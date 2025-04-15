@@ -1,0 +1,127 @@
+---
+description: Apply these rules when making changes to the project
+globs:
+alwaysApply: true
+---
+
+Update this rule if user requested changes to the project requirement, etc.
+# Tech Stack Document
+
+This document explains the technology choices for Shepherd in everyday language. Our goal is to communicate how each part of the tech stack works together to create a smooth, engaging, and secure mobile experience for users on both iOS and Android devices.
+
+## Frontend Technologies
+
+For the part of Shepherd that users interact with directly, we have chosen the following tools:
+
+*   **React Native / Expo**
+
+    *   Provides a way to build native mobile apps using familiar web technologies. Expo streamlines development, testing, and deployment across both iOS and Android.
+
+*   **TypeScript**
+
+    *   Adds safety and clarity to the code by catching errors early and making the code easier to understand and maintain.
+
+*   **Expo Router**
+
+    *   Helps manage navigation between different screens. Its structure makes it simpler to create clear and intuitive flows, much like the engaging journey we want Shepherd to offer its users.
+
+*   **Nativewind**
+
+    *   A styling tool that uses utility classes to apply consistent design across all screens. This ensures that the app’s look closely reflects a friendly and vibrant Duolingo-inspired design with a spiritual twist.
+
+*   **Rive**
+
+    *   Powers engaging animations, especially for the lamb avatar on the home screen. Provides dynamic, interactive animations that respond to user interactions and app state changes.
+
+These frontend choices allow us to deliver an interface that is smooth, responsive, and visually engaging, making it easier for users to navigate through spiritual lessons, daily Bible readings, and interactive guided prayer sessions.
+
+## Backend Technologies
+
+Behind the scenes, Shepherd relies on robust backend solutions that make the app both powerful and reliable:
+
+*   **Firebase (Firestore & Firebase Auth)**
+
+    *   **Firestore** manages the storage of user data, such as progress tracking, prayer journals, and personalized Bible modules. Its real-time update feature ensures the app feels responsive.
+    *   **Firebase Auth** handles user authentication, allowing seamless logins via anonymous sign-in, Sign in with Apple (SIWA) on iOS, or Google sign-in on Android.
+
+*   **Bible API Integration**
+
+    *   This API offers a ready-made solution to fetch Bible texts and verses. We have designed our integration to be modular, meaning that if we need to change the endpoint later, it can be done with minimal disruption.
+
+*   **Zustand & Async Storage**
+
+    *   These tools work together to store data locally on the user’s device, ensuring that users can continue their spiritual activities even without an internet connection. They also help in keeping the app responsive by managing state efficiently.
+
+These backend technologies work in harmony to manage data, authenticate users, and provide content, ensuring a secure and engaging experience for every user.
+
+## Infrastructure and Deployment
+
+To guarantee that Shepherd is always available and performs well under different usage scenarios, we have incorporated the following infrastructure components:
+
+*   **Hosting and Cloud Services (Firebase)**
+
+    *   Firebase not only manages user data and authentication but also provides robust hosting services to ensure the app remains reliable and scales as the number of users grows.
+
+*   **Continuous Integration / Continuous Deployment (CI/CD)**
+
+    *   While not explicitly detailed in every step, our development process involves using automated tools to test and deploy code. This speeds up the release cycle and makes it easier to roll out new features or fixes quickly.
+
+*   **Version Control (Git and GitHub)**
+
+    *   Our code is maintained in Git repositories, with platforms like GitHub to manage version control, collaboration, and project documentation. This keeps development organized and collaborative.
+
+*   **Cursor IDE**
+
+    *   This advanced integrated development environment offers real-time coding suggestions and improves developer productivity, contributing to the overall stability of the project.
+
+These infrastructure choices provide a strong foundation for dependable app performance, quick updates, and scalability as Shepherd grows.
+
+## Third-Party Integrations
+
+Shepherd is further enhanced by several third-party services that add value beyond our core development components:
+
+*   **Bible API (from wldeh/bible-api)**
+
+    *   Used to retrieve Bible texts and verses, this integration is central to Shepherd’s educational and spiritual content. Its modular design allows us to change the service if needed without extensive rewrites.
+
+*   **RevenueCat and Superwall**
+
+    *   These services manage in-app purchases and subscriptions. They help display a clear pricing page and control feature access for users on the pro tier, supporting our monetization strategy without compromising user experience.
+
+*   **Third-Party Authentication Providers**
+
+    *   Integration with Sign in with Apple and Google Sign-In provides a secure way for users to log in, making the onboarding process smoother and more intuitive.
+
+These integrations bring specialized functionality to Shepherd, ensuring that each component works to enhance user engagement and make everyday spiritual practices more rewarding.
+
+## Security and Performance Considerations
+
+Shepherd prioritizes user trust, engagement, and a smooth user experience by adopting the following measures:
+
+*   **Authentication & Authorization**
+
+    *   Firebase Auth ensures that user data is securely managed. Using industry-recognized authentication methods like SIWA and Google Sign-In helps safeguard user privacy.
+
+*   **Data Protection**
+
+    *   All sensitive data is stored securely in Firestore. Coupled with local storage via Zustand and Async Storage, user progress and journal entries are protected even in offline mode.
+
+*   **Performance Optimizations**
+
+    *   Using caching strategies and maintaining a solid offline-first architecture ensures rapid load times and uninterrupted user experience. Animation cues, powered by Rive, and modular API calls help reduce wait times and prevent unnecessary load on the network.
+
+These measures collectively enhance both security and performance, ensuring that Shepherd remains a safe and highly responsive app for our users.
+
+## Conclusion and Overall Tech Stack Summary
+
+In summary, our selected tech stack aligns perfectly with the goals of Shepherd:
+
+*   **Frontend**: React Native, Expo, TypeScript, Expo Router, Nativewind, and Rive deliver a visually appealing, nimble, and interactive user interface.
+*   **Backend**: Firebase and the modular Bible API integration, managed with state tools like Zustand and Async Storage, ensure robust data management and continuous operation, even offline.
+*   **Infrastructure**: Firebase hosting, Git version control, and CI/CD processes ensure that the application is both scalable and reliable.
+*   **Third-Party Integrations**: Services such as RevenueCat, Superwall, and external authentication providers add specialized functionality that supports our monetization and user sign-in processes.
+*   **Security & Performance**: Best-practice measures involving secure authentication, data encryption, and caching make sure users have a smooth and safe experience.
+
+These choices have been made to align with the needs of Gen Z Christians looking for a gamified, engaging, and accessible way to nurture their spiritual lives. Every element of the tech stack contributes to making Shepherd an intuitive and reliable companion in the daily journey of spiritual growth.
+
+Feel free to reach out with any questions or clarifications as we continue developing this inspiring project.

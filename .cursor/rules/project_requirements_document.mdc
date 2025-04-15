@@ -1,0 +1,142 @@
+---
+description: Apply these rules when making changes to the project
+globs: 
+alwaysApply: true
+---
+# Shepherd - Project Requirements Document
+
+5 main tabs:
+Map / Bible / Home / Stats / Profile
+
+WE ARE USING YARN PACKAGE MANAGER BRO
+
+
+## 1. Project Overview
+
+Shepherd is a mobile application for iOS and Android tailored for Gen Z Christians who struggle with consistent spiritual habits. The app combines elements from similar applications like Finch and Duolingo, enabling users to care for a lamb avatar by participating in daily spiritual exercises such as Bible reading and prayer. The design will mirror Duolingo’s engaging UI while maintaining a sacred tone with a unique lamb mascot that evolves as users progress in their spiritual journey.
+
+The objective behind building Shepherd is to overcome the challenge many young Christians face in committing to regular Bible study and prayer. By embedding gamification, Shepherd aims to boost daily Bible engagement through interactive and personalized spiritual paths. The app's success will be evaluated based on user retention rates, frequency of daily activities, and how effectively the gamified elements drive spiritual habits.
+
+## 2. In-Scope vs. Out-of-Scope
+
+**In-Scope:**
+
+*   User onboarding sequence tailored to spiritual objectives and engagement frequency.
+*   A dynamic home screen featuring the lamb avatar, progress metrics, and navigation for daily activities.
+*   Bible study paths resembling Duolingo's map navigation, offering thematic content.
+*   Daily practices that include Bible reading, guided prayers, and journaling prompts.
+*   Gamification features with streaks, XP, and animated reward systems.
+*   Offline functionality via local storage for uninterrupted access.
+*   Initial monetization through RevenueCat and Superwall for subscription models.
+*   Interactive lamb animation powered by the Rive engine.
+
+**Out-of-Scope:**
+
+*   Social features such as community sharing, leaderboards, or profiles.
+*   Detailed lamb customization and community content creation for release phases beyond MVP.
+*   Administrator or moderator roles beyond user-centered functionalities.
+*   Expanding licensing agreements outside the current Bible API.
+
+## 3. User Flow
+
+Upon downloading Shepherd, users are greeted with a welcome screen introducing the app as a spiritual growth tool via the lamb avatar. The onboarding process allows users to select a spiritual goal path, such as "Walk in the Light" or "Heart of David", set engagement frequencies, and specify their spiritual maturity. This setup individualizes the user's Bible study plan.
+
+After onboarding, users arrive at a home screen with their lamb avatar and spiritual progress indicators prominently displayed. The interface offers three primary interactions: Bible reading, prayer sessions, and journaling, each accessible with simple navigation. The app’s design facilitates easy transitions between these activities, thereby supporting consistent daily use.
+
+## 4. Core Features
+
+*   **Onboarding Funnel:**
+
+    *   Introduction to the lamb avatar and user input for its name and denomination preferences.
+    *   Selection of spiritual goals and engagement frequency.
+
+*   **Path-Based Bible Study:**
+
+    *   Structured thematic paths, utilizing a map-like interface for user progress.
+    *   Unlockable content with mini-lessons under each scriptural theme.
+
+*   **Daily Spiritual Practices:**
+
+    *   Automating continuous Bible reading and interactive prayer sessions.
+    *   Reflection through journaling prompts aligned with daily readings.
+
+*   **Gamification and Animation:**
+
+    *   Evolving lamb avatar reflecting spiritual engagement.
+    *   Displaying streaks, XP, and personalized visual rewards.
+
+*   **Offline Functionality:**
+
+    *   Leveraging local data storage to provide uninterrupted access during disconnected states.
+
+*   **Monetization Features:**
+
+    *   Integration with RevenueCat and Superwall to manage premium content.
+
+*   **Animations:**
+
+    *   Utilizing Rive for effective avatar motion animation and visual feedback.
+
+## 5. Tech Stack & Tools
+
+all rive animations are located inside @assets/riveAnimations folder. 
+
+*   **Frontend:**
+
+    *   Developed with React Native and Expo.
+    *   Utilizes TypeScript for enhanced type safety.
+    *   Expo Router for seamless app navigation.
+    *   Styled using Nativewind for consistent cross-platform theming.
+
+*   **Backend:**
+
+    *   Firebase for database management and user authentication.
+    *   Bible API for scripture access.
+
+*   **Data Management:**
+
+    *   Zustand and Async Storage for efficient offline data handling.
+
+*   **Development Tools:**
+
+    *   Cursor IDE for dynamic coding environment and feedback.
+    *   Rive for advanced animation integration to power UI elements like the animated lamb.
+
+## 6. Non-Functional Requirements
+
+*   **Performance:**
+
+    *   Prioritize quick transitions and negligible latency across features.
+
+*   **Usability:**
+
+    *   Design must ensure straightforward navigation and operation.
+
+*   **Security:**
+
+    *   Firebase will be employed for fortified data security and user authentication.
+
+*   **Scalability:**
+
+    *   Adopt a modular framework conducive to growth and integration updates.
+
+*   **Reliability:**
+
+    *   Guarantee strength of offline capabilities with reliable data synchronization.
+
+## 7. Constraints & Assumptions
+
+*   Reliance on the stability and availability of the designated Bible API.
+*   Use of Firebase’s security and data protection to meet application's standards.
+*   Assume role diversification is unnecessary with MVP’s single user focus.
+*   Lamb customization will be limited to animated improvements.
+*   Offline accessibility remains a pivotal feature ensured by employing local caching.
+
+## 8. Known Issues & Potential Pitfalls
+
+*   API rate limits or potential down periods may affect scripture access.
+*   Ensuring data consistency between local storage and Firebase can present challenges.
+*   User-centric design for prayer functionality needs iterative refinement based on feedback loops.
+*   Billing complexities and third-party integrations require thorough validation.
+
+This document serves as a detailed roadmap for creating Shepherd and anticipates technical requirements and challenges. Future documentation will rely on this PRD as the guiding source for coherent development and feature incorporation.

@@ -1,0 +1,168 @@
+---
+description: Apply these rules when making changes to the project
+globs:
+alwaysApply: true
+---
+
+Update this rule if user requested changes to the project requirement, etc.
+# Backend Structure Document
+
+## 1. Backend Architecture
+
+The backend for Shepherd is built around a serverless, cloud-based approach that emphasizes scalability, maintainability, and high performance. Here’s how it is designed:
+
+*   The core of the backend uses Firebase services, specifically Firestore for the database and Firebase Auth for user authentication. This approach removes the need for traditional server management while ensuring a high level of uptime and reliability.
+*   The architecture is event-driven. User interactions in the mobile app trigger events that are processed by Firebase Cloud Functions when needed. This keeps the system responsive and capable of scaling automatically as the user base grows.
+*   The design adopts a modular pattern. Distinct functions handle user data management, Bible content delivery, gamification rewards, and monetization events. This modularity means that individual components can be updated or scaled without impacting the entire system.
+*   Offline capabilities are provided by syncing local storage (through Async Storage and Zustand) with the cloud. This hybrid approach ensures the app maintains functionality even when connectivity is intermittent.
+
+## 2. Database Management
+
+Shepherd relies on Firebase’s Firestore database, which is a NoSQL document-based system. Here’s how the data is managed and structured:
+
+*   **Technology:**
+
+    *   Firebase Firestore (NoSQL)
+    *   Local caching using Async Storage for offline use
+
+*   **Data Storage & Structure:**
+
+    *   Data is stored in collections and documents, which makes it naturally flexible—perfect for storing user profiles, progress tracking data, Bible content, and game state variables like streaks and XP.
+    *   The Bible content fetched from the Bible API is cached locally for offline use as well as stored in Firestore if needed for updates and syncing across devices.
+    *   User settings, preferences, and authentication statuses are securely stored and managed via Firebase Auth and Firestore.
+
+*   **Data Access Practices:**
+
+    *   Queries are optimized for fast lookups of user-specific information and Bible modules.
+    *   Security rules in Firestore ensure that only authenticated users can read their personal data, thus avoiding unnecessary load and security risks.
+
+## 3. Database Schema
+
+Since we are using a NoSQL database (Firestore), the data is stored in collections and documents rather than in a fixed SQL schema. Here’s a human-readable outline of the data structure:
+
+*   **Users Collection:**
+
+    *   Each document represents a user and stores:
+
+        *   User ID
+        *   Authentication details (using Firebase Auth)
+        *   Onboarding choices (lamb avatar details, denomination, spiritual goals, experience level, frequency goals, and selected path)
+        *   Engagement metrics (daily streaks, XP, progression through Bible reading modules)
+        *   Subscription status (monetization details handled via RevenueCat and Superwall integration)
+
+*   **Bible Content Collection:**
+
+    *   Documents identified by Bible version, chapter, and verse
+    *   Cached version of the Bible for offline use
+    *   Additional metadata (such as last updated timestamp for cache refresh)
+
+*   **Activity Logs Collection:**
+
+    *   Documents to track user interactions such as reading sessions, prayer sessions, and reflections
+    *   Helps in generating progress tracking, streak calculations, and awarding in-app rewards
+
+*   **Monetization Collection:**
+
+    *   Documents that store subscription status, purchase history, and pro account details
+
+## 4. API Design and Endpoints
+
+The API is designed with a RESTful approach, enabling the mobile app to communicate seamlessly with the backend. Key endpoints and their roles include:
+
+*   **Authentication Endpoints:**
+
+    *   Handling user sign-up, sign-in, and sign-out processes via Firebase Auth (including anonymous login, SIWA, and Google Sign-in setups)
+
+*   **User Data Endpoints:**
+
+    *   Endpoints to fetch and update user onboarding data, personal settings, and progress records
+
+*   **Bible Content Endpoints:**
+
+    *   Endpoints to deliver Bible verses and modules fetched from the Bible API and subsequently served from the local cache
+    *   Endpoints for bulk download and caching of Bible content for offline capabilities
+
+*   **Activity Tracking Endpoints:**
+
+    *   Endpoints that log activities such as reading sessions, prayer, and reflections, which are used to update progress trackers and gamified elements like streaks and XP
+
+*   **Monetization Endpoints:**
+
+    *   Secure endpoints to manage subscription status, in-app purchases, and revenue data (integrated with RevenueCat and Superwall)
+
+## 5. Hosting Solutions
+
+The backend is hosted using cloud-based Firebase services, which bring several benefits:
+
+*   **Firebase Hosting and Cloud Functions:**
+
+    *   Ensures automatic scaling based on demand
+    *   Reduces overhead since there is no need to manage physical or virtual servers
+    *   Provides robust security and compliance
+
+*   **Cost-Effectiveness:**
+
+    *   Pay-as-you-go pricing model scales with usage, making it affordable during both initial launch and as the user base grows
+
+## 6. Infrastructure Components
+
+Multiple infrastructure components work together to build a smooth and responsive experience:
+
+*   **Load Balancers:**
+
+    *   Managed by Firebase to route requests efficiently and maintain service reliability even during heavy traffic periods
+
+*   **Caching Mechanisms:**
+
+    *   Local caching via Async Storage ensures users can access Bible content offline
+    *   Server-side caching in Firestore helps reduce redundant read operations
+
+*   **Content Delivery Networks (CDNs):**
+
+    *   Used to rapidly deliver static assets such as images (avatars, UI elements) and possibly cached Bible content to users globally
+
+*   **Serverless Functions:**
+
+    *   Firebase Cloud Functions handle backend compute tasks and events triggered by user interactions
+
+## 7. Security Measures
+
+Security is a top priority. Here’s a breakdown of the security protocols:
+
+*   **Authentication & Authorization:**
+
+    *   All access to sensitive data is protected by Firebase Auth.
+    *   Role-based access control is implemented via Firestore security rules to ensure users can only access their own data.
+
+*   **Data Encryption:**
+
+    *   Data in transit is encrypted using HTTPS.
+    *   Sensitive information stored in Firestore is further protected by Firebase’s built-in security measures.
+
+*   **Secure API Endpoints:**
+
+    *   All endpoints follow secure coding practices to prevent common vulnerabilities, and data is validated on both the client and server sides.
+
+## 8. Monitoring and Maintenance
+
+To ensure the backend remains healthy and efficient, various monitoring and maintenance strategies are used:
+
+*   **Monitoring Tools:**
+
+    *   Firebase provides real-time analytics and logs which help monitor usage patterns, errors, and performance bottlenecks.
+    *   Additional third-party tools may be integrated to gain deeper insights into backend operations.
+
+*   **Maintenance Strategies:**
+
+    *   Regular updates to Firebase rules and cloud functions.
+    *   Scheduled backups and maintenance windows to ensure data integrity and performance.
+    *   Continuous integration and deployment (CI/CD) pipelines to enable frequent and reliable updates.
+
+## 9. Conclusion and Overall Backend Summary
+
+The backend of Shepherd is designed with a modern, serverless architecture that leverages Firebase’s powerful suite of services. By utilizing Firestore for data management, Firebase Auth for secure authentication, and Cloud Functions for scalable processing, the system is built to support rapid growth, offline functionality, and a seamless user experience.
+
+*   Unique aspects of this backend include its strong emphasis on offline capabilities and gamification logic seamlessly integrated with a mature cloud infrastructure.
+*   Each component, from the API endpoints to the security protocols, works together to help Gen Z Christians build a more consistent, engaging, and spiritually fulfilling daily routine.
+
+This setup not only meets the immediate needs of the MVP but also lays a strong foundation for future features and scalability as Shepherd continues to evolve.
