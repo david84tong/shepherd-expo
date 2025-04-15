@@ -1,5 +1,6 @@
-import { View, Text, ImageBackground, SafeAreaView, Platform, Image } from 'react-native';
-import Rive from 'rive-react-native';
+import { View, Text, ImageBackground, SafeAreaView, Platform, Image, Button } from 'react-native';
+import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
+import { useRef, useState } from 'react';
 import SecondaryButton from '../../components/SecondaryButton';
 
 // Assuming background is in assets/backgrounds
@@ -11,8 +12,31 @@ const dropIcon = require('../../assets/icons/breadIcon.png');
 const quillIcon = require('../../assets/icons/breadIcon.png');
 
 export default function HomeScreen() {
+  const riveRef = useRef<RiveRef>(null);
+  const [riveError, setRiveError] = useState<RNRiveError | null>(null);
+
+  /** Send the lamb off–screen */
+  const handleOutOfFrame = () => {
+    try {
+      riveRef.current?.setInputState('MAIN', 'Out of Frame', true);
+    } catch (error) {
+      console.error("Error setting Rive input state:", error);
+    }
+  };
+
+  const handleRiveError = (error: RNRiveError) => {
+    console.error("Rive Error:", error.message, error.type);
+    setRiveError(error);
+  };
+
   const handleReadPress = () => {
     console.log('Read Daily Bread Pressed');
+    // Reset the Rive animation state
+    try {
+      riveRef.current?.reset();
+    } catch (error) {
+      console.error("Error resetting Rive animation:", error);
+    }
   };
 
   const handlePrayerPress = () => {
@@ -45,13 +69,22 @@ export default function HomeScreen() {
 
         {/* Top Section - Lamb Avatar */}
         <View className="items-center justify-center" style={{ flex: Platform.OS === 'ios' ? 0.8 : 0.6 }}>
-          <View className="w-56 h-56">
-            <Rive
+          <View className="w-56 h-56 items-center justify-center overflow-hidden">
+            {riveError ? (
+              <Text className="text-red-500 p-4 text-center">
+                Error loading animation: {riveError.message} ({riveError.type})
+              </Text>
+            ) : (
+              <Rive
+              ref={riveRef}
               resourceName="example"
               autoplay={true}
+              onError={handleRiveError}
               style={{ width: '100%', height: '100%' }}
             />
+            )}
           </View>
+          {!riveError && <Button title="Trigger Out of Frame" onPress={handleOutOfFrame} />}
         </View>
 
         {/* Bottom Section - Action Buttons Card */}
