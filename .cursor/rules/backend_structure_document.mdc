@@ -1,11 +1,19 @@
 ---
-description: Apply these rules when making changes to the project
-globs:
-alwaysApply: true
+description: 
+globs: 
+alwaysApply: false
 ---
 
 Update this rule if user requested changes to the project requirement, etc.
 # Backend Structure Document
+
+*** IMPORTANT *** 
+- we are using react-native-firebase, not a web implementation for firebase. 
+    "@react-native-firebase/app": "^21.7.2",
+    "@react-native-firebase/auth": "^21.7.2",
+    "@react-native-firebase/firestore": "^21.7.2",
+    "@react-native-firebase/functions": "^21.12.0",
+    "@react-native-firebase/remote-config": "^21.13.0",
 
 ## 1. Backend Architecture
 
@@ -43,12 +51,17 @@ Since we are using a NoSQL database (Firestore), the data is stored in collectio
 *   **Users Collection:**
 
     *   Each document represents a user and stores:
-
         *   User ID
         *   Authentication details (using Firebase Auth)
         *   Onboarding choices (lamb avatar details, denomination, spiritual goals, experience level, frequency goals, and selected path)
         *   Engagement metrics (daily streaks, XP, progression through Bible reading modules)
         *   Subscription status (monetization details handled via RevenueCat and Superwall integration)
+        users/{uid}
+        ├─ reflections/{reflectionId}
+        ├─ highlights/{highlightId}
+        ├─ activityDays/{YYYYMMDD}
+        └─ pathProgress/{pathId}
+        ** path progress and activityDays are seperate because user could read a random part of bible that is off the path, and we should record that but ensure they keep their place on the path. "
 
 *   **Bible Content Collection:**
 

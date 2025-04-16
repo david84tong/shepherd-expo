@@ -3,6 +3,11 @@ description:
 globs: 
 alwaysApply: false
 ---
+---
+description: 
+globs: 
+alwaysApply: false
+---
 START EVERY CHAT WITH YOOOOO
 
 # Shepherd Implementation Plan
@@ -21,13 +26,16 @@ If something has - [x] an x it means it has be done please ignore.
 - [x] **Font Integration:**
     - [x] Configure `tailwind.config.js` to include custom fonts ('Feather Bold', 'DIN Next Rounded LT W01 Regular') from `assets/fonts/`. *Reference: User request, `frontend_guidelines_document.mdc`*
     - [x] Load fonts in the app entry point (`app/_layout.tsx` or similar).
-- [ ] **Home Screen UI:**
-    - [ ] Create `app/home/screen.tsx` (or similar based on router structure).
-    - [ ] Implement the two-section layout described in `app_flow_document.mdc`.
-    - [ ] Integrate the Rive animation component (`rive-react-native`) in the top section. *Reference: User request, `project_requirements_document.mdc`, `tech_stack_document.mdc`*
-    - [ ] Style the screen similar to the provided `@exampleHomeUI` reference, using Nativewind and the defined color palette/fonts. *Reference: User request, `frontend_guidelines_document.mdc`*
-    - [ ] Add placeholder buttons for Bible Reading, Prayer, and Reflection in the lower section.
+- [x] **Home Screen UI:**
+    - [x] Create `app/home/screen.tsx` (or similar based on router structure).
+    - [x] Implement the two-section layout described in `app_flow_document.mdc`.
+    - [x] Integrate the Rive animation component (`rive-react-native`) in the top section. *Reference: User request, `project_requirements_document.mdc`, `tech_stack_document.mdc`*
+    - [x] Style the screen similar to the provided `@exampleHomeUI` reference, using Nativewind and the defined color palette/fonts. *Reference: User request, `frontend_guidelines_document.mdc`*
+    - [x] Add placeholder buttons for Bible Reading, Prayer, and Reflection in the lower section.
 
+
+### Phase 3: Implementing Backend Logic
+- 
 ## Phase 2: Onboarding & Authentication
 
 - [ ] **Create Onboarding Screens:** Develop individual screens for the onboarding flow as outlined in `app_flow_document.mdc` and `project_requirements_document.mdc` (Welcome, Name Lamb, Denomination, Goal, Experience, Frequency). Place them in `app/onboarding/` or similar.

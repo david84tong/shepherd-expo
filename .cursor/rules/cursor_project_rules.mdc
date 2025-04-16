@@ -1,131 +1,99 @@
 ---
 description: Apply these rules when making changes to the project
-globs:
+globs: 
 alwaysApply: true
 ---
 
-Update this rule if user requested changes to the project requirement, etc.
-## Project Overview
 
-* **Type:** Mobile App (React Native/Expo)
-* **Description:** Shepherd is a mobile app designed to engage Gen Z Christians with daily Bible reading and prayer, inspired by Finch and Duolingo. It offers a gamified, intuitive experience with features like onboarding, themed Bible modules, daily engagement loops, and an evolving lamb avatar.
-* **Primary Goal:** Increase daily Bible engagement through gamification and intuitive design.
+Whenever user is asking for UI changes look and follow [frontend_guidelines_document.mdc](mdc:.cursor/rules/frontend_guidelines_document.mdc), for anything data logic / cloud storage refer to [backend_structure_document.mdc](mdc:.cursor/rules/backend_structure_document.mdc). 
 
-## Project Structure
+---
 
-### Framework-Specific Routing
+### 1 · Package Manager
+- **Yarn** – use `yarn` for every install / script.
 
-* **Directory Rules:**
+### 2 · Styling Guidelines
+- **NativeWind** (Tailwind‑class syntax for React Native).  
+- Avoid `StyleSheet.create()` unless a component truly can’t be expressed with NativeWind utilities.
 
-    * **Expo Router (Latest):** Implements file-system based routing in the `app/` directory. Routes are defined using a nested structure similar to Next.js App Router conventions. For example, an onboarding screen is placed in `app/onboarding/screen.tsx` and similar routes are structured in nested folders under `app/`.
-    * Example: "Expo Router" → `app/[route]/screen.tsx` pattern
+### 3 · Project Structure
+```
+/app
+    /api        → API clients (e.g., bible.ts)
+    /models     → TypeScript interfaces & domain models
+    /stores     → Zustand stores + Firestore sync helpers
+    /(tabs)     → screens
+    /assets
+    - /backgrounds
+    - /fonts
+    - /icons
+    - /riveAnimations
+    /components
+    
 
-### Core Directories
+```
 
-* **Versioned Structure:**
+### 4 · Navigation Shell
+Bottom tab bar: **Map · Bible · Home · Stats · Profile**
 
-    * **app/**: Contains React Native screens and components organized into feature-based folders such as onboarding, home, modules, and statistics.
-    * Example: `app/api` → Manages modular API integration for the Bible API, allowing for easy replacement if needed.
-    * Example: `app/components` → Holds reusable UI components such as buttons, headers, and the evolving lamb avatar animation.
+---
 
-### Key Files
+## 5 · Core Screens & Loops
 
-* **Stack-Versioned Patterns:**
+| Screen | Key elements |
+|--------|--------------|
+| **Home** | • Rive lamb avatar on scenic header<br>• Streak flame in top‑right<br>• Three primary buttons (stacked): **Read Daily Bread · Prayer · Reflect** |
+| **Map** | Duolingo‑style path: units unlock, show XP, streak, % Bible read |
+| **Bible** | Reader with verse highlighting & chunked scrolling |
+| **Stats** | GitHub‑style heat‑map (y‑axis = Bible chapters). Shows:<br>  – days read<br>  – verses & chapters total<br>  – % Bible completed |
+| **Profile** | Avatar settings, translation choice, auth status |
 
-    * **app/onboarding/screen.tsx:** Implements the personalized onboarding funnel including lamb avatar introduction and goal selection.
-    * **app/home/screen.tsx:** Manages the daily reading, prayer, and reflection loops alongside the Lamb Growth System visualization.
-    * **app/navigation/_layout.tsx:** Configures the Expo Router navigation layout.
+### Daily Reading / Prayer Flow (compressed)
 
-## Tech Stack Rules
+1. **Trigger** – Push: “🕊️ Time to talk with the Shepherd.”  
+2. **Settle (10 s)** – Breathing ring + verse of the day → *Begin*.  
+3. **Mode Select** – Quick (< 60 s), Guided (3‑5 min), or Custom list.  
+4. **Pray** – Swipe cards: A‑C‑T‑S; mic / note / skip.  
+5. **Reflect** – “Amen” → 2‑line journal prompt.  
+6. **Reward** – Lamb animation + XP, streak increment, pasture update.
 
-* **Version Enforcement:**
+### Lamb Growth System
+- Lamb brightness & pasture health scale with daily engagement.  
+- Neglect dims lamb and withers background.
 
-    * **expo-router@latest:** Enforce usage of the `app/` directory with nested route folders. The routing must strictly follow the file-system based navigation without mixing legacy patterns.
-    * **react-native@latest & typescript:** Ensure type safety and quality experiences across mobile platforms.
+---
 
-## PRD Compliance
+## 6 · Learning Path Model
 
-* **Non-Negotiable:**
+| Item | Value |
+|------|-------|
+| Paths per user | 3‑5 thematic (from onboarding) |
+| Units per path | 3‑5 |
+| Verses per mini‑lesson | ~5–10 |
+| UI | Same node/lock progression as Duolingo |
 
-    * "The entire Bible should be downloaded to the user's device using robust offline capabilities (Zustand and Async Storage) with a loading screen that fetches and caches the Bible data based on the searched Bible version."
+---
 
-## App Flow Integration
+## 7 · Tech Stack
 
-* **Stack-Aligned Flow:**
+- **React Native / Expo** (with Expo Router)
+- **NativeWind** for styling themes
+- **Rive‑RN** for lamb animations
+- **Firebase**  
+  - Auth: anonymous, SIWA, Google  
+  - Firestore: cloud data  
+  - Cloud Functions (aggregation)  
+- **Zustand + AsyncStorage** – offline‑first caching & sync
+- **bible.ts** (inside `/api`) – fetches scripture from CDN; provider is swappable for NIV/ESV once licensed.
 
-    * Example: The Expo Router based Auth Flow directs users from the onboarding funnel (`app/onboarding/screen.tsx`) to the home screen (`app/home/screen.tsx`), ensuring smooth transitions between personalized Bible learning paths and daily engagement loops.
+---
 
-## Best Practices
+### 8 · Rules of Thumb
 
-* **React Native / Expo**
-    * Leverage Expo’s development tools for rapid iteration and debugging.
-    * Optimize performance by using native modules and avoiding unnecessary re-renders.
-    * Strictly follow Expo Router file-based convention.
+1. **Single source of truth:** All live stats (XP, streak, totals) live on the root `users/{uid}` doc; history lives in `activityDays/{YYYYMMDD}`.  
+2. **Provider abstraction:** `BibleProvider.fetch(versionId, reference)`—makes swapping translations/API endpoints painless.  
+3. **Offline first:** Cache full translation locally on first download; serve from AsyncStorage, sync highlights & progress to Firestore when online.
 
-* **Typescript**
-    * Enforce strict type checking to minimize runtime errors.
-    * Utilize interfaces and types for consistent data modeling.
-    * Adopt code linting and formatting standards.
+---
 
-* **Nativewind**
-    * Use utility-first styling to maintain consistent design.
-    * Follow theme guidelines for color palette and responsive design.
-    * Ensure style classes are modular and reusable.
-
-* **Firestore**
-    * Implement efficient querying and real-time updates.
-    * Secure data by applying robust Firestore security rules.
-    * Optimize data structure for scalable and efficient reads/writes.
-
-* **Zustand / Async Storage**
-    * Manage local state efficiently with minimal boilerplate code.
-    * Implement robust caching strategies for offline capability.
-    * Ensure synchronization between local storage and remote data.
-
-* **Expo Router**
-    * Adhere to the file-system based routing within the `app/` directory.
-    * Avoid mixing legacy routing patterns like flat `pages/` structures.
-    * Test all navigations for seamless user transitions.
-
-* **Firebase Auth**
-    * Prefer anonymous sign-in initially with fallback integrations like SIWA and Google Sign-In.
-    * Secure authentication flows with token validation.
-    * Monitor user sessions effectively.
-
-* **Rive**
-    * Optimize animations to ensure smooth performance across devices.
-    * Keep animations lightweight to reduce battery consumption.
-    * Integrate animations within the React Native lifecycle effectively.
-
-* **RevenueCat + Superwall**
-    * Ensure secure and smooth in-app monetization flows.
-    * Test pricing pages and pro feature unlocks thoroughly.
-    * Monitor user conversion metrics consistently.
-
-## Rules
-
-* Derive folder/file patterns directly from tech stack version documentation.
-* If using Expo Router: Enforce `app/` directory with nested route folders exclusively.
-* Mirror file structure logic for React Native projects as per Expo Router specifications.
-* Never mix version patterns (e.g., avoid using flat or Pages Router structures within an Expo Router project).
-
-## Rules Metrics
-
-Before starting the project development, create a metrics file in the root of the project called
-
-`cursor_metrics.md`.
-
-### Instructions:
-
-* Each time a cursor rule is used as context, update `cursor_metrics.md`.
-* Use the following format for `cursor_metrics.md:`
-
-# Rules Metrics
-
-## Usage
-
-The number of times each rule is used as context:
-
-* rule-name.mdc: 0
-* another-rule.mdc: 0
-* ...other rules
+*(End of rules)*
