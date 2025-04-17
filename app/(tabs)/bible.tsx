@@ -10,6 +10,8 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { fetchChapter, ChapterResponse, FetchError, Verse } from '../api/bible';
+import PrimaryButton from '../../components/PrimaryButton';
+import SideButton from '~/components/SideButton';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
 const DEFAULT_FONT_SIZE = 16;
@@ -21,6 +23,9 @@ export default function BibleScreen() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
+  const [currentBook, setCurrentBook] = useState<string>('Genesis');
+  const [currentChapter, setCurrentChapter] = useState<number>(1);
+  const [currentVersion, setCurrentVersion] = useState<string>('ESV');
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -39,20 +44,60 @@ export default function BibleScreen() {
         console.error("Failed to load font size from AsyncStorage", e);
       }
 
-      const result = await fetchChapter('ESV', 1, 1);
+      loadChapter(currentVersion, currentBook, currentChapter);
+    };
+
+    loadInitialData();
+  }, []);
+
+  const loadChapter = async (version: string, book: string, chapter: number) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      // For simplicity, we're using book index 1 here as Genesis
+      // In a real app, you would map book names to their index or use the API differently
+      const result = await fetchChapter(version, 1, chapter);
 
       if ('error' in result) {
         setError(result.message);
         setChapterData(null);
       } else {
         setChapterData(result);
+        setCurrentBook(result.book);
+        setCurrentChapter(result.chapter);
+        setCurrentVersion(result.version);
         setError(null);
       }
+    } catch (error) {
+      setError("Failed to load chapter");
+      setChapterData(null);
+    } finally {
       setLoading(false);
-    };
+    }
+  };
 
-    loadInitialData();
-  }, []);
+  const navigateToPreviousChapter = () => {
+    if (loading || !chapterData) return;
+    
+    if (currentChapter > 1) {
+      loadChapter(currentVersion, currentBook, currentChapter - 1);
+    }
+    // In a complete implementation, you would also handle navigation to the previous book's
+    // last chapter when at chapter 1
+  };
+
+  const navigateToNextChapter = () => {
+    if (loading || !chapterData) return;
+    
+    // For simplicity, we're allowing navigation up to chapter 50 (maximum in Genesis)
+    // In a real app, you would check the max chapters for each book
+    if (currentChapter < 50) {
+      loadChapter(currentVersion, currentBook, currentChapter + 1);
+    }
+    // In a complete implementation, you would also handle navigation to the next book's
+    // first chapter when at the last chapter
+  };
 
   const updateFontSize = async (newSize: number) => {
     if (newSize >= MIN_FONT_SIZE && newSize <= MAX_FONT_SIZE) {
@@ -71,6 +116,11 @@ export default function BibleScreen() {
 
   const decreaseFontSize = () => {
     updateFontSize(fontSize - 1);
+  };
+
+  const handleFinishReading = () => {
+    // Placeholder for finish reading logic
+    console.log('Finish Reading Pressed');
   };
 
   const renderBibleContent = () => {
@@ -110,6 +160,7 @@ export default function BibleScreen() {
               {chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'Loading...'}
             </Text>
           </TouchableOpacity>
+          
           <TouchableOpacity style={styles.headerButton}>
             <Text style={styles.headerButtonText}>
               {chapterData ? chapterData.version : '...'}
@@ -138,6 +189,34 @@ export default function BibleScreen() {
 
       <View style={styles.contentArea}>
         {renderBibleContent()}
+      </View>
+
+      {/* Floating chapter navigation buttons */}
+      <View style={styles.floatingNavContainer}>
+        <TouchableOpacity
+          style={[styles.navButton, currentChapter <= 1 && styles.disabledNavButton]}
+          onPress={navigateToPreviousChapter}
+          disabled={currentChapter <= 1 || loading}
+        >
+          <Text style={[styles.navButtonText, currentChapter <= 1 && styles.disabledButtonText]}>←</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.navButton, (currentChapter >= 50 || loading) && styles.disabledNavButton]}
+          onPress={navigateToNextChapter}
+          disabled={currentChapter >= 50 || loading}
+        >
+          <Text style={[styles.navButtonText, (currentChapter >= 50 || loading) && styles.disabledButtonText]}>→</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Finish Reading Button - Fixed at bottom */}
+      <View style={styles.finishButtonContainer}>
+        <SideButton
+          title="Finish Reading"
+          onPress={handleFinishReading}
+          backgroundColor="#FFC800" // Duolingo Yellow
+          textColor="#ffffff"       // Dark Gray Text
+        />
       </View>
     </SafeAreaView>
   );
@@ -175,6 +254,23 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     fontFamily: 'Inter-Medium',
   },
+  navButton: {
+    backgroundColor: '#FFE4A8',
+    borderRadius: 24,
+    width: 48,
+    height: 48,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+  },
+  navButtonText: {
+    color: '#3C584A',
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  disabledNavButton: {
+    backgroundColor: 'rgba(220, 178, 128, 0.1)',
+  },
   iconButton: {
     padding: 8,
     marginLeft: 8,
@@ -210,5 +306,18 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#DCB280',
     fontFamily: 'Inter-Bold',
+  },
+  floatingNavContainer: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  finishButtonContainer: {
+    position: 'absolute',
+    bottom: 20, // Adjust spacing as needed
+    left: 20,
+    right: 20,
   },
 });
