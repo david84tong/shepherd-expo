@@ -1,7 +1,14 @@
 import { Tabs } from 'expo-router';
-import { Text, Animated, Platform, StyleSheet, ViewStyle } from 'react-native';
+import { Text, Animated, Platform, StyleSheet, View, ViewStyle } from 'react-native';
 import { useHomeStore } from '../../store/homeStore';
 import { useEffect, useRef } from 'react';
+
+// Helper component to center the icon
+const CenteredIcon = ({ children }: { children: React.ReactNode }) => (
+  <View style={styles.iconContainer}>
+    {children}
+  </View>
+);
 
 export default function TabLayout() {
   const mode = useHomeStore((state) => state.mode);
@@ -45,7 +52,7 @@ export default function TabLayout() {
         elevation: 5,
       },
     }),
-  };
+  } as ViewStyle; // Cast to ViewStyle for type safety
 
   return (
     <Tabs
@@ -54,47 +61,83 @@ export default function TabLayout() {
         tabBarActiveTintColor: '#3C584A',
         tabBarInactiveTintColor: '#3C584A80',
         headerShown: false,
-        // Add bottom padding to screens to prevent content from being hidden behind the tab bar
-        contentStyle: {
-          backgroundColor: '#FFF4D9',
+        // Remove item/icon specific styles, rely on the wrapper
+        tabBarLabelStyle: {
+          marginTop: 2,
         },
       }}
     >
+    
       <Tabs.Screen
         name="map"
         options={{
           title: 'Map',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🗺️</Text>,
+          tabBarIcon: ({ color }) => (
+            <CenteredIcon>
+              <Text style={{ color, fontSize: 20 }}>🗺️</Text>
+            </CenteredIcon>
+          ),
         }}
       />
       <Tabs.Screen
         name="bible"
         options={{
           title: 'Bible',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📖</Text>,
+          tabBarIcon: ({ color }) => (
+            <CenteredIcon>
+              <Text style={{ color, fontSize: 20 }}>📖</Text>
+            </CenteredIcon>
+          ),
         }}
       />
       <Tabs.Screen
-        name="home"
+        name="index"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>🏠</Text>,
+          tabBarIcon: ({ color }) => (
+            <CenteredIcon>
+              <Text style={{ color, fontSize: 20 }}>🏠</Text>
+            </CenteredIcon>
+          ),
         }}
       />
       <Tabs.Screen
         name="stats"
         options={{
           title: 'Stats',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>📊</Text>,
+          tabBarIcon: ({ color }) => (
+            <CenteredIcon>
+              <Text style={{ color, fontSize: 20 }}>📊</Text>
+            </CenteredIcon>
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color }) => <Text style={{ color, fontSize: 20 }}>👤</Text>,
+          tabBarIcon: ({ color }) => (
+            <CenteredIcon>
+              <Text style={{ color, fontSize: 20 }}>👤</Text>
+            </CenteredIcon>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="home"
+        options={{
+          tabBarButton: () => null,
         }}
       />
     </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    flex: 1, // Take up available space
+    justifyContent: 'center', // Center vertically
+    alignItems: 'center', // Center horizontally
+    width: '100%', // Ensure it spans the tab item width
+  },
+});

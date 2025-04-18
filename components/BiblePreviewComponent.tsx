@@ -16,9 +16,14 @@ interface BiblePreviewProps {
 const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }) => {
   const cardAnim = useRef(new Animated.Value(-100)).current; // Y offset for entry
   const cardOpacity = useRef(new Animated.Value(0)).current;
+  
+  // Animation values for the primary button
+  const buttonAnim = useRef(new Animated.Value(60)).current; // Start 60 units below final position
+  const buttonOpacity = useRef(new Animated.Value(0)).current; // Start fully transparent
 
   useEffect(() => {
     if (visible) {
+      // First animate the card
       Animated.parallel([
         Animated.timing(cardAnim, {
           toValue: 0,
@@ -31,9 +36,28 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
           useNativeDriver: true,
         })
       ]).start();
+      
+      // Then animate the button with a delay to create a nice sequence
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(buttonAnim, {
+            toValue: 0, 
+            duration: 400,
+            useNativeDriver: true,
+          }),
+          Animated.timing(buttonOpacity, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          })
+        ]).start();
+      }, 200); // Slight delay after card animation starts
     } else {
+      // Reset animations when component is hidden
       cardAnim.setValue(-100);
       cardOpacity.setValue(0);
+      buttonAnim.setValue(60);
+      buttonOpacity.setValue(0);
     }
   }, [visible]);
 
@@ -70,17 +94,20 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         <Text style={styles.dateText}>Today's Reading · June 7, 2024</Text>
         {/* Summary Section */}
         <View style={styles.summarySection}>
-          <Text style={styles.summaryLabel}>Summary</Text>
+          <Text style={styles.summaryLabel}>SUMMARY</Text>
           <Text style={styles.summaryText}>
             Jesus describes Himself as the Good Shepherd who lays down His life for the sheep. 
           </Text>
         </View>
       </Animated.View>
 
-      {/* Bottom Button */}
-      <View style={styles.bottomButton}>
+      {/* Animated Bottom Button */}
+      <Animated.View style={[styles.bottomButton, {
+        opacity: buttonOpacity,
+        transform: [{ translateY: buttonAnim }]
+      }]}>
         <PrimaryButton title="Start Reading" onPress={handleStart} />
-      </View>
+      </Animated.View>
     </View>
   );
 };
@@ -88,7 +115,6 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)',
   },
   header: {
     paddingTop: 60,

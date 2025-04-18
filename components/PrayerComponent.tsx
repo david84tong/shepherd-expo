@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, Text, Animated } from 'react-native';
 import PrimaryButton from './PrimaryButton';
 
 interface PrayerComponentProps {
@@ -22,6 +22,35 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   onClose,
   buttonStyle,
 }) => {
+  // Animation values for button entry
+  const buttonAnim = useRef(new Animated.Value(50)).current; // Start 50 units below final position
+  const buttonOpacity = useRef(new Animated.Value(0)).current; // Start fully transparent
+
+  // Run animation when component becomes visible
+  useEffect(() => {
+    if (visible) {
+      // Slight delay to let background transition first
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(buttonAnim, {
+            toValue: 0,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(buttonOpacity, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          })
+        ]).start();
+      }, 100);
+    } else {
+      // Reset animations when component is hidden
+      buttonAnim.setValue(50);
+      buttonOpacity.setValue(0);
+    }
+  }, [visible]);
+
   if (!visible) return null;
 
   const handleDonePress = () => {
@@ -38,7 +67,22 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
       </View>
-      <PrimaryButton title="Done Praying" onPress={handleDonePress} style={buttonStyle} />
+      
+      {/* Animated Primary Button */}
+      <Animated.View style={{
+        position: 'absolute',
+        bottom: 40,
+        left: 20,
+        right: 20,
+        opacity: buttonOpacity,
+        transform: [{ translateY: buttonAnim }]
+      }}>
+        <PrimaryButton 
+          title="Done Praying" 
+          onPress={handleDonePress} 
+          style={buttonStyle} 
+        />
+      </Animated.View>
     </View>
   );
 };
