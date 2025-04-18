@@ -55,9 +55,9 @@ export default function BibleScreen() {
     setError(null);
 
     try {
-      // For simplicity, we're using book index 1 here as Genesis
-      // In a real app, you would map book names to their index or use the API differently
-      const result = await fetchChapter(version, 1, chapter);
+      // Convert book name to book ID - or use 1 for Genesis
+      const bookId = 1; // In a real app, you would map book names to their IDs
+      const result = await fetchChapter(version, bookId, chapter);
 
       if ('error' in result) {
         setError(result.message);
@@ -88,12 +88,19 @@ export default function BibleScreen() {
   };
 
   const navigateToNextChapter = () => {
-    if (loading || !chapterData) return;
+    console.log('Next button pressed, current chapter:', currentChapter);
+    if (loading || !chapterData) {
+      console.log('Loading or no chapter data, skipping navigation');
+      return;
+    }
     
     // For simplicity, we're allowing navigation up to chapter 50 (maximum in Genesis)
     // In a real app, you would check the max chapters for each book
     if (currentChapter < 50) {
+      console.log('Navigating to next chapter:', currentChapter + 1);
       loadChapter(currentVersion, currentBook, currentChapter + 1);
+    } else {
+      console.log('Already at maximum chapter');
     }
     // In a complete implementation, you would also handle navigation to the next book's
     // first chapter when at the last chapter
@@ -197,6 +204,7 @@ export default function BibleScreen() {
           style={[styles.navButton, currentChapter <= 1 && styles.disabledNavButton]}
           onPress={navigateToPreviousChapter}
           disabled={currentChapter <= 1 || loading}
+          activeOpacity={0.7}
         >
           <Text style={[styles.navButtonText, currentChapter <= 1 && styles.disabledButtonText]}>←</Text>
         </TouchableOpacity>
@@ -204,6 +212,7 @@ export default function BibleScreen() {
           style={[styles.navButton, (currentChapter >= 50 || loading) && styles.disabledNavButton]}
           onPress={navigateToNextChapter}
           disabled={currentChapter >= 50 || loading}
+          activeOpacity={0.7}
         >
           <Text style={[styles.navButtonText, (currentChapter >= 50 || loading) && styles.disabledButtonText]}>→</Text>
         </TouchableOpacity>
@@ -214,8 +223,7 @@ export default function BibleScreen() {
         <SideButton
           title="Finish Reading"
           onPress={handleFinishReading}
-          backgroundColor="#FFC800" // Duolingo Yellow
-          textColor="#ffffff"       // Dark Gray Text
+          disabled={false}
         />
       </View>
     </SafeAreaView>
@@ -261,7 +269,12 @@ const styles = StyleSheet.create({
     height: 48,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
+    marginHorizontal: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    elevation: 4,
   },
   navButtonText: {
     color: '#3C584A',
@@ -309,10 +322,11 @@ const styles = StyleSheet.create({
   },
   floatingNavContainer: {
     position: 'absolute',
-    bottom: 20,
+    bottom: 30,
     right: 20,
     flexDirection: 'row',
     alignItems: 'center',
+    zIndex: 10,
   },
   finishButtonContainer: {
     position: 'absolute',

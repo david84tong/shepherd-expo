@@ -8,6 +8,7 @@ interface SecondaryButtonProps {
   points: number;
   onPress?: () => void;
   style?: object;
+  disabled?: boolean;
 }
 
 const SecondaryButton: React.FC<SecondaryButtonProps> = ({
@@ -17,6 +18,7 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   points,
   onPress,
   style,
+  disabled = false,
 }) => {
   // Simple state to track pressed state
   const [isPressed, setIsPressed] = useState(false);
@@ -27,10 +29,12 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
         style={[
           styles.button,
           isPressed && styles.buttonPressed,
+          disabled && styles.buttonDisabled,
           style
         ]}
         activeOpacity={1}
         onPress={onPress}
+        disabled={disabled}
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}
       >
@@ -78,6 +82,12 @@ const styles = StyleSheet.create({
       height: 3,
     },
     elevation: 3,
+  },
+  buttonDisabled: {
+    backgroundColor: '#F0F0F0',
+    borderColor: '#E0E0E0',
+    shadowOpacity: 0.5,
+    elevation: 2,
   },
   icon: {
     width: 32,

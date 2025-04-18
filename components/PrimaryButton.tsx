@@ -5,18 +5,20 @@ interface PrimaryButtonProps {
   title: string;
   onPress: () => void;
   disabled?: boolean;
+  style?: object;
 }
 
 const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   title,
   onPress,
   disabled = false,
+  style,
 }) => {
   // Simple state to track pressed state
   const [isPressed, setIsPressed] = useState(false);
 
   return (
-    <View style={styles.buttonWrapper}>
+    <View style={[styles.buttonWrapper, style]}>
       <TouchableOpacity
         style={[
           styles.button,
@@ -39,6 +41,7 @@ const styles = StyleSheet.create({
   buttonWrapper: {
     marginTop: 16,
     height: 70, // Slightly shorter than SecondaryButton
+    width: '100%', // Ensure wrapper takes full width
   },
   button: {
     flexDirection: 'row',
@@ -46,6 +49,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center', // Center text
     paddingHorizontal: 20,
     height: '100%',
+    width: '100%', // Button fills wrapper
     borderRadius: 20,
     borderWidth: 3,
     borderColor: '#FFE4A8',
@@ -74,8 +78,10 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: 'Feather Bold',
-    color: '#4B4B4B', // Dark gray for good contrast on yellow
+    color: '#fff', // White text for better contrast
     fontSize: 18,
+    textAlign: 'center',
+    width: '100%',
   },
 });
 

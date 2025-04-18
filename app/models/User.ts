@@ -1,7 +1,5 @@
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
-
-
 export interface UserDoc {
     displayName: string;
     denomination?: string;
@@ -9,7 +7,7 @@ export interface UserDoc {
     experienceLevel: 'new' | 'growing' | 'mature';
     frequencyGoal: 'daily' | 'weekly';
     selectedPathId: string;
-    lamb: { level: number; xp: number; mood: string; hunger: number };
+    lamb: Lamb;
     streakCount: number;
     lastActivityDate: FirebaseFirestoreTypes.Timestamp;
     versesReadTotal: number;
@@ -18,4 +16,14 @@ export interface UserDoc {
     proStatus: 'free' | 'trial' | 'pro';
     createdAt: FirebaseFirestoreTypes.Timestamp;
     updatedAt: FirebaseFirestoreTypes.Timestamp;
+}
+
+
+export interface Lamb {
+    level: number;
+    xp: number;
+    mood: string;
+    hearts: number;
+    name: string;
+    skin: string;
 }
