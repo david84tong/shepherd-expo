@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Animated } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, Text, Animated, Platform } from 'react-native';
 import PrimaryButton from './PrimaryButton';
+import { usePathStore } from '../store/pathStore';
 
 interface PrayerComponentProps {
   /** Whether the component should render. */
@@ -10,6 +11,9 @@ interface PrayerComponentProps {
   /** Optional style for the PrimaryButton */
   buttonStyle?: object;
 }
+
+const TARGET_TEXT = "Dear God, I come before you...";
+const TYPING_SPEED_MS = 50;
 
 /**
  * PrayerComponent owns the UI **and** the logic for ending a prayer session.
@@ -25,36 +29,73 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   // Animation values for button entry
   const buttonAnim = useRef(new Animated.Value(50)).current; // Start 50 units below final position
   const buttonOpacity = useRef(new Animated.Value(0)).current; // Start fully transparent
+  const setPathInProgress = usePathStore((state) => state.setPathInProgress);
+
+  // State for typing animation
+  const [typedText, setTypedText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Run animation when component becomes visible
   useEffect(() => {
     if (visible) {
-      // Slight delay to let background transition first
-      setTimeout(() => {
-        Animated.parallel([
-          Animated.timing(buttonAnim, {
-            toValue: 0,
-            duration: 500,
-            useNativeDriver: true,
-          }),
-          Animated.timing(buttonOpacity, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          })
-        ]).start();
-      }, 100);
+      // Set path in progress when component becomes visible
+      setPathInProgress(true);
+      
+      // Reset typing state immediately when becoming visible
+      setTypedText('');
+      setCurrentIndex(0);
+      if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+      
+      // Start typing animation slightly after entry
+      const typingTimer = setTimeout(() => {
+        typingIntervalRef.current = setInterval(() => {
+          setCurrentIndex((prevIndex) => {
+            if (prevIndex < TARGET_TEXT.length) {
+              setTypedText((prev) => TARGET_TEXT.substring(0, prevIndex + 1));
+              return prevIndex + 1;
+            } else {
+              if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+              return prevIndex;
+            }
+          });
+        }, TYPING_SPEED_MS);
+      }, 400); // Start typing after button animation starts
+
+      // Button animation
+      Animated.parallel([
+        Animated.timing(buttonAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(buttonOpacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        })
+      ]).start();
+
+      // Cleanup timers on unmount or visibility change
+      return () => {
+        clearTimeout(typingTimer);
+        if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+      };
     } else {
-      // Reset animations when component is hidden
+      // Reset animations and typing state when component is hidden
       buttonAnim.setValue(50);
       buttonOpacity.setValue(0);
+      setTypedText('');
+      setCurrentIndex(0);
+      if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
     }
-  }, [visible]);
+  }, [visible, setPathInProgress]);
 
   if (!visible) return null;
 
   const handleDonePress = () => {
     console.log('Triggering done praying animation...');
+    setPathInProgress(false);
     // Trigger the animation controlled by Home.
     onClose();
   };
@@ -66,6 +107,11 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
         <TouchableOpacity onPress={handleDonePress} style={styles.backButton}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
+      </View>
+      
+      {/* Typing Text */} 
+      <View style={styles.typingTextContainer}>
+        <Text style={styles.typingText}>{typedText}</Text>
       </View>
       
       {/* Animated Primary Button */}
@@ -90,11 +136,11 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
-    justifyContent: 'flex-end',
+    // Removed justifyContent to allow text at top
     ...StyleSheet.absoluteFillObject,
   },
   header: {
-    paddingTop: 60,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40, // Adjusted padding for different platforms
     paddingHorizontal: 20,
     width: '100%',
     position: 'absolute',
@@ -121,6 +167,22 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: '#3C584A',
     fontFamily: 'Inter-Bold',
+  },
+  typingTextContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 120 : 100, // Position below header
+    left: 20,
+    right: 20,
+    alignItems: 'center',
+    padding: 24,
+    backgroundColor: 'rgba(255, 244, 217, 0.8)', // Semi-transparent background
+    borderRadius: 8,
+  },
+  typingText: {
+    fontFamily: 'Feather Bold',
+    fontSize: 18,
+    color: '#3C584A',
+    textAlign: 'center',
   },
 });
 

@@ -1,6 +1,7 @@
-import { Tabs } from 'expo-router';
+import { Tabs, router } from 'expo-router';
 import { Animated, Platform, StyleSheet, View, ViewStyle, Image, Pressable } from 'react-native';
 import { useHomeStore } from '../../store/homeStore';
+import { usePathStore } from '../../store/pathStore';
 import { useEffect, useRef } from 'react';
 
 // Helper component to center the icon
@@ -55,15 +56,16 @@ function CustomTabBarButton(props: any) {
 
 export default function TabLayout() {
   const mode = useHomeStore((state) => state.mode);
+  const pathInProgress = usePathStore((state) => state.pathInProgress);
   const tabBarAnim = useRef(new Animated.Value(1)).current;
   
   useEffect(() => {
     Animated.timing(tabBarAnim, {
-      toValue: mode === 'DEFAULT' ? 1 : 0,
+      toValue: (mode === 'DEFAULT' && !pathInProgress) ? 1 : 0,
       duration: 300,
       useNativeDriver: true,
     }).start();
-  }, [mode]);
+  }, [mode, pathInProgress]);
 
   // Using absolute positioning to prevent the "chin" gap
   const animatedTabBarStyle = {
@@ -129,20 +131,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="bible2"
-        options={{
-          title: '',
-          tabBarIcon: ({ color, focused }) => (
-            <CenteredIcon>
-              <Image 
-                source={require('../../assets/icons/bibleIcon.png')}
-                className="w-12 h-12" 
-              />
-            </CenteredIcon>
-          ),
-        }}
-      />
+  
       <Tabs.Screen
         name="stats"
         options={{
@@ -157,7 +146,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
+          <Tabs.Screen
         name="index" 
         options={{
           title: 'sheep',
@@ -179,13 +168,13 @@ export default function TabLayout() {
             <CenteredIcon>
               <Image 
                 source={require('../../assets/icons/bibleIcon.png')}
-                className="w-14 h-14" // Corrected height
+                className="w-14 h-14"
               />
             </CenteredIcon>
           ),
         }}
       />
-        <Tabs.Screen
+      <Tabs.Screen
         name="profile"
         options={{ 
           title: 'Profile',
@@ -193,7 +182,7 @@ export default function TabLayout() {
             <CenteredIcon>
               <Image 
                 source={require('../../assets/icons/profileIcon.png')}
-                className="w-14 h-14" // Corrected height
+                className="w-14 h-14"
               />
             </CenteredIcon>
           ),

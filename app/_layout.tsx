@@ -34,7 +34,25 @@ export default function RootLayout() {
 
   return (
     <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen 
+        name="(tabs)" 
+        options={{ 
+          headerShown: false, 
+          // Explicitly set the desired animation for entering the tabs group
+          animation: 'slide_from_right', 
+        }} 
+      />
+      <Stack.Screen 
+        name="bibleReader" 
+        options={{
+          // Override animation to ensure slide transition
+          animation: "slide_from_right",
+          // Custom animation duration for smoother feel
+          animationDuration: 350, // ms
+          // Hide header for full-screen experience
+          headerShown: false 
+        }}
+      />
       <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
     </Stack>
   );

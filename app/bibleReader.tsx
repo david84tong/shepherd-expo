@@ -9,23 +9,19 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
-import { fetchChapter, ChapterResponse, FetchError, Verse } from '../api/bible';
-import PrimaryButton from '../../components/PrimaryButton';
+import { fetchChapter, ChapterResponse, FetchError, Verse } from './api/bible';
+import PrimaryButton from '../components/PrimaryButton';
 import SideButton from '~/components/SideButton';
-import { usePathStore } from '../../store/pathStore';
-import { useHomeStore } from '../../store/homeStore';
-import { router } from 'expo-router';
+import { usePathStore } from '../store/pathStore';
+import { useHomeStore } from '../store/homeStore';
+import { router, useLocalSearchParams } from 'expo-router';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
 const DEFAULT_FONT_SIZE = 16;
 const MIN_FONT_SIZE = 12;
 const MAX_FONT_SIZE = 28;
 
-/**
- * This file serves as a placeholder for the Bible tab.
- * It immediately redirects to the actual Bible Reader screen.
- */
-export default function BibleTab() {
+export default function BibleReaderScreen() {
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,13 +42,10 @@ export default function BibleTab() {
   const [currentVersion, setCurrentVersion] = useState<string>('ESV');
   
   const setHomeMode = useHomeStore((state) => state.setMode);
-
-  // When coming to this tab from a preview, clear the path in progress state
-  useEffect(() => {
-    // This ensures that when we navigate via tab the tabbar stays visible
-    setPathInProgress(false);
-  }, []);
-
+  
+  // We can access the transition parameter if needed
+  const params = useLocalSearchParams();
+  
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
@@ -70,7 +63,6 @@ export default function BibleTab() {
         console.error("Failed to load font size from AsyncStorage", e);
       }
 
-      // Load from saved state
       loadChapter(currentVersion, currentBook, currentBookId, currentChapter);
     };
 
@@ -89,8 +81,6 @@ export default function BibleTab() {
         setChapterData(null);
       } else {
         setChapterData(result);
-        
-        // Update local state
         setCurrentBook(result.book);
         setCurrentChapter(result.chapter);
         setCurrentVersion(result.version);
@@ -112,11 +102,9 @@ export default function BibleTab() {
     if (loading || !chapterData) return;
     
     if (currentChapter > 1) {
-      // Previous chapter in same book
       loadChapter(currentVersion, currentBook, currentBookId, currentChapter - 1);
     } else {
       // Would need to go to previous book's last chapter
-      // This would require a book map with chapter counts
       console.log("At first chapter - would need to go to previous book");
     }
   };
@@ -129,7 +117,6 @@ export default function BibleTab() {
     }
     
     // Simple chapter navigation for now
-    // A more complete implementation would check max chapters per book
     loadChapter(currentVersion, currentBook, currentBookId, currentChapter + 1);
   };
 
@@ -153,13 +140,13 @@ export default function BibleTab() {
   };
 
   const handleFinishReading = () => {
-    console.log('Finish Reading Pressed - Navigating to Home tab');
+    console.log('Finish Reading Pressed - Resetting states');
     // Reset states
     setPathInProgress(false);
     setHomeMode('DEFAULT');
     
-    // Navigate to the home tab
-    router.navigate('/(tabs)'); // Navigate to the default tab (index)
+    // Go back to the home screen
+    router.back();
   };
 
   const renderBibleContent = () => {
@@ -194,6 +181,10 @@ export default function BibleTab() {
     <SafeAreaView className="flex-1 bg-main-bg">
       <View style={styles.newHeaderContainer}>
         <View style={styles.headerLeft}>
+          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+            <Text style={styles.backButtonText}>←</Text>
+          </TouchableOpacity>
+          
           <TouchableOpacity style={styles.headerButton}>
             <Text style={styles.headerButtonText}>
               {chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'Loading...'}
@@ -282,6 +273,25 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  backButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 244, 217, 0.95)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  backButtonText: {
+    fontSize: 24,
+    color: '#3C584A',
+    fontFamily: 'Inter-Bold',
+  },
   headerButton: {
     backgroundColor: 'rgba(220, 178, 128, 0.2)',
     borderRadius: 15,
@@ -367,4 +377,4 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
   },
-});
+}); 

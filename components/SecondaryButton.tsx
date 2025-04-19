@@ -45,6 +45,7 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
         </View>
         <View style={styles.pointsContainer}>
           <Text style={styles.points}>+{points}</Text>
+          <Image source={require('../assets/icons/starIcon.png')} style={styles.starIcon} resizeMode="contain" />
         </View>
       </TouchableOpacity>
     </View>
@@ -59,7 +60,7 @@ const styles = StyleSheet.create({
   button: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     height: '100%',
     borderRadius: 20,
     borderWidth: 3,
@@ -103,6 +104,12 @@ const styles = StyleSheet.create({
     color: '#3C584A',
     fontSize: 18,
   },
+  starIcon: {
+    width: 20,
+    height: 20,
+    marginLeft: 0,
+    padding: 0
+  },
   subtitle: {
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     color: 'rgba(60, 88, 74, 0.7)',
@@ -111,13 +118,15 @@ const styles = StyleSheet.create({
   pointsContainer: {
     backgroundColor: '#FFE4A8',
     borderRadius: 20,
-    paddingHorizontal: 12, 
+    paddingHorizontal: 8, 
     paddingVertical: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   points: {
     fontFamily: 'Feather Bold',
-    color: '#3C584A',
-    fontSize: 14,
+    color: '#7A8B7D',
+    fontSize: 12,
   },
 });
 

@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import PrimaryButton from './PrimaryButton';
+import { router } from 'expo-router';
+import { usePathStore } from '../store/pathStore';
 
 interface BiblePreviewProps {
   /** Whether the preview overlay should be shown. */
@@ -14,8 +16,12 @@ interface BiblePreviewProps {
  * Rendered only when `visible` is true.
  */
 const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }) => {
+  const containerOpacity = useRef(new Animated.Value(0)).current; // Overall container opacity
   const cardAnim = useRef(new Animated.Value(-100)).current; // Y offset for entry
   const cardOpacity = useRef(new Animated.Value(0)).current;
+  
+  // Get saved reading & path in progress state from path store
+  const { savedBook, savedChapter, setPathInProgress } = usePathStore();
   
   // Animation values for the primary button
   const buttonAnim = useRef(new Animated.Value(60)).current; // Start 60 units below final position
@@ -23,8 +29,16 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
 
   useEffect(() => {
     if (visible) {
-      // First animate the card
+      // Set path in progress when component becomes visible
+      setPathInProgress(true);
+      
+      // First animate the container opacity and card entry
       Animated.parallel([
+        Animated.timing(containerOpacity, { // Fade in container
+          toValue: 1,
+          duration: 400, // Faster fade-in
+          useNativeDriver: true,
+        }),
         Animated.timing(cardAnim, {
           toValue: 0,
           duration: 500,
@@ -37,7 +51,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         })
       ]).start();
       
-      // Then animate the button with a delay to create a nice sequence
+      // Then animate the button with a delay
       setTimeout(() => {
         Animated.parallel([
           Animated.timing(buttonAnim, {
@@ -51,36 +65,49 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
             useNativeDriver: true,
           })
         ]).start();
-      }, 200); // Slight delay after card animation starts
+      }, 200); 
     } else {
       // Reset animations when component is hidden
+      containerOpacity.setValue(0); // Reset container opacity
       cardAnim.setValue(-100);
       cardOpacity.setValue(0);
       buttonAnim.setValue(60);
       buttonOpacity.setValue(0);
     }
-  }, [visible]);
+  }, [visible, setPathInProgress]);
 
+  // We still return null immediately when not visible, so fade-out isn't seen
+  // A different approach (e.g., keeping mounted until animation finishes) 
+  // would be needed for a visible fade-out.
   if (!visible) return null;
 
   const handleBack = () => {
+    setPathInProgress(false);
     onClose();
   };
 
   const handleStart = () => {
-    console.log('Start Pressed');
+    setPathInProgress(false);
+    
+    // Navigate to the standalone bibleReader screen with animation
+    router.push({
+      pathname: '/bibleReader',
+      params: {
+        transition: 'slide_from_right'
+      }
+    });
   };
 
   return (
-    <View style={styles.container} pointerEvents="box-none">
-      {/* Back Button */}
+    <Animated.View style={[styles.container, { opacity: containerOpacity }]} pointerEvents="box-none">
+      {/* Back Button */} 
       <View style={styles.header}>
         <TouchableOpacity onPress={handleBack} style={styles.backButton}>
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Animated Card Preview at the top */}
+      {/* Animated Card Preview at the top */} 
       <Animated.View style={[styles.card, {
         opacity: cardOpacity,
         transform: [{ translateY: cardAnim }],
@@ -88,38 +115,44 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         marginTop: 24,
       }]}
       >
-        {/* Pillar Title */}
+        {/* Pillar Title */} 
         <Text style={styles.pillarTitle}>The Good Shepherd</Text>
-        {/* Date or subtitle */}
-        <Text style={styles.dateText}>Today's Reading · June 7, 2024</Text>
-        {/* Summary Section */}
+        {/* Date or subtitle */} 
+        <Text style={styles.dateText}>Today's Reading · {savedBook} {savedChapter}</Text>
+        {/* Summary Section */} 
         <View style={styles.summarySection}>
           <Text style={styles.summaryLabel}>SUMMARY</Text>
           <Text style={styles.summaryText}>
-            Jesus describes Himself as the Good Shepherd who lays down His life for the sheep. 
+            {savedBook === 'John' && savedChapter === 3 ? 
+              "Jesus teaches Nicodemus about being born again and God's love for the world." : 
+              "Jesus describes Himself as the Good Shepherd who lays down His life for the sheep."}
           </Text>
         </View>
       </Animated.View>
 
-      {/* Animated Bottom Button */}
+      {/* Animated Bottom Button */} 
       <Animated.View style={[styles.bottomButton, {
         opacity: buttonOpacity,
         transform: [{ translateY: buttonAnim }]
       }]}>
         <PrimaryButton title="Start Reading" onPress={handleStart} />
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     ...StyleSheet.absoluteFillObject,
+    // Added background color to make opacity noticeable
+    backgroundColor: 'rgba(0,0,0,0.1)', // Example: slight dark overlay
   },
   header: {
     paddingTop: 60,
     paddingHorizontal: 20,
     width: '100%',
+    // Ensure header is above potential container background
+    zIndex: 1,
   },
   backButton: {
     width: 44,
@@ -151,6 +184,8 @@ const styles = StyleSheet.create({
     shadowRadius: 16,
     elevation: 8,
     alignItems: 'center',
+    // Ensure card is above potential container background
+    zIndex: 1,
   },
   pillarTitle: {
     fontSize: 28,
@@ -197,6 +232,8 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
     alignItems: 'center',
+    // Ensure button is above potential container background
+    zIndex: 1,
   },
 });
 

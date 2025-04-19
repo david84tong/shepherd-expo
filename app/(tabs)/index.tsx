@@ -32,62 +32,61 @@ export default function HomeScreen() {
   const mode = useHomeStore((state) => state.mode);
   const setMode = useHomeStore((state) => state.setMode);
 
-  // Animation value for UI elements (lamb position, card visibility)
-  // 0: default, 0.5: preview, 1: prayer/reflection
-  const uiAnim = useRef(new Animated.Value(0)).current;
-
-  // Separate Animated values for background opacities
-  const grassOpacityAnim = useRef(new Animated.Value(1)).current; // Start with grass visible
+  // --- Animation Values --- 
+  const uiAnim = useRef(new Animated.Value(0)).current; // 0: default, 0.5: preview, 1: full overlay
+  const headerDefaultOpacityAnim = useRef(new Animated.Value(1)).current; // Opacity for default header elements
+  
+  // Background opacities
+  const grassOpacityAnim = useRef(new Animated.Value(1)).current; 
   const pathOpacityAnim = useRef(new Animated.Value(0)).current;
   const waterOpacityAnim = useRef(new Animated.Value(0)).current;
   const journalOpacityAnim = useRef(new Animated.Value(0)).current;
 
-  // Separate animation values for different modes
+  // Lamb position animations
   const previewAnim = useRef(new Animated.Value(0)).current;
   const prayerAnim = useRef(new Animated.Value(0)).current;
   const reflectionAnim = useRef(new Animated.Value(0)).current;
 
-  // --- Animation Definitions ---
+  // --- Derived Animated Values ---
 
-  // Water background effects tied to its opacity
+  // Back button opacity (inverse of default header opacity)
+  const headerBackOpacityAnim = headerDefaultOpacityAnim.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 0],
+  });
+
+  // Water background effects
   const waterTranslateY = waterOpacityAnim.interpolate({ inputRange: [0, 1], outputRange: [50, 0], extrapolate: 'clamp' });
   const waterScale = waterOpacityAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05], extrapolate: 'clamp' });
 
-  // Interpolate lamb position with separate animations for each mode
+  // Lamb position interpolation
   const lambTranslateX = Animated.add(
-    // Preview: no horizontal movement
     previewAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0], extrapolate: 'clamp' }),
     Animated.add(
-      // Prayer: diagonal movement (left)
       prayerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40], extrapolate: 'clamp' }),
-      // Reflection: rightward movement
       reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 40], extrapolate: 'clamp' })
     )
   );
-
   const lambTranslateY = Animated.add(
-    // Preview: moves down slightly
     previewAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 240], extrapolate: 'clamp' }),
     Animated.add(
-      // Prayer: moves down further
       prayerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 200], extrapolate: 'clamp' }),
-      // Reflection: moves down same as prayer
       reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 140], extrapolate: 'clamp' })
     )
   );
 
-  // Bottom Action Card animation
+  // Bottom card animation
   const bottomCardOpacity = uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [1, 0], extrapolate: 'clamp' });
   const bottomCardTranslateY = uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [0, 300], extrapolate: 'clamp' });
 
   // --- Rive Handlers ---
   const handleOutOfFrame = () => {
-    try {
-      riveRef.current?.setInputState('MAIN', 'Out of Frame', true);
-    } catch (error) {
-      console.error("Error setting Rive input state:", error);
-    }
-  };
+      try {
+        riveRef.current?.setInputState('MAIN', 'Out of Frame', true);
+      } catch (error) {
+        console.error("Error setting Rive input state:", error);
+      }
+    };
   const handleRiveError = (error: RNRiveError) => {
     console.error("Rive Error:", error.message, error.type);
     setRiveError(error);
@@ -99,14 +98,12 @@ export default function HomeScreen() {
       .filter(anim => anim !== targetOpacityAnim)
       .map(anim => Animated.timing(anim, { toValue: 0, duration, useNativeDriver: true }));
 
-    // Reset all mode animations first
     const resetAnims = [
       Animated.timing(previewAnim, { toValue: 0, duration: 0, useNativeDriver: true }),
       Animated.timing(prayerAnim, { toValue: 0, duration: 0, useNativeDriver: true }),
       Animated.timing(reflectionAnim, { toValue: 0, duration: 0, useNativeDriver: true }),
     ];
     
-    // Determine which mode animation to activate
     let modeAnim: Animated.CompositeAnimation;
     if (mode === 'PREVIEW') {
       modeAnim = Animated.timing(previewAnim, { toValue: 1, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
@@ -115,7 +112,6 @@ export default function HomeScreen() {
     } else if (mode === 'REFLECTION') {
       modeAnim = Animated.timing(reflectionAnim, { toValue: 1, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
     } else {
-      // Default case - should never happen but needed for type safety
       modeAnim = Animated.timing(previewAnim, { toValue: 0, duration: 0, useNativeDriver: true });
     }
 
@@ -123,6 +119,7 @@ export default function HomeScreen() {
       Animated.parallel(resetAnims),
       Animated.parallel([
         Animated.timing(uiAnim, { toValue: targetUiAnim, duration, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+        Animated.timing(headerDefaultOpacityAnim, { toValue: 0, duration, useNativeDriver: true }), // Fade out default header
         Animated.timing(targetOpacityAnim, { toValue: 1, duration, useNativeDriver: true }),
         ...fadeOutAnims,
         modeAnim,
@@ -131,7 +128,6 @@ export default function HomeScreen() {
   };
 
   const animateToDefault = (duration: number = 600) => {
-    // Reset all position animations
     const resetAnims = [
       Animated.timing(previewAnim, { toValue: 0, duration, useNativeDriver: true }),
       Animated.timing(prayerAnim, { toValue: 0, duration, useNativeDriver: true }),
@@ -140,6 +136,7 @@ export default function HomeScreen() {
     
     Animated.parallel([
       Animated.timing(uiAnim, { toValue: 0, duration, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(headerDefaultOpacityAnim, { toValue: 1, duration, useNativeDriver: true }), // Fade in default header
       Animated.timing(grassOpacityAnim, { toValue: 1, duration, useNativeDriver: true }),
       Animated.timing(pathOpacityAnim, { toValue: 0, duration, useNativeDriver: true }),
       Animated.timing(waterOpacityAnim, { toValue: 0, duration, useNativeDriver: true }),
@@ -148,8 +145,20 @@ export default function HomeScreen() {
     ]).start();
   };
 
-  // --- Event Handlers for Buttons ---
-  const handleReadPress = () => {
+  // --- NEW useEffect to react to external mode changes ---
+  useEffect(() => {
+    // When mode changes back to DEFAULT (e.g., from BibleScreen), run the reset animation
+    if (mode === 'DEFAULT') {
+      // Consider adding a check if the previous state was NOT default to avoid running on initial load,
+      // but this might be sufficient for now.
+      animateToDefault(); 
+    }
+    // Note: We don't need to handle PREVIEW, PRAYER, REFLECTION here
+    // because those transitions are already triggered by handleReadPress etc.
+  }, [mode]); // Run this effect whenever the mode changes
+
+  // --- Event Handlers ---
+   const handleReadPress = () => {
     console.log('Read Daily Bread Pressed');
     setMode('PREVIEW');
     animateToState(0.5, pathOpacityAnim, 500, 'PREVIEW'); // Faster transition
@@ -170,15 +179,14 @@ export default function HomeScreen() {
   // --- Handlers for Closing Overlays ---
   const handleCloseOverlay = () => {
     console.log('Closing Overlay, returning to default');
-    animateToDefault();
-    // Set mode back to default AFTER animation starts (or finishes)
-    // Setting it immediately triggers the useEffect for tab bar correctly
+    // animateToDefault(); // This is now handled by the useEffect above
     setMode('DEFAULT'); 
   };
 
+
   return (
     <View style={{ flex: 1 }}>
-      {/* Background Layers */}
+      {/* Background Layers */} 
       <Animated.Image source={grassBg} style={[styles.backgroundImage, { opacity: grassOpacityAnim }]} resizeMode="cover" />
       <Animated.Image source={pathBg} style={[styles.backgroundImage, { opacity: pathOpacityAnim }]} resizeMode="cover" />
       <Animated.Image source={journalBg} style={[styles.backgroundImage, { opacity: journalOpacityAnim }]} resizeMode="cover" />
@@ -195,37 +203,37 @@ export default function HomeScreen() {
       />
 
       <SafeAreaView className="flex-1">
-        {/* Header: Shows Back Button or Title/Streak/Hearts */} 
+        {/* Header: Contains logic for showing Back OR Title/Stats */} 
         <View style={styles.headerContainer}>
-          {mode !== 'DEFAULT' ? (
-            <TouchableOpacity onPress={handleCloseOverlay} style={styles.headerBackButton}>
-              <Text style={styles.headerBackText}>←</Text>
-            </TouchableOpacity>
-          ) : (
-            <>
-              <Text style={styles.headerTitle}>Shepherd</Text>
-              {/* Spacer between title and header right group */}
-              <View style={{ flex: 1 }} />
-              {/* Group for Streak and Hearts */}
-              <View style={styles.headerRightGroup}>
-                {/* Streak Counter */}
+            {/* Animated Back Button */} 
+            <Animated.View style={{ opacity: headerBackOpacityAnim }} pointerEvents={mode === 'DEFAULT' ? 'none' : 'auto'}>
+              <TouchableOpacity onPress={handleCloseOverlay} style={styles.headerBackButton} disabled={mode === 'DEFAULT'}>
+                <Text style={styles.headerBackText}>←</Text>
+              </TouchableOpacity>
+            </Animated.View>
 
+            {/* Animated Default Header Elements (Title + Stats) */} 
+            <Animated.View 
+              style={[styles.headerDefaultContentContainer, { opacity: headerDefaultOpacityAnim }]}
+              pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}
+            >
+              <Text style={styles.headerTitle}>Shepherd</Text>
+              <View style={{ flex: 1 }} />
+              <View style={styles.headerRightGroup}>
                 <View style={styles.streakContainer}>
                   <Text style={styles.streakNumber}>2</Text>
                   <Image source={flameIcon} style={styles.streakIcon} />
                 </View>
-                {/* Heart Counter */}
                 <View style={styles.heartContainer}>
                   <Text style={styles.heartNumber}>87/100</Text>
                   <Image source={heartIcon} style={styles.heartIcon} />
                 </View>
               </View>
-            </>
-          )}
+            </Animated.View>
         </View>
 
         {/* Top Section - Lamb Avatar */} 
-        <Animated.View
+         <Animated.View
           style={[styles.riveWrapper, {
             transform: [
               { translateX: lambTranslateX },
@@ -247,7 +255,6 @@ export default function HomeScreen() {
               />
             )}
           </View>
-          {/* {!riveError && <Button title="Trigger Out of Frame" onPress={handleOutOfFrame} />}  */}
         </Animated.View>
 
         {/* Bottom Section - Action Buttons Card */} 
@@ -257,20 +264,16 @@ export default function HomeScreen() {
             transform: [{ translateY: bottomCardTranslateY }],
           }]}>
           
-          {/* XP Bar Section */} 
           <View style={styles.xpBarContainer}>
-            {/* Level Star Icon + Text */} 
             <View style={styles.levelContainer}>
               <Image source={starIcon} style={styles.levelStarIcon} />
               <Text style={styles.levelText}>LVL 1</Text>
             </View>
-            {/* Pill Bar */} 
             <View style={styles.pillOuter}>
               <View style={styles.pillInner} />
             </View>
           </View>
 
-          {/* Buttons are disabled if not in DEFAULT mode */}
           <SecondaryButton 
             icon={breadIcon}
             title="Read Daily Bread"
@@ -297,15 +300,15 @@ export default function HomeScreen() {
           />
         </Animated.View>
 
-        {/* Overlays - Rendered based on mode */} 
+
+        {/* Overlays */} 
         <BiblePreviewComponent 
           visible={mode === 'PREVIEW'} 
           onClose={handleCloseOverlay}
         />
         <PrayerComponent
           visible={mode === 'PRAYER'}
-          onClose={handleCloseOverlay} // Use generic close handler
-          // Removed buttonStyle, handle spacing within PrayerComponent if needed
+          onClose={handleCloseOverlay} 
         />
         <JournalComponent
           visible={mode === 'REFLECTION'}
@@ -316,7 +319,7 @@ export default function HomeScreen() {
   );
 }
 
-// Add specific styles for clarity
+// Styles
 const styles = StyleSheet.create({
   backgroundImage: {
     ...StyleSheet.absoluteFillObject,
@@ -328,31 +331,48 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'ios' ? 4 : 16, // Adjust for notch/status bar
+    paddingTop: Platform.OS === 'ios' ? 4 : 16, 
     marginBottom: 16,
+    // Allow positioning context for absolute positioned children
+    position: 'relative', 
+    height: 50, // Give header container a fixed height
   },
   headerBackButton: {
-     paddingVertical: 8, 
-     paddingRight: 16
+    paddingVertical: 8, 
+    paddingRight: 16,
+    // Position within the parent container for absolute positioning
+    // Ensure it doesn't affect the layout flow of the default header
   },
   headerBackText: {
     fontSize: 28, 
-    color: 'white', // Make back button white for better contrast on bg
+    color: 'white', 
     fontFamily: 'Feather Bold' 
+  },
+  headerDefaultContentContainer: {
+    // Takes up the full space to align items correctly
+    ...StyleSheet.absoluteFillObject,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    // Padding is handled by parent headerContainer
   },
   headerTitle: {
     fontFamily: 'Feather Bold',
     fontSize: 28,
     color: 'white',
-    textShadowColor: 'rgba(0, 0, 0, 0.2)', // Subtle shadow
+    textShadowColor: 'rgba(0, 0, 0, 0.2)', 
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+    marginLeft: 20,
+    // Ensure title doesn't overlap back button area
+    // No extra margin needed if positioned correctly within flex container
   },
-  headerRightGroup: { // New style for grouping streak and hearts
+  headerRightGroup: { 
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4, // Add gap between streak and heart containers
-    marginLeft: 10,
+    gap: 4, 
+    marginRight: 20,
+    // marginRight: 0, // No extra margin needed if parent is spaced correctly
   },
   streakContainer: {
     flexDirection: 'row',
@@ -391,14 +411,12 @@ const styles = StyleSheet.create({
     height: 32,
   },
   riveWrapper: {
-    // Use flex for positioning instead of hardcoded values if possible
-    flex: Platform.OS === 'ios' ? 0.7 : 0.6, // Adjust flex ratio
+    flex: Platform.OS === 'ios' ? 0.7 : 0.6, 
     alignItems: 'center',
     justifyContent: 'center',
-    // Removed margin top, rely on flex and header margin
   },
   riveContainer: {
-    width: 220, // Slightly larger container
+    width: 220, 
     height: 220,
     alignItems: 'center',
     justifyContent: 'center',
@@ -410,12 +428,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   bottomCard: {
-    flex: 1, // Allow card to take remaining space
-    backgroundColor: '#FFF4D9', // Use a theme color if available
+    flex: 1, 
+    backgroundColor: '#FFF4D9', 
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingHorizontal: 24,
-    paddingTop: 16, // Reduced padding to make space for XP bar
+    paddingTop: 16, 
     paddingBottom: 16, 
     marginTop: -80, 
     shadowColor: "#000",
@@ -424,47 +442,47 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 10,
     justifyContent: 'flex-start', 
-    gap: 8, // Increased gap slightly for XP bar
+    gap: 8, 
   },
-  xpBarContainer: { // Container for Level Text and Pill Bar
+  xpBarContainer: { 
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10, // Space between Level group and bar
-    marginBottom: 8, // Add some margin below the XP bar
-    paddingHorizontal: 4, // Slight horizontal padding within the card
+    gap: 10, 
+    marginBottom: 8, 
+    paddingHorizontal: 4, 
   },
-  levelContainer: { // Container for LVL text and Star icon
+  levelContainer: { 
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4, // Space between icon and text
+    gap: 4, 
   },
   levelText: {
     fontFamily: 'Feather Bold',
     fontSize: 18,
-    color: '#8B5E3C', // A brown-ish color
+    color: '#8B5E3C', 
   },
   levelStarIcon: {
-    width: 32, // Increased size
+    width: 32, 
     height: 32,
   },
   pillOuter: {
-    flex: 1, // Take remaining space
-    height: 14, // Height of the bar
-    backgroundColor: '#E0D5B9', // Light background for the empty part
-    borderRadius: 999, // Pill shape
+    flex: 1, 
+    height: 14, 
+    backgroundColor: '#E0D5B9', 
+    borderRadius: 999, 
     borderWidth: 1,
-    borderColor: '#C8BBA0', // Slightly darker border
-    shadowColor: '#000', // Shadow for depth
+    borderColor: '#C8BBA0', 
+    shadowColor: '#000', 
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
     elevation: 2,
-    justifyContent: 'center', // Center the inner pill vertically if needed
+    justifyContent: 'center', 
   },
   pillInner: {
-    height: '100%', // Fill height
-    width: '25%', // Initial XP fill percentage
-    backgroundColor: '#F4C244', // A gold/yellow color for XP
+    height: '100%', 
+    width: '25%', 
+    backgroundColor: '#F4C244', 
     borderRadius: 999,
   },
 }); 

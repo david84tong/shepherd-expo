@@ -11,6 +11,7 @@ import {
   Animated
 } from 'react-native';
 import PrimaryButton from './PrimaryButton';
+import { usePathStore } from '../store/pathStore';
 
 interface JournalProps {
   visible: boolean;
@@ -28,6 +29,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   const inputRef = useRef<TextInput>(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const setPathInProgress = usePathStore((state) => state.setPathInProgress);
   
   // Animation values
   const cardAnimY = useRef(new Animated.Value(200)).current;
@@ -68,6 +70,9 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   // Entry and exit animations
   useEffect(() => {
     if (visible) {
+      // Set path in progress when component becomes visible
+      setPathInProgress(true);
+      
       // First animate the header
       Animated.timing(headerOpacity, {
         toValue: 1,
@@ -120,12 +125,13 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       buttonAnimY.setValue(100);
       buttonOpacity.setValue(0);
     }
-  }, [visible, cardAnimY, cardOpacity, headerOpacity, buttonAnimY, buttonOpacity]);
+  }, [visible, cardAnimY, cardOpacity, headerOpacity, buttonAnimY, buttonOpacity, setPathInProgress]);
 
   if (!visible) return null;
 
   const handleSave = () => {
     Keyboard.dismiss();
+    setPathInProgress(false);
     onClose();
   };
 
@@ -142,7 +148,13 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     <View style={styles.overlay}>
       {/* Animated Header */}
       <Animated.View style={[styles.header, { opacity: headerOpacity }]}>
-        <TouchableOpacity onPress={onClose} style={styles.backButton}>
+        <TouchableOpacity 
+          onPress={() => {
+            setPathInProgress(false);
+            onClose();
+          }} 
+          style={styles.backButton}
+        >
           <Text style={styles.backButtonText}>←</Text>
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Daily Reflection</Text>
