@@ -20,6 +20,8 @@ const breadIcon = require('../../assets/icons/breadIcon.png');
 const dropIcon = require('../../assets/icons/waterIcon.png');
 const quillIcon = require('../../assets/icons/journalIcon.png');
 const flameIcon = require('../../assets/icons/flameIcon.png');
+const heartIcon = require('../../assets/icons/heartIcon.png'); // Import heart icon
+const starIcon = require('../../assets/icons/starIcon.png'); // Import star icon
 
 export default function HomeScreen() {
   const riveRef = useRef<RiveRef>(null);
@@ -193,7 +195,7 @@ export default function HomeScreen() {
       />
 
       <SafeAreaView className="flex-1">
-        {/* Header: Shows Back Button or Title/Streak */} 
+        {/* Header: Shows Back Button or Title/Streak/Hearts */} 
         <View style={styles.headerContainer}>
           {mode !== 'DEFAULT' ? (
             <TouchableOpacity onPress={handleCloseOverlay} style={styles.headerBackButton}>
@@ -202,9 +204,21 @@ export default function HomeScreen() {
           ) : (
             <>
               <Text style={styles.headerTitle}>Shepherd</Text>
-              <View style={styles.streakContainer}>
-                <Text style={styles.streakNumber}>2</Text>
-                <Image source={flameIcon} style={styles.streakIcon} />
+              {/* Spacer between title and header right group */}
+              <View style={{ flex: 1 }} />
+              {/* Group for Streak and Hearts */}
+              <View style={styles.headerRightGroup}>
+                {/* Streak Counter */}
+
+                <View style={styles.streakContainer}>
+                  <Text style={styles.streakNumber}>2</Text>
+                  <Image source={flameIcon} style={styles.streakIcon} />
+                </View>
+                {/* Heart Counter */}
+                <View style={styles.heartContainer}>
+                  <Text style={styles.heartNumber}>87/100</Text>
+                  <Image source={heartIcon} style={styles.heartIcon} />
+                </View>
               </View>
             </>
           )}
@@ -242,6 +256,20 @@ export default function HomeScreen() {
             opacity: bottomCardOpacity,
             transform: [{ translateY: bottomCardTranslateY }],
           }]}>
+          
+          {/* XP Bar Section */} 
+          <View style={styles.xpBarContainer}>
+            {/* Level Star Icon + Text */} 
+            <View style={styles.levelContainer}>
+              <Image source={starIcon} style={styles.levelStarIcon} />
+              <Text style={styles.levelText}>LVL 1</Text>
+            </View>
+            {/* Pill Bar */} 
+            <View style={styles.pillOuter}>
+              <View style={styles.pillInner} />
+            </View>
+          </View>
+
           {/* Buttons are disabled if not in DEFAULT mode */}
           <SecondaryButton 
             icon={breadIcon}
@@ -314,11 +342,17 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontFamily: 'Feather Bold',
-    fontSize: 30,
+    fontSize: 28,
     color: 'white',
     textShadowColor: 'rgba(0, 0, 0, 0.2)', // Subtle shadow
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 2,
+  },
+  headerRightGroup: { // New style for grouping streak and hearts
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4, // Add gap between streak and heart containers
+    marginLeft: 10,
   },
   streakContainer: {
     flexDirection: 'row',
@@ -336,6 +370,24 @@ const styles = StyleSheet.create({
   },
   streakIcon: {
     width: 32,
+    height: 32,
+  },
+  heartContainer: { // Style for the heart container
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.3)',
+    borderRadius: 99,
+    paddingHorizontal: 10, // Adjusted padding
+    paddingVertical: 4,
+  },
+  heartNumber: { // Style for the heart text
+    fontFamily: 'Feather Bold',
+    fontSize: 18, 
+    color: 'white',
+    marginRight: 6, // Adjusted spacing
+  },
+  heartIcon: { // Style for the heart icon
+    width: 32, 
     height: 32,
   },
   riveWrapper: {
@@ -363,15 +415,56 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     paddingHorizontal: 24,
-    paddingTop: 32,
-    paddingBottom: 16, // Add some bottom padding
-    marginTop: -120, // Adjust overlap as needed
+    paddingTop: 16, // Reduced padding to make space for XP bar
+    paddingBottom: 16, 
+    marginTop: -80, 
     shadowColor: "#000",
     shadowOffset: { width: 0, height: -5 },
     shadowOpacity: 0.1,
     shadowRadius: 10,
     elevation: 10,
-    justifyContent: 'flex-start', // Align buttons to top
-    gap: 4, // Use gap for spacing between buttons
+    justifyContent: 'flex-start', 
+    gap: 8, // Increased gap slightly for XP bar
+  },
+  xpBarContainer: { // Container for Level Text and Pill Bar
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10, // Space between Level group and bar
+    marginBottom: 8, // Add some margin below the XP bar
+    paddingHorizontal: 4, // Slight horizontal padding within the card
+  },
+  levelContainer: { // Container for LVL text and Star icon
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4, // Space between icon and text
+  },
+  levelText: {
+    fontFamily: 'Feather Bold',
+    fontSize: 18,
+    color: '#8B5E3C', // A brown-ish color
+  },
+  levelStarIcon: {
+    width: 32, // Increased size
+    height: 32,
+  },
+  pillOuter: {
+    flex: 1, // Take remaining space
+    height: 14, // Height of the bar
+    backgroundColor: '#E0D5B9', // Light background for the empty part
+    borderRadius: 999, // Pill shape
+    borderWidth: 1,
+    borderColor: '#C8BBA0', // Slightly darker border
+    shadowColor: '#000', // Shadow for depth
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+    justifyContent: 'center', // Center the inner pill vertically if needed
+  },
+  pillInner: {
+    height: '100%', // Fill height
+    width: '25%', // Initial XP fill percentage
+    backgroundColor: '#F4C244', // A gold/yellow color for XP
+    borderRadius: 999,
   },
 }); 
