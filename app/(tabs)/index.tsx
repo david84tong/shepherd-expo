@@ -46,6 +46,9 @@ export default function HomeScreen() {
   const previewAnim = useRef(new Animated.Value(0)).current;
   const prayerAnim = useRef(new Animated.Value(0)).current;
   const reflectionAnim = useRef(new Animated.Value(0)).current;
+  
+  // Lamb size animation (for prayer and reflection modes)
+  const lambSizeAnim = useRef(new Animated.Value(1)).current; // 1 = 100%, 0.75 = 75%
 
   // --- Derived Animated Values ---
 
@@ -70,7 +73,7 @@ export default function HomeScreen() {
   const lambTranslateY = Animated.add(
     previewAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 240], extrapolate: 'clamp' }),
     Animated.add(
-      prayerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 200], extrapolate: 'clamp' }),
+      prayerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 250], extrapolate: 'clamp' }),
       reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 140], extrapolate: 'clamp' })
     )
   );
@@ -78,6 +81,13 @@ export default function HomeScreen() {
   // Bottom card animation
   const bottomCardOpacity = uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [1, 0], extrapolate: 'clamp' });
   const bottomCardTranslateY = uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [0, 300], extrapolate: 'clamp' });
+
+  // Lamb size interpolation
+  const lambSize = lambSizeAnim.interpolate({
+    inputRange: [0.75, 1],
+    outputRange: [165, 220], // 220 * 0.75 = 165 (25% smaller)
+    extrapolate: 'clamp'
+  });
 
   // --- Rive Handlers ---
   const handleOutOfFrame = () => {
@@ -107,10 +117,16 @@ export default function HomeScreen() {
     let modeAnim: Animated.CompositeAnimation;
     if (mode === 'PREVIEW') {
       modeAnim = Animated.timing(previewAnim, { toValue: 1, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
+      // Keep lamb at full size for preview
+      Animated.timing(lambSizeAnim, { toValue: 1, duration, useNativeDriver: false }).start();
     } else if (mode === 'PRAYER') {
       modeAnim = Animated.timing(prayerAnim, { toValue: 1, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
+      // Shrink lamb by 25% for prayer
+      Animated.timing(lambSizeAnim, { toValue: 0.75, duration, useNativeDriver: false }).start();
     } else if (mode === 'REFLECTION') {
       modeAnim = Animated.timing(reflectionAnim, { toValue: 1, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
+      // Shrink lamb by 25% for reflection
+      Animated.timing(lambSizeAnim, { toValue: 0.75, duration, useNativeDriver: false }).start();
     } else {
       modeAnim = Animated.timing(previewAnim, { toValue: 0, duration: 0, useNativeDriver: true });
     }
@@ -133,6 +149,9 @@ export default function HomeScreen() {
       Animated.timing(prayerAnim, { toValue: 0, duration, useNativeDriver: true }),
       Animated.timing(reflectionAnim, { toValue: 0, duration, useNativeDriver: true }),
     ];
+    
+    // Reset lamb size to 100%
+    Animated.timing(lambSizeAnim, { toValue: 1, duration, useNativeDriver: false }).start();
     
     Animated.parallel([
       Animated.timing(uiAnim, { toValue: 0, duration, easing: Easing.out(Easing.quad), useNativeDriver: true }),
@@ -240,7 +259,13 @@ export default function HomeScreen() {
               { translateY: lambTranslateY }
             ]
           }]}>
-          <View style={styles.riveContainer}>
+          <Animated.View style={[
+            styles.riveContainer, 
+            { 
+              width: lambSize, 
+              height: lambSize 
+            }
+          ]}>
             {riveError ? (
               <Text style={styles.errorText}>
                 Error loading animation: {riveError.message} ({riveError.type})
@@ -254,7 +279,7 @@ export default function HomeScreen() {
                 style={{ width: '100%', height: '100%' }} // Fill container
               />
             )}
-          </View>
+          </Animated.View>
         </Animated.View>
 
         {/* Bottom Section - Action Buttons Card */} 
