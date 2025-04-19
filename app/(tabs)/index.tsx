@@ -17,8 +17,9 @@ const journalBg = require('../../assets/backgrounds/mainBackground.png'); // Add
 
 // Icons
 const breadIcon = require('../../assets/icons/breadIcon.png');
-const dropIcon = require('../../assets/icons/breadIcon.png');
-const quillIcon = require('../../assets/icons/breadIcon.png');
+const dropIcon = require('../../assets/icons/waterIcon.png');
+const quillIcon = require('../../assets/icons/journalIcon.png');
+const flameIcon = require('../../assets/icons/flameIcon.png');
 
 export default function HomeScreen() {
   const riveRef = useRef<RiveRef>(null);
@@ -69,7 +70,7 @@ export default function HomeScreen() {
       // Prayer: moves down further
       prayerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 200], extrapolate: 'clamp' }),
       // Reflection: moves down same as prayer
-      reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 200], extrapolate: 'clamp' })
+      reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 140], extrapolate: 'clamp' })
     )
   );
 
@@ -203,7 +204,7 @@ export default function HomeScreen() {
               <Text style={styles.headerTitle}>Shepherd</Text>
               <View style={styles.streakContainer}>
                 <Text style={styles.streakNumber}>2</Text>
-                <Text style={styles.streakEmoji}>🔥</Text>
+                <Image source={flameIcon} style={styles.streakIcon} />
               </View>
             </>
           )}
@@ -232,7 +233,7 @@ export default function HomeScreen() {
               />
             )}
           </View>
-          {!riveError && <Button title="Trigger Out of Frame" onPress={handleOutOfFrame} />} 
+          {/* {!riveError && <Button title="Trigger Out of Frame" onPress={handleOutOfFrame} />}  */}
         </Animated.View>
 
         {/* Bottom Section - Action Buttons Card */} 
@@ -333,8 +334,9 @@ const styles = StyleSheet.create({
     color: 'white',
     marginRight: 4,
   },
-  streakEmoji: {
-    fontSize: 16,
+  streakIcon: {
+    width: 32,
+    height: 32,
   },
   riveWrapper: {
     // Use flex for positioning instead of hardcoded values if possible
@@ -370,6 +372,6 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     elevation: 10,
     justifyContent: 'flex-start', // Align buttons to top
-    gap: 16, // Use gap for spacing between buttons
+    gap: 4, // Use gap for spacing between buttons
   },
 }); 

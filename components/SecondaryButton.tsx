@@ -54,7 +54,7 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
 const styles = StyleSheet.create({
   buttonWrapper: {
     marginTop: 16,
-    height: 70,
+    height: 80,
   },
   button: {
     flexDirection: 'row',
@@ -90,9 +90,10 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   icon: {
-    width: 32,
-    height: 32,
-    marginRight: 16,
+    width: 56,
+    height: 56,
+    marginRight: 8,
+    marginLeft: -8
   },
   textContainer: {
     flex: 1,

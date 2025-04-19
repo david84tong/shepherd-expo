@@ -109,7 +109,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       // Focus the input after ALL animations complete
       const timer = setTimeout(() => {
         inputRef.current?.focus();
-      }, 1400); // Delay keyboard appearance until animations are done
+      }, 300); // Delay keyboard appearance until animations are done
       
       return () => clearTimeout(timer);
     } else {
@@ -131,11 +131,11 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
 
   // Calculate positions based on keyboard state
   const cardStyle = {
-    height: keyboardVisible ? SCREEN_HEIGHT - 250 - keyboardHeight : SCREEN_HEIGHT - 250,
+    height: keyboardVisible ? SCREEN_HEIGHT - 300 - keyboardHeight : SCREEN_HEIGHT - 250,
   };
 
   const buttonPosition = {
-    bottom: keyboardVisible ? keyboardHeight + 10 : 40
+    bottom: keyboardVisible ? keyboardHeight + 25 : 40
   };
 
   return (
@@ -237,7 +237,7 @@ const styles = StyleSheet.create({
   },
   card: {
     position: 'absolute',
-    top: 120,
+    top: 40,
     left: 20,
     right: 20,
     backgroundColor: '#E6F2FF',
@@ -248,10 +248,11 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 8,
+    marginTop: 84
   },
   subtitle: {
     fontSize: 18,
-    fontFamily: 'Inter-Regular',
+    fontFamily: 'Feather Bold',
     color: '#4A6C8C',
     marginBottom: 20,
     textAlign: 'center',
