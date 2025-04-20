@@ -12,6 +12,7 @@ import {
 } from 'react-native';
 import PrimaryButton from './PrimaryButton';
 import { usePathStore } from '../store/pathStore';
+import Rive, { RiveRef } from 'rive-react-native';
 
 interface JournalProps {
   visible: boolean;
@@ -37,6 +38,8 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   const headerOpacity = useRef(new Animated.Value(0)).current;
   const buttonAnimY = useRef(new Animated.Value(100)).current;
   const buttonOpacity = useRef(new Animated.Value(0)).current;
+  const bottomContentAnimY = useRef(new Animated.Value(100)).current;
+  const bottomContentOpacity = useRef(new Animated.Value(0)).current;
 
   // Keyboard event listeners with height information
   useEffect(() => {
@@ -111,6 +114,21 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         delay: 700
       }).start();
 
+      // Animate bottom content (Rive + Button)
+      Animated.timing(bottomContentOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+        delay: 700
+      }).start();
+      
+      Animated.timing(bottomContentAnimY, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+        delay: 700
+      }).start();
+
       // Focus the input after ALL animations complete
       const timer = setTimeout(() => {
         inputRef.current?.focus();
@@ -124,8 +142,10 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       headerOpacity.setValue(0);
       buttonAnimY.setValue(100);
       buttonOpacity.setValue(0);
+      bottomContentAnimY.setValue(100);
+      bottomContentOpacity.setValue(0);
     }
-  }, [visible, cardAnimY, cardOpacity, headerOpacity, buttonAnimY, buttonOpacity, setPathInProgress]);
+  }, [visible, cardAnimY, cardOpacity, headerOpacity, buttonAnimY, buttonOpacity, bottomContentAnimY, bottomContentOpacity, setPathInProgress]);
 
   if (!visible) return null;
 
@@ -140,8 +160,8 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     height: keyboardVisible ? SCREEN_HEIGHT - 300 - keyboardHeight : SCREEN_HEIGHT - 250,
   };
 
-  const buttonPosition = {
-    bottom: keyboardVisible ? keyboardHeight + 25 : 40
+  const bottomContentPosition = {
+    bottom: keyboardVisible ? keyboardHeight + 20 : 30 // Adjust vertical positioning slightly
   };
 
   return (
@@ -184,18 +204,30 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         />
       </Animated.View>
 
-      {/* Animated Button */}
+      {/* Animated Bottom Content (Rive + Button) */}
       <Animated.View 
         style={[
-          styles.buttonContainer, 
-          buttonPosition,
+          styles.bottomContainer,
+          bottomContentPosition,
           {
-            opacity: buttonOpacity,
-            transform: [{ translateY: buttonAnimY }]
+            opacity: bottomContentOpacity,
+            transform: [{ translateY: bottomContentAnimY }]
           }
         ]}
       >
-        <PrimaryButton title="Save Entry" onPress={handleSave} />
+        {/* Rive Animation */}
+        <View style={styles.riveWrapper}>
+          <Rive
+            resourceName="lambWriting"
+            autoplay={true}
+            style={styles.riveStyle}
+          />
+        </View>
+        
+        {/* Save Button */}
+        <View style={styles.buttonWrapper}>
+          <PrimaryButton title="Save Entry" onPress={handleSave} />
+        </View>
       </Animated.View>
     </View>
   );
@@ -282,11 +314,29 @@ const styles = StyleSheet.create({
     borderColor: '#A8C0E0',
     textAlignVertical: 'top',
   },
-  buttonContainer: {
+  bottomContainer: { 
     position: 'absolute',
     left: 20,
     right: 20,
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: 0,
+  },
+  riveWrapper: {
+    width: 100,
+    height: 100,
+  },
+  riveStyle: {
+    width: '130%',
+    height: '130%',
+    marginLeft: -20,
+    marginTop: -30,
+  },
+  buttonWrapper: {
+    flex: 1,
+    marginLeft: 0,
+    alignItems: 'flex-end',
+    marginRight: 4,
   },
 });
 

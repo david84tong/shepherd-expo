@@ -31,6 +31,9 @@ export default function HomeScreen() {
   // Use Zustand store for mode management
   const mode = useHomeStore((state) => state.mode);
   const setMode = useHomeStore((state) => state.setMode);
+  
+  // State to manage the Rive resource name
+  const [riveResourceName, setRiveResourceName] = useState('mainSheep2'); // Default resource
 
   // --- Animation Values --- 
   const uiAnim = useRef(new Animated.Value(0)).current; // 0: default, 0.5: preview, 1: full overlay
@@ -49,6 +52,8 @@ export default function HomeScreen() {
   
   // Lamb size animation (for prayer and reflection modes)
   const lambSizeAnim = useRef(new Animated.Value(1)).current; // 1 = 100%, 0.75 = 75%
+  // Opacity for the main screen's Rive wrapper
+  const lambOpacityAnim = useRef(new Animated.Value(1)).current; // 1 = visible, 0 = hidden
 
   // --- Derived Animated Values ---
 
@@ -66,15 +71,15 @@ export default function HomeScreen() {
   const lambTranslateX = Animated.add(
     previewAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0], extrapolate: 'clamp' }),
     Animated.add(
-      prayerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40], extrapolate: 'clamp' }),
-      reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 40], extrapolate: 'clamp' })
+      prayerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -20], extrapolate: 'clamp' }),
+      reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40], extrapolate: 'clamp' })
     )
   );
   const lambTranslateY = Animated.add(
     previewAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 240], extrapolate: 'clamp' }),
     Animated.add(
-      prayerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 250], extrapolate: 'clamp' }),
-      reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 140], extrapolate: 'clamp' })
+      prayerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 290], extrapolate: 'clamp' }),
+      reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 200], extrapolate: 'clamp' })
     )
   );
 
@@ -115,18 +120,18 @@ export default function HomeScreen() {
     ];
     
     let modeAnim: Animated.CompositeAnimation;
+    let lambOpacityTarget = 1; // Default to visible
+    
     if (mode === 'PREVIEW') {
       modeAnim = Animated.timing(previewAnim, { toValue: 1, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
-      // Keep lamb at full size for preview
       Animated.timing(lambSizeAnim, { toValue: 1, duration, useNativeDriver: false }).start();
     } else if (mode === 'PRAYER') {
       modeAnim = Animated.timing(prayerAnim, { toValue: 1, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
-      // Shrink lamb by 25% for prayer
       Animated.timing(lambSizeAnim, { toValue: 0.75, duration, useNativeDriver: false }).start();
     } else if (mode === 'REFLECTION') {
       modeAnim = Animated.timing(reflectionAnim, { toValue: 1, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
-      // Shrink lamb by 25% for reflection
       Animated.timing(lambSizeAnim, { toValue: 0.75, duration, useNativeDriver: false }).start();
+      lambOpacityTarget = 0; // Hide main lamb when journal is open
     } else {
       modeAnim = Animated.timing(previewAnim, { toValue: 0, duration: 0, useNativeDriver: true });
     }
@@ -135,8 +140,10 @@ export default function HomeScreen() {
       Animated.parallel(resetAnims),
       Animated.parallel([
         Animated.timing(uiAnim, { toValue: targetUiAnim, duration, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(headerDefaultOpacityAnim, { toValue: 0, duration, useNativeDriver: true }), // Fade out default header
+        Animated.timing(headerDefaultOpacityAnim, { toValue: 0, duration, useNativeDriver: true }), 
         Animated.timing(targetOpacityAnim, { toValue: 1, duration, useNativeDriver: true }),
+        // Animate main lamb opacity
+        Animated.timing(lambOpacityAnim, { toValue: lambOpacityTarget, duration: duration / 2, useNativeDriver: true }), 
         ...fadeOutAnims,
         modeAnim,
       ])
@@ -150,8 +157,9 @@ export default function HomeScreen() {
       Animated.timing(reflectionAnim, { toValue: 0, duration, useNativeDriver: true }),
     ];
     
-    // Reset lamb size to 100%
     Animated.timing(lambSizeAnim, { toValue: 1, duration, useNativeDriver: false }).start();
+    // Ensure main lamb becomes visible again
+    Animated.timing(lambOpacityAnim, { toValue: 1, duration, useNativeDriver: true }).start();
     
     Animated.parallel([
       Animated.timing(uiAnim, { toValue: 0, duration, easing: Easing.out(Easing.quad), useNativeDriver: true }),
@@ -162,35 +170,37 @@ export default function HomeScreen() {
       Animated.timing(journalOpacityAnim, { toValue: 0, duration, useNativeDriver: true }),
       ...resetAnims
     ]).start();
+    
+    setRiveResourceName('mainSheep2');
   };
 
-  // --- NEW useEffect to react to external mode changes ---
+  // --- useEffect to react to external mode changes ---
   useEffect(() => {
-    // When mode changes back to DEFAULT (e.g., from BibleScreen), run the reset animation
     if (mode === 'DEFAULT') {
-      // Consider adding a check if the previous state was NOT default to avoid running on initial load,
-      // but this might be sufficient for now.
       animateToDefault(); 
+      // Ensure resource is reset if mode changes externally
+      setRiveResourceName('mainSheep2'); 
     }
-    // Note: We don't need to handle PREVIEW, PRAYER, REFLECTION here
-    // because those transitions are already triggered by handleReadPress etc.
-  }, [mode]); // Run this effect whenever the mode changes
+  }, [mode]); 
 
   // --- Event Handlers ---
    const handleReadPress = () => {
-    console.log('Read Daily Bread Pressed');
+    console.log('Read Daily Bread Pressed - Setting resource to lambEat');
+    setRiveResourceName('lambEat'); // Set resource for eating animation
     setMode('PREVIEW');
-    animateToState(0.5, pathOpacityAnim, 500, 'PREVIEW'); // Faster transition
+    animateToState(0.5, pathOpacityAnim, 500, 'PREVIEW');
   };
 
   const handlePrayerPress = () => {
-    console.log('Daily Prayer Pressed');
+    console.log('Daily Prayer Pressed - Setting resource to lambSheep');
+    setRiveResourceName('lambSheep'); // Set resource for prayer/drinking animation
     setMode('PRAYER');
     animateToState(1, waterOpacityAnim, 600, 'PRAYER');
   };
 
   const handleReflectionPress = () => {
-    console.log('Daily Reflection / QT Pressed');
+    console.log('Daily Reflection / QT Pressed - Temporarily NOT changing resource');
+    // setRiveResourceName('lambWriting'); // Temporarily commented out to test crash
     setMode('REFLECTION');
     animateToState(1, journalOpacityAnim, 600, 'REFLECTION');
   };
@@ -198,7 +208,6 @@ export default function HomeScreen() {
   // --- Handlers for Closing Overlays ---
   const handleCloseOverlay = () => {
     console.log('Closing Overlay, returning to default');
-    // animateToDefault(); // This is now handled by the useEffect above
     setMode('DEFAULT'); 
   };
 
@@ -254,6 +263,7 @@ export default function HomeScreen() {
         {/* Top Section - Lamb Avatar */} 
          <Animated.View
           style={[styles.riveWrapper, {
+            opacity: lambOpacityAnim, // Apply opacity animation
             transform: [
               { translateX: lambTranslateX },
               { translateY: lambTranslateY }
@@ -273,7 +283,7 @@ export default function HomeScreen() {
             ) : (
               <Rive
                 ref={riveRef}
-                resourceName="idleLamb"
+                resourceName={riveResourceName}
                 autoplay={true}
                 onError={handleRiveError}
                 style={{ width: '100%', height: '100%' }} // Fill container
