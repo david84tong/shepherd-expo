@@ -38,6 +38,8 @@ export default function HomeScreen() {
   
   // State to manage the Rive resource name
   const [riveResourceName, setRiveResourceName] = useState('mainSheep2'); // Default resource
+  // State to control background Rive animation
+  const [showBgRive, setShowBgRive] = useState(false);
   // Lamb size animation
   const lambSizeAnim = useRef(new Animated.Value(256)).current; // Start with full size (256px)
 
@@ -188,6 +190,7 @@ export default function HomeScreen() {
     console.log('Daily Prayer Pressed - Setting resource to lambSheep');
     setRiveResourceName('lambSheep'); // Set resource for prayer/drinking animation
     setMode('PRAYER');
+    setShowBgRive(true); // Show the green background Rive animation
     // Animate lamb size to smaller size
     Animated.timing(lambSizeAnim, {
       toValue: 128,
@@ -214,6 +217,7 @@ export default function HomeScreen() {
   const handleCloseOverlay = () => {
     console.log('Closing Overlay, returning to default');
     setMode('DEFAULT');
+    setShowBgRive(false); // Hide the green background Rive animation
     // Animate lamb size back to full size
     Animated.timing(lambSizeAnim, {
       toValue: 256,
@@ -235,17 +239,21 @@ export default function HomeScreen() {
       <Animated.Image source={grassBg} style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: grassOpacityAnim }]} resizeMode="cover" />
       <Animated.Image source={pathBg} style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: pathOpacityAnim }]} resizeMode="cover" />
       <Animated.Image source={journalBg} style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: journalOpacityAnim }]} resizeMode="cover" />
-      <Animated.Image
-        source={waterBg}
+      {/* Prayer background Rive animation */}
+      <Animated.View 
         style={[
-          {position: 'absolute', width: '100%', height: '100%'},
-          { 
-            opacity: waterOpacityAnim, 
-            transform: [{ translateY: waterTranslateY }, { scale: waterScale }] 
-          }
+          {position: 'absolute', width: '100%', height: '100%', zIndex: 0},
+          { opacity: waterOpacityAnim }
         ]}
-        resizeMode="cover"
-      />
+      >
+        {showBgRive && (
+          <Rive
+            resourceName="bg-green"
+            autoplay={true}
+            style={{ width: '160%', height: '160%', top: -300, left: -128 }}
+          />
+        )}
+      </Animated.View>
 
       <SafeAreaView className="flex-1">
         {/* Header: Contains logic for showing Back OR Title/Stats */} 
@@ -314,7 +322,7 @@ export default function HomeScreen() {
 
         {/* Bottom Section - Action Buttons Card */} 
         <Animated.View
-          className="mt-6 bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-36"
+          className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-28"
           style={{
             ...Platform.select({ ios: { shadowColor: 'rgba(0,0,0,0.08)', shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, shadowOpacity: 1, }, android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)', }, }),
             opacity: bottomCardOpacity,

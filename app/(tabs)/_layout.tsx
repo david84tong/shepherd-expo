@@ -41,7 +41,7 @@ function CustomTabBarButton(props: any) {
           style={[
             StyleSheet.absoluteFillObject, // Position behind content
             {
-              backgroundColor: 'rgba(0, 0, 0, 0.05)', // bg-black/5 equivalent
+              backgroundColor: '#FFE4A8', // bg-black/5 equivalent
               borderRadius: 8, // rounded-lg equivalent
               opacity: focusAnim, // Apply animated opacity
             }
@@ -88,10 +88,10 @@ export default function TabLayout() {
     // Add shadow for better visual separation
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -3 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
+        shadowColor: '#FFE4A8',
+        shadowOffset: { width: 0, height: -4 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
       },
       android: {
         elevation: 5,

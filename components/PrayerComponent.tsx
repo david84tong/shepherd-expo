@@ -149,7 +149,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
       <View className="flex-1 h-96" />
       {/* Animated Primary Button */}
       <Animated.View 
-        className="w-full px-5 mb-10 mt-auto items-center z-10 mt-36"
+        className="w-full px-5 mb-10 mt-auto items-center z-10 mt-32"
         style={{
           opacity: buttonOpacity,
           transform: [{ translateY: buttonAnim }]

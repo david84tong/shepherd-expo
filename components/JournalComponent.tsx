@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   View, 
   Text, 
-  StyleSheet, 
   TouchableOpacity, 
   TextInput, 
   Platform, 
@@ -13,6 +12,7 @@ import {
 import PrimaryButton from './PrimaryButton';
 import { usePathStore } from '../store/pathStore';
 import Rive, { RiveRef } from 'rive-react-native';
+import { Ionicons } from '@expo/vector-icons';
 
 interface JournalProps {
   visible: boolean;
@@ -35,7 +35,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   // Animation values
   const cardAnimY = useRef(new Animated.Value(200)).current;
   const cardOpacity = useRef(new Animated.Value(0)).current;
-  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const containerOpacity = useRef(new Animated.Value(0)).current;
   const buttonAnimY = useRef(new Animated.Value(100)).current;
   const buttonOpacity = useRef(new Animated.Value(0)).current;
   const bottomContentAnimY = useRef(new Animated.Value(100)).current;
@@ -76,12 +76,11 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       // Set path in progress when component becomes visible
       setPathInProgress(true);
       
-      // First animate the header
-      Animated.timing(headerOpacity, {
+      // First animate the container
+      Animated.timing(containerOpacity, {
         toValue: 1,
         duration: 400,
         useNativeDriver: true,
-        delay: 200 // Start after lamb animation has progressed
       }).start();
       
       // Then animate the card
@@ -89,14 +88,14 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         toValue: 1,
         duration: 500,
         useNativeDriver: true,
-        delay: 400
+        delay: 200
       }).start();
       
       Animated.timing(cardAnimY, {
         toValue: 0,
         duration: 500,
         useNativeDriver: true,
-        delay: 400
+        delay: 200
       }).start();
       
       // Finally animate the button
@@ -104,14 +103,14 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         toValue: 1,
         duration: 400,
         useNativeDriver: true,
-        delay: 700
+        delay: 500
       }).start();
       
       Animated.timing(buttonAnimY, {
         toValue: 0,
         duration: 400,
         useNativeDriver: true,
-        delay: 700
+        delay: 500
       }).start();
 
       // Animate bottom content (Rive + Button)
@@ -119,33 +118,33 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         toValue: 1,
         duration: 400,
         useNativeDriver: true,
-        delay: 700
+        delay: 500
       }).start();
       
       Animated.timing(bottomContentAnimY, {
         toValue: 0,
         duration: 400,
         useNativeDriver: true,
-        delay: 700
+        delay: 500
       }).start();
 
-      // Focus the input after ALL animations complete
+      // Focus the input after animations complete
       const timer = setTimeout(() => {
         inputRef.current?.focus();
-      }, 300); // Delay keyboard appearance until animations are done
+      }, 600);
       
       return () => clearTimeout(timer);
     } else {
       // Reset animations when hiding
+      containerOpacity.setValue(0);
       cardAnimY.setValue(200);
       cardOpacity.setValue(0);
-      headerOpacity.setValue(0);
       buttonAnimY.setValue(100);
       buttonOpacity.setValue(0);
       bottomContentAnimY.setValue(100);
       bottomContentOpacity.setValue(0);
     }
-  }, [visible, cardAnimY, cardOpacity, headerOpacity, buttonAnimY, buttonOpacity, bottomContentAnimY, bottomContentOpacity, setPathInProgress]);
+  }, [visible, cardAnimY, cardOpacity, containerOpacity, buttonAnimY, buttonOpacity, bottomContentAnimY, bottomContentOpacity, setPathInProgress]);
 
   if (!visible) return null;
 
@@ -155,189 +154,86 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     onClose();
   };
 
-  // Calculate positions based on keyboard state
-  const cardStyle = {
-    height: keyboardVisible ? SCREEN_HEIGHT - 300 - keyboardHeight : SCREEN_HEIGHT - 250,
-  };
-
-  const bottomContentPosition = {
-    bottom: keyboardVisible ? keyboardHeight + 20 : 30 // Adjust vertical positioning slightly
-  };
-
   return (
-    <View style={styles.overlay}>
-      {/* Animated Header */}
-      <Animated.View style={[styles.header, { opacity: headerOpacity }]}>
+    <Animated.View
+      className="absolute flex w-full"
+      style={{ opacity: containerOpacity }}
+      pointerEvents="box-none"
+    >
+      {/* Back Button */} 
+      <View className="pt-[60px] px-5  z-10 absolute ">
         <TouchableOpacity 
           onPress={() => {
             setPathInProgress(false);
             onClose();
-          }} 
-          style={styles.backButton}
+          }}
+          className="w-[44px] h-[44px] rounded-full bg-[rgba(255,244,217,0.95)] items-center justify-center"
+          style={{
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.15,
+            shadowRadius: 3,
+            elevation: 3
+          }}
         >
-          <Text style={styles.backButtonText}>←</Text>
+          <Ionicons name="chevron-back" size={22} color="#2D3720" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Daily Reflection</Text>
-      </Animated.View>
+      </View>
 
       {/* Animated Card with TextInput */}
+ 
       <Animated.View 
+        className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto mt-[120px] border-4 border-border"
         style={[
-          styles.card, 
-          cardStyle,
           { 
             opacity: cardOpacity,
-            transform: [{ translateY: cardAnimY }]
+            transform: [{ translateY: cardAnimY }],
+            maxHeight: keyboardVisible ? SCREEN_HEIGHT - keyboardHeight - 200 : SCREEN_HEIGHT - 280, 
+            minHeight: 250
           }
         ]}
       >
-        <Text style={styles.subtitle}>What's on your mind today?</Text>
+        <Text className="text-h1 font-feather text-accentGold mb-6 text-center leading-tight">Daily Reflection</Text>
         
         <TextInput
           ref={inputRef}
-          style={styles.textInput}
-          placeholder="Start writing your reflection here..."
-          placeholderTextColor="#A8C0E0"
+          className="w-full bg-surfaceCream/50 rounded-[18px] p-4 border border-border text-body font-din text-textPrimary"
+          placeholder="What\'s on your mind today?"
+          placeholderTextColor="#B89B4C"
           multiline
           textAlignVertical="top"
           scrollEnabled={true}
+          style={{ flex: 1 }}
         />
       </Animated.View>
 
       {/* Animated Bottom Content (Rive + Button) */}
       <Animated.View 
+        className="absolute left-0 right-0 flex-row items-center px-5 z-10"
         style={[
-          styles.bottomContainer,
-          bottomContentPosition,
           {
             opacity: bottomContentOpacity,
-            transform: [{ translateY: bottomContentAnimY }]
+            transform: [{ translateY: bottomContentAnimY }],
+            bottom: keyboardVisible ? keyboardHeight + -440 : -100
           }
         ]}
       >
         {/* Rive Animation */}
-        <View style={styles.riveWrapper}>
+        <View className="w-[100px] h-[100px] -ml-5 -mb-2">
           <Rive
             resourceName="lambWriting"
             autoplay={true}
-            style={styles.riveStyle}
+            style={{ width: '130%', height: '130%' }}
           />
         </View>
         
         {/* Save Button */}
-        <View style={styles.buttonWrapper}>
+        <View className="flex-1 items-end w-[300px]">
           <PrimaryButton title="Save Entry" onPress={handleSave} />
         </View>
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 };
-
-const styles = StyleSheet.create({
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.1)', // Semi-transparent overlay
-  },
-  header: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 50 : 30,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    zIndex: 10,
-  },
-  headerTitle: {
-    fontSize: 22,
-    fontFamily: 'Feather Bold',
-    color: '#FFF',
-    marginLeft: 15,
-    textShadowColor: 'rgba(0, 0, 0, 0.5)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 244, 217, 0.95)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-  backButtonText: {
-    fontSize: 24,
-    color: '#3C584A',
-    fontFamily: 'Inter-Bold',
-  },
-  card: {
-    position: 'absolute',
-    top: 40,
-    left: 20,
-    right: 20,
-    backgroundColor: '#E6F2FF',
-    borderRadius: 18,
-    padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 8,
-    marginTop: 84
-  },
-  subtitle: {
-    fontSize: 18,
-    fontFamily: 'Feather Bold',
-    color: '#4A6C8C',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  textInput: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    color: '#3C584A',
-    fontFamily: 'Inter-Regular',
-    lineHeight: 22,
-    borderWidth: 1,
-    borderColor: '#A8C0E0',
-    textAlignVertical: 'top',
-  },
-  bottomContainer: { 
-    position: 'absolute',
-    left: 20,
-    right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 0,
-  },
-  riveWrapper: {
-    width: 100,
-    height: 100,
-  },
-  riveStyle: {
-    width: '130%',
-    height: '130%',
-    marginLeft: -20,
-    marginTop: -30,
-  },
-  buttonWrapper: {
-    flex: 1,
-    marginLeft: 0,
-    alignItems: 'flex-end',
-    marginRight: 4,
-  },
-});
 
 export default JournalComponent;
