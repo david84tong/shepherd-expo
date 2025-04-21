@@ -12,7 +12,6 @@ import { useHomeStore, HomeMode } from '../../store/homeStore'; // Import Zustan
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.40; // 40%
 const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
-const SMALL_LAMB_SIZE = BASE_LAMB_SIZE * 0.75; // 75% of base size
 
 // Backgrounds
 const grassBg = require('../../assets/backgrounds/defaultBackground.png');
@@ -39,6 +38,8 @@ export default function HomeScreen() {
   
   // State to manage the Rive resource name
   const [riveResourceName, setRiveResourceName] = useState('mainSheep2'); // Default resource
+  // Lamb size animation
+  const lambSizeAnim = useRef(new Animated.Value(256)).current; // Start with full size (256px)
 
   // --- Animation Values --- 
   const uiAnim = useRef(new Animated.Value(0)).current; // 0: default, 0.5: preview, 1: full overlay
@@ -55,8 +56,6 @@ export default function HomeScreen() {
   const prayerAnim = useRef(new Animated.Value(0)).current;
   const reflectionAnim = useRef(new Animated.Value(0)).current;
   
-  // Lamb size animation (for prayer and reflection modes)
-  const lambSizeAnim = useRef(new Animated.Value(1)).current; // 1 = 100%, 0.75 = 75%
   // Opacity for the main screen's Rive wrapper
   const lambOpacityAnim = useRef(new Animated.Value(1)).current; // 1 = visible, 0 = hidden
 
@@ -92,13 +91,6 @@ export default function HomeScreen() {
   const bottomCardOpacity = uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [1, 0], extrapolate: 'clamp' });
   const bottomCardTranslateY = uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [0, 300], extrapolate: 'clamp' });
 
-  // Lamb size interpolation
-  const lambSize = lambSizeAnim.interpolate({
-    inputRange: [0.75, 1],
-    outputRange: [SMALL_LAMB_SIZE, BASE_LAMB_SIZE],
-    extrapolate: 'clamp'
-  });
-
   // --- Rive Handlers ---
   const handleOutOfFrame = () => {
       try {
@@ -129,13 +121,10 @@ export default function HomeScreen() {
     
     if (mode === 'PREVIEW') {
       modeAnim = Animated.timing(previewAnim, { toValue: 1, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
-      Animated.timing(lambSizeAnim, { toValue: 1, duration, useNativeDriver: false }).start();
     } else if (mode === 'PRAYER') {
       modeAnim = Animated.timing(prayerAnim, { toValue: 1, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
-      Animated.timing(lambSizeAnim, { toValue: 0.75, duration, useNativeDriver: false }).start();
     } else if (mode === 'REFLECTION') {
       modeAnim = Animated.timing(reflectionAnim, { toValue: 1, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
-      Animated.timing(lambSizeAnim, { toValue: 0.75, duration, useNativeDriver: false }).start();
       lambOpacityTarget = 0; // Hide main lamb when journal is open
     } else {
       modeAnim = Animated.timing(previewAnim, { toValue: 0, duration: 0, useNativeDriver: true });
@@ -162,7 +151,6 @@ export default function HomeScreen() {
       Animated.timing(reflectionAnim, { toValue: 0, duration, useNativeDriver: true }),
     ];
     
-    Animated.timing(lambSizeAnim, { toValue: 1, duration, useNativeDriver: false }).start();
     // Ensure main lamb becomes visible again
     Animated.timing(lambOpacityAnim, { toValue: 1, duration, useNativeDriver: true }).start();
     
@@ -200,6 +188,12 @@ export default function HomeScreen() {
     console.log('Daily Prayer Pressed - Setting resource to lambSheep');
     setRiveResourceName('lambSheep'); // Set resource for prayer/drinking animation
     setMode('PRAYER');
+    // Animate lamb size to smaller size
+    Animated.timing(lambSizeAnim, {
+      toValue: 128,
+      duration: 500,
+      useNativeDriver: false,
+    }).start();
     animateToState(1, waterOpacityAnim, 600, 'PRAYER');
   };
 
@@ -207,15 +201,33 @@ export default function HomeScreen() {
     console.log('Daily Reflection / QT Pressed - Temporarily NOT changing resource');
     // setRiveResourceName('lambWriting'); // Temporarily commented out to test crash
     setMode('REFLECTION');
+    // Animate lamb size to smaller size
+    Animated.timing(lambSizeAnim, {
+      toValue: 128,
+      duration: 500,
+      useNativeDriver: false,
+    }).start();
     animateToState(1, journalOpacityAnim, 600, 'REFLECTION');
   };
 
   // --- Handlers for Closing Overlays ---
   const handleCloseOverlay = () => {
     console.log('Closing Overlay, returning to default');
-    setMode('DEFAULT'); 
+    setMode('DEFAULT');
+    // Animate lamb size back to full size
+    Animated.timing(lambSizeAnim, {
+      toValue: 256,
+      duration: 500,
+      useNativeDriver: false,
+    }).start();
   };
 
+  // Set initial lamb size based on mode
+  useEffect(() => {
+    if (mode === 'DEFAULT') {
+      lambSizeAnim.setValue(256); // Reset to full size when in default mode
+    }
+  }, []);
 
   return (
     <View className="flex-1">
@@ -280,17 +292,14 @@ export default function HomeScreen() {
           }}>
           <Animated.View 
             className="items-center justify-center overflow-hidden"
-            style={{ 
-              width: lambSize, 
-              height: lambSize 
-            }}
+            style={{}}
           >
             {riveError ? (
               <Text className="text-red-500 p-4 text-center">
                 Error loading animation: {riveError.message} ({riveError.type})
               </Text>
             ) : (
-              <View className="w-64 h-64">
+              <Animated.View style={{ width: lambSizeAnim, height: lambSizeAnim }}>
                 <Rive
                   ref={riveRef}
                   resourceName={riveResourceName}
@@ -298,7 +307,7 @@ export default function HomeScreen() {
                   onError={handleRiveError}
                   style={{ width: '100%', height: '100%' }}
                 />
-              </View>
+              </Animated.View>
             )}
           </Animated.View>
         </Animated.View>
@@ -317,7 +326,7 @@ export default function HomeScreen() {
               <Image source={starIcon} className="w-8 h-8" />
               <Text className="font-feather text-body text-textPrimary">LVL 1</Text>
             </View>
-            <View className="flex-1 h-4 bg-pillBorder rounded-full border border-pillBorder overflow-hidden">
+            <View className="flex-1 h-4 bg-pillBorder rounded-full border-4 border-border overflow-hidden">
               <View className="h-full w-1/4 bg-accentGold rounded-full" />
             </View>
           </View>
