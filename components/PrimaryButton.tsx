@@ -6,6 +6,7 @@ interface PrimaryButtonProps {
   onPress: () => void;
   disabled?: boolean;
   style?: string;
+  isActive?: boolean;
 }
 
 const PrimaryButton: React.FC<PrimaryButtonProps> = ({
@@ -13,6 +14,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   onPress,
   disabled = false,
   style,
+  isActive = true,
 }) => {
   // Simple state to track pressed state
   const [isPressed, setIsPressed] = useState(false);
@@ -22,16 +24,16 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
       <Pressable
         className={
           `flex-row items-center justify-center px-5 h-full w-full rounded-[20px] border-[3px] ` +
-          `${disabled ? 'bg-[#E5E5E5] border-[#D0D0D0]' : 'bg-accentGold border-buttonBorder'} ` +
-          `transform ${!isPressed ? 'shadow-buttonShadow' : ''} ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
+          `${disabled || !isActive ? 'bg-[#E5E5E5] border-[#D0D0D0]' : 'bg-accentGold border-buttonBorder'} ` +
+          `transform ${(!isPressed && isActive) ? 'shadow-buttonShadow' : ''} ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
         }
-        style={({ pressed }) => [{ elevation: pressed ? 3 : 6 }]}
+        style={({ pressed }) => [{ elevation: pressed ? 3 : isActive ? 6 : 0 }]}
         onPress={onPress}
         disabled={disabled}
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}
       >
-        <Text className="font-feather text-white text-heading text-center w-full">
+        <Text className={`font-feather ${disabled || !isActive ? 'text-gray-400' : 'text-white'} text-heading text-center w-full`}>
           {title}
         </Text>
       </Pressable>

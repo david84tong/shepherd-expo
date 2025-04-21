@@ -268,7 +268,7 @@ export default function HomeScreen() {
               pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}
             >
               <Text 
-                className="text-h1 font-feather text-white ml-5 tracking-wide"
+                className="text-h1 font-feather text-white ml-2 tracking-wide"
                 style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}
               >
                 Shepherd

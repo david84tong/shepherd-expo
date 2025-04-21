@@ -23,7 +23,8 @@ module.exports = {
         shadowColor: 'rgba(0,0,0,0.08)', // Shadow color separate for RN
         pillBorder: '#E9E2C7',      // Border for metric pills
         description: '#B89B4C',
-        buttonBorder: '#FFE4A8', // Shadow color for secondary button
+        buttonBorder: '#FFE4A8',
+        blue: "#06B6FE", // Shadow color for secondary button
       },
       fontFamily: {
         // Keeping existing fonts, apply sizes via classes
@@ -46,6 +47,7 @@ module.exports = {
         'card': '0px 2px 4px rgba(0,0,0,0.08)', // Match spec
         'cta-inset': 'inset 0 -2px 2px rgba(0,0,0,0.06)',
         'buttonShadow': '0px 8.716px 0px 0px #FFE4A8', // Inset shadows are hard in RN
+        'backButton': '0px 5.716px 0px 0px #FFE4A8', // Inset shadows are hard in RN
       },
       secondaryButtonShadow: {
         'secondary': '', // Match spec

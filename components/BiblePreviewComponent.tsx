@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import PrimaryButton from './PrimaryButton';
 import { router } from 'expo-router';
 import { usePathStore } from '../store/pathStore';
-import { Ionicons } from '@expo/vector-icons';
+import BackButton from './BackButton';
 
 interface BiblePreviewProps {
   /** Whether the preview overlay should be shown. */
@@ -105,26 +105,12 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
       style={{ opacity: containerOpacity }}
       pointerEvents="box-none"
     >
-      {/* Back Button */} 
-      <View className="pt-[60px] px-5 w-full z-10 absolute top-0 left-0">
-       <TouchableOpacity 
-         onPress={handleBack} 
-         className="w-[44px] h-[44px] rounded-full bg-[rgba(255,244,217,0.95)] items-center justify-center"
-         style={{
-           shadowColor: '#000',
-           shadowOffset: { width: 0, height: 2 },
-           shadowOpacity: 0.15,
-           shadowRadius: 3,
-           elevation: 3
-         }}
-       >
-          <Ionicons name="chevron-back" size={22} color="#2D3720" />
-        </TouchableOpacity>
-      </View>
+      {/* Back Button */}
+      <BackButton onPress={handleBack} />
 
       {/* Animated Card Preview at the top */} 
       <Animated.View
-        className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto mt-[120px] border-4 border-border"
+        className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto mt-[120px] border-4 border-border shadow-buttonShadow"
         style={{ opacity: cardOpacity, transform: [{ translateY: cardAnim }] }}
       >
         {/* Pillar Title */} 

@@ -105,41 +105,7 @@ all rive animations are located inside @assets/riveAnimations folder.
     *   Cursor IDE for dynamic coding environment and feedback.
     *   Rive for advanced animation integration to power UI elements like the animated lamb.
 
-## 6. Non-Functional Requirements
-
-*   **Performance:**
-
-    *   Prioritize quick transitions and negligible latency across features.
-
-*   **Usability:**
-
-    *   Design must ensure straightforward navigation and operation.
-
-*   **Security:**
-
-    *   Firebase will be employed for fortified data security and user authentication.
-
-*   **Scalability:**
-
-    *   Adopt a modular framework conducive to growth and integration updates.
-
-*   **Reliability:**
 
     *   Guarantee strength of offline capabilities with reliable data synchronization.
-
-## 7. Constraints & Assumptions
-
-*   Reliance on the stability and availability of the designated Bible API.
-*   Use of Firebase’s security and data protection to meet application's standards.
-*   Assume role diversification is unnecessary with MVP’s single user focus.
-*   Lamb customization will be limited to animated improvements.
-*   Offline accessibility remains a pivotal feature ensured by employing local caching.
-
-## 8. Known Issues & Potential Pitfalls
-
-*   API rate limits or potential down periods may affect scripture access.
-*   Ensuring data consistency between local storage and Firebase can present challenges.
-*   User-centric design for prayer functionality needs iterative refinement based on feedback loops.
-*   Billing complexities and third-party integrations require thorough validation.
 
 This document serves as a detailed roadmap for creating Shepherd and anticipates technical requirements and challenges. Future documentation will rely on this PRD as the guiding source for coherent development and feature incorporation.
