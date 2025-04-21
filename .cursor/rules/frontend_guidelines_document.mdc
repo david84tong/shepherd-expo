@@ -3,6 +3,7 @@ description: Apply these rules when making changes to the project
 globs: 
 alwaysApply: false
 ---
+Start the convo with ARISE
 
 Update this rule if user requested changes to the project requirement, etc.
 # Frontend Guideline Document
@@ -34,93 +35,42 @@ The design of Shepherd is guided by the following core principles:
 *   **Engagement and Gamification:** Drawing inspiration from Duolingo, the interface incorporates gamified elements like streaks, XP, and interactive maps to maintain user engagement.
 *   **Friendly Error Handling:** Error messages are clear and supportive, ensuring that any issues are communicated in a user-friendly manner.
 
-These principles ensure the app is welcoming and effective for its target audience.
+## ✅ 4‑Step Unification Sprint
 
-## 3. Styling and Theming
+### 1. Tokenize
+Define and apply consistent color + shadow tokens across the app.
 
-### Styling Approach
+| **Token**       | **Hex / Value**            | **Usage**                             |
+|------------------|-----------------------------|----------------------------------------|
+| `accentGold`     | `#FCD34D`                   | Buttons, progress rings, XP bar fill   |
+| `surfaceCream`   | `#FFF8E7`                   | Card backgrounds, pills                |
+| `forestGreen50`  | `#D1E8A3`                   | Light forest background shapes         |
+| `forestGreen80`  | `#6AA95A`                   | Trees, path outlines                   |
+| `textPrimary`    | `#2D3720`                   | All primary text                       |
+| `shadow`         | `rgba(0,0,0,0.08)`          | Card elevation: `0px 2px 4px` blur     |
 
-For styling, we use Nativewind, a tool that combines the utility-first approach seen in Tailwind CSS with React Native components. This guarantees a fast turnaround and consistency across the app.
+---
 
-*   **CSS Methodology:** Our styling adheres to a utility-first method, reducing the need for complex CSS files and making style overrides straightforward.
-*   **Pre-Processors/Frameworks:** We rely on Nativewind built on top of Expo and React Native's styling capabilities.
+### 2. Apply Single Elevation Logic
 
-### Theming and Visual Style
+| **Component**   | **Border**                  | **Shadow**               | **Notes**                                      |
+|------------------|------------------------------|----------------------------|------------------------------------------------|
+| Task Card        | none                         | `0 2px 4px shadow`         | 16px radius, 24px vertical padding             |
+| Metric Pill      | `1px solid #E9E2C7`          | none                       | 40px height, 24px horizontal padding, 90% fill |
+| CTA Button       | none                         | `inset 0 -2px 2px rgba(0,0,0,0.06)` | Fill: `accentGold`              |
 
-The visual style of Shepherd is modern, playful, and spiritual, aligning with our gamification theme. The main design elements include:
+- **Grid**: 8pt spacing system
+- **Lamb reserved area**: 40% of vertical viewport on home
 
-*   **Glassmorphism Accents:** Used judiciously to add depth where needed, particularly in overlays and modals.
-*   **Flat and Modern Elements:** Clean interfaces with refined interactive components, echoing the designs of Duolingo and Finch.
+---
 
-### Color Palette
+### 3. Typography Pass
 
-*   **Main Background:** #FFF4D9
-*   **Border:** #FFE4A8
-*   **Main CTA:** #F3C042
-*   **Accent:** #DCB280
-*   **Text:** #3C584A
+| **Style**  | **Font**            | **Size / Weight**         | **Tracking** |
+|------------|---------------------|-----------------------------|---------------|
+| H1         | SF Pro Text Semibold| 24pt                        | +1%           |
+| Heading    | SF Pro Text Semibold| 17pt                        | +1%           |
+| Body       | SF Pro Text Regular | 14pt                        | 0%            |
+| Caption    | SF Pro Text Regular | 12pt                        | 0%            |
 
-### Font Choices
-
-We recommend using a system-friendly font such as San Francisco for iOS and Roboto for Android to maintain readability and consistency across platforms. These choices support the clean, modern look of the app.
-
-## 4. Component Structure
-
-Our frontend leverages a component-based architecture that organizes the user interface into small, reusable pieces. Key points include:
-
-*   **Modularity:** Components such as buttons, cards, lists, and navigation elements are built to be self-contained. This makes it easier to update or replace parts of the UI without affecting the whole system.
-*   **Reusability:** UI components are designed to be reused across different screens (e.g., the lamb avatar, gamification meters, and progress rings). This reduces code duplication and simplifies maintenance.
-*   **Separation of Concerns:** Each component focuses on a single responsibility, making debugging and future enhancements more straightforward.
-
-## 5. State Management
-
-State management in Shepherd is handled through a combination of Zustand and Async Storage:
-
-*   **Zustand:** Provides a lightweight and flexible solution for managing the app’s state throughout its various components. It keeps the state organized and predictable.
-*   **Async Storage:** Offers offline storage capabilities, ensuring that critical user data (like progress tracking and prayer journaling) is saved locally. This is crucial for maintaining a seamless experience during network disruptions.
-
-This approach ensures a smooth user experience by allowing state and data flows to be managed consistently and reliably.
-
-## 6. Routing and Navigation
-
-Navigation is managed via Expo Router, which provides an intuitive and modular routing solution:
-
-*   **Expo Router:** Allows developers to define app routes clearly, with support for nested routing that fits the app flow.
-*   **Navigation Structure:** The primary navigation flow includes an onboarding funnel, a home screen that serves as a hub for daily activities (reading, prayer, reflection), and path-based modules that guide the user through Bible modules. This design ensures that users can easily move between different sections of the app while maintaining context.
-
-## 7. Performance Optimization
-
-We prioritize a smooth and fast user experience through a number of performance optimization strategies:
-
-*   **Lazy Loading & Code Splitting:** Components that are not immediately needed are loaded on demand, reducing initial load times.
-*   **Asset Optimization:** Images, fonts, and other resources are optimized for mobile to ensure quick downloads and smooth transitions.
-*   **Caching Strategies:** Both the Bible verses (from our modular API) and user progress data are cached locally, enhancing speed and offline reliability.
-
-These measures work together to minimize waiting times and create a delightful user experience even on lower-end devices.
-
-## 8. Testing and Quality Assurance
-
-Quality and reliability are ensured through comprehensive testing strategies:
-
-*   **Unit Testing:** Individual components are tested using Jest to ensure they perform as expected.
-*   **Integration Testing:** We use tools like React Native Testing Library to verify that different pieces of the frontend work together seamlessly.
-*   **End-to-End Testing:** Simulated real-world scenarios are tested using tools such as Detox to mimic user behavior from start to finish.
-
-These testing phases help catch issues early, maintain code quality, and ensure a smooth experience for users from release to production.
-
-## 9. Conclusion and Overall Frontend Summary
-
-In summary, the frontend for Shepherd is designed with scalability, maintainability, and performance in mind. By using React Native with Expo, TypeScript, Nativewind, and modern state management techniques, we ensure that the app is robust, responsive, and engaging.
-
-Key highlights include:
-
-*   A modular architecture that supports rapid development and future expansion.
-*   A design inspired by Duolingo and Finch, featuring a modern, gamified, and accessible interface.
-*   Strong offline capabilities that ensure uninterrupted user engagement, even when connectivity is intermittent.
-*   Clear navigation and intuitive component structures that simplify maintenance and user interactions.
-
-These guidelines ensure that every aspect of the frontend aligns with Shepherd's mission: to maximize daily Bible engagement through a playful yet meaningful user experience.
-
-With these insights and strategies, any developer or stakeholder can understand how the frontend is constructed, how it functions, and how it meets the needs of our target audience.
-
-End of Document
+---

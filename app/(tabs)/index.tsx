@@ -1,4 +1,4 @@
-import { View, Text, SafeAreaView, Platform, Image, Button, Animated, StyleSheet, Easing, TouchableOpacity } from 'react-native';
+import { View, Text, SafeAreaView, Platform, Image, Button, Animated, Easing, TouchableOpacity, Dimensions } from 'react-native';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import { useRef, useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
@@ -8,6 +8,11 @@ import PrayerComponent from '../../components/PrayerComponent';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
 import JournalComponent from '../../components/JournalComponent';
 import { useHomeStore, HomeMode } from '../../store/homeStore'; // Import Zustand store
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
+const LAMB_VIEWPORT_PERCENTAGE = 0.40; // 40%
+const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
+const SMALL_LAMB_SIZE = BASE_LAMB_SIZE * 0.75; // 75% of base size
 
 // Backgrounds
 const grassBg = require('../../assets/backgrounds/defaultBackground.png');
@@ -90,7 +95,7 @@ export default function HomeScreen() {
   // Lamb size interpolation
   const lambSize = lambSizeAnim.interpolate({
     inputRange: [0.75, 1],
-    outputRange: [165, 220], // 220 * 0.75 = 165 (25% smaller)
+    outputRange: [SMALL_LAMB_SIZE, BASE_LAMB_SIZE],
     extrapolate: 'clamp'
   });
 
@@ -213,15 +218,15 @@ export default function HomeScreen() {
 
 
   return (
-    <View style={{ flex: 1 }}>
+    <View className="flex-1">
       {/* Background Layers */} 
-      <Animated.Image source={grassBg} style={[styles.backgroundImage, { opacity: grassOpacityAnim }]} resizeMode="cover" />
-      <Animated.Image source={pathBg} style={[styles.backgroundImage, { opacity: pathOpacityAnim }]} resizeMode="cover" />
-      <Animated.Image source={journalBg} style={[styles.backgroundImage, { opacity: journalOpacityAnim }]} resizeMode="cover" />
+      <Animated.Image source={grassBg} style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: grassOpacityAnim }]} resizeMode="cover" />
+      <Animated.Image source={pathBg} style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: pathOpacityAnim }]} resizeMode="cover" />
+      <Animated.Image source={journalBg} style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: journalOpacityAnim }]} resizeMode="cover" />
       <Animated.Image
         source={waterBg}
         style={[
-          styles.backgroundImage,
+          {position: 'absolute', width: '100%', height: '100%'},
           { 
             opacity: waterOpacityAnim, 
             transform: [{ translateY: waterTranslateY }, { scale: waterScale }] 
@@ -232,29 +237,35 @@ export default function HomeScreen() {
 
       <SafeAreaView className="flex-1">
         {/* Header: Contains logic for showing Back OR Title/Stats */} 
-        <View style={styles.headerContainer}>
+        <View className="flex-row justify-between items-center px-6 pt-1 pb-4 h-[50px] relative">
             {/* Animated Back Button */} 
             <Animated.View style={{ opacity: headerBackOpacityAnim }} pointerEvents={mode === 'DEFAULT' ? 'none' : 'auto'}>
-              <TouchableOpacity onPress={handleCloseOverlay} style={styles.headerBackButton} disabled={mode === 'DEFAULT'}>
-                <Text style={styles.headerBackText}>←</Text>
+              <TouchableOpacity onPress={handleCloseOverlay} className="py-2 pr-4" disabled={mode === 'DEFAULT'}>
+                <Text className="text-3xl text-white font-feather">←</Text>
               </TouchableOpacity>
             </Animated.View>
 
             {/* Animated Default Header Elements (Title + Stats) */} 
             <Animated.View 
-              style={[styles.headerDefaultContentContainer, { opacity: headerDefaultOpacityAnim }]}
+              className="absolute inset-0 flex-row items-center justify-between"
+              style={[{ opacity: headerDefaultOpacityAnim }]}
               pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}
             >
-              <Text style={styles.headerTitle}>Shepherd</Text>
-              <View style={{ flex: 1 }} />
-              <View style={styles.headerRightGroup}>
-                <View style={styles.streakContainer}>
-                  <Text style={styles.streakNumber}>2</Text>
-                  <Image source={flameIcon} style={styles.streakIcon} />
+              <Text 
+                className="text-h1 font-sans-semibold text-white ml-5 tracking-wide"
+                style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}
+              >
+                Shepherd
+              </Text>
+              <View className="flex-1" />
+              <View className="flex-row items-center gap-1 mr-5">
+                <View className="flex-row items-center bg-white/30 rounded-full px-3 py-1.5 h-9 border border-pillBorder">
+                  <Text className="font-sans-semibold text-body text-white mr-1">2</Text>
+                  <Image source={flameIcon} className="w-5 h-5" />
                 </View>
-                <View style={styles.heartContainer}>
-                  <Text style={styles.heartNumber}>87/100</Text>
-                  <Image source={heartIcon} style={styles.heartIcon} />
+                <View className="flex-row items-center bg-white/30 rounded-full px-3 py-1.5 h-9 border border-pillBorder">
+                  <Text className="font-sans-semibold text-body text-white mr-1">87/100</Text>
+                  <Image source={heartIcon} className="w-5 h-5" />
                 </View>
               </View>
             </Animated.View>
@@ -262,50 +273,57 @@ export default function HomeScreen() {
 
         {/* Top Section - Lamb Avatar */} 
          <Animated.View
-          style={[styles.riveWrapper, {
-            opacity: lambOpacityAnim, // Apply opacity animation
+          className="items-center justify-center"
+          style={{
+            opacity: lambOpacityAnim,
             transform: [
               { translateX: lambTranslateX },
               { translateY: lambTranslateY }
-            ]
-          }]}>
-          <Animated.View style={[
-            styles.riveContainer, 
-            { 
+            ],
+            height: BASE_LAMB_SIZE
+          }}>
+          <Animated.View 
+            className="items-center justify-center overflow-hidden"
+            style={{ 
               width: lambSize, 
               height: lambSize 
-            }
-          ]}>
+            }}
+          >
             {riveError ? (
-              <Text style={styles.errorText}>
+              <Text className="text-red-500 p-4 text-center">
                 Error loading animation: {riveError.message} ({riveError.type})
               </Text>
             ) : (
-              <Rive
-                ref={riveRef}
-                resourceName={riveResourceName}
-                autoplay={true}
-                onError={handleRiveError}
-                style={{ width: '100%', height: '100%' }} // Fill container
-              />
+              <View className="w-full h-full">
+                <Rive
+                  ref={riveRef}
+                  resourceName={riveResourceName}
+                  artboardName="Shepherd Animation"
+                  autoplay={true}
+                  onError={handleRiveError}
+                  style={{ width: '100%', height: '100%' }}
+                />
+              </View>
             )}
           </Animated.View>
         </Animated.View>
 
         {/* Bottom Section - Action Buttons Card */} 
         <Animated.View
-          style={[styles.bottomCard, {
+          className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2"
+          style={{
+            ...Platform.select({ ios: { shadowColor: 'rgba(0,0,0,0.08)', shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, shadowOpacity: 1, }, android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)', }, }),
             opacity: bottomCardOpacity,
             transform: [{ translateY: bottomCardTranslateY }],
-          }]}>
+          }}>
           
-          <View style={styles.xpBarContainer}>
-            <View style={styles.levelContainer}>
-              <Image source={starIcon} style={styles.levelStarIcon} />
-              <Text style={styles.levelText}>LVL 1</Text>
+          <View className="flex-row items-center gap-2.5 mb-4 px-1">
+            <View className="flex-row items-center gap-1">
+              <Image source={starIcon} className="w-6 h-6" />
+              <Text className="font-sans-semibold text-body text-textPrimary">LVL 1</Text>
             </View>
-            <View style={styles.pillOuter}>
-              <View style={styles.pillInner} />
+            <View className="flex-1 h-2.5 bg-pillBorder rounded-full border border-pillBorder overflow-hidden">
+              <View className="h-full w-1/4 bg-accentGold rounded-full" />
             </View>
           </View>
 
@@ -352,172 +370,4 @@ export default function HomeScreen() {
       </SafeAreaView>
     </View>
   );
-}
-
-// Styles
-const styles = StyleSheet.create({
-  backgroundImage: {
-    ...StyleSheet.absoluteFillObject,
-    width: "100%",
-    height: "100%",
-  },
-  headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-    paddingTop: Platform.OS === 'ios' ? 4 : 16, 
-    marginBottom: 16,
-    // Allow positioning context for absolute positioned children
-    position: 'relative', 
-    height: 50, // Give header container a fixed height
-  },
-  headerBackButton: {
-    paddingVertical: 8, 
-    paddingRight: 16,
-    // Position within the parent container for absolute positioning
-    // Ensure it doesn't affect the layout flow of the default header
-  },
-  headerBackText: {
-    fontSize: 28, 
-    color: 'white', 
-    fontFamily: 'Feather Bold' 
-  },
-  headerDefaultContentContainer: {
-    // Takes up the full space to align items correctly
-    ...StyleSheet.absoluteFillObject,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    // Padding is handled by parent headerContainer
-  },
-  headerTitle: {
-    fontFamily: 'Feather Bold',
-    fontSize: 28,
-    color: 'white',
-    textShadowColor: 'rgba(0, 0, 0, 0.2)', 
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 2,
-    marginLeft: 20,
-    // Ensure title doesn't overlap back button area
-    // No extra margin needed if positioned correctly within flex container
-  },
-  headerRightGroup: { 
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4, 
-    marginRight: 20,
-    // marginRight: 0, // No extra margin needed if parent is spaced correctly
-  },
-  streakContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 99,
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-  },
-  streakNumber: {
-    fontFamily: 'Feather Bold',
-    fontSize: 18,
-    color: 'white',
-    marginRight: 4,
-  },
-  streakIcon: {
-    width: 32,
-    height: 32,
-  },
-  heartContainer: { // Style for the heart container
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
-    borderRadius: 99,
-    paddingHorizontal: 10, // Adjusted padding
-    paddingVertical: 4,
-  },
-  heartNumber: { // Style for the heart text
-    fontFamily: 'Feather Bold',
-    fontSize: 18, 
-    color: 'white',
-    marginRight: 6, // Adjusted spacing
-  },
-  heartIcon: { // Style for the heart icon
-    width: 32, 
-    height: 32,
-  },
-  riveWrapper: {
-    flex: Platform.OS === 'ios' ? 0.7 : 0.6, 
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  riveContainer: {
-    width: 220, 
-    height: 220,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  errorText: {
-    color: 'red',
-    padding: 16,
-    textAlign: 'center',
-  },
-  bottomCard: {
-    flex: 1, 
-    backgroundColor: '#FFF4D9', 
-    borderTopLeftRadius: 30,
-    borderTopRightRadius: 30,
-    paddingHorizontal: 24,
-    paddingTop: 16, 
-    paddingBottom: 16, 
-    marginTop: -80, 
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: -5 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 10,
-    justifyContent: 'flex-start', 
-    gap: 8, 
-  },
-  xpBarContainer: { 
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10, 
-    marginBottom: 8, 
-    paddingHorizontal: 4, 
-  },
-  levelContainer: { 
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4, 
-  },
-  levelText: {
-    fontFamily: 'Feather Bold',
-    fontSize: 18,
-    color: '#8B5E3C', 
-  },
-  levelStarIcon: {
-    width: 32, 
-    height: 32,
-  },
-  pillOuter: {
-    flex: 1, 
-    height: 14, 
-    backgroundColor: '#E0D5B9', 
-    borderRadius: 999, 
-    borderWidth: 1,
-    borderColor: '#C8BBA0', 
-    shadowColor: '#000', 
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-    justifyContent: 'center', 
-  },
-  pillInner: {
-    height: '100%', 
-    width: '25%', 
-    backgroundColor: '#F4C244', 
-    borderRadius: 999,
-  },
-}); 
+} 
