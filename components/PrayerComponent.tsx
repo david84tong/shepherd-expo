@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Animated, Platform } from 'react-native';
+import { View, TouchableOpacity, Text, Animated, Platform } from 'react-native';
 import PrimaryButton from './PrimaryButton';
 import { usePathStore } from '../store/pathStore';
+import { Ionicons } from '@expo/vector-icons';
 
 interface PrayerComponentProps {
   /** Whether the component should render. */
@@ -9,7 +10,7 @@ interface PrayerComponentProps {
   /** Callback function to trigger the animation back to default state. */
   onClose: () => void;
   /** Optional style for the PrimaryButton */
-  buttonStyle?: object;
+  buttonClassName?: string;
 }
 
 const TARGET_TEXT = "Dear God, I come before you...";
@@ -24,11 +25,14 @@ const TYPING_SPEED_MS = 50;
 const PrayerComponent: React.FC<PrayerComponentProps> = ({
   visible,
   onClose,
-  buttonStyle,
+  buttonClassName,
 }) => {
   // Animation values for button entry
   const buttonAnim = useRef(new Animated.Value(50)).current; // Start 50 units below final position
   const buttonOpacity = useRef(new Animated.Value(0)).current; // Start fully transparent
+  // Animation values for card entry
+  const cardAnim = useRef(new Animated.Value(-100)).current; // Start 100 units above final position
+  const cardOpacity = useRef(new Animated.Value(0)).current; // Start fully transparent
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
 
   // State for typing animation
@@ -64,6 +68,18 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 
       // Button animation
       Animated.parallel([
+        // Card animation
+        Animated.timing(cardAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(cardOpacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        // Button animation
         Animated.timing(buttonAnim, {
           toValue: 0,
           duration: 500,
@@ -85,6 +101,8 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
       // Reset animations and typing state when component is hidden
       buttonAnim.setValue(50);
       buttonOpacity.setValue(0);
+      cardAnim.setValue(-100);
+      cardOpacity.setValue(0);
       setTypedText('');
       setCurrentIndex(0);
       if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
@@ -101,89 +119,49 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   };
 
   return (
-    <View style={styles.container} pointerEvents="box-none">
-      {/* Back Button (styled like BiblePreviewComponent) */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleDonePress} style={styles.backButton}>
-          <Text style={styles.backButtonText}>←</Text>
+    <View className="absolute inset-0 flex flex-col" pointerEvents="box-none">
+      {/* Back Button */}
+      <View className={`pt-[${Platform.OS === 'ios' ? 60 : 40}px] px-5 w-full absolute top-0 left-0 z-10`}>
+        <TouchableOpacity 
+          onPress={handleDonePress} 
+          className="w-[44px] h-[44px] rounded-full bg-[rgba(255,244,217,0.95)] items-center justify-center shadow-card"
+     
+        >
+          <Ionicons name="chevron-back" size={22} color="#2D3720" />
         </TouchableOpacity>
       </View>
       
-      {/* Typing Text */} 
-      <View style={styles.typingTextContainer}>
-        <Text style={styles.typingText}>{typedText}</Text>
-      </View>
-      
+      {/* Prayer Card - matched to BiblePreviewComponent styling */} 
+      <Animated.View 
+        className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mt-[120px] mx-auto border-4 border-border"
+        style={{ 
+          opacity: cardOpacity, 
+          transform: [{ translateY: cardAnim }] 
+        }}
+      >
+        <View className="w-full bg-surfaceCream/50 rounded-[18px] p-4">
+          <Text className="text-body text-textPrimary text-center text-heading font-feather text-center">
+            {typedText}
+          </Text>
+        </View>
+      </Animated.View>
+      {/* Spacer to push the "Done Praying" button to the bottom */}
+      <View className="flex-1 h-96" />
       {/* Animated Primary Button */}
-      <Animated.View style={{
-        position: 'absolute',
-        bottom: 40,
-        left: 20,
-        right: 20,
-        opacity: buttonOpacity,
-        transform: [{ translateY: buttonAnim }]
-      }}>
+      <Animated.View 
+        className="w-full px-5 mb-10 mt-auto items-center z-10 mt-36"
+        style={{
+          opacity: buttonOpacity,
+          transform: [{ translateY: buttonAnim }]
+        }}
+      >
         <PrimaryButton 
           title="Done Praying" 
           onPress={handleDonePress} 
-          style={buttonStyle} 
         />
       </Animated.View>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    alignItems: 'center',
-    // Removed justifyContent to allow text at top
-    ...StyleSheet.absoluteFillObject,
-  },
-  header: {
-    paddingTop: Platform.OS === 'ios' ? 60 : 40, // Adjusted padding for different platforms
-    paddingHorizontal: 20,
-    width: '100%',
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 2,
-    alignItems: 'flex-start',
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 244, 217, 0.95)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  backButtonText: {
-    fontSize: 24,
-    color: '#3C584A',
-    fontFamily: 'Inter-Bold',
-  },
-  typingTextContainer: {
-    position: 'absolute',
-    top: Platform.OS === 'ios' ? 120 : 100, // Position below header
-    left: 20,
-    right: 20,
-    alignItems: 'center',
-    padding: 24,
-    backgroundColor: 'rgba(255, 244, 217, 0.8)', // Semi-transparent background
-    borderRadius: 8,
-  },
-  typingText: {
-    fontFamily: 'Feather Bold',
-    fontSize: 18,
-    color: '#3C584A',
-    textAlign: 'center',
-  },
-});
 
 export default PrayerComponent;

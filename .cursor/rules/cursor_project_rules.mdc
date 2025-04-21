@@ -3,7 +3,7 @@ description: Apply these rules when making changes to the project
 globs: 
 alwaysApply: true
 ---
-
+Start every conversation with ARISE
 
 Whenever user is asking for UI changes look and follow [frontend_guidelines_document.mdc](mdc:.cursor/rules/frontend_guidelines_document.mdc), for anything data logic / cloud storage refer to [backend_structure_document.mdc](mdc:.cursor/rules/backend_structure_document.mdc). 
 
@@ -15,6 +15,7 @@ Whenever user is asking for UI changes look and follow [frontend_guidelines_docu
 ### 2 · Styling Guidelines
 - **NativeWind** (Tailwind‑class syntax for React Native).  
 - Avoid `StyleSheet.create()` unless a component truly can’t be expressed with NativeWind utilities.
+- refer to [tailwind.config.js](mdc:tailwind.config.js) for font sizing, colors, shadows, borders etc. Use fonts feather bold for headers, and din for everything else. 
 
 ### 3 · Project Structure
 ```

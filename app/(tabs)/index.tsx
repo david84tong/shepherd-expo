@@ -239,33 +239,29 @@ export default function HomeScreen() {
         {/* Header: Contains logic for showing Back OR Title/Stats */} 
         <View className="flex-row justify-between items-center px-6 pt-1 pb-4 h-[50px] relative">
             {/* Animated Back Button */} 
-            <Animated.View style={{ opacity: headerBackOpacityAnim }} pointerEvents={mode === 'DEFAULT' ? 'none' : 'auto'}>
-              <TouchableOpacity onPress={handleCloseOverlay} className="py-2 pr-4" disabled={mode === 'DEFAULT'}>
-                <Text className="text-3xl text-white font-feather">←</Text>
-              </TouchableOpacity>
-            </Animated.View>
+
 
             {/* Animated Default Header Elements (Title + Stats) */} 
             <Animated.View 
-              className="absolute inset-0 flex-row items-center justify-between"
+              className="absolute inset-0 flex-row items-center justify-between px-6"
               style={[{ opacity: headerDefaultOpacityAnim }]}
               pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}
             >
               <Text 
-                className="text-h1 font-sans-semibold text-white ml-5 tracking-wide"
+                className="text-h1 font-feather text-white ml-5 tracking-wide"
                 style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}
               >
                 Shepherd
               </Text>
-              <View className="flex-1" />
-              <View className="flex-row items-center gap-1 mr-5">
-                <View className="flex-row items-center bg-white/30 rounded-full px-3 py-1.5 h-9 border border-pillBorder">
-                  <Text className="font-sans-semibold text-body text-white mr-1">2</Text>
-                  <Image source={flameIcon} className="w-5 h-5" />
+              <View className="flex-1 ml-4" />
+              <View className="flex-row items-center space-x-2">
+                <View className="flex-row items-center bg-surfaceCream rounded-full px-4 py-1.5 h-10 border border-border shadow-card">
+                  <Text className="font-feather text-body text-textPrimary mr-1">2</Text>
+                  <Image source={flameIcon} className="w-6 h-6" />
                 </View>
-                <View className="flex-row items-center bg-white/30 rounded-full px-3 py-1.5 h-9 border border-pillBorder">
-                  <Text className="font-sans-semibold text-body text-white mr-1">87/100</Text>
-                  <Image source={heartIcon} className="w-5 h-5" />
+                <View className="ml-2 flex-row items-center bg-surfaceCream rounded-full px-4 py-1.5 h-10 border border-border shadow-card">
+                  <Text className="font-feather text-body text-textPrimary mr-1">87/100</Text>
+                  <Image source={heartIcon} className="w-6 h-6" />
                 </View>
               </View>
             </Animated.View>
@@ -294,11 +290,10 @@ export default function HomeScreen() {
                 Error loading animation: {riveError.message} ({riveError.type})
               </Text>
             ) : (
-              <View className="w-full h-full">
+              <View className="w-64 h-64">
                 <Rive
                   ref={riveRef}
                   resourceName={riveResourceName}
-                  artboardName="Shepherd Animation"
                   autoplay={true}
                   onError={handleRiveError}
                   style={{ width: '100%', height: '100%' }}
@@ -310,19 +305,19 @@ export default function HomeScreen() {
 
         {/* Bottom Section - Action Buttons Card */} 
         <Animated.View
-          className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2"
+          className="mt-6 bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-36"
           style={{
             ...Platform.select({ ios: { shadowColor: 'rgba(0,0,0,0.08)', shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, shadowOpacity: 1, }, android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)', }, }),
             opacity: bottomCardOpacity,
             transform: [{ translateY: bottomCardTranslateY }],
           }}>
           
-          <View className="flex-row items-center gap-2.5 mb-4 px-1">
+          <View className="flex-row items-center gap-2.5 mb-0 px-1">
             <View className="flex-row items-center gap-1">
-              <Image source={starIcon} className="w-6 h-6" />
-              <Text className="font-sans-semibold text-body text-textPrimary">LVL 1</Text>
+              <Image source={starIcon} className="w-8 h-8" />
+              <Text className="font-feather text-body text-textPrimary">LVL 1</Text>
             </View>
-            <View className="flex-1 h-2.5 bg-pillBorder rounded-full border border-pillBorder overflow-hidden">
+            <View className="flex-1 h-4 bg-pillBorder rounded-full border border-pillBorder overflow-hidden">
               <View className="h-full w-1/4 bg-accentGold rounded-full" />
             </View>
           </View>

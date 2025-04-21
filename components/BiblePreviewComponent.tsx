@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import PrimaryButton from './PrimaryButton';
 import { router } from 'expo-router';
 import { usePathStore } from '../store/pathStore';
+import { Ionicons } from '@expo/vector-icons';
 
 interface BiblePreviewProps {
   /** Whether the preview overlay should be shown. */
@@ -99,142 +100,57 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   };
 
   return (
-    <Animated.View style={[styles.container, { opacity: containerOpacity }]} pointerEvents="box-none">
+    <Animated.View
+      className="absolute inset-0 flex flex-col"
+      style={{ opacity: containerOpacity }}
+      pointerEvents="box-none"
+    >
       {/* Back Button */} 
-      <View style={styles.header}>
-        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-          <Text style={styles.backButtonText}>←</Text>
+      <View className="pt-[60px] px-5 w-full z-10 absolute top-0 left-0">
+       <TouchableOpacity 
+         onPress={handleBack} 
+         className="w-[44px] h-[44px] rounded-full bg-[rgba(255,244,217,0.95)] items-center justify-center"
+         style={{
+           shadowColor: '#000',
+           shadowOffset: { width: 0, height: 2 },
+           shadowOpacity: 0.15,
+           shadowRadius: 3,
+           elevation: 3
+         }}
+       >
+          <Ionicons name="chevron-back" size={22} color="#2D3720" />
         </TouchableOpacity>
       </View>
 
       {/* Animated Card Preview at the top */} 
-      <Animated.View style={[styles.card, {
-        opacity: cardOpacity,
-        transform: [{ translateY: cardAnim }],
-        alignSelf: 'center',
-        marginTop: 24,
-      }]}
+      <Animated.View
+        className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto mt-[120px] border-4 border-border"
+        style={{ opacity: cardOpacity, transform: [{ translateY: cardAnim }] }}
       >
         {/* Pillar Title */} 
-        <Text style={styles.pillarTitle}>The Good Shepherd</Text>
+        <Text className="text-h1 font-feather text-accentGold mb-2 text-center leading-tight ">The Good Shepherd</Text>
         {/* Date or subtitle */} 
-        <Text style={styles.dateText}>Today's Reading · {savedBook} {savedChapter}</Text>
+        <Text className="text-body font-din text-[#B89B4C] mb-4">Today's Reading · {savedBook} {savedChapter}</Text>
         {/* Summary Section */} 
-        <View style={styles.summarySection}>
-          <Text style={styles.summaryLabel}>SUMMARY</Text>
-          <Text style={styles.summaryText}>
+        <View className="w-full bg-surfaceCream/50 rounded-[18px] p-4 mt-2 border border-border mb-2">
+          <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-1 tracking-wider">SUMMARY</Text>
+          <Text className="text-body font-din text-textPrimary text-center">
             {savedBook === 'John' && savedChapter === 3 ? 
               "Jesus teaches Nicodemus about being born again and God's love for the world." : 
               "Jesus describes Himself as the Good Shepherd who lays down His life for the sheep."}
           </Text>
         </View>
       </Animated.View>
-
-      {/* Animated Bottom Button */} 
-      <Animated.View style={[styles.bottomButton, {
-        opacity: buttonOpacity,
-        transform: [{ translateY: buttonAnim }]
-      }]}>
+      <View className="flex-1 h-96" />
+      {/* Animated Primary Button */}
+      <Animated.View 
+        className="w-full px-5 mb-10 mt-auto items-center z-10 mt-0"
+        style={{ opacity: buttonOpacity, transform: [{ translateY: buttonAnim }] }}
+      >
         <PrimaryButton title="Start Reading" onPress={handleStart} />
       </Animated.View>
     </Animated.View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    ...StyleSheet.absoluteFillObject,
-    // Added background color to make opacity noticeable
-    backgroundColor: 'rgba(0,0,0,0.1)', // Example: slight dark overlay
-  },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    width: '100%',
-    // Ensure header is above potential container background
-    zIndex: 1,
-  },
-  backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 244, 217, 0.95)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 3,
-    elevation: 3,
-  },
-  backButtonText: {
-    fontSize: 24,
-    color: '#3C584A',
-    fontFamily: 'Inter-Bold',
-  },
-  card: {
-    width: '90%',
-    backgroundColor: '#FFF4D9',
-    borderRadius: 28,
-    paddingVertical: 32,
-    paddingHorizontal: 24,
-    shadowColor: '#EAA800',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 8,
-    alignItems: 'center',
-    // Ensure card is above potential container background
-    zIndex: 1,
-  },
-  pillarTitle: {
-    fontSize: 28,
-    fontFamily: 'Feather Bold',
-    color: '#EAA800',
-    marginBottom: 8,
-    letterSpacing: 1.2,
-    textAlign: 'center',
-  },
-  dateText: {
-    fontSize: 15,
-    color: '#B89B4C',
-    fontFamily: 'Inter-Regular',
-    marginBottom: 4,
-    textAlign: 'center',
-  },
-  summarySection: {
-    width: '100%',
-    backgroundColor: '#FFF9ED',
-    borderRadius: 18,
-    padding: 16,
-    marginTop: 8,
-    borderWidth: 1,
-    borderColor: '#FFE4A8',
-  },
-  summaryLabel: {
-    fontSize: 13,
-    color: '#B89B4C',
-    fontFamily: 'Inter-Bold',
-    marginBottom: 4,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
-  },
-  summaryText: {
-    fontSize: 16,
-    color: '#3C584A',
-    fontFamily: 'Inter-Regular',
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  bottomButton: {
-    position: 'absolute',
-    bottom: 40,
-    left: 20,
-    right: 20,
-    alignItems: 'center',
-    // Ensure button is above potential container background
-    zIndex: 1,
-  },
-});
 
 export default BiblePreviewComponent;

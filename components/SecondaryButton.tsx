@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, View, Text, Image, ImageSourcePropType, StyleSheet, Animated } from 'react-native';
+import { TouchableOpacity, View, Text, Image, ImageSourcePropType, Pressable } from 'react-native';
 
 interface SecondaryButtonProps {
   icon: ImageSourcePropType;
@@ -7,7 +7,7 @@ interface SecondaryButtonProps {
   subtitle: string;
   points: number;
   onPress?: () => void;
-  style?: object;
+  style?: string;
   disabled?: boolean;
 }
 
@@ -24,110 +24,37 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   const [isPressed, setIsPressed] = useState(false);
   
   return (
-    <View style={styles.buttonWrapper}>
-      <TouchableOpacity
-        style={[
-          styles.button,
-          isPressed && styles.buttonPressed,
-          disabled && styles.buttonDisabled,
-          style
+    <View className={`mt-6 h-[80px] w-full ${style || ''}`}>
+      <Pressable
+        className={`
+          flex-row items-center h-full w-full rounded-card border-[3px] border-border px-4
+          bg-surfaceCream transform ${!isPressed ? 'shadow-buttonShadow' : ''}
+          ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}
+        `}
+        style={({ pressed }) => [
+          { elevation: pressed ? 3 : 6 }
         ]}
-        activeOpacity={1}
         onPress={onPress}
         disabled={disabled}
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}
       >
-        <Image source={icon} style={styles.icon} resizeMode="contain" />
-        <View style={styles.textContainer}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.subtitle}>{subtitle}</Text>
+        <Image source={icon} className="w-[56px] h-[56px] mr-2 -ml-2" resizeMode="contain" />
+        <View className="flex-1">
+          <Text className="font-feather text-textPrimary text-heading">
+            {title}
+          </Text>
+          <Text className="font-din text-textPrimary/70 text-body">
+            {subtitle}
+          </Text>
         </View>
-        <View style={styles.pointsContainer}>
-          <Text style={styles.points}>+{points}</Text>
-          <Image source={require('../assets/icons/starIcon.png')} style={styles.starIcon} resizeMode="contain" />
+        <View className="rounded-full px-2 py-0.5 flex-row items-center">
+          <Image source={require('../assets/icons/starIcon.png')} className="w-5 h-5 " resizeMode="contain" />
+          <Text className="font-feather text-textPrimary/70 text-caption">+{points}</Text>
         </View>
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  buttonWrapper: {
-    marginTop: 16,
-    height: 80,
-  },
-  button: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    height: '100%',
-    borderRadius: 20,
-    borderWidth: 3,
-    borderColor: '#FFE4A8',
-    backgroundColor: '#F9F3E5',
-    shadowColor: '#FFE4A8',
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 6, // For Android
-    transform: [{ translateY: 0 }],
-  },
-  buttonPressed: {
-    transform: [{ translateY: 3 }],
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    elevation: 3,
-  },
-  buttonDisabled: {
-    backgroundColor: '#F0F0F0',
-    borderColor: '#E0E0E0',
-    shadowOpacity: 0.5,
-    elevation: 2,
-  },
-  icon: {
-    width: 56,
-    height: 56,
-    marginRight: 8,
-    marginLeft: -8
-  },
-  textContainer: {
-    flex: 1,
-  },
-  title: {
-    fontFamily: 'Feather Bold',
-    color: '#3C584A',
-    fontSize: 18,
-  },
-  starIcon: {
-    width: 20,
-    height: 20,
-    marginLeft: 0,
-    padding: 0
-  },
-  subtitle: {
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    color: 'rgba(60, 88, 74, 0.7)',
-    fontSize: 14,
-  },
-  pointsContainer: {
-    backgroundColor: '#FFE4A8',
-    borderRadius: 20,
-    paddingHorizontal: 8, 
-    paddingVertical: 2,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  points: {
-    fontFamily: 'Feather Bold',
-    color: '#7A8B7D',
-    fontSize: 12,
-  },
-});
 
 export default SecondaryButton; 
