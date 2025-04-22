@@ -12,8 +12,8 @@ import {
 import { fetchChapter, ChapterResponse, FetchError, Verse } from './api/bible';
 import PrimaryButton from '../components/PrimaryButton';
 import SideButton from '~/components/SideButton';
-import { usePathStore } from '../store/pathStore';
-import { useHomeStore } from '../store/homeStore';
+import { usePathStore } from './stores/pathStore';
+import { useHomeStore } from './stores/homeStore';
 import { router, useLocalSearchParams } from 'expo-router';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';

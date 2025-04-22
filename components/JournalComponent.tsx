@@ -10,7 +10,7 @@ import {
   Animated
 } from 'react-native';
 import PrimaryButton from './PrimaryButton';
-import { usePathStore } from '../store/pathStore';
+import { usePathStore } from '../app/stores/pathStore';
 import Rive, { RiveRef } from 'rive-react-native';
 import BackButton from './BackButton';
 

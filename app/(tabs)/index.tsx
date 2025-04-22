@@ -7,7 +7,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import PrayerComponent from '../../components/PrayerComponent';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
 import JournalComponent from '../../components/JournalComponent';
-import { useHomeStore, HomeMode } from '../../store/homeStore'; // Import Zustand store
+import { useHomeStore, HomeMode } from '../stores/homeStore'; // Import Zustand store
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.40; // 40%
@@ -350,7 +350,7 @@ export default function HomeScreen() {
           <SecondaryButton 
             icon={dropIcon}
             title="Daily Prayer"
-            subtitle="Feed your soul with scripture"
+            subtitle="Water your soul with prayer"
             points={5}
             onPress={handlePrayerPress}
             disabled={mode !== 'DEFAULT'}
@@ -358,7 +358,7 @@ export default function HomeScreen() {
           <SecondaryButton 
             icon={quillIcon}
             title="Daily Reflection / QT"
-            subtitle="Feed your soul with scripture"
+            subtitle="Pause and reflect on the Word"
             points={5}
             onPress={handleReflectionPress}
             disabled={mode !== 'DEFAULT'}

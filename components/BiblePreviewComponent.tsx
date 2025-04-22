@@ -2,7 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import PrimaryButton from './PrimaryButton';
 import { router } from 'expo-router';
-import { usePathStore } from '../store/pathStore';
+import { usePathStore } from '../app/stores/pathStore';
 import BackButton from './BackButton';
 
 interface BiblePreviewProps {
@@ -110,7 +110,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
 
       {/* Animated Card Preview at the top */} 
       <Animated.View
-        className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto mt-[120px] border-4 border-border shadow-buttonShadow"
+        className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto mt-[120px] border-4 border-border "
         style={{ opacity: cardOpacity, transform: [{ translateY: cardAnim }] }}
       >
         {/* Pillar Title */} 

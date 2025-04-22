@@ -17,7 +17,7 @@ const BackButton: React.FC<BackButtonProps> = ({
   const [isPressed, setIsPressed] = useState(false);
 
   return (
-    <View className={`pt-[${Platform.OS === 'ios' ? 60 : 40}px] px-5 w-full absolute top-0 left-0 z-20 ${containerClassName}`}>
+    <View className={`${Platform.OS === 'ios' ? 'pt-[60px]' : 'pt-[40px]'} px-5 w-full absolute top-0 left-0 z-20 ${containerClassName}`}>
       <Pressable 
         onPress={onPress} 
         disabled={disabled}

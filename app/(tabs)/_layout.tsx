@@ -1,7 +1,7 @@
 import { Tabs, router } from 'expo-router';
 import { Animated, Platform, StyleSheet, View, ViewStyle, Image, Pressable } from 'react-native';
-import { useHomeStore } from '../../store/homeStore';
-import { usePathStore } from '../../store/pathStore';
+import { useHomeStore } from '../stores/homeStore';
+import { usePathStore } from '../stores/pathStore';
 import { useEffect, useRef } from 'react';
 
 // Helper component to center the icon

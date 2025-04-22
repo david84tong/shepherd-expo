@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, TouchableOpacity, Text, Animated, Platform, Easing } from 'react-native';
 import PrimaryButton from './PrimaryButton';
-import { usePathStore } from '../store/pathStore';
+import { usePathStore } from '../app/stores/pathStore';
 import BackButton from './BackButton';
 
 interface PrayerComponentProps {

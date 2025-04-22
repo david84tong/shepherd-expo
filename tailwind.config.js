@@ -46,7 +46,7 @@ module.exports = {
         // This might need platform-specific styling or utility classes
         'card': '0px 2px 4px rgba(0,0,0,0.08)', // Match spec
         'cta-inset': 'inset 0 -2px 2px rgba(0,0,0,0.06)',
-        'buttonShadow': '0px 8.716px 0px 0px #FFE4A8', // Inset shadows are hard in RN
+        'buttonShadow': '0px 5.716px 0px 0px #FFE4A8', // Inset shadows are hard in RN
         'backButton': '0px 5.716px 0px 0px #FFE4A8', // Inset shadows are hard in RN
       },
       secondaryButtonShadow: {
