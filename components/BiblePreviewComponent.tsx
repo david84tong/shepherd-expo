@@ -4,6 +4,7 @@ import PrimaryButton from './PrimaryButton';
 import { router } from 'expo-router';
 import { usePathStore } from '../app/stores/pathStore';
 import BackButton from './BackButton';
+import * as Haptics from 'expo-haptics';
 
 interface BiblePreviewProps {
   /** Whether the preview overlay should be shown. */
@@ -22,7 +23,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   const cardOpacity = useRef(new Animated.Value(0)).current;
   
   // Get saved reading & path in progress state from path store
-  const { savedBook, savedChapter, setPathInProgress } = usePathStore();
+  const { savedBook, savedChapter, setPathInProgress, savedBookId } = usePathStore();
   
   // Animation values for the primary button
   const buttonAnim = useRef(new Animated.Value(60)).current; // Start 60 units below final position
@@ -88,13 +89,25 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   };
 
   const handleStart = () => {
-    setPathInProgress(false);
+    setPathInProgress(false); // Allow tab bar to reappear if needed
     
-    // Navigate to the standalone bibleReader screen with animation
+    // Explicitly trigger haptic feedback before navigation
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    } catch (error) {
+      // Silently fail if haptics not available
+    }
+    
+    // Use a simpler approach - this will rely on our route config in _layout.tsx
+    // for the slide_from_right animation
     router.push({
-      pathname: '/bibleReader',
-      params: {
-        transition: 'slide_from_right'
+      pathname: '/bibleReader', // Use bibleReader which we know is configured correctly
+      params: { 
+        bookId: savedBookId.toString(), 
+        chapters: savedChapter.toString(),
+        title: `Today: ${savedBook} ${savedChapter}`,
+        source: 'preview',
+        timestamp: Date.now().toString() // Force params refresh
       }
     });
   };

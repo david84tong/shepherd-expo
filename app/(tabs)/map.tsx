@@ -1,9 +1,10 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, SectionList, Pressable, SafeAreaView, NativeSyntheticEvent, NativeScrollEvent, ViewToken } from 'react-native';
+import { View, Text, SectionList, Pressable, SafeAreaView, NativeSyntheticEvent, NativeScrollEvent, ViewToken, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { BIBLE_PATHS, Unit, Path } from '../models/Path';
+import { usePathStore } from '../stores/pathStore';
 
 // Define node status
 type NodeStatus = 'locked' | 'active' | 'completed';
@@ -192,19 +193,65 @@ export default function MapScreen() {
   const [currentSectionTitle, setCurrentSectionTitle] = useState(sections[0]?.title || 'Map');
   const sectionListRef = useRef<SectionList<Unit, BibleSection>>(null);
   
+  // Get path store functions
+  const { setPathInProgress } = usePathStore();
+  
   // Track if we need to suppress haptic feedback (e.g., on first render)
   const isFirstRender = useRef(true);
-  // Throttle updates
+  // To prevent excessive updates
   const lastUpdate = useRef(Date.now());
   const updateIntervalMs = 300; // Minimum ms between updates
 
   const handleNodePress = (unit: Unit) => {
+    console.log('Pressed unit:', unit.title, unit.reference);
+    console.log('Reference details:', JSON.stringify(unit.reference));
+    
+    // Set path in progress to hide tab bar when opening Bible
+    setPathInProgress(true);
+    
+    // Navigate to the Bible screen with reference
     const { bookId, chapters } = unit.reference;
+    
+    // Special case for Genesis Creation & Choice - force it to Genesis 1 directly
+    // This is a temporary fix to ensure Genesis 1 always loads
+    if (unit.id === 'gen-1') {
+      console.log("⚠️ SPECIAL CASE: Forcing Genesis 1");
+      router.push({
+        pathname: '/bibleReader', // Use bibleReader (not /bible) for consistency
+        params: {
+          bookId: "1", 
+          chapters: "1",
+          title: "Genesis 1 - Creation & Choice",
+          source: 'map-direct',
+          force: 'true',
+          timestamp: Date.now().toString()
+        }
+      });
+      return;
+    }
+    
+    // Genesis 1 first node should have bookId=1, chapters=[1,2]
+    // Verify the data looks right
+    console.log(`Selected node data: Book ID=${bookId}, Chapters=${JSON.stringify(chapters)}`);
+    
+    // Ensure chapters is always an array and join correctly
     const chaptersQuery = Array.isArray(chapters) ? chapters.join(',') : '';
+    
     if (bookId && chaptersQuery) {
-      router.push(`/bible?bookId=${bookId}&chapters=${chaptersQuery}&title=${encodeURIComponent(unit.title)}`);
+        // Use an absolute path format to target the Bible reader screen
+        router.push({
+          pathname: '/bibleReader', // Use bibleReader (not /bible) for consistency
+          params: {
+            bookId: bookId.toString(), 
+            chapters: chaptersQuery,
+            title: encodeURIComponent(unit.title),
+            // Add a flag to help identify where this navigation came from
+            source: 'map',
+            timestamp: Date.now().toString() // Force new params by adding timestamp
+          }
+        });
     } else {
-      console.warn('Invalid unit reference for navigation:', unit.reference);
+        console.warn('Invalid unit reference for navigation:', unit.reference);
     }
   };
 
@@ -281,6 +328,31 @@ export default function MapScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surfaceCream">
+      {/* Debug button with Genesis parameters */}
+      <TouchableOpacity
+        onPress={() => router.push({
+          pathname: '/bibleReader',
+          params: { 
+            bookId: "1", 
+            chapters: "1",
+            title: "Genesis 1 - Direct Debug",
+            source: 'debug-button',
+            timestamp: Date.now().toString()
+          }
+        })}
+        style={{ 
+          padding: 8, 
+          backgroundColor: '#FFE4A8', 
+          margin: 8, 
+          borderRadius: 8,
+          alignItems: 'center',
+          flexDirection: 'row',
+          justifyContent: 'center',
+        }}
+      >
+        <Text style={{ color: '#3C584A', fontWeight: 'bold' }}>📖 OPEN GENESIS 1 DIRECT</Text>
+      </TouchableOpacity>
+      
       {/* Custom Sticky Header */}
       <StickyPathHeader title={currentSectionTitle} />
 

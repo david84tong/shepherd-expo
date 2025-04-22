@@ -43,13 +43,39 @@ export default function BibleReaderScreen() {
   
   const setHomeMode = useHomeStore((state) => state.setMode);
   
-  // We can access the transition parameter if needed
+  // Get URL parameters directly
   const params = useLocalSearchParams();
   
+  // When coming to this tab from a preview, clear the path in progress state
+  useEffect(() => {
+    // This ensures that when we navigate via tab the tabbar stays visible
+    setPathInProgress(false);
+  }, []);
+
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
       setError(null);
+
+      console.log("🔄 BibleReader: Loading initial data");
+      console.log("📋 URL Params:", params);
+      
+      // Get route params from useLocalSearchParams
+      const urlBookId = params.bookId ? parseInt(params.bookId as string, 10) : null;
+      const urlChapters = params.chapters ? (params.chapters as string).split(',').map(c => parseInt(c, 10)) : null;
+      const urlTitle = params.title as string || null;
+      
+      // Log what we found in the URL
+      console.log(`📱 URL bookId: ${urlBookId}, chapters: ${urlChapters}, title: ${urlTitle}`);
+      console.log(`💾 Saved: bookId: ${savedBookId}, chapter: ${savedChapter}, book: ${savedBook}`);
+      
+      // Determine what to load based on priority:
+      // 1. URL parameters if present and valid
+      // 2. Saved state from store if URL params not available
+      let bookIdToLoad = urlBookId && !isNaN(urlBookId) ? urlBookId : savedBookId;
+      let chapterToLoad = urlChapters && urlChapters.length > 0 && !isNaN(urlChapters[0]) ? urlChapters[0] : savedChapter;
+      
+      console.log(`🎯 Loading: bookId: ${bookIdToLoad}, chapter: ${chapterToLoad}`);
 
       try {
         const savedSize = await AsyncStorage.getItem(FONT_SIZE_KEY);
@@ -63,7 +89,8 @@ export default function BibleReaderScreen() {
         console.error("Failed to load font size from AsyncStorage", e);
       }
 
-      loadChapter(currentVersion, currentBook, currentBookId, currentChapter);
+      // Load from determined values, not default state
+      await loadChapter(currentVersion, 'Loading...', bookIdToLoad, chapterToLoad);
     };
 
     loadInitialData();
@@ -72,16 +99,24 @@ export default function BibleReaderScreen() {
   const loadChapter = async (version: string, book: string, bookId: number, chapter: number) => {
     setLoading(true);
     setError(null);
+    
+    console.log(`📚 LOADING CHAPTER - version:${version}, book:${book}, bookId:${bookId}, chapter:${chapter}`);
 
     try {
+      // Key line: bookId is now being passed properly to the API
       const result = await fetchChapter(version, bookId, chapter);
 
       if ('error' in result) {
+        console.error(`❌ Error loading chapter: ${result.message}`);
         setError(result.message);
         setChapterData(null);
       } else {
+        console.log(`✅ Successfully loaded: ${result.book} ${result.chapter}`);
         setChapterData(result);
+        
+        // Update the UI state with actual data
         setCurrentBook(result.book);
+        setCurrentBookId(bookId);
         setCurrentChapter(result.chapter);
         setCurrentVersion(result.version);
         
@@ -91,6 +126,7 @@ export default function BibleReaderScreen() {
         setError(null);
       }
     } catch (error) {
+      console.error("Failed to load chapter", error);
       setError("Failed to load chapter");
       setChapterData(null);
     } finally {

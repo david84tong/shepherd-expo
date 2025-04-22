@@ -53,6 +53,17 @@ export default function RootLayout() {
           headerShown: false 
         }}
       />
+      <Stack.Screen 
+        name="bible" 
+        options={{
+          // Override animation to ensure slide transition
+          animation: "slide_from_right",
+          // Custom animation duration for smoother feel
+          animationDuration: 350, // ms
+          // Hide header for full-screen experience
+          headerShown: false 
+        }}
+      />
       <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
     </Stack>
   );
