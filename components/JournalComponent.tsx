@@ -185,7 +185,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         <TextInput
           ref={inputRef}
           className="w-full bg-surfaceCream/50 rounded-[18px] p-4 border border-border text-body font-din text-textPrimary"
-          placeholder="What\'s on your mind today?"
+          placeholder="What's on your mind today?"
           placeholderTextColor="#B89B4C"
           multiline
           textAlignVertical="top"
@@ -215,8 +215,8 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         </View>
         
         {/* Save Button */}
-        <View className="flex-1 items-end w-[300px]">
-          <PrimaryButton title="Save Entry" onPress={handleSave} />
+        <View className="flex-1 items-end w-[280px] ml-8 mt-4">
+          <PrimaryButton title="Hold This Thought" onPress={handleSave} />
         </View>
       </Animated.View>
     </Animated.View>

@@ -25,6 +25,7 @@ module.exports = {
         description: '#B89B4C',
         buttonBorder: '#FFE4A8',
         blue: "#06B6FE", // Shadow color for secondary button
+        red: "#DF4533"
       },
       fontFamily: {
         // Keeping existing fonts, apply sizes via classes

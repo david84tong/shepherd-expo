@@ -1,7 +1,7 @@
 ---
-description: Apply these rules when making changes to the project
+description: 
 globs: 
-alwaysApply: true
+alwaysApply: false
 ---
 # Shepherd - Project Requirements Document
 

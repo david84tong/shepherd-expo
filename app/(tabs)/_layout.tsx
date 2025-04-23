@@ -89,7 +89,7 @@ export default function TabLayout() {
     ...Platform.select({
       ios: {
         shadowColor: '#FFE4A8',
-        shadowOffset: { width: 0, height: -4 },
+        shadowOffset: { width: 0, height: -3 },
         shadowOpacity: 1,
         shadowRadius: 0,
       },

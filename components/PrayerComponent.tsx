@@ -209,7 +209,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
         }}
       >
         <PrimaryButton 
-          title="Done Praying" 
+          title="Amen" 
           onPress={handleDonePress} 
           disabled={isTimerActive}
           isActive={!isTimerActive} // Button is visually inactive during timer

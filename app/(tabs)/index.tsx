@@ -7,6 +7,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import PrayerComponent from '../../components/PrayerComponent';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
 import JournalComponent from '../../components/JournalComponent';
+import ProgressPill from '../../components/ProgressPill';
 import { useHomeStore, HomeMode } from '../stores/homeStore'; // Import Zustand store
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
@@ -24,7 +25,8 @@ const breadIcon = require('../../assets/icons/breadIcon.png');
 const dropIcon = require('../../assets/icons/waterIcon.png');
 const quillIcon = require('../../assets/icons/journalIcon.png');
 const flameIcon = require('../../assets/icons/flameIcon.png');
-const heartIcon = require('../../assets/icons/heartIcon.png'); // Import heart icon
+const gemIcon = require('../../assets/icons/redGemIcon.png');
+const heartIcon = require('../../assets/icons/heartIcon.png');
 const starIcon = require('../../assets/icons/starIcon.png'); // Import star icon
 
 export default function HomeScreen() {
@@ -273,15 +275,11 @@ export default function HomeScreen() {
               >
                 Shepherd
               </Text>
-              <View className="flex-1 ml-4" />
+              <View className="flex-1 ml-0 mr-10" />
               <View className="flex-row items-center space-x-2">
-                <View className="flex-row items-center bg-surfaceCream rounded-full px-4 py-1.5 h-10 border border-border shadow-card">
-                  <Text className="font-feather text-body text-textPrimary mr-1">2</Text>
-                  <Image source={flameIcon} className="w-6 h-6" />
-                </View>
-                <View className="ml-2 flex-row items-center bg-surfaceCream rounded-full px-4 py-1.5 h-10 border border-border shadow-card">
-                  <Text className="font-feather text-body text-textPrimary mr-1">87/100</Text>
-                  <Image source={heartIcon} className="w-6 h-6" />
+                <ProgressPill value={0} label="2" icon={flameIcon} />
+                <View className="ml-2">
+                  <ProgressPill value={0} label="3" icon={gemIcon} />
                 </View>
               </View>
             </Animated.View>
@@ -330,18 +328,20 @@ export default function HomeScreen() {
           }}>
           
           <View className="flex-row items-center gap-2.5 mb-0 px-1">
+          <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
+              <View className="h-full w-1/4 bg-red rounded-full" />
+            </View>
             <View className="flex-row items-center gap-1">
-              <Image source={starIcon} className="w-8 h-8" />
-              <Text className="font-feather text-body text-textPrimary">LVL 1</Text>
+            <Text className="font-feather text-body text-description">87/100</Text>
+
+              <Image source={heartIcon} className="w-8 h-8" />
             </View>
-            <View className="flex-1 h-4 bg-pillBorder rounded-full border-4 border-border overflow-hidden">
-              <View className="h-full w-1/4 bg-accentGold rounded-full" />
-            </View>
+       
           </View>
 
           <SecondaryButton 
             icon={breadIcon}
-            title="Read Daily Bread"
+            title="Daily Bread – Read"
             subtitle="Feed your soul with scripture"
             points={5}
             onPress={handleReadPress}
@@ -349,16 +349,16 @@ export default function HomeScreen() {
           />
           <SecondaryButton 
             icon={dropIcon}
-            title="Daily Prayer"
-            subtitle="Water your soul with prayer"
+            title="Living Water – Pray"
+            subtitle="Refresh your spirit with prayer"
             points={5}
             onPress={handlePrayerPress}
             disabled={mode !== 'DEFAULT'}
           />
           <SecondaryButton 
             icon={quillIcon}
-            title="Daily Reflection / QT"
-            subtitle="Pause and reflect on the Word"
+            title="Quiet Time – Reflect"
+            subtitle="Pause and meet with God"
             points={5}
             onPress={handleReflectionPress}
             disabled={mode !== 'DEFAULT'}
