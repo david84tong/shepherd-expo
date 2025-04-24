@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,7 +13,7 @@ import { fetchChapter, ChapterResponse, FetchError, Verse } from './api/bible';
 import PrimaryButton from '../components/PrimaryButton';
 import SideButton from '~/components/SideButton';
 import { usePathStore } from './stores/pathStore';
-import { useHomeStore } from './stores/homeStore';
+import { useHomeStore, SuccessAnimationType } from './stores/homeStore';
 import { router, useLocalSearchParams } from 'expo-router';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
@@ -42,6 +42,8 @@ export default function BibleReaderScreen() {
   const [currentVersion, setCurrentVersion] = useState<string>('ESV');
   
   const setHomeMode = useHomeStore((state) => state.setMode);
+  const setSuccessType = useHomeStore((state) => state.setSuccessType);
+  const setReadingCompleted = useHomeStore((state) => state.setReadingCompleted);
   
   // Get URL parameters directly
   const params = useLocalSearchParams();
@@ -176,10 +178,12 @@ const increaseFontSize = () => {
   };
 
   const handleFinishReading = () => {
-    console.log('Finish Reading Pressed - Showing success animation');
+    console.log('Finish Reading Pressed - Showing success animation for READING');
     // Reset states
     setPathInProgress(false);
     setHomeMode('DEFAULT');
+    setSuccessType(SuccessAnimationType.READING);
+    setReadingCompleted(true);
     
     // Navigate to success animation screen instead of going back
     router.navigate({
@@ -192,6 +196,16 @@ const increaseFontSize = () => {
   };
 
   const renderBibleContent = () => {
+    // Memoize style calculations to prevent unnecessary style object recreations
+    // IMPORTANT: These need to be here before any conditional returns
+    const verseTextStyle = useMemo(() => {
+      return [styles.verseText, { fontSize: fontSize }];
+    }, [fontSize]);
+    
+    const verseNumberStyle = useMemo(() => {
+      return [styles.verseNumber, { fontSize: fontSize }];
+    }, [fontSize]);
+
     if (loading) {
       return <ActivityIndicator size="large" color="#3C584A" className="mt-10" />;
     }
@@ -201,9 +215,6 @@ const increaseFontSize = () => {
     }
 
     if (chapterData) {
-      const verseTextStyle = [styles.verseText, { fontSize: fontSize }];
-      const verseNumberStyle = [styles.verseNumber, { fontSize: fontSize }];
-
       return (
         <ScrollView contentContainerStyle={styles.scrollContainer}>
           {chapterData.verses.map((verse: Verse) => (
@@ -271,15 +282,32 @@ const increaseFontSize = () => {
           disabled={currentChapter <= 1 || loading}
           activeOpacity={0.7}
         >
-          <Text style={[styles.navButtonText, currentChapter <= 1 && styles.disabledButtonText]}>←</Text>
+          <Text style={useMemo(() => {
+            return [
+              styles.navButtonText, 
+              currentChapter <= 1 && styles.disabledButtonText
+            ];
+          }, [currentChapter])}
+          >←</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={[styles.navButton, loading && styles.disabledNavButton]}
+          style={useMemo(() => {
+            return [
+              styles.navButton, 
+              loading && styles.disabledNavButton
+            ];
+          }, [loading])}
           onPress={navigateToNextChapter}
           disabled={loading}
           activeOpacity={0.7}
         >
-          <Text style={[styles.navButtonText, loading && styles.disabledButtonText]}>→</Text>
+          <Text style={useMemo(() => {
+            return [
+              styles.navButtonText, 
+              loading && styles.disabledButtonText
+            ];
+          }, [loading])}
+          >→</Text>
         </TouchableOpacity>
       </View>
 

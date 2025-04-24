@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   View, 
   Text, 
@@ -11,8 +11,10 @@ import {
 } from 'react-native';
 import PrimaryButton from './PrimaryButton';
 import { usePathStore } from '../app/stores/pathStore';
+import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import Rive, { RiveRef } from 'rive-react-native';
 import BackButton from './BackButton';
+import { router } from 'expo-router';
 
 interface JournalProps {
   visible: boolean;
@@ -31,6 +33,10 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
+  
+  // Get store functions
+  const setSuccessType = useHomeStore((state) => state.setSuccessType);
+  const setReflectionCompleted = useHomeStore((state) => state.setReflectionCompleted);
   
   // Animation values
   const cardAnimY = useRef(new Animated.Value(200)).current;
@@ -72,7 +78,10 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
 
   // Entry and exit animations
   useEffect(() => {
+    console.log('JournalComponent: visible =', visible);
+    
     if (visible) {
+      console.log('JournalComponent: Showing journal component');
       // Set path in progress when component becomes visible
       setPathInProgress(true);
       
@@ -146,12 +155,34 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     }
   }, [visible, cardAnimY, cardOpacity, containerOpacity, buttonAnimY, buttonOpacity, bottomContentAnimY, bottomContentOpacity, setPathInProgress]);
 
+  // Pre-compute memoized values outside and before any conditional returns
+  const cardStyle = useMemo(() => { 
+    return {
+      opacity: cardOpacity,
+      transform: [{ translateY: cardAnimY }],
+      maxHeight: keyboardVisible ? SCREEN_HEIGHT - keyboardHeight - 200 : SCREEN_HEIGHT - 280, 
+      minHeight: 250
+    };
+  }, [cardOpacity, cardAnimY, keyboardVisible, keyboardHeight]);
+
+  const bottomContentStyle = useMemo(() => {
+    return {
+      opacity: bottomContentOpacity,
+      transform: [{ translateY: bottomContentAnimY }],
+      bottom: keyboardVisible ? keyboardHeight + -440 : -100
+    };
+  }, [bottomContentOpacity, bottomContentAnimY, keyboardVisible, keyboardHeight]);
+
   if (!visible) return null;
 
   const handleSave = () => {
     Keyboard.dismiss();
     setPathInProgress(false);
-    onClose();
+    setReflectionCompleted(true); // Set reflection as completed
+    setSuccessType(SuccessAnimationType.REFLECTION);
+    
+    // Navigate to success screen
+    router.push("/success");
   };
 
   return (
@@ -171,14 +202,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       {/* Animated Card with TextInput */}
       <Animated.View 
         className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto mt-[120px] border-4 border-border"
-        style={[
-          { 
-            opacity: cardOpacity,
-            transform: [{ translateY: cardAnimY }],
-            maxHeight: keyboardVisible ? SCREEN_HEIGHT - keyboardHeight - 200 : SCREEN_HEIGHT - 280, 
-            minHeight: 250
-          }
-        ]}
+        style={cardStyle}
       >
         <Text className="text-h1 font-feather text-accentGold mb-6 text-center leading-tight">Daily Reflection</Text>
         
@@ -197,13 +221,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       {/* Animated Bottom Content (Rive + Button) */}
       <Animated.View 
         className="absolute left-0 right-0 flex-row items-center px-5 z-10"
-        style={[
-          {
-            opacity: bottomContentOpacity,
-            transform: [{ translateY: bottomContentAnimY }],
-            bottom: keyboardVisible ? keyboardHeight + -440 : -100
-          }
-        ]}
+        style={bottomContentStyle}
       >
         {/* Rive Animation */}
         <View className="w-[100px] h-[100px] -ml-5 -mb-2">

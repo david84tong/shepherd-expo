@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { View, TouchableOpacity, Text, Animated, Platform, Easing } from 'react-native';
 import PrimaryButton from './PrimaryButton';
 import { usePathStore } from '../app/stores/pathStore';
+import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import BackButton from './BackButton';
+import { router } from 'expo-router';
 
 interface PrayerComponentProps {
   /** Whether the component should render. */
@@ -40,6 +42,9 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   const timerProgress = useRef(new Animated.Value(0)).current; // 0 to 1 for progress
   const shakeAnimation = useRef(new Animated.Value(0)).current; // For button shake
 
+  // Get store functions
+  const setSuccessType = useHomeStore((state) => state.setSuccessType);
+  const setPrayerCompleted = useHomeStore((state) => state.setPrayerCompleted);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
 
   // State for typing animation
@@ -49,7 +54,10 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 
   // Run animation when component becomes visible
   useEffect(() => {
+    console.log('PrayerComponent: visible =', visible);
+    
     if (visible) {
+      console.log('PrayerComponent: Showing prayer component');
       // Reset states immediately
       setPathInProgress(true);
       setIsTimerActive(true); 
@@ -145,33 +153,60 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     }
   }, [visible, setPathInProgress, timerProgress, cardAnim, cardOpacity, buttonAnim, buttonOpacity, shakeAnimation]);
 
+  // Interpolate derived values (memoised to prevent listener leaks)
+  // IMPORTANT: These hooks must be before any conditional returns
+  const progressBarWidth = useMemo(() => {
+    return timerProgress.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0%', '100%'],
+      extrapolate: 'clamp', // Ensure width doesn't go beyond 100%
+    });
+  }, []);
+
+  const shakeTranslateX = useMemo(() => {
+    return shakeAnimation.interpolate({
+      inputRange: [-10, 0, 10],
+      outputRange: [-5, 0, 5],
+    });
+  }, []);
+
   if (!visible) return null;
 
   const handleDonePress = () => {
-
-    // console.log('Triggering done praying animation...'); // Less noisy logs
+    console.log('PrayerComponent: Amen button pressed, setting successType to PRAYER');
+    
+    // First set the success type in the store
+    setSuccessType(SuccessAnimationType.PRAYER);
+    setPrayerCompleted(true);
     setPathInProgress(false);
-    onClose(); // Trigger the animation controlled by Home.
+    
+    // Delayed navigation to ensure state updates first
+    setTimeout(() => {
+      try {
+        // Use absolute path format to ensure proper navigation
+        router.push("/success");
+        console.log('Successfully navigated to success screen');
+      } catch (error) {
+        console.error('Error navigating to success screen:', error);
+        // Fallback to onClose if navigation fails
+        onClose && onClose();
+      }
+    }, 100); // Short delay to ensure state updates first
   };
 
-  // Interpolate progress bar width
-  const progressBarWidth = timerProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['0%', '100%'],
-    extrapolate: 'clamp', // Ensure width doesn't go beyond 100%
-  });
-
-  // Interpolate shake transform
-  const shakeTranslateX = shakeAnimation.interpolate({
-    inputRange: [-10, 0, 10],
-    outputRange: [-5, 0, 5], // Adjust amplitude of shake here
-  });
+  // New handler specifically for back button
+  const handleBackPress = () => {
+    console.log('PrayerComponent: Back button pressed, just closing');
+    setPathInProgress(false);
+    // Just call onClose without showing success screen
+    onClose && onClose();
+  };
 
   return (
     <View className="absolute inset-0 flex flex-col" pointerEvents="box-none">
       {/* Back Button */}
       <BackButton 
-        onPress={handleDonePress}
+        onPress={handleBackPress}
       />
       
       {/* Prayer Card */} 

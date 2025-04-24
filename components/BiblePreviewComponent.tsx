@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import PrimaryButton from './PrimaryButton';
 import { router } from 'expo-router';
@@ -76,7 +76,10 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
       buttonAnim.setValue(60);
       buttonOpacity.setValue(0);
     }
-  }, [visible, setPathInProgress]);
+  }, [visible, setPathInProgress, containerOpacity, cardAnim, cardOpacity, buttonAnim, buttonOpacity]);
+
+  // IMPORTANT: Any useMemo or other hooks must be placed here,
+  // before any conditional returns to avoid "more hooks than expected" errors
 
   // We still return null immediately when not visible, so fade-out isn't seen
   // A different approach (e.g., keeping mounted until animation finishes) 

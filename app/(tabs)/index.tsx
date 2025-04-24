@@ -1,7 +1,7 @@
 import { View, Text, SafeAreaView, Platform, Button, Animated, Easing, TouchableOpacity, Dimensions, ActivityIndicator, Image as RNImage } from 'react-native';
 import { Image } from 'expo-image';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { Asset } from 'expo-asset';
 import SecondaryButton from '../../components/SecondaryButton';
@@ -72,37 +72,37 @@ export default function HomeScreen() {
   const riveScaleAnim = useRef(new Animated.Value(1)).current; // Scale animation
   const riveRotateAnim = useRef(new Animated.Value(0)).current; // Rotation animation
 
-  // --- Derived Animated Values ---
+  // --- Derived Animated Values (memoized to avoid recreating nodes each render) ---
 
   // Back button opacity (inverse of default header opacity)
-  const headerBackOpacityAnim = headerDefaultOpacityAnim.interpolate({
+  const headerBackOpacityAnim = useMemo(() => headerDefaultOpacityAnim.interpolate({
     inputRange: [0, 1],
     outputRange: [1, 0],
-  });
+  }), []);
 
   // Water background effects
-  const waterTranslateY = waterOpacityAnim.interpolate({ inputRange: [0, 1], outputRange: [50, 0], extrapolate: 'clamp' });
-  const waterScale = waterOpacityAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05], extrapolate: 'clamp' });
+  const waterTranslateY = useMemo(() => waterOpacityAnim.interpolate({ inputRange: [0, 1], outputRange: [50, 0], extrapolate: 'clamp' }), []);
+  const waterScale = useMemo(() => waterOpacityAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05], extrapolate: 'clamp' }), []);
 
   // Lamb position interpolation
-  const lambTranslateX = Animated.add(
+  const lambTranslateX = useMemo(() => Animated.add(
     previewAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0], extrapolate: 'clamp' }),
     Animated.add(
       prayerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -20], extrapolate: 'clamp' }),
       reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40], extrapolate: 'clamp' })
     )
-  );
-  const lambTranslateY = Animated.add(
+  ), []);
+  const lambTranslateY = useMemo(() => Animated.add(
     previewAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 240], extrapolate: 'clamp' }),
     Animated.add(
       prayerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 290], extrapolate: 'clamp' }),
       reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 200], extrapolate: 'clamp' })
     )
-  );
+  ), []);
 
   // Bottom card animation
-  const bottomCardOpacity = uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [1, 0], extrapolate: 'clamp' });
-  const bottomCardTranslateY = uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [0, 300], extrapolate: 'clamp' });
+  const bottomCardOpacity = useMemo(() => uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [1, 0], extrapolate: 'clamp' }), []);
+  const bottomCardTranslateY = useMemo(() => uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [0, 300], extrapolate: 'clamp' }), []);
 
   // --- Rive Handlers ---
   const handleOutOfFrame = () => {
@@ -211,12 +211,44 @@ export default function HomeScreen() {
   
   // --- useEffect to react to external mode changes ---
   useEffect(() => {
+    console.log('HomeScreen: Mode changed to', mode);
+    
     if (mode === 'DEFAULT') {
       animateToDefault(); 
       // Ensure resource is reset if mode changes externally
       setRiveResourceName('mainSheep1'); 
+    } else if (mode === 'PRAYER') {
+      // Handle prayer mode activation when coming from other screens
+      console.log('Activating Prayer mode from external navigation');
+      setShowBgRive(true);
+      
+      // Set the Rive resource
+      setRiveResourceName('lamb-drinking');
+      
+      // Animate lamb size
+      Animated.timing(lambSizeAnim, {
+        toValue: 128,
+        duration: 800,
+        useNativeDriver: false,
+      }).start();
+      
+      // Trigger the animation to prayer state
+      animateToState(1, waterOpacityAnim, 800, 'PRAYER');
+    } else if (mode === 'REFLECTION') {
+      // Handle reflection mode activation when coming from other screens
+      console.log('Activating Reflection mode from external navigation');
+      
+      // Animate lamb size
+      Animated.timing(lambSizeAnim, {
+        toValue: 128,
+        duration: 800,
+        useNativeDriver: false,
+      }).start();
+      
+      // Trigger the animation to reflection state
+      animateToState(1, journalOpacityAnim, 800, 'REFLECTION');
     }
-  }, [mode]); 
+  }, [mode]);
 
   // --- Event Handlers ---
   const handleReadPress = () => {
@@ -400,7 +432,7 @@ export default function HomeScreen() {
   }, []);
 
   // --- Load and cache images ---
-  const cacheImages = async () => {
+  const cacheImages = useMemo(() => async () => {
     // Define all the assets to preload
     const images = [
       grassBg,
@@ -435,7 +467,7 @@ export default function HomeScreen() {
       // Continue even if caching fails
       setAssetsLoaded(true);
     }
-  };
+  }, []); // Empty dependency array ensures this function only gets created once
 
   // Call cache images when component mounts
   useEffect(() => {
@@ -573,11 +605,10 @@ export default function HomeScreen() {
               <View className="h-full w-1/4 bg-red rounded-full" />
             </View>
             <View className="flex-row items-center gap-1">
-            <Text className="font-feather text-body text-description">87/100</Text>
-
-              <Image source={heartIcon} className="w-8 h-8" />
+            <Text className="font-feather text-body text-description">88/100</Text>
+            <Image source={heartIcon} className="w-6 h-6" />
             </View>
-       
+      
           </View>
 
           <SecondaryButton 
