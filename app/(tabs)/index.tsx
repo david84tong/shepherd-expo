@@ -96,6 +96,7 @@ export default function HomeScreen() {
       reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40], extrapolate: 'clamp' })
     )
   ), []);
+
   const lambTranslateY = useMemo(() => Animated.add(
     previewAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 240], extrapolate: 'clamp' }),
     Animated.add(
@@ -536,7 +537,7 @@ export default function HomeScreen() {
               >
                 Shepherd
               </Text>
-              <View className="flex-1 ml-0 mr-10" />
+              <View className="flex-1 ml-6 mr-10" />
               <View className="flex-row items-center space-x-2">
                 <ProgressPill value={0} label="2" icon={flameIcon} />
                 <View className="ml-2">
@@ -606,10 +607,10 @@ export default function HomeScreen() {
           
           <View className="flex-row items-center gap-2.5 mb-0 px-1">
                  <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
-              <View className="h-full w-1/4 bg-red rounded-full" />
+              <View className="h-full w-3/4 bg-red rounded-full" />
             </View>
             <View className="flex-row items-center gap-1">
-            <Text className="font-feather text-body text-description">88/100</Text>
+            <Text className="font-feather text-body text-description">75/100</Text>
             <Image source={heartIcon} className="w-8 h-8"  />
             </View>
       

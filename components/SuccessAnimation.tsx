@@ -1,10 +1,15 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, TouchableOpacity, Dimensions, Animated } from 'react-native';
+import { View, Text, TouchableOpacity, Dimensions, Animated, Image } from 'react-native';
 import Rive, { RiveRef } from 'rive-react-native';
 import { router } from 'expo-router';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { usePathStore } from '../app/stores/pathStore';
 import PrimaryButton from './PrimaryButton';
+
+// Import icons
+const gemIcon = require('../assets/icons/greenGemIcon.png');
+const heartIcon = require('../assets/icons/heartIcon.png');
+const starIcon = require('../assets/icons/starIcon.png');
 
 // Get screen dimensions to ensure full screen sizing
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -44,6 +49,18 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       setSuccessType(SuccessAnimationType.READING);
     }
   }, [successType, setSuccessType]);
+  
+  // Track if component is unmounting
+  const isUnmounting = useRef(false);
+  
+  // Cleanup when component unmounts
+  useEffect(() => {
+    return () => {
+      isUnmounting.current = true;
+      // Safe to reset success type when component is truly unmounted
+      setSuccessType(null);
+    };
+  }, [setSuccessType]);
   
   // Animations for rewards card
   const cardOpacity = useRef(new Animated.Value(0)).current;
@@ -88,10 +105,12 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     rewardTitle = "REFLECTION REWARDS";
   }  else if (successType === SuccessAnimationType.BONUS) {
     console.log("Setting up BONUS success screen");
-    message = "Bonus Complete!";
-    subMessage = "You've completed a bonus task.";
-    heartReward = 1;
-    xpReward = 2;
+    message = "Daily Trifecta Complete!";
+    subMessage = "Amazing! You've completed all three spiritual disciplines today.";
+    heartReward = 5;
+    xpReward = 10;
+    riveResource = "chest";
+    rewardTitle = "BONUS REWARDS";
   } else {
     // This should not happen, but log an error if it does
     console.error("Invalid or missing success type:", successType);
@@ -148,22 +167,16 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Default navigation behavior
   const handleGoHome = () => {
+    // Set unmounting flag first
+    isUnmounting.current = true;
+    
     // Reset states (except successType until after navigation)
     console.log('handleGoHome - Resetting states');
     setPathInProgress(false);
     setHomeMode('DEFAULT');
     
-    // Add delay to give assets time to load
-    console.log('Adding delay before navigation to ensure assets load');
-    
-    // First navigate without changing the successType
+    // Navigate without changing the successType - it will be reset in the cleanup effect
     router.replace('/(tabs)');
-    
-    // Set a longer timeout to reset successType after the navigation is complete
-    // and this component is unmounted
-    setTimeout(() => {
-      setSuccessType(null);
-    }, 1000); // Longer delay to ensure component is fully unmounted
   };
 
   // Determine the action for the button press
@@ -254,14 +267,26 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         }}
       >
         <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">{rewardTitle}</Text>
-        <View className="flex-row items-center justify-center mb-2">
-          <Text className="font-din text-textPrimary text-xl mr-2">❤️</Text>
-          <Text className="font-din text-textPrimary text-xl">+{heartReward} Hearts</Text>
-        </View>
-        <View className="flex-row items-center justify-center">
-          <Text className="font-din text-textPrimary text-xl mr-2">⭐</Text>
-          <Text className="font-din text-textPrimary text-xl">+{xpReward} Soul Points</Text>
-        </View>
+        
+        {successType === SuccessAnimationType.BONUS ? (
+          // Special bonus reward display
+          <View className="flex-row items-center justify-center mb-2">
+            <Image source={gemIcon} className="w-6 h-6 mr-2" />
+            <Text className="font-din text-textPrimary text-xl">+9 Gems</Text>
+          </View>
+        ) : (
+          // Standard rewards display for other success types
+          <>
+            <View className="flex-row items-center justify-center mb-2">
+              <Image source={heartIcon} className="w-6 h-6 mr-2" />
+              <Text className="font-din text-textPrimary text-xl">+{heartReward} Hearts</Text>
+            </View>
+            <View className="flex-row items-center justify-center">
+              <Image source={starIcon} className="w-6 h-6 mr-2" />
+              <Text className="font-din text-textPrimary text-xl">+{xpReward} Soul Points</Text>
+            </View>
+          </>
+        )}
       </Animated.View>
       
       {/* Next Action Buttons - based on completion state */}
