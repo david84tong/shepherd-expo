@@ -40,6 +40,11 @@ export default function HomeScreen() {
   const mode = useHomeStore((state) => state.mode);
   const setMode = useHomeStore((state) => state.setMode);
   
+  // Get completion states from the store
+  const readingCompleted = useHomeStore((state) => state.readingCompleted);
+  const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
+  const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
+  
   // State to manage the Rive resource name
   const [riveResourceName, setRiveResourceName] = useState('mainSheep1'); // Default resource
   // State to control background Rive animation
@@ -618,6 +623,7 @@ export default function HomeScreen() {
             points={5}
             onPress={handleReadPress}
             disabled={mode !== 'DEFAULT'}
+            completed={readingCompleted}
           />
           <SecondaryButton 
             icon={dropIcon}
@@ -626,6 +632,7 @@ export default function HomeScreen() {
             points={5}
             onPress={handlePrayerPress}
             disabled={mode !== 'DEFAULT'}
+            completed={prayerCompleted}
           />
           <SecondaryButton 
             icon={quillIcon}
@@ -634,6 +641,7 @@ export default function HomeScreen() {
             points={5}
             onPress={handleReflectionPress}
             disabled={mode !== 'DEFAULT'}
+            completed={reflectionCompleted}
           />
         </Animated.View>
 

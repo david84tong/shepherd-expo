@@ -7,6 +7,10 @@ interface PrimaryButtonProps {
   disabled?: boolean;
   style?: string;
   isActive?: boolean;
+  primaryColor?: string;
+  textColor?: string;
+  shadowStyle?: string;
+  buttonType?: 'default' | 'blue' | 'gold';
 }
 
 const PrimaryButton: React.FC<PrimaryButtonProps> = ({
@@ -15,17 +19,39 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   disabled = false,
   style,
   isActive = true,
+  primaryColor,
+  textColor = 'white',
+  shadowStyle,
+  buttonType = 'default'
 }) => {
   // Simple state to track pressed state
   const [isPressed, setIsPressed] = useState(false);
+
+  // Set colors based on button type
+  let bgColor = 'bg-accentGold';
+  let borderColor = 'border-buttonBorder';
+  let buttonShadow = shadowStyle || 'shadow-buttonShadow';
+  
+  if (buttonType === 'blue') {
+    bgColor = 'bg-[#4FB8FE]';
+    borderColor = 'border-[#98E1FE]';
+    buttonShadow = 'shadow-blueButtonShadow';
+  }
+  
+  // Override with primaryColor if provided
+  if (primaryColor) {
+    bgColor = primaryColor;
+  }
+  
+  const txtColor = disabled || !isActive ? 'text-gray-400' : textColor.startsWith('text-') ? textColor : `text-${textColor}`;
 
   return (
     <View className={`mt-4 h-[70px] w-full ${style || ''}`}>
       <Pressable
         className={
           `flex-row items-center justify-center px-5 h-full w-full rounded-[20px] border-[3px] ` +
-          `${disabled || !isActive ? 'bg-[#E5E5E5] border-[#D0D0D0]' : 'bg-accentGold border-buttonBorder'} ` +
-          `transform ${(!isPressed && isActive) ? 'shadow-buttonShadow' : ''} ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
+          `${disabled || !isActive ? 'bg-[#E5E5E5] border-[#D0D0D0]' : `${bgColor} ${borderColor}`} ` +
+          `transform ${(!isPressed && isActive) ? buttonShadow : ''} ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
         }
         style={({ pressed }) => [{ elevation: pressed ? 3 : isActive ? 6 : 0 }]}
         onPress={onPress}
@@ -33,7 +59,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}
       >
-        <Text className={`font-feather ${disabled || !isActive ? 'text-gray-400' : 'text-white'} text-heading text-center w-full`}>
+        <Text className={`font-feather ${disabled || !isActive ? 'text-gray-400' : txtColor} text-heading text-center w-full`}>
           {title}
         </Text>
       </Pressable>

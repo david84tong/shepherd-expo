@@ -142,17 +142,22 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Default navigation behavior
   const handleGoHome = () => {
-    // Reset states
+    // Reset states (except successType until after navigation)
     console.log('handleGoHome - Resetting states');
     setPathInProgress(false);
     setHomeMode('DEFAULT');
-    setSuccessType(null);
     
     // Add delay to give assets time to load
     console.log('Adding delay before navigation to ensure assets load');
     setTimeout(() => {
       // Navigate to home tab instead of going back
       router.replace('/(tabs)');
+      
+      // Reset successType AFTER navigation is triggered
+      // This prevents the "Invalid or missing success type: null" error
+      setTimeout(() => {
+        setSuccessType(null);
+      }, 100);
     }, 500); // 500ms delay
   };
 
@@ -249,31 +254,54 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         </View>
       </Animated.View>
       
-      {/* Next Action Buttons - only shown after reading completion */}
-      {showNextButtons && (
-        <View className="w-full mt-4 mb-2">
+      {/* Next Action Buttons - based on completion state */}
+      <View className="w-full mt-4 mb-2">
+        {/* Show title only if at least one action is available */}
+        {(!prayerCompleted || !reflectionCompleted) && (
           <Text className="font-feather text-lg text-textPrimary mb-3 text-center">Continue Your Journey</Text>
-          <View className="flex-row justify-center space-x-4">
+        )}
+        
+        <View className="flex-row justify-center space-x-4">
+          {/* Show Pray button only if prayer is not completed */}
+          {!prayerCompleted && (
             <PrimaryButton
               title="Pray"
               onPress={handleGoToPrayer}
-              style="flex-1"
+              style={reflectionCompleted ? "w-full" : "flex-1"}
+              buttonType="blue"
             />
+          )}
+          
+          {/* Show Reflect button only if reflection is not completed */}
+          {!reflectionCompleted && (
             <PrimaryButton
               title="Reflect"
               onPress={handleGoToReflection}
-              style="flex-1"
+              style={prayerCompleted ? "w-full" : "flex-1"}
             />
-          </View>
+          )}
         </View>
-      )}
+      </View>
       
-      {/* Use PrimaryButton instead of TouchableOpacity */}
-      <PrimaryButton
-        title={buttonText}
-        onPress={handlePress}
-        style="mt-4"
-      />
+      {/* Return Home - style based on whether action buttons are shown */}
+      {(!prayerCompleted || !reflectionCompleted) ? (
+        // Text link style when action buttons are shown
+        <TouchableOpacity
+          onPress={handlePress}
+          className="mt-4"
+        >
+          <Text className="font-feather text-description text-center underline">
+            Go Home
+          </Text>
+        </TouchableOpacity>
+      ) : (
+        // Regular button when no action buttons are shown
+        <PrimaryButton
+          title={buttonText}
+          onPress={handlePress}
+          style="mt-4"
+        />
+      )}
     </View>
   );
 };

@@ -1,4 +1,6 @@
 import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Define the possible states/modes for the home screen
 export type HomeMode = 'DEFAULT' | 'PREVIEW' | 'PRAYER' | 'REFLECTION';
@@ -31,28 +33,41 @@ interface HomeState {
 
 /**
  * Zustand store to manage the current operational mode of the Home screen.
- * This helps decouple state logic from the component and allows other components
- * to react to or change the mode if necessary.
+ * Uses persist middleware to save completion states in AsyncStorage.
  */
-export const useHomeStore = create<HomeState>((set) => ({
-  // Default UI states
-  mode: 'DEFAULT',
-  successType: null,
-  
-  // Default completion states
-  readingCompleted: false,
-  prayerCompleted: false,
-  reflectionCompleted: false,
-  
-  // Setter functions
-  setMode: (mode) => set({ mode }),
-  setSuccessType: (type) => set({ successType: type }),
-  setReadingCompleted: (completed) => set({ readingCompleted: completed }),
-  setPrayerCompleted: (completed) => set({ prayerCompleted: completed }),
-  setReflectionCompleted: (completed) => set({ reflectionCompleted: completed }),
-  resetCompletionStates: () => set({ 
-    readingCompleted: false, 
-    prayerCompleted: false, 
-    reflectionCompleted: false 
-  }),
-}));
+export const useHomeStore = create<HomeState>()(
+  persist(
+    (set) => ({
+      // Default UI states
+      mode: 'DEFAULT',
+      successType: null,
+      
+      // Default completion states
+      readingCompleted: false,
+      prayerCompleted: false,
+      reflectionCompleted: false,
+      
+      // Setter functions
+      setMode: (mode) => set({ mode }),
+      setSuccessType: (type) => set({ successType: type }),
+      setReadingCompleted: (completed) => set({ readingCompleted: completed }),
+      setPrayerCompleted: (completed) => set({ prayerCompleted: completed }),
+      setReflectionCompleted: (completed) => set({ reflectionCompleted: completed }),
+      resetCompletionStates: () => set({ 
+        readingCompleted: false, 
+        prayerCompleted: false, 
+        reflectionCompleted: false 
+      }),
+    }),
+    {
+      name: 'shepherd-home-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        // Only persist these fields (completion states)
+        readingCompleted: state.readingCompleted,
+        prayerCompleted: state.prayerCompleted,
+        reflectionCompleted: state.reflectionCompleted,
+      }),
+    }
+  )
+);

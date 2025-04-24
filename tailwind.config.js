@@ -15,11 +15,13 @@ module.exports = {
         // 'secondary-button-bg': '#F9F3E5',
 
         // New Tokens
+        lightGreen: "#D2FFC6",
+        darkGreen: "#24CA17",
         accentGold: '#FCD34D',    // Buttons, progress, XP fill
         surfaceCream: '#FFF4D9',  // Card backgrounds, pills
-        forestGreen50: '#D1E8A3', // Light background shapes
-        forestGreen80: '#6AA95A', // Trees, path outlines
-        textPrimary: '#2D3720',   // All primary text
+        forestGreen50: '#A8F093', // Light background shapes
+        forestGreen80: '#24CA17', // Trees, path outlines
+        textPrimary: '#3C584A',   // All primary text
         shadowColor: 'rgba(0,0,0,0.08)', // Shadow color separate for RN
         pillBorder: '#E9E2C7',      // Border for metric pills
         description: '#B89B4C',
@@ -49,6 +51,7 @@ module.exports = {
         'cta-inset': 'inset 0 -2px 2px rgba(0,0,0,0.06)',
         'buttonShadow': '0px 5.716px 0px 0px #FFE4A8', // Inset shadows are hard in RN
         'backButton': '0px 5.716px 0px 0px #FFE4A8', // Inset shadows are hard in RN
+        'blueButtonShadow': '0px 5.716px 0px 0px #98E1FE', // Fixed blue button shadow
       },
       secondaryButtonShadow: {
         'secondary': '', // Match spec
