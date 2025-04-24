@@ -167,7 +167,7 @@ export default function BibleReaderScreen() {
     }
   };
 
-  const increaseFontSize = () => {
+const increaseFontSize = () => {
     updateFontSize(fontSize + 1);
   };
 
@@ -176,13 +176,19 @@ export default function BibleReaderScreen() {
   };
 
   const handleFinishReading = () => {
-    console.log('Finish Reading Pressed - Resetting states');
+    console.log('Finish Reading Pressed - Showing success animation');
     // Reset states
     setPathInProgress(false);
     setHomeMode('DEFAULT');
     
-    // Go back to the home screen
-    router.back();
+    // Navigate to success animation screen instead of going back
+    router.navigate({
+      pathname: "/success",
+      params: {
+        message: "Reading Complete!",
+        subMessage: "You've finished today's chapter. Great progress!"
+      }
+    });
   };
 
   const renderBibleContent = () => {

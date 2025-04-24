@@ -5,9 +5,17 @@
     "version": "1.0.7",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "Shepherd",
+    "scheme": "shepherd",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF4D9"
+    },
     "ios": {
       "bundleIdentifier": "io.tryshepherd.ios",
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -34,7 +42,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/favicon.png"
     },
     "plugins": [
       "expo-router",
@@ -53,14 +61,15 @@
           "image": "./assets/icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#0A0A0A"
+          "backgroundColor": "#FFF4D9"
         }
       ],
-      "@react-native-firebase/app"
-
+      "@react-native-firebase/app",
+      "expo-font"
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "tsconfigPaths": true
     },
     "extra": {
       "router": {

@@ -1,7 +1,9 @@
-import { View, Text, SafeAreaView, Platform, Image, Button, Animated, Easing, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, SafeAreaView, Platform, Button, Animated, Easing, TouchableOpacity, Dimensions, ActivityIndicator, Image as RNImage } from 'react-native';
+import { Image } from 'expo-image';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import { useRef, useState, useEffect } from 'react';
 import { useNavigation } from '@react-navigation/native';
+import { Asset } from 'expo-asset';
 import SecondaryButton from '../../components/SecondaryButton';
 import PrimaryButton from '../../components/PrimaryButton';
 import PrayerComponent from '../../components/PrayerComponent';
@@ -39,11 +41,14 @@ export default function HomeScreen() {
   const setMode = useHomeStore((state) => state.setMode);
   
   // State to manage the Rive resource name
-  const [riveResourceName, setRiveResourceName] = useState('mainSheep2'); // Default resource
+  const [riveResourceName, setRiveResourceName] = useState('mainSheep1'); // Default resource
   // State to control background Rive animation
   const [showBgRive, setShowBgRive] = useState(false);
   // Lamb size animation
   const lambSizeAnim = useRef(new Animated.Value(256)).current; // Start with full size (256px)
+
+  // Add state for asset loading
+  const [assetsLoaded, setAssetsLoaded] = useState(false);
 
   // --- Animation Values --- 
   const uiAnim = useRef(new Animated.Value(0)).current; // 0: default, 0.5: preview, 1: full overlay
@@ -62,6 +67,10 @@ export default function HomeScreen() {
   
   // Opacity for the main screen's Rive wrapper
   const lambOpacityAnim = useRef(new Animated.Value(1)).current; // 1 = visible, 0 = hidden
+
+  // Add Rive view specific animations
+  const riveScaleAnim = useRef(new Animated.Value(1)).current; // Scale animation
+  const riveRotateAnim = useRef(new Animated.Value(0)).current; // Rotation animation
 
   // --- Derived Animated Values ---
 
@@ -109,7 +118,7 @@ export default function HomeScreen() {
   };
 
   // --- Animation Helpers ---
-  const animateToState = (targetUiAnim: number, targetOpacityAnim: Animated.Value, duration: number = 600, mode: HomeMode) => {
+  const animateToState = (targetUiAnim: number, targetOpacityAnim: Animated.Value, duration: number = 1000, mode: HomeMode) => {
     const fadeOutAnims = [grassOpacityAnim, pathOpacityAnim, waterOpacityAnim, journalOpacityAnim]
       .filter(anim => anim !== targetOpacityAnim)
       .map(anim => Animated.timing(anim, { toValue: 0, duration, useNativeDriver: true }));
@@ -124,11 +133,26 @@ export default function HomeScreen() {
     let lambOpacityTarget = 1; // Default to visible
     
     if (mode === 'PREVIEW') {
-      modeAnim = Animated.timing(previewAnim, { toValue: 1, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
+      modeAnim = Animated.timing(previewAnim, { 
+        toValue: 1, 
+        duration, 
+        easing: Easing.bezier(0.16, 1, 0.3, 1), // Use a more natural spring-like easing
+        useNativeDriver: true 
+      });
     } else if (mode === 'PRAYER') {
-      modeAnim = Animated.timing(prayerAnim, { toValue: 1, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
+      modeAnim = Animated.timing(prayerAnim, { 
+        toValue: 1, 
+        duration, 
+        easing: Easing.bezier(0.16, 1, 0.3, 1), // Use a more natural spring-like easing 
+        useNativeDriver: true 
+      });
     } else if (mode === 'REFLECTION') {
-      modeAnim = Animated.timing(reflectionAnim, { toValue: 1, duration, easing: Easing.out(Easing.quad), useNativeDriver: true });
+      modeAnim = Animated.timing(reflectionAnim, { 
+        toValue: 1, 
+        duration, 
+        easing: Easing.bezier(0.16, 1, 0.3, 1), // Use a more natural spring-like easing
+        useNativeDriver: true 
+      });
       lambOpacityTarget = 0; // Hide main lamb when journal is open
     } else {
       modeAnim = Animated.timing(previewAnim, { toValue: 0, duration: 0, useNativeDriver: true });
@@ -148,84 +172,224 @@ export default function HomeScreen() {
     ]).start();
   };
 
-  const animateToDefault = (duration: number = 600) => {
-    const resetAnims = [
-      Animated.timing(previewAnim, { toValue: 0, duration, useNativeDriver: true }),
-      Animated.timing(prayerAnim, { toValue: 0, duration, useNativeDriver: true }),
-      Animated.timing(reflectionAnim, { toValue: 0, duration, useNativeDriver: true }),
+  const animateToDefault = (duration: number = 800) => {
+    console.log('Animating back to default state');
+    const resetPositionAnims = [
+      Animated.timing(previewAnim, { toValue: 0, duration, easing: Easing.bezier(0.25, 0.1, 0.25, 1), useNativeDriver: true }),
+      Animated.timing(prayerAnim, { toValue: 0, duration, easing: Easing.bezier(0.25, 0.1, 0.25, 1), useNativeDriver: true }),
+      Animated.timing(reflectionAnim, { toValue: 0, duration, easing: Easing.bezier(0.25, 0.1, 0.25, 1), useNativeDriver: true }),
     ];
     
-    // Ensure main lamb becomes visible again
-    Animated.timing(lambOpacityAnim, { toValue: 1, duration, useNativeDriver: true }).start();
-    
     Animated.parallel([
+      // UI element animations
       Animated.timing(uiAnim, { toValue: 0, duration, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-      Animated.timing(headerDefaultOpacityAnim, { toValue: 1, duration, useNativeDriver: true }), // Fade in default header
+      Animated.timing(headerDefaultOpacityAnim, { toValue: 1, duration, useNativeDriver: true }),
       Animated.timing(grassOpacityAnim, { toValue: 1, duration, useNativeDriver: true }),
       Animated.timing(pathOpacityAnim, { toValue: 0, duration, useNativeDriver: true }),
       Animated.timing(waterOpacityAnim, { toValue: 0, duration, useNativeDriver: true }),
       Animated.timing(journalOpacityAnim, { toValue: 0, duration, useNativeDriver: true }),
-      ...resetAnims
-    ]).start();
+      // Lamb position animations
+      ...resetPositionAnims,
+      // Lamb opacity animation (ensure it fades back in fully)
+      Animated.timing(lambOpacityAnim, { toValue: 1, duration, useNativeDriver: true }),
+      // Reset Rive view animations
+      Animated.timing(riveScaleAnim, { toValue: 1, duration, useNativeDriver: true }),
+      Animated.timing(riveRotateAnim, { toValue: 0, duration, useNativeDriver: true })
+    ]).start(() => {
+      // Set Rive resource back to default AFTER animation completes
+      console.log('Default animation complete, resetting Rive resource to mainSheep1');
+      setRiveResourceName('mainSheep1');
+    });
     
-    setRiveResourceName('mainSheep2');
+    // Animate lamb size separately as it cannot use native driver
+    Animated.timing(lambSizeAnim, {
+      toValue: 256,
+      duration: duration, // Use the same duration
+      useNativeDriver: false, // Explicitly set to false
+    }).start();
   };
-
+  
   // --- useEffect to react to external mode changes ---
   useEffect(() => {
     if (mode === 'DEFAULT') {
       animateToDefault(); 
       // Ensure resource is reset if mode changes externally
-      setRiveResourceName('mainSheep2'); 
+      setRiveResourceName('mainSheep1'); 
     }
   }, [mode]); 
 
   // --- Event Handlers ---
-   const handleReadPress = () => {
-    console.log('Read Daily Bread Pressed - Setting resource to lambEat');
-    setRiveResourceName('lambEat'); // Set resource for eating animation
+  const handleReadPress = () => {
+    console.log('Read Daily Bread Pressed - Setting resource to lamb-eating');
     setMode('PREVIEW');
-    animateToState(0.5, pathOpacityAnim, 500, 'PREVIEW');
+    animateToState(0.5, pathOpacityAnim, 1000, 'PREVIEW');
+    
+    // Animate the Rive view itself
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(riveScaleAnim, {
+          toValue: 0.9,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(riveRotateAnim, {
+          toValue: 0.05,
+          duration: 400,
+          useNativeDriver: true,
+        })
+      ]),
+      Animated.parallel([
+        Animated.timing(riveScaleAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(riveRotateAnim, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        })
+      ])
+    ]).start();
+    
+    // Set Rive resource after a delay
+    setTimeout(() => {
+      console.log('Setting Rive to lamb-eating');
+      setRiveResourceName('lamb-eating');
+    }, 300);
   };
 
   const handlePrayerPress = () => {
-    console.log('Daily Prayer Pressed - Setting resource to lambSheep');
-    setRiveResourceName('lambSheep'); // Set resource for prayer/drinking animation
+    console.log('Daily Prayer Pressed - Setting resource to lamb-drinking');
     setMode('PRAYER');
-    setShowBgRive(true); // Show the green background Rive animation
-    // Animate lamb size to smaller size
+    setShowBgRive(true);
+    
     Animated.timing(lambSizeAnim, {
       toValue: 128,
-      duration: 500,
+      duration: 1200,
       useNativeDriver: false,
     }).start();
-    animateToState(1, waterOpacityAnim, 600, 'PRAYER');
+    
+    animateToState(1, waterOpacityAnim, 1000, 'PRAYER');
+    
+    // Animate the Rive view itself
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(riveScaleAnim, {
+          toValue: 0.85,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(riveRotateAnim, {
+          toValue: -0.05,
+          duration: 400,
+          useNativeDriver: true,
+        })
+      ]),
+      Animated.parallel([
+        Animated.timing(riveScaleAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(riveRotateAnim, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        })
+      ])
+    ]).start();
+    
+    // Set Rive resource after a delay
+    setTimeout(() => {
+      console.log('Setting Rive to lamb-drinking');
+      setRiveResourceName('lamb-drinking');
+    }, 300);
   };
 
   const handleReflectionPress = () => {
-    console.log('Daily Reflection / QT Pressed - Temporarily NOT changing resource');
-    // setRiveResourceName('lambWriting'); // Temporarily commented out to test crash
+    console.log('Daily Reflection / QT Pressed - No resource change');
     setMode('REFLECTION');
-    // Animate lamb size to smaller size
+    
     Animated.timing(lambSizeAnim, {
       toValue: 128,
-      duration: 500,
+      duration: 1200,
       useNativeDriver: false,
     }).start();
-    animateToState(1, journalOpacityAnim, 600, 'REFLECTION');
+    
+    animateToState(1, journalOpacityAnim, 1000, 'REFLECTION');
+    
+    // Animate the Rive view itself
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(riveScaleAnim, {
+          toValue: 0.9,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(riveRotateAnim, {
+          toValue: 0.05,
+          duration: 400,
+          useNativeDriver: true,
+        })
+      ]),
+      Animated.parallel([
+        Animated.timing(riveScaleAnim, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.timing(riveRotateAnim, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        })
+      ])
+    ]).start();
+    
+    // No Rive change needed here currently
+    /* setTimeout(() => {
+      // setRiveResourceName('lambWriting');
+    }, 300); */
   };
 
   // --- Handlers for Closing Overlays ---
   const handleCloseOverlay = () => {
-    console.log('Closing Overlay, returning to default');
-    setMode('DEFAULT');
-    setShowBgRive(false); // Hide the green background Rive animation
-    // Animate lamb size back to full size
-    Animated.timing(lambSizeAnim, {
-      toValue: 256,
-      duration: 500,
-      useNativeDriver: false,
-    }).start();
+    console.log('Closing Overlay, triggering return to default');
+
+    // Animate the Rive view for closing
+    Animated.sequence([
+      Animated.parallel([
+        Animated.timing(riveScaleAnim, {
+          toValue: 0.95,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(riveRotateAnim, {
+          toValue: -0.03,
+          duration: 250,
+          useNativeDriver: true,
+        })
+      ]),
+      Animated.parallel([
+        Animated.timing(riveScaleAnim, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+        Animated.timing(riveRotateAnim, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        })
+      ])
+    ]).start();
+
+    // Hide any specific background elements
+    setShowBgRive(false);
+
+    // Set mode to trigger animateToDefault via useEffect
+    setMode('DEFAULT'); 
   };
 
   // Set initial lamb size based on mode
@@ -235,12 +399,74 @@ export default function HomeScreen() {
     }
   }, []);
 
+  // --- Load and cache images ---
+  const cacheImages = async () => {
+    // Define all the assets to preload
+    const images = [
+      grassBg,
+      waterBg,
+      pathBg,
+      journalBg,
+      breadIcon,
+      dropIcon,
+      quillIcon,
+      flameIcon,
+      gemIcon,
+      heartIcon,
+      starIcon
+    ];
+
+    try {
+      console.log('Preloading images for faster rendering');
+      
+      // Create assets from modules for better caching
+      const imageAssets = images.map(image => Asset.fromModule(image).downloadAsync());
+      
+      // Wait for all assets to download and cache
+      await Promise.all(imageAssets);
+      
+      // Explicitly process asset sources for better native caching
+      const processedAssets = images.map(image => RNImage.resolveAssetSource(image));
+      
+      console.log('Image preloading complete, cached', images.length, 'images');
+      setAssetsLoaded(true);
+    } catch (error) {
+      console.error('Failed to cache images:', error);
+      // Continue even if caching fails
+      setAssetsLoaded(true);
+    }
+  };
+
+  // Call cache images when component mounts
+  useEffect(() => {
+    cacheImages();
+  }, []);
+
+  // Modify the return statement to show loading indicator while assets load
+  if (!assetsLoaded) {
+    return (
+      <View className="flex-1 items-center justify-center bg-surfaceCream">
+        <ActivityIndicator size="large" color="#3C584A" />
+        <Text className="font-feather text-textPrimary mt-4">Loading Shepherd...</Text>
+      </View>
+    );
+  }
+
   return (
     <View className="flex-1">
-      {/* Background Layers */} 
-      <Animated.Image source={grassBg} style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: grassOpacityAnim }]} resizeMode="cover" />
-      <Animated.Image source={pathBg} style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: pathOpacityAnim }]} resizeMode="cover" />
-      <Animated.Image source={journalBg} style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: journalOpacityAnim }]} resizeMode="cover" />
+      {/* Background Layers - Use expo-image for better performance */} 
+      <Animated.View style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: grassOpacityAnim }]}>
+        <Image source={grassBg} style={{width: '100%', height: '100%'}} contentFit="cover" transition={300} />
+      </Animated.View>
+      
+      <Animated.View style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: pathOpacityAnim }]}>
+        <Image source={pathBg} style={{width: '100%', height: '100%'}} contentFit="cover" transition={300} />
+      </Animated.View>
+      
+      <Animated.View style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: journalOpacityAnim }]}>
+        <Image source={journalBg} style={{width: '100%', height: '100%'}} contentFit="cover" transition={300} />
+      </Animated.View>
+      
       {/* Prayer background Rive animation */}
       <Animated.View 
         style={[
@@ -305,14 +531,29 @@ export default function HomeScreen() {
                 Error loading animation: {riveError.message} ({riveError.type})
               </Text>
             ) : (
-              <Animated.View style={{ width: lambSizeAnim, height: lambSizeAnim }}>
-                <Rive
-                  ref={riveRef}
-                  resourceName={riveResourceName}
-                  autoplay={true}
-                  onError={handleRiveError}
-                  style={{ width: '100%', height: '100%' }}
-                />
+              <Animated.View style={{ 
+                width: lambSizeAnim, 
+                height: lambSizeAnim
+              }}>
+                <Animated.View style={{
+                  width: '100%', 
+                  height: '100%',
+                  transform: [
+                    { scale: riveScaleAnim },
+                    { rotate: riveRotateAnim.interpolate({
+                      inputRange: [-1, 0, 1],
+                      outputRange: ['-60deg', '0deg', '60deg']
+                    })}
+                  ]
+                }}>
+                  <Rive
+                    ref={riveRef}
+                    resourceName={riveResourceName}
+                    autoplay={true}
+                    onError={handleRiveError}
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </Animated.View>
               </Animated.View>
             )}
           </Animated.View>
@@ -328,7 +569,7 @@ export default function HomeScreen() {
           }}>
           
           <View className="flex-row items-center gap-2.5 mb-0 px-1">
-          <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
+                 <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
               <View className="h-full w-1/4 bg-red rounded-full" />
             </View>
             <View className="flex-row items-center gap-1">

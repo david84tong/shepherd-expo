@@ -1,3 +1,5 @@
+// Import Reanimated first for initialization
+import 'react-native-reanimated';
 import '../global.css';
 import { Stack, SplashScreen, useRouter } from 'expo-router';
 import { useFonts } from 'expo-font';
@@ -5,8 +7,9 @@ import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Modal, FlatList, SafeAreaView, ScrollView } from 'react-native';
 import { BottomSheetModal, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import Animated from 'react-native-reanimated';
+import { Asset } from 'expo-asset';
 import SuccessAnimationContent from '../components/SuccessAnimation';
+import AppLoading from '../components/AppLoading';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -177,6 +180,29 @@ export default function RootLayout() {
     'Feather Bold': require('../assets/fonts/Feather Bold.ttf'),
     'DIN Next Rounded LT W01 Regular': require('../assets/fonts/DIN Next Rounded LT W01 Regular.ttf'),
   });
+  
+  // Add state for loading progress
+  const [appReady, setAppReady] = useState(false);
+  const [loadProgress, setLoadProgress] = useState(0);
+
+  // Preload resources with simulated progress
+  const preloadResources = () => {
+    let progress = 0;
+    const interval = setInterval(() => {
+      progress += 0.1;
+      setLoadProgress(Math.min(progress, 0.95)); // Cap at 95% until fully loaded
+      
+      if (progress >= 1) {
+        clearInterval(interval);
+        // Finish loading when progress is complete
+        setTimeout(() => {
+          setLoadProgress(1);
+          setAppReady(true);
+          SplashScreen.hideAsync();
+        }, 500);
+      }
+    }, 200);
+  };
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
@@ -185,12 +211,13 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (loaded) {
-      SplashScreen.hideAsync();
+      // Start preloading resources with progress
+      preloadResources();
     }
   }, [loaded]);
-
-  if (!loaded) {
-    return null;
+  
+  if (!appReady) {
+    return <AppLoading progress={loadProgress} />;
   }
 
   return (
@@ -228,6 +255,7 @@ export default function RootLayout() {
             }}
           />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="success" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
         </Stack>
         
         {/* Show debug button */}
