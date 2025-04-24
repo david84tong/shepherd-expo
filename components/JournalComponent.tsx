@@ -179,7 +179,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     Keyboard.dismiss();
     setPathInProgress(false);
     setReflectionCompleted(true); // Set reflection as completed
-    setSuccessType(SuccessAnimationType.REFLECTION);
+    setSuccessType(SuccessAnimationType.BONUS);
     
     // Navigate to success screen
     router.push("/success");

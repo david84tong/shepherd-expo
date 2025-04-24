@@ -86,6 +86,12 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     xpReward = 2;
     riveResource = "successHeartAndStars"; 
     rewardTitle = "REFLECTION REWARDS";
+  }  else if (successType === SuccessAnimationType.BONUS) {
+    console.log("Setting up BONUS success screen");
+    message = "Bonus Complete!";
+    subMessage = "You've completed a bonus task.";
+    heartReward = 1;
+    xpReward = 2;
   } else {
     // This should not happen, but log an error if it does
     console.error("Invalid or missing success type:", successType);
@@ -149,16 +155,15 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     
     // Add delay to give assets time to load
     console.log('Adding delay before navigation to ensure assets load');
+    
+    // First navigate without changing the successType
+    router.replace('/(tabs)');
+    
+    // Set a longer timeout to reset successType after the navigation is complete
+    // and this component is unmounted
     setTimeout(() => {
-      // Navigate to home tab instead of going back
-      router.replace('/(tabs)');
-      
-      // Reset successType AFTER navigation is triggered
-      // This prevents the "Invalid or missing success type: null" error
-      setTimeout(() => {
-        setSuccessType(null);
-      }, 100);
-    }, 500); // 500ms delay
+      setSuccessType(null);
+    }, 1000); // Longer delay to ensure component is fully unmounted
   };
 
   // Determine the action for the button press
@@ -186,15 +191,20 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     console.log('Navigating to Reflection from Success screen');
     
     // First update the state in the store
-    setHomeMode('REFLECTION');
-    setPathInProgress(true); // Make sure path is in progress to show the component
-    
+    // Make sure path is in progress to show the component
+    setHomeMode('DEFAULT');
+    setPathInProgress(false); 
+    router.push('/(tabs)');
+
     // Add delay to give assets time to load
     console.log('Adding delay before navigation to ensure assets load');
     setTimeout(() => {
       // Navigate back to the home tab - the useEffect in index.tsx will respond to mode change  
-      router.push('/(tabs)');
-    }, 500); // 500ms delay
+      setHomeMode('REFLECTION');
+      setPathInProgress(true); 
+    }, 700); // 500ms delay
+
+
   };
   
   // Determine if we should show next action buttons (only after reading is completed)
@@ -227,7 +237,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       </View>
       
       {/* Success message - enlarged */}
-      <Text className="font-feather text-[32px] text-textPrimary mb-4 text-center">{message}</Text>
+      <Text className="font-feather text-[32px] text-textPrimary mb-4 text-center -mt-16">{message}</Text>
       <Text className="font-din text-xl text-secondaryText text-center mb-6 px-6">{subMessage}</Text>
       
       {/* Rewards Card */}
@@ -257,11 +267,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       {/* Next Action Buttons - based on completion state */}
       <View className="w-full mt-4 mb-2">
         {/* Show title only if at least one action is available */}
-        {(!prayerCompleted || !reflectionCompleted) && (
-          <Text className="font-feather text-lg text-textPrimary mb-3 text-center">Continue Your Journey</Text>
-        )}
+     
         
-        <View className="flex-row justify-center space-x-4">
+        <View className="flex-row justify-center space-x-12">
           {/* Show Pray button only if prayer is not completed */}
           {!prayerCompleted && (
             <PrimaryButton
@@ -271,7 +279,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
               buttonType="blue"
             />
           )}
-          
+          <View className="w-4"></View>
           {/* Show Reflect button only if reflection is not completed */}
           {!reflectionCompleted && (
             <PrimaryButton

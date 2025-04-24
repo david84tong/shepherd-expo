@@ -4,10 +4,11 @@ import '../global.css';
 import { Stack, SplashScreen, useRouter } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Modal, FlatList, SafeAreaView, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, FlatList, SafeAreaView, ScrollView, Alert } from 'react-native';
 import { BottomSheetModal, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Asset } from 'expo-asset';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import SuccessAnimationContent from '../components/SuccessAnimation';
 import AppLoading from '../components/AppLoading';
 
@@ -53,6 +54,31 @@ function DebugButton() {
   // Dismiss the success animation sheet
   const handleDismissSuccessSheet = useCallback(() => {
     successSheetRef.current?.dismiss();
+  }, []);
+
+  // Reset local storage handler
+  const handleResetLocalStorage = useCallback(() => {
+    Alert.alert(
+      "Reset Storage",
+      "This will clear ALL app data including your progress. Are you sure?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Reset", 
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await AsyncStorage.clear();
+              console.log("✅ Local storage cleared successfully");
+              Alert.alert("Success", "Local storage has been cleared. Restart the app for changes to take effect.");
+            } catch (error) {
+              console.error("❌ Error clearing local storage:", error);
+              Alert.alert("Error", "Failed to clear local storage.");
+            }
+          }
+        }
+      ]
+    );
   }, []);
 
   const navigateTo = (item: DebugScreen) => {
@@ -125,6 +151,15 @@ function DebugButton() {
                 >
                   <Text className="font-feather text-base text-textPrimary">Show Success Animation</Text>
                   <Text className="font-din text-sm text-[#7C927E] mt-1">Native Bottom Sheet Animation</Text>
+                </TouchableOpacity>
+                
+                {/* Reset Local Storage Button */}
+                <TouchableOpacity
+                  className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
+                  onPress={handleResetLocalStorage}
+                >
+                  <Text className="font-feather text-base text-textPrimary">Reset Local Storage</Text>
+                  <Text className="font-din text-sm text-[#A57070] mt-1">Clear AsyncStorage including completion data</Text>
                 </TouchableOpacity>
               </View>
               

@@ -44,6 +44,8 @@ export default function BibleReaderScreen() {
   const setHomeMode = useHomeStore((state) => state.setMode);
   const setSuccessType = useHomeStore((state) => state.setSuccessType);
   const setReadingCompleted = useHomeStore((state) => state.setReadingCompleted);
+  const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
+  const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
   
   // Get URL parameters directly
   const params = useLocalSearchParams();
@@ -178,19 +180,29 @@ const increaseFontSize = () => {
   };
 
   const handleFinishReading = () => {
-    console.log('Finish Reading Pressed - Showing success animation for READING');
+    console.log('Finish Reading Pressed - Updating completion status');
     // Reset states
     setPathInProgress(false);
     setHomeMode('DEFAULT');
-    setSuccessType(SuccessAnimationType.READING);
     setReadingCompleted(true);
+    
+    // Check if all tasks are completed
+    const allCompleted = prayerCompleted && reflectionCompleted;
+    
+    if (allCompleted) {
+      console.log('All tasks completed! Setting success type to BONUS');
+      setSuccessType(SuccessAnimationType.BONUS);
+    } else {
+      console.log('Reading completed, but not all tasks. Setting success type to READING');
+      setSuccessType(SuccessAnimationType.READING);
+    }
     
     // Navigate to success animation screen instead of going back
     router.navigate({
       pathname: "/success",
       params: {
-        message: "Reading Complete!",
-        subMessage: "You've finished today's chapter. Great progress!"
+        message: allCompleted ? "Daily Trifecta Complete!" : "Reading Complete!",
+        subMessage: allCompleted ? "Amazing! You've completed all three spiritual disciplines today." : "You've finished today's chapter. Great progress!"
       }
     });
   };

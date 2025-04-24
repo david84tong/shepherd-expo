@@ -34,7 +34,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   
   if (buttonType === 'blue') {
     bgColor = 'bg-[#4FB8FE]';
-    borderColor = 'border-[#98E1FE]';
+    borderColor = 'border-[#06B6FE]';
     buttonShadow = 'shadow-blueButtonShadow';
   }
   

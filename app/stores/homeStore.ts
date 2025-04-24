@@ -10,6 +10,7 @@ export enum SuccessAnimationType {
     READING = 'reading',
     PRAYER = 'prayer',
     REFLECTION = 'reflection',
+    BONUS = 'bonus',
 }
 
 interface HomeState {

@@ -45,6 +45,8 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   // Get store functions
   const setSuccessType = useHomeStore((state) => state.setSuccessType);
   const setPrayerCompleted = useHomeStore((state) => state.setPrayerCompleted);
+  const readingCompleted = useHomeStore((state) => state.readingCompleted);
+  const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
 
   // State for typing animation
@@ -173,12 +175,22 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   if (!visible) return null;
 
   const handleDonePress = () => {
-    console.log('PrayerComponent: Amen button pressed, setting successType to PRAYER');
+    console.log('PrayerComponent: Amen button pressed, updating completion status');
     
-    // First set the success type in the store
-    setSuccessType(SuccessAnimationType.PRAYER);
+    // Mark prayer as completed
     setPrayerCompleted(true);
     setPathInProgress(false);
+    
+    // Check if all three tasks are completed
+    const allCompleted = readingCompleted && reflectionCompleted;
+    
+    if (allCompleted) {
+      console.log('All tasks completed! Setting success type to BONUS');
+      setSuccessType(SuccessAnimationType.BONUS);
+    } else {
+      console.log('Prayer completed, but not all tasks. Setting success type to PRAYER');
+      setSuccessType(SuccessAnimationType.PRAYER);
+    }
     
     // Delayed navigation to ensure state updates first
     setTimeout(() => {

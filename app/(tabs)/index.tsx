@@ -1,5 +1,4 @@
-import { View, Text, SafeAreaView, Platform, Button, Animated, Easing, TouchableOpacity, Dimensions, ActivityIndicator, Image as RNImage } from 'react-native';
-import { Image } from 'expo-image';
+import { View, Text, SafeAreaView, Platform, Button, Animated, Easing, TouchableOpacity, Dimensions, ActivityIndicator, Image } from 'react-native';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigation } from '@react-navigation/native';
@@ -27,7 +26,7 @@ const breadIcon = require('../../assets/icons/breadIcon.png');
 const dropIcon = require('../../assets/icons/waterIcon.png');
 const quillIcon = require('../../assets/icons/journalIcon.png');
 const flameIcon = require('../../assets/icons/flameIcon.png');
-const gemIcon = require('../../assets/icons/redGemIcon.png');
+const gemIcon = require('../../assets/icons/greenGemIcon.png');
 const heartIcon = require('../../assets/icons/heartIcon.png');
 const starIcon = require('../../assets/icons/starIcon.png'); // Import star icon
 
@@ -463,7 +462,6 @@ export default function HomeScreen() {
       await Promise.all(imageAssets);
       
       // Explicitly process asset sources for better native caching
-      const processedAssets = images.map(image => RNImage.resolveAssetSource(image));
       
       console.log('Image preloading complete, cached', images.length, 'images');
       setAssetsLoaded(true);
@@ -544,6 +542,7 @@ export default function HomeScreen() {
                 <View className="ml-2">
                   <ProgressPill value={0} label="3" icon={gemIcon} />
                 </View>
+                
               </View>
             </Animated.View>
         </View>
@@ -611,7 +610,7 @@ export default function HomeScreen() {
             </View>
             <View className="flex-row items-center gap-1">
             <Text className="font-feather text-body text-description">88/100</Text>
-            <Image source={heartIcon} className="w-6 h-6" />
+            <Image source={heartIcon} className="w-8 h-8"  />
             </View>
       
           </View>
