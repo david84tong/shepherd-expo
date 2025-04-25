@@ -1,4 +1,16 @@
-import { View, Text, SafeAreaView, Platform, Button, Animated, Easing, TouchableOpacity, Dimensions, ActivityIndicator, Image } from 'react-native';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  Platform,
+  Button,
+  Animated,
+  Easing,
+  TouchableOpacity,
+  Dimensions,
+  ActivityIndicator,
+  Image,
+} from 'react-native';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigation } from '@react-navigation/native';
@@ -15,7 +27,7 @@ import { useUserStore } from '../stores/userStore'; // Import user store
 import { Unit, BIBLE_PATHS } from '../models/Path'; // Import Unit type and BIBLE_PATHS
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
-const LAMB_VIEWPORT_PERCENTAGE = 0.40; // 40%
+const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
 const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
 
 // Backgrounds
@@ -44,7 +56,7 @@ export default function HomeScreen() {
   // Use Zustand store for mode management
   const mode = useHomeStore((state) => state.mode);
   const setMode = useHomeStore((state) => state.setMode);
-  
+
   // Get completion states from the store
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
@@ -52,14 +64,14 @@ export default function HomeScreen() {
 
   // Get current path state from pathStore
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
-  
+
   // Get user stats from userStore
-  const lambHearts = useUserStore(state => state.getLambHearts());
-  const streakCount = useUserStore(state => state.getStreakCount());
-  const gens = useUserStore(state => state.getGens());
-  
+  const lambHearts = useUserStore((state) => state.getLambHearts());
+  const streakCount = useUserStore((state) => state.getStreakCount());
+  const gens = useUserStore((state) => state.getGens());
+
   // State to manage the Rive resource name
-  const [riveResourceName, setRiveResourceName] = useState('mainSheep1'); // Default resource
+  const [artboardName, setArtboardName] = useState('Idle1'); // Default artboard
   // State to control background Rive animation
   const [showBgRive, setShowBgRive] = useState(false);
   // Lamb size animation
@@ -68,12 +80,12 @@ export default function HomeScreen() {
   // Add state for asset loading
   const [assetsLoaded, setAssetsLoaded] = useState(false);
 
-  // --- Animation Values --- 
+  // --- Animation Values ---
   const uiAnim = useRef(new Animated.Value(0)).current; // 0: default, 0.5: preview, 1: full overlay
   const headerDefaultOpacityAnim = useRef(new Animated.Value(1)).current; // Opacity for default header elements
-  
+
   // Background opacities
-  const grassOpacityAnim = useRef(new Animated.Value(1)).current; 
+  const grassOpacityAnim = useRef(new Animated.Value(1)).current;
   const pathOpacityAnim = useRef(new Animated.Value(0)).current;
   const waterOpacityAnim = useRef(new Animated.Value(0)).current;
   const journalOpacityAnim = useRef(new Animated.Value(0)).current;
@@ -82,7 +94,7 @@ export default function HomeScreen() {
   const previewAnim = useRef(new Animated.Value(0)).current;
   const prayerAnim = useRef(new Animated.Value(0)).current;
   const reflectionAnim = useRef(new Animated.Value(0)).current;
-  
+
   // Opacity for the main screen's Rive wrapper
   const lambOpacityAnim = useRef(new Animated.Value(1)).current; // 1 = visible, 0 = hidden
 
@@ -93,87 +105,146 @@ export default function HomeScreen() {
   // --- Derived Animated Values (memoized to avoid recreating nodes each render) ---
 
   // Back button opacity (inverse of default header opacity)
-  const headerBackOpacityAnim = useMemo(() => headerDefaultOpacityAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: [1, 0],
-  }), []);
+  const headerBackOpacityAnim = useMemo(
+    () =>
+      headerDefaultOpacityAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [1, 0],
+      }),
+    []
+  );
 
   // Water background effects
-  const waterTranslateY = useMemo(() => waterOpacityAnim.interpolate({ inputRange: [0, 1], outputRange: [50, 0], extrapolate: 'clamp' }), []);
-  const waterScale = useMemo(() => waterOpacityAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 1.05], extrapolate: 'clamp' }), []);
+  const waterTranslateY = useMemo(
+    () =>
+      waterOpacityAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [50, 0],
+        extrapolate: 'clamp',
+      }),
+    []
+  );
+  const waterScale = useMemo(
+    () =>
+      waterOpacityAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [1, 1.05],
+        extrapolate: 'clamp',
+      }),
+    []
+  );
 
   // Lamb position interpolation
-  const lambTranslateX = useMemo(() => Animated.add(
-    previewAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0], extrapolate: 'clamp' }),
-    Animated.add(
-      prayerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -20], extrapolate: 'clamp' }),
-      reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40], extrapolate: 'clamp' })
-    )
-  ), []);
+  const lambTranslateX = useMemo(
+    () =>
+      Animated.add(
+        previewAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0], extrapolate: 'clamp' }),
+        Animated.add(
+          prayerAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, -20],
+            extrapolate: 'clamp',
+          }),
+          reflectionAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, -40],
+            extrapolate: 'clamp',
+          })
+        )
+      ),
+    []
+  );
 
-  const lambTranslateY = useMemo(() => Animated.add(
-    previewAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 240], extrapolate: 'clamp' }),
-    Animated.add(
-      prayerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 290], extrapolate: 'clamp' }),
-      reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 200], extrapolate: 'clamp' })
-    )
-  ), []);
+  const lambTranslateY = useMemo(
+    () =>
+      Animated.add(
+        previewAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [0, 240],
+          extrapolate: 'clamp',
+        }),
+        Animated.add(
+          prayerAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 290],
+            extrapolate: 'clamp',
+          }),
+          reflectionAnim.interpolate({
+            inputRange: [0, 1],
+            outputRange: [0, 200],
+            extrapolate: 'clamp',
+          })
+        )
+      ),
+    []
+  );
 
   // Bottom card animation
-  const bottomCardOpacity = useMemo(() => uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [1, 0], extrapolate: 'clamp' }), []);
-  const bottomCardTranslateY = useMemo(() => uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [0, 300], extrapolate: 'clamp' }), []);
+  const bottomCardOpacity = useMemo(
+    () => uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [1, 0], extrapolate: 'clamp' }),
+    []
+  );
+  const bottomCardTranslateY = useMemo(
+    () => uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [0, 300], extrapolate: 'clamp' }),
+    []
+  );
 
   // --- Conditional Glow Style ---
   const showGlow = lambHearts > 80;
 
   // --- Rive Handlers ---
   const handleOutOfFrame = () => {
-      try {
-        riveRef.current?.setInputState('MAIN', 'Out of Frame', true);
-      } catch (error) {
-        console.error("Error setting Rive input state:", error);
-      }
-    };
+    try {
+      riveRef.current?.setInputState('MAIN', 'Out of Frame', true);
+    } catch (error) {
+      console.error('Error setting Rive input state:', error);
+    }
+  };
   const handleRiveError = (error: RNRiveError) => {
-    console.error("Rive Error:", error.message, error.type);
+    console.error('Rive Error:', error.message, error.type);
     setRiveError(error);
   };
 
   // --- Animation Helpers ---
-  const animateToState = (targetUiAnim: number, targetOpacityAnim: Animated.Value, duration: number = 1000, mode: HomeMode) => {
+  const animateToState = (
+    targetUiAnim: number,
+    targetOpacityAnim: Animated.Value,
+    duration: number = 1000,
+    mode: HomeMode
+  ) => {
     const fadeOutAnims = [grassOpacityAnim, pathOpacityAnim, waterOpacityAnim, journalOpacityAnim]
-      .filter(anim => anim !== targetOpacityAnim)
-      .map(anim => Animated.timing(anim, { toValue: 0, duration, useNativeDriver: true }));
+      .filter((anim) => anim !== targetOpacityAnim)
+      .map((anim) => Animated.timing(anim, { toValue: 0, duration, useNativeDriver: true }));
 
     const resetAnims = [
       Animated.timing(previewAnim, { toValue: 0, duration: 0, useNativeDriver: true }),
       Animated.timing(prayerAnim, { toValue: 0, duration: 0, useNativeDriver: true }),
       Animated.timing(reflectionAnim, { toValue: 0, duration: 0, useNativeDriver: true }),
     ];
-    
+
     let modeAnim: Animated.CompositeAnimation;
     let lambOpacityTarget = 1; // Default to visible
-    
+
     if (mode === 'PREVIEW') {
-      modeAnim = Animated.timing(previewAnim, { 
-        toValue: 1, 
-        duration, 
+      modeAnim = Animated.timing(previewAnim, {
+        toValue: 1,
+        duration,
         easing: Easing.bezier(0.16, 1, 0.3, 1), // Use a more natural spring-like easing
-        useNativeDriver: true 
+        useNativeDriver: true,
       });
     } else if (mode === 'PRAYER') {
-      modeAnim = Animated.timing(prayerAnim, { 
-        toValue: 1, 
-        duration, 
-        easing: Easing.bezier(0.16, 1, 0.3, 1), // Use a more natural spring-like easing 
-        useNativeDriver: true 
+      modeAnim = Animated.timing(prayerAnim, {
+        toValue: 1,
+        duration,
+        easing: Easing.bezier(0.16, 1, 0.3, 1), // Use a more natural spring-like easing
+        useNativeDriver: true,
       });
     } else if (mode === 'REFLECTION') {
-      modeAnim = Animated.timing(reflectionAnim, { 
-        toValue: 1, 
-        duration, 
+      modeAnim = Animated.timing(reflectionAnim, {
+        toValue: 1,
+        duration,
         easing: Easing.bezier(0.16, 1, 0.3, 1), // Use a more natural spring-like easing
-        useNativeDriver: true 
+        useNativeDriver: true,
       });
       lambOpacityTarget = 0; // Hide main lamb when journal is open
     } else {
@@ -183,28 +254,57 @@ export default function HomeScreen() {
     Animated.sequence([
       Animated.parallel(resetAnims),
       Animated.parallel([
-        Animated.timing(uiAnim, { toValue: targetUiAnim, duration, easing: Easing.out(Easing.quad), useNativeDriver: true }),
-        Animated.timing(headerDefaultOpacityAnim, { toValue: 0, duration, useNativeDriver: true }), 
+        Animated.timing(uiAnim, {
+          toValue: targetUiAnim,
+          duration,
+          easing: Easing.out(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(headerDefaultOpacityAnim, { toValue: 0, duration, useNativeDriver: true }),
         Animated.timing(targetOpacityAnim, { toValue: 1, duration, useNativeDriver: true }),
         // Animate main lamb opacity
-        Animated.timing(lambOpacityAnim, { toValue: lambOpacityTarget, duration: duration / 2, useNativeDriver: true }), 
+        Animated.timing(lambOpacityAnim, {
+          toValue: lambOpacityTarget,
+          duration: duration / 2,
+          useNativeDriver: true,
+        }),
         ...fadeOutAnims,
         modeAnim,
-      ])
+      ]),
     ]).start();
   };
 
   const animateToDefault = (duration: number = 800) => {
     console.log('Animating back to default state');
     const resetPositionAnims = [
-      Animated.timing(previewAnim, { toValue: 0, duration, easing: Easing.bezier(0.25, 0.1, 0.25, 1), useNativeDriver: true }),
-      Animated.timing(prayerAnim, { toValue: 0, duration, easing: Easing.bezier(0.25, 0.1, 0.25, 1), useNativeDriver: true }),
-      Animated.timing(reflectionAnim, { toValue: 0, duration, easing: Easing.bezier(0.25, 0.1, 0.25, 1), useNativeDriver: true }),
+      Animated.timing(previewAnim, {
+        toValue: 0,
+        duration,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+        useNativeDriver: true,
+      }),
+      Animated.timing(prayerAnim, {
+        toValue: 0,
+        duration,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+        useNativeDriver: true,
+      }),
+      Animated.timing(reflectionAnim, {
+        toValue: 0,
+        duration,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+        useNativeDriver: true,
+      }),
     ];
-    
+
     Animated.parallel([
       // UI element animations
-      Animated.timing(uiAnim, { toValue: 0, duration, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(uiAnim, {
+        toValue: 0,
+        duration,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
       Animated.timing(headerDefaultOpacityAnim, { toValue: 1, duration, useNativeDriver: true }),
       Animated.timing(grassOpacityAnim, { toValue: 1, duration, useNativeDriver: true }),
       Animated.timing(pathOpacityAnim, { toValue: 0, duration, useNativeDriver: true }),
@@ -216,20 +316,21 @@ export default function HomeScreen() {
       Animated.timing(lambOpacityAnim, { toValue: 1, duration, useNativeDriver: true }),
       // Reset Rive view animations
       Animated.timing(riveScaleAnim, { toValue: 1, duration, useNativeDriver: true }),
-      Animated.timing(riveRotateAnim, { toValue: 0, duration, useNativeDriver: true })
+      Animated.timing(riveRotateAnim, { toValue: 0, duration, useNativeDriver: true }),
     ]).start(() => {
       // We should check completion status BEFORE setting resource back to default
-     
-      
+
       if (readingCompleted && prayerCompleted && reflectionCompleted) {
         console.log('DEBUG - All activities completed, setting resource to lambWriting');
-        setRiveResourceName('lamb-writing');
+        setArtboardName('Writing');
       } else {
         console.log('DEBUG - Not all activities completed, setting resource to mainSheep1');
-        setRiveResourceName('mainSheep1');
+        setArtboardName('Idle1');
       }
+      // Set Rive resource back to default AFTER animation completes
+      console.log('Default animation complete, resetting Rive resource to mainSheep1');
     });
-    
+
     // Animate lamb size separately as it cannot use native driver
     Animated.timing(lambSizeAnim, {
       toValue: 256,
@@ -237,7 +338,7 @@ export default function HomeScreen() {
       useNativeDriver: false, // Explicitly set to false
     }).start();
   };
-  
+
   // --- useEffect to react to external mode changes ---
   useEffect(() => {
     console.log('HomeScreen: Mode changed to', mode);
@@ -245,40 +346,42 @@ export default function HomeScreen() {
       readingCompleted,
       prayerCompleted,
       reflectionCompleted,
-      allCompleted: readingCompleted && prayerCompleted && reflectionCompleted
+      allCompleted: readingCompleted && prayerCompleted && reflectionCompleted,
     });
-    
+
     if (mode === 'DEFAULT') {
-      animateToDefault(); 
+      animateToDefault();
       // No need to set resource here, it will be set in the animateToDefault callback
+      // Ensure resource is reset if mode changes externally
+      setArtboardName('Idle1');
     } else if (mode === 'PRAYER') {
       // Handle prayer mode activation when coming from other screens
       console.log('Activating Prayer mode from external navigation');
       setShowBgRive(true);
-      
+
       // Set the Rive resource
-      setRiveResourceName('lamb-drinking');
-      
+      setArtboardName('Drinking');
+
       // Animate lamb size
       Animated.timing(lambSizeAnim, {
         toValue: 128,
         duration: 800,
         useNativeDriver: false,
       }).start();
-      
+
       // Trigger the animation to prayer state
       animateToState(1, waterOpacityAnim, 800, 'PRAYER');
     } else if (mode === 'REFLECTION') {
       // Handle reflection mode activation when coming from other screens
       console.log('Activating Reflection mode from external navigation');
-      
+
       // Animate lamb size
       Animated.timing(lambSizeAnim, {
         toValue: 128,
         duration: 800,
         useNativeDriver: false,
       }).start();
-      
+
       // Trigger the animation to reflection state
       animateToState(1, journalOpacityAnim, 800, 'REFLECTION');
     }
@@ -287,11 +390,11 @@ export default function HomeScreen() {
   // --- Event Handlers ---
   const handleReadPress = () => {
     console.log('Read Daily Bread Pressed - Setting resource to lamb-eating');
-    
+
     // Set the UI mode to preview
     setMode('PREVIEW');
     animateToState(0.5, pathOpacityAnim, 1000, 'PREVIEW');
-    
+
     // Animate the Rive view itself
     Animated.sequence([
       Animated.parallel([
@@ -304,7 +407,7 @@ export default function HomeScreen() {
           toValue: 0.05,
           duration: 400,
           useNativeDriver: true,
-        })
+        }),
       ]),
       Animated.parallel([
         Animated.timing(riveScaleAnim, {
@@ -316,14 +419,14 @@ export default function HomeScreen() {
           toValue: 0,
           duration: 600,
           useNativeDriver: true,
-        })
-      ])
+        }),
+      ]),
     ]).start();
-    
+
     // Set Rive resource after a delay
     setTimeout(() => {
       console.log('Setting Rive to lamb-eating');
-      setRiveResourceName('lamb-eating');
+      setArtboardName('Eating Bread');
     }, 300);
   };
 
@@ -331,15 +434,15 @@ export default function HomeScreen() {
     console.log('Daily Prayer Pressed - Setting resource to lamb-drinking');
     setMode('PRAYER');
     setShowBgRive(true);
-    
+
     Animated.timing(lambSizeAnim, {
       toValue: 128,
       duration: 1200,
       useNativeDriver: false,
     }).start();
-    
+
     animateToState(1, waterOpacityAnim, 1000, 'PRAYER');
-    
+
     // Animate the Rive view itself
     Animated.sequence([
       Animated.parallel([
@@ -352,7 +455,7 @@ export default function HomeScreen() {
           toValue: -0.05,
           duration: 400,
           useNativeDriver: true,
-        })
+        }),
       ]),
       Animated.parallel([
         Animated.timing(riveScaleAnim, {
@@ -364,29 +467,29 @@ export default function HomeScreen() {
           toValue: 0,
           duration: 600,
           useNativeDriver: true,
-        })
-      ])
+        }),
+      ]),
     ]).start();
-    
+
     // Set Rive resource after a delay
     setTimeout(() => {
       console.log('Setting Rive to lamb-drinking');
-      setRiveResourceName('lamb-drinking');
+      setArtboardName('Drinking');
     }, 300);
   };
 
   const handleReflectionPress = () => {
     console.log('Daily Reflection / QT Pressed - No resource change');
     setMode('REFLECTION');
-    
+
     Animated.timing(lambSizeAnim, {
       toValue: 128,
       duration: 1200,
       useNativeDriver: false,
     }).start();
-    
+
     animateToState(1, journalOpacityAnim, 1000, 'REFLECTION');
-    
+
     // Animate the Rive view itself
     Animated.sequence([
       Animated.parallel([
@@ -399,7 +502,7 @@ export default function HomeScreen() {
           toValue: 0.05,
           duration: 400,
           useNativeDriver: true,
-        })
+        }),
       ]),
       Animated.parallel([
         Animated.timing(riveScaleAnim, {
@@ -411,10 +514,10 @@ export default function HomeScreen() {
           toValue: 0,
           duration: 600,
           useNativeDriver: true,
-        })
-      ])
+        }),
+      ]),
     ]).start();
-    
+
     // No Rive change needed here currently
     /* setTimeout(() => {
       // setRiveResourceName('lambWriting');
@@ -428,7 +531,7 @@ export default function HomeScreen() {
       readingCompleted,
       prayerCompleted,
       reflectionCompleted,
-      allCompleted: readingCompleted && prayerCompleted && reflectionCompleted
+      allCompleted: readingCompleted && prayerCompleted && reflectionCompleted,
     });
 
     // Animate the Rive view for closing
@@ -443,7 +546,7 @@ export default function HomeScreen() {
           toValue: -0.03,
           duration: 250,
           useNativeDriver: true,
-        })
+        }),
       ]),
       Animated.parallel([
         Animated.timing(riveScaleAnim, {
@@ -455,15 +558,15 @@ export default function HomeScreen() {
           toValue: 0,
           duration: 500,
           useNativeDriver: true,
-        })
-      ])
+        }),
+      ]),
     ]).start();
 
     // Hide any specific background elements
     setShowBgRive(false);
 
     // Set mode to trigger animateToDefault via useEffect
-    setMode('DEFAULT'); 
+    setMode('DEFAULT');
   };
 
   // Additional useEffect to update Rive animation when completion status changes
@@ -473,61 +576,59 @@ export default function HomeScreen() {
       readingCompleted,
       prayerCompleted,
       reflectionCompleted,
-      mode
+      mode,
     });
-    
+
     if (mode === 'DEFAULT') {
       if (readingCompleted && prayerCompleted && reflectionCompleted) {
         console.log('DEBUG - Setting directly to lambWriting because all activities completed');
-        setRiveResourceName('lamb-writing');
+        setArtboardName('Writing');
       } else {
         console.log('DEBUG - Setting directly to mainSheep1 because not all activities completed');
-        setRiveResourceName('mainSheep1');
+        setArtboardName('Idle1');
       }
     }
   }, [readingCompleted, prayerCompleted, reflectionCompleted, mode]);
 
-  // Add effect to log riveResourceName changes
-  useEffect(() => {
-    console.log('DEBUG - Rive resource name changed to:', riveResourceName);
-  }, [riveResourceName]);
-
   // --- Load and cache images ---
-  const cacheImages = useMemo(() => async () => {
-    // Define all the assets to preload
-    const images = [
-      grassBg,
-      waterBg,
-      pathBg,
-      journalBg,
-      breadIcon,
-      dropIcon,
-      quillIcon,
-      flameIcon,
-      gemIcon,
-      heartIcon,
-      starIcon
-    ];
+  const cacheImages = useMemo(
+    () => async () => {
+      // Define all the assets to preload
+      const images = [
+        grassBg,
+        waterBg,
+        pathBg,
+        journalBg,
+        breadIcon,
+        dropIcon,
+        quillIcon,
+        flameIcon,
+        gemIcon,
+        heartIcon,
+        starIcon,
+      ];
 
-    try {
-      console.log('Preloading images for faster rendering');
-      
-      // Create assets from modules for better caching
-      const imageAssets = images.map(image => Asset.fromModule(image).downloadAsync());
-      
-      // Wait for all assets to download and cache
-      await Promise.all(imageAssets);
-      
-      // Explicitly process asset sources for better native caching
-      
-      console.log('Image preloading complete, cached', images.length, 'images');
-      setAssetsLoaded(true);
-    } catch (error) {
-      console.error('Failed to cache images:', error);
-      // Continue even if caching fails
-      setAssetsLoaded(true);
-    }
-  }, []); // Empty dependency array ensures this function only gets created once
+      try {
+        console.log('Preloading images for faster rendering');
+
+        // Create assets from modules for better caching
+        const imageAssets = images.map((image) => Asset.fromModule(image).downloadAsync());
+
+        // Wait for all assets to download and cache
+        await Promise.all(imageAssets);
+
+        // Explicitly process asset sources for better native caching
+
+        console.log('Image preloading complete, cached', images.length, 'images');
+        setAssetsLoaded(true);
+      } catch (error) {
+        console.error('Failed to cache images:', error);
+        // Continue even if caching fails
+        setAssetsLoaded(true);
+      }
+    },
+    []
+  ); // Empty dependency array ensures this function only gets created once
 
   // Call cache images when component mounts
   useEffect(() => {
@@ -546,29 +647,82 @@ export default function HomeScreen() {
 
   return (
     <View className="flex-1">
-      {/* Background Layers - Use expo-image for better performance */} 
-      <Animated.View style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: grassOpacityAnim }]}>
-        <Image source={grassBg} style={{width: '100%', height: '100%'}} />
-      </Animated.View>
-      
-      <Animated.View style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: pathOpacityAnim }]}>
-        <Image source={pathBg} style={{width: '100%', height: '100%'}} />
-      </Animated.View>
-      
-      <Animated.View style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: journalOpacityAnim }]}>
-        <Image source={journalBg} style={{width: '100%', height: '100%'}} />
-      </Animated.View>
-      
-      {/* Prayer background Rive animation */}
-      <Animated.View 
+      {/* Background Layers - Use expo-image for better performance */}
+      <Animated.View
         style={[
-          {position: 'absolute', width: '100%', height: '100%', zIndex: 0},
-          { opacity: waterOpacityAnim }
-        ]}
-      >
+          { position: 'absolute', width: '100%', height: '100%' },
+          { opacity: grassOpacityAnim },
+        ]}>
+        <Image source={grassBg} style={{ width: '100%', height: '100%' }} />
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          { position: 'absolute', width: '100%', height: '100%' },
+          { opacity: pathOpacityAnim },
+        ]}>
+        <Image source={pathBg} style={{ width: '100%', height: '100%' }} />
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          { position: 'absolute', width: '100%', height: '100%' },
+          { opacity: journalOpacityAnim },
+        ]}>
+        <Image source={journalBg} style={{ width: '100%', height: '100%' }} />
+      </Animated.View>
+
+      {/* Prayer background Rive animation */}
+      <Animated.View
+        style={[
+          { position: 'absolute', width: '100%', height: '100%' },
+          { opacity: grassOpacityAnim },
+        ]}>
+        <Image
+          source={grassBg}
+          style={{ width: '100%', height: '100%' }}
+          contentFit="cover"
+          transition={300}
+        />
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          { position: 'absolute', width: '100%', height: '100%' },
+          { opacity: pathOpacityAnim },
+        ]}>
+        <Image
+          source={pathBg}
+          style={{ width: '100%', height: '100%' }}
+          contentFit="cover"
+          transition={300}
+        />
+      </Animated.View>
+
+      <Animated.View
+        style={[
+          { position: 'absolute', width: '100%', height: '100%' },
+          { opacity: journalOpacityAnim },
+        ]}>
+        <Image
+          source={journalBg}
+          style={{ width: '100%', height: '100%' }}
+          contentFit="cover"
+          transition={300}
+        />
+      </Animated.View>
+
+      {/* Prayer background Rive animation */}
+      <Animated.View
+        style={[
+          { position: 'absolute', width: '100%', height: '100%', zIndex: 0 },
+          { opacity: waterOpacityAnim },
+        ]}>
         {showBgRive && (
           <Rive
-            resourceName="bg-green"
+            resourceName="shepherd_animations"
+            stateMachineName="State Machine 1"
+            artboardName="Drinking"
             autoplay={true}
             style={{ width: '160%', height: '160%', top: -300, left: -128 }}
           />
@@ -576,43 +730,40 @@ export default function HomeScreen() {
       </Animated.View>
 
       <SafeAreaView className="flex-1">
-        {/* Header: Contains logic for showing Back OR Title/Stats */} 
+        {/* Header: Contains logic for showing Back OR Title/Stats */}
         <View className="flex-row justify-between items-center px-6 pt-1 pb-4 h-[50px] relative">
-            {/* Animated Back Button */} 
+          {/* Animated Back Button */}
 
-
-            {/* Animated Default Header Elements (Title + Stats) */} 
-            <Animated.View 
-              className="absolute inset-0 flex-row items-center justify-between px-6"
-              style={[{ opacity: headerDefaultOpacityAnim }]}
-              pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}
-            >
-              <Text 
-                className="text-h1 font-feather text-white ml-2 tracking-wide"
-                style={{ textShadowColor: 'rgba(0, 0, 0, 0.2)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 2 }}
-              >
-                Shepherd
-              </Text>
-              <View className="flex-1 ml-6 mr-10" />
-              <View className="flex-row items-center space-x-2">
-                <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
-                <View className="ml-2">
-                  <ProgressPill value={0} label={gens.toString()} icon={gemIcon} />
-                </View>
-                
+          {/* Animated Default Header Elements (Title + Stats) */}
+          <Animated.View
+            className="absolute inset-0 flex-row items-center justify-between px-6"
+            style={[{ opacity: headerDefaultOpacityAnim }]}
+            pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}>
+            <Text
+              className="text-h1 font-feather text-white ml-2 tracking-wide"
+              style={{
+                textShadowColor: 'rgba(0, 0, 0, 0.2)',
+                textShadowOffset: { width: 0, height: 1 },
+                textShadowRadius: 2,
+              }}>
+              Shepherd
+            </Text>
+            <View className="flex-1 ml-6 mr-10" />
+            <View className="flex-row items-center space-x-2">
+              <ProgressPill value={0} label="2" icon={flameIcon} />
+              <View className="ml-2">
+                <ProgressPill value={0} label="3" icon={gemIcon} />
               </View>
-            </Animated.View>
+            </View>
+          </Animated.View>
         </View>
 
-        {/* Top Section - Lamb Avatar */} 
-         <Animated.View
+        {/* Top Section - Lamb Avatar */}
+        <Animated.View
           className="items-center justify-center"
           style={{
             opacity: lambOpacityAnim,
-            transform: [
-              { translateX: lambTranslateX },
-              { translateY: lambTranslateY }
-            ],
+            transform: [{ translateX: lambTranslateX }, { translateY: lambTranslateY }],
             height: BASE_LAMB_SIZE,
             // Add conditional shadow for the glow effect
             shadowColor: showGlow ? '#FDE047' : 'transparent', // yellow-300
@@ -621,33 +772,36 @@ export default function HomeScreen() {
             shadowRadius: 15, // Adjust radius for softness
             elevation: showGlow ? 10 : 0, // Android shadow
           }}>
-          <Animated.View 
-            className="items-center justify-center overflow-hidden"
-            style={{}}
-          >
+          <Animated.View className="items-center justify-center overflow-hidden" style={{}}>
             {riveError ? (
               <Text className="text-red-500 p-4 text-center">
                 Error loading animation: {riveError.message} ({riveError.type})
               </Text>
             ) : (
-              <Animated.View style={{ 
-                width: lambSizeAnim, 
-                height: lambSizeAnim
-              }}>
-                <Animated.View style={{
-                  width: '100%', 
-                  height: '100%',
-                  transform: [
-                    { scale: riveScaleAnim },
-                    { rotate: riveRotateAnim.interpolate({
-                      inputRange: [-1, 0, 1],
-                      outputRange: ['-60deg', '0deg', '60deg']
-                    })}
-                  ]
+              <Animated.View
+                style={{
+                  width: lambSizeAnim,
+                  height: lambSizeAnim,
                 }}>
+                <Animated.View
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    transform: [
+                      { scale: riveScaleAnim },
+                      {
+                        rotate: riveRotateAnim.interpolate({
+                          inputRange: [-1, 0, 1],
+                          outputRange: ['-60deg', '0deg', '60deg'],
+                        }),
+                      },
+                    ],
+                  }}>
                   <Rive
                     ref={riveRef}
-                    resourceName={riveResourceName}
+                    resourceName="shepherd_animations"
+                    stateMachineName="State Machine 1"
+                    artboardName={artboardName}
                     autoplay={true}
                     onError={handleRiveError}
                     style={{ width: '100%', height: '100%' }}
@@ -658,30 +812,38 @@ export default function HomeScreen() {
           </Animated.View>
         </Animated.View>
 
-        {/* Bottom Section - Action Buttons Card */} 
+        {/* Bottom Section - Action Buttons Card */}
         <Animated.View
           className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-28"
           style={{
-            ...Platform.select({ ios: { shadowColor: 'rgba(0,0,0,0.08)', shadowOffset: { width: 0, height: 2 }, shadowRadius: 4, shadowOpacity: 1, }, android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)', }, }),
+            ...Platform.select({
+              ios: {
+                shadowColor: 'rgba(0,0,0,0.08)',
+                shadowOffset: { width: 0, height: 2 },
+                shadowRadius: 4,
+                shadowOpacity: 1,
+              },
+              android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
+            }),
             opacity: bottomCardOpacity,
             transform: [{ translateY: bottomCardTranslateY }],
           }}>
-          
           <View className="flex-row items-center gap-2.5 mb-0 px-1">
-                 <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
-              <View 
-                className="h-full bg-red rounded-full" 
+            <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
+              <View
+                className="h-full bg-red rounded-full"
                 style={{ width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%` }}
               />
             </View>
             <View className="flex-row items-center gap-1">
-            <Text className="font-feather text-body text-description">{lambHearts}/{MAX_HEARTS}</Text>
-            <Image source={heartIcon} className="w-8 h-8"  />
+              <Text className="font-feather text-body text-description">
+                {lambHearts}/{MAX_HEARTS}
+              </Text>
+              <Image source={heartIcon} className="w-8 h-8" />
             </View>
-      
           </View>
 
-          <SecondaryButton 
+          <SecondaryButton
             icon={breadIcon}
             title="Daily Bread – Read"
             subtitle="Feed your soul with scripture"
@@ -690,7 +852,7 @@ export default function HomeScreen() {
             disabled={mode !== 'DEFAULT'}
             completed={readingCompleted}
           />
-          <SecondaryButton 
+          <SecondaryButton
             icon={dropIcon}
             title="Living Water – Pray"
             subtitle="Refresh your spirit with prayer"
@@ -699,7 +861,7 @@ export default function HomeScreen() {
             disabled={mode !== 'DEFAULT'}
             completed={prayerCompleted}
           />
-          <SecondaryButton 
+          <SecondaryButton
             icon={quillIcon}
             title="Quiet Time – Reflect"
             subtitle="Pause and meet with God"
@@ -710,21 +872,11 @@ export default function HomeScreen() {
           />
         </Animated.View>
 
-
-        {/* Overlays */} 
-        <BiblePreviewComponent 
-          visible={mode === 'PREVIEW'} 
-          onClose={handleCloseOverlay}
-        />
-        <PrayerComponent
-          visible={mode === 'PRAYER'}
-          onClose={handleCloseOverlay} 
-        />
-        <JournalComponent
-          visible={mode === 'REFLECTION'}
-          onClose={handleCloseOverlay}
-        />
+        {/* Overlays */}
+        <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
+        <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
+        <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
       </SafeAreaView>
     </View>
   );
-} 
+}
