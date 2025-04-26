@@ -1,11 +1,14 @@
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
 export interface UserDoc {
-    displayName: string;
-    denomination?: string;
+    //onboarding questions
     spiritualGoal: 'Walk' | 'Overcome' | 'Understand' | 'Explore';
     experienceLevel: 'new' | 'growing' | 'mature';
     frequencyGoal: 'daily' | 'weekly';
+
+
+    denomination?: string;
+    displayName: string;
     selectedPathId: string;
     lamb: Lamb;
     streakCount: number;
@@ -16,6 +19,10 @@ export interface UserDoc {
     proStatus: 'free' | 'trial' | 'pro';
     createdAt: FirebaseFirestoreTypes.Timestamp;
     updatedAt: FirebaseFirestoreTypes.Timestamp;
+    gens: number;
+    lastReadingDate: FirebaseFirestoreTypes.Timestamp;
+    lastPrayerDate: FirebaseFirestoreTypes.Timestamp;
+    lastReflectionDate: FirebaseFirestoreTypes.Timestamp;
 }
 
 

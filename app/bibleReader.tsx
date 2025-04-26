@@ -353,17 +353,17 @@ const increaseFontSize = () => {
     }
   };
 
-  const renderBibleContent = () => {
-    // Memoize style calculations to prevent unnecessary style object recreations
-    // IMPORTANT: These need to be here before any conditional returns
-    const verseTextStyle = useMemo(() => {
-      return [styles.verseText, { fontSize: fontSize }];
-    }, [fontSize]);
-    
-    const verseNumberStyle = useMemo(() => {
-      return [styles.verseNumber, { fontSize: fontSize }];
-    }, [fontSize]);
+  // Memoize style calculations to prevent unnecessary style object recreations
+  // These are defined at component level because hooks can't be used in regular functions
+  const verseTextStyle = useMemo(() => {
+    return [styles.verseText, { fontSize: fontSize }];
+  }, [fontSize]);
+  
+  const verseNumberStyle = useMemo(() => {
+    return [styles.verseNumber, { fontSize: fontSize }];
+  }, [fontSize]);
 
+  const renderBibleContent = () => {
     if (loading) {
       return <ActivityIndicator size="large" color="#3C584A" className="mt-10" />;
     }

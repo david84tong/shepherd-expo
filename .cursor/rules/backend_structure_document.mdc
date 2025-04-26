@@ -178,4 +178,6 @@ The backend of Shepherd is designed with a modern, serverless architecture that 
 *   Unique aspects of this backend include its strong emphasis on offline capabilities and gamification logic seamlessly integrated with a mature cloud infrastructure.
 *   Each component, from the API endpoints to the security protocols, works together to help Gen Z Christians build a more consistent, engaging, and spiritually fulfilling daily routine.
 
+    
+
 This setup not only meets the immediate needs of the MVP but also lays a strong foundation for future features and scalability as Shepherd continues to evolve.

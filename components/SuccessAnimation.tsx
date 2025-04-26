@@ -1,10 +1,12 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, Dimensions, Animated, Image } from 'react-native';
 import Rive, { RiveRef } from 'rive-react-native';
 import { router } from 'expo-router';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { usePathStore } from '../app/stores/pathStore';
+import { useUserStore } from '../app/stores/userStore';
 import PrimaryButton from './PrimaryButton';
+import firestore from '@react-native-firebase/firestore';
 
 // Import icons
 const gemIcon = require('../assets/icons/greenGemIcon.png');
@@ -20,6 +22,9 @@ interface SuccessAnimationProps {
   subMessage?: string;
   onClose?: () => void;
 }
+
+// Max hearts constant
+const MAX_HEARTS = 100;
 
 /**
  * Success animation screen shown after completing a reading or via debug.
@@ -39,6 +44,24 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
+  
+  // Get user store functions
+  const lambHearts = useUserStore(state => state.getLambHearts());
+  const lambXp = useUserStore(state => state.getLambXp());
+  const setLambHearts = useUserStore(state => state.setLambHearts);
+  const setLambXp = useUserStore(state => state.setLambXp);
+  const addXp = useUserStore(state => state.addXp);
+  const setLastActivityDate = useUserStore(state => state.setLastActivityDate);
+  const setLastReadingDate = useUserStore(state => state.setLastReadingDate);
+  const setLastPrayerDate = useUserStore(state => state.setLastPrayerDate);
+  const setLastReflectionDate = useUserStore(state => state.setLastReflectionDate);
+  
+  // State to track if rewards have been applied
+  const [rewardsApplied, setRewardsApplied] = useState(false);
+  // Calculate actual heart reward (don't exceed MAX_HEARTS)
+  const [actualHeartReward, setActualHeartReward] = useState(0);
+  // Flag to check if at max hearts
+  const [isAtMaxHearts, setIsAtMaxHearts] = useState(false);
   
   // Log when component mounts or successType changes
   useEffect(() => {
@@ -115,6 +138,53 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     // This should not happen, but log an error if it does
     console.error("Invalid or missing success type:", successType);
   }
+
+  // Apply rewards to user state when component mounts
+  useEffect(() => {
+    if (!rewardsApplied && successType) {
+      console.log(`Applying rewards: ${heartReward} hearts, ${xpReward} XP`);
+      console.log(`Current hearts: ${lambHearts}, Current XP: ${lambXp}`);
+      
+      // Check if at max hearts and calculate actual heart reward
+      const isMax = lambHearts >= MAX_HEARTS;
+      setIsAtMaxHearts(isMax);
+      
+      // Calculate how many hearts to actually add without exceeding MAX_HEARTS
+      const heartsToAdd = isMax ? 0 : Math.min(heartReward, MAX_HEARTS - lambHearts);
+      setActualHeartReward(heartsToAdd);
+      
+      // Update user state with new values
+      if (heartsToAdd > 0) {
+        setLambHearts(lambHearts + heartsToAdd);
+      }
+      
+      // Always add XP
+      addXp(xpReward);
+      
+      // Create a new timestamp for the current time
+      // @ts-ignore - Firestore type issue workaround
+      const now = firestore.Timestamp.now();
+      
+      // Always update lastActivityDate regardless of activity type
+      setLastActivityDate(now);
+      
+      // Update specific activity timestamp based on success type
+      if (successType === SuccessAnimationType.READING) {
+        setLastReadingDate(now);
+      } else if (successType === SuccessAnimationType.PRAYER) {
+        setLastPrayerDate(now);
+      } else if (successType === SuccessAnimationType.REFLECTION) {
+        setLastReflectionDate(now);
+      }
+      
+      // Mark rewards as applied
+      setRewardsApplied(true);
+      
+      console.log(`Applied ${heartsToAdd} hearts (of intended ${heartReward}) and ${xpReward} XP`);
+      console.log(`Updated values - Hearts: ${lambHearts + heartsToAdd}, XP: ${lambXp + xpReward}`);
+      console.log(`Updated activity timestamp for ${successType}`);
+    }
+  }, [successType, rewardsApplied, lambHearts, lambXp, heartReward, xpReward]);
 
   // Play animations when component mounts or successType changes
   useEffect(() => {
@@ -216,8 +286,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       setHomeMode('REFLECTION');
       setPathInProgress(true); 
     }, 700); // 500ms delay
-
-
   };
   
   // Determine if we should show next action buttons (only after reading is completed)
@@ -277,10 +345,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         ) : (
           // Standard rewards display for other success types
           <>
-            <View className="flex-row items-center justify-center mb-2">
-              <Image source={heartIcon} className="w-6 h-6 mr-2" />
-              <Text className="font-din text-textPrimary text-xl">+{heartReward} Hearts</Text>
-            </View>
+            {/* Only show hearts reward if not at max hearts */}
+            {!isAtMaxHearts && actualHeartReward > 0 && (
+              <View className="flex-row items-center justify-center mb-2">
+                <Image source={heartIcon} className="w-6 h-6 mr-2" />
+                <Text className="font-din text-textPrimary text-xl">+{actualHeartReward} Hearts</Text>
+              </View>
+            )}
             <View className="flex-row items-center justify-center">
               <Image source={starIcon} className="w-6 h-6 mr-2" />
               <Text className="font-din text-textPrimary text-xl">+{xpReward} Soul Points</Text>
@@ -291,9 +362,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       
       {/* Next Action Buttons - based on completion state */}
       <View className="w-full mt-4 mb-2">
-        {/* Show title only if at least one action is available */}
-     
-        
         <View className="flex-row justify-center space-x-12">
           {/* Show Pray button only if prayer is not completed */}
           {!prayerCompleted && (

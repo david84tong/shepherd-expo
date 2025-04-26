@@ -11,6 +11,7 @@ import JournalComponent from '../../components/JournalComponent';
 import ProgressPill from '../../components/ProgressPill';
 import { useHomeStore, HomeMode } from '../stores/homeStore'; // Import Zustand store
 import { usePathStore } from '../stores/pathStore'; // Import path store
+import { useUserStore } from '../stores/userStore'; // Import user store
 import { Unit, BIBLE_PATHS } from '../models/Path'; // Import Unit type and BIBLE_PATHS
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
@@ -32,6 +33,9 @@ const gemIcon = require('../../assets/icons/greenGemIcon.png');
 const heartIcon = require('../../assets/icons/heartIcon.png');
 const starIcon = require('../../assets/icons/starIcon.png'); // Import star icon
 
+// Max hearts constant
+const MAX_HEARTS = 100;
+
 export default function HomeScreen() {
   const riveRef = useRef<RiveRef>(null);
   const [riveError, setRiveError] = useState<RNRiveError | null>(null);
@@ -48,6 +52,11 @@ export default function HomeScreen() {
 
   // Get current path state from pathStore
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
+  
+  // Get user stats from userStore
+  const lambHearts = useUserStore(state => state.getLambHearts());
+  const streakCount = useUserStore(state => state.getStreakCount());
+  const gens = useUserStore(state => state.getGens());
   
   // State to manage the Rive resource name
   const [riveResourceName, setRiveResourceName] = useState('mainSheep1'); // Default resource
@@ -499,15 +508,15 @@ export default function HomeScreen() {
     <View className="flex-1">
       {/* Background Layers - Use expo-image for better performance */} 
       <Animated.View style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: grassOpacityAnim }]}>
-        <Image source={grassBg} style={{width: '100%', height: '100%'}} contentFit="cover" transition={300} />
+        <Image source={grassBg} style={{width: '100%', height: '100%'}} />
       </Animated.View>
       
       <Animated.View style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: pathOpacityAnim }]}>
-        <Image source={pathBg} style={{width: '100%', height: '100%'}} contentFit="cover" transition={300} />
+        <Image source={pathBg} style={{width: '100%', height: '100%'}} />
       </Animated.View>
       
       <Animated.View style={[{position: 'absolute', width: '100%', height: '100%'}, { opacity: journalOpacityAnim }]}>
-        <Image source={journalBg} style={{width: '100%', height: '100%'}} contentFit="cover" transition={300} />
+        <Image source={journalBg} style={{width: '100%', height: '100%'}} />
       </Animated.View>
       
       {/* Prayer background Rive animation */}
@@ -546,9 +555,9 @@ export default function HomeScreen() {
               </Text>
               <View className="flex-1 ml-6 mr-10" />
               <View className="flex-row items-center space-x-2">
-                <ProgressPill value={0} label="2" icon={flameIcon} />
+                <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
                 <View className="ml-2">
-                  <ProgressPill value={0} label="3" icon={gemIcon} />
+                  <ProgressPill value={0} label={gens.toString()} icon={gemIcon} />
                 </View>
                 
               </View>
@@ -614,10 +623,13 @@ export default function HomeScreen() {
           
           <View className="flex-row items-center gap-2.5 mb-0 px-1">
                  <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
-              <View className="h-full w-3/4 bg-red rounded-full" />
+              <View 
+                className="h-full bg-red rounded-full" 
+                style={{ width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%` }}
+              />
             </View>
             <View className="flex-row items-center gap-1">
-            <Text className="font-feather text-body text-description">75/100</Text>
+            <Text className="font-feather text-body text-description">{lambHearts}/{MAX_HEARTS}</Text>
             <Image source={heartIcon} className="w-8 h-8"  />
             </View>
       

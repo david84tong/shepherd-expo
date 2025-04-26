@@ -4,13 +4,15 @@ import '../global.css';
 import { Stack, SplashScreen, useRouter } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Modal, FlatList, SafeAreaView, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, FlatList, SafeAreaView, ScrollView, Alert, StyleSheet } from 'react-native';
 import { BottomSheetModal, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Asset } from 'expo-asset';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SuccessAnimationContent from '../components/SuccessAnimation';
 import AppLoading from '../components/AppLoading';
+import { useUIStore } from './stores/uiStore';
+import { HalfModalType } from './halfModal';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -31,10 +33,14 @@ const DEBUG_SCREENS: DebugScreen[] = [
   { name: 'Prayer', route: '/prayer' }
 ];
 
-// DebugButton component
-function DebugButton() {
+// Define props for DebugButton
+interface DebugButtonProps {
+  // showPenaltyModal: (penalty: number, days: number, streakBroken: boolean) => void;
+}
+
+// DebugButton component accepts props
+function DebugButton({ }: DebugButtonProps) {
   const [modalVisible, setModalVisible] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false);
   const router = useRouter();
   
   // Reference to the success bottom sheet modal
@@ -80,6 +86,27 @@ function DebugButton() {
       ]
     );
   }, []);
+
+  // Handler for the heart penalty modal test button
+  const handleTestPenaltyModal = useCallback(() => {
+    console.log("[DebugButton] handleTestPenaltyModal called");
+    setModalVisible(false); // Close debug menu first
+
+    // Prepare params for heart penalty
+    const params = {
+      type: HalfModalType.HEART_PENALTY,
+      message: "Debug: Hearts Lost!",
+      subMessage: "You lost 5 hearts for 2 days of inactivity.",
+      penalty: '5',  // Pass as string
+      daysMissed: '2', // Pass as string
+    };
+
+    // Delay slightly before navigating
+    setTimeout(() => {
+      console.log("Navigating to /halfModal with penalty params:", params);
+      router.push({ pathname: '/halfModal', params });
+    }, 50);
+  }, [router]);
 
   const navigateTo = (item: DebugScreen) => {
     setModalVisible(false);
@@ -153,6 +180,15 @@ function DebugButton() {
                   <Text className="font-din text-sm text-[#7C927E] mt-1">Native Bottom Sheet Animation</Text>
                 </TouchableOpacity>
                 
+                {/* Add Heart Penalty Modal Button Back */}
+                <TouchableOpacity
+                  className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
+                  onPress={handleTestPenaltyModal} 
+                >
+                  <Text className="font-feather text-base text-textPrimary">Test Heart Penalty Modal</Text>
+                  <Text className="font-din text-sm text-[#A57070] mt-1">Show penalty via /halfModal</Text>
+                </TouchableOpacity>
+                
                 {/* Reset Local Storage Button */}
                 <TouchableOpacity
                   className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
@@ -211,6 +247,7 @@ export const unstable_settings = {
 };
 
 export default function RootLayout() {
+  const router = useRouter();
   const [loaded, error] = useFonts({
     'Feather Bold': require('../assets/fonts/Feather Bold.ttf'),
     'DIN Next Rounded LT W01 Regular': require('../assets/fonts/DIN Next Rounded LT W01 Regular.ttf'),
@@ -219,6 +256,9 @@ export default function RootLayout() {
   // Add state for loading progress
   const [appReady, setAppReady] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
+  
+  // Get modal dim state from store
+  const isModalDimActive = useUIStore((state) => state.isModalDimActive);
 
   // Preload resources with simulated progress
   const preloadResources = () => {
@@ -244,58 +284,117 @@ export default function RootLayout() {
     if (error) throw error;
   }, [error]);
 
+  // Function to check streak status - Modified to navigate to halfModal
+  const checkStreakStatus = useCallback(async () => {
+    try {
+      const { checkStreakAndApplyPenalties } = require('../app/hooks/streakHook');
+      const result = await checkStreakAndApplyPenalties();
+      
+      if (result && result.heartPenalty > 0) {
+        console.log(`Penalty detected: ${result.heartPenalty} hearts, ${result.daysMissed} days missed, streak broken: ${result.streakBroken}`);
+        
+        // Prepare params - ensure values are strings for navigation
+        const params = {
+          type: HalfModalType.HEART_PENALTY,
+          message: result.streakBroken ? "Streak Broken!" : "Hearts Lost!",
+          subMessage: result.streakBroken
+              ? `Your streak has been reset. You lost ${result.heartPenalty} hearts after ${result.daysMissed} days of inactivity.`
+              : `You lost ${result.heartPenalty} hearts after ${result.daysMissed} days of inactivity.`,
+          penalty: String(result.heartPenalty),
+          daysMissed: String(result.daysMissed),
+        };
+
+        // Delay showing the modal slightly
+        setTimeout(() => {
+          console.log("Navigating to /halfModal with params:", params);
+          router.push({ pathname: '/halfModal', params });
+        }, 1500);
+      }
+    } catch (error) {
+      console.error('Error checking streak status:', error);
+    }
+  }, [router]);
+
+  // Updated useEffect to use the useCallback version of checkStreakStatus
   useEffect(() => {
-    if (loaded) {
-      // Start preloading resources with progress
+    if (loaded && !appReady) { // Ensure fonts are loaded before checking streak
+      checkStreakStatus();
       preloadResources();
     }
-  }, [loaded]);
+  }, [loaded, appReady, checkStreakStatus]); // Add checkStreakStatus to dependencies
   
   if (!appReady) {
     return <AppLoading progress={loadProgress} />;
   }
+  
+  console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <BottomSheetModalProvider>
-        <Stack>
-          <Stack.Screen 
-            name="(tabs)" 
-            options={{ 
-              headerShown: false, 
-              // Explicitly set the desired animation for entering the tabs group
-              animation: 'slide_from_right', 
-            }} 
-          />
-          <Stack.Screen 
-            name="bibleReader" 
-            options={{
-              // Override animation to ensure slide transition
-              animation: "slide_from_right",
-              // Custom animation duration for smoother feel
-              animationDuration: 350, // ms
-              // Hide header for full-screen experience
-              headerShown: false 
-            }}
-          />
-          <Stack.Screen 
-            name="bible" 
-            options={{
-              // Override animation to ensure slide transition
-              animation: "slide_from_right",
-              // Custom animation duration for smoother feel
-              animationDuration: 350, // ms
-              // Hide header for full-screen experience
-              headerShown: false 
-            }}
-          />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="success" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
-        </Stack>
-        
-        {/* Show debug button */}
-        <DebugButton />
-      </BottomSheetModalProvider>
-    </GestureHandlerRootView>
+    <>
+      {/* Main App Content */}
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <BottomSheetModalProvider>
+          <Stack>
+            <Stack.Screen 
+              name="(tabs)" 
+              options={{ 
+                headerShown: false, 
+                // Explicitly set the desired animation for entering the tabs group
+                animation: 'slide_from_right', 
+              }} 
+            />
+            <Stack.Screen 
+              name="bibleReader" 
+              options={{
+                // Override animation to ensure slide transition
+                animation: "slide_from_right",
+                // Custom animation duration for smoother feel
+                animationDuration: 350, // ms
+                // Hide header for full-screen experience
+                headerShown: false 
+              }}
+            />
+            <Stack.Screen 
+              name="bible" 
+              options={{
+                // Override animation to ensure slide transition
+                animation: "slide_from_right",
+                // Custom animation duration for smoother feel
+                animationDuration: 350, // ms
+                // Hide header for full-screen experience
+                headerShown: false 
+              }}
+            />
+            <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
+            <Stack.Screen name="success" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
+            <Stack.Screen 
+              name="halfModal" 
+              options={{ 
+                presentation: 'transparentModal',
+                headerShown: false 
+              }}
+            />
+          </Stack>
+          
+          {/* Pass only necessary props to DebugButton */}
+          <DebugButton />
+        </BottomSheetModalProvider>
+
+        {/* Conditionally render the dimming overlay */}
+        {isModalDimActive && (
+          <View style={styles.dimOverlay} pointerEvents="none" />
+        )}
+
+      </GestureHandlerRootView>
+    </>
   );
 }
+
+// Add styles for the overlay
+const styles = StyleSheet.create({
+  dimOverlay: {
+    ...StyleSheet.absoluteFillObject, // Cover everything
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 10, // Ensure it's above main content but below the modal screen presented by router
+  },
+});
