@@ -3,8 +3,10 @@ import { View, TouchableOpacity, Text, Animated, Platform, Easing } from 'react-
 import PrimaryButton from './PrimaryButton';
 import { usePathStore } from '../app/stores/pathStore';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
+import { useUserStore } from '../app/stores/userStore';
 import BackButton from './BackButton';
 import { router } from 'expo-router';
+import firestore from '@react-native-firebase/firestore';
 
 interface PrayerComponentProps {
   /** Whether the component should render. */
@@ -48,6 +50,10 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
+  
+  // Get userStore functions for saving prayer
+  const addCompletedPrayer = useUserStore(state => state.addCompletedPrayer);
+  const setLastPrayerDate = useUserStore(state => state.setLastPrayerDate);
 
   // State for typing animation
   const [typedText, setTypedText] = useState('');
@@ -180,6 +186,26 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     // Mark prayer as completed
     setPrayerCompleted(true);
     setPathInProgress(false);
+    
+    // Create current timestamp
+    const now = firestore.Timestamp.now();
+    
+    // Save prayer data to userStore
+    console.log('Saving prayer data to userStore');
+    try {
+      // Save the completed prayer
+      addCompletedPrayer({
+        date: now,
+        type: 'standard' // You could add more prayer types later
+      });
+      
+      // Update last prayer date
+      setLastPrayerDate(now);
+      
+      console.log('Prayer saved successfully');
+    } catch (error) {
+      console.error('Error saving prayer data:', error);
+    }
     
     // Check if all three tasks are completed
     const allCompleted = readingCompleted && reflectionCompleted;

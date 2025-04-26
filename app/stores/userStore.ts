@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { UserDoc, Lamb } from '../models/User';
+import { UserDoc, Lamb, Prayer, Reflection, Reading } from '../models/User';
 import firestore from '@react-native-firebase/firestore';
 
 interface UserStore extends UserDoc {
@@ -22,6 +22,12 @@ interface UserStore extends UserDoc {
   getCreatedAt: () => UserDoc['createdAt'];
   getUpdatedAt: () => UserDoc['updatedAt'];
   getGens: () => number;
+  getLastReadingDate: () => UserDoc['lastReadingDate'];
+  getLastPrayerDate: () => UserDoc['lastPrayerDate'];
+  getLastReflectionDate: () => UserDoc['lastReflectionDate'];
+  getCompletedReflections: () => [Reflection];
+  getCompletedPrayers: () => [Prayer];
+  getCompletedReadings: () => [Reading];
   
   // Getters for Lamb fields
   getLambLevel: () => number;
@@ -51,6 +57,12 @@ interface UserStore extends UserDoc {
   setCreatedAt: (timestamp: UserDoc['createdAt']) => void;
   setUpdatedAt: (timestamp: UserDoc['updatedAt']) => void;
   setGens: (gens: number) => void;
+  setCompletedReflections: (reflections: [Reflection]) => void;
+  setCompletedPrayers: (prayers: [Prayer]) => void;
+  setCompletedReadings: (readings: [Reading]) => void;
+  addCompletedReflection: (reflection: Reflection) => void;
+  addCompletedPrayer: (prayer: Prayer) => void;
+  addCompletedReading: (reading: Reading) => void;
   
   // Setters for Lamb fields
   setLambLevel: (level: number) => void;
@@ -93,7 +105,10 @@ const initialState: Partial<UserDoc> = {
   chaptersReadTotal: 0,
   bibleVersion: 'ESV',
   proStatus: 'free',
-  gens: 10
+  gens: 10,
+  completedReflections: [] as unknown as [Reflection],
+  completedPrayers: [] as unknown as [Prayer],
+  completedReadings: [] as unknown as [Reading]
 };
 
 export const useUserStore = create<UserStore>()(
@@ -118,6 +133,12 @@ export const useUserStore = create<UserStore>()(
       getCreatedAt: () => get().createdAt,
       getUpdatedAt: () => get().updatedAt,
       getGens: () => get().gens,
+      getLastReadingDate: () => get().lastReadingDate,
+      getLastPrayerDate: () => get().lastPrayerDate,
+      getLastReflectionDate: () => get().lastReflectionDate,
+      getCompletedReflections: () => get().completedReflections,
+      getCompletedPrayers: () => get().completedPrayers,
+      getCompletedReadings: () => get().completedReadings,
       
       // Getters for Lamb
       getLambLevel: () => get().lamb.level,
@@ -147,6 +168,20 @@ export const useUserStore = create<UserStore>()(
       setCreatedAt: (createdAt) => set({ createdAt }),
       setUpdatedAt: (updatedAt) => set({ updatedAt }),
       setGens: (gens) => set({ gens }),
+      setCompletedReflections: (completedReflections) => set({ completedReflections }),
+      setCompletedPrayers: (completedPrayers) => set({ completedPrayers }),
+      setCompletedReadings: (completedReadings) => set({ completedReadings }),
+      
+      // Add single items to the completed arrays
+      addCompletedReflection: (reflection) => set(state => ({
+        completedReflections: [...state.completedReflections, reflection] as unknown as [Reflection]
+      })),
+      addCompletedPrayer: (prayer) => set(state => ({
+        completedPrayers: [...state.completedPrayers, prayer] as unknown as [Prayer]
+      })),
+      addCompletedReading: (reading) => set(state => ({
+        completedReadings: [...state.completedReadings, reading] as unknown as [Reading]
+      })),
       
       // Setters for Lamb
       setLambLevel: (level) => set(state => ({
@@ -198,7 +233,10 @@ export const useUserStore = create<UserStore>()(
         proStatus: state.proStatus,
         createdAt: state.createdAt,
         updatedAt: state.updatedAt,
-        gens: state.gens
+        gens: state.gens,
+        completedReflections: state.completedReflections,
+        completedPrayers: state.completedPrayers,
+        completedReadings: state.completedReadings
       }),
     }
   )

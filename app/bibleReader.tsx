@@ -17,8 +17,10 @@ import PrimaryButton from '../components/PrimaryButton';
 import SideButton from '~/components/SideButton';
 import { usePathStore } from './stores/pathStore';
 import { useHomeStore, SuccessAnimationType } from './stores/homeStore';
+import { useUserStore } from './stores/userStore';
 import { router, useLocalSearchParams } from 'expo-router';
 import { BIBLE_PATHS, Path, Unit } from './models/Path';
+import firestore from '@react-native-firebase/firestore';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
 const DEFAULT_FONT_SIZE = 16;
@@ -65,6 +67,14 @@ export default function BibleReaderScreen() {
   const setReadingCompleted = useHomeStore((state) => state.setReadingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
+  
+  // Get userStore functions for saving reading
+  const addCompletedReading = useUserStore(state => state.addCompletedReading);
+  const setLastReadingDate = useUserStore(state => state.setLastReadingDate);
+  const setVersesReadTotal = useUserStore(state => state.setVersesReadTotal);
+  const setChaptersReadTotal = useUserStore(state => state.setChaptersReadTotal);
+  const getVersesReadTotal = useUserStore(state => state.getVersesReadTotal);
+  const getChaptersReadTotal = useUserStore(state => state.getChaptersReadTotal);
   
   // Get URL parameters directly
   const params = useLocalSearchParams();
@@ -258,6 +268,36 @@ const increaseFontSize = () => {
     let nextUnit: Unit | null = null;
     let shouldStayInPath = false;
 
+    // Create current timestamp
+    const now = firestore.Timestamp.now();
+    
+    // Save reading data to userStore
+    console.log('Saving reading data to userStore');
+    try {
+      // Save the completed reading
+      addCompletedReading({
+        date: now,
+        completed: `${currentBook}:${currentChapter}`
+      });
+      
+      // Update last reading date
+      setLastReadingDate(now);
+      
+      // Update total verses and chapters read
+      const currentVerses = getVersesReadTotal();
+      const currentChapters = getChaptersReadTotal();
+      
+      // Add the number of verses in this chapter
+      const versesInChapter = chapterData ? chapterData.verses.length : 0;
+      setVersesReadTotal(currentVerses + versesInChapter);
+      setChaptersReadTotal(currentChapters + 1);
+      
+      console.log(`Reading saved successfully. Added ${versesInChapter} verses and 1 chapter.`);
+      console.log(`New totals: ${currentVerses + versesInChapter} verses, ${currentChapters + 1} chapters`);
+    } catch (error) {
+      console.error('Error saving reading data:', error);
+    }
+
     // If we are in a path and at the end chapter, mark the UNIT as completed
     if (pathInProgress && currentPath && isAtEndChapter) {
       console.log(`✅ Unit ${currentPath.unitId} completed! Attempting to mark...`);
@@ -331,26 +371,72 @@ const increaseFontSize = () => {
     });
   };
 
+  // Check if the current chapter is the end chapter of the selected path
+  const isAtEndChapter = useMemo(() => {
+    // Debug info
+    console.log("⚠️ Checking if at end chapter:");
+    console.log("- pathInProgress:", pathInProgress);
+    console.log("- currentPath:", currentPath);
+    console.log("- currentBookId:", currentBookId);
+    console.log("- currentChapter:", currentChapter);
+    
+    // If not in a path or no current path defined, consider it "at end"
+    if (!pathInProgress || !currentPath) {
+      console.log("➡️ No active path, consider isAtEndChapter irrelevant for now");
+      return false; // If not in a path, isAtEndChapter isn't strictly meaningful here
+    }
+    
+    // Check if we're on the right book and at the final chapter from the currentPath
+    const isActuallyAtEnd = currentBookId === currentPath.bookId && currentChapter === currentPath.endChapter;
+    console.log(`➡️ Book match: ${currentBookId === currentPath.bookId}, Chapter match: ${currentChapter === currentPath.endChapter}`);
+    console.log(`➡️ End result: ${isActuallyAtEnd ? "AT END CHAPTER" : "NOT at end chapter"}`);
+    
+    return isActuallyAtEnd;
+  }, [pathInProgress, currentPath, currentBookId, currentChapter]);
+
+  // Determine if the finish button should be enabled
+  const isFinishEnabled = useMemo(() => {
+    // Case 1: Past the end chapter in a path
+    if (pathInProgress && currentPath && currentChapter > currentPath.endChapter) {
+      console.log("✅ Finish enabled: Past end chapter");
+      return true;
+    }
+    // Case 2: On the end chapter in a path AND scrolled to bottom
+    if (isAtEndChapter && hasScrolledToBottom) { // Use the memoized isAtEndChapter
+      console.log("✅ Finish enabled: On end chapter and scrolled");
+      return true;
+    }
+    // Case 3: Not in a path AND scrolled to bottom
+    if (!pathInProgress && hasScrolledToBottom) {
+       console.log("✅ Finish enabled: Not in path and scrolled");
+      return true;
+    }
+    // Otherwise, disabled
+    console.log("❌ Finish disabled");
+    return false;
+  }, [pathInProgress, currentPath, currentChapter, isAtEndChapter, hasScrolledToBottom]); // Add dependencies
+
+  // Reset hasScrolledToBottom only when chapter changes, but never set it to false again for the same chapter
+  useEffect(() => {
+    setHasScrolledToBottom(false);
+  }, [currentChapter]);
+
   // Handle scroll events to detect when user reaches bottom
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    
     // Check if user has scrolled to the bottom (with a small threshold)
-    const isAtBottom = layoutMeasurement.height + contentOffset.y >= 
+    const scrolledToBottom = layoutMeasurement.height + contentOffset.y >= 
       contentSize.height - 100; // 100px threshold
-    
     // Only mark as scrolled to bottom if we're at the end chapter AND at the bottom of the content
-    if (isAtBottom && !hasScrolledToBottom) {
-      // Check if we're viewing the final chapter of the unit
-      const isEndChapter = currentPath && currentChapter === currentPath.endChapter;
-      
-      if (isEndChapter) {
-        console.log('📜 User has scrolled to bottom of the final chapter! Enabling Finish button.');
+    if (scrolledToBottom && !hasScrolledToBottom) {
+      // Only set to true if actually at the end chapter or not in a path
+      if (isAtEndChapter || !pathInProgress) {
+        console.log('📜 User has scrolled to bottom! Enabling Finish button.');
         setHasScrolledToBottom(true);
-      } else {
-        console.log(`📜 User has scrolled to bottom of chapter ${currentChapter}, but this isn't the final chapter (${currentPath?.endChapter}). Finish button remains disabled.`);
       }
+      // No need for the else log here, the button logic handles it
     }
+    // Never set hasScrolledToBottom to false after it's true for this chapter
   };
 
   // Memoize style calculations to prevent unnecessary style object recreations
@@ -392,35 +478,6 @@ const increaseFontSize = () => {
 
     return <Text className="text-text/70 mt-10">No data available.</Text>;
   };
-
-  // Check if the current chapter is the end chapter of the selected path
-  const isAtEndChapter = useMemo(() => {
-    // Debug info
-    console.log("⚠️ Checking if at end chapter:");
-    console.log("- pathInProgress:", pathInProgress);
-    console.log("- currentPath:", currentPath);
-    console.log("- currentBookId:", currentBookId);
-    console.log("- currentChapter:", currentChapter);
-    
-    // If not in a path or no current path defined, consider it "at end"
-    if (!pathInProgress || !currentPath) {
-      console.log("➡️ No active path, showing finish button");
-      return true;
-    }
-    
-    // Check if we're on the right book and at the final chapter from the currentPath
-    const isAtEnd = currentBookId === currentPath.bookId && currentChapter === currentPath.endChapter;
-    console.log(`➡️ Book match: ${currentBookId === currentPath.bookId}, Chapter match: ${currentChapter === currentPath.endChapter}`);
-    console.log(`➡️ End result: ${isAtEnd ? "AT END CHAPTER" : "NOT at end chapter"}`);
-    
-    return isAtEnd;
-  }, [pathInProgress, currentPath, currentBookId, currentChapter]);
-
-  // Reset hasScrolledToBottom when chapter changes
-  useEffect(() => {
-    console.log(`📚 Chapter changed to ${currentChapter}, resetting bottom scroll state`);
-    setHasScrolledToBottom(false);
-  }, [currentChapter]);
 
   return (
     <SafeAreaView className="flex-1 bg-main-bg">
@@ -510,7 +567,7 @@ const increaseFontSize = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Finish Reading Button - Always show but conditionally enable */}
+      {/* Finish Reading Button - Use calculated enabled state */}
       <Animated.View 
         style={[
           styles.finishButtonContainer,
@@ -521,9 +578,9 @@ const increaseFontSize = () => {
         ]}
       >
         <SideButton
-          title={hasScrolledToBottom ? "Finish Reading" :  "Finish Reading"}
+          title="Finish Reading"
           onPress={handleFinishReading}
-          disabled={!hasScrolledToBottom || (!pathInProgress && !isAtEndChapter)}
+          disabled={!isFinishEnabled} // Use the calculated enabled state
         />
       </Animated.View>
     </SafeAreaView>

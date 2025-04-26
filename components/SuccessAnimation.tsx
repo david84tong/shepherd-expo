@@ -40,12 +40,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const setSuccessType = useHomeStore((state) => state.setSuccessType);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
   
+  // -------- Other hooks below (must appear before any conditional return) --------
   // Get completion states
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
   
-  // Get user store functions
+  // User store hooks
   const lambHearts = useUserStore(state => state.getLambHearts());
   const lambXp = useUserStore(state => state.getLambXp());
   const setLambHearts = useUserStore(state => state.setLambHearts);
@@ -55,6 +56,11 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const setLastReadingDate = useUserStore(state => state.setLastReadingDate);
   const setLastPrayerDate = useUserStore(state => state.setLastPrayerDate);
   const setLastReflectionDate = useUserStore(state => state.setLastReflectionDate);
+  const getGens = useUserStore(state => state.getGens);
+  const setGens = useUserStore(state => state.setGens);
+  
+  // Determine which type to use for rendering – default to READING if null while store updates
+  const effectiveType = successType ?? SuccessAnimationType.READING;
   
   // State to track if rewards have been applied
   const [rewardsApplied, setRewardsApplied] = useState(false);
@@ -102,7 +108,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   let rewardTitle = "REWARDS EARNED";
 
   // Get values based on successType - make sure we are handling all possible types
-  if (successType === SuccessAnimationType.READING) {
+  if (effectiveType === SuccessAnimationType.READING) {
     console.log("Setting up READING success screen");
     message = "Reading Complete!";
     subMessage = "You finished today's Bible reading. The Shepherd is pleased.";
@@ -110,7 +116,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     xpReward = 5; 
     riveResource = "successHeartAndStars";
     rewardTitle = "READING REWARDS";
-  } else if (successType === SuccessAnimationType.PRAYER) {
+  } else if (effectiveType === SuccessAnimationType.PRAYER) {
     console.log("Setting up PRAYER success screen");
     message = "Prayer Complete!";
     subMessage = "You spent quality time with the Shepherd in prayer.";
@@ -118,7 +124,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     xpReward = 3;
     riveResource = "successHeartAndStars";
     rewardTitle = "PRAYER REWARDS";
-  } else if (successType === SuccessAnimationType.REFLECTION) {
+  } else if (effectiveType === SuccessAnimationType.REFLECTION) {
     console.log("Setting up REFLECTION success screen");
     message = "Reflection Complete!";
     subMessage = "You've recorded your thoughts and connected with the Word.";
@@ -126,7 +132,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     xpReward = 2;
     riveResource = "successHeartAndStars"; 
     rewardTitle = "REFLECTION REWARDS";
-  }  else if (successType === SuccessAnimationType.BONUS) {
+  }  else if (effectiveType === SuccessAnimationType.BONUS) {
     console.log("Setting up BONUS success screen");
     message = "Daily Trifecta Complete!";
     subMessage = "Amazing! You've completed all three spiritual disciplines today.";
@@ -136,12 +142,12 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     rewardTitle = "BONUS REWARDS";
   } else {
     // This should not happen, but log an error if it does
-    console.error("Invalid or missing success type:", successType);
+    console.error("Invalid or missing success type:", effectiveType);
   }
 
   // Apply rewards to user state when component mounts
   useEffect(() => {
-    if (!rewardsApplied && successType) {
+    if (!rewardsApplied && effectiveType) {
       console.log(`Applying rewards: ${heartReward} hearts, ${xpReward} XP`);
       console.log(`Current hearts: ${lambHearts}, Current XP: ${lambXp}`);
       
@@ -161,6 +167,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Always add XP
       addXp(xpReward);
       
+      // If this is a BONUS reward, add 9 gems
+      if (effectiveType === SuccessAnimationType.BONUS) {
+        const currentGems = getGens();
+        setGens(currentGems + 9);
+        console.log(`Applied +9 Gems. Updated value - Gems: ${currentGems + 9}`);
+      }
+      
       // Create a new timestamp for the current time
       // @ts-ignore - Firestore type issue workaround
       const now = firestore.Timestamp.now();
@@ -169,11 +182,11 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       setLastActivityDate(now);
       
       // Update specific activity timestamp based on success type
-      if (successType === SuccessAnimationType.READING) {
+      if (effectiveType === SuccessAnimationType.READING) {
         setLastReadingDate(now);
-      } else if (successType === SuccessAnimationType.PRAYER) {
+      } else if (effectiveType === SuccessAnimationType.PRAYER) {
         setLastPrayerDate(now);
-      } else if (successType === SuccessAnimationType.REFLECTION) {
+      } else if (effectiveType === SuccessAnimationType.REFLECTION) {
         setLastReflectionDate(now);
       }
       
@@ -182,13 +195,19 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       
       console.log(`Applied ${heartsToAdd} hearts (of intended ${heartReward}) and ${xpReward} XP`);
       console.log(`Updated values - Hearts: ${lambHearts + heartsToAdd}, XP: ${lambXp + xpReward}`);
-      console.log(`Updated activity timestamp for ${successType}`);
+      console.log(`Updated activity timestamp for ${effectiveType}`);
     }
-  }, [successType, rewardsApplied, lambHearts, lambXp, heartReward, xpReward]);
+  }, [effectiveType, rewardsApplied, lambHearts, lambXp, heartReward, xpReward]);
 
   // Play animations when component mounts or successType changes
   useEffect(() => {
-    console.log("Running animation effect for successType:", successType, "using resource:", riveResource);
+    // Prevent running animation logic if successType is null (e.g., during cleanup)
+    if (!effectiveType) {
+      console.log("SuccessAnimation: Animation effect skipped due to null successType.");
+      return;
+    }
+    
+    console.log("Running animation effect for successType:", effectiveType, "using resource:", riveResource);
 
     // Reset animations
     cardOpacity.setValue(0);
@@ -233,7 +252,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     }, 800); // Delay to start after the main animation
     
     return () => clearTimeout(timer);
-  }, [successType]); // Add successType to dependencies so the effect reruns when it changes
+  }, [effectiveType]); // Keep effectiveType dependency
 
   // Default navigation behavior
   const handleGoHome = () => {
@@ -289,7 +308,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   };
   
   // Determine if we should show next action buttons (only after reading is completed)
-  const showNextButtons = successType === SuccessAnimationType.READING && !prayerCompleted && !reflectionCompleted;
+  const showNextButtons = effectiveType === SuccessAnimationType.READING && !prayerCompleted && !reflectionCompleted;
 
   return (
     <View className="flex-1 items-center justify-center pt-12 pb-16 px-5 bg-surfaceCream">
@@ -336,7 +355,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       >
         <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">{rewardTitle}</Text>
         
-        {successType === SuccessAnimationType.BONUS ? (
+        {effectiveType === SuccessAnimationType.BONUS ? (
           // Special bonus reward display
           <View className="flex-row items-center justify-center mb-2">
             <Image source={gemIcon} className="w-6 h-6 mr-2" />

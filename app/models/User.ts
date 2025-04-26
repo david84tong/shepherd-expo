@@ -5,8 +5,6 @@ export interface UserDoc {
     spiritualGoal: 'Walk' | 'Overcome' | 'Understand' | 'Explore';
     experienceLevel: 'new' | 'growing' | 'mature';
     frequencyGoal: 'daily' | 'weekly';
-
-
     denomination?: string;
     displayName: string;
     selectedPathId: string;
@@ -23,6 +21,24 @@ export interface UserDoc {
     lastReadingDate: FirebaseFirestoreTypes.Timestamp;
     lastPrayerDate: FirebaseFirestoreTypes.Timestamp;
     lastReflectionDate: FirebaseFirestoreTypes.Timestamp;
+    completedReflections: [Reflection];
+    completedPrayers: [Prayer];
+    completedReadings: [Reading];
+}
+
+export interface Reading {
+    date: FirebaseFirestoreTypes.Timestamp;
+    completed: string; // book:chapter
+}
+
+export interface Reflection {
+    date: FirebaseFirestoreTypes.Timestamp;
+    content: string;
+}
+
+export interface Prayer {
+    date: FirebaseFirestoreTypes.Timestamp;
+    type: string;
 }
 
 

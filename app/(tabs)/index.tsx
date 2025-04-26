@@ -123,6 +123,9 @@ export default function HomeScreen() {
   const bottomCardOpacity = useMemo(() => uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [1, 0], extrapolate: 'clamp' }), []);
   const bottomCardTranslateY = useMemo(() => uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [0, 300], extrapolate: 'clamp' }), []);
 
+  // --- Conditional Glow Style ---
+  const showGlow = lambHearts > 80;
+
   // --- Rive Handlers ---
   const handleOutOfFrame = () => {
       try {
@@ -215,9 +218,16 @@ export default function HomeScreen() {
       Animated.timing(riveScaleAnim, { toValue: 1, duration, useNativeDriver: true }),
       Animated.timing(riveRotateAnim, { toValue: 0, duration, useNativeDriver: true })
     ]).start(() => {
-      // Set Rive resource back to default AFTER animation completes
-      console.log('Default animation complete, resetting Rive resource to mainSheep1');
-      setRiveResourceName('mainSheep1');
+      // We should check completion status BEFORE setting resource back to default
+     
+      
+      if (readingCompleted && prayerCompleted && reflectionCompleted) {
+        console.log('DEBUG - All activities completed, setting resource to lambWriting');
+        setRiveResourceName('lamb-writing');
+      } else {
+        console.log('DEBUG - Not all activities completed, setting resource to mainSheep1');
+        setRiveResourceName('mainSheep1');
+      }
     });
     
     // Animate lamb size separately as it cannot use native driver
@@ -231,11 +241,16 @@ export default function HomeScreen() {
   // --- useEffect to react to external mode changes ---
   useEffect(() => {
     console.log('HomeScreen: Mode changed to', mode);
+    console.log('DEBUG - Current completion status:', {
+      readingCompleted,
+      prayerCompleted,
+      reflectionCompleted,
+      allCompleted: readingCompleted && prayerCompleted && reflectionCompleted
+    });
     
     if (mode === 'DEFAULT') {
       animateToDefault(); 
-      // Ensure resource is reset if mode changes externally
-      setRiveResourceName('mainSheep1'); 
+      // No need to set resource here, it will be set in the animateToDefault callback
     } else if (mode === 'PRAYER') {
       // Handle prayer mode activation when coming from other screens
       console.log('Activating Prayer mode from external navigation');
@@ -267,7 +282,7 @@ export default function HomeScreen() {
       // Trigger the animation to reflection state
       animateToState(1, journalOpacityAnim, 800, 'REFLECTION');
     }
-  }, [mode]);
+  }, [mode, readingCompleted, prayerCompleted, reflectionCompleted]);
 
   // --- Event Handlers ---
   const handleReadPress = () => {
@@ -409,6 +424,12 @@ export default function HomeScreen() {
   // --- Handlers for Closing Overlays ---
   const handleCloseOverlay = () => {
     console.log('Closing Overlay, triggering return to default');
+    console.log('DEBUG - Current completion status when closing overlay:', {
+      readingCompleted,
+      prayerCompleted,
+      reflectionCompleted,
+      allCompleted: readingCompleted && prayerCompleted && reflectionCompleted
+    });
 
     // Animate the Rive view for closing
     Animated.sequence([
@@ -445,12 +466,31 @@ export default function HomeScreen() {
     setMode('DEFAULT'); 
   };
 
-  // Set initial lamb size based on mode
+  // Additional useEffect to update Rive animation when completion status changes
   useEffect(() => {
+    // Only update when in DEFAULT mode, as other modes have their own animations
+    console.log('DEBUG - Completion status changed:', {
+      readingCompleted,
+      prayerCompleted,
+      reflectionCompleted,
+      mode
+    });
+    
     if (mode === 'DEFAULT') {
-      lambSizeAnim.setValue(256); // Reset to full size when in default mode
+      if (readingCompleted && prayerCompleted && reflectionCompleted) {
+        console.log('DEBUG - Setting directly to lambWriting because all activities completed');
+        setRiveResourceName('lamb-writing');
+      } else {
+        console.log('DEBUG - Setting directly to mainSheep1 because not all activities completed');
+        setRiveResourceName('mainSheep1');
+      }
     }
-  }, []);
+  }, [readingCompleted, prayerCompleted, reflectionCompleted, mode]);
+
+  // Add effect to log riveResourceName changes
+  useEffect(() => {
+    console.log('DEBUG - Rive resource name changed to:', riveResourceName);
+  }, [riveResourceName]);
 
   // --- Load and cache images ---
   const cacheImages = useMemo(() => async () => {
@@ -573,7 +613,13 @@ export default function HomeScreen() {
               { translateX: lambTranslateX },
               { translateY: lambTranslateY }
             ],
-            height: BASE_LAMB_SIZE
+            height: BASE_LAMB_SIZE,
+            // Add conditional shadow for the glow effect
+            shadowColor: showGlow ? '#FDE047' : 'transparent', // yellow-300
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: showGlow ? 0.6 : 0,
+            shadowRadius: 15, // Adjust radius for softness
+            elevation: showGlow ? 10 : 0, // Android shadow
           }}>
           <Animated.View 
             className="items-center justify-center overflow-hidden"

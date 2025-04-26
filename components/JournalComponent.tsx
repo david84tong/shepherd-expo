@@ -12,9 +12,11 @@ import {
 import PrimaryButton from './PrimaryButton';
 import { usePathStore } from '../app/stores/pathStore';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
+import { useUserStore } from '../app/stores/userStore';
 import Rive, { RiveRef } from 'rive-react-native';
 import BackButton from './BackButton';
 import { router } from 'expo-router';
+import firestore from '@react-native-firebase/firestore';
 
 interface JournalProps {
   visible: boolean;
@@ -33,10 +35,15 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
+  const [reflectionContent, setReflectionContent] = useState('');
   
   // Get store functions
   const setSuccessType = useHomeStore((state) => state.setSuccessType);
   const setReflectionCompleted = useHomeStore((state) => state.setReflectionCompleted);
+  
+  // Get userStore functions for saving reflection
+  const addCompletedReflection = useUserStore(state => state.addCompletedReflection);
+  const setLastReflectionDate = useUserStore(state => state.setLastReflectionDate);
   
   // Animation values
   const cardAnimY = useRef(new Animated.Value(200)).current;
@@ -152,6 +159,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       buttonOpacity.setValue(0);
       bottomContentAnimY.setValue(100);
       bottomContentOpacity.setValue(0);
+      setReflectionContent(''); // Clear content when closing
     }
   }, [visible, cardAnimY, cardOpacity, containerOpacity, buttonAnimY, buttonOpacity, bottomContentAnimY, bottomContentOpacity, setPathInProgress]);
 
@@ -179,7 +187,28 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     Keyboard.dismiss();
     setPathInProgress(false);
     setReflectionCompleted(true); // Set reflection as completed
-    setSuccessType(SuccessAnimationType.BONUS);
+    
+    // Create current timestamp
+    const now = firestore.Timestamp.now();
+    
+    // Save reflection to userStore
+    console.log('Saving reflection data to userStore');
+    try {
+      // Save the reflection content
+      addCompletedReflection({
+        date: now,
+        content: reflectionContent.trim() || "Reflected on my spiritual journey today."
+      });
+      
+      // Update last reflection date
+      setLastReflectionDate(now);
+      
+      console.log('Reflection saved successfully');
+    } catch (error) {
+      console.error('Error saving reflection data:', error);
+    }
+    
+    setSuccessType(SuccessAnimationType.REFLECTION);
     
     // Navigate to success screen
     router.push("/success");
@@ -215,6 +244,8 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
           textAlignVertical="top"
           scrollEnabled={true}
           style={{ flex: 1 }}
+          value={reflectionContent}
+          onChangeText={setReflectionContent}
         />
       </Animated.View>
 

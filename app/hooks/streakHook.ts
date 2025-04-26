@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import firestore from '@react-native-firebase/firestore';
 import { useUserStore } from '../stores/userStore';
+import { useHomeStore } from '../stores/homeStore';
 
 // Penalties for missing activities (hearts lost per day)
 const PENALTIES = {
@@ -29,19 +30,31 @@ export const checkStreakAndApplyPenalties = async () => {
     
     // Get store outside of hook context
     const userStore = useUserStore.getState();
+    const homeStore = useHomeStore.getState();
     
     // Get current data from store
     const lambHearts = userStore.lamb.hearts;
     const streakCount = userStore.streakCount;
     const lastActivityDate = userStore.lastActivityDate;
     
+    // Add debug logs for lastActivityDate
+    console.log('DEBUG - lastActivityDate:', lastActivityDate);
+    console.log('DEBUG - lastActivityDate type:', lastActivityDate ? typeof lastActivityDate : 'undefined');
+    console.log('DEBUG - lastActivityDate instanceof Timestamp:', lastActivityDate ? lastActivityDate instanceof firestore.Timestamp : 'N/A');
+    
     // Firebase expects timestamp objects, but our store might have them as fields
     const lastReadingDate = userStore.lastReadingDate;
     const lastPrayerDate = userStore.lastPrayerDate;
     const lastReflectionDate = userStore.lastReflectionDate;
     
+    // Add additional debug logs for other date fields
+    console.log('DEBUG - lastReadingDate:', lastReadingDate);
+    console.log('DEBUG - lastPrayerDate:', lastPrayerDate);
+    console.log('DEBUG - lastReflectionDate:', lastReflectionDate);
+    
     // Current date
     const now = new Date();
+    console.log('DEBUG - Current date (now):', now);
     
     // If no previous activity, this is a new user
     if (!lastActivityDate) {
@@ -49,23 +62,93 @@ export const checkStreakAndApplyPenalties = async () => {
       return { streakBroken: false, heartPenalty: 0, daysMissed: 0 };
     }
     
+    // Safely handle date conversion based on type
+    let lastActivityDateObj;
+    try {
+      // Check if the date is already a Date object
+      if (lastActivityDate instanceof Date) {
+        lastActivityDateObj = lastActivityDate;
+        console.log('DEBUG - lastActivityDate is already a Date object');
+      } 
+      // Check if it's a Firestore Timestamp
+      else if (lastActivityDate.toDate && typeof lastActivityDate.toDate === 'function') {
+        lastActivityDateObj = lastActivityDate.toDate();
+        console.log('DEBUG - Successfully converted Timestamp to Date');
+      }
+      // Check if it's a serialized timestamp object (JSON string)
+      else if (typeof lastActivityDate === 'object' && lastActivityDate.seconds) {
+        // Create a proper Firestore Timestamp object
+        const timestamp = new firestore.Timestamp(
+          lastActivityDate.seconds,
+          lastActivityDate.nanoseconds || 0
+        );
+        lastActivityDateObj = timestamp.toDate();
+        console.log('DEBUG - Converted serialized timestamp object to Date');
+      }
+      // If it's another format, fallback to current date
+      else {
+        console.error('DEBUG - Unrecognized date format, using current date as fallback');
+        lastActivityDateObj = now;
+      }
+    } catch (error) {
+      console.error('DEBUG - Error converting lastActivityDate:', error);
+      lastActivityDateObj = now; // Fallback to current date
+    }
+    
+    console.log('DEBUG - Final lastActivityDateObj:', lastActivityDateObj);
+    
+    // Apply similar safe conversions to other date fields
+    const getDateFromTimestamp = (timestamp) => {
+      if (!timestamp) return null;
+      try {
+        if (timestamp instanceof Date) return timestamp;
+        if (timestamp.toDate && typeof timestamp.toDate === 'function') return timestamp.toDate();
+        if (typeof timestamp === 'object' && timestamp.seconds) {
+          return new firestore.Timestamp(
+            timestamp.seconds, 
+            timestamp.nanoseconds || 0
+          ).toDate();
+        }
+        return null;
+      } catch (error) {
+        console.error('DEBUG - Error converting timestamp:', error);
+        return null;
+      }
+    };
+    
+    const lastReadingDateObj = getDateFromTimestamp(lastReadingDate);
+    const lastPrayerDateObj = getDateFromTimestamp(lastPrayerDate);
+    const lastReflectionDateObj = getDateFromTimestamp(lastReflectionDate);
+    
+    console.log('DEBUG - Converted date objects:', {
+      lastReadingDateObj,
+      lastPrayerDateObj,
+      lastReflectionDateObj
+    });
+    
     // Calculate days since last activities
-    const daysSinceActivity = lastActivityDate ? 
-      getDaysDifference(now, lastActivityDate.toDate()) : 0;
+    const daysSinceActivity = lastActivityDateObj ? 
+      getDaysDifference(now, lastActivityDateObj) : 0;
       
-    const daysSinceReading = lastReadingDate ? 
-      getDaysDifference(now, lastReadingDate.toDate()) : daysSinceActivity;
+    const daysSinceReading = lastReadingDateObj ? 
+      getDaysDifference(now, lastReadingDateObj) : daysSinceActivity;
       
-    const daysSincePrayer = lastPrayerDate ? 
-      getDaysDifference(now, lastPrayerDate.toDate()) : daysSinceActivity;
+    const daysSincePrayer = lastPrayerDateObj ? 
+      getDaysDifference(now, lastPrayerDateObj) : daysSinceActivity;
       
-    const daysSinceReflection = lastReflectionDate ? 
-      getDaysDifference(now, lastReflectionDate.toDate()) : daysSinceActivity;
+    const daysSinceReflection = lastReflectionDateObj ? 
+      getDaysDifference(now, lastReflectionDateObj) : daysSinceActivity;
     
     // Skip if user was active today
     if (daysSinceActivity === 0) {
       console.log('🎯 User was active today, no penalties needed');
       return { streakBroken: false, heartPenalty: 0, daysMissed: 0 };
+    }
+    
+    // Reset completion states in homeStore if it's a new day
+    if (daysSinceActivity > 0) {
+      console.log('🔄 New day detected - resetting completion states in homeStore');
+      homeStore.resetCompletionStates();
     }
     
     console.log(`⏰ Days since last activity: ${daysSinceActivity}`);
@@ -132,6 +215,8 @@ export const checkStreakAndApplyPenalties = async () => {
     }
   } catch (error) {
     console.error('❌ Error checking streak and applying penalties:', error);
+    console.error('❌ Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    console.error('❌ Error stack:', error.stack);
     return {
       error: error,
       streakBroken: false,
@@ -146,6 +231,7 @@ export const checkStreakAndApplyPenalties = async () => {
  */
 export const useStreakManager = () => {
   const userStore = useUserStore();
+  const homeStore = useHomeStore();
   
   const checkAndApplyPenalties = useCallback(async () => {
     try {
@@ -156,13 +242,24 @@ export const useStreakManager = () => {
       const streakCount = userStore.getStreakCount();
       const lastActivityDate = userStore.getLastActivityDate();
       
+      // Add debug logs for lastActivityDate
+      console.log('DEBUG - lastActivityDate:', lastActivityDate);
+      console.log('DEBUG - lastActivityDate type:', lastActivityDate ? typeof lastActivityDate : 'undefined');
+      console.log('DEBUG - lastActivityDate instanceof Timestamp:', lastActivityDate ? lastActivityDate instanceof firestore.Timestamp : 'N/A');
+      
       // Firebase expects timestamp objects, but our store might have them as fields
       const lastReadingDate = userStore.lastReadingDate;
       const lastPrayerDate = userStore.lastPrayerDate;
       const lastReflectionDate = userStore.lastReflectionDate;
       
+      // Add additional debug logs for other date fields
+      console.log('DEBUG - lastReadingDate:', lastReadingDate);
+      console.log('DEBUG - lastPrayerDate:', lastPrayerDate);
+      console.log('DEBUG - lastReflectionDate:', lastReflectionDate);
+      
       // Current date
       const now = new Date();
+      console.log('DEBUG - Current date (now):', now);
       
       // If no previous activity, this is a new user
       if (!lastActivityDate) {
@@ -170,23 +267,93 @@ export const useStreakManager = () => {
         return;
       }
       
+      // Safely handle date conversion based on type
+      let lastActivityDateObj;
+      try {
+        // Check if the date is already a Date object
+        if (lastActivityDate instanceof Date) {
+          lastActivityDateObj = lastActivityDate;
+          console.log('DEBUG - lastActivityDate is already a Date object');
+        } 
+        // Check if it's a Firestore Timestamp
+        else if (lastActivityDate.toDate && typeof lastActivityDate.toDate === 'function') {
+          lastActivityDateObj = lastActivityDate.toDate();
+          console.log('DEBUG - Successfully converted Timestamp to Date');
+        }
+        // Check if it's a serialized timestamp object (JSON string)
+        else if (typeof lastActivityDate === 'object' && lastActivityDate.seconds) {
+          // Create a proper Firestore Timestamp object
+          const timestamp = new firestore.Timestamp(
+            lastActivityDate.seconds,
+            lastActivityDate.nanoseconds || 0
+          );
+          lastActivityDateObj = timestamp.toDate();
+          console.log('DEBUG - Converted serialized timestamp object to Date');
+        }
+        // If it's another format, fallback to current date
+        else {
+          console.error('DEBUG - Unrecognized date format, using current date as fallback');
+          lastActivityDateObj = now;
+        }
+      } catch (error) {
+        console.error('DEBUG - Error converting lastActivityDate:', error);
+        lastActivityDateObj = now; // Fallback to current date
+      }
+      
+      console.log('DEBUG - Final lastActivityDateObj:', lastActivityDateObj);
+      
+      // Apply similar safe conversions to other date fields
+      const getDateFromTimestamp = (timestamp) => {
+        if (!timestamp) return null;
+        try {
+          if (timestamp instanceof Date) return timestamp;
+          if (timestamp.toDate && typeof timestamp.toDate === 'function') return timestamp.toDate();
+          if (typeof timestamp === 'object' && timestamp.seconds) {
+            return new firestore.Timestamp(
+              timestamp.seconds, 
+              timestamp.nanoseconds || 0
+            ).toDate();
+          }
+          return null;
+        } catch (error) {
+          console.error('DEBUG - Error converting timestamp:', error);
+          return null;
+        }
+      };
+      
+      const lastReadingDateObj = getDateFromTimestamp(lastReadingDate);
+      const lastPrayerDateObj = getDateFromTimestamp(lastPrayerDate);
+      const lastReflectionDateObj = getDateFromTimestamp(lastReflectionDate);
+      
+      console.log('DEBUG - Converted date objects:', {
+        lastReadingDateObj,
+        lastPrayerDateObj,
+        lastReflectionDateObj
+      });
+      
       // Calculate days since last activities
-      const daysSinceActivity = lastActivityDate ? 
-        getDaysDifference(now, lastActivityDate.toDate()) : 0;
+      const daysSinceActivity = lastActivityDateObj ? 
+        getDaysDifference(now, lastActivityDateObj) : 0;
         
-      const daysSinceReading = lastReadingDate ? 
-        getDaysDifference(now, lastReadingDate.toDate()) : daysSinceActivity;
+      const daysSinceReading = lastReadingDateObj ? 
+        getDaysDifference(now, lastReadingDateObj) : daysSinceActivity;
         
-      const daysSincePrayer = lastPrayerDate ? 
-        getDaysDifference(now, lastPrayerDate.toDate()) : daysSinceActivity;
+      const daysSincePrayer = lastPrayerDateObj ? 
+        getDaysDifference(now, lastPrayerDateObj) : daysSinceActivity;
         
-      const daysSinceReflection = lastReflectionDate ? 
-        getDaysDifference(now, lastReflectionDate.toDate()) : daysSinceActivity;
+      const daysSinceReflection = lastReflectionDateObj ? 
+        getDaysDifference(now, lastReflectionDateObj) : daysSinceActivity;
       
       // Skip if user was active today
       if (daysSinceActivity === 0) {
         console.log('🎯 User was active today, no penalties needed');
         return;
+      }
+      
+      // Reset completion states in homeStore if it's a new day
+      if (daysSinceActivity > 0) {
+        console.log('🔄 New day detected - resetting completion states in homeStore');
+        homeStore.resetCompletionStates();
       }
       
       console.log(`⏰ Days since last activity: ${daysSinceActivity}`);
@@ -253,6 +420,8 @@ export const useStreakManager = () => {
       }
     } catch (error) {
       console.error('❌ Error checking streak and applying penalties:', error);
+      console.error('❌ Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      console.error('❌ Error stack:', error.stack);
       return {
         error: error,
         streakBroken: false,
@@ -260,7 +429,7 @@ export const useStreakManager = () => {
         daysMissed: 0
       };
     }
-  }, [userStore]);
+  }, [userStore, homeStore]);
   
   return {
     checkStreakAndApplyPenalties: checkAndApplyPenalties

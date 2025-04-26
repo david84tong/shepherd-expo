@@ -35,7 +35,7 @@ export default function HalfModalScreen() {
   if (type === HalfModalType.HEART_PENALTY) {
     title = getStringParam('message') || "Hearts Lost!";
     description = getStringParam('subMessage') || `You lost ${penalty} hearts for ${daysMissed} days of inactivity.`;
-    icon = require('../assets/icons/heartIcon.png');
+    icon = require('../assets/lambStatic/cryingLamb.png');
   } else if (type === HalfModalType.WIDGET_REMINDER) {
     title = getStringParam('message') || "Reminder";
     description = getStringParam('subMessage') || "Just a friendly reminder!";
@@ -75,19 +75,19 @@ export default function HalfModalScreen() {
         <View className="w-10 h-1 bg-gray-300 rounded-full self-center mb-4" />
 
         {/* Icon */}
-        <Image source={icon} className="w-12 h-12 mb-3" resizeMode="contain" />
+        <Image source={icon} className="w-64 h-64 mb-3" resizeMode="contain" />
         
         {/* Title */}
         <Text className="font-feather text-textPrimary text-2xl mb-2 text-center">{title}</Text>
 
         {/* Description */}
-        <Text className="font-din text-secondaryText text-base mb-5 text-center px-4">{description}</Text>
+        {/* <Text className="font-din text-secondaryText text-base mb-5 text-center px-4">{description}</Text> */}
         
         {/* Type-specific content (e.g., penalty info) */}
         {type === HalfModalType.HEART_PENALTY && penalty > 0 && (
-          <View className="bg-[#FFEDED] p-3 rounded-lg mb-4 border-l-4 border-l-[#FF6B6B] w-[90%] items-center">
-            <Text className="font-din text-[#A57070] text-sm text-center">
-              {penalty} hearts lost after {daysMissed} days away
+          <View className="">
+            <Text className="font-din text-secondaryText text-base mb-5 text-center text-lg px-4">
+              {penalty} hearts ❤️ lost after {daysMissed} days away
             </Text>
           </View>
         )}
