@@ -204,7 +204,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto mt-[120px] border-4 border-border"
         style={cardStyle}
       >
-        <Text className="text-h1 font-feather text-accentGold mb-6 text-center leading-tight">Daily Reflection</Text>
+        <Text className="text-h1 font-feather text-textPrimary mb-6 text-center leading-tight">Daily Reflection</Text>
         
         <TextInput
           ref={inputRef}

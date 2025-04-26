@@ -4,7 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { BIBLE_PATHS, Unit, Path } from '../models/Path';
-import { usePathStore } from '../stores/pathStore';
+import { usePathStore, PathInfo } from '../stores/pathStore';
 
 // Define node status
 type NodeStatus = 'locked' | 'active' | 'completed';
@@ -17,15 +17,42 @@ type BibleSection = {
   data: Unit[];
 };
 
-// Dummy status logic (replace with actual user progress)
-const getUnitStatus = (pathId: string, unitId: string): NodeStatus => {
-  // Find the path and unit indices for the original logic
-  const pathIndex = BIBLE_PATHS.findIndex(p => p.id === pathId);
-  const unitIndex = BIBLE_PATHS[pathIndex]?.units.findIndex(u => u.id === unitId) ?? -1;
-
-  // For now: first unit of first path is active, rest are locked
-  if (pathIndex === 0 && unitIndex === 0) return 'active';
-  return 'locked';
+// Hook to get unit status based on global state
+const useUnitStatus = () => {
+  const completedUnitIds = usePathStore((state) => state.completedUnitIds);
+  
+  const getStatus = (pathId: string, unitId: string): NodeStatus => {
+    // 1. Check if the current unit is completed
+    if (completedUnitIds.includes(unitId)) {
+      return 'completed';
+    }
+    
+    // Find the path and unit indices
+    const pathIndex = BIBLE_PATHS.findIndex(p => p.id === pathId);
+    const currentPath = BIBLE_PATHS[pathIndex];
+    if (!currentPath) return 'locked'; // Path not found
+    
+    const unitIndex = currentPath.units.findIndex(u => u.id === unitId);
+    if (unitIndex === -1) return 'locked'; // Unit not found
+    
+    // 2. Check if it's the very first unit overall and not completed
+    if (pathIndex === 0 && unitIndex === 0) {
+      return 'active';
+    }
+    
+    // 3. Check if the PREVIOUS unit in the SAME path is completed
+    if (unitIndex > 0) {
+      const previousUnitId = currentPath.units[unitIndex - 1].id;
+      if (completedUnitIds.includes(previousUnitId)) {
+        return 'active';
+      }
+    }
+    
+    // 4. If none of the above, it's locked
+    return 'locked';
+  };
+  
+  return { getStatus };
 };
 
 // Node Component (for Units)
@@ -194,7 +221,8 @@ export default function MapScreen() {
   const sectionListRef = useRef<SectionList<Unit, BibleSection>>(null);
   
   // Get path store functions
-  const { setPathInProgress } = usePathStore();
+  const { setPathInProgress, setSelectedPath, setSelectedBookChapter, setCurrentPath } = usePathStore();
+  const { getStatus } = useUnitStatus(); // Use the custom hook
   
   // Track if we need to suppress haptic feedback (e.g., on first render)
   const isFirstRender = useRef(true);
@@ -206,29 +234,62 @@ export default function MapScreen() {
     console.log('Pressed unit:', unit.title, unit.reference);
     console.log('Reference details:', JSON.stringify(unit.reference));
     
-    // Set path in progress to hide tab bar when opening Bible
-    setPathInProgress(true);
+    // Get the current section/path information
+    const currentPath = sections.find(section => section.data.some(u => u.id === unit.id));
     
-    // Navigate to the Bible screen with reference
-    const { bookId, chapters } = unit.reference;
-    
-    // Special case for Genesis Creation & Choice - force it to Genesis 1 directly
-    // This is a temporary fix to ensure Genesis 1 always loads
-    if (unit.id === 'gen-1') {
-      console.log("⚠️ SPECIAL CASE: Forcing Genesis 1");
-      router.push({
-        pathname: '/bibleReader', // Use bibleReader (not /bible) for consistency
-        params: {
-          bookId: "1", 
-          chapters: "1",
-          title: "Genesis 1 - Creation & Choice",
-          source: 'map-direct',
-          force: 'true',
-          timestamp: Date.now().toString()
-        }
-      });
+    if (!currentPath) {
+      console.warn('Path not found for unit:', unit.id);
       return;
     }
+    
+    // Get chapter range
+    const { bookId, chapters } = unit.reference;
+    const startChapter = Array.isArray(chapters) && chapters.length > 0 ? chapters[0] : 1;
+    const endChapter = Array.isArray(chapters) && chapters.length > 1 ? chapters[chapters.length - 1] : startChapter;
+    
+    // Create the book name lookup based on bookId
+    // This is a simplified mapping - in a real app, you'd have a more complete mapping
+    const bookNames: Record<number, string> = {
+      1: "Genesis",
+      2: "Exodus",
+      // Add more as needed
+      43: "John",
+      44: "Acts",
+      45: "Romans",
+      // Add more as needed
+    };
+    
+    const bookName = bookNames[bookId] || `Book ${bookId}`;
+    
+    // Set the selected book chapter
+    const bookChapterText = `${bookName} ${startChapter}`;
+    setSelectedBookChapter(bookChapterText);
+    
+    // Save path selection to store (legacy way - keep for compatibility)
+    setSelectedPath(
+      currentPath.pathId,
+      currentPath.title,
+      unit.id,
+      unit.title,
+      startChapter,
+      endChapter
+    );
+    
+    // Set the complete current path object 
+    const pathInfo: PathInfo = {
+      pathId: currentPath.pathId,
+      pathTitle: currentPath.title,
+      unitId: unit.id,
+      unitTitle: unit.title,
+      bookId,
+      startChapter,
+      endChapter
+    };
+    
+    setCurrentPath(pathInfo);
+    
+    // Set path in progress to hide tab bar when opening Bible
+    setPathInProgress(true);
     
     // Genesis 1 first node should have bookId=1, chapters=[1,2]
     // Verify the data looks right
@@ -305,7 +366,7 @@ export default function MapScreen() {
     index: number, 
     section: BibleSection
   }) => {
-    const status = getUnitStatus(section.pathId, item.id);
+    const status = getStatus(section.pathId, item.id); // Get status from hook
     const alignment = ['center', 'start', 'center', 'end'][index % 4] as 'start' | 'center' | 'end';
     return (
       <PathNode
@@ -330,7 +391,10 @@ export default function MapScreen() {
     <SafeAreaView className="flex-1 bg-surfaceCream">
       {/* Debug button with Genesis parameters */}
       <TouchableOpacity
-        onPress={() => router.push({
+        onPress={() => 
+        { 
+          console.log("genesis 1");
+           router.push({
           pathname: '/bibleReader',
           params: { 
             bookId: "1", 
@@ -339,7 +403,9 @@ export default function MapScreen() {
             source: 'debug-button',
             timestamp: Date.now().toString()
           }
-        })}
+        })
+      }
+      }
         style={{ 
           padding: 8, 
           backgroundColor: '#FFE4A8', 

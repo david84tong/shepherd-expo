@@ -10,6 +10,8 @@ import BiblePreviewComponent from '../../components/BiblePreviewComponent';
 import JournalComponent from '../../components/JournalComponent';
 import ProgressPill from '../../components/ProgressPill';
 import { useHomeStore, HomeMode } from '../stores/homeStore'; // Import Zustand store
+import { usePathStore } from '../stores/pathStore'; // Import path store
+import { Unit, BIBLE_PATHS } from '../models/Path'; // Import Unit type and BIBLE_PATHS
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.40; // 40%
@@ -43,6 +45,9 @@ export default function HomeScreen() {
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
+
+  // Get current path state from pathStore
+  const setPathInProgress = usePathStore((state) => state.setPathInProgress);
   
   // State to manage the Rive resource name
   const [riveResourceName, setRiveResourceName] = useState('mainSheep1'); // Default resource
@@ -258,6 +263,8 @@ export default function HomeScreen() {
   // --- Event Handlers ---
   const handleReadPress = () => {
     console.log('Read Daily Bread Pressed - Setting resource to lamb-eating');
+    
+    // Set the UI mode to preview
     setMode('PREVIEW');
     animateToState(0.5, pathOpacityAnim, 1000, 'PREVIEW');
     

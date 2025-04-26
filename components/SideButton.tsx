@@ -21,15 +21,15 @@ const SideButton: React.FC<SideButtonProps> = ({
         className={
           `flex-row items-center justify-center px-5 h-full w-full rounded-[20px] border-[3px] ` +
           `${disabled ? 'bg-[#E5E5E5] border-[#D0D0D0]' : 'bg-accentGold border-border'} ` +
-          `transform ${!isPressed ? 'shadow-buttonShadow' : ''} ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
+          `transform ${!isPressed && !disabled ? 'shadow-buttonShadow' : ''} ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
         }
-        style={({ pressed }) => [{ elevation: pressed ? 3 : 8 }]}
+        style={({ pressed }) => [{ elevation: pressed || disabled ? 0 : 8 }]}
         onPress={onPress}
         disabled={disabled}
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}
       >
-        <Text className="font-feather text-white text-heading text-center">
+        <Text className={`font-feather text-heading text-center ${disabled ? 'text-gray-400' : 'text-white'}`}>
           {title}
         </Text>
       </Pressable>

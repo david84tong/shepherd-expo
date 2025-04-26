@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { usePathStore } from '../app/stores/pathStore';
 import BackButton from './BackButton';
 import * as Haptics from 'expo-haptics';
+import { Unit, BIBLE_PATHS } from '../app/models/Path'; // Import Unit and BIBLE_PATHS
 
 interface BiblePreviewProps {
   /** Whether the preview overlay should be shown. */
@@ -23,17 +24,83 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   const cardOpacity = useRef(new Animated.Value(0)).current;
   
   // Get saved reading & path in progress state from path store
-  const { savedBook, savedChapter, setPathInProgress, savedBookId } = usePathStore();
+  const { 
+    savedBook, 
+    savedChapter, 
+    setPathInProgress, 
+    savedBookId, 
+    completedUnitIds,
+    setCurrentPath
+  } = usePathStore();
   
+  // Find the next uncompleted unit from BIBLE_PATHS
+  const nextUnit = useMemo(() => {
+    let nextUnitToComplete: Unit | null = null;
+    
+    console.log('Finding next uncompleted unit. Completed:', completedUnitIds);
+    
+    // Iterate through all paths in order
+    for (const path of BIBLE_PATHS) {
+      // Iterate through units in order within each path
+      for (const unit of path.units) {
+        // Find the first unit that's not in completedUnitIds
+        if (!completedUnitIds.includes(unit.id)) {
+          console.log(`Found next uncompleted unit: ${unit.title}`);
+          nextUnitToComplete = unit;
+          
+          // Also store the path details in a variable for later use
+          const pathInfo = {
+            pathId: path.id,
+            pathTitle: path.title
+          };
+          
+          // Break out of unit loop once we find the first uncompleted unit
+          break;
+        }
+      }
+      
+      // Break out of path loop if we found a unit
+      if (nextUnitToComplete) break;
+    }
+    
+    // If no uncompleted unit was found, default to the first unit
+    if (!nextUnitToComplete && BIBLE_PATHS.length > 0 && BIBLE_PATHS[0].units.length > 0) {
+      console.log('No uncompleted units found, defaulting to first unit');
+      nextUnitToComplete = BIBLE_PATHS[0].units[0];
+    }
+    
+    return nextUnitToComplete;
+  }, [completedUnitIds]);
+  
+  // Content for the preview card - either from nextUnit or fallbacks
+  const title = useMemo(() => nextUnit?.title || "The Good Shepherd", [nextUnit]);
+  const subtitle = useMemo(() => 
+    nextUnit ? 
+    `Next: ${nextUnit.reference.bookName} ${nextUnit.reference.chapters[0]}` : 
+    `Today's Reading · ${savedBook} ${savedChapter}`,
+    [nextUnit, savedBook, savedChapter]
+  );
+  const summary = useMemo(() => 
+    nextUnit?.description || 
+    (savedBook === 'John' && savedChapter === 3 ? 
+     "Jesus teaches Nicodemus about being born again and God's love for the world." : 
+     "Jesus describes Himself as the Good Shepherd who lays down His life for the sheep."),
+    [nextUnit, savedBook, savedChapter]
+  );
+
+  // Determine bookId and chapter for the "Start Reading" button
+  const bookIdToLoad = useMemo(() => nextUnit?.reference.bookId || savedBookId, [nextUnit, savedBookId]);
+  const chaptersToLoad = useMemo(() => 
+    nextUnit ? nextUnit.reference.chapters.join(',') : savedChapter.toString(), 
+    [nextUnit, savedChapter]
+  );
+
   // Animation values for the primary button
   const buttonAnim = useRef(new Animated.Value(60)).current; // Start 60 units below final position
   const buttonOpacity = useRef(new Animated.Value(0)).current; // Start fully transparent
 
   useEffect(() => {
     if (visible) {
-      // Set path in progress when component becomes visible
-      setPathInProgress(true);
-      
       // First animate the container opacity and card entry
       Animated.parallel([
         Animated.timing(containerOpacity, { // Fade in container
@@ -76,14 +143,9 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
       buttonAnim.setValue(60);
       buttonOpacity.setValue(0);
     }
-  }, [visible, setPathInProgress, containerOpacity, cardAnim, cardOpacity, buttonAnim, buttonOpacity]);
+  }, [visible, containerOpacity, cardAnim, cardOpacity, buttonAnim, buttonOpacity]);
 
-  // IMPORTANT: Any useMemo or other hooks must be placed here,
-  // before any conditional returns to avoid "more hooks than expected" errors
-
-  // We still return null immediately when not visible, so fade-out isn't seen
-  // A different approach (e.g., keeping mounted until animation finishes) 
-  // would be needed for a visible fade-out.
+  // We still return null immediately when not visible
   if (!visible) return null;
 
   const handleBack = () => {
@@ -92,7 +154,37 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   };
 
   const handleStart = () => {
-    setPathInProgress(false); // Allow tab bar to reappear if needed
+    // Set up the path information if we have a nextUnit
+    if (nextUnit) {
+      console.log('Starting reading with unit:', nextUnit.title);
+      
+      // Find the path that contains this unit
+      let pathId = '';
+      let pathTitle = '';
+      for (const path of BIBLE_PATHS) {
+        if (path.units.some(u => u.id === nextUnit.id)) {
+          pathId = path.id;
+          pathTitle = path.title;
+          break;
+        }
+      }
+      
+      // Get start and end chapters
+      const startChapter = nextUnit.reference.chapters[0];
+      const endChapter = nextUnit.reference.chapters[nextUnit.reference.chapters.length - 1];
+      
+      // Set the currentPath in the pathStore
+      setPathInProgress(true); // Keep path progress active for Bible Reader
+      setCurrentPath({
+        pathId: pathId,
+        pathTitle: pathTitle,
+        unitId: nextUnit.id,
+        unitTitle: nextUnit.title,
+        bookId: nextUnit.reference.bookId,
+        startChapter: startChapter,
+        endChapter: endChapter
+      });
+    }
     
     // Explicitly trigger haptic feedback before navigation
     try {
@@ -106,9 +198,9 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
     router.push({
       pathname: '/bibleReader', // Use bibleReader which we know is configured correctly
       params: { 
-        bookId: savedBookId.toString(), 
-        chapters: savedChapter.toString(),
-        title: `Today: ${savedBook} ${savedChapter}`,
+        bookId: bookIdToLoad.toString(), // Use determined bookId
+        chapters: chaptersToLoad, // Use determined chapters
+        title: title, // Pass the dynamic title
         source: 'preview',
         timestamp: Date.now().toString() // Force params refresh
       }
@@ -130,16 +222,14 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         style={{ opacity: cardOpacity, transform: [{ translateY: cardAnim }] }}
       >
         {/* Pillar Title */} 
-        <Text className="text-h1 font-feather text-accentGold mb-2 text-center leading-tight ">The Good Shepherd</Text>
+        <Text className="text-h1 font-feather text-accentGold mb-2 text-center leading-tight ">{title}</Text>
         {/* Date or subtitle */} 
-        <Text className="text-body font-din text-[#B89B4C] mb-4">Today's Reading · {savedBook} {savedChapter}</Text>
+        <Text className="text-body font-din text-[#B89B4C] mb-4">{subtitle}</Text>
         {/* Summary Section */} 
         <View className="w-full bg-surfaceCream/50 rounded-[18px] p-4 mt-2 border border-border mb-2">
           <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-1 tracking-wider">SUMMARY</Text>
           <Text className="text-body font-din text-textPrimary text-center">
-            {savedBook === 'John' && savedChapter === 3 ? 
-              "Jesus teaches Nicodemus about being born again and God's love for the world." : 
-              "Jesus describes Himself as the Good Shepherd who lays down His life for the sheep."}
+            {summary}
           </Text>
         </View>
       </Animated.View>

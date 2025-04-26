@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,9 @@ import {
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
+  Animated,
+  NativeSyntheticEvent,
+  NativeScrollEvent,
 } from 'react-native';
 import { fetchChapter, ChapterResponse, FetchError, Verse } from './api/bible';
 import PrimaryButton from '../components/PrimaryButton';
@@ -15,6 +18,7 @@ import SideButton from '~/components/SideButton';
 import { usePathStore } from './stores/pathStore';
 import { useHomeStore, SuccessAnimationType } from './stores/homeStore';
 import { router, useLocalSearchParams } from 'expo-router';
+import { BIBLE_PATHS, Path, Unit } from './models/Path';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
 const DEFAULT_FONT_SIZE = 16;
@@ -26,6 +30,14 @@ export default function BibleReaderScreen() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  
+  // Animation values for button container
+  const buttonContainerAnim = useRef(new Animated.Value(100)).current;
+  const buttonOpacityAnim = useRef(new Animated.Value(0)).current;
+  
+  // Reference to the ScrollView
+  const scrollViewRef = useRef<ScrollView>(null);
   
   // Get saved reading state from pathStore
   const { 
@@ -33,7 +45,14 @@ export default function BibleReaderScreen() {
     savedBookId, 
     savedChapter, 
     setSavedReading,
-    setPathInProgress 
+    setPathInProgress,
+    pathInProgress,
+    endChapter,
+    savedBookId: selectedBookId,
+    currentPath,
+    setCurrentPath,
+    markUnitAsCompleted,
+    setNextUnitPreview
   } = usePathStore();
   
   const [currentBook, setCurrentBook] = useState<string>(savedBook);
@@ -52,8 +71,15 @@ export default function BibleReaderScreen() {
   
   // When coming to this tab from a preview, clear the path in progress state
   useEffect(() => {
-    // This ensures that when we navigate via tab the tabbar stays visible
-    setPathInProgress(false);
+    // Check if we're coming from the map or direct navigation
+    if (params.source === 'map' || params.source === 'debug-button') {
+      // Keep pathInProgress true if coming from map
+      console.log('📱 Navigation from map detected, keeping pathInProgress true');
+    } else {
+      // Only reset pathInProgress if not coming from map
+      console.log('📱 Navigation not from map, setting pathInProgress false');
+      setPathInProgress(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -72,6 +98,34 @@ export default function BibleReaderScreen() {
       // Log what we found in the URL
       console.log(`📱 URL bookId: ${urlBookId}, chapters: ${urlChapters}, title: ${urlTitle}`);
       console.log(`💾 Saved: bookId: ${savedBookId}, chapter: ${savedChapter}, book: ${savedBook}`);
+      
+      // Debug path information
+      console.log("📍 Path in progress:", pathInProgress);
+      console.log("🛤️ Current path:", currentPath);
+      
+      // If we have url chapters, make sure path tracking is enabled
+      if (urlChapters && urlChapters.length > 1) {
+        // We're in a multi-chapter path
+        setPathInProgress(true);
+        
+        // If there's no current path yet, create one now
+        if (!currentPath) {
+          const startCh = urlChapters[0];
+          const endCh = urlChapters[urlChapters.length - 1]; 
+          
+          setCurrentPath({
+            pathId: 'direct-navigation',
+            pathTitle: urlTitle || 'Bible Reading',
+            unitId: `direct-${urlBookId}-${urlChapters.join('-')}`,
+            unitTitle: urlTitle || 'Bible Reading',
+            bookId: urlBookId || 1,
+            startChapter: startCh,
+            endChapter: endCh
+          });
+          
+          console.log(`🆕 Created path from URL params: bookId=${urlBookId}, startCh=${startCh}, endCh=${endCh}`);
+        }
+      }
       
       // Determine what to load based on priority:
       // 1. URL parameters if present and valid
@@ -99,6 +153,26 @@ export default function BibleReaderScreen() {
 
     loadInitialData();
   }, []);
+
+  useEffect(() => {
+    // Animate the button container after component mounts
+    if (!loading && chapterData) {
+      Animated.parallel([
+        Animated.timing(buttonContainerAnim, {
+          toValue: 0,
+          duration: 500,
+          delay: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(buttonOpacityAnim, {
+          toValue: 1,
+          duration: 400,
+          delay: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [loading, chapterData]);
 
   const loadChapter = async (version: string, book: string, bookId: number, chapter: number) => {
     setLoading(true);
@@ -181,14 +255,64 @@ const increaseFontSize = () => {
 
   const handleFinishReading = () => {
     console.log('Finish Reading Pressed - Updating completion status');
-    // Reset states
-    setPathInProgress(false);
+    let nextUnit: Unit | null = null;
+    let shouldStayInPath = false;
+
+    // If we are in a path and at the end chapter, mark the UNIT as completed
+    if (pathInProgress && currentPath && isAtEndChapter) {
+      console.log(`✅ Unit ${currentPath.unitId} completed! Attempting to mark...`);
+      markUnitAsCompleted(currentPath.unitId);
+
+      // Find the next unit logic
+      const currentPathIndex = BIBLE_PATHS.findIndex(p => p.id === currentPath.pathId);
+      if (currentPathIndex !== -1) {
+        const currentPathData = BIBLE_PATHS[currentPathIndex];
+        const currentUnitIndex = currentPathData.units.findIndex(u => u.id === currentPath.unitId);
+
+        if (currentUnitIndex !== -1) {
+          // Check if there's a next unit in the current path
+          if (currentUnitIndex < currentPathData.units.length - 1) {
+            nextUnit = currentPathData.units[currentUnitIndex + 1];
+            console.log(`🔜 Next unit in same path found: ${nextUnit.title}`);
+          } else {
+            // Check if there's a next path
+            if (currentPathIndex < BIBLE_PATHS.length - 1) {
+              const nextPath = BIBLE_PATHS[currentPathIndex + 1];
+              if (nextPath.units.length > 0) {
+                nextUnit = nextPath.units[0];
+                console.log(`⏭️ Next unit in next path found: ${nextUnit.title}`);
+              }
+            }
+          }
+        }
+      }
+
+      if (nextUnit) {
+        shouldStayInPath = true; 
+        console.log(`🚀 Setting next unit preview and staying in path.`);
+      } else {
+        console.log(`🏁 Reached the end of all paths.`);
+      }
+
+    } else {
+      // Log why it wasn't marked / why we didn't look for the next unit
+      console.log("⚠️ Did not mark unit or look for next unit. Conditions:");
+      console.log(`   - pathInProgress: ${pathInProgress}`);
+      console.log(`   - currentPath: ${JSON.stringify(currentPath)}`);
+      console.log(`   - isAtEndChapter: ${isAtEndChapter}`);
+    }
+
+    // Update store state
+    setNextUnitPreview(nextUnit); // Set the next unit (or null if none)
+    setPathInProgress(shouldStayInPath); // Keep in path only if there's a next unit
+
+    // --- Existing navigation logic --- 
     setHomeMode('DEFAULT');
     setReadingCompleted(true);
-    
+
     // Check if all tasks are completed
     const allCompleted = prayerCompleted && reflectionCompleted;
-    
+
     if (allCompleted) {
       console.log('All tasks completed! Setting success type to BONUS');
       setSuccessType(SuccessAnimationType.BONUS);
@@ -196,8 +320,8 @@ const increaseFontSize = () => {
       console.log('Reading completed, but not all tasks. Setting success type to READING');
       setSuccessType(SuccessAnimationType.READING);
     }
-    
-    // Navigate to success animation screen instead of going back
+
+    // Navigate to success animation screen
     router.navigate({
       pathname: "/success",
       params: {
@@ -205,6 +329,28 @@ const increaseFontSize = () => {
         subMessage: allCompleted ? "Amazing! You've completed all three spiritual disciplines today." : "You've finished today's chapter. Great progress!"
       }
     });
+  };
+
+  // Handle scroll events to detect when user reaches bottom
+  const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    
+    // Check if user has scrolled to the bottom (with a small threshold)
+    const isAtBottom = layoutMeasurement.height + contentOffset.y >= 
+      contentSize.height - 100; // 100px threshold
+    
+    // Only mark as scrolled to bottom if we're at the end chapter AND at the bottom of the content
+    if (isAtBottom && !hasScrolledToBottom) {
+      // Check if we're viewing the final chapter of the unit
+      const isEndChapter = currentPath && currentChapter === currentPath.endChapter;
+      
+      if (isEndChapter) {
+        console.log('📜 User has scrolled to bottom of the final chapter! Enabling Finish button.');
+        setHasScrolledToBottom(true);
+      } else {
+        console.log(`📜 User has scrolled to bottom of chapter ${currentChapter}, but this isn't the final chapter (${currentPath?.endChapter}). Finish button remains disabled.`);
+      }
+    }
   };
 
   const renderBibleContent = () => {
@@ -228,7 +374,12 @@ const increaseFontSize = () => {
 
     if (chapterData) {
       return (
-        <ScrollView contentContainerStyle={styles.scrollContainer}>
+        <ScrollView 
+          ref={scrollViewRef}
+          contentContainerStyle={styles.scrollContainer}
+          onScroll={handleScroll}
+          scrollEventThrottle={16} // Frequent enough for smooth detection
+        >
           {chapterData.verses.map((verse: Verse) => (
             <Text key={verse.verse} style={verseTextStyle} selectable={true}>
               <Text style={verseNumberStyle}>{verse.verse} </Text>
@@ -242,11 +393,47 @@ const increaseFontSize = () => {
     return <Text className="text-text/70 mt-10">No data available.</Text>;
   };
 
+  // Check if the current chapter is the end chapter of the selected path
+  const isAtEndChapter = useMemo(() => {
+    // Debug info
+    console.log("⚠️ Checking if at end chapter:");
+    console.log("- pathInProgress:", pathInProgress);
+    console.log("- currentPath:", currentPath);
+    console.log("- currentBookId:", currentBookId);
+    console.log("- currentChapter:", currentChapter);
+    
+    // If not in a path or no current path defined, consider it "at end"
+    if (!pathInProgress || !currentPath) {
+      console.log("➡️ No active path, showing finish button");
+      return true;
+    }
+    
+    // Check if we're on the right book and at the final chapter from the currentPath
+    const isAtEnd = currentBookId === currentPath.bookId && currentChapter === currentPath.endChapter;
+    console.log(`➡️ Book match: ${currentBookId === currentPath.bookId}, Chapter match: ${currentChapter === currentPath.endChapter}`);
+    console.log(`➡️ End result: ${isAtEnd ? "AT END CHAPTER" : "NOT at end chapter"}`);
+    
+    return isAtEnd;
+  }, [pathInProgress, currentPath, currentBookId, currentChapter]);
+
+  // Reset hasScrolledToBottom when chapter changes
+  useEffect(() => {
+    console.log(`📚 Chapter changed to ${currentChapter}, resetting bottom scroll state`);
+    setHasScrolledToBottom(false);
+  }, [currentChapter]);
+
   return (
     <SafeAreaView className="flex-1 bg-main-bg">
       <View style={styles.newHeaderContainer}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <TouchableOpacity onPress={() => {
+            // Check if we came from the map and reset pathInProgress
+            if (params.source === 'map') {
+              console.log('📱 Navigating back to map, setting pathInProgress to false');
+              setPathInProgress(false);
+            }
+            router.back();
+          }} style={styles.backButton}>
             <Text style={styles.backButtonText}>←</Text>
           </TouchableOpacity>
           
@@ -323,14 +510,22 @@ const increaseFontSize = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Finish Reading Button - Fixed at bottom */}
-      <View style={styles.finishButtonContainer}>
+      {/* Finish Reading Button - Always show but conditionally enable */}
+      <Animated.View 
+        style={[
+          styles.finishButtonContainer,
+          {
+            opacity: buttonOpacityAnim,
+            transform: [{ translateY: buttonContainerAnim }]
+          }
+        ]}
+      >
         <SideButton
-          title="Finish Reading"
+          title={hasScrolledToBottom ? "Finish Reading" :  "Finish Reading"}
           onPress={handleFinishReading}
-          disabled={false}
+          disabled={!hasScrolledToBottom || (!pathInProgress && !isAtEndChapter)}
         />
-      </View>
+      </Animated.View>
     </SafeAreaView>
   );
 }
