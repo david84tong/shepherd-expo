@@ -12,7 +12,8 @@ export interface BibleReference {
     id: string; // Unique identifier for the unit (e.g., 'gen-1')
     title: string; // Title of the unit (e.g., "Creation & Choice")
     description: string; // One sentence description of the unit content
-    reference: BibleReference; // The Bible chapters covered
+    reference: BibleReference | BibleReference[]; // The Bible chapters covered
+    icon: string; // Icon name from @expo/vector-icons
     // Add other properties like description, xp reward, etc. later
   }
   
@@ -20,13 +21,16 @@ export interface BibleReference {
   export interface Path {
     id: string; // Unique identifier for the path (e.g., 'genesis-beginnings')
     title: string; // Title of the path (e.g., "Genesis: Beginnings")
+    description: string; // Description of the path (e.g., "The beginning of the Bible")
+    color: string; // Color of the path (e.g., "yellow")
+    icon: string; // Icon name from @expo/vector-icons
     units: Unit[]; // Array of units within the path
     // Add other properties like description, icon, etc. later
   }
   
   // Mapping from Bible book names to their numeric IDs
   // Based on common Bible API conventions
-  const BIBLE_BOOK_IDS: { [key: string]: number } = {
+  export const BIBLE_BOOK_IDS: { [key: string]: number } = {
     'Genesis': 1, 'Exodus': 2, 'Leviticus': 3, 'Numbers': 4, 'Deuteronomy': 5,
     'Joshua': 6, 'Judges': 7, 'Ruth': 8, '1 Samuel': 9, '2 Samuel': 10,
     '1 Kings': 11, '2 Kings': 12, '1 Chronicles': 13, '2 Chronicles': 14, 'Ezra': 15,
@@ -59,177 +63,252 @@ export interface BibleReference {
     return { bookId, bookName, chapters };
   };
   
-  // Define all the Bible study paths
-  export const BIBLE_PATHS: Path[] = [
-    // 1. Genesis: Beginnings
+  // Bible reading curriculum generated 2025-04-27.
+// Helpers presumed in project scope:
+// • createRef(book: string, chapters: number[]) => ScriptureReference
+// • generateChapters(start: number, end: number) => number[]
+// • Path, Unit interfaces already declared
+
+export const BIBLE_PATHS: Path[] = [
+    /** 1 ▸ Genesis */
     {
       id: 'genesis-beginnings',
       title: 'Genesis: Beginnings',
+      color: 'yellow',
+      icon: 'leaf',
+      description:
+        'Travel from the dawn of creation to the death of Joseph. These origin stories lay the foundation for every major theme that follows in Scripture.',
       units: [
-        { id: 'gen-1', title: 'Creation & Choice', description: 'God creates the world and places humans in the Garden of Eden with freedom to choose.', reference: createRef('Genesis', generateChapters(1, 2)) },
-        { id: 'gen-2', title: 'The Fall', description: 'Adam and Eve disobey God, introducing sin and suffering into the world.', reference: createRef('Genesis', [3,4]) },
-        { id: 'gen-3', title: 'Cain & Abel', description: 'The first murder occurs as Cain kills his brother Abel out of jealousy.', reference: createRef('Genesis', [4,5]) },
-        { id: 'gen-4', title: 'Noah & the Flood', description: 'God sends a worldwide flood but preserves Noah and his family to restart humanity.', reference: createRef('Genesis', generateChapters(6, 9)) },
-        { id: 'gen-5', title: 'Tower of Babel', description: 'Humans attempt to build a tower to heaven, leading God to confuse their languages.', reference: createRef('Genesis', [11]) },
-        { id: 'gen-6', title: "Abraham's Call", description: 'God calls Abraham to leave his homeland and promises to make him a great nation.', reference: createRef('Genesis', [12]) },
-        { id: 'gen-7', title: 'Isaac & Jacob', description: 'The covenant continues through Abraham\'s son Isaac and grandson Jacob, who becomes Israel.', reference: createRef('Genesis', generateChapters(21, 33)) }, // Note: Large range
-        { id: 'gen-8', title: "Joseph's Story", description: 'Joseph rises from slavery to leadership in Egypt and saves his family during a famine.', reference: createRef('Genesis', generateChapters(37, 50)) }, // Note: Large range
+        { id: 'gen-1', title: 'Creation & Choice', reference: createRef('Genesis', generateChapters(1, 3)), description: 'God speaks the cosmos into being and crowns it with image-bearing humans. In Eden they are invited to trust the Creator\'s wisdom or define good and evil for themselves.', icon: 'globe' },
+        { id: 'gen-2', title: 'Cain, Abel', reference: createRef('Genesis', generateChapters(4, 6)), description: 'Jealousy drives the first murder and violence multiplies across the earth. Even in judgment, God marks Cain with mercy and preserves a faithful remnant.', icon: 'people' },
+        { id: 'gen-3', title: 'Noah & the Flood', reference: createRef('Genesis', generateChapters(7, 9)), description: 'Waters of judgment cleanse a corrupt world, yet grace carries Noah\'s family to a new start. A rainbow covenant promises that God\'s long-range plan is redemption, not destruction.', icon: 'water' },
+        { id: 'gen-4', title: 'Nations & Babel', reference: createRef('Genesis', generateChapters(10, 12)), description: 'Humanity scatters into distinct peoples after a prideful tower-project. Out of the confusion God calls one man, Abram, to become a blessing to all nations.', icon: 'language' },
+        { id: 'gen-5', title: 'Abraham\'s Call', reference: createRef('Genesis', generateChapters(12, 17)), description: 'God establishes a binding promise of land, descendants, and global blessing. Abraham\'s faith is tested repeatedly yet ultimately credited as righteousness.', icon: 'star' },
+        { id: 'gen-6', title: 'Isaac\'s Family', reference: createRef('Genesis', generateChapters(21, 24)), description: 'A miraculous son carries the covenant line forward. His marriage to Rebekah ensures the promise continues despite human weakness.', icon: 'people' },
+        { id: 'gen-7', title: 'Jacob & Esau', reference: createRef('Genesis', generateChapters(25, 28)), description: 'Twin brothers struggle for birthright and blessing, revealing God\'s sovereign choice. Jacob experiences both deception and divine encounter on his way out of Canaan.', icon: 'swap-horizontal' },
+        { id: 'gen-8', title: 'Jacob\'s Sojourn & Return', reference: createRef('Genesis', generateChapters(29, 33)), description: 'Years of exile, marriage, and family drama refine Jacob\'s character. A mysterious night-wrestling match prepares him to face Esau and reclaim his new name—Israel.', icon: 'walk' },
+        { id: 'gen-9', title: 'Joseph: Dreams to Dungeon', reference: createRef('Genesis', generateChapters(37, 41)), description: 'Joseph\'s coat, dreams, and betrayal plunge him into slavery and prison. Yet every setback becomes a setup for God\'s providential rise to Egyptian power.', icon: 'bed' },
+        { id: 'gen-10', title: 'Joseph: Famine & Forgiveness', reference: createRef('Genesis', generateChapters(42, 47)), description: 'Global famine reunites Joseph with the brothers who wronged him. Tears of reconciliation show how God turns evil intentions into saving purposes.', icon: 'leaf' },
+        { id: 'gen-11', title: 'Jacob Blesses & Joseph Dies', reference: createRef('Genesis', generateChapters(48, 50)), description: 'A dying patriarch blesses twelve sons and foretells their futures. Joseph\'s final act of faith is requesting his bones be carried to the promised land.', icon: 'hand-right' },
       ],
     },
-    // 2. Exodus: Deliverance & Law
+  
+    /** 2 ▸ Exodus */
     {
-      id: 'exodus-deliverance',
+      id: 'exodus-deliverance-law',
       title: 'Exodus: Deliverance & Law',
+      color: 'red',
+      icon: 'repeat',
+      description:
+        'Witness God break Israel\'s chains and forge a nation by covenant at Sinai. Liberation is not merely freedom from Pharaoh but freedom for worship and holy living.',
       units: [
-        { id: 'exo-1', title: 'Slavery in Egypt', description: 'The Israelites multiply but are enslaved and oppressed by a new Pharaoh.', reference: createRef('Exodus', [1]) },
-        { id: 'exo-2', title: "Moses' Call", description: 'God calls Moses from a burning bush to lead His people out of Egyptian slavery.', reference: createRef('Exodus', generateChapters(3, 4)) },
-        { id: 'exo-3', title: 'The Ten Plagues', description: 'God sends ten devastating plagues upon Egypt to persuade Pharaoh to release the Israelites.', reference: createRef('Exodus', generateChapters(7, 12)) },
-        { id: 'exo-4', title: 'Red Sea Crossing', description: 'God miraculously parts the Red Sea for the Israelites to escape the pursuing Egyptian army.', reference: createRef('Exodus', [14]) },
-        { id: 'exo-5', title: 'Ten Commandments', description: 'God gives Moses the Ten Commandments as the foundation of His covenant with Israel.', reference: createRef('Exodus', [20]) },
-        { id: 'exo-6', title: 'Golden Calf & Idolatry', description: 'The Israelites build and worship a golden calf while Moses is on Mount Sinai.', reference: createRef('Exodus', [32]) },
-        { id: 'exo-7', title: 'Tabernacle Instructions', description: 'God gives detailed instructions for building a portable sanctuary for worship.', reference: createRef('Exodus', [...generateChapters(25, 31), ...generateChapters(35, 40)]) },
+        { id: 'exo-1', title: 'Bondage & Moses\' Birth', reference: createRef('Exodus', generateChapters(1, 4)), description: 'A new pharaoh enslaves Israel and orders infant sons killed. God preserves baby Moses and appears in a burning bush to recruit him as deliverer.', icon: 'person' },
+        { id: 'exo-2', title: 'Confronting Pharaoh', reference: createRef('Exodus', generateChapters(5, 10)), description: 'Nine escalating plagues expose Egypt\'s gods as powerless. Each refusal hardens Pharaoh\'s heart and magnifies Yahweh\'s supremacy.', icon: 'warning' },
+        { id: 'exo-3', title: 'Passover & Red Sea', reference: createRef('Exodus', generateChapters(11, 15)), description: 'The death of the firstborn breaks Egypt\'s resistance, and the Passover lamb becomes Israel\'s rescue symbol. Walls of water then open a path of freedom and close upon pursuing armies.', icon: 'water' },
+        { id: 'exo-4', title: 'Wilderness Provision', reference: createRef('Exodus', generateChapters(16, 18)), description: 'Bread from heaven and water from rock sustain a complaining people. Early battles and Jethro\'s counsel shape community leadership.', icon: 'nutrition' },
+        { id: 'exo-5', title: 'Sinai & Ten Words', reference: createRef('Exodus', generateChapters(19, 24)), description: 'Thunder, fire, and trumpet blasts announce God\'s arrival on the mountain. Israel vows obedience as the Ten Commandments anchor a comprehensive covenant.', icon: 'document-text' },
+        { id: 'exo-6', title: 'Tabernacle Blueprint', reference: createRef('Exodus', generateChapters(25, 31)), description: 'Detailed designs reveal that God intends to dwell among His people. Every measurement, fabric, and furnishing is a portable echo of Eden.', icon: 'home' },
+        { id: 'exo-7', title: 'Golden Calf & Renewal', reference: createRef('Exodus', generateChapters(32, 34)), description: 'Impatience births idolatry when Israel molds a calf from gold. Moses pleads for mercy, and God renews the covenant while revealing His compassionate name.', icon: 'alert' },
+        { id: 'exo-8', title: 'Tabernacle Completed', reference: createRef('Exodus', generateChapters(35, 40)), description: 'Skilled artisans follow God\'s pattern precisely. The cloud and fiery glory move in, signaling that Israel\'s King has taken up residence.', icon: 'home' },
       ],
     },
-    // 3. Wilderness: Testing & Provision
+  
+    /** 3 ▸ Wilderness Years */
     {
-      id: 'wilderness-testing',
+      id: 'wilderness-testing-provision',
       title: 'Wilderness: Testing & Provision',
+      color: 'green',
+      icon: 'navigate',
+      description:
+        'Leviticus instructs a redeemed people how to live with a holy God, while Numbers and Deuteronomy chronicle forty years of wandering discipline. These books prove that grace precedes law and that hearts, not geography, determine readiness for promise.',
       units: [
-        { id: 'wild-1', title: 'Manna & Provision', description: 'God provides miraculous bread from heaven to feed the Israelites in the wilderness.', reference: createRef('Exodus', [16]) },
-        { id: 'wild-2', title: 'Grumbling & Water', description: 'Moses strikes a rock to provide water for the complaining Israelites.', reference: createRef('Exodus', [17]) },
-        { id: 'wild-3', title: 'Mount Sinai & Law (Overview)', description: 'God establishes a system of sacrifices and offerings for atonement and worship.', reference: createRef('Leviticus', [1]) }, // Using Ch 1 as overview
-        { id: 'wild-4', title: 'Nadab & Abihu', description: 'Aaron\'s sons are killed when they offer unauthorized fire before the Lord.', reference: createRef('Leviticus', [10]) },
-        { id: 'wild-5', title: 'Day of Atonement', description: 'God establishes an annual ritual for cleansing the people from their sins.', reference: createRef('Leviticus', [16]) },
-        { id: 'wild-6', title: 'Census & Rebellion', description: 'Spies report on Canaan, but the people refuse to enter the Promised Land.', reference: createRef('Numbers', generateChapters(13, 14)) },
-        { id: 'wild-7', title: 'Balaam', description: 'A pagan prophet is hired to curse Israel but ends up blessing them instead.', reference: createRef('Numbers', generateChapters(22, 24)) },
-        { id: 'wild-8', title: "Moses' Final Words (Overview)", description: 'Moses reviews Israel\'s journey and renews God\'s covenant before his death.', reference: createRef('Deuteronomy', [1]) }, // Using Ch 1 as overview
+        { id: 'wild-1', title: 'Offerings & Consecration', reference: createRef('Leviticus', generateChapters(1, 5)), description: 'Five core sacrifices explain atonement and fellowship. The rituals teach that sin has a cost and that nearness to God is a gift.', icon: 'flame' },
+        { id: 'wild-2', title: 'Priesthood & Purity', reference: createRef('Leviticus', generateChapters(6, 10)), description: 'Ordination of Aaron\'s sons shows the joy and danger of sacred duty. Tragedy strikes when strange fire ignores God\'s holiness.', icon: 'person' },
+        { id: 'wild-3', title: 'Atonement & Ethics', reference: createRef('Leviticus', generateChapters(16, 19)), description: 'The Day of Atonement purges both sanctuary and people once a year. Immediately God links forgiveness to everyday justice and neighbor-love.', icon: 'heart' },
+        { id: 'wild-4', title: 'Festivals & Vows', reference: createRef('Leviticus', generateChapters(23, 27)), description: 'Sabbaths, feasts, and jubilee weave worship into Israel\'s calendar. Vows and tithes underline that time, land, and life belong to the Lord.', icon: 'calendar' },
+        { id: 'wild-5', title: 'Census & Camp', reference: createRef('Numbers', generateChapters(1, 4)), description: 'A precise head-count arranges tribes around the tabernacle like spokes around a hub. God dwells at the center, visually preaching His priority.', icon: 'people' },
+        { id: 'wild-6', title: 'Complaints & Spies', reference: createRef('Nu{mbers', generateChapters(11, 14)), description: 'Grumbling spreads like wildfire and culminates in unbelief at Canaan\'s borders. Forty years of wandering become the price of fear.', icon: 'chatbubble' },
+        { id: 'wild-7', title: 'Balaam\'s Oracles', reference: createRef('Numbers', generateChapters(22, 24)), description: 'A hired seer cannot curse those whom God has blessed. Instead, he foretells a star and scepter that will rise from Israel.', icon: 'star' },
+        { id: 'wild-8', title: 'Plains of Moab', reference: createRef('Numbers', generateChapters(25, 31)), description: 'Sexual seduction and idolatry provoke deadly judgment, yet a second census prepares a new generation. Cities of refuge and Midianite war close the book.', icon: 'location' },
+        { id: 'wild-9', title: 'Moses\' First Farewell', reference: createRef('Deuteronomy', generateChapters(1, 6)), description: 'Standing on the border, Moses retells Israel\'s story to kindle trust. The Shema calls every heart and home to covenant love.', icon: 'megaphone' },
+        { id: 'wild-10', title: 'Covenant Renewal', reference: createRef('Deuteronomy', generateChapters(27, 30)), description: 'Mountains of blessing and curse dramatize the stakes of obedience. Moses pleads, "Choose life," pointing to circumcised hearts as the true hope.', icon: 'refresh' },
+        { id: 'wild-11', title: 'Death of Moses', reference: createRef('Deuteronomy', generateChapters(31, 34)), description: 'Joshua is commissioned as successor, and Moses views the land from Nebo\'s peak. The greatest prophet is buried by God Himself, awaiting a greater one to come.', icon: 'person' },
       ],
     },
-    // 4. Kingdoms & Prophets
-     {
+  
+    /** 4 ▸ Kingdoms & Prophets */
+    {
       id: 'kingdoms-prophets',
       title: 'Kingdoms & Prophets',
+      color: 'orange',
+      icon: 'crown',
+      description:
+        'From conquest to exile, Israel\'s monarchy rises, fractures, and falls while prophets call kings back to covenant loyalty. These narratives show that political power without spiritual fidelity ends in ruin.',
       units: [
-        { id: 'king-1', title: 'Joshua & Conquest (Overview)', description: 'Joshua leads Israel into the Promised Land, beginning the conquest of Canaan.', reference: createRef('Joshua', [1]) }, // Ch 1 Overview
-        { id: 'king-2', title: 'Judges & Cycles (Overview)', description: 'Israel falls into repeated cycles of sin, oppression, repentance, and deliverance.', reference: createRef('Judges', [1]) }, // Ch 1 Overview
-        { id: 'king-3', title: 'Rise of Kings', description: 'Samuel anoints Saul as Israel\'s first king, who later falls from favor with God.', reference: createRef('1 Samuel', generateChapters(1, 31)) }, // Whole book? Large. Consider splitting. Using 1-8 for now.
-        { id: 'king-4', title: "David's Reign", description: 'David becomes king, establishes Jerusalem as capital, and receives God\'s covenant.', reference: createRef('2 Samuel', generateChapters(1, 24)) }, // Whole book? Large. Consider splitting. Using 5-12 for now.
-        { id: 'king-5', title: 'Solomon & the Temple', description: 'Solomon builds the magnificent temple in Jerusalem and rules during Israel\'s golden age.', reference: createRef('1 Kings', generateChapters(1, 11)) },
-        { id: 'king-6', title: 'Division of the Kingdom', description: 'The kingdom splits into Israel (north) and Judah (south) following Solomon\'s death.', reference: createRef('1 Kings', [12]) }, // Starting point
-        { id: 'king-7', title: 'Elijah & Elisha', description: 'Prophets Elijah and Elisha confront idolatry and perform miracles during dark times in Israel.', reference: createRef('1 Kings', [...generateChapters(17, 22), ...createRef('2 Kings', generateChapters(1, 13)).chapters]) }, // Multi-book range
-        { id: 'king-8', title: 'Assyrian Exile', description: 'The northern kingdom of Israel is conquered by Assyria and its people are exiled.', reference: createRef('2 Kings', [17]) },
-        { id: 'king-9', title: 'Babylonian Exile', description: 'Jerusalem falls to Babylon, and the people of Judah are taken into captivity.', reference: createRef('2 Kings', [25]) },
+        { id: 'kp-1', title: 'Joshua & Conquest', reference: createRef('Joshua', generateChapters(1, 7)), description: 'Courageous obedience parts the Jordan and topples Jericho. Early compromise at Ai warns that hidden sin can derail public victory.', icon: 'shield' },
+        { id: 'kp-2', title: 'Judges\' Cycles', reference: createRef('Judges', generateChapters(1, 7)), description: 'Israel drifts into a downward spiral of idolatry, oppression, and deliverance. Each judge offers temporary relief but points to the need for a faithful king.', icon: 'reload' },
+        { id: 'kp-3', title: 'Rise of Saul', reference: createRef('1 Samuel', generateChapters(8, 14)), description: 'People demand a king and God grants Saul, whose tall stature masks insecure heart. Early victories soon give way to rash vows and disobedience.', icon: 'trending-up' },
+        { id: 'kp-4', title: 'David on the Run', reference: createRef('1 Samuel', generateChapters(15, 21)), description: 'Anointing shifts to David, sparking royal jealousy. Wilderness caves become training grounds for the future shepherd-king.', icon: 'footsteps' },
+        { id: 'kp-5', title: 'David\'s Reign', reference: createRef('2 Samuel', generateChapters(1, 7)), description: 'Jerusalem becomes capital and God promises an eternal dynasty. Yet private sin with Bathsheba will sow public turmoil.', icon: 'crown' },
+        { id: 'kp-6', title: 'Solomon & Temple', reference: createRef('1 Kings', generateChapters(1, 7)), description: 'Wisdom, wealth, and worship reach their zenith as the temple is dedicated. Sadly Solomon\'s many marriages plant seeds of idolatry.', icon: 'business' },
+        { id: 'kp-7', title: 'Kingdom Divides', reference: createRef('1 Kings', generateChapters(12, 16)), description: 'Harsh policies split the kingdom into Israel and Judah. Golden calves at Dan and Bethel institutionalize covenant breach.', icon: 'git-branch' },
+        { id: 'kp-8', title: 'Elijah & Elisha', reference: createRef('1 Kings', generateChapters(17, 22)), description: 'Fire from heaven and chariots of whirlwind highlight prophetic power. Successor Elisha doubles the miracles to prove God\'s ongoing presence.', icon: 'flame' },
+        { id: 'kp-9', title: 'Assyrian Exile', reference: createRef('2 Kings', generateChapters(17, 19)), description: 'Relentless idolatry ends in Samaria\'s fall and deportation. Hezekiah\'s faith, however, momentarily stays Assyria\'s hand against Judah.', icon: 'airplane' },
+        { id: 'kp-10', title: 'Babylonian Exile', reference: createRef('2 Kings', generateChapters(23, 25)), description: 'Despite Josiah\'s reforms, Judah collapses under Babylonian siege. The book closes with a captive king eating at an enemy\'s table—yet hinting at future hope.', icon: 'planet' },
       ],
     },
-    // 5. Wisdom & Poetry
+  
+    /** 5 ▸ Wisdom & Poetry */
     {
       id: 'wisdom-poetry',
       title: 'Wisdom & Poetry',
+      color: 'teal',
+      icon: 'musical-notes',
+      description:
+        'Israel\'s songbook and wisdom literature give voice to every human emotion and question. They teach that reverence for God is the beginning of knowledge and the anchor in suffering.',
       units: [
-        // Note: Specific Psalms/Proverbs selection needed. Using placeholders.
-        { id: 'wis-1', title: 'Psalms of Lament & Praise', description: 'Various psalms expressing human emotions from despair to joyful praise toward God.', reference: createRef('Psalms', [1, 23, 51, 100, 150]) }, // Example selection
-        { id: 'wis-2', title: 'Proverbs of Wisdom & Folly', description: 'Practical wisdom for godly living contrasted with the path of foolishness.', reference: createRef('Proverbs', [1, 10, 31]) }, // Example selection
-        { id: 'wis-3', title: 'Ecclesiastes: Meaning of Life', description: 'A philosophical exploration of life\'s meaning, concluding that true purpose is found in fearing God.', reference: createRef('Ecclesiastes', [1, 3, 12]) }, // Example selection
-        { id: 'wis-4', title: 'Song of Songs: Love & Devotion', description: 'A poetic celebration of romantic love between a bride and groom.', reference: createRef('Song of Songs', [1, 2, 8]) }, // Example selection
-        { id: 'wis-5', title: 'Job: Suffering & Sovereignty', description: 'A righteous man suffers intensely and questions God, who ultimately reveals His sovereign wisdom.', reference: createRef('Job', [1, 2, 38, 42]) }, // Example selection
+        { id: 'wis-1', title: 'Psalms: Lament & Praise', reference: createRef('Psalms', generateChapters(1, 6)), description: 'The psalter opens by contrasting blessed and wicked paths. Early laments quickly pivot to trust, modeling honest yet hopeful prayer.', icon: 'musical-note' },
+        { id: 'wis-2', title: 'Proverbs: Wisdom & Folly', reference: createRef('Proverbs', generateChapters(1, 7)), description: 'Short, memorable sayings invite readers to skillful living under God. Every couplet punches home the choice between disciplined wisdom and self-destructive folly.', icon: 'bulb' },
+        { id: 'wis-3', title: 'Ecclesiastes: Chasing Wind', reference: createRef('Ecclesiastes', generateChapters(1, 6)), description: 'The Teacher tests pleasure, work, and learning only to label them "vanity." By facing life\'s enigmas head-on, he points beyond the sun to fearless obedience.', icon: 'wind' },
+        { id: 'wis-4', title: 'Song of Songs: Covenant Love', reference: createRef('Song of Songs', generateChapters(1, 4)), description: 'A poetic duet celebrates the beauty and exclusivity of marital love. Its garden imagery echoes Eden and anticipates intimate union with Christ.', icon: 'heart' },
+        { id: 'wis-5', title: 'Job: Suffering & Sovereignty', reference: createRef('Job', generateChapters(1, 7)), description: 'A righteous man loses everything when heaven and hell wager over integrity. Dialogues with friends reveal bad theology, but the whirlwind speech reveals a bigger God.', icon: 'thunderstorm' },
       ],
     },
-     // 6. Major Prophets
-     {
+  
+    /** 6 ▸ Major Prophets */
+    {
       id: 'major-prophets',
       title: 'Major Prophets',
+      color: 'purple',
+      icon: 'megaphone',
+      description:
+        'Isaiah, Jeremiah, Ezekiel, and Daniel thunder judgment yet spotlight hope in a coming Messiah and restored creation. Their visions stretch from their own troubled century to the very end of days.',
       units: [
-        // Using key chapters as examples for these large books
-        { id: 'maj-1', title: 'Isaiah: Messiah & Judgment', description: 'Isaiah prophesies judgment on Israel but also promises a coming Messiah and future restoration.', reference: createRef('Isaiah', [1, 6, 9, 53, 61]) },
-        { id: 'maj-2', title: 'Jeremiah: Weeping Prophet', description: 'Jeremiah sorrowfully warns of Jerusalem\'s destruction while promising a future new covenant.', reference: createRef('Jeremiah', [1, 7, 29, 31]) },
-        { id: 'maj-3', title: 'Ezekiel: Visions & Restoration', description: 'Ezekiel receives dramatic visions from God about judgment on Israel and future restoration.', reference: createRef('Ezekiel', [1, 37, 47]) },
-        { id: 'maj-4', title: 'Daniel: Exile & Faithfulness', description: 'Daniel remains faithful to God in exile and receives apocalyptic visions about future kingdoms.', reference: createRef('Daniel', [1, 3, 6, 7, 9]) },
+        { id: 'maj-1', title: 'Isaiah: Vision & Call', reference: createRef('Isaiah', generateChapters(1, 6)), description: 'Holy, holy, holy shakes the temple and Isaiah volunteers despite unclean lips. The commissioning anticipates both hardened listeners and a preserved stump.', icon: 'eye' },
+        { id: 'maj-2', title: 'Isaiah: Comfort & Servant', reference: createRef('Isaiah', generateChapters(40, 46)), description: 'The exile horizon turns silky with promises of a highway home. Four servant songs climax in a wounded healer who bears others\' sins.', icon: 'bandage' },
+        { id: 'maj-3', title: 'Jeremiah: Early Oracles', reference: createRef('Jeremiah', generateChapters(1, 6)), description: 'A reluctant youth receives a mission to uproot and to plant. Almond branch and boiling pot visions frame looming Babylonian invasion.', icon: 'megaphone' },
+        { id: 'maj-4', title: 'Jeremiah: Laments', reference: createRef('Jeremiah', generateChapters(18, 23)), description: 'Confessions pour out as the prophet wrestles with loneliness and danger. Yet amid tears he announces a new covenant written on hearts, not stone.', icon: 'sad' },
+        { id: 'maj-5', title: 'Ezekiel: Wheels & Glory', reference: createRef('Ezekiel', generateChapters(1, 7)), description: 'Exiles by the Kebar River behold a storm-throne vision beyond imagination. Judgment oracles explain why God\'s glory departs the temple.', icon: 'aperture' },
+        { id: 'maj-6', title: 'Ezekiel: Restoration Hope', reference: createRef('Ezekiel', generateChapters(36, 39)), description: 'Dry bones rattle back to life, picturing national resurrection. A future Davidic shepherd and a decisive victory over Gog seal the promise.', icon: 'expand' },
+        { id: 'maj-7', title: 'Daniel: Faithful in Exile', reference: createRef('Daniel', generateChapters(1, 6)), description: 'Diet tests, fiery furnaces, and lion dens showcase uncompromising loyalty. Each deliverance foreshadows an everlasting kingdom not cut by human hands.', icon: 'paw' },
       ],
     },
-    // 7. Minor Prophets
+  
+    /** 7 ▸ Minor Prophets */
     {
       id: 'minor-prophets',
       title: 'Minor Prophets',
+      color: 'pink',
+      icon: 'megaphone',
+      description:
+        'Twelve shorter books amplify covenant themes of justice, mercy, and eschatological hope. Though "minor" in length, their messages are major in urgency.',
       units: [
-        // Overview - Selecting first chapter of each book
-        { id: 'min-1', title: 'Hosea', description: 'God commands Hosea to marry an unfaithful woman as a metaphor for Israel\'s unfaithfulness to Him.', reference: createRef('Hosea', [1]) },
-        { id: 'min-2', title: 'Joel', description: 'Joel uses a devastating locust plague to warn of God\'s coming judgment and call for repentance.', reference: createRef('Joel', [1]) },
-        { id: 'min-3', title: 'Amos', description: 'A shepherd called to prophecy against social injustice and religious hypocrisy in Israel.', reference: createRef('Amos', [1]) },
-        { id: 'min-4', title: 'Obadiah', description: 'The shortest prophetic book pronounces judgment on Edom for its violence against Judah.', reference: createRef('Obadiah', [1]) },
-        { id: 'min-5', title: 'Jonah', description: 'A reluctant prophet flees from God\'s call to warn the wicked city of Nineveh about judgment.', reference: createRef('Jonah', [1]) },
-        { id: 'min-6', title: 'Micah', description: 'Micah condemns corruption and injustice while prophesying about the Messiah\'s birth in Bethlehem.', reference: createRef('Micah', [1]) },
-        { id: 'min-7', title: 'Nahum', description: 'Nahum prophesies the destruction of Nineveh as God\'s judgment on Assyria\'s cruelty.', reference: createRef('Nahum', [1]) },
-        { id: 'min-8', title: 'Habakkuk', description: 'A prophet questions God about evil and injustice but learns to trust God\'s sovereign timing.', reference: createRef('Habakkuk', [1]) },
-        { id: 'min-9', title: 'Zephaniah', description: 'Zephaniah warns of the coming "Day of the Lord" but offers hope of restoration for a faithful remnant.', reference: createRef('Zephaniah', [1]) },
-        { id: 'min-10', title: 'Haggai', description: 'Haggai challenges the returned exiles to rebuild God\'s temple and reorder their priorities.', reference: createRef('Haggai', [1]) },
-        { id: 'min-11', title: 'Zechariah', description: 'Through apocalyptic visions, Zechariah encourages the rebuilding of the temple and prophesies the Messiah.', reference: createRef('Zechariah', [1]) },
-        { id: 'min-12', title: 'Malachi', description: 'The final Old Testament prophet confronts Israel\'s spiritual apathy and foretells the coming of Elijah.', reference: createRef('Malachi', [1]) },
+        { id: 'min-1', title: 'Hosea: Covenant Love', reference: createRef('Hosea', generateChapters(1, 4)), description: 'A faithful husband pursues an unfaithful wife to dramatize God\'s relentless grace. Even judgment passages end with a promise of renewed intimacy.', icon: 'heart' },
+        { id: 'min-2', title: 'Joel: Day of the LORD', reference: createRef('Joel', generateChapters(1, 3)), description: 'Locust devastation becomes a sermon on cosmic reckoning. Yet God also pledges an outpoured Spirit for all flesh.', icon: 'sunny' },
+        { id: 'min-3', title: 'Amos: Justice Rolls', reference: createRef('Amos', generateChapters(1, 4)), description: 'A shepherd-prophet targets affluent complacency with roaring indictments. True worship, he insists, must overflow in righteousness.', icon: 'scale' },
+        { id: 'min-4', title: 'Micah: Justice & Hope', reference: createRef('Micah', generateChapters(1, 5)), description: 'Rural Micah challenges urban corruption and foretells Bethlehem\'s ruler. The famous call to do justice, love mercy, and walk humbly rings out.', icon: 'shield' },
+        { id: 'min-5', title: 'Habakkuk: Faith in Crisis', reference: createRef('Habakkuk', generateChapters(1, 3)), description: 'A prophet argues with God about unanswered violence. By the end he sings: "The righteous will live by faith."', icon: 'help' },
+        { id: 'min-6', title: 'Zephaniah: Purifying Fire', reference: createRef('Zephaniah', generateChapters(1, 3)), description: 'Sweeping day-of-the-LORD announcements purge earth and sky. Yet a humble remnant will sing as God rejoices over them.', icon: 'flame' },
+        { id: 'min-7', title: 'Haggai & Early Zechariah', reference: [createRef('Haggai', generateChapters(1, 2)), createRef('Zechariah', [1])], description: 'Returned exiles stall on rebuilding the temple until prophetic urgency stirs them. Initial night visions in Zechariah confirm that God\'s angel armies stand behind the project.', icon: 'home' },
+        { id: 'min-8', title: 'Zechariah: Visions of Glory', reference: createRef('Zechariah', generateChapters(2, 4)), description: 'Flying scrolls, lampstands, and a crowned high priest forecast messianic triumph. Jerusalem\'s future extends far beyond walls of stone.', icon: 'eye' },
+        { id: 'min-9', title: 'Malachi: Final Word', reference: createRef('Malachi', generateChapters(1, 4)), description: 'A skeptical post-exilic community is confronted about tithes, divorce, and apathy. The closing promise of Elijah hints at the coming of John the Baptist.', icon: 'mail' },
       ],
     },
-      // 8. Gospels: The Life of Christ
+  
+    /** 8 ▸ Gospels */
     {
       id: 'gospels-life-of-christ',
       title: 'Gospels: The Life of Christ',
+      color: 'crimson',
+      icon: 'bookmark',
+      description:
+        'Four complementary portraits unveil Jesus\' birth, ministry, sacrifice, and resurrection. Reading them side-by-side highlights both unique emphases and a united proclamation: the kingdom has come.',
       units: [
-        { id: 'gos-1', title: 'Birth of Jesus', description: 'Angels announce the miraculous birth of Jesus to Mary and Joseph in Bethlehem.', reference: createRef('Luke', generateChapters(1, 2)) },
-        { id: 'gos-2', title: 'Baptism & Temptation', description: 'Jesus is baptized by John and resists Satan\'s temptations in the wilderness.', reference: createRef('Matthew', generateChapters(3, 4)) },
-        { id: 'gos-3', title: 'Teachings & Parables', description: 'Jesus delivers the Sermon on the Mount and teaches through powerful parables.', reference: createRef('Matthew', [...generateChapters(5, 7), ...createRef('Luke', [15]).chapters]) }, // Combine refs
-        { id: 'gos-4', title: 'Miracles & Ministry (Overview)', description: 'Jesus demonstrates divine power through healing the sick, casting out demons, and controlling nature.', reference: createRef('Mark', [1, 2, 4, 5]) }, // Key chapters Mark
-        { id: 'gos-5', title: 'Crucifixion', description: 'Jesus is arrested, tried, sentenced, and crucified for the sins of humanity.', reference: createRef('John', [19]) },
-        { id: 'gos-6', title: 'Resurrection', description: 'Jesus rises from the dead, appears to his disciples, and commissions them to spread the gospel.', reference: createRef('Luke', [...[24], ...createRef('John', [20]).chapters]) }, // Combine refs
+        { id: 'gos-1', title: 'Birth & Boyhood', reference: createRef('Luke', generateChapters(1, 3)), description: 'Angelic announcements overshadow Nazareth and Bethlehem. A twelve-year-old Jesus astounds temple teachers, foreshadowing His mission.', icon: 'star' },
+        { id: 'gos-2', title: 'Baptism & Early Call', reference: createRef('Matthew', generateChapters(3, 5)), description: 'Heaven opens over the Jordan as the Spirit descends like a dove. Wilderness temptations test the Son\'s obedience before public ministry begins.', icon: 'water' },
+        { id: 'gos-3', title: 'Sermon on the Mount', reference: createRef('Matthew', generateChapters(5, 7)), description: 'Jesus redefines righteousness, confronting both legalism and hypocrisy. Beatitudes bless outsiders while heart-level commands raise the moral bar.', icon: 'mountain' },
+        { id: 'gos-4', title: 'Parables of Grace', reference: createRef('Luke', generateChapters(15, 17)), description: 'Sheep, coins, and prodigal sons illustrate heaven\'s joy over one repentant sinner. Kingdom grace scandalizes the self-righteous but embraces the lost.', icon: 'chatbubble' },
+        { id: 'gos-5', title: 'Signs & Power', reference: createRef('Mark', generateChapters(1, 5)), description: 'Demons are silenced, storms are stilled, and paralytics walk. Each miracle is a billboard for the authority of the King.', icon: 'flash' },
+        { id: 'gos-6', title: 'Upper Room & Prayer', reference: createRef('John', generateChapters(12, 17)), description: 'Foot-washing models servant leadership on the eve of betrayal. Jesus\' high-priestly prayer secures unity and joy for future disciples.', icon: 'home' },
+        { id: 'gos-7', title: 'Passion & Cross', reference: createRef('John', generateChapters(18, 19)), description: 'Roman trials, a crown of thorns, and crucifixion fulfill ancient prophecies. "It is finished" signals that the debt of sin is paid in full.', icon: 'add' },
+        { id: 'gos-8', title: 'Resurrection & Commission', reference: createRef('John', generateChapters(20, 21)), description: 'An empty tomb turns mourning into mission. The risen Lord restores Peter and sends believers to the ends of the earth.', icon: 'sunny' },
       ],
     },
-    // 9. Acts & Early Church
+  
+    /** 9 ▸ Acts */
     {
       id: 'acts-early-church',
       title: 'Acts & Early Church',
+      color: 'indigo',
+      icon: 'people',
+      description:
+        'Luke\'s sequel chronicles how the risen Christ continues His work through the Spirit-empowered church. Geographic and ethnic barriers crumble as the gospel races from Jerusalem to Rome.',
       units: [
-        { id: 'acts-1', title: 'Pentecost', description: 'The Holy Spirit empowers the disciples, and thousands believe in Jesus after Peter\'s sermon.', reference: createRef('Acts', [2]) },
-        { id: 'acts-2', title: 'Peter & Early Church', description: 'The Jerusalem church grows rapidly through miracles, persecution, and the Spirit\'s guidance.', reference: createRef('Acts', generateChapters(3, 12)) },
-        { id: 'acts-3', title: "Paul's Conversion", description: 'Saul the persecutor encounters Jesus on the Damascus road and becomes Paul the apostle.', reference: createRef('Acts', [9]) },
-        { id: 'acts-4', title: "Paul's Journeys", description: 'Paul travels throughout the Mediterranean world planting churches and preaching Christ.', reference: createRef('Acts', generateChapters(13, 21)) },
-        { id: 'acts-5', title: "Paul's Trials & Rome", description: 'Paul defends his faith before rulers and is eventually taken to Rome as a prisoner.', reference: createRef('Acts', generateChapters(22, 28)) },
+        { id: 'act-1', title: 'Pentecost & Peter', reference: createRef('Acts', generateChapters(1, 4)), description: 'Wind, fire, and multilingual praise launch a new era. Peter\'s bold preaching turns thousands of skeptics into a Spirit-filled community.', icon: 'flame' },
+        { id: 'act-2', title: 'Growth & Opposition', reference: createRef('Acts', generateChapters(5, 7)), description: 'Miracles multiply even as arrests escalate. Stephen\'s martyrdom seeds a wider gospel dispersion.', icon: 'trending-up' },
+        { id: 'act-3', title: 'Saul to Paul', reference: createRef('Acts', generateChapters(8, 9)), description: 'A persecutor is blinded by resurrected glory and reborn as apostle. Baptism and early preaching astonish former allies and foes alike.', icon: 'flash' },
+        { id: 'act-4', title: 'Peter & Gentiles', reference: createRef('Acts', generateChapters(10, 12)), description: 'Cornelius\' household receives the Spirit, proving the gospel is borderless. Meanwhile divine jailbreaks and angelic interventions keep leaders mobile.', icon: 'globe' },
+        { id: 'act-5', title: 'Paul\'s 1st Journey', reference: createRef('Acts', generateChapters(13, 15)), description: 'Synagogue sermons stir both revival and riots across Cyprus and Asia Minor. The Jerusalem council clarifies that salvation is by grace, not circumcision.', icon: 'walk' },
+        { id: 'act-6', title: 'Paul\'s 2nd Journey', reference: createRef('Acts', generateChapters(16, 18)), description: 'A Macedonian vision ferries the gospel into Europe. Prison hymns in Philippi and philosophers in Athens hear the same risen Christ.', icon: 'boat' },
+        { id: 'act-7', title: 'Paul\'s 3rd Journey', reference: createRef('Acts', generateChapters(19, 21)), description: 'Ephesus sees city-wide impact and bonfires of magic scrolls. Farewell tears at Miletus reveal the depth of gospel friendships.', icon: 'footsteps' },
+        { id: 'act-8', title: 'Trials & Rome', reference: createRef('Acts', generateChapters(22, 28)), description: 'Courtrooms, conspiracies, and shipwreck cannot mute the witness. Acts ends with Paul proclaiming the kingdom unhindered in Caesar\'s capital.', icon: 'business' },
       ],
     },
-     // 10. Paul's Letters
-     {
-      id: 'pauls-letters',
-      title: "Paul's Letters",
+  
+    /** 10 ▸ Paul's Letters */
+    {
+      id: 'pauline-epistles',
+      title: 'Paul\'s Letters',
+      color: 'blue',
+      icon: 'mail',
+      description:
+        'These epistles apply Christ\'s gospel to doctrine, discipleship, and daily life. Written to diverse churches and leaders, they trace a roadmap from sin to glory and from chaos to order.',
       units: [
-        // Using first chapter or key chapters as representative
-        { id: 'paul-1', title: 'Romans: Gospel Explained', description: 'Paul systematically explains salvation by faith, righteousness, and life in the Spirit.', reference: createRef('Romans', [1, 3, 8]) },
-        { id: 'paul-2', title: 'Corinthians: Church Issues', description: 'Paul addresses divisions, immorality, and confusion while emphasizing love as the greatest gift.', reference: createRef('1 Corinthians', [1, 13, 15]) },
-        { id: 'paul-3', title: 'Galatians: Grace vs Law', description: 'Paul defends justification by faith alone against those requiring adherence to the Mosaic Law.', reference: createRef('Galatians', [1, 5]) },
-        { id: 'paul-4', title: 'Ephesians: Unity in Christ', description: 'Paul reveals God\'s cosmic plan to unite all things in Christ and its implications for the church.', reference: createRef('Ephesians', [1, 2, 6]) },
-        { id: 'paul-5', title: 'Philippians: Joy in Trial', description: 'From prison, Paul encourages the Philippians to rejoice in Christ despite suffering.', reference: createRef('Philippians', [1, 2, 4]) },
-        { id: 'paul-6', title: 'Colossians: Supremacy of Christ', description: 'Paul combats false teaching by emphasizing Christ\'s deity, sufficiency, and lordship.', reference: createRef('Colossians', [1, 3]) },
-        { id: 'paul-7', title: 'Thessalonians: Hope & End Times', description: 'Paul instructs believers about Christ\'s return and how to live faithfully until then.', reference: createRef('1 Thessalonians', [1, 4, 5]) },
-        { id: 'paul-8', title: 'Timothy & Titus: Church Leadership', description: 'Paul mentors young pastors on sound doctrine, church order, and godly leadership.', reference: createRef('1 Timothy', [...[1, 3], ...createRef('Titus', [1]).chapters]) },
+        { id: 'paul-1', title: 'Romans: Gospel Explained', reference: createRef('Romans', generateChapters(1, 7)), description: 'Paul unfolds humanity\'s universal need and God\'s surprising solution of justification by faith. The letter\'s logical argument has sparked revivals for centuries.', icon: 'document-text' },
+        { id: 'paul-2', title: 'Corinthians: Church Issues', reference: createRef('1 Corinthians', generateChapters(1, 7)), description: 'Divisions, immorality, and worship chaos plague a gifted yet immature church. Paul prescribes cross-shaped love as the only cure.', icon: 'people' },
+        { id: 'paul-3', title: 'Galatians: Grace vs Law', reference: createRef('Galatians', generateChapters(1, 6)), description: 'Judaizers add circumcision to the gospel, provoking a fiery rebuttal. Freedom in the Spirit replaces slavery to external rules.', icon: 'scale' },
+        { id: 'paul-4', title: 'Ephesians: Unity in Christ', reference: createRef('Ephesians', generateChapters(1, 6)), description: 'Cosmic praise for electing grace flows into practical unity among Jews and Gentiles. Marriage, parenting, and spiritual warfare all hinge on identity in Christ.', icon: 'link' },
+        { id: 'paul-5', title: 'Philippians: Joy in Trial', reference: createRef('Philippians', generateChapters(1, 4)), description: 'A prisoner writes the happiest letter in the New Testament. The secret of contentment is knowing that to live is Christ and to die is gain.', icon: 'happy' },
+        { id: 'paul-6', title: 'Colossians: Christ Supreme', reference: createRef('Colossians', generateChapters(1, 4)), description: 'False philosophies shrink Jesus; Paul paints Him as creator, sustainer, and reconciler. Complete sufficiency in Christ dethrones every competing "ism."', icon: 'star' },
+        { id: 'paul-7', title: '1 Thessalonians: Hope While Waiting', reference: createRef('1 Thessalonians', generateChapters(1, 5)), description: 'New believers endure persecution with steadfast faith. Paul clarifies that the Lord\'s return will reunite the living and the dead.', icon: 'time' },
+        { id: 'paul-8', title: '2 Thessalonians: Steadfast Until He Comes', reference: createRef('2 Thessalonians', generateChapters(1, 3)), description: 'Confusion about end-times timetables is corrected with calm assurance. Idleness is rebuked because future hope fuels present diligence.', icon: 'alarm' },
+        { id: 'paul-9', title: '1 Timothy: Guard the Gospel', reference: createRef('1 Timothy', generateChapters(1, 6)), description: 'A young pastor is charged to silence false teachers and model integrity. Instructions shape healthy doctrine, prayer, and leadership.', icon: 'shield' },
+        { id: 'paul-10', title: 'Titus: Healthy Churches', reference: createRef('Titus', generateChapters(1, 3)), description: 'On Crete, grace trains believers to say "No" to ungodliness and "Yes" to good works. Elders must embody this transformation for the sake of witness.', icon: 'medkit' },
       ],
     },
-    // 11. General Epistles
+  
+    /** 11 ▸ General Epistles */
     {
       id: 'general-epistles',
       title: 'General Epistles',
+      color: 'cyan',
+      icon: 'mail-open',
+      description:
+        'Written by several authors, these letters emphasize authentic faith expressed in love and endurance. They broaden the pastoral voice beyond Paul and anchor believers amid trials and heresies.',
       units: [
-        { id: 'genepi-1', title: 'Hebrews: Christ the Fulfillment', description: 'This letter shows how Jesus fulfills and surpasses the Old Testament priesthood and sacrifices.', reference: createRef('Hebrews', [1, 4, 11]) },
-        { id: 'genepi-2', title: 'James: Faith in Action', description: 'James emphasizes that genuine faith produces good works and practical holiness.', reference: createRef('James', [1, 2, 5]) },
-        { id: 'genepi-3', title: '1–2 Peter: Suffering & Holiness', description: 'Peter encourages believers to remain faithful through suffering and warns against false teachers.', reference: createRef('1 Peter', [...[1, 2, 5], ...createRef('2 Peter', [1]).chapters]) },
-        { id: 'genepi-4', title: '1–3 John: Love & Truth', description: 'John emphasizes the inseparable connection between loving God, loving others, and holding to truth.', reference: createRef('1 John', [...[1, 4], ...createRef('2 John', [1]).chapters, ...createRef('3 John', [1]).chapters]) },
-        { id: 'genepi-5', title: 'Jude: Contending for the Faith', description: 'Jude warns against false teachers and encourages believers to stand firm in apostolic teaching.', reference: createRef('Jude', [1]) },
+        { id: 'genep-1', title: 'Hebrews: Christ the Fulfillment', reference: createRef('Hebrews', generateChapters(1, 7)), description: 'Better priest, better covenant, better sacrifice—Jesus surpasses every shadow. The warning passages urge hearers not to drift back to lesser things.', icon: 'trending-up' },
+        { id: 'genep-2', title: 'James: Faith in Action', reference: createRef('James', generateChapters(1, 5)), description: 'True religion bridles the tongue and cares for the vulnerable. Works are not a rival to faith but its inevitable fruit.', icon: 'hammer' },
+        { id: 'genep-3', title: '1 Peter: Suffering & Holiness', reference: createRef('1 Peter', generateChapters(1, 5)), description: 'Exiles on earth receive living hope through Christ\'s resurrection. Holiness and humble submission weaponize believers against slander.', icon: 'sparkles' },
+        { id: 'genep-4', title: '1 John: Love & Truth', reference: createRef('1 John', generateChapters(1, 5)), description: 'John refutes proto-Gnostic denial of Christ\'s incarnation. Walking in light naturally overflows in brother-love.', icon: 'heart' },
+        { id: 'genep-5', title: 'Jude + 2 & 3 John: Contend & Care', reference: [createRef('Jude', [1]), createRef('2 John', [1]), createRef('3 John', [1])], description: 'Tiny letters pack a punch against false teachers and for faithful hospitality. They remind us that truth and love must travel together.', icon: 'mail' },
       ],
     },
-      // 12. Revelation: The End & New Beginning
+  
+    /** 12 ▸ Revelation */
     {
-      id: 'revelation-end',
+      id: 'revelation-end-new',
       title: 'Revelation: The End & New Beginning',
+      color: 'scarlet',
+      icon: 'planet',
+      description:
+        'John\'s apocalypse peels back the curtain on cosmic conflict and ultimate victory. Symbolic visions strengthen saints to conquer by the Lamb\'s blood and faithful testimony.',
       units: [
-        { id: 'rev-1', title: 'Letters to the Churches', description: 'Jesus addresses seven churches in Asia Minor with encouragement, warnings, and promises.', reference: createRef('Revelation', generateChapters(2, 3)) },
-        { id: 'rev-2', title: 'Heavenly Visions', description: 'John sees a vision of God\'s throne room with worship from living creatures and elders.', reference: createRef('Revelation', generateChapters(4, 5)) },
-        { id: 'rev-3', title: 'Judgment & Triumph', description: 'A series of seals, trumpets, and bowls reveal God\'s judgment on a rebellious world.', reference: createRef('Revelation', generateChapters(6, 20)) }, // Very large range
-        { id: 'rev-4', title: 'New Heavens & New Earth', description: 'John describes the glorious new creation where God will dwell with His people forever.', reference: createRef('Revelation', generateChapters(21, 22)) },
+        { id: 'rev-1', title: 'Letters to the Churches', reference: createRef('Revelation', generateChapters(1, 3)), description: 'Seven real congregations receive customized commendations and corrections. The risen Christ walks among His lampstands, trimming wicks for brighter witness.', icon: 'mail' },
+        { id: 'rev-2', title: 'Throne & Seals', reference: createRef('Revelation', generateChapters(4, 8)), description: 'A rainbow-encircled throne anchors worship above. As the Lamb breaks seals, judgment and redemption advance hand in hand.', icon: 'ribbon' },
+        { id: 'rev-3', title: 'Trumpets & Witnesses', reference: createRef('Revelation', generateChapters(9, 13)), description: 'Cosmic plagues and demonic forces unleash warnings yet leave many unrepentant. Two faithful witnesses and a war in heaven assure that evil\'s rage is limited.', icon: 'megaphone' },
+        { id: 'rev-4', title: 'Bowls & Babylon', reference: createRef('Revelation', generateChapters(14, 18)), description: 'Final bowls finish God\'s wrath and topple the seductive city called Babylon. Heaven erupts in hallelujahs over just judgments.', icon: 'wine' },
+        { id: 'rev-5', title: 'Victory & New Creation', reference: createRef('Revelation', generateChapters(19, 22)), description: 'A white-horse rider defeats the beast and resurrects His people. New heavens and new earth emerge as God dwells with humanity forever.', icon: 'earth' },
       ],
     },
   ];
   
-  // You can now import BIBLE_PATHS elsewhere in your store or application

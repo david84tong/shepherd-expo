@@ -3,11 +3,10 @@ import { View, Text, SectionList, Pressable, SafeAreaView, NativeSyntheticEvent,
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { BIBLE_PATHS, Unit, Path } from '../models/Path';
+import { BIBLE_PATHS, Unit, Path, BIBLE_BOOK_IDS } from '../models/Path';
 import { usePathStore, PathInfo } from '../stores/pathStore';
-
-// Define node status
-type NodeStatus = 'locked' | 'active' | 'completed';
+import PathNode, { NodeStatus } from '../../components/MapComponents/PathNode';
+import StickyPathHeader from '../../components/MapComponents/StickyPathHeader';
 
 // Define our custom section type
 type BibleSection = {
@@ -15,6 +14,9 @@ type BibleSection = {
   pathId: string;
   index: number;
   data: Unit[];
+  icon?: string;
+  color?: string;
+  description?: string;
 };
 
 // Hook to get unit status based on global state
@@ -55,149 +57,76 @@ const useUnitStatus = () => {
   return { getStatus };
 };
 
-// Node Component (for Units)
-interface PathNodeProps {
-  unit: Unit;
-  status: NodeStatus;
-  alignment: 'start' | 'center' | 'end';
-  onPress: (unit: Unit) => void;
-}
-
-const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress }) => {
-  const [isPressed, setIsPressed] = useState(false);
-  const isDisabled = status === 'locked';
-
-  const alignmentClass = {
-    start: 'items-start',
-    center: 'items-center',
-    end: 'items-end',
-  }[alignment];
-
-  const nodeBgColor = {
-    locked: 'bg-gray-300',
-    active: 'bg-accentGold',
-    completed: 'bg-forestGreen80',
-  }[status];
-
-  const nodeBorderColor = {
-    locked: 'border-gray-400',
-    active: 'border-buttonBorder',
-    completed: 'border-forestGreen50',
-  }[status];
-
-  const iconColor = isDisabled ? '#9CA3AF' : '#FFFFFF';
-
-  // Enhanced shadow styling
-  let shadowStyle = {};
-  if (!isPressed) {
-    if (status === 'active') {
-      // Use direct style object for more control over the active shadow
-      shadowStyle = { 
-        shadowColor: '#FFE4A8', // Golden yellow
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.8,
-        shadowRadius: 0,
-        elevation: 10
-      };
-    } else if (status === 'completed') {
-      shadowStyle = { 
-        shadowColor: '#A0D468', // Green
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.7,
-        shadowRadius: 0,
-        elevation: 8
-      };
-    } else {
-      // Locked state
-      shadowStyle = { 
-        shadowColor: '#9CA3AF', // Gray
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.5,
-        shadowRadius: 0,
-        elevation: 5
-      };
-    }
-  }
-
-  // TailwindCSS shadow classes (as fallbacks)
-  const nodeShadowBase = 'shadow-[0px_6px_0px_0px_';
-  const nodeShadowColor = {
-    locked: '#D1D5DB]',
-    active: 'rgba(219,185,86,0.7)]',
-    completed: 'rgba(209,232,163,1)]',
-  }[status];
-  const nodeShadowClass = !isPressed ? `${nodeShadowBase}${nodeShadowColor}` : '';
-
-  return (
-    <View className={`w-full px-16 my-4 ${alignmentClass}`}> 
-      <Pressable
-        onPress={() => !isDisabled && onPress(unit)}
-        disabled={isDisabled}
-        onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
-        className={`
-          w-24 h-24 rounded-full items-center justify-center border-4 
-          p-2
-          ${nodeBgColor} ${nodeBorderColor}
-          transform ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}
-          ${nodeShadowClass} 
-        `}
-        style={{ 
-          ...shadowStyle,
-          elevation: isPressed ? 2 : (status === 'active' ? 10 : 5)
-        }}
-      >
-        <Ionicons name="book" size={32} color={iconColor} />
-        <Text 
-          className={`text-center text-xs mt-1 ${isDisabled ? 'text-gray-500' : 'text-white'} font-din`} 
-          numberOfLines={2}
-        >
-          {unit.title}
-        </Text>
-      </Pressable>
-    </View>
-  );
-};
-
 // Custom header component for each section
 interface SectionHeaderProps {
   title: string;
   isFirst: boolean;
+  icon: string;
+  color: string;
 }
 
-const SectionHeader: React.FC<SectionHeaderProps> = ({ title, isFirst }) => {
-  return (
-    <View className={`pt-6 pb-4 ${isFirst ? 'mt-0' : 'mt-6 border-t border-gray-300 mx-8'}`}>
-      <Text className="text-center font-feather text-heading3 text-textPrimary">
-        {title}
-      </Text>
-    </View>
-  );
-};
+const SectionHeader: React.FC<SectionHeaderProps> = ({ title, isFirst, icon, color }) => {
+  // Get the background color based on path color
+  const getBgColor = () => {
+    switch (color) {
+      case 'yellow': return 'bg-lightYellow';
+      case 'red': return 'bg-lightRed';
+      case 'green': return 'bg-lightGreen';
+      case 'orange': return 'bg-lightOrange';
+      case 'teal': return 'bg-lightTeal';
+      case 'purple': return 'bg-lightPurple';
+      case 'pink': return 'bg-lightPink';
+      case 'crimson': return 'bg-lightCrimson';
+      case 'indigo': return 'bg-lightIndigo';
+      case 'blue': return 'bg-lightBlue';
+      case 'cyan': return 'bg-lightCyan';
+      case 'scarlet': return 'bg-lightScarlet';
+      default: return 'bg-lightGreen';
+    }
+  };
+  
+  // Get the border color based on path color
+  const getBorderColor = () => {
+    switch (color) {
+      case 'yellow': return 'border-darkYellow';
+      case 'red': return 'border-darkRed';
+      case 'green': return 'border-darkGreen';
+      case 'orange': return 'border-darkOrange';
+      case 'teal': return 'border-darkTeal';
+      case 'purple': return 'border-darkPurple';
+      case 'pink': return 'border-darkPink';
+      case 'crimson': return 'border-darkCrimson';
+      case 'indigo': return 'border-darkIndigo';
+      case 'blue': return 'border-darkBlue';
+      case 'cyan': return 'border-darkCyan';
+      case 'scarlet': return 'border-darkScarlet';
+      default: return 'border-darkGreen';
+    }
+  };
 
-// Sticky header at the top
-interface StickyHeaderProps {
-  title: string;
-}
-
-const StickyPathHeader: React.FC<StickyHeaderProps> = ({ title }) => {
   return (
-    <View className="absolute top-0 left-0 right-0 pt-10 bg-surfaceCream z-10"> 
-      <View className="px-4 pt-4 mb-2">
-        <View className="bg-forestGreen80 rounded-2xl p-4 items-center justify-center shadow-md">
-          <Text className="text-white font-feather text-heading3 text-center">{title}</Text>
+    <View className={`pt-8 pb-4 ${isFirst ? 'mt-0' : 'mt-4'}`}>
+      <View className="flex items-center justify-center mx-4">
+        <View className={`${getBgColor()} ${getBorderColor()} border-[1px] rounded-xl p-2 flex-row items-center justify-center shadow-sm w-full`}>
+          <Ionicons name={(icon || "book") as any} size={24} color="#3C584A" />
+          <Text className="text-textPrimary font-feather text-lg text-center ml-2">
+            {title}
+          </Text>
         </View>
       </View>
     </View>
   );
 };
 
-// Prepare data for SectionList with section indices
+// Prepare data for SectionList with section indices and include colors
 const sections: BibleSection[] = BIBLE_PATHS.map((path, index) => ({
   title: path.title,
   pathId: path.id,
   index,
   data: path.units,
+  icon: path.icon,
+  color: path.color,
+  description: path.description
 }));
 
 // Safe haptic feedback function
@@ -218,6 +147,10 @@ const triggerHaptic = () => {
 export default function MapScreen() {
   const router = useRouter();
   const [currentSectionTitle, setCurrentSectionTitle] = useState(sections[0]?.title || 'Map');
+  const [currentSectionIcon, setCurrentSectionIcon] = useState(sections[0]?.icon || 'book');
+  const [currentSectionColor, setCurrentSectionColor] = useState(sections[0]?.color || 'green');
+  const [currentSectionDescription, setCurrentSectionDescription] = useState(sections[0]?.description || '');
+  const [currentSectionIndex, setCurrentSectionIndex] = useState(sections[0]?.index || 0);
   const sectionListRef = useRef<SectionList<Unit, BibleSection>>(null);
   
   // Get path store functions
@@ -242,23 +175,27 @@ export default function MapScreen() {
       return;
     }
     
-    // Get chapter range
-    const { bookId, chapters } = unit.reference;
+    // Get chapter range - handle both single reference and array of references
+    let bookId, chapters;
+    
+    if (Array.isArray(unit.reference)) {
+      // If it's an array of references, use the first one
+      bookId = unit.reference[0].bookId;
+      chapters = unit.reference[0].chapters;
+    } else {
+      // It's a single reference
+      bookId = unit.reference.bookId;
+      chapters = unit.reference.chapters;
+    }
+    
     const startChapter = Array.isArray(chapters) && chapters.length > 0 ? chapters[0] : 1;
     const endChapter = Array.isArray(chapters) && chapters.length > 1 ? chapters[chapters.length - 1] : startChapter;
     
     // Create the book name lookup based on bookId
-    // This is a simplified mapping - in a real app, you'd have a more complete mapping
-    const bookNames: Record<number, string> = {
-      1: "Genesis",
-      2: "Exodus",
-      // Add more as needed
-      43: "John",
-      44: "Acts",
-      45: "Romans",
-      // Add more as needed
-    };
-    
+    // Use BIBLE_BOOK_IDS from Path.ts to generate a reverse mapping
+    const bookNames: Record<number, string> = Object.fromEntries(
+      Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => [id, name])
+    );
     const bookName = bookNames[bookId] || `Book ${bookId}`;
     
     // Set the selected book chapter
@@ -338,8 +275,13 @@ export default function MapScreen() {
         (curr.index < prev.index) ? curr : prev, visibleSections[0]);
       
       if (topSection && topSection.title !== currentSectionTitle) {
-        // Update the current section title
+        // Update the current section title, icon, color, description, and index
         setCurrentSectionTitle(topSection.title);
+        setCurrentSectionIcon(topSection.icon || 'book');
+        setCurrentSectionColor(topSection.color || 'green');
+        setCurrentSectionDescription(topSection.description || '');
+        setCurrentSectionIndex(topSection.index || 0);
+        
         lastUpdate.current = now;
         
         // Don't trigger haptic on first render
@@ -379,56 +321,44 @@ export default function MapScreen() {
     );
   };
 
-  // Render section header with custom component
   const renderSectionHeader = ({ section }: { section: BibleSection }) => (
-    <SectionHeader 
+    <SimpleSectionHeader 
       title={section.title} 
-      isFirst={section.index === 0} 
+      isFirst={section.index === 0}
     />
   );
 
+  interface SimpleSectionHeaderProps {
+    title: string;
+    isFirst: boolean;
+  }
+  
+  const SimpleSectionHeader: React.FC<SimpleSectionHeaderProps> = ({ title, isFirst }) => {
+    return (
+      <View className={`pt-6 pb-4 ${isFirst ? 'mt-0' : 'mt-6 border-t border-gray-300 mx-8'}`}>
+      
+      </View>
+    );
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-surfaceCream">
-      {/* Debug button with Genesis parameters */}
-      <TouchableOpacity
-        onPress={() => 
-        { 
-          console.log("genesis 1");
-           router.push({
-          pathname: '/bibleReader',
-          params: { 
-            bookId: "1", 
-            chapters: "1",
-            title: "Genesis 1 - Direct Debug",
-            source: 'debug-button',
-            timestamp: Date.now().toString()
-          }
-        })
-      }
-      }
-        style={{ 
-          padding: 8, 
-          backgroundColor: '#FFE4A8', 
-          margin: 8, 
-          borderRadius: 8,
-          alignItems: 'center',
-          flexDirection: 'row',
-          justifyContent: 'center',
-        }}
-      >
-        <Text style={{ color: '#3C584A', fontWeight: 'bold' }}>📖 OPEN GENESIS 1 DIRECT</Text>
-      </TouchableOpacity>
-      
       {/* Custom Sticky Header */}
-      <StickyPathHeader title={currentSectionTitle} />
+      <StickyPathHeader 
+        title={currentSectionTitle} 
+        icon={currentSectionIcon}
+        color={currentSectionColor}
+        description={currentSectionDescription}
+        sectionNumber={currentSectionIndex + 1}
+      />
 
       <SectionList<Unit, BibleSection>
         ref={sectionListRef}
         sections={sections}
         keyExtractor={(item) => item.id}
         renderItem={renderUnitItem}
-        renderSectionHeader={renderSectionHeader}
         // Remove the separate section separator since we integrated it into the header
+        renderSectionHeader={renderSectionHeader}
         SectionSeparatorComponent={null}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: 100, paddingBottom: 40 }}
@@ -436,7 +366,8 @@ export default function MapScreen() {
         viewabilityConfig={viewabilityConfig}
         // Use a more standard scroll throttle value
         scrollEventThrottle={16}
-        stickySectionHeadersEnabled={false} // Disable default sticky headers
+        stickySectionHeadersEnabled={false} 
+        className="-mt-16"
       />
     </SafeAreaView>
   );

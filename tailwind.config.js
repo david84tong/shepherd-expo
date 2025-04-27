@@ -27,7 +27,57 @@ module.exports = {
         description: '#B89B4C',
         buttonBorder: '#FFE4A8',
         blue: "#06B6FE", // Shadow color for secondary button
-        red: "#DF4533"
+        red: "#DF4533",
+
+        // Path colors from Path.ts (Adjusted to be lighter backgrounds)
+        lightYellow: "#FFFBC8",
+        darkYellow:  "#F7B500",
+        
+        lightRed:    "#FFD2D2",
+        darkRed:     "#E64132",
+        
+        lightOrange: "#FFE6CC",
+        darkOrange:  "#FF8C1A",
+        
+        lightTeal:   "#C6FFF6",
+        darkTeal:    "#17CABC",
+        
+        lightPurple: "#E8D6FF",
+        darkPurple:  "#7B2BFF",
+        
+        lightPink:   "#FFD6F0",
+        darkPink:    "#E6319E",
+        
+        lightCrimson:"#FFE0DC",
+        darkCrimson: "#C81E28",
+        
+        lightIndigo: "#D9E0FF",
+        darkIndigo:  "#3040FF",
+        
+        lightBlue:   "#D6EEFF",
+        darkBlue:    "#2196F3",
+        
+        lightCyan:   "#CCFFFF",
+        darkCyan:    "#18B2B6",
+        
+        lightScarlet:"#FFDAD4",
+        darkScarlet: "#D72618",
+
+        // Darker border colors for paths (Keep for potential future use)
+        /*
+        pathYellowDark: '#D7B644', // Darker yellow
+        pathRedDark: '#D97373',    // Darker red
+        pathGreenDark: '#72C85A',  // Darker green
+        pathOrangeDark: '#D99B73', // Darker orange
+        pathTealDark: '#5AC8B5',   // Darker teal
+        pathPurpleDark: '#A85AD9',// Darker purple
+        pathPinkDark: '#D973A8',   // Darker pink
+        pathCrimsonDark: '#D93D3D',// Darker crimson
+        pathIndigoDark: '#5A5AD9', // Darker indigo
+        pathBlueDark: '#5AA3D9',  // Darker blue
+        pathCyanDark: '#5AD9D9',   // Darker cyan
+        pathScarletDark: '#D92323' // Darker scarlet
+        */
       },
       fontFamily: {
         // Keeping existing fonts, apply sizes via classes
@@ -52,6 +102,21 @@ module.exports = {
         'buttonShadow': '0px 5.716px 0px 0px #FFE4A8', // Inset shadows are hard in RN
         'backButton': '0px 5.716px 0px 0px #FFE4A8', // Inset shadows are hard in RN
         'blueButtonShadow': '0px 5.716px 0px 0px #98E1FE', // Fixed blue button shadow
+
+        // Shadows for each dark color - solid shadow style with vertical offset
+        'darkYellow': '0px 5px 0px 0px #F7B500',
+        'darkRed': '0px 5px 0px 0px #E64132',
+        'darkGreen': '0px 5px 0px 0px #24CA17',
+        'darkOrange': '0px 5px 0px 0px #FF8C1A',
+        'darkTeal': '0px 5px 0px 0px #17CABC',
+        'darkPurple': '0px 5px 0px 0px #7B2BFF',
+        'darkPink': '0px 5px 0px 0px #E6319E',
+        'darkCrimson': '0px 5px 0px 0px #C81E28',
+        'darkIndigo': '0px 5px 0px 0px #3040FF',
+        'darkBlue': '0px 5px 0px 0px #2196F3',
+        'darkCyan': '0px 5px 0px 0px #18B2B6',
+        'darkScarlet': '0px 5px 0px 0px #D72618',
+        'gray': '0px 5px 0px 0px #808080',
       },
       secondaryButtonShadow: {
         'secondary': '', // Match spec
