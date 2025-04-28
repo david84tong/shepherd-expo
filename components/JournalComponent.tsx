@@ -257,7 +257,8 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         {/* Rive Animation */}
         <View className="w-[100px] h-[100px] -ml-5 -mb-2">
           <Rive
-            resourceName="lamb-writing"
+            resourceName="homeLamb"
+            artboardName="lamb-writing"
             autoplay={true}
             style={{ width: '130%', height: '130%' }}
           />

@@ -7,6 +7,7 @@ import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '../app/stores/userStore';
 import PrimaryButton from './PrimaryButton';
 import firestore from '@react-native-firebase/firestore';
+import { getLambMoodByHearts } from '../app/hooks/streakHook';
 
 // Import icons
 const gemIcon = require('../assets/icons/greenGemIcon.png');
@@ -58,6 +59,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const setLastReflectionDate = useUserStore(state => state.setLastReflectionDate);
   const getGens = useUserStore(state => state.getGens);
   const setGens = useUserStore(state => state.setGens);
+  const setLambMood = useUserStore(state => state.setLambMood);
   
   // Determine which type to use for rendering – default to READING if null while store updates
   const effectiveType = successType ?? SuccessAnimationType.READING;
@@ -105,16 +107,18 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   let heartReward = 0;
   let xpReward = 0;
   let riveResource = "successHeartAndStars"; // Default animation
+  let riveArtboard: string | undefined = undefined;
   let rewardTitle = "REWARDS EARNED";
 
   // Get values based on successType - make sure we are handling all possible types
   if (effectiveType === SuccessAnimationType.READING) {
     console.log("Setting up READING success screen");
     message = "Reading Complete!";
-    subMessage = "You finished today's Bible reading. The Shepherd is pleased.";
+    subMessage = "You finished today's Bible reading & fed your lamb.";
     heartReward = 3;
     xpReward = 5; 
-    riveResource = "successHeartAndStars";
+    riveResource = "homeLamb";
+    riveArtboard = "lamb-eating";
     rewardTitle = "READING REWARDS";
   } else if (effectiveType === SuccessAnimationType.PRAYER) {
     console.log("Setting up PRAYER success screen");
@@ -162,6 +166,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Update user state with new values
       if (heartsToAdd > 0) {
         setLambHearts(lambHearts + heartsToAdd);
+        setLambMood(getLambMoodByHearts(lambHearts + heartsToAdd));
       }
       
       // Always add XP
@@ -310,6 +315,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   // Determine if we should show next action buttons (only after reading is completed)
   const showNextButtons = effectiveType === SuccessAnimationType.READING && !prayerCompleted && !reflectionCompleted;
 
+  // Set lamb mood to 'lamb-full' if all actions are completed
+  useEffect(() => {
+    if (readingCompleted && prayerCompleted && reflectionCompleted) {
+      setLambMood('lamb-full');
+    }
+  }, [readingCompleted, prayerCompleted, reflectionCompleted, setLambMood]);
+
   return (
     <View className="flex-1 items-center justify-center pt-12 pb-16 px-5 bg-surfaceCream">
       {/* Rive animation - centered */}
@@ -332,6 +344,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             resourceName={riveResource}
             autoplay={false}
             style={{ width: '100%', height: '100%' }}
+            {...(riveArtboard ? { artboardName: riveArtboard } : {})}
           />
         </Animated.View>
       </View>

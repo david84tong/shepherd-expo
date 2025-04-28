@@ -21,6 +21,9 @@ export interface UserDoc {
     lastReadingDate: FirebaseFirestoreTypes.Timestamp;
     lastPrayerDate: FirebaseFirestoreTypes.Timestamp;
     lastReflectionDate: FirebaseFirestoreTypes.Timestamp;
+    lastReadingPenaltyDate: FirebaseFirestoreTypes.Timestamp;
+    lastPrayerPenaltyDate: FirebaseFirestoreTypes.Timestamp;
+    lastReflectionPenaltyDate: FirebaseFirestoreTypes.Timestamp;
     completedReflections: [Reflection];
     completedPrayers: [Prayer];
     completedReadings: [Reading];
@@ -45,7 +48,13 @@ export interface Prayer {
 export interface Lamb {
     level: number;
     xp: number;
-    mood: string;
+    mood: string; // lamb-idle, lamb-eating, lamb-drinking, lamb-full, lamb-writing 
+    // inactive states: 
+    // <50 hearts lamb-sleepy, 
+    // <30 hearts lamb-angry, 
+    // <20 hearts lamb-chubby dying, 
+    // <10 hearts: lamb-skinny dying, 
+    // <1 hearts: smoking
     hearts: number;
     name: string;
     skin: string;

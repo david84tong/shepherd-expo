@@ -25,6 +25,9 @@ interface UserStore extends UserDoc {
   getLastReadingDate: () => UserDoc['lastReadingDate'];
   getLastPrayerDate: () => UserDoc['lastPrayerDate'];
   getLastReflectionDate: () => UserDoc['lastReflectionDate'];
+  getLastReadingPenaltyDate: () => UserDoc['lastReadingPenaltyDate'];
+  getLastPrayerPenaltyDate: () => UserDoc['lastPrayerPenaltyDate'];
+  getLastReflectionPenaltyDate: () => UserDoc['lastReflectionPenaltyDate'];
   getCompletedReflections: () => [Reflection];
   getCompletedPrayers: () => [Prayer];
   getCompletedReadings: () => [Reading];
@@ -50,6 +53,9 @@ interface UserStore extends UserDoc {
   setLastReadingDate: (date: UserDoc['lastReadingDate']) => void;
   setLastPrayerDate: (date: UserDoc['lastPrayerDate']) => void;
   setLastReflectionDate: (date: UserDoc['lastReflectionDate']) => void;
+  setLastReadingPenaltyDate: (date: UserDoc['lastReadingPenaltyDate']) => void;
+  setLastPrayerPenaltyDate: (date: UserDoc['lastPrayerPenaltyDate']) => void;
+  setLastReflectionPenaltyDate: (date: UserDoc['lastReflectionPenaltyDate']) => void;
   setVersesReadTotal: (count: number) => void;
   setChaptersReadTotal: (count: number) => void;
   setBibleVersion: (version: string) => void;
@@ -82,7 +88,7 @@ interface UserStore extends UserDoc {
 const initialLamb: Lamb = {
   level: 1,
   xp: 0,
-  mood: 'happy',
+  mood: 'lamb-idle',
   hearts: 50,
   name: 'Shepherd',
   skin: 'default'
@@ -100,6 +106,9 @@ const initialState: Partial<UserDoc> = {
   lastReadingDate: firestore.Timestamp.now(),
   lastPrayerDate: firestore.Timestamp.now(),
   lastReflectionDate: firestore.Timestamp.now(),
+  lastReadingPenaltyDate: firestore.Timestamp.now(),
+  lastPrayerPenaltyDate: firestore.Timestamp.now(),
+  lastReflectionPenaltyDate: firestore.Timestamp.now(),
   streakCount: 0,
   versesReadTotal: 0,
   chaptersReadTotal: 0,
@@ -136,6 +145,9 @@ export const useUserStore = create<UserStore>()(
       getLastReadingDate: () => get().lastReadingDate,
       getLastPrayerDate: () => get().lastPrayerDate,
       getLastReflectionDate: () => get().lastReflectionDate,
+      getLastReadingPenaltyDate: () => get().lastReadingPenaltyDate,
+      getLastPrayerPenaltyDate: () => get().lastPrayerPenaltyDate,
+      getLastReflectionPenaltyDate: () => get().lastReflectionPenaltyDate,
       getCompletedReflections: () => get().completedReflections,
       getCompletedPrayers: () => get().completedPrayers,
       getCompletedReadings: () => get().completedReadings,
@@ -161,6 +173,9 @@ export const useUserStore = create<UserStore>()(
       setLastReadingDate: (lastReadingDate) => set({ lastReadingDate }),
       setLastPrayerDate: (lastPrayerDate) => set({ lastPrayerDate }),
       setLastReflectionDate: (lastReflectionDate) => set({ lastReflectionDate }),
+      setLastReadingPenaltyDate: (lastReadingPenaltyDate) => set({ lastReadingPenaltyDate }),
+      setLastPrayerPenaltyDate: (lastPrayerPenaltyDate) => set({ lastPrayerPenaltyDate }),
+      setLastReflectionPenaltyDate: (lastReflectionPenaltyDate) => set({ lastReflectionPenaltyDate }),
       setVersesReadTotal: (versesReadTotal) => set({ versesReadTotal }),
       setChaptersReadTotal: (chaptersReadTotal) => set({ chaptersReadTotal }),
       setBibleVersion: (bibleVersion) => set({ bibleVersion }),
@@ -227,6 +242,9 @@ export const useUserStore = create<UserStore>()(
         lastReadingDate: state.lastReadingDate,
         lastPrayerDate: state.lastPrayerDate,
         lastReflectionDate: state.lastReflectionDate,
+        lastReadingPenaltyDate: state.lastReadingPenaltyDate,
+        lastPrayerPenaltyDate: state.lastPrayerPenaltyDate,
+        lastReflectionPenaltyDate: state.lastReflectionPenaltyDate,
         versesReadTotal: state.versesReadTotal,
         chaptersReadTotal: state.chaptersReadTotal,
         bibleVersion: state.bibleVersion,

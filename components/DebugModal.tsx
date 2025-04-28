@@ -5,6 +5,8 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
 import { HalfModalType } from '../app/halfModal'; // Adjust path as needed
+import firestore from '@react-native-firebase/firestore';
+import { useUserStore } from '../app/stores/userStore';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -95,6 +97,83 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
     }, 50);
   }, [router]);
 
+  // Handler to set all activity dates to N days ago
+  const setAllActivityDates = useCallback((daysAgo: number) => {
+    const now = new Date();
+    const targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysAgo);
+    const timestamp = firestore.Timestamp.fromDate(targetDate);
+    
+    // Set activity dates to N days ago
+    useUserStore.getState().setLastActivityDate(timestamp);
+    useUserStore.getState().setLastReadingDate(timestamp);
+    useUserStore.getState().setLastPrayerDate(timestamp);
+    useUserStore.getState().setLastReflectionDate(timestamp);
+    
+    // Set penalty dates to (N+1) days ago to ensure the condition "daysSince > daysSincePenalty" can be met
+    const penaltyDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (daysAgo + 1));
+    const penaltyTimestamp = firestore.Timestamp.fromDate(penaltyDate);
+    useUserStore.getState().setLastReadingPenaltyDate(penaltyTimestamp);
+    useUserStore.getState().setLastPrayerPenaltyDate(penaltyTimestamp);
+    useUserStore.getState().setLastReflectionPenaltyDate(penaltyTimestamp);
+    
+    Alert.alert('Set Dates', `Activity dates: ${daysAgo} day(s) ago\nPenalty dates: ${daysAgo + 1} day(s) ago`);
+  }, []);
+
+  // Function to directly test the penalty system
+  const testPenaltyScenario = useCallback(() => {
+    const now = new Date();
+    
+    // Set activity dates to 3 days ago to ensure "daysSince > 1" condition is met
+    const activityDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3);
+    const activityTimestamp = firestore.Timestamp.fromDate(activityDate);
+    useUserStore.getState().setLastActivityDate(activityTimestamp);
+    useUserStore.getState().setLastReadingDate(activityTimestamp);
+    useUserStore.getState().setLastPrayerDate(activityTimestamp);
+    useUserStore.getState().setLastReflectionDate(activityTimestamp);
+    
+    // Set penalty dates to 1 day ago to ensure "daysSince > daysSincePenalty" condition is met
+    const penaltyDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
+    const penaltyTimestamp = firestore.Timestamp.fromDate(penaltyDate);
+    useUserStore.getState().setLastReadingPenaltyDate(penaltyTimestamp);
+    useUserStore.getState().setLastPrayerPenaltyDate(penaltyTimestamp);
+    useUserStore.getState().setLastReflectionPenaltyDate(penaltyTimestamp);
+    
+    Alert.alert('Penalty Test', 'Set up for penalty:\nActivity: 3 days ago\nPenalty: 1 day ago\nPenalties should trigger on next app open.');
+  }, []);
+
+  // Handler to set only penalty dates to N days ago
+  const setPenaltyDates = useCallback((daysAgo: number) => {
+    const now = new Date();
+    const targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysAgo);
+    const timestamp = firestore.Timestamp.fromDate(targetDate);
+    useUserStore.getState().setLastReadingPenaltyDate(timestamp);
+    useUserStore.getState().setLastPrayerPenaltyDate(timestamp);
+    useUserStore.getState().setLastReflectionPenaltyDate(timestamp);
+    // Also set lastActivityDate
+    useUserStore.getState().setLastActivityDate(timestamp);
+    Alert.alert('Set Dates', `Penalty dates & Last Activity set to ${daysAgo} day(s) ago.`);
+  }, []);
+
+  // Handler to set lamb hearts to a specific value
+  const setLambHearts = useCallback((hearts: number) => {
+    useUserStore.getState().setLambHearts(hearts);
+    Alert.alert('Set Hearts', `Lamb hearts set to ${hearts}`);
+  }, []);
+
+  // Sync activity dates with penalty dates
+  const syncActivityAndPenaltyDates = useCallback(() => {
+    const state = useUserStore.getState();
+    const readingPenaltyDate = state.getLastReadingPenaltyDate();
+    const prayerPenaltyDate = state.getLastPrayerPenaltyDate();
+    const reflectionPenaltyDate = state.getLastReflectionPenaltyDate();
+
+    if (readingPenaltyDate) state.setLastReadingDate(readingPenaltyDate);
+    if (prayerPenaltyDate) state.setLastPrayerDate(prayerPenaltyDate);
+    if (reflectionPenaltyDate) state.setLastReflectionDate(reflectionPenaltyDate);
+
+    Alert.alert('Sync Dates', 'Activity dates synced with their respective penalty dates.');
+  }, []);
+
   const navigateTo = (item: DebugScreen) => {
     setModalVisible(false);
     
@@ -183,6 +262,56 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
                 >
                   <Text className="font-feather text-base text-textPrimary">Reset Local Storage</Text>
                   <Text className="font-din text-sm text-[#A57070] mt-1">Clear AsyncStorage including completion data</Text>
+                </TouchableOpacity>
+
+                {/* Set Lamb Hearts Buttons */}
+                <View className="mt-4">
+                  <Text className="font-feather text-base text-textPrimary mb-1">Set Lamb Hearts</Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {[0, 10, 20, 30, 40, 50, 100].map((hearts) => (
+                      <TouchableOpacity
+                        key={hearts}
+                        className="bg-[#FFE0E8] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
+                        onPress={() => setLambHearts(hearts)}
+                      >
+                        <Text className="font-din text-sm text-textPrimary">{`${hearts} ❤️`}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Set Only Penalty Dates Buttons */}
+                <View className="mt-4">
+                  <Text className="font-feather text-base text-textPrimary mb-1">Set Penalty Dates Only</Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {[0,1,2,3,4,5].map((n) => (
+                      <TouchableOpacity
+                        key={n}
+                        className="bg-[#FFE8E0] px-3 py-2 rounded-lg border border-[#FFA0A0] mb-1"
+                        onPress={() => setPenaltyDates(n)}
+                      >
+                        <Text className="font-din text-sm text-textPrimary">{`-${n} day${n !== 1 ? 's' : ''}`}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+                
+                {/* Test Penalty Scenario Button */}
+                <TouchableOpacity
+                  className="bg-[#FF8080] p-4 rounded-xl my-2 border-l-4 border-l-[#FF0000]"
+                  onPress={testPenaltyScenario}
+                >
+                  <Text className="font-feather text-base text-white">Test Penalty System</Text>
+                  <Text className="font-din text-sm text-white/80 mt-1">Sets up guaranteed penalty trigger</Text>
+                </TouchableOpacity>
+
+                {/* Sync Activity/Penalty Dates Button */}
+                <TouchableOpacity
+                  className="bg-[#E0F2F7] p-4 rounded-xl my-2 border-l-4 border-l-[#4FC3F7]"
+                  onPress={syncActivityAndPenaltyDates}
+                >
+                  <Text className="font-feather text-base text-textPrimary">Sync Activity & Penalty Dates</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">Set activity dates = penalty dates</Text>
                 </TouchableOpacity>
               </View>
               

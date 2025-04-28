@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import PrimaryButton from './PrimaryButton';
 import { router } from 'expo-router';
@@ -72,14 +72,18 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
     return nextUnitToComplete;
   }, [completedUnitIds]);
   
+  // Helper to get a single BibleReference from nextUnit.reference
+  const getFirstReference = (ref: Unit['reference']) => Array.isArray(ref) ? ref[0] : ref;
+
   // Content for the preview card - either from nextUnit or fallbacks
   const title = useMemo(() => nextUnit?.title || "The Good Shepherd", [nextUnit]);
-  const subtitle = useMemo(() => 
-    nextUnit ? 
-    `Next: ${nextUnit.reference.bookName} ${nextUnit.reference.chapters[0]}` : 
-    `Today's Reading · ${savedBook} ${savedChapter}`,
-    [nextUnit, savedBook, savedChapter]
-  );
+  const subtitle = useMemo(() => {
+    if (nextUnit) {
+      const ref = getFirstReference(nextUnit.reference);
+      return `Next: ${ref.bookName} ${ref.chapters[0]}`;
+    }
+    return `Today's Reading · ${savedBook} ${savedChapter}`;
+  }, [nextUnit, savedBook, savedChapter]);
   const summary = useMemo(() => 
     nextUnit?.description || 
     (savedBook === 'John' && savedChapter === 3 ? 
@@ -89,15 +93,18 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   );
 
   // Determine bookId and chapter for the "Start Reading" button
-  const bookIdToLoad = useMemo(() => nextUnit?.reference.bookId || savedBookId, [nextUnit, savedBookId]);
+  const bookIdToLoad = useMemo(() => nextUnit ? getFirstReference(nextUnit.reference).bookId : savedBookId, [nextUnit, savedBookId]);
   const chaptersToLoad = useMemo(() => 
-    nextUnit ? nextUnit.reference.chapters.join(',') : savedChapter.toString(), 
+    nextUnit ? getFirstReference(nextUnit.reference).chapters.join(',') : savedChapter.toString(), 
     [nextUnit, savedChapter]
   );
 
   // Animation values for the primary button
   const buttonAnim = useRef(new Animated.Value(60)).current; // Start 60 units below final position
   const buttonOpacity = useRef(new Animated.Value(0)).current; // Start fully transparent
+
+  const [scrolledToBottom, setScrolledToBottom] = useState(false);
+  const scrollViewRef = useRef(null);
 
   useEffect(() => {
     if (visible) {
@@ -156,8 +163,6 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   const handleStart = () => {
     // Set up the path information if we have a nextUnit
     if (nextUnit) {
-      console.log('Starting reading with unit:', nextUnit.title);
-      
       // Find the path that contains this unit
       let pathId = '';
       let pathTitle = '';
@@ -168,11 +173,12 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
           break;
         }
       }
-      
-      // Get start and end chapters
-      const startChapter = nextUnit.reference.chapters[0];
-      const endChapter = nextUnit.reference.chapters[nextUnit.reference.chapters.length - 1];
-      
+
+      // Handle reference as BibleReference | BibleReference[]
+      const ref = getFirstReference(nextUnit.reference);
+      const startChapter = ref.chapters[0];
+      const endChapter = ref.chapters[ref.chapters.length - 1];
+
       // Set the currentPath in the pathStore
       setPathInProgress(true); // Keep path progress active for Bible Reader
       setCurrentPath({
@@ -180,31 +186,75 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         pathTitle: pathTitle,
         unitId: nextUnit.id,
         unitTitle: nextUnit.title,
-        bookId: nextUnit.reference.bookId,
+        bookId: ref.bookId,
         startChapter: startChapter,
         endChapter: endChapter
       });
+
+      // Navigate to bibleReader with correct params
+      router.push({
+        pathname: '/bibleReader',
+        params: {
+          bookId: ref.bookId.toString(),
+          chapters: ref.chapters.join(','),
+          title: nextUnit.title,
+          source: 'preview',
+          timestamp: Date.now().toString()
+        }
+      });
+    } else {
+      router.push({
+        pathname: '/bibleReader',
+        params: {
+          bookId: savedBookId.toString(),
+          chapters: savedChapter.toString(),
+          title: title,
+          source: 'preview',
+          timestamp: Date.now().toString()
+        }
+      });
     }
-    
-    // Explicitly trigger haptic feedback before navigation
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    } catch (error) {
-      // Silently fail if haptics not available
-    }
-    
-    // Use a simpler approach - this will rely on our route config in _layout.tsx
-    // for the slide_from_right animation
+  };
+
+  // Handler for "Just Read Bible" button
+  const handleJustReadBible = () => {
+    console.log('Just Read Bible');
+    // Exit any path progress state
+      setPathInProgress(false); // Keep path progress active for Bible Reader
+
+    // Navigate directly to the Bible reader with saved state
     router.push({
-      pathname: '/bibleReader', // Use bibleReader which we know is configured correctly
-      params: { 
-        bookId: bookIdToLoad.toString(), // Use determined bookId
-        chapters: chaptersToLoad, // Use determined chapters
-        title: title, // Pass the dynamic title
-        source: 'preview',
-        timestamp: Date.now().toString() // Force params refresh
+      pathname: '/bibleReader',
+      params: {
+        bookId: savedBookId.toString(),
+        chapters: savedChapter.toString(),
+        title: savedBook,
+        source: 'just-read',
+        timestamp: Date.now().toString(),
       }
     });
+
+    // Close the preview overlay
+  };
+
+  // Handler for "Finish Reading" button
+  const handleFinishReading = () => {
+    // You can add your finish reading logic here
+    alert('Finish Reading!');
+  };
+
+  // Function to check if scrolled to bottom
+  const handleScroll = (event: any) => {
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const paddingToBottom = 20; // px
+    if (
+      layoutMeasurement.height + contentOffset.y >=
+      contentSize.height - paddingToBottom
+    ) {
+      setScrolledToBottom(true);
+    } else {
+      setScrolledToBottom(false);
+    }
   };
 
   return (
@@ -236,10 +286,14 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
       <View className="flex-1 h-96" />
       {/* Animated Primary Button */}
       <Animated.View 
-        className="w-full px-5 mb-10 mt-auto items-center z-10 mt-0"
+        className="w-full px-5 mb-2 mt-auto items-center z-10 mt-0"
         style={{ opacity: buttonOpacity, transform: [{ translateY: buttonAnim }] }}
       >
         <PrimaryButton title="Start Reading" onPress={handleStart} />
+        {/* Just Read Bible Button */}
+        <PrimaryButton title="Just Read Bible" onPress={handleJustReadBible} buttonType="default" style="mt-2" />
+        {/* Finish Reading Button */}
+   
       </Animated.View>
     </Animated.View>
   );

@@ -69,9 +69,10 @@ export default function HomeScreen() {
   const lambHearts = useUserStore((state) => state.getLambHearts());
   const streakCount = useUserStore((state) => state.getStreakCount());
   const gens = useUserStore((state) => state.getGens());
+  const lambMood = useUserStore((state) => state.getLambMood());
 
   // State to manage the Rive resource name
-  const [artboardName, setArtboardName] = useState('Idle1'); // Default artboard
+  const [artboardName, setArtboardName] = useState('lamb-idle'); // Default artboard
   // State to control background Rive animation
   const [showBgRive, setShowBgRive] = useState(false);
   // Lamb size animation
@@ -192,14 +193,17 @@ export default function HomeScreen() {
   // --- Conditional Glow Style ---
   const showGlow = lambHearts > 80;
 
-  // --- Rive Handlers ---
-  const handleOutOfFrame = () => {
-    try {
-      riveRef.current?.setInputState('MAIN', 'Out of Frame', true);
-    } catch (error) {
-      console.error('Error setting Rive input state:', error);
-    }
+  // --- Mood to Artboard Mapping ---
+  const moodToArtboard: Record<string, string> = {
+    'lamb-idle': 'lamb-idle',
+    'lamb-sleepy': 'lamb-sleepy',
+    'lamb-angry': 'lamb-angry',
+    'lamb-chubby dying': 'lamb-chubby dying',
+    'lamb-skinny dying': 'lamb-skinny dying',
+    'smoking': 'smoke',
   };
+
+
   const handleRiveError = (error: RNRiveError) => {
     console.error('Rive Error:', error.message, error.type);
     setRiveError(error);
@@ -226,6 +230,14 @@ export default function HomeScreen() {
     let lambOpacityTarget = 1; // Default to visible
 
     if (mode === 'PREVIEW') {
+      setArtboardName('lamb-idle');
+      // Update artboard based on lamb mood from userStore
+      const currentMood = useUserStore.getState().getLambMood();
+      if (currentMood && moodToArtboard[currentMood]) {
+        setArtboardName(moodToArtboard[currentMood]);
+      } else {
+        setArtboardName('lamb-idle'); // Default fallback
+      }
       modeAnim = Animated.timing(previewAnim, {
         toValue: 1,
         duration,
@@ -233,6 +245,7 @@ export default function HomeScreen() {
         useNativeDriver: true,
       });
     } else if (mode === 'PRAYER') {
+      setArtboardName('lamb-drinking');
       modeAnim = Animated.timing(prayerAnim, {
         toValue: 1,
         duration,
@@ -240,6 +253,7 @@ export default function HomeScreen() {
         useNativeDriver: true,
       });
     } else if (mode === 'REFLECTION') {
+      setArtboardName('lamb-writing');
       modeAnim = Animated.timing(reflectionAnim, {
         toValue: 1,
         duration,
@@ -317,19 +331,7 @@ export default function HomeScreen() {
       // Reset Rive view animations
       Animated.timing(riveScaleAnim, { toValue: 1, duration, useNativeDriver: true }),
       Animated.timing(riveRotateAnim, { toValue: 0, duration, useNativeDriver: true }),
-    ]).start(() => {
-      // We should check completion status BEFORE setting resource back to default
-
-      if (readingCompleted && prayerCompleted && reflectionCompleted) {
-        console.log('DEBUG - All activities completed, setting resource to lambWriting');
-        setArtboardName('Writing');
-      } else {
-        console.log('DEBUG - Not all activities completed, setting resource to mainSheep1');
-        setArtboardName('Idle1');
-      }
-      // Set Rive resource back to default AFTER animation completes
-      console.log('Default animation complete, resetting Rive resource to mainSheep1');
-    });
+    ]).start();
 
     // Animate lamb size separately as it cannot use native driver
     Animated.timing(lambSizeAnim, {
@@ -351,16 +353,13 @@ export default function HomeScreen() {
 
     if (mode === 'DEFAULT') {
       animateToDefault();
-      // No need to set resource here, it will be set in the animateToDefault callback
-      // Ensure resource is reset if mode changes externally
-      setArtboardName('Idle1');
     } else if (mode === 'PRAYER') {
       // Handle prayer mode activation when coming from other screens
       console.log('Activating Prayer mode from external navigation');
       setShowBgRive(true);
 
       // Set the Rive resource
-      setArtboardName('Drinking');
+      setArtboardName('lamb-drinking');
 
       // Animate lamb size
       Animated.timing(lambSizeAnim, {
@@ -385,7 +384,7 @@ export default function HomeScreen() {
       // Trigger the animation to reflection state
       animateToState(1, journalOpacityAnim, 800, 'REFLECTION');
     }
-  }, [mode, readingCompleted, prayerCompleted, reflectionCompleted]);
+  }, [mode, readingCompleted, prayerCompleted, reflectionCompleted, lambMood]);
 
   // --- Event Handlers ---
   const handleReadPress = () => {
@@ -425,8 +424,8 @@ export default function HomeScreen() {
 
     // Set Rive resource after a delay
     setTimeout(() => {
-      console.log('Setting Rive to lamb-eating');
-      setArtboardName('Eating Bread');
+      console.log('Setting Rive to lamb-reading');
+      setArtboardName('lamb-reading');
     }, 300);
   };
 
@@ -474,7 +473,7 @@ export default function HomeScreen() {
     // Set Rive resource after a delay
     setTimeout(() => {
       console.log('Setting Rive to lamb-drinking');
-      setArtboardName('Drinking');
+      setArtboardName('lamb-drinking');
     }, 300);
   };
 
@@ -517,11 +516,13 @@ export default function HomeScreen() {
         }),
       ]),
     ]).start();
-
+  // Set Rive resource after a delay
+  setTimeout(() => {
+    console.log('Setting Rive to lamb-drinking');
+    setArtboardName('lamb-writing');
+  }, 300);
     // No Rive change needed here currently
-    /* setTimeout(() => {
-      // setRiveResourceName('lambWriting');
-    }, 300); */
+   
   };
 
   // --- Handlers for Closing Overlays ---
@@ -580,15 +581,10 @@ export default function HomeScreen() {
     });
 
     if (mode === 'DEFAULT') {
-      if (readingCompleted && prayerCompleted && reflectionCompleted) {
-        console.log('DEBUG - Setting directly to lambWriting because all activities completed');
-        setArtboardName('Writing');
-      } else {
-        console.log('DEBUG - Setting directly to mainSheep1 because not all activities completed');
-        setArtboardName('Idle1');
-      }
+      // Always set artboard based on lamb mood in DEFAULT mode
+      setArtboardName(moodToArtboard[lambMood] || 'lamb-idle');
     }
-  }, [readingCompleted, prayerCompleted, reflectionCompleted, mode]);
+  }, [readingCompleted, prayerCompleted, reflectionCompleted, mode, lambMood]);
 
   // --- Load and cache images ---
   const cacheImages = useMemo(
@@ -714,9 +710,7 @@ export default function HomeScreen() {
         ]}>
         {showBgRive && (
           <Rive
-            resourceName="shepherd_animations"
-            stateMachineName="State Machine 1"
-            artboardName="Drinking"
+            resourceName="homeLamb"
             autoplay={true}
             style={{ width: '160%', height: '160%', top: -300, left: -128 }}
           />
@@ -791,10 +785,8 @@ export default function HomeScreen() {
                   }}>
                   <Rive
                     ref={riveRef}
-                    resourceName="shepherd_animations"
-                    stateMachineName="State Machine 1"
+                    resourceName="homeLamb"
                     artboardName={artboardName}
-                    autoplay={true}
                     onError={handleRiveError}
                     style={{ width: '100%', height: '100%' }}
                   />

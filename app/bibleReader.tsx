@@ -102,17 +102,17 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // When coming to this tab from a preview, clear the path in progress state
   useEffect(() => {
     if (!isEmbedded) {
-      // Check if we're coming from the map or direct navigation
-      if (effectiveParams?.source === 'map' || effectiveParams?.source === 'debug-button') {
-        // Keep pathInProgress true if coming from map
-        console.log('📱 Navigation from map detected, keeping pathInProgress true');
+      // Check if we're coming from the map, preview, or direct navigation
+      if (effectiveParams?.source === 'map' || effectiveParams?.source === 'debug-button' || effectiveParams?.source === 'preview') {
+        // Keep pathInProgress true if coming from map or preview
+        console.log(`📱 Navigation source: ${effectiveParams?.source}, keeping pathInProgress state.`);
       } else {
-        // Only reset pathInProgress if not coming from map
-        console.log('📱 Navigation not from map, setting pathInProgress false');
+        // Only reset pathInProgress if not coming from map/preview/debug
+        console.log('📱 Navigation source not map/preview/debug, setting pathInProgress false');
         setPathInProgress(false);
       }
     }
-  }, [isEmbedded]);
+  }, [isEmbedded, effectiveParams?.source]);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -376,21 +376,17 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   // Determine if the finish button should be enabled
   const isFinishEnabled = useMemo(() => {
-    // Case 1: Past the end chapter in a path
-    if (pathInProgress && currentPath && currentChapter > currentPath.endChapter) {
+    // Only enable if on the end chapter in a path AND scrolled to bottom
+    if (pathInProgress && currentPath && currentChapter === currentPath.endChapter && hasScrolledToBottom) {
       return true;
     }
-    // Case 2: On the end chapter in a path AND scrolled to bottom
-    if (isAtEndChapter && hasScrolledToBottom) { // Use the memoized isAtEndChapter
-      return true;
-    }
-    // Case 3: Not in a path AND scrolled to bottom
+    // If not in a path AND scrolled to bottom
     if (!pathInProgress && hasScrolledToBottom) {
       return true;
     }
     // Otherwise, disabled
     return false;
-  }, [pathInProgress, currentPath, currentChapter, isAtEndChapter, hasScrolledToBottom]); // Add dependencies
+  }, [pathInProgress, currentPath, currentChapter, hasScrolledToBottom]);
 
   // Reset hasScrolledToBottom only when chapter changes, but never set it to false again for the same chapter
   useEffect(() => {
@@ -541,20 +537,27 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         isEmbedded && styles.floatingNavContainerEmbedded
       ]}>
         <TouchableOpacity
-          style={[styles.navButton, currentChapter <= 1 && styles.disabledNavButton]}
+          style={[styles.navButton, (currentChapter <= 1 || loading) && styles.disabledNavButton]}
           onPress={navigateToPreviousChapter}
           disabled={currentChapter <= 1 || loading}
           activeOpacity={0.7}
         >
-          <Text style={[styles.navButtonText, currentChapter <= 1 && styles.disabledButtonText]}>←</Text>
+          <Text style={[styles.navButtonText, (currentChapter <= 1 || loading) && styles.disabledButtonText]}>←</Text>
         </TouchableOpacity>
+        {/* Next Chapter button always renders, but disable at end-of-unit */}
         <TouchableOpacity
-          style={[styles.navButton, loading && styles.disabledNavButton]}
+          style={[
+            styles.navButton,
+            (loading || (pathInProgress && isAtEndChapter)) && styles.disabledNavButton
+          ]}
           onPress={navigateToNextChapter}
-          disabled={loading}
+          disabled={loading || (pathInProgress && isAtEndChapter)}
           activeOpacity={0.7}
         >
-          <Text style={[styles.navButtonText, loading && styles.disabledButtonText]}>→</Text>
+          <Text style={[
+            styles.navButtonText,
+            (loading || (pathInProgress && isAtEndChapter)) && styles.disabledButtonText
+          ]}>→</Text>
         </TouchableOpacity>
       </View>
 

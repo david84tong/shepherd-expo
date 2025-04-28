@@ -63,18 +63,17 @@ export default function RootLayout() {
 
   // Function to check streak status - Modified to navigate to halfModal
   const checkStreakStatus = useCallback(async () => {
-
     try {
       const { checkStreakAndApplyPenalties } = require('../app/hooks/streakHook');
       const result = await checkStreakAndApplyPenalties();
-      
+      console.log('[checkStreakStatus] Result from checkStreakAndApplyPenalties:', JSON.stringify(result, null, 2));
+
       if (result && result.heartPenalty > 0) {
-        console.log(`Penalty detected: ${result.heartPenalty} hearts, ${result.daysMissed} days missed, streak broken: ${result.streakBroken}`);
-        
+        console.log('[checkStreakStatus] Penalty detected, navigating to modal...');
         // Prepare params - ensure values are strings for navigation
         const params = {
           type: HalfModalType.HEART_PENALTY,
-          message: result.streakBroken ? "Streak Broken!" : "Hearts Lost!",
+          message: result.streakBroken ? "Hearts Lost!" : "Hearts Lost!",
           subMessage: result.streakBroken
               ? `Your streak has been reset. You lost ${result.heartPenalty} hearts after ${result.daysMissed} days of inactivity.`
               : `You lost ${result.heartPenalty} hearts after ${result.daysMissed} days of inactivity.`,
@@ -93,15 +92,19 @@ export default function RootLayout() {
     }
   }, [router]);
 
-  // Updated useEffect to use the useCallback version of checkStreakStatus
+  // Effect for preloading resources
   useEffect(() => {
-    if (loaded && !appReady) { // Ensure fonts are loaded before checking streak
-      checkStreakStatus();
+    if (loaded && !appReady) {
       preloadResources();
- 
-
     }
-  }, [loaded, appReady, checkStreakStatus]); // Add checkStreakStatus to dependencies
+  }, [loaded, appReady]); // Only depends on loaded and appReady
+
+  // Effect for checking streak status *after* app is ready
+  useEffect(() => {
+    if (appReady) {
+      checkStreakStatus();
+    }
+  }, [appReady, checkStreakStatus]); // Runs only when appReady changes to true
   
   if (!appReady) {
     return <AppLoading progress={loadProgress} />;

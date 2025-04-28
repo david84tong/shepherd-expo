@@ -1,4 +1,5 @@
-// All potention
+// Bible curriculum path models and references
+// Path.ts: Defines the data structures for Bible paths, units, and references
 
 // Represents a range of chapters within a specific book
 export interface BibleReference {
@@ -145,7 +146,7 @@ export const BIBLE_PATHS: Path[] = [
         { id: 'wild-3', title: 'Atonement & Ethics', reference: createRef('Leviticus', generateChapters(16, 19)), description: 'The Day of Atonement purges both sanctuary and people once a year. Immediately God links forgiveness to everyday justice and neighbor-love.', icon: 'heart' },
         { id: 'wild-4', title: 'Festivals & Vows', reference: createRef('Leviticus', generateChapters(23, 27)), description: 'Sabbaths, feasts, and jubilee weave worship into Israel\'s calendar. Vows and tithes underline that time, land, and life belong to the Lord.', icon: 'calendar' },
         { id: 'wild-5', title: 'Census & Camp', reference: createRef('Numbers', generateChapters(1, 4)), description: 'A precise head-count arranges tribes around the tabernacle like spokes around a hub. God dwells at the center, visually preaching His priority.', icon: 'people' },
-        { id: 'wild-6', title: 'Complaints & Spies', reference: createRef('Nu{mbers', generateChapters(11, 14)), description: 'Grumbling spreads like wildfire and culminates in unbelief at Canaan\'s borders. Forty years of wandering become the price of fear.', icon: 'chatbubble' },
+        { id: 'wild-6', title: 'Complaints & Spies', reference: createRef('Numbers', generateChapters(11, 14)), description: 'Grumbling spreads like wildfire and culminates in unbelief at Canaan\'s borders. Forty years of wandering become the price of fear.', icon: 'chatbubble' },
         { id: 'wild-7', title: 'Balaam\'s Oracles', reference: createRef('Numbers', generateChapters(22, 24)), description: 'A hired seer cannot curse those whom God has blessed. Instead, he foretells a star and scepter that will rise from Israel.', icon: 'star' },
         { id: 'wild-8', title: 'Plains of Moab', reference: createRef('Numbers', generateChapters(25, 31)), description: 'Sexual seduction and idolatry provoke deadly judgment, yet a second census prepares a new generation. Cities of refuge and Midianite war close the book.', icon: 'location' },
         { id: 'wild-9', title: 'Moses\' First Farewell', reference: createRef('Deuteronomy', generateChapters(1, 6)), description: 'Standing on the border, Moses retells Israel\'s story to kindle trust. The Shema calls every heart and home to covenant love.', icon: 'megaphone' },

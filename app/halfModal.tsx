@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useUIStore } from './stores/uiStore';
+import { useUserStore } from './stores/userStore';
 import PrimaryButton from '../components/PrimaryButton';
 
 // Define the types of modals this screen can display
@@ -16,6 +17,8 @@ export default function HalfModalScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const setIsModalDimActive = useUIStore((state) => state.setIsModalDimActive);
+  const getLambName = useUserStore(state => state.getLambName);
+  const lambName = getLambName();
 
   // Helper function to safely get string param
   const getStringParam = (paramName: string): string | undefined => {
@@ -75,10 +78,10 @@ export default function HalfModalScreen() {
         <View className="w-10 h-1 bg-gray-300 rounded-full self-center mb-4" />
 
         {/* Icon */}
-        <Image source={icon} className="w-64 h-64 mb-3" resizeMode="contain" />
+        <Image source={icon} className="w-72 h-72 mb-3" resizeMode="contain" />
         
         {/* Title */}
-        <Text className="font-feather text-textPrimary text-2xl mb-2 text-center">{title}</Text>
+        <Text className="font-feather text-textPrimary text-4xl mb-2 text-center">{title}</Text>
 
         {/* Description */}
         {/* <Text className="font-din text-secondaryText text-base mb-5 text-center px-4">{description}</Text> */}
@@ -86,15 +89,15 @@ export default function HalfModalScreen() {
         {/* Type-specific content (e.g., penalty info) */}
         {type === HalfModalType.HEART_PENALTY && penalty > 0 && (
           <View className="">
-            <Text className="font-din text-secondaryText text-base mb-5 text-center text-lg px-4">
-              {penalty} hearts ❤️ lost after {daysMissed} days away
+            <Text className="font-din text-secondaryText text-base mb-5 text-center text-xl px-4">
+              ❤️ {lambName} lost {penalty} hearts, after {daysMissed} days away. 
             </Text>
           </View>
         )}
         
         {/* Close Button using PrimaryButton */}
         <PrimaryButton
-          title="Got It"
+          title="Bounce back"
           onPress={() => router.back()} // Use router.back to dismiss
           style="w-full mt-2" // Use w-full for width, mt-2 for spacing
           // Ensure PrimaryButton doesn't enforce a fixed height if 'h-auto' isn't working, check its internal styles
