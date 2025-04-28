@@ -201,6 +201,7 @@ export default function HomeScreen() {
     'lamb-chubby dying': 'lamb-chubby dying',
     'lamb-skinny dying': 'lamb-skinny dying',
     'smoking': 'smoke',
+    'lamb-full': 'lamb-full'
   };
 
 
@@ -233,6 +234,7 @@ export default function HomeScreen() {
       setArtboardName('lamb-idle');
       // Update artboard based on lamb mood from userStore
       const currentMood = useUserStore.getState().getLambMood();
+      console.log('Current mood:', currentMood);
       if (currentMood && moodToArtboard[currentMood]) {
         setArtboardName(moodToArtboard[currentMood]);
       } else {
@@ -349,10 +351,22 @@ export default function HomeScreen() {
       prayerCompleted,
       reflectionCompleted,
       allCompleted: readingCompleted && prayerCompleted && reflectionCompleted,
+      mode,
     });
 
     if (mode === 'DEFAULT') {
+      console.log('Animating to default state');
       animateToDefault();
+      setArtboardName('lamb-idle');
+      // Update artboard based on lamb mood from userStore
+      const currentMood = useUserStore.getState().getLambMood();
+      console.log('Current mood:', currentMood);
+      if (currentMood && moodToArtboard[currentMood]) {
+        setArtboardName(moodToArtboard[currentMood]);
+      } else {
+        setArtboardName('lamb-idle'); // Default fallback
+      }
+ 
     } else if (mode === 'PRAYER') {
       // Handle prayer mode activation when coming from other screens
       console.log('Activating Prayer mode from external navigation');

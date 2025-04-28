@@ -106,7 +106,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   let subMessage = propSubMessage || "Task completed successfully.";
   let heartReward = 0;
   let xpReward = 0;
-  let riveResource = "successHeartAndStars"; // Default animation
+  let riveResource = "successLamb"; // Default animation
   let riveArtboard: string | undefined = undefined;
   let rewardTitle = "REWARDS EARNED";
 
@@ -117,36 +117,48 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     subMessage = "You finished today's Bible reading & fed your lamb.";
     heartReward = 3;
     xpReward = 5; 
-    riveResource = "homeLamb";
     riveArtboard = "lamb-eating";
     rewardTitle = "READING REWARDS";
-  } else if (effectiveType === SuccessAnimationType.PRAYER) {
-    console.log("Setting up PRAYER success screen");
-    message = "Prayer Complete!";
-    subMessage = "You spent quality time with the Shepherd in prayer.";
-    heartReward = 2;
-    xpReward = 3;
-    riveResource = "successHeartAndStars";
-    rewardTitle = "PRAYER REWARDS";
+  } else if (effectiveType === SuccessAnimationType.BONUS) {
+    console.log("Setting up BONUS success screen");
+    message = "Daily Trifecta Complete!";
+    subMessage = "Amazing! You've completed all three spiritual disciplines today.";
+    heartReward = 5;
+    xpReward = 10;
+    riveArtboard = "chest";
+    rewardTitle = "BONUS REWARDS";
   } else if (effectiveType === SuccessAnimationType.REFLECTION) {
     console.log("Setting up REFLECTION success screen");
     message = "Reflection Complete!";
     subMessage = "You've recorded your thoughts and connected with the Word.";
     heartReward = 1;
     xpReward = 2;
-    riveResource = "successHeartAndStars"; 
+    riveArtboard = "heart-hold";
     rewardTitle = "REFLECTION REWARDS";
-  }  else if (effectiveType === SuccessAnimationType.BONUS) {
-    console.log("Setting up BONUS success screen");
-    message = "Daily Trifecta Complete!";
-    subMessage = "Amazing! You've completed all three spiritual disciplines today.";
-    heartReward = 5;
-    xpReward = 10;
-    riveResource = "chest";
-    rewardTitle = "BONUS REWARDS";
+  } else if (effectiveType === SuccessAnimationType.PRAYER) {
+    console.log("Setting up PRAYER success screen");
+    message = "Prayer Complete!";
+    subMessage = "You spent quality time with the Shepherd in prayer.";
+    heartReward = 2;
+    xpReward = 3;
+    rewardTitle = "PRAYER REWARDS";
+    // We'll determine artboard below based on rewards
   } else {
     // This should not happen, but log an error if it does
     console.error("Invalid or missing success type:", effectiveType);
+  }
+
+  // After rewards are calculated, set artboard for PRAYER or other types
+  if (effectiveType === SuccessAnimationType.PRAYER) {
+    if (actualHeartReward > 0 && xpReward > 0) {
+      riveArtboard = "success-heart-stars";
+    } else if (xpReward > 0 && actualHeartReward === 0) {
+      riveArtboard = "success-stars";
+    } else if (actualHeartReward > 0 && xpReward === 0) {
+      riveArtboard = "success-heart";
+    } else {
+      riveArtboard = undefined;
+    }
   }
 
   // Apply rewards to user state when component mounts
@@ -167,6 +179,14 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       if (heartsToAdd > 0) {
         setLambHearts(lambHearts + heartsToAdd);
         setLambMood(getLambMoodByHearts(lambHearts + heartsToAdd));
+      }
+
+      if (lambHearts + heartsToAdd >= 50) {
+        console.log('Checking if lamb has full hp');
+        if (readingCompleted && prayerCompleted && reflectionCompleted) {
+          console.log('Setting lamb-full mood');
+          setLambMood('lamb-full');
+        }
       }
       
       // Always add XP
@@ -202,6 +222,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       console.log(`Updated values - Hearts: ${lambHearts + heartsToAdd}, XP: ${lambXp + xpReward}`);
       console.log(`Updated activity timestamp for ${effectiveType}`);
     }
+
+    
   }, [effectiveType, rewardsApplied, lambHearts, lambXp, heartReward, xpReward]);
 
   // Play animations when component mounts or successType changes
@@ -316,11 +338,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const showNextButtons = effectiveType === SuccessAnimationType.READING && !prayerCompleted && !reflectionCompleted;
 
   // Set lamb mood to 'lamb-full' if all actions are completed
-  useEffect(() => {
-    if (readingCompleted && prayerCompleted && reflectionCompleted) {
-      setLambMood('lamb-full');
-    }
-  }, [readingCompleted, prayerCompleted, reflectionCompleted, setLambMood]);
+
 
   return (
     <View className="flex-1 items-center justify-center pt-12 pb-16 px-5 bg-surfaceCream">
@@ -341,7 +359,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         >
           <Rive
             ref={riveRef}
-            resourceName={riveResource}
+            resourceName={"successLamb"}
             autoplay={false}
             style={{ width: '100%', height: '100%' }}
             {...(riveArtboard ? { artboardName: riveArtboard } : {})}

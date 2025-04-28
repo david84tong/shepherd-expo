@@ -40,6 +40,8 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   // Get store functions
   const setSuccessType = useHomeStore((state) => state.setSuccessType);
   const setReflectionCompleted = useHomeStore((state) => state.setReflectionCompleted);
+  const readingCompleted = useHomeStore((state) => state.readingCompleted);
+  const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   
   // Get userStore functions for saving reflection
   const addCompletedReflection = useUserStore(state => state.addCompletedReflection);
@@ -208,7 +210,11 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       console.error('Error saving reflection data:', error);
     }
     
-    setSuccessType(SuccessAnimationType.REFLECTION);
+    if (readingCompleted && prayerCompleted) {
+      setSuccessType(SuccessAnimationType.BONUS);
+    } else {
+      setSuccessType(SuccessAnimationType.REFLECTION);
+    }
     
     // Navigate to success screen
     router.push("/success");

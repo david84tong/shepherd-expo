@@ -208,13 +208,9 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     }
     
     // Check if all three tasks are completed
-    const allCompleted = readingCompleted && reflectionCompleted;
-    
-    if (allCompleted) {
-      console.log('All tasks completed! Setting success type to BONUS');
+    if (readingCompleted && reflectionCompleted) {
       setSuccessType(SuccessAnimationType.BONUS);
     } else {
-      console.log('Prayer completed, but not all tasks. Setting success type to PRAYER');
       setSuccessType(SuccessAnimationType.PRAYER);
     }
     

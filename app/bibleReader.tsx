@@ -341,13 +341,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     setReadingCompleted(true);
 
     // Check if all tasks are completed
-    const allCompleted = prayerCompleted && reflectionCompleted;
-
-    if (allCompleted) {
-      console.log('All tasks completed! Setting success type to BONUS');
+    if (prayerCompleted && reflectionCompleted) {
       setSuccessType(SuccessAnimationType.BONUS);
     } else {
-      console.log('Reading completed, but not all tasks. Setting success type to READING');
       setSuccessType(SuccessAnimationType.READING);
     }
 
@@ -355,8 +351,8 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     router.navigate({
       pathname: "/success",
       params: {
-        message: allCompleted ? "Daily Trifecta Complete!" : "Reading Complete!",
-        subMessage: allCompleted ? "Amazing! You've completed all three spiritual disciplines today." : "You've finished today's chapter. Great progress!"
+        message: prayerCompleted && reflectionCompleted ? "Daily Trifecta Complete!" : "Reading Complete!",
+        subMessage: prayerCompleted && reflectionCompleted ? "Amazing! You've completed all three spiritual disciplines today." : "You've finished today's chapter. Great progress!"
       }
     });
   };
