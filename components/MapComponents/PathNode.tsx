@@ -140,6 +140,12 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
         >
           {unit.title}
         </Text>
+        {/* Completed check icon */}
+        {status === 'completed' && (
+          <View className="absolute ml-4 mt-4 -bottom-1 -right-2 bg-lightGreen rounded-full p-1.5 border-4 border-darkGreen ">
+            <Ionicons name="checkmark" size={24} color="green" style={{ fontWeight: 'bold' }} />
+          </View>
+        )}
       </Pressable>
     </View>
   );

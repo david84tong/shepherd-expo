@@ -71,7 +71,7 @@ const StickyPathHeader: React.FC<StickyPathHeaderProps> = ({ title, icon, color,
   return (
     <View className="absolute top-0 left-0 right-0 z-10 mt-12">
       <View className="px-4 pt-10">
-        <View className={`flex-row items-center w-full ${getBgColor()} ${getBorderClass()} border-2 rounded-3xl shadow-md px-5 py-4`} style={{ minHeight: 72 }}>
+        <View className={`flex-row items-center w-full ${getBgColor()} ${getBorderClass()} border-2 rounded-3xl  px-5 py-4`} style={{ minHeight: 72 }}>
           <View className="flex-1 justify-center">
             <Text className="font-din uppercase text-2xl mb-1 text-textPrimary" style={{ color: getDarkColor(), opacity: 0.7 }}>{`SECTION ${sectionNumber}`}</Text>
             <Text className="font-feather text-2xl font-bold" style={{ color: getDarkColor() }}>{title}</Text>

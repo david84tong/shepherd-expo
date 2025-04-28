@@ -47,6 +47,24 @@ export interface BibleReference {
     'Revelation': 66
   };
   
+  // Placeholder mapping for chapter counts per book ID
+  // In a real app, this should come from a reliable source or API
+  export const BIBLE_CHAPTER_COUNTS: { [key: number]: number } = {
+    1: 50, // Genesis
+    2: 40, // Exodus
+    3: 27, // Leviticus
+    // ... add counts for all 66 books
+    19: 150, // Psalms
+    40: 28, // Matthew
+    41: 16, // Mark
+    42: 24, // Luke
+    43: 21, // John
+    44: 28, // Acts
+    45: 16, // Romans
+    // ... etc.
+    66: 22, // Revelation
+  };
+  
   // Helper to generate chapter number arrays
   const generateChapters = (start: number, end: number): number[] => {
     return Array.from({ length: end - start + 1 }, (_, i) => start + i);

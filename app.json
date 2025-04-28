@@ -17,7 +17,7 @@
       "backgroundColor": "#FFF4D9"
     },
     "ios": {
-      "bundleIdentifier": "io.tryshepherd.ios",
+      "bundleIdentifier": "io.tryshepherd.app",
       "googleServicesFile": "./GoogleService-Info.plist",
       "deploymentTarget": "15.1",
       "appleTeamId": "45ZFHZF3MY",
@@ -27,8 +27,8 @@
         "usesNonExemptEncryption": false
       },
       "infoPlist": {
-        "NSCameraUsageDescription": "Arise needs camera access to create your player card and generate personalized workout plans based on your physique.",
-        "NSPhotoLibraryUsageDescription": "Arise needs photo library access to create your player card and assess your fitness level for personalized workout recommendations."
+        "NSCameraUsageDescription": "Shepherd needs camera access to create your player card and generate personalized workout plans based on your physique.",
+        "NSPhotoLibraryUsageDescription": "Shepherd needs photo library access to create your player card and assess your fitness level for personalized workout recommendations."
       }
     },
     "android": {
@@ -36,7 +36,7 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "llc.sololeveling.Arise",
+      "package": "io.tryshepherd.app",
       "googleServicesFile": "./google-services.json"
     },
     "web": {
@@ -76,9 +76,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "93cd2b82-ddbb-4bec-842d-115770cd12e8"
+        "projectId": "e55bbb73-0fba-4eb9-92ec-9433da72c8c7"
       }
     },
-    "owner": "stealth-company"
+    "owner": "goodd0ctor"
   }
 }

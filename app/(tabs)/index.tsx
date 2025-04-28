@@ -681,8 +681,6 @@ export default function HomeScreen() {
         <Image
           source={grassBg}
           style={{ width: '100%', height: '100%' }}
-          contentFit="cover"
-          transition={300}
         />
       </Animated.View>
 
@@ -694,8 +692,6 @@ export default function HomeScreen() {
         <Image
           source={pathBg}
           style={{ width: '100%', height: '100%' }}
-          contentFit="cover"
-          transition={300}
         />
       </Animated.View>
 
@@ -707,8 +703,6 @@ export default function HomeScreen() {
         <Image
           source={journalBg}
           style={{ width: '100%', height: '100%' }}
-          contentFit="cover"
-          transition={300}
         />
       </Animated.View>
 
@@ -751,9 +745,7 @@ export default function HomeScreen() {
             <View className="flex-1 ml-6 mr-10" />
             <View className="flex-row items-center space-x-2">
               <ProgressPill value={0} label="2" icon={flameIcon} />
-              <View className="ml-2">
-                <ProgressPill value={0} label="3" icon={gemIcon} />
-              </View>
+              <ProgressPill value={0} label="3" icon={gemIcon} />
             </View>
           </Animated.View>
         </View>

@@ -19,20 +19,38 @@ import { usePathStore } from './stores/pathStore';
 import { useHomeStore, SuccessAnimationType } from './stores/homeStore';
 import { useUserStore } from './stores/userStore';
 import { router, useLocalSearchParams } from 'expo-router';
-import { BIBLE_PATHS, Path, Unit } from './models/Path';
+import { BIBLE_PATHS, Path, Unit, BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from './models/Path';
 import firestore from '@react-native-firebase/firestore';
+import BookChapterSelectorSheet from '../components/BookChapterSelectorSheet';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
 const DEFAULT_FONT_SIZE = 16;
 const MIN_FONT_SIZE = 12;
 const MAX_FONT_SIZE = 28;
 
-export default function BibleReaderScreen() {
+// Define component props
+interface BibleReaderProps {
+  isEmbedded?: boolean; // Whether it's embedded in another screen
+  initialBookId?: number; // Initial book ID to display
+  initialBookName?: string; // Initial book name
+  initialChapter?: number; // Initial chapter to display
+  onNavigateBack?: () => void; // Optional callback for custom back navigation
+}
+
+// Export the component for reuse
+export const BibleReader: React.FC<BibleReaderProps> = ({
+  isEmbedded = false,
+  initialBookId,
+  initialBookName,
+  initialChapter,
+  onNavigateBack,
+}) => {
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  const [isSelectorVisible, setIsSelectorVisible] = useState(false);
   
   // Animation values for button container
   const buttonContainerAnim = useRef(new Animated.Value(100)).current;
@@ -57,9 +75,10 @@ export default function BibleReaderScreen() {
     setNextUnitPreview
   } = usePathStore();
   
-  const [currentBook, setCurrentBook] = useState<string>(savedBook);
-  const [currentBookId, setCurrentBookId] = useState<number>(savedBookId);
-  const [currentChapter, setCurrentChapter] = useState<number>(savedChapter);
+  // Initialize with props if provided, otherwise use saved state
+  const [currentBook, setCurrentBook] = useState<string>(initialBookName || savedBook);
+  const [currentBookId, setCurrentBookId] = useState<number>(initialBookId || savedBookId);
+  const [currentChapter, setCurrentChapter] = useState<number>(initialChapter || savedChapter);
   const [currentVersion, setCurrentVersion] = useState<string>('ESV');
   
   const setHomeMode = useHomeStore((state) => state.setMode);
@@ -76,21 +95,24 @@ export default function BibleReaderScreen() {
   const getVersesReadTotal = useUserStore(state => state.getVersesReadTotal);
   const getChaptersReadTotal = useUserStore(state => state.getChaptersReadTotal);
   
-  // Get URL parameters directly
+  // Always call hooks unconditionally, even if we don't use the results
   const params = useLocalSearchParams();
-  
+  const effectiveParams = !isEmbedded ? params : null;
+
   // When coming to this tab from a preview, clear the path in progress state
   useEffect(() => {
-    // Check if we're coming from the map or direct navigation
-    if (params.source === 'map' || params.source === 'debug-button') {
-      // Keep pathInProgress true if coming from map
-      console.log('📱 Navigation from map detected, keeping pathInProgress true');
-    } else {
-      // Only reset pathInProgress if not coming from map
-      console.log('📱 Navigation not from map, setting pathInProgress false');
-      setPathInProgress(false);
+    if (!isEmbedded) {
+      // Check if we're coming from the map or direct navigation
+      if (effectiveParams?.source === 'map' || effectiveParams?.source === 'debug-button') {
+        // Keep pathInProgress true if coming from map
+        console.log('📱 Navigation from map detected, keeping pathInProgress true');
+      } else {
+        // Only reset pathInProgress if not coming from map
+        console.log('📱 Navigation not from map, setting pathInProgress false');
+        setPathInProgress(false);
+      }
     }
-  }, []);
+  }, [isEmbedded]);
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -98,50 +120,18 @@ export default function BibleReaderScreen() {
       setError(null);
 
       console.log("🔄 BibleReader: Loading initial data");
-      console.log("📋 URL Params:", params);
-      
-      // Get route params from useLocalSearchParams
-      const urlBookId = params.bookId ? parseInt(params.bookId as string, 10) : null;
-      const urlChapters = params.chapters ? (params.chapters as string).split(',').map(c => parseInt(c, 10)) : null;
-      const urlTitle = params.title as string || null;
-      
-      // Log what we found in the URL
-      console.log(`📱 URL bookId: ${urlBookId}, chapters: ${urlChapters}, title: ${urlTitle}`);
-      console.log(`💾 Saved: bookId: ${savedBookId}, chapter: ${savedChapter}, book: ${savedBook}`);
-      
-      // Debug path information
-      console.log("📍 Path in progress:", pathInProgress);
-      console.log("🛤️ Current path:", currentPath);
-      
-      // If we have url chapters, make sure path tracking is enabled
-      if (urlChapters && urlChapters.length > 1) {
-        // We're in a multi-chapter path
-        setPathInProgress(true);
-        
-        // If there's no current path yet, create one now
-        if (!currentPath) {
-          const startCh = urlChapters[0];
-          const endCh = urlChapters[urlChapters.length - 1]; 
-          
-          setCurrentPath({
-            pathId: 'direct-navigation',
-            pathTitle: urlTitle || 'Bible Reading',
-            unitId: `direct-${urlBookId}-${urlChapters.join('-')}`,
-            unitTitle: urlTitle || 'Bible Reading',
-            bookId: urlBookId || 1,
-            startChapter: startCh,
-            endChapter: endCh
-          });
-          
-          console.log(`🆕 Created path from URL params: bookId=${urlBookId}, startCh=${startCh}, endCh=${endCh}`);
-        }
+      if (!isEmbedded) {
+        console.log("📋 URL Params:", effectiveParams);
       }
       
-      // Determine what to load based on priority:
-      // 1. URL parameters if present and valid
-      // 2. Saved state from store if URL params not available
-      let bookIdToLoad = urlBookId && !isNaN(urlBookId) ? urlBookId : savedBookId;
-      let chapterToLoad = urlChapters && urlChapters.length > 0 && !isNaN(urlChapters[0]) ? urlChapters[0] : savedChapter;
+      // Get route params from useLocalSearchParams if not embedded
+      const urlBookId = !isEmbedded && effectiveParams?.bookId ? parseInt(effectiveParams.bookId as string, 10) : null;
+      const urlChapters = !isEmbedded && effectiveParams?.chapters ? (effectiveParams.chapters as string).split(',').map(c => parseInt(c, 10)) : null;
+      const urlTitle = !isEmbedded && effectiveParams?.title ? effectiveParams.title as string : null;
+      
+      // If embedded, use props; otherwise check URL params then fall back to saved state
+      const bookIdToLoad = initialBookId || (urlBookId && !isNaN(urlBookId) ? urlBookId : currentBookId);
+      const chapterToLoad = initialChapter || (urlChapters && urlChapters.length > 0 && !isNaN(urlChapters[0]) ? urlChapters[0] : currentChapter);
       
       console.log(`🎯 Loading: bookId: ${bookIdToLoad}, chapter: ${chapterToLoad}`);
 
@@ -158,11 +148,11 @@ export default function BibleReaderScreen() {
       }
 
       // Load from determined values, not default state
-      await loadChapter(currentVersion, 'Loading...', bookIdToLoad, chapterToLoad);
+      await loadChapter(currentVersion, initialBookName || 'Loading...', bookIdToLoad, chapterToLoad);
     };
 
     loadInitialData();
-  }, []);
+  }, [initialBookId, initialChapter]);
 
   useEffect(() => {
     // Animate the button container after component mounts
@@ -255,7 +245,7 @@ export default function BibleReaderScreen() {
     }
   };
 
-const increaseFontSize = () => {
+  const increaseFontSize = () => {
     updateFontSize(fontSize + 1);
   };
 
@@ -373,23 +363,13 @@ const increaseFontSize = () => {
 
   // Check if the current chapter is the end chapter of the selected path
   const isAtEndChapter = useMemo(() => {
-    // Debug info
-    console.log("⚠️ Checking if at end chapter:");
-    console.log("- pathInProgress:", pathInProgress);
-    console.log("- currentPath:", currentPath);
-    console.log("- currentBookId:", currentBookId);
-    console.log("- currentChapter:", currentChapter);
-    
     // If not in a path or no current path defined, consider it "at end"
     if (!pathInProgress || !currentPath) {
-      console.log("➡️ No active path, consider isAtEndChapter irrelevant for now");
       return false; // If not in a path, isAtEndChapter isn't strictly meaningful here
     }
     
     // Check if we're on the right book and at the final chapter from the currentPath
     const isActuallyAtEnd = currentBookId === currentPath.bookId && currentChapter === currentPath.endChapter;
-    console.log(`➡️ Book match: ${currentBookId === currentPath.bookId}, Chapter match: ${currentChapter === currentPath.endChapter}`);
-    console.log(`➡️ End result: ${isActuallyAtEnd ? "AT END CHAPTER" : "NOT at end chapter"}`);
     
     return isActuallyAtEnd;
   }, [pathInProgress, currentPath, currentBookId, currentChapter]);
@@ -398,21 +378,17 @@ const increaseFontSize = () => {
   const isFinishEnabled = useMemo(() => {
     // Case 1: Past the end chapter in a path
     if (pathInProgress && currentPath && currentChapter > currentPath.endChapter) {
-      console.log("✅ Finish enabled: Past end chapter");
       return true;
     }
     // Case 2: On the end chapter in a path AND scrolled to bottom
     if (isAtEndChapter && hasScrolledToBottom) { // Use the memoized isAtEndChapter
-      console.log("✅ Finish enabled: On end chapter and scrolled");
       return true;
     }
     // Case 3: Not in a path AND scrolled to bottom
     if (!pathInProgress && hasScrolledToBottom) {
-       console.log("✅ Finish enabled: Not in path and scrolled");
       return true;
     }
     // Otherwise, disabled
-    console.log("❌ Finish disabled");
     return false;
   }, [pathInProgress, currentPath, currentChapter, isAtEndChapter, hasScrolledToBottom]); // Add dependencies
 
@@ -434,13 +410,10 @@ const increaseFontSize = () => {
         console.log('📜 User has scrolled to bottom! Enabling Finish button.');
         setHasScrolledToBottom(true);
       }
-      // No need for the else log here, the button logic handles it
     }
-    // Never set hasScrolledToBottom to false after it's true for this chapter
   };
 
   // Memoize style calculations to prevent unnecessary style object recreations
-  // These are defined at component level because hooks can't be used in regular functions
   const verseTextStyle = useMemo(() => {
     return [styles.verseText, { fontSize: fontSize }];
   }, [fontSize]);
@@ -479,28 +452,60 @@ const increaseFontSize = () => {
     return <Text className="text-text/70 mt-10">No data available.</Text>;
   };
 
+  const handleOpenSelector = () => {
+    console.log('🔍 DEBUG: Opening selector');
+    setIsSelectorVisible(true);
+  };
+
+  const handleCloseSelector = () => {
+    setIsSelectorVisible(false);
+  };
+
+  const handleSelectBookChapter = (bookId: number, chapter: number) => {
+    console.log(`📖 New selection: Book ID ${bookId}, Chapter ${chapter}`);
+    // Find book name from reverse map for logging/UI update (optional here)
+    const bookNames: Record<number, string> = Object.fromEntries(
+      Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => [id, name])
+    );
+    const bookName = bookNames[bookId] || 'Unknown Book';
+    
+    // Load the newly selected chapter
+    loadChapter(currentVersion, bookName, bookId, chapter);
+  };
+
+  // Handle back navigation based on context
+  const handleBackNavigation = () => {
+    if (onNavigateBack) {
+      // Custom back navigation when embedded
+      onNavigateBack();
+    } else if (!isEmbedded && effectiveParams?.source === 'map') {
+      // Navigation back to map when coming from map
+      console.log('📱 Navigating back to map, setting pathInProgress to false');
+      setPathInProgress(false);
+      router.back();
+    } else {
+      // Default back navigation
+      router.back();
+    }
+  };
+
   return (
     <SafeAreaView className="flex-1 bg-main-bg">
       <View style={styles.newHeaderContainer}>
         <View style={styles.headerLeft}>
-          <TouchableOpacity onPress={() => {
-            // Check if we came from the map and reset pathInProgress
-            if (params.source === 'map') {
-              console.log('📱 Navigating back to map, setting pathInProgress to false');
-              setPathInProgress(false);
-            }
-            router.back();
-          }} style={styles.backButton}>
-            <Text style={styles.backButtonText}>←</Text>
-          </TouchableOpacity>
+          {!isEmbedded && (
+            <TouchableOpacity onPress={handleBackNavigation} style={styles.backButton}>
+              <Text style={styles.backButtonText}>←</Text>
+            </TouchableOpacity>
+          )}
           
-          <TouchableOpacity style={styles.headerButton}>
+          <TouchableOpacity style={styles.headerButton} onPress={handleOpenSelector}>
             <Text style={styles.headerButtonText}>
               {chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'Loading...'}
             </Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.headerButton}>
+          <TouchableOpacity style={styles.headerButton} onPress={handleOpenSelector}>
             <Text style={styles.headerButtonText}>
               {chapterData ? chapterData.version : '...'}
             </Text>
@@ -531,44 +536,30 @@ const increaseFontSize = () => {
       </View>
 
       {/* Floating chapter navigation buttons */}
-      <View style={styles.floatingNavContainer}>
+      <View style={[
+        styles.floatingNavContainer,
+        isEmbedded && styles.floatingNavContainerEmbedded
+      ]}>
         <TouchableOpacity
           style={[styles.navButton, currentChapter <= 1 && styles.disabledNavButton]}
           onPress={navigateToPreviousChapter}
           disabled={currentChapter <= 1 || loading}
           activeOpacity={0.7}
         >
-          <Text style={useMemo(() => {
-            return [
-              styles.navButtonText, 
-              currentChapter <= 1 && styles.disabledButtonText
-            ];
-          }, [currentChapter])}
-          >←</Text>
+          <Text style={[styles.navButtonText, currentChapter <= 1 && styles.disabledButtonText]}>←</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={useMemo(() => {
-            return [
-              styles.navButton, 
-              loading && styles.disabledNavButton
-            ];
-          }, [loading])}
+          style={[styles.navButton, loading && styles.disabledNavButton]}
           onPress={navigateToNextChapter}
           disabled={loading}
           activeOpacity={0.7}
         >
-          <Text style={useMemo(() => {
-            return [
-              styles.navButtonText, 
-              loading && styles.disabledButtonText
-            ];
-          }, [loading])}
-          >→</Text>
+          <Text style={[styles.navButtonText, loading && styles.disabledButtonText]}>→</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Finish Reading Button - Use calculated enabled state */}
-      <Animated.View 
+      {/* Finish Reading Button - Only show in standalone mode */}
+      {!isEmbedded && <Animated.View 
         style={[
           styles.finishButtonContainer,
           {
@@ -582,8 +573,34 @@ const increaseFontSize = () => {
           onPress={handleFinishReading}
           disabled={!isFinishEnabled} // Use the calculated enabled state
         />
-      </Animated.View>
+      </Animated.View>}
+
+      {/* Book Chapter Selector Sheet */}
+      <BookChapterSelectorSheet 
+        visible={isSelectorVisible}
+        onClose={handleCloseSelector}
+        currentBookId={currentBookId}
+        currentChapter={currentChapter}
+        onSelect={handleSelectBookChapter}
+      />
     </SafeAreaView>
+  );
+};
+
+// Standalone screen that uses the component
+export default function BibleReaderScreen() {
+  const params = useLocalSearchParams();
+  
+  // Extract params for initial state
+  const urlBookId = params.bookId ? parseInt(params.bookId as string, 10) : undefined;
+  const urlChapters = params.chapters ? (params.chapters as string).split(',').map(c => parseInt(c, 10)) : undefined;
+  const initialChapter = urlChapters && urlChapters.length > 0 ? urlChapters[0] : undefined;
+  
+  return (
+    <BibleReader 
+      initialBookId={urlBookId}
+      initialChapter={initialChapter}
+    />
   );
 }
 
@@ -704,6 +721,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     zIndex: 10,
+  },
+  floatingNavContainerEmbedded: {
+    bottom: 100, // Move up when tab bar is present
   },
   finishButtonContainer: {
     position: 'absolute',

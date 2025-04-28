@@ -161,7 +161,7 @@ export default function MapScreen() {
   const isFirstRender = useRef(true);
   // To prevent excessive updates
   const lastUpdate = useRef(Date.now());
-  const updateIntervalMs = 300; // Minimum ms between updates
+  const updateIntervalMs = 50; // Faster header updates
 
   const handleNodePress = (unit: Unit) => {
     console.log('Pressed unit:', unit.title, unit.reference);
@@ -264,23 +264,21 @@ export default function MapScreen() {
       return;
     }
     
-    // Look for section changes
+    // Determine currently focused section (closest to top) by taking the last visible section (highest index)
     const visibleSections = viewableItems
       .filter(token => token.isViewable && token.section)
       .map(token => token.section);
-    
+
     if (visibleSections.length > 0) {
-      // Get the first visible section (topmost)
-      const topSection = visibleSections.reduce((prev, curr) => 
-        (curr.index < prev.index) ? curr : prev, visibleSections[0]);
-      
-      if (topSection && topSection.title !== currentSectionTitle) {
+      const focusedSection = visibleSections.reduce((prev, curr) => (curr.index > prev.index ? curr : prev), visibleSections[0]);
+
+      if (focusedSection && focusedSection.title !== currentSectionTitle) {
         // Update the current section title, icon, color, description, and index
-        setCurrentSectionTitle(topSection.title);
-        setCurrentSectionIcon(topSection.icon || 'book');
-        setCurrentSectionColor(topSection.color || 'green');
-        setCurrentSectionDescription(topSection.description || '');
-        setCurrentSectionIndex(topSection.index || 0);
+        setCurrentSectionTitle(focusedSection.title);
+        setCurrentSectionIcon(focusedSection.icon || 'book');
+        setCurrentSectionColor(focusedSection.color || 'green');
+        setCurrentSectionDescription(focusedSection.description || '');
+        setCurrentSectionIndex(focusedSection.index || 0);
         
         lastUpdate.current = now;
         
@@ -297,9 +295,9 @@ export default function MapScreen() {
   // Create a viewability config ref
   const viewabilityConfig = {
     // Consider an item visible when at least 10% is visible
-    itemVisiblePercentThreshold: 10,
+    itemVisiblePercentThreshold: 0,
     // This helps ensure we catch the sections early
-    minimumViewTime: 10,
+    minimumViewTime: 1,
   };
 
   // Render item function for SectionList
