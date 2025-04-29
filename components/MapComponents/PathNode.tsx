@@ -118,7 +118,7 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}
         className={`
-          w-32 h-32 rounded-full items-center justify-center border-2
+          w-36 h-36 rounded-full items-center justify-center border-2
           p-2
           ${getBgColorClass()} ${getBorderColorClass()}
           transform ${isPressed ? 'translate-y-1' : 'translate-y-0'}

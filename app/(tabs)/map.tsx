@@ -1,8 +1,9 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, SectionList, Pressable, SafeAreaView, NativeSyntheticEvent, NativeScrollEvent, ViewToken, TouchableOpacity } from 'react-native';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
+import { View, Text, SectionList, Pressable, SafeAreaView, NativeSyntheticEvent, NativeScrollEvent, ViewToken, TouchableOpacity, Dimensions, Image, Animated, ImageSourcePropType } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
+import Rive from 'rive-react-native';
 import { BIBLE_PATHS, Unit, Path, BIBLE_BOOK_IDS } from '../models/Path';
 import { usePathStore, PathInfo } from '../stores/pathStore';
 import PathNode, { NodeStatus } from '../../components/MapComponents/PathNode';
@@ -17,6 +18,32 @@ type BibleSection = {
   icon?: string;
   color?: string;
   description?: string;
+  image?: ImageSourcePropType;
+  riveName?: string;
+  artboardName?: string;
+};
+
+// Next node indicator component with Rive animation
+const NextNodeIndicator = ({ alignment }: { alignment: 'start' | 'center' | 'end' }) => {
+  // Only render on non-center alignments (left or right of path)
+  if (alignment === 'center') return null;
+
+  // More visible wrapper with bright colors
+  return (
+    <View 
+      className={`absolute ${alignment === 'start' ? 'right-1' : 'left-1'} top-4 w-28 h-28 bg-yellow-300 rounded-full items-center justify-center border-4 border-white`}
+      style={{ zIndex: 50 }}
+    >
+      <Rive
+        resourceName="homeLamb"
+        artboardName="lamb-idle"
+        autoplay={true}
+        style={{ width: '100%', height: '100%' }}
+      />
+      {/* Text indicator to make it obvious */}
+      <Text className="absolute bottom-0 font-bold text-xs bg-white px-1 rounded">NEXT</Text>
+    </View>
+  );
 };
 
 // Hook to get unit status based on global state
@@ -126,7 +153,10 @@ const sections: BibleSection[] = BIBLE_PATHS.map((path, index) => ({
   data: path.units,
   icon: path.icon,
   color: path.color,
-  description: path.description
+  description: path.description,
+  image: path.image,
+  riveName: path.riveName,
+  artboardName: path.artboardName
 }));
 
 // Safe haptic feedback function
@@ -144,6 +174,65 @@ const triggerHaptic = () => {
   }
 };
 
+// Pulsing animation component
+const PulsingCircle: React.FC = () => {
+  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const opacityAnim = useRef(new Animated.Value(0.7)).current;
+  
+  useEffect(() => {
+    const pulse = () => {
+      Animated.parallel([
+        Animated.sequence([
+          Animated.timing(scaleAnim, {
+            toValue: 1.2,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(scaleAnim, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: true,
+          })
+        ]),
+        Animated.sequence([
+          Animated.timing(opacityAnim, {
+            toValue: 0,
+            duration: 800,
+            useNativeDriver: true,
+          }),
+          Animated.timing(opacityAnim, {
+            toValue: 0.7,
+            duration: 800,
+            useNativeDriver: true,
+          })
+        ])
+      ]).start(() => pulse());
+    };
+    
+    pulse();
+    return () => {
+      // Cleanup animations
+      scaleAnim.stopAnimation();
+      opacityAnim.stopAnimation();
+    };
+  }, []);
+  
+  return (
+    <Animated.View
+      style={{
+        position: 'absolute',
+        width: '100%',
+        height: '100%',
+        borderRadius: 9999,
+        borderWidth: 2,
+        borderColor: '#facc15', // tailwind yellow-400
+        transform: [{ scale: scaleAnim }],
+        opacity: opacityAnim,
+      }}
+    />
+  );
+};
+
 export default function MapScreen() {
   const router = useRouter();
   const [currentSectionTitle, setCurrentSectionTitle] = useState(sections[0]?.title || 'Map');
@@ -156,6 +245,7 @@ export default function MapScreen() {
   // Get path store functions
   const { setPathInProgress, setSelectedPath, setSelectedBookChapter, setCurrentPath } = usePathStore();
   const { getStatus } = useUnitStatus(); // Use the custom hook
+  const completedUnitIds = usePathStore((state) => state.completedUnitIds);
   
   // Track if we need to suppress haptic feedback (e.g., on first render)
   const isFirstRender = useRef(true);
@@ -300,25 +390,108 @@ export default function MapScreen() {
     minimumViewTime: 1,
   };
 
-  // Render item function for SectionList
-  const renderUnitItem = ({ item, index, section }: { 
+  // Find the next available unit
+  const nextAvailableUnit = useCallback(() => {
+    // Find first unit or next unlocked unit that isn't completed
+    for (const path of BIBLE_PATHS) {
+      for (let i = 0; i < path.units.length; i++) {
+        const unit = path.units[i];
+        // Skip if already completed
+        if (completedUnitIds.includes(unit.id)) continue;
+        
+        // First unit or unit after a completed one is available
+        if (i === 0 || completedUnitIds.includes(path.units[i-1].id)) {
+          console.log("Next available unit:", unit.id, unit.title);
+          return unit;
+        }
+      }
+    }
+    return null;
+  }, [completedUnitIds]);
+  
+  // Track visible items to locate next unit on screen
+  const [nextItemLayout, setNextItemLayout] = useState<{ id: string, x: number, y: number } | null>(null);
+  const [showNextIndicator, setShowNextIndicator] = useState(false);
+  const nextUnit = nextAvailableUnit();
+  
+  // Function to check if a unit should be indicated as next  
+  const isNextUnit = useCallback((unit: Unit) => {
+    return nextUnit?.id === unit.id;
+  }, [nextUnit]);
+  
+  // Render a node item
+  const renderItem = useCallback(({ item, index, section }: { 
     item: Unit, 
     index: number, 
     section: BibleSection
   }) => {
-    const status = getStatus(section.pathId, item.id); // Get status from hook
+    const status = getStatus(section.pathId, item.id);
     const alignment = ['center', 'start', 'center', 'end'][index % 4] as 'start' | 'center' | 'end';
+    const shouldIndicateNext = isNextUnit(item);
+    
+    // Position within each section (repeating pattern)
+    // Show sheep only at second node position of every section
+    const isSecondNodeInSection = index === 1;
+    
+    // Show journal icon only at fourth node position of every section
+    const isFourthNodeInSection = index === 3;
+    
+    if (shouldIndicateNext) {
+      console.log(`Next unit on screen: ${item.id} (${item.title})`);
+    }
+    
     return (
-      <PathNode
-        key={item.id}
-        unit={item}
-        status={status}
-        alignment={alignment}
-        onPress={handleNodePress}
-      />
+      <View className="relative">
+        <PathNode
+          key={item.id}
+          unit={item}
+          status={status}
+          alignment={alignment}
+          onPress={handleNodePress}
+        />
+        
+        {/* Sheep decoration at second node position in every section */}
+        {isSecondNodeInSection && section.riveName && section.artboardName && (
+          <View 
+            className={`absolute ${section.riveName === 'successLamb' ? 'right-24' : 'right-2'} top-1/2 -translate-y-1/2`}
+            style={{ zIndex: 10 }}
+          >
+            <View className="w-44 h-44">
+              <Rive
+                resourceName={section.riveName}
+                artboardName={section.artboardName}
+                autoplay={true}
+                style={{
+                  width: section.riveName === 'successLamb' ? '200%' : '100%',
+                  height: section.riveName === 'successLamb' ? '200%' : '100%',
+                  opacity: section.pathId === 'genesis-beginnings' ? 1 : 0.5,
+                }}
+              />
+            </View>
+          </View>
+        )}
+        
+        {/* Journal icon at fourth node position in every section */}
+        {isFourthNodeInSection && section.image && (
+          <View 
+            className="absolute left-8 top-1/2 -translate-y-1/2"
+            style={{ zIndex: 10 }}
+          >
+            <Image 
+              source={section.image}
+              style={{ width: 128, height: 128 }}
+              resizeMode="contain"
+              className="opacity-50"
+            />
+          </View>
+        )}
+        
+    
+      </View>
     );
-  };
+  }, [getStatus, handleNodePress, isNextUnit]);
 
+  // Render section header
   const renderSectionHeader = ({ section }: { section: BibleSection }) => (
     <SimpleSectionHeader 
       title={section.title} 
@@ -354,19 +527,29 @@ export default function MapScreen() {
         ref={sectionListRef}
         sections={sections}
         keyExtractor={(item) => item.id}
-        renderItem={renderUnitItem}
-        // Remove the separate section separator since we integrated it into the header
+        renderItem={renderItem}
         renderSectionHeader={renderSectionHeader}
         SectionSeparatorComponent={null}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingTop: 100, paddingBottom: 40 }}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
-        // Use a more standard scroll throttle value
         scrollEventThrottle={16}
         stickySectionHeadersEnabled={false} 
         className="-mt-16"
       />
+      
+      {/* If we want a floating persistent next indicator, we could add it here */}
+      {nextUnit && (
+        <View className="absolute bottom-4 right-4 items-center">
+          <View className="bg-white px-2 py-1 rounded-full mb-1 shadow-sm">
+            <Text className="text-xs font-bold text-yellow-600">NEXT UNIT</Text>
+          </View>
+          <View className="bg-yellow-300 p-2 rounded-full shadow-sm border border-white">
+            <Ionicons name="arrow-up" size={20} color="#000" />
+          </View>
+        </View>
+      )}
     </SafeAreaView>
   );
 } 

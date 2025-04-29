@@ -90,14 +90,14 @@ export default function HalfModalScreen() {
         {type === HalfModalType.HEART_PENALTY && penalty > 0 && (
           <View className="">
             <Text className="font-din text-secondaryText text-base mb-5 text-center text-xl px-4">
-              ❤️ {lambName} lost {penalty} hearts, after {daysMissed} days away. 
+              ❤️ {lambName} lost {penalty} hearts after {daysMissed} days away. 
             </Text>
           </View>
         )}
         
         {/* Close Button using PrimaryButton */}
         <PrimaryButton
-          title="Bounce back"
+          title="Let's bounce back"
           onPress={() => router.back()} // Use router.back to dismiss
           style="w-full mt-2" // Use w-full for width, mt-2 for spacing
           // Ensure PrimaryButton doesn't enforce a fixed height if 'h-auto' isn't working, check its internal styles

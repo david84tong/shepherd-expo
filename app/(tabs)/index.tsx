@@ -355,7 +355,7 @@ export default function HomeScreen() {
     });
 
     if (mode === 'DEFAULT') {
-      console.log('Animating to default state');
+      
       animateToDefault();
       setArtboardName('lamb-idle');
       // Update artboard based on lamb mood from userStore
@@ -733,7 +733,7 @@ export default function HomeScreen() {
 
       <SafeAreaView className="flex-1">
         {/* Header: Contains logic for showing Back OR Title/Stats */}
-        <View className="flex-row justify-between items-center px-6 pt-1 pb-4 h-[50px] relative">
+        <View className="flex-row justify-between items-center px-4 pt-1 pb-2 h-[42px] relative">
           {/* Animated Back Button */}
 
           {/* Animated Default Header Elements (Title + Stats) */}
@@ -742,7 +742,7 @@ export default function HomeScreen() {
             style={[{ opacity: headerDefaultOpacityAnim }]}
             pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}>
             <Text
-              className="text-h1 font-feather text-white ml-2 tracking-wide"
+              className="text-h1 font-feather text-white tracking-wide"
               style={{
                 textShadowColor: 'rgba(0, 0, 0, 0.2)',
                 textShadowOffset: { width: 0, height: 1 },
@@ -750,7 +750,7 @@ export default function HomeScreen() {
               }}>
               Shepherd
             </Text>
-            <View className="flex-1 ml-6 mr-10" />
+            <View className="flex-1 ml-2 mr-2" />
             <View className="flex-row items-center space-x-2">
               <ProgressPill value={0} label="2" icon={flameIcon} />
               <ProgressPill value={0} label="3" icon={gemIcon} />
@@ -797,13 +797,13 @@ export default function HomeScreen() {
                       },
                     ],
                   }}>
-                  <Rive
+                  {/* <Rive
                     ref={riveRef}
                     resourceName="homeLamb"
                     artboardName={artboardName}
                     onError={handleRiveError}
                     style={{ width: '100%', height: '100%' }}
-                  />
+                  /> */}
                 </Animated.View>
               </Animated.View>
             )}

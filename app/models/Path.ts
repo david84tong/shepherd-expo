@@ -1,6 +1,8 @@
 // Bible curriculum path models and references
 // Path.ts: Defines the data structures for Bible paths, units, and references
 
+import { ImageSourcePropType } from 'react-native';
+
 // Represents a range of chapters within a specific book
 export interface BibleReference {
     bookId: number; // Numeric ID for the book (e.g., 1 for Genesis)
@@ -26,7 +28,9 @@ export interface BibleReference {
     color: string; // Color of the path (e.g., "yellow")
     icon: string; // Icon name from @expo/vector-icons
     units: Unit[]; // Array of units within the path
-    // Add other properties like description, icon, etc. later
+    image?: ImageSourcePropType; // Image source for the path
+    riveName?: string; // Name of the Rive animation resource
+    artboardName?: string; // Name of the artboard in the Rive animation
   }
   
   // Mapping from Bible book names to their numeric IDs
@@ -97,6 +101,9 @@ export const BIBLE_PATHS: Path[] = [
       icon: 'leaf',
       description:
         'Travel from the dawn of creation to the death of Joseph. These origin stories lay the foundation for every major theme that follows in Scripture.',
+      image: require('../../assets/icons/noahsArc.png'),
+      riveName: 'homeLamb',
+      artboardName: 'lamb-reading',
       units: [
         { id: 'gen-1', title: 'Creation & Choice', reference: createRef('Genesis', generateChapters(1, 3)), description: 'God speaks the cosmos into being and crowns it with image-bearing humans. In Eden they are invited to trust the Creator\'s wisdom or define good and evil for themselves.', icon: 'globe' },
         { id: 'gen-2', title: 'Cain, Abel', reference: createRef('Genesis', generateChapters(4, 6)), description: 'Jealousy drives the first murder and violence multiplies across the earth. Even in judgment, God marks Cain with mercy and preserves a faithful remnant.', icon: 'people' },
@@ -120,6 +127,9 @@ export const BIBLE_PATHS: Path[] = [
       icon: 'repeat',
       description:
         'Witness God break Israel\'s chains and forge a nation by covenant at Sinai. Liberation is not merely freedom from Pharaoh but freedom for worship and holy living.',
+      image: require('../../assets/icons/pyramids.png'),
+      riveName: 'homeLamb',
+      artboardName: 'lamb-idle',
       units: [
         { id: 'exo-1', title: 'Bondage & Moses\' Birth', reference: createRef('Exodus', generateChapters(1, 4)), description: 'A new pharaoh enslaves Israel and orders infant sons killed. God preserves baby Moses and appears in a burning bush to recruit him as deliverer.', icon: 'person' },
         { id: 'exo-2', title: 'Confronting Pharaoh', reference: createRef('Exodus', generateChapters(5, 10)), description: 'Nine escalating plagues expose Egypt\'s gods as powerless. Each refusal hardens Pharaoh\'s heart and magnifies Yahweh\'s supremacy.', icon: 'warning' },
@@ -140,6 +150,9 @@ export const BIBLE_PATHS: Path[] = [
       icon: 'navigate',
       description:
         'Leviticus instructs a redeemed people how to live with a holy God, while Numbers and Deuteronomy chronicle forty years of wandering discipline. These books prove that grace precedes law and that hearts, not geography, determine readiness for promise.',
+      image: require('../../assets/icons/wilderness.png'),
+      riveName: 'homeLamb',
+      artboardName: 'lamb-eating',
       units: [
         { id: 'wild-1', title: 'Offerings & Consecration', reference: createRef('Leviticus', generateChapters(1, 5)), description: 'Five core sacrifices explain atonement and fellowship. The rituals teach that sin has a cost and that nearness to God is a gift.', icon: 'flame' },
         { id: 'wild-2', title: 'Priesthood & Purity', reference: createRef('Leviticus', generateChapters(6, 10)), description: 'Ordination of Aaron\'s sons shows the joy and danger of sacred duty. Tragedy strikes when strange fire ignores God\'s holiness.', icon: 'person' },
@@ -151,7 +164,7 @@ export const BIBLE_PATHS: Path[] = [
         { id: 'wild-8', title: 'Plains of Moab', reference: createRef('Numbers', generateChapters(25, 31)), description: 'Sexual seduction and idolatry provoke deadly judgment, yet a second census prepares a new generation. Cities of refuge and Midianite war close the book.', icon: 'location' },
         { id: 'wild-9', title: 'Moses\' First Farewell', reference: createRef('Deuteronomy', generateChapters(1, 6)), description: 'Standing on the border, Moses retells Israel\'s story to kindle trust. The Shema calls every heart and home to covenant love.', icon: 'megaphone' },
         { id: 'wild-10', title: 'Covenant Renewal', reference: createRef('Deuteronomy', generateChapters(27, 30)), description: 'Mountains of blessing and curse dramatize the stakes of obedience. Moses pleads, "Choose life," pointing to circumcised hearts as the true hope.', icon: 'refresh' },
-        { id: 'wild-11', title: 'Death of Moses', reference: createRef('Deuteronomy', generateChapters(31, 34)), description: 'Joshua is commissioned as successor, and Moses views the land from Nebo\'s peak. The greatest prophet is buried by God Himself, awaiting a greater one to come.', icon: 'person' },
+        { id: 'wild-11', title: 'Moses\' Farewell', reference: createRef('Deuteronomy', generateChapters(31, 34)), description: 'Joshua is commissioned as successor, and Moses views the land from Nebo\'s peak. The greatest prophet is buried by God Himself, awaiting a greater one to come.', icon: 'person' },
       ],
     },
   
@@ -160,15 +173,18 @@ export const BIBLE_PATHS: Path[] = [
       id: 'kingdoms-prophets',
       title: 'Kingdoms & Prophets',
       color: 'orange',
-      icon: 'crown',
+      icon: 'trophy',
       description:
         'From conquest to exile, Israel\'s monarchy rises, fractures, and falls while prophets call kings back to covenant loyalty. These narratives show that political power without spiritual fidelity ends in ruin.',
+      image: require('../../assets/icons/castle.png'),
+      riveName: 'homeLamb',
+      artboardName: 'lamb-drinking',
       units: [
         { id: 'kp-1', title: 'Joshua & Conquest', reference: createRef('Joshua', generateChapters(1, 7)), description: 'Courageous obedience parts the Jordan and topples Jericho. Early compromise at Ai warns that hidden sin can derail public victory.', icon: 'shield' },
         { id: 'kp-2', title: 'Judges\' Cycles', reference: createRef('Judges', generateChapters(1, 7)), description: 'Israel drifts into a downward spiral of idolatry, oppression, and deliverance. Each judge offers temporary relief but points to the need for a faithful king.', icon: 'reload' },
         { id: 'kp-3', title: 'Rise of Saul', reference: createRef('1 Samuel', generateChapters(8, 14)), description: 'People demand a king and God grants Saul, whose tall stature masks insecure heart. Early victories soon give way to rash vows and disobedience.', icon: 'trending-up' },
         { id: 'kp-4', title: 'David on the Run', reference: createRef('1 Samuel', generateChapters(15, 21)), description: 'Anointing shifts to David, sparking royal jealousy. Wilderness caves become training grounds for the future shepherd-king.', icon: 'footsteps' },
-        { id: 'kp-5', title: 'David\'s Reign', reference: createRef('2 Samuel', generateChapters(1, 7)), description: 'Jerusalem becomes capital and God promises an eternal dynasty. Yet private sin with Bathsheba will sow public turmoil.', icon: 'crown' },
+        { id: 'kp-5', title: 'David\'s Reign', reference: createRef('2 Samuel', generateChapters(1, 7)), description: 'Jerusalem becomes capital and God promises an eternal dynasty. Yet private sin with Bathsheba will sow public turmoil.', icon: 'ribbon' },
         { id: 'kp-6', title: 'Solomon & Temple', reference: createRef('1 Kings', generateChapters(1, 7)), description: 'Wisdom, wealth, and worship reach their zenith as the temple is dedicated. Sadly Solomon\'s many marriages plant seeds of idolatry.', icon: 'business' },
         { id: 'kp-7', title: 'Kingdom Divides', reference: createRef('1 Kings', generateChapters(12, 16)), description: 'Harsh policies split the kingdom into Israel and Judah. Golden calves at Dan and Bethel institutionalize covenant breach.', icon: 'git-branch' },
         { id: 'kp-8', title: 'Elijah & Elisha', reference: createRef('1 Kings', generateChapters(17, 22)), description: 'Fire from heaven and chariots of whirlwind highlight prophetic power. Successor Elisha doubles the miracles to prove God\'s ongoing presence.', icon: 'flame' },
@@ -185,10 +201,13 @@ export const BIBLE_PATHS: Path[] = [
       icon: 'musical-notes',
       description:
         'Israel\'s songbook and wisdom literature give voice to every human emotion and question. They teach that reverence for God is the beginning of knowledge and the anchor in suffering.',
+      image: require('../../assets/icons/shepherd.png'),
+      riveName: 'homeLamb',
+      artboardName: 'lamb-writing',
       units: [
         { id: 'wis-1', title: 'Psalms: Lament & Praise', reference: createRef('Psalms', generateChapters(1, 6)), description: 'The psalter opens by contrasting blessed and wicked paths. Early laments quickly pivot to trust, modeling honest yet hopeful prayer.', icon: 'musical-note' },
         { id: 'wis-2', title: 'Proverbs: Wisdom & Folly', reference: createRef('Proverbs', generateChapters(1, 7)), description: 'Short, memorable sayings invite readers to skillful living under God. Every couplet punches home the choice between disciplined wisdom and self-destructive folly.', icon: 'bulb' },
-        { id: 'wis-3', title: 'Ecclesiastes: Chasing Wind', reference: createRef('Ecclesiastes', generateChapters(1, 6)), description: 'The Teacher tests pleasure, work, and learning only to label them "vanity." By facing life\'s enigmas head-on, he points beyond the sun to fearless obedience.', icon: 'wind' },
+        { id: 'wis-3', title: 'Ecclesiastes: Chasing Wind', reference: createRef('Ecclesiastes', generateChapters(1, 6)), description: 'The Teacher tests pleasure, work, and learning only to label them "vanity." By facing life\'s enigmas head-on, he points beyond the sun to fearless obedience.', icon: 'thunderstorm' },
         { id: 'wis-4', title: 'Song of Songs: Covenant Love', reference: createRef('Song of Songs', generateChapters(1, 4)), description: 'A poetic duet celebrates the beauty and exclusivity of marital love. Its garden imagery echoes Eden and anticipates intimate union with Christ.', icon: 'heart' },
         { id: 'wis-5', title: 'Job: Suffering & Sovereignty', reference: createRef('Job', generateChapters(1, 7)), description: 'A righteous man loses everything when heaven and hell wager over integrity. Dialogues with friends reveal bad theology, but the whirlwind speech reveals a bigger God.', icon: 'thunderstorm' },
       ],
@@ -202,13 +221,16 @@ export const BIBLE_PATHS: Path[] = [
       icon: 'megaphone',
       description:
         'Isaiah, Jeremiah, Ezekiel, and Daniel thunder judgment yet spotlight hope in a coming Messiah and restored creation. Their visions stretch from their own troubled century to the very end of days.',
+      image: require('../../assets/icons/oracle.png'),
+      riveName: 'homeLamb',
+      artboardName: 'lamb-sleepy',
       units: [
         { id: 'maj-1', title: 'Isaiah: Vision & Call', reference: createRef('Isaiah', generateChapters(1, 6)), description: 'Holy, holy, holy shakes the temple and Isaiah volunteers despite unclean lips. The commissioning anticipates both hardened listeners and a preserved stump.', icon: 'eye' },
-        { id: 'maj-2', title: 'Isaiah: Comfort & Servant', reference: createRef('Isaiah', generateChapters(40, 46)), description: 'The exile horizon turns silky with promises of a highway home. Four servant songs climax in a wounded healer who bears others\' sins.', icon: 'bandage' },
+        { id: 'maj-2', title: 'Isaiah: The Servant', reference: createRef('Isaiah', generateChapters(40, 46)), description: 'The exile horizon turns silky with promises of a highway home. Four servant songs climax in a wounded healer who bears others\' sins.', icon: 'bandage' },
         { id: 'maj-3', title: 'Jeremiah: Early Oracles', reference: createRef('Jeremiah', generateChapters(1, 6)), description: 'A reluctant youth receives a mission to uproot and to plant. Almond branch and boiling pot visions frame looming Babylonian invasion.', icon: 'megaphone' },
         { id: 'maj-4', title: 'Jeremiah: Laments', reference: createRef('Jeremiah', generateChapters(18, 23)), description: 'Confessions pour out as the prophet wrestles with loneliness and danger. Yet amid tears he announces a new covenant written on hearts, not stone.', icon: 'sad' },
         { id: 'maj-5', title: 'Ezekiel: Wheels & Glory', reference: createRef('Ezekiel', generateChapters(1, 7)), description: 'Exiles by the Kebar River behold a storm-throne vision beyond imagination. Judgment oracles explain why God\'s glory departs the temple.', icon: 'aperture' },
-        { id: 'maj-6', title: 'Ezekiel: Restoration Hope', reference: createRef('Ezekiel', generateChapters(36, 39)), description: 'Dry bones rattle back to life, picturing national resurrection. A future Davidic shepherd and a decisive victory over Gog seal the promise.', icon: 'expand' },
+        { id: 'maj-6', title: 'Ezek: New Hope', reference: createRef('Ezekiel', generateChapters(36, 39)), description: 'Dry bones rattle back to life, picturing national resurrection. A future Davidic shepherd and a decisive victory over Gog seal the promise.', icon: 'expand' },
         { id: 'maj-7', title: 'Daniel: Faithful in Exile', reference: createRef('Daniel', generateChapters(1, 6)), description: 'Diet tests, fiery furnaces, and lion dens showcase uncompromising loyalty. Each deliverance foreshadows an everlasting kingdom not cut by human hands.', icon: 'paw' },
       ],
     },
@@ -221,6 +243,9 @@ export const BIBLE_PATHS: Path[] = [
       icon: 'megaphone',
       description:
         'Twelve shorter books amplify covenant themes of justice, mercy, and eschatological hope. Though "minor" in length, their messages are major in urgency.',
+      image: require('../../assets/icons/scale.png'),
+      riveName: 'successLamb',
+      artboardName: 'heart-hold',
       units: [
         { id: 'min-1', title: 'Hosea: Covenant Love', reference: createRef('Hosea', generateChapters(1, 4)), description: 'A faithful husband pursues an unfaithful wife to dramatize God\'s relentless grace. Even judgment passages end with a promise of renewed intimacy.', icon: 'heart' },
         { id: 'min-2', title: 'Joel: Day of the LORD', reference: createRef('Joel', generateChapters(1, 3)), description: 'Locust devastation becomes a sermon on cosmic reckoning. Yet God also pledges an outpoured Spirit for all flesh.', icon: 'sunny' },
@@ -228,8 +253,8 @@ export const BIBLE_PATHS: Path[] = [
         { id: 'min-4', title: 'Micah: Justice & Hope', reference: createRef('Micah', generateChapters(1, 5)), description: 'Rural Micah challenges urban corruption and foretells Bethlehem\'s ruler. The famous call to do justice, love mercy, and walk humbly rings out.', icon: 'shield' },
         { id: 'min-5', title: 'Habakkuk: Faith in Crisis', reference: createRef('Habakkuk', generateChapters(1, 3)), description: 'A prophet argues with God about unanswered violence. By the end he sings: "The righteous will live by faith."', icon: 'help' },
         { id: 'min-6', title: 'Zephaniah: Purifying Fire', reference: createRef('Zephaniah', generateChapters(1, 3)), description: 'Sweeping day-of-the-LORD announcements purge earth and sky. Yet a humble remnant will sing as God rejoices over them.', icon: 'flame' },
-        { id: 'min-7', title: 'Haggai & Early Zechariah', reference: [createRef('Haggai', generateChapters(1, 2)), createRef('Zechariah', [1])], description: 'Returned exiles stall on rebuilding the temple until prophetic urgency stirs them. Initial night visions in Zechariah confirm that God\'s angel armies stand behind the project.', icon: 'home' },
-        { id: 'min-8', title: 'Zechariah: Visions of Glory', reference: createRef('Zechariah', generateChapters(2, 4)), description: 'Flying scrolls, lampstands, and a crowned high priest forecast messianic triumph. Jerusalem\'s future extends far beyond walls of stone.', icon: 'eye' },
+        { id: 'min-7', title: 'Haggai & Zech', reference: [createRef('Haggai', generateChapters(1, 2)), createRef('Zechariah', [1])], description: 'Returned exiles stall on rebuilding the temple until prophetic urgency stirs them. Initial night visions in Zechariah confirm that God\'s angel armies stand behind the project.', icon: 'home' },
+        { id: 'min-8', title: 'Zech: Glory Visions', reference: createRef('Zechariah', generateChapters(2, 4)), description: 'Flying scrolls, lampstands, and a crowned high priest forecast messianic triumph. Jerusalem\'s future extends far beyond walls of stone.', icon: 'eye' },
         { id: 'min-9', title: 'Malachi: Final Word', reference: createRef('Malachi', generateChapters(1, 4)), description: 'A skeptical post-exilic community is confronted about tithes, divorce, and apathy. The closing promise of Elijah hints at the coming of John the Baptist.', icon: 'mail' },
       ],
     },
@@ -242,10 +267,13 @@ export const BIBLE_PATHS: Path[] = [
       icon: 'bookmark',
       description:
         'Four complementary portraits unveil Jesus\' birth, ministry, sacrifice, and resurrection. Reading them side-by-side highlights both unique emphases and a united proclamation: the kingdom has come.',
+      image: require('../../assets/icons/jesus.png'),
+      riveName: 'successLamb',
+      artboardName: 'success-stars',
       units: [
         { id: 'gos-1', title: 'Birth & Boyhood', reference: createRef('Luke', generateChapters(1, 3)), description: 'Angelic announcements overshadow Nazareth and Bethlehem. A twelve-year-old Jesus astounds temple teachers, foreshadowing His mission.', icon: 'star' },
         { id: 'gos-2', title: 'Baptism & Early Call', reference: createRef('Matthew', generateChapters(3, 5)), description: 'Heaven opens over the Jordan as the Spirit descends like a dove. Wilderness temptations test the Son\'s obedience before public ministry begins.', icon: 'water' },
-        { id: 'gos-3', title: 'Sermon on the Mount', reference: createRef('Matthew', generateChapters(5, 7)), description: 'Jesus redefines righteousness, confronting both legalism and hypocrisy. Beatitudes bless outsiders while heart-level commands raise the moral bar.', icon: 'mountain' },
+        { id: 'gos-3', title: 'Sermon on the Mount', reference: createRef('Matthew', generateChapters(5, 7)), description: 'Jesus redefines righteousness, confronting both legalism and hypocrisy. Beatitudes bless outsiders while heart-level commands raise the moral bar.', icon: 'triangle' },
         { id: 'gos-4', title: 'Parables of Grace', reference: createRef('Luke', generateChapters(15, 17)), description: 'Sheep, coins, and prodigal sons illustrate heaven\'s joy over one repentant sinner. Kingdom grace scandalizes the self-righteous but embraces the lost.', icon: 'chatbubble' },
         { id: 'gos-5', title: 'Signs & Power', reference: createRef('Mark', generateChapters(1, 5)), description: 'Demons are silenced, storms are stilled, and paralytics walk. Each miracle is a billboard for the authority of the King.', icon: 'flash' },
         { id: 'gos-6', title: 'Upper Room & Prayer', reference: createRef('John', generateChapters(12, 17)), description: 'Foot-washing models servant leadership on the eve of betrayal. Jesus\' high-priestly prayer secures unity and joy for future disciples.', icon: 'home' },
@@ -262,6 +290,9 @@ export const BIBLE_PATHS: Path[] = [
       icon: 'people',
       description:
         'Luke\'s sequel chronicles how the risen Christ continues His work through the Spirit-empowered church. Geographic and ethnic barriers crumble as the gospel races from Jerusalem to Rome.',
+      image: require('../../assets/icons/church.png'),
+      riveName: 'successLamb',
+      artboardName: 'lamb-eyes',
       units: [
         { id: 'act-1', title: 'Pentecost & Peter', reference: createRef('Acts', generateChapters(1, 4)), description: 'Wind, fire, and multilingual praise launch a new era. Peter\'s bold preaching turns thousands of skeptics into a Spirit-filled community.', icon: 'flame' },
         { id: 'act-2', title: 'Growth & Opposition', reference: createRef('Acts', generateChapters(5, 7)), description: 'Miracles multiply even as arrests escalate. Stephen\'s martyrdom seeds a wider gospel dispersion.', icon: 'trending-up' },
@@ -282,6 +313,9 @@ export const BIBLE_PATHS: Path[] = [
       icon: 'mail',
       description:
         'These epistles apply Christ\'s gospel to doctrine, discipleship, and daily life. Written to diverse churches and leaders, they trace a roadmap from sin to glory and from chaos to order.',
+      image: require('../../assets/icons/apostlePaul.png'),
+      riveName: 'successLamb',
+      artboardName: 'success-hearts',
       units: [
         { id: 'paul-1', title: 'Romans: Gospel Explained', reference: createRef('Romans', generateChapters(1, 7)), description: 'Paul unfolds humanity\'s universal need and God\'s surprising solution of justification by faith. The letter\'s logical argument has sparked revivals for centuries.', icon: 'document-text' },
         { id: 'paul-2', title: 'Corinthians: Church Issues', reference: createRef('1 Corinthians', generateChapters(1, 7)), description: 'Divisions, immorality, and worship chaos plague a gifted yet immature church. Paul prescribes cross-shaped love as the only cure.', icon: 'people' },
@@ -289,9 +323,9 @@ export const BIBLE_PATHS: Path[] = [
         { id: 'paul-4', title: 'Ephesians: Unity in Christ', reference: createRef('Ephesians', generateChapters(1, 6)), description: 'Cosmic praise for electing grace flows into practical unity among Jews and Gentiles. Marriage, parenting, and spiritual warfare all hinge on identity in Christ.', icon: 'link' },
         { id: 'paul-5', title: 'Philippians: Joy in Trial', reference: createRef('Philippians', generateChapters(1, 4)), description: 'A prisoner writes the happiest letter in the New Testament. The secret of contentment is knowing that to live is Christ and to die is gain.', icon: 'happy' },
         { id: 'paul-6', title: 'Colossians: Christ Supreme', reference: createRef('Colossians', generateChapters(1, 4)), description: 'False philosophies shrink Jesus; Paul paints Him as creator, sustainer, and reconciler. Complete sufficiency in Christ dethrones every competing "ism."', icon: 'star' },
-        { id: 'paul-7', title: '1 Thessalonians: Hope While Waiting', reference: createRef('1 Thessalonians', generateChapters(1, 5)), description: 'New believers endure persecution with steadfast faith. Paul clarifies that the Lord\'s return will reunite the living and the dead.', icon: 'time' },
-        { id: 'paul-8', title: '2 Thessalonians: Steadfast Until He Comes', reference: createRef('2 Thessalonians', generateChapters(1, 3)), description: 'Confusion about end-times timetables is corrected with calm assurance. Idleness is rebuked because future hope fuels present diligence.', icon: 'alarm' },
-        { id: 'paul-9', title: '1 Timothy: Guard the Gospel', reference: createRef('1 Timothy', generateChapters(1, 6)), description: 'A young pastor is charged to silence false teachers and model integrity. Instructions shape healthy doctrine, prayer, and leadership.', icon: 'shield' },
+        { id: 'paul-7', title: '1 Thess: Hope While Waiting', reference: createRef('1 Thessalonians', generateChapters(1, 5)), description: 'New believers endure persecution with steadfast faith. Paul clarifies that the Lord\'s return will reunite the living and the dead.', icon: 'time' },
+        { id: 'paul-8', title: '2 Thess: Steadfast', reference: createRef('2 Thessalonians', generateChapters(1, 3)), description: 'Confusion about end-times timetables is corrected with calm assurance. Idleness is rebuked because future hope fuels present diligence.', icon: 'alarm' },
+        { id: 'paul-9', title: '1 Timothy: Guarding Gospel', reference: createRef('1 Timothy', generateChapters(1, 6)), description: 'A young pastor is charged to silence false teachers and model integrity. Instructions shape healthy doctrine, prayer, and leadership.', icon: 'shield' },
         { id: 'paul-10', title: 'Titus: Healthy Churches', reference: createRef('Titus', generateChapters(1, 3)), description: 'On Crete, grace trains believers to say "No" to ungodliness and "Yes" to good works. Elders must embody this transformation for the sake of witness.', icon: 'medkit' },
       ],
     },
@@ -304,12 +338,15 @@ export const BIBLE_PATHS: Path[] = [
       icon: 'mail-open',
       description:
         'Written by several authors, these letters emphasize authentic faith expressed in love and endurance. They broaden the pastoral voice beyond Paul and anchor believers amid trials and heresies.',
+      image: require('../../assets/icons/epistles.png'),
+      riveName: 'successLamb',
+      artboardName: 'chest',
       units: [
-        { id: 'genep-1', title: 'Hebrews: Christ the Fulfillment', reference: createRef('Hebrews', generateChapters(1, 7)), description: 'Better priest, better covenant, better sacrifice—Jesus surpasses every shadow. The warning passages urge hearers not to drift back to lesser things.', icon: 'trending-up' },
+        { id: 'genep-1', title: 'Heb: Christ Supreme', reference: createRef('Hebrews', generateChapters(1, 7)), description: 'Better priest, better covenant, better sacrifice—Jesus surpasses every shadow. The warning passages urge hearers not to drift back to lesser things.', icon: 'trending-up' },
         { id: 'genep-2', title: 'James: Faith in Action', reference: createRef('James', generateChapters(1, 5)), description: 'True religion bridles the tongue and cares for the vulnerable. Works are not a rival to faith but its inevitable fruit.', icon: 'hammer' },
-        { id: 'genep-3', title: '1 Peter: Suffering & Holiness', reference: createRef('1 Peter', generateChapters(1, 5)), description: 'Exiles on earth receive living hope through Christ\'s resurrection. Holiness and humble submission weaponize believers against slander.', icon: 'sparkles' },
-        { id: 'genep-4', title: '1 John: Love & Truth', reference: createRef('1 John', generateChapters(1, 5)), description: 'John refutes proto-Gnostic denial of Christ\'s incarnation. Walking in light naturally overflows in brother-love.', icon: 'heart' },
-        { id: 'genep-5', title: 'Jude + 2 & 3 John: Contend & Care', reference: [createRef('Jude', [1]), createRef('2 John', [1]), createRef('3 John', [1])], description: 'Tiny letters pack a punch against false teachers and for faithful hospitality. They remind us that truth and love must travel together.', icon: 'mail' },
+        { id: 'genep-3', title: 'Suffering & Holiness', reference: createRef('1 Peter', generateChapters(1, 5)), description: 'Exiles on earth receive living hope through Christ\'s resurrection. Holiness and humble submission weaponize believers against slander.', icon: 'sparkles' },
+        { id: 'genep-4', title: '1 John: True Love', reference: createRef('1 John', generateChapters(1, 5)), description: 'John refutes proto-Gnostic denial of Christ\'s incarnation. Walking in light naturally overflows in brother-love.', icon: 'heart' },
+        { id: 'genep-5', title: 'Jude & Johns', reference: [createRef('Jude', [1]), createRef('2 John', [1]), createRef('3 John', [1])], description: 'Tiny letters pack a punch against false teachers and for faithful hospitality. They remind us that truth and love must travel together.', icon: 'mail' },
       ],
     },
   
@@ -321,12 +358,15 @@ export const BIBLE_PATHS: Path[] = [
       icon: 'planet',
       description:
         'John\'s apocalypse peels back the curtain on cosmic conflict and ultimate victory. Symbolic visions strengthen saints to conquer by the Lamb\'s blood and faithful testimony.',
+      image: require('../../assets/icons/hell.png'),
+      riveName: 'homeLamb',
+      artboardName: 'lamb-angry',
       units: [
-        { id: 'rev-1', title: 'Letters to the Churches', reference: createRef('Revelation', generateChapters(1, 3)), description: 'Seven real congregations receive customized commendations and corrections. The risen Christ walks among His lampstands, trimming wicks for brighter witness.', icon: 'mail' },
+        { id: 'rev-1', title: 'Seven Churches', reference: createRef('Revelation', generateChapters(1, 3)), description: 'Seven real congregations receive customized commendations and corrections. The risen Christ walks among His lampstands, trimming wicks for brighter witness.', icon: 'mail' },
         { id: 'rev-2', title: 'Throne & Seals', reference: createRef('Revelation', generateChapters(4, 8)), description: 'A rainbow-encircled throne anchors worship above. As the Lamb breaks seals, judgment and redemption advance hand in hand.', icon: 'ribbon' },
-        { id: 'rev-3', title: 'Trumpets & Witnesses', reference: createRef('Revelation', generateChapters(9, 13)), description: 'Cosmic plagues and demonic forces unleash warnings yet leave many unrepentant. Two faithful witnesses and a war in heaven assure that evil\'s rage is limited.', icon: 'megaphone' },
+        { id: 'rev-3', title: 'Rev: Trumpets', reference: createRef('Revelation', generateChapters(9, 13)), description: 'Cosmic plagues and demonic forces unleash warnings yet leave many unrepentant. Two faithful witnesses and a war in heaven assure that evil\'s rage is limited.', icon: 'megaphone' },
         { id: 'rev-4', title: 'Bowls & Babylon', reference: createRef('Revelation', generateChapters(14, 18)), description: 'Final bowls finish God\'s wrath and topple the seductive city called Babylon. Heaven erupts in hallelujahs over just judgments.', icon: 'wine' },
-        { id: 'rev-5', title: 'Victory & New Creation', reference: createRef('Revelation', generateChapters(19, 22)), description: 'A white-horse rider defeats the beast and resurrects His people. New heavens and new earth emerge as God dwells with humanity forever.', icon: 'earth' },
+        { id: 'rev-5', title: 'New Creation', reference: createRef('Revelation', generateChapters(19, 22)), description: 'A white-horse rider defeats the beast and resurrects His people. New heavens and new earth emerge as God dwells with humanity forever.', icon: 'earth' },
       ],
     },
   ];

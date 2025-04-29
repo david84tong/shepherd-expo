@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useUserStore } from '../stores/userStore';
 import dayjs from 'dayjs';
 import { Reading, Prayer, Reflection } from '../models/User';
@@ -132,6 +132,8 @@ function getMonthGrid(
   return grid;
 }
 
+const journalIcon = require('../../assets/icons/journalIcon.png');
+
 export default function StatsScreen() {
   const readings = useUserStore(s => s.getCompletedReadings());
   const prayers = useUserStore(s => s.getCompletedPrayers());
@@ -149,11 +151,11 @@ export default function StatsScreen() {
     .slice(0, 3);
 
   return (
-    <ScrollView className="flex-1 bg-main-bg px-4 pt-8">
-      <Text className="text-h1 font-feather text-center mb-1">Heart posture</Text>
+    <ScrollView className="flex-1 bg-main-bg px-4 pt-12">
+      <Text className="text-h1 font-feather text-center mb-1 mt-16">Heart posture</Text>
       <Text className="text-body font-din text-center text-description mb-6">Reflect on how you're really doing</Text>
       {/* Heatmap */}
-      <View className="bg-surfaceCream rounded-xl p-4 mb-6 border border-border">
+      <View className="bg-surfaceCream rounded-xl p-4 mb-6 border-4 border-border">
         <View className="flex-row justify-between items-center mb-3">
           <Text className="text-heading font-feather text-textPrimary">Activity</Text>
           <TouchableOpacity className="flex-row items-center">
@@ -187,19 +189,19 @@ export default function StatsScreen() {
       <Text className="text-h2 font-feather mb-3 mt-2">Recent reflections</Text>
       <View className="mb-8 space-y-3"> 
         {recentReflections.map((rf, i) => (
-          <View key={i} className="bg-surfaceCream rounded-xl p-4 border border-border"> 
+          <View key={i} className="bg-surfaceCream rounded-xl p-4 border-4 border-border"> 
             <View className="flex-row items-start"> 
               {/* Icon Column */}
-              <View className="w-10 h-10 rounded-lg bg-[#FFF4D9] items-center justify-center mr-4"> 
-                <FontAwesome name="book" size={20} color="#B89B4C" />
+              <View className="w-10 h-10 rounded-lg bg-[#FFF4D9] items-center justify-center mr-4">
+                <Image source={journalIcon} className="w-12 h-12" />
               </View>
 
               {/* Content Column */}
               <View className="flex-1">
                 {/* Top Row: Title + Date */}
                 <View className="flex-row justify-between items-center mb-1">
-                  <Text className="font-feather text-heading text-textPrimary flex-shrink mr-2" numberOfLines={1} ellipsizeMode='tail'> 
-                    {rf.content.split(' ').slice(0, 3).join(' ') || 'Reflection'}
+                  <Text className="font-feather text-heading text-textPrimary flex-shrink mr-2"> 
+                    Reflection
                   </Text>
                   <Text className="text-caption font-din text-description whitespace-nowrap">
                     {dayjs(toDateSafe(rf.date)).format('MMMM D')}

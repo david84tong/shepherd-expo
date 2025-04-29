@@ -8,6 +8,9 @@
     "scheme": "shepherd",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
+    "developmentClient": {
+      "silentLaunch": true
+    },
     "assetBundlePatterns": [
       "**/*"
     ],
