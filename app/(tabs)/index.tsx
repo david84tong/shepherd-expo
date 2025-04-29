@@ -797,13 +797,13 @@ export default function HomeScreen() {
                       },
                     ],
                   }}>
-                  {/* <Rive
+                  <Rive
                     ref={riveRef}
                     resourceName="homeLamb"
                     artboardName={artboardName}
                     onError={handleRiveError}
                     style={{ width: '100%', height: '100%' }}
-                  /> */}
+                  />
                 </Animated.View>
               </Animated.View>
             )}

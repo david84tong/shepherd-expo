@@ -1,7 +1,7 @@
 // Import Reanimated first for initialization
 import 'react-native-reanimated';
 import '../global.css';
-import { Stack, SplashScreen, useRouter, } from 'expo-router';
+import { Stack, SplashScreen, useRouter, useSegments } from 'expo-router';
 import { useFonts } from 'expo-font';
 import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Modal, FlatList, SafeAreaView, ScrollView, Alert, StyleSheet } from 'react-native';
@@ -14,6 +14,7 @@ import AppLoading from '../components/AppLoading';
 import { useUIStore } from './stores/uiStore';
 import { HalfModalType } from './halfModal';
 import { DebugButton } from '../components/DebugModal';
+import { ONBOARDING_COMPLETED_KEY } from './types/onboarding';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -25,17 +26,37 @@ export const unstable_settings = {
 
 export default function RootLayout() {
   const router = useRouter();
+  const segments = useSegments();
   const [loaded, error] = useFonts({
     'Feather Bold': require('../assets/fonts/Feather Bold.ttf'),
     'DIN Next Rounded LT W01 Regular': require('../assets/fonts/DIN Next Rounded LT W01 Regular.ttf'),
   });
   
-  // Add state for loading progress
+  // Add state for loading progress and onboarding check
   const [appReady, setAppReady] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
+  const [isOnboardingChecked, setIsOnboardingChecked] = useState(false);
   
   // Get modal dim state from store
   const isModalDimActive = useUIStore((state) => state.isModalDimActive);
+
+  // Check if user has completed onboarding
+  const checkOnboarding = useCallback(async () => {
+    try {
+      const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+      
+      // If onboarding is not completed and we're not already in onboarding
+      if (onboardingCompleted !== 'true' && !segments.includes('onboarding')) {
+        console.log('Onboarding not completed, redirecting...');
+        router.replace('/onboarding/1');
+      }
+      
+      setIsOnboardingChecked(true);
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+      setIsOnboardingChecked(true); // Set to true even on error to prevent loops
+    }
+  }, [router, segments]);
 
   // Preload resources with simulated progress
   const preloadResources = () => {
@@ -97,14 +118,19 @@ export default function RootLayout() {
     if (loaded && !appReady) {
       preloadResources();
     }
-  }, [loaded, appReady]); // Only depends on loaded and appReady
+  }, [loaded, appReady]);
 
-  // Effect for checking streak status *after* app is ready
+  // Effect for checking onboarding and streak status after app is ready
   useEffect(() => {
-    if (appReady) {
-      checkStreakStatus();
+    if (appReady && !isOnboardingChecked) {
+      checkOnboarding().then(() => {
+        // Only check streak if onboarding is completed
+        if (segments.includes('(tabs)')) {
+          checkStreakStatus();
+        }
+      });
     }
-  }, [appReady, checkStreakStatus]); // Runs only when appReady changes to true
+  }, [appReady, isOnboardingChecked, checkOnboarding, checkStreakStatus, segments]);
   
   if (!appReady) {
     return <AppLoading progress={loadProgress} />;
@@ -122,29 +148,30 @@ export default function RootLayout() {
               name="(tabs)" 
               options={{ 
                 headerShown: false, 
-                // Explicitly set the desired animation for entering the tabs group
                 animation: 'slide_from_right', 
               }} 
             />
             <Stack.Screen 
+              name="onboarding"
+              options={{
+                headerShown: false,
+                animation: 'fade',
+                gestureEnabled: false,
+              }}
+            />
+            <Stack.Screen 
               name="bibleReader" 
               options={{
-                // Override animation to ensure slide transition
                 animation: "slide_from_right",
-                // Custom animation duration for smoother feel
-                animationDuration: 350, // ms
-                // Hide header for full-screen experience
+                animationDuration: 350,
                 headerShown: false 
               }}
             />
             <Stack.Screen 
               name="bible" 
               options={{
-                // Override animation to ensure slide transition
                 animation: "slide_from_right",
-                // Custom animation duration for smoother feel
-                animationDuration: 350, // ms
-                // Hide header for full-screen experience
+                animationDuration: 350,
                 headerShown: false 
               }}
             />

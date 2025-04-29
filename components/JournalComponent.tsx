@@ -213,7 +213,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     if (readingCompleted && prayerCompleted) {
       setSuccessType(SuccessAnimationType.BONUS);
     } else {
-      setSuccessType(SuccessAnimationType.REFLECTION);
+    setSuccessType(SuccessAnimationType.REFLECTION);
     }
     
     // Navigate to success screen

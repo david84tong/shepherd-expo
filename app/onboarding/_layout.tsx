@@ -27,7 +27,19 @@ export default function OnboardingLayout() {
       return null
     }
   }
-
+    // age range
+    // what should we call you
+    // 
+    // how many minutes per day can u read
+    // explainer screen
+   // sign up (skip with a button)
+  // lamb hatch
+  // lamb name
+  // gems + hearts
+  // notification
+  // rating
+  // pricing
+  // if pro => join the community
   const handleDebug = () => {
     Alert.alert('Debug Info', '', [
       {
@@ -65,23 +77,19 @@ export default function OnboardingLayout() {
   }
 
   return (
-    <View
-      className="flex-1 bg-surfaceCream"
-      style={{
-        paddingTop: insets.top,
-        paddingLeft: insets.left,
-        paddingRight: insets.right,
-        paddingBottom: 0,
-      }}
-    >
-      <View className="flex-1">
-        {/* Conditionally render progress bar or spacer based on page number */}
+    <View className="flex-1">
+      <View
+        className="flex-1"
+        style={{
+          paddingLeft: insets.left,
+          paddingRight: insets.right,
+        }}
+      >
         {pathname &&
-        (/\/onboarding\/(1[7-9]|2[0-9]|3[0-1])/.test(pathname) ||
-          pathname.includes('/onboarding/auth')) ? (
-          <View className="h-6" />
-        ) : (
-          <View className="absolute top-0 left-0 right-0 z-10">
+        (pathname === '/onboarding/1' ||
+         /\/onboarding\/(1[7-9]|2[0-9]|3[0-1])/.test(pathname) ||
+          pathname.includes('/onboarding/auth')) ? null : (
+          <View className="absolute top-0 left-0 right-0 z-10" style={{ marginTop: insets.top }}>
             <ProgressBar />
           </View>
         )}
@@ -99,17 +107,17 @@ export default function OnboardingLayout() {
             headerShown: false,
             animation: 'fade',
             contentStyle: {
-              backgroundColor: '#FFF4D9', // surfaceCream color
+              backgroundColor: 'transparent',
             },
           }}
         >
-          {ONBOARDING_PAGES.map((page: OnboardingPage) => (
+          {ONBOARDING_PAGES.map((page: string) => (
             <Stack.Screen
               key={page}
               name={page}
               options={{
                 contentStyle: {
-                  backgroundColor: '#FFF4D9', // surfaceCream color
+                  backgroundColor: 'transparent',
                 },
                 ...(page === '1' && {
                   gestureEnabled: false,

@@ -6,6 +6,8 @@ export interface OnboardingResponse {
   name: string;
   goals: string[];
   notifications: boolean;
+  intent?: 'read-bible' | 'talk-to-god' | 'just-exploring';
+  currentScreen?: string;
 }
 
 export type OnboardingPageId = keyof OnboardingResponse;
