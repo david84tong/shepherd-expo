@@ -88,6 +88,7 @@ module.exports = {
       },
       fontSize: {
         // Mapping semantic styles to Tailwind sizes
+        'title': '36px',
         'h1': '28px',       // H1
         'h2': '24px',       // H1
         'heading': '18px', // Heading (~17pt)

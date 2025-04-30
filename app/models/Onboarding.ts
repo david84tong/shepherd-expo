@@ -32,24 +32,43 @@ export type OnboardingResponses = {
 
   /* ────────── PHASE 1 ────────── */
 
-  /** Screen 2 – “What brings you here today?” */
+  /** Screen 2 – "What brings you here today?" */
   intent?:
     | 'read-bible'
     | 'talk-to-god'
     | 'just-exploring'
 
-  /** Screen 4 – “This journey is rooted in the way of Jesus.” */
+  /** Screen 4 – "This journey is rooted in the way of Jesus." */
   jesusOrientation?:
     | 'sounds-good'
     | 'learn-more-first'
     | 'not-sure-yet'
 
-  /** Screen 5 – “In one word, how would you describe your spiritual season?” */
+  /** Screen 5 – "In one word, how would you describe your spiritual season?" */
   spiritualSeasonWord?: string
+
+  /** Screen 6 - "Which of these do you prescribe to?" */
+  religiousAffiliation?:
+    | 'protestant'
+    | 'catholic'
+    | 'orthodox'
+    | 'evangelical'
+    | 'jewish'
+    | 'agnostic'
+    | 'spiritual'
+    | 'other'
+    | 'prefer-not-to-say'
+
+  /** Screen 7 - "When would you like to receive notifications?" */
+  notificationPreference?:
+    | 'morning'
+    | 'afternoon'
+    | 'evening'
+    | 'night'
 
   /* ────────── PHASE 2 – Sorting Quiz ────────── */
 
-  /** Screen 6 – “What brings you here spiritually?”  */
+  /** Screen 6 – "What brings you here spiritually?"  */
   pathAffinity?:
     | 'understand-full-bible'
     | 'healing'
@@ -57,19 +76,19 @@ export type OnboardingResponses = {
     | 'exploring-christianity'
     | 'daily-encouragement'
 
-  /** Screen 7 – “How much of the Bible have you read before?” */
+  /** Screen 7 – "How much of the Bible have you read before?" */
   bibleFamiliarity?:
     | 'never'
     | 'a-little'
     | 'a-lot'
 
-  /** Screen 8 – “How comfortable are you with prayer?” */
+  /** Screen 8 – "How comfortable are you with prayer?" */
   prayerConfidence?:
     | 'pray-regularly'
     | 'sometimes'
     | 'never-prayed'
 
-  /** Screen 9 – “What tends to get in the way of staying consistent?” */
+  /** Screen 9 – "What tends to get in the way of staying consistent?" */
   consistencyObstacle?:
     | 'forget'
     | 'feel-guilt'
@@ -79,12 +98,12 @@ export type OnboardingResponses = {
 
   /* ────────── PHASE 3 ────────── */
 
-  /** Screen 16 – “What will you name your lamb?” */
+  /** Screen 16 – "What will you name your lamb?" */
   lambName?: string
 
   /* ────────── PHASE 5 ────────── */
 
-  /** Screen 24 – “Would you like to commit to showing up daily?” */
+  /** Screen 24 – "Would you like to commit to showing up daily?" */
   streakCommitment?:
     | 'daily'
     | 'own-pace'
@@ -101,17 +120,18 @@ export type OnboardingResponses = {
 
 /* ---------- OPTIONAL: blank initial state helper ---------- */
 
-export const shepherdOnboardingInitialState: ShepherdOnboardingResponses = {
+export const shepherdOnboardingInitialState: OnboardingResponses = {
   currentScreen: 'welcome',
-  intent: '',
-  jesusOrientation: '',
-  spiritualSeasonWord: '',
-  pathAffinity: '',
-  bibleFamiliarity: '',
-  prayerConfidence: '',
-  consistencyObstacle: '',
-  lambName: '',
-  streakCommitment: '',
-  completedAt: '',
+  intent: undefined,
+  jesusOrientation: undefined,
+  spiritualSeasonWord: undefined,
+  religiousAffiliation: undefined,
+  pathAffinity: undefined,
+  bibleFamiliarity: undefined,
+  prayerConfidence: undefined,
+  consistencyObstacle: undefined,
+  lambName: undefined,
+  streakCommitment: undefined,
+  completedAt: undefined,
   appRated: false,
 }

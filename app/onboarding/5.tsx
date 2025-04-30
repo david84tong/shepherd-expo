@@ -1,146 +1,135 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Animated } from 'react-native';
+import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import PrimaryButton from '../../components/PrimaryButton';
+import { OnboardingResponses } from '../models/Onboarding';
+import Animated, { 
+  useAnimatedStyle, 
+  withTiming, 
+  withSpring,
+  useSharedValue,
+  withDelay,
+} from 'react-native-reanimated';
 
-export default function OnboardingBibleFamiliarityScreen() {
+export default function OnboardingReadingTimeScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [selectedOption, setSelectedOption] = useState<string | undefined>(undefined);
 
-  // Create animated values
-  const titleAnimation = new Animated.Value(0);
-  const buttonAnimations = [
-    new Animated.Value(0),
-    new Animated.Value(0),
-    new Animated.Value(0),
-  ];
+  // Create Reanimated shared values for each component
+  const iconOpacity = useSharedValue(0);
+  const iconTranslateY = useSharedValue(40);
+  
+  const titleOpacity = useSharedValue(0);
+  const titleTranslateY = useSharedValue(40);
+  
+  const optionsOpacity = useSharedValue(0);
+  const optionsTranslateY = useSharedValue(40);
 
   useEffect(() => {
-    // Stagger the animations
-    Animated.stagger(100, [
-      // Title animation
-      Animated.timing(titleAnimation, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-      // Button animations
-      ...buttonAnimations.map(anim =>
-        Animated.timing(anim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
+    // Reset animation values
+    iconOpacity.value = 0;
+    iconTranslateY.value = 40;
+    titleOpacity.value = 0;
+    titleTranslateY.value = 40;
+    optionsOpacity.value = 0;
+    optionsTranslateY.value = 40;
+    
+    // Staggered animations for each component
+    const animateComponent = (opacity: any, translateY: any, delay: number) => {
+      opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
+      translateY.value = withDelay(delay, 
+        withSpring(0, { 
+          damping: 20,
+          stiffness: 90,
         })
-      ),
-    ]).start();
+      );
+    };
+
+    // Start animations with delays
+    animateComponent(iconOpacity, iconTranslateY, 0);
+    animateComponent(titleOpacity, titleTranslateY, 200);
+    animateComponent(optionsOpacity, optionsTranslateY, 400);
   }, []);
 
-  const handleSelection = async (familiarity: string) => {
-    setSelectedOption(familiarity);
-  };
+  // Create animated styles for each component
+  const iconStyle = useAnimatedStyle(() => ({
+    opacity: iconOpacity.value,
+    transform: [{ translateY: iconTranslateY.value }]
+  }));
 
-  const handleContinue = async () => {
-    if (selectedOption) {
-      await setResponse('bibleFamiliarity', selectedOption);
-      router.push('onboarding/6' as any);
-    }
-  };
+  const titleStyle = useAnimatedStyle(() => ({
+    opacity: titleOpacity.value,
+    transform: [{ translateY: titleTranslateY.value }]
+  }));
 
-  // Common animation styles
-  const getAnimatedStyle = (animation: Animated.Value) => ({
-    opacity: animation,
-    transform: [
-      {
-        translateY: animation.interpolate({
-          inputRange: [0, 1],
-          outputRange: [20, 0],
-        }),
-      },
-    ],
-  });
+  const optionsStyle = useAnimatedStyle(() => ({
+    opacity: optionsOpacity.value,
+    transform: [{ translateY: optionsTranslateY.value }]
+  }));
+
+  const handleSelection = async (duration: string) => {
+    setSelectedOption(duration);
+    await setResponse('readingDuration', duration);
+    router.push('/onboarding/6');
+  };
 
   const options = [
     {
-      id: 'never',
-      icon: 'book-outline',
-      color: '#24CA17',
-      bgColor: 'bg-lightGreen',
-      title: 'Never',
-      description: 'Starting fresh on this journey',
+      id: '1-5',
+      title: '1-5 mins',
     },
     {
-      id: 'a-little',
-      icon: 'bookmark-outline',
-      color: '#F7B500',
-      bgColor: 'bg-lightYellow',
-      title: 'A Little',
-      description: 'Read some passages before',
+      id: '6-10',
+      title: '6-10 mins',
     },
     {
-      id: 'a-lot',
-      icon: 'library-outline',
-      color: '#2196F3',
-      bgColor: 'bg-lightBlue',
-      title: 'A Lot',
-      description: 'Regular Bible reader',
+      id: '11-15',
+      title: '11-15 mins',
     },
-  ];
+    {
+      id: '16-20',
+      title: '16-20 mins',
+    },
+    {
+      id: '20-30',
+      title: '20-30 mins',
+    },
+    {
+      id: '30-60',
+      title: '30-60 mins',
+    },
+    {
+      id: '60+',
+      title: '60+ mins',
+    },
+  ] as const;
 
   return (
     <View className="flex-1 bg-surfaceCream px-6 pt-12">
       {/* Decorative Background Elements */}
-      <View className="absolute right-0 top-20 opacity-5">
-        <Ionicons name="book" size={200} color="#000000" />
-      </View>
-
+ 
       {/* Question Text */}
-      <Animated.View style={getAnimatedStyle(titleAnimation)}>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-4">
-          How much of the Bible have you read before?
+      <Animated.View style={titleStyle}>
+        <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-16">
+          How many minutes per day can you read?
         </Text>
       </Animated.View>
 
       {/* Options Container */}
-      <View className="space-y-4 mt-8">
-        {options.map((option, index) => (
-          <Animated.View key={option.id} style={getAnimatedStyle(buttonAnimations[index])}>
-            <View className="flex-row items-center px-4 bg-white rounded-card border-[3px] border-border">
-              <View className={`${option.bgColor} rounded-xl p-3 mr-4`}>
-                <Ionicons name={option.icon as any} size={32} color={option.color} />
-              </View>
-              <View className="flex-1">
-                <Text className="font-feather text-lg">{option.title}</Text>
-                <Text className="font-din text-sm text-description mt-1">
-                  {option.description}
-                </Text>
-              </View>
-              <PrimaryButton
-                title={option.title}
-                onPress={() => handleSelection(option.id)}
-                isActive={true}
-                style={`${selectedOption === option.id ? 'border-accentGold bg-surfaceCream' : ''}`}
-                primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : `bg-white`}
-                textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
-              />
-            </View>
-          </Animated.View>
+      <Animated.View style={optionsStyle} className="space-y-4 mt-8">
+        {options.map((option) => (
+          <PrimaryButton
+            key={option.id}
+            title={option.title}
+            onPress={() => handleSelection(option.id)}
+            isActive={true}
+            primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
+            textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
+          />
         ))}
-      </View>
-
-      {/* Continue Button */}
-      <Animated.View 
-        style={[getAnimatedStyle(buttonAnimations[0])]}
-        className="absolute bottom-0 left-0 right-0 px-6 pb-8"
-      >
-        <PrimaryButton
-          title="Continue"
-          onPress={handleContinue}
-          disabled={!selectedOption}
-          isActive={!!selectedOption}
-        />
       </Animated.View>
     </View>
   );

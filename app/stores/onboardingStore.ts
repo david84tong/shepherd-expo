@@ -1,15 +1,18 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
-import { OnboardingResponse, ONBOARDING_STORAGE_KEY } from '../models/Onboarding';
+import { OnboardingResponses, ONBOARDING_STORAGE_KEY } from '../models/Onboarding';
 
 interface OnboardingState {
-  responses: OnboardingResponse;
-  setResponse: (key: keyof OnboardingResponse, value: any) => Promise<void>;
+  responses: OnboardingResponses;
+  currentScreen: string;
+  setResponse: (key: keyof OnboardingResponses, value: any) => Promise<void>;
+  setCurrentScreen: (screen: string) => Promise<void>;
   clearResponses: () => Promise<void>;
 }
 
 export const useOnboardingStore = create<OnboardingState>((set) => ({
   responses: {},
+  currentScreen: '1',
   setResponse: async (key, value) => {
     try {
       set((state) => ({
@@ -23,15 +26,30 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
         JSON.stringify({
           ...useOnboardingStore.getState().responses,
           [key]: value,
+          currentScreen: useOnboardingStore.getState().currentScreen
         })
       );
     } catch (error) {
       console.error('Error saving onboarding response:', error);
     }
   },
+  setCurrentScreen: async (screen) => {
+    try {
+      set({ currentScreen: screen });
+      await AsyncStorage.setItem(
+        ONBOARDING_STORAGE_KEY,
+        JSON.stringify({
+          ...useOnboardingStore.getState().responses,
+          currentScreen: screen
+        })
+      );
+    } catch (error) {
+      console.error('Error saving current screen:', error);
+    }
+  },
   clearResponses: async () => {
     try {
-      set({ responses: {} });
+      set({ responses: {}, currentScreen: '1' });
       await AsyncStorage.removeItem(ONBOARDING_STORAGE_KEY);
     } catch (error) {
       console.error('Error clearing onboarding responses:', error);

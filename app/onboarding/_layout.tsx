@@ -2,6 +2,7 @@ import { Alert, View, Text } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Stack, usePathname, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
+import { useEffect } from 'react'
 
 import { debugOnboardingStorage, useOnboardingStore } from '../stores/onboardingStore'
 import {
@@ -15,6 +16,15 @@ export default function OnboardingLayout() {
   const pathname = usePathname()
   const router = useRouter()
   const insets = useSafeAreaInsets()
+  const { currentScreen, setCurrentScreen } = useOnboardingStore()
+
+  // Update current screen based on pathname
+  useEffect(() => {
+    if (pathname) {
+      const screen = pathname.split('/').pop() || '1'
+      setCurrentScreen(screen)
+    }
+  }, [pathname, setCurrentScreen])
 
   const checkStorageAndDebug = async () => {
     try {
@@ -27,17 +37,18 @@ export default function OnboardingLayout() {
       return null
     }
   }
-    // age range
-    // what should we call you
-    // 
-    // how many minutes per day can u read
-    // explainer screen
+ 
    // sign up (skip with a button)
-  // lamb hatch
-  // lamb name
+  // [x] lamb hatch 
+  // [x] lamb name
+     //[x] age range
+    // what should we call you
+    // [x] how many minutes per day can u read
+  // explainer screen
   // gems + hearts
   // notification
   // rating
+    // generating ur custom plan screen. 
   // pricing
   // if pro => join the community
   const handleDebug = () => {
@@ -77,57 +88,55 @@ export default function OnboardingLayout() {
   }
 
   return (
-    <View className="flex-1">
-      <View
-        className="flex-1"
-        style={{
-          paddingLeft: insets.left,
-          paddingRight: insets.right,
+    <View style={{ flex: 1, paddingLeft: insets.left, paddingRight: insets.right }}>
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          animation: 'fade',
+          contentStyle: {
+            backgroundColor: 'transparent',
+          },
         }}
       >
-        {pathname &&
-        (pathname === '/onboarding/1' ||
-         /\/onboarding\/(1[7-9]|2[0-9]|3[0-1])/.test(pathname) ||
-          pathname.includes('/onboarding/auth')) ? null : (
-          <View className="absolute top-0 left-0 right-0 z-10" style={{ marginTop: insets.top }}>
+        {ONBOARDING_PAGES.map((page: string) => (
+          <Stack.Screen
+            key={page}
+            name={page}
+            options={{
+              contentStyle: {
+                backgroundColor: 'transparent',
+                marginTop: currentScreen === '1' ? 0 : 12
+              },
+              ...(page === '1' && {
+                gestureEnabled: false,
+                headerBackVisible: false,
+              }),
+            }}
+          />
+        ))}
+      </Stack>
+
+      {/* Conditional Progress Bar */}
+      {pathname &&
+        !pathname.startsWith('/onboarding/1') &&
+        !pathname.includes('/onboarding/auth') && (
+          <View 
+            className="absolute top-0 left-0 right-0 bg-surfaceCream" 
+            style={{ paddingTop: insets.top }}
+          >
             <ProgressBar />
+            <View className="h-0" />
           </View>
-        )}
+        )
+      }
 
-        {/* Debug button - uncomment for debugging */}
-        {/* <Text
-          onPress={handleDebug}
-          className="absolute top-2.5 right-2.5 text-textPrimary/30 text-[10px] z-[1000]"
-        >
-          Debug
-        </Text> */}
-
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            animation: 'fade',
-            contentStyle: {
-              backgroundColor: 'transparent',
-            },
-          }}
-        >
-          {ONBOARDING_PAGES.map((page: string) => (
-            <Stack.Screen
-              key={page}
-              name={page}
-              options={{
-                contentStyle: {
-                  backgroundColor: 'transparent',
-                },
-                ...(page === '1' && {
-                  gestureEnabled: false,
-                  headerBackVisible: false,
-                }),
-              }}
-            />
-          ))}
-        </Stack>
-      </View>
+      {/* Debug button (keep commented out) */}
+      {/* <Text
+        onPress={handleDebug}
+        className="absolute top-2.5 right-2.5 text-textPrimary/30 text-[10px] z-[1000]"
+      >
+        Debug
+      </Text> */}
     </View>
   )
 }

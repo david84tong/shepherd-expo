@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Modal, FlatList, SafeAreaView, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,13 +15,15 @@ interface DebugScreen {
   params?: Record<string, string>;
 }
 
-const DEBUG_SCREENS: DebugScreen[] = [
-  { name: 'Home', route: '/' },
-  { name: 'Map', route: '/map' },
-  { name: 'Bible Reader', route: '/bibleReader', params: { bookId: '1', chapters: '1' } },
-  { name: 'Stats', route: '/stats' },
-  { name: 'Profile', route: '/profile' },
-  { name: 'Prayer', route: '/prayer' }
+// Onboarding screens for debugging
+const ONBOARDING_SCREENS: DebugScreen[] = [
+  { name: 'Onboarding 1 - Welcome', route: '/onboarding/1' },
+  { name: 'Onboarding 2 - Lamb Name', route: '/onboarding/2' },
+  { name: 'Onboarding 3 - Intent', route: '/onboarding/3' },
+  { name: 'Onboarding 4 - Bible Familiarity', route: '/onboarding/4' },
+  { name: 'Onboarding 5 - Reading Time', route: '/onboarding/5' },
+  { name: 'Onboarding 6 - Custom Plan', route: '/onboarding/6' },
+  { name: 'Onboarding 7 - Notifications', route: '/onboarding/7' },
 ];
 
 // Define props for DebugButton (currently none needed)
@@ -176,32 +178,7 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
 
   const navigateTo = (item: DebugScreen) => {
     setModalVisible(false);
-    
-    // Handle navigation based on route
-    switch (item.route) {
-      case '/':
-      case '/map':
-      case '/stats':
-      case '/profile':
-        router.push(item.route as any);
-        break;
-      case '/bibleReader':
-      case '/prayer':
-      case '/bible':
-        // For routes with params
-        if (item.params) {
-          const queryString = Object.entries(item.params)
-            .map(([key, value]) => `${key}=${value}`)
-            .join('&');
-          router.push(`${item.route}?${queryString}` as any);
-        } else {
-          router.push(item.route as any);
-        }
-        break;
-      default:
-        // For any other route
-        console.log(`Navigation to ${item.route} not implemented`);
-    }
+    router.push(item.route as any);
   };
 
   return (
@@ -224,7 +201,7 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
         <SafeAreaView className="flex-1 bg-black/50">
           <View className="m-5 mt-[60px] bg-surfaceCream rounded-[20px] flex-1 shadow-lg">
             <View className="flex-row items-center justify-between border-b border-b-buttonBorder p-4">
-              <Text className="font-feather text-xl text-textPrimary">Debug Navigation</Text>
+              <Text className="font-feather text-xl text-textPrimary">Debug Menu</Text>
               <TouchableOpacity 
                 onPress={() => setModalVisible(false)}
                 className="w-8 h-8 rounded-full bg-forestGreen80 items-center justify-center"
@@ -233,9 +210,9 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
               </TouchableOpacity>
             </View>
 
-            <ScrollView className="p-2">
+            <ScrollView className="p-4">
               <View className="mb-4">
-                <Text className="font-feather text-lg text-textPrimary mb-2">Special Debug Actions</Text>
+                <Text className="font-feather text-lg text-textPrimary mb-3">Animations & Modals</Text>
                 
                 {/* Success Animation Button */}
                 <TouchableOpacity
@@ -246,7 +223,7 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
                   <Text className="font-din text-sm text-[#7C927E] mt-1">Native Bottom Sheet Animation</Text>
                 </TouchableOpacity>
                 
-                {/* Add Heart Penalty Modal Button Back */}
+                {/* Heart Penalty Modal Button */}
                 <TouchableOpacity
                   className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
                   onPress={handleTestPenaltyModal} 
@@ -254,19 +231,14 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
                   <Text className="font-feather text-base text-textPrimary">Test Heart Penalty Modal</Text>
                   <Text className="font-din text-sm text-[#A57070] mt-1">Show penalty via /halfModal</Text>
                 </TouchableOpacity>
+              </View>
+              
+              <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">Heart & Penalty System</Text>
                 
-                {/* Reset Local Storage Button */}
-                <TouchableOpacity
-                  className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
-                  onPress={handleResetLocalStorage}
-                >
-                  <Text className="font-feather text-base text-textPrimary">Reset Local Storage</Text>
-                  <Text className="font-din text-sm text-[#A57070] mt-1">Clear AsyncStorage including completion data</Text>
-                </TouchableOpacity>
-
                 {/* Set Lamb Hearts Buttons */}
-                <View className="mt-4">
-                  <Text className="font-feather text-base text-textPrimary mb-1">Set Lamb Hearts</Text>
+                <View className="mb-4">
+                  <Text className="font-feather text-base text-textPrimary mb-2">Set Lamb Hearts</Text>
                   <View className="flex-row flex-wrap gap-2">
                     {[0, 10, 20, 30, 40, 50, 100].map((hearts) => (
                       <TouchableOpacity
@@ -281,8 +253,8 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
                 </View>
 
                 {/* Set Only Penalty Dates Buttons */}
-                <View className="mt-4">
-                  <Text className="font-feather text-base text-textPrimary mb-1">Set Penalty Dates Only</Text>
+                <View className="mb-4">
+                  <Text className="font-feather text-base text-textPrimary mb-2">Set Penalty Dates</Text>
                   <View className="flex-row flex-wrap gap-2">
                     {[0,1,2,3,4,5].map((n) => (
                       <TouchableOpacity
@@ -315,23 +287,34 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
                 </TouchableOpacity>
               </View>
               
+              {/* Local Storage */}
               <View className="mb-4">
-                <Text className="font-feather text-lg text-textPrimary mb-2">App Navigation</Text>
+                <Text className="font-feather text-lg text-textPrimary mb-3">Data Management</Text>
                 
-                <FlatList
-                  data={DEBUG_SCREENS}
-                  keyExtractor={(item) => item.route}
-                  renderItem={({ item }) => (
+                {/* Reset Local Storage Button */}
+                <TouchableOpacity
+                  className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
+                  onPress={handleResetLocalStorage}
+                >
+                  <Text className="font-feather text-base text-textPrimary">Reset Local Storage</Text>
+                  <Text className="font-din text-sm text-[#A57070] mt-1">Clear AsyncStorage including completion data</Text>
+                </TouchableOpacity>
+              </View>
+              
+              {/* Onboarding Navigation */}
+              <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">Onboarding Screens</Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {ONBOARDING_SCREENS.map((screen) => (
                     <TouchableOpacity
-                      className="bg-white p-4 rounded-xl my-1.5 border-l-4 border-l-forestGreen80"
-                      onPress={() => navigateTo(item)}
+                      key={screen.route}
+                      className="bg-[#E0F7FF] px-3 py-2 rounded-lg border border-[#4FB8FE] mb-1"
+                      onPress={() => navigateTo(screen)}
                     >
-                      <Text className="font-feather text-base text-textPrimary">{item.name}</Text>
-                      <Text className="font-din text-sm text-[#7C927E] mt-1">{item.route}</Text>
+                      <Text className="font-din text-sm text-textPrimary">{screen.name.replace('Onboarding ', '')}</Text>
                     </TouchableOpacity>
-                  )}
-                  scrollEnabled={false}
-                />
+                  ))}
+                </View>
               </View>
             </ScrollView>
           </View>

@@ -233,6 +233,9 @@ const PulsingCircle: React.FC = () => {
   );
 };
 
+// Define a rough constant height for each node item (including margins)
+const ITEM_HEIGHT = 180; // adjust if needed
+
 export default function MapScreen() {
   const router = useRouter();
   const [currentSectionTitle, setCurrentSectionTitle] = useState(sections[0]?.title || 'Map');
@@ -464,7 +467,7 @@ export default function MapScreen() {
                 style={{
                   width: section.riveName === 'successLamb' ? '200%' : '100%',
                   height: section.riveName === 'successLamb' ? '200%' : '100%',
-                  opacity: section.pathId === 'genesis-beginnings' ? 1 : 0.5,
+                  opacity: section.pathId === 'genesis-beginnings' ? 1 : 1,
                 }}
               />
             </View>
@@ -481,7 +484,7 @@ export default function MapScreen() {
               source={section.image}
               style={{ width: 128, height: 128 }}
               resizeMode="contain"
-              className="opacity-50"
+              className="opacity-100"
             />
           </View>
         )}
@@ -535,7 +538,17 @@ export default function MapScreen() {
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         scrollEventThrottle={16}
-        stickySectionHeadersEnabled={false} 
+        stickySectionHeadersEnabled={false}
+        // Performance optimizations
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={15}
+        removeClippedSubviews={true}
+        getItemLayout={(_data, index) => ({
+          length: ITEM_HEIGHT,
+          offset: ITEM_HEIGHT * index,
+          index,
+        })}
         className="-mt-16"
       />
       

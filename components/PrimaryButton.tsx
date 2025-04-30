@@ -51,9 +51,9 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
         className={
           `flex-row items-center justify-center px-5 h-full w-full rounded-[20px] border-[3px] ` +
           `${disabled || !isActive ? 'bg-[#E5E5E5] border-[#D0D0D0]' : `${bgColor} ${borderColor}`} ` +
-          `transform ${(!isPressed && isActive) ? buttonShadow : ''} ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
+          `transform ${(!isPressed && isActive && !disabled) ? buttonShadow : ''} ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
         }
-        style={({ pressed }) => [{ elevation: pressed ? 3 : isActive ? 6 : 0 }]}
+        style={({ pressed }) => [{ elevation: pressed ? 3 : (isActive && !disabled) ? 6 : 0 }]}
         onPress={onPress}
         disabled={disabled}
         onPressIn={() => setIsPressed(true)}

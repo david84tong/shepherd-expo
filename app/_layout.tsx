@@ -46,7 +46,7 @@ export default function RootLayout() {
       const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
       
       // If onboarding is not completed and we're not already in onboarding
-      if (onboardingCompleted !== 'true' && !segments.includes('onboarding')) {
+      if (onboardingCompleted !== 'true' && !(segments as string[]).includes('onboarding')) {
         console.log('Onboarding not completed, redirecting...');
         router.replace('/onboarding/1');
       }
@@ -121,11 +121,11 @@ export default function RootLayout() {
   }, [loaded, appReady]);
 
   // Effect for checking onboarding and streak status after app is ready
-  useEffect(() => {
+useEffect(() => {
     if (appReady && !isOnboardingChecked) {
       checkOnboarding().then(() => {
         // Only check streak if onboarding is completed
-        if (segments.includes('(tabs)')) {
+        if ((segments as string[]).includes('(tabs)')) {
           checkStreakStatus();
         }
       });

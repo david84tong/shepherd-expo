@@ -125,7 +125,7 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
           ${getShadowClass()}
         `}
         style={{ 
-          opacity: isDisabled ? 0.2 : 1,
+          opacity: isDisabled ? 1 : 1,
         }}
       >
         <Ionicons 
