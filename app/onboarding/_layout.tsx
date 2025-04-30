@@ -11,12 +11,16 @@ import {
   ONBOARDING_STORAGE_KEY,
 } from '../models/Onboarding'
 import ProgressBar from './components/ProgressBar'
+import { useAppInitialization } from '../hooks/initHook'
 
 export default function OnboardingLayout() {
   const pathname = usePathname()
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { currentScreen, setCurrentScreen } = useOnboardingStore()
+  
+  // Initialize app and create user on first open
+  const { isInitialized, isLoading } = useAppInitialization()
 
   // Update current screen based on pathname
   useEffect(() => {
@@ -25,6 +29,13 @@ export default function OnboardingLayout() {
       setCurrentScreen(screen)
     }
   }, [pathname, setCurrentScreen])
+
+  // Log initialization status for debugging
+  useEffect(() => {
+    if (isInitialized) {
+      console.log('🔍 App initialization complete, user data ready')
+    }
+  }, [isInitialized])
 
   const checkStorageAndDebug = async () => {
     try {
@@ -85,6 +96,12 @@ export default function OnboardingLayout() {
       },
       { text: 'OK' },
     ])
+  }
+
+  // If still initializing, could show a loading indicator here
+  if (isLoading) {
+    // We could return a loading screen, but for most cases
+    // this will be very brief, so we just render the layout
   }
 
   return (
