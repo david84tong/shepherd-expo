@@ -4,11 +4,11 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import PrimaryButton from '../../components/PrimaryButton';
-import Rive, { RiveRef } from 'rive-react-native';
+import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
-const WELCOME_TEXT = "Welcome to Shepherd";
+const WELCOME_TEXT = "Welcome to Shepherd3";
 const SECOND_STAGE_PROMPT = "Tap on the lost lamb to wake it up";
 const FIRST_STAGE_TYPING_SPEED = 100; // Slower for welcome text
 const SECOND_STAGE_TYPING_SPEED = 50; // Keep original speed for second stage
@@ -47,6 +47,8 @@ export default function OnboardingWelcomeScreen() {
   const textOpacityAnim = useRef(new Animated.Value(1)).current;
   const gradientOpacityAnim = useRef(new Animated.Value(0)).current;
   const screenFadeAnim = useRef(new Animated.Value(1)).current; // New animation for screen transition
+
+  // Reference to the Rive state machine
   const riveRef = useRef<RiveRef>(null);
 
   // Function to start the zoom and transition to second stage
@@ -157,20 +159,19 @@ export default function OnboardingWelcomeScreen() {
 
   // Handle tapping the lamb in the second stage
   const handleLambTap = () => {
+    console.log('handleLambTap2');
+    // Set the tap input to true to trigger the state machine
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {
-        // Silently fail if haptics don't work
-        console.log('Haptics not available');
-      });
-    console.log('handleLambTap');
+      console.log('Haptics not available');
+    });
+    
+    if (!secondStageActive || isLambTapped) return;
+    riveRef.current?.fireState('State Machine 1', 'tap');
     setIsAnimating(false);
-    if (!secondStageActive || isLambTapped) return; 
-    // Only tappable in stage 2 and only once
-    
-    
     setIsLambTapped(true);
-    riveRef.current?.play(); 
-    // Play the waking up animation
-    // Make button fully visible and active
+    
+    // Make button fully visible and active after tap
     Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
   };
 
@@ -274,8 +275,13 @@ export default function OnboardingWelcomeScreen() {
                 <Rive
                   ref={riveRef}
                   resourceName="homeLamb"
-                  artboardName="lamb-wakingup"
-                  autoplay={false}
+                  artboardName="lamb-wakingup-click"
+                  stateMachineName="State Machine 1"
+                  fit={Fit.Contain}
+                  alignment={Alignment.Center}
+                  onStateChanged={(stateMachineName: string) => {
+                    console.log('State changed:', stateMachineName);
+                  }}
                   style={{ width: '100%', height: '100%' }}
                 />
                 {/* Transparent overlay for tap detection */}

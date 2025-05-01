@@ -133,13 +133,7 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
           size={42} 
           color={getTextIconColor()} 
         />
-        <Text 
-          className="text-center text-small mt-1 font-feather"
-          style={{ color: getTextIconColor() }}
-          numberOfLines={2}
-        >
-          {unit.title}
-        </Text>
+       
         {/* Completed check icon */}
         {status === 'completed' && (
           <View className="absolute ml-4 mt-4 -bottom-1 -right-2 bg-lightGreen rounded-full p-1.5 border-4 border-darkGreen ">

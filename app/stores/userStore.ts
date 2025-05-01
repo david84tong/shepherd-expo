@@ -6,6 +6,16 @@ import auth from '@react-native-firebase/auth';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
 import { updateLambField, syncUserDocument, createUserDocument } from '../../utils/firestore';
 
+// Helper function to check if user is authenticated
+const isAuthenticated = () => {
+  const currentUser = auth().currentUser;
+  if (!currentUser) {
+    console.log('No authenticated user found, skipping Firestore operation');
+    return false;
+  }
+  return true;
+};
+
 // Create a custom storage object with logging
 const customStorage: StateStorage = {
   getItem: async (name: string) => {
@@ -127,8 +137,10 @@ export const useUserStore = create<UserStore>()(
             updatedAt: Timestamp.now()
           };
           
-          // Try to sync with Firestore
-          syncUserDocument(newState);
+          // Only sync with Firestore if authenticated
+          if (isAuthenticated()) {
+            syncUserDocument(newState);
+          }
           
           return newState;
         });
@@ -237,8 +249,10 @@ export const useUserStore = create<UserStore>()(
           
           console.log('New state after setting lamb name:', newState);
           
-          // Try to sync with Firestore
-          updateLambField('name', name);
+          // Only sync with Firestore if authenticated
+          if (isAuthenticated()) {
+            updateLambField('name', name);
+          }
           
           return newState;
         });
@@ -255,6 +269,9 @@ export const useUserStore = create<UserStore>()(
 
       // Sync with Firestore
       syncWithFirestore: async () => {
+        if (!isAuthenticated()) {
+          return false;
+        }
         const state = get();
         return await syncUserDocument(state);
       },

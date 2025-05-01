@@ -1,11 +1,12 @@
 import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
-import { HalfModalType } from '../app/halfModal'; // Adjust path as needed
+import { HalfModalType } from '../app/halfModal';
 import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
 import { useUserStore } from '../app/stores/userStore';
 
 // Debug screen destinations
@@ -36,8 +37,9 @@ interface DebugButtonProps {}
 
 // DebugButton component 
 export function DebugButton({ }: DebugButtonProps) { // Export the component
-  const [modalVisible, setModalVisible] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
+  const [modalVisible, setModalVisible] = useState(false);
   
   // Reference to the success bottom sheet modal
   const successSheetRef = useRef<BottomSheetModal>(null);
@@ -83,26 +85,24 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
     );
   }, []);
 
-  // Handler for the heart penalty modal test button
-  const handleTestPenaltyModal = useCallback(() => {
-    console.log("[DebugButton] handleTestPenaltyModal called");
-    setModalVisible(false); // Close debug menu first
-
-    // Prepare params for heart penalty
+  // Handler for showing a test modal
+  const handleShowPenaltyModal = useCallback(() => {
+    // Show a penalty modal for testing
     const params = {
       type: HalfModalType.HEART_PENALTY,
-      message: "Debug: Hearts Lost!",
-      subMessage: "You lost 5 hearts for 2 days of inactivity.",
-      penalty: '5',  // Pass as string
-      daysMissed: '2', // Pass as string
+      message: "Test Penalty Modal",
+      subMessage: "This is a test penalty modal",
+      penalty: 5,
+      daysMissed: 3,
     };
-
-    // Delay slightly before navigating
-    setTimeout(() => {
-      console.log("Navigating to /halfModal with penalty params:", params);
-      router.push({ pathname: '/halfModal', params });
-    }, 50);
-  }, [router]);
+    
+    // Use global showHalfModal instead of router.push
+    if (typeof global !== 'undefined' && (global as any).showHalfModal) {
+      (global as any).showHalfModal(params);
+    } else {
+      console.error('showHalfModal not available on global object');
+    }
+  }, []);
 
   // Handler to set all activity dates to N days ago
   const setAllActivityDates = useCallback((daysAgo: number) => {
@@ -181,6 +181,50 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
     Alert.alert('Sync Dates', 'Activity dates synced with their respective penalty dates.');
   }, []);
 
+  // Add signOut handler
+  const handleSignOut = useCallback(async () => {
+    try {
+      await auth().signOut();
+      // Reset user store after sign out
+      useUserStore.getState().resetUserStore();
+      console.log('✅ User signed out successfully');
+      Alert.alert('Success', 'Signed out successfully');
+      setModalVisible(false);
+    } catch (error) {
+      console.error('❌ Error signing out:', error);
+      Alert.alert('Error', 'Failed to sign out');
+    }
+  }, []);
+
+  // Available routes grouped by type
+  const ROUTE_GROUPS = {
+    'Tab Routes': [
+      { name: 'Tabs Home', route: '/(tabs)' },
+      { name: 'Home Tab', route: '/(tabs)/home' },
+      { name: 'Map Tab', route: '/(tabs)/map' },
+      { name: 'Bible Tab', route: '/(tabs)/bible' },
+      { name: 'Stats Tab', route: '/(tabs)/stats' },
+      { name: 'Profile Tab', route: '/(tabs)/profile' },
+    ],
+    'Modal Routes': [
+      { name: 'Half Modal', route: '/halfModal' },
+      { name: 'Streak', route: '/streak' },
+    ],
+    'Feature Routes': [
+      { name: 'Settings', route: '/settings' },
+      { name: 'Prayer', route: '/prayer' },
+      { name: 'Reflection', route: '/reflection' },
+    ]
+  };
+
+  // Handler for showing sitemap
+  const handleShowSitemap = useCallback(() => {
+    setModalVisible(false);
+    setTimeout(() => {
+      router.push('/sitemap' as any);
+    }, 300);
+  }, [router]);
+
   const navigateTo = (item: DebugScreen) => {
     setModalVisible(false);
     router.push(item.route as any);
@@ -231,10 +275,19 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
                 {/* Heart Penalty Modal Button */}
                 <TouchableOpacity
                   className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
-                  onPress={handleTestPenaltyModal} 
+                  onPress={handleShowPenaltyModal} 
                 >
                   <Text className="font-feather text-base text-textPrimary">Test Heart Penalty Modal</Text>
                   <Text className="font-din text-sm text-[#A57070] mt-1">Show penalty via /halfModal</Text>
+                </TouchableOpacity>
+
+                {/* Sitemap Button */}
+                <TouchableOpacity
+                  className="bg-[#E0F7E6] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FD675]"
+                  onPress={handleShowSitemap}
+                >
+                  <Text className="font-feather text-base text-textPrimary">Show Current Route</Text>
+                  <Text className="font-din text-sm text-[#5B8A6A] mt-1">Display current app route</Text>
                 </TouchableOpacity>
               </View>
               
@@ -312,6 +365,15 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">Data Management</Text>
                 
+                {/* Sign Out Button */}
+                <TouchableOpacity
+                  className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
+                  onPress={handleSignOut}
+                >
+                  <Text className="font-feather text-base text-textPrimary">Sign Out</Text>
+                  <Text className="font-din text-sm text-[#A57070] mt-1">Sign out current user and reset store</Text>
+                </TouchableOpacity>
+
                 {/* Reset Local Storage Button */}
                 <TouchableOpacity
                   className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
@@ -336,6 +398,36 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
                     </TouchableOpacity>
                   ))}
                 </View>
+              </View>
+
+              {/* Sitemap Section */}
+              <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">App Routes</Text>
+                
+                {Object.entries(ROUTE_GROUPS).map(([groupName, routes]) => (
+                  <View key={groupName} className="mb-4">
+                    <Text className="font-feather text-base text-textPrimary mb-2">{groupName}</Text>
+                    <View className="flex-row flex-wrap gap-2">
+                      {routes.map((route) => (
+                        <TouchableOpacity
+                          key={route.route}
+                          className="bg-[#E0F7E6] px-3 py-2 rounded-lg border border-[#4FD675] mb-1"
+                          onPress={() => {
+                            setModalVisible(false);
+                            setTimeout(() => {
+                              router.push(route.route as any);
+                            }, 300);
+                          }}
+                        >
+                          <Text className="font-din text-sm text-textPrimary">
+                            {route.name}
+                            {pathname === route.route ? ' (current)' : ''}
+                          </Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+                ))}
               </View>
             </ScrollView>
           </View>

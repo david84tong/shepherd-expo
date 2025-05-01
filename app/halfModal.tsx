@@ -1,9 +1,18 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, Image } from 'react-native';
+/**
+ * DEPRECATED: This component has been replaced by an inline BottomSheet implementation in _layout.tsx.
+ * We're keeping this file for the HalfModalType enum which is still used throughout the codebase.
+ * New code should use the global.showHalfModal function exposed from _layout.tsx instead of router.push.
+ */
+
+import React, { useEffect, useRef, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useUIStore } from './stores/uiStore';
 import { useUserStore } from './stores/userStore';
 import PrimaryButton from '../components/PrimaryButton';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import * as Haptics from 'expo-haptics';
+import Animated, { useSharedValue, withTiming } from 'react-native-reanimated';
 
 // Define the types of modals this screen can display
 export enum HalfModalType {
@@ -19,6 +28,14 @@ export default function HalfModalScreen() {
   const setIsModalDimActive = useUIStore((state) => state.setIsModalDimActive);
   const getLambName = useUserStore(state => state.getLambName);
   const lambName = getLambName();
+  
+  // Bottom sheet reference and configuration
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ['60%'], []);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  
+  // Animation value for the background
+  const backdropOpacity = useSharedValue(0);
 
   // Helper function to safely get string param
   const getStringParam = (paramName: string): string | undefined => {
@@ -49,61 +66,132 @@ export default function HalfModalScreen() {
     icon = require('../assets/icons/heartIcon.png');
   }
 
-  // Effect for managing dim state
+  // Function to dismiss the modal
+  const handleDismiss = () => {
+    bottomSheetRef.current?.close();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  // Handle bottom sheet changes
+  const handleSheetChange = (index: number) => {
+    if (index >= 0) {
+      setSheetOpen(true);
+      backdropOpacity.value = withTiming(1, { duration: 200 });
+    } else {
+      setSheetOpen(false);
+      backdropOpacity.value = withTiming(0, { duration: 200 });
+      
+      // Only call router.back() when the sheet is fully closed
+      if (index === -1) {
+        setTimeout(() => {
+          router.back();
+        }, 100);
+      }
+    }
+  };
+
+  // Effect for managing dim state and presenting sheet
   useEffect(() => {
-    console.log(`[HalfModal] Mounting (Type: ${type}), scheduling dim activation...`);
+    console.log(`[HalfModal] Mounting (Type: ${type}), activating dim...`);
+    setIsModalDimActive(true);
+    
+    // Open the bottom sheet after a slight delay
     const timer = setTimeout(() => {
-      console.log("[HalfModal] Timer fired, setting dim active");
-      setIsModalDimActive(true);
-    }, 500);
+      bottomSheetRef.current?.expand();
+    }, 100);
 
     return () => {
-      console.log("[HalfModal] Unmounting, clearing timer and setting dim inactive");
+      console.log("[HalfModal] Unmounting, setting dim inactive");
       clearTimeout(timer);
       setIsModalDimActive(false);
     };
-  }, [setIsModalDimActive]); // Keep dimming logic independent of type changes
+  }, [setIsModalDimActive, type]);
 
   return (
-    // Container MUST be transparent to see the overlay behind it
-    <View className="flex-1 justify-end bg-transparent">
-      {/* Pressable overlay for background taps */}
-      <Pressable 
-        style={StyleSheet.absoluteFill} // Keep StyleSheet for absoluteFill
-        onPress={() => router.back()} 
-      />
-      {/* Modal content sheet with NativeWind styles */}
-      <View className="bg-surfaceCream p-5 pb-8 rounded-t-[20px] items-center w-full shadow-lg z-10">
-        {/* Optional Handle Bar */}
-        <View className="w-10 h-1 bg-gray-300 rounded-full self-center mb-4" />
-
-        {/* Icon */}
-        <Image source={icon} className="w-72 h-72 mb-3" resizeMode="contain" />
-        
-        {/* Title */}
-        <Text className="font-feather text-textPrimary text-4xl mb-2 text-center">{title}</Text>
-
-        {/* Description */}
-        {/* <Text className="font-din text-secondaryText text-base mb-5 text-center px-4">{description}</Text> */}
-        
-        {/* Type-specific content (e.g., penalty info) */}
-        {type === HalfModalType.HEART_PENALTY && penalty > 0 && (
-          <View className="">
-            <Text className="font-din text-secondaryText text-base mb-5 text-center text-xl px-4">
-              ❤️ {lambName} lost {penalty} hearts after {daysMissed} days away. 
-            </Text>
-          </View>
-        )}
-        
-        {/* Close Button using PrimaryButton */}
-        <PrimaryButton
-          title="Let's bounce back"
-          onPress={() => router.back()} // Use router.back to dismiss
-          style="w-full mt-2" // Use w-full for width, mt-2 for spacing
-          // Ensure PrimaryButton doesn't enforce a fixed height if 'h-auto' isn't working, check its internal styles
-          buttonType="default" // Or adjust based on modal type if needed
-        />
-      </View>
+    // Container with transparent background to see the overlay
+    <View style={styles.container}>
+      <BottomSheet
+        ref={bottomSheetRef}
+        index={-1}
+        snapPoints={snapPoints}
+        enablePanDownToClose={true}
+        onClose={() => handleSheetChange(-1)}
+        onChange={handleSheetChange}
+        backgroundStyle={styles.sheetBackground}
+        handleIndicatorStyle={styles.handleIndicator}
+      >
+        <BottomSheetView style={styles.contentContainer}>
+          {/* Icon */}
+          <Image source={icon} style={styles.icon} resizeMode="contain" />
+          
+          {/* Title */}
+          <Text style={styles.title}>{title}</Text>
+          
+          {/* Type-specific content (e.g., penalty info) */}
+          {type === HalfModalType.HEART_PENALTY && penalty > 0 && (
+            <View>
+              <Text style={styles.penaltyText}>
+                ❤️ {lambName} lost {penalty} hearts after {daysMissed} days away. 
+              </Text>
+            </View>
+          )}
+          
+          {/* Close Button using PrimaryButton */}
+          <PrimaryButton
+            title="Let's bounce back"
+            onPress={handleDismiss}
+            style="w-full mt-6"
+            buttonType="default"
+          />
+        </BottomSheetView>
+      </BottomSheet>
     </View>
   );
-} 
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'transparent',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  sheetBackground: {
+    backgroundColor: '#FFF4D9', // surfaceCream 
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  handleIndicator: {
+    backgroundColor: '#DCB280',
+    width: 40,
+    height: 4,
+  },
+  contentContainer: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 20,
+    paddingBottom: 30,
+  },
+  icon: {
+    width: 240,
+    height: 240,
+    marginBottom: 16,
+  },
+  title: {
+    fontFamily: 'Nunito-Black',
+    fontSize: 32,
+    color: '#3C584A', // textPrimary
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  penaltyText: {
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 18,
+    color: '#666', // secondaryText
+    marginBottom: 20,
+    textAlign: 'center',
+    paddingHorizontal: 16,
+  },
+}); 
