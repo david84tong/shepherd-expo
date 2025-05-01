@@ -2,33 +2,65 @@ import { Alert, View, Text } from 'react-native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Stack, usePathname, useRouter } from 'expo-router'
 import { useSafeAreaInsets } from 'react-native-safe-area-context'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated'
 
 import { debugOnboardingStorage, useOnboardingStore } from '../stores/onboardingStore'
 import {
   ONBOARDING_COMPLETED_KEY,
-  ONBOARDING_PAGES,
   ONBOARDING_STORAGE_KEY,
 } from '../models/Onboarding'
 import ProgressBar from './components/ProgressBar'
 import { useAppInitialization } from '../hooks/initHook'
+
+// Define the actual screens we have implemented
+const IMPLEMENTED_SCREENS = [
+  '1',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  'auth',
+  'lambFound',
+  'pathAffinity'
+];
 
 export default function OnboardingLayout() {
   const pathname = usePathname()
   const router = useRouter()
   const insets = useSafeAreaInsets()
   const { currentScreen, setCurrentScreen } = useOnboardingStore()
+  const [previousScreen, setPreviousScreen] = useState('')
+  const progressOpacity = useSharedValue(1)
   
   // Initialize app and create user on first open
   const { isInitialized, isLoading } = useAppInitialization()
 
-  // Update current screen based on pathname
+  // Update current screen based on pathname with smoother transitions
   useEffect(() => {
     if (pathname) {
       const screen = pathname.split('/').pop() || '1'
+      
+      // Save previous screen for transition handling
+      if (currentScreen && currentScreen !== screen) {
+        setPreviousScreen(currentScreen)
+      }
+      
+      // Animate progress bar opacity during transition
+      if (screen !== '1' && currentScreen !== screen) {
+        // Briefly fade out progress bar during transition
+        progressOpacity.value = withTiming(0.4, { duration: 150 }, () => {
+          // Then fade it back in with the new value
+          progressOpacity.value = withTiming(1, { duration: 250 })
+        })
+      }
+      
       setCurrentScreen(screen)
     }
-  }, [pathname, setCurrentScreen])
+  }, [pathname, setCurrentScreen, progressOpacity])
 
   // Log initialization status for debugging
   useEffect(() => {
@@ -48,20 +80,7 @@ export default function OnboardingLayout() {
       return null
     }
   }
- 
-   // sign up (skip with a button)
-  // [x] lamb hatch 
-  // [x] lamb name
-     //[x] age range
-    // what should we call you
-    // [x] how many minutes per day can u read
-  // explainer screen
-  // gems + hearts
-  // notification
-  // rating
-    // generating ur custom plan screen. 
-  // pricing
-  // if pro => join the community
+
   const handleDebug = () => {
     Alert.alert('Debug Info', '', [
       {
@@ -86,9 +105,9 @@ export default function OnboardingLayout() {
             await clearResponses()
             await AsyncStorage.setItem(
               ONBOARDING_STORAGE_KEY,
-              JSON.stringify({ currentScreen: 'welcome' })
+              JSON.stringify({ currentScreen: '1' })
             )
-            router.push('/onboarding/welcome' as any)
+            router.push('/onboarding/1' as any)
           } catch (error) {
             console.error('❌ Error resetting onboarding data:', error)
           }
@@ -104,27 +123,35 @@ export default function OnboardingLayout() {
     // this will be very brief, so we just render the layout
   }
 
+  // Animated style for progress bar
+  const progressStyle = useAnimatedStyle(() => ({
+    opacity: progressOpacity.value,
+  }))
+
   return (
-    <View style={{ flex: 1, paddingLeft: insets.left, paddingRight: insets.right }}>
+    <View style={{ flex: 1, paddingLeft: insets.left, paddingRight: insets.right, backgroundColor: '#FFF4D9' }}>
       <Stack
         screenOptions={{
           headerShown: false,
           animation: 'fade',
+          animationDuration: 200,
           contentStyle: {
-            backgroundColor: 'transparent',
+            backgroundColor: '#FFF4D9',
           },
+          animationTypeForReplace: 'push',
+          gestureEnabled: false,
         }}
       >
-        {ONBOARDING_PAGES.map((page: string) => (
+        {IMPLEMENTED_SCREENS.map((screen) => (
           <Stack.Screen
-            key={page}
-            name={page}
+            key={screen}
+            name={screen}
             options={{
               contentStyle: {
-                backgroundColor: 'transparent',
-                marginTop: currentScreen === '1' ? 0 : 12
+                backgroundColor: '#FFF4D9',
+                marginTop: screen === '1' ? 0 : 48
               },
-              ...(page === '1' && {
+              ...(screen === '1' && {
                 gestureEnabled: false,
                 headerBackVisible: false,
               }),
@@ -133,19 +160,28 @@ export default function OnboardingLayout() {
         ))}
       </Stack>
 
-      {/* Conditional Progress Bar */}
+      {/* Animated Progress Bar */}
       {pathname &&
         !pathname.startsWith('/onboarding/1') &&
         !pathname.includes('/onboarding/auth') && (
-          <View 
-            className="absolute top-0 left-0 right-0 bg-surfaceCream" 
-            style={{ paddingTop: insets.top }}
+          <Animated.View 
+            style={[
+              {
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                backgroundColor: '#FFF4D9',
+                paddingTop: insets.top,
+                zIndex: 100,
+              },
+              progressStyle
+            ]}
           >
             <ProgressBar />
             <View className="h-0" />
-          </View>
-        )
-      }
+          </Animated.View>
+        )}
 
       {/* Debug button (keep commented out) */}
       {/* <Text
@@ -155,5 +191,5 @@ export default function OnboardingLayout() {
         Debug
       </Text> */}
     </View>
-  )
+  );
 }

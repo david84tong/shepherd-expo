@@ -1,136 +1,143 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, Image } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useOnboardingStore } from '../stores/onboardingStore';
+import { useUserStore } from '../stores/userStore';
 import PrimaryButton from '../../components/PrimaryButton';
+import { OnboardingResponses } from '../models/Onboarding';
+import Animated, { 
+  useAnimatedStyle, 
+  withTiming, 
+  withSpring,
+  useSharedValue,
+  withDelay,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
-export default function NotificationPermissionScreen() {
+export default function OnboardingAgeRangeScreen() {
   const router = useRouter();
-  const [showingAlert, setShowingAlert] = useState(false);
+  const { setResponse } = useOnboardingStore();
+  const { setUser } = useUserStore();
+  const [selectedOption, setSelectedOption] = useState<OnboardingResponses['ageRange']>(undefined);
 
-  // Function to handle moving to next screen
-  const moveToNextScreen = () => {
-    router.push('/onboarding/8');
-  };
+  // Create Reanimated shared values for each component
+  const titleOpacity = useSharedValue(0);
+  const titleTranslateY = useSharedValue(40);
+  
+  const optionsOpacity = useSharedValue(0);
+  const optionsTranslateY = useSharedValue(40);
 
-  // Function to handle the don't allow button
-  const handleDontAllow = () => {
-    Alert.alert(
-      "Notifications Declined",
-      "You can always enable notifications later in your device settings.",
-      [{ text: "Continue", onPress: moveToNextScreen }]
-    );
-  };
-
-  // Function to handle the allow button - simulates permission request
-  const handleAllow = () => {
-    if (showingAlert) return;
+  useEffect(() => {
+    // Reset animation values
+    titleOpacity.value = 0;
+    titleTranslateY.value = 40;
+    optionsOpacity.value = 0;
+    optionsTranslateY.value = 40;
     
-    setShowingAlert(true);
-    // Simulate iOS permission request with our own alert
-    Alert.alert(
-      "\"Shepherd\" Would Like to Send You Notifications",
-      "Notifications may include alerts, sounds, and icon badges. These can be configured in Settings.",
-      [
-        { 
-          text: "Don't Allow", 
-          onPress: () => {
-            setShowingAlert(false);
-            Alert.alert(
-              "Notification Access Denied",
-              "You can enable notifications later in your device settings if you change your mind.",
-              [{ text: "Continue", onPress: moveToNextScreen }]
-            );
-          },
-          style: 'cancel'
-        },
-        { 
-          text: "Allow", 
-          onPress: () => {
-            setShowingAlert(false);
-            Alert.alert(
-              "Notification Access Granted",
-              "You'll now receive helpful reminders to keep up with your practice.",
-              [{ text: "Continue", onPress: moveToNextScreen }]
-            );
-          } 
-        }
-      ]
-    );
+    // Staggered animations for each component
+    const animateComponent = (opacity: any, translateY: any, delay: number) => {
+      opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
+      translateY.value = withDelay(delay, 
+        withSpring(0, { 
+          damping: 20,
+          stiffness: 90,
+        })
+      );
+    };
+
+    // Start animations with delays
+    animateComponent(titleOpacity, titleTranslateY, 0);
+    animateComponent(optionsOpacity, optionsTranslateY, 200);
+  }, []);
+
+  // Create animated styles for each component
+  const titleStyle = useAnimatedStyle(() => ({
+    opacity: titleOpacity.value,
+    transform: [{ translateY: titleTranslateY.value }]
+  }));
+
+  const optionsStyle = useAnimatedStyle(() => ({
+    opacity: optionsOpacity.value,
+    transform: [{ translateY: optionsTranslateY.value }]
+  }));
+
+  const handleSelection = async (ageRange: OnboardingResponses['ageRange']) => {
+    // Trigger light haptic feedback
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
+        console.log('Haptics not available');
+      });
+    } catch (error) {
+      console.log('Haptics not available');
+    }
+    
+    setSelectedOption(ageRange);
+    await setResponse('ageRange', ageRange);
+    
+    // Save to user store
+    setUser({ ageRange });
+    
+    // Navigate to next screen
+    router.push('/onboarding/8' as any);
   };
 
-  // Function to handle the remind me button
-  const handleRemindMe = () => {
-    moveToNextScreen();
-  };
+  const options = [
+    {
+      id: 'under-18',
+      title: 'Under 18',
+    },
+    {
+      id: '18-24',
+      title: '18-24',
+    },
+    {
+      id: '25-34',
+      title: '25-34',
+    },
+    {
+      id: '35-44',
+      title: '35-44',
+    },
+    {
+      id: '45-54',
+      title: '45-54',
+    },
+    {
+      id: '55-64',
+      title: '55-64',
+    },
+    {
+      id: '65-plus',
+      title: '65+',
+    },
+    {
+      id: 'prefer-not-to-say',
+      title: 'Prefer not to say',
+    },
+  ] as const;
 
   return (
-    <View className="flex-1 bg-surfaceCream items-center px-5">
-      <View>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-12 mt-32 mx-12">
-            Get Support from Shepherd
+    <View className="flex-1 bg-surfaceCream px-6 pt-12">
+      {/* Question Text */}
+      <Animated.View style={titleStyle}>
+        <Text className="font-feather text-h1 text-center text-textPrimary mb-4">
+          What is your age range?
         </Text>
-      </View>
+      </Animated.View>
 
-      {/* iOS-style Notification Example */}
-      <View className="bg-white rounded-xl w-[400px] shadow-sm mb-6 flex-row p-3 items-center">
-        <Image 
-          source={require('../../assets/icon.png')} 
-          className="w-12 h-12  mr-3 rounded-[8px]"
-        />
-        <View className="flex-1">
-          <View className="flex-row justify-between">
-            <Text className="font-bold text-black">From Shepherd</Text>
-            <Text className="text-gray-400 text-xs">now</Text>
-          </View>
-          <Text className="text-black text-sm">Reminder that God is with you.</Text>
-        </View>
-      </View>
-
-      {/* Notification Dialog - positioned to match iOS style */}
-      <View className="absolute top-[42%] left-0 right-0 flex items-center justify-center z-10 opacity-90">
-        <View className="bg-white rounded-[14px] w-[280px] overflow-hidden shadow-lg">
-          <View className="p-4">
-            <Text className="text-black text-[17px] font-feather text-center mb-2 mt-2">
-              "Shepherd" Would Like to Send You Notifications
-            </Text>
-            <Text className="text-[#666666] text-[15px] font-din text-center px-6 mb-2">
-              Notifications may include alerts, sounds, and icon badges. These can be configured in Settings.
-            </Text>
-          </View>
-
-          <View className="flex-row border-t border-gray-200">
-            <TouchableOpacity 
-              className="flex-1 py-[12px] border-r border-gray-200"
-              onPress={handleDontAllow}
-            >
-              <Text className="text-[#007AFF] text-[17px] text-center font-din">Don't Allow</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity 
-              className="flex-1 py-[12px]"
-              onPress={handleAllow}
-            >
-              <Text className="text-accentGold text-[17px] text-center font-bold">Allow</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* Yellow arrow pointing up */}
-        <View className="mt-4 ml-36">
-          <Text className="text-accentGold text-[42px]">↑</Text>
-        </View>
-      </View>
-
-      {/* Bottom button */}
-      <View className="absolute bottom-10 w-full px-5">
-        <PrimaryButton
-          title="REMIND ME TO PRACTICE"
-          onPress={handleRemindMe}
-          primaryColor="bg-accentGold"
-          textColor="text-white"
-          style="mt-0"
-        />
-      </View>
+      {/* Options Container */}
+      <Animated.View style={optionsStyle} className="space-y-4 mt-0">
+        {options.map((option) => (
+          <PrimaryButton
+            key={option.id}
+            title={option.title}
+            onPress={() => handleSelection(option.id as OnboardingResponses['ageRange'])}
+            isActive={true}
+            primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
+            textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
+          />
+        ))}
+      </Animated.View>
     </View>
   );
 }

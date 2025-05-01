@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TouchableOpacity, Text, View, Pressable } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
 interface PrimaryButtonProps {
   title: string;
@@ -45,6 +46,27 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   
   const txtColor = disabled || !isActive ? 'text-gray-400' : textColor.startsWith('text-') ? textColor : `text-${textColor}`;
 
+  // Function to trigger haptic feedback
+  const triggerHaptic = () => {
+    if (!disabled && isActive) {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {
+          // Silently fail if haptics don't work
+          console.log('Haptics not available');
+        });
+      } catch (error) {
+        // Safely ignore haptic errors
+        console.log('Haptics not available');
+      }
+    }
+  };
+
+  // Handle press with haptic feedback
+  const handlePress = () => {
+    triggerHaptic();
+    onPress();
+  };
+
   return (
     <View className={`mt-4 h-[70px] w-full ${style || ''}`}>
       <Pressable
@@ -54,7 +76,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
           `transform ${(!isPressed && isActive && !disabled) ? buttonShadow : ''} ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
         }
         style={({ pressed }) => [{ elevation: pressed ? 3 : (isActive && !disabled) ? 6 : 0 }]}
-        onPress={onPress}
+        onPress={handlePress}
         disabled={disabled}
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}

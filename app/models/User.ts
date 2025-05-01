@@ -2,10 +2,14 @@ import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
 export interface UserDoc {
     //onboarding questions
+    id: string;
+    uid?: string; // Firebase auth user ID
+    email?: string; // User email from authentication
     spiritualGoal: 'Walk' | 'Overcome' | 'Understand' | 'Explore';
     experienceLevel: 'new' | 'growing' | 'mature';
     frequencyGoal: 'daily' | 'weekly';
     denomination?: string;
+    ageRange: string;
     displayName: string;
     selectedPathId: string;
     lamb: Lamb;
@@ -27,6 +31,95 @@ export interface UserDoc {
     completedReflections: [Reflection];
     completedPrayers: [Prayer];
     completedReadings: [Reading];
+}
+
+export interface UserStore extends UserDoc {
+    // Get complete user object
+    getUser: () => UserDoc;
+    
+    // Set complete user object
+    setUser: (user: Partial<UserDoc>) => void;
+    
+    // Create new user
+    createUser: (id: string, userData: Partial<UserDoc>) => Promise<boolean>;
+    
+    // Getters for UserDoc fields
+    getSpiritualGoal: () => UserDoc['spiritualGoal'];
+    getExperienceLevel: () => UserDoc['experienceLevel'];
+    getFrequencyGoal: () => UserDoc['frequencyGoal'];
+    getDenomination: () => UserDoc['denomination'];
+    getDisplayName: () => string;
+    getSelectedPathId: () => string;
+    getLamb: () => Lamb;
+    getStreakCount: () => number;
+    getLastActivityDate: () => UserDoc['lastActivityDate'];
+    getVersesReadTotal: () => number; 
+    getChaptersReadTotal: () => number;
+    getBibleVersion: () => string;
+    getProStatus: () => UserDoc['proStatus'];
+    getCreatedAt: () => UserDoc['createdAt'];
+    getUpdatedAt: () => UserDoc['updatedAt'];
+    getGens: () => number;
+    getLastReadingDate: () => UserDoc['lastReadingDate'];
+    getLastPrayerDate: () => UserDoc['lastPrayerDate'];
+    getLastReflectionDate: () => UserDoc['lastReflectionDate'];
+    getLastReadingPenaltyDate: () => UserDoc['lastReadingPenaltyDate'];
+    getLastPrayerPenaltyDate: () => UserDoc['lastPrayerPenaltyDate'];
+    getLastReflectionPenaltyDate: () => UserDoc['lastReflectionPenaltyDate'];
+    getCompletedReflections: () => [Reflection];
+    getCompletedPrayers: () => [Prayer];
+    getCompletedReadings: () => [Reading];
+    
+    // Getters for Lamb fields
+    getLambLevel: () => number;
+    getLambXp: () => number;
+    getLambMood: () => string;
+    getLambHearts: () => number;
+    getLambName: () => string;
+    getLambSkin: () => string;
+    
+    // Setters for UserDoc fields
+    setSpiritualGoal: (goal: UserDoc['spiritualGoal']) => void;
+    setExperienceLevel: (level: UserDoc['experienceLevel']) => void;
+    setFrequencyGoal: (goal: UserDoc['frequencyGoal']) => void;
+    setDenomination: (denomination?: string) => void;
+    setDisplayName: (name: string) => void;
+    setSelectedPathId: (pathId: string) => void;
+    setLamb: (lamb: Lamb) => void;
+    setStreakCount: (count: number) => void;
+    setLastActivityDate: (date: UserDoc['lastActivityDate']) => void;
+    setLastReadingDate: (date: UserDoc['lastReadingDate']) => void;
+    setLastPrayerDate: (date: UserDoc['lastPrayerDate']) => void;
+    setLastReflectionDate: (date: UserDoc['lastReflectionDate']) => void;
+    setLastReadingPenaltyDate: (date: UserDoc['lastReadingPenaltyDate']) => void;
+    setLastPrayerPenaltyDate: (date: UserDoc['lastPrayerPenaltyDate']) => void;
+    setLastReflectionPenaltyDate: (date: UserDoc['lastReflectionPenaltyDate']) => void;
+    setVersesReadTotal: (count: number) => void;
+    setChaptersReadTotal: (count: number) => void;
+    setBibleVersion: (version: string) => void;
+    setProStatus: (status: UserDoc['proStatus']) => void;
+    setCreatedAt: (timestamp: UserDoc['createdAt']) => void;
+    setUpdatedAt: (timestamp: UserDoc['updatedAt']) => void;
+    setGens: (gens: number) => void;
+    setCompletedReflections: (reflections: [Reflection]) => void;
+    setCompletedPrayers: (prayers: [Prayer]) => void;
+    setCompletedReadings: (readings: [Reading]) => void;
+    addCompletedReflection: (reflection: Reflection) => void;
+    addCompletedPrayer: (prayer: Prayer) => void;
+    addCompletedReading: (reading: Reading) => void;
+    
+    // Setters for Lamb fields
+    setLambLevel: (level: number) => void;
+    setLambXp: (xp: number) => void;
+    setLambMood: (mood: string) => void;
+    setLambHearts: (hearts: number) => void;
+    setLambName: (name: string) => void;
+    setLambSkin: (skin: string) => void;
+    
+    // Utility functions
+    incrementStreak: () => void;
+    addXp: (amount: number) => void;
+    resetUserStore: () => void;
 }
 
 export interface Reading {

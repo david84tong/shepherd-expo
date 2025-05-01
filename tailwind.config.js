@@ -80,20 +80,24 @@ module.exports = {
         */
       },
       fontFamily: {
-        // Keeping existing fonts, apply sizes via classes
-        'feather': ['Feather Bold'], // for headers
+        // Updated font mappings to match actual font files
+        'feather': ['Nunito-Black'], // for headers
         'din': ['DIN Next Rounded LT W01 Regular'], // for body
-        // Assuming Inter from previous steps might be used for Body/Caption
-
+        'feather-bold': ['Nunito-Black'], // Was Nunito-Black
+        'nunito-bold': ['Nunito-Bold'], // Added for backward compatibility
+        'nunito-black': ['Nunito-Black'], // Added for backward compatibility
+        'nunito-medium': ['Nunito-Medium'], // Added for backward compatibility
+        'nunito-regular': ['Nunito-Regular'], // Added for backward compatibility
       },
       fontSize: {
         // Mapping semantic styles to Tailwind sizes
         'title': '36px',
         'h1': '28px',       // H1
         'h2': '24px',       // H1
-        'heading': '18px', // Heading (~17pt)
+        'heading': '20px', // Heading (~17pt)
         'body': '16px',    // Body
-        'caption': '14px', // Caption
+        'caption': '16px', // Caption
+        'smallCaption': '14px', // Caption
       },
       boxShadow: {
         // Define the unified shadow - Note: NativeWind shadow support varies

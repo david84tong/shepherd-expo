@@ -3,6 +3,7 @@ import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboardingStore } from '../stores/onboardingStore';
+import { useUserStore } from '../stores/userStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import { OnboardingResponses } from '../models/Onboarding';
 import Animated, { 
@@ -12,10 +13,12 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 export default function OnboardingReadingTimeScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
+  const { setFrequencyGoal } = useUserStore();
   const [selectedOption, setSelectedOption] = useState<string | undefined>(undefined);
 
   // Create Reanimated shared values for each component
@@ -71,8 +74,31 @@ export default function OnboardingReadingTimeScreen() {
   }));
 
   const handleSelection = async (duration: string) => {
+    // Map duration to minutes
+    const durationMap = {
+      '1-5': 5,
+      '6-10': 10,
+      '11-15': 15,
+      '16-20': 20,
+      '20-30': 30,
+      '30-60': 60,
+      '60+': 90
+    } as const;
+    
+    // Set in user store
+    setFrequencyGoal(durationMap[duration as keyof typeof durationMap]);
+    
+    // Trigger light haptic feedback
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
+        console.log('Haptics not available');
+      });
+    } catch (error) {
+      console.log('Haptics not available');
+    }
+    
     setSelectedOption(duration);
-    await setResponse('readingDuration', duration);
+    await setResponse('streakCommitment', duration as any);
     router.push('/onboarding/6');
   };
 
@@ -113,7 +139,7 @@ export default function OnboardingReadingTimeScreen() {
  
       {/* Question Text */}
       <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-16">
+        <Text className="font-feather text-h1 text-center text-textPrimary mb-4">
           How many minutes per day can you read?
         </Text>
       </Animated.View>

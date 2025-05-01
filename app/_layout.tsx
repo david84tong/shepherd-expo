@@ -27,9 +27,13 @@ export const unstable_settings = {
 export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
-  const [loaded, error] = useFonts({
+  const [fontsLoaded, fontError] = useFonts({
     'Feather Bold': require('../assets/fonts/Feather Bold.ttf'),
     'DIN Next Rounded LT W01 Regular': require('../assets/fonts/DIN Next Rounded LT W01 Regular.ttf'),
+    'Nunito-Bold': require('../assets/fonts/Nunito-Bold.ttf'),
+    'Nunito-Black': require('../assets/fonts/Nunito-Black.ttf'),
+    'Nunito-Medium': require('../assets/fonts/Nunito-Medium.ttf'),
+    'Nunito-Regular': require('../assets/fonts/Nunito-Regular.ttf'),
   });
   
   // Add state for loading progress and onboarding check
@@ -79,8 +83,11 @@ export default function RootLayout() {
 
   // Expo Router uses Error Boundaries to catch errors in the navigation tree.
   useEffect(() => {
-    if (error) throw error;
-  }, [error]);
+    if (fontsLoaded || fontError) {
+      // Hide splash screen once fonts are loaded or if there's an error
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontError]);
 
   // Function to check streak status - Modified to navigate to halfModal
   const checkStreakStatus = useCallback(async () => {
@@ -115,10 +122,10 @@ export default function RootLayout() {
 
   // Effect for preloading resources
   useEffect(() => {
-    if (loaded && !appReady) {
+    if (fontsLoaded && !appReady) {
       preloadResources();
     }
-  }, [loaded, appReady]);
+  }, [fontsLoaded, appReady]);
 
   // Effect for checking onboarding and streak status after app is ready
 useEffect(() => {
@@ -132,8 +139,8 @@ useEffect(() => {
     }
   }, [appReady, isOnboardingChecked, checkOnboarding, checkStreakStatus, segments]);
   
-  if (!appReady) {
-    return <AppLoading progress={loadProgress} />;
+  if (!fontsLoaded && !fontError) {
+    return null;
   }
   
   console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
@@ -156,7 +163,9 @@ useEffect(() => {
               options={{
                 headerShown: false,
                 animation: 'fade',
+                animationDuration: 200,
                 gestureEnabled: false,
+                contentStyle: { backgroundColor: '#FFF4D9' }
               }}
             />
             <Stack.Screen 

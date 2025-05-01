@@ -3,6 +3,7 @@ import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboardingStore } from '../stores/onboardingStore';
+import { useUserStore } from '../stores/userStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import { OnboardingResponses } from '../models/Onboarding';
 import Animated, { 
@@ -12,10 +13,12 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 export default function OnboardingBibleFamiliarityScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
+  const { setExperienceLevel } = useUserStore();
   const [selectedOption, setSelectedOption] = useState<OnboardingResponses['bibleFamiliarity']>(undefined);
 
   // Create Reanimated shared values for each component
@@ -71,6 +74,26 @@ export default function OnboardingBibleFamiliarityScreen() {
   }));
 
   const handleSelection = async (familiarity: OnboardingResponses['bibleFamiliarity']) => {
+    // Map familiarity to experience level
+    const experienceMap = {
+      'never': 'Beginner',
+      'a-little': 'Beginner',
+      'on-off': 'Intermediate',
+      'consistently': 'Advanced'
+    } as const;
+    
+    // Set in user store
+    setExperienceLevel(experienceMap[familiarity]);
+    
+    // Trigger light haptic feedback
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
+        console.log('Haptics not available');
+      });
+    } catch (error) {
+      console.log('Haptics not available');
+    }
+    
     setSelectedOption(familiarity);
     await setResponse('bibleFamiliarity', familiarity);
     router.push('/onboarding/5');
@@ -105,7 +128,7 @@ export default function OnboardingBibleFamiliarityScreen() {
   
       {/* Question Text */}
       <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-16">
+        <Text className="font-feather text-h1 text-center text-textPrimary mb-4">
           How much of the Bible have you read before?
         </Text>
       </Animated.View>

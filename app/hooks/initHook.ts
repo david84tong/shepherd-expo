@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUserStore } from '../stores/userStore';
-import firestore from '@react-native-firebase/firestore';
+import { Timestamp } from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
 
 // Key to check if app has been initialized
 const APP_INITIALIZED_KEY = 'shepherd-app-initialized';
@@ -14,12 +15,22 @@ const generateUUID = () => {
   });
 };
 
+// Helper function to safely format timestamp
+const formatTimestamp = (timestamp: any) => {
+  if (!timestamp) return 'Not set';
+  if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+    return timestamp.toDate().toLocaleString();
+  }
+  return 'Invalid timestamp';
+};
+
 export const useAppInitialization = () => {
   const [isInitialized, setIsInitialized] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Get user store actions
+  // Get user store actions and getters
   const resetUserStore = useUserStore(state => state.resetUserStore);
+  const getUser = useUserStore(state => state.getUser);
   const setDisplayName = useUserStore(state => state.setDisplayName);
   const setCreatedAt = useUserStore(state => state.setCreatedAt);
   const setUpdatedAt = useUserStore(state => state.setUpdatedAt);
@@ -42,14 +53,11 @@ export const useAppInitialization = () => {
         if (!hasInitialized) {
           console.log('🚀 First app open, initializing user...');
           
-          // Reset to initial state first
-          resetUserStore();
-          
           // Generate anonymous user ID
           const anonymousUserId = generateUUID();
           
           // Create timestamp for user creation
-          const currentTime = firestore.Timestamp.now();
+          const currentTime = Timestamp.now();
           
           // Set up user with timestamps and anonymous ID
           await AsyncStorage.setItem('shepherd-anonymous-user-id', anonymousUserId);
@@ -71,6 +79,40 @@ export const useAppInitialization = () => {
           console.log('✅ User initialized with ID:', anonymousUserId);
         } else {
           console.log('📱 App already initialized');
+          
+          // Get current user data
+          const userData = getUser();
+          const firebaseUser = auth().currentUser;
+          
+          // Log user state
+          console.log('📊 Current User Data:', {
+            // Auth Status
+            isAuthenticated: !!firebaseUser,
+            firebaseUID: firebaseUser?.uid || 'Not authenticated',
+            firebaseEmail: firebaseUser?.email || 'Not available',
+            
+            // User Profile
+            displayName: userData.displayName || 'Not set',
+            spiritualGoal: userData.spiritualGoal || 'Not set',
+            experienceLevel: userData.experienceLevel || 'Not set',
+            frequencyGoal: userData.frequencyGoal || 'Not set',
+            
+            // Stats
+            streakCount: userData.streakCount || 0,
+            versesReadTotal: userData.versesReadTotal || 0,
+            chaptersReadTotal: userData.chaptersReadTotal || 0,
+            
+            // Timestamps
+            createdAt: formatTimestamp(userData.createdAt),
+            lastActivityDate: formatTimestamp(userData.lastActivityDate),
+            
+            // Lamb Status
+            lambLevel: userData?.lamb?.level || 1,
+            lambXp: userData?.lamb?.xp || 0,
+            lambMood: userData?.lamb?.mood || 'lamb-idle',
+            lambHearts: userData?.lamb?.hearts || 50,
+            lambName: userData?.lamb?.name || 'Not set'
+          });
         }
         
         setIsInitialized(true);

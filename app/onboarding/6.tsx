@@ -12,6 +12,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../stores/onboardingStore';
+import { useUserStore } from '../stores/userStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import { OnboardingResponses } from '../models/Onboarding';
 import Animated, { 
@@ -21,10 +22,12 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 export default function OnboardingReligiousAffiliationScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
+  const { setDenomination } = useUserStore();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
 
   // Create Reanimated shared values for each component
@@ -69,9 +72,34 @@ export default function OnboardingReligiousAffiliationScreen() {
   }));
 
   const handleSelection = async (affiliation: string) => {
+    // Map affiliation to denomination
+    const denominationMap = {
+      'protestant': 'Protestant',
+      'catholic': 'Catholic',
+      'orthodox': 'Orthodox',
+      'evangelical': 'Evangelical',
+      'jewish': 'Jewish',
+      'agnostic': 'Other',
+      'spiritual': 'Other',
+      'other': 'Other',
+      'prefer-not-to-say': 'Other'
+    } as const;
+    
+    // Set in user store
+    setDenomination(denominationMap[affiliation as keyof typeof denominationMap]);
+    
+    // Trigger light haptic feedback
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
+        console.log('Haptics not available');
+      });
+    } catch (error) {
+      console.log('Haptics not available');
+    }
+    
     setSelectedOption(affiliation);
     await setResponse('religiousAffiliation', affiliation as OnboardingResponses['religiousAffiliation']);
-    router.push('/onboarding/pathAffinity' as any);
+    router.push('/onboarding/7' as any);
   };
 
   const options = [
@@ -117,7 +145,7 @@ export default function OnboardingReligiousAffiliationScreen() {
     <View className="flex-1 bg-surfaceCream px-6 pt-12">
       {/* Question Text */}
       <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-16">
+        <Text className="font-feather text-h1 text-center text-textPrimary mb-4">
           Which of these do you prescribe to?
         </Text>
       </Animated.View>

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { View, Text, TextInput, Keyboard } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useOnboardingStore } from '../stores/onboardingStore';
+import { useUserStore } from '../stores/userStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import Rive from 'rive-react-native';
 import Animated, { 
@@ -11,56 +12,86 @@ import Animated, {
   useSharedValue,
   withDelay,
   withSequence,
+  FadeIn,
+  FadeOut,
 } from 'react-native-reanimated';
 
 export default function OnboardingLambNameScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { setResponse } = useOnboardingStore();
-  const [lambName, setLambName] = useState('');
+  const setLambName = useUserStore(state => state.setLambName);
+  const [inputLambName, setInputLambName] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  
+  // Track if animations have been initialized
+  const animationsInitialized = useRef(false);
 
   // Create Reanimated shared values for each component
+  const screenOpacity = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
-  const titleTranslateY = useSharedValue(40);
+  const titleTranslateY = useSharedValue(20); // Smaller initial offset
   
   const lambOpacity = useSharedValue(0);
-  const lambTranslateY = useSharedValue(40);
+  const lambTranslateY = useSharedValue(20); // Smaller initial offset
   
   const inputOpacity = useSharedValue(0);
-  const inputTranslateY = useSharedValue(40);
+  const inputTranslateY = useSharedValue(20); // Smaller initial offset
   
   const buttonOpacity = useSharedValue(0);
-  const buttonTranslateY = useSharedValue(40);
+  const buttonTranslateY = useSharedValue(20); // Smaller initial offset
 
-  useEffect(() => {
-    // Reset animation values
-    titleOpacity.value = 0;
-    titleTranslateY.value = 40;
-    lambOpacity.value = 0;
-    lambTranslateY.value = 40;
-    inputOpacity.value = 0;
-    inputTranslateY.value = 40;
-    buttonOpacity.value = 0;
-    buttonTranslateY.value = 40;
+  // Run animations only once during initial layout
+  useLayoutEffect(() => {
+    if (animationsInitialized.current) return;
     
-    // Staggered animations for each component
-    const animateComponent = (opacity: any, translateY: any, delay: number) => {
-      opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
-      translateY.value = withDelay(delay, 
-        withSpring(0, { 
-          damping: 20,
-          stiffness: 90,
-        })
-      );
-    };
+    // Set initial screen opacity based on whether we came from immediate transition
+    const immediate = params?.immediate === 'true';
+    screenOpacity.value = immediate ? 1 : 0;
+    
+    if (!immediate) {
+      // Fade in the entire screen first, faster
+      screenOpacity.value = withTiming(1, { duration: 250 });
+    }
+    
+    // Reset animation values with minimal delay
+    const timer = setTimeout(() => {
+      titleOpacity.value = 0;
+      titleTranslateY.value = 20;
+      lambOpacity.value = 0;
+      lambTranslateY.value = 20;
+      inputOpacity.value = 0;
+      inputTranslateY.value = 20;
+      buttonOpacity.value = 0;
+      buttonTranslateY.value = 20;
+      
+      // Staggered animations for each component with shorter delays
+      const animateComponent = (opacity: any, translateY: any, delay: number) => {
+        opacity.value = withDelay(delay, withTiming(1, { duration: 300 })); // Faster timing
+        translateY.value = withDelay(delay, 
+          withSpring(0, { 
+            damping: 16, // More damping for faster settling
+            stiffness: 100, // Stiffer spring for faster animation
+            mass: 0.8, // Lighter mass for quicker movement
+          })
+        );
+      };
 
-    // Start animations with delays
-    animateComponent(titleOpacity, titleTranslateY, 0);
-    animateComponent(lambOpacity, lambTranslateY, 200);
-    animateComponent(inputOpacity, inputTranslateY, 400);
-    animateComponent(buttonOpacity, buttonTranslateY, 600);
+      // Use much shorter delays between components for faster overall animation
+      animateComponent(titleOpacity, titleTranslateY, 50);
+      animateComponent(lambOpacity, lambTranslateY, 100);
+      animateComponent(inputOpacity, inputTranslateY, 150);
+      animateComponent(buttonOpacity, buttonTranslateY, 200);
+      
+      // Mark animations as initialized
+      animationsInitialized.current = true;
+    }, 50); // Much shorter initial delay
 
-    // Keyboard listeners
+    return () => clearTimeout(timer);
+  }, []); // Empty dependency array so it only runs once
+
+  // Keyboard listeners (separated from animation logic)
+  useEffect(() => {
     const keyboardWillShow = Keyboard.addListener('keyboardWillShow', () => setKeyboardVisible(true));
     const keyboardWillHide = Keyboard.addListener('keyboardWillHide', () => setKeyboardVisible(false));
 
@@ -70,6 +101,13 @@ export default function OnboardingLambNameScreen() {
     };
   }, []);
 
+  // Create animated style for the screen container
+  const screenStyle = useAnimatedStyle(() => ({
+    opacity: screenOpacity.value,
+    flex: 1,
+    backgroundColor: '#FFF4D9' // Explicitly set the cream background color
+  }));
+  
   // Create animated styles for each component
   const titleStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,
@@ -92,14 +130,30 @@ export default function OnboardingLambNameScreen() {
   }));
 
   const handleContinue = async () => {
-    if (lambName.trim()) {
-      await setResponse('lambName', lambName.trim());
-      router.push('/onboarding/3');
+    if (inputLambName.trim()) {
+      // Save the lamb name to the user store
+      setLambName(inputLambName.trim());
+      
+      // Save to onboarding responses
+      setResponse('lambName', inputLambName.trim());
+      
+      // Animate out before navigating, but faster
+      screenOpacity.value = withTiming(0, { duration: 300 }); // Faster fade out
+      
+      // Shorter delay before navigating
+      router.push({
+        pathname: '/onboarding/3',
+        params: { 
+          animated: true,
+          animation: 'fade',
+          immediate: true
+        }
+      } as any);
     }
   };
 
   return (
-    <View className="flex-1 bg-surfaceCream px-6 pt-12">
+    <Animated.View style={screenStyle} className="px-6 pt-12">
       {/* Question Text */}
       <Animated.View style={titleStyle}>
         <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-0">
@@ -125,8 +179,11 @@ export default function OnboardingLambNameScreen() {
           placeholderTextColor="#A0A0A0"
           maxLength={9}
           autoFocus={true}
-          value={lambName}
-          onChangeText={setLambName}
+          value={inputLambName}
+          onChangeText={setInputLambName}
+          autoCorrect={false}
+          autoCapitalize="none"
+          spellCheck={false}
         />
       </Animated.View>
       
@@ -135,10 +192,10 @@ export default function OnboardingLambNameScreen() {
         <PrimaryButton
           title="Continue"
           onPress={handleContinue}
-          disabled={!lambName.trim()}
-          isActive={!!lambName.trim()}
+          disabled={!inputLambName.trim()}
+          isActive={!!inputLambName.trim()}
         />
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 }

@@ -6,12 +6,27 @@ import { useOnboardingStore } from '../stores/onboardingStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import Rive, { RiveRef } from 'rive-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 
 const WELCOME_TEXT = "Welcome to Shepherd";
 const SECOND_STAGE_PROMPT = "Tap on the lost lamb to wake it up";
 const FIRST_STAGE_TYPING_SPEED = 100; // Slower for welcome text
 const SECOND_STAGE_TYPING_SPEED = 50; // Keep original speed for second stage
 const ZOOM_DURATION = 5000; // 5 seconds for a very slow zoom
+const TRANSITION_DURATION = 350; // Faster transition animation duration
+
+// Function to trigger a light haptic feedback
+const triggerTypeHaptic = () => {
+  try {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid).catch(() => {
+      // Silently fail if haptics don't work
+      console.log('Haptics not available');
+    });
+  } catch (error) {
+    // Safely ignore haptic errors
+    console.log('Haptics not available');
+  }
+};
 
 export default function OnboardingWelcomeScreen() {
   const router = useRouter();
@@ -23,6 +38,7 @@ export default function OnboardingWelcomeScreen() {
   const [secondStageActive, setSecondStageActive] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isLambTapped, setIsLambTapped] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
 
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -30,6 +46,7 @@ export default function OnboardingWelcomeScreen() {
   const translateYAnim = useRef(new Animated.Value(0)).current;
   const textOpacityAnim = useRef(new Animated.Value(1)).current;
   const gradientOpacityAnim = useRef(new Animated.Value(0)).current;
+  const screenFadeAnim = useRef(new Animated.Value(1)).current; // New animation for screen transition
   const riveRef = useRef<RiveRef>(null);
 
   // Function to start the zoom and transition to second stage
@@ -84,6 +101,12 @@ export default function OnboardingWelcomeScreen() {
         const interval = setInterval(() => {
           if (currentIndex <= textToType.length) {
             setDisplayText(textToType.slice(0, currentIndex));
+            
+            // Trigger haptic feedback for each new character
+            if (currentIndex > 0 && currentIndex <= textToType.length) {
+              triggerTypeHaptic();
+            }
+            
             currentIndex++;
           } else {
             clearInterval(interval);
@@ -111,6 +134,12 @@ export default function OnboardingWelcomeScreen() {
       const interval = setInterval(() => {
         if (currentIndex <= textToType.length) {
           setDisplayText(textToType.slice(0, currentIndex));
+          
+          // Trigger haptic feedback for each new character
+          if (currentIndex > 0 && currentIndex <= textToType.length) {
+            triggerTypeHaptic();
+          }
+          
           currentIndex++;
         } else {
           clearInterval(interval);
@@ -128,16 +157,44 @@ export default function OnboardingWelcomeScreen() {
 
   // Handle tapping the lamb in the second stage
   const handleLambTap = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {
+        // Silently fail if haptics don't work
+        console.log('Haptics not available');
+      });
     console.log('handleLambTap');
     setIsAnimating(false);
     if (!secondStageActive || isLambTapped) return; 
     // Only tappable in stage 2 and only once
+    
     
     setIsLambTapped(true);
     riveRef.current?.play(); 
     // Play the waking up animation
     // Make button fully visible and active
     Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+  };
+
+  // Handle the transition to the next screen with animation
+  const handleTransitionToNextScreen = () => {
+    setIsTransitioning(true);
+    
+    // Create a smoother and faster fade out effect
+    Animated.timing(screenFadeAnim, {
+      toValue: 0,
+      duration: TRANSITION_DURATION,
+      easing: Easing.out(Easing.ease),
+      useNativeDriver: true,
+    }).start(() => {
+      // Navigate after animation completes
+      router.push({
+        pathname: '/onboarding/2',
+        params: { 
+          animated: true,
+          animation: 'fade', 
+          immediate: true
+        }
+      } as any);
+    });
   };
 
   // Handle the main button press
@@ -147,8 +204,8 @@ export default function OnboardingWelcomeScreen() {
       // First stage: Start the zoom
       startZoomAndTransition();
     } else if (isLambTapped) {
-      // Second stage & lamb tapped: Navigate
-      router.push('/onboarding/2' as any);
+      // Second stage & lamb tapped: Navigate with animation
+      handleTransitionToNextScreen();
     }
     // Do nothing if in second stage but lamb hasn't been tapped
   };
@@ -159,7 +216,7 @@ export default function OnboardingWelcomeScreen() {
   });
 
   return (
-    <View className="flex-1">
+    <Animated.View style={{ flex: 1, opacity: screenFadeAnim, backgroundColor: '#FFF4D9' }}>
       {/* Header Text (Single element) */}
       <Animated.View 
         className="px-6 absolute top-0 left-0 right-0 z-10 mx-8" 
@@ -185,7 +242,7 @@ export default function OnboardingWelcomeScreen() {
       >
         <Pressable 
           onPress={handleLambTap}
-          disabled={!secondStageActive || isLambTapped}
+          disabled={!secondStageActive || isLambTapped || isTransitioning}
           className="flex-1"
         >
           <ImageBackground 
@@ -224,7 +281,7 @@ export default function OnboardingWelcomeScreen() {
                 {/* Transparent overlay for tap detection */}
                 <Pressable 
                   onPress={handleLambTap}
-                  disabled={!secondStageActive || isLambTapped}
+                  disabled={!secondStageActive || isLambTapped || isTransitioning}
                   className="absolute top-0 left-0 right-0 bottom-0 bg-black/[0.01] h-full w-full"
                 />
               </View>
@@ -253,10 +310,10 @@ export default function OnboardingWelcomeScreen() {
         <PrimaryButton
           title={isLambTapped ? "Claim Lost Lamb" : "Begin Journey"}
           onPress={handleButtonPress}
-          // Active unless in stage 2 AND lamb hasn't been tapped
-          disabled={(secondStageActive && !isLambTapped) || isAnimating}
+          // Active unless in stage 2 AND lamb hasn't been tapped or is transitioning
+          disabled={(secondStageActive && !isLambTapped) || isAnimating || isTransitioning}
         />
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 }

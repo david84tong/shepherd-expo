@@ -66,6 +66,17 @@ export type OnboardingResponses = {
     | 'evening'
     | 'night'
 
+  /** Screen 9 - "What is your age range?" */
+  ageRange?:
+    | 'under-18'
+    | '18-24'
+    | '25-34'
+    | '35-44'
+    | '45-54'
+    | '55-64'
+    | '65-plus'
+    | 'prefer-not-to-say'
+
   /* ────────── PHASE 2 – Sorting Quiz ────────── */
 
   /** Screen 6 – "What brings you here spiritually?"  */

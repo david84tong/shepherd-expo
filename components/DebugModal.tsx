@@ -26,6 +26,11 @@ const ONBOARDING_SCREENS: DebugScreen[] = [
   { name: 'Onboarding 7 - Notifications', route: '/onboarding/7' },
 ];
 
+// Feature screens for debugging
+const FEATURE_SCREENS: DebugScreen[] = [
+  { name: 'Streak Screen', route: '/streak' },
+];
+
 // Define props for DebugButton (currently none needed)
 interface DebugButtonProps {}
 
@@ -231,6 +236,22 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
                   <Text className="font-feather text-base text-textPrimary">Test Heart Penalty Modal</Text>
                   <Text className="font-din text-sm text-[#A57070] mt-1">Show penalty via /halfModal</Text>
                 </TouchableOpacity>
+              </View>
+              
+              {/* Feature Screens Navigation */}
+              <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">Feature Screens</Text>
+                <View className="flex-row flex-wrap gap-2">
+                  {FEATURE_SCREENS.map((screen) => (
+                    <TouchableOpacity
+                      key={screen.route}
+                      className="bg-[#F0E6FF] px-3 py-2 rounded-lg border border-[#9B7FFE] mb-1"
+                      onPress={() => navigateTo(screen)}
+                    >
+                      <Text className="font-din text-sm text-textPrimary">{screen.name}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
               </View>
               
               <View className="mb-4">

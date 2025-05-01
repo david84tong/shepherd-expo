@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import PrimaryButton from '../../components/PrimaryButton';
@@ -11,55 +11,88 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 
 export default function OnboardingIntentScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { setResponse } = useOnboardingStore();
   const [pressedButton, setPressedButton] = useState<string | null>(null);
   const [selectedIntents, setSelectedIntents] = useState<string[]>([]);
+  
+  // Track if animations have been initialized
+  const animationsInitialized = useRef(false);
 
   // Create Reanimated shared values for each component
+  const screenOpacity = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
-  const titleTranslateY = useSharedValue(40);
+  const titleTranslateY = useSharedValue(20); // Smaller initial offset
   
   const subtitleOpacity = useSharedValue(0);
-  const subtitleTranslateY = useSharedValue(40);
+  const subtitleTranslateY = useSharedValue(20); // Smaller initial offset
 
   const buttonsOpacity = useSharedValue(0);
-  const buttonsTranslateY = useSharedValue(40);
+  const buttonsTranslateY = useSharedValue(20); // Smaller initial offset
   
   const continueOpacity = useSharedValue(0);
-  const continueTranslateY = useSharedValue(40);
+  const continueTranslateY = useSharedValue(20); // Smaller initial offset
 
-  useEffect(() => {
-    // Reset animation values
-    titleOpacity.value = 0;
-    titleTranslateY.value = 40;
-    subtitleOpacity.value = 0;
-    subtitleTranslateY.value = 40;
-    buttonsOpacity.value = 0;
-    buttonsTranslateY.value = 40;
-    continueOpacity.value = 0;
-    continueTranslateY.value = 40;
+  // Run animations only once during initial layout
+  useLayoutEffect(() => {
+    if (animationsInitialized.current) return;
     
-    // Staggered animations for each component
-    const animateComponent = (opacity: any, translateY: any, delay: number) => {
-      opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
-      translateY.value = withDelay(delay, 
-        withSpring(0, { 
-          damping: 20,
-          stiffness: 90,
-        })
-      );
-    };
+    // Set initial screen opacity based on whether we came from immediate transition
+    const immediate = params?.immediate === 'true';
+    screenOpacity.value = immediate ? 1 : 0;
+    
+    if (!immediate) {
+      // Fade in the entire screen first, faster
+      screenOpacity.value = withTiming(1, { duration: 250 });
+    }
+    
+    // Reset animation values with minimal delay
+    const timer = setTimeout(() => {
+      titleOpacity.value = 0;
+      titleTranslateY.value = 20;
+      subtitleOpacity.value = 0;
+      subtitleTranslateY.value = 20;
+      buttonsOpacity.value = 0;
+      buttonsTranslateY.value = 20;
+      continueOpacity.value = 0;
+      continueTranslateY.value = 20;
+      
+      // Staggered animations for each component with shorter delays
+      const animateComponent = (opacity: any, translateY: any, delay: number) => {
+        opacity.value = withDelay(delay, withTiming(1, { duration: 300 })); // Faster timing
+        translateY.value = withDelay(delay, 
+          withSpring(0, { 
+            damping: 16, // More damping for faster settling
+            stiffness: 100, // Stiffer spring for faster animation
+            mass: 0.8, // Lighter mass for quicker movement
+          })
+        );
+      };
 
-    // Start animations with delays
-    animateComponent(titleOpacity, titleTranslateY, 0);
-    animateComponent(subtitleOpacity, subtitleTranslateY, 200);
-    animateComponent(buttonsOpacity, buttonsTranslateY, 400);
-    animateComponent(continueOpacity, continueTranslateY, 600);
-  }, []);
+      // Use much shorter delays between components for faster overall animation
+      animateComponent(titleOpacity, titleTranslateY, 50);
+      animateComponent(subtitleOpacity, subtitleTranslateY, 100);
+      animateComponent(buttonsOpacity, buttonsTranslateY, 150);
+      animateComponent(continueOpacity, continueTranslateY, 200);
+      
+      // Mark animations as initialized
+      animationsInitialized.current = true;
+    }, 50); // Much shorter initial delay
 
+    return () => clearTimeout(timer);
+  }, []); // Empty dependency array so it only runs once
+
+  // Create animated style for the screen container
+  const screenStyle = useAnimatedStyle(() => ({
+    opacity: screenOpacity.value,
+    flex: 1,
+    backgroundColor: '#FFF4D9' // Explicitly set the cream background color
+  }));
+  
   // Create animated styles for each component
   const titleStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,
@@ -82,6 +115,15 @@ export default function OnboardingIntentScreen() {
   }));
 
   const handleSelection = (intent: string) => {
+    // Trigger light haptic feedback
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
+        console.log('Haptics not available');
+      });
+    } catch (error) {
+      console.log('Haptics not available');
+    }
+    
     setSelectedIntents(prev => {
       const newSelection = prev.includes(intent)
         ? prev.filter(i => i !== intent)
@@ -92,8 +134,19 @@ export default function OnboardingIntentScreen() {
 
   const handleContinue = async () => {
     if (selectedIntents.length > 0) {
+      // Animate out before navigating, but faster
+      screenOpacity.value = withTiming(0, { duration: 300 }); // Faster fade out
+      
+      // Shorter delay before navigating
       await setResponse('intent', selectedIntents);
-      router.push('/onboarding/4');
+      router.push({
+        pathname: '/onboarding/4',
+        params: { 
+          animated: true,
+          animation: 'fade',
+          immediate: true
+        }
+      } as any);
     }
   };
 
@@ -133,7 +186,7 @@ export default function OnboardingIntentScreen() {
   ];
 
   return (
-    <View className="flex-1 bg-surfaceCream px-6 pt-12">
+    <Animated.View style={screenStyle} className="px-6 pt-12">
       {/* Question Text */}
       <Animated.View style={titleStyle}>
         <Text className="font-feather text-h1 text-center text-textPrimary mb-8">
@@ -195,6 +248,6 @@ export default function OnboardingIntentScreen() {
           isActive={selectedIntents.length > 0}
         />
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 }
