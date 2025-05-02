@@ -70,6 +70,7 @@ export default function HomeScreen() {
   const streakCount = useUserStore((state) => state.getStreakCount());
   const gens = useUserStore((state) => state.getGens());
   const lambMood = useUserStore((state) => state.getLambMood());
+  const lambName = useUserStore((state) => state.getLambName()); // Get the lamb's name from userStore
 
   // State to manage the Rive resource name
   const [artboardName, setArtboardName] = useState('lamb-idle'); // Default artboard
@@ -748,7 +749,7 @@ export default function HomeScreen() {
                 textShadowOffset: { width: 0, height: 1 },
                 textShadowRadius: 2,
               }}>
-              Shepherd
+              {lambName || 'Shepherd'}
             </Text>
             <View className="flex-1 ml-2 mr-2" />
             <View className="flex-row items-center space-x-2">

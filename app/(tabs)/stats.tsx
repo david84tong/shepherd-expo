@@ -188,34 +188,46 @@ export default function StatsScreen() {
       {/* Recent reflections */}
       <Text className="text-h2 font-feather mb-3 mt-2">Recent reflections</Text>
       <View className="mb-8 space-y-3"> 
-        {recentReflections.map((rf, i) => (
-          <View key={i} className="bg-surfaceCream rounded-xl p-4 border-4 border-border"> 
-            <View className="flex-row items-start"> 
-              {/* Icon Column */}
-              <View className="w-10 h-10 rounded-lg bg-[#FFF4D9] items-center justify-center mr-4">
-                <Image source={journalIcon} className="w-12 h-12" />
-              </View>
-
-              {/* Content Column */}
-              <View className="flex-1">
-                {/* Top Row: Title + Date */}
-                <View className="flex-row justify-between items-center mb-1">
-                  <Text className="font-feather text-heading text-textPrimary flex-shrink mr-2"> 
-                    Reflection
-                  </Text>
-                  <Text className="text-caption font-din text-description whitespace-nowrap">
-                    {dayjs(toDateSafe(rf.date)).format('MMMM D')}
-                  </Text>
+        {recentReflections.length > 0 ? (
+          recentReflections.map((rf, i) => (
+            <View key={i} className="bg-surfaceCream rounded-xl p-4 border-4 border-border"> 
+              <View className="flex-row items-start"> 
+                {/* Icon Column */}
+                <View className="w-10 h-10 rounded-lg bg-[#FFF4D9] items-center justify-center mr-4">
+                  <Image source={journalIcon} className="w-12 h-12" />
                 </View>
 
-                {/* Bottom Row: Content Preview */}
-                <Text className="font-din text-body text-textPrimary" numberOfLines={1} ellipsizeMode="tail">
-                  {rf.content} 
-                </Text>
+                {/* Content Column */}
+                <View className="flex-1">
+                  {/* Top Row: Title + Date */}
+                  <View className="flex-row justify-between items-center mb-1">
+                    <Text className="font-feather text-heading text-textPrimary flex-shrink mr-2"> 
+                      Reflection
+                    </Text>
+                    <Text className="text-caption font-din text-description whitespace-nowrap">
+                      {dayjs(toDateSafe(rf.date)).format('MMMM D')}
+                    </Text>
+                  </View>
+
+                  {/* Bottom Row: Content Preview */}
+                  <Text className="font-din text-body text-textPrimary" numberOfLines={1} ellipsizeMode="tail">
+                    {rf.content} 
+                  </Text>
+                </View>
               </View>
             </View>
+          ))
+        ) : (
+          <View className="bg-surfaceCream/70 rounded-xl p-5 border-4 border-border flex items-center justify-center"> 
+            <Image source={journalIcon} className="w-16 h-16 opacity-50 mb-3" />
+            <Text className="font-feather text-heading text-textPrimary/70 text-center">
+              No recent reflections
+            </Text>
+            <Text className="font-din text-body text-description text-center mt-1">
+              Take a moment to reflect on your journey with God
+            </Text>
           </View>
-        ))}
+        )}
       </View>
     </ScrollView>
   );

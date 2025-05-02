@@ -39,6 +39,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const setHomeMode = useHomeStore((state) => state.setMode);
   const successType = useHomeStore((state) => state.successType);
   const setSuccessType = useHomeStore((state) => state.setSuccessType);
+  const setSawDailyBonus = useHomeStore((state) => state.setSawDailyBonus);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
   
   // -------- Other hooks below (must appear before any conditional return) --------
@@ -46,6 +47,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
+  const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
   
   // User store hooks
   const lambHearts = useUserStore(state => state.getLambHearts());
@@ -61,8 +63,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const setGens = useUserStore(state => state.setGens);
   const setLambMood = useUserStore(state => state.setLambMood);
   
-  // Determine which type to use for rendering – default to READING if null while store updates
-  const effectiveType = successType ?? SuccessAnimationType.READING;
+  // Determine which type to use for rendering – force READING if sawDailyBonus is true
+  const effectiveType = sawDailyBonus ? SuccessAnimationType.READING : (successType ?? SuccessAnimationType.READING);
   
   // State to track if rewards have been applied
   const [rewardsApplied, setRewardsApplied] = useState(false);
@@ -109,6 +111,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   let riveResource = "successLamb"; // Default animation
   let riveArtboard: string | undefined = undefined;
   let rewardTitle = "REWARDS EARNED";
+
+
 
   // Get values based on successType - make sure we are handling all possible types
   if (effectiveType === SuccessAnimationType.READING) {
@@ -192,11 +196,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Always add XP
       addXp(xpReward);
       
-      // If this is a BONUS reward, add 9 gems
+      // If this is a BONUS reward, add 9 gems AND set sawDailyBonus flag
       if (effectiveType === SuccessAnimationType.BONUS) {
         const currentGems = getGens();
         setGens(currentGems + 9);
         console.log(`Applied +9 Gems. Updated value - Gems: ${currentGems + 9}`);
+        setSawDailyBonus(true);
+        console.log("Setting sawDailyBonus to true");
       }
       
       // Create a new timestamp for the current time
@@ -217,6 +223,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       
       // Mark rewards as applied
       setRewardsApplied(true);
+
+      // Sync user state to Firestore after rewards are applied
+      useUserStore.getState().syncWithFirestore();
       
       console.log(`Applied ${heartsToAdd} hearts (of intended ${heartReward}) and ${xpReward} XP`);
       console.log(`Updated values - Hearts: ${lambHearts + heartsToAdd}, XP: ${lambXp + xpReward}`);

@@ -62,8 +62,8 @@ export const createUserDocument = async (id: string, userData: Partial<UserDoc>)
   }
 };
 
-// Update a single field in the user document
-export const updateUserField = async (field: string, value: any) => {
+// Update a single field (top-level or nested) in the user document
+export const updateField = async (fieldPath: string, value: any) => {
   try {
     const currentUser = auth().currentUser;
     if (!currentUser) {
@@ -75,37 +75,13 @@ export const updateUserField = async (field: string, value: any) => {
       .collection('users')
       .doc(currentUser.uid)
       .update({
-        [field]: value,
+        [fieldPath]: value,
         updatedAt: Timestamp.now()
       });
 
     return true;
   } catch (error) {
-    console.error(`Error updating user field ${field}:`, error);
-    return false;
-  }
-};
-
-// Update lamb properties
-export const updateLambField = async (field: string, value: any) => {
-  try {
-    const currentUser = auth().currentUser;
-    if (!currentUser) {
-      console.log('No authenticated user found, skipping sync');
-      return false;
-    }
-
-    await firestore()
-      .collection('users')
-      .doc(currentUser.uid)
-      .update({
-        [`lamb.${field}`]: value,
-        updatedAt: Timestamp.now()
-      });
-
-    return true;
-  } catch (error) {
-    console.error(`Error updating lamb field ${field}:`, error);
+    console.error(`Error updating user field ${fieldPath}:`, error);
     return false;
   }
 };

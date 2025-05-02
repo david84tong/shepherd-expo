@@ -22,6 +22,7 @@ interface HomeState {
   readingCompleted: boolean;
   prayerCompleted: boolean;
   reflectionCompleted: boolean;
+  sawDailyBonus: boolean;
   
   // Setter functions
   setMode: (mode: HomeMode) => void;
@@ -29,6 +30,7 @@ interface HomeState {
   setReadingCompleted: (completed: boolean) => void;
   setPrayerCompleted: (completed: boolean) => void;
   setReflectionCompleted: (completed: boolean) => void;
+  setSawDailyBonus: (saw: boolean) => void;
   resetCompletionStates: () => void; // Reset all completion states
 }
 
@@ -47,6 +49,7 @@ export const useHomeStore = create<HomeState>()(
       readingCompleted: false,
       prayerCompleted: false,
       reflectionCompleted: false,
+      sawDailyBonus: false,
       
       // Setter functions
       setMode: (mode) => set({ mode }),
@@ -54,10 +57,12 @@ export const useHomeStore = create<HomeState>()(
       setReadingCompleted: (completed) => set({ readingCompleted: completed }),
       setPrayerCompleted: (completed) => set({ prayerCompleted: completed }),
       setReflectionCompleted: (completed) => set({ reflectionCompleted: completed }),
+      setSawDailyBonus: (saw) => set({ sawDailyBonus: saw }),
       resetCompletionStates: () => set({ 
         readingCompleted: false, 
         prayerCompleted: false, 
-        reflectionCompleted: false 
+        reflectionCompleted: false,
+        sawDailyBonus: false
       }),
     }),
     {
@@ -68,6 +73,7 @@ export const useHomeStore = create<HomeState>()(
         readingCompleted: state.readingCompleted,
         prayerCompleted: state.prayerCompleted,
         reflectionCompleted: state.reflectionCompleted,
+        sawDailyBonus: state.sawDailyBonus,
       }),
     }
   )

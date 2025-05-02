@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserDoc, Lamb, Prayer, Reflection, Reading, UserStore } from '../models/User';
 import auth from '@react-native-firebase/auth';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
-import { updateLambField, syncUserDocument, createUserDocument } from '../../utils/firestore';
+import { updateField, syncUserDocument, createUserDocument } from '../../utils/firestore';
 
 // Helper function to check if user is authenticated
 const isAuthenticated = () => {
@@ -209,7 +209,12 @@ export const useUserStore = create<UserStore>()(
       setProStatus: (proStatus) => set({ proStatus }),
       setCreatedAt: (createdAt) => set({ createdAt }),
       setUpdatedAt: (updatedAt) => set({ updatedAt }),
-      setGens: (gens) => set({ gens }),
+      setGens: (gens) => {
+        set({ gens });
+        if (isAuthenticated()) {
+          updateField('gens', gens);
+        }
+      },
       setCompletedReflections: (completedReflections) => set({ completedReflections }),
       setCompletedPrayers: (completedPrayers) => set({ completedPrayers }),
       setCompletedReadings: (completedReadings) => set({ completedReadings }),
@@ -221,23 +226,49 @@ export const useUserStore = create<UserStore>()(
       addCompletedPrayer: (prayer) => set(state => ({
         completedPrayers: [...state.completedPrayers, prayer] as unknown as [Prayer]
       })),
-      addCompletedReading: (reading) => set(state => ({
-        completedReadings: [...state.completedReadings, reading] as unknown as [Reading]
-      })),
+      addCompletedReading: (reading) => {
+        set((state) => {
+          const newState = {
+            ...state,
+            completedReadings: [...state.completedReadings, reading] as unknown as [Reading],
+            updatedAt: Timestamp.now()
+          };
+          // Only sync with Firestore if authenticated
+          if (isAuthenticated()) {
+            syncUserDocument(newState);
+          }
+          return newState;
+        });
+      },
       
       // Setters for Lamb
       setLambLevel: (level) => set(state => ({
         lamb: { ...state.lamb, level }
       })),
-      setLambXp: (xp) => set(state => ({
-        lamb: { ...state.lamb, xp }
-      })),
-      setLambMood: (mood) => set(state => ({
-        lamb: { ...state.lamb, mood }
-      })),
-      setLambHearts: (hearts) => set(state => ({
-        lamb: { ...state.lamb, hearts }
-      })),
+      setLambXp: (xp) => {
+        set(state => ({
+          lamb: { ...state.lamb, xp }
+        }));
+        if (isAuthenticated()) {
+          updateField('lamb.xp', xp);
+        }
+      },
+      setLambMood: (mood) => {
+        set(state => ({
+          lamb: { ...state.lamb, mood }
+        }));
+        if (isAuthenticated()) {
+          updateField('lamb.mood', mood);
+        }
+      },
+      setLambHearts: (hearts) => {
+        set(state => ({
+          lamb: { ...state.lamb, hearts }
+        }));
+        if (isAuthenticated()) {
+          updateField('lamb.hearts', hearts);
+        }
+      },
       setLambName: (name) => {
         console.log('Setting lamb name:', name);
         set((state) => {
@@ -251,7 +282,7 @@ export const useUserStore = create<UserStore>()(
           
           // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
-            updateLambField('name', name);
+            updateField('lamb.name', name);
           }
           
           return newState;
@@ -263,9 +294,14 @@ export const useUserStore = create<UserStore>()(
       
       // Utility functions
       incrementStreak: () => set(state => ({ streakCount: state.streakCount + 1 })),
-      addXp: (amount) => set(state => ({ 
-        lamb: { ...state.lamb, xp: state.lamb.xp + amount } 
-      })),
+      addXp: (amount) => {
+        set(state => ({ 
+          lamb: { ...state.lamb, xp: state.lamb.xp + amount } 
+        }));
+        if (isAuthenticated()) {
+          updateField('lamb.xp', get().lamb.xp);
+        }
+      },
 
       // Sync with Firestore
       syncWithFirestore: async () => {
@@ -273,7 +309,41 @@ export const useUserStore = create<UserStore>()(
           return false;
         }
         const state = get();
-        return await syncUserDocument(state);
+        // Create an object with only the data fields, excluding functions
+        const dataToSync: Partial<UserDoc> = {
+          spiritualGoal: state.spiritualGoal,
+          experienceLevel: state.experienceLevel,
+          frequencyGoal: state.frequencyGoal,
+          denomination: state.denomination,
+          displayName: state.displayName,
+          selectedPathId: state.selectedPathId,
+          lamb: state.lamb,
+          streakCount: state.streakCount,
+          lastActivityDate: state.lastActivityDate,
+          lastReadingDate: state.lastReadingDate,
+          lastPrayerDate: state.lastPrayerDate,
+          lastReflectionDate: state.lastReflectionDate,
+          lastReadingPenaltyDate: state.lastReadingPenaltyDate,
+          lastPrayerPenaltyDate: state.lastPrayerPenaltyDate,
+          lastReflectionPenaltyDate: state.lastReflectionPenaltyDate,
+          versesReadTotal: state.versesReadTotal,
+          chaptersReadTotal: state.chaptersReadTotal,
+          bibleVersion: state.bibleVersion,
+          proStatus: state.proStatus,
+          updatedAt: state.updatedAt, // Use current state's updatedAt
+          gens: state.gens,
+          completedReflections: state.completedReflections,
+          completedPrayers: state.completedPrayers,
+          completedReadings: state.completedReadings,
+          // Ensure id and potentially uid/email are included if they exist on state
+          id: state.id,
+          ...(state.uid && { uid: state.uid }),
+          ...(state.email && { email: state.email }),
+          ...(state.denomination && { denomination: state.denomination }),
+        };
+
+        // Pass only the data object to syncUserDocument
+        return await syncUserDocument(dataToSync);
       },
     }),
     {

@@ -77,7 +77,18 @@ const useUnitStatus = () => {
       }
     }
     
-    // 4. If none of the above, it's locked
+    // 4. Check if it's the FIRST unit of a LATER path AND the LAST unit of the PREVIOUS path is completed
+    if (unitIndex === 0 && pathIndex > 0) {
+      const previousPath = BIBLE_PATHS[pathIndex - 1];
+      if (previousPath && previousPath.units.length > 0) {
+        const lastUnitOfPreviousPathId = previousPath.units[previousPath.units.length - 1].id;
+        if (completedUnitIds.includes(lastUnitOfPreviousPathId)) {
+          return 'active';
+        }
+      }
+    }
+    
+    // 5. If none of the above, it's locked
     return 'locked';
   };
   

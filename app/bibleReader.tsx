@@ -86,6 +86,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const setReadingCompleted = useHomeStore((state) => state.setReadingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
+  const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
   
   // Get userStore functions for saving reading
   const addCompletedReading = useUserStore(state => state.addCompletedReading);
@@ -264,10 +265,12 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     // Save reading data to userStore
     console.log('Saving reading data to userStore');
     try {
-      // Save the completed reading
+      // Create a proper Reading object with the correct structure
       addCompletedReading({
         date: now,
-        completed: `${currentBook}:${currentChapter}`
+        book: currentBook,
+        chapters: [`${currentChapter}`] as unknown as [string],
+        isUnit: pathInProgress
       });
       
       // Update last reading date
@@ -341,18 +344,20 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     setReadingCompleted(true);
 
     // Check if all tasks are completed
-    if (prayerCompleted && reflectionCompleted) {
+    if (sawDailyBonus) {
+      setSuccessType(SuccessAnimationType.READING);
+    } else if (prayerCompleted && reflectionCompleted) {
       setSuccessType(SuccessAnimationType.BONUS);
     } else {
       setSuccessType(SuccessAnimationType.READING);
     }
 
-    // Navigate to success animation screen
-    router.navigate({
+    // Navigate to success animation screen - Use replace to unmount BibleReader
+    router.replace({
       pathname: "/success",
       params: {
-        message: prayerCompleted && reflectionCompleted ? "Daily Trifecta Complete!" : "Reading Complete!",
-        subMessage: prayerCompleted && reflectionCompleted ? "Amazing! You've completed all three spiritual disciplines today." : "You've finished today's chapter. Great progress!"
+        message: sawDailyBonus ? "Reading Complete!" : (prayerCompleted && reflectionCompleted ? "Daily Trifecta Complete!" : "Reading Complete!"),
+        subMessage: sawDailyBonus ? "You've finished today's chapter. Great progress!" : (prayerCompleted && reflectionCompleted ? "Amazing! You've completed all three spiritual disciplines today." : "You've finished today's chapter. Great progress!")
       }
     });
   };

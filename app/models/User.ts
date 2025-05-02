@@ -5,9 +5,9 @@ export interface UserDoc {
     id: string;
     uid?: string; // Firebase auth user ID
     email?: string; // User email from authentication
-    spiritualGoal: 'Walk' | 'Overcome' | 'Understand' | 'Explore';
-    experienceLevel: 'new' | 'growing' | 'mature';
-    frequencyGoal: 'daily' | 'weekly';
+    spiritualGoal: string;
+    experienceLevel: string;
+    frequencyGoal: string
     denomination?: string;
     ageRange: string;
     displayName: string;
@@ -120,11 +120,14 @@ export interface UserStore extends UserDoc {
     incrementStreak: () => void;
     addXp: (amount: number) => void;
     resetUserStore: () => void;
+    syncWithFirestore: () => Promise<boolean>;
 }
 
 export interface Reading {
     date: FirebaseFirestoreTypes.Timestamp;
-    completed: string; // book:chapter
+    book: string;
+    chapters: [string];
+    isUnit: boolean;
 }
 
 export interface Reflection {
