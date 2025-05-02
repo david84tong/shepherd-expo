@@ -14,7 +14,7 @@ import { HalfModalType } from './halfModal';
 import { DebugButton } from '../components/DebugModal';
 import { ONBOARDING_COMPLETED_KEY } from './types/onboarding';
 import { isSignedIn } from './hooks/authHook';
-import BottomSheet, { BottomSheetView, BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetView, BottomSheetModalProvider, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
 import { useSharedValue, withTiming } from 'react-native-reanimated';
 import PrimaryButton from '../components/PrimaryButton';
@@ -63,7 +63,7 @@ export default function RootLayout() {
   
   // Bottom sheet for settings
   const settingsSheetRef = useRef<BottomSheet>(null);
-  const settingsSnapPoints = useMemo(() => ['40%'], []);
+  const settingsSnapPoints = useMemo(() => ['40%', '90%'], []);
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
 
   // Check if user has completed onboarding
@@ -161,7 +161,6 @@ export default function RootLayout() {
     daysMissed?: number;
   }) => {
     setHalfModalParams(params);
-    setIsModalDimActive(true);
     
     setTimeout(() => {
       halfModalRef.current?.expand();
@@ -175,9 +174,6 @@ export default function RootLayout() {
       backdropOpacity.value = withTiming(1, { duration: 200 });
     } else {
       backdropOpacity.value = withTiming(0, { duration: 200 });
-      setTimeout(() => {
-        setIsModalDimActive(false);
-      }, 200);
     }
   };
 
@@ -189,7 +185,6 @@ export default function RootLayout() {
   
   // Show settings modal
   const showSettings = () => {
-    setIsModalDimActive(true);
     setIsSettingsVisible(true);
     
     setTimeout(() => {
@@ -203,7 +198,6 @@ export default function RootLayout() {
     settingsSheetRef.current?.close();
     setTimeout(() => {
       setIsSettingsVisible(false);
-      setIsModalDimActive(false);
     }, 200);
   };
   
@@ -213,7 +207,6 @@ export default function RootLayout() {
       // Sheet is closed
       setTimeout(() => {
         setIsSettingsVisible(false);
-        setIsModalDimActive(false);
       }, 200);
     }
   };
@@ -259,6 +252,19 @@ useEffect(() => {
       });
     }
   }, [appReady, isOnboardingChecked, checkOnboarding, checkStreakStatus, segments]);
+  
+  // Custom backdrop renderer for both bottom sheets
+  const renderBackdrop = useCallback(
+    (props: any) => (
+      <BottomSheetBackdrop
+        {...props}
+        disappearsOnIndex={-1}
+        appearsOnIndex={0}
+        opacity={0.5}
+      />
+    ),
+    []
+  );
   
   if (!fontsLoaded && !fontError) {
     return null;
@@ -309,14 +315,6 @@ useEffect(() => {
             <Stack.Screen name="success" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
           </Stack>
           
-          {/* Render the imported DebugButton component */}
-          <DebugButton />
-          
-          {/* Conditionally render the dimming overlay */}
-          {isModalDimActive && (
-            <View style={styles.dimOverlay} pointerEvents="none" />
-          )}
-          
           {/* Global Half Modal */}
           <BottomSheet
             ref={halfModalRef}
@@ -326,6 +324,7 @@ useEffect(() => {
             onChange={handleHalfModalChange}
             backgroundStyle={styles.sheetBackground}
             handleIndicatorStyle={styles.handleIndicator}
+            backdropComponent={renderBackdrop}
           >
             <BottomSheetView style={styles.contentContainer}>
               {halfModalParams.type === HalfModalType.HEART_PENALTY && (
@@ -378,8 +377,9 @@ useEffect(() => {
             onChange={handleSettingsChange}
             backgroundStyle={styles.sheetBackground}
             handleIndicatorStyle={styles.handleIndicator}
+            backdropComponent={renderBackdrop}
           >
-            <BottomSheetView style={{ flex: 1 }}>
+            <BottomSheetView style={styles.settingsContentContainer}>
               {/* Header */}
               <View style={styles.settingsHeader}>
                 <Text style={styles.settingsTitle}>Settings</Text>
@@ -405,24 +405,22 @@ useEffect(() => {
               </View>
             </BottomSheetView>
           </BottomSheet>
+          
+          {/* Render the imported DebugButton component */}
+          <DebugButton />
         </BottomSheetModalProvider>
       </GestureHandlerRootView>
     </>
   );
 }
 
-// Add styles for the overlay
+// Add styles for the components
 const styles = StyleSheet.create({
-  dimOverlay: {
-    ...StyleSheet.absoluteFillObject, // Cover everything
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 10, // Ensure it's above main content but below the modal screen presented by router
-  },
+
   sheetBackground: {
     backgroundColor: '#FFF4D9', // surfaceCream 
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    zIndex: 20, // Make sure modals are above the dim overlay
   },
   handleIndicator: {
     backgroundColor: '#DCB280',
@@ -434,7 +432,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     paddingBottom: 30,
-    zIndex: 20, // Ensure content is above the overlay
+  },
+  settingsContentContainer: {
+    flex: 1,
   },
   icon: {
     width: 240,
