@@ -1,5 +1,6 @@
 // Bible curriculum path models and references
 // Path.ts: Defines the data structures for Bible paths, units, and references
+// revert too this later
 
 import { ImageSourcePropType } from 'react-native';
 import { PathOption } from '../onboarding/8';
