@@ -43,7 +43,7 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
           { elevation: (pressed || completed) ? 0 : 6 }
         ]}
         onPress={onPress}
-        disabled={disabled || completed}
+        disabled={disabled}
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}
       >

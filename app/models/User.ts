@@ -1,17 +1,18 @@
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import { PathOption } from '../onboarding/8';
 
 export interface UserDoc {
     //onboarding questions
     id: string;
+    selectedPathId: string;
     uid?: string; // Firebase auth user ID
     email?: string; // User email from authentication
     spiritualGoal: string;
     experienceLevel: string;
-    frequencyGoal: string
+    frequencyGoal: string;
     denomination?: string;
     ageRange: string;
     displayName: string;
-    selectedPathId: string;
     lamb: Lamb;
     streakCount: number;
     lastActivityDate: FirebaseFirestoreTypes.Timestamp;

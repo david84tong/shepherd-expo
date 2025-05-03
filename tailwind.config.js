@@ -15,6 +15,7 @@ module.exports = {
         // 'secondary-button-bg': '#F9F3E5',
 
         // New Tokens
+        brightYellow: "#FFD629",
         lightGreen: "#D2FFC6",
         darkGreen: "#24CA17",
         accentGold: '#FCD34D',    // Buttons, progress, XP fill

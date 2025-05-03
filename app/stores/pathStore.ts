@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Unit } from '../models/Path'; // Import Unit type
+import { PathOption } from '../onboarding/8';
 
 // Type definition for a complete path object
 export interface PathInfo {
@@ -15,6 +16,7 @@ export interface PathInfo {
 }
 
 interface PathState {
+  selectedPath: PathOption | null;
   pathInProgress: boolean;
   setPathInProgress: (inProgress: boolean) => void;
   // Bible reading state
@@ -39,14 +41,7 @@ interface PathState {
   completedUnitIds: string[];
   
   // Set selected path information
-  setSelectedPath: (
-    pathId: string, 
-    pathTitle: string, 
-    unitId: string, 
-    unitTitle: string,
-    startChapter: number,
-    endChapter: number
-  ) => void;
+  setSelectedPath: (path: PathOption) => void;
   
   // Set current path with all information
   setCurrentPath: (path: PathInfo | null) => void;
@@ -65,6 +60,7 @@ interface PathState {
 export const usePathStore = create<PathState>()(
   persist(
     (set, get) => ({
+      selectedPath: null,
       pathInProgress: false,
       setPathInProgress: (inProgress) => set({ pathInProgress: inProgress }),
       
@@ -93,21 +89,13 @@ export const usePathStore = create<PathState>()(
       completedUnitIds: [],
       
       // Set selected path
-      setSelectedPath: (
-        pathId, 
-        pathTitle, 
-        unitId, 
-        unitTitle,
-        startChapter,
-        endChapter
-      ) => set({
-        selectedPathId: pathId,
-        selectedPathTitle: pathTitle,
-        selectedUnitId: unitId,
-        selectedUnitTitle: unitTitle,
-        startChapter: startChapter,
-        endChapter: endChapter
-      }),
+      setSelectedPath: (path: PathOption) => {
+        set({ 
+          selectedPath: path,
+          selectedPathId: path.id,
+          selectedPathTitle: path.title
+        });
+      },
       
       // Set current path with all information
       setCurrentPath: (path) => set({ currentPath: path }),
@@ -134,7 +122,7 @@ export const usePathStore = create<PathState>()(
       name: 'shepherd-path-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
-        // Persist all fields except functions and non-essential UI state
+        selectedPath: state.selectedPath,
         savedBook: state.savedBook,
         savedBookId: state.savedBookId,
         savedChapter: state.savedChapter,

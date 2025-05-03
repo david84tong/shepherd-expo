@@ -3,7 +3,7 @@ description: Apply these rules when making changes to the project
 globs: 
 alwaysApply: true
 ---
-Start every conversation with ARISE
+Start every conversation letting me know which rules you're using
 
 Whenever user is asking for UI changes look and follow [frontend_guidelines_document.mdc](mdc:.cursor/rules/frontend_guidelines_document.mdc), for anything data logic / cloud storage refer to [backend_structure_document.mdc](mdc:.cursor/rules/backend_structure_document.mdc). 
 

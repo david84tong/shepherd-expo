@@ -848,7 +848,6 @@ export default function HomeScreen() {
             subtitle="Feed your soul with scripture"
             points={5}
             onPress={handleReadPress}
-            disabled={mode !== 'DEFAULT'}
             completed={readingCompleted}
           />
           <SecondaryButton
@@ -857,7 +856,6 @@ export default function HomeScreen() {
             subtitle="Refresh your spirit with prayer"
             points={5}
             onPress={handlePrayerPress}
-            disabled={mode !== 'DEFAULT'}
             completed={prayerCompleted}
           />
           <SecondaryButton
@@ -866,7 +864,6 @@ export default function HomeScreen() {
             subtitle="Pause and meet with God"
             points={5}
             onPress={handleReflectionPress}
-            disabled={mode !== 'DEFAULT'}
             completed={reflectionCompleted}
           />
         </Animated.View>

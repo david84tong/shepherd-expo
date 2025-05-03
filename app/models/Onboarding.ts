@@ -77,6 +77,13 @@ export type OnboardingResponses = {
     | '65-plus'
     | 'prefer-not-to-say'
 
+  /** Screen 8 - "Choose Your Path" */
+  selectedPath?:
+    | 'walk-in-light'
+    | 'way-of-wisdom'
+    | 'overcoming'
+    | 'knowing-jesus'
+
   /* ────────── PHASE 2 – Sorting Quiz ────────── */
 
   /** Screen 6 – "What brings you here spiritually?"  */

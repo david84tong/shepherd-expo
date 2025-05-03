@@ -6,6 +6,23 @@ import { UserDoc } from '../app/models/User';
  * Firestore utility functions for handling user data
  */
 
+// Add this utility at the top (after imports)
+function undefinedToNull(obj: any): any {
+  if (Array.isArray(obj)) return obj.map(undefinedToNull);
+  if (obj && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => {
+        if (v === undefined) {
+          console.log(`[undefinedToNull] Converting key from undefined to null:`, k);
+          return [k, null];
+        }
+        return [k, undefinedToNull(v)];
+      })
+    );
+  }
+  return obj;
+}
+
 // Create a new user document with specified ID
 export const createUserDocument = async (id: string, userData: Partial<UserDoc>) => {
   try {
@@ -47,12 +64,13 @@ export const createUserDocument = async (id: string, userData: Partial<UserDoc>)
       completedPrayers: userData.completedPrayers || [],
       completedReadings: userData.completedReadings || []
     };
+    const docToCreateCleaned = undefinedToNull(docToCreate);
 
     // Create the document with the specified ID
     await firestore()
       .collection('users')
       .doc(id)
-      .set(docToCreate);
+      .set(docToCreateCleaned);
 
     console.log('Successfully created user document with ID:', id);
     return true;
@@ -102,11 +120,12 @@ export const syncUserDocument = async (userDoc: Partial<UserDoc>) => {
       updatedAt: Timestamp.now(),
       createdAt: userDoc.createdAt || Timestamp.now()
     };
+    const docToSyncCleaned = undefinedToNull(docToSync);
 
     await firestore()
       .collection('users')
       .doc(currentUser.uid)
-      .set(docToSync, { merge: true });
+      .set(docToSyncCleaned, { merge: true });
 
     console.log('Successfully synced with Firestore');
     return true;

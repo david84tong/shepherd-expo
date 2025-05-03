@@ -263,9 +263,6 @@ export default function MapScreen() {
   
   // Track if we need to suppress haptic feedback (e.g., on first render)
   const isFirstRender = useRef(true);
-  // To prevent excessive updates
-  const lastUpdate = useRef(Date.now());
-  const updateIntervalMs = 50; // Faster header updates
 
   const handleNodePress = (unit: Unit) => {
     console.log('Pressed unit:', unit.title, unit.reference);
@@ -307,14 +304,7 @@ export default function MapScreen() {
     setSelectedBookChapter(bookChapterText);
     
     // Save path selection to store (legacy way - keep for compatibility)
-    setSelectedPath(
-      currentPath.pathId,
-      currentPath.title,
-      unit.id,
-      unit.title,
-      startChapter,
-      endChapter
-    );
+    // setSelectedPath call removed (legacy)
     
     // Set the complete current path object 
     const pathInfo: PathInfo = {
@@ -362,19 +352,14 @@ export default function MapScreen() {
     viewableItems: ViewToken[],
     changed: ViewToken[] 
   }) => {
-    // Skip if too soon since last update
-    const now = Date.now();
-    if (now - lastUpdate.current < updateIntervalMs) {
-      return;
-    }
-    
-    // Determine currently focused section (closest to top) by taking the last visible section (highest index)
+    // No debouncing to improve responsiveness
+    // Determine currently focused section (closest to top) by taking the first visible section (smallest index)
     const visibleSections = viewableItems
       .filter(token => token.isViewable && token.section)
       .map(token => token.section);
 
     if (visibleSections.length > 0) {
-      const focusedSection = visibleSections.reduce((prev, curr) => (curr.index > prev.index ? curr : prev), visibleSections[0]);
+      const focusedSection = visibleSections.reduce((prev, curr) => (curr.index < prev.index ? curr : prev), visibleSections[0]);
 
       if (focusedSection && focusedSection.title !== currentSectionTitle) {
         // Update the current section title, icon, color, description, and index
@@ -384,7 +369,7 @@ export default function MapScreen() {
         setCurrentSectionDescription(focusedSection.description || '');
         setCurrentSectionIndex(focusedSection.index || 0);
         
-        lastUpdate.current = now;
+        // No debouncing update necessary
         
         // Don't trigger haptic on first render
         if (!isFirstRender.current) {
@@ -398,10 +383,7 @@ export default function MapScreen() {
 
   // Create a viewability config ref
   const viewabilityConfig = {
-    // Consider an item visible when at least 10% is visible
-    itemVisiblePercentThreshold: 0,
-    // This helps ensure we catch the sections early
-    minimumViewTime: 1,
+    viewAreaCoveragePercentThreshold: 10,
   };
 
   // Find the next available unit

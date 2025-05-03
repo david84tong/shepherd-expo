@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, Image, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
-import PrimaryButton from '../../components/PrimaryButton';
+import { useOnboardingStore } from '../stores/onboardingStore';
+import { useUserStore } from '../stores/userStore';
 import Animated, { 
   useAnimatedStyle, 
   withTiming, 
@@ -9,30 +10,42 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import * as Notifications from 'expo-notifications';
+import * as Haptics from 'expo-haptics';
+import PrimaryButton from '../../components/PrimaryButton';
 
-export default function NotificationPermissionScreen() {
+// Path images
+const walkInLightImg = require('../../assets/onboarding/chronological.png');
+const wisdomImg = require('../../assets/onboarding/dailyWisdom.png');
+const overcomingImg = require('../../assets/onboarding/overcomingFlesh.png');
+const knowingJesusImg = require('../../assets/onboarding/walkingWithJesus.png');
+
+export type PathOption = {
+  id: string;
+  title: string;
+  subtitle: string;
+  image: any;
+  order: [string];
+};
+
+export default function OnboardingPathScreen() {
   const router = useRouter();
-  const [showingAlert, setShowingAlert] = useState(false);
+  const { setResponse } = useOnboardingStore();
+  const { setUser } = useUserStore();
+  const [selectedPathId, setSelectedPathId] = useState("knowing-jesus");
+  const [pressedId, setPressedId] = useState<string | undefined>(undefined);
 
   // Create Reanimated shared values for each component
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(40);
-  
-  const contentOpacity = useSharedValue(0);
-  const contentTranslateY = useSharedValue(40);
-  
-  const buttonOpacity = useSharedValue(0);
-  const buttonTranslateY = useSharedValue(40);
+  const optionsOpacity = useSharedValue(0);
+  const optionsTranslateY = useSharedValue(40);
 
   useEffect(() => {
     // Reset animation values
     titleOpacity.value = 0;
     titleTranslateY.value = 40;
-    contentOpacity.value = 0;
-    contentTranslateY.value = 40;
-    buttonOpacity.value = 0;
-    buttonTranslateY.value = 40;
+    optionsOpacity.value = 0;
+    optionsTranslateY.value = 40;
     
     // Staggered animations for each component
     const animateComponent = (opacity: any, translateY: any, delay: number) => {
@@ -47,8 +60,7 @@ export default function NotificationPermissionScreen() {
 
     // Start animations with delays
     animateComponent(titleOpacity, titleTranslateY, 0);
-    animateComponent(contentOpacity, contentTranslateY, 200);
-    animateComponent(buttonOpacity, buttonTranslateY, 400);
+    animateComponent(optionsOpacity, optionsTranslateY, 200);
   }, []);
 
   // Create animated styles for each component
@@ -57,125 +69,118 @@ export default function NotificationPermissionScreen() {
     transform: [{ translateY: titleTranslateY.value }]
   }));
 
-  const contentStyle = useAnimatedStyle(() => ({
-    opacity: contentOpacity.value,
-    transform: [{ translateY: contentTranslateY.value }]
+  const optionsStyle = useAnimatedStyle(() => ({
+    opacity: optionsOpacity.value,
+    transform: [{ translateY: optionsTranslateY.value }]
   }));
 
-  const buttonStyle = useAnimatedStyle(() => ({
-    opacity: buttonOpacity.value,
-    transform: [{ translateY: buttonTranslateY.value }]
-  }));
-
-  // Function to handle the don't allow button
-  const handleDontAllow = () => {
-    router.push('/onboarding/9' as any);
-  };
-
-  // Function to handle the allow button
-  const handleAllow = async () => {
-    if (showingAlert) return;
-    setShowingAlert(true);
-    
+  const handleSelection = async (pathId: string) => {
+    // Trigger light haptic feedback
     try {
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
-      
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-      
-      if (finalStatus === 'granted') {
-        router.push('/onboarding/9' as any);
-
-      } else {
-        router.push('/onboarding/9' as any);
-
-      }
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     } catch (error) {
-      console.error('Error requesting notification permissions:', error);
-      
-    } finally {
-      setShowingAlert(false);
+      console.log('Haptics not available');
     }
+    setSelectedPathId(pathId);
+    await setResponse('selectedPath', pathId as any);
+    setUser({ selectedPathId: pathId });
   };
+ 
+  const paths: PathOption[] = [
+    {
+      id: 'knowing-jesus',
+      title: 'Knowing Jesus',
+      subtitle: 'Deepen your relationship with Christ',
+      image: knowingJesusImg,
+      order: [""]
 
-  // Function to handle the remind me button
-  const handleRemindMe = () => {
-    router.push('/onboarding/9' as any);
-  };
+    },  
+    {
+      id: 'way-of-wisdom',
+      title: 'The Way of Wisdom',
+      subtitle: 'Gain clarity and discernment',
+      image: wisdomImg,
+      order: [""]
+    },
+    {
+      id: 'overcoming',
+      title: 'Overcoming the Flesh',
+      subtitle: 'Learn to resist temptation',
+      image: overcomingImg,
+      order: [""]
+    },
+    {
+      id: 'walk-in-light',
+      title: 'Journey Through',
+      subtitle: 'Read the Bible chronologically',
+      image: walkInLightImg,
+      order: [""],
+    },
+  ];
 
   return (
-    <View className="flex-1 bg-surfaceCream items-center px-5">
+    <View className="flex-1 bg-surfaceCream px-6 pt-12">
+      {/* Title Section */}
       <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-12 mt-32 mx-12">
-          Get Support from Shepherd
+        <Text className="font-feather text-h1 text-center text-textPrimary mb-2">
+          Choose Your Path
+        </Text>
+        <Text className="font-din text-body text-center text-description mb-8">
+         How would you like to read the Bible?
         </Text>
       </Animated.View>
 
-      <Animated.View style={contentStyle} className="items-center">
-        {/* iOS-style Notification Example */}
-        <View className="bg-white rounded-xl w-[400px] shadow-sm mb-6 flex-row p-3 items-center">
-          <Image 
-            source={require('../../assets/icon.png')} 
-            className="w-12 h-12 mr-3 rounded-[8px]"
-          />
-          <View className="flex-1">
-            <View className="flex-row justify-between">
-              <Text className="font-bold text-black">From Shepherd</Text>
-              <Text className="text-gray-400 text-xs">now</Text>
-            </View>
-            <Text className="text-black text-sm">Reminder that God is with you.</Text>
-          </View>
-        </View>
-
-        {/* Notification Dialog - positioned to match iOS style */}
-        <View className="absolute top-[42%] left-0 right-0 flex items-center justify-center z-10 opacity-90 mt-28">
-          <View className="bg-white rounded-[14px] w-[280px] overflow-hidden shadow-lg">
-            <View className="p-4">
-              <Text className="text-black text-[17px] font-feather text-center mb-2 mt-2">
-                "Shepherd" Would Like to Send You Notifications
-              </Text>
-              <Text className="text-[#666666] text-[15px] font-din text-center px-6 mb-2">
-                Notifications may include alerts, sounds, and icon badges. These can be configured in Settings.
-              </Text>
-            </View>
-
-            <View className="flex-row border-t border-gray-200">
-              <TouchableOpacity 
-                className="flex-1 py-[12px] border-r border-gray-200"
-                onPress={handleDontAllow}
+      {/* Path Options Grid */}
+      <Animated.View style={optionsStyle} className="flex-1">
+        <View className="flex-row flex-wrap justify-between gap-y-4 w-[100%] pb-24 overflow-hidden shadow-buttonShadow">
+          {paths.map((path) => (
+            <View key={path.id} className={`bg-surfaceCream w-[46%] rounded-xl border-border border-4 overflow-hidden ${
+              selectedPathId === path.id ? 'border-4 border-accentGold' : 'opacity-70'
+            }`}>
+              <Pressable
+                onPress={() => handleSelection(path.id)}
+                onPressIn={() => {
+                  setPressedId(path.id);
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
+                onPressOut={() => setPressedId(undefined)}
+                className={`transform ${pressedId === path.id ? 'translate-y-[3px]' : 'translate-y-0'}`}
+                style={({ pressed }) => [
+                  { elevation: pressed ? 0 : 6 }
+                ]}
               >
-                <Text className="text-[#007AFF] text-[17px] text-center font-din">Don't Allow</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                className="flex-1 py-[12px]"
-                onPress={handleAllow}
-              >
-                <Text className="text-accentGold text-[17px] text-center font-bold">Allow</Text>
-              </TouchableOpacity>
+                {/* Path Image */}
+                <Image
+                  source={path.image}
+                  className={`w-[100%] h-40 shadow-md`}
+                  resizeMode="cover"
+                />
+                
+                {/* Path Text Content */}
+                <View className="p-3">
+                  <Text className="font-feather text-h3 text-textPrimary mb-1 text-center">
+                    {path.title}
+                  </Text>
+                  <Text className="font-din text-md text-description text-center">
+                    {path.subtitle}
+                  </Text>
+                </View>
+              </Pressable>
             </View>
-          </View>
-
-          {/* Yellow arrow pointing up */}
-          <View className="mt-4 ml-36">
-            <Text className="text-accentGold text-[42px]">↑</Text>
-          </View>
+          ))}
         </View>
       </Animated.View>
 
-      {/* Bottom button */}
-      <Animated.View style={[buttonStyle, { position: 'absolute', bottom: 48, width: '100%', paddingHorizontal: 20 }]}>
-        <PrimaryButton
-          title="REMIND ME TO PRACTICE"
-          onPress={handleRemindMe}
-          primaryColor="bg-accentGold"
-          textColor="text-white"
-          style="mt-0"
-        />
-      </Animated.View>
+      {/* Continue Button */}
+      <PrimaryButton
+        title="Continue"
+        onPress={() => {
+          setUser({ selectedPathId: selectedPathId });
+          router.push('/onboarding/9' as any);
+        }}
+        disabled={!selectedPathId}
+        style="mt-6 mb-12"
+      />
     </View>
   );
 }

@@ -5,6 +5,7 @@ import { UserDoc, Lamb, Prayer, Reflection, Reading, UserStore } from '../models
 import auth from '@react-native-firebase/auth';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
 import { updateField, syncUserDocument, createUserDocument } from '../../utils/firestore';
+import { PathOption } from '../onboarding/8';
 
 // Helper function to check if user is authenticated
 const isAuthenticated = () => {
@@ -69,6 +70,23 @@ const initialState: Partial<UserDoc> = {
   completedReadings: [] as unknown as [Reading]
 };
 
+// Add this utility at the top (after imports)
+function undefinedToNull(obj: any): any {
+  if (Array.isArray(obj)) return obj.map(undefinedToNull);
+  if (obj && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj).map(([k, v]) => {
+        if (v === undefined) {
+          console.log(`[undefinedToNull] Converting key from undefined to null:`, k);
+          return [k, null];
+        }
+        return [k, undefinedToNull(v)];
+      })
+    );
+  }
+  return obj;
+}
+
 export const useUserStore = create<UserStore>()(
   persist(
     (set, get) => ({
@@ -119,8 +137,9 @@ export const useUserStore = create<UserStore>()(
         
         set(newState);
         
-        // Try to create document in Firestore
-        const success = await createUserDocument(id, userData);
+        // Convert undefined to null before sending to Firestore
+        const cleanedUserData = undefinedToNull(userData);
+        const success = await createUserDocument(id, cleanedUserData);
         if (!success) {
           console.error('Failed to create user document in Firestore');
         }
@@ -195,7 +214,22 @@ export const useUserStore = create<UserStore>()(
       setDisplayName: (displayName) => set({ displayName }),
       setSelectedPathId: (selectedPathId) => set({ selectedPathId }),
       setLamb: (lamb) => set({ lamb }),
-      setStreakCount: (streakCount) => set({ streakCount }),
+      setStreakCount: (streakCount) => {
+        set((state) => {
+          const newState = {
+            ...state,
+            streakCount,
+            updatedAt: Timestamp.now()
+          };
+          
+          // Only sync with Firestore if authenticated
+          if (isAuthenticated()) {
+            updateField('streakCount', streakCount);
+          }
+          
+          return newState;
+        });
+      },
       setLastActivityDate: (lastActivityDate) => set({ lastActivityDate }),
       setLastReadingDate: (lastReadingDate) => set({ lastReadingDate }),
       setLastPrayerDate: (lastPrayerDate) => set({ lastPrayerDate }),
@@ -293,7 +327,23 @@ export const useUserStore = create<UserStore>()(
       })),
       
       // Utility functions
-      incrementStreak: () => set(state => ({ streakCount: state.streakCount + 1 })),
+      incrementStreak: () => {
+        set((state) => {
+          const newStreakCount = state.streakCount + 1;
+          const newState = {
+            ...state,
+            streakCount: newStreakCount,
+            updatedAt: Timestamp.now()
+          };
+          
+          // Only sync with Firestore if authenticated
+          if (isAuthenticated()) {
+            updateField('streakCount', newStreakCount);
+          }
+          
+          return newState;
+        });
+      },
       addXp: (amount) => {
         set(state => ({ 
           lamb: { ...state.lamb, xp: state.lamb.xp + amount } 

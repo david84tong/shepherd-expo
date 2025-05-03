@@ -2,7 +2,7 @@
 // Path.ts: Defines the data structures for Bible paths, units, and references
 
 import { ImageSourcePropType } from 'react-native';
-
+import { PathOption } from '../onboarding/8';
 // Represents a range of chapters within a specific book
 export interface BibleReference {
     bookId: number; // Numeric ID for the book (e.g., 1 for Genesis)
@@ -192,24 +192,83 @@ export const BIBLE_PATHS: Path[] = [
         { id: 'kp-10', title: 'Babylonian Exile', reference: createRef('2 Kings', generateChapters(23, 25)), description: 'Despite Josiah\'s reforms, Judah collapses under Babylonian siege. The book closes with a captive king eating at an enemy\'s table—yet hinting at future hope.', icon: 'planet' },
       ],
     },
-  
-    /** 5 ▸ Wisdom & Poetry */
+
+    // INSERTED SECTION: Psalms Wisdom & Insight
     {
-      id: 'wisdom-poetry',
-      title: 'Wisdom & Poetry',
-      color: 'teal',
-      icon: 'musical-notes',
+      id: 'psalms-wisdom',
+      title: 'Psalms: Wisdom & Insight',
+      color: 'gold',
+      icon: 'bulb',
       description:
-        'Israel\'s songbook and wisdom literature give voice to every human emotion and question. They teach that reverence for God is the beginning of knowledge and the anchor in suffering.',
-      image: require('../../assets/icons/shepherd.png'),
+        `Eight wisdom-psalm clusters that sharpen discernment, sustain trust, and ignite lifelong delight in God's Word.`,
+      image: require('../../assets/icons/owlIcon.png'),
       riveName: 'homeLamb',
-      artboardName: 'lamb-writing',
+    artboardName: 'lamb-reading',
       units: [
-        { id: 'wis-1', title: 'Psalms: Lament & Praise', reference: createRef('Psalms', generateChapters(1, 6)), description: 'The psalter opens by contrasting blessed and wicked paths. Early laments quickly pivot to trust, modeling honest yet hopeful prayer.', icon: 'musical-note' },
-        { id: 'wis-2', title: 'Proverbs: Wisdom & Folly', reference: createRef('Proverbs', generateChapters(1, 7)), description: 'Short, memorable sayings invite readers to skillful living under God. Every couplet punches home the choice between disciplined wisdom and self-destructive folly.', icon: 'bulb' },
-        { id: 'wis-3', title: 'Ecclesiastes: Chasing Wind', reference: createRef('Ecclesiastes', generateChapters(1, 6)), description: 'The Teacher tests pleasure, work, and learning only to label them "vanity." By facing life\'s enigmas head-on, he points beyond the sun to fearless obedience.', icon: 'thunderstorm' },
-        { id: 'wis-4', title: 'Song of Songs: Covenant Love', reference: createRef('Song of Songs', generateChapters(1, 4)), description: 'A poetic duet celebrates the beauty and exclusivity of marital love. Its garden imagery echoes Eden and anticipates intimate union with Christ.', icon: 'heart' },
-        { id: 'wis-5', title: 'Job: Suffering & Sovereignty', reference: createRef('Job', generateChapters(1, 7)), description: 'A righteous man loses everything when heaven and hell wager over integrity. Dialogues with friends reveal bad theology, but the whirlwind speech reveals a bigger God.', icon: 'thunderstorm' },
+        {
+          id: 'psw-1',
+          title: 'Two Roads',
+          reference: createRef('Psalms', generateChapters(1, 3)),
+          description:
+            'Blessed vs. wicked: a life rooted by streams shows the only path that prospers.',
+          icon: 'walk',
+        },
+        {
+          id: 'psw-2',
+          title: 'Shelter & Trust',
+          reference: createRef('Psalms', generateChapters(11, 16)),
+          description:
+            'When dangers loom, these prayers model confident refuge in the Lord.',
+          icon: 'shield',
+        },
+        {
+          id: 'psw-3',
+          title: 'Creation & Torah',
+          reference: createRef('Psalms', generateChapters(19, 24)),
+          description:
+            `The skies proclaim glory while God's perfect law revives the soul.`,
+          icon: 'sunny',
+        },
+        {
+          id: 'psw-4',
+          title: 'Fret Not Evil',
+          reference: createRef('Psalms', generateChapters(37, 41)),
+          description:
+            'Patience and generosity outlast the temporary triumph of evildoers.',
+          icon: 'time',
+        },
+        {
+          id: 'psw-5',
+          title: 'True Wealth',
+          reference: createRef('Psalms', generateChapters(49, 53)),
+          description:
+            'Riches cannot ransom a soul; eternal perspective is real security.',
+          icon: 'cash',
+        },
+        {
+          id: 'psw-6',
+          title: 'Wisdom in Adversity',
+          reference: createRef('Psalms', generateChapters(90, 94)),
+          description:
+            'Moses teaches us to number our days; laments become declarations of faith.',
+          icon: 'calendar',
+        },
+        {
+          id: 'psw-7',
+          title: 'Delighting in the Word',
+          reference: createRef('Psalms', generateChapters(119, 122)),
+          description:
+            'An alphabet of devotion exalts Scripture as light, life, and liberty.',
+          icon: 'book',
+        },
+        {
+          id: 'psw-8',
+          title: 'Final Hallelujahs',
+          reference: createRef('Psalms', generateChapters(145, 150)),
+          description:
+            'Wise living crescendos in universal praise—let everything that has breath!',
+          icon: 'musical-notes',
+        },
       ],
     },
   

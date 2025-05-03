@@ -94,9 +94,9 @@ function calculateStreakAndPenalties({
 }) {
   // Convert dates
   const lastActivityDateObj = getDateFromTimestamp(lastActivityDate) || now;
-    const lastReadingDateObj = getDateFromTimestamp(lastReadingDate);
-    const lastPrayerDateObj = getDateFromTimestamp(lastPrayerDate);
-    const lastReflectionDateObj = getDateFromTimestamp(lastReflectionDate);
+  const lastReadingDateObj = getDateFromTimestamp(lastReadingDate);
+  const lastPrayerDateObj = getDateFromTimestamp(lastPrayerDate);
+  const lastReflectionDateObj = getDateFromTimestamp(lastReflectionDate);
   const lastReadingPenaltyDateObj = getDateFromTimestamp(lastReadingPenaltyDate);
   const lastPrayerPenaltyDateObj = getDateFromTimestamp(lastPrayerPenaltyDate);
   const lastReflectionPenaltyDateObj = getDateFromTimestamp(lastReflectionPenaltyDate);
@@ -112,6 +112,17 @@ function calculateStreakAndPenalties({
   const daysSincePrayerPenalty = lastPrayerPenaltyDateObj ? getDaysDifference(now, lastPrayerPenaltyDateObj) : 0;
   const daysSinceReflectionPenalty = lastReflectionPenaltyDateObj ? getDaysDifference(now, lastReflectionPenaltyDateObj) : 0;
 
+  // Check if lastReadingDate is more than 24 hours ago
+  const isReadingMoreThan24HoursAgo = lastReadingDateObj ? 
+    (now.getTime() - lastReadingDateObj.getTime() > 24 * 60 * 60 * 1000) : 
+    false;
+  
+  // Reset streak immediately if reading is more than 24 hours ago
+  if (isReadingMoreThan24HoursAgo && streakCount > 0) {
+    if (debug) console.log(`🔄 Resetting streak to 0: reading > 24hrs ago = ${isReadingMoreThan24HoursAgo}`);
+    setStreakCount(0);
+  }
+
   if (debug) {
     console.log('DEBUG - Converted date objects:', {
       lastActivityDateObj,
@@ -126,22 +137,27 @@ function calculateStreakAndPenalties({
     console.log(`📚 Days since reading: ${daysSinceReading}, Days since reading penalty: ${daysSinceReadingPenalty}`);
     console.log(`🙏 Days since prayer: ${daysSincePrayer}, Days since prayer penalty: ${daysSincePrayerPenalty}`);
     console.log(`✍️ Days since reflection: ${daysSinceReflection}, Days since reflection penalty: ${daysSinceReflectionPenalty}`);
+    console.log(`⚠️ Reading more than 24 hours ago: ${isReadingMoreThan24HoursAgo}`);
   }
   
   setLambMood(getLambMoodByHearts(lambHearts));
     
-    // Skip if user was active today
-    if (daysSinceActivity === 0) {
-      return { streakBroken: false, heartPenalty: 0, daysMissed: 0 };
-    }
+  // Skip if user was active today
+  if (daysSinceActivity === 0) {
+    return { 
+      streakBroken: isReadingMoreThan24HoursAgo, 
+      heartPenalty: 0, 
+      daysMissed: 0 
+    };
+  }
     
   // Reset completion states if it's a new day
-    if (daysSinceActivity > 0) {
+  if (daysSinceActivity > 0) {
     resetCompletionStates();
-    }
+  }
     
-    // Calculate total heart penalties (ignoring first day)
-    let heartPenalty = 0;
+  // Calculate total heart penalties (ignoring first day)
+  let heartPenalty = 0;
   let applyReadingPenalty = false;
   let applyPrayerPenalty = false;
   let applyReflectionPenalty = false;
@@ -171,16 +187,21 @@ function calculateStreakAndPenalties({
     console.log(`⏹️ No reflection penalty: days since reflection = ${daysSinceReflection}, days since penalty = ${daysSinceReflectionPenalty}`);
   }
     
-    // Check if Bible reading streak is broken (more than 1 day)
+  // Check if Bible reading streak is broken (more than 1 day)
   const isReadingStreakBroken = daysSinceReading >= 1 && applyReadingPenalty;
-    
-    // Apply penalties and update streak
-    if (heartPenalty > 0 || isReadingStreakBroken) {
+  
+  // Apply penalties and update streak
+  if (heartPenalty > 0 || isReadingStreakBroken || isReadingMoreThan24HoursAgo) {
     let newHearts = lambHearts - heartPenalty;
     if (newHearts < 0) newHearts = 0;
     setLambHearts(newHearts);
     setLambMood(getLambMoodByHearts(newHearts));
-    if (isReadingStreakBroken) setStreakCount(0);
+    
+    // Reset streak if reading streak is broken or more than 24 hours since last reading
+    if ((isReadingStreakBroken || isReadingMoreThan24HoursAgo) && streakCount > 0) {
+      if (debug) console.log(`🔄 Resetting streak to 0: streak broken = ${isReadingStreakBroken}, reading > 24hrs ago = ${isReadingMoreThan24HoursAgo}`);
+      setStreakCount(0);
+    }
     
     // Update lastActivityDate
     setLastActivityDate(firestore.Timestamp.now());
@@ -191,19 +212,19 @@ function calculateStreakAndPenalties({
     if (applyPrayerPenalty) setLastPrayerPenaltyDate(nowTimestamp);
     if (applyReflectionPenalty) setLastReflectionPenaltyDate(nowTimestamp);
       
-      return {
-        streakBroken: isReadingStreakBroken,
+    return {
+      streakBroken: isReadingStreakBroken || isReadingMoreThan24HoursAgo,
       heartPenalty, 
       daysMissed: daysSinceActivity,
       readingPenalized: applyReadingPenalty,
       prayerPenalized: applyPrayerPenalty,
       reflectionPenalized: applyReflectionPenalty
-      };
-    } else {
+    };
+  } else {
     setLambMood(getLambMoodByHearts(lambHearts));
-      return {
-        streakBroken: false,
-        heartPenalty: 0,
+    return {
+      streakBroken: isReadingMoreThan24HoursAgo,
+      heartPenalty: 0,
       daysMissed: 0,
       readingPenalized: false,
       prayerPenalized: false,
