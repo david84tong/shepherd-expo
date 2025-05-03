@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { useSharedValue, withTiming } from 'react-native-reanimated';
 import PrimaryButton from '../components/PrimaryButton';
 import auth from '@react-native-firebase/auth';
+import { useAppInitialization } from './hooks/initHook';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -65,6 +66,9 @@ export default function RootLayout() {
   const settingsSheetRef = useRef<BottomSheet>(null);
   const settingsSnapPoints = useMemo(() => ['40%', '90%'], []);
   const [isSettingsVisible, setIsSettingsVisible] = useState(false);
+
+  // App initialization hook
+  const { isInitialized, isLoading } = useAppInitialization();
 
   // Check if user has completed onboarding
   const checkOnboarding = useCallback(async () => {
@@ -267,6 +271,12 @@ useEffect(() => {
   );
   
   if (!fontsLoaded && !fontError) {
+    return null;
+  }
+  if (isLoading) {
+    return <AppLoading />;
+  }
+  if (!isInitialized) {
     return null;
   }
   

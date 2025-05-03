@@ -15,7 +15,7 @@ export interface BibleReference {
   export interface Unit {
     id: string; // Unique identifier for the unit (e.g., 'gen-1')
     title: string; // Title of the unit (e.g., "Creation & Choice")
-    description: string; // One sentence description of the unit content
+    description: string; // One sentence description of the unit conten
     reference: BibleReference | BibleReference[]; // The Bible chapters covered
     icon: string; // Icon name from @expo/vector-icons
     // Add other properties like description, xp reward, etc. later

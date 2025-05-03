@@ -3,6 +3,7 @@ import { View, Text, Image, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
+import { usePathStore } from '../stores/pathStore';
 import Animated, { 
   useAnimatedStyle, 
   withTiming, 
@@ -24,13 +25,14 @@ export type PathOption = {
   title: string;
   subtitle: string;
   image: any;
-  order: [string];
+  order: string[];
 };
 
 export default function OnboardingPathScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
   const { setUser } = useUserStore();
+  const { setSelectedPath } = usePathStore();
   const [selectedPathId, setSelectedPathId] = useState("knowing-jesus");
   const [pressedId, setPressedId] = useState<string | undefined>(undefined);
 
@@ -84,6 +86,9 @@ export default function OnboardingPathScreen() {
     setSelectedPathId(pathId);
     await setResponse('selectedPath', pathId as any);
     setUser({ selectedPathId: pathId });
+    // Save full PathOption to pathStore
+    const selectedPathObj = paths.find((p) => p.id === pathId);
+    if (selectedPathObj) setSelectedPath(selectedPathObj);
   };
  
   const paths: PathOption[] = [
@@ -92,29 +97,71 @@ export default function OnboardingPathScreen() {
       title: 'Knowing Jesus',
       subtitle: 'Deepen your relationship with Christ',
       image: knowingJesusImg,
-      order: [""]
-
+      order: [  'gospels-life-of-christ',      // Meet Jesus first
+        'acts-early-church',           // See faith in action
+        'pauline-epistles',            // Romans & grace foundations
+        'genesis-beginnings',          // Creation, fall, promise
+        'exodus-deliverance-law',      // God’s rescue & covenant
+        'psalms-wisdom',               // God’s love & honest prayer
+        'general-epistles',            // Identity & assurance
+        'revelation-end-new',          // Hope & new creation
+        'kingdoms-prophets',           // Story-arc context
+        'major-prophets',              // Messianic promises
+        'minor-prophets',              // Justice & mercy echo-chamber
+        'wilderness-testing-provision']
     },  
     {
       id: 'way-of-wisdom',
       title: 'The Way of Wisdom',
       subtitle: 'Gain clarity and discernment',
       image: wisdomImg,
-      order: [""]
+      order: [ 'psalms-wisdom',               // 💡 daily heart-training starts here
+        'gospels-life-of-christ',      // Parables & Sermon on the Mount
+        'general-epistles',            // James: faith in action
+        'pauline-epistles',            // Short practical letters
+        'acts-early-church',           // Everyday courage & generosity
+        'genesis-beginnings',          // Foundational life lessons
+        'exodus-deliverance-law',      // Ten Words ≥ daily ethics
+        'kingdoms-prophets',           // Narrative case-studies
+        'major-prophets',              // Long-form meditation
+        'minor-prophets',              // Short, punchy convictions
+        'wilderness-testing-provision',// Sabbaths, vows, spiritual rhythms
+        'revelation-end-new',  ]
     },
     {
       id: 'overcoming',
       title: 'Overcoming the Flesh',
       subtitle: 'Learn to resist temptation',
       image: overcomingImg,
-      order: [""]
+      order: [  'genesis-beginnings',          // Fall, Cain, Noah
+        'exodus-deliverance-law',      // Golden Calf & the Law
+        'gospels-life-of-christ',      // Jesus’ temptation & teaching
+        'pauline-epistles',            // Romans 7, Gal 5, Eph 6
+        'general-epistles',            // James & 1 Peter on trials
+        'psalms-wisdom',               // Honest prayers & heart-level wisdom
+        'wilderness-testing-provision',// Discipline in the desert
+        'minor-prophets',              // Sin-judgment-hope cycle
+        'kingdoms-prophets',           // Kings who rise/fall
+        'major-prophets',              // Big-picture holiness & hope
+        'acts-early-church',           // Spiritual warfare in mission
+        'revelation-end-new', ]
     },
     {
       id: 'walk-in-light',
       title: 'Journey Through',
       subtitle: 'Read the Bible chronologically',
       image: walkInLightImg,
-      order: [""],
+      order: ['genesis-beginnings',
+        'exodus-deliverance-law',
+        'wilderness-testing-provision',
+        'kingdoms-prophets',
+        'major-prophets',
+        'minor-prophets',
+        'gospels-life-of-christ',
+        'acts-early-church',
+        'pauline-epistles',
+        'general-epistles',
+        'revelation-end-new'],
     },
   ];
 

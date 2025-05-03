@@ -69,14 +69,19 @@ const StickyPathHeader: React.FC<StickyPathHeaderProps> = ({ title, icon, color,
   };
   
   return (
-    <View className="absolute top-0 left-0 right-0 z-10 mt-12">
+    <View className="w-full">
       <View className="px-4 pt-10">
-        <View className={`flex-row items-center w-full ${getBgColor()} ${getBorderClass()} border-2 rounded-3xl  px-5 py-4`} style={{ minHeight: 72 }}>
+        <View className={`flex-row items-center w-full ${getBgColor()} ${getBorderClass()} border-2 rounded-3xl px-5 py-4`} style={{ minHeight: 72 }}>
           <View className="flex-1 justify-center">
             <Text className="font-din uppercase text-2xl mb-1 text-textPrimary" style={{ color: getDarkColor(), opacity: 0.7 }}>{`SECTION ${sectionNumber}`}</Text>
             <Text className="font-feather text-2xl font-bold" style={{ color: getDarkColor() }}>{title}</Text>
           </View>
           <Ionicons name={(icon || "book") as any} size={32} style={{ color: getDarkColor(), opacity: 0.7 }} />
+        </View>
+        {/* Decorative connector below header */}
+        <View className="items-center">
+          <View className="w-1 h-4 bg-gray-300" style={{ borderRadius: 2, marginTop: -2, marginBottom: 2 }} />
+          <View className="w-3 h-3 rounded-full" style={{ backgroundColor: getDarkColor(), marginBottom: -6, borderWidth: 2, borderColor: '#fff' }} />
         </View>
       </View>
     </View>

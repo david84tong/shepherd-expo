@@ -46,52 +46,51 @@ const NextNodeIndicator = ({ alignment }: { alignment: 'start' | 'center' | 'end
   );
 };
 
-// Hook to get unit status based on global state
-const useUnitStatus = () => {
+// Hook to get unit status based on global state and current section order
+const useUnitStatus = (sections: BibleSection[]) => {
   const completedUnitIds = usePathStore((state) => state.completedUnitIds);
-  
+
   const getStatus = (pathId: string, unitId: string): NodeStatus => {
     // 1. Check if the current unit is completed
     if (completedUnitIds.includes(unitId)) {
       return 'completed';
     }
-    
-    // Find the path and unit indices
-    const pathIndex = BIBLE_PATHS.findIndex(p => p.id === pathId);
-    const currentPath = BIBLE_PATHS[pathIndex];
-    if (!currentPath) return 'locked'; // Path not found
-    
-    const unitIndex = currentPath.units.findIndex(u => u.id === unitId);
-    if (unitIndex === -1) return 'locked'; // Unit not found
-    
-    // 2. Check if it's the very first unit overall and not completed
-    if (pathIndex === 0 && unitIndex === 0) {
+
+    // Find the section and unit indices based on the current order
+    const sectionIndex = sections.findIndex(s => s.pathId === pathId);
+    const currentSection = sections[sectionIndex];
+    if (!currentSection) return 'locked';
+    const unitIndex = currentSection.data.findIndex(u => u.id === unitId);
+    if (unitIndex === -1) return 'locked';
+
+    // 2. If this is the very first unit in the first section, it's active
+    if (sectionIndex === 0 && unitIndex === 0) {
       return 'active';
     }
-    
-    // 3. Check if the PREVIOUS unit in the SAME path is completed
+
+    // 3. If previous unit in the same section is completed, it's active
     if (unitIndex > 0) {
-      const previousUnitId = currentPath.units[unitIndex - 1].id;
+      const previousUnitId = currentSection.data[unitIndex - 1].id;
       if (completedUnitIds.includes(previousUnitId)) {
         return 'active';
       }
     }
-    
-    // 4. Check if it's the FIRST unit of a LATER path AND the LAST unit of the PREVIOUS path is completed
-    if (unitIndex === 0 && pathIndex > 0) {
-      const previousPath = BIBLE_PATHS[pathIndex - 1];
-      if (previousPath && previousPath.units.length > 0) {
-        const lastUnitOfPreviousPathId = previousPath.units[previousPath.units.length - 1].id;
-        if (completedUnitIds.includes(lastUnitOfPreviousPathId)) {
+
+    // 4. If first unit in a later section and last unit of previous section is completed, it's active
+    if (unitIndex === 0 && sectionIndex > 0) {
+      const previousSection = sections[sectionIndex - 1];
+      if (previousSection && previousSection.data.length > 0) {
+        const lastUnitOfPreviousSectionId = previousSection.data[previousSection.data.length - 1].id;
+        if (completedUnitIds.includes(lastUnitOfPreviousSectionId)) {
           return 'active';
         }
       }
     }
-    
-    // 5. If none of the above, it's locked
+
+    // 5. Otherwise, locked
     return 'locked';
   };
-  
+
   return { getStatus };
 };
 
@@ -156,8 +155,25 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title, isFirst, icon, col
   );
 };
 
+// Get selectedPath from pathStore
+const selectedPath = usePathStore.getState().selectedPath;
+
+// If selectedPath and its order exist, reorder BIBLE_PATHS accordingly
+let orderedPaths = BIBLE_PATHS;
+if (selectedPath && Array.isArray(selectedPath.order) && selectedPath.order.length > 0) {
+  // Create a map for quick lookup
+  const pathMap = Object.fromEntries(BIBLE_PATHS.map((p) => [p.id, p]));
+  // Filter out any ids not in BIBLE_PATHS
+  orderedPaths = selectedPath.order
+    .map((id) => pathMap[id])
+    .filter(Boolean);
+  // Add any paths not in the order array to the end
+  const remaining = BIBLE_PATHS.filter((p) => !selectedPath.order.includes(p.id));
+  orderedPaths = [...orderedPaths, ...remaining];
+}
+
 // Prepare data for SectionList with section indices and include colors
-const sections: BibleSection[] = BIBLE_PATHS.map((path, index) => ({
+const sections: BibleSection[] = orderedPaths.map((path, index) => ({
   title: path.title,
   pathId: path.id,
   index,
@@ -169,6 +185,14 @@ const sections: BibleSection[] = BIBLE_PATHS.map((path, index) => ({
   riveName: path.riveName,
   artboardName: path.artboardName
 }));
+
+// Debug: Log selectedPath and its order
+console.log('[MapScreen] selectedPath:', selectedPath);
+if (selectedPath) {
+  console.log('[MapScreen] selectedPath.order:', selectedPath.order);
+}
+console.log('[MapScreen] orderedPaths:', orderedPaths.map(p => p.id));
+console.log('[MapScreen] sections:', sections.map(s => s.pathId));
 
 // Safe haptic feedback function
 const triggerHaptic = () => {
@@ -258,7 +282,7 @@ export default function MapScreen() {
   
   // Get path store functions
   const { setPathInProgress, setSelectedPath, setSelectedBookChapter, setCurrentPath } = usePathStore();
-  const { getStatus } = useUnitStatus(); // Use the custom hook
+  const { getStatus } = useUnitStatus(sections); // Use the custom hook with current sections
   const completedUnitIds = usePathStore((state) => state.completedUnitIds);
   
   // Track if we need to suppress haptic feedback (e.g., on first render)
@@ -487,38 +511,23 @@ export default function MapScreen() {
     );
   }, [getStatus, handleNodePress, isNextUnit]);
 
-  // Render section header
-  const renderSectionHeader = ({ section }: { section: BibleSection }) => (
-    <SimpleSectionHeader 
-      title={section.title} 
-      isFirst={section.index === 0}
-    />
-  );
-
-  interface SimpleSectionHeaderProps {
-    title: string;
-    isFirst: boolean;
-  }
-  
-  const SimpleSectionHeader: React.FC<SimpleSectionHeaderProps> = ({ title, isFirst }) => {
+  // Render section header using StickyPathHeader for each section
+  const renderSectionHeader = ({ section }: { section: BibleSection }) => {
+    // Trigger haptic feedback when a new section header is rendered
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     return (
-      <View className={`pt-6 pb-4 ${isFirst ? 'mt-0' : 'mt-6 border-t border-gray-300 mx-8'}`}>
-      
-      </View>
+      <StickyPathHeader
+        title={section.title || ''}
+        icon={section.icon || 'book'}
+        color={section.color || 'green'}
+        description={section.description || ''}
+        sectionNumber={section.index + 1}
+      />
     );
   };
 
   return (
     <SafeAreaView className="flex-1 bg-surfaceCream">
-      {/* Custom Sticky Header */}
-      <StickyPathHeader 
-        title={currentSectionTitle} 
-        icon={currentSectionIcon}
-        color={currentSectionColor}
-        description={currentSectionDescription}
-        sectionNumber={currentSectionIndex + 1}
-      />
-
       <SectionList<Unit, BibleSection>
         ref={sectionListRef}
         sections={sections}
@@ -527,7 +536,7 @@ export default function MapScreen() {
         renderSectionHeader={renderSectionHeader}
         SectionSeparatorComponent={null}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: 100, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: 40 }}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         scrollEventThrottle={16}
@@ -542,7 +551,6 @@ export default function MapScreen() {
           offset: ITEM_HEIGHT * index,
           index,
         })}
-        className="-mt-16"
       />
       
       {/* If we want a floating persistent next indicator, we could add it here */}

@@ -5,6 +5,7 @@ import { Feather } from '@expo/vector-icons';
 import { useCallback, useRef, useState } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Haptics from 'expo-haptics';
+import { usePathStore } from '../stores/pathStore';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -36,6 +37,9 @@ export default function ProfileScreen() {
       console.error('showSettings not available on global object');
     }
   }, []);
+
+  // Get selected path from pathStore
+  const selectedPath = usePathStore((state) => state.selectedPath);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -92,6 +96,14 @@ export default function ProfileScreen() {
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
             <Text className="font-feather text-heading text-textPrimary mb-2">Journey Started</Text>
             <Text className="font-din text-description">{joinDate}</Text>
+          </View>
+
+          {/* Selected Path Card */}
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+            <Text className="font-feather text-heading text-textPrimary mb-2">Selected Path</Text>
+            <Text className="font-din text-description">
+              {selectedPath?.title || 'No path selected'}
+            </Text>
           </View>
 
           {/* Store Section */}

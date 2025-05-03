@@ -3,6 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUserStore } from '../stores/userStore';
 import { Timestamp } from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import { getUserDocument } from '../../utils/firestore';
 
 // Key to check if app has been initialized
 const APP_INITIALIZED_KEY = 'shepherd-app-initialized';
@@ -44,6 +45,7 @@ export const useAppInitialization = () => {
 
   useEffect(() => {
     const initializeApp = async () => {
+        console.log('🚀 Initializing app french...');
       try {
         setIsLoading(true);
         
@@ -113,6 +115,14 @@ export const useAppInitialization = () => {
             lambHearts: userData?.lamb?.hearts || 50,
             lambName: userData?.lamb?.name || 'Not set'
           });
+
+          // Fetch user from Firestore and set to userStore
+          const firestoreUser = await getUserDocument();
+          if (firestoreUser) {
+            // Set the fetched user in Zustand userStore
+            useUserStore.getState().setUser(firestoreUser);
+            console.log('✅ User loaded from Firestore:', firestoreUser);
+          }
         }
         
         setIsInitialized(true);

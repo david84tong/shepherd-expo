@@ -33,44 +33,38 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
     setCurrentPath
   } = usePathStore();
   
-  // Find the next uncompleted unit from BIBLE_PATHS
+  // Use selectedPath to determine the correct order for BIBLE_PATHS
+  const selectedPath = usePathStore((state) => state.selectedPath);
+  const orderedPaths = useMemo(() => {
+    if (selectedPath && Array.isArray(selectedPath.order) && selectedPath.order.length > 0) {
+      const pathMap = Object.fromEntries(BIBLE_PATHS.map((p) => [p.id, p]));
+      const ordered = selectedPath.order.map((id) => pathMap[id]).filter(Boolean);
+      const remaining = BIBLE_PATHS.filter((p) => !selectedPath.order.includes(p.id));
+      return [...ordered, ...remaining];
+    }
+    return BIBLE_PATHS;
+  }, [selectedPath]);
+
+  // Find the next uncompleted unit from the ordered paths
   const nextUnit = useMemo(() => {
     let nextUnitToComplete: Unit | null = null;
-    
     console.log('Finding next uncompleted unit. Completed:', completedUnitIds);
-    
-    // Iterate through all paths in order
-    for (const path of BIBLE_PATHS) {
-      // Iterate through units in order within each path
+    for (const path of orderedPaths) {
       for (const unit of path.units) {
-        // Find the first unit that's not in completedUnitIds
         if (!completedUnitIds.includes(unit.id)) {
-          console.log(`Found next uncompleted unit: ${unit.title}`);
+          console.log(`[BiblePreviewComponent] Found next uncompleted unit: ${unit.title} in path ${path.id}`);
           nextUnitToComplete = unit;
-          
-          // Also store the path details in a variable for later use
-          const pathInfo = {
-            pathId: path.id,
-            pathTitle: path.title
-          };
-          
-          // Break out of unit loop once we find the first uncompleted unit
           break;
         }
       }
-      
-      // Break out of path loop if we found a unit
       if (nextUnitToComplete) break;
     }
-    
-    // If no uncompleted unit was found, default to the first unit
-    if (!nextUnitToComplete && BIBLE_PATHS.length > 0 && BIBLE_PATHS[0].units.length > 0) {
-      console.log('No uncompleted units found, defaulting to first unit');
-      nextUnitToComplete = BIBLE_PATHS[0].units[0];
+    if (!nextUnitToComplete && orderedPaths.length > 0 && orderedPaths[0].units.length > 0) {
+      console.log('[BiblePreviewComponent] No uncompleted units found, defaulting to first unit');
+      nextUnitToComplete = orderedPaths[0].units[0];
     }
-    
     return nextUnitToComplete;
-  }, [completedUnitIds]);
+  }, [completedUnitIds, orderedPaths]);
   
   // Helper to get a single BibleReference from nextUnit.reference
   const getFirstReference = (ref: Unit['reference']) => Array.isArray(ref) ? ref[0] : ref;
