@@ -62,6 +62,8 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
   const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
+  const setMode = useHomeStore((state) => state.setMode); // já deve existir ou adicione
+
 
   // Get userStore functions for saving prayer
   const addCompletedPrayer = useUserStore((state) => state.addCompletedPrayer);
@@ -262,7 +264,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     // Mark prayer as completed
     setPrayerCompleted(true);
     setPathInProgress(false);
-
+    setMode('DEFAULT');
     // Create current timestamp
     const now = firestore.Timestamp.now();
 
