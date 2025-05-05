@@ -145,7 +145,7 @@ export default function OnboardingLambNameScreen() {
         params: {
           animated: true,
           animation: 'fade',
-          immediate: true, // boolean
+          immediate: false, // boolean
         },
       } as any);
     }

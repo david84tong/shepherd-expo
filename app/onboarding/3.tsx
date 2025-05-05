@@ -1,19 +1,20 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import React, { useState, useRef, useLayoutEffect } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
-  withTiming,
-  withSpring,
   useSharedValue,
   withDelay,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import PrimaryButton from '../../components/PrimaryButton';
 import { useOnboardingStore } from '../stores/onboardingStore';
+import { toBool } from '../utils/toBool';
 
 export default function OnboardingIntentScreen() {
   const router = useRouter();
@@ -45,7 +46,7 @@ export default function OnboardingIntentScreen() {
     if (animationsInitialized.current) return;
 
     // Set initial screen opacity based on whether we came from immediate transition
-    const immediate = params?.immediate === 'true';
+    const immediate = toBool(params?.immediate);
     screenOpacity.value = immediate ? 1 : 0;
 
     if (!immediate) {
@@ -152,7 +153,7 @@ export default function OnboardingIntentScreen() {
         params: {
           animated: true,
           animation: 'fade',
-          immediate: true,
+          immediate: false,
         },
       } as any);
     }
@@ -232,11 +233,10 @@ export default function OnboardingIntentScreen() {
             <View
               className={`
               w-6 h-6 rounded-full border-2 items-center justify-center
-              ${
-                selectedIntents.includes(button.id)
+              ${selectedIntents.includes(button.id)
                   ? 'bg-accentGold border-accentGold'
                   : 'border-description'
-              }
+                }
             `}>
               {selectedIntents.includes(button.id) && (
                 <Ionicons name="checkmark" size={16} color="white" />
