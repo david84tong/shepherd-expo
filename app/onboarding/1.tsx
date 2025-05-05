@@ -246,7 +246,7 @@ export default function OnboardingWelcomeScreen() {
         params: {
           animated: true,
           animation: 'fade',
-          immediate: true,
+          immediate: false,
         },
       } as any);
     });

@@ -14,6 +14,7 @@ import Rive from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
+import { toBool } from '../utils/toBool';
 
 export default function OnboardingLambNameScreen() {
   const router = useRouter();
@@ -47,12 +48,10 @@ export default function OnboardingLambNameScreen() {
   useLayoutEffect(() => {
     if (animationsInitialized.current) return;
 
-    // Set initial screen opacity based on whether we came from immediate transition
-    const immediate = params?.immediate === 'true';
+    const immediate = toBool(params?.immediate);
     screenOpacity.value = immediate ? 1 : 0;
 
     if (!immediate) {
-      // Fade in the entire screen first, faster
       screenOpacity.value = withTiming(1, { duration: 250 });
     }
 
@@ -138,22 +137,15 @@ export default function OnboardingLambNameScreen() {
 
   const handleContinue = async () => {
     if (inputLambName.trim()) {
-      // Save the lamb name to the user store
       setLambName(inputLambName.trim());
-
-      // Save to onboarding responses
       setResponse('lambName', inputLambName.trim());
-
-      // Animate out before navigating, but faster
-      screenOpacity.value = withTiming(0, { duration: 300 }); // Faster fade out
-
-      // Shorter delay before navigating
+      screenOpacity.value = withTiming(0, { duration: 300 });
       router.push({
         pathname: '/onboarding/3',
         params: {
           animated: true,
           animation: 'fade',
-          immediate: true,
+          immediate: true, // boolean
         },
       } as any);
     }
