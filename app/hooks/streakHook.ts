@@ -419,7 +419,7 @@ export const useStreakManager = () => {
 
 // ─────────────── STREAK SUBTEXTS (1–21) ───────────────
 export const STREAK_SUBTEXTS: Record<number, string> = {
-  1: "Therefore, if anyone is in Christ, he is a new creation. The old has passed away; behold, the new has come.(2 Cor 5:17)",
+  1: "Therefore, if anyone is in Christ, he is a new creation. The old has passed away; behold, the new has come. (2 Cor 5:17)",
   2: "Faith as small as a mustard seed can move mountains. (Mt 17:20)",
   3: "The Lord is my shepherd; I shall not want. (Ps 23:1)",
   4: "Those who hope in the Lord will renew their strength. (Isa 40:31)",

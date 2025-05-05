@@ -116,7 +116,7 @@ export default function NotificationPermissionScreen() {
 
       <Animated.View style={contentStyle} className="items-center">
         {/* iOS-style Notification Example */}
-        <View className="bg-white rounded-xl w-[400px] shadow-sm mb-6 flex-row p-3 items-center">
+        <View className="bg-white rounded-xl w-[360px] shadow-sm mb-6 flex-row p-3 items-center mx-12">
           <Image 
             source={require('../../assets/icon.png')} 
             className="w-12 h-12 mr-3 rounded-[8px]"

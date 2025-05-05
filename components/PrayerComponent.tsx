@@ -4,11 +4,15 @@ import PrimaryButton from './PrimaryButton';
 import { usePathStore } from '../app/stores/pathStore';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { useUserStore } from '../app/stores/userStore';
+import { usePrayerStore } from '../app/stores/prayerStore';
 import BackButton from './BackButton';
 import { router } from 'expo-router';
 import firestore from '@react-native-firebase/firestore';
 import { useAssets } from 'expo-asset';
 import Rive from 'rive-react-native';
+
+// Default prayer template if no user prayer is available
+const DEFAULT_PRAYER_TEMPLATE = "Dear God, I come before you today with a heart full of gratitude. Please help me find inner peace and wisdom in all that I do. Amen.";
 
 interface PrayerComponentProps {
   /** Whether the component should render. */
@@ -19,7 +23,6 @@ interface PrayerComponentProps {
   buttonClassName?: string;
 }
 
-const TARGET_TEXT = "Dear God, I come before you...";
 const TYPING_SPEED_MS = 50;
 const WAIT_DURATION_S = 10; // 10 seconds wait time
 
@@ -57,6 +60,20 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   // Get userStore functions for saving prayer
   const addCompletedPrayer = useUserStore(state => state.addCompletedPrayer);
   const setLastPrayerDate = useUserStore(state => state.setLastPrayerDate);
+  
+  // Get prayer content from prayerStore
+  const { recentPrayers } = usePrayerStore();
+  const prayerTopic = recentPrayers.length > 0 ? recentPrayers[0] : '';
+  
+  // Generate prayer text based on the user's selected topic
+  const generatePrayerText = () => {
+    if (!prayerTopic) return DEFAULT_PRAYER_TEMPLATE;
+    
+    return `Dear God, I come before you today with a humble heart. Please help me with ${prayerTopic.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
+  };
+  
+  // Prayer text to display (with the user's topic)
+  const [prayerText, setPrayerText] = useState(generatePrayerText());
 
   // State for typing animation
   const [typedText, setTypedText] = useState('');
@@ -74,6 +91,10 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     
     if (visible) {
       console.log('PrayerComponent: Showing prayer component');
+      // Generate fresh prayer text
+      const newPrayerText = generatePrayerText();
+      setPrayerText(newPrayerText);
+      
       // Reset states immediately
       setPathInProgress(true);
       setIsTimerActive(true); 
@@ -87,8 +108,8 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
       const typingTimer = setTimeout(() => {
         typingIntervalRef.current = setInterval(() => {
           setCurrentIndex((prevIndex) => {
-            if (prevIndex < TARGET_TEXT.length) {
-              setTypedText((prev) => TARGET_TEXT.substring(0, prevIndex + 1));
+            if (prevIndex < newPrayerText.length) {
+              setTypedText((prev) => newPrayerText.substring(0, prevIndex + 1));
               return prevIndex + 1;
             } else {
               if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
@@ -167,7 +188,40 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
       setCurrentIndex(0);
       if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
     }
-  }, [visible, setPathInProgress, timerProgress, cardAnim, cardOpacity, buttonAnim, buttonOpacity, shakeAnimation]);
+  }, [visible, setPathInProgress, timerProgress, cardAnim, cardOpacity, buttonAnim, buttonOpacity, shakeAnimation, prayerTopic]);
+
+  // Function to render prayer text with highlighted topic
+  const renderPrayerText = () => {
+    if (!prayerTopic || !typedText) {
+      return <Text className="text-body text-textPrimary font-din">{typedText}</Text>;
+    }
+    
+    // Check if the prayer topic is in the typed text (case insensitive)
+    const lowerTypedText = typedText.toLowerCase();
+    const lowerPrayerTopic = prayerTopic.toLowerCase();
+    
+    if (lowerTypedText.includes(lowerPrayerTopic)) {
+      // Find the actual case as it appears in typed text
+      const startIndex = lowerTypedText.indexOf(lowerPrayerTopic);
+      const endIndex = startIndex + prayerTopic.length;
+      
+      // Split text into parts: before topic, topic, after topic
+      const beforeTopic = typedText.substring(0, startIndex);
+      const topicText = typedText.substring(startIndex, endIndex);
+      const afterTopic = typedText.substring(endIndex);
+      
+      return (
+        <Text className="text-body text-textPrimary font-din">
+          {beforeTopic}
+          <Text className="text-blue font-feather">{topicText}</Text>
+          {afterTopic}
+        </Text>
+      );
+    }
+    
+    // If topic not found, just return the text
+    return <Text className="text-body text-textPrimary font-din">{typedText}</Text>;
+  };
 
   // Interpolate derived values (memoised to prevent listener leaks)
   // IMPORTANT: These hooks must be before any conditional returns
@@ -204,7 +258,8 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
       // Save the completed prayer
       addCompletedPrayer({
         date: now,
-        type: 'standard' // You could add more prayer types later
+        type: 'standard', // You could add more prayer types later
+        topic: prayerTopic || 'general' // Save the prayer topic
       });
       
       // Update last prayer date
@@ -245,24 +300,23 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   };
 
   return (
-    <View className="absolute inset-0 flex flex-col" pointerEvents="box-none">
+    <View className="flex flex-col h-full w-full absolute" pointerEvents="box-none">
       {/* Back Button */}
       <BackButton 
         onPress={handleBackPress}
+        containerClassName="-pt-[4px]"
       />
       
       {/* Prayer Card */} 
       <Animated.View 
-        className={`w-[90%] bg-surfaceCream rounded-[28px] pt-8 pb-4 px-6 items-center z-10 mt-[120px] mx-auto border-4 border-border`}
+        className={`w-[90%] bg-surfaceCream rounded-[28px] pt-8 pb-4 px-6 mt-[120px] items-center z-10 mx-auto border-4 border-border`}
         style={{ 
           opacity: cardOpacity, 
           transform: [{ translateY: cardAnim }] 
         }}
       >
         <View className="w-full bg-surfaceCream/50 rounded-[18px] p-4 mb-4">
-          <Text className="text-body text-textPrimary text-body font-feather text-center ">
-            {typedText}
-          </Text>
+          {renderPrayerText()}
         </View>
         {/* Progress Bar Container */}
         <View className="w-full h-4 bg-blue-100 rounded-full overflow-hidden">
@@ -275,17 +329,17 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
       </Animated.View>
 
       {/* Spacer to push the "Done Praying" button to the bottom */}
-      <View className="flex-1 h-64" />
+      <View className="flex-1 h-[100px]" />
 
       {/* Animated Button Container */}
       <Animated.View 
-        className="w-full px-5 mb-10 mt-64"
+        className="w-full px-5 mb-10 absolute -bottom-24"
         style={{
           opacity: buttonOpacity,
           transform: [{ translateY: buttonAnim }, { translateX: shakeTranslateX }]
         }}
       >
-        <View className="mt-16">
+        <View className="mt-64">
         <PrimaryButton 
           title="Amen" 
           onPress={handleDonePress} 

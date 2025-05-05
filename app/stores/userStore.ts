@@ -225,6 +225,7 @@ export const useUserStore = create<UserStore>()(
           
           // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
+            console.log('Updating streakCount in Firestore:', streakCount);
             updateField('streakCount', streakCount);
           }
           

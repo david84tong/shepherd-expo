@@ -3,6 +3,7 @@ import { Animated, Platform, StyleSheet, View, ViewStyle, Image, Pressable } fro
 import { useHomeStore } from '../stores/homeStore';
 import { usePathStore } from '../stores/pathStore';
 import { useEffect, useRef } from 'react';
+import * as Haptics from 'expo-haptics';
 
 // Helper component to center the icon
 const CenteredIcon = ({ children }: { children: React.ReactNode }) => (
@@ -27,10 +28,22 @@ function CustomTabBarButton(props: any) {
       useNativeDriver: true, // Use native driver for performance (opacity)
     }).start();
   }, [focused, focusAnim]);
+  
+  // Handle press with haptic feedback
+  const handlePress = () => {
+    // Trigger medium haptic feedback when tab is pressed
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {
+      // Silently fail if haptics don't work
+      console.log('Haptics not available');
+    });
+    
+    // Call the original onPress handler
+    onPress();
+  };
 
   return (
     <Pressable
-      onPress={onPress}
+      onPress={handlePress}
       // Apply base flex styling and only horizontal margin
       className={`flex-1 items-center justify-center mx-1`}
     >

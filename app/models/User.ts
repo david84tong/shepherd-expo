@@ -139,6 +139,7 @@ export interface Reflection {
 export interface Prayer {
     date: FirebaseFirestoreTypes.Timestamp;
     type: string;
+    topic?: string; // Optional topic field for the prayer
 }
 
 

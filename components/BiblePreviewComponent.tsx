@@ -291,10 +291,17 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         style={{ opacity: buttonOpacity, transform: [{ translateY: buttonAnim }] }}
       >
         <PrimaryButton title="Start Reading" onPress={handleStart} />
-        {/* Just Read Bible Button */}
-        <PrimaryButton title="Just Read Bible" onPress={handleJustReadBible} buttonType="default" style="mt-2" />
-        {/* Finish Reading Button */}
-   
+        
+        {/* Just Read Bible Button - now styled as underlined grey text */}
+        <TouchableOpacity 
+          onPress={handleJustReadBible}
+          className="mt-4 mb-6 py-2"
+          activeOpacity={0.7}
+        >
+          <Text className="text-body font-nunito-bold text-textPrimary/70 text-center underline text-white">
+            Just Read Bible
+          </Text>
+        </TouchableOpacity>
       </Animated.View>
     </Animated.View>
   );

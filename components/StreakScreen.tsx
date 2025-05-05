@@ -319,10 +319,10 @@ export const StreakScreen = () => {
       </Animated.View>
 
       {/* Day tracker card */}
-      <Animated.View style={cardStyle} className="mx-4 rounded-card border-4 border-border bg-white py-4 px-2 py-8">
-        <View className="flex-row justify-between items-center mb-2 px-8">
+      <Animated.View style={cardStyle} className="mx-4 rounded-card border-4 border-border bg-white py-4 px-2 py-6">
+        <View className="flex-row justify-between items-center mb-2 px-4">
           {weekCells.map((cell) => (
-            <View key={cell.dateKey} className="items-center">
+            <View key={cell.dateKey} className="items-center mx-1">
               <Text className={`font-feather text-md mb-1
                 ${cell.isToday ? 'text-accentGold font-feather-bold' : 'text-description'}`}>
                 {cell.label}
@@ -330,23 +330,23 @@ export const StreakScreen = () => {
 
               {/* icon swap */}
               {cell.status === 'BEFORE_ACCOUNT' && (
-                <View className="w-12 h-12" />
+                <View className="w-10 h-10" />
               )}
               {cell.status === 'FUTURE' && (
-                <View className="w-12 h-12 rounded-full bg-[#EAEAEA]" />
+                <View className="w-10 h-10 rounded-full bg-[#EAEAEA]" />
               )}
               {cell.status === 'TODAY_PENDING' && (
-                <View className="w-12 h-12 rounded-full border-2 border-accentGold items-center justify-center">
+                <View className="w-10 h-10 rounded-full border-2 border-accentGold items-center justify-center">
                   <Ionicons name="ellipsis-horizontal" size={24} color="#F2B705" />
                 </View>
               )}
               {cell.status === 'COMPLETED' && (
-                <View className="w-12 h-12 rounded-full bg-accentGold items-center justify-center">
+                <View className="w-10 h-10 rounded-full bg-accentGold items-center justify-center">
                   <Image source={require('../assets/icons/whiteCheck.png')} className="w-12 h-12" />
                 </View>
               )}
               {cell.status === 'MISSED' && (
-                <View className="w-12 h-12 rounded-full bg-[#EAEAEA] items-center justify-center">
+                <View className="w-10 h-10 rounded-full bg-[#EAEAEA] items-center justify-center">
                   <Text className="text-[#999] text-xl">✕</Text>
                 </View>
               )}
@@ -354,7 +354,7 @@ export const StreakScreen = () => {
           ))}
         </View>
         <View className="border-t border-border my-2" />
-        <Animated.Text style={subtextStyle} className="text-center text-black text-h2 font-din px-8 py-4">
+        <Animated.Text style={subtextStyle} className="text-center text-black text-heading font-din px-8 py-4">
           {subText}
         </Animated.Text>
       </Animated.View>

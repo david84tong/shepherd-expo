@@ -12,8 +12,8 @@ import { useAssets } from 'expo-asset';
 const FIRST_WELCOME_TEXT = "Welcome to Shepherd";
 const SECOND_WELCOME_TEXT = "You found a lost lamb...";
 const SECOND_STAGE_PROMPT = "Tap on the lost lamb to wake it up";
-const TYPING_SPEED = 100; // Speed for all typing effects
-const ZOOM_DURATION = 5000; // 5 seconds for a very slow zoom
+const TYPING_SPEED = 75; // Speed for all typing effects
+const ZOOM_DURATION = 4000; // 5 seconds for a very slow zoom
 const TRANSITION_DURATION = 350; // Faster transition animation duration
 
 // Function to trigger a light haptic feedback
@@ -158,7 +158,7 @@ export default function OnboardingWelcomeScreen() {
             clearInterval(typingInterval);
           }
         }, TYPING_SPEED);
-      }, 1000);
+      }, 500);
       
       return () => {
         clearTimeout(typingTimeout);

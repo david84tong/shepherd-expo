@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { View, Text, SectionList, Pressable, SafeAreaView, NativeSyntheticEvent, NativeScrollEvent, ViewToken, TouchableOpacity, Dimensions, Image, Animated, ImageSourcePropType, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -186,60 +186,6 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title, isFirst, icon, col
   );
 };
 
-// Get selectedPath from pathStore
-const selectedPath = usePathStore.getState().selectedPath;
-
-// If selectedPath and its order exist, reorder BIBLE_PATHS accordingly
-let orderedPaths = BIBLE_PATHS;
-if (selectedPath && Array.isArray(selectedPath.order) && selectedPath.order.length > 0) {
-  // Create a map for quick lookup
-  const pathMap = Object.fromEntries(BIBLE_PATHS.map((p) => [p.id, p]));
-  // Filter out any ids not in BIBLE_PATHS
-  orderedPaths = selectedPath.order
-    .map((id) => pathMap[id])
-    .filter(Boolean);
-  // Add any paths not in the order array to the end
-  const remaining = BIBLE_PATHS.filter((p) => !selectedPath.order.includes(p.id));
-  orderedPaths = [...orderedPaths, ...remaining];
-}
-
-// Prepare data for SectionList with section indices and include colors
-const sections: BibleSection[] = orderedPaths.map((path, index) => ({
-  title: path.title,
-  pathId: path.id,
-  index,
-  data: path.units,
-  icon: path.icon,
-  color: path.color,
-  description: path.description,
-  image: path.image,
-  riveName: path.riveName,
-  artboardName: path.artboardName
-}));
-
-// Debug: Log selectedPath and its order
-console.log('[MapScreen] selectedPath:', selectedPath);
-if (selectedPath) {
-  console.log('[MapScreen] selectedPath.order:', selectedPath.order);
-}
-console.log('[MapScreen] orderedPaths:', orderedPaths.map(p => p.id));
-console.log('[MapScreen] sections:', sections.map(s => s.pathId));
-
-// Safe haptic feedback function
-const triggerHaptic = () => {
-  // Check if Haptics is available and the method exists
-  if (Haptics && typeof Haptics.impactAsync === 'function') {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {
-        // Silently fail if haptics don't work
-      });
-    } catch (error) {
-      // Safely ignore haptic errors
-      console.log('Haptics not available');
-    }
-  }
-};
-
 // Pulsing animation component
 const PulsingCircle: React.FC = () => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -304,6 +250,39 @@ const ITEM_HEIGHT = 180; // adjust if needed
 
 export default function MapScreen() {
   const router = useRouter();
+  
+  // Get selectedPath from the store inside the component
+  const selectedPath = usePathStore((state) => state.selectedPath);
+  
+  // Calculate sections inside the component using useMemo
+  const sections = useMemo(() => {
+    let orderedPaths = BIBLE_PATHS;
+    if (selectedPath && Array.isArray(selectedPath.order) && selectedPath.order.length > 0) {
+      console.log('[MapScreen Component] Reordering paths based on selectedPath:', selectedPath.id);
+      const pathMap = Object.fromEntries(BIBLE_PATHS.map((p) => [p.id, p]));
+      orderedPaths = selectedPath.order
+        .map((id) => pathMap[id])
+        .filter(Boolean);
+      const remaining = BIBLE_PATHS.filter((p) => !selectedPath.order.includes(p.id));
+      orderedPaths = [...orderedPaths, ...remaining];
+    } else {
+      console.log('[MapScreen Component] Using default path order.');
+    }
+
+    return orderedPaths.map((path, index) => ({
+      title: path.title,
+      pathId: path.id,
+      index,
+      data: path.units,
+      icon: path.icon,
+      color: path.color,
+      description: path.description,
+      image: path.image,
+      riveName: path.riveName,
+      artboardName: path.artboardName
+    }));
+  }, [selectedPath]); // Recalculate sections when selectedPath changes
+  
   const [currentSectionTitle, setCurrentSectionTitle] = useState(sections[0]?.title || 'Map');
   const [currentSectionIcon, setCurrentSectionIcon] = useState(sections[0]?.icon || 'book');
   const [currentSectionColor, setCurrentSectionColor] = useState(sections[0]?.color || 'green');
@@ -312,9 +291,20 @@ export default function MapScreen() {
   const sectionListRef = useRef<SectionList<Unit, BibleSection>>(null);
   
   // Get path store functions
-  const { setPathInProgress, setSelectedPath, setSelectedBookChapter, setCurrentPath } = usePathStore();
-  const { getStatus, isSectionUnlocked } = useUnitStatus(sections); // Use the custom hook with current sections
+  const { setPathInProgress, setSelectedBookChapter, setCurrentPath } = usePathStore();
+  const { getStatus, isSectionUnlocked } = useUnitStatus(sections); // Pass the calculated sections to the hook
   const completedUnitIds = usePathStore((state) => state.completedUnitIds);
+
+  // Update initial state based on calculated sections
+  useEffect(() => {
+    if (sections.length > 0) {
+      setCurrentSectionTitle(sections[0].title);
+      setCurrentSectionIcon(sections[0].icon || 'book');
+      setCurrentSectionColor(sections[0].color || 'green');
+      setCurrentSectionDescription(sections[0].description || '');
+      setCurrentSectionIndex(sections[0].index || 0);
+    }
+  }, [sections]);
   
   // Track if we need to suppress haptic feedback (e.g., on first render)
   const isFirstRender = useRef(true);
@@ -430,12 +420,8 @@ export default function MapScreen() {
         setCurrentSectionDescription(focusedSection.description || '');
         setCurrentSectionIndex(focusedSection.index || 0);
         
-        // No debouncing update necessary
-        
-        // Don't trigger haptic on first render
-        if (!isFirstRender.current) {
-          triggerHaptic(); // Use our safe wrapper instead of direct call
-        } else {
+        // Still track first render
+        if (isFirstRender.current) {
           isFirstRender.current = false;
         }
       }
@@ -565,9 +551,6 @@ export default function MapScreen() {
 
   // Render section header using StickyPathHeader for each section
   const renderSectionHeader = ({ section }: { section: BibleSection }) => {
-    // Trigger haptic feedback when a new section header is rendered
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    
     // Check if section is unlocked
     const isUnlocked = isSectionUnlocked(section.pathId);
     
