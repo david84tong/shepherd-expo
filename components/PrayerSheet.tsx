@@ -226,7 +226,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
           </View>
 
           {/* Generate button */}
-          <View className="mt-48">
+          <View className="mt-28">
             <PrimaryButton
               title="Generate a prayer"
               onPress={handlePrayerGenerate}
