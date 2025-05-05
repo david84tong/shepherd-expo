@@ -1,13 +1,19 @@
 import React, { useEffect } from 'react';
-import { View, Text, Animated, ImageBackground } from 'react-native';
+import { View, Text, Animated, ImageBackground, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import Rive from 'rive-react-native';
+import { useAssets } from 'expo-asset';
 
 export default function OnboardingWelcomeScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
+
+  // Load Rive assets
+  const [riveAssets] = useAssets([
+    require('../../assets/riveAnimations/homeLamb.riv')
+  ]);
 
   // Create animated values
   const titleAnimation = new Animated.Value(0);
@@ -55,6 +61,16 @@ export default function OnboardingWelcomeScreen() {
     ],
   });
 
+  // Show loading indicator while assets load
+  if (!riveAssets) {
+    return (
+      <View className="flex-1 items-center justify-center bg-surfaceCream">
+        <ActivityIndicator size="large" color="#3C584A" />
+        <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
+      </View>
+    );
+  }
+
   return (
     <View className="flex-1">
       <ImageBackground 
@@ -77,7 +93,7 @@ export default function OnboardingWelcomeScreen() {
         >
           <View className="h-[200px] w-full justify-center items-center">
             <Rive
-              resourceName="homeLamb"
+              url={riveAssets[0].localUri!}
               artboardName="lamb-idle"
               autoplay={true}
               style={{ width: '80%', height: '80%' }}

@@ -4,7 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { UserDoc, Lamb, Prayer, Reflection, Reading, UserStore } from '../models/User';
 import auth from '@react-native-firebase/auth';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
-import { updateField, syncUserDocument, createUserDocument } from '../../utils/firestore';
+import { updateField, syncUserDocument, createUserDocument, getUserDocument } from '../../utils/firestore';
 import { PathOption } from '../onboarding/8';
 
 // Helper function to check if user is authenticated
@@ -130,7 +130,7 @@ export const useUserStore = create<UserStore>()(
         const newState = {
           ...initialState,
           ...userData,
-          id,
+          id,  // Just set id, no need for uid
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now()
         } as UserDoc;
@@ -138,7 +138,10 @@ export const useUserStore = create<UserStore>()(
         set(newState);
         
         // Convert undefined to null before sending to Firestore
-        const cleanedUserData = undefinedToNull(userData);
+        const cleanedUserData = undefinedToNull({
+          ...userData,
+          id  // Ensure id is explicitly set in Firestore doc
+        });
         const success = await createUserDocument(id, cleanedUserData);
         if (!success) {
           console.error('Failed to create user document in Firestore');
@@ -152,8 +155,7 @@ export const useUserStore = create<UserStore>()(
         set((state) => {
           const newState = {
             ...state,
-            ...user,
-            updatedAt: Timestamp.now()
+            ...user
           };
           
           // Only sync with Firestore if authenticated
@@ -218,8 +220,7 @@ export const useUserStore = create<UserStore>()(
         set((state) => {
           const newState = {
             ...state,
-            streakCount,
-            updatedAt: Timestamp.now()
+            streakCount
           };
           
           // Only sync with Firestore if authenticated
@@ -264,8 +265,7 @@ export const useUserStore = create<UserStore>()(
         set((state) => {
           const newState = {
             ...state,
-            completedReadings: [...state.completedReadings, reading] as unknown as [Reading],
-            updatedAt: Timestamp.now()
+            completedReadings: [...state.completedReadings, reading] as unknown as [Reading]
           };
           // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
@@ -274,6 +274,7 @@ export const useUserStore = create<UserStore>()(
           return newState;
         });
       },
+      
       
       // Setters for Lamb
       setLambLevel: (level) => set(state => ({
@@ -308,8 +309,7 @@ export const useUserStore = create<UserStore>()(
         set((state) => {
           const newState = {
             ...state,
-            lamb: { ...state.lamb, name },
-            updatedAt: Timestamp.now()
+            lamb: { ...state.lamb, name }
           };
           
           console.log('New state after setting lamb name:', newState);
@@ -332,13 +332,12 @@ export const useUserStore = create<UserStore>()(
           const newStreakCount = state.streakCount + 1;
           const newState = {
             ...state,
-            streakCount: newStreakCount,
-            updatedAt: Timestamp.now()
+            streakCount: newStreakCount
           };
           
           // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
-            updateField('streakCount', newStreakCount);
+            // updateField('streakCount', newStreakCount);
           }
           
           return newState;
@@ -385,15 +384,70 @@ export const useUserStore = create<UserStore>()(
           completedReflections: state.completedReflections,
           completedPrayers: state.completedPrayers,
           completedReadings: state.completedReadings,
-          // Ensure id and potentially uid/email are included if they exist on state
+          // Ensure id and email are included if they exist on state
           id: state.id,
-          ...(state.uid && { uid: state.uid }),
           ...(state.email && { email: state.email }),
           ...(state.denomination && { denomination: state.denomination }),
         };
 
         // Pass only the data object to syncUserDocument
         return await syncUserDocument(dataToSync);
+      },
+      
+      // Fetch user data from Firestore and update the store
+      fetchFromFirestore: async () => {
+        if (!isAuthenticated()) {
+          console.log('User not authenticated, skipping Firestore fetch');
+          return false;
+        }
+        
+        try {
+          console.log('Fetching latest user data from Firestore');
+          const currentUser = auth().currentUser;
+          if (!currentUser || !currentUser.uid) {
+            console.log('No valid user ID available, skipping Firestore fetch');
+            return false;
+          }
+          
+          // First try to get the document directly
+          const userDoc = await firestore().collection('users').doc(currentUser.uid).get();
+          
+          if (!userDoc.exists) {
+            console.log('User document does not exist in Firestore for ID:', currentUser.uid);
+            
+            // If document doesn't exist, try to create it with local data
+            const currentState = get();
+            if (currentState && currentState.id) {
+              console.log('Creating user document from local state');
+              await syncUserDocument(currentState);
+              return true;
+            }
+            return false;
+          }
+          
+          const userData = userDoc.data() as UserDoc;
+          
+          if (userData) {
+            console.log('Got user data from Firestore, updating local store');
+            
+            // Ensure the data has an id field (matching Firebase uid)
+            const updatedUserData = {
+              ...userData,
+              id: currentUser.uid
+            };
+            
+            set((state) => ({
+              ...state,
+              ...updatedUserData
+            }));
+            return true;
+          }
+          
+          return false;
+        } catch (error) {
+          console.error('Error fetching user data from Firestore:', error);
+          return false;
+        }
       },
     }),
     {

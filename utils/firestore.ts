@@ -35,7 +35,6 @@ export const createUserDocument = async (id: string, userData: Partial<UserDoc>)
     const docToCreate = {
       ...userData,
       id,
-      uid: currentUser.uid,
       email: currentUser.email,
       createdAt: Timestamp.now(),
       updatedAt: Timestamp.now(),
@@ -89,9 +88,12 @@ export const updateField = async (fieldPath: string, value: any) => {
       return false;
     }
 
+    // Use uid from Firebase auth for the document ID
+    const userId = currentUser.uid;
+
     await firestore()
       .collection('users')
-      .doc(currentUser.uid)
+      .doc(userId)
       .update({
         [fieldPath]: value,
         updatedAt: Timestamp.now()
@@ -113,9 +115,12 @@ export const syncUserDocument = async (userDoc: Partial<UserDoc>) => {
       return false;
     }
 
+    // Use uid from Firebase auth for the document ID
+    const userId = currentUser.uid;
+
     const docToSync = {
       ...userDoc,
-      uid: currentUser.uid,
+      id: userId,
       email: currentUser.email,
       updatedAt: Timestamp.now(),
       createdAt: userDoc.createdAt || Timestamp.now()
@@ -124,7 +129,7 @@ export const syncUserDocument = async (userDoc: Partial<UserDoc>) => {
 
     await firestore()
       .collection('users')
-      .doc(currentUser.uid)
+      .doc(userId)
       .set(docToSyncCleaned, { merge: true });
 
     console.log('Successfully synced with Firestore');
@@ -144,9 +149,12 @@ export const getUserDocument = async () => {
       return null;
     }
 
+    // Use uid from Firebase auth for the document ID
+    const userId = currentUser.uid;
+
     const doc = await firestore()
       .collection('users')
-      .doc(currentUser.uid)
+      .doc(userId)
       .get();
 
     return doc.exists ? doc.data() as UserDoc : null;

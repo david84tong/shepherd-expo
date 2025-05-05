@@ -71,7 +71,7 @@ export function useAuth() {
       
       // Create or update user document in Firestore
       const userDoc = {
-        uid,
+        id: uid,
         email,
         displayName,
         createdAt: firestore.Timestamp.now(),
@@ -113,7 +113,7 @@ export function useAuth() {
       // Create anonymous user document
       const { uid } = userCredential.user;
       const userDoc = {
-        uid,
+        id: uid,
         displayName: 'Anonymous User',
         createdAt: firestore.Timestamp.now(),
         updatedAt: firestore.Timestamp.now(),

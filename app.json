@@ -2,7 +2,7 @@
   "expo": {
     "name": "Shepherd",
     "slug": "shepherd",
-    "version": "1.0.7",
+    "version": "1.1.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "shepherd",
@@ -20,10 +20,11 @@
       "backgroundColor": "#FFF4D9"
     },
     "ios": {
-      "bundleIdentifier": "io.tryshepherd.app",
+      "bundleIdentifier": "second.round.shepherd",
+      "buildNumber": "12",
       "googleServicesFile": "./GoogleService-Info.plist",
       "deploymentTarget": "15.1",
-      "appleTeamId": "45ZFHZF3MY",
+      "appleTeamId": "FY756JUW9K",
       "usesAppleSignIn": false,
       "supportsTablet": false,
       "config": {
@@ -39,7 +40,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "io.tryshepherd.app",
+      "package": "second.round.shepherd",
+      "versionCode": 1,
       "googleServicesFile": "./google-services.json"
     },
     "web": {
@@ -82,6 +84,6 @@
         "projectId": "e55bbb73-0fba-4eb9-92ec-9433da72c8c7"
       }
     },
-    "owner": "goodd0ctor"
+    "owner": "second-round"
   }
 }

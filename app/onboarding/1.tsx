@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, Animated, ImageBackground, Easing, Pressable, TouchableOpacity } from 'react-native';
+import { View, Text, Animated, ImageBackground, Easing, Pressable, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOnboardingStore } from '../stores/onboardingStore';
@@ -7,11 +7,12 @@ import PrimaryButton from '../../components/PrimaryButton';
 import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import { useAssets } from 'expo-asset';
 
-const WELCOME_TEXT = "Welcome to Shepherd3";
+const FIRST_WELCOME_TEXT = "Welcome to Shepherd";
+const SECOND_WELCOME_TEXT = "You found a lost lamb...";
 const SECOND_STAGE_PROMPT = "Tap on the lost lamb to wake it up";
-const FIRST_STAGE_TYPING_SPEED = 100; // Slower for welcome text
-const SECOND_STAGE_TYPING_SPEED = 50; // Keep original speed for second stage
+const TYPING_SPEED = 100; // Speed for all typing effects
 const ZOOM_DURATION = 5000; // 5 seconds for a very slow zoom
 const TRANSITION_DURATION = 350; // Faster transition animation duration
 
@@ -39,6 +40,7 @@ export default function OnboardingWelcomeScreen() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [isLambTapped, setIsLambTapped] = useState(false);
   const [isTransitioning, setIsTransitioning] = useState(false);
+  const [textPhase, setTextPhase] = useState(1); // 1 = first welcome, 2 = second welcome, 3 = tap prompt
 
   // Animation refs
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -51,25 +53,47 @@ export default function OnboardingWelcomeScreen() {
   // Reference to the Rive state machine
   const riveRef = useRef<RiveRef>(null);
 
+  // Function to start typing the second welcome text
+  const startSecondWelcomeText = () => {
+    // Fade out text
+    Animated.timing(textOpacityAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setDisplayText(''); // Clear text
+      setTextPhase(2); // Move to second text phase
+      
+      // Fade in text for second phase
+      setTimeout(() => {
+        Animated.timing(textOpacityAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      }, 200);
+    });
+  };
+
   // Function to start the zoom and transition to second stage
   const startZoomAndTransition = () => {
-    // Clear the text immediately
-    setDisplayText('');
+    // Clear the text with animation
+    Animated.timing(textOpacityAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      setDisplayText(''); // Clear text
+      setTextPhase(3); // Move to tap prompt phase
+    });
     
-    // Fade out text only
-    Animated.parallel([
-      Animated.timing(textOpacityAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(gradientOpacityAnim, {
-        toValue: 1,
-        duration: 2000,
-        easing: Easing.bezier(0.4, 0, 0.2, 1),
-        useNativeDriver: false
-      })
-    ]).start();
+    // Fade in gradient
+    Animated.timing(gradientOpacityAnim, {
+      toValue: 1,
+      duration: 2000,
+      easing: Easing.bezier(0.4, 0, 0.2, 1),
+      useNativeDriver: false
+    }).start();
     
     // Start zoom animation
     Animated.parallel([
@@ -91,16 +115,36 @@ export default function OnboardingWelcomeScreen() {
     });
   };
 
-  // Combined typewriter effect
+  // Typewriter effect based on current text phase
   useEffect(() => {
-    let currentIndex = 0;
-    const textToType = secondStageActive ? SECOND_STAGE_PROMPT : WELCOME_TEXT;
-    const typingSpeed = secondStageActive ? SECOND_STAGE_TYPING_SPEED : FIRST_STAGE_TYPING_SPEED;
+    let textToType = '';
     
-    if (secondStageActive) {
-      // Start typing after delay
+    // Determine which text to type based on phase
+    if (textPhase === 1) {
+      textToType = FIRST_WELCOME_TEXT;
+    } else if (textPhase === 2) {
+      textToType = SECOND_WELCOME_TEXT;
+    } else if (textPhase === 3 && secondStageActive) {
+      textToType = SECOND_STAGE_PROMPT;
+    } else {
+      return; // No text to type
+    }
+    
+    let currentIndex = 0;
+    let typingInterval: NodeJS.Timeout;
+    
+    // If we're in tap prompt phase, add delay before typing
+    if (textPhase === 3) {
       const typingTimeout = setTimeout(() => {
-        const interval = setInterval(() => {
+        // Fade in text container
+        Animated.timing(textOpacityAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true
+        }).start();
+        
+        // Start typing after fade in
+        typingInterval = setInterval(() => {
           if (currentIndex <= textToType.length) {
             setDisplayText(textToType.slice(0, currentIndex));
             
@@ -111,29 +155,18 @@ export default function OnboardingWelcomeScreen() {
             
             currentIndex++;
           } else {
-            clearInterval(interval);
+            clearInterval(typingInterval);
           }
-        }, typingSpeed);
-        return () => clearInterval(interval);
+        }, TYPING_SPEED);
       }, 1000);
-
-      // Fade in text after delay
-      const fadeTimeout = setTimeout(() => {
-        Animated.timing(textOpacityAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true
-        }).start();
-      }, 700);
-
+      
       return () => {
         clearTimeout(typingTimeout);
-        clearTimeout(fadeTimeout);
+        clearInterval(typingInterval);
       };
     } else {
-      // First stage typing
-      textOpacityAnim.setValue(1);
-      const interval = setInterval(() => {
+      // For first and second welcome texts
+      typingInterval = setInterval(() => {
         if (currentIndex <= textToType.length) {
           setDisplayText(textToType.slice(0, currentIndex));
           
@@ -144,18 +177,30 @@ export default function OnboardingWelcomeScreen() {
           
           currentIndex++;
         } else {
-          clearInterval(interval);
-          // Fade in button after text finishes typing
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 500,
-            useNativeDriver: true,
-          }).start();
+          clearInterval(typingInterval);
+          
+          // After first text finishes, automatically transition to second text after a delay
+          if (textPhase === 1) {
+            // Wait 1.5 seconds after first text completes before showing second text
+            const transitionTimer = setTimeout(() => {
+              startSecondWelcomeText();
+            }, 1500);
+            
+            return () => clearTimeout(transitionTimer);
+          } else if (textPhase === 2) {
+            // After second text finishes, show the button
+            Animated.timing(fadeAnim, {
+              toValue: 1,
+              duration: 500,
+              useNativeDriver: true,
+            }).start();
+          }
         }
-      }, typingSpeed);
-      return () => clearInterval(interval);
+      }, TYPING_SPEED);
+      
+      return () => clearInterval(typingInterval);
     }
-  }, [secondStageActive]);
+  }, [textPhase, secondStageActive]);
 
   // Handle tapping the lamb in the second stage
   const handleLambTap = () => {
@@ -201,20 +246,27 @@ export default function OnboardingWelcomeScreen() {
   // Handle the main button press
   const handleButtonPress = () => {
     setIsAnimating(true);
-    if (!secondStageActive) {
-      // First stage: Start the zoom
+    
+    if (textPhase === 2) {
+      // After seeing both welcome texts, start zoom animation
       startZoomAndTransition();
-    } else if (isLambTapped) {
+    } else if (secondStageActive && isLambTapped) {
       // Second stage & lamb tapped: Navigate with animation
       handleTransitionToNextScreen();
     }
-    // Do nothing if in second stage but lamb hasn't been tapped
   };
 
-  const interpolatedMiddleColor = gradientOpacityAnim.interpolate({
-    inputRange: [0, 1],
-    outputRange: ['rgba(0,0,0,0.2)', 'rgba(0,0,0,0.6)']
-  });
+  // Load the Rive asset - Moved after all other hooks
+  const [assets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+
+  // Show loading indicator while assets are loading
+  if (!assets) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF4D9' }}>
+        <ActivityIndicator size="large" color="#3C584A" />
+      </View>
+    );
+  }
 
   return (
     <Animated.View style={{ flex: 1, opacity: screenFadeAnim, backgroundColor: '#FFF4D9' }}>
@@ -226,7 +278,7 @@ export default function OnboardingWelcomeScreen() {
           opacity: textOpacityAnim
         }}
       > 
-        <Text className="font-feather text-title text-center text-white mt-12">
+        <Text className={`${textPhase === 3 ? 'font-nunito-bold text-h1' : 'font-feather text-title'} text-center text-white mt-12`}>
           {displayText}
         </Text>
       </Animated.View>
@@ -258,7 +310,12 @@ export default function OnboardingWelcomeScreen() {
               style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
             />
             {/* Animated overlay gradient (stage 2) */}
-            <Animated.View style={{ opacity: gradientOpacityAnim }}>
+            <Animated.View 
+              style={{
+                opacity: gradientOpacityAnim,
+                position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 // Added positioning
+              }}
+            >
               <LinearGradient
                 colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.4)', 'transparent']}
                 locations={[0, 0.3, 1]}
@@ -274,14 +331,11 @@ export default function OnboardingWelcomeScreen() {
               <View className="w-[225px] h-[225px] w-full justify-center items-center relative">
                 <Rive
                   ref={riveRef}
-                  resourceName="homeLamb"
+                  url={assets[0].localUri!} // Use url prop with localUri
                   artboardName="lamb-wakingup-click"
                   stateMachineName="State Machine 1"
                   fit={Fit.Contain}
                   alignment={Alignment.Center}
-                  onStateChanged={(stateMachineName: string) => {
-                    console.log('State changed:', stateMachineName);
-                  }}
                   style={{ width: '100%', height: '100%' }}
                 />
                 {/* Transparent overlay for tap detection */}
@@ -314,9 +368,9 @@ export default function OnboardingWelcomeScreen() {
         }}
       >
         <PrimaryButton
-          title={isLambTapped ? "Claim Lost Lamb" : "Begin Journey"}
+          title={textPhase === 2 ? "Begin Journey" : "Claim Lost Lamb"}
           onPress={handleButtonPress}
-          // Active unless in stage 2 AND lamb hasn't been tapped or is transitioning
+          // Only disable in specific conditions
           disabled={(secondStageActive && !isLambTapped) || isAnimating || isTransitioning}
         />
       </Animated.View>

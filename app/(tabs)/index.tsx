@@ -14,7 +14,7 @@ import {
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigation } from '@react-navigation/native';
-import { Asset } from 'expo-asset';
+import { Asset, useAssets } from 'expo-asset';
 import SecondaryButton from '../../components/SecondaryButton';
 import PrimaryButton from '../../components/PrimaryButton';
 import PrayerComponent from '../../components/PrayerComponent';
@@ -78,6 +78,12 @@ export default function HomeScreen() {
   const [showBgRive, setShowBgRive] = useState(false);
   // Lamb size animation
   const lambSizeAnim = useRef(new Animated.Value(256)).current; // Start with full size (256px)
+
+  // Load Rive assets
+  const [riveAssets] = useAssets([
+    require('../../assets/riveAnimations/homeLamb.riv'),
+    require('../../assets/riveAnimations/bg-green.riv')
+  ]);
 
   // Add state for asset loading
   const [assetsLoaded, setAssetsLoaded] = useState(false);
@@ -168,7 +174,7 @@ export default function HomeScreen() {
         Animated.add(
           prayerAnim.interpolate({
             inputRange: [0, 1],
-            outputRange: [0, 290],
+            outputRange: [0, 330],
             extrapolate: 'clamp',
           }),
           reflectionAnim.interpolate({
@@ -646,8 +652,8 @@ export default function HomeScreen() {
     cacheImages();
   }, []);
 
-  // Modify the return statement to show loading indicator while assets load
-  if (!assetsLoaded) {
+  // Show loading indicator while assets load
+  if (!assetsLoaded || !riveAssets) {
     return (
       <View className="flex-1 items-center justify-center bg-surfaceCream">
         <ActivityIndicator size="large" color="#3C584A" />
@@ -723,9 +729,9 @@ export default function HomeScreen() {
           { position: 'absolute', width: '100%', height: '100%', zIndex: 0 },
           { opacity: waterOpacityAnim },
         ]}>
-        {showBgRive && (
+        {showBgRive && riveAssets && (
           <Rive
-            resourceName="homeLamb"
+            url={riveAssets[1].localUri!}
             autoplay={true}
             style={{ width: '160%', height: '160%', top: -300, left: -128 }}
           />
@@ -739,22 +745,23 @@ export default function HomeScreen() {
 
           {/* Animated Default Header Elements (Title + Stats) */}
           <Animated.View
-            className="absolute inset-0 flex-row items-center justify-between px-6"
+            className="absolute inset-0 flex-row items-center justify-between px-8 w-full"
             style={[{ opacity: headerDefaultOpacityAnim }]}
             pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}>
-            <Text
-              className="text-h1 font-feather text-white tracking-wide"
-              style={{
-                textShadowColor: 'rgba(0, 0, 0, 0.2)',
-                textShadowOffset: { width: 0, height: 1 },
-                textShadowRadius: 2,
-              }}>
-              {lambName || 'Shepherd'}
-            </Text>
-            <View className="flex-1 ml-2 mr-2" />
-            <View className="flex-row items-center space-x-2">
-              <ProgressPill value={0} label="2" icon={flameIcon} />
-              <ProgressPill value={0} label="3" icon={gemIcon} />
+            <View className="flex-row items-center flex-1 justify-between">
+              <Text
+                className="text-h1 font-feather text-white tracking-wide right-0"
+                style={{
+                  textShadowColor: 'rgba(0, 0, 0, 0.2)',
+                  textShadowOffset: { width: 0, height: 1 },
+                  textShadowRadius: 2,
+                }}>
+                {lambName || 'Shepherd'}
+              </Text>
+              <View className="flex-row gap-2 left-8">
+                <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
+                <ProgressPill value={0} label={gens.toString()} icon={gemIcon} />
+              </View>
             </View>
           </Animated.View>
         </View>
@@ -798,13 +805,15 @@ export default function HomeScreen() {
                       },
                     ],
                   }}>
-                  <Rive
-                    ref={riveRef}
-                    resourceName="homeLamb"
-                    artboardName={artboardName}
-                    onError={handleRiveError}
-                    style={{ width: '100%', height: '100%' }}
-                  />
+                  {riveAssets && (
+                    <Rive
+                      ref={riveRef}
+                      url={riveAssets[0].localUri!}
+                      artboardName={artboardName}
+                      onError={handleRiveError}
+                      style={{ width: '100%', height: '100%' }}
+                    />
+                  )}
                 </Animated.View>
               </Animated.View>
             )}

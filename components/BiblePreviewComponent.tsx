@@ -6,6 +6,8 @@ import { usePathStore } from '../app/stores/pathStore';
 import BackButton from './BackButton';
 import * as Haptics from 'expo-haptics';
 import { Unit, BIBLE_PATHS } from '../app/models/Path'; // Import Unit and BIBLE_PATHS
+import { useAssets } from 'expo-asset';
+import Rive from 'rive-react-native';
 
 interface BiblePreviewProps {
   /** Whether the preview overlay should be shown. */
@@ -99,6 +101,11 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
 
   const [scrolledToBottom, setScrolledToBottom] = useState(false);
   const scrollViewRef = useRef(null);
+
+  // Prepare for future Rive usage
+  const [riveAssets] = useAssets([
+    require('../assets/riveAnimations/homeLamb.riv')
+  ]);
 
   useEffect(() => {
     if (visible) {

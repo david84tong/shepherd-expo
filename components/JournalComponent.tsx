@@ -7,7 +7,8 @@ import {
   Platform, 
   Keyboard,
   Dimensions,
-  Animated
+  Animated,
+  ActivityIndicator
 } from 'react-native';
 import PrimaryButton from './PrimaryButton';
 import { usePathStore } from '../app/stores/pathStore';
@@ -17,6 +18,7 @@ import Rive, { RiveRef } from 'rive-react-native';
 import BackButton from './BackButton';
 import { router } from 'expo-router';
 import firestore from '@react-native-firebase/firestore';
+import { useAssets } from 'expo-asset';
 
 interface JournalProps {
   visible: boolean;
@@ -42,6 +44,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   const setReflectionCompleted = useHomeStore((state) => state.setReflectionCompleted);
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
+  const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
   
   // Get userStore functions for saving reflection
   const addCompletedReflection = useUserStore(state => state.addCompletedReflection);
@@ -55,6 +58,11 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   const buttonOpacity = useRef(new Animated.Value(0)).current;
   const bottomContentAnimY = useRef(new Animated.Value(100)).current;
   const bottomContentOpacity = useRef(new Animated.Value(0)).current;
+
+  // Load Rive assets
+  const [riveAssets] = useAssets([
+    require('../assets/riveAnimations/homeLamb.riv')
+  ]);
 
   // Keyboard event listeners with height information
   useEffect(() => {
@@ -185,6 +193,15 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
 
   if (!visible) return null;
 
+  // Show loading indicator if assets aren't loaded yet
+  if (!riveAssets) {
+    return (
+      <View className="absolute flex w-full h-full justify-center items-center" style={{ backgroundColor: 'rgba(255, 255, 255, 0.7)' }}>
+        <ActivityIndicator size="large" color="#3C584A" />
+      </View>
+    );
+  }
+
   const handleSave = () => {
     Keyboard.dismiss();
     setPathInProgress(false);
@@ -210,10 +227,10 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       console.error('Error saving reflection data:', error);
     }
     
-    if (readingCompleted && prayerCompleted) {
+    if (readingCompleted && prayerCompleted && !sawDailyBonus) {
       setSuccessType(SuccessAnimationType.BONUS);
     } else {
-    setSuccessType(SuccessAnimationType.REFLECTION);
+      setSuccessType(SuccessAnimationType.REFLECTION);
     }
     
     // Navigate to success screen
@@ -263,7 +280,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         {/* Rive Animation */}
         <View className="w-[100px] h-[100px] -ml-5 -mb-2">
           <Rive
-            resourceName="homeLamb"
+            url={riveAssets[0].localUri!}
             artboardName="lamb-writing"
             autoplay={true}
             style={{ width: '130%', height: '130%' }}

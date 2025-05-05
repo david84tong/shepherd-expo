@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { View, Text, SectionList, Pressable, SafeAreaView, NativeSyntheticEvent, NativeScrollEvent, ViewToken, TouchableOpacity, Dimensions, Image, Animated, ImageSourcePropType } from 'react-native';
+import { View, Text, SectionList, Pressable, SafeAreaView, NativeSyntheticEvent, NativeScrollEvent, ViewToken, TouchableOpacity, Dimensions, Image, Animated, ImageSourcePropType, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -8,6 +8,7 @@ import { BIBLE_PATHS, Unit, Path, BIBLE_BOOK_IDS } from '../models/Path';
 import { usePathStore, PathInfo } from '../stores/pathStore';
 import PathNode, { NodeStatus } from '../../components/MapComponents/PathNode';
 import StickyPathHeader from '../../components/MapComponents/StickyPathHeader';
+import { useAssets } from 'expo-asset';
 
 // Define our custom section type
 type BibleSection = {
@@ -25,8 +26,22 @@ type BibleSection = {
 
 // Next node indicator component with Rive animation
 const NextNodeIndicator = ({ alignment }: { alignment: 'start' | 'center' | 'end' }) => {
+  // Load Rive assets
+  const [riveAssets] = useAssets([
+    require('../../assets/riveAnimations/homeLamb.riv')
+  ]);
+  
   // Only render on non-center alignments (left or right of path)
   if (alignment === 'center') return null;
+
+  // Show loading indicator if assets aren't loaded yet
+  if (!riveAssets) {
+    return (
+      <View className="absolute right-1 top-4 w-28 h-28 bg-yellow-300 rounded-full items-center justify-center border-4 border-white">
+        <ActivityIndicator size="small" color="#3C584A" />
+      </View>
+    );
+  }
 
   // More visible wrapper with bright colors
   return (
@@ -35,7 +50,7 @@ const NextNodeIndicator = ({ alignment }: { alignment: 'start' | 'center' | 'end
       style={{ zIndex: 50 }}
     >
       <Rive
-        resourceName="homeLamb"
+        url={riveAssets[0].localUri!}
         artboardName="lamb-idle"
         autoplay={true}
         style={{ width: '100%', height: '100%' }}
@@ -90,8 +105,24 @@ const useUnitStatus = (sections: BibleSection[]) => {
     // 5. Otherwise, locked
     return 'locked';
   };
+  
+  // Function to check if a section is unlocked
+  const isSectionUnlocked = (pathId: string): boolean => {
+    // First section is always unlocked
+    const sectionIndex = sections.findIndex(s => s.pathId === pathId);
+    if (sectionIndex === 0) return true;
+    
+    // For other sections, check if the last unit of the previous section is completed
+    const previousSection = sections[sectionIndex - 1];
+    if (previousSection && previousSection.data.length > 0) {
+      const lastUnitOfPreviousSectionId = previousSection.data[previousSection.data.length - 1].id;
+      return completedUnitIds.includes(lastUnitOfPreviousSectionId);
+    }
+    
+    return false;
+  };
 
-  return { getStatus };
+  return { getStatus, isSectionUnlocked };
 };
 
 // Custom header component for each section
@@ -282,11 +313,17 @@ export default function MapScreen() {
   
   // Get path store functions
   const { setPathInProgress, setSelectedPath, setSelectedBookChapter, setCurrentPath } = usePathStore();
-  const { getStatus } = useUnitStatus(sections); // Use the custom hook with current sections
+  const { getStatus, isSectionUnlocked } = useUnitStatus(sections); // Use the custom hook with current sections
   const completedUnitIds = usePathStore((state) => state.completedUnitIds);
   
   // Track if we need to suppress haptic feedback (e.g., on first render)
   const isFirstRender = useRef(true);
+
+  // Load all Rive assets needed for sections
+  const [riveAssets] = useAssets([
+    require('../../assets/riveAnimations/homeLamb.riv'),
+    require('../../assets/riveAnimations/successLamb.riv')
+  ]);
 
   const handleNodePress = (unit: Unit) => {
     console.log('Pressed unit:', unit.title, unit.reference);
@@ -439,6 +476,19 @@ export default function MapScreen() {
     return nextUnit?.id === unit.id;
   }, [nextUnit]);
   
+  // Function to get Rive asset based on name
+  const getRiveAssetUri = (riveName?: string) => {
+    if (!riveAssets || !riveName) return null;
+    
+    if (riveName === 'homeLamb') {
+      return riveAssets[0].localUri!;
+    } else if (riveName === 'successLamb') {
+      return riveAssets[1].localUri!;
+    }
+    
+    return null;
+  };
+
   // Render a node item
   const renderItem = useCallback(({ item, index, section }: { 
     item: Unit, 
@@ -477,16 +527,18 @@ export default function MapScreen() {
             style={{ zIndex: 10 }}
           >
             <View className="w-44 h-44">
-              <Rive
-                resourceName={section.riveName}
-                artboardName={section.artboardName}
-                autoplay={true}
-                style={{
-                  width: section.riveName === 'successLamb' ? '200%' : '100%',
-                  height: section.riveName === 'successLamb' ? '200%' : '100%',
-                  opacity: section.pathId === 'genesis-beginnings' ? 1 : 1,
-                }}
-              />
+              {section.riveName && getRiveAssetUri(section.riveName) ? (
+                <Rive
+                  url={getRiveAssetUri(section.riveName)!}
+                  artboardName={section.artboardName}
+                  autoplay={true}
+                  style={{
+                    width: section.riveName === 'successLamb' ? '200%' : '100%',
+                    height: section.riveName === 'successLamb' ? '200%' : '100%',
+                    opacity: section.pathId === 'genesis-beginnings' ? 1 : 1,
+                  }}
+                />
+              ) : null}
             </View>
           </View>
         )}
@@ -515,6 +567,10 @@ export default function MapScreen() {
   const renderSectionHeader = ({ section }: { section: BibleSection }) => {
     // Trigger haptic feedback when a new section header is rendered
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    
+    // Check if section is unlocked
+    const isUnlocked = isSectionUnlocked(section.pathId);
+    
     return (
       <StickyPathHeader
         title={section.title || ''}
@@ -522,9 +578,20 @@ export default function MapScreen() {
         color={section.color || 'green'}
         description={section.description || ''}
         sectionNumber={section.index + 1}
+        isLocked={!isUnlocked}
       />
     );
   };
+
+  // Show loading indicator while assets load
+  if (!riveAssets) {
+    return (
+      <View className="flex-1 items-center justify-center bg-surfaceCream">
+        <ActivityIndicator size="large" color="#3C584A" />
+        <Text className="font-feather text-textPrimary mt-4">Loading Map...</Text>
+      </View>
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-surfaceCream">

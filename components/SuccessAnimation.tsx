@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, Dimensions, Animated, Image } from 'react-native';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
+import { View, Text, TouchableOpacity, Dimensions, Animated, Image, ActivityIndicator } from 'react-native';
 import Rive, { RiveRef } from 'rive-react-native';
 import { router } from 'expo-router';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
@@ -8,6 +8,9 @@ import { useUserStore } from '../app/stores/userStore';
 import PrimaryButton from './PrimaryButton';
 import firestore from '@react-native-firebase/firestore';
 import { getLambMoodByHearts } from '../app/hooks/streakHook';
+import dayjs from 'dayjs';
+import { StreakScreen } from './StreakScreen';
+import { useAssets } from 'expo-asset';
 
 // Import icons
 const gemIcon = require('../assets/icons/greenGemIcon.png');
@@ -42,6 +45,11 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const setSawDailyBonus = useHomeStore((state) => state.setSawDailyBonus);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
   
+  // Load Rive assets
+  const [riveAssets] = useAssets([
+    require('../assets/riveAnimations/successLamb.riv')
+  ]);
+  
   // -------- Other hooks below (must appear before any conditional return) --------
   // Get completion states
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
@@ -57,14 +65,22 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const addXp = useUserStore(state => state.addXp);
   const setLastActivityDate = useUserStore(state => state.setLastActivityDate);
   const setLastReadingDate = useUserStore(state => state.setLastReadingDate);
+  const lastReadingDate = useUserStore(state => state.getLastReadingDate());
   const setLastPrayerDate = useUserStore(state => state.setLastPrayerDate);
   const setLastReflectionDate = useUserStore(state => state.setLastReflectionDate);
   const getGens = useUserStore(state => state.getGens);
   const setGens = useUserStore(state => state.setGens);
   const setLambMood = useUserStore(state => state.setLambMood);
   
-  // Determine which type to use for rendering – force READING if sawDailyBonus is true
-  const effectiveType = sawDailyBonus ? SuccessAnimationType.READING : (successType ?? SuccessAnimationType.READING);
+  // Determine which type to use for rendering
+  const effectiveType = successType ?? SuccessAnimationType.READING;
+  
+  // Reset sawDailyBonus flag after determining effectiveType so it doesn't override future success screens
+  useEffect(() => {
+    if (sawDailyBonus) {
+      setSawDailyBonus(false);
+    }
+  }, [sawDailyBonus, setSawDailyBonus]);
   
   // State to track if rewards have been applied
   const [rewardsApplied, setRewardsApplied] = useState(false);
@@ -111,8 +127,84 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   let riveResource = "successLamb"; // Default animation
   let riveArtboard: string | undefined = undefined;
   let rewardTitle = "REWARDS EARNED";
-
-
+  
+  // State to track if we should show the streak screen
+  const [showStreakScreen, setShowStreakScreen] = useState(false);
+  // Fade animation for transition to streak screen
+  const fadeToStreakAnim = useRef(new Animated.Value(1)).current;
+  // Loading state to prevent blank screen
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  
+  // Check if this is the first reading of the day
+  const isFirstReadingOfDay = useMemo(() => {
+    console.log('=== DEBUG: isFirstReadingOfDay calculation ===');
+    console.log('effectiveType:', effectiveType);
+    
+    // Only proceed if we have the right success type
+    if (!effectiveType || effectiveType !== SuccessAnimationType.READING) {
+      console.log('DEBUG: Not a reading success type - returning false');
+      return false;
+    }
+    
+    // Get today's date at the start of the day
+    const today = dayjs().startOf('day');
+    console.log('DEBUG: today:', today.format('YYYY-MM-DD HH:mm:ss'));
+    
+    // Get the completed readings directly
+    const completedReadings = useUserStore.getState().getCompletedReadings();
+    console.log('DEBUG: Total completed readings:', completedReadings.length);
+    
+    // If this is the first reading ever, it's definitely the first of the day
+    if (completedReadings.length <= 1) {
+      console.log('DEBUG: This is the first or second reading ever - returning true');
+      return true;
+    }
+    
+    try {
+      // Map readings to date strings in YYYY-MM-DD format
+      const readingDateStrings = completedReadings
+        .filter(reading => reading.date) // Only include readings with dates
+        .map(reading => {
+          if (reading.date && typeof reading.date.toDate === 'function') {
+            // Firestore timestamp
+            const date = reading.date.toDate();
+            return dayjs(date).format('YYYY-MM-DD');
+          } else if (reading.date instanceof Date) {
+            // Regular Date
+            return dayjs(reading.date).format('YYYY-MM-DD');
+          } else {
+            // Try to handle as string or number
+            return dayjs(reading.date as any).format('YYYY-MM-DD');
+          }
+        })
+        .filter(dateStr => /^\d{4}-\d{2}-\d{2}$/.test(dateStr)); // Filter out invalid dates
+      
+      // Today's date as string for easy comparison
+      const todayStr = today.format('YYYY-MM-DD');
+      
+      // Count readings done today
+      const todaysReadingsCount = readingDateStrings.filter(date => date === todayStr).length;
+      console.log('DEBUG: Readings done today:', todaysReadingsCount);
+      
+      // Check for any readings before today
+      const hasEarlierReadings = readingDateStrings.some(date => date < todayStr);
+      console.log('DEBUG: Has earlier readings:', hasEarlierReadings);
+      
+      // This is the first reading of day if:
+      // 1. It's the only reading today (or first), AND
+      // 2. Either there are earlier readings OR this is truly the first reading ever
+      const isFirstOfDay = (todaysReadingsCount <= 1) && 
+                          (hasEarlierReadings || completedReadings.length === 1);
+      
+      console.log('DEBUG: Is first reading of day:', isFirstOfDay);
+      console.log('=== END DEBUG ===');
+      
+      return isFirstOfDay;
+    } catch (error) {
+      console.error('Error processing reading dates:', error);
+      return false;
+    }
+  }, [effectiveType]);
 
   // Get values based on successType - make sure we are handling all possible types
   if (effectiveType === SuccessAnimationType.READING) {
@@ -146,7 +238,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     heartReward = 2;
     xpReward = 3;
     rewardTitle = "PRAYER REWARDS";
-    // We'll determine artboard below based on rewards
+    riveArtboard = "success-heart"; // Show heart animation by default
   } else {
     // This should not happen, but log an error if it does
     console.error("Invalid or missing success type:", effectiveType);
@@ -292,6 +384,24 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Default navigation behavior
   const handleGoHome = () => {
+    // If this is the first reading of the day and effectiveType is READING, show streak screen
+    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
+      console.log('First reading of the day - showing streak screen');
+      // Start transition with fade out animation
+      setIsTransitioning(true);
+      
+      // Fade out current content
+      Animated.timing(fadeToStreakAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start(() => {
+        // After fade out completes, show streak screen
+        setShowStreakScreen(true);
+      });
+      return;
+    }
+    
     // Set unmounting flag first
     isUnmounting.current = true;
     
@@ -348,9 +458,32 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Set lamb mood to 'lamb-full' if all actions are completed
 
+  // If we're showing the streak screen, return it
+  if (showStreakScreen) {
+    return <StreakScreen />;
+  }
+
+  // Show loading indicator if assets aren't loaded yet
+  if (!riveAssets) {
+    return (
+      <View className="flex-1 items-center justify-center bg-surfaceCream">
+        <ActivityIndicator size="large" color="#3C584A" />
+        <Text className="font-feather text-textPrimary mt-4">Loading animation...</Text>
+      </View>
+    );
+  }
 
   return (
-    <View className="flex-1 items-center justify-center pt-12 pb-16 px-5 bg-surfaceCream">
+    <Animated.View 
+      className="flex-1 items-center justify-center pt-12 pb-16 px-5 bg-surfaceCream"
+      style={{ opacity: fadeToStreakAnim }}
+    >
+      {isTransitioning && (
+        <View className="absolute inset-0 items-center justify-center bg-surfaceCream">
+          <ActivityIndicator size="large" color="#F2B705" />
+        </View>
+      )}
+      
       {/* Rive animation - centered */}
       <View className="w-full h-96 my-8 items-center justify-center ">
         <Animated.View
@@ -368,7 +501,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         >
           <Rive
             ref={riveRef}
-            resourceName={"successLamb"}
+            url={riveAssets[0].localUri!}
             autoplay={false}
             style={{ width: '100%', height: '100%' }}
             {...(riveArtboard ? { artboardName: riveArtboard } : {})}
@@ -462,7 +595,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
           style="mt-4"
         />
       )}
-    </View>
+    </Animated.View>
   );
 };
 

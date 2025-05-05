@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
-import firestore from '@react-native-firebase/firestore';
+import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
 import { useUserStore } from '../stores/userStore';
 import { useHomeStore } from '../stores/homeStore';
 
@@ -39,6 +40,27 @@ function getDateFromTimestamp(timestamp: any): Date | null {
         return null;
       }
 }
+
+// Check if user is authenticated
+const isAuthenticated = () => {
+  return auth().currentUser !== null;
+};
+
+// Sync local changes back to Firestore
+const syncUserDataToFirestore = async () => {
+  if (!isAuthenticated()) {
+    console.log('User not authenticated, skipping Firestore sync');
+    return false;
+  }
+  
+  try {
+    console.log('Syncing user data to Firestore');
+    return await useUserStore.getState().syncWithFirestore();
+  } catch (error) {
+    console.error('Error syncing user data to Firestore:', error);
+    return false;
+  }
+};
 
 // Utility: Set lamb mood based on hearts
 export function getLambMoodByHearts(hearts: number): string {
@@ -212,6 +234,11 @@ function calculateStreakAndPenalties({
     if (applyPrayerPenalty) setLastPrayerPenaltyDate(nowTimestamp);
     if (applyReflectionPenalty) setLastReflectionPenaltyDate(nowTimestamp);
       
+    // Sync with Firestore if authenticated
+    if (isAuthenticated()) {
+      syncUserDataToFirestore();
+    }
+      
     return {
       streakBroken: isReadingStreakBroken || isReadingMoreThan24HoursAgo,
       heartPenalty, 
@@ -236,12 +263,35 @@ function calculateStreakAndPenalties({
 // Refactored: Non-hook version for use outside React components
 export const checkStreakAndApplyPenalties = async () => {
   try {
+    // First, try to fetch latest data from Firestore if user is authenticated
+    if (isAuthenticated()) {
+      try {
+        console.log('User is authenticated, fetching latest data from Firestore before checking streak');
+        await useUserStore.getState().fetchFromFirestore();
+      } catch (fetchError) {
+        console.error('Error fetching from Firestore, continuing with local data:', fetchError);
+        // Continue with local data if fetch fails
+      }
+    }
+
     const userStore = useUserStore.getState();
     const homeStore = useHomeStore.getState();
     const now = new Date();
+    
+    // Validate that we have the required data from userStore
+    if (!userStore.lamb || typeof userStore.lamb !== 'object') {
+      console.error('Invalid lamb object in userStore:', userStore.lamb);
+      return {
+        streakBroken: false,
+        heartPenalty: 0,
+        daysMissed: 0,
+        error: 'Invalid lamb data'
+      };
+    }
+    
     // Do NOT update lastActivityDate here, only after penalty calculation
     const lambHearts = userStore.lamb.hearts;
-    const streakCount = userStore.streakCount;
+    const streakCount = userStore.streakCount || 0;
     const lastActivityDate = userStore.lastActivityDate;
     const lastReadingDate = userStore.lastReadingDate;
     const lastPrayerDate = userStore.lastPrayerDate;
@@ -250,7 +300,7 @@ export const checkStreakAndApplyPenalties = async () => {
     const lastPrayerPenaltyDate = userStore.lastPrayerPenaltyDate;
     const lastReflectionPenaltyDate = userStore.lastReflectionPenaltyDate;
     
-    return calculateStreakAndPenalties({
+    const result = calculateStreakAndPenalties({
       lambHearts,
       streakCount,
       lastActivityDate,
@@ -271,6 +321,19 @@ export const checkStreakAndApplyPenalties = async () => {
       resetCompletionStates: homeStore.resetCompletionStates,
       debug: true,
     });
+    
+    // Sync changes back to Firestore if authenticated and there were significant changes
+    if (isAuthenticated() && (result.heartPenalty > 0 || result.streakBroken)) {
+      try {
+        console.log('Syncing streak changes back to Firestore');
+        await syncUserDataToFirestore();
+      } catch (syncError) {
+        console.error('Error syncing streak changes to Firestore:', syncError);
+        // Continue even if sync fails - changes are still applied locally
+      }
+    }
+    
+    return result;
   } catch (error) {
     console.error('❌ Error checking streak and applying penalties:', error);
     console.error('❌ Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
@@ -291,6 +354,11 @@ export const useStreakManager = () => {
   
   const checkAndApplyPenalties = useCallback(async () => {
     try {
+      // First, try to fetch latest data from Firestore if user is authenticated
+      if (isAuthenticated()) {
+        await userStore.fetchFromFirestore();
+      }
+      
       const lambHearts = userStore.getLambHearts();
       const streakCount = userStore.getStreakCount();
       const lastActivityDate = userStore.getLastActivityDate();
@@ -301,8 +369,8 @@ export const useStreakManager = () => {
       const lastPrayerPenaltyDate = userStore.getLastPrayerPenaltyDate();
       const lastReflectionPenaltyDate = userStore.getLastReflectionPenaltyDate();
       const now = new Date();
-      // Do NOT update lastActivityDate here, only after penalty calculation
-      return calculateStreakAndPenalties({
+      
+      const result = calculateStreakAndPenalties({
         lambHearts,
         streakCount,
         lastActivityDate,
@@ -323,6 +391,14 @@ export const useStreakManager = () => {
         resetCompletionStates: homeStore.resetCompletionStates,
         debug: true,
       });
+      
+      // Sync changes back to Firestore if authenticated and there were significant changes
+      if (isAuthenticated() && (result.heartPenalty > 0 || result.streakBroken)) {
+        console.log('Syncing streak changes back to Firestore');
+        await userStore.syncWithFirestore();
+      }
+      
+      return result;
     } catch (error) {
       console.error('❌ Error checking streak and applying penalties:', error);
       console.error('❌ Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
@@ -339,5 +415,34 @@ export const useStreakManager = () => {
   return {
     checkStreakAndApplyPenalties: checkAndApplyPenalties
   };
+};
+
+// ─────────────── STREAK SUBTEXTS (1–21) ───────────────
+export const STREAK_SUBTEXTS: Record<number, string> = {
+  1: "Therefore, if anyone is in Christ, he is a new creation. The old has passed away; behold, the new has come.(2 Cor 5:17)",
+  2: "Faith as small as a mustard seed can move mountains. (Mt 17:20)",
+  3: "The Lord is my shepherd; I shall not want. (Ps 23:1)",
+  4: "Those who hope in the Lord will renew their strength. (Isa 40:31)",
+  5: "Your word is a lamp to my feet and a light to my path. (Ps 119:105)",
+  6: "Surpassed 50% of learners—keep shining your light!",
+  7: "Be still, and know that I am God. (Ps 46:10)",
+  8: "His mercies are new every morning. (Lam 3:23)",
+  9: "Rejoice always, pray continually, give thanks. (1 Th 5:16-18)",
+  10: "I can do all things through Christ who strengthens me. (Php 4:13)",
+  11: "Seek first His kingdom and righteousness. (Mt 6:33)",
+  12: "Give us today our daily bread. (Mt 6:11)",
+  13: "The joy of the Lord is your strength. (Neh 8:10)",
+  14: "Well done, good and faithful servant. (Mt 25:23)",
+  15: "My grace is sufficient for you. (2 Co 12:9)",
+  16: "Run with perseverance the race marked out. (Heb 12:1)",
+  17: "The Lord goes before you and will be with you. (Dt 31:8)",
+  18: "The steadfast love of the Lord never ceases. (Lam 3:22)",
+  19: "Taste and see that the Lord is good. (Ps 34:8)",
+  20: "Twenty days—you're ahead of 90% of learners! Keep the faith.",
+  21: "Twenty-one days—habit formed; continue to abide in Him. (Jn 15:4)"
+};
+
+export const getStreakSubtext = (day: number): string => {
+  return STREAK_SUBTEXTS[day] || "Keep going—one day at a time.";
 };
 

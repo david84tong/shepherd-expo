@@ -8,6 +8,7 @@ import { HalfModalType } from '../app/halfModal';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import { useUserStore } from '../app/stores/userStore';
+import { useHomeStore } from '../app/stores/homeStore';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -196,6 +197,37 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
     }
   }, []);
 
+  // Handler to reset HomeStore data and clear completedReadings
+  const handleResetCompletionData = useCallback(() => {
+    Alert.alert(
+      "Reset Completion Data",
+      "This will reset all completion states and clear reading history. Continue?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { 
+          text: "Reset", 
+          style: "destructive",
+          onPress: () => {
+            // Reset homeStore data
+            const homeStore = useHomeStore.getState();
+            homeStore.resetCompletionStates();
+            homeStore.setMode('DEFAULT');
+            homeStore.setSuccessType(null);
+            
+            // Clear completedReadings from userStore
+            const userStore = useUserStore.getState();
+            userStore.setCompletedReadings([] as any);
+            
+            // Sync with Firestore to save changes
+            userStore.syncWithFirestore();
+            
+            Alert.alert('Reset Complete', 'HomeStore data and completed readings have been reset.');
+          }
+        }
+      ]
+    );
+  }, []);
+
   // Available routes grouped by type
   const ROUTE_GROUPS = {
     'Tab Routes': [
@@ -224,6 +256,20 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
       router.push('/sitemap' as any);
     }, 300);
   }, [router]);
+
+  // Handler for showing Prayer Modal
+  const handleShowPrayerModal = useCallback(() => {
+    setModalVisible(false);
+    
+    // Use global showPrayerModal if available
+    setTimeout(() => {
+      if (typeof global !== 'undefined' && (global as any).showPrayerModal) {
+        (global as any).showPrayerModal();
+      } else {
+        console.error('showPrayerModal not available on global object');
+      }
+    }, 300);
+  }, []);
 
   const navigateTo = (item: DebugScreen) => {
     setModalVisible(false);
@@ -279,6 +325,15 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
                 >
                   <Text className="font-feather text-base text-textPrimary">Test Heart Penalty Modal</Text>
                   <Text className="font-din text-sm text-[#A57070] mt-1">Show penalty via /halfModal</Text>
+                </TouchableOpacity>
+
+                {/* Prayer Modal Button */}
+                <TouchableOpacity
+                  className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
+                  onPress={handleShowPrayerModal} 
+                >
+                  <Text className="font-feather text-base text-textPrimary">Test Prayer Modal</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">Show prayer input modal</Text>
                 </TouchableOpacity>
 
                 {/* Sitemap Button */}
@@ -381,6 +436,15 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
                 >
                   <Text className="font-feather text-base text-textPrimary">Reset Local Storage</Text>
                   <Text className="font-din text-sm text-[#A57070] mt-1">Clear AsyncStorage including completion data</Text>
+                </TouchableOpacity>
+
+                {/* Reset Completion Data Button */}
+                <TouchableOpacity
+                  className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
+                  onPress={handleResetCompletionData}
+                >
+                  <Text className="font-feather text-base text-textPrimary">Reset Completion Data</Text>
+                  <Text className="font-din text-sm text-[#A57070] mt-1">Reset HomeStore and clear completed readings</Text>
                 </TouchableOpacity>
               </View>
               

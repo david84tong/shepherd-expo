@@ -8,9 +8,10 @@ interface StickyPathHeaderProps {
   color: string;
   description: string;
   sectionNumber: number;
+  isLocked?: boolean;
 }
 
-const StickyPathHeader: React.FC<StickyPathHeaderProps> = ({ title, icon, color, description, sectionNumber }) => {
+const StickyPathHeader: React.FC<StickyPathHeaderProps> = ({ title, icon, color, description, sectionNumber, isLocked = false }) => {
   // Get the light background color based on path color
   const getBgColor = () => {
     switch (color) {
@@ -71,12 +72,20 @@ const StickyPathHeader: React.FC<StickyPathHeaderProps> = ({ title, icon, color,
   return (
     <View className="w-full">
       <View className="px-4 pt-10">
-        <View className={`flex-row items-center w-full ${getBgColor()} ${getBorderClass()} border-2 rounded-3xl px-5 py-4`} style={{ minHeight: 72 }}>
+        <View className={`flex-row items-center w-full ${getBgColor()} ${getBorderClass()} border-2 rounded-3xl px-5 py-4`} style={{ minHeight: 72, opacity: isLocked ? 0.5 : 1 }}>
           <View className="flex-1 justify-center">
             <Text className="font-din uppercase text-2xl mb-1 text-textPrimary" style={{ color: getDarkColor(), opacity: 0.7 }}>{`SECTION ${sectionNumber}`}</Text>
             <Text className="font-feather text-2xl font-bold" style={{ color: getDarkColor() }}>{title}</Text>
           </View>
-          <Ionicons name={(icon || "book") as any} size={32} style={{ color: getDarkColor(), opacity: 0.7 }} />
+          {isLocked ? (
+            <View className="relative">
+              <View className="bg-gray-200 rounded-full p-1.5 border-4 border-gray-400">
+                <Ionicons name="lock-closed" size={24} color="gray" style={{ fontWeight: 'bold' }} />
+              </View>
+            </View>
+          ) : (
+            <Ionicons name={(icon || "book") as any} size={32} style={{ color: getDarkColor(), opacity: 0.7 }} />
+          )}
         </View>
         {/* Decorative connector below header */}
         <View className="items-center">

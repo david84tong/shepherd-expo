@@ -90,6 +90,7 @@ export default function SaveProgressScreen() {
     try {
       // Create user object from onboarding responses
       const userData = {
+        id: uid, // Use id consistently instead of uid
         displayName,
         spiritualGoal: responses.intent?.includes('read-bible') ? 'Understand'
           : responses.intent?.includes('talk-to-god') ? 'Overcome'

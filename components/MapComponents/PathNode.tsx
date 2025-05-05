@@ -125,7 +125,7 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
           ${getShadowClass()}
         `}
         style={{ 
-          opacity: isDisabled ? 1 : 1,
+          opacity: isDisabled ? 0.5 : 1,
         }}
       >
         <Ionicons 
@@ -138,6 +138,13 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
         {status === 'completed' && (
           <View className="absolute ml-4 mt-4 -bottom-1 -right-2 bg-lightGreen rounded-full p-1.5 border-4 border-darkGreen ">
             <Ionicons name="checkmark" size={24} color="green" style={{ fontWeight: 'bold' }} />
+          </View>
+        )}
+        
+        {/* Locked icon */}
+        {status === 'locked' && (
+          <View className="absolute ml-4 mt-4 -bottom-1 -right-2 bg-gray-200 rounded-full p-1.5 border-4 border-gray-400">
+            <Ionicons name="lock-closed" size={24} color="gray" style={{ fontWeight: 'bold' }} />
           </View>
         )}
       </Pressable>

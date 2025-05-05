@@ -1,14 +1,14 @@
-import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, SafeAreaView } from 'react-native';
 import { useUserStore } from '../stores/userStore';
 import dayjs from 'dayjs';
 import { Reading, Prayer, Reflection } from '../models/User';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
+import { Feather } from '@expo/vector-icons/';
 
 const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const COLORS: Record<number, string> = {
-  3: 'bg-darkGreen', // green
-  2: 'bg-accentGold', // yellow
-  1: 'bg-red', // red
+  3: 'bg-accentGold', // yellow instead of green 
+  2: 'bg-accentGold/80', // lighter yellow
+  1: 'bg-accentGold/60', // even lighter yellow
   0: 'bg-pillBorder' // gray (using pillBorder color from config)
 };
 
@@ -18,8 +18,54 @@ function toDateSafe(ts: any): Date {
   if (!ts) return new Date();
   if (ts instanceof Date) return ts;
   if (typeof ts.toDate === 'function') return ts.toDate();
-  if (typeof ts.seconds === 'number') return new Date(ts.seconds * 1000);
+  if (ts.seconds !== undefined) return new Date(ts.seconds * 1000);
+  if (ts._seconds !== undefined) return new Date(ts._seconds * 1000);
   return new Date(ts);
+}
+
+// Function to format relative time (30m ago, 2d ago, etc.)
+function formatRelativeTime(timestamp: any): string {
+  try {
+    const date = toDateSafe(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    
+    // Less than a minute
+    if (diffMs < 60000) {
+      return 'just now';
+    }
+    
+    // Minutes
+    const diffMins = Math.floor(diffMs / 60000);
+    if (diffMins < 60) {
+      return `${diffMins}m ago`;
+    }
+    
+    // Hours
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) {
+      return `${diffHours}h ago`;
+    }
+    
+    // Days
+    const diffDays = Math.floor(diffHours / 24);
+    if (diffDays < 30) {
+      return `${diffDays}d ago`;
+    }
+    
+    // Months
+    const diffMonths = Math.floor(diffDays / 30);
+    if (diffMonths < 12) {
+      return `${diffMonths}mo ago`;
+    }
+    
+    // Years
+    const diffYears = Math.floor(diffMonths / 12);
+    return `${diffYears}y ago`;
+  } catch (error) {
+    console.error('Error formatting relative time:', error, timestamp);
+    return '';
+  }
 }
 
 function getWeekData(
@@ -133,11 +179,18 @@ function getMonthGrid(
 }
 
 const journalIcon = require('../../assets/icons/journalIcon.png');
+const breadIcon = require('../../assets/icons/breadIcon.png');
+const dropIcon = require('../../assets/icons/waterIcon.png');
 
 export default function StatsScreen() {
   const readings = useUserStore(s => s.getCompletedReadings());
   const prayers = useUserStore(s => s.getCompletedPrayers());
   const reflections = useUserStore(s => s.getCompletedReflections());
+  
+  // Total activity counts
+  const totalBibleReadings = readings.length;
+  const totalPrayerSessions = prayers.length;
+  const totalReflections = reflections.length;
 
   // Get current year and month
   const now = dayjs();
@@ -151,84 +204,127 @@ export default function StatsScreen() {
     .slice(0, 3);
 
   return (
-    <ScrollView className="flex-1 bg-main-bg px-4 pt-12">
-      <Text className="text-h1 font-feather text-center mb-1 mt-16">Heart posture</Text>
-      <Text className="text-body font-din text-center text-description mb-6">Reflect on how you're really doing</Text>
-      {/* Heatmap */}
-      <View className="bg-surfaceCream rounded-xl p-4 mb-6 border-4 border-border">
-        <View className="flex-row justify-between items-center mb-3">
-          <Text className="text-heading font-feather text-textPrimary">Activity</Text>
-          <TouchableOpacity className="flex-row items-center">
-            <Text className="text-caption font-din text-description mr-1">Overall</Text>
-            <FontAwesome name="chevron-down" size={14} color="#B89B4C" />
-          </TouchableOpacity>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
+      <ScrollView className="flex-1 bg-surfaceCream">
+        {/* Header */}
+        <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
+          <Text className="font-feather text-h2 text-textPrimary">Stats</Text>
         </View>
-        {/* Day headers with proper spacing */}
-        <View className="flex-row justify-between mb-2">
-          {DAYS.map(d => (
-            <Text key={d} className="text-caption font-din text-description w-8 text-center">{d}</Text>
-          ))}
-        </View>
-        {/* Month grid */}
-        {monthGrid.map((week, weekIdx) => (
-          <View key={weekIdx} className="flex-row justify-between mt-2">
-            {week.map((day, dayIdx) => {
-              if (!day) return <View key={dayIdx} className="w-8 h-8 rounded-md bg-transparent" />;
-              const count = [day.reading, day.prayer, day.reflection].filter(Boolean).length;
-              return (
-                <View
-                  key={day.date}
-                  className={`w-8 h-8 rounded-md ${COLORS[count]}`}
-                />
-              );
-            })}
+        
+        {/* Heatmap Card */}
+        <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+          <View className="flex-row justify-between items-center mb-4">
+            <Text className="font-feather text-heading text-textPrimary">Monthly Activity</Text>
+            <TouchableOpacity className="bg-lightYellow px-4 py-1 rounded-full">
+              <Text className="font-feather text-accentGold">{now.format('MMMM YYYY')}</Text>
+            </TouchableOpacity>
           </View>
-        ))}
-      </View>
-      {/* Recent reflections */}
-      <Text className="text-h2 font-feather mb-3 mt-2">Recent reflections</Text>
-      <View className="mb-8 space-y-3"> 
-        {recentReflections.length > 0 ? (
-          recentReflections.map((rf, i) => (
-            <View key={i} className="bg-surfaceCream rounded-xl p-4 border-4 border-border"> 
-              <View className="flex-row items-start"> 
-                {/* Icon Column */}
-                <View className="w-10 h-10 rounded-lg bg-[#FFF4D9] items-center justify-center mr-4">
-                  <Image source={journalIcon} className="w-12 h-12" />
-                </View>
-
-                {/* Content Column */}
-                <View className="flex-1">
-                  {/* Top Row: Title + Date */}
-                  <View className="flex-row justify-between items-center mb-1">
-                    <Text className="font-feather text-heading text-textPrimary flex-shrink mr-2"> 
-                      Reflection
-                    </Text>
-                    <Text className="text-caption font-din text-description whitespace-nowrap">
-                      {dayjs(toDateSafe(rf.date)).format('MMMM D')}
-                    </Text>
-                  </View>
-
-                  {/* Bottom Row: Content Preview */}
-                  <Text className="font-din text-body text-textPrimary" numberOfLines={1} ellipsizeMode="tail">
-                    {rf.content} 
-                  </Text>
-                </View>
-              </View>
+          
+          {/* Day headers with proper spacing */}
+          <View className="flex-row justify-between mb-2">
+            {DAYS.map(d => (
+              <Text key={d} className="text-caption font-din text-description w-8 text-center">{d}</Text>
+            ))}
+          </View>
+          
+          {/* Month grid */}
+          {monthGrid.map((week, weekIdx) => (
+            <View key={weekIdx} className="flex-row justify-between mt-2">
+              {week.map((day, dayIdx) => {
+                if (!day) return <View key={dayIdx} className="w-8 h-8 rounded-md bg-transparent" />;
+                const count = [day.reading, day.prayer, day.reflection].filter(Boolean).length;
+                return (
+                  <View
+                    key={day.date}
+                    className={`w-8 h-8 rounded-md ${COLORS[count]}`}
+                  />
+                );
+              })}
             </View>
-          ))
-        ) : (
-          <View className="bg-surfaceCream/70 rounded-xl p-5 border-4 border-border flex items-center justify-center"> 
-            <Image source={journalIcon} className="w-16 h-16 opacity-50 mb-3" />
-            <Text className="font-feather text-heading text-textPrimary/70 text-center">
-              No recent reflections
-            </Text>
-            <Text className="font-din text-body text-description text-center mt-1">
-              Take a moment to reflect on your journey with God
-            </Text>
+          ))}
+          
+          <View className="flex-row justify-end mt-4">
+            <View className="flex-row items-center mr-3">
+              <View className="w-3 h-3 rounded-sm bg-pillBorder mr-1" />
+              <Text className="font-din text-description text-xs">0</Text>
+            </View>
+            <View className="flex-row items-center mr-3">
+              <View className="w-3 h-3 rounded-sm bg-accentGold/60 mr-1" />
+              <Text className="font-din text-description text-xs">1</Text>
+            </View>
+            <View className="flex-row items-center mr-3">
+              <View className="w-3 h-3 rounded-sm bg-accentGold/80 mr-1" />
+              <Text className="font-din text-description text-xs">2</Text>
+            </View>
+            <View className="flex-row items-center">
+              <View className="w-3 h-3 rounded-sm bg-accentGold mr-1" />
+              <Text className="font-din text-description text-xs">3</Text>
+            </View>
           </View>
-        )}
-      </View>
-    </ScrollView>
+        </View>
+        
+   
+        
+        {/* Activity Summary Card - Moved to bottom */}
+        <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-cardx mt-8">
+          <Text className="font-feather text-heading text-textPrimary mb-4">Activity Summary</Text>
+          
+          <View className="flex-row justify-between">
+            <View className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1">
+              <Text className="font-feather text-h2 text-textPrimary">{totalBibleReadings}</Text>
+              <Text className="font-din text-description text-center">Readings</Text>
+            </View>
+            <View className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1">
+              <Text className="font-feather text-h2 text-textPrimary">{totalPrayerSessions}</Text>
+              <Text className="font-din text-description text-center">Prayers</Text>
+            </View>
+            <View className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1">
+              <Text className="font-feather text-h2 text-textPrimary">{totalReflections}</Text>
+              <Text className="font-din text-description text-center">Reflections</Text>
+            </View>
+          </View>
+        </View>
+
+             {/* Recent reflections */}
+             <View className="mx-6 mt-8 bg-white rounded-[20px] p-6 shadow-card  mb-24">
+          <Text className="font-feather text-heading text-textPrimary mb-4">Recent Reflections</Text>
+        
+          {recentReflections.length > 0 ? (
+            <View className="space-y-4">
+              {recentReflections.map((rf, i) => (
+                <View key={i} className="bg-surfaceCream rounded-xl p-4"> 
+                  <View className="flex-row items-center"> 
+                    {/* Icon Column */}
+                    <View className="w-10 h-10 rounded-full bg-surfaceCream items-center justify-center mr-4">
+                      <Image source={journalIcon} className="w-5 h-5" />
+                    </View>
+                    
+                    {/* Content Column */}
+                    <View className="flex-1 flex-row justify-between items-center">
+                      <Text className="font-feather text-body text-textPrimary flex-1" numberOfLines={1}>
+                        Quiet Time
+                      </Text>
+                      <Text className="font-din text-description text-sm ml-2">
+                        {formatRelativeTime(rf.date)}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center"> 
+              <Image source={journalIcon} className="w-16 h-16 opacity-50 mb-3" />
+              <Text className="font-feather text-heading text-textPrimary/70 text-center">
+                No recent reflections
+              </Text>
+              <Text className="font-din text-body text-description text-center mt-1">
+                Take a moment to reflect on your journey with God
+              </Text>
+            </View>
+          )}
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 } 

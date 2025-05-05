@@ -516,15 +516,6 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           <TouchableOpacity onPress={increaseFontSize} style={styles.iconButton} disabled={fontSize >= MAX_FONT_SIZE}>
             <Text style={[styles.fontSizeAdjustText, fontSize >= MAX_FONT_SIZE && styles.disabledButtonText]}>+</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Text style={styles.iconPlaceholder}>🔊</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Text style={styles.iconPlaceholder}>🔍</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.iconButton}>
-            <Text style={styles.iconPlaceholder}>⋮</Text>
-          </TouchableOpacity>
         </View>
       </View>
 
@@ -690,10 +681,6 @@ const styles = StyleSheet.create({
     fontSize: 20,
     color: '#3C584A',
     fontFamily: 'Inter-Medium',
-  },
-  iconPlaceholder: {
-    fontSize: 20,
-    color: '#3C584A',
   },
   disabledButtonText: {
     color: '#DCB280',

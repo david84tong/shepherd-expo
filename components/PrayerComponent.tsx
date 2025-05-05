@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, TouchableOpacity, Text, Animated, Platform, Easing } from 'react-native';
+import { View, TouchableOpacity, Text, Animated, Platform, Easing, ActivityIndicator } from 'react-native';
 import PrimaryButton from './PrimaryButton';
 import { usePathStore } from '../app/stores/pathStore';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
@@ -7,6 +7,8 @@ import { useUserStore } from '../app/stores/userStore';
 import BackButton from './BackButton';
 import { router } from 'expo-router';
 import firestore from '@react-native-firebase/firestore';
+import { useAssets } from 'expo-asset';
+import Rive from 'rive-react-native';
 
 interface PrayerComponentProps {
   /** Whether the component should render. */
@@ -49,6 +51,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   const setPrayerCompleted = useHomeStore((state) => state.setPrayerCompleted);
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
+  const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
   
   // Get userStore functions for saving prayer
@@ -59,6 +62,11 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   const [typedText, setTypedText] = useState('');
   const [currentIndex, setCurrentIndex] = useState(0);
   const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Load Rive assets (if needed in the future)
+  const [riveAssets] = useAssets([
+    require('../assets/riveAnimations/homeLamb.riv')
+  ]);
 
   // Run animation when component becomes visible
   useEffect(() => {
@@ -208,7 +216,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     }
     
     // Check if all three tasks are completed
-    if (readingCompleted && reflectionCompleted) {
+    if (readingCompleted && reflectionCompleted && !sawDailyBonus) {
       setSuccessType(SuccessAnimationType.BONUS);
     } else {
       setSuccessType(SuccessAnimationType.PRAYER);
@@ -252,7 +260,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
         }}
       >
         <View className="w-full bg-surfaceCream/50 rounded-[18px] p-4 mb-4">
-          <Text className="text-body text-textPrimary text-heading font-feather text-center ">
+          <Text className="text-body text-textPrimary text-body font-feather text-center ">
             {typedText}
           </Text>
         </View>
@@ -277,12 +285,14 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
           transform: [{ translateY: buttonAnim }, { translateX: shakeTranslateX }]
         }}
       >
+        <View className="mt-16">
         <PrimaryButton 
           title="Amen" 
           onPress={handleDonePress} 
           disabled={isTimerActive}
-          isActive={!isTimerActive} // Button is visually inactive during timer
+          
         />
+        </View>
       </Animated.View>
     </View>
   );

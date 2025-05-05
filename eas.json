@@ -11,6 +11,13 @@
     "preview": {
       "distribution": "internal"
     },
+    "debug": {
+      "distribution": "internal",
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Debug"
+      }
+    },
     "production": {
       "autoIncrement": true
     }

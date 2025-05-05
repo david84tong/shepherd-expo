@@ -12,6 +12,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function OnboardingIntentScreen() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export default function OnboardingIntentScreen() {
   const { setResponse } = useOnboardingStore();
   const [pressedButton, setPressedButton] = useState<string | null>(null);
   const [selectedIntents, setSelectedIntents] = useState<string[]>([]);
+  const insets = useSafeAreaInsets();
   
   // Track if animations have been initialized
   const animationsInitialized = useRef(false);
@@ -111,7 +113,11 @@ export default function OnboardingIntentScreen() {
 
   const continueStyle = useAnimatedStyle(() => ({
     opacity: continueOpacity.value,
-    transform: [{ translateY: continueTranslateY.value }]
+    transform: [{ translateY: continueTranslateY.value }],
+    position: 'absolute',
+    left: 24,
+    right: 24,
+    bottom: Math.max(insets.bottom + 16, 24),
   }));
 
   const handleSelection = (intent: string) => {
@@ -186,22 +192,22 @@ export default function OnboardingIntentScreen() {
   ];
 
   return (
-    <Animated.View style={screenStyle} className="px-6 pt-12">
+    <Animated.View style={screenStyle} className="px-6 pt-12 pb-24">
       {/* Question Text */}
       <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-8">
+        <Text className="font-feather text-h1 text-center text-textPrimary mb-4 px-12">
           What brings you here today?
         </Text>
       </Animated.View>
 
       <Animated.View style={subtitleStyle}>
-        <Text className="font-din text-md text-description text-center mt-2">
+        <Text className="font-din text-lg text-description text-center mt-0">
           Select all that apply
         </Text>
       </Animated.View>
 
-      {/* Buttons Container */}
-      <Animated.View style={buttonsStyle} className="space-y-4 mt-8">
+      {/* Buttons Container - with padding at bottom to make space for fixed button */}
+      <Animated.View style={buttonsStyle} className="space-y-4 mt-8 mb-20">
         {buttons.map((button) => (
           <Pressable
             key={button.id}
@@ -238,9 +244,9 @@ export default function OnboardingIntentScreen() {
           </Pressable>
         ))}
       </Animated.View>
-
-      {/* Continue Button */}
-      <Animated.View style={continueStyle} className="mt-6">
+        
+      {/* Continue Button - Fixed at bottom */}
+      <Animated.View style={continueStyle}>
         <PrimaryButton
           title="Continue"
           onPress={handleContinue}

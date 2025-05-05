@@ -5,7 +5,6 @@ export interface UserDoc {
     //onboarding questions
     id: string;
     selectedPathId: string;
-    uid?: string; // Firebase auth user ID
     email?: string; // User email from authentication
     spiritualGoal: string;
     experienceLevel: string;
@@ -122,6 +121,7 @@ export interface UserStore extends UserDoc {
     addXp: (amount: number) => void;
     resetUserStore: () => void;
     syncWithFirestore: () => Promise<boolean>;
+    fetchFromFirestore: () => Promise<boolean>;
 }
 
 export interface Reading {

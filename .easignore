@@ -1,0 +1,92 @@
+# .easignore file for reducing project archive size
+# Based on https://expo.fyi/eas-build-archive
+
+# Node modules, packages
+node_modules/
+npm-debug.*
+yarn-debug.*
+yarn-error.log
+
+# Build and dist directories
+dist/
+web-build/
+
+# Local development files
+.expo/
+.vscode/
+.cursor/
+.git/
+.github/
+.idea/
+
+# Environment and secret files
+.env
+.env.*
+.envrc
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+
+# macOS system files
+.DS_Store
+**/.DS_Store
+
+# Logs and debug files
+*.log
+logs/
+firebase-debug.log*
+firebase-debug.*.log*
+
+# Test and documentation
+__tests__/
+test/
+tests/
+coverage/
+docs/
+documentation/
+*.md
+!README.md
+
+# Tool configuration that's not required for build
+.eslintrc*
+.prettierrc*
+.babelrc*
+.editorconfig
+tsconfig.tsbuildinfo
+*.tgz
+
+# OS-specific platform folders (will be re-generated)
+ios/
+android/
+
+# Development resources not needed for production
+assets/dev/
+assets/raw/
+assets/**/*.psd
+assets/**/*.ai
+assets/**/*.sketch
+assets/unused/
+
+# Large asset files that aren't used in the app itself
+# (customize based on your project's needs)
+**/sample-data/
+**/*.mp4
+**/*.mov
+
+# Temporary and cache files
+.tmp/
+.cache/
+.turbo/
+.next/
+.nuxt/
+.output/
+metro-cache/
+
+# Source maps
+**/*.map
+
+# Unused rive animations (if not needed in production)
+# assets/riveAnimations/*.riv 

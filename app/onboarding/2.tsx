@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { View, Text, TextInput, Keyboard } from 'react-native';
+import { View, Text, TextInput, Keyboard, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import Rive from 'rive-react-native';
+import { useAssets } from 'expo-asset';
 import Animated, { 
   useAnimatedStyle, 
   withTiming, 
@@ -23,6 +24,11 @@ export default function OnboardingLambNameScreen() {
   const setLambName = useUserStore(state => state.setLambName);
   const [inputLambName, setInputLambName] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  
+  // Load Rive assets
+  const [riveAssets] = useAssets([
+    require('../../assets/riveAnimations/homeLamb.riv')
+  ]);
   
   // Track if animations have been initialized
   const animationsInitialized = useRef(false);
@@ -152,6 +158,16 @@ export default function OnboardingLambNameScreen() {
     }
   };
 
+  // Show loading indicator while assets load
+  if (!riveAssets) {
+    return (
+      <View className="flex-1 items-center justify-center bg-surfaceCream">
+        <ActivityIndicator size="large" color="#3C584A" />
+        <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
+      </View>
+    );
+  }
+
   return (
     <Animated.View style={screenStyle} className="px-6 pt-12">
       {/* Question Text */}
@@ -164,7 +180,7 @@ export default function OnboardingLambNameScreen() {
       {/* Rive Animation */}
       <Animated.View style={lambStyle} className="h-[160px] w-full justify-center items-center my-8">
         <Rive
-          resourceName="homeLamb"
+          url={riveAssets[0].localUri!}
           artboardName="lamb-idle"
           autoplay={true}
           style={{ width: '80%', height: '80%' }}
