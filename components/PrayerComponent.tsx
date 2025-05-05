@@ -1,20 +1,20 @@
 import firestore from '@react-native-firebase/firestore';
 import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  View,
-  Text,
   Animated,
   Easing,
+  Text,
+  View,
 } from 'react-native';
 
-import BackButton from './BackButton';
-import PrimaryButton from './PrimaryButton';
-import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
+import { SuccessAnimationType, useHomeStore } from '../app/stores/homeStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { usePrayerStore } from '../app/stores/prayerStore';
 import { useUserStore } from '../app/stores/userStore';
+import BackButton from './BackButton';
+import PrimaryButton from './PrimaryButton';
 
 // Default prayer template if no user prayer is available
 const DEFAULT_PRAYER_TEMPLATE =
@@ -62,7 +62,6 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
   const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
-  const setMode = useHomeStore((state) => state.setMode); // já deve existir ou adicione
 
 
   // Get userStore functions for saving prayer
@@ -264,7 +263,6 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     // Mark prayer as completed
     setPrayerCompleted(true);
     setPathInProgress(false);
-    setMode('DEFAULT');
     // Create current timestamp
     const now = firestore.Timestamp.now();
 

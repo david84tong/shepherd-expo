@@ -406,7 +406,7 @@ export default function HomeScreen() {
       // Trigger the animation to reflection state
       animateToState(1, journalOpacityAnim, 800, 'REFLECTION');
     }
-  }, [mode, readingCompleted, prayerCompleted, reflectionCompleted, lambMood]);
+  }, [mode]);
 
   // --- Event Handlers ---
   const handleReadPress = () => {
@@ -620,7 +620,7 @@ export default function HomeScreen() {
       // Always set artboard based on lamb mood in DEFAULT mode
       setArtboardName(moodToArtboard[lambMood] || 'lamb-idle');
     }
-  }, [readingCompleted, prayerCompleted, reflectionCompleted, mode, lambMood]);
+  }, [mode, lambMood]);
 
   // --- Load and cache images ---
   const cacheImages = useMemo(
