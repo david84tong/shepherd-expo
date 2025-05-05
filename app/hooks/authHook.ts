@@ -1,9 +1,10 @@
 // authStore.ts
 
-import { useState, useEffect } from 'react';
 import auth from '@react-native-firebase/auth';
-import * as AppleAuthentication from 'expo-apple-authentication';
 import firestore from '@react-native-firebase/firestore';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import { useState, useEffect } from 'react';
+
 import { useUserStore } from '../stores/userStore';
 
 // Helper function to check if user is signed in
@@ -17,7 +18,7 @@ export function useAuth() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  
+
   // Get user from the store
   const { getUser, setUser: updateUser, setCreatedAt, setUpdatedAt } = useUserStore();
   const user = getUser();
@@ -30,7 +31,7 @@ export function useAuth() {
 
     return () => unsubscribe();
   }, []);
-  
+
   const signInWithApple = async () => {
     console.log('[Auth] signInWithApple() called');
     try {
@@ -62,13 +63,13 @@ export function useAuth() {
       // Sign in to Firebase with the Apple credential
       const userCredential = await auth().signInWithCredential(firebaseCredential);
       console.log('[Auth] Firebase sign-in successful, uid:', userCredential.user.uid);
-      
+
       // Get user info
       const { uid, email } = userCredential.user;
-      const displayName = credential.fullName?.givenName 
+      const displayName = credential.fullName?.givenName
         ? `${credential.fullName.givenName} ${credential.fullName.familyName || ''}`
         : 'Anonymous User';
-      
+
       // Create or update user document in Firestore
       const userDoc = {
         id: uid,
@@ -77,14 +78,14 @@ export function useAuth() {
         createdAt: firestore.Timestamp.now(),
         updatedAt: firestore.Timestamp.now(),
       };
-      
+
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
-      
+
       // Update local store
       updateUser({
         id: uid,
         displayName,
-        email: email || undefined
+        email: email || undefined,
       });
       setCreatedAt(firestore.Timestamp.now());
       setUpdatedAt(firestore.Timestamp.now());
@@ -124,7 +125,7 @@ export function useAuth() {
       // Update local store
       updateUser({
         id: uid,
-        displayName: 'Anonymous User'
+        displayName: 'Anonymous User',
       });
       setCreatedAt(firestore.Timestamp.now());
       setUpdatedAt(firestore.Timestamp.now());
@@ -138,13 +139,13 @@ export function useAuth() {
       setLoading(false);
     }
   };
-  
-  return { 
-    user, 
-    loading, 
+
+  return {
+    user,
+    loading,
     error,
     isAuthenticated,
     signInWithApple,
-    signInAnonymously
+    signInAnonymously,
   };
 }

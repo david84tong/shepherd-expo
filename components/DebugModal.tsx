@@ -1,14 +1,15 @@
-import React, { useState, useRef, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert } from 'react-native';
-import { useRouter, usePathname } from 'expo-router';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
+import { useRouter, usePathname } from 'expo-router';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
+import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert } from 'react-native';
+
 import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
 import { HalfModalType } from '../app/halfModal';
-import firestore from '@react-native-firebase/firestore';
-import auth from '@react-native-firebase/auth';
-import { useUserStore } from '../app/stores/userStore';
 import { useHomeStore } from '../app/stores/homeStore';
+import { useUserStore } from '../app/stores/userStore';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -29,24 +30,23 @@ const ONBOARDING_SCREENS: DebugScreen[] = [
 ];
 
 // Feature screens for debugging
-const FEATURE_SCREENS: DebugScreen[] = [
-  { name: 'Streak Screen', route: '/streak' },
-];
+const FEATURE_SCREENS: DebugScreen[] = [{ name: 'Streak Screen', route: '/streak' }];
 
 // Define props for DebugButton (currently none needed)
 interface DebugButtonProps {}
 
-// DebugButton component 
-export function DebugButton({ }: DebugButtonProps) { // Export the component
+// DebugButton component
+export function DebugButton({}: DebugButtonProps) {
+  // Export the component
   const router = useRouter();
   const pathname = usePathname();
   const [modalVisible, setModalVisible] = useState(false);
-  
+
   // Reference to the success bottom sheet modal
   const successSheetRef = useRef<BottomSheetModal>(null);
-  
+
   // Snap points for success animation
-  const successSnapPoints = useMemo(() => ['90%'], []); 
+  const successSnapPoints = useMemo(() => ['90%'], []);
 
   // Present the success animation sheet
   const handleShowSuccessSheet = useCallback(() => {
@@ -64,24 +64,27 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
   // Reset local storage handler
   const handleResetLocalStorage = useCallback(() => {
     Alert.alert(
-      "Reset Storage",
-      "This will clear ALL app data including your progress. Are you sure?",
+      'Reset Storage',
+      'This will clear ALL app data including your progress. Are you sure?',
       [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Reset", 
-          style: "destructive",
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
           onPress: async () => {
             try {
               await AsyncStorage.clear();
-              console.log("✅ Local storage cleared successfully");
-              Alert.alert("Success", "Local storage has been cleared. Restart the app for changes to take effect.");
+              console.log('✅ Local storage cleared successfully');
+              Alert.alert(
+                'Success',
+                'Local storage has been cleared. Restart the app for changes to take effect.'
+              );
             } catch (error) {
-              console.error("❌ Error clearing local storage:", error);
-              Alert.alert("Error", "Failed to clear local storage.");
+              console.error('❌ Error clearing local storage:', error);
+              Alert.alert('Error', 'Failed to clear local storage.');
             }
-          }
-        }
+          },
+        },
       ]
     );
   }, []);
@@ -91,12 +94,12 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
     // Show a penalty modal for testing
     const params = {
       type: HalfModalType.HEART_PENALTY,
-      message: "Test Penalty Modal",
-      subMessage: "This is a test penalty modal",
+      message: 'Test Penalty Modal',
+      subMessage: 'This is a test penalty modal',
       penalty: 5,
       daysMissed: 3,
     };
-    
+
     // Use global showHalfModal instead of router.push
     if (typeof global !== 'undefined' && (global as any).showHalfModal) {
       (global as any).showHalfModal(params);
@@ -110,27 +113,30 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
     const now = new Date();
     const targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - daysAgo);
     const timestamp = firestore.Timestamp.fromDate(targetDate);
-    
+
     // Set activity dates to N days ago
     useUserStore.getState().setLastActivityDate(timestamp);
     useUserStore.getState().setLastReadingDate(timestamp);
     useUserStore.getState().setLastPrayerDate(timestamp);
     useUserStore.getState().setLastReflectionDate(timestamp);
-    
+
     // Set penalty dates to (N+1) days ago to ensure the condition "daysSince > daysSincePenalty" can be met
     const penaltyDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - (daysAgo + 1));
     const penaltyTimestamp = firestore.Timestamp.fromDate(penaltyDate);
     useUserStore.getState().setLastReadingPenaltyDate(penaltyTimestamp);
     useUserStore.getState().setLastPrayerPenaltyDate(penaltyTimestamp);
     useUserStore.getState().setLastReflectionPenaltyDate(penaltyTimestamp);
-    
-    Alert.alert('Set Dates', `Activity dates: ${daysAgo} day(s) ago\nPenalty dates: ${daysAgo + 1} day(s) ago`);
+
+    Alert.alert(
+      'Set Dates',
+      `Activity dates: ${daysAgo} day(s) ago\nPenalty dates: ${daysAgo + 1} day(s) ago`
+    );
   }, []);
 
   // Function to directly test the penalty system
   const testPenaltyScenario = useCallback(() => {
     const now = new Date();
-    
+
     // Set activity dates to 3 days ago to ensure "daysSince > 1" condition is met
     const activityDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3);
     const activityTimestamp = firestore.Timestamp.fromDate(activityDate);
@@ -138,15 +144,18 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
     useUserStore.getState().setLastReadingDate(activityTimestamp);
     useUserStore.getState().setLastPrayerDate(activityTimestamp);
     useUserStore.getState().setLastReflectionDate(activityTimestamp);
-    
+
     // Set penalty dates to 1 day ago to ensure "daysSince > daysSincePenalty" condition is met
     const penaltyDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
     const penaltyTimestamp = firestore.Timestamp.fromDate(penaltyDate);
     useUserStore.getState().setLastReadingPenaltyDate(penaltyTimestamp);
     useUserStore.getState().setLastPrayerPenaltyDate(penaltyTimestamp);
     useUserStore.getState().setLastReflectionPenaltyDate(penaltyTimestamp);
-    
-    Alert.alert('Penalty Test', 'Set up for penalty:\nActivity: 3 days ago\nPenalty: 1 day ago\nPenalties should trigger on next app open.');
+
+    Alert.alert(
+      'Penalty Test',
+      'Set up for penalty:\nActivity: 3 days ago\nPenalty: 1 day ago\nPenalties should trigger on next app open.'
+    );
   }, []);
 
   // Handler to set only penalty dates to N days ago
@@ -200,30 +209,30 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
   // Handler to reset HomeStore data and clear completedReadings
   const handleResetCompletionData = useCallback(() => {
     Alert.alert(
-      "Reset Completion Data",
-      "This will reset all completion states and clear reading history. Continue?",
+      'Reset Completion Data',
+      'This will reset all completion states and clear reading history. Continue?',
       [
-        { text: "Cancel", style: "cancel" },
-        { 
-          text: "Reset", 
-          style: "destructive",
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Reset',
+          style: 'destructive',
           onPress: () => {
             // Reset homeStore data
             const homeStore = useHomeStore.getState();
             homeStore.resetCompletionStates();
             homeStore.setMode('DEFAULT');
             homeStore.setSuccessType(null);
-            
+
             // Clear completedReadings from userStore
             const userStore = useUserStore.getState();
             userStore.setCompletedReadings([] as any);
-            
+
             // Sync with Firestore to save changes
             userStore.syncWithFirestore();
-            
+
             Alert.alert('Reset Complete', 'HomeStore data and completed readings have been reset.');
-          }
-        }
+          },
+        },
       ]
     );
   }, []);
@@ -246,7 +255,7 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
       { name: 'Settings', route: '/settings' },
       { name: 'Prayer', route: '/prayer' },
       { name: 'Reflection', route: '/reflection' },
-    ]
+    ],
   };
 
   // Handler for showing sitemap
@@ -260,7 +269,7 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
   // Handler for showing Prayer Modal
   const handleShowPrayerModal = useCallback(() => {
     setModalVisible(false);
-    
+
     // Use global showPrayerModal if available
     setTimeout(() => {
       if (typeof global !== 'undefined' && (global as any).showPrayerModal) {
@@ -281,71 +290,80 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
       {/* Floating Debug Button */}
       <TouchableOpacity
         onPress={() => setModalVisible(true)}
-        className="absolute bottom-6 left-6 bg-forestGreen80/80 rounded-3xl w-12 h-12 justify-center items-center z-50 shadow-md"
-      >
+        className="absolute bottom-6 left-6 bg-forestGreen80/80 rounded-3xl w-12 h-12 justify-center items-center z-50 shadow-md">
         <Text className="text-white text-2xl">🐛</Text>
       </TouchableOpacity>
 
       {/* Debug Navigation Modal */}
       <Modal
         animationType="slide"
-        transparent={true}
+        transparent
         visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
+        onRequestClose={() => setModalVisible(false)}>
         <SafeAreaView className="flex-1 bg-black/50">
           <View className="m-5 mt-[60px] bg-surfaceCream rounded-[20px] flex-1 shadow-lg">
             <View className="flex-row items-center justify-between border-b border-b-buttonBorder p-4">
               <Text className="font-feather text-xl text-textPrimary">Debug Menu</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => setModalVisible(false)}
-                className="w-8 h-8 rounded-full bg-forestGreen80 items-center justify-center"
-              >
+                className="w-8 h-8 rounded-full bg-forestGreen80 items-center justify-center">
                 <Text className="text-white text-base font-bold">✕</Text>
               </TouchableOpacity>
             </View>
 
             <ScrollView className="p-4">
               <View className="mb-4">
-                <Text className="font-feather text-lg text-textPrimary mb-3">Animations & Modals</Text>
-                
+                <Text className="font-feather text-lg text-textPrimary mb-3">
+                  Animations & Modals
+                </Text>
+
                 {/* Success Animation Button */}
                 <TouchableOpacity
                   className="bg-[#E8F3E0] p-4 rounded-xl my-1.5 border-l-4 border-l-[#A0D468]"
-                  onPress={handleShowSuccessSheet}
-                >
-                  <Text className="font-feather text-base text-textPrimary">Show Success Animation</Text>
-                  <Text className="font-din text-sm text-[#7C927E] mt-1">Native Bottom Sheet Animation</Text>
+                  onPress={handleShowSuccessSheet}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Show Success Animation
+                  </Text>
+                  <Text className="font-din text-sm text-[#7C927E] mt-1">
+                    Native Bottom Sheet Animation
+                  </Text>
                 </TouchableOpacity>
-                
+
                 {/* Heart Penalty Modal Button */}
                 <TouchableOpacity
                   className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
-                  onPress={handleShowPenaltyModal} 
-                >
-                  <Text className="font-feather text-base text-textPrimary">Test Heart Penalty Modal</Text>
-                  <Text className="font-din text-sm text-[#A57070] mt-1">Show penalty via /halfModal</Text>
+                  onPress={handleShowPenaltyModal}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Test Heart Penalty Modal
+                  </Text>
+                  <Text className="font-din text-sm text-[#A57070] mt-1">
+                    Show penalty via /halfModal
+                  </Text>
                 </TouchableOpacity>
 
                 {/* Prayer Modal Button */}
                 <TouchableOpacity
                   className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
-                  onPress={handleShowPrayerModal} 
-                >
+                  onPress={handleShowPrayerModal}>
                   <Text className="font-feather text-base text-textPrimary">Test Prayer Modal</Text>
-                  <Text className="font-din text-sm text-[#6A8A94] mt-1">Show prayer input modal</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Show prayer input modal
+                  </Text>
                 </TouchableOpacity>
 
                 {/* Sitemap Button */}
                 <TouchableOpacity
                   className="bg-[#E0F7E6] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FD675]"
-                  onPress={handleShowSitemap}
-                >
-                  <Text className="font-feather text-base text-textPrimary">Show Current Route</Text>
-                  <Text className="font-din text-sm text-[#5B8A6A] mt-1">Display current app route</Text>
+                  onPress={handleShowSitemap}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Show Current Route
+                  </Text>
+                  <Text className="font-din text-sm text-[#5B8A6A] mt-1">
+                    Display current app route
+                  </Text>
                 </TouchableOpacity>
               </View>
-              
+
               {/* Feature Screens Navigation */}
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">Feature Screens</Text>
@@ -354,27 +372,29 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
                     <TouchableOpacity
                       key={screen.route}
                       className="bg-[#F0E6FF] px-3 py-2 rounded-lg border border-[#9B7FFE] mb-1"
-                      onPress={() => navigateTo(screen)}
-                    >
+                      onPress={() => navigateTo(screen)}>
                       <Text className="font-din text-sm text-textPrimary">{screen.name}</Text>
                     </TouchableOpacity>
                   ))}
                 </View>
               </View>
-              
+
               <View className="mb-4">
-                <Text className="font-feather text-lg text-textPrimary mb-3">Heart & Penalty System</Text>
-                
+                <Text className="font-feather text-lg text-textPrimary mb-3">
+                  Heart & Penalty System
+                </Text>
+
                 {/* Set Lamb Hearts Buttons */}
                 <View className="mb-4">
-                  <Text className="font-feather text-base text-textPrimary mb-2">Set Lamb Hearts</Text>
+                  <Text className="font-feather text-base text-textPrimary mb-2">
+                    Set Lamb Hearts
+                  </Text>
                   <View className="flex-row flex-wrap gap-2">
                     {[0, 10, 20, 30, 40, 50, 100].map((hearts) => (
                       <TouchableOpacity
                         key={hearts}
                         className="bg-[#FFE0E8] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
-                        onPress={() => setLambHearts(hearts)}
-                      >
+                        onPress={() => setLambHearts(hearts)}>
                         <Text className="font-din text-sm text-textPrimary">{`${hearts} ❤️`}</Text>
                       </TouchableOpacity>
                     ))}
@@ -383,82 +403,97 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
 
                 {/* Set Only Penalty Dates Buttons */}
                 <View className="mb-4">
-                  <Text className="font-feather text-base text-textPrimary mb-2">Set Penalty Dates</Text>
+                  <Text className="font-feather text-base text-textPrimary mb-2">
+                    Set Penalty Dates
+                  </Text>
                   <View className="flex-row flex-wrap gap-2">
-                    {[0,1,2,3,4,5].map((n) => (
+                    {[0, 1, 2, 3, 4, 5].map((n) => (
                       <TouchableOpacity
                         key={n}
                         className="bg-[#FFE8E0] px-3 py-2 rounded-lg border border-[#FFA0A0] mb-1"
-                        onPress={() => setPenaltyDates(n)}
-                      >
+                        onPress={() => setPenaltyDates(n)}>
                         <Text className="font-din text-sm text-textPrimary">{`-${n} day${n !== 1 ? 's' : ''}`}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
                 </View>
-                
+
                 {/* Test Penalty Scenario Button */}
                 <TouchableOpacity
                   className="bg-[#FF8080] p-4 rounded-xl my-2 border-l-4 border-l-[#FF0000]"
-                  onPress={testPenaltyScenario}
-                >
+                  onPress={testPenaltyScenario}>
                   <Text className="font-feather text-base text-white">Test Penalty System</Text>
-                  <Text className="font-din text-sm text-white/80 mt-1">Sets up guaranteed penalty trigger</Text>
+                  <Text className="font-din text-sm text-white/80 mt-1">
+                    Sets up guaranteed penalty trigger
+                  </Text>
                 </TouchableOpacity>
 
                 {/* Sync Activity/Penalty Dates Button */}
                 <TouchableOpacity
                   className="bg-[#E0F2F7] p-4 rounded-xl my-2 border-l-4 border-l-[#4FC3F7]"
-                  onPress={syncActivityAndPenaltyDates}
-                >
-                  <Text className="font-feather text-base text-textPrimary">Sync Activity & Penalty Dates</Text>
-                  <Text className="font-din text-sm text-[#6A8A94] mt-1">Set activity dates = penalty dates</Text>
+                  onPress={syncActivityAndPenaltyDates}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Sync Activity & Penalty Dates
+                  </Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Set activity dates = penalty dates
+                  </Text>
                 </TouchableOpacity>
               </View>
-              
+
               {/* Local Storage */}
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">Data Management</Text>
-                
+
                 {/* Sign Out Button */}
                 <TouchableOpacity
                   className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
-                  onPress={handleSignOut}
-                >
+                  onPress={handleSignOut}>
                   <Text className="font-feather text-base text-textPrimary">Sign Out</Text>
-                  <Text className="font-din text-sm text-[#A57070] mt-1">Sign out current user and reset store</Text>
+                  <Text className="font-din text-sm text-[#A57070] mt-1">
+                    Sign out current user and reset store
+                  </Text>
                 </TouchableOpacity>
 
                 {/* Reset Local Storage Button */}
                 <TouchableOpacity
                   className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
-                  onPress={handleResetLocalStorage}
-                >
-                  <Text className="font-feather text-base text-textPrimary">Reset Local Storage</Text>
-                  <Text className="font-din text-sm text-[#A57070] mt-1">Clear AsyncStorage including completion data</Text>
+                  onPress={handleResetLocalStorage}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Reset Local Storage
+                  </Text>
+                  <Text className="font-din text-sm text-[#A57070] mt-1">
+                    Clear AsyncStorage including completion data
+                  </Text>
                 </TouchableOpacity>
 
                 {/* Reset Completion Data Button */}
                 <TouchableOpacity
                   className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
-                  onPress={handleResetCompletionData}
-                >
-                  <Text className="font-feather text-base text-textPrimary">Reset Completion Data</Text>
-                  <Text className="font-din text-sm text-[#A57070] mt-1">Reset HomeStore and clear completed readings</Text>
+                  onPress={handleResetCompletionData}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Reset Completion Data
+                  </Text>
+                  <Text className="font-din text-sm text-[#A57070] mt-1">
+                    Reset HomeStore and clear completed readings
+                  </Text>
                 </TouchableOpacity>
               </View>
-              
+
               {/* Onboarding Navigation */}
               <View className="mb-4">
-                <Text className="font-feather text-lg text-textPrimary mb-3">Onboarding Screens</Text>
+                <Text className="font-feather text-lg text-textPrimary mb-3">
+                  Onboarding Screens
+                </Text>
                 <View className="flex-row flex-wrap gap-2">
                   {ONBOARDING_SCREENS.map((screen) => (
                     <TouchableOpacity
                       key={screen.route}
                       className="bg-[#E0F7FF] px-3 py-2 rounded-lg border border-[#4FB8FE] mb-1"
-                      onPress={() => navigateTo(screen)}
-                    >
-                      <Text className="font-din text-sm text-textPrimary">{screen.name.replace('Onboarding ', '')}</Text>
+                      onPress={() => navigateTo(screen)}>
+                      <Text className="font-din text-sm text-textPrimary">
+                        {screen.name.replace('Onboarding ', '')}
+                      </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
@@ -467,10 +502,12 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
               {/* Sitemap Section */}
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">App Routes</Text>
-                
+
                 {Object.entries(ROUTE_GROUPS).map(([groupName, routes]) => (
                   <View key={groupName} className="mb-4">
-                    <Text className="font-feather text-base text-textPrimary mb-2">{groupName}</Text>
+                    <Text className="font-feather text-base text-textPrimary mb-2">
+                      {groupName}
+                    </Text>
                     <View className="flex-row flex-wrap gap-2">
                       {routes.map((route) => (
                         <TouchableOpacity
@@ -481,8 +518,7 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
                             setTimeout(() => {
                               router.push(route.route as any);
                             }, 300);
-                          }}
-                        >
+                          }}>
                           <Text className="font-din text-sm text-textPrimary">
                             {route.name}
                             {pathname === route.route ? ' (current)' : ''}
@@ -497,16 +533,15 @@ export function DebugButton({ }: DebugButtonProps) { // Export the component
           </View>
         </SafeAreaView>
       </Modal>
-      
+
       {/* Success Animation Bottom Sheet - Note: This relies on BottomSheetModalProvider being higher up */}
       <BottomSheetModal
         ref={successSheetRef}
         index={0}
         snapPoints={successSnapPoints}
-        enablePanDownToClose={true}
+        enablePanDownToClose
         backgroundStyle={{ backgroundColor: '#FFF4D9' }}
-        handleIndicatorStyle={{ backgroundColor: '#DCB280' }}
-      >
+        handleIndicatorStyle={{ backgroundColor: '#DCB280' }}>
         <SuccessAnimationContent
           message="Great job!"
           subMessage="You triggered the success animation from debug menu."

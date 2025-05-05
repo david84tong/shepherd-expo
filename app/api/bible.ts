@@ -60,7 +60,9 @@ export const fetchChapter = async (
         if (errorBody && errorBody.message) {
           apiErrorMessage = errorBody.message; // Use API's error message
         }
-      } catch (e) { /* Ignore parsing error, stick to default message */ }
+      } catch (e) {
+        /* Ignore parsing error, stick to default message */
+      }
 
       console.error(`API Error: ${response.status} ${response.statusText} for ${url}`);
       return {
@@ -85,9 +87,9 @@ export const fetchChapter = async (
     }
 
     // Transform the raw API data into our desired ChapterResponse structure
-    const transformedVerses: Verse[] = rawData.map(apiVerse => ({
+    const transformedVerses: Verse[] = rawData.map((apiVerse) => ({
       verse: apiVerse.verseId, // Use verseId from new API
-      text: apiVerse.verse,    // Use verse from new API
+      text: apiVerse.verse, // Use verse from new API
     }));
 
     // Get book name from the first verse
@@ -95,13 +97,12 @@ export const fetchChapter = async (
 
     const chapterResponse: ChapterResponse = {
       book: bookName,
-      chapter: chapter, // Use the requested chapter number
+      chapter, // Use the requested chapter number
       version: translation, // Use the requested translation
       verses: transformedVerses,
     };
 
     return chapterResponse;
-
   } catch (err) {
     console.error(`Network or parsing error fetching ${url}:`, err);
     const message = err instanceof Error ? err.message : 'An unknown error occurred.';
@@ -114,19 +115,21 @@ export const fetchChapter = async (
  * @param translation - The Bible translation ID (e.g., 'KJV') Defaults to 'KJV'
  * @returns An array of chapter data or error objects.
  */
-export const fetchFirst10GenesisChapters = async (translation: string = 'KJV'): Promise<(ChapterResponse | FetchError)[]> => {
+export const fetchFirst10GenesisChapters = async (
+  translation: string = 'KJV'
+): Promise<(ChapterResponse | FetchError)[]> => {
   const bookId = 1; // Genesis is book 1
   const chapterNumbers = Array.from({ length: 10 }, (_, i) => i + 1); // Chapters 1 to 10
 
   console.log(`Fetching chapters 1-10 of Genesis (Book ID ${bookId}) in ${translation}...`);
 
-  const chapterPromises = chapterNumbers.map(chapter =>
+  const chapterPromises = chapterNumbers.map((chapter) =>
     fetchChapter(translation, bookId, chapter)
   );
 
   try {
     const results = await Promise.all(chapterPromises);
-    console.log(`Successfully fetched ${results.filter(r => !('error' in r)).length} chapters.`);
+    console.log(`Successfully fetched ${results.filter((r) => !('error' in r)).length} chapters.`);
     results.forEach((result, index) => {
       if ('error' in result) {
         console.warn(`Error fetching chapter ${index + 1}: ${result.message}`);
@@ -134,8 +137,9 @@ export const fetchFirst10GenesisChapters = async (translation: string = 'KJV'): 
     });
     return results;
   } catch (error) {
-    console.error("Error fetching multiple chapters:", error);
-    const message = error instanceof Error ? error.message : 'An unknown error occurred during batch fetch.';
+    console.error('Error fetching multiple chapters:', error);
+    const message =
+      error instanceof Error ? error.message : 'An unknown error occurred during batch fetch.';
     return chapterNumbers.map(() => ({ error: true, message }));
   }
-}; 
+};

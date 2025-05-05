@@ -1,11 +1,12 @@
-import React from 'react';
-import { StreakScreen } from '../components/StreakScreen';
 import { Stack } from 'expo-router';
+import React from 'react';
+
+import { StreakScreen } from '../components/StreakScreen';
 
 export default function StreakRoute() {
   return (
     <>
-      <Stack.Screen 
+      <Stack.Screen
         options={{
           headerShown: false,
           title: 'Streak',
@@ -14,4 +15,4 @@ export default function StreakRoute() {
       <StreakScreen />
     </>
   );
-} 
+}

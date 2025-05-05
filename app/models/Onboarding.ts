@@ -1,6 +1,6 @@
-export const WORKOUT_DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const
-export const ONBOARDING_STORAGE_KEY = '@onboarding_responses'
-export const ONBOARDING_COMPLETED_KEY = '@onboarding_completed'
+export const WORKOUT_DAYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const;
+export const ONBOARDING_STORAGE_KEY = '@onboarding_responses';
+export const ONBOARDING_COMPLETED_KEY = '@onboarding_completed';
 export const ONBOARDING_PAGES = [
   'welcome',
   '1',
@@ -23,29 +23,22 @@ export const ONBOARDING_PAGES = [
   '17',
   '18',
   'auth',
-]
-
+];
 
 export type OnboardingResponses = {
   /** Track which onboarding screen the user is on */
-  currentScreen?: string
+  currentScreen?: string;
 
   /* ────────── PHASE 1 ────────── */
 
   /** Screen 2 – "What brings you here today?" */
-  intent?:
-    | 'read-bible'
-    | 'talk-to-god'
-    | 'just-exploring'
+  intent?: 'read-bible' | 'talk-to-god' | 'just-exploring';
 
   /** Screen 4 – "This journey is rooted in the way of Jesus." */
-  jesusOrientation?:
-    | 'sounds-good'
-    | 'learn-more-first'
-    | 'not-sure-yet'
+  jesusOrientation?: 'sounds-good' | 'learn-more-first' | 'not-sure-yet';
 
   /** Screen 5 – "In one word, how would you describe your spiritual season?" */
-  spiritualSeasonWord?: string
+  spiritualSeasonWord?: string;
 
   /** Screen 6 - "Which of these do you prescribe to?" */
   religiousAffiliation?:
@@ -57,14 +50,10 @@ export type OnboardingResponses = {
     | 'agnostic'
     | 'spiritual'
     | 'other'
-    | 'prefer-not-to-say'
+    | 'prefer-not-to-say';
 
   /** Screen 7 - "When would you like to receive notifications?" */
-  notificationPreference?:
-    | 'morning'
-    | 'afternoon'
-    | 'evening'
-    | 'night'
+  notificationPreference?: 'morning' | 'afternoon' | 'evening' | 'night';
 
   /** Screen 9 - "What is your age range?" */
   ageRange?:
@@ -75,14 +64,10 @@ export type OnboardingResponses = {
     | '45-54'
     | '55-64'
     | '65-plus'
-    | 'prefer-not-to-say'
+    | 'prefer-not-to-say';
 
   /** Screen 8 - "Choose Your Path" */
-  selectedPath?:
-    | 'walk-in-light'
-    | 'way-of-wisdom'
-    | 'overcoming'
-    | 'knowing-jesus'
+  selectedPath?: 'walk-in-light' | 'way-of-wisdom' | 'overcoming' | 'knowing-jesus';
 
   /* ────────── PHASE 2 – Sorting Quiz ────────── */
 
@@ -92,19 +77,13 @@ export type OnboardingResponses = {
     | 'healing'
     | 'struggling-with-guilt'
     | 'exploring-christianity'
-    | 'daily-encouragement'
+    | 'daily-encouragement';
 
   /** Screen 7 – "How much of the Bible have you read before?" */
-  bibleFamiliarity?:
-    | 'never'
-    | 'a-little'
-    | 'a-lot'
+  bibleFamiliarity?: 'never' | 'a-little' | 'a-lot';
 
   /** Screen 8 – "How comfortable are you with prayer?" */
-  prayerConfidence?:
-    | 'pray-regularly'
-    | 'sometimes'
-    | 'never-prayed'
+  prayerConfidence?: 'pray-regularly' | 'sometimes' | 'never-prayed';
 
   /** Screen 9 – "What tends to get in the way of staying consistent?" */
   consistencyObstacle?:
@@ -112,29 +91,26 @@ export type OnboardingResponses = {
     | 'feel-guilt'
     | 'dont-know-where-to-start'
     | 'lose-motivation'
-    | 'feel-unworthy'
+    | 'feel-unworthy';
 
   /* ────────── PHASE 3 ────────── */
 
   /** Screen 16 – "What will you name your lamb?" */
-  lambName?: string
+  lambName?: string;
 
   /* ────────── PHASE 5 ────────── */
 
   /** Screen 24 – "Would you like to commit to showing up daily?" */
-  streakCommitment?:
-    | 'daily'
-    | 'own-pace'
-    | 'remind-occasionally'
+  streakCommitment?: 'daily' | 'own-pace' | 'remind-occasionally';
 
   /* ────────── META ────────── */
 
   /** ISO-8601 timestamp when onboarding is finished */
-  completedAt?: string
+  completedAt?: string;
 
   /** Flag indicating whether the user has rated the app */
-  appRated?: boolean
-}
+  appRated?: boolean;
+};
 
 /* ---------- OPTIONAL: blank initial state helper ---------- */
 
@@ -152,4 +128,4 @@ export const shepherdOnboardingInitialState: OnboardingResponses = {
   streakCommitment: undefined,
   completedAt: undefined,
   appRated: false,
-}
+};

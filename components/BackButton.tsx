@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { TouchableOpacity, View, StyleSheet, Platform, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { View, Platform, Pressable } from 'react-native';
 
 interface BackButtonProps {
   onPress: () => void;
@@ -17,9 +17,10 @@ const BackButton: React.FC<BackButtonProps> = ({
   const [isPressed, setIsPressed] = useState(false);
 
   return (
-    <View className={`${Platform.OS === 'ios' ? 'pt-[60px]' : 'pt-[40px]'} px-5 w-full absolute top-0 left-0 z-20 ${containerClassName}`}>
-      <Pressable 
-        onPress={onPress} 
+    <View
+      className={`${Platform.OS === 'ios' ? 'pt-[60px]' : 'pt-[40px]'} px-5 w-full absolute top-0 left-0 z-20 ${containerClassName}`}>
+      <Pressable
+        onPress={onPress}
         disabled={disabled}
         className={`
           w-[42px] h-[42px] rounded-full bg-[rgba(255,244,217,0.95)] 
@@ -29,12 +30,11 @@ const BackButton: React.FC<BackButtonProps> = ({
         `}
         style={({ pressed }) => [{ elevation: pressed ? 2 : 5 }]}
         onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
-      >
-        <Ionicons 
-          name="chevron-back" 
-          size={22} 
-          color="#2D3720" 
+        onPressOut={() => setIsPressed(false)}>
+        <Ionicons
+          name="chevron-back"
+          size={22}
+          color="#2D3720"
           style={{ opacity: disabled ? 0.5 : 1 }}
         />
       </Pressable>

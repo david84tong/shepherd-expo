@@ -1,29 +1,29 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Define the possible states/modes for the home screen
 export type HomeMode = 'DEFAULT' | 'PREVIEW' | 'PRAYER' | 'REFLECTION';
 
 // Define the possible success types
 export enum SuccessAnimationType {
-    READING = 'reading',
-    PRAYER = 'prayer',
-    REFLECTION = 'reflection',
-    BONUS = 'bonus',
+  READING = 'reading',
+  PRAYER = 'prayer',
+  REFLECTION = 'reflection',
+  BONUS = 'bonus',
 }
 
 interface HomeState {
   // UI mode states
   mode: HomeMode;
   successType: SuccessAnimationType | null;
-  
+
   // Completion tracking states
   readingCompleted: boolean;
   prayerCompleted: boolean;
   reflectionCompleted: boolean;
   sawDailyBonus: boolean;
-  
+
   // Setter functions
   setMode: (mode: HomeMode) => void;
   setSuccessType: (type: SuccessAnimationType | null) => void;
@@ -44,13 +44,13 @@ export const useHomeStore = create<HomeState>()(
       // Default UI states
       mode: 'DEFAULT',
       successType: null,
-      
+
       // Default completion states
       readingCompleted: false,
       prayerCompleted: false,
       reflectionCompleted: false,
       sawDailyBonus: false,
-      
+
       // Setter functions
       setMode: (mode) => set({ mode }),
       setSuccessType: (type) => set({ successType: type }),
@@ -58,12 +58,13 @@ export const useHomeStore = create<HomeState>()(
       setPrayerCompleted: (completed) => set({ prayerCompleted: completed }),
       setReflectionCompleted: (completed) => set({ reflectionCompleted: completed }),
       setSawDailyBonus: (saw) => set({ sawDailyBonus: saw }),
-      resetCompletionStates: () => set({ 
-        readingCompleted: false, 
-        prayerCompleted: false, 
-        reflectionCompleted: false,
-        sawDailyBonus: false
-      }),
+      resetCompletionStates: () =>
+        set({
+          readingCompleted: false,
+          prayerCompleted: false,
+          reflectionCompleted: false,
+          sawDailyBonus: false,
+        }),
     }),
     {
       name: 'shepherd-home-storage',

@@ -11,4 +11,4 @@ export const useUIStore = create<UIState>((set) => ({
     console.log(`[UIStore] Setting isModalDimActive to: ${isActive}`); // Log state changes
     set({ isModalDimActive: isActive });
   },
-})); 
+}));

@@ -1,13 +1,12 @@
+import { useAssets } from 'expo-asset';
+import { router } from 'expo-router';
 import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, Animated } from 'react-native';
-import PrimaryButton from './PrimaryButton';
-import { router } from 'expo-router';
-import { usePathStore } from '../app/stores/pathStore';
+
 import BackButton from './BackButton';
-import * as Haptics from 'expo-haptics';
+import PrimaryButton from './PrimaryButton';
 import { Unit, BIBLE_PATHS } from '../app/models/Path'; // Import Unit and BIBLE_PATHS
-import { useAssets } from 'expo-asset';
-import Rive from 'rive-react-native';
+import { usePathStore } from '../app/stores/pathStore';
 
 interface BiblePreviewProps {
   /** Whether the preview overlay should be shown. */
@@ -24,17 +23,17 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   const containerOpacity = useRef(new Animated.Value(0)).current; // Overall container opacity
   const cardAnim = useRef(new Animated.Value(-100)).current; // Y offset for entry
   const cardOpacity = useRef(new Animated.Value(0)).current;
-  
+
   // Get saved reading & path in progress state from path store
-  const { 
-    savedBook, 
-    savedChapter, 
-    setPathInProgress, 
-    savedBookId, 
+  const {
+    savedBook,
+    savedChapter,
+    setPathInProgress,
+    savedBookId,
     completedUnitIds,
-    setCurrentPath
+    setCurrentPath,
   } = usePathStore();
-  
+
   // Use selectedPath to determine the correct order for BIBLE_PATHS
   const selectedPath = usePathStore((state) => state.selectedPath);
   const orderedPaths = useMemo(() => {
@@ -54,7 +53,9 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
     for (const path of orderedPaths) {
       for (const unit of path.units) {
         if (!completedUnitIds.includes(unit.id)) {
-          console.log(`[BiblePreviewComponent] Found next uncompleted unit: ${unit.title} in path ${path.id}`);
+          console.log(
+            `[BiblePreviewComponent] Found next uncompleted unit: ${unit.title} in path ${path.id}`
+          );
           nextUnitToComplete = unit;
           break;
         }
@@ -67,12 +68,12 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
     }
     return nextUnitToComplete;
   }, [completedUnitIds, orderedPaths]);
-  
+
   // Helper to get a single BibleReference from nextUnit.reference
-  const getFirstReference = (ref: Unit['reference']) => Array.isArray(ref) ? ref[0] : ref;
+  const getFirstReference = (ref: Unit['reference']) => (Array.isArray(ref) ? ref[0] : ref);
 
   // Content for the preview card - either from nextUnit or fallbacks
-  const title = useMemo(() => nextUnit?.title || "The Good Shepherd", [nextUnit]);
+  const title = useMemo(() => nextUnit?.title || 'The Good Shepherd', [nextUnit]);
   const subtitle = useMemo(() => {
     if (nextUnit) {
       const ref = getFirstReference(nextUnit.reference);
@@ -80,18 +81,23 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
     }
     return `Today's Reading · ${savedBook} ${savedChapter}`;
   }, [nextUnit, savedBook, savedChapter]);
-  const summary = useMemo(() => 
-    nextUnit?.description || 
-    (savedBook === 'John' && savedChapter === 3 ? 
-     "Jesus teaches Nicodemus about being born again and God's love for the world." : 
-     "Jesus describes Himself as the Good Shepherd who lays down His life for the sheep."),
+  const summary = useMemo(
+    () =>
+      nextUnit?.description ||
+      (savedBook === 'John' && savedChapter === 3
+        ? "Jesus teaches Nicodemus about being born again and God's love for the world."
+        : 'Jesus describes Himself as the Good Shepherd who lays down His life for the sheep.'),
     [nextUnit, savedBook, savedChapter]
   );
 
   // Determine bookId and chapter for the "Start Reading" button
-  const bookIdToLoad = useMemo(() => nextUnit ? getFirstReference(nextUnit.reference).bookId : savedBookId, [nextUnit, savedBookId]);
-  const chaptersToLoad = useMemo(() => 
-    nextUnit ? getFirstReference(nextUnit.reference).chapters.join(',') : savedChapter.toString(), 
+  const bookIdToLoad = useMemo(
+    () => (nextUnit ? getFirstReference(nextUnit.reference).bookId : savedBookId),
+    [nextUnit, savedBookId]
+  );
+  const chaptersToLoad = useMemo(
+    () =>
+      nextUnit ? getFirstReference(nextUnit.reference).chapters.join(',') : savedChapter.toString(),
     [nextUnit, savedChapter]
   );
 
@@ -103,15 +109,14 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   const scrollViewRef = useRef(null);
 
   // Prepare for future Rive usage
-  const [riveAssets] = useAssets([
-    require('../assets/riveAnimations/homeLamb.riv')
-  ]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
 
   useEffect(() => {
     if (visible) {
       // First animate the container opacity and card entry
       Animated.parallel([
-        Animated.timing(containerOpacity, { // Fade in container
+        Animated.timing(containerOpacity, {
+          // Fade in container
           toValue: 1,
           duration: 400, // Faster fade-in
           useNativeDriver: true,
@@ -125,14 +130,14 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
           toValue: 1,
           duration: 500,
           useNativeDriver: true,
-        })
+        }),
       ]).start();
-      
+
       // Then animate the button with a delay
       setTimeout(() => {
         Animated.parallel([
           Animated.timing(buttonAnim, {
-            toValue: 0, 
+            toValue: 0,
             duration: 400,
             useNativeDriver: true,
           }),
@@ -140,9 +145,9 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
             toValue: 1,
             duration: 400,
             useNativeDriver: true,
-          })
+          }),
         ]).start();
-      }, 200); 
+      }, 200);
     } else {
       // Reset animations when component is hidden
       containerOpacity.setValue(0); // Reset container opacity
@@ -168,7 +173,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
       let pathId = '';
       let pathTitle = '';
       for (const path of BIBLE_PATHS) {
-        if (path.units.some(u => u.id === nextUnit.id)) {
+        if (path.units.some((u) => u.id === nextUnit.id)) {
           pathId = path.id;
           pathTitle = path.title;
           break;
@@ -183,13 +188,13 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
       // Set the currentPath in the pathStore
       setPathInProgress(true); // Keep path progress active for Bible Reader
       setCurrentPath({
-        pathId: pathId,
-        pathTitle: pathTitle,
+        pathId,
+        pathTitle,
         unitId: nextUnit.id,
         unitTitle: nextUnit.title,
         bookId: ref.bookId,
-        startChapter: startChapter,
-        endChapter: endChapter
+        startChapter,
+        endChapter,
       });
 
       // Navigate to bibleReader with correct params
@@ -200,8 +205,8 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
           chapters: ref.chapters.join(','),
           title: nextUnit.title,
           source: 'preview',
-          timestamp: Date.now().toString()
-        }
+          timestamp: Date.now().toString(),
+        },
       });
     } else {
       router.push({
@@ -209,10 +214,10 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         params: {
           bookId: savedBookId.toString(),
           chapters: savedChapter.toString(),
-          title: title,
+          title,
           source: 'preview',
-          timestamp: Date.now().toString()
-        }
+          timestamp: Date.now().toString(),
+        },
       });
     }
   };
@@ -221,7 +226,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   const handleJustReadBible = () => {
     console.log('Just Read Bible');
     // Exit any path progress state
-      setPathInProgress(false); // Keep path progress active for Bible Reader
+    setPathInProgress(false); // Keep path progress active for Bible Reader
 
     // Navigate directly to the Bible reader with saved state
     router.push({
@@ -232,7 +237,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         title: savedBook,
         source: 'just-read',
         timestamp: Date.now().toString(),
-      }
+      },
     });
 
     // Close the preview overlay
@@ -248,10 +253,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   const handleScroll = (event: any) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     const paddingToBottom = 20; // px
-    if (
-      layoutMeasurement.height + contentOffset.y >=
-      contentSize.height - paddingToBottom
-    ) {
+    if (layoutMeasurement.height + contentOffset.y >= contentSize.height - paddingToBottom) {
       setScrolledToBottom(true);
     } else {
       setScrolledToBottom(false);
@@ -262,42 +264,40 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
     <Animated.View
       className="absolute inset-0 flex flex-col"
       style={{ opacity: containerOpacity }}
-      pointerEvents="box-none"
-    >
+      pointerEvents="box-none">
       {/* Back Button */}
       <BackButton onPress={handleBack} />
 
-      {/* Animated Card Preview at the top */} 
+      {/* Animated Card Preview at the top */}
       <Animated.View
         className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto mt-[120px] border-4 border-border "
-        style={{ opacity: cardOpacity, transform: [{ translateY: cardAnim }] }}
-      >
-        {/* Pillar Title */} 
-        <Text className="text-h1 font-feather text-accentGold mb-2 text-center leading-tight ">{title}</Text>
-        {/* Date or subtitle */} 
+        style={{ opacity: cardOpacity, transform: [{ translateY: cardAnim }] }}>
+        {/* Pillar Title */}
+        <Text className="text-h1 font-feather text-accentGold mb-2 text-center leading-tight ">
+          {title}
+        </Text>
+        {/* Date or subtitle */}
         <Text className="text-body font-din text-[#B89B4C] mb-4">{subtitle}</Text>
-        {/* Summary Section */} 
+        {/* Summary Section */}
         <View className="w-full bg-surfaceCream/50 rounded-[18px] p-4 mt-2 border border-border mb-2">
-          <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-1 tracking-wider">SUMMARY</Text>
-          <Text className="text-body font-din text-textPrimary text-center">
-            {summary}
+          <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-1 tracking-wider">
+            SUMMARY
           </Text>
+          <Text className="text-body font-din text-textPrimary text-center">{summary}</Text>
         </View>
       </Animated.View>
       <View className="flex-1 h-96" />
       {/* Animated Primary Button */}
-      <Animated.View 
+      <Animated.View
         className="w-full px-5 mb-2 mt-auto items-center z-10 mt-0"
-        style={{ opacity: buttonOpacity, transform: [{ translateY: buttonAnim }] }}
-      >
+        style={{ opacity: buttonOpacity, transform: [{ translateY: buttonAnim }] }}>
         <PrimaryButton title="Start Reading" onPress={handleStart} />
-        
+
         {/* Just Read Bible Button - now styled as underlined grey text */}
-        <TouchableOpacity 
+        <TouchableOpacity
           onPress={handleJustReadBible}
           className="mt-4 mb-6 py-2"
-          activeOpacity={0.7}
-        >
+          activeOpacity={0.7}>
           <Text className="text-body font-nunito-bold text-textPrimary/70 text-center underline text-white">
             Just Read Bible
           </Text>

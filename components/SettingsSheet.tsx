@@ -1,13 +1,18 @@
+import { Feather } from '@expo/vector-icons';
+import BottomSheet, {
+  BottomSheetView,
+  BottomSheetBackdrop,
+  BottomSheetBackdropProps,
+} from '@gorhom/bottom-sheet';
+import Clipboard from '@react-native-clipboard/clipboard';
+import auth from '@react-native-firebase/auth';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import React, { useCallback, useState, useRef, useImperativeHandle } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import BottomSheet, { BottomSheetView, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
-import Clipboard from '@react-native-clipboard/clipboard';
-import * as Haptics from 'expo-haptics';
-import { Feather } from '@expo/vector-icons';
-import auth from '@react-native-firebase/auth';
-import { useUserStore } from '../app/stores/userStore';
+
 import { useUIStore } from '../app/stores/uiStore';
-import { useRouter } from 'expo-router';
+import { useUserStore } from '../app/stores/userStore';
 
 interface SettingsSheetProps {
   settingsSheetRef: React.RefObject<SettingsSheetRef>;
@@ -19,12 +24,9 @@ export type SettingsSheetRef = {
   show: () => void;
   close: () => void;
   expand: () => void;
-}
+};
 
-const SettingsSheet: React.FC<SettingsSheetProps> = ({
-  settingsSheetRef,
-  snapPoints,
-}) => {
+const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoints }) => {
   const router = useRouter();
   const [userId, setUserId] = useState<string>('Anonymous user');
   const setIsModalDimActive = useUIStore((state) => state.setIsModalDimActive);
@@ -68,12 +70,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   // Custom backdrop renderer
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.5}
-      />
+      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
     ),
     []
   );
@@ -82,7 +79,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   const prepareAndShow = useCallback(() => {
     // Get user ID directly from Firebase or userStore
     let currentUserId = 'Not authenticated';
-    
+
     // First try to get the current Firebase user's UID
     const currentUser = auth().currentUser;
     if (currentUser?.uid) {
@@ -92,9 +89,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       const user = useUserStore.getState().getUser();
       currentUserId = user?.id || 'Not authenticated';
     }
-    
+
     setUserId(currentUserId);
-    
+
     // Show the sheet
     bottomSheetRef.current?.expand();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
@@ -106,7 +103,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
     () => ({
       show: prepareAndShow,
       close: () => bottomSheetRef.current?.close(),
-      expand: () => bottomSheetRef.current?.expand()
+      expand: () => bottomSheetRef.current?.expand(),
     }),
     [prepareAndShow]
   );
@@ -116,12 +113,11 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       ref={bottomSheetRef}
       index={-1}
       snapPoints={snapPoints}
-      enablePanDownToClose={true}
+      enablePanDownToClose
       onChange={handleSettingsChange}
       backgroundStyle={styles.sheetBackground}
       handleIndicatorStyle={styles.handleIndicator}
-      backdropComponent={renderBackdrop}
-    >
+      backdropComponent={renderBackdrop}>
       <BottomSheetView style={styles.settingsContentContainer}>
         {/* Header */}
         <View style={styles.settingsHeader}>
@@ -137,11 +133,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
           <View style={styles.settingsSection}>
             <Text style={styles.settingsSectionTitle}>User ID</Text>
             <View style={styles.userIdContainer}>
-              <Text style={styles.userIdText} numberOfLines={1} ellipsizeMode="tail">{userId}</Text>
-              <TouchableOpacity 
-                onPress={handleCopyUserId}
-                style={styles.copyButton}
-              >
+              <Text style={styles.userIdText} numberOfLines={1} ellipsizeMode="tail">
+                {userId}
+              </Text>
+              <TouchableOpacity onPress={handleCopyUserId} style={styles.copyButton}>
                 <Feather name="copy" size={16} color="#3C584A" />
               </TouchableOpacity>
             </View>
@@ -155,10 +150,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
           </View>
 
           {/* Sign Out Button */}
-          <TouchableOpacity
-            onPress={handleSignOut}
-            style={styles.signOutButton}
-          >
+          <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
             <Text style={styles.signOutText}>Sign Out</Text>
           </TouchableOpacity>
         </View>
@@ -168,89 +160,89 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 };
 
 const styles = StyleSheet.create({
-  sheetBackground: {
-    backgroundColor: '#FFF4D9', // surfaceCream 
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+  copyButton: {
+    padding: 5,
+  },
+  divider: {
+    backgroundColor: '#FFE4A8',
+    height: 1,
+    marginVertical: 20,
+  },
+  doneButton: {
+    color: '#F7B500',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    fontWeight: '600',
   },
   handleIndicator: {
     backgroundColor: '#DCB280',
-    width: 40,
     height: 4,
-  },
-  settingsContentContainer: {
-    flex: 1,
-  },
-  settingsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFE4A8',
-  },
-  settingsTitle: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Black',
-    color: '#3C584A',
-  },
-  doneButton: {
-    fontSize: 16,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    color: '#F7B500',
-    fontWeight: '600',
+    width: 40,
   },
   settingsContent: {
     flex: 1,
     padding: 20,
   },
-  settingsText: {
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    color: 'rgba(60, 88, 74, 0.7)',
-    fontSize: 16,
+  settingsContentContainer: {
+    flex: 1,
   },
-  signOutButton: {
-    backgroundColor: 'rgba(223, 69, 51, 0.1)',
-    padding: 16,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#DF4533',
-    marginBottom: 20,
-  },
-  signOutText: {
-    fontFamily: 'Nunito-Black',
-    fontSize: 16,
-    color: '#DF4533',
+  settingsHeader: {
+    alignItems: 'center',
+    borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
   settingsSection: {
     marginBottom: 20,
   },
   settingsSectionTitle: {
+    color: '#3C584A',
     fontFamily: 'Nunito-Black',
     fontSize: 18,
-    color: '#3C584A',
     marginBottom: 10,
   },
-  userIdContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  userIdText: {
+  settingsText: {
+    color: 'rgba(60, 88, 74, 0.7)',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
+  },
+  settingsTitle: {
     color: '#3C584A',
-    marginRight: 10,
-    flexShrink: 1, // Allow text to shrink
+    fontFamily: 'Nunito-Black',
+    fontSize: 18,
   },
-  copyButton: {
-    padding: 5,
+  sheetBackground: {
+    backgroundColor: '#FFF4D9', // surfaceCream
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#FFE4A8',
-    marginVertical: 20,
+  signOutButton: {
+    backgroundColor: 'rgba(223, 69, 51, 0.1)',
+    borderLeftColor: '#DF4533',
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    marginBottom: 20,
+    padding: 16,
+  },
+  signOutText: {
+    color: '#DF4533',
+    fontFamily: 'Nunito-Black',
+    fontSize: 16,
+  },
+  userIdContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  userIdText: {
+    color: '#3C584A',
+    flexShrink: 1,
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    marginRight: 10, // Allow text to shrink
   },
 });
 
-export default SettingsSheet; 
+export default SettingsSheet;

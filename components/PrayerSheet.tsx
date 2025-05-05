@@ -1,3 +1,10 @@
+import { Ionicons } from '@expo/vector-icons';
+import BottomSheet, {
+  BottomSheetView,
+  BottomSheetBackdrop,
+  BottomSheetBackdropProps,
+} from '@gorhom/bottom-sheet';
+import * as Haptics from 'expo-haptics';
 import React, { useCallback, useState, useRef, useImperativeHandle, useEffect } from 'react';
 import {
   View,
@@ -8,9 +15,7 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import BottomSheet, { BottomSheetView, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+
 import PrimaryButton from './PrimaryButton';
 import { usePrayerStore } from '../app/stores/prayerStore';
 
@@ -33,68 +38,64 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
   onPrayerGenerated,
 }) => {
   const [prayerInput, setPrayerInput] = useState('');
-  
+
   // Add internal ref for the actual BottomSheet
   const bottomSheetRef = useRef<BottomSheet>(null);
-  
+
   // Access prayer store
-  const { 
-    prayerTopics, 
-    recentPrayers, 
-    incrementTopicCount, 
-    addRecentPrayer, 
-    getOrderedTopics 
-  } = usePrayerStore();
-  
+  const { prayerTopics, recentPrayers, incrementTopicCount, addRecentPrayer, getOrderedTopics } =
+    usePrayerStore();
+
   // Get ordered topics
-  const [orderedTopics, setOrderedTopics] = useState(getOrderedTopics().map(topic => topic.name));
-  
+  const [orderedTopics, setOrderedTopics] = useState(getOrderedTopics().map((topic) => topic.name));
+
   // Update ordered topics when store changes
   useEffect(() => {
-    setOrderedTopics(getOrderedTopics().map(topic => topic.name));
+    setOrderedTopics(getOrderedTopics().map((topic) => topic.name));
   }, [prayerTopics, getOrderedTopics]);
-  
+
   // Handle prayer topic selection
-  const handlePrayerTopicPress = useCallback((topic: string) => {
-    setPrayerInput(topic);
-    incrementTopicCount(topic);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-  }, [incrementTopicCount]);
-  
+  const handlePrayerTopicPress = useCallback(
+    (topic: string) => {
+      setPrayerInput(topic);
+      incrementTopicCount(topic);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    },
+    [incrementTopicCount]
+  );
+
   // Handle prayer generation
   const handlePrayerGenerate = useCallback(() => {
     if (!prayerInput.trim()) return;
-    
+
     console.log(`Generating prayer for: ${prayerInput}`);
-    
+
     // Save the prayer to store
     incrementTopicCount(prayerInput);
     addRecentPrayer(prayerInput);
-    
+
     // Close the bottom sheet
     bottomSheetRef.current?.close();
-    
+
     // Trigger the onPrayerGenerated callback after the sheet is closed
     setTimeout(() => {
       if (onPrayerGenerated) {
         onPrayerGenerated();
       } else {
         // Fallback if no callback provided - show the alert as before
-        Alert.alert(
-          "Prayer Generated", 
-          `Your prayer for "${prayerInput}" has been generated.`,
-          [{ text: "Amen", style: "default" }]
-        );
+        Alert.alert('Prayer Generated', `Your prayer for "${prayerInput}" has been generated.`, [
+          { text: 'Amen', style: 'default' },
+        ]);
       }
       setPrayerInput('');
     }, 300);
   }, [prayerInput, incrementTopicCount, addRecentPrayer, onPrayerGenerated]);
-  
+
   // Close the prayer sheet
   const handleClose = useCallback(() => {
     bottomSheetRef.current?.close();
   }, []);
-  
+
   // Handle prayer sheet changes
   const handlePrayerSheetChange = useCallback((index: number) => {
     if (index === -1) {
@@ -104,16 +105,11 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
       }, 200);
     }
   }, []);
-  
+
   // Custom backdrop renderer
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.5}
-      />
+      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
     ),
     []
   );
@@ -121,21 +117,21 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
   // Show the prayer sheet with any preparations
   const showSheet = useCallback(() => {
     setPrayerInput('');
-    
+
     // Update ordered topics before showing the sheet
-    setOrderedTopics(getOrderedTopics().map(topic => topic.name));
-    
+    setOrderedTopics(getOrderedTopics().map((topic) => topic.name));
+
     bottomSheetRef.current?.expand();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   }, [getOrderedTopics]);
-  
+
   // Expose methods via ref
   useImperativeHandle(
     prayerSheetRef,
     () => ({
       show: showSheet,
       close: () => bottomSheetRef.current?.close(),
-      expand: () => bottomSheetRef.current?.expand()
+      expand: () => bottomSheetRef.current?.expand(),
     }),
     [showSheet]
   );
@@ -145,14 +141,13 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
       ref={bottomSheetRef}
       index={-1}
       snapPoints={snapPoints}
-      enablePanDownToClose={true}
+      enablePanDownToClose
       onChange={handlePrayerSheetChange}
       backgroundStyle={styles.sheetBackground}
       handleIndicatorStyle={styles.handleIndicator}
       backdropComponent={renderBackdrop}
       keyboardBehavior="interactive"
-      keyboardBlurBehavior="restore"
-    >
+      keyboardBlurBehavior="restore">
       <BottomSheetView style={styles.prayerContentContainer}>
         {/* Header */}
         <View style={styles.prayerHeader}>
@@ -165,7 +160,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
           </TouchableOpacity>
         </View>
 
-        <ScrollView 
+        <ScrollView
           style={styles.prayerContent}
           contentContainerStyle={{ paddingBottom: 30 }}
           keyboardShouldPersistTaps="handled" // Ensure taps work inside scrollview when keyboard is up
@@ -185,7 +180,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
                 placeholder="guidance..."
                 placeholderTextColor="#B89B4C"
                 style={styles.prayerInputText}
-                autoFocus={true}
+                autoFocus
               />
             </View>
           </View>
@@ -194,17 +189,15 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
           {recentPrayers.length > 0 && (
             <View style={styles.recentPrayersContainer}>
               <Text style={styles.prayerTopicsLabel}>Recent prayers:</Text>
-              <ScrollView 
+              <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{ paddingRight: 20 }}
-              >
+                contentContainerStyle={{ paddingRight: 20 }}>
                 {recentPrayers.slice(0, 5).map((prayer, index) => (
                   <TouchableOpacity
                     key={index}
                     onPress={() => handlePrayerTopicPress(prayer)}
-                    style={styles.recentPrayerButton}
-                  >
+                    style={styles.recentPrayerButton}>
                     <Text style={styles.recentPrayerText} numberOfLines={1}>
                       {prayer}
                     </Text>
@@ -219,14 +212,13 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
             <Text style={styles.prayerTopicsLabel}>Or pick one of these:</Text>
             <View style={styles.prayerTopicsGrid}>
               {orderedTopics
-                .filter(topic => !recentPrayers.includes(topic))
+                .filter((topic) => !recentPrayers.includes(topic))
                 .slice(0, 8)
                 .map((topic) => (
                   <TouchableOpacity
                     key={topic}
                     onPress={() => handlePrayerTopicPress(topic)}
-                    style={styles.prayerTopicButton}
-                  >
+                    style={styles.prayerTopicButton}>
                     <Text style={styles.prayerTopicText}>{topic}</Text>
                   </TouchableOpacity>
                 ))}
@@ -248,145 +240,145 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
 };
 
 const styles = StyleSheet.create({
-  sheetBackground: {
-    backgroundColor: '#FFF4D9', // surfaceCream 
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+  doneButton: {
+    color: '#F7B500',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    fontWeight: '600',
   },
   handleIndicator: {
     backgroundColor: '#DCB280',
-    width: 40,
     height: 4,
-  },
-  prayerContentContainer: {
-    flex: 1,
-  },
-  prayerHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFE4A8',
-  },
-  prayerTitle: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Black',
-    color: '#3C584A',
-  },
-  doneButton: {
-    fontSize: 16,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    color: '#F7B500',
-    fontWeight: '600',
+    width: 40,
   },
   prayerContent: {
     flex: 1,
     paddingHorizontal: 20, // Add horizontal padding
   },
-  prayerEmojiContainer: {
-    alignItems: 'center',
-    marginVertical: 20,
+  prayerContentContainer: {
+    flex: 1,
   },
   prayerEmoji: {
     fontSize: 36,
   },
+  prayerEmojiContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  prayerGenerateButton: {
+    alignItems: 'center',
+    backgroundColor: '#FFF4D9',
+    borderRadius: 30,
+    elevation: 6,
+    padding: 16,
+    shadowColor: '#FFE4A8',
+    shadowOffset: { width: 0, height: 5.716 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+  },
+  prayerGenerateButtonDisabled: {
+    backgroundColor: '#E0E0E0',
+    elevation: 0,
+    shadowColor: 'transparent',
+  },
+  prayerGenerateContainer: {
+    // Use padding instead of marginTop: auto to ensure it's reachable when keyboard is up
+    paddingVertical: 20,
+  },
+  prayerGenerateText: {
+    color: '#3C584A',
+    fontFamily: 'Nunito-Black',
+    fontSize: 18,
+  },
+  prayerGenerateTextDisabled: {
+    color: 'rgba(60, 88, 74, 0.5)',
+  },
+  prayerHeader: {
+    alignItems: 'center',
+    borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
   prayerInputContainer: {
     marginBottom: 30,
   },
-  prayerInputWrapper: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#FCD34D',
-    paddingBottom: 8,
-  },
   prayerInputLabel: {
+    color: '#3C584A',
     fontFamily: 'Nunito-Black',
     fontSize: 22,
-    color: '#3C584A',
     marginRight: 8,
   },
   prayerInputText: {
-    fontFamily: 'Nunito-Black',
-    fontSize: 22,
     color: '#06B6FE',
     flex: 1,
+    fontFamily: 'Nunito-Black',
+    fontSize: 22,
+  },
+  prayerInputWrapper: {
+    alignItems: 'center',
+    borderBottomColor: '#FCD34D',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    paddingBottom: 8,
+  },
+  prayerTitle: {
+    color: '#3C584A',
+    fontFamily: 'Nunito-Black',
+    fontSize: 18,
+  },
+  prayerTopicButton: {
+    backgroundColor: 'white',
+    borderColor: '#E9E2C7',
+    borderRadius: 30,
+    borderWidth: 1,
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+  },
+  prayerTopicText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
   },
   prayerTopicsContainer: {
     marginBottom: 30,
-  },
-  prayerTopicsLabel: {
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 18,
-    color: '#B89B4C',
-    marginBottom: 16,
   },
   prayerTopicsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 10,
   },
-  prayerTopicButton: {
-    backgroundColor: 'white',
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: '#E9E2C7',
-  },
-  prayerTopicText: {
+  prayerTopicsLabel: {
+    color: '#B89B4C',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 16,
-    color: '#3C584A',
-  },
-  prayerGenerateContainer: {
-    // Use padding instead of marginTop: auto to ensure it's reachable when keyboard is up
-    paddingVertical: 20,
-  },
-  prayerGenerateButton: {
-    backgroundColor: '#FFF4D9',
-    padding: 16,
-    borderRadius: 30,
-    alignItems: 'center',
-    shadowColor: '#FFE4A8',
-    shadowOffset: { width: 0, height: 5.716 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 6,
-  },
-  prayerGenerateButtonDisabled: {
-    backgroundColor: '#E0E0E0',
-    shadowColor: 'transparent',
-    elevation: 0,
-  },
-  prayerGenerateText: {
-    fontFamily: 'Nunito-Black',
     fontSize: 18,
-    color: '#3C584A',
+    marginBottom: 16,
   },
-  prayerGenerateTextDisabled: {
-    color: 'rgba(60, 88, 74, 0.5)',
+  recentPrayerButton: {
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderColor: '#E9E2C7',
+    borderRadius: 20,
+    borderWidth: 1,
+    marginRight: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+  },
+  recentPrayerText: {
+    color: '#06B6FE',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 14,
+    maxWidth: 150,
   },
   recentPrayersContainer: {
     marginBottom: 30,
   },
-  recentPrayerButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 20,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: '#E9E2C7',
-  },
-  recentPrayerText: {
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 14,
-    color: '#06B6FE',
-    maxWidth: 150,
+  sheetBackground: {
+    backgroundColor: '#FFF4D9', // surfaceCream
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
 });
 
-export default PrayerSheet; 
+export default PrayerSheet;
