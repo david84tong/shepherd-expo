@@ -17,6 +17,7 @@ import { usePrayerStore } from '../app/stores/prayerStore';
 interface PrayerSheetProps {
   prayerSheetRef: React.RefObject<PrayerSheetRef>;
   snapPoints: string[];
+  onPrayerGenerated?: () => void;
 }
 
 // Define the ref type that includes both BottomSheet methods and our custom show method
@@ -29,6 +30,7 @@ export type PrayerSheetRef = {
 const PrayerSheet: React.FC<PrayerSheetProps> = ({
   prayerSheetRef,
   snapPoints,
+  onPrayerGenerated,
 }) => {
   const [prayerInput, setPrayerInput] = useState('');
   
@@ -69,20 +71,24 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
     incrementTopicCount(prayerInput);
     addRecentPrayer(prayerInput);
     
-    // Here you would typically call your prayer generation logic
+    // Close the bottom sheet
     bottomSheetRef.current?.close();
     
-    // Delay to allow the sheet to close before showing alert
+    // Trigger the onPrayerGenerated callback after the sheet is closed
     setTimeout(() => {
-      // Optionally show a success message
-      Alert.alert(
-        "Prayer Generated", 
-        `Your prayer for "${prayerInput}" has been generated.`,
-        [{ text: "Amen", style: "default" }]
-      );
+      if (onPrayerGenerated) {
+        onPrayerGenerated();
+      } else {
+        // Fallback if no callback provided - show the alert as before
+        Alert.alert(
+          "Prayer Generated", 
+          `Your prayer for "${prayerInput}" has been generated.`,
+          [{ text: "Amen", style: "default" }]
+        );
+      }
       setPrayerInput('');
     }, 300);
-  }, [prayerInput, incrementTopicCount, addRecentPrayer]);
+  }, [prayerInput, incrementTopicCount, addRecentPrayer, onPrayerGenerated]);
   
   // Close the prayer sheet
   const handleClose = useCallback(() => {

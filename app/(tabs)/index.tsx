@@ -21,10 +21,13 @@ import PrayerComponent from '../../components/PrayerComponent';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
 import JournalComponent from '../../components/JournalComponent';
 import ProgressPill from '../../components/ProgressPill';
+import PrayerSheet, { PrayerSheetRef } from '../../components/PrayerSheet';
 import { useHomeStore, HomeMode } from '../stores/homeStore'; // Import Zustand store
 import { usePathStore } from '../stores/pathStore'; // Import path store
 import { useUserStore } from '../stores/userStore'; // Import user store
+import { usePrayerStore } from '../stores/prayerStore'; // Import prayer store
 import { Unit, BIBLE_PATHS } from '../models/Path'; // Import Unit type and BIBLE_PATHS
+import * as Haptics from 'expo-haptics';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
@@ -211,6 +214,8 @@ export default function HomeScreen() {
     'lamb-full': 'lamb-full'
   };
 
+  // Add ref for the prayer sheet
+  const prayerSheetRef = useRef<PrayerSheetRef>(null);
 
   const handleRiveError = (error: RNRiveError) => {
     console.error('Rive Error:', error.message, error.type);
@@ -451,7 +456,21 @@ export default function HomeScreen() {
   };
 
   const handlePrayerPress = () => {
-    console.log('Daily Prayer Pressed - Setting resource to lamb-drinking');
+    console.log('Daily Prayer Pressed - Showing prayer sheet');
+    
+    // Provide haptic feedback when prayer button pressed
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    
+    // Show the prayer sheet
+    prayerSheetRef.current?.show();
+    
+    // Original animation code - we'll use this when moving to the prayer component
+    // but not immediately, we'll wait for prayer generation
+  };
+
+  // Add a new function to handle prayer generation when sheet is submitted
+  const handlePrayerGenerated = () => {
+    console.log('Prayer Generated - Setting resource to lamb-drinking');
     setMode('PRAYER');
     setShowBgRive(true);
 
@@ -881,6 +900,13 @@ export default function HomeScreen() {
         <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
         <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
         <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
+        
+        {/* Add PrayerSheet component */}
+        <PrayerSheet 
+          prayerSheetRef={prayerSheetRef} 
+          snapPoints={['60%', '85%']}
+          onPrayerGenerated={handlePrayerGenerated}
+        />
       </SafeAreaView>
     </View>
   );
