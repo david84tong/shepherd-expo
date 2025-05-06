@@ -25,7 +25,7 @@
       "googleServicesFile": "./GoogleService-Info.plist",
       "deploymentTarget": "15.1",
       "appleTeamId": "FY756JUW9K",
-      "usesAppleSignIn": false,
+      "usesAppleSignIn": true,
       "supportsTablet": false,
       "config": {
         "usesNonExemptEncryption": false
