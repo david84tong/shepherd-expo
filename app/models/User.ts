@@ -8,6 +8,9 @@ export interface UserDoc {
   email?: string; // User email from authentication
   spiritualGoal: string;
   experienceLevel: string;
+  notificationTime: string;
+  setNotificationTime: (time: string) => Promise<void>;
+
   frequencyGoal: string;
   denomination?: string;
   ageRange: string;

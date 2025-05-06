@@ -263,13 +263,14 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     // Mark prayer as completed
     setPrayerCompleted(true);
     setPathInProgress(false);
-    // Create current timestamp
+    
+    // Create current timestamp using Firestore Timestamp
     const now = firestore.Timestamp.now();
 
     // Save prayer data to userStore
     console.log('Saving prayer data to userStore');
     try {
-      // Save the completed prayer
+      // Save the completed prayer with Firestore timestamp
       addCompletedPrayer({
         date: now,
         type: 'standard', // You could add more prayer types later
@@ -283,11 +284,13 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     } catch (error) {
       console.error('Error saving prayer data:', error);
     }
-
-    // Check if all three tasks are completed
+    
+    // Check if all three tasks are completed for bonus, but only if not already seen
     if (readingCompleted && reflectionCompleted && !sawDailyBonus) {
+      console.log('All three disciplines completed - showing BONUS success');
       setSuccessType(SuccessAnimationType.BONUS);
     } else {
+      console.log('Normal prayer completion - showing PRAYER success');
       setSuccessType(SuccessAnimationType.PRAYER);
     }
 

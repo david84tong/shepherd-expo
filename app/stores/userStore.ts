@@ -63,6 +63,7 @@ const initialState: Partial<UserDoc> = {
   lastReadingPenaltyDate: Timestamp.now(),
   lastPrayerPenaltyDate: Timestamp.now(),
   lastReflectionPenaltyDate: Timestamp.now(),
+  notificationTime: 'none',
   streakCount: 0,
   versesReadTotal: 0,
   chaptersReadTotal: 0,
@@ -203,7 +204,6 @@ export const useUserStore = create<UserStore>()(
       getCompletedReflections: () => get().completedReflections,
       getCompletedPrayers: () => get().completedPrayers,
       getCompletedReadings: () => get().completedReadings,
-
       // Getters for Lamb
       getLambLevel: () => get().lamb.level,
       getLambXp: () => get().lamb.xp,
@@ -256,10 +256,24 @@ export const useUserStore = create<UserStore>()(
           updateField('gens', gens);
         }
       },
+      setNotificationTime: async (time: string) => {
+        set({ notificationTime: time });
+    
+        const user = get().getUser?.();
+        if (user?.id) {
+          try {
+            await firestore()
+              .collection('users')
+              .doc(user.id)
+              .update({ notificationTime: time });
+          } catch (error) {
+            console.error('Error updating notificationTime in Firestore:', error);
+          }
+        }
+      },
       setCompletedReflections: (completedReflections) => set({ completedReflections }),
       setCompletedPrayers: (completedPrayers) => set({ completedPrayers }),
       setCompletedReadings: (completedReadings) => set({ completedReadings }),
-
       // Add single items to the completed arrays
       addCompletedReflection: (reflection) =>
         set((state) => ({
@@ -386,6 +400,7 @@ export const useUserStore = create<UserStore>()(
           lastReadingPenaltyDate: state.lastReadingPenaltyDate,
           lastPrayerPenaltyDate: state.lastPrayerPenaltyDate,
           lastReflectionPenaltyDate: state.lastReflectionPenaltyDate,
+          notificationTime: state.notificationTime,
           versesReadTotal: state.versesReadTotal,
           chaptersReadTotal: state.chaptersReadTotal,
           bibleVersion: state.bibleVersion,
@@ -481,6 +496,7 @@ export const useUserStore = create<UserStore>()(
           lastReadingPenaltyDate: state.lastReadingPenaltyDate,
           lastPrayerPenaltyDate: state.lastPrayerPenaltyDate,
           lastReflectionPenaltyDate: state.lastReflectionPenaltyDate,
+          notificationTime: state.notificationTime,
           versesReadTotal: state.versesReadTotal,
           chaptersReadTotal: state.chaptersReadTotal,
           bibleVersion: state.bibleVersion,

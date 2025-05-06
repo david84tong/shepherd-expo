@@ -1,37 +1,52 @@
 import { AntDesign } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, Alert } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Image, Text, TouchableOpacity, View } from 'react-native';
 import Animated, {
   useAnimatedStyle,
-  withTiming,
-  withSpring,
   useSharedValue,
   withDelay,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useAuth } from '../hooks/authHook';
-import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
+import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
+
+const scheduleNotification = async (time: string) => {};
+const completeOnboarding = async (router: ReturnType<typeof useRouter>) => {
+  try {
+    await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+    // Navigate to the next onboarding screen or home
+    router.replace('/onboarding/11');
+  } catch (error) {
+    console.error('Error completing onboarding:', error);
+  }
+};
 
 export default function SaveProgressScreen() {
   const router = useRouter();
+  const setResponse = useOnboardingStore(state => state.setResponse);
+  const responses = useOnboardingStore(state => state.responses);
+  const setUser = useUserStore(state => state.setUser);
+  const createUser = useUserStore(state => state.createUser);
+  const [selectedOption, setSelectedOption] = useState<string | undefined>(undefined);
+  const [pressedButton, setPressedButton] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { signInWithApple, signInAnonymously } = useAuth();
-  const { clearResponses, responses } = useOnboardingStore();
-  const { createUser } = useUserStore();
 
   // Animation shared values
   const headerOpacity = useSharedValue(0);
   const headerTranslateY = useSharedValue(40);
-
   const benefitsOpacity = useSharedValue(0);
   const benefitsTranslateY = useSharedValue(40);
-
   const buttonsOpacity = useSharedValue(0);
   const buttonsTranslateY = useSharedValue(40);
+
+  const { signInWithApple, signInAnonymously } = useAuth();
 
   useEffect(() => {
     // Reset animation values
@@ -43,7 +58,7 @@ export default function SaveProgressScreen() {
     buttonsTranslateY.value = 40;
 
     // Staggered animations for each component
-    const animateComponent = (opacity: any, translateY: any, delay: number) => {
+    const animateComponent = (opacity: typeof headerOpacity, translateY: typeof headerTranslateY, delay: number) => {
       opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
       translateY.value = withDelay(
         delay,
@@ -53,8 +68,6 @@ export default function SaveProgressScreen() {
         })
       );
     };
-
-    // Start animations with delays
     animateComponent(headerOpacity, headerTranslateY, 0);
     animateComponent(benefitsOpacity, benefitsTranslateY, 200);
     animateComponent(buttonsOpacity, buttonsTranslateY, 400);
@@ -65,26 +78,35 @@ export default function SaveProgressScreen() {
     opacity: headerOpacity.value,
     transform: [{ translateY: headerTranslateY.value }],
   }));
-
   const benefitsStyle = useAnimatedStyle(() => ({
     opacity: benefitsOpacity.value,
     transform: [{ translateY: benefitsTranslateY.value }],
   }));
-
   const buttonsStyle = useAnimatedStyle(() => ({
     opacity: buttonsOpacity.value,
     transform: [{ translateY: buttonsTranslateY.value }],
   }));
 
-  // Mark onboarding as completed and navigate to home
-  const completeOnboarding = async () => {
+  const handleSelection = async (time: string) => {
+    // Trigger light haptic feedback
     try {
-      await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
-      await clearResponses(); // Clear onboarding responses after completion
-      router.replace('/(tabs)');
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
+        console.log('Haptics not available');
+      });
     } catch (error) {
-      console.error('Error completing onboarding:', error);
+      console.log('Haptics not available');
     }
+
+    setSelectedOption(time);
+
+    // Save to onboarding store
+    await setResponse('notificationPreference', time);
+
+    // Schedule the notification
+    await scheduleNotification(time);
+
+    // Navigate to the next screen
+    router.push('/onboarding/11');
   };
 
   // Create user object from onboarding responses
@@ -138,9 +160,9 @@ export default function SaveProgressScreen() {
     try {
       setLoading(true);
       const user = await signInWithApple();
-      if (user) {
+      if (user && user.uid) {
         await createUserFromResponses(user.uid, user.displayName || 'Anonymous User');
-        await completeOnboarding();
+        await completeOnboarding(router);
       }
     } catch (error) {
       console.error('Apple sign in error:', error);
@@ -167,9 +189,9 @@ export default function SaveProgressScreen() {
             try {
               setLoading(true);
               const user = await signInAnonymously();
-              if (user) {
+              if (user && user.uid) {
                 await createUserFromResponses(user.uid, 'Anonymous User');
-                await completeOnboarding();
+                await completeOnboarding(router);
               }
             } catch (error) {
               console.error('Anonymous sign in error:', error);
@@ -188,11 +210,11 @@ export default function SaveProgressScreen() {
   };
 
   return (
-    <View className="flex-1 bg-surfaceCream px-6">
-      {/* Header */}
-      <Animated.View style={headerStyle} className="items-center mt-16 mb-8">
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-3">
-          Save Your Progress
+    <View className="flex-1 bg-surfaceCream px-6 pt-16">
+      {/* Question Text */}
+      <Animated.View style={headerStyle}>
+        <Text className="font-feather text-h1 text-center text-textPrimary mb-4">
+          When would you like to be reminded to read?
         </Text>
         <Text className="font-din text-body text-center text-description mb-6">
           Sign in to keep your reading streak and Bible progress synced across devices.
@@ -245,7 +267,7 @@ export default function SaveProgressScreen() {
             className="flex-row items-center justify-center bg-black w-full py-4 px-6 rounded-[16px] mb-4"
             onPress={handleAppleSignIn}
             disabled={loading}>
-            <AntDesign name="apple1" size={24} color="white" style={{ marginRight: 10 }} />
+            <AntDesign name="apple1" size={24} color="white" />
             <Text className="font-din text-white text-[18px] font-bold">
               {loading ? 'Signing in...' : 'Sign in with Apple'}
             </Text>

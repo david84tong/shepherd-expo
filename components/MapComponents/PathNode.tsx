@@ -30,7 +30,12 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
 
   // Get background color based on status - use light colors for active and completed
   const getBgColorClass = () => {
-    // Always use the path color, regardless of status
+    // For locked nodes, use grey
+    if (status === 'locked') {
+      return 'bg-gray-200';
+    }
+    
+    // For active and completed nodes, use the path color
     switch (pathColor) {
       case 'yellow':
         return 'bg-lightYellow';
@@ -63,7 +68,12 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
 
   // Get border color based on status - use dark colors for active and completed
   const getBorderColorClass = () => {
-    // Always use the path color, regardless of status
+    // For locked nodes, use grey
+    if (status === 'locked') {
+      return 'border-gray-400';
+    }
+    
+    // For active and completed nodes, use the path color
     switch (pathColor) {
       case 'yellow':
         return 'border-darkYellow';
@@ -96,7 +106,12 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
 
   // Get text/icon color based on status - use dark colors for active and completed
   const getTextIconColor = () => {
-    // Always use the path color, regardless of status
+    // For locked nodes, use grey
+    if (status === 'locked') {
+      return '#9CA3AF'; // gray-400
+    }
+    
+    // For active and completed nodes, use the path color
     switch (pathColor) {
       case 'yellow':
         return '#F7B500';
@@ -132,7 +147,12 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
     if (isPressed) {
       return '';
     }
-
+    
+    // For locked nodes, use grey shadow
+    if (status === 'locked') {
+      return 'shadow-greyShadow';
+  }
+    
     switch (pathColor) {
       case 'yellow':
         return 'shadow-darkYellow';
@@ -177,11 +197,16 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
           transform ${isPressed ? 'translate-y-1' : 'translate-y-0'}
           ${getShadowClass()}
         `}
-        style={{
-          opacity: isDisabled ? 0.5 : 1,
-        }}>
-        <Ionicons name={(unit.icon || 'book') as any} size={42} color={getTextIconColor()} />
-
+        style={{ 
+          opacity: isDisabled ? 0.3 : 1,
+        }}
+      >
+        <Ionicons 
+          name={(unit.icon || "book") as any} 
+          size={42} 
+          color={getTextIconColor()} 
+        />
+       
         {/* Completed check icon */}
         {status === 'completed' && (
           <View className="absolute ml-4 mt-4 -bottom-1 -right-2 bg-lightGreen rounded-full p-1.5 border-4 border-darkGreen ">

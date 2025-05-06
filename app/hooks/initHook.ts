@@ -3,7 +3,6 @@ import auth from '@react-native-firebase/auth';
 import { Timestamp } from '@react-native-firebase/firestore';
 import { useEffect, useState } from 'react';
 
-import { getUserDocument } from '../../utils/firestore';
 import { useUserStore } from '../stores/userStore';
 
 // Key to check if app has been initialized
@@ -32,22 +31,23 @@ export const useAppInitialization = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   // Get user store actions and getters
-  const resetUserStore = useUserStore((state) => state.resetUserStore);
-  const getUser = useUserStore((state) => state.getUser);
-  const setDisplayName = useUserStore((state) => state.setDisplayName);
-  const setCreatedAt = useUserStore((state) => state.setCreatedAt);
-  const setUpdatedAt = useUserStore((state) => state.setUpdatedAt);
-  const setLastActivityDate = useUserStore((state) => state.setLastActivityDate);
-  const setLastReadingDate = useUserStore((state) => state.setLastReadingDate);
-  const setLastPrayerDate = useUserStore((state) => state.setLastPrayerDate);
-  const setLastReflectionDate = useUserStore((state) => state.setLastReflectionDate);
-  const setLastReadingPenaltyDate = useUserStore((state) => state.setLastReadingPenaltyDate);
-  const setLastPrayerPenaltyDate = useUserStore((state) => state.setLastPrayerPenaltyDate);
-  const setLastReflectionPenaltyDate = useUserStore((state) => state.setLastReflectionPenaltyDate);
+  const resetUserStore = useUserStore(state => state.resetUserStore);
+  const getUser = useUserStore(state => state.getUser);
+  const setDisplayName = useUserStore(state => state.setDisplayName);
+  const setCreatedAt = useUserStore(state => state.setCreatedAt);
+  const setUpdatedAt = useUserStore(state => state.setUpdatedAt);
+  const setLastActivityDate = useUserStore(state => state.setLastActivityDate);
+  const setLastReadingDate = useUserStore(state => state.setLastReadingDate);
+  const setLastPrayerDate = useUserStore(state => state.setLastPrayerDate);
+  const setLastReflectionDate = useUserStore(state => state.setLastReflectionDate);
+  const setLastReadingPenaltyDate = useUserStore(state => state.setLastReadingPenaltyDate);
+  const setLastPrayerPenaltyDate = useUserStore(state => state.setLastPrayerPenaltyDate);
+  const setLastReflectionPenaltyDate = useUserStore(state => state.setLastReflectionPenaltyDate);
+  const fetchFromFirestore = useUserStore(state => state.fetchFromFirestore);
 
   useEffect(() => {
     const initializeApp = async () => {
-      console.log('🚀 Initializing app french...');
+      console.log('🚀 Initializing app...');
       try {
         setIsLoading(true);
 
@@ -118,12 +118,16 @@ export const useAppInitialization = () => {
             lambName: userData?.lamb?.name || 'Not set',
           });
 
-          // Fetch user from Firestore and set to userStore
-          const firestoreUser = await getUserDocument();
-          if (firestoreUser) {
-            // Set the fetched user in Zustand userStore
-            useUserStore.getState().setUser(firestoreUser);
-            console.log('✅ User loaded from Firestore:', firestoreUser);
+          // Fetch user from Firestore and update userStore
+          try {
+            const fetchSuccess = await fetchFromFirestore();
+            if (fetchSuccess) {
+              console.log('✅ User data successfully fetched from Firestore');
+            } else {
+              console.warn('⚠️ User data could not be fetched from Firestore');
+            }
+          } catch (firestoreError) {
+            console.error('❌ Error fetching user from Firestore:', firestoreError);
           }
         }
 

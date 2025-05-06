@@ -1,8 +1,7 @@
 import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, Animated } from 'react-native';
-
+import { View, Text, TouchableOpacity, Animated, ScrollView } from 'react-native';
 import BackButton from './BackButton';
 import PrimaryButton from './PrimaryButton';
 import { Unit, BIBLE_PATHS } from '../app/models/Path'; // Import Unit and BIBLE_PATHS
@@ -244,10 +243,10 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   };
 
   // Handler for "Finish Reading" button
-  const handleFinishReading = () => {
-    // You can add your finish reading logic here
-    alert('Finish Reading!');
-  };
+  // const handleFinishReading = () => {
+  //   // You can add your finish reading logic here
+  //   alert('Finish Reading!');
+  // };
 
   // Function to check if scrolled to bottom
   const handleScroll = (event: any) => {
@@ -262,42 +261,52 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
 
   return (
     <Animated.View
-      className="absolute inset-0 flex flex-col"
+      className="absolute inset-0 flex flex-col justify-between w-full h-full"
       style={{ opacity: containerOpacity }}
-      pointerEvents="box-none">
-      {/* Back Button */}
+    >
+      {/* Back Button - Stays at the top */}
       <BackButton onPress={handleBack} />
 
-      {/* Animated Card Preview at the top */}
-      <Animated.View
-        className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto mt-[120px] border-4 border-border "
-        style={{ opacity: cardOpacity, transform: [{ translateY: cardAnim }] }}>
-        {/* Pillar Title */}
-        <Text className="text-h1 font-feather text-accentGold mb-2 text-center leading-tight ">
-          {title}
-        </Text>
-        {/* Date or subtitle */}
-        <Text className="text-body font-din text-[#B89B4C] mb-4">{subtitle}</Text>
-        {/* Summary Section */}
-        <View className="w-full bg-surfaceCream/50 rounded-[18px] p-4 mt-2 border border-border mb-2">
-          <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-1 tracking-wider">
-            SUMMARY
-          </Text>
-          <Text className="text-body font-din text-textPrimary text-center">{summary}</Text>
-        </View>
-      </Animated.View>
-      <View className="flex-1 h-96" />
-      {/* Animated Primary Button */}
-      <Animated.View
-        className="w-full px-5 mb-2 mt-auto items-center z-10 mt-0"
-        style={{ opacity: buttonOpacity, transform: [{ translateY: buttonAnim }] }}>
-        <PrimaryButton title="Start Reading" onPress={handleStart} />
+      {/* Content Area - Scrolls if needed, takes up available space */}
+      <ScrollView 
+        ref={scrollViewRef}
+        onScroll={handleScroll} 
+        scrollEventThrottle={16}
+        contentContainerStyle={{ 
+          paddingTop: 100, // Adjust this to provide space for the BackButton
+          paddingBottom: 150, // Provide space for the absolutely positioned buttons at the bottom
+          alignItems: 'center', // Center content horizontally
+        }}
+        className="w-full"
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Animated Card Preview */}
+        <Animated.View
+          className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center border-4 border-border mb-6 mt-8"
+          style={{ opacity: cardOpacity, transform: [{ translateY: cardAnim }] }}
+        >
+          <Text className="text-h1 font-feather text-accentGold mb-2 text-center leading-tight ">{title}</Text>
+          <Text className="text-body font-din text-[#B89B4C] mb-4">{subtitle}</Text>
+          <View className="w-full bg-surfaceCream/50 rounded-[18px] p-4 mt-2 border border-border mb-2">
+            <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-1 tracking-wider">SUMMARY</Text>
+            <Text className="text-body font-din text-textPrimary text-center">
+              {summary}
+            </Text>
+          </View>
+        </Animated.View>
+      </ScrollView>
 
-        {/* Just Read Bible Button - now styled as underlined grey text */}
-        <TouchableOpacity
+      {/* Absolutely Positioned Buttons Container at the bottom */}
+      <Animated.View 
+        className="absolute -bottom-24 left-0 right-0 w-full px-5 pb-8 pt-4 items-center bg-transparent z-20"
+        style={{ opacity: buttonOpacity, transform: [{ translateY: buttonAnim }] }}
+      >
+        <PrimaryButton title="Start Reading" onPress={handleStart} />
+        <TouchableOpacity 
           onPress={handleJustReadBible}
-          className="mt-4 mb-6 py-2"
-          activeOpacity={0.7}>
+          className="mt-4 py-2"
+          activeOpacity={0.7}
+        >
           <Text className="text-body font-nunito-bold text-textPrimary/70 text-center underline text-white">
             Just Read Bible
           </Text>

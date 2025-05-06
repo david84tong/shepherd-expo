@@ -24,8 +24,8 @@ interface PathState {
   savedBook: string;
   savedBookId: number; // Numeric ID for API calls
   savedChapter: number;
+  savedTranslation: string; // Store the user's preferred Bible translation
   setSavedReading: (book: string, bookId: number, chapter: number) => void;
-
   // Path selection state
   selectedPathId: string | null;
   selectedPathTitle: string | null;
@@ -69,11 +69,11 @@ export const usePathStore = create<PathState>()(
       savedBook: 'John',
       savedBookId: 43, // John is book ID 43 in the API
       savedChapter: 3,
+      savedTranslation: 'ESV',
 
       // Set saved reading state
       setSavedReading: (book, bookId, chapter) =>
         set({ savedBook: book, savedBookId: bookId, savedChapter: chapter }),
-
       // Default path selection state
       selectedPathId: null,
       selectedPathTitle: null,
@@ -127,6 +127,7 @@ export const usePathStore = create<PathState>()(
         savedBook: state.savedBook,
         savedBookId: state.savedBookId,
         savedChapter: state.savedChapter,
+        savedTranslation: state.savedTranslation,
         selectedPathId: state.selectedPathId,
         selectedPathTitle: state.selectedPathTitle,
         selectedUnitId: state.selectedUnitId,

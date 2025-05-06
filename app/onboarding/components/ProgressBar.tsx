@@ -1,11 +1,11 @@
 import { usePathname } from 'expo-router';
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  Easing,
 } from 'react-native-reanimated';
 
 export default function ProgressBar() {
@@ -36,8 +36,8 @@ export default function ProgressBar() {
   });
 
   return (
-    <View className="w-full h-1 bg-gray-200">
-      <Animated.View style={progressStyle} />
+    <View className="w-full h-2 bg-gray-200 rounded-full">
+      <Animated.View style={progressStyle} className="rounded-full" />
     </View>
   );
 }

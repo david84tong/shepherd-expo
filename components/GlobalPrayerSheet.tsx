@@ -1,23 +1,24 @@
 import { Ionicons } from '@expo/vector-icons';
 import BottomSheet, {
-  BottomSheetView,
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
+  BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
-import React, { useCallback, useState, useRef, useImperativeHandle, useEffect } from 'react';
+import React, { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  TextInput,
+  Alert,
   ScrollView,
   StyleSheet,
-  Alert,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 
-import PrimaryButton from './PrimaryButton';
 import { usePrayerStore } from '../app/stores/prayerStore';
+import PrimaryButton from './PrimaryButton';
+import { useUIStore } from '~/app/stores/uiStore';
 
 interface PrayerSheetProps {
   prayerSheetRef: React.RefObject<PrayerSheetRef>;
@@ -54,12 +55,15 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
     setOrderedTopics(getOrderedTopics().map((topic) => topic.name));
   }, [prayerTopics, getOrderedTopics]);
 
+  // Access UI store
+  const hidePrayerSheet = useUIStore(state => state.hidePrayerSheet);
+
   // Handle prayer topic selection
   const handlePrayerTopicPress = useCallback(
     (topic: string) => {
       setPrayerInput(topic);
       incrementTopicCount(topic);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     },
     [incrementTopicCount]
   );
@@ -100,6 +104,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
   const handlePrayerSheetChange = useCallback((index: number) => {
     if (index === -1) {
       // Sheet is closed - reset state after a delay
+      hidePrayerSheet();
       setTimeout(() => {
         setPrayerInput('');
       }, 200);
@@ -122,7 +127,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
     setOrderedTopics(getOrderedTopics().map((topic) => topic.name));
 
     bottomSheetRef.current?.expand();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
   }, [getOrderedTopics]);
 
   // Expose methods via ref
@@ -249,7 +254,30 @@ const styles = StyleSheet.create({
   handleIndicator: {
     backgroundColor: '#DCB280',
     height: 4,
-    width: 40,
+  },
+  prayerContentContainer: {
+    flex: 1,
+  },
+  prayerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#FFE4A8',
+  },
+  prayerTitle: {
+    fontSize: 18,
+    fontFamily: 'Nunito-Black',
+    color: '#3C584A',
+  },
+  doneButton: {
+    fontSize: 16,
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    color: '#F7B500',
+    fontWeight: '600',
+    opacity: 0
   },
   prayerContent: {
     flex: 1,

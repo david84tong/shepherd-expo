@@ -27,6 +27,10 @@ const ONBOARDING_SCREENS: DebugScreen[] = [
   { name: 'Onboarding 5 - Reading Time', route: '/onboarding/5' },
   { name: 'Onboarding 6 - Custom Plan', route: '/onboarding/6' },
   { name: 'Onboarding 7 - Notifications', route: '/onboarding/7' },
+  { name: 'Onboarding 8 - Path Selection', route: '/onboarding/8' },
+  { name: 'Onboarding 9 - Notification Permission', route: '/onboarding/9' },
+  { name: 'Onboarding 10 - Reminder Time', route: '/onboarding/10' },
+  { name: 'Loading Screen', route: '/onboarding/LoadingScreen' },
 ];
 
 // Feature screens for debugging

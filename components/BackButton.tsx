@@ -1,6 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useState } from 'react';
-import { View, Platform, Pressable } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { Pressable } from 'react-native';
+import { useState } from 'react';
+import { Platform, View } from 'react-native';
 
 interface BackButtonProps {
   onPress: () => void;
@@ -16,11 +18,16 @@ const BackButton: React.FC<BackButtonProps> = ({
   // Track pressed state
   const [isPressed, setIsPressed] = useState(false);
 
+  const handlePress = () => {
+    // Trigger light haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    onPress();
+  };
+
   return (
-    <View
-      className={`${Platform.OS === 'ios' ? 'pt-[60px]' : 'pt-[40px]'} px-5 w-full absolute top-0 left-0 z-20 ${containerClassName}`}>
-      <Pressable
-        onPress={onPress}
+    <View className={`${Platform.OS === 'ios' ? 'pt-[60px]' : 'pt-[40px]'} px-5 w-full absolute top-0 left-0 z-20 ${containerClassName}`}>
+      <Pressable 
+        onPress={handlePress} 
         disabled={disabled}
         className={`
           w-[42px] h-[42px] rounded-full bg-[rgba(255,244,217,0.95)] 

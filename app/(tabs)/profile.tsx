@@ -100,14 +100,20 @@ export default function ProfileScreen() {
         title: `Read ${reading.book} ${reading.chapters?.join(', ') || ''}`,
       })) || [];
 
-    const prayers =
-      completedPrayers?.map((prayer) => ({
+    const prayers = completedPrayers?.map(prayer => {
+      let prayerTitle = `${prayer.type || 'Daily'} Prayer`;
+      if (prayer.topic && prayer.topic.toLowerCase() !== 'general') {
+        prayerTitle = `Prayed for ${prayer.topic}`;
+      }
+      return {
         type: 'prayer' as const,
         date: prayer.date,
-        data: prayer,
+        data: prayer, // raw prayer object for potential future use
         icon: dropIcon,
-        title: `${prayer.type || 'Daily'} Prayer`,
-      })) || [];
+        title: prayerTitle,
+        // content: prayer.content, // Only if prayer.content exists on the Prayer type
+      };
+    }) || [];
 
     const reflections =
       completedReflections?.map((reflection) => ({
@@ -119,10 +125,7 @@ export default function ProfileScreen() {
         content: reflection.content,
       })) || [];
 
-    // Combine all activities
     const combined = [...readings, ...prayers, ...reflections];
-
-    // Sort by date, newest first
     return combined.sort((a, b) => {
       const dateA = toDateSafe(a.date);
       const dateB = toDateSafe(b.date);
@@ -312,9 +315,22 @@ export default function ProfileScreen() {
 
                         {/* Content */}
                         <View className="flex-1 flex-row justify-between bg-surfaceCream px-4 py-3 rounded-md items-center">
-                          <Text className="font-feather text-body text-textPrimary flex-1">
-                            {activity.title}
-                          </Text>
+                          <View className="flex-1 mr-2">
+                            <Text className="font-feather text-body text-textPrimary flex-wrap">
+                              {activity.title}
+                            </Text>
+                            {/* Display prayer topic or reflection content if available */}
+                            {(activity.type === 'prayer' && activity.data.topic && activity.title !== `Prayed for ${activity.data.topic}`) && (
+                              <Text className="font-din text-sm text-description mt-1">
+                                Topic: {activity.data.topic}
+                              </Text>
+                            )}
+                            {(activity.type === 'reflection' && activity.content) && (
+                              <Text className="font-din text-sm text-description mt-1" numberOfLines={1} ellipsizeMode="tail">
+                                {activity.content}
+                              </Text>
+                            )}
+                          </View>
                           <Text className="font-din text-description text-sm ml-2">
                             {formatRelativeTime(activity.date)}
                           </Text>
