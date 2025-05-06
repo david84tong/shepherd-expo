@@ -6,13 +6,13 @@ import {
   View,
   Text,
   ScrollView,
-  ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
-  Animated,
+  Animated as RNAnimated,
   NativeSyntheticEvent,
   NativeScrollEvent,
+  Easing as RNEasing,
 } from 'react-native';
 
 import { fetchChapter, ChapterResponse, Verse } from './api/bible';
@@ -20,8 +20,15 @@ import { BIBLE_PATHS, Unit, BIBLE_BOOK_IDS } from './models/Path';
 import { useHomeStore, SuccessAnimationType } from './stores/homeStore';
 import { usePathStore } from './stores/pathStore';
 import { useUserStore } from './stores/userStore';
-import BookChapterSelectorSheet from '../components/BookChapterSelectorSheet';
-
+import Reanimated, { 
+  useSharedValue, 
+  useAnimatedStyle, 
+  withTiming, 
+  withRepeat, 
+  withSequence, 
+  withDelay, 
+  Easing as ReanimatedEasing
+} from 'react-native-reanimated';
 import SideButton from '~/components/SideButton';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
@@ -38,6 +45,45 @@ interface BibleReaderProps {
   onNavigateBack?: () => void; // Optional callback for custom back navigation
 }
 
+// Custom Loading Indicator Component (using Reanimated)
+const PulsingDotsIndicator = () => {
+  const dot1Opacity = useSharedValue(0.3);
+  const dot2Opacity = useSharedValue(0.3);
+  const dot3Opacity = useSharedValue(0.3);
+
+  const dotAnim = (opacity: Reanimated.SharedValue<number>, delay: number) => {
+    return withRepeat(
+      withSequence(
+        withDelay(delay, withTiming(1, { duration: 400, easing: ReanimatedEasing.out(ReanimatedEasing.quad) })),
+        withTiming(0.3, { duration: 400, easing: ReanimatedEasing.in(ReanimatedEasing.quad) })
+      ),
+      -1, // infinite repeat
+      false // don't reverse
+    );
+  };
+
+  useEffect(() => {
+    dot1Opacity.value = dotAnim(dot1Opacity, 0);
+    dot2Opacity.value = dotAnim(dot2Opacity, 150);
+    dot3Opacity.value = dotAnim(dot3Opacity, 300);
+  }, []);
+
+  const animatedStyle1 = useAnimatedStyle(() => ({ opacity: dot1Opacity.value }));
+  const animatedStyle2 = useAnimatedStyle(() => ({ opacity: dot2Opacity.value }));
+  const animatedStyle3 = useAnimatedStyle(() => ({ opacity: dot3Opacity.value }));
+
+  return (
+    <View className="items-center justify-center flex-1 mt-20">
+      <View className="flex-row space-x-2 mb-4">
+        <Reanimated.View className="w-3 h-3 bg-accentGold rounded-full" style={animatedStyle1} />
+        <Reanimated.View className="w-3 h-3 bg-accentGold rounded-full" style={animatedStyle2} />
+        <Reanimated.View className="w-3 h-3 bg-accentGold rounded-full" style={animatedStyle3} />
+      </View>
+      <Text className="font-feather text-description text-base">Loading Chapter...</Text>
+    </View>
+  );
+};
+
 // Export the component for reuse
 export const BibleReader: React.FC<BibleReaderProps> = ({
   isEmbedded = false,
@@ -51,12 +97,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
-  const [isSelectorVisible, setIsSelectorVisible] = useState(false);
-
-  // Animation values for button container
-  const buttonContainerAnim = useRef(new Animated.Value(100)).current;
-  const buttonOpacityAnim = useRef(new Animated.Value(0)).current;
-
+  
+  // Animation values for button container (using RNAnimated for these)
+  const buttonsAnim = useRef(new RNAnimated.Value(0)).current; // 0: hidden, 1: visible
+  
   // Reference to the ScrollView
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -180,34 +224,22 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   }, [initialBookId, initialChapter, currentVersion]);
 
   useEffect(() => {
-    // Animate the button container after component mounts
-    if (!loading && chapterData) {
-      Animated.parallel([
-        Animated.timing(buttonContainerAnim, {
-          toValue: 0,
-          duration: 500,
-          delay: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(buttonOpacityAnim, {
-          toValue: 1,
-          duration: 400,
-          delay: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [loading, chapterData]);
+    console.log(`[AnimationEffect] hasScrolledToBottom changed to: ${hasScrolledToBottom}. Animating buttons.`);
+    RNAnimated.timing(buttonsAnim, {
+      toValue: hasScrolledToBottom ? 1 : 0,
+      duration: 400,
+      easing: RNEasing.out(RNEasing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [hasScrolledToBottom, buttonsAnim]); // Added buttonsAnim to dependency array as it's used in effect
 
-  // Reload chapter when the translation changes in settings
+  // Reset hasScrolledToBottom when chapter, bookId or version changes.
+  // This will trigger the animation to hide the buttons via the other useEffect.
   useEffect(() => {
-    // Only reload if we're not already loading and we have chapter data
-    if (!loading && chapterData && currentVersion !== savedTranslation) {
-      console.log(`📚 Translation changed from ${currentVersion} to ${savedTranslation}. Reloading chapter.`);
-      setCurrentVersion(savedTranslation);
-      loadChapter(savedTranslation, currentBook, currentBookId, currentChapter);
-    }
-  }, [savedTranslation]);
+    console.log('[ChapterChangeEffect] Chapter, BookID, or Version changed. Setting hasScrolledToBottom = false.');
+    setHasScrolledToBottom(false);
+    // buttonsAnim.setValue(0); // No longer needed, the other useEffect handles animation to 0
+  }, [currentChapter, currentBookId, currentVersion]);
 
   const loadChapter = async (version: string, book: string, bookId: number, chapter: number) => {
     setLoading(true);
@@ -386,8 +418,11 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     if (sawDailyBonus) {
       setSuccessType(SuccessAnimationType.READING);
     } else if (prayerCompleted && reflectionCompleted) {
+      // Only show BONUS type if the daily bonus hasn't been seen yet
+      console.log("All disciplines completed - showing BONUS");
       setSuccessType(SuccessAnimationType.BONUS);
     } else {
+      console.log("Regular reading completion - showing READING");
       setSuccessType(SuccessAnimationType.READING);
     }
 
@@ -411,15 +446,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   // Check if the current chapter is the end chapter of the selected path
   const isAtEndChapter = useMemo(() => {
-    // If not in a path or no current path defined, consider it "at end"
     if (!pathInProgress || !currentPath) {
-      return false; // If not in a path, isAtEndChapter isn't strictly meaningful here
+      console.log('[isAtEndChapter] Not in path or no currentPath data. Returning false.');
+      return false; 
     }
-
-    // Check if we're on the right book and at the final chapter from the currentPath
-    const isActuallyAtEnd =
-      currentBookId === currentPath.bookId && currentChapter === currentPath.endChapter;
-
+    
+    const isActuallyAtEnd = currentBookId === currentPath.bookId && currentChapter === currentPath.endChapter;
+    console.log(`[isAtEndChapter] Calculation: pathInProgress=${pathInProgress}, currentPath.bookId=${currentPath.bookId}, currentBookId=${currentBookId}, currentPath.endChapter=${currentPath.endChapter}, currentChapter=${currentChapter}. Result: ${isActuallyAtEnd}`);
     return isActuallyAtEnd;
   }, [pathInProgress, currentPath, currentBookId, currentChapter]);
 
@@ -442,24 +475,20 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     return false;
   }, [pathInProgress, currentPath, currentChapter, hasScrolledToBottom]);
 
-  // Reset hasScrolledToBottom only when chapter changes, but never set it to false again for the same chapter
-  useEffect(() => {
-    setHasScrolledToBottom(false);
-  }, [currentChapter]);
-
-  // Handle scroll events to detect when user reaches bottom
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    // Check if user has scrolled to the bottom (with a small threshold)
-    const scrolledToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 100; // 100px threshold
-    // Only mark as scrolled to bottom if we're at the end chapter AND at the bottom of the content
-    if (scrolledToBottom && !hasScrolledToBottom) {
-      // Only set to true if actually at the end chapter or not in a path
-      if (isAtEndChapter || !pathInProgress) {
-        console.log('📜 User has scrolled to bottom! Enabling Finish button.');
-        setHasScrolledToBottom(true);
-      }
-    }
+    
+    const threshold = pathInProgress ? 10 : 100; 
+    const scrolledToBottomThreshold = contentSize.height - threshold;
+    const bottomReached = layoutMeasurement.height + contentOffset.y >= scrolledToBottomThreshold;
+
+    // console.log(`[ScrollEvent] pathInProgress: ${pathInProgress}, threshold: ${threshold}, offset.y: ${contentOffset.y.toFixed(2)}, layoutH: ${layoutMeasurement.height.toFixed(2)}, contentH: ${contentSize.height.toFixed(2)}, calcBottom: ${(layoutMeasurement.height + contentOffset.y).toFixed(2)}, scrollBottomThr: ${scrolledToBottomThreshold.toFixed(2)}, bottomReached: ${bottomReached}`);
+
+    if (bottomReached && !hasScrolledToBottom) {
+      console.log(`[handleScroll] Bottom of current view reached. pathInProgress: ${pathInProgress}, isAtEndChapter: ${isAtEndChapter}. Setting hasScrolledToBottom = true.`);
+      setHasScrolledToBottom(true);
+    } 
+    // Note: hasScrolledToBottom is reset to false only when a new chapter/version loads.
   };
 
   // Memoize style calculations to prevent unnecessary style object recreations
@@ -473,13 +502,11 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   const renderBibleContent = () => {
     if (loading) {
-      return <ActivityIndicator size="large" color="#3C584A" className="mt-10" />;
+      return <PulsingDotsIndicator />;
     }
 
     if (error) {
-      return (
-        <Text className="text-red-500 mt-10 text-center px-4">Error loading chapter: {error}</Text>
-      );
+      return <Text className="text-red-500 mt-10 text-center font-feather px-4">Error loading chapter: {error}</Text>;
     }
 
     if (chapterData) {
@@ -488,7 +515,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           ref={scrollViewRef}
           contentContainerStyle={styles.scrollContainer}
           onScroll={handleScroll}
-          scrollEventThrottle={16} // Frequent enough for smooth detection
+          scrollEventThrottle={16} 
         >
           {chapterData.verses.map((verse: Verse) => (
             <Text key={verse.verse} style={verseTextStyle} selectable>
@@ -505,7 +532,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   const handleOpenSelector = () => {
     console.log('🔍 DEBUG: Opening selector');
-    showBookChapterSelector(currentBookId, currentChapter, handleSelectBookChapter);
+    // showBookChapterSelector(currentBookId, currentChapter, handleSelectBookChapter); // Uncomment if available
   };
 
   const handleSelectBookChapter = (bookId: number, chapter: number) => {
@@ -534,6 +561,19 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       // Default back navigation
       router.back();
     }
+  };
+
+  // Animated styles for buttons
+  const buttonsContainerStyle = {
+    opacity: buttonsAnim,
+    transform: [
+      {
+        translateY: buttonsAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [100, 0], // Slide up from bottom
+        }),
+      },
+    ],
   };
 
   return (
@@ -587,9 +627,8 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
       <View style={styles.contentArea}>{renderBibleContent()}</View>
 
-      {/* Floating chapter navigation buttons */}
-      <View
-        style={[styles.floatingNavContainer, isEmbedded && styles.floatingNavContainerEmbedded]}>
+      {/* Floating chapter navigation buttons - Now Animated */}
+      <RNAnimated.View style={[styles.floatingNavContainer, isEmbedded && styles.floatingNavContainerEmbedded, buttonsContainerStyle]}>
         <TouchableOpacity
           style={[styles.navButton, (currentChapter <= 1 || loading) && styles.disabledNavButton]}
           onPress={navigateToPreviousChapter}
@@ -603,7 +642,6 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
             ←
           </Text>
         </TouchableOpacity>
-        {/* Next Chapter button always renders, but disable at end-of-unit */}
         <TouchableOpacity
           style={[
             styles.navButton,
@@ -620,34 +658,21 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
             →
           </Text>
         </TouchableOpacity>
-      </View>
+      </RNAnimated.View>
 
-      {/* Finish Reading Button - Only show in standalone mode */}
-      {!isEmbedded && (
-        <Animated.View
-          style={[
-            styles.finishButtonContainer,
-            {
-              opacity: buttonOpacityAnim,
-              transform: [{ translateY: buttonContainerAnim }],
-            },
-          ]}>
-          <SideButton
-            title="Finish Reading"
-            onPress={handleFinishReading}
-            disabled={!isFinishEnabled} // Use the calculated enabled state
-          />
-        </Animated.View>
-      )}
-
-      {/* Book Chapter Selector Sheet */}
-      <BookChapterSelectorSheet
-        visible={isSelectorVisible}
-        onClose={handleCloseSelector}
-        currentBookId={currentBookId}
-        currentChapter={currentChapter}
-        onSelect={handleSelectBookChapter}
-      />
+      {/* Finish Reading Button - Now Animated */}
+      {!isEmbedded && <RNAnimated.View 
+        style={[
+          styles.finishButtonContainer,
+          buttonsContainerStyle // Apply the same animation
+        ]}
+      >
+        <SideButton
+          title="Finish Reading"
+          onPress={handleFinishReading}
+          disabled={!isFinishEnabled || !hasScrolledToBottom} // Ensure finish button is also tied to hasScrolledToBottom for enabled state
+        />
+      </RNAnimated.View>}
     </SafeAreaView>
   );
 };

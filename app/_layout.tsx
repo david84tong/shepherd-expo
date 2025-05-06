@@ -18,7 +18,10 @@ import { ONBOARDING_COMPLETED_KEY } from './types/onboarding';
 // Import the sheet components
 import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet';
 import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
-import PrayerSheet, { PrayerSheetRef } from '~/components/GlobalPrayerSheet';
+import GlobalPrayerSheet from '../components/GlobalPrayerSheet';
+import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
+import OldReflectionSheet from '../components/OldReflectionSheet';
+import { Reflection } from './models/User';
 
 // Error logging setup
 if (__DEV__) {
@@ -92,6 +95,7 @@ export default function RootLayout() {
   const isPrayerSheetVisible = useUIStore((state) => state.isPrayerSheetVisible);
   const showPrayerSheet = useUIStore((state) => state.showPrayerSheet);
   const showBookChapterSelector = useUIStore((state) => state.showBookChapterSelector);
+  const showOldReflectionSheet = useUIStore(state => state.showOldReflectionSheet);
 
   // Sheet refs
   const halfModalRef = useRef<HalfModalSheetRef>(null);
@@ -214,9 +218,10 @@ export default function RootLayout() {
       (global as any).showSettings = showSettings;
       (global as any).showPrayerSheet = showPrayerSheet;
       (global as any).showBookChapterSelector = showBookChapterSelector;
+      (global as any).showOldReflectionSheet = showOldReflectionSheet;
     }
-  }, []);
-
+  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet]);
+  
   // Effect for preloading resources
   useEffect(() => {
     if (fontsLoaded && !appReady) {
@@ -294,11 +299,17 @@ export default function RootLayout() {
           snapPoints={halfModalSnapPoints}
           params={halfModalParams}
         />
-
-        <SettingsSheet settingsSheetRef={settingsSheetRef} snapPoints={settingsSnapPoints} />
-
-        <PrayerSheet prayerSheetRef={prayerSheetRef} snapPoints={prayerSnapPoints} />
-
+        
+        <SettingsSheet
+          settingsSheetRef={settingsSheetRef}
+          snapPoints={settingsSnapPoints}
+        />
+        
+        {/* Global sheets */}
+        <GlobalPrayerSheet prayerSheetRef={prayerSheetRef} snapPoints={prayerSnapPoints} />
+        <GlobalBookChapterSelectorSheet />
+        <OldReflectionSheet />
+        
         <DebugButton />
       </BottomSheetModalProvider>
     </GestureHandlerRootView>

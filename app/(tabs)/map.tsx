@@ -1,10 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useAssets } from 'expo-asset';
 import { useRouter } from 'expo-router';
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Animated,
   Image,
   ImageSourcePropType,
   SafeAreaView,
@@ -13,7 +12,6 @@ import {
   View,
   ViewToken
 } from 'react-native';
-import Rive from 'rive-react-native';
 
 import PathNode, { NodeStatus } from '../../components/MapComponents/PathNode';
 import StickyPathHeader from '../../components/MapComponents/StickyPathHeader';
@@ -34,39 +32,39 @@ type BibleSection = {
   artboardName?: string;
 };
 
-// Next node indicator component with Rive animation
-const NextNodeIndicator = ({ alignment }: { alignment: 'start' | 'center' | 'end' }) => {
-  // Load Rive assets
-  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+// Optimize NextNodeIndicator with memo
+// const NextNodeIndicator = React.memo(({ alignment }: { alignment: 'start' | 'center' | 'end' }) => {
+//   // Load Rive assets
+//   const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
 
-  // Only render on non-center alignments (left or right of path)
-  if (alignment === 'center') return null;
+//   // Only render on non-center alignments (left or right of path)
+//   if (alignment === 'center') return null;
 
-  // Show loading indicator if assets aren't loaded yet
-  if (!riveAssets) {
-    return (
-      <View className="absolute right-1 top-4 w-28 h-28 bg-yellow-300 rounded-full items-center justify-center border-4 border-white">
-        <ActivityIndicator size="small" color="#3C584A" />
-      </View>
-    );
-  }
+//   // Show loading indicator if assets aren't loaded yet
+//   if (!riveAssets) {
+//     return (
+//       <View className="absolute right-1 top-4 w-28 h-28 bg-yellow-300 rounded-full items-center justify-center border-4 border-white">
+//         <ActivityIndicator size="small" color="#3C584A" />
+//       </View>
+//     );
+//   }
 
-  // More visible wrapper with bright colors
-  return (
-    <View
-      className={`absolute ${alignment === 'start' ? 'right-1' : 'left-1'} top-4 w-28 h-28 bg-yellow-300 rounded-full items-center justify-center border-4 border-white`}
-      style={{ zIndex: 50 }}>
-      <Rive
-        url={riveAssets[0].localUri!}
-        artboardName="lamb-idle"
-        autoplay
-        style={{ width: '100%', height: '100%' }}
-      />
-      {/* Text indicator to make it obvious */}
-      <Text className="absolute bottom-0 font-bold text-xs bg-white px-1 rounded">NEXT</Text>
-    </View>
-  );
-};
+//   // More visible wrapper with bright colors
+//   return (
+//     <View
+//       className={`absolute ${alignment === 'start' ? 'right-1' : 'left-1'} top-4 w-28 h-28 bg-yellow-300 rounded-full items-center justify-center border-4 border-white`}
+//       style={{ zIndex: 50 }}>
+//       <Rive
+//         url={riveAssets[0].localUri!}
+//         artboardName="lamb-idle"
+//         autoplay
+//         style={{ width: '100%', height: '100%' }}
+//       />
+//       {/* Text indicator to make it obvious */}
+//       <Text className="absolute bottom-0 font-bold text-xs bg-white px-1 rounded">NEXT</Text>
+//     </View>
+//   );
+// });
 
 // Hook to get unit status based on global state and current section order
 const useUnitStatus = (sections: BibleSection[]) => {
@@ -134,149 +132,150 @@ const useUnitStatus = (sections: BibleSection[]) => {
 };
 
 // Custom header component for each section
-interface SectionHeaderProps {
-  title: string;
-  isFirst: boolean;
-  icon: string;
-  color: string;
-}
+// interface SectionHeaderProps {
+//   title: string;
+//   isFirst: boolean;
+//   icon: string;
+//   color: string;
+// }
 
-const SectionHeader: React.FC<SectionHeaderProps> = ({ title, isFirst, icon, color }) => {
-  // Get the background color based on path color
-  const getBgColor = () => {
-    switch (color) {
-      case 'yellow':
-        return 'bg-lightYellow';
-      case 'red':
-        return 'bg-lightRed';
-      case 'green':
-        return 'bg-lightGreen';
-      case 'orange':
-        return 'bg-lightOrange';
-      case 'teal':
-        return 'bg-lightTeal';
-      case 'purple':
-        return 'bg-lightPurple';
-      case 'pink':
-        return 'bg-lightPink';
-      case 'crimson':
-        return 'bg-lightCrimson';
-      case 'indigo':
-        return 'bg-lightIndigo';
-      case 'blue':
-        return 'bg-lightBlue';
-      case 'cyan':
-        return 'bg-lightCyan';
-      case 'scarlet':
-        return 'bg-lightScarlet';
-      default:
-        return 'bg-lightGreen';
-    }
-  };
+// Optimize SectionHeader with memo
+// const SectionHeader = React.memo(({ title, isFirst, icon, color }: SectionHeaderProps) => {
+//   // Get the background color based on path color
+//   const getBgColor = () => {
+//     switch (color) {
+//       case 'yellow':
+//         return 'bg-lightYellow';
+//       case 'red':
+//         return 'bg-lightRed';
+//       case 'green':
+//         return 'bg-lightGreen';
+//       case 'orange':
+//         return 'bg-lightOrange';
+//       case 'teal':
+//         return 'bg-lightTeal';
+//       case 'purple':
+//         return 'bg-lightPurple';
+//       case 'pink':
+//         return 'bg-lightPink';
+//       case 'crimson':
+//         return 'bg-lightCrimson';
+//       case 'indigo':
+//         return 'bg-lightIndigo';
+//       case 'blue':
+//         return 'bg-lightBlue';
+//       case 'cyan':
+//         return 'bg-lightCyan';
+//       case 'scarlet':
+//         return 'bg-lightScarlet';
+//       default:
+//         return 'bg-lightGreen';
+//     }
+//   };
 
-  // Get the border color based on path color
-  const getBorderColor = () => {
-    switch (color) {
-      case 'yellow':
-        return 'border-darkYellow';
-      case 'red':
-        return 'border-darkRed';
-      case 'green':
-        return 'border-darkGreen';
-      case 'orange':
-        return 'border-darkOrange';
-      case 'teal':
-        return 'border-darkTeal';
-      case 'purple':
-        return 'border-darkPurple';
-      case 'pink':
-        return 'border-darkPink';
-      case 'crimson':
-        return 'border-darkCrimson';
-      case 'indigo':
-        return 'border-darkIndigo';
-      case 'blue':
-        return 'border-darkBlue';
-      case 'cyan':
-        return 'border-darkCyan';
-      case 'scarlet':
-        return 'border-darkScarlet';
-      default:
-        return 'border-darkGreen';
-    }
-  };
+//   // Get the border color based on path color
+//   const getBorderColor = () => {
+//     switch (color) {
+//       case 'yellow':
+//         return 'border-darkYellow';
+//       case 'red':
+//         return 'border-darkRed';
+//       case 'green':
+//         return 'border-darkGreen';
+//       case 'orange':
+//         return 'border-darkOrange';
+//       case 'teal':
+//         return 'border-darkTeal';
+//       case 'purple':
+//         return 'border-darkPurple';
+//       case 'pink':
+//         return 'border-darkPink';
+//       case 'crimson':
+//         return 'border-darkCrimson';
+//       case 'indigo':
+//         return 'border-darkIndigo';
+//       case 'blue':
+//         return 'border-darkBlue';
+//       case 'cyan':
+//         return 'border-darkCyan';
+//       case 'scarlet':
+//         return 'border-darkScarlet';
+//       default:
+//         return 'border-darkGreen';
+//     }
+//   };
 
-  return (
-    <View className={`pt-8 pb-4 ${isFirst ? 'mt-0' : 'mt-4'}`}>
-      <View className="flex items-center justify-center mx-4">
-        <View
-          className={`${getBgColor()} ${getBorderColor()} border-[1px] rounded-xl p-2 flex-row items-center justify-center shadow-sm w-full`}>
-          <Ionicons name={(icon || 'book') as any} size={24} color="#3C584A" />
-          <Text className="text-textPrimary font-feather text-lg text-center ml-2">{title}</Text>
-        </View>
-      </View>
-    </View>
-  );
-};
+//   return (
+//     <View className={`pt-8 pb-4 ${isFirst ? 'mt-0' : 'mt-4'}`}>
+//       <View className="flex items-center justify-center mx-4">
+//         <View
+//           className={`${getBgColor()} ${getBorderColor()} border-[1px] rounded-xl p-2 flex-row items-center justify-center shadow-sm w-full`}>
+//           <Ionicons name={(icon || 'book') as any} size={24} color="#3C584A" />
+//           <Text className="text-textPrimary font-feather text-lg text-center ml-2">{title}</Text>
+//         </View>
+//       </View>
+//     </View>
+//   );
+// });
 
-// Pulsing animation component
-const PulsingCircle: React.FC = () => {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const opacityAnim = useRef(new Animated.Value(0.7)).current;
+// // Optimize the pulsing animation component
+// const PulsingCircle = React.memo(() => {
+//   const scaleAnim = useRef(new Animated.Value(1)).current;
+//   const opacityAnim = useRef(new Animated.Value(0.7)).current;
 
-  useEffect(() => {
-    const pulse = () => {
-      Animated.parallel([
-        Animated.sequence([
-          Animated.timing(scaleAnim, {
-            toValue: 1.2,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(scaleAnim, {
-            toValue: 1,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-        ]),
-        Animated.sequence([
-          Animated.timing(opacityAnim, {
-            toValue: 0,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-          Animated.timing(opacityAnim, {
-            toValue: 0.7,
-            duration: 800,
-            useNativeDriver: true,
-          }),
-        ]),
-      ]).start(() => pulse());
-    };
+//   useEffect(() => {
+//     const pulse = () => {
+//       Animated.parallel([
+//         Animated.sequence([
+//           Animated.timing(scaleAnim, {
+//             toValue: 1.2,
+//             duration: 800,
+//             useNativeDriver: true,
+//           }),
+//           Animated.timing(scaleAnim, {
+//             toValue: 1,
+//             duration: 800,
+//             useNativeDriver: true,
+//           }),
+//         ]),
+//         Animated.sequence([
+//           Animated.timing(opacityAnim, {
+//             toValue: 0,
+//             duration: 800,
+//             useNativeDriver: true,
+//           }),
+//           Animated.timing(opacityAnim, {
+//             toValue: 0.7,
+//             duration: 800,
+//             useNativeDriver: true,
+//           }),
+//         ]),
+//       ]).start(() => pulse());
+//     };
 
-    pulse();
-    return () => {
-      // Cleanup animations
-      scaleAnim.stopAnimation();
-      opacityAnim.stopAnimation();
-    };
-  }, []);
+//     pulse();
+//     return () => {
+//       // Cleanup animations
+//       scaleAnim.stopAnimation();
+//       opacityAnim.stopAnimation();
+//     };
+//   }, []);
 
-  return (
-    <Animated.View
-      style={{
-        position: 'absolute',
-        width: '100%',
-        height: '100%',
-        borderRadius: 9999,
-        borderWidth: 2,
-        borderColor: '#facc15', // tailwind yellow-400
-        transform: [{ scale: scaleAnim }],
-        opacity: opacityAnim,
-      }}
-    />
-  );
-};
+//   return (
+//     <Animated.View
+//       style={{
+//         position: 'absolute',
+//         width: '100%',
+//         height: '100%',
+//         borderRadius: 9999,
+//         borderWidth: 2,
+//         borderColor: '#facc15', // tailwind yellow-400
+//         transform: [{ scale: scaleAnim }],
+//         opacity: opacityAnim,
+//       }}
+//     />
+//   );
+// });
 
 // Define a rough constant height for each node item (including margins)
 const ITEM_HEIGHT = 180; // adjust if needed
@@ -517,78 +516,69 @@ export default function MapScreen() {
     return null;
   };
 
-  // Render a node item
-  const renderItem = useCallback(
-    ({ item, index, section }: { item: Unit; index: number; section: BibleSection }) => {
-      const status = getStatus(section.pathId, item.id);
-      const alignment = ['center', 'start', 'center', 'end'][index % 4] as
-        | 'start'
-        | 'center'
-        | 'end';
-      const shouldIndicateNext = isNextUnit(item);
+  // Render a node item - Optimized with useCallback and better dependencies
+  const renderItem = useCallback(({ item, index, section }: {
+    item: Unit,
+    index: number,
+    section: BibleSection
+  }) => {
+    const status = getStatus(section.pathId, item.id);
+    const alignment = ['center', 'start', 'center', 'end'][index % 4] as 'start' | 'center' | 'end';
+    const shouldIndicateNext = isNextUnit(item);
 
-      // Position within each section (repeating pattern)
-      // Show sheep only at second node position of every section
-      const isSecondNodeInSection = index === 1;
+    // Position within each section (repeating pattern)
+    // Show sheep only at second node position of every section
+    const isSecondNodeInSection = index === 1;
 
-      // Show journal icon only at fourth node position of every section
-      const isFourthNodeInSection = index === 3;
+    // Show journal icon only at fourth node position of every section
+    const isFourthNodeInSection = index === 3;
 
-      if (shouldIndicateNext) {
-        console.log(`Next unit on screen: ${item.id} (${item.title})`);
-      }
+    if (shouldIndicateNext) {
+      console.log(`Next unit on screen: ${item.id} (${item.title})`);
+    }
 
-      return (
-        <View className="relative">
-          <PathNode
-            key={item.id}
-            unit={item}
-            status={status}
-            alignment={alignment}
-            onPress={handleNodePress}
-          />
+    return (
+      <View className="relative">
+        <PathNode
+          key={item.id}
+          unit={item}
+          status={status}
+          alignment={alignment}
+          onPress={handleNodePress}
+        />
 
-          {/* Sheep decoration at second node position in every section */}
-          {isSecondNodeInSection && section.riveName && section.artboardName && (
-            <View
-              className={`absolute ${section.riveName === 'successLamb' ? 'right-24' : 'right-2'} top-1/2 -translate-y-1/2`}
-              style={{ zIndex: 10 }}>
-              <View className="w-44 h-44">
-                {section.riveName && getRiveAssetUri(section.riveName) ? (
-                  <Rive
-                    url={getRiveAssetUri(section.riveName)!}
-                    artboardName={section.artboardName}
-                    autoplay
-                    style={{
-                      width: section.riveName === 'successLamb' ? '200%' : '100%',
-                      height: section.riveName === 'successLamb' ? '200%' : '100%',
-                      opacity: section.pathId === 'genesis-beginnings' ? 1 : 1,
-                    }}
-                  />
-                ) : null}
-              </View>
+        {/* Sheep decoration at second node position in every section - Only render when visible */}
+        {isSecondNodeInSection && section.riveName && section.artboardName && false && (
+          <View
+            className={`absolute ${section.riveName === 'successLamb' ? 'right-24' : 'right-2'} top-1/2 -translate-y-1/2`}
+            style={{ zIndex: 10 }}
+          >
+            <View className="w-44 h-44">
+              {/* Rive animations temporarily disabled for performance */}
             </View>
-          )}
+          </View>
+        )}
 
-          {/* Journal icon at fourth node position in every section */}
-          {isFourthNodeInSection && section.image && (
-            <View className="absolute left-8 top-1/2 -translate-y-1/2" style={{ zIndex: 10 }}>
-              <Image
-                source={section.image}
-                style={{ width: 128, height: 128 }}
-                resizeMode="contain"
-                className="opacity-100"
-              />
-            </View>
-          )}
-        </View>
-      );
-    },
-    [getStatus, handleNodePress, isNextUnit]
-  );
+        {/* Journal icon at fourth node position in every section */}
+        {isFourthNodeInSection && section.image && (
+          <View
+            className="absolute left-8 top-1/2 -translate-y-1/2"
+            style={{ zIndex: 10 }}
+          >
+            <Image
+              source={section.image}
+              style={{ width: 128, height: 128 }}
+              resizeMode="contain"
+              className="opacity-100"
+            />
+          </View>
+        )}
+      </View>
+    );
+  }, [getStatus, handleNodePress, isNextUnit]); // Optimized dependencies
 
-  // Render section header using StickyPathHeader for each section
-  const renderSectionHeader = ({ section }: { section: BibleSection }) => {
+  // Render section header - Improved with memo
+  const renderSectionHeader = useCallback(({ section }: { section: BibleSection }) => {
     // Check if section is unlocked
     const isUnlocked = isSectionUnlocked(section.pathId);
 
@@ -602,7 +592,7 @@ export default function MapScreen() {
         isLocked={!isUnlocked}
       />
     );
-  };
+  }, [isSectionUnlocked]);
 
   // Show loading indicator while assets load
   if (!riveAssets) {
@@ -630,15 +620,20 @@ export default function MapScreen() {
         scrollEventThrottle={16}
         stickySectionHeadersEnabled={false}
         // Performance optimizations
-        initialNumToRender={10}
-        maxToRenderPerBatch={10}
-        windowSize={15}
-        removeClippedSubviews
+        initialNumToRender={5}
+        maxToRenderPerBatch={5}
+        windowSize={10}
+        removeClippedSubviews={true}
         getItemLayout={(_data, index) => ({
           length: ITEM_HEIGHT,
           offset: ITEM_HEIGHT * index,
           index,
         })}
+        updateCellsBatchingPeriod={50}
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+          autoscrollToTopThreshold: 10,
+        }}
       />
 
       {/* If we want a floating persistent next indicator, we could add it here */}

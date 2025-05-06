@@ -14,11 +14,11 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 const GlobalBookChapterSelectorSheet: React.FC = () => {
   // Access uiStore to control visibility
   const isBookChapterSelectorVisible = useUIStore(state => state.isBookChapterSelectorVisible);
-  const { currentBookId, currentChapter, onSelectCallback } = useUIStore(state => state.bookChapterSelectorProps);
+  const bookChapterSelectorParams = useUIStore(state => state.bookChapterSelectorParams);
   const hideBookChapterSelector = useUIStore(state => state.hideBookChapterSelector);
 
   // Local state
-  const [selectedBookId, setSelectedBookId] = useState<number>(currentBookId || 1);
+  const [selectedBookId, setSelectedBookId] = useState<number>(bookChapterSelectorParams.initialBookId || 1);
   
   // Ref for the bottom sheet
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -41,21 +41,21 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
   // Watch for visibility changes and open/close the sheet accordingly
   useEffect(() => {
     if (isBookChapterSelectorVisible) {
-      setSelectedBookId(currentBookId || 1);
+      setSelectedBookId(bookChapterSelectorParams.initialBookId || 1);
       showSheet();
     } else {
       bottomSheetRef.current?.close();
     }
-  }, [isBookChapterSelectorVisible, currentBookId]);
+  }, [isBookChapterSelectorVisible, bookChapterSelectorParams.initialBookId]);
 
   // Handle select chapter
   const handleSelectChapter = useCallback((chapter: number) => {
-    if (onSelectCallback) {
-      onSelectCallback(selectedBookId, chapter);
+    if (bookChapterSelectorParams.onSelect) {
+      bookChapterSelectorParams.onSelect(selectedBookId, chapter);
     }
     bottomSheetRef.current?.close();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-  }, [selectedBookId, onSelectCallback]);
+  }, [selectedBookId, bookChapterSelectorParams.onSelect]);
   
   // Handle select book
   const handleSelectBook = useCallback((bookId: number) => {
@@ -154,13 +154,17 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
                   key={chapter}
                   style={[
                     styles.chapterItem,
-                    selectedBookId === currentBookId && chapter === currentChapter && styles.selectedChapterItem
+                    selectedBookId === bookChapterSelectorParams.initialBookId && 
+                    chapter === bookChapterSelectorParams.initialChapter && 
+                    styles.selectedChapterItem
                   ]}
                   onPress={() => handleSelectChapter(chapter)}
                 >
                   <Text style={[
                     styles.chapterItemText,
-                    selectedBookId === currentBookId && chapter === currentChapter && styles.selectedChapterItemText
+                    selectedBookId === bookChapterSelectorParams.initialBookId && 
+                    chapter === bookChapterSelectorParams.initialChapter && 
+                    styles.selectedChapterItemText
                   ]}>
                     {chapter}
                   </Text>

@@ -254,7 +254,30 @@ const styles = StyleSheet.create({
   handleIndicator: {
     backgroundColor: '#DCB280',
     height: 4,
-    width: 40,
+  },
+  prayerContentContainer: {
+    flex: 1,
+  },
+  prayerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#FFE4A8',
+  },
+  prayerTitle: {
+    fontSize: 18,
+    fontFamily: 'Nunito-Black',
+    color: '#3C584A',
+  },
+  doneButton: {
+    fontSize: 16,
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    color: '#F7B500',
+    fontWeight: '600',
+    opacity: 0
   },
   prayerContent: {
     flex: 1,

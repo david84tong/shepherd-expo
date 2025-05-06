@@ -1,7 +1,5 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import dayjs from 'dayjs';
-import { useAssets } from 'expo-asset';
-import { router } from 'expo-router';
 import React, { useEffect, useMemo, useState, useRef, useLayoutEffect } from 'react';
 import { View, Text, Image, ActivityIndicator } from 'react-native';
 import Animated, {
@@ -11,11 +9,12 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
+import { useAssets } from 'expo-asset';
+import { router } from 'expo-router';
+import { usePathStore } from '../app/stores/pathStore';
+import { useUserStore } from '~/app/stores/userStore';
 import Rive, { RiveRef } from 'rive-react-native';
-
 import PrimaryButton from './PrimaryButton';
-import { getStreakSubtext } from '../app/hooks/streakHook';
-import { useUserStore } from '../app/stores/userStore';
 
 /* ─────────────── helper ─────────────── */
 type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE';
@@ -282,7 +281,11 @@ export const StreakScreen = () => {
   const subText = getStreakSubtext(streak);
 
   // Add a function to handle continue button press
+  const setPathInProgress = usePathStore((state) => state.setPathInProgress);
+
   const handleContinue = () => {
+    console.log('[StreakScreen] Continue pressed. Resetting pathInProgress and navigating to home.');
+    setPathInProgress(false);
     router.replace('/(tabs)');
   };
 

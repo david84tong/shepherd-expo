@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { View, Text, Image, ImageSourcePropType, Pressable } from 'react-native';
+import { TouchableOpacity, View, Text, Image, ImageSourcePropType, Pressable } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
 interface SecondaryButtonProps {
   icon: ImageSourcePropType;
@@ -30,7 +31,13 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   const borderColor = completed ? 'border-darkGreen' : 'border-border';
   const shadowClass = !isPressed && !completed ? 'shadow-buttonShadow' : '';
   const opacityClass = completed ? 'opacity-70' : '';
-
+  
+  const handlePress = () => {
+    // Trigger medium haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    if (onPress) onPress();
+  };
+  
   return (
     <View className={`mt-6 h-[80px] w-full ${style || ''}`}>
       <Pressable
@@ -39,12 +46,15 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
           ${bgColor} transform ${shadowClass} ${opacityClass}
           ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}
         `}
-        style={({ pressed }) => [{ elevation: pressed || completed ? 0 : 6 }]}
-        onPress={onPress}
+        style={({ pressed }) => [
+          { elevation: (pressed || completed) ? 0 : 6 }
+        ]}
+        onPress={handlePress}
         disabled={disabled}
         onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}>
-        <Image source={icon} className="w-[56px] h-[56px] mr-2 -ml-2" resizeMode="contain" />
+        onPressOut={() => setIsPressed(false)}
+      >
+        <Image source={icon} className="w-[48px] h-[48px] mr-2 -ml-2" resizeMode="contain" />
         <View className="flex-1">
           <Text className="font-feather text-textPrimary text-heading">{title}</Text>
           <Text className="font-din text-textPrimary/70 text-body">{subtitle}</Text>
