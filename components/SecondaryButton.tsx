@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, View, Text, Image, ImageSourcePropType, Pressable } from 'react-native';
+import { View, Text, Image, ImageSourcePropType, Pressable } from 'react-native';
 
 interface SecondaryButtonProps {
   icon: ImageSourcePropType;
@@ -24,13 +24,13 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
 }) => {
   // Simple state to track pressed state
   const [isPressed, setIsPressed] = useState(false);
-  
+
   // Determine styles based on completed status
   const bgColor = completed ? 'bg-lightGreen' : 'bg-surfaceCream';
   const borderColor = completed ? 'border-darkGreen' : 'border-border';
-  const shadowClass = (!isPressed && !completed) ? 'shadow-buttonShadow' : '';
+  const shadowClass = !isPressed && !completed ? 'shadow-buttonShadow' : '';
   const opacityClass = completed ? 'opacity-70' : '';
-  
+
   return (
     <View className={`mt-6 h-[80px] w-full ${style || ''}`}>
       <Pressable
@@ -39,22 +39,15 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
           ${bgColor} transform ${shadowClass} ${opacityClass}
           ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}
         `}
-        style={({ pressed }) => [
-          { elevation: (pressed || completed) ? 0 : 6 }
-        ]}
+        style={({ pressed }) => [{ elevation: pressed || completed ? 0 : 6 }]}
         onPress={onPress}
         disabled={disabled}
         onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
-      >
+        onPressOut={() => setIsPressed(false)}>
         <Image source={icon} className="w-[56px] h-[56px] mr-2 -ml-2" resizeMode="contain" />
         <View className="flex-1">
-          <Text className="font-feather text-textPrimary text-heading">
-            {title}
-          </Text>
-          <Text className="font-din text-textPrimary/70 text-body">
-            {subtitle}
-          </Text>
+          <Text className="font-feather text-textPrimary text-heading">{title}</Text>
+          <Text className="font-din text-textPrimary/70 text-body">{subtitle}</Text>
         </View>
         <View className="rounded-full px-2 py-0.5 flex-row items-center">
           {completed ? (
@@ -63,7 +56,11 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
             </View>
           ) : (
             <>
-              <Image source={require('../assets/icons/starIcon.png')} className="w-5 h-5" resizeMode="contain" />
+              <Image
+                source={require('../assets/icons/starIcon.png')}
+                className="w-5 h-5"
+                resizeMode="contain"
+              />
               <Text className="font-feather text-textPrimary/70 text-caption">+{points}</Text>
             </>
           )}
@@ -73,4 +70,4 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   );
 };
 
-export default SecondaryButton; 
+export default SecondaryButton;

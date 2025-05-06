@@ -1,18 +1,20 @@
-import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { View, Text, Pressable } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useOnboardingStore } from '../stores/onboardingStore';
-import PrimaryButton from '../../components/PrimaryButton';
-import Animated, { 
-  useAnimatedStyle, 
-  withTiming, 
-  withSpring,
+import * as Haptics from 'expo-haptics';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { Pressable, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
   useSharedValue,
   withDelay,
+  withSpring,
+  withTiming,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+import PrimaryButton from '../../components/PrimaryButton';
+import { useOnboardingStore } from '../stores/onboardingStore';
+import { toBool } from '../utils/toBool';
 
 export default function OnboardingIntentScreen() {
   const router = useRouter();
@@ -21,7 +23,7 @@ export default function OnboardingIntentScreen() {
   const [pressedButton, setPressedButton] = useState<string | null>(null);
   const [selectedIntents, setSelectedIntents] = useState<string[]>([]);
   const insets = useSafeAreaInsets();
-  
+
   // Track if animations have been initialized
   const animationsInitialized = useRef(false);
 
@@ -29,29 +31,29 @@ export default function OnboardingIntentScreen() {
   const screenOpacity = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20); // Smaller initial offset
-  
+
   const subtitleOpacity = useSharedValue(0);
   const subtitleTranslateY = useSharedValue(20); // Smaller initial offset
 
   const buttonsOpacity = useSharedValue(0);
   const buttonsTranslateY = useSharedValue(20); // Smaller initial offset
-  
+
   const continueOpacity = useSharedValue(0);
   const continueTranslateY = useSharedValue(20); // Smaller initial offset
 
   // Run animations only once during initial layout
   useLayoutEffect(() => {
     if (animationsInitialized.current) return;
-    
+
     // Set initial screen opacity based on whether we came from immediate transition
-    const immediate = params?.immediate === 'true';
+    const immediate = toBool(params?.immediate);
     screenOpacity.value = immediate ? 1 : 0;
-    
+
     if (!immediate) {
       // Fade in the entire screen first, faster
       screenOpacity.value = withTiming(1, { duration: 250 });
     }
-    
+
     // Reset animation values with minimal delay
     const timer = setTimeout(() => {
       titleOpacity.value = 0;
@@ -62,12 +64,13 @@ export default function OnboardingIntentScreen() {
       buttonsTranslateY.value = 20;
       continueOpacity.value = 0;
       continueTranslateY.value = 20;
-      
+
       // Staggered animations for each component with shorter delays
       const animateComponent = (opacity: any, translateY: any, delay: number) => {
         opacity.value = withDelay(delay, withTiming(1, { duration: 300 })); // Faster timing
-        translateY.value = withDelay(delay, 
-          withSpring(0, { 
+        translateY.value = withDelay(
+          delay,
+          withSpring(0, {
             damping: 16, // More damping for faster settling
             stiffness: 100, // Stiffer spring for faster animation
             mass: 0.8, // Lighter mass for quicker movement
@@ -80,7 +83,7 @@ export default function OnboardingIntentScreen() {
       animateComponent(subtitleOpacity, subtitleTranslateY, 100);
       animateComponent(buttonsOpacity, buttonsTranslateY, 150);
       animateComponent(continueOpacity, continueTranslateY, 200);
-      
+
       // Mark animations as initialized
       animationsInitialized.current = true;
     }, 50); // Much shorter initial delay
@@ -92,23 +95,23 @@ export default function OnboardingIntentScreen() {
   const screenStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
     flex: 1,
-    backgroundColor: '#FFF4D9' // Explicitly set the cream background color
+    backgroundColor: '#FFF4D9', // Explicitly set the cream background color
   }));
-  
+
   // Create animated styles for each component
   const titleStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,
-    transform: [{ translateY: titleTranslateY.value }]
+    transform: [{ translateY: titleTranslateY.value }],
   }));
 
   const subtitleStyle = useAnimatedStyle(() => ({
     opacity: subtitleOpacity.value,
-    transform: [{ translateY: subtitleTranslateY.value }]
+    transform: [{ translateY: subtitleTranslateY.value }],
   }));
 
   const buttonsStyle = useAnimatedStyle(() => ({
     opacity: buttonsOpacity.value,
-    transform: [{ translateY: buttonsTranslateY.value }]
+    transform: [{ translateY: buttonsTranslateY.value }],
   }));
 
   const continueStyle = useAnimatedStyle(() => ({
@@ -129,10 +132,10 @@ export default function OnboardingIntentScreen() {
     } catch (error) {
       console.log('Haptics not available');
     }
-    
-    setSelectedIntents(prev => {
+
+    setSelectedIntents((prev) => {
       const newSelection = prev.includes(intent)
-        ? prev.filter(i => i !== intent)
+        ? prev.filter((i) => i !== intent)
         : [...prev, intent];
       return newSelection;
     });
@@ -142,16 +145,16 @@ export default function OnboardingIntentScreen() {
     if (selectedIntents.length > 0) {
       // Animate out before navigating, but faster
       screenOpacity.value = withTiming(0, { duration: 300 }); // Faster fade out
-      
+
       // Shorter delay before navigating
       await setResponse('intent', selectedIntents);
       router.push({
         pathname: '/onboarding/4',
-        params: { 
+        params: {
           animated: true,
           animation: 'fade',
-          immediate: true
-        }
+          immediate: false,
+        },
       } as any);
     }
   };
@@ -219,23 +222,21 @@ export default function OnboardingIntentScreen() {
               flex-row items-center shadow-buttonShadow mt-4
               ${pressedButton === button.id ? 'translate-y-[3px] shadow-none' : 'translate-y-0'}
               ${selectedIntents.includes(button.id) ? 'border-accentGold bg-surfaceCream' : ''}
-            `}
-          >
+            `}>
             <View className={`${button.bgColor} rounded-xl p-3`}>
               <Ionicons name={button.icon as any} size={24} color={button.color} />
             </View>
             <View className="ml-4 flex-1">
               <Text className="font-feather text-lg text-textPrimary">{button.title}</Text>
-              <Text className="font-din text-md text-description mt-1">
-                {button.description}
-              </Text>
+              <Text className="font-din text-md text-description mt-1">{button.description}</Text>
             </View>
-            <View className={`
+            <View
+              className={`
               w-6 h-6 rounded-full border-2 items-center justify-center
-              ${selectedIntents.includes(button.id) 
-                ? 'bg-accentGold border-accentGold' 
-                : 'border-description'
-              }
+              ${selectedIntents.includes(button.id)
+                  ? 'bg-accentGold border-accentGold'
+                  : 'border-description'
+                }
             `}>
               {selectedIntents.includes(button.id) && (
                 <Ionicons name="checkmark" size={16} color="white" />
@@ -244,7 +245,7 @@ export default function OnboardingIntentScreen() {
           </Pressable>
         ))}
       </Animated.View>
-        
+
       {/* Continue Button - Fixed at bottom */}
       <Animated.View style={continueStyle}>
         <PrimaryButton

@@ -1,4 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import firestore from '@react-native-firebase/firestore';
+import { router, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
@@ -12,16 +14,15 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
 } from 'react-native';
-import { fetchChapter, ChapterResponse, FetchError, Verse } from './api/bible';
-import PrimaryButton from '../components/PrimaryButton';
-import SideButton from '~/components/SideButton';
-import { usePathStore } from './stores/pathStore';
+
+import { fetchChapter, ChapterResponse, Verse } from './api/bible';
+import { BIBLE_PATHS, Unit, BIBLE_BOOK_IDS } from './models/Path';
 import { useHomeStore, SuccessAnimationType } from './stores/homeStore';
+import { usePathStore } from './stores/pathStore';
 import { useUserStore } from './stores/userStore';
-import { router, useLocalSearchParams } from 'expo-router';
-import { BIBLE_PATHS, Path, Unit, BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from './models/Path';
-import firestore from '@react-native-firebase/firestore';
 import BookChapterSelectorSheet from '../components/BookChapterSelectorSheet';
+
+import SideButton from '~/components/SideButton';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
 const DEFAULT_FONT_SIZE = 16;
@@ -51,19 +52,19 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
   const [isSelectorVisible, setIsSelectorVisible] = useState(false);
-  
+
   // Animation values for button container
   const buttonContainerAnim = useRef(new Animated.Value(100)).current;
   const buttonOpacityAnim = useRef(new Animated.Value(0)).current;
-  
+
   // Reference to the ScrollView
   const scrollViewRef = useRef<ScrollView>(null);
-  
+
   // Get saved reading state from pathStore
-  const { 
-    savedBook, 
-    savedBookId, 
-    savedChapter, 
+  const {
+    savedBook,
+    savedBookId,
+    savedChapter,
     setSavedReading,
     setPathInProgress,
     pathInProgress,
@@ -72,30 +73,30 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     currentPath,
     setCurrentPath,
     markUnitAsCompleted,
-    setNextUnitPreview
+    setNextUnitPreview,
   } = usePathStore();
-  
+
   // Initialize with props if provided, otherwise use saved state
   const [currentBook, setCurrentBook] = useState<string>(initialBookName || savedBook);
   const [currentBookId, setCurrentBookId] = useState<number>(initialBookId || savedBookId);
   const [currentChapter, setCurrentChapter] = useState<number>(initialChapter || savedChapter);
   const [currentVersion, setCurrentVersion] = useState<string>('ESV');
-  
+
   const setHomeMode = useHomeStore((state) => state.setMode);
   const setSuccessType = useHomeStore((state) => state.setSuccessType);
   const setReadingCompleted = useHomeStore((state) => state.setReadingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
   const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
-  
+
   // Get userStore functions for saving reading
-  const addCompletedReading = useUserStore(state => state.addCompletedReading);
-  const setLastReadingDate = useUserStore(state => state.setLastReadingDate);
-  const setVersesReadTotal = useUserStore(state => state.setVersesReadTotal);
-  const setChaptersReadTotal = useUserStore(state => state.setChaptersReadTotal);
-  const getVersesReadTotal = useUserStore(state => state.getVersesReadTotal);
-  const getChaptersReadTotal = useUserStore(state => state.getChaptersReadTotal);
-  
+  const addCompletedReading = useUserStore((state) => state.addCompletedReading);
+  const setLastReadingDate = useUserStore((state) => state.setLastReadingDate);
+  const setVersesReadTotal = useUserStore((state) => state.setVersesReadTotal);
+  const setChaptersReadTotal = useUserStore((state) => state.setChaptersReadTotal);
+  const getVersesReadTotal = useUserStore((state) => state.getVersesReadTotal);
+  const getChaptersReadTotal = useUserStore((state) => state.getChaptersReadTotal);
+
   // Always call hooks unconditionally, even if we don't use the results
   const params = useLocalSearchParams();
   const effectiveParams = !isEmbedded ? params : null;
@@ -104,9 +105,15 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   useEffect(() => {
     if (!isEmbedded) {
       // Check if we're coming from the map, preview, or direct navigation
-      if (effectiveParams?.source === 'map' || effectiveParams?.source === 'debug-button' || effectiveParams?.source === 'preview') {
+      if (
+        effectiveParams?.source === 'map' ||
+        effectiveParams?.source === 'debug-button' ||
+        effectiveParams?.source === 'preview'
+      ) {
         // Keep pathInProgress true if coming from map or preview
-        console.log(`📱 Navigation source: ${effectiveParams?.source}, keeping pathInProgress state.`);
+        console.log(
+          `📱 Navigation source: ${effectiveParams?.source}, keeping pathInProgress state.`
+        );
       } else {
         // Only reset pathInProgress if not coming from map/preview/debug
         console.log('📱 Navigation source not map/preview/debug, setting pathInProgress false');
@@ -120,20 +127,32 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       setLoading(true);
       setError(null);
 
-      console.log("🔄 BibleReader: Loading initial data");
+      console.log('🔄 BibleReader: Loading initial data');
       if (!isEmbedded) {
-        console.log("📋 URL Params:", effectiveParams);
+        console.log('📋 URL Params:', effectiveParams);
       }
-      
+
       // Get route params from useLocalSearchParams if not embedded
-      const urlBookId = !isEmbedded && effectiveParams?.bookId ? parseInt(effectiveParams.bookId as string, 10) : null;
-      const urlChapters = !isEmbedded && effectiveParams?.chapters ? (effectiveParams.chapters as string).split(',').map(c => parseInt(c, 10)) : null;
-      const urlTitle = !isEmbedded && effectiveParams?.title ? effectiveParams.title as string : null;
-      
+      const urlBookId =
+        !isEmbedded && effectiveParams?.bookId
+          ? parseInt(effectiveParams.bookId as string, 10)
+          : null;
+      const urlChapters =
+        !isEmbedded && effectiveParams?.chapters
+          ? (effectiveParams.chapters as string).split(',').map((c) => parseInt(c, 10))
+          : null;
+      const urlTitle =
+        !isEmbedded && effectiveParams?.title ? (effectiveParams.title as string) : null;
+
       // If embedded, use props; otherwise check URL params then fall back to saved state
-      const bookIdToLoad = initialBookId || (urlBookId && !isNaN(urlBookId) ? urlBookId : currentBookId);
-      const chapterToLoad = initialChapter || (urlChapters && urlChapters.length > 0 && !isNaN(urlChapters[0]) ? urlChapters[0] : currentChapter);
-      
+      const bookIdToLoad =
+        initialBookId || (urlBookId && !isNaN(urlBookId) ? urlBookId : currentBookId);
+      const chapterToLoad =
+        initialChapter ||
+        (urlChapters && urlChapters.length > 0 && !isNaN(urlChapters[0])
+          ? urlChapters[0]
+          : currentChapter);
+
       console.log(`🎯 Loading: bookId: ${bookIdToLoad}, chapter: ${chapterToLoad}`);
 
       try {
@@ -145,11 +164,16 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           }
         }
       } catch (e) {
-        console.error("Failed to load font size from AsyncStorage", e);
+        console.error('Failed to load font size from AsyncStorage', e);
       }
 
       // Load from determined values, not default state
-      await loadChapter(currentVersion, initialBookName || 'Loading...', bookIdToLoad, chapterToLoad);
+      await loadChapter(
+        currentVersion,
+        initialBookName || 'Loading...',
+        bookIdToLoad,
+        chapterToLoad
+      );
     };
 
     loadInitialData();
@@ -178,8 +202,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const loadChapter = async (version: string, book: string, bookId: number, chapter: number) => {
     setLoading(true);
     setError(null);
-    
-    console.log(`📚 LOADING CHAPTER - version:${version}, book:${book}, bookId:${bookId}, chapter:${chapter}`);
+
+    console.log(
+      `📚 LOADING CHAPTER - version:${version}, book:${book}, bookId:${bookId}, chapter:${chapter}`
+    );
 
     try {
       // Key line: bookId is now being passed properly to the API
@@ -192,21 +218,21 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       } else {
         console.log(`✅ Successfully loaded: ${result.book} ${result.chapter}`);
         setChapterData(result);
-        
+
         // Update the UI state with actual data
         setCurrentBook(result.book);
         setCurrentBookId(bookId);
         setCurrentChapter(result.chapter);
         setCurrentVersion(result.version);
-        
+
         // Save to the store for persistence
         setSavedReading(result.book, bookId, result.chapter);
-        
+
         setError(null);
       }
     } catch (error) {
-      console.error("Failed to load chapter", error);
-      setError("Failed to load chapter");
+      console.error('Failed to load chapter', error);
+      setError('Failed to load chapter');
       setChapterData(null);
     } finally {
       setLoading(false);
@@ -215,12 +241,12 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   const navigateToPreviousChapter = () => {
     if (loading || !chapterData) return;
-    
+
     if (currentChapter > 1) {
       loadChapter(currentVersion, currentBook, currentBookId, currentChapter - 1);
     } else {
       // Would need to go to previous book's last chapter
-      console.log("At first chapter - would need to go to previous book");
+      console.log('At first chapter - would need to go to previous book');
     }
   };
 
@@ -230,7 +256,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       console.log('Loading or no chapter data, skipping navigation');
       return;
     }
-    
+
     // Simple chapter navigation for now
     loadChapter(currentVersion, currentBook, currentBookId, currentChapter + 1);
   };
@@ -241,7 +267,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       try {
         await AsyncStorage.setItem(FONT_SIZE_KEY, newSize.toString());
       } catch (e) {
-        console.error("Failed to save font size to AsyncStorage", e);
+        console.error('Failed to save font size to AsyncStorage', e);
       }
     }
   };
@@ -261,7 +287,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
     // Create current timestamp
     const now = firestore.Timestamp.now();
-    
+
     // Save reading data to userStore
     console.log('Saving reading data to userStore');
     try {
@@ -270,23 +296,25 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         date: now,
         book: currentBook,
         chapters: [`${currentChapter}`] as unknown as [string],
-        isUnit: pathInProgress
+        isUnit: pathInProgress,
       });
-      
+
       // Update last reading date
       setLastReadingDate(now);
-      
+
       // Update total verses and chapters read
       const currentVerses = getVersesReadTotal();
       const currentChapters = getChaptersReadTotal();
-      
+
       // Add the number of verses in this chapter
       const versesInChapter = chapterData ? chapterData.verses.length : 0;
       setVersesReadTotal(currentVerses + versesInChapter);
       setChaptersReadTotal(currentChapters + 1);
-      
+
       console.log(`Reading saved successfully. Added ${versesInChapter} verses and 1 chapter.`);
-      console.log(`New totals: ${currentVerses + versesInChapter} verses, ${currentChapters + 1} chapters`);
+      console.log(
+        `New totals: ${currentVerses + versesInChapter} verses, ${currentChapters + 1} chapters`
+      );
     } catch (error) {
       console.error('Error saving reading data:', error);
     }
@@ -297,10 +325,12 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       markUnitAsCompleted(currentPath.unitId);
 
       // Find the next unit logic
-      const currentPathIndex = BIBLE_PATHS.findIndex(p => p.id === currentPath.pathId);
+      const currentPathIndex = BIBLE_PATHS.findIndex((p) => p.id === currentPath.pathId);
       if (currentPathIndex !== -1) {
         const currentPathData = BIBLE_PATHS[currentPathIndex];
-        const currentUnitIndex = currentPathData.units.findIndex(u => u.id === currentPath.unitId);
+        const currentUnitIndex = currentPathData.units.findIndex(
+          (u) => u.id === currentPath.unitId
+        );
 
         if (currentUnitIndex !== -1) {
           // Check if there's a next unit in the current path
@@ -321,15 +351,14 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       }
 
       if (nextUnit) {
-        shouldStayInPath = true; 
+        shouldStayInPath = true;
         console.log(`🚀 Setting next unit preview and staying in path.`);
       } else {
         console.log(`🏁 Reached the end of all paths.`);
       }
-
     } else {
       // Log why it wasn't marked / why we didn't look for the next unit
-      console.log("⚠️ Did not mark unit or look for next unit. Conditions:");
+      console.log('⚠️ Did not mark unit or look for next unit. Conditions:');
       console.log(`   - pathInProgress: ${pathInProgress}`);
       console.log(`   - currentPath: ${JSON.stringify(currentPath)}`);
       console.log(`   - isAtEndChapter: ${isAtEndChapter}`);
@@ -339,7 +368,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     setNextUnitPreview(nextUnit); // Set the next unit (or null if none)
     setPathInProgress(shouldStayInPath); // Keep in path only if there's a next unit
 
-    // --- Existing navigation logic --- 
+    // --- Existing navigation logic ---
     setHomeMode('DEFAULT');
     setReadingCompleted(true);
 
@@ -354,11 +383,19 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
     // Navigate to success animation screen - Use replace to unmount BibleReader
     router.replace({
-      pathname: "/success",
+      pathname: '/success',
       params: {
-        message: sawDailyBonus ? "Reading Complete!" : (prayerCompleted && reflectionCompleted ? "Daily Trifecta Complete!" : "Reading Complete!"),
-        subMessage: sawDailyBonus ? "You've finished today's chapter. Great progress!" : (prayerCompleted && reflectionCompleted ? "Amazing! You've completed all three spiritual disciplines today." : "You've finished today's chapter. Great progress!")
-      }
+        message: sawDailyBonus
+          ? 'Reading Complete!'
+          : prayerCompleted && reflectionCompleted
+            ? 'Daily Trifecta Complete!'
+            : 'Reading Complete!',
+        subMessage: sawDailyBonus
+          ? "You've finished today's chapter. Great progress!"
+          : prayerCompleted && reflectionCompleted
+            ? "Amazing! You've completed all three spiritual disciplines today."
+            : "You've finished today's chapter. Great progress!",
+      },
     });
   };
 
@@ -368,17 +405,23 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     if (!pathInProgress || !currentPath) {
       return false; // If not in a path, isAtEndChapter isn't strictly meaningful here
     }
-    
+
     // Check if we're on the right book and at the final chapter from the currentPath
-    const isActuallyAtEnd = currentBookId === currentPath.bookId && currentChapter === currentPath.endChapter;
-    
+    const isActuallyAtEnd =
+      currentBookId === currentPath.bookId && currentChapter === currentPath.endChapter;
+
     return isActuallyAtEnd;
   }, [pathInProgress, currentPath, currentBookId, currentChapter]);
 
   // Determine if the finish button should be enabled
   const isFinishEnabled = useMemo(() => {
     // Only enable if on the end chapter in a path AND scrolled to bottom
-    if (pathInProgress && currentPath && currentChapter === currentPath.endChapter && hasScrolledToBottom) {
+    if (
+      pathInProgress &&
+      currentPath &&
+      currentChapter === currentPath.endChapter &&
+      hasScrolledToBottom
+    ) {
       return true;
     }
     // If not in a path AND scrolled to bottom
@@ -398,8 +441,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     // Check if user has scrolled to the bottom (with a small threshold)
-    const scrolledToBottom = layoutMeasurement.height + contentOffset.y >= 
-      contentSize.height - 100; // 100px threshold
+    const scrolledToBottom = layoutMeasurement.height + contentOffset.y >= contentSize.height - 100; // 100px threshold
     // Only mark as scrolled to bottom if we're at the end chapter AND at the bottom of the content
     if (scrolledToBottom && !hasScrolledToBottom) {
       // Only set to true if actually at the end chapter or not in a path
@@ -412,11 +454,11 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   // Memoize style calculations to prevent unnecessary style object recreations
   const verseTextStyle = useMemo(() => {
-    return [styles.verseText, { fontSize: fontSize }];
+    return [styles.verseText, { fontSize }];
   }, [fontSize]);
-  
+
   const verseNumberStyle = useMemo(() => {
-    return [styles.verseNumber, { fontSize: fontSize }];
+    return [styles.verseNumber, { fontSize }];
   }, [fontSize]);
 
   const renderBibleContent = () => {
@@ -425,19 +467,21 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     }
 
     if (error) {
-      return <Text className="text-red-500 mt-10 text-center px-4">Error loading chapter: {error}</Text>;
+      return (
+        <Text className="text-red-500 mt-10 text-center px-4">Error loading chapter: {error}</Text>
+      );
     }
 
     if (chapterData) {
       return (
-        <ScrollView 
+        <ScrollView
           ref={scrollViewRef}
           contentContainerStyle={styles.scrollContainer}
           onScroll={handleScroll}
           scrollEventThrottle={16} // Frequent enough for smooth detection
         >
           {chapterData.verses.map((verse: Verse) => (
-            <Text key={verse.verse} style={verseTextStyle} selectable={true}>
+            <Text key={verse.verse} style={verseTextStyle} selectable>
               <Text style={verseNumberStyle}>{verse.verse} </Text>
               {verse.text}
             </Text>
@@ -465,7 +509,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => [id, name])
     );
     const bookName = bookNames[bookId] || 'Unknown Book';
-    
+
     // Load the newly selected chapter
     loadChapter(currentVersion, bookName, bookId, chapter);
   };
@@ -495,83 +539,103 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
               <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
           )}
-          
+
           <TouchableOpacity style={styles.headerButton} onPress={handleOpenSelector}>
             <Text style={styles.headerButtonText}>
               {chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'Loading...'}
             </Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity style={styles.headerButton} onPress={handleOpenSelector}>
-            <Text style={styles.headerButtonText}>
-              {chapterData ? chapterData.version : '...'}
-            </Text>
+            <Text style={styles.headerButtonText}>{chapterData ? chapterData.version : '...'}</Text>
           </TouchableOpacity>
         </View>
 
         <View style={styles.headerRight}>
-          <TouchableOpacity onPress={decreaseFontSize} style={styles.iconButton} disabled={fontSize <= MIN_FONT_SIZE}>
-            <Text style={[styles.fontSizeAdjustText, fontSize <= MIN_FONT_SIZE && styles.disabledButtonText]}>-</Text>
+          <TouchableOpacity
+            onPress={decreaseFontSize}
+            style={styles.iconButton}
+            disabled={fontSize <= MIN_FONT_SIZE}>
+            <Text
+              style={[
+                styles.fontSizeAdjustText,
+                fontSize <= MIN_FONT_SIZE && styles.disabledButtonText,
+              ]}>
+              -
+            </Text>
           </TouchableOpacity>
-          <TouchableOpacity onPress={increaseFontSize} style={styles.iconButton} disabled={fontSize >= MAX_FONT_SIZE}>
-            <Text style={[styles.fontSizeAdjustText, fontSize >= MAX_FONT_SIZE && styles.disabledButtonText]}>+</Text>
+          <TouchableOpacity
+            onPress={increaseFontSize}
+            style={styles.iconButton}
+            disabled={fontSize >= MAX_FONT_SIZE}>
+            <Text
+              style={[
+                styles.fontSizeAdjustText,
+                fontSize >= MAX_FONT_SIZE && styles.disabledButtonText,
+              ]}>
+              +
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <View style={styles.contentArea}>
-        {renderBibleContent()}
-      </View>
+      <View style={styles.contentArea}>{renderBibleContent()}</View>
 
       {/* Floating chapter navigation buttons */}
-      <View style={[
-        styles.floatingNavContainer,
-        isEmbedded && styles.floatingNavContainerEmbedded
-      ]}>
+      <View
+        style={[styles.floatingNavContainer, isEmbedded && styles.floatingNavContainerEmbedded]}>
         <TouchableOpacity
           style={[styles.navButton, (currentChapter <= 1 || loading) && styles.disabledNavButton]}
           onPress={navigateToPreviousChapter}
           disabled={currentChapter <= 1 || loading}
-          activeOpacity={0.7}
-        >
-          <Text style={[styles.navButtonText, (currentChapter <= 1 || loading) && styles.disabledButtonText]}>←</Text>
+          activeOpacity={0.7}>
+          <Text
+            style={[
+              styles.navButtonText,
+              (currentChapter <= 1 || loading) && styles.disabledButtonText,
+            ]}>
+            ←
+          </Text>
         </TouchableOpacity>
         {/* Next Chapter button always renders, but disable at end-of-unit */}
         <TouchableOpacity
           style={[
             styles.navButton,
-            (loading || (pathInProgress && isAtEndChapter)) && styles.disabledNavButton
+            (loading || (pathInProgress && isAtEndChapter)) && styles.disabledNavButton,
           ]}
           onPress={navigateToNextChapter}
           disabled={loading || (pathInProgress && isAtEndChapter)}
-          activeOpacity={0.7}
-        >
-          <Text style={[
-            styles.navButtonText,
-            (loading || (pathInProgress && isAtEndChapter)) && styles.disabledButtonText
-          ]}>→</Text>
+          activeOpacity={0.7}>
+          <Text
+            style={[
+              styles.navButtonText,
+              (loading || (pathInProgress && isAtEndChapter)) && styles.disabledButtonText,
+            ]}>
+            →
+          </Text>
         </TouchableOpacity>
       </View>
 
       {/* Finish Reading Button - Only show in standalone mode */}
-      {!isEmbedded && <Animated.View 
-        style={[
-          styles.finishButtonContainer,
-          {
-            opacity: buttonOpacityAnim,
-            transform: [{ translateY: buttonContainerAnim }]
-          }
-        ]}
-      >
-        <SideButton
-          title="Finish Reading"
-          onPress={handleFinishReading}
-          disabled={!isFinishEnabled} // Use the calculated enabled state
-        />
-      </Animated.View>}
+      {!isEmbedded && (
+        <Animated.View
+          style={[
+            styles.finishButtonContainer,
+            {
+              opacity: buttonOpacityAnim,
+              transform: [{ translateY: buttonContainerAnim }],
+            },
+          ]}>
+          <SideButton
+            title="Finish Reading"
+            onPress={handleFinishReading}
+            disabled={!isFinishEnabled} // Use the calculated enabled state
+          />
+        </Animated.View>
+      )}
 
       {/* Book Chapter Selector Sheet */}
-      <BookChapterSelectorSheet 
+      <BookChapterSelectorSheet
         visible={isSelectorVisible}
         onClose={handleCloseSelector}
         currentBookId={currentBookId}
@@ -585,136 +649,47 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 // Standalone screen that uses the component
 export default function BibleReaderScreen() {
   const params = useLocalSearchParams();
-  
+
   // Extract params for initial state
   const urlBookId = params.bookId ? parseInt(params.bookId as string, 10) : undefined;
-  const urlChapters = params.chapters ? (params.chapters as string).split(',').map(c => parseInt(c, 10)) : undefined;
+  const urlChapters = params.chapters
+    ? (params.chapters as string).split(',').map((c) => parseInt(c, 10))
+    : undefined;
   const initialChapter = urlChapters && urlChapters.length > 0 ? urlChapters[0] : undefined;
-  
-  return (
-    <BibleReader 
-      initialBookId={urlBookId}
-      initialChapter={initialChapter}
-    />
-  );
+
+  return <BibleReader initialBookId={urlBookId} initialChapter={initialChapter} />;
 }
 
 // Styles
 const styles = StyleSheet.create({
-  newHeaderContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    backgroundColor: '#FFF4D9',
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFE4A8',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 244, 217, 0.95)',
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 244, 217, 0.95)',
+    borderRadius: 22,
+    elevation: 3,
+    height: 44,
     justifyContent: 'center',
     marginRight: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 3,
-    elevation: 3,
+    width: 44,
   },
   backButtonText: {
-    fontSize: 24,
     color: '#3C584A',
     fontFamily: 'Inter-Bold',
-  },
-  headerButton: {
-    backgroundColor: 'rgba(220, 178, 128, 0.2)',
-    borderRadius: 15,
-    paddingVertical: 5,
-    paddingHorizontal: 12,
-    marginRight: 8,
-  },
-  headerButtonText: {
-    color: '#3C584A',
-    fontSize: 14,
-    fontWeight: '500',
-    fontFamily: 'Inter-Medium',
-  },
-  navButton: {
-    backgroundColor: '#FFE4A8',
-    borderRadius: 24,
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginHorizontal: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 2,
-    elevation: 4,
-  },
-  navButtonText: {
-    color: '#3C584A',
     fontSize: 24,
-    fontWeight: '700',
   },
-  disabledNavButton: {
-    backgroundColor: 'rgba(220, 178, 128, 0.1)',
-  },
-  iconButton: {
-    padding: 8,
-    marginLeft: 8,
-  },
-  fontSizeAdjustText: {
-    fontSize: 20,
-    color: '#3C584A',
-    fontFamily: 'Inter-Medium',
+  contentArea: {
+    backgroundColor: '#FFF4D9',
+    flex: 1,
   },
   disabledButtonText: {
     color: '#DCB280',
   },
-  contentArea: {
-    flex: 1,
-    backgroundColor: '#FFF4D9',
-  },
-  scrollContainer: {
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 30,
-  },
-  verseText: {
-    lineHeight: 24,
-    marginBottom: 10,
-    color: '#3C584A',
-    fontFamily: 'Inter-Regular',
-  },
-  verseNumber: {
-    fontWeight: 'bold',
-    color: '#DCB280',
-    fontFamily: 'Inter-Bold',
-  },
-  floatingNavContainer: {
-    position: 'absolute',
-    bottom: 30,
-    right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  floatingNavContainerEmbedded: {
-    bottom: 100, // Move up when tab bar is present
+  disabledNavButton: {
+    backgroundColor: 'rgba(220, 178, 128, 0.1)',
   },
   finishButtonContainer: {
     position: 'absolute',
@@ -722,4 +697,90 @@ const styles = StyleSheet.create({
     left: 20,
     right: 20,
   },
-}); 
+  floatingNavContainer: {
+    alignItems: 'center',
+    bottom: 30,
+    flexDirection: 'row',
+    position: 'absolute',
+    right: 20,
+    zIndex: 10,
+  },
+  floatingNavContainerEmbedded: {
+    bottom: 100, // Move up when tab bar is present
+  },
+  fontSizeAdjustText: {
+    color: '#3C584A',
+    fontFamily: 'Inter-Medium',
+    fontSize: 20,
+  },
+  headerButton: {
+    backgroundColor: 'rgba(220, 178, 128, 0.2)',
+    borderRadius: 15,
+    marginRight: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  headerButtonText: {
+    color: '#3C584A',
+    fontFamily: 'Inter-Medium',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  headerLeft: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  headerRight: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  iconButton: {
+    marginLeft: 8,
+    padding: 8,
+  },
+  navButton: {
+    alignItems: 'center',
+    backgroundColor: '#FFE4A8',
+    borderRadius: 24,
+    elevation: 4,
+    height: 48,
+    justifyContent: 'center',
+    marginHorizontal: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    width: 48,
+  },
+  navButtonText: {
+    color: '#3C584A',
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  newHeaderContainer: {
+    alignItems: 'center',
+    backgroundColor: '#FFF4D9',
+    borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+  },
+  scrollContainer: {
+    paddingBottom: 30,
+    paddingHorizontal: 20,
+    paddingTop: 10,
+  },
+  verseNumber: {
+    color: '#DCB280',
+    fontFamily: 'Inter-Bold',
+    fontWeight: 'bold',
+  },
+  verseText: {
+    color: '#3C584A',
+    fontFamily: 'Inter-Regular',
+    lineHeight: 24,
+    marginBottom: 10,
+  },
+});

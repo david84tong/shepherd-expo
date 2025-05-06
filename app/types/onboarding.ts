@@ -39,4 +39,4 @@ export const ONBOARDING_PAGES: OnboardingPage[] = [
     title: 'Stay Connected',
     description: 'Enable notifications to receive daily reminders and encouragement',
   },
-] 
+];

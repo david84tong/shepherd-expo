@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, Text, View, Pressable } from 'react-native';
+import { Text, View, Pressable } from 'react-native';
 
 interface SideButtonProps {
   title: string;
@@ -7,11 +7,7 @@ interface SideButtonProps {
   disabled?: boolean;
 }
 
-const SideButton: React.FC<SideButtonProps> = ({
-  title,
-  onPress,
-  disabled = false,
-}) => {
+const SideButton: React.FC<SideButtonProps> = ({ title, onPress, disabled = false }) => {
   // Simple state to track pressed state
   const [isPressed, setIsPressed] = useState(false);
 
@@ -27,9 +23,9 @@ const SideButton: React.FC<SideButtonProps> = ({
         onPress={onPress}
         disabled={disabled}
         onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
-      >
-        <Text className={`font-feather text-heading text-center ${disabled ? 'text-gray-400' : 'text-white'}`}>
+        onPressOut={() => setIsPressed(false)}>
+        <Text
+          className={`font-feather text-heading text-center ${disabled ? 'text-gray-400' : 'text-white'}`}>
           {title}
         </Text>
       </Pressable>
@@ -37,4 +33,4 @@ const SideButton: React.FC<SideButtonProps> = ({
   );
 };
 
-export default SideButton; 
+export default SideButton;

@@ -1,18 +1,19 @@
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useUserStore } from '../stores/userStore';
 import { Feather } from '@expo/vector-icons';
-import { useCallback, useMemo } from 'react';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import * as Haptics from 'expo-haptics';
-import { usePathStore } from '../stores/pathStore';
-import dayjs from 'dayjs';
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import dayjs from 'dayjs';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import { useCallback, useMemo } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+import { usePathStore } from '../stores/pathStore';
+import { useUserStore } from '../stores/userStore';
 
 // Import the icons similar to those in index.tsx
 const breadIcon = require('../../assets/icons/breadIcon.png');
-const dropIcon = require('../../assets/icons/waterIcon.png');
 const quillIcon = require('../../assets/icons/journalIcon.png');
+const dropIcon = require('../../assets/icons/waterIcon.png');
 
 // Define activity type for the timeline
 type ActivityType = {
@@ -43,7 +44,7 @@ export default function ProfileScreen() {
     getCompletedReadings,
     getCompletedPrayers,
     getCompletedReflections,
-    getUser
+    getUser,
   } = useUserStore();
 
   const lamb = getLamb();
@@ -59,13 +60,13 @@ export default function ProfileScreen() {
   const joinDate = useMemo(() => {
     // Handle the case when createdAt doesn't exist
     if (!createdAtTimestamp) return 'Just started';
-    
+
     try {
       const date = toDateSafe(createdAtTimestamp);
       return date.toLocaleDateString('en-US', {
         month: 'long',
         day: 'numeric',
-        year: 'numeric'
+        year: 'numeric',
       });
     } catch (error) {
       console.error('Error formatting createdAt date:', error, createdAtTimestamp);
@@ -78,7 +79,7 @@ export default function ProfileScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (typeof global !== 'undefined' && (global as any).showSettings) {
       (global as any).showSettings({
-        userId: userId
+        userId,
       });
     } else {
       console.error('showSettings not available on global object');
@@ -90,30 +91,33 @@ export default function ProfileScreen() {
 
   // Combine all activities and sort by date (newest first)
   const allActivities = useMemo<ActivityType[]>(() => {
-    const readings = completedReadings?.map(reading => ({
-      type: 'reading' as const,
-      date: reading.date,
-      data: reading,
-      icon: breadIcon,
-      title: `Read ${reading.book} ${reading.chapters?.join(', ') || ''}`,
-    })) || [];
+    const readings =
+      completedReadings?.map((reading) => ({
+        type: 'reading' as const,
+        date: reading.date,
+        data: reading,
+        icon: breadIcon,
+        title: `Read ${reading.book} ${reading.chapters?.join(', ') || ''}`,
+      })) || [];
 
-    const prayers = completedPrayers?.map(prayer => ({
-      type: 'prayer' as const,
-      date: prayer.date,
-      data: prayer,
-      icon: dropIcon,
-      title: `${prayer.type || 'Daily'} Prayer`,
-    })) || [];
+    const prayers =
+      completedPrayers?.map((prayer) => ({
+        type: 'prayer' as const,
+        date: prayer.date,
+        data: prayer,
+        icon: dropIcon,
+        title: `${prayer.type || 'Daily'} Prayer`,
+      })) || [];
 
-    const reflections = completedReflections?.map(reflection => ({
-      type: 'reflection' as const,
-      date: reflection.date,
-      data: reflection,
-      icon: quillIcon,
-      title: "Quiet Time",
-      content: reflection.content,
-    })) || [];
+    const reflections =
+      completedReflections?.map((reflection) => ({
+        type: 'reflection' as const,
+        date: reflection.date,
+        data: reflection,
+        icon: quillIcon,
+        title: 'Quiet Time',
+        content: reflection.content,
+      })) || [];
 
     // Combine all activities
     const combined = [...readings, ...prayers, ...reflections];
@@ -131,17 +135,17 @@ export default function ProfileScreen() {
     try {
       const date = toDateSafe(timestamp);
       const today = new Date();
-      
+
       // Check if the date is today
       if (dayjs(date).isSame(dayjs(today), 'day')) {
         return 'Today';
       }
-      
+
       // Check if the date is yesterday
       if (dayjs(date).isSame(dayjs(today).subtract(1, 'day'), 'day')) {
         return 'Yesterday';
       }
-      
+
       // Otherwise, format the date
       return dayjs(date).format('MMM D, YYYY');
     } catch (error) {
@@ -156,36 +160,36 @@ export default function ProfileScreen() {
       const date = toDateSafe(timestamp);
       const now = new Date();
       const diffMs = now.getTime() - date.getTime();
-      
+
       // Less than a minute
       if (diffMs < 60000) {
         return 'just now';
       }
-      
+
       // Minutes
       const diffMins = Math.floor(diffMs / 60000);
       if (diffMins < 60) {
         return `${diffMins}m ago`;
       }
-      
+
       // Hours
       const diffHours = Math.floor(diffMins / 60);
       if (diffHours < 24) {
         return `${diffHours}h ago`;
       }
-      
+
       // Days
       const diffDays = Math.floor(diffHours / 24);
       if (diffDays < 30) {
         return `${diffDays}d ago`;
       }
-      
+
       // Months
       const diffMonths = Math.floor(diffDays / 30);
       if (diffMonths < 12) {
         return `${diffMonths}mo ago`;
       }
-      
+
       // Years
       const diffYears = Math.floor(diffMonths / 12);
       return `${diffYears}y ago`;
@@ -202,10 +206,9 @@ export default function ProfileScreen() {
           {/* Header */}
           <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
             <Text className="font-feather text-h2 text-textPrimary">Profile</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               onPress={handleShowSettings}
-              className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center"
-            >
+              className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center">
               <Feather name="settings" size={20} color="#B89B4C" />
             </TouchableOpacity>
           </View>
@@ -213,18 +216,20 @@ export default function ProfileScreen() {
           {/* Lamb Stats Card */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
             <View className="flex-row justify-between items-center mb-6">
-            <View className="bg-lightYellow px-4 py-1 rounded-lg opacity-80">
-                <Text className="font-feather text-heading text-primary">{lamb.name ? lamb.name : "Your Lamb"}</Text>
+              <View className="bg-lightYellow px-4 py-1 rounded-lg opacity-80">
+                <Text className="font-feather text-heading text-primary">
+                  {lamb.name ? lamb.name : 'Your Lamb'}
+                </Text>
               </View>
-                <Image source={require("../../assets/icons/sheepIcon.png")} className="w-12 h-12 rounded-full" />
-             
+              <Image
+                source={require('../../assets/icons/sheepIcon.png')}
+                className="w-12 h-12 rounded-full"
+              />
             </View>
-
-      
 
             {/* Stats Grid */}
             <View className="flex-row justify-between space-x-8">
-            <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3 ">
+              <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3 ">
                 <Text className="font-feather text-h2 text-textPrimary">{lamb.level}</Text>
                 <Text className="font-din text-description">Level</Text>
               </View>
@@ -232,22 +237,22 @@ export default function ProfileScreen() {
                 <Text className="font-feather text-h2 text-textPrimary">{streak}</Text>
                 <Text className="font-din text-description">Day Streak</Text>
               </View>
-             
+
               <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3">
                 <Text className="font-feather text-h2 text-textPrimary">{lamb.hearts}</Text>
                 <Text className="font-din text-description">Hearts</Text>
               </View>
             </View>
-                  {/* XP Bar */}
-                  <View className="mt-6 mx-2">
+            {/* XP Bar */}
+            <View className="mt-6 mx-2">
               <View className="flex-row justify-between mb-2">
                 <Text className="font-din text-description">Experience</Text>
                 <Text className="font-din text-description">{lamb.xp} XP</Text>
               </View>
               <View className="h-4 bg-lightYellow rounded-full overflow-hidden">
-                <View 
-                  className="h-full bg-accentGold rounded-full" 
-                  style={{ width: `${Math.min((lamb.xp % 100) / 100 * 100, 100)}%` }} 
+                <View
+                  className="h-full bg-accentGold rounded-full"
+                  style={{ width: `${Math.min(((lamb.xp % 100) / 100) * 100, 100)}%` }}
                 />
               </View>
             </View>
@@ -262,43 +267,49 @@ export default function ProfileScreen() {
           {/* Activity History Timeline Card */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
             <Text className="font-feather text-heading text-textPrimary mb-4">Your Journey</Text>
-            
+
             {allActivities.length === 0 ? (
-              <Text className="font-din text-description text-center py-6">No activities yet. Begin your journey today!</Text>
+              <Text className="font-din text-description text-center py-6">
+                No activities yet. Begin your journey today!
+              </Text>
             ) : (
               <View className="mt-2">
                 {allActivities.map((activity, index) => {
                   // Get date as string
                   const dateString = formatActivityDate(activity.date);
-                  
+
                   // Check if we need to show a date header (first item or different day from previous)
-                  const showDateHeader = index === 0 || 
-                    formatActivityDate(activity.date) !== formatActivityDate(allActivities[index - 1].date);
-                  
+                  const showDateHeader =
+                    index === 0 ||
+                    formatActivityDate(activity.date) !==
+                      formatActivityDate(allActivities[index - 1].date);
+
                   return (
                     <View key={`${activity.type}-${index}`}>
                       {/* Date header if needed */}
                       {showDateHeader && (
                         <View className="py-2 mb-2">
-                          <Text className="font-feather text-body text-accentGold">{dateString}</Text>
+                          <Text className="font-feather text-body text-accentGold">
+                            {dateString}
+                          </Text>
                         </View>
                       )}
-                      
+
                       {/* Activity item */}
                       <View className="flex-row mb-4 relative">
                         {/* Timeline line */}
                         {index < allActivities.length - 1 && (
-                          <View 
-                            className="absolute bg-border" 
-                            style={{ width: 2, left: 14, top: 28, bottom: -16 }} 
+                          <View
+                            className="absolute bg-border"
+                            style={{ width: 2, left: 14, top: 28, bottom: -16 }}
                           />
                         )}
-                        
+
                         {/* Icon */}
                         <View className="bg-surfaceCream w-8 h-8 rounded-full justify-center items-center mr-4 z-10">
                           <Image source={activity.icon} className="w-5 h-5" />
                         </View>
-                        
+
                         {/* Content */}
                         <View className="flex-1 flex-row justify-between bg-surfaceCream px-4 py-3 rounded-md items-center">
                           <Text className="font-feather text-body text-textPrimary flex-1">
@@ -332,10 +343,12 @@ export default function ProfileScreen() {
                 <Text className="font-din text-accentGold">Coming Soon</Text>
               </View>
             </View>
-            <Text className="font-din text-description mt-2">Customize your lamb and unlock special items!</Text>
+            <Text className="font-din text-description mt-2">
+              Customize your lamb and unlock special items!
+            </Text>
           </View>
         </ScrollView>
       </SafeAreaView>
     </GestureHandlerRootView>
   );
-} 
+}

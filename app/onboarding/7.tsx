@@ -1,18 +1,19 @@
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import { View, Text } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useOnboardingStore } from '../stores/onboardingStore';
-import { useUserStore } from '../stores/userStore';
-import PrimaryButton from '../../components/PrimaryButton';
-import { OnboardingResponses } from '../models/Onboarding';
-import Animated, { 
-  useAnimatedStyle, 
-  withTiming, 
+import Animated, {
+  useAnimatedStyle,
+  withTiming,
   withSpring,
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+
+import PrimaryButton from '../../components/PrimaryButton';
+import { OnboardingResponses } from '../models/Onboarding';
+import { useOnboardingStore } from '../stores/onboardingStore';
+import { useUserStore } from '../stores/userStore';
 
 export default function OnboardingAgeRangeScreen() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function OnboardingAgeRangeScreen() {
   // Create Reanimated shared values for each component
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(40);
-  
+
   const optionsOpacity = useSharedValue(0);
   const optionsTranslateY = useSharedValue(40);
 
@@ -33,12 +34,13 @@ export default function OnboardingAgeRangeScreen() {
     titleTranslateY.value = 40;
     optionsOpacity.value = 0;
     optionsTranslateY.value = 40;
-    
+
     // Staggered animations for each component
     const animateComponent = (opacity: any, translateY: any, delay: number) => {
       opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
-      translateY.value = withDelay(delay, 
-        withSpring(0, { 
+      translateY.value = withDelay(
+        delay,
+        withSpring(0, {
           damping: 20,
           stiffness: 90,
         })
@@ -53,12 +55,12 @@ export default function OnboardingAgeRangeScreen() {
   // Create animated styles for each component
   const titleStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,
-    transform: [{ translateY: titleTranslateY.value }]
+    transform: [{ translateY: titleTranslateY.value }],
   }));
 
   const optionsStyle = useAnimatedStyle(() => ({
     opacity: optionsOpacity.value,
-    transform: [{ translateY: optionsTranslateY.value }]
+    transform: [{ translateY: optionsTranslateY.value }],
   }));
 
   const handleSelection = async (ageRange: OnboardingResponses['ageRange']) => {
@@ -70,13 +72,13 @@ export default function OnboardingAgeRangeScreen() {
     } catch (error) {
       console.log('Haptics not available');
     }
-    
+
     setSelectedOption(ageRange);
     await setResponse('ageRange', ageRange);
-    
+
     // Save to user store
     setUser({ ageRange });
-    
+
     // Navigate to next screen
     router.push('/onboarding/8' as any);
   };
@@ -132,7 +134,7 @@ export default function OnboardingAgeRangeScreen() {
             key={option.id}
             title={option.title}
             onPress={() => handleSelection(option.id as OnboardingResponses['ageRange'])}
-            isActive={true}
+            isActive
             primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
             textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
           />

@@ -1,15 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, Image } from 'react-native';
+import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
-import PrimaryButton from '../../components/PrimaryButton';
-import Animated, { 
-  useAnimatedStyle, 
-  withTiming, 
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  withTiming,
   withSpring,
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import * as Notifications from 'expo-notifications';
+
+import PrimaryButton from '../../components/PrimaryButton';
 
 export default function NotificationPermissionScreen() {
   const router = useRouter();
@@ -18,10 +19,10 @@ export default function NotificationPermissionScreen() {
   // Create Reanimated shared values for each component
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(40);
-  
+
   const contentOpacity = useSharedValue(0);
   const contentTranslateY = useSharedValue(40);
-  
+
   const buttonOpacity = useSharedValue(0);
   const buttonTranslateY = useSharedValue(40);
 
@@ -33,12 +34,13 @@ export default function NotificationPermissionScreen() {
     contentTranslateY.value = 40;
     buttonOpacity.value = 0;
     buttonTranslateY.value = 40;
-    
+
     // Staggered animations for each component
     const animateComponent = (opacity: any, translateY: any, delay: number) => {
       opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
-      translateY.value = withDelay(delay, 
-        withSpring(0, { 
+      translateY.value = withDelay(
+        delay,
+        withSpring(0, {
           damping: 20,
           stiffness: 90,
         })
@@ -54,17 +56,17 @@ export default function NotificationPermissionScreen() {
   // Create animated styles for each component
   const titleStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,
-    transform: [{ translateY: titleTranslateY.value }]
+    transform: [{ translateY: titleTranslateY.value }],
   }));
 
   const contentStyle = useAnimatedStyle(() => ({
     opacity: contentOpacity.value,
-    transform: [{ translateY: contentTranslateY.value }]
+    transform: [{ translateY: contentTranslateY.value }],
   }));
 
   const buttonStyle = useAnimatedStyle(() => ({
     opacity: buttonOpacity.value,
-    transform: [{ translateY: buttonTranslateY.value }]
+    transform: [{ translateY: buttonTranslateY.value }],
   }));
 
   // Function to handle the don't allow button
@@ -76,7 +78,7 @@ export default function NotificationPermissionScreen() {
   const handleAllow = async () => {
     if (showingAlert) return;
     setShowingAlert(true);
-    
+
     try {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
@@ -85,17 +87,14 @@ export default function NotificationPermissionScreen() {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
-      
+
       if (finalStatus === 'granted') {
         router.push('/onboarding/10' as any);
-
       } else {
         router.push('/onboarding/10' as any);
-
       }
     } catch (error) {
       console.error('Error requesting notification permissions:', error);
-      
     } finally {
       setShowingAlert(false);
     }
@@ -117,8 +116,8 @@ export default function NotificationPermissionScreen() {
       <Animated.View style={contentStyle} className="items-center">
         {/* iOS-style Notification Example */}
         <View className="bg-white rounded-xl w-[360px] shadow-sm mb-6 flex-row p-3 items-center mx-12">
-          <Image 
-            source={require('../../assets/icon.png')} 
+          <Image
+            source={require('../../assets/icon.png')}
             className="w-12 h-12 mr-3 rounded-[8px]"
           />
           <View className="flex-1">
@@ -138,22 +137,19 @@ export default function NotificationPermissionScreen() {
                 "Shepherd" Would Like to Send You Notifications
               </Text>
               <Text className="text-[#666666] text-[15px] font-din text-center px-6 mb-2">
-                Notifications may include alerts, sounds, and icon badges. These can be configured in Settings.
+                Notifications may include alerts, sounds, and icon badges. These can be configured
+                in Settings.
               </Text>
             </View>
 
             <View className="flex-row border-t border-gray-200">
-              <TouchableOpacity 
+              <TouchableOpacity
                 className="flex-1 py-[12px] border-r border-gray-200"
-                onPress={handleDontAllow}
-              >
+                onPress={handleDontAllow}>
                 <Text className="text-[#007AFF] text-[17px] text-center font-din">Don't Allow</Text>
               </TouchableOpacity>
-              
-              <TouchableOpacity 
-                className="flex-1 py-[12px]"
-                onPress={handleAllow}
-              >
+
+              <TouchableOpacity className="flex-1 py-[12px]" onPress={handleAllow}>
                 <Text className="text-accentGold text-[17px] text-center font-bold">Allow</Text>
               </TouchableOpacity>
             </View>
@@ -167,7 +163,11 @@ export default function NotificationPermissionScreen() {
       </Animated.View>
 
       {/* Bottom button */}
-      <Animated.View style={[buttonStyle, { position: 'absolute', bottom: 48, width: '100%', paddingHorizontal: 20 }]}>
+      <Animated.View
+        style={[
+          buttonStyle,
+          { position: 'absolute', bottom: 48, width: '100%', paddingHorizontal: 20 },
+        ]}>
         <PrimaryButton
           title="REMIND ME TO PRACTICE"
           onPress={handleRemindMe}

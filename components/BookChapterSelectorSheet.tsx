@@ -1,5 +1,16 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, Text, Modal, TouchableOpacity, ScrollView, StyleSheet, Animated, Pressable, Dimensions } from 'react-native';
+import {
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Animated,
+  Pressable,
+  Dimensions,
+} from 'react-native';
+
 import { BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from '../app/models/Path';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -14,24 +25,28 @@ interface BookChapterSelectorSheetProps {
   onSelect: (bookId: number, chapter: number) => void;
 }
 
-const BookChapterSelectorSheet: React.FC<BookChapterSelectorSheetProps> = ({ 
-  visible, 
-  onClose, 
-  currentBookId, 
-  currentChapter, 
-  onSelect 
+const BookChapterSelectorSheet: React.FC<BookChapterSelectorSheetProps> = ({
+  visible,
+  onClose,
+  currentBookId,
+  currentChapter,
+  onSelect,
 }) => {
   const [selectedBookId, setSelectedBookId] = useState<number>(currentBookId);
   const [isVisible, setIsVisible] = useState<boolean>(visible);
   const sheetAnim = useRef(new Animated.Value(SHEET_HEIGHT)).current;
 
   // Reverse mapping for book names
-  const bookNames: Record<number, string> = useMemo(() => Object.fromEntries(
-    Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => [id, name])
-  ), []);
+  const bookNames: Record<number, string> = useMemo(
+    () => Object.fromEntries(Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => [id, name])),
+    []
+  );
 
-  const bookList = useMemo(() => Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => ({ id, name })), []);
-  
+  const bookList = useMemo(
+    () => Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => ({ id, name })),
+    []
+  );
+
   // Filter chapter counts based on the selected book
   const availableChapters = useMemo(() => {
     const count = BIBLE_CHAPTER_COUNTS[selectedBookId] || 0;
@@ -62,12 +77,12 @@ const BookChapterSelectorSheet: React.FC<BookChapterSelectorSheetProps> = ({
     onSelect(selectedBookId, chapter);
     handleClose();
   };
-  
+
   const handleSelectBook = (bookId: number) => {
-     setSelectedBookId(bookId);
-     // Maybe scroll chapter view to top or to current chapter if applicable
+    setSelectedBookId(bookId);
+    // Maybe scroll chapter view to top or to current chapter if applicable
   };
-  
+
   // Handle close with animation
   const handleClose = () => {
     Animated.timing(sheetAnim, {
@@ -81,17 +96,16 @@ const BookChapterSelectorSheet: React.FC<BookChapterSelectorSheetProps> = ({
 
   return (
     <Modal
-      transparent={true}
+      transparent
       visible={isVisible}
       onRequestClose={handleClose}
       animationType="none" // Use custom animation
     >
       <Pressable style={styles.overlay} onPress={handleClose}>
-        <Animated.View 
+        <Animated.View
           style={[styles.sheetContainer, { transform: [{ translateY: sheetAnim }] }]}
           // Prevent clicks inside the sheet from closing it
-          onStartShouldSetResponder={() => true} 
-        >
+          onStartShouldSetResponder={() => true}>
           {/* Header */}
           <View style={styles.header}>
             <Text style={styles.headerTitle}>Select Book & Chapter</Text>
@@ -106,19 +120,16 @@ const BookChapterSelectorSheet: React.FC<BookChapterSelectorSheetProps> = ({
             <View style={styles.listContainer}>
               <Text style={styles.listTitle}>Book</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                {bookList.map(book => (
-                  <TouchableOpacity 
+                {bookList.map((book) => (
+                  <TouchableOpacity
                     key={book.id}
-                    style={[
-                      styles.bookItem,
-                      selectedBookId === book.id && styles.selectedBookItem
-                    ]}
-                    onPress={() => handleSelectBook(book.id)}
-                  >
-                    <Text style={[
-                      styles.bookItemText,
-                      selectedBookId === book.id && styles.selectedBookItemText
-                    ]}>
+                    style={[styles.bookItem, selectedBookId === book.id && styles.selectedBookItem]}
+                    onPress={() => handleSelectBook(book.id)}>
+                    <Text
+                      style={[
+                        styles.bookItemText,
+                        selectedBookId === book.id && styles.selectedBookItemText,
+                      ]}>
                       {book.name}
                     </Text>
                   </TouchableOpacity>
@@ -130,19 +141,23 @@ const BookChapterSelectorSheet: React.FC<BookChapterSelectorSheetProps> = ({
             <View style={[styles.listContainer, { flex: 1 }]}>
               <Text style={styles.listTitle}>Chapter</Text>
               <ScrollView contentContainerStyle={styles.chapterGrid}>
-                {availableChapters.map(chapter => (
-                  <TouchableOpacity 
+                {availableChapters.map((chapter) => (
+                  <TouchableOpacity
                     key={chapter}
                     style={[
                       styles.chapterItem,
-                      selectedBookId === currentBookId && chapter === currentChapter && styles.selectedChapterItem
+                      selectedBookId === currentBookId &&
+                        chapter === currentChapter &&
+                        styles.selectedChapterItem,
                     ]}
-                    onPress={() => handleSelectChapter(chapter)}
-                  >
-                    <Text style={[
-                      styles.chapterItemText,
-                      selectedBookId === currentBookId && chapter === currentChapter && styles.selectedChapterItemText
-                    ]}>
+                    onPress={() => handleSelectChapter(chapter)}>
+                    <Text
+                      style={[
+                        styles.chapterItemText,
+                        selectedBookId === currentBookId &&
+                          chapter === currentChapter &&
+                          styles.selectedChapterItemText,
+                      ]}>
                       {chapter}
                     </Text>
                   </TouchableOpacity>
@@ -157,32 +172,41 @@ const BookChapterSelectorSheet: React.FC<BookChapterSelectorSheetProps> = ({
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-end',
+  bookItem: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginHorizontal: 5,
+    backgroundColor: '#F9F3E5', // secondary-button-bg (or similar light cream)
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#E9E2C7', // pillBorder
   },
-  sheetContainer: {
-    height: SHEET_HEIGHT,
-    width: '100%',
-    backgroundColor: '#FFF4D9', // surfaceCream
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    overflow: 'hidden',
+  bookItemText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 15, // textPrimary
   },
-  header: {
+  chapterGrid: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFE4A8', // buttonBorder
+    flexWrap: 'wrap',
+    paddingBottom: 20,
+    paddingHorizontal: 15,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontFamily: 'Feather Bold',
-    color: '#3C584A', // textPrimary
+  chapterItem: {
+    width: 55, // Adjust size as needed
+    height: 55,
+    borderRadius: 27.5, // Make it circular
+    backgroundColor: '#F9F3E5',
+    borderWidth: 1,
+    borderColor: '#E9E2C7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    margin: 6,
+  },
+  chapterItemText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
   },
   closeButton: {
     padding: 5,
@@ -197,6 +221,20 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingTop: 10,
   },
+  header: {
+    alignItems: 'center',
+    borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15, // buttonBorder
+  },
+  headerTitle: {
+    color: '#3C584A',
+    fontFamily: 'Feather Bold',
+    fontSize: 18, // textPrimary
+  },
   listContainer: {
     marginBottom: 15,
   },
@@ -208,57 +246,34 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     textTransform: 'uppercase',
   },
-  bookItem: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    marginHorizontal: 5,
-    backgroundColor: '#F9F3E5', // secondary-button-bg (or similar light cream)
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: '#E9E2C7', // pillBorder
+  overlay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    flex: 1,
+    justifyContent: 'flex-end',
   },
   selectedBookItem: {
     backgroundColor: '#FFE4A8', // buttonBorder
     borderColor: '#F7B500', // darkYellow
   },
-  bookItemText: {
-    fontSize: 15,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    color: '#3C584A', // textPrimary
-  },
   selectedBookItemText: {
     fontWeight: '600',
-  },
-  chapterGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 15,
-    paddingBottom: 20,
-  },
-  chapterItem: {
-    width: 55, // Adjust size as needed
-    height: 55,
-    borderRadius: 27.5, // Make it circular
-    backgroundColor: '#F9F3E5',
-    borderWidth: 1,
-    borderColor: '#E9E2C7',
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: 6,
   },
   selectedChapterItem: {
     backgroundColor: '#F7B500', // darkYellow
     borderColor: '#F7B500',
   },
-  chapterItemText: {
-    fontSize: 16,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    color: '#3C584A',
-  },
   selectedChapterItemText: {
     color: 'white',
     fontWeight: 'bold',
   },
+  sheetContainer: {
+    height: SHEET_HEIGHT,
+    width: '100%',
+    backgroundColor: '#FFF4D9', // surfaceCream
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    overflow: 'hidden',
+  },
 });
 
-export default BookChapterSelectorSheet; 
+export default BookChapterSelectorSheet;

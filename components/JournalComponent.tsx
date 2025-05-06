@@ -1,24 +1,24 @@
+import firestore from '@react-native-firebase/firestore';
+import { useAssets } from 'expo-asset';
+import { router } from 'expo-router';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
-  View, 
-  Text, 
-  TouchableOpacity, 
-  TextInput, 
-  Platform, 
+  View,
+  Text,
+  TextInput,
+  Platform,
   Keyboard,
   Dimensions,
   Animated,
-  ActivityIndicator
+  ActivityIndicator,
 } from 'react-native';
-import PrimaryButton from './PrimaryButton';
-import { usePathStore } from '../app/stores/pathStore';
-import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
-import { useUserStore } from '../app/stores/userStore';
-import Rive, { RiveRef } from 'rive-react-native';
+import Rive from 'rive-react-native';
+
 import BackButton from './BackButton';
-import { router } from 'expo-router';
-import firestore from '@react-native-firebase/firestore';
-import { useAssets } from 'expo-asset';
+import PrimaryButton from './PrimaryButton';
+import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
+import { usePathStore } from '../app/stores/pathStore';
+import { useUserStore } from '../app/stores/userStore';
 
 interface JournalProps {
   visible: boolean;
@@ -38,18 +38,18 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
   const [reflectionContent, setReflectionContent] = useState('');
-  
+
   // Get store functions
   const setSuccessType = useHomeStore((state) => state.setSuccessType);
   const setReflectionCompleted = useHomeStore((state) => state.setReflectionCompleted);
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
-  
+
   // Get userStore functions for saving reflection
-  const addCompletedReflection = useUserStore(state => state.addCompletedReflection);
-  const setLastReflectionDate = useUserStore(state => state.setLastReflectionDate);
-  
+  const addCompletedReflection = useUserStore((state) => state.addCompletedReflection);
+  const setLastReflectionDate = useUserStore((state) => state.setLastReflectionDate);
+
   // Animation values
   const cardAnimY = useRef(new Animated.Value(200)).current;
   const cardOpacity = useRef(new Animated.Value(0)).current;
@@ -60,9 +60,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   const bottomContentOpacity = useRef(new Animated.Value(0)).current;
 
   // Load Rive assets
-  const [riveAssets] = useAssets([
-    require('../assets/riveAnimations/homeLamb.riv')
-  ]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
 
   // Keyboard event listeners with height information
   useEffect(() => {
@@ -81,7 +79,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
       handleKeyboardShow
     );
-    
+
     const keyboardDidHideListener = Keyboard.addListener(
       Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
       handleKeyboardHide
@@ -96,47 +94,47 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   // Entry and exit animations
   useEffect(() => {
     console.log('JournalComponent: visible =', visible);
-    
+
     if (visible) {
       console.log('JournalComponent: Showing journal component');
       // Set path in progress when component becomes visible
       setPathInProgress(true);
-      
+
       // First animate the container
       Animated.timing(containerOpacity, {
         toValue: 1,
         duration: 400,
         useNativeDriver: true,
       }).start();
-      
+
       // Then animate the card
       Animated.timing(cardOpacity, {
         toValue: 1,
         duration: 500,
         useNativeDriver: true,
-        delay: 200
+        delay: 200,
       }).start();
-      
+
       Animated.timing(cardAnimY, {
         toValue: 0,
         duration: 500,
         useNativeDriver: true,
-        delay: 200
+        delay: 200,
       }).start();
-      
+
       // Finally animate the button
       Animated.timing(buttonOpacity, {
         toValue: 1,
         duration: 400,
         useNativeDriver: true,
-        delay: 500
+        delay: 500,
       }).start();
-      
+
       Animated.timing(buttonAnimY, {
         toValue: 0,
         duration: 400,
         useNativeDriver: true,
-        delay: 500
+        delay: 500,
       }).start();
 
       // Animate bottom content (Rive + Button)
@@ -144,21 +142,21 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         toValue: 1,
         duration: 400,
         useNativeDriver: true,
-        delay: 500
+        delay: 500,
       }).start();
-      
+
       Animated.timing(bottomContentAnimY, {
         toValue: 0,
         duration: 400,
         useNativeDriver: true,
-        delay: 500
+        delay: 500,
       }).start();
 
       // Focus the input after animations complete
       const timer = setTimeout(() => {
         inputRef.current?.focus();
       }, 600);
-      
+
       return () => clearTimeout(timer);
     } else {
       // Reset animations when hiding
@@ -171,15 +169,25 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       bottomContentOpacity.setValue(0);
       setReflectionContent(''); // Clear content when closing
     }
-  }, [visible, cardAnimY, cardOpacity, containerOpacity, buttonAnimY, buttonOpacity, bottomContentAnimY, bottomContentOpacity, setPathInProgress]);
+  }, [
+    visible,
+    cardAnimY,
+    cardOpacity,
+    containerOpacity,
+    buttonAnimY,
+    buttonOpacity,
+    bottomContentAnimY,
+    bottomContentOpacity,
+    setPathInProgress,
+  ]);
 
   // Pre-compute memoized values outside and before any conditional returns
-  const cardStyle = useMemo(() => { 
+  const cardStyle = useMemo(() => {
     return {
       opacity: cardOpacity,
       transform: [{ translateY: cardAnimY }],
-      maxHeight: keyboardVisible ? SCREEN_HEIGHT - keyboardHeight - 200 : SCREEN_HEIGHT - 280, 
-      minHeight: 250
+      maxHeight: keyboardVisible ? SCREEN_HEIGHT - keyboardHeight - 200 : SCREEN_HEIGHT - 280,
+      minHeight: 250,
     };
   }, [cardOpacity, cardAnimY, keyboardVisible, keyboardHeight]);
 
@@ -187,7 +195,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     return {
       opacity: bottomContentOpacity,
       transform: [{ translateY: bottomContentAnimY }],
-      bottom: keyboardVisible ? keyboardHeight + -440 : -100
+      bottom: keyboardVisible ? keyboardHeight + -440 : -100,
     };
   }, [bottomContentOpacity, bottomContentAnimY, keyboardVisible, keyboardHeight]);
 
@@ -196,7 +204,9 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   // Show loading indicator if assets aren't loaded yet
   if (!riveAssets) {
     return (
-      <View className="absolute flex w-full h-full justify-center items-center" style={{ backgroundColor: 'rgba(255, 255, 255, 0.7)' }}>
+      <View
+        className="absolute flex w-full h-full justify-center items-center"
+        style={{ backgroundColor: 'rgba(255, 255, 255, 0.7)' }}>
         <ActivityIndicator size="large" color="#3C584A" />
       </View>
     );
@@ -206,58 +216,58 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     Keyboard.dismiss();
     setPathInProgress(false);
     setReflectionCompleted(true); // Set reflection as completed
-    
+
     // Create current timestamp
     const now = firestore.Timestamp.now();
-    
+
     // Save reflection to userStore
     console.log('Saving reflection data to userStore');
     try {
       // Save the reflection content
       addCompletedReflection({
         date: now,
-        content: reflectionContent.trim() || "Reflected on my spiritual journey today."
+        content: reflectionContent.trim() || 'Reflected on my spiritual journey today.',
       });
-      
+
       // Update last reflection date
       setLastReflectionDate(now);
-      
+
       console.log('Reflection saved successfully');
     } catch (error) {
       console.error('Error saving reflection data:', error);
     }
-    
+
     if (readingCompleted && prayerCompleted && !sawDailyBonus) {
       setSuccessType(SuccessAnimationType.BONUS);
     } else {
       setSuccessType(SuccessAnimationType.REFLECTION);
     }
-    
+
     // Navigate to success screen
-    router.push("/success");
+    router.push('/success');
   };
 
   return (
     <Animated.View
       className="absolute flex w-full"
       style={{ opacity: containerOpacity }}
-      pointerEvents="box-none"
-    >
+      pointerEvents="box-none">
       {/* Back Button */}
-      <BackButton 
+      <BackButton
         onPress={() => {
           setPathInProgress(false);
           onClose();
-        }} 
+        }}
       />
 
       {/* Animated Card with TextInput */}
-      <Animated.View 
+      <Animated.View
         className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto mt-[120px] border-4 border-border"
-        style={cardStyle}
-      >
-        <Text className="text-h1 font-feather text-textPrimary mb-6 text-center leading-tight">Daily Reflection</Text>
-        
+        style={cardStyle}>
+        <Text className="text-h1 font-feather text-textPrimary mb-6 text-center leading-tight">
+          Daily Reflection
+        </Text>
+
         <TextInput
           ref={inputRef}
           className="w-full bg-surfaceCream/50 rounded-[18px] p-4 border border-border text-body font-din text-textPrimary"
@@ -265,7 +275,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
           placeholderTextColor="#B89B4C"
           multiline
           textAlignVertical="top"
-          scrollEnabled={true}
+          scrollEnabled
           style={{ flex: 1 }}
           value={reflectionContent}
           onChangeText={setReflectionContent}
@@ -273,20 +283,19 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       </Animated.View>
 
       {/* Animated Bottom Content (Rive + Button) */}
-      <Animated.View 
+      <Animated.View
         className="absolute left-0 right-0 flex-row items-center px-5 z-10"
-        style={bottomContentStyle}
-      >
+        style={bottomContentStyle}>
         {/* Rive Animation */}
         <View className="w-[100px] h-[100px] -ml-5 -mb-2">
           <Rive
             url={riveAssets[0].localUri!}
             artboardName="lamb-writing"
-            autoplay={true}
+            autoplay
             style={{ width: '130%', height: '130%' }}
           />
         </View>
-        
+
         {/* Save Button */}
         <View className="flex-1 items-end w-[280px] ml-8 mt-4">
           <PrimaryButton title="Hold This Thought" onPress={handleSave} />

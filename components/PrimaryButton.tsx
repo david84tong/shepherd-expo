@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
-import { TouchableOpacity, Text, View, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import React, { useState } from 'react';
+import { Text, View, Pressable } from 'react-native';
 
 interface PrimaryButtonProps {
   title: string;
@@ -23,7 +23,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   primaryColor,
   textColor = 'white',
   shadowStyle,
-  buttonType = 'default'
+  buttonType = 'default',
 }) => {
   // Simple state to track pressed state
   const [isPressed, setIsPressed] = useState(false);
@@ -32,19 +32,24 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   let bgColor = 'bg-accentGold';
   let borderColor = 'border-buttonBorder';
   let buttonShadow = shadowStyle || 'shadow-buttonShadow';
-  
+
   if (buttonType === 'blue') {
     bgColor = 'bg-[#4FB8FE]';
     borderColor = 'border-[#06B6FE]';
     buttonShadow = 'shadow-blueButtonShadow';
   }
-  
+
   // Override with primaryColor if provided
   if (primaryColor) {
     bgColor = primaryColor;
   }
-  
-  const txtColor = disabled || !isActive ? 'text-gray-400' : textColor.startsWith('text-') ? textColor : `text-${textColor}`;
+
+  const txtColor =
+    disabled || !isActive
+      ? 'text-gray-400'
+      : textColor.startsWith('text-')
+        ? textColor
+        : `text-${textColor}`;
 
   // Function to trigger haptic feedback
   const triggerHaptic = () => {
@@ -73,15 +78,15 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
         className={
           `flex-row items-center justify-center px-5 h-full w-full rounded-[20px] border-[3px] ` +
           `${disabled || !isActive ? 'bg-[#E5E5E5] border-[#D0D0D0]' : `${bgColor} ${borderColor}`} ` +
-          `transform ${(!isPressed && isActive && !disabled) ? buttonShadow : ''} ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
+          `transform ${!isPressed && isActive && !disabled ? buttonShadow : ''} ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
         }
-        style={({ pressed }) => [{ elevation: pressed ? 3 : (isActive && !disabled) ? 6 : 0 }]}
+        style={({ pressed }) => [{ elevation: pressed ? 3 : isActive && !disabled ? 6 : 0 }]}
         onPress={handlePress}
         disabled={disabled}
         onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}
-      >
-        <Text className={`font-feather ${disabled || !isActive ? 'text-gray-400' : txtColor} text-heading text-center w-full`}>
+        onPressOut={() => setIsPressed(false)}>
+        <Text
+          className={`font-feather ${disabled || !isActive ? 'text-gray-400' : txtColor} text-heading text-center w-full`}>
           {title}
         </Text>
       </Pressable>
