@@ -4,15 +4,16 @@
  * New code should use the global.showHalfModal function exposed from _layout.tsx instead of router.push.
  */
 
-import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import * as Haptics from 'expo-haptics';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import React, { useEffect, useRef, useMemo, useState } from 'react';
+import { View, Text, StyleSheet, Image } from 'react-native';
+import { useSharedValue, withTiming } from 'react-native-reanimated';
+
 import { useUIStore } from './stores/uiStore';
 import { useUserStore } from './stores/userStore';
 import PrimaryButton from '../components/PrimaryButton';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import * as Haptics from 'expo-haptics';
-import Animated, { useSharedValue, withTiming } from 'react-native-reanimated';
 
 // Define the types of modals this screen can display
 export enum HalfModalType {
@@ -26,14 +27,14 @@ export default function HalfModalScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const setIsModalDimActive = useUIStore((state) => state.setIsModalDimActive);
-  const getLambName = useUserStore(state => state.getLambName);
+  const getLambName = useUserStore((state) => state.getLambName);
   const lambName = getLambName();
-  
+
   // Bottom sheet reference and configuration
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['60%'], []);
   const [sheetOpen, setSheetOpen] = useState(false);
-  
+
   // Animation value for the background
   const backdropOpacity = useSharedValue(0);
 
@@ -45,24 +46,26 @@ export default function HalfModalScreen() {
 
   // Determine content based on params
   const type = (getStringParam('type') as HalfModalType) || HalfModalType.GENERIC;
-  let title = getStringParam('message') || "Attention";
-  let description = getStringParam('subMessage') || "Something happened.";
+  let title = getStringParam('message') || 'Attention';
+  let description = getStringParam('subMessage') || 'Something happened.';
   let icon = require('../assets/icons/heartIcon.png'); // Generic icon
-  let penalty = parseInt(getStringParam('penalty') || '0', 10);
-  let daysMissed = parseInt(getStringParam('daysMissed') || '0', 10);
+  const penalty = parseInt(getStringParam('penalty') || '0', 10);
+  const daysMissed = parseInt(getStringParam('daysMissed') || '0', 10);
 
   // Set content based on type (using require for icons)
   if (type === HalfModalType.HEART_PENALTY) {
-    title = getStringParam('message') || "Hearts Lost!";
-    description = getStringParam('subMessage') || `You lost ${penalty} hearts for ${daysMissed} days of inactivity.`;
+    title = getStringParam('message') || 'Hearts Lost!';
+    description =
+      getStringParam('subMessage') ||
+      `You lost ${penalty} hearts for ${daysMissed} days of inactivity.`;
     icon = require('../assets/lambStatic/cryingLamb.png');
   } else if (type === HalfModalType.WIDGET_REMINDER) {
-    title = getStringParam('message') || "Reminder";
-    description = getStringParam('subMessage') || "Just a friendly reminder!";
+    title = getStringParam('message') || 'Reminder';
+    description = getStringParam('subMessage') || 'Just a friendly reminder!';
     icon = require('../assets/icons/heartIcon.png');
   } else if (type === HalfModalType.ANNOUNCEMENT) {
-    title = getStringParam('message') || "Announcement";
-    description = getStringParam('subMessage') || "We have news for you!";
+    title = getStringParam('message') || 'Announcement';
+    description = getStringParam('subMessage') || 'We have news for you!';
     icon = require('../assets/icons/heartIcon.png');
   }
 
@@ -80,7 +83,7 @@ export default function HalfModalScreen() {
     } else {
       setSheetOpen(false);
       backdropOpacity.value = withTiming(0, { duration: 200 });
-      
+
       // Only call router.back() when the sheet is fully closed
       if (index === -1) {
         setTimeout(() => {
@@ -94,14 +97,14 @@ export default function HalfModalScreen() {
   useEffect(() => {
     console.log(`[HalfModal] Mounting (Type: ${type}), activating dim...`);
     setIsModalDimActive(true);
-    
+
     // Open the bottom sheet after a slight delay
     const timer = setTimeout(() => {
       bottomSheetRef.current?.expand();
     }, 100);
 
     return () => {
-      console.log("[HalfModal] Unmounting, setting dim inactive");
+      console.log('[HalfModal] Unmounting, setting dim inactive');
       clearTimeout(timer);
       setIsModalDimActive(false);
     };
@@ -114,28 +117,27 @@ export default function HalfModalScreen() {
         ref={bottomSheetRef}
         index={-1}
         snapPoints={snapPoints}
-        enablePanDownToClose={true}
+        enablePanDownToClose
         onClose={() => handleSheetChange(-1)}
         onChange={handleSheetChange}
         backgroundStyle={styles.sheetBackground}
-        handleIndicatorStyle={styles.handleIndicator}
-      >
+        handleIndicatorStyle={styles.handleIndicator}>
         <BottomSheetView style={styles.contentContainer}>
           {/* Icon */}
           <Image source={icon} style={styles.icon} resizeMode="contain" />
-          
+
           {/* Title */}
           <Text style={styles.title}>{title}</Text>
-          
+
           {/* Type-specific content (e.g., penalty info) */}
           {type === HalfModalType.HEART_PENALTY && penalty > 0 && (
             <View>
               <Text style={styles.penaltyText}>
-                ❤️ {lambName} lost {penalty} hearts after {daysMissed} days away. 
+                ❤️ {lambName} lost {penalty} hearts after {daysMissed} days away.
               </Text>
             </View>
           )}
-          
+
           {/* Close Button using PrimaryButton */}
           <PrimaryButton
             title="Let's bounce back"
@@ -150,41 +152,29 @@ export default function HalfModalScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
   backdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
-  sheetBackground: {
-    backgroundColor: '#FFF4D9', // surfaceCream 
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  handleIndicator: {
-    backgroundColor: '#DCB280',
-    width: 40,
-    height: 4,
+  container: {
+    backgroundColor: 'transparent',
+    flex: 1,
   },
   contentContainer: {
-    flex: 1,
     alignItems: 'center',
+    flex: 1,
     padding: 20,
     paddingBottom: 30,
   },
+  handleIndicator: {
+    backgroundColor: '#DCB280',
+    height: 4,
+    width: 40,
+  },
   icon: {
-    width: 240,
     height: 240,
     marginBottom: 16,
-  },
-  title: {
-    fontFamily: 'Nunito-Black',
-    fontSize: 32,
-    color: '#3C584A', // textPrimary
-    marginBottom: 16,
-    textAlign: 'center',
+    width: 240,
   },
   penaltyText: {
     fontFamily: 'DIN Next Rounded LT W01 Regular',
@@ -194,4 +184,16 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 16,
   },
-}); 
+  sheetBackground: {
+    backgroundColor: '#FFF4D9', // surfaceCream
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  title: {
+    fontFamily: 'Nunito-Black',
+    fontSize: 32,
+    color: '#3C584A', // textPrimary
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+});

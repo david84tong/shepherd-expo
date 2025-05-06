@@ -1,24 +1,24 @@
 import '../global.css';
-import { Stack, SplashScreen, useRouter, useSegments } from 'expo-router';
-import { useFonts } from 'expo-font';
-import { useEffect, useState, useRef, useMemo } from 'react';
-import { View, LogBox } from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import AppLoading from '../components/AppLoading';
-import { useUIStore } from './stores/uiStore';
+import { useFonts } from 'expo-font';
+import { Stack, SplashScreen, useRouter, useSegments } from 'expo-router';
+import { useEffect, useState, useRef, useMemo } from 'react';
+import { LogBox } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 import { HalfModalType } from './halfModal';
+import AppLoading from '../components/AppLoading';
+import { isSignedIn } from './hooks/authHook';
+import { useAppInitialization } from './hooks/initHook';
+import { useUIStore } from './stores/uiStore';
 import { DebugButton } from '../components/DebugModal';
 import { ONBOARDING_COMPLETED_KEY } from './types/onboarding';
-import { isSignedIn } from './hooks/authHook';
-import BottomSheet, { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import { useAppInitialization } from './hooks/initHook';
 
 // Import the sheet components
 import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet';
 import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
-import GlobalPrayerSheet from '../components/GlobalPrayerSheet';
-import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
+import PrayerSheet, { PrayerSheetRef } from '~/components/GlobalPrayerSheet';
 
 // Error logging setup
 if (__DEV__) {
@@ -33,7 +33,7 @@ if (__DEV__) {
       console.error(`An error occurred: ${args[0].substring(0, 100)}...`);
     }
   };
-  
+
   // Set up global error handler
   ErrorUtils.setGlobalHandler((error, isFatal) => {
     if (isFatal) {
@@ -81,12 +81,12 @@ export default function RootLayout() {
     'Nunito-Medium': require('../assets/fonts/Nunito-Medium.ttf'),
     'Nunito-Regular': require('../assets/fonts/Nunito-Regular.ttf'),
   });
-  
+
   // Loading states
   const [appReady, setAppReady] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
   const [isOnboardingChecked, setIsOnboardingChecked] = useState(false);
-  
+
   // Global modal state
   const isModalDimActive = useUIStore((state) => state.isModalDimActive);
   const isPrayerSheetVisible = useUIStore((state) => state.isPrayerSheetVisible);
@@ -96,11 +96,13 @@ export default function RootLayout() {
   // Sheet refs
   const halfModalRef = useRef<HalfModalSheetRef>(null);
   const settingsSheetRef = useRef<SettingsSheetRef>(null);
-  
+  const prayerSheetRef = useRef<PrayerSheetRef>(null);
+
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
   const settingsSnapPoints = useMemo(() => ['40%', '90%'], []);
-  
+  const prayerSnapPoints = useMemo(() => ['60%', '85%'], []);
+
   // HalfModal params
   const [halfModalParams, setHalfModalParams] = useState<{
     type?: HalfModalType;
@@ -126,22 +128,24 @@ export default function RootLayout() {
       }
 
       const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-      
+
       if (onboardingCompleted !== 'true') {
         if (!(segments as string[]).includes('onboarding')) {
-          console.log('User not signed in or onboarding not completed, redirecting to welcome screen...');
+          console.log(
+            'User not signed in or onboarding not completed, redirecting to welcome screen...'
+          );
           router.replace('/onboarding/1');
         }
       } else if (!(segments as string[]).includes('(tabs)')) {
         console.log('Onboarding completed, redirecting to tabs...');
         router.replace('/(tabs)');
       }
-      
+
       setIsOnboardingChecked(true);
     } catch (error) {
       console.error('Error checking onboarding status:', error);
       setIsOnboardingChecked(true);
-      
+
       if (!(segments as string[]).includes('onboarding')) {
         router.replace('/onboarding/1');
       }
@@ -154,7 +158,7 @@ export default function RootLayout() {
     const interval = setInterval(() => {
       progress += 0.1;
       setLoadProgress(Math.min(progress, 0.95));
-      
+
       if (progress >= 1) {
         clearInterval(interval);
         setTimeout(() => {
@@ -170,15 +174,15 @@ export default function RootLayout() {
     try {
       const { checkStreakAndApplyPenalties } = require('../app/hooks/streakHook');
       const result = await checkStreakAndApplyPenalties();
-      
+
       if (result && result.heartPenalty > 0) {
         // Prepare params for heart penalty modal
         const params = {
           type: HalfModalType.HEART_PENALTY,
-          message: result.streakBroken ? "Hearts Lost!" : "Hearts Lost!",
+          message: result.streakBroken ? 'Hearts Lost!' : 'Hearts Lost!',
           subMessage: result.streakBroken
-              ? `Your streak has been reset. You lost ${result.heartPenalty} hearts after ${result.daysMissed} days of inactivity.`
-              : `You lost ${result.heartPenalty} hearts after ${result.daysMissed} days of inactivity.`,
+            ? `Your streak has been reset. You lost ${result.heartPenalty} hearts after ${result.daysMissed} days of inactivity.`
+            : `You lost ${result.heartPenalty} hearts after ${result.daysMissed} days of inactivity.`,
           penalty: result.heartPenalty,
           daysMissed: result.daysMissed,
         };
@@ -211,92 +215,90 @@ export default function RootLayout() {
       (global as any).showPrayerSheet = showPrayerSheet;
       (global as any).showBookChapterSelector = showBookChapterSelector;
     }
-  }, [showPrayerSheet, showBookChapterSelector]);
-  
+  }, []);
+
   // Effect for preloading resources
   useEffect(() => {
     if (fontsLoaded && !appReady) {
       preloadResources();
     }
   }, [fontsLoaded, appReady]);
-  
+
   // Effect for checking onboarding and streak status
   useEffect(() => {
     if (fontsLoaded && !isOnboardingChecked) {
       checkOnboarding().then(() => {
-        SplashScreen.hideAsync().catch(err => console.log('Error hiding splash screen:', err));
-        
+        SplashScreen.hideAsync().catch((err) => console.log('Error hiding splash screen:', err));
+
         if ((segments as string[]).includes('(tabs)')) {
           checkStreakStatus();
         }
       });
     }
   }, [fontsLoaded, isOnboardingChecked, segments]);
-  
+
   // Loading states
   if (!fontsLoaded && !fontError) return null;
   if (isLoading) return <AppLoading />;
   if (!isInitialized) return null;
-  
+
   console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
         <Stack>
-          <Stack.Screen 
-            name="(tabs)" 
-            options={{ 
-              headerShown: false, 
-              animation: 'slide_from_right', 
-            }} 
+          <Stack.Screen
+            name="(tabs)"
+            options={{
+              headerShown: false,
+              animation: 'slide_from_right',
+            }}
           />
-          <Stack.Screen 
+          <Stack.Screen
             name="onboarding"
             options={{
               headerShown: false,
               animation: 'fade',
               animationDuration: 200,
               gestureEnabled: false,
-              contentStyle: { backgroundColor: '#FFF4D9' }
+              contentStyle: { backgroundColor: '#FFF4D9' },
             }}
           />
-          <Stack.Screen 
-            name="bibleReader" 
+          <Stack.Screen
+            name="bibleReader"
             options={{
-              animation: "slide_from_right",
+              animation: 'slide_from_right',
               animationDuration: 350,
-              headerShown: false 
+              headerShown: false,
             }}
           />
-          <Stack.Screen 
-            name="bible" 
+          <Stack.Screen
+            name="bible"
             options={{
-              animation: "slide_from_right",
+              animation: 'slide_from_right',
               animationDuration: 350,
-              headerShown: false 
+              headerShown: false,
             }}
           />
           <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="success" options={{ headerShown: false, animation: 'slide_from_bottom' }} />
+          <Stack.Screen
+            name="success"
+            options={{ headerShown: false, animation: 'slide_from_bottom' }}
+          />
         </Stack>
-        
+
         {/* Render the self-contained bottom sheet components */}
         <HalfModalSheet
           halfModalRef={halfModalRef}
           snapPoints={halfModalSnapPoints}
           params={halfModalParams}
         />
-        
-        <SettingsSheet
-          settingsSheetRef={settingsSheetRef}
-          snapPoints={settingsSnapPoints}
-        />
-        
-        {/* Global sheets */}
-        <GlobalPrayerSheet />
-        <GlobalBookChapterSelectorSheet />
-        
+
+        <SettingsSheet settingsSheetRef={settingsSheetRef} snapPoints={settingsSnapPoints} />
+
+        <PrayerSheet prayerSheetRef={prayerSheetRef} snapPoints={prayerSnapPoints} />
+
         <DebugButton />
       </BottomSheetModalProvider>
     </GestureHandlerRootView>

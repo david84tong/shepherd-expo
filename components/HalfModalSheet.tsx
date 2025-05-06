@@ -1,10 +1,15 @@
+import BottomSheet, {
+  BottomSheetView,
+  BottomSheetBackdrop,
+  BottomSheetBackdropProps,
+} from '@gorhom/bottom-sheet';
+import * as Haptics from 'expo-haptics';
 import React, { useCallback, useRef, useImperativeHandle } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
-import BottomSheet, { BottomSheetView, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
-import { HalfModalType } from '../app/halfModal';
+
 import PrimaryButton from './PrimaryButton';
+import { HalfModalType } from '../app/halfModal';
 import { useUserStore } from '../app/stores/userStore';
-import * as Haptics from 'expo-haptics';
 
 export type HalfModalSheetRef = {
   expand: () => void;
@@ -23,11 +28,7 @@ interface HalfModalSheetProps {
   };
 }
 
-const HalfModalSheet: React.FC<HalfModalSheetProps> = ({
-  halfModalRef,
-  snapPoints,
-  params,
-}) => {
+const HalfModalSheet: React.FC<HalfModalSheetProps> = ({ halfModalRef, snapPoints, params }) => {
   // Add internal ref for the actual BottomSheet
   const bottomSheetRef = useRef<BottomSheet>(null);
 
@@ -45,12 +46,7 @@ const HalfModalSheet: React.FC<HalfModalSheetProps> = ({
   // Custom backdrop renderer
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.5}
-      />
+      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
     ),
     []
   );
@@ -60,7 +56,7 @@ const HalfModalSheet: React.FC<HalfModalSheetProps> = ({
     halfModalRef,
     () => ({
       expand: () => bottomSheetRef.current?.expand(),
-      close: () => bottomSheetRef.current?.close()
+      close: () => bottomSheetRef.current?.close(),
     }),
     []
   );
@@ -70,44 +66,43 @@ const HalfModalSheet: React.FC<HalfModalSheetProps> = ({
       ref={bottomSheetRef}
       index={-1}
       snapPoints={snapPoints}
-      enablePanDownToClose={true}
+      enablePanDownToClose
       onChange={handleSheetChange}
       backgroundStyle={styles.sheetBackground}
       handleIndicatorStyle={styles.handleIndicator}
-      backdropComponent={renderBackdrop}
-    >
+      backdropComponent={renderBackdrop}>
       <BottomSheetView style={styles.contentContainer}>
         {params.type === HalfModalType.HEART_PENALTY && (
           <>
-            <Image 
-              source={require('../assets/lambStatic/cryingLamb.png')} 
-              style={styles.icon} 
-              resizeMode="contain" 
+            <Image
+              source={require('../assets/lambStatic/cryingLamb.png')}
+              style={styles.icon}
+              resizeMode="contain"
             />
-            <Text style={styles.title}>{params.message || "Hearts Lost!"}</Text>
+            <Text style={styles.title}>{params.message || 'Hearts Lost!'}</Text>
             {params.penalty && params.daysMissed && (
               <View>
                 <Text style={styles.penaltyText}>
-                  ❤️ {useUserStore.getState().getLambName()} lost {params.penalty} hearts 
-                  after {params.daysMissed} days away. 
+                  ❤️ {useUserStore.getState().getLambName()} lost {params.penalty} hearts after{' '}
+                  {params.daysMissed} days away.
                 </Text>
               </View>
             )}
           </>
         )}
-        
+
         {params.type !== HalfModalType.HEART_PENALTY && (
           <>
-            <Image 
-              source={require('../assets/icons/heartIcon.png')} 
-              style={styles.icon} 
-              resizeMode="contain" 
+            <Image
+              source={require('../assets/icons/heartIcon.png')}
+              style={styles.icon}
+              resizeMode="contain"
             />
-            <Text style={styles.title}>{params.message || "Attention"}</Text>
-            <Text style={styles.penaltyText}>{params.subMessage || "Something happened."}</Text>
+            <Text style={styles.title}>{params.message || 'Attention'}</Text>
+            <Text style={styles.penaltyText}>{params.subMessage || 'Something happened.'}</Text>
           </>
         )}
-        
+
         {/* Close Button */}
         <PrimaryButton
           title="Let's bounce back"
@@ -121,33 +116,21 @@ const HalfModalSheet: React.FC<HalfModalSheetProps> = ({
 };
 
 const styles = StyleSheet.create({
-  sheetBackground: {
-    backgroundColor: '#FFF4D9', // surfaceCream 
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  handleIndicator: {
-    backgroundColor: '#DCB280',
-    width: 40,
-    height: 4,
-  },
   contentContainer: {
-    flex: 1,
     alignItems: 'center',
+    flex: 1,
     padding: 20,
     paddingBottom: 30,
   },
+  handleIndicator: {
+    backgroundColor: '#DCB280',
+    height: 4,
+    width: 40,
+  },
   icon: {
-    width: 240,
     height: 240,
     marginBottom: 16,
-  },
-  title: {
-    fontFamily: 'Nunito-Black',
-    fontSize: 32,
-    color: '#3C584A', // textPrimary
-    marginBottom: 16,
-    textAlign: 'center',
+    width: 240,
   },
   penaltyText: {
     fontFamily: 'DIN Next Rounded LT W01 Regular',
@@ -157,6 +140,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingHorizontal: 16,
   },
+  sheetBackground: {
+    backgroundColor: '#FFF4D9', // surfaceCream
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  title: {
+    fontFamily: 'Nunito-Black',
+    fontSize: 32,
+    color: '#3C584A', // textPrimary
+    marginBottom: 16,
+    textAlign: 'center',
+  },
 });
 
-export default HalfModalSheet; 
+export default HalfModalSheet;

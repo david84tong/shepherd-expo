@@ -1,5 +1,6 @@
 import auth from '@react-native-firebase/auth';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
+
 import { UserDoc } from '../app/models/User';
 
 /**
@@ -50,7 +51,7 @@ export const createUserDocument = async (id: string, userData: Partial<UserDoc>)
         mood: 'lamb-idle',
         hearts: 50,
         name: '',
-        skin: 'default'
+        skin: 'default',
       },
       streakCount: userData.streakCount || 0,
       lastActivityDate: userData.lastActivityDate || Timestamp.now(),
@@ -61,15 +62,12 @@ export const createUserDocument = async (id: string, userData: Partial<UserDoc>)
       gens: userData.gens || 10,
       completedReflections: userData.completedReflections || [],
       completedPrayers: userData.completedPrayers || [],
-      completedReadings: userData.completedReadings || []
+      completedReadings: userData.completedReadings || [],
     };
     const docToCreateCleaned = undefinedToNull(docToCreate);
 
     // Create the document with the specified ID
-    await firestore()
-      .collection('users')
-      .doc(id)
-      .set(docToCreateCleaned);
+    await firestore().collection('users').doc(id).set(docToCreateCleaned);
 
     console.log('Successfully created user document with ID:', id);
     return true;
@@ -96,7 +94,7 @@ export const updateField = async (fieldPath: string, value: any) => {
       .doc(userId)
       .update({
         [fieldPath]: value,
-        updatedAt: Timestamp.now()
+        updatedAt: Timestamp.now(),
       });
 
     return true;
@@ -123,14 +121,11 @@ export const syncUserDocument = async (userDoc: Partial<UserDoc>) => {
       id: userId,
       email: currentUser.email,
       updatedAt: Timestamp.now(),
-      createdAt: userDoc.createdAt || Timestamp.now()
+      createdAt: userDoc.createdAt || Timestamp.now(),
     };
     const docToSyncCleaned = undefinedToNull(docToSync);
 
-    await firestore()
-      .collection('users')
-      .doc(userId)
-      .set(docToSyncCleaned, { merge: true });
+    await firestore().collection('users').doc(userId).set(docToSyncCleaned, { merge: true });
 
     console.log('Successfully synced with Firestore');
     return true;
@@ -152,12 +147,9 @@ export const getUserDocument = async () => {
     // Use uid from Firebase auth for the document ID
     const userId = currentUser.uid;
 
-    const doc = await firestore()
-      .collection('users')
-      .doc(userId)
-      .get();
+    const doc = await firestore().collection('users').doc(userId).get();
 
-    return doc.exists ? doc.data() as UserDoc : null;
+    return doc.exists ? (doc.data() as UserDoc) : null;
   } catch (error) {
     console.error('Error getting user document:', error);
     return null;

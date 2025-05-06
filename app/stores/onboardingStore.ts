@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { create } from 'zustand';
+
 import { OnboardingResponses, ONBOARDING_STORAGE_KEY } from '../models/Onboarding';
 
 interface OnboardingState {
@@ -26,7 +27,7 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
         JSON.stringify({
           ...useOnboardingStore.getState().responses,
           [key]: value,
-          currentScreen: useOnboardingStore.getState().currentScreen
+          currentScreen: useOnboardingStore.getState().currentScreen,
         })
       );
     } catch (error) {
@@ -40,7 +41,7 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
         ONBOARDING_STORAGE_KEY,
         JSON.stringify({
           ...useOnboardingStore.getState().responses,
-          currentScreen: screen
+          currentScreen: screen,
         })
       );
     } catch (error) {

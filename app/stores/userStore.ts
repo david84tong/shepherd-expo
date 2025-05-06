@@ -1,11 +1,15 @@
-import { create } from 'zustand';
-import { createJSONStorage, persist, StateStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { UserDoc, Lamb, Prayer, Reflection, Reading, UserStore } from '../models/User';
 import auth from '@react-native-firebase/auth';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
-import { updateField, syncUserDocument, createUserDocument, getUserDocument } from '../../utils/firestore';
-import { PathOption } from '../onboarding/8';
+import { create } from 'zustand';
+import { createJSONStorage, persist, StateStorage } from 'zustand/middleware';
+
+import {
+  updateField,
+  syncUserDocument,
+  createUserDocument,
+} from '../../utils/firestore';
+import { UserDoc, Lamb, Prayer, Reflection, Reading, UserStore } from '../models/User';
 
 // Helper function to check if user is authenticated
 const isAuthenticated = () => {
@@ -40,8 +44,8 @@ const initialLamb: Lamb = {
   xp: 0,
   mood: 'lamb-idle',
   hearts: 50,
-  name: '',  // Start with empty name
-  skin: 'default'
+  name: '', // Start with empty name
+  skin: 'default',
 };
 
 // Initial user state (only used if no persisted state exists)
@@ -68,7 +72,7 @@ const initialState: Partial<UserDoc> = {
   gens: 10,
   completedReflections: [] as unknown as [Reflection],
   completedPrayers: [] as unknown as [Prayer],
-  completedReadings: [] as unknown as [Reading]
+  completedReadings: [] as unknown as [Reading],
 };
 
 // Add this utility at the top (after imports)
@@ -91,8 +95,8 @@ function undefinedToNull(obj: any): any {
 export const useUserStore = create<UserStore>()(
   persist(
     (set, get) => ({
-      ...initialState as UserDoc,
-      
+      ...(initialState as UserDoc),
+
       // Get complete user object
       getUser: () => {
         const state = get();
@@ -131,23 +135,23 @@ export const useUserStore = create<UserStore>()(
         const newState = {
           ...initialState,
           ...userData,
-          id,  // Just set id, no need for uid
+          id, // Just set id, no need for uid
           createdAt: Timestamp.now(),
-          updatedAt: Timestamp.now()
+          updatedAt: Timestamp.now(),
         } as UserDoc;
-        
+
         set(newState);
-        
+
         // Convert undefined to null before sending to Firestore
         const cleanedUserData = undefinedToNull({
           ...userData,
-          id  // Ensure id is explicitly set in Firestore doc
+          id, // Ensure id is explicitly set in Firestore doc
         });
         const success = await createUserDocument(id, cleanedUserData);
         if (!success) {
           console.error('Failed to create user document in Firestore');
         }
-        
+
         return success;
       },
 
@@ -156,24 +160,24 @@ export const useUserStore = create<UserStore>()(
         set((state) => {
           const newState = {
             ...state,
-            ...user
+            ...user,
           };
-          
+
           // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
             syncUserDocument(newState);
           }
-          
+
           return newState;
         });
       },
-      
+
       // Reset user store to initial state
       resetUserStore: () => {
         console.log('Resetting user store to initial state');
         set(initialState as UserDoc);
       },
-      
+
       // Getters for UserDoc
       getSpiritualGoal: () => get().spiritualGoal,
       getExperienceLevel: () => get().experienceLevel,
@@ -200,8 +204,6 @@ export const useUserStore = create<UserStore>()(
       getCompletedReflections: () => get().completedReflections,
       getCompletedPrayers: () => get().completedPrayers,
       getCompletedReadings: () => get().completedReadings,
-      getNotificationTime: () => get().notificationTime,
-      
       // Getters for Lamb
       getLambLevel: () => get().lamb.level,
       getLambXp: () => get().lamb.xp,
@@ -209,7 +211,7 @@ export const useUserStore = create<UserStore>()(
       getLambHearts: () => get().lamb.hearts,
       getLambName: () => get().lamb.name,
       getLambSkin: () => get().lamb.skin,
-      
+
       // Setters for UserDoc
       setSpiritualGoal: (spiritualGoal) => set({ spiritualGoal }),
       setExperienceLevel: (experienceLevel) => set({ experienceLevel }),
@@ -222,15 +224,15 @@ export const useUserStore = create<UserStore>()(
         set((state) => {
           const newState = {
             ...state,
-            streakCount
+            streakCount,
           };
-          
+
           // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
             console.log('Updating streakCount in Firestore:', streakCount);
             updateField('streakCount', streakCount);
           }
-          
+
           return newState;
         });
       },
@@ -240,7 +242,8 @@ export const useUserStore = create<UserStore>()(
       setLastReflectionDate: (lastReflectionDate) => set({ lastReflectionDate }),
       setLastReadingPenaltyDate: (lastReadingPenaltyDate) => set({ lastReadingPenaltyDate }),
       setLastPrayerPenaltyDate: (lastPrayerPenaltyDate) => set({ lastPrayerPenaltyDate }),
-      setLastReflectionPenaltyDate: (lastReflectionPenaltyDate) => set({ lastReflectionPenaltyDate }),
+      setLastReflectionPenaltyDate: (lastReflectionPenaltyDate) =>
+        set({ lastReflectionPenaltyDate }),
       setVersesReadTotal: (versesReadTotal) => set({ versesReadTotal }),
       setChaptersReadTotal: (chaptersReadTotal) => set({ chaptersReadTotal }),
       setBibleVersion: (bibleVersion) => set({ bibleVersion }),
@@ -253,28 +256,40 @@ export const useUserStore = create<UserStore>()(
           updateField('gens', gens);
         }
       },
+      setNotificationTime: async (time: string) => {
+        set({ notificationTime: time });
+    
+        const user = get().getUser?.();
+        if (user?.id) {
+          try {
+            await firestore()
+              .collection('users')
+              .doc(user.id)
+              .update({ notificationTime: time });
+          } catch (error) {
+            console.error('Error updating notificationTime in Firestore:', error);
+          }
+        }
+      },
       setCompletedReflections: (completedReflections) => set({ completedReflections }),
       setCompletedPrayers: (completedPrayers) => set({ completedPrayers }),
       setCompletedReadings: (completedReadings) => set({ completedReadings }),
-      setNotificationTime: (notificationTime) => {
-        set({ notificationTime });
-        if (isAuthenticated()) {
-          updateField('notificationTime', notificationTime);
-        }
-      },
-      
       // Add single items to the completed arrays
-      addCompletedReflection: (reflection) => set(state => ({
-        completedReflections: [...state.completedReflections, reflection] as unknown as [Reflection]
-      })),
-      addCompletedPrayer: (prayer) => set(state => ({
-        completedPrayers: [...state.completedPrayers, prayer] as unknown as [Prayer]
-      })),
+      addCompletedReflection: (reflection) =>
+        set((state) => ({
+          completedReflections: [...state.completedReflections, reflection] as unknown as [
+            Reflection,
+          ],
+        })),
+      addCompletedPrayer: (prayer) =>
+        set((state) => ({
+          completedPrayers: [...state.completedPrayers, prayer] as unknown as [Prayer],
+        })),
       addCompletedReading: (reading) => {
         set((state) => {
           const newState = {
             ...state,
-            completedReadings: [...state.completedReadings, reading] as unknown as [Reading]
+            completedReadings: [...state.completedReadings, reading] as unknown as [Reading],
           };
           // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
@@ -283,31 +298,31 @@ export const useUserStore = create<UserStore>()(
           return newState;
         });
       },
-      
-      
+
       // Setters for Lamb
-      setLambLevel: (level) => set(state => ({
-        lamb: { ...state.lamb, level }
-      })),
+      setLambLevel: (level) =>
+        set((state) => ({
+          lamb: { ...state.lamb, level },
+        })),
       setLambXp: (xp) => {
-        set(state => ({
-          lamb: { ...state.lamb, xp }
+        set((state) => ({
+          lamb: { ...state.lamb, xp },
         }));
         if (isAuthenticated()) {
           updateField('lamb.xp', xp);
         }
       },
       setLambMood: (mood) => {
-        set(state => ({
-          lamb: { ...state.lamb, mood }
+        set((state) => ({
+          lamb: { ...state.lamb, mood },
         }));
         if (isAuthenticated()) {
           updateField('lamb.mood', mood);
         }
       },
       setLambHearts: (hearts) => {
-        set(state => ({
-          lamb: { ...state.lamb, hearts }
+        set((state) => ({
+          lamb: { ...state.lamb, hearts },
         }));
         if (isAuthenticated()) {
           updateField('lamb.hearts', hearts);
@@ -318,43 +333,44 @@ export const useUserStore = create<UserStore>()(
         set((state) => {
           const newState = {
             ...state,
-            lamb: { ...state.lamb, name }
+            lamb: { ...state.lamb, name },
           };
-          
+
           console.log('New state after setting lamb name:', newState);
-          
+
           // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
             updateField('lamb.name', name);
           }
-          
+
           return newState;
         });
       },
-      setLambSkin: (skin) => set(state => ({
-        lamb: { ...state.lamb, skin }
-      })),
-      
+      setLambSkin: (skin) =>
+        set((state) => ({
+          lamb: { ...state.lamb, skin },
+        })),
+
       // Utility functions
       incrementStreak: () => {
         set((state) => {
           const newStreakCount = state.streakCount + 1;
           const newState = {
             ...state,
-            streakCount: newStreakCount
+            streakCount: newStreakCount,
           };
-          
+
           // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
             // updateField('streakCount', newStreakCount);
           }
-          
+
           return newState;
         });
       },
       addXp: (amount) => {
-        set(state => ({ 
-          lamb: { ...state.lamb, xp: state.lamb.xp + amount } 
+        set((state) => ({
+          lamb: { ...state.lamb, xp: state.lamb.xp + amount },
         }));
         if (isAuthenticated()) {
           updateField('lamb.xp', get().lamb.xp);
@@ -403,14 +419,14 @@ export const useUserStore = create<UserStore>()(
         // Pass only the data object to syncUserDocument
         return await syncUserDocument(dataToSync);
       },
-      
+
       // Fetch user data from Firestore and update the store
       fetchFromFirestore: async () => {
         if (!isAuthenticated()) {
           console.log('User not authenticated, skipping Firestore fetch');
           return false;
         }
-        
+
         try {
           console.log('Fetching latest user data from Firestore');
           const currentUser = auth().currentUser;
@@ -418,13 +434,13 @@ export const useUserStore = create<UserStore>()(
             console.log('No valid user ID available, skipping Firestore fetch');
             return false;
           }
-          
+
           // First try to get the document directly
           const userDoc = await firestore().collection('users').doc(currentUser.uid).get();
-          
+
           if (!userDoc.exists) {
             console.log('User document does not exist in Firestore for ID:', currentUser.uid);
-            
+
             // If document doesn't exist, try to create it with local data
             const currentState = get();
             if (currentState && currentState.id) {
@@ -434,25 +450,25 @@ export const useUserStore = create<UserStore>()(
             }
             return false;
           }
-          
+
           const userData = userDoc.data() as UserDoc;
-          
+
           if (userData) {
             console.log('Got user data from Firestore, updating local store');
-            
+
             // Ensure the data has an id field (matching Firebase uid)
             const updatedUserData = {
               ...userData,
-              id: currentUser.uid
+              id: currentUser.uid,
             };
-            
+
             set((state) => ({
               ...state,
-              ...updatedUserData
+              ...updatedUserData,
             }));
             return true;
           }
-          
+
           return false;
         } catch (error) {
           console.error('Error fetching user data from Firestore:', error);
@@ -490,7 +506,7 @@ export const useUserStore = create<UserStore>()(
           gens: state.gens,
           completedReflections: state.completedReflections,
           completedPrayers: state.completedPrayers,
-          completedReadings: state.completedReadings
+          completedReadings: state.completedReadings,
         };
         console.log('Persisting state:', persistedState);
         return persistedState;

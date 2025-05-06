@@ -1,17 +1,26 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, Animated, ImageBackground, Easing, Pressable, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useOnboardingStore } from '../stores/onboardingStore';
-import PrimaryButton from '../../components/PrimaryButton';
-import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 import { useAssets } from 'expo-asset';
+import * as Haptics from 'expo-haptics';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  Animated,
+  ImageBackground,
+  Easing,
+  Pressable,
+  ActivityIndicator,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
 
-const FIRST_WELCOME_TEXT = "Welcome to Shepherd";
-const SECOND_WELCOME_TEXT = "You found a lost lamb...";
-const SECOND_STAGE_PROMPT = "Tap on the lost lamb to wake it up";
+import PrimaryButton from '../../components/PrimaryButton';
+import { useOnboardingStore } from '../stores/onboardingStore';
+
+const FIRST_WELCOME_TEXT = 'Welcome to Shepherd';
+const SECOND_WELCOME_TEXT = 'You found a lost lamb...';
+const SECOND_STAGE_PROMPT = 'Tap on the lost lamb to wake it up';
 const TYPING_SPEED = 75; // Speed for all typing effects
 const ZOOM_DURATION = 4000; // 5 seconds for a very slow zoom
 const TRANSITION_DURATION = 350; // Faster transition animation duration
@@ -33,7 +42,7 @@ export default function OnboardingWelcomeScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
   const insets = useSafeAreaInsets();
-  
+
   // State for UI and flow
   const [displayText, setDisplayText] = useState('');
   const [secondStageActive, setSecondStageActive] = useState(false);
@@ -63,7 +72,7 @@ export default function OnboardingWelcomeScreen() {
     }).start(() => {
       setDisplayText(''); // Clear text
       setTextPhase(2); // Move to second text phase
-      
+
       // Fade in text for second phase
       setTimeout(() => {
         Animated.timing(textOpacityAnim, {
@@ -86,15 +95,15 @@ export default function OnboardingWelcomeScreen() {
       setDisplayText(''); // Clear text
       setTextPhase(3); // Move to tap prompt phase
     });
-    
+
     // Fade in gradient
     Animated.timing(gradientOpacityAnim, {
       toValue: 1,
       duration: 2000,
       easing: Easing.bezier(0.4, 0, 0.2, 1),
-      useNativeDriver: false
+      useNativeDriver: false,
     }).start();
-    
+
     // Start zoom animation
     Animated.parallel([
       Animated.timing(scaleAnim, {
@@ -108,7 +117,7 @@ export default function OnboardingWelcomeScreen() {
         duration: ZOOM_DURATION,
         easing: Easing.bezier(0.1, 0, 0, 1),
         useNativeDriver: true,
-      })
+      }),
     ]).start(() => {
       // Animation complete: Activate the second stage
       setSecondStageActive(true);
@@ -118,7 +127,7 @@ export default function OnboardingWelcomeScreen() {
   // Typewriter effect based on current text phase
   useEffect(() => {
     let textToType = '';
-    
+
     // Determine which text to type based on phase
     if (textPhase === 1) {
       textToType = FIRST_WELCOME_TEXT;
@@ -129,10 +138,10 @@ export default function OnboardingWelcomeScreen() {
     } else {
       return; // No text to type
     }
-    
+
     let currentIndex = 0;
     let typingInterval: NodeJS.Timeout;
-    
+
     // If we're in tap prompt phase, add delay before typing
     if (textPhase === 3) {
       const typingTimeout = setTimeout(() => {
@@ -140,26 +149,26 @@ export default function OnboardingWelcomeScreen() {
         Animated.timing(textOpacityAnim, {
           toValue: 1,
           duration: 300,
-          useNativeDriver: true
+          useNativeDriver: true,
         }).start();
-        
+
         // Start typing after fade in
         typingInterval = setInterval(() => {
           if (currentIndex <= textToType.length) {
             setDisplayText(textToType.slice(0, currentIndex));
-            
+
             // Trigger haptic feedback for each new character
             if (currentIndex > 0 && currentIndex <= textToType.length) {
               triggerTypeHaptic();
             }
-            
+
             currentIndex++;
           } else {
             clearInterval(typingInterval);
           }
         }, TYPING_SPEED);
       }, 500);
-      
+
       return () => {
         clearTimeout(typingTimeout);
         clearInterval(typingInterval);
@@ -169,23 +178,23 @@ export default function OnboardingWelcomeScreen() {
       typingInterval = setInterval(() => {
         if (currentIndex <= textToType.length) {
           setDisplayText(textToType.slice(0, currentIndex));
-          
+
           // Trigger haptic feedback for each new character
           if (currentIndex > 0 && currentIndex <= textToType.length) {
             triggerTypeHaptic();
           }
-          
+
           currentIndex++;
         } else {
           clearInterval(typingInterval);
-          
+
           // After first text finishes, automatically transition to second text after a delay
           if (textPhase === 1) {
             // Wait 1.5 seconds after first text completes before showing second text
             const transitionTimer = setTimeout(() => {
               startSecondWelcomeText();
             }, 1500);
-            
+
             return () => clearTimeout(transitionTimer);
           } else if (textPhase === 2) {
             // After second text finishes, show the button
@@ -197,7 +206,7 @@ export default function OnboardingWelcomeScreen() {
           }
         }
       }, TYPING_SPEED);
-      
+
       return () => clearInterval(typingInterval);
     }
   }, [textPhase, secondStageActive]);
@@ -210,12 +219,12 @@ export default function OnboardingWelcomeScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {
       console.log('Haptics not available');
     });
-    
+
     if (!secondStageActive || isLambTapped) return;
     riveRef.current?.fireState('State Machine 1', 'tap');
     setIsAnimating(false);
     setIsLambTapped(true);
-    
+
     // Make button fully visible and active after tap
     Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
   };
@@ -223,7 +232,7 @@ export default function OnboardingWelcomeScreen() {
   // Handle the transition to the next screen with animation
   const handleTransitionToNextScreen = () => {
     setIsTransitioning(true);
-    
+
     // Create a smoother and faster fade out effect
     Animated.timing(screenFadeAnim, {
       toValue: 0,
@@ -234,11 +243,11 @@ export default function OnboardingWelcomeScreen() {
       // Navigate after animation completes
       router.push({
         pathname: '/onboarding/2',
-        params: { 
+        params: {
           animated: true,
-          animation: 'fade', 
-          immediate: true
-        }
+          animation: 'fade',
+          immediate: false,
+        },
       } as any);
     });
   };
@@ -246,7 +255,7 @@ export default function OnboardingWelcomeScreen() {
   // Handle the main button press
   const handleButtonPress = () => {
     setIsAnimating(true);
-    
+
     if (textPhase === 2) {
       // After seeing both welcome texts, start zoom animation
       startZoomAndTransition();
@@ -262,7 +271,13 @@ export default function OnboardingWelcomeScreen() {
   // Show loading indicator while assets are loading
   if (!assets) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#FFF4D9' }}>
+      <View
+        style={{
+          flex: 1,
+          justifyContent: 'center',
+          alignItems: 'center',
+          backgroundColor: '#FFF4D9',
+        }}>
         <ActivityIndicator size="large" color="#3C584A" />
       </View>
     );
@@ -271,38 +286,32 @@ export default function OnboardingWelcomeScreen() {
   return (
     <Animated.View style={{ flex: 1, opacity: screenFadeAnim, backgroundColor: '#FFF4D9' }}>
       {/* Header Text (Single element) */}
-      <Animated.View 
-        className="px-6 absolute top-0 left-0 right-0 z-10 mx-8" 
-        style={{ 
+      <Animated.View
+        className="px-6 absolute top-0 left-0 right-0 z-10 mx-8"
+        style={{
           paddingTop: insets.top,
-          opacity: textOpacityAnim
-        }}
-      > 
-        <Text className={`${textPhase === 3 ? 'font-nunito-bold text-h1' : 'font-feather text-title'} text-center text-white mt-12`}>
+          opacity: textOpacityAnim,
+        }}>
+        <Text
+          className={`${textPhase === 3 ? 'font-nunito-bold text-h1' : 'font-feather text-title'} text-center text-white mt-12`}>
           {displayText}
         </Text>
       </Animated.View>
 
       {/* Main content area that zooms */}
-      <Animated.View 
+      <Animated.View
         style={{
           flex: 1,
-          transform: [
-            { scale: scaleAnim },
-            { translateY: translateYAnim }
-          ]
-        }}
-      >
-        <Pressable 
+          transform: [{ scale: scaleAnim }, { translateY: translateYAnim }],
+        }}>
+        <Pressable
           onPress={handleLambTap}
           disabled={!secondStageActive || isLambTapped || isTransitioning}
-          className="flex-1"
-        >
-          <ImageBackground 
+          className="flex-1">
+          <ImageBackground
             source={require('../../assets/backgrounds/oldBarn.png')}
             className="absolute top-0 left-0 right-0 bottom-0"
-            resizeMode="cover"
-          >
+            resizeMode="cover">
             {/* Base gradient (stage 1) */}
             <LinearGradient
               colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.4)', 'transparent']}
@@ -310,12 +319,15 @@ export default function OnboardingWelcomeScreen() {
               style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
             />
             {/* Animated overlay gradient (stage 2) */}
-            <Animated.View 
+            <Animated.View
               style={{
                 opacity: gradientOpacityAnim,
-                position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 // Added positioning
-              }}
-            >
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                top: 0,
+                bottom: 0, // Added positioning
+              }}>
               <LinearGradient
                 colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.4)', 'transparent']}
                 locations={[0, 0.3, 1]}
@@ -323,7 +335,7 @@ export default function OnboardingWelcomeScreen() {
               />
             </Animated.View>
           </ImageBackground>
-          
+
           {/* Inner container */}
           <View className="flex-1">
             {/* Lamb Animation */}
@@ -339,7 +351,7 @@ export default function OnboardingWelcomeScreen() {
                   style={{ width: '100%', height: '100%' }}
                 />
                 {/* Transparent overlay for tap detection */}
-                <Pressable 
+                <Pressable
                   onPress={handleLambTap}
                   disabled={!secondStageActive || isLambTapped || isTransitioning}
                   className="absolute top-0 left-0 right-0 bottom-0 bg-black/[0.01] h-full w-full"
@@ -351,7 +363,7 @@ export default function OnboardingWelcomeScreen() {
       </Animated.View>
 
       {/* Fixed Button at Bottom */}
-      <Animated.View 
+      <Animated.View
         style={{
           position: 'absolute',
           left: 24,
@@ -359,16 +371,17 @@ export default function OnboardingWelcomeScreen() {
           bottom: Math.max(insets.bottom + 20, 32),
           opacity: fadeAnim,
           // Keep button translateY animation simple
-          transform: [{
-            translateY: fadeAnim.interpolate({
-              inputRange: [0, 0.5, 1],
-              outputRange: [20, 0, 0], // Slide up initially, stay put after
-            })
-          }]
-        }}
-      >
+          transform: [
+            {
+              translateY: fadeAnim.interpolate({
+                inputRange: [0, 0.5, 1],
+                outputRange: [20, 0, 0], // Slide up initially, stay put after
+              }),
+            },
+          ],
+        }}>
         <PrimaryButton
-          title={!isLambTapped ? "Begin Journey" : "Claim Lost Lamb"}
+          title={textPhase === 2 ? 'Begin Journey' : 'Claim Lost Lamb'}
           onPress={handleButtonPress}
           // Only disable in specific conditions
           disabled={(secondStageActive && !isLambTapped) || isAnimating || isTransitioning}

@@ -1,15 +1,16 @@
-import { View, Text, ScrollView, TouchableOpacity, Image, SafeAreaView } from 'react-native';
-import { useUserStore } from '../stores/userStore';
+import React from 'react';
 import dayjs from 'dayjs';
+import { View, Text, ScrollView, TouchableOpacity, Image, SafeAreaView } from 'react-native';
+
 import { Reading, Prayer, Reflection } from '../models/User';
-import { Feather } from '@expo/vector-icons/';
+import { useUserStore } from '../stores/userStore';
 
 const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const COLORS: Record<number, string> = {
-  3: 'bg-accentGold', // yellow instead of green 
+  3: 'bg-accentGold', // yellow instead of green
   2: 'bg-accentGold/80', // lighter yellow
   1: 'bg-accentGold/60', // even lighter yellow
-  0: 'bg-pillBorder' // gray (using pillBorder color from config)
+  0: 'bg-pillBorder', // gray (using pillBorder color from config)
 };
 
 type DayMap = { [date: string]: { reading: boolean; prayer: boolean; reflection: boolean } };
@@ -29,36 +30,36 @@ function formatRelativeTime(timestamp: any): string {
     const date = toDateSafe(timestamp);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
-    
+
     // Less than a minute
     if (diffMs < 60000) {
       return 'just now';
     }
-    
+
     // Minutes
     const diffMins = Math.floor(diffMs / 60000);
     if (diffMins < 60) {
       return `${diffMins}m ago`;
     }
-    
+
     // Hours
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24) {
       return `${diffHours}h ago`;
     }
-    
+
     // Days
     const diffDays = Math.floor(diffHours / 24);
     if (diffDays < 30) {
       return `${diffDays}d ago`;
     }
-    
+
     // Months
     const diffMonths = Math.floor(diffDays / 30);
     if (diffMonths < 12) {
       return `${diffMonths}mo ago`;
     }
-    
+
     // Years
     const diffYears = Math.floor(diffMonths / 12);
     return `${diffYears}y ago`;
@@ -99,7 +100,7 @@ function getWeekData(
     const d = today.subtract(i, 'day').format('YYYY-MM-DD');
     days.push({
       date: d,
-      ...(map[d] || { reading: false, prayer: false, reflection: false })
+      ...(map[d] || { reading: false, prayer: false, reflection: false }),
     });
   }
   return days;
@@ -151,7 +152,7 @@ function getMonthGrid(
       const d = dayjs(new Date(year, month, dayCounter)).format('YYYY-MM-DD');
       week.push({
         date: d,
-        ...(map[d] || { reading: false, prayer: false, reflection: false })
+        ...(map[d] || { reading: false, prayer: false, reflection: false }),
       });
       dayCounter++;
     }
@@ -166,7 +167,7 @@ function getMonthGrid(
         const d = dayjs(new Date(year, month, dayCounter)).format('YYYY-MM-DD');
         week.push({
           date: d,
-          ...(map[d] || { reading: false, prayer: false, reflection: false })
+          ...(map[d] || { reading: false, prayer: false, reflection: false }),
         });
         dayCounter++;
       } else {
@@ -178,15 +179,15 @@ function getMonthGrid(
   return grid;
 }
 
-const journalIcon = require('../../assets/icons/journalIcon.png');
 const breadIcon = require('../../assets/icons/breadIcon.png');
+const journalIcon = require('../../assets/icons/journalIcon.png');
 const dropIcon = require('../../assets/icons/waterIcon.png');
 
 export default function StatsScreen() {
-  const readings = useUserStore(s => s.getCompletedReadings());
-  const prayers = useUserStore(s => s.getCompletedPrayers());
-  const reflections = useUserStore(s => s.getCompletedReflections());
-  
+  const readings = useUserStore((s) => s.getCompletedReadings());
+  const prayers = useUserStore((s) => s.getCompletedPrayers());
+  const reflections = useUserStore((s) => s.getCompletedReflections());
+
   // Total activity counts
   const totalBibleReadings = readings.length;
   const totalPrayerSessions = prayers.length;
@@ -200,7 +201,7 @@ export default function StatsScreen() {
 
   // Recent reflections (sorted desc)
   const recentReflections = [...reflections]
-    .sort((a, b) => (toDateSafe(b.date).getTime()) - (toDateSafe(a.date).getTime()))
+    .sort((a, b) => toDateSafe(b.date).getTime() - toDateSafe(a.date).getTime())
     .slice(0, 3);
 
   return (
@@ -210,7 +211,7 @@ export default function StatsScreen() {
         <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
           <Text className="font-feather text-h2 text-textPrimary">Stats</Text>
         </View>
-        
+
         {/* Heatmap Card */}
         <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
           <View className="flex-row justify-between items-center mb-4">
@@ -219,30 +220,28 @@ export default function StatsScreen() {
               <Text className="font-feather text-accentGold">{now.format('MMMM YYYY')}</Text>
             </TouchableOpacity>
           </View>
-          
+
           {/* Day headers with proper spacing */}
           <View className="flex-row justify-between mb-2">
-            {DAYS.map(d => (
-              <Text key={d} className="text-caption font-din text-description w-8 text-center">{d}</Text>
+            {DAYS.map((d) => (
+              <Text key={d} className="text-caption font-din text-description w-8 text-center">
+                {d}
+              </Text>
             ))}
           </View>
-          
+
           {/* Month grid */}
           {monthGrid.map((week, weekIdx) => (
             <View key={weekIdx} className="flex-row justify-between mt-2">
               {week.map((day, dayIdx) => {
-                if (!day) return <View key={dayIdx} className="w-8 h-8 rounded-md bg-transparent" />;
+                if (!day)
+                  return <View key={dayIdx} className="w-8 h-8 rounded-md bg-transparent" />;
                 const count = [day.reading, day.prayer, day.reflection].filter(Boolean).length;
-                return (
-                  <View
-                    key={day.date}
-                    className={`w-8 h-8 rounded-md ${COLORS[count]}`}
-                  />
-                );
+                return <View key={day.date} className={`w-8 h-8 rounded-md ${COLORS[count]}`} />;
               })}
             </View>
           ))}
-          
+
           <View className="flex-row justify-end mt-4">
             <View className="flex-row items-center mr-3">
               <View className="w-3 h-3 rounded-sm bg-pillBorder mr-1" />
@@ -262,13 +261,11 @@ export default function StatsScreen() {
             </View>
           </View>
         </View>
-        
-   
-        
+
         {/* Activity Summary Card - Moved to bottom */}
         <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-cardx mt-8">
           <Text className="font-feather text-heading text-textPrimary mb-4">Activity Summary</Text>
-          
+
           <View className="flex-row justify-between">
             <View className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1">
               <Text className="font-feather text-h2 text-textPrimary">{totalBibleReadings}</Text>
@@ -285,23 +282,27 @@ export default function StatsScreen() {
           </View>
         </View>
 
-             {/* Recent reflections */}
-             <View className="mx-6 mt-8 bg-white rounded-[20px] p-6 shadow-card  mb-24">
-          <Text className="font-feather text-heading text-textPrimary mb-4">Recent Reflections</Text>
-        
+        {/* Recent reflections */}
+        <View className="mx-6 mt-8 bg-white rounded-[20px] p-6 shadow-card  mb-24">
+          <Text className="font-feather text-heading text-textPrimary mb-4">
+            Recent Reflections
+          </Text>
+
           {recentReflections.length > 0 ? (
             <View className="space-y-4">
               {recentReflections.map((rf, i) => (
-                <View key={i} className="bg-surfaceCream rounded-xl p-4"> 
-                  <View className="flex-row items-center"> 
+                <View key={i} className="bg-surfaceCream rounded-xl p-4">
+                  <View className="flex-row items-center">
                     {/* Icon Column */}
                     <View className="w-10 h-10 rounded-full bg-surfaceCream items-center justify-center mr-4">
                       <Image source={journalIcon} className="w-5 h-5" />
                     </View>
-                    
+
                     {/* Content Column */}
                     <View className="flex-1 flex-row justify-between items-center">
-                      <Text className="font-feather text-body text-textPrimary flex-1" numberOfLines={1}>
+                      <Text
+                        className="font-feather text-body text-textPrimary flex-1"
+                        numberOfLines={1}>
                         Quiet Time
                       </Text>
                       <Text className="font-din text-description text-sm ml-2">
@@ -313,7 +314,7 @@ export default function StatsScreen() {
               ))}
             </View>
           ) : (
-            <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center"> 
+            <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center">
               <Image source={journalIcon} className="w-16 h-16 opacity-50 mb-3" />
               <Text className="font-feather text-heading text-textPrimary/70 text-center">
                 No recent reflections
@@ -327,4 +328,4 @@ export default function StatsScreen() {
       </ScrollView>
     </SafeAreaView>
   );
-} 
+}

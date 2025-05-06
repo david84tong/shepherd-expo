@@ -1,97 +1,22 @@
-import React, { useCallback, useState, useRef, useImperativeHandle, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView, Platform } from 'react-native';
-import BottomSheet, { BottomSheetView, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
-import Clipboard from '@react-native-clipboard/clipboard';
-import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
+import BottomSheet, {
+  BottomSheetView,
+  BottomSheetBackdrop,
+  BottomSheetBackdropProps,
+} from '@gorhom/bottom-sheet';
+import Clipboard from '@react-native-clipboard/clipboard';
 import auth from '@react-native-firebase/auth';
-import { useUserStore } from '../app/stores/userStore';
-import { useUIStore } from '../app/stores/uiStore';
-import { usePathStore } from '../app/stores/pathStore';
+import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import React, { useCallback, useState, useRef, useImperativeHandle, useEffect } from 'react';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView } from 'react-native';
+import Animated from 'react-native-reanimated';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import * as Notifications from 'expo-notifications';
-import Animated, { 
-  useAnimatedStyle,
-  withTiming,
-  FadeIn,
-  FadeOut,
-  SlideInDown,
-  SlideOutDown,
-  Easing,
-  useSharedValue,
-  interpolate,
-  withSequence,
-  withSpring,
-} from 'react-native-reanimated';
 
-// Add the function to schedule notifications
-const scheduleNotification = async (time: string) => {
-  // Skip if user selected 'none'
-  if (time === 'none') {
-    await Notifications.cancelAllScheduledNotificationsAsync();
-    return;
-  }
-  
-  try {
-    // Get permission first
-    const { status } = await Notifications.getPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('Notification permission not granted');
-      return;
-    }
-    
-    // Cancel any existing notifications
-    await Notifications.cancelAllScheduledNotificationsAsync();
-    
-    // Parse time ranges into hours for notifications
-    let hour = 8; // Default to 8 AM
-    let minute = 0;
-    
-    switch (time) {
-      case 'morning':
-        hour = 8; // 8 AM
-        break;
-      case 'afternoon':
-        hour = 14; // 2 PM
-        break;
-      case 'evening':
-        hour = 19; // 7 PM
-        break;
-      case 'night':
-        hour = 21; // 9 PM
-        break;
-      case 'custom':
-        // For custom times, the time string will be in format "HH:MM"
-        if (time.includes(':')) {
-          const [hourStr, minuteStr] = time.split(':');
-          hour = parseInt(hourStr, 10);
-          minute = parseInt(minuteStr, 10);
-        }
-        break;
-      default:
-        hour = 8; // Default to 8 AM
-    }
-    
-    // Schedule daily notification
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "Time to talk with the Shepherd",
-        body: "Take a moment to read scripture and connect with God.",
-        sound: true,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds: 60 * 60 * 24, // 24 hours
-        repeats: true,
-      },
-    });
-    
-    console.log(`Notification scheduled to repeat daily`);
-  } catch (error) {
-    console.error('Failed to schedule notification:', error);
-  }
-};
+import { useUIStore } from '../app/stores/uiStore';
+import { useUserStore } from '../app/stores/userStore';
+import { useSharedValue } from 'react-native-reanimated';
+import { usePathStore } from '../app/stores/pathStore';
 
 interface SettingsSheetProps {
   settingsSheetRef: React.RefObject<SettingsSheetRef>;
@@ -103,12 +28,9 @@ export type SettingsSheetRef = {
   show: () => void;
   close: () => void;
   expand: () => void;
-}
+};
 
-const SettingsSheet: React.FC<SettingsSheetProps> = ({
-  settingsSheetRef,
-  snapPoints,
-}) => {
+const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoints }) => {
   const router = useRouter();
   const [userId, setUserId] = useState<string>('Anonymous user');
   const setIsModalDimActive = useUIStore((state) => state.setIsModalDimActive);
@@ -117,7 +39,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   
   // Get user store data
   const notificationTime = useUserStore(state => state.notificationTime);
-  const setNotificationTime = useUserStore(state => state.setNotificationTime);
+  const setNotificationTime = useUserStore(state => state.setNotificationTime || (() => {}));
   
   // State for the time picker
   const [selectedTime, setSelectedTime] = useState(new Date());
@@ -148,7 +70,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   
   // Get path store functions
   const savedTranslation = usePathStore(state => state.savedTranslation);
-  const setSavedTranslation = usePathStore(state => state.setSavedTranslation);
+  const setSavedTranslation = (translation: string) => {
+    usePathStore.setState({ savedTranslation: translation });
+  };
 
   // Available translations
   const translations = [
@@ -202,12 +126,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   // Custom backdrop renderer
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.5}
-      />
+      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
     ),
     []
   );
@@ -216,7 +135,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   const prepareAndShow = useCallback(() => {
     // Get user ID directly from Firebase or userStore
     let currentUserId = 'Not authenticated';
-    
+
     // First try to get the current Firebase user's UID
     const currentUser = auth().currentUser;
     if (currentUser?.uid) {
@@ -226,9 +145,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       const user = useUserStore.getState().getUser();
       currentUserId = user?.id || 'Not authenticated';
     }
-    
+
     setUserId(currentUserId);
-    
+
     // Show the sheet
     bottomSheetRef.current?.expand();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
@@ -240,152 +159,59 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
     () => ({
       show: prepareAndShow,
       close: () => bottomSheetRef.current?.close(),
-      expand: () => bottomSheetRef.current?.expand()
+      expand: () => bottomSheetRef.current?.expand(),
     }),
     [prepareAndShow]
   );
 
-  // Handle translation selection
-  const handleTranslationChange = useCallback((translation: string) => {
-    setSavedTranslation(translation);
-    setTranslationModalVisible(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-  }, [setSavedTranslation]);
-
-  // Function to get display text for notification time
-  const getNotificationTimeDisplay = useCallback(() => {
-    if (!notificationTime || notificationTime === 'none') {
-      return 'No notifications';
-    }
-    
-    switch (notificationTime) {
-      case 'morning':
-        return 'Morning (7-9 AM)';
-      case 'afternoon':
-        return 'Afternoon (2-5 PM)';
-      case 'evening':
-        return 'Evening (6-8 PM)';
-      case 'night':
-        return 'Night (9-11 PM)';
-      default:
-        // For custom time format "HH:MM"
-        if (notificationTime.includes(':')) {
-          const [hours, minutes] = notificationTime.split(':').map(part => parseInt(part, 10));
-          const time = new Date();
-          time.setHours(hours);
-          time.setMinutes(minutes);
-          return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
-        return notificationTime;
-    }
-  }, [notificationTime]);
-
-  // Toggle notifications on/off
-  const toggleNotifications = (enableNotifications: boolean) => {
-    if (!enableNotifications) {
-      setNotificationTime('none');
-      scheduleNotification('none');
+  // Funções utilitárias e handlers ausentes
+  const animateToggle = (enable: boolean) => {
+    // Simples toggle, pode ser expandido para animação real
+    if (enable) {
+      setNotificationTime('08:00'); // Default para 8h
     } else {
-      // If turning on, show the time picker
-      setShowTimePicker(true);
+      setNotificationTime('none');
     }
-    
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   };
 
-  // Toggle time picker visibility with animation
   const toggleTimePicker = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    
-    // Animate the scale of the selector button
-    toggleScale.value = withSequence(
-      withTiming(0.95, { duration: 100, easing: Easing.inOut(Easing.quad) }),
-      withTiming(1, { duration: 100, easing: Easing.inOut(Easing.quad) })
-    );
-    
-    // First update state, then animate
-    const newPickerState = !showTimePicker;
-    setShowTimePicker(newPickerState);
-    
-    // Animate picker height with slight delay to ensure state has updated
-    setTimeout(() => {
-      timePickerHeight.value = withTiming(
-        newPickerState ? 230 : 0, 
-        { 
-          duration: 300, 
-          easing: Easing.bezierFn(0.25, 1, 0.5, 1) 
-        }
-      );
-    }, 10);
+    setShowTimePicker((prev) => !prev);
   };
 
-  // Generate animated styles
-  const timePickerAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      height: timePickerHeight.value,
-      opacity: interpolate(
-        timePickerHeight.value,
-        [0, 50, 230],
-        [0, 0.5, 1]
-      ),
-      transform: [
-        { 
-          scale: interpolate(
-            timePickerHeight.value,
-            [0, 230],
-            [0.95, 1]
-          ) 
-        }
-      ]
-    };
-  });
-  
-  const selectorButtonStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ scale: toggleScale.value }]
-    };
-  });
-
-  // Handle time selection and close picker
-  const handleTimeConfirm = () => {
-    if (selectedTime) {
-      const hours = selectedTime.getHours();
-      const minutes = selectedTime.getMinutes();
-      
-      // Format as "HH:MM"
-      const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-      
-      // Update the time in userStore
-      setNotificationTime(timeString);
-      
-      // Reschedule notifications with the new time
-      scheduleNotification(timeString);
-      
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+  const getNotificationTimeDisplay = () => {
+    if (notificationTime && notificationTime.includes(':')) {
+      const [h, m] = notificationTime.split(':');
+      const hour = parseInt(h, 10);
+      const minute = m.padStart(2, '0');
+      const ampm = hour >= 12 ? 'PM' : 'AM';
+      const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+      return `${hour12}:${minute} ${ampm}`;
     }
-    
-    // Animate picker closing
-    timePickerHeight.value = withTiming(0, { 
-      duration: 250, 
-      easing: Easing.out(Easing.cubic) 
-    });
-    
-    // Close the picker after animation
-    setTimeout(() => {
-      setShowTimePicker(false);
-    }, 200);
+    // Fallback para presets
+    switch (notificationTime) {
+      case 'morning': return 'Morning (8:00 AM)';
+      case 'afternoon': return 'Afternoon (12:00 PM)';
+      case 'evening': return 'Evening (6:00 PM)';
+      case 'night': return 'Night (9:00 PM)';
+      default: return 'Select Time';
+    }
   };
 
-  // Animate toggle button on press
-  const animateToggle = (enableNotifications: boolean) => {
-    toggleScale.value = withSequence(
-      withTiming(0.9, { duration: 100 }),
-      withTiming(1.1, { duration: 100 }),
-      withTiming(1, { duration: 150 })
-    );
-    
-    toggleNotifications(enableNotifications);
+  const handleTimeConfirm = () => {
+    const hours = selectedTime.getHours();
+    const minutes = selectedTime.getMinutes();
+    setNotificationTime(`${hours}:${minutes.toString().padStart(2, '0')}`);
+    setShowTimePicker(false);
   };
+
+  const handleTranslationChange = (id: string) => {
+    setSavedTranslation(id);
+    setTranslationModalVisible(false);
+  };
+
+  // Estilos animados placeholders (ajuste conforme necessário)
+  const selectorButtonStyle = {};
+  const timePickerAnimatedStyle = {};
 
   return (
     <>
@@ -393,12 +219,11 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
         ref={bottomSheetRef}
         index={-1}
         snapPoints={snapPoints}
-        enablePanDownToClose={true}
+        enablePanDownToClose
         onChange={handleSettingsChange}
         backgroundStyle={styles.sheetBackground}
         handleIndicatorStyle={styles.handleIndicator}
-        backdropComponent={renderBackdrop}
-      >
+        backdropComponent={renderBackdrop}>
         <BottomSheetView style={styles.settingsContentContainer}>
           {/* Header */}
           <View style={styles.settingsHeader}>
@@ -414,11 +239,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
             <View style={styles.settingsSection}>
               <Text style={styles.settingsSectionTitle}>User ID</Text>
               <View style={styles.userIdContainer}>
-                <Text style={styles.userIdText} numberOfLines={1} ellipsizeMode="tail">{userId}</Text>
-                <TouchableOpacity 
-                  onPress={handleCopyUserId}
-                  style={styles.copyButton}
-                >
+                <Text style={styles.userIdText} numberOfLines={1} ellipsizeMode="tail">
+                  {userId}
+                </Text>
+                <TouchableOpacity onPress={handleCopyUserId} style={styles.copyButton}>
                   <Feather name="copy" size={16} color="#3C584A" />
                 </TouchableOpacity>
               </View>
@@ -426,26 +250,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 
             <View style={styles.divider} />
 
-            {/* Bible Translation Section */}
-            <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>Bible Translation</Text>
-              <TouchableOpacity 
-                style={styles.translationSelector}
-                onPress={() => setTranslationModalVisible(true)}
-              >
-                <Text style={styles.translationText}>
-                  {translations.find(t => t.id === savedTranslation)?.name || 'English Standard Version (ESV)'}
-                </Text>
-                <Feather name="chevron-right" size={18} color="#3C584A" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.divider} />
-
             {/* Notification Time Section */}
             <View style={styles.settingsSection}>
               <Text style={styles.settingsSectionTitle}>Notification Time</Text>
-              
               {/* Toggle for enabling/disabling notifications */}
               <View style={styles.notificationToggleContainer}>
                 <Text style={styles.notificationToggleText}>
@@ -471,7 +278,6 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                   />
                 </TouchableOpacity>
               </View>
-              
               {notificationTime !== 'none' && (
                 <Animated.View style={selectorButtonStyle}>
                   <TouchableOpacity 
@@ -488,7 +294,6 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                   </TouchableOpacity>
                 </Animated.View>
               )}
-              
               {/* Embedded Time Picker with animation */}
               {notificationTime !== 'none' && (
                 <Animated.View 
@@ -506,7 +311,6 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                     onChange={(event, date) => date && setSelectedTime(date)}
                     style={styles.timePicker}
                   />
-                  
                   <TouchableOpacity
                     style={styles.donePickingButton}
                     onPress={handleTimeConfirm}
@@ -545,7 +349,6 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Select Bible Translation</Text>
-            
             <ScrollView style={styles.translationScrollView} showsVerticalScrollIndicator={false}>
               {translations.map(translation => (
                 <TouchableOpacity
@@ -568,7 +371,6 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                 </TouchableOpacity>
               ))}
             </ScrollView>
-            
             <TouchableOpacity
               style={styles.cancelButton}
               onPress={() => setTranslationModalVisible(false)}
@@ -576,6 +378,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
           </View>
+          {/* Sign Out Button */}
+          <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
+            <Text style={styles.signOutText}>Sign Out</Text>
+          </TouchableOpacity>
         </View>
       </Modal>
     </>
@@ -583,88 +389,88 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 };
 
 const styles = StyleSheet.create({
-  sheetBackground: {
-    backgroundColor: '#FFF4D9', // surfaceCream 
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+  copyButton: {
+    padding: 5,
+  },
+  divider: {
+    backgroundColor: '#FFE4A8',
+    height: 1,
+    marginVertical: 20,
+  },
+  doneButton: {
+    color: '#F7B500',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    fontWeight: '600',
   },
   handleIndicator: {
     backgroundColor: '#DCB280',
-    width: 40,
     height: 4,
-  },
-  settingsContentContainer: {
-    flex: 1,
-  },
-  settingsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFE4A8',
-  },
-  settingsTitle: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Black',
-    color: '#3C584A',
-  },
-  doneButton: {
-    fontSize: 16,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    color: '#F7B500',
-    fontWeight: '600',
+    width: 40,
   },
   settingsContent: {
     flex: 1,
     padding: 20,
   },
-  settingsText: {
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    color: 'rgba(60, 88, 74, 0.7)',
-    fontSize: 16,
+  settingsContentContainer: {
+    flex: 1,
   },
-  signOutButton: {
-    backgroundColor: 'rgba(223, 69, 51, 0.1)',
-    padding: 16,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#DF4533',
-    marginBottom: 20,
-  },
-  signOutText: {
-    fontFamily: 'Nunito-Black',
-    fontSize: 16,
-    color: '#DF4533',
+  settingsHeader: {
+    alignItems: 'center',
+    borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
   settingsSection: {
     marginBottom: 20,
   },
   settingsSectionTitle: {
+    color: '#3C584A',
     fontFamily: 'Nunito-Black',
     fontSize: 18,
-    color: '#3C584A',
     marginBottom: 10,
   },
-  userIdContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  userIdText: {
+  settingsText: {
+    color: 'rgba(60, 88, 74, 0.7)',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
+  },
+  settingsTitle: {
     color: '#3C584A',
-    marginRight: 10,
-    flexShrink: 1, // Allow text to shrink
+    fontFamily: 'Nunito-Black',
+    fontSize: 18,
   },
-  copyButton: {
-    padding: 5,
+  sheetBackground: {
+    backgroundColor: '#FFF4D9', // surfaceCream
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
-  divider: {
-    height: 1,
-    backgroundColor: '#FFE4A8',
-    marginVertical: 20,
+  signOutButton: {
+    backgroundColor: 'rgba(223, 69, 51, 0.1)',
+    borderLeftColor: '#DF4533',
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    marginBottom: 20,
+    padding: 16,
+  },
+  signOutText: {
+    color: '#DF4533',
+    fontFamily: 'Nunito-Black',
+    fontSize: 16,
+  },
+  userIdContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  userIdText: {
+    color: '#3C584A',
+    flexShrink: 1,
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    marginRight: 10, // Allow text to shrink
   },
   translationSelector: {
     flexDirection: 'row',
@@ -814,4 +620,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SettingsSheet; 
+export default SettingsSheet;

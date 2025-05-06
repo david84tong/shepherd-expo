@@ -1,16 +1,15 @@
-import { Tabs, router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+import { Tabs } from 'expo-router';
+import { useEffect, useRef } from 'react';
 import { Animated, Platform, StyleSheet, View, ViewStyle, Image, Pressable } from 'react-native';
+
 import { useHomeStore } from '../stores/homeStore';
 import { usePathStore } from '../stores/pathStore';
-import { useEffect, useRef } from 'react';
-import * as Haptics from 'expo-haptics';
 
 // Helper component to center the icon
 const CenteredIcon = ({ children }: { children: React.ReactNode }) => (
   // Use className for centering and ensure it doesn't expand unnecessarily
-  <View className="flex items-center justify-center">
-    {children}
-  </View>
+  <View className="flex items-center justify-center">{children}</View>
 );
 
 // Custom Tab Bar Button component with animation
@@ -28,7 +27,7 @@ function CustomTabBarButton(props: any) {
       useNativeDriver: true, // Use native driver for performance (opacity)
     }).start();
   }, [focused, focusAnim]);
-  
+
   // Handle press with haptic feedback
   const handlePress = () => {
     // Trigger medium haptic feedback when tab is pressed
@@ -36,7 +35,7 @@ function CustomTabBarButton(props: any) {
       // Silently fail if haptics don't work
       console.log('Haptics not available');
     });
-    
+
     // Call the original onPress handler
     onPress();
   };
@@ -45,10 +44,9 @@ function CustomTabBarButton(props: any) {
     <Pressable
       onPress={handlePress}
       // Apply base flex styling and only horizontal margin
-      className={`flex-1 items-center justify-center mx-1`}
-    >
+      className="flex-1 items-center justify-center mx-1">
       {/* Container for content and animated background */}
-      <View className={`items-center justify-center p-4 mt-4 w-full`}> 
+      <View className="items-center justify-center p-4 mt-4 w-full">
         {/* Animated background View */}
         <Animated.View
           style={[
@@ -57,7 +55,7 @@ function CustomTabBarButton(props: any) {
               backgroundColor: '#FFE4A8', // bg-black/5 equivalent
               borderRadius: 8, // rounded-lg equivalent
               opacity: focusAnim, // Apply animated opacity
-            }
+            },
           ]}
         />
         {/* Actual tab content (icon/label) */}
@@ -71,10 +69,10 @@ export default function TabLayout() {
   const mode = useHomeStore((state) => state.mode);
   const pathInProgress = usePathStore((state) => state.pathInProgress);
   const tabBarAnim = useRef(new Animated.Value(1)).current;
-  
+
   useEffect(() => {
     Animated.timing(tabBarAnim, {
-      toValue: (mode === 'DEFAULT' && !pathInProgress) ? 1 : 0,
+      toValue: mode === 'DEFAULT' && !pathInProgress ? 1 : 0,
       duration: 300,
       useNativeDriver: true,
     }).start();
@@ -111,7 +109,7 @@ export default function TabLayout() {
       },
     }),
     // Ensure a minimum height for the tab bar
-    height: Platform.OS === 'ios' ? 90 : 70, 
+    height: Platform.OS === 'ios' ? 90 : 70,
   } as ViewStyle; // Cast to ViewStyle for type safety
 
   return (
@@ -122,81 +120,64 @@ export default function TabLayout() {
         tabBarInactiveTintColor: '#3C584A80',
         headerShown: false,
         tabBarLabelStyle: {
-          marginTop: 2, 
+          marginTop: 2,
           fontSize: 1, // Reset font size to be visible
         },
         // Use the custom button component for all tabs
         tabBarButton: (props) => <CustomTabBarButton {...props} />,
-      }}
-    >
-    
+      }}>
       <Tabs.Screen
         name="map"
         options={{
           title: 'map',
-          tabBarIcon: ({ color, focused }) => ( 
+          tabBarIcon: ({ color, focused }) => (
             <CenteredIcon>
-              <Image 
-                source={require('../../assets/icons/trophyIcon.png')}
-                className="w-12 h-12" 
-              />
+              <Image source={require('../../assets/icons/trophyIcon.png')} className="w-12 h-12" />
             </CenteredIcon>
           ),
         }}
       />
-  
+
       <Tabs.Screen
         name="stats"
         options={{
           title: 'heart',
           tabBarIcon: ({ color, focused }) => (
             <CenteredIcon>
-              <Image 
-                source={require('../../assets/icons/heartIcon.png')}
-                className="w-12 h-12" 
-              />
+              <Image source={require('../../assets/icons/heartIcon.png')} className="w-12 h-12" />
             </CenteredIcon>
           ),
         }}
       />
-          <Tabs.Screen
-        name="index" 
+      <Tabs.Screen
+        name="index"
         options={{
           title: 'sheep',
           tabBarIcon: ({ color, focused }) => (
             <CenteredIcon>
-              <Image 
-                source={require('../../assets/icons/sheepIcon.png')}
-                className="w-16 h-16" 
-              />
+              <Image source={require('../../assets/icons/sheepIcon.png')} className="w-16 h-16" />
             </CenteredIcon>
           ),
         }}
       />
       <Tabs.Screen
         name="bible"
-        options={{ 
+        options={{
           title: 'Bible',
           tabBarIcon: ({ color, focused }) => (
             <CenteredIcon>
-              <Image 
-                source={require('../../assets/icons/bibleIcon.png')}
-                className="w-14 h-14"
-              />
+              <Image source={require('../../assets/icons/bibleIcon.png')} className="w-14 h-14" />
             </CenteredIcon>
           ),
         }}
       />
       <Tabs.Screen
         name="profile"
-        options={{ 
+        options={{
           title: 'Profile',
           tabBarIcon: ({ color, focused }) => (
             <CenteredIcon>
-              <Image 
-                source={require('../../assets/icons/profileIcon.png')}
-                className="w-14 h-14"
-              />
+              <Image source={require('../../assets/icons/profileIcon.png')} className="w-14 h-14" />
             </CenteredIcon>
           ),
         }}

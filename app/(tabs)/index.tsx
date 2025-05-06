@@ -1,33 +1,29 @@
-import {
-  View,
-  Text,
-  SafeAreaView,
-  Platform,
-  Button,
-  Animated,
-  Easing,
-  TouchableOpacity,
-  Dimensions,
-  ActivityIndicator,
-  Image,
-} from 'react-native';
-import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
-import { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { Asset, useAssets } from 'expo-asset';
-import SecondaryButton from '../../components/SecondaryButton';
-import PrimaryButton from '../../components/PrimaryButton';
-import PrayerComponent from '../../components/PrayerComponent';
+import * as Haptics from 'expo-haptics';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Easing,
+  Image,
+  Platform,
+  SafeAreaView,
+  Text,
+  View
+} from 'react-native';
+
+import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
 import JournalComponent from '../../components/JournalComponent';
+import PrayerComponent from '../../components/PrayerComponent';
 import ProgressPill from '../../components/ProgressPill';
-import { useHomeStore, HomeMode } from '../stores/homeStore'; // Import Zustand store
+import SecondaryButton from '../../components/SecondaryButton';
+import { HomeMode, useHomeStore } from '../stores/homeStore'; // Import Zustand store
 import { usePathStore } from '../stores/pathStore'; // Import path store
 import { useUserStore } from '../stores/userStore'; // Import user store
-import { usePrayerStore } from '../stores/prayerStore'; // Import prayer store
-import { useUIStore } from '../stores/uiStore'; // Import UI store
-import { Unit, BIBLE_PATHS } from '../models/Path'; // Import Unit type and BIBLE_PATHS
-import * as Haptics from 'expo-haptics';
+import PrayerSheet, { PrayerSheetRef } from '~/components/GlobalPrayerSheet';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
@@ -214,8 +210,8 @@ export default function HomeScreen() {
     'lamb-full': 'lamb-full'
   };
 
-  // Get UI store functions
-  const showPrayerSheet = useUIStore(state => state.showPrayerSheet);
+  // Add ref for the prayer sheet
+  const prayerSheetRef = useRef<PrayerSheetRef>(null);
 
   const handleRiveError = (error: RNRiveError) => {
     console.error('Rive Error:', error.message, error.type);
@@ -367,7 +363,6 @@ export default function HomeScreen() {
     });
 
     if (mode === 'DEFAULT') {
-      
       animateToDefault();
       setArtboardName('lamb-idle');
       // Update artboard based on lamb mood from userStore
@@ -378,39 +373,28 @@ export default function HomeScreen() {
       } else {
         setArtboardName('lamb-idle'); // Default fallback
       }
- 
     } else if (mode === 'PRAYER') {
       // Handle prayer mode activation when coming from other screens
       console.log('Activating Prayer mode from external navigation');
       setShowBgRive(true);
-
-      // Set the Rive resource
       setArtboardName('lamb-drinking');
-
-      // Animate lamb size
       Animated.timing(lambSizeAnim, {
         toValue: 128,
         duration: 800,
         useNativeDriver: false,
       }).start();
-
-      // Trigger the animation to prayer state
       animateToState(1, waterOpacityAnim, 800, 'PRAYER');
     } else if (mode === 'REFLECTION') {
       // Handle reflection mode activation when coming from other screens
       console.log('Activating Reflection mode from external navigation');
-
-      // Animate lamb size
       Animated.timing(lambSizeAnim, {
         toValue: 128,
         duration: 800,
         useNativeDriver: false,
       }).start();
-
-      // Trigger the animation to reflection state
       animateToState(1, journalOpacityAnim, 800, 'REFLECTION');
     }
-  }, [mode, readingCompleted, prayerCompleted, reflectionCompleted, lambMood]);
+  }, [mode, lambMood]);
 
   // --- Event Handlers ---
   const handleReadPress = () => {
@@ -457,12 +441,15 @@ export default function HomeScreen() {
 
   const handlePrayerPress = () => {
     console.log('Daily Prayer Pressed - Showing prayer sheet');
-    
+
     // Provide haptic feedback when prayer button pressed
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    
-    // Show the prayer sheet using uiStore
-    showPrayerSheet(handlePrayerGenerated);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
+
+    // Show the prayer sheet
+    prayerSheetRef.current?.show();
+
+    // Original animation code - we'll use this when moving to the prayer component
+    // but not immediately, we'll wait for prayer generation
   };
 
   // Add a new function to handle prayer generation when sheet is submitted
@@ -553,13 +540,13 @@ export default function HomeScreen() {
         }),
       ]),
     ]).start();
-  // Set Rive resource after a delay
-  setTimeout(() => {
-    console.log('Setting Rive to lamb-drinking');
-    setArtboardName('lamb-writing');
-  }, 300);
+    // Set Rive resource after a delay
+    setTimeout(() => {
+      console.log('Setting Rive to lamb-drinking');
+      setArtboardName('lamb-writing');
+    }, 300);
     // No Rive change needed here currently
-   
+
   };
 
   // --- Handlers for Closing Overlays ---
@@ -621,7 +608,7 @@ export default function HomeScreen() {
       // Always set artboard based on lamb mood in DEFAULT mode
       setArtboardName(moodToArtboard[lambMood] || 'lamb-idle');
     }
-  }, [readingCompleted, prayerCompleted, reflectionCompleted, mode, lambMood]);
+  }, [mode, lambMood]);
 
   // --- Load and cache images ---
   const cacheImages = useMemo(
@@ -762,7 +749,7 @@ export default function HomeScreen() {
           {/* Animated Default Header Elements (Title + Stats) */}
           <Animated.View
             className="absolute inset-0 flex-row items-center justify-between px-8 w-full"
-            style={[{ opacity: headerDefaultOpacityAnim }]}
+            style={{ opacity: headerDefaultOpacityAnim }}
             pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}>
             <View className="flex-row items-center flex-1 justify-between">
               <Text
@@ -897,6 +884,13 @@ export default function HomeScreen() {
         <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
         <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
         <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
+
+        {/* Add PrayerSheet component */}
+        <PrayerSheet
+          prayerSheetRef={prayerSheetRef}
+          snapPoints={['60%', '85%']}
+          onPrayerGenerated={handlePrayerGenerated}
+        />
       </SafeAreaView>
     </View>
   );

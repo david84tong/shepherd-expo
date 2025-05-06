@@ -15,54 +15,54 @@ module.exports = {
         // 'secondary-button-bg': '#F9F3E5',
 
         // New Tokens
-        brightYellow: "#FFD629",
-        lightGreen: "#D2FFC6",
-        darkGreen: "#24CA17",
-        accentGold: '#FCD34D',    // Buttons, progress, XP fill
-        surfaceCream: '#FFF4D9',  // Card backgrounds, pills
+        brightYellow: '#FFD629',
+        lightGreen: '#D2FFC6',
+        darkGreen: '#24CA17',
+        accentGold: '#FCD34D', // Buttons, progress, XP fill
+        surfaceCream: '#FFF4D9', // Card backgrounds, pills
         forestGreen50: '#A8F093', // Light background shapes
         forestGreen80: '#24CA17', // Trees, path outlines
-        textPrimary: '#3C584A',   // All primary text
+        textPrimary: '#3C584A', // All primary text
         shadowColor: 'rgba(0,0,0,0.08)', // Shadow color separate for RN
-        pillBorder: '#E9E2C7',      // Border for metric pills
+        pillBorder: '#E9E2C7', // Border for metric pills
         description: '#B89B4C',
         buttonBorder: '#FFE4A8',
-        blue: "#06B6FE", // Shadow color for secondary button
-        red: "#DF4533",
+        blue: '#06B6FE', // Shadow color for secondary button
+        red: '#DF4533',
 
         // Path colors from Path.ts (Adjusted to be lighter backgrounds)
-        lightYellow: "#FFFBC8",
-        darkYellow:  "#F7B500",
-        
-        lightRed:    "#FFD2D2",
-        darkRed:     "#E64132",
-        
-        lightOrange: "#FFE6CC",
-        darkOrange:  "#FF8C1A",
-        
-        lightTeal:   "#C6FFF6",
-        darkTeal:    "#17CABC",
-        
-        lightPurple: "#E8D6FF",
-        darkPurple:  "#7B2BFF",
-        
-        lightPink:   "#FFD6F0",
-        darkPink:    "#E6319E",
-        
-        lightCrimson:"#FFE0DC",
-        darkCrimson: "#C81E28",
-        
-        lightIndigo: "#D9E0FF",
-        darkIndigo:  "#3040FF",
-        
-        lightBlue:   "#D6EEFF",
-        darkBlue:    "#2196F3",
-        
-        lightCyan:   "#CCFFFF",
-        darkCyan:    "#18B2B6",
-        
-        lightScarlet:"#FFDAD4",
-        darkScarlet: "#D72618",
+        lightYellow: '#FFFBC8',
+        darkYellow: '#F7B500',
+
+        lightRed: '#FFD2D2',
+        darkRed: '#E64132',
+
+        lightOrange: '#FFE6CC',
+        darkOrange: '#FF8C1A',
+
+        lightTeal: '#C6FFF6',
+        darkTeal: '#17CABC',
+
+        lightPurple: '#E8D6FF',
+        darkPurple: '#7B2BFF',
+
+        lightPink: '#FFD6F0',
+        darkPink: '#E6319E',
+
+        lightCrimson: '#FFE0DC',
+        darkCrimson: '#C81E28',
+
+        lightIndigo: '#D9E0FF',
+        darkIndigo: '#3040FF',
+
+        lightBlue: '#D6EEFF',
+        darkBlue: '#2196F3',
+
+        lightCyan: '#CCFFFF',
+        darkCyan: '#18B2B6',
+
+        lightScarlet: '#FFDAD4',
+        darkScarlet: '#D72618',
 
         // Darker border colors for paths (Keep for potential future use)
         /*
@@ -82,8 +82,8 @@ module.exports = {
       },
       fontFamily: {
         // Updated font mappings to match actual font files
-        'feather': ['Nunito-Black'], // for headers
-        'din': ['DIN Next Rounded LT W01 Regular'], // for body
+        feather: ['Nunito-Black'], // for headers
+        din: ['DIN Next Rounded LT W01 Regular'], // for body
         'feather-bold': ['Nunito-Black'], // Was Nunito-Black
         'nunito-bold': ['Nunito-Bold'], // Added for backward compatibility
         'nunito-black': ['Nunito-Black'], // Added for backward compatibility
@@ -92,44 +92,43 @@ module.exports = {
       },
       fontSize: {
         // Mapping semantic styles to Tailwind sizes
-        'title': '36px',
-        'h1': '28px',       // H1
-        'h2': '24px',       // H1
-        'heading': '20px', // Heading (~17pt)
-        'body': '16px',    // Body
-        'caption': '16px', // Caption
-        'smallCaption': '14px', // Caption
+        title: '36px',
+        h1: '28px', // H1
+        h2: '24px', // H1
+        heading: '20px', // Heading (~17pt)
+        body: '16px', // Body
+        caption: '16px', // Caption
+        smallCaption: '14px', // Caption
       },
       boxShadow: {
         // Define the unified shadow - Note: NativeWind shadow support varies
         // This might need platform-specific styling or utility classes
-        'card': '0px 2px 4px rgba(0,0,0,0.08)', // Match spec
+        card: '0px 2px 4px rgba(0,0,0,0.08)', // Match spec
         'cta-inset': 'inset 0 -2px 2px rgba(0,0,0,0.06)',
-        'buttonShadow': '0px 5.716px 0px 0px #FFE4A8', // Inset shadows are hard in RN
-        'backButton': '0px 5.716px 0px 0px #FFE4A8', // Inset shadows are hard in RN
-        'blueButtonShadow': '0px 5.716px 0px 0px #98E1FE', // Fixed blue button shadow
-        'appleShadow': '0px 5.716px 0px 0px rgb(67, 67, 67)', // Inset shadows are hard in RN
+        buttonShadow: '0px 5.716px 0px 0px #FFE4A8', // Inset shadows are hard in RN
+        backButton: '0px 5.716px 0px 0px #FFE4A8', // Inset shadows are hard in RN
+        blueButtonShadow: '0px 5.716px 0px 0px #98E1FE', // Fixed blue button shadow
 
         // Shadows for each dark color - solid shadow style with vertical offset
-        'darkYellow': '0px 5px 0px 0px #F7B500',
-        'darkRed': '0px 5px 0px 0px #E64132',
-        'darkGreen': '0px 5px 0px 0px #24CA17',
-        'darkOrange': '0px 5px 0px 0px #FF8C1A',
-        'darkTeal': '0px 5px 0px 0px #17CABC',
-        'darkPurple': '0px 5px 0px 0px #7B2BFF',
-        'darkPink': '0px 5px 0px 0px #E6319E',
-        'darkCrimson': '0px 5px 0px 0px #C81E28',
-        'darkIndigo': '0px 5px 0px 0px #3040FF',
-        'darkBlue': '0px 5px 0px 0px #2196F3',
-        'darkCyan': '0px 5px 0px 0px #18B2B6',
-        'darkScarlet': '0px 5px 0px 0px #D72618',
-        'gray': '0px 5px 0px 0px #808080',
+        darkYellow: '0px 5px 0px 0px #F7B500',
+        darkRed: '0px 5px 0px 0px #E64132',
+        darkGreen: '0px 5px 0px 0px #24CA17',
+        darkOrange: '0px 5px 0px 0px #FF8C1A',
+        darkTeal: '0px 5px 0px 0px #17CABC',
+        darkPurple: '0px 5px 0px 0px #7B2BFF',
+        darkPink: '0px 5px 0px 0px #E6319E',
+        darkCrimson: '0px 5px 0px 0px #C81E28',
+        darkIndigo: '0px 5px 0px 0px #3040FF',
+        darkBlue: '0px 5px 0px 0px #2196F3',
+        darkCyan: '0px 5px 0px 0px #18B2B6',
+        darkScarlet: '0px 5px 0px 0px #D72618',
+        gray: '0px 5px 0px 0px #808080',
       },
       secondaryButtonShadow: {
-        'secondary': '', // Match spec
+        secondary: '', // Match spec
       },
       borderRadius: {
-        'card': '16px', // Task Card radius
+        card: '16px', // Task Card radius
         // 'button-secondary': '26.149px', // Keep or remove if unused
       },
       // Remove old border width if not needed

@@ -1,19 +1,18 @@
+import { useAssets } from 'expo-asset';
+import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { View, Text, Animated, ImageBackground, ActivityIndicator } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useOnboardingStore } from '../stores/onboardingStore';
-import PrimaryButton from '../../components/PrimaryButton';
 import Rive from 'rive-react-native';
-import { useAssets } from 'expo-asset';
+
+import PrimaryButton from '../../components/PrimaryButton';
+import { useOnboardingStore } from '../stores/onboardingStore';
 
 export default function OnboardingWelcomeScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
 
   // Load Rive assets
-  const [riveAssets] = useAssets([
-    require('../../assets/riveAnimations/homeLamb.riv')
-  ]);
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
 
   // Create animated values
   const titleAnimation = new Animated.Value(0);
@@ -73,7 +72,7 @@ export default function OnboardingWelcomeScreen() {
 
   return (
     <View className="flex-1">
-      <ImageBackground 
+      <ImageBackground
         source={require('../../assets/backgrounds/oldBarn.png')}
         className="absolute inset-0 w-full h-full"
         resizeMode="cover"
@@ -87,30 +86,22 @@ export default function OnboardingWelcomeScreen() {
         </Animated.View>
 
         {/* Centered Rive Animation */}
-        <Animated.View 
-          style={[getAnimatedStyle(riveAnimation)]}
-          className="flex-1 justify-center items-center"
-        >
+        <Animated.View
+          style={getAnimatedStyle(riveAnimation)}
+          className="flex-1 justify-center items-center">
           <View className="h-[200px] w-full justify-center items-center">
             <Rive
               url={riveAssets[0].localUri!}
               artboardName="lamb-idle"
-              autoplay={true}
+              autoplay
               style={{ width: '80%', height: '80%' }}
             />
           </View>
         </Animated.View>
 
         {/* Continue Button */}
-        <Animated.View 
-          style={[getAnimatedStyle(buttonAnimation)]}
-          className="pb-8"
-        >
-          <PrimaryButton
-            title="Begin Journey"
-            onPress={handleContinue}
-            isActive={true}
-          />
+        <Animated.View style={getAnimatedStyle(buttonAnimation)} className="pb-8">
+          <PrimaryButton title="Begin Journey" onPress={handleContinue} isActive />
         </Animated.View>
       </View>
     </View>
