@@ -16,6 +16,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import PrimaryButton from '../../components/PrimaryButton';
+import { toBool } from '../utils/toBool';
 export default function OnboardingIntentScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();

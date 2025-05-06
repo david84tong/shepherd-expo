@@ -155,6 +155,12 @@ export default function SaveProgressScreen() {
     }
   };
 
+  function isErrorWithCodeAndMessage(err: unknown): err is { code?: string; name?: string; message?: string } {
+    return typeof err === 'object' && err !== null && (
+      'code' in err || 'name' in err || 'message' in err
+    );
+  }
+
   // Handle sign in with Apple
   const handleAppleSignIn = async () => {
     try {
@@ -164,13 +170,84 @@ export default function SaveProgressScreen() {
         await createUserFromResponses(user.uid, user.displayName || 'Anonymous User');
         await completeOnboarding(router);
       }
-    } catch (error) {
-      console.error('Apple sign in error:', error);
-      Alert.alert(
-        'Sign In Failed',
-        'There was a problem signing in with Apple. You can try again later.',
-        [{ text: 'OK' }]
-      );
+    } catch (error: unknown) {
+      // Type guard para acessar propriedades do erro
+
+      let code = '';
+      let message = '';
+      
+      if (isErrorWithCodeAndMessage(error)) {
+        code = error.code || error.name || '';
+        message = error.message || '';
+      }
+
+      if (code === 'ERR_REQUEST_CANCELED') {
+        Alert.alert(
+          'Sign In Canceled',
+          'You canceled the sign in process. If this was a mistake, please try again.',
+          [{ text: 'OK' }]
+        );
+      } else if (code === 'ERR_INVALID_OPERATION') {
+        Alert.alert(
+          'Invalid Operation',
+          'An invalid operation was performed during Apple Sign In. Please try again.',
+          [{ text: 'OK' }]
+        );
+      } else if (code === 'ERR_INVALID_RESPONSE') {
+        Alert.alert(
+          'Invalid Response',
+          'Received an invalid response from Apple. Please try again.',
+          [{ text: 'OK' }]
+        );
+      } else if (code === 'ERR_INVALID_SCOPE') {
+        Alert.alert(
+          'Invalid Scope',
+          'An invalid scope was requested during Apple Sign In. Please contact support.',
+          [{ text: 'OK' }]
+        );
+      } else if (code === 'ERR_REQUEST_FAILED') {
+        Alert.alert(
+          'Request Failed',
+          'The Apple Sign In request failed. Please check your internet connection and try again.',
+          [{ text: 'OK' }]
+        );
+      } else if (code === 'ERR_REQUEST_NOT_HANDLED') {
+        Alert.alert(
+          'Request Not Handled',
+          'The Apple Sign In request was not handled correctly. Please try again.',
+          [{ text: 'OK' }]
+        );
+      } else if (code === 'ERR_REQUEST_NOT_INTERACTIVE') {
+        Alert.alert(
+          'Not Interactive',
+          'The Apple Sign In request is not interactive. Please try again.',
+          [{ text: 'OK' }]
+        );
+      } else if (code === 'ERR_REQUEST_UNKNOWN') {
+        Alert.alert(
+          'Unknown Error',
+          'An unknown error occurred during Apple Sign In. Please try again.',
+          [{ text: 'OK' }]
+        );
+      } else if (message.includes('Apple Authentication is not available')) {
+        Alert.alert(
+          'Apple Sign In Not Available',
+          'Sign in with Apple is not supported on this device. Please try another sign-in method.',
+          [{ text: 'OK' }]
+        );
+      } else if (message.includes('No identity token')) {
+        Alert.alert(
+          'Authentication Incomplete',
+          'Could not complete sign in with Apple. Please try again.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert(
+          'Sign In Failed',
+          'There was a problem signing in with Apple. You can try again later.',
+          [{ text: 'OK' }]
+        );
+      }
     } finally {
       setLoading(false);
     }
