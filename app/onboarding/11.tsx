@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useAuth } from '../hooks/authHook';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
@@ -129,6 +130,7 @@ export default function SaveProgressScreen() {
   // Handle sign in with Apple
   const handleAppleSignIn = async () => {
     try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setLoading(true);
       console.log("Starting Apple sign in process...");
       const user = await signInWithApple();
@@ -147,12 +149,16 @@ export default function SaveProgressScreen() {
       // Provide more specific feedback based on the error
       let errorMessage = "There was a problem signing in with Apple.";
       
-      if (error.message && error.message.includes("canceled")) {
+      if (error.message?.includes("canceled") || error.message?.includes("cancelled")) {
         errorMessage = "Sign in was canceled. Please try again.";
-      } else if (error.message && error.message.includes("network")) {
+      } else if (error.message?.includes("network")) {
         errorMessage = "Network error. Please check your internet connection and try again.";
-      } else if (error.message && error.message.includes("configuration")) {
+      } else if (error.message?.includes("configuration")) {
         errorMessage = "Authentication configuration error. Please try another method.";
+      } else if (error.message?.includes("incomplete")) {
+        errorMessage = "Sign in process was interrupted. Please try again.";
+      } else if (error.message?.includes("operation couldn't be completed")) {
+        errorMessage = "Sign in process could not be completed. Please try again.";
       }
       
       Alert.alert(
@@ -161,8 +167,7 @@ export default function SaveProgressScreen() {
         [{ text: "OK" }]
       );
       
-      // Automatically fall back to anonymous sign in after Apple sign in fails
-      handleSkip(false);
+      // Do NOT automatically fall back to anonymous sign in after Apple sign in fails
     } finally {
       setLoading(false);
     }
@@ -170,6 +175,8 @@ export default function SaveProgressScreen() {
 
   // Handle anonymous sign in
   const handleSkip = async (showConfirmation = true) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
     if (showConfirmation) {
       Alert.alert(
         "Skip Sign In?",
@@ -262,7 +269,11 @@ export default function SaveProgressScreen() {
             onPress={handleAppleSignIn}
             disabled={loading}
           >
-            <AntDesign name="apple1" size={24} color="white" style={{ marginRight: 10 }} />
+            {loading ? (
+              <ActivityIndicator color="white" size="small" style={{ marginRight: 10 }} />
+            ) : (
+              <AntDesign name="apple1" size={24} color="white" style={{ marginRight: 10 }} />
+            )}
             <Text className="font-din text-white text-[18px] font-bold">
               {loading ? "Signing in..." : "Sign in with Apple"}
             </Text>
@@ -285,26 +296,6 @@ export default function SaveProgressScreen() {
           We only use your Apple ID for authentication. Your email and personal details stay private.
         </Text>
       </Animated.View>
-
-      {/* Authentication Loading Overlay */}
-      {loading && (
-        <Animated.View 
-          entering={FadeIn.duration(300)}
-          exiting={FadeOut.duration(300)}
-          className="absolute inset-0 bg-black/30 items-center justify-center"
-          style={{ zIndex: 50 }}
-        >
-          <View className="bg-white/90 rounded-2xl p-6 items-center shadow-lg w-4/5 max-w-[300px]">
-            <ActivityIndicator size="large" color="#F7B500" />
-            <Text className="font-din text-textPrimary text-lg mt-4 text-center">
-              Authenticating...
-            </Text>
-            <Text className="font-din text-description text-sm mt-2 text-center">
-              Please wait while we secure your account
-            </Text>
-          </View>
-        </Animated.View>
-      )}
     </View>
   );
 }

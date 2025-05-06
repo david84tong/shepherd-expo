@@ -122,7 +122,7 @@ export default function OnboardingReligiousAffiliationScreen() {
     },
     {
       id: 'evangelical',
-      title: 'Non-Denominational / Evangelical',
+      title: 'Non-Denominational',
     },
     {
       id: 'jewish',
@@ -138,12 +138,9 @@ export default function OnboardingReligiousAffiliationScreen() {
     },
     {
       id: 'other',
-      title: 'Other Religion',
-    },
-    {
-      id: 'prefer-not-to-say',
-      title: 'Prefer not to say',
-    },
+      title: 'Other',
+    }
+
   ];
 
   return (
@@ -151,7 +148,7 @@ export default function OnboardingReligiousAffiliationScreen() {
       {/* Question Text */}
       <Animated.View style={titleStyle}>
         <Text className="font-feather text-h1 text-center text-textPrimary mb-4">
-          Which of these do you prescribe to?
+          Which best describes your beliefs?
         </Text>
       </Animated.View>
 

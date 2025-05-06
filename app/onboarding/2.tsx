@@ -2,19 +2,21 @@ import { useAssets } from 'expo-asset';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { View, Text, TextInput, Keyboard, ActivityIndicator } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  withTiming,
+import { useOnboardingStore } from '../stores/onboardingStore';
+import { useUserStore } from '../stores/userStore';
+import { useAnalytics } from '../hooks/useAnalytics';
+import { useOnboardingScreenTracking, logOnboardingButtonPress } from './components/analytics-helper';
+import PrimaryButton from '../../components/PrimaryButton';
+import Rive from 'rive-react-native';
+import Animated, { 
+  useAnimatedStyle, 
+  withTiming, 
   withSpring,
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import Rive from 'rive-react-native';
-
-import PrimaryButton from '../../components/PrimaryButton';
-import { useOnboardingStore } from '../stores/onboardingStore';
-import { useUserStore } from '../stores/userStore';
 import { toBool } from '../utils/toBool';
+
 
 export default function OnboardingLambNameScreen() {
   const router = useRouter();
@@ -23,7 +25,13 @@ export default function OnboardingLambNameScreen() {
   const setLambName = useUserStore((state) => state.setLambName);
   const [inputLambName, setInputLambName] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
-
+  
+  // Initialize analytics
+  const analytics = useAnalytics();
+  
+  // Use the helper hook for screen tracking
+  useOnboardingScreenTracking(2);
+  
   // Load Rive assets
   const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
 
@@ -137,6 +145,10 @@ export default function OnboardingLambNameScreen() {
 
   const handleContinue = async () => {
     if (inputLambName.trim()) {
+      // Log button press using helper function
+    
+      
+      // Save the lamb name to the user store
       setLambName(inputLambName.trim());
       setResponse('lambName', inputLambName.trim());
       screenOpacity.value = withTiming(0, { duration: 300 });
@@ -189,7 +201,6 @@ export default function OnboardingLambNameScreen() {
           placeholder="Enter name"
           placeholderTextColor="#A0A0A0"
           maxLength={9}
-          autoFocus
           value={inputLambName}
           onChangeText={setInputLambName}
           autoCorrect={false}

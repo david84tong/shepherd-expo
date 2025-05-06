@@ -104,23 +104,28 @@ export default function OnboardingBibleFamiliarityScreen() {
   const options = [
     {
       id: 'never',
-      title: 'Never',
+      title: 'Not at all',
       description: 'Starting fresh on this journey',
     },
     {
       id: 'a-little',
-      title: 'A Little',
-      description: 'Read it at church, or ocassionally',
+      title: 'Somewhat',
+      description: 'Starting fresh on this journey',
     },
     {
       id: 'on-off',
-      title: 'On and Off',
-      description: 'Sporadic Bible reader',
+      title: 'Fairly',
+      description: `I've read some of the books` ,
     },
     {
       id: 'consistently',
-      title: 'Consistently',
-      description: 'Regular Bible reader',
+      title: 'Very',
+      description: `I've read most of it`,
+    },
+    {
+      id: 'extremely',
+      title: 'Extremely',
+      description: `I've read it all or nearly all`,
     },
   ] as const;
 
@@ -131,7 +136,7 @@ export default function OnboardingBibleFamiliarityScreen() {
       {/* Question Text */}
       <Animated.View style={titleStyle}>
         <Text className="font-feather text-h1 text-center text-textPrimary mb-4">
-          How much of the Bible have you read before?
+          How familiar are you with the Bible?
         </Text>
       </Animated.View>
 

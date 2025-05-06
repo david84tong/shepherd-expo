@@ -43,6 +43,7 @@ export default function OnboardingPathScreen() {
   const optionsOpacity = useSharedValue(0);
   const optionsTranslateY = useSharedValue(40);
 
+  
   useEffect(() => {
     // Reset animation values
     titleOpacity.value = 0;
@@ -174,6 +175,17 @@ export default function OnboardingPathScreen() {
       ],
     },
   ];
+
+  const handleContinue = useCallback(() => {
+    if (selectedPathId) {
+      // Log the continue button press with selected path
+      const pathData = paths.find(p => p.id === selectedPathId);
+    
+      
+      setUser({ selectedPathId: selectedPathId });
+      router.push('/onboarding/9' as any);
+    }
+  }, [selectedPathId, setUser, router]);
 
   return (
     <View className="flex-1 bg-surfaceCream px-6 pt-12">
