@@ -60,8 +60,7 @@ export default function LoginScreen() {
   return (
     <SafeAreaView className="flex-1 bg-[#FFF3D9] justify-center px-6">
       <View className="items-center mb-10">
-        <Image source={require('../assets/icon.png')} className="w-20 h-20 mb-4" />
-        <Text className="text-3xl font-feather-bold text-indigo-700 mb-2">Sign In</Text>
+        <Image source={require('../assets/icon.png')} className="w-20 h-20 mb-4 rounded-full" />
         <Text className="text-base font-din text-slate-600 text-center">Welcome back! Please sign in to continue.</Text>
       </View>
       <View className="mb-6">
