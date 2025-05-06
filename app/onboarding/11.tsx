@@ -228,11 +228,11 @@ export default function SaveProgressScreen() {
         </Text>
         
         {/* Icon */}
-        <View className="bg-white p-4 rounded-full mb-8 shadow-md">
+        <View className="bg-white rounded-full mb-8 shadow-md overflow-hidden w-24 h-24 items-center justify-center">
           <Image 
             source={require('../../assets/icon.png')} 
-            className="w-24 h-24"
-            resizeMode="contain"
+            className="w-24 h-24 rounded-full"
+            resizeMode="cover"
           />
         </View>
       </Animated.View>

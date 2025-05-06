@@ -71,7 +71,7 @@ export default function NotificationPermissionScreen() {
 
   // Function to handle the don't allow button
   const handleDontAllow = () => {
-    router.push('/onboarding/10' as any);
+    router.push('/onboarding/11' as any);
   };
 
   // Function to handle the allow button
@@ -89,9 +89,9 @@ export default function NotificationPermissionScreen() {
       }
 
       if (finalStatus === 'granted') {
-        router.push('/onboarding/10' as any);
+        router.push('/onboarding/11' as any);
       } else {
-        router.push('/onboarding/10' as any);
+        router.push('/onboarding/11' as any);
       }
     } catch (error) {
       console.error('Error requesting notification permissions:', error);
@@ -102,7 +102,7 @@ export default function NotificationPermissionScreen() {
 
   // Function to handle the remind me button
   const handleRemindMe = () => {
-    router.push('/onboarding/10' as any);
+    router.push('/onboarding/11' as any);
   };
 
   return (
