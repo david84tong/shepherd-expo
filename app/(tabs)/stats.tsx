@@ -509,16 +509,6 @@ export default function StatsScreen() {
           )}
         </View>
 
-        {/* Recent Activity */}
-        <View className="px-6 mb-6">
-          <View className="flex-row justify-between items-center mb-3">
-            <Text className="font-feather text-textPrimary text-heading">Recent Activity</Text>
-            <TouchableOpacity onPress={handleActivityCardPress} activeOpacity={0.7}>
-              <Text className="font-din text-accentGold text-body">See All</Text>
-            </TouchableOpacity>
-          </View>
-          {renderRecentActivity()}
-        </View>
       </ScrollView>
     </SafeAreaView>
   );

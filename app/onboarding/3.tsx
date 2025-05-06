@@ -1,21 +1,21 @@
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
+import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useLayoutEffect, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
-  withSpring,
   withTiming,
+  withSpring,
+  FadeIn,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import PrimaryButton from '../../components/PrimaryButton';
+import { useAnalytics } from '../hooks/useAnalytics';
 import { useOnboardingStore } from '../stores/onboardingStore';
-import { toBool } from '../utils/toBool';
-
+import PrimaryButton from '../../components/PrimaryButton';
 export default function OnboardingIntentScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -40,6 +40,17 @@ export default function OnboardingIntentScreen() {
 
   const continueOpacity = useSharedValue(0);
   const continueTranslateY = useSharedValue(20); // Smaller initial offset
+
+  // Initialize analytics
+  const { logScreenView, logButtonPress } = useAnalytics();
+  
+  // Log screen view when component mounts
+  useEffect(() => {
+    logScreenView('OnboardingIntentScreen', {
+      step: 3,
+      screenName: 'Intent Screen'
+    });
+  }, [logScreenView]);
 
   // Run animations only once during initial layout
   useLayoutEffect(() => {
@@ -132,8 +143,15 @@ export default function OnboardingIntentScreen() {
     } catch (error) {
       console.log('Haptics not available');
     }
-
-    setSelectedIntents((prev) => {
+    
+    // Log the selection with analytics
+    logButtonPress('intentSelect', 'OnboardingIntentScreen', {
+      step: 3,
+      selection: intent,
+      action: 'Select Option'
+    });
+    
+    setSelectedIntents(prev => {
       const newSelection = prev.includes(intent)
         ? prev.filter((i) => i !== intent)
         : [...prev, intent];

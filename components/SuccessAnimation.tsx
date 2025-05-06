@@ -255,11 +255,11 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   // After rewards are calculated, set artboard for PRAYER or other types
   if (effectiveType === SuccessAnimationType.PRAYER) {
     if (actualHeartReward > 0 && xpReward > 0) {
-      riveArtboard = 'success-heart-stars';
+      riveArtboard = "success-hearts";
     } else if (xpReward > 0 && actualHeartReward === 0) {
       riveArtboard = 'success-stars';
     } else if (actualHeartReward > 0 && xpReward === 0) {
-      riveArtboard = 'success-heart';
+      riveArtboard = "success-hearts";
     } else {
       riveArtboard = undefined;
     }

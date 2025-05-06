@@ -162,7 +162,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
         // Wait a moment before calling completion handler and navigating
         setTimeout(() => {
           finalizeAndNavigate();
-        }, 600);
+        }, 400);
       }
     }, 120); // Adjust speed of progress
     
@@ -183,11 +183,9 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   return (
     <View className="flex-1 items-center justify-center bg-surfaceCream px-8">
       {/* Pulsing Rive animation */}
-      <Animated.View
-        style={{
-          transform: [{ scale: pulseAnim }],
-        }}
-        className="w-40 h-40 mb-24"
+      <View
+        
+        className="w-56 h-56 mb-24"
       >
         <Rive
           url={assets[0].localUri!}
@@ -197,7 +195,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
           alignment={Alignment.Center}
           style={{ width: 160, height: 160 }}
         />
-      </Animated.View>
+      </View>
       
       {/* Animated message text */}
       <Animated.View

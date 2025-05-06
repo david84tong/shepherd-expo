@@ -13,14 +13,16 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useOnboardingStore } from '../stores/onboardingStore';
+import { useAnalytics } from '../hooks/useAnalytics';
+import PrimaryButton from '../../components/PrimaryButton';
 import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
 
-import PrimaryButton from '../../components/PrimaryButton';
-import { useOnboardingStore } from '../stores/onboardingStore';
 
-const FIRST_WELCOME_TEXT = 'Welcome to Shepherd';
-const SECOND_WELCOME_TEXT = 'You found a lost lamb...';
-const SECOND_STAGE_PROMPT = 'Tap on the lost lamb to wake it up';
+
+const FIRST_WELCOME_TEXT = "Every Shepherd starts with one lost lamb...";
+const SECOND_WELCOME_TEXT = "This one's yours.";
+const SECOND_STAGE_PROMPT = "Tap to wake it up";
 const TYPING_SPEED = 75; // Speed for all typing effects
 const ZOOM_DURATION = 4000; // 5 seconds for a very slow zoom
 const TRANSITION_DURATION = 350; // Faster transition animation duration
@@ -42,7 +44,18 @@ export default function OnboardingWelcomeScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
   const insets = useSafeAreaInsets();
-
+  
+  // Initialize analytics
+  const { logScreenView, logButtonPress, logEvent, AnalyticsEvent, EventCategory } = useAnalytics();
+  
+  // Log screen view when component mounts
+  useEffect(() => {
+    logScreenView('OnboardingWelcomeScreen', {
+      step: 1,
+      screenName: 'Welcome'
+    });
+  }, [logScreenView]);
+  
   // State for UI and flow
   const [displayText, setDisplayText] = useState('');
   const [secondStageActive, setSecondStageActive] = useState(false);
@@ -221,6 +234,15 @@ export default function OnboardingWelcomeScreen() {
     });
 
     if (!secondStageActive || isLambTapped) return;
+    
+    // Log the lamb tap interaction
+    logEvent('lamb_tap', EventCategory.USER_ACTION, {
+      step: 1,
+      screenName: 'Welcome',
+      stage: 'second_stage',
+      action: 'Tapped Lamb'
+    });
+    
     riveRef.current?.fireState('State Machine 1', 'tap');
     setIsAnimating(false);
     setIsLambTapped(true);
@@ -257,10 +279,25 @@ export default function OnboardingWelcomeScreen() {
     setIsAnimating(true);
 
     if (textPhase === 2) {
-      // After seeing both welcome texts, start zoom animation
+      // Log button press for starting journey
+      logButtonPress('startJourney', 'OnboardingWelcomeScreen', {
+        step: 1,
+        screenName: 'Welcome',
+        textPhase: textPhase,
+        action: 'Begin Journey'
+      });
+      
+      // Start the zoom animation sequence
       startZoomAndTransition();
-    } else if (secondStageActive && isLambTapped) {
-      // Second stage & lamb tapped: Navigate with animation
+    } else if (isLambTapped) {
+      // Log button press for claiming lamb
+      logButtonPress('claimLostLamb', 'OnboardingWelcomeScreen', {
+        step: 1,
+        screenName: 'Welcome',
+        textPhase: textPhase,
+        action: 'Claim Lost Lamb'
+      });
+      
       handleTransitionToNextScreen();
     }
   };

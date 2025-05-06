@@ -6,6 +6,7 @@ import * as AppleAuthentication from 'expo-apple-authentication';
 import { useState, useEffect } from 'react';
 
 import { useUserStore } from '../stores/userStore';
+import analytics from '../../utils/analytics';
 
 // Helper function to check if user is signed in
 export const isSignedIn = () => {
@@ -38,6 +39,13 @@ export function useAuth() {
       setLoading(true);
       setError(null);
 
+      // Check if Apple Sign In is available on the device
+      const isAvailable = await AppleAuthentication.isAvailableAsync();
+      if (!isAvailable) {
+        console.error('[Auth] Apple Authentication is not available on this device');
+        throw new Error('Apple Authentication is not available on this device');
+      }
+
       // Start the Apple authentication flow using Expo
       console.log('[Auth] Launching AppleAuthentication.signInAsync');
       const credential = await AppleAuthentication.signInAsync({
@@ -46,30 +54,44 @@ export function useAuth() {
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
       });
-      console.log('[Auth] Apple credential obtained:', credential);
+      
+      // Log full credential object (excluding sensitive data) for debugging
+      console.log('[Auth] Apple credential received:', {
+        user: credential?.user,
+        fullName: credential?.fullName,
+        email: credential?.email ? 'email-exists' : 'no-email',
+        realUserStatus: credential?.realUserStatus,
+        state: credential?.state,
+        identityToken: credential?.identityToken ? 'token-exists' : 'no-token',
+        authorizationCode: credential?.authorizationCode ? 'code-exists' : 'no-code',
+      });
 
       // Create Firebase credential from Apple response
-      const { identityToken } = credential;
+      const { identityToken, authorizationCode } = credential;
       if (!identityToken) {
         console.log('[Auth] No identityToken returned from Apple');
-        throw new Error('No identity token provided from Apple');
+        throw new Error('Authentication incomplete: No identity token provided from Apple');
       }
-      console.log('[Auth] identityToken length:', identityToken.length);
-
+      
       // Create a Firebase credential
-      const firebaseCredential = auth.AppleAuthProvider.credential(identityToken);
-      console.log('[Auth] Firebase credential created');
+      const firebaseCredential = auth.AppleAuthProvider.credential(identityToken, authorizationCode);
+      console.log('[Auth] Firebase credential created successfully');
 
       // Sign in to Firebase with the Apple credential
       const userCredential = await auth().signInWithCredential(firebaseCredential);
       console.log('[Auth] Firebase sign-in successful, uid:', userCredential.user.uid);
-
-      // Get user info
-      const { uid, email } = userCredential.user;
-      const displayName = credential.fullName?.givenName
+      
+      // Get user info from Firebase user and Apple credential
+      const { uid, email: firebaseEmail } = userCredential.user;
+      
+      // Combine info from Apple credential and Firebase
+      const email = firebaseEmail || credential.email || '';
+      const displayName = credential.fullName?.givenName 
         ? `${credential.fullName.givenName} ${credential.fullName.familyName || ''}`
-        : 'Anonymous User';
-
+        : userCredential.user.displayName || 'Anonymous User';
+      
+      console.log('[Auth] User info combined:', { uid, displayName, email: email ? 'exists' : 'none' });
+      
       // Create or update user document in Firestore
       const userDoc = {
         id: uid,
@@ -80,7 +102,8 @@ export function useAuth() {
       };
 
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
-
+      console.log('[Auth] User document updated in Firestore');
+      
       // Update local store
       updateUser({
         id: uid,
@@ -90,11 +113,43 @@ export function useAuth() {
       setCreatedAt(firestore.Timestamp.now());
       setUpdatedAt(firestore.Timestamp.now());
 
+      // Log successful sign in
+      if (analytics.isInitialized) {
+        analytics.logEvent('auth_success', 'user_action', { 
+          method: 'apple', 
+          uid: uid.substring(0, 8) // Only log a portion of the UID for privacy
+        });
+      }
+
       return userCredential.user;
     } catch (err) {
-      console.error('Apple sign in error:', err);
-      setError(err as Error);
-      throw err;
+      const error = err as Error;
+      console.error('[Auth] Apple sign in error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
+      
+      // Check for specific Apple Authentication errors
+      if (error.message?.includes("The operation couldn't be completed")) {
+        console.log('[Auth] Apple Sign In process was interrupted or incomplete');
+        error.message = 'Apple Sign In process was incomplete. Please try again.';
+      } else if (error.message?.includes('canceled')) {
+        console.log('[Auth] User canceled the Apple Sign In');
+        error.message = 'Apple Sign In was canceled. Please try again.';
+      }
+      
+      // Log authentication error
+      if (analytics.isInitialized) {
+        analytics.logError('Authentication error', 'apple_auth_failed', { 
+          error_message: error.message,
+          error_name: error.name
+        });
+      }
+      
+      setError(error);
+      // Explicitly pass the error upward for the UI to handle
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -130,11 +185,28 @@ export function useAuth() {
       setCreatedAt(firestore.Timestamp.now());
       setUpdatedAt(firestore.Timestamp.now());
 
+      // Log successful anonymous sign in
+      if (analytics.isInitialized) {
+        analytics.logEvent('auth_success', 'user_action', { 
+          method: 'anonymous', 
+          uid: uid.substring(0, 8) // Only log a portion of the UID for privacy
+        });
+      }
+
       return userCredential.user;
     } catch (err) {
-      console.error('Anonymous sign in error:', err);
-      setError(err as Error);
-      throw err;
+      const error = err as Error;
+      console.error('[Auth] Anonymous sign in error:', error.message, error.stack);
+      
+      // Log authentication error
+      if (analytics.isInitialized) {
+        analytics.logError('Authentication error', 'anonymous_auth_failed', { 
+          error_message: error.message 
+        });
+      }
+      
+      setError(error);
+      throw error;
     } finally {
       setLoading(false);
     }

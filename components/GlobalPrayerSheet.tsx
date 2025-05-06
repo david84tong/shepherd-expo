@@ -185,7 +185,6 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
                 placeholder="guidance..."
                 placeholderTextColor="#B89B4C"
                 style={styles.prayerInputText}
-                autoFocus
               />
             </View>
           </View>
@@ -272,20 +271,11 @@ const styles = StyleSheet.create({
     fontFamily: 'Nunito-Black',
     color: '#3C584A',
   },
-  doneButton: {
-    fontSize: 16,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    color: '#F7B500',
-    fontWeight: '600',
-    opacity: 0
-  },
   prayerContent: {
     flex: 1,
     paddingHorizontal: 20, // Add horizontal padding
   },
-  prayerContentContainer: {
-    flex: 1,
-  },
+  
   prayerEmoji: {
     fontSize: 36,
   },
@@ -321,15 +311,7 @@ const styles = StyleSheet.create({
   prayerGenerateTextDisabled: {
     color: 'rgba(60, 88, 74, 0.5)',
   },
-  prayerHeader: {
-    alignItems: 'center',
-    borderBottomColor: '#FFE4A8',
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-  },
+
   prayerInputContainer: {
     marginBottom: 30,
   },
@@ -352,11 +334,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingBottom: 8,
   },
-  prayerTitle: {
-    color: '#3C584A',
-    fontFamily: 'Nunito-Black',
-    fontSize: 18,
-  },
+
   prayerTopicButton: {
     backgroundColor: 'white',
     borderColor: '#E9E2C7',
