@@ -66,6 +66,7 @@ export function DebugButton({}: DebugButtonProps) {
   }, []);
 
   // Reset local storage handler
+  // WARNING: This will clear ALL app data including onboarding completion flag. Do NOT use for logout.
   const handleResetLocalStorage = useCallback(() => {
     Alert.alert(
       'Reset Storage',
@@ -199,16 +200,19 @@ export function DebugButton({}: DebugButtonProps) {
   const handleSignOut = useCallback(async () => {
     try {
       await auth().signOut();
+      // Salva flag de onboarding completo
+      await AsyncStorage.setItem('@shepherd/onboarding_completed', 'true');
       // Reset user store after sign out
       useUserStore.getState().resetUserStore();
       console.log('✅ User signed out successfully');
       Alert.alert('Success', 'Signed out successfully');
       setModalVisible(false);
+      router.replace('/login');
     } catch (error) {
       console.error('❌ Error signing out:', error);
       Alert.alert('Error', 'Failed to sign out');
     }
-  }, []);
+  }, [router]);
 
   // Handler to reset HomeStore data and clear completedReadings
   const handleResetCompletionData = useCallback(() => {

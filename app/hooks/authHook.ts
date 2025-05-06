@@ -3,7 +3,9 @@
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import * as AppleAuthentication from 'expo-apple-authentication';
+import * as WebBrowser from 'expo-web-browser';
 import { useState, useEffect } from 'react';
+import { Platform } from 'react-native';
 
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
@@ -212,6 +214,67 @@ export function useAuth() {
     }
   };
 
+  // Google Sign-In
+  // const signInWithGoogle = async () => {
+  //   try {
+  //     setLoading(true);
+  //     setError(null);
+
+  //     // Configure Google Auth
+  //     const clientId = Platform.select({
+  //       ios: '226457915179-94pi2j8k1m56vee052gh3qjp3vm9t37i.apps.googleusercontent.com',
+  //       android: 'YOUR_ANDROID_CLIENT_ID', // Replace with your Android client ID
+  //       default: '',
+  //     });
+
+  //     const redirectUri = Google.makeRedirectUri({ useProxy: true });
+  //     const result = await Google.startAsync({
+  //       clientId,
+  //       redirectUri,
+  //       scopes: ['profile', 'email'],
+  //     });
+
+  //     if (result.type !== 'success' || !result.authentication?.idToken) {
+  //       throw new Error('Google Sign-In was cancelled or failed.');
+  //     }
+
+  //     // Create Firebase credential with the Google ID token
+  //     const { idToken, accessToken } = result.authentication;
+  //     const googleCredential = auth.GoogleAuthProvider.credential(idToken, accessToken);
+  //     const userCredential = await auth().signInWithCredential(googleCredential);
+
+  //     // Save user info
+  //     const { uid, email, displayName } = userCredential.user;
+  //     const userDoc = {
+  //       id: uid,
+  //       email: email || '',
+  //       displayName: displayName || 'Google User',
+  //       createdAt: firestore.Timestamp.now(),
+  //       updatedAt: firestore.Timestamp.now(),
+  //     };
+  //     await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
+  //     updateUser({ id: uid, displayName: userDoc.displayName, email: userDoc.email });
+  //     setCreatedAt(firestore.Timestamp.now());
+  //     setUpdatedAt(firestore.Timestamp.now());
+
+  //     // Analytics
+  //     if (analytics.isInitialized) {
+  //       analytics.logEvent('auth_success', 'user_action', {
+  //         method: 'google',
+  //         uid: uid.substring(0, 8),
+  //       });
+  //     }
+
+  //     return userCredential.user;
+  //   } catch (err) {
+  //     const error = err as Error;
+  //     setError(error);
+  //     throw error;
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   return {
     user,
     loading,
@@ -221,3 +284,5 @@ export function useAuth() {
     signInAnonymously,
   };
 }
+
+WebBrowser.maybeCompleteAuthSession();

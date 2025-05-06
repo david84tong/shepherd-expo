@@ -17,6 +17,7 @@ import { useUIStore } from '../app/stores/uiStore';
 import { useUserStore } from '../app/stores/userStore';
 import { useSharedValue } from 'react-native-reanimated';
 import { usePathStore } from '../app/stores/pathStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface SettingsSheetProps {
   settingsSheetRef: React.RefObject<SettingsSheetRef>;
@@ -107,10 +108,12 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       await auth().signOut();
+      await AsyncStorage.setItem('@shepherd/onboarding_completed', 'true');
+
       useUserStore.getState().resetUserStore();
       bottomSheetRef.current?.close();
       setIsModalDimActive(false);
-      router.replace('/onboarding/1');
+      router.replace('/login');
     } catch (error) {
       console.error('Error signing out:', error);
     }

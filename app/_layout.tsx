@@ -140,9 +140,12 @@ export default function RootLayout() {
           );
           router.replace('/onboarding/1');
         }
-      } else if (!(segments as string[]).includes('(tabs)')) {
-        console.log('Onboarding completed, redirecting to tabs...');
-        router.replace('/(tabs)');
+      } else {
+        // Se onboarding já foi completado, mas não está logado, vai para login
+        if (!(segments as string[]).includes('login')) {
+          console.log('Onboarding completed but not signed in, redirecting to login...');
+          router.replace('/login');
+        }
       }
 
       setIsOnboardingChecked(true);
@@ -258,6 +261,16 @@ export default function RootLayout() {
             options={{
               headerShown: false,
               animation: 'slide_from_right',
+            }}
+          />
+          <Stack.Screen
+            name="login"
+            options={{
+              headerShown: false,
+              animation: 'fade',
+              animationDuration: 200,
+              gestureEnabled: false,
+              contentStyle: { backgroundColor: '#FFF4D9' },
             }}
           />
           <Stack.Screen
