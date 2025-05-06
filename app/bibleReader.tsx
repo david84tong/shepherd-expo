@@ -18,10 +18,10 @@ import SideButton from '~/components/SideButton';
 import { usePathStore } from './stores/pathStore';
 import { useHomeStore, SuccessAnimationType } from './stores/homeStore';
 import { useUserStore } from './stores/userStore';
+import { useUIStore } from './stores/uiStore';
 import { router, useLocalSearchParams } from 'expo-router';
 import { BIBLE_PATHS, Path, Unit, BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from './models/Path';
 import firestore from '@react-native-firebase/firestore';
-import BookChapterSelectorSheet from '../components/BookChapterSelectorSheet';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
 const DEFAULT_FONT_SIZE = 16;
@@ -50,7 +50,6 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
-  const [isSelectorVisible, setIsSelectorVisible] = useState(false);
   
   // Animation values for button container
   const buttonContainerAnim = useRef(new Animated.Value(100)).current;
@@ -59,11 +58,15 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // Reference to the ScrollView
   const scrollViewRef = useRef<ScrollView>(null);
   
+  // Get UI store for the book chapter selector
+  const showBookChapterSelector = useUIStore(state => state.showBookChapterSelector);
+  
   // Get saved reading state from pathStore
   const { 
     savedBook, 
     savedBookId, 
     savedChapter, 
+    savedTranslation,
     setSavedReading,
     setPathInProgress,
     pathInProgress,
@@ -79,7 +82,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const [currentBook, setCurrentBook] = useState<string>(initialBookName || savedBook);
   const [currentBookId, setCurrentBookId] = useState<number>(initialBookId || savedBookId);
   const [currentChapter, setCurrentChapter] = useState<number>(initialChapter || savedChapter);
-  const [currentVersion, setCurrentVersion] = useState<string>('ESV');
+  const [currentVersion, setCurrentVersion] = useState<string>(savedTranslation);
   
   const setHomeMode = useHomeStore((state) => state.setMode);
   const setSuccessType = useHomeStore((state) => state.setSuccessType);
@@ -153,7 +156,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     };
 
     loadInitialData();
-  }, [initialBookId, initialChapter]);
+  }, [initialBookId, initialChapter, currentVersion]);
 
   useEffect(() => {
     // Animate the button container after component mounts
@@ -174,6 +177,16 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       ]).start();
     }
   }, [loading, chapterData]);
+
+  // Reload chapter when the translation changes in settings
+  useEffect(() => {
+    // Only reload if we're not already loading and we have chapter data
+    if (!loading && chapterData && currentVersion !== savedTranslation) {
+      console.log(`📚 Translation changed from ${currentVersion} to ${savedTranslation}. Reloading chapter.`);
+      setCurrentVersion(savedTranslation);
+      loadChapter(savedTranslation, currentBook, currentBookId, currentChapter);
+    }
+  }, [savedTranslation]);
 
   const loadChapter = async (version: string, book: string, bookId: number, chapter: number) => {
     setLoading(true);
@@ -451,11 +464,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   const handleOpenSelector = () => {
     console.log('🔍 DEBUG: Opening selector');
-    setIsSelectorVisible(true);
-  };
-
-  const handleCloseSelector = () => {
-    setIsSelectorVisible(false);
+    showBookChapterSelector(currentBookId, currentChapter, handleSelectBookChapter);
   };
 
   const handleSelectBookChapter = (bookId: number, chapter: number) => {
@@ -502,11 +511,11 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
             </Text>
           </TouchableOpacity>
           
-          <TouchableOpacity style={styles.headerButton} onPress={handleOpenSelector}>
+          {/* <TouchableOpacity style={styles.headerButton} onPress={handleOpenSelector}>
             <Text style={styles.headerButtonText}>
               {chapterData ? chapterData.version : '...'}
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
 
         <View style={styles.headerRight}>
@@ -569,15 +578,6 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           disabled={!isFinishEnabled} // Use the calculated enabled state
         />
       </Animated.View>}
-
-      {/* Book Chapter Selector Sheet */}
-      <BookChapterSelectorSheet 
-        visible={isSelectorVisible}
-        onClose={handleCloseSelector}
-        currentBookId={currentBookId}
-        currentChapter={currentChapter}
-        onSelect={handleSelectBookChapter}
-      />
     </SafeAreaView>
   );
 };

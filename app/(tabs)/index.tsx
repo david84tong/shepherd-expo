@@ -24,7 +24,10 @@ import ProgressPill from '../../components/ProgressPill';
 import { useHomeStore, HomeMode } from '../stores/homeStore'; // Import Zustand store
 import { usePathStore } from '../stores/pathStore'; // Import path store
 import { useUserStore } from '../stores/userStore'; // Import user store
+import { usePrayerStore } from '../stores/prayerStore'; // Import prayer store
+import { useUIStore } from '../stores/uiStore'; // Import UI store
 import { Unit, BIBLE_PATHS } from '../models/Path'; // Import Unit type and BIBLE_PATHS
+import * as Haptics from 'expo-haptics';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
@@ -211,6 +214,8 @@ export default function HomeScreen() {
     'lamb-full': 'lamb-full'
   };
 
+  // Get UI store functions
+  const showPrayerSheet = useUIStore(state => state.showPrayerSheet);
 
   const handleRiveError = (error: RNRiveError) => {
     console.error('Rive Error:', error.message, error.type);
@@ -451,7 +456,18 @@ export default function HomeScreen() {
   };
 
   const handlePrayerPress = () => {
-    console.log('Daily Prayer Pressed - Setting resource to lamb-drinking');
+    console.log('Daily Prayer Pressed - Showing prayer sheet');
+    
+    // Provide haptic feedback when prayer button pressed
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    
+    // Show the prayer sheet using uiStore
+    showPrayerSheet(handlePrayerGenerated);
+  };
+
+  // Add a new function to handle prayer generation when sheet is submitted
+  const handlePrayerGenerated = () => {
+    console.log('Prayer Generated - Setting resource to lamb-drinking');
     setMode('PRAYER');
     setShowBgRive(true);
 

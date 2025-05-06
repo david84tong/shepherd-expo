@@ -13,7 +13,7 @@ import {
 import ProgressBar from './components/ProgressBar'
 import { useAppInitialization } from '../hooks/initHook'
 
-// Define the actual screens we have implemented
+// Define the actual screens we have implemented - MOVED HERE
 const IMPLEMENTED_SCREENS = [
   '1',
   '2',
@@ -23,9 +23,12 @@ const IMPLEMENTED_SCREENS = [
   '6',
   '7',
   '8',
+  '10', // Ensure 10 is included
+  '11',
   'auth',
   'lambFound',
-  'pathAffinity'
+  'pathAffinity',
+  'LoadingScreen' // Ensure LoadingScreen is included
 ];
 
 export default function OnboardingLayout() {
@@ -38,6 +41,22 @@ export default function OnboardingLayout() {
   
   // Initialize app and create user on first open
   const { isInitialized, isLoading } = useAppInitialization()
+
+  // IMPORTANT: All hooks must be declared before any conditional returns
+  // Animated style for progress bar
+  const progressStyle = useAnimatedStyle(() => ({
+    opacity: progressOpacity.value,
+  }))
+
+  // --- DEBUG LOGGING START ---
+  const shouldShowProgressBar = pathname &&
+    pathname !== '/onboarding/1' &&
+    pathname !== '/onboarding/11' &&
+    pathname !== '/onboarding/LoadingScreen' &&
+    !pathname.includes('/onboarding/auth');
+
+  console.log(`[OnboardingLayout] Path: ${pathname}, Should show progress bar: ${shouldShowProgressBar}`);
+  // --- DEBUG LOGGING END ---
 
   // Update current screen based on pathname with smoother transitions
   useEffect(() => {
@@ -119,14 +138,11 @@ export default function OnboardingLayout() {
 
   // If still initializing, could show a loading indicator here
   if (isLoading) {
-    // We could return a loading screen, but for most cases
-    // this will be very brief, so we just render the layout
+    // Return a minimal loading component instead of continuing to render
+    return (
+      <View style={{ flex: 1, backgroundColor: '#FFF4D9' }} />
+    );
   }
-
-  // Animated style for progress bar
-  const progressStyle = useAnimatedStyle(() => ({
-    opacity: progressOpacity.value,
-  }))
 
   return (
     <View style={{ flex: 1, paddingLeft: insets.left, paddingRight: insets.right, backgroundColor: '#FFF4D9' }}>
@@ -161,9 +177,7 @@ export default function OnboardingLayout() {
       </Stack>
 
       {/* Animated Progress Bar */}
-      {pathname &&
-        !pathname.startsWith('/onboarding/1') &&
-        !pathname.includes('/onboarding/auth') && (
+      {shouldShowProgressBar && (
           <Animated.View 
             style={[
               {

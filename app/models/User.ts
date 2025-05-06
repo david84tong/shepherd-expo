@@ -28,6 +28,7 @@ export interface UserDoc {
     lastReadingPenaltyDate: FirebaseFirestoreTypes.Timestamp;
     lastPrayerPenaltyDate: FirebaseFirestoreTypes.Timestamp;
     lastReflectionPenaltyDate: FirebaseFirestoreTypes.Timestamp;
+    notificationTime?: string; // Time preference for daily notification
     completedReflections: [Reflection];
     completedPrayers: [Prayer];
     completedReadings: [Reading];
@@ -66,6 +67,7 @@ export interface UserStore extends UserDoc {
     getLastReadingPenaltyDate: () => UserDoc['lastReadingPenaltyDate'];
     getLastPrayerPenaltyDate: () => UserDoc['lastPrayerPenaltyDate'];
     getLastReflectionPenaltyDate: () => UserDoc['lastReflectionPenaltyDate'];
+    getNotificationTime: () => string | undefined;
     getCompletedReflections: () => [Reflection];
     getCompletedPrayers: () => [Prayer];
     getCompletedReadings: () => [Reading];
@@ -94,6 +96,7 @@ export interface UserStore extends UserDoc {
     setLastReadingPenaltyDate: (date: UserDoc['lastReadingPenaltyDate']) => void;
     setLastPrayerPenaltyDate: (date: UserDoc['lastPrayerPenaltyDate']) => void;
     setLastReflectionPenaltyDate: (date: UserDoc['lastReflectionPenaltyDate']) => void;
+    setNotificationTime: (time: string) => void;
     setVersesReadTotal: (count: number) => void;
     setChaptersReadTotal: (count: number) => void;
     setBibleVersion: (version: string) => void;

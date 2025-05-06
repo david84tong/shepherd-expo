@@ -59,6 +59,7 @@ const initialState: Partial<UserDoc> = {
   lastReadingPenaltyDate: Timestamp.now(),
   lastPrayerPenaltyDate: Timestamp.now(),
   lastReflectionPenaltyDate: Timestamp.now(),
+  notificationTime: 'none',
   streakCount: 0,
   versesReadTotal: 0,
   chaptersReadTotal: 0,
@@ -199,6 +200,7 @@ export const useUserStore = create<UserStore>()(
       getCompletedReflections: () => get().completedReflections,
       getCompletedPrayers: () => get().completedPrayers,
       getCompletedReadings: () => get().completedReadings,
+      getNotificationTime: () => get().notificationTime,
       
       // Getters for Lamb
       getLambLevel: () => get().lamb.level,
@@ -254,6 +256,12 @@ export const useUserStore = create<UserStore>()(
       setCompletedReflections: (completedReflections) => set({ completedReflections }),
       setCompletedPrayers: (completedPrayers) => set({ completedPrayers }),
       setCompletedReadings: (completedReadings) => set({ completedReadings }),
+      setNotificationTime: (notificationTime) => {
+        set({ notificationTime });
+        if (isAuthenticated()) {
+          updateField('notificationTime', notificationTime);
+        }
+      },
       
       // Add single items to the completed arrays
       addCompletedReflection: (reflection) => set(state => ({
@@ -376,6 +384,7 @@ export const useUserStore = create<UserStore>()(
           lastReadingPenaltyDate: state.lastReadingPenaltyDate,
           lastPrayerPenaltyDate: state.lastPrayerPenaltyDate,
           lastReflectionPenaltyDate: state.lastReflectionPenaltyDate,
+          notificationTime: state.notificationTime,
           versesReadTotal: state.versesReadTotal,
           chaptersReadTotal: state.chaptersReadTotal,
           bibleVersion: state.bibleVersion,
@@ -471,6 +480,7 @@ export const useUserStore = create<UserStore>()(
           lastReadingPenaltyDate: state.lastReadingPenaltyDate,
           lastPrayerPenaltyDate: state.lastPrayerPenaltyDate,
           lastReflectionPenaltyDate: state.lastReflectionPenaltyDate,
+          notificationTime: state.notificationTime,
           versesReadTotal: state.versesReadTotal,
           chaptersReadTotal: state.chaptersReadTotal,
           bibleVersion: state.bibleVersion,

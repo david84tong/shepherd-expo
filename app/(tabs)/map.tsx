@@ -513,7 +513,7 @@ export default function MapScreen() {
             style={{ zIndex: 10 }}
           >
             <View className="w-44 h-44">
-              {section.riveName && getRiveAssetUri(section.riveName) ? (
+              {/* {section.riveName && getRiveAssetUri(section.riveName) ? (
                 <Rive
                   url={getRiveAssetUri(section.riveName)!}
                   artboardName={section.artboardName}
@@ -524,7 +524,7 @@ export default function MapScreen() {
                     opacity: section.pathId === 'genesis-beginnings' ? 1 : 1,
                   }}
                 />
-              ) : null}
+              ) : null} */}
             </View>
           </View>
         )}

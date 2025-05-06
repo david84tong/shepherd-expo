@@ -14,10 +14,11 @@ import { isSignedIn } from './hooks/authHook';
 import BottomSheet, { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useAppInitialization } from './hooks/initHook';
 
-// Import the new sheet components
+// Import the sheet components
 import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet';
 import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
-import PrayerSheet, { PrayerSheetRef } from '../components/PrayerSheet';
+import GlobalPrayerSheet from '../components/GlobalPrayerSheet';
+import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
 
 // Error logging setup
 if (__DEV__) {
@@ -50,6 +51,25 @@ export const unstable_settings = {
   initialRouteName: '(tabs)',
 };
 
+// Define the actual screens we have implemented
+// REMOVED - This belongs in app/onboarding/_layout.tsx
+// const IMPLEMENTED_SCREENS = [
+//   '1',
+//   '2',
+//   '3',
+//   '4',
+//   '5',
+//   '6',
+//   '7',
+//   '8',
+//   '10',
+//   '11',
+//   'auth',
+//   'lambFound',
+//   'pathAffinity',
+//   'LoadingScreen'
+// ];
+
 export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
@@ -69,16 +89,17 @@ export default function RootLayout() {
   
   // Global modal state
   const isModalDimActive = useUIStore((state) => state.isModalDimActive);
+  const isPrayerSheetVisible = useUIStore((state) => state.isPrayerSheetVisible);
+  const showPrayerSheet = useUIStore((state) => state.showPrayerSheet);
+  const showBookChapterSelector = useUIStore((state) => state.showBookChapterSelector);
 
   // Sheet refs
   const halfModalRef = useRef<HalfModalSheetRef>(null);
   const settingsSheetRef = useRef<SettingsSheetRef>(null);
-  const prayerSheetRef = useRef<PrayerSheetRef>(null);
   
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
   const settingsSnapPoints = useMemo(() => ['40%', '90%'], []);
-  const prayerSnapPoints = useMemo(() => ['60%', '85%'], []);
   
   // HalfModal params
   const [halfModalParams, setHalfModalParams] = useState<{
@@ -182,18 +203,15 @@ export default function RootLayout() {
     settingsSheetRef.current?.show();
   };
 
-  const showPrayerModal = () => {
-    prayerSheetRef.current?.show();
-  };
-
   // Expose global functions
   useEffect(() => {
     if (typeof global !== 'undefined') {
       (global as any).showHalfModal = showHalfModal;
       (global as any).showSettings = showSettings;
-      (global as any).showPrayerModal = showPrayerModal;
+      (global as any).showPrayerSheet = showPrayerSheet;
+      (global as any).showBookChapterSelector = showBookChapterSelector;
     }
-  }, []);
+  }, [showPrayerSheet, showBookChapterSelector]);
   
   // Effect for preloading resources
   useEffect(() => {
@@ -275,10 +293,9 @@ export default function RootLayout() {
           snapPoints={settingsSnapPoints}
         />
         
-        <PrayerSheet
-          prayerSheetRef={prayerSheetRef}
-          snapPoints={prayerSnapPoints}
-        />
+        {/* Global sheets */}
+        <GlobalPrayerSheet />
+        <GlobalBookChapterSelectorSheet />
         
         <DebugButton />
       </BottomSheetModalProvider>

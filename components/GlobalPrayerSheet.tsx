@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef, useImperativeHandle, useEffect } from 'react';
+import React, { useCallback, useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,26 +13,21 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import PrimaryButton from './PrimaryButton';
 import { usePrayerStore } from '../app/stores/prayerStore';
+import { useUIStore } from '../app/stores/uiStore';
 
-interface PrayerSheetProps {
-  prayerSheetRef: React.RefObject<PrayerSheetRef>;
-  snapPoints: string[];
-}
-
-// Define the ref type that includes both BottomSheet methods and our custom show method
-export type PrayerSheetRef = {
-  show: () => void;
-  close: () => void;
-  expand: () => void;
-};
-
-const PrayerSheet: React.FC<PrayerSheetProps> = ({
-  prayerSheetRef,
-  snapPoints,
-}) => {
+/**
+ * GlobalPrayerSheet is a singleton component that can be rendered at the root level
+ * and controlled via the uiStore. This ensures it's rendered above the tab bar.
+ */
+const GlobalPrayerSheet: React.FC = () => {
   const [prayerInput, setPrayerInput] = useState('');
   
-  // Add internal ref for the actual BottomSheet
+  // Access uiStore to control visibility
+  const isPrayerSheetVisible = useUIStore(state => state.isPrayerSheetVisible);
+  const prayerGeneratedCallback = useUIStore(state => state.prayerGeneratedCallback);
+  const hidePrayerSheet = useUIStore(state => state.hidePrayerSheet);
+  
+  // Ref for the bottom sheet
   const bottomSheetRef = useRef<BottomSheet>(null);
   
   // Access prayer store
@@ -52,6 +47,15 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
     setOrderedTopics(getOrderedTopics().map(topic => topic.name));
   }, [prayerTopics, getOrderedTopics]);
   
+  // Watch for visibility changes and open/close the sheet accordingly
+  useEffect(() => {
+    if (isPrayerSheetVisible) {
+      showSheet();
+    } else {
+      bottomSheetRef.current?.close();
+    }
+  }, [isPrayerSheetVisible]);
+  
   // Handle prayer topic selection
   const handlePrayerTopicPress = useCallback((topic: string) => {
     setPrayerInput(topic);
@@ -69,35 +73,41 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
     incrementTopicCount(prayerInput);
     addRecentPrayer(prayerInput);
     
-    // Here you would typically call your prayer generation logic
+    // Close the bottom sheet
     bottomSheetRef.current?.close();
     
-    // Delay to allow the sheet to close before showing alert
+    // Trigger callback after the sheet is closed
     setTimeout(() => {
-      // Optionally show a success message
-      Alert.alert(
-        "Prayer Generated", 
-        `Your prayer for "${prayerInput}" has been generated.`,
-        [{ text: "Amen", style: "default" }]
-      );
+      if (prayerGeneratedCallback) {
+        prayerGeneratedCallback();
+      } else {
+        // Fallback if no callback provided
+        Alert.alert(
+          "Prayer Generated", 
+          `Your prayer for "${prayerInput}" has been generated.`,
+          [{ text: "Amen", style: "default" }]
+        );
+      }
       setPrayerInput('');
     }, 300);
-  }, [prayerInput, incrementTopicCount, addRecentPrayer]);
+  }, [prayerInput, incrementTopicCount, addRecentPrayer, prayerGeneratedCallback]);
   
   // Close the prayer sheet
   const handleClose = useCallback(() => {
     bottomSheetRef.current?.close();
-  }, []);
+    hidePrayerSheet();
+  }, [hidePrayerSheet]);
   
   // Handle prayer sheet changes
   const handlePrayerSheetChange = useCallback((index: number) => {
     if (index === -1) {
       // Sheet is closed - reset state after a delay
+      hidePrayerSheet();
       setTimeout(() => {
         setPrayerInput('');
       }, 200);
     }
-  }, []);
+  }, [hidePrayerSheet]);
   
   // Custom backdrop renderer
   const renderBackdrop = useCallback(
@@ -122,23 +132,12 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
     bottomSheetRef.current?.expand();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   }, [getOrderedTopics]);
-  
-  // Expose methods via ref
-  useImperativeHandle(
-    prayerSheetRef,
-    () => ({
-      show: showSheet,
-      close: () => bottomSheetRef.current?.close(),
-      expand: () => bottomSheetRef.current?.expand()
-    }),
-    [showSheet]
-  );
 
   return (
     <BottomSheet
       ref={bottomSheetRef}
       index={-1}
-      snapPoints={snapPoints}
+      snapPoints={['60%', '85%']}
       enablePanDownToClose={true}
       onChange={handlePrayerSheetChange}
       backgroundStyle={styles.sheetBackground}
@@ -228,7 +227,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
           </View>
 
           {/* Generate button */}
-          <View className="mt-48">
+          <View className="mt-12">
             <PrimaryButton
               title="Generate a prayer"
               onPress={handlePrayerGenerate}
@@ -335,34 +334,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#3C584A',
   },
-  prayerGenerateContainer: {
-    // Use padding instead of marginTop: auto to ensure it's reachable when keyboard is up
-    paddingVertical: 20,
-  },
-  prayerGenerateButton: {
-    backgroundColor: '#FFF4D9',
-    padding: 16,
-    borderRadius: 30,
-    alignItems: 'center',
-    shadowColor: '#FFE4A8',
-    shadowOffset: { width: 0, height: 5.716 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 6,
-  },
-  prayerGenerateButtonDisabled: {
-    backgroundColor: '#E0E0E0',
-    shadowColor: 'transparent',
-    elevation: 0,
-  },
-  prayerGenerateText: {
-    fontFamily: 'Nunito-Black',
-    fontSize: 18,
-    color: '#3C584A',
-  },
-  prayerGenerateTextDisabled: {
-    color: 'rgba(60, 88, 74, 0.5)',
-  },
   recentPrayersContainer: {
     marginBottom: 30,
   },
@@ -383,4 +354,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PrayerSheet; 
+export default GlobalPrayerSheet; 

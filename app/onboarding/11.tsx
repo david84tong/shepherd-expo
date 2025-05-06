@@ -1,0 +1,310 @@
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+import { useRouter } from 'expo-router';
+import { AntDesign } from '@expo/vector-icons';
+import { useAuth } from '../hooks/authHook';
+import { useOnboardingStore } from '../stores/onboardingStore';
+import { useUserStore } from '../stores/userStore';
+import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Animated, { 
+  useAnimatedStyle, 
+  withTiming, 
+  withSpring,
+  useSharedValue,
+  withDelay,
+  FadeIn,
+  FadeOut,
+} from 'react-native-reanimated';
+
+export default function SaveProgressScreen() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const { signInWithApple, signInAnonymously } = useAuth();
+  const { clearResponses, responses } = useOnboardingStore();
+  const { createUser } = useUserStore();
+
+  // Animation shared values
+  const headerOpacity = useSharedValue(0);
+  const headerTranslateY = useSharedValue(40);
+  
+  const benefitsOpacity = useSharedValue(0);
+  const benefitsTranslateY = useSharedValue(40);
+  
+  const buttonsOpacity = useSharedValue(0);
+  const buttonsTranslateY = useSharedValue(40);
+
+  useEffect(() => {
+    // Reset animation values
+    headerOpacity.value = 0;
+    headerTranslateY.value = 40;
+    benefitsOpacity.value = 0;
+    benefitsTranslateY.value = 40;
+    buttonsOpacity.value = 0;
+    buttonsTranslateY.value = 40;
+    
+    // Staggered animations for each component
+    const animateComponent = (opacity: any, translateY: any, delay: number) => {
+      opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
+      translateY.value = withDelay(delay, 
+        withSpring(0, { 
+          damping: 20,
+          stiffness: 90,
+        })
+      );
+    };
+
+    // Start animations with delays
+    animateComponent(headerOpacity, headerTranslateY, 0);
+    animateComponent(benefitsOpacity, benefitsTranslateY, 200);
+    animateComponent(buttonsOpacity, buttonsTranslateY, 400);
+  }, []);
+
+  // Create animated styles
+  const headerStyle = useAnimatedStyle(() => ({
+    opacity: headerOpacity.value,
+    transform: [{ translateY: headerTranslateY.value }]
+  }));
+
+  const benefitsStyle = useAnimatedStyle(() => ({
+    opacity: benefitsOpacity.value,
+    transform: [{ translateY: benefitsTranslateY.value }]
+  }));
+
+  const buttonsStyle = useAnimatedStyle(() => ({
+    opacity: buttonsOpacity.value,
+    transform: [{ translateY: buttonsTranslateY.value }]
+  }));
+
+  // Mark onboarding as completed and navigate to home
+  const completeOnboarding = async () => {
+    try {
+      await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+      await clearResponses(); // Clear onboarding responses after completion
+      router.replace('/onboarding/LoadingScreen'); // Changed to redirect to loading screen instead
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+    }
+  };
+
+  // Create user object from onboarding responses
+  const createUserFromResponses = async (uid: string, displayName: string) => {
+    try {
+      // Create user object from onboarding responses
+      const userData = {
+        id: uid, // Use id consistently instead of uid
+        displayName,
+        spiritualGoal: responses.intent?.includes('read-bible') ? 'Understand'
+          : responses.intent?.includes('talk-to-god') ? 'Overcome'
+          : responses.intent?.includes('reflection-quiet-time') ? 'Explore'
+          : 'Walk',
+        experienceLevel: responses.bibleFamiliarity === 'never' ? 'new'
+          : responses.bibleFamiliarity === 'a-little' ? 'new'
+          : responses.bibleFamiliarity === 'a-lot' ? 'mature'
+          : 'growing',
+        frequencyGoal: 'daily',
+        denomination: responses.religiousAffiliation,
+        ageRange: responses.ageRange,
+        lamb: {
+          level: 1,
+          xp: 0,
+          mood: 'lamb-idle',
+          hearts: 50,
+          name: responses.lambName || '',
+          skin: 'default'
+        }
+      };
+
+      // Create user in Firestore
+      const success = await createUser(uid, userData);
+      if (!success) {
+        throw new Error('Failed to create user document');
+      }
+    } catch (error) {
+      console.error('Error creating user:', error);
+      throw error;
+    }
+  };
+
+  // Handle sign in with Apple
+  const handleAppleSignIn = async () => {
+    try {
+      setLoading(true);
+      console.log("Starting Apple sign in process...");
+      const user = await signInWithApple();
+      
+      if (user) {
+        console.log("Apple sign in successful, creating user...");
+        await createUserFromResponses(user.uid, user.displayName || 'Anonymous User');
+        await completeOnboarding();
+      } else {
+        console.error("Apple sign in returned no user");
+        throw new Error("No user data returned from Apple");
+      }
+    } catch (error: any) {
+      console.error("Apple sign in error:", error);
+      
+      // Provide more specific feedback based on the error
+      let errorMessage = "There was a problem signing in with Apple.";
+      
+      if (error.message && error.message.includes("canceled")) {
+        errorMessage = "Sign in was canceled. Please try again.";
+      } else if (error.message && error.message.includes("network")) {
+        errorMessage = "Network error. Please check your internet connection and try again.";
+      } else if (error.message && error.message.includes("configuration")) {
+        errorMessage = "Authentication configuration error. Please try another method.";
+      }
+      
+      Alert.alert(
+        "Sign In Failed",
+        `${errorMessage} You can try again or use the anonymous option to continue.`,
+        [{ text: "OK" }]
+      );
+      
+      // Automatically fall back to anonymous sign in after Apple sign in fails
+      handleSkip(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle anonymous sign in
+  const handleSkip = async (showConfirmation = true) => {
+    if (showConfirmation) {
+      Alert.alert(
+        "Skip Sign In?",
+        "Without an account, your progress won't be saved if you delete the app or change devices.",
+        [
+          { text: "Go Back", style: "cancel" },
+          { 
+            text: "Skip Anyway", 
+            onPress: () => createAnonymousAccount()
+          }
+        ]
+      );
+    } else {
+      // Skip confirmation if coming from a failed Apple sign in
+      createAnonymousAccount();
+    }
+  };
+  
+  // Function to create anonymous account (extracted to avoid duplication)
+  const createAnonymousAccount = async () => {
+    try {
+      setLoading(true);
+      const user = await signInAnonymously();
+      if (user) {
+        await createUserFromResponses(user.uid, 'Anonymous User');
+        await completeOnboarding();
+      }
+    } catch (error) {
+      console.error("Anonymous sign in error:", error);
+      Alert.alert(
+        "Error",
+        "There was a problem creating anonymous account. Please try again.",
+        [{ text: "OK" }]
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <View className="flex-1 bg-surfaceCream px-6">
+      {/* Header */}
+      <Animated.View style={headerStyle} className="items-center mt-16 mb-8">
+        <Text className="font-feather text-h1 text-center text-textPrimary mb-3">
+          Save Your Progress
+        </Text>
+        <Text className="font-din text-body text-center text-description mb-6">
+          Sign in to keep your reading streak and Bible progress synced across devices.
+        </Text>
+        
+        {/* Icon */}
+        <View className="bg-white p-4 rounded-full mb-8 shadow-md">
+          <Image 
+            source={require('../../assets/icon.png')} 
+            className="w-24 h-24"
+            resizeMode="contain"
+          />
+        </View>
+      </Animated.View>
+      
+      {/* Benefits */}
+      <Animated.View style={benefitsStyle} className="mb-8">
+        <View className="flex-row items-center mb-4">
+          <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
+            <AntDesign name="check" size={18} color="#24CA17" />
+          </View>
+          <Text className="font-din text-body text-textPrimary flex-1">Save your reading progress</Text>
+        </View>
+        
+        <View className="flex-row items-center mb-4">
+          <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
+            <AntDesign name="check" size={18} color="#24CA17" />
+          </View>
+          <Text className="font-din text-body text-textPrimary flex-1">Transfer between devices</Text>
+        </View>
+        
+        <View className="flex-row items-center mb-4">
+          <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
+            <AntDesign name="check" size={18} color="#24CA17" />
+          </View>
+          <Text className="font-din text-body text-textPrimary flex-1">Keep your reading streak safe</Text>
+        </View>
+      </Animated.View>
+      
+      {/* Sign in button and Skip button */}
+      <Animated.View style={buttonsStyle}>
+        <View className="items-center mb-4">
+          <TouchableOpacity 
+            className="flex-row items-center justify-center bg-black w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow"
+            onPress={handleAppleSignIn}
+            disabled={loading}
+          >
+            <AntDesign name="apple1" size={24} color="white" style={{ marginRight: 10 }} />
+            <Text className="font-din text-white text-[18px] font-bold">
+              {loading ? "Signing in..." : "Sign in with Apple"}
+            </Text>
+          </TouchableOpacity>
+        </View>
+        
+        {/* Skip button */}
+        <TouchableOpacity 
+          onPress={() => handleSkip(true)}
+          className="items-center"
+          disabled={loading}
+        >
+          <Text className="font-din text-description underline text-[16px]">
+            {loading ? "Please wait..." : "Skip for now"}
+          </Text>
+        </TouchableOpacity>
+        
+        {/* Privacy note */}
+        <Text className="font-din text-[12px] text-description text-center mt-6 px-8">
+          We only use your Apple ID for authentication. Your email and personal details stay private.
+        </Text>
+      </Animated.View>
+
+      {/* Authentication Loading Overlay */}
+      {loading && (
+        <Animated.View 
+          entering={FadeIn.duration(300)}
+          exiting={FadeOut.duration(300)}
+          className="absolute inset-0 bg-black/30 items-center justify-center"
+          style={{ zIndex: 50 }}
+        >
+          <View className="bg-white/90 rounded-2xl p-6 items-center shadow-lg w-4/5 max-w-[300px]">
+            <ActivityIndicator size="large" color="#F7B500" />
+            <Text className="font-din text-textPrimary text-lg mt-4 text-center">
+              Authenticating...
+            </Text>
+            <Text className="font-din text-description text-sm mt-2 text-center">
+              Please wait while we secure your account
+            </Text>
+          </View>
+        </Animated.View>
+      )}
+    </View>
+  );
+}

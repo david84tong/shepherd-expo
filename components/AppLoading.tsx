@@ -53,10 +53,7 @@ const AppLoading: React.FC<AppLoadingProps> = ({ progress = 0 }) => {
         />
       </Animated.View>
       
-      {/* Loading text */}
-      <Text className="font-feather text-textPrimary text-xl mb-6">
-        Loading Shepherd...
-      </Text>
+  
       
       {/* Loading indicator */}
       <ActivityIndicator size="large" color="#3C584A" />

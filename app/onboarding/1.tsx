@@ -368,7 +368,7 @@ export default function OnboardingWelcomeScreen() {
         }}
       >
         <PrimaryButton
-          title={textPhase === 2 ? "Begin Journey" : "Claim Lost Lamb"}
+          title={!isLambTapped ? "Begin Journey" : "Claim Lost Lamb"}
           onPress={handleButtonPress}
           // Only disable in specific conditions
           disabled={(secondStageActive && !isLambTapped) || isAnimating || isTransitioning}

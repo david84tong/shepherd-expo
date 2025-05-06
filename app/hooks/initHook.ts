@@ -117,11 +117,24 @@ export const useAppInitialization = () => {
           });
 
           // Fetch user from Firestore and set to userStore
-          const firestoreUser = await getUserDocument();
-          if (firestoreUser) {
-            // Set the fetched user in Zustand userStore
-            useUserStore.getState().setUser(firestoreUser);
-            console.log('✅ User loaded from Firestore:', firestoreUser);
+          try {
+            const firestoreUser = await getUserDocument();
+            if (firestoreUser && typeof firestoreUser === 'object' && firestoreUser !== null) {
+              // Check if we have a valid user object before setting it
+              if (firestoreUser.id) {
+                // Update individual fields instead of the whole object at once
+                if (firestoreUser.displayName) setDisplayName(firestoreUser.displayName);
+                if (firestoreUser.createdAt) setCreatedAt(firestoreUser.createdAt);
+                if (firestoreUser.updatedAt) setUpdatedAt(firestoreUser.updatedAt);
+                // Add other important fields if needed
+                
+                console.log('✅ User loaded from Firestore:', firestoreUser.id);
+              } else {
+                console.error('❌ Invalid user document structure (missing ID)');
+              }
+            }
+          } catch (firestoreError) {
+            console.error('❌ Error fetching user from Firestore:', firestoreError);
           }
         }
         
