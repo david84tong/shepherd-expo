@@ -273,6 +273,7 @@ const styles = StyleSheet.create({
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     color: '#F7B500',
     fontWeight: '600',
+    opacity: 0
   },
   prayerContent: {
     flex: 1,

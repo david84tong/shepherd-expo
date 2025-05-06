@@ -28,6 +28,9 @@ interface JournalProps {
 // Get screen dimensions
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+// Minimum characters required to enable the save button
+const MIN_CHARS_REQUIRED = 10;
+
 /**
  * Component for the Daily Reflection/Journaling feature.
  * Includes an auto-focusing TextInput and handles keyboard appearance.
@@ -38,6 +41,12 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
   const [reflectionContent, setReflectionContent] = useState('');
+  
+  // Calculate character count
+  const charCount = useMemo(() => reflectionContent.length, [reflectionContent]);
+  
+  // Check if button should be enabled
+  const isButtonEnabled = useMemo(() => charCount >= MIN_CHARS_REQUIRED, [charCount]);
   
   // Get store functions
   const setSuccessType = useHomeStore((state) => state.setSuccessType);
@@ -203,6 +212,9 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   }
 
   const handleSave = () => {
+    // Don't save if not enough characters
+    if (reflectionContent.length < MIN_CHARS_REQUIRED) return;
+    
     Keyboard.dismiss();
     setPathInProgress(false);
     setReflectionCompleted(true); // Set reflection as completed
@@ -253,23 +265,40 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
 
       {/* Animated Card with TextInput */}
       <Animated.View 
-        className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto mt-[120px] border-4 border-border"
+        className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto mt-[120px] border-4 border-border pb-4"
         style={cardStyle}
       >
-        <Text className="text-h1 font-feather text-textPrimary mb-6 text-center leading-tight">Daily Reflection</Text>
+        <Text className="text-heading font-feather text-textPrimary mb-2 text-center leading-tight">Reflection</Text>
         
-        <TextInput
-          ref={inputRef}
-          className="w-full bg-surfaceCream/50 rounded-[18px] p-4 border border-border text-body font-din text-textPrimary"
-          placeholder="What's on your mind today?"
-          placeholderTextColor="#B89B4C"
-          multiline
-          textAlignVertical="top"
-          scrollEnabled={true}
-          style={{ flex: 1 }}
-          value={reflectionContent}
-          onChangeText={setReflectionContent}
-        />
+        {/* Text input area with character counter */}
+        <View className="w-full relative flex-1">
+          <TextInput
+            ref={inputRef}
+            className="w-full bg-surfaceCream/50 rounded-[18px] p-4 border border-border text-body font-din text-textPrimary"
+            placeholder="What's on your mind today?"
+            placeholderTextColor="#B89B4C"
+            multiline
+            textAlignVertical="top"
+            scrollEnabled={true}
+            style={{ flex: 1 }}
+            value={reflectionContent}
+            onChangeText={setReflectionContent}
+          />
+          
+          {/* Character count bubble */}
+          <View className="absolute -top-3 -right-2 bg-white rounded-full py-1 px-3  border border-[#FFE4A8]">
+            <Text className="font-feather text-sm text-textPrimary">
+              {charCount}
+            </Text>
+          </View>
+        </View>
+        
+        {/* Character count instruction (only show when under minimum) */}
+        {charCount < MIN_CHARS_REQUIRED && (
+          <Text className="font-din text-sm text-description mt-2 text-right self-end">
+            Please write at least {MIN_CHARS_REQUIRED} characters
+          </Text>
+        )}
       </Animated.View>
 
       {/* Animated Bottom Content (Rive + Button) */}
@@ -289,7 +318,11 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         
         {/* Save Button */}
         <View className="flex-1 items-end w-[280px] ml-8 mt-4">
-          <PrimaryButton title="Hold This Thought" onPress={handleSave} />
+          <PrimaryButton 
+            title="Hold This Thought" 
+            onPress={handleSave} 
+            disabled={!isButtonEnabled}
+          />
         </View>
       </Animated.View>
     </Animated.View>

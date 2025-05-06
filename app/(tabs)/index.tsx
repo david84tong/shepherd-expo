@@ -21,7 +21,7 @@ import PrayerComponent from '../../components/PrayerComponent';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
 import JournalComponent from '../../components/JournalComponent';
 import ProgressPill from '../../components/ProgressPill';
-import { useHomeStore, HomeMode } from '../stores/homeStore'; // Import Zustand store
+import { useHomeStore, HomeMode, SuccessAnimationType } from '../stores/homeStore'; // Import Zustand store
 import { usePathStore } from '../stores/pathStore'; // Import path store
 import { useUserStore } from '../stores/userStore'; // Import user store
 import { usePrayerStore } from '../stores/prayerStore'; // Import prayer store
@@ -229,6 +229,11 @@ export default function HomeScreen() {
     duration: number = 1000,
     mode: HomeMode
   ) => {
+    // Add haptic feedback when animating to a new state
+    if (mode !== 'DEFAULT') {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+    }
+
     const fadeOutAnims = [grassOpacityAnim, pathOpacityAnim, waterOpacityAnim, journalOpacityAnim]
       .filter((anim) => anim !== targetOpacityAnim)
       .map((anim) => Animated.timing(anim, { toValue: 0, duration, useNativeDriver: true }));
@@ -304,6 +309,9 @@ export default function HomeScreen() {
 
   const animateToDefault = (duration: number = 800) => {
     console.log('Animating back to default state');
+    // Provide haptic feedback when returning to default state
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    
     const resetPositionAnims = [
       Animated.timing(previewAnim, {
         toValue: 0,
@@ -384,6 +392,9 @@ export default function HomeScreen() {
       console.log('Activating Prayer mode from external navigation');
       setShowBgRive(true);
 
+      // Provide haptic feedback for mode change
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+
       // Set the Rive resource
       setArtboardName('lamb-drinking');
 
@@ -400,6 +411,9 @@ export default function HomeScreen() {
       // Handle reflection mode activation when coming from other screens
       console.log('Activating Reflection mode from external navigation');
 
+      // Provide haptic feedback for mode change
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+
       // Animate lamb size
       Animated.timing(lambSizeAnim, {
         toValue: 128,
@@ -414,152 +428,74 @@ export default function HomeScreen() {
 
   // --- Event Handlers ---
   const handleReadPress = () => {
-    console.log('Read Daily Bread Pressed - Setting resource to lamb-eating');
-
-    // Set the UI mode to preview
+    console.log('Read the word button pressed');
+    
+    // Trigger heavy haptic feedback for this significant action
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+    
+    // Animate mode transition
+    animateToState(0.5, pathOpacityAnim, 800, 'PREVIEW');
+    setArtboardName('lamb-reading');
+    
+    // Update the mode in the store
     setMode('PREVIEW');
-    animateToState(0.5, pathOpacityAnim, 1000, 'PREVIEW');
-
-    // Animate the Rive view itself
+    
+    // Animate the Rive view a bit
     Animated.sequence([
-      Animated.parallel([
-        Animated.timing(riveScaleAnim, {
-          toValue: 0.9,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(riveRotateAnim, {
-          toValue: 0.05,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(riveScaleAnim, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(riveRotateAnim, {
-          toValue: 0,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-      ]),
+      Animated.timing(riveScaleAnim, {
+        toValue: 1.05,
+        duration: 300,
+        useNativeDriver: true,
+      }),
+      Animated.timing(riveScaleAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }),
     ]).start();
-
-    // Set Rive resource after a delay
-    setTimeout(() => {
-      console.log('Setting Rive to lamb-reading');
-      setArtboardName('lamb-reading');
-    }, 300);
   };
 
   const handlePrayerPress = () => {
-    console.log('Daily Prayer Pressed - Showing prayer sheet');
+    console.log('Prayer button pressed');
     
-    // Provide haptic feedback when prayer button pressed
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    // Trigger rigid haptic feedback for this significant action
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     
-    // Show the prayer sheet using uiStore
-    showPrayerSheet(handlePrayerGenerated);
-  };
-
-  // Add a new function to handle prayer generation when sheet is submitted
-  const handlePrayerGenerated = () => {
-    console.log('Prayer Generated - Setting resource to lamb-drinking');
+    // Update the mode in the store
     setMode('PRAYER');
-    setShowBgRive(true);
-
-    Animated.timing(lambSizeAnim, {
-      toValue: 128,
-      duration: 1200,
-      useNativeDriver: false,
-    }).start();
-
-    animateToState(1, waterOpacityAnim, 1000, 'PRAYER');
-
-    // Animate the Rive view itself
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(riveScaleAnim, {
-          toValue: 0.85,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(riveRotateAnim, {
-          toValue: -0.05,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(riveScaleAnim, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(riveRotateAnim, {
-          toValue: 0,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
-
-    // Set Rive resource after a delay
-    setTimeout(() => {
-      console.log('Setting Rive to lamb-drinking');
-      setArtboardName('lamb-drinking');
-    }, 300);
+    
+    // Animate mode transition with water animations  
+    animateToState(0.5, waterOpacityAnim, 800, 'PRAYER');
+    setArtboardName('lamb-drinking');
   };
 
   const handleReflectionPress = () => {
-    console.log('Daily Reflection / QT Pressed - No resource change');
+    console.log('Reflection button pressed');
+    
+    // Trigger heavy haptic feedback for this significant action
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {});
+    
+    // Update the mode in the store
     setMode('REFLECTION');
-
-    Animated.timing(lambSizeAnim, {
-      toValue: 128,
-      duration: 1200,
-      useNativeDriver: false,
-    }).start();
-
-    animateToState(1, journalOpacityAnim, 1000, 'REFLECTION');
-
-    // Animate the Rive view itself
-    Animated.sequence([
-      Animated.parallel([
-        Animated.timing(riveScaleAnim, {
-          toValue: 0.9,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(riveRotateAnim, {
-          toValue: 0.05,
-          duration: 400,
-          useNativeDriver: true,
-        }),
-      ]),
-      Animated.parallel([
-        Animated.timing(riveScaleAnim, {
-          toValue: 1,
-          duration: 500,
-          useNativeDriver: true,
-        }),
-        Animated.timing(riveRotateAnim, {
-          toValue: 0,
-          duration: 600,
-          useNativeDriver: true,
-        }),
-      ]),
-    ]).start();
-  // Set Rive resource after a delay
-  setTimeout(() => {
-    console.log('Setting Rive to lamb-drinking');
+    
+    // Animate to reflection state
+    animateToState(0.5, journalOpacityAnim, 800, 'REFLECTION');
     setArtboardName('lamb-writing');
-  }, 300);
-    // No Rive change needed here currently
-   
+    
+    // Rotate the lamb slightly when transitioning to reflection
+    Animated.timing(riveRotateAnim, {
+      toValue: 0.05, // Slightly rotated
+      duration: 500,
+      useNativeDriver: true,
+    }).start(() => {
+      // Return to normal rotation after a delay
+      Animated.timing(riveRotateAnim, {
+        toValue: 0,
+        duration: 500,
+        delay: 500,
+        useNativeDriver: true,
+      }).start();
+    });
   };
 
   // --- Handlers for Closing Overlays ---

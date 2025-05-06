@@ -19,6 +19,8 @@ import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet'
 import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
 import GlobalPrayerSheet from '../components/GlobalPrayerSheet';
 import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
+import OldReflectionSheet from '../components/OldReflectionSheet';
+import { Reflection } from './models/User';
 
 // Error logging setup
 if (__DEV__) {
@@ -92,6 +94,7 @@ export default function RootLayout() {
   const isPrayerSheetVisible = useUIStore((state) => state.isPrayerSheetVisible);
   const showPrayerSheet = useUIStore((state) => state.showPrayerSheet);
   const showBookChapterSelector = useUIStore((state) => state.showBookChapterSelector);
+  const showOldReflectionSheet = useUIStore(state => state.showOldReflectionSheet);
 
   // Sheet refs
   const halfModalRef = useRef<HalfModalSheetRef>(null);
@@ -210,8 +213,9 @@ export default function RootLayout() {
       (global as any).showSettings = showSettings;
       (global as any).showPrayerSheet = showPrayerSheet;
       (global as any).showBookChapterSelector = showBookChapterSelector;
+      (global as any).showOldReflectionSheet = showOldReflectionSheet;
     }
-  }, [showPrayerSheet, showBookChapterSelector]);
+  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet]);
   
   // Effect for preloading resources
   useEffect(() => {
@@ -296,6 +300,7 @@ export default function RootLayout() {
         {/* Global sheets */}
         <GlobalPrayerSheet />
         <GlobalBookChapterSelectorSheet />
+        <OldReflectionSheet />
         
         <DebugButton />
       </BottomSheetModalProvider>

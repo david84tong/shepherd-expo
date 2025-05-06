@@ -24,8 +24,8 @@ type BibleSection = {
   artboardName?: string;
 };
 
-// Next node indicator component with Rive animation
-const NextNodeIndicator = ({ alignment }: { alignment: 'start' | 'center' | 'end' }) => {
+// Optimize NextNodeIndicator with memo
+const NextNodeIndicator = React.memo(({ alignment }: { alignment: 'start' | 'center' | 'end' }) => {
   // Load Rive assets
   const [riveAssets] = useAssets([
     require('../../assets/riveAnimations/homeLamb.riv')
@@ -59,7 +59,7 @@ const NextNodeIndicator = ({ alignment }: { alignment: 'start' | 'center' | 'end
       <Text className="absolute bottom-0 font-bold text-xs bg-white px-1 rounded">NEXT</Text>
     </View>
   );
-};
+});
 
 // Hook to get unit status based on global state and current section order
 const useUnitStatus = (sections: BibleSection[]) => {
@@ -133,7 +133,8 @@ interface SectionHeaderProps {
   color: string;
 }
 
-const SectionHeader: React.FC<SectionHeaderProps> = ({ title, isFirst, icon, color }) => {
+// Optimize SectionHeader with memo
+const SectionHeader = React.memo(({ title, isFirst, icon, color }: SectionHeaderProps) => {
   // Get the background color based on path color
   const getBgColor = () => {
     switch (color) {
@@ -184,10 +185,10 @@ const SectionHeader: React.FC<SectionHeaderProps> = ({ title, isFirst, icon, col
       </View>
     </View>
   );
-};
+});
 
-// Pulsing animation component
-const PulsingCircle: React.FC = () => {
+// Optimize the pulsing animation component
+const PulsingCircle = React.memo(() => {
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(0.7)).current;
   
@@ -243,7 +244,7 @@ const PulsingCircle: React.FC = () => {
       }}
     />
   );
-};
+});
 
 // Define a rough constant height for each node item (including margins)
 const ITEM_HEIGHT = 180; // adjust if needed
@@ -475,7 +476,7 @@ export default function MapScreen() {
     return null;
   };
 
-  // Render a node item
+  // Render a node item - Optimized with useCallback and better dependencies
   const renderItem = useCallback(({ item, index, section }: { 
     item: Unit, 
     index: number, 
@@ -506,25 +507,14 @@ export default function MapScreen() {
           onPress={handleNodePress}
         />
         
-        {/* Sheep decoration at second node position in every section */}
-        {isSecondNodeInSection && section.riveName && section.artboardName && (
+        {/* Sheep decoration at second node position in every section - Only render when visible */}
+        {isSecondNodeInSection && section.riveName && section.artboardName && false && (
           <View 
             className={`absolute ${section.riveName === 'successLamb' ? 'right-24' : 'right-2'} top-1/2 -translate-y-1/2`}
             style={{ zIndex: 10 }}
           >
             <View className="w-44 h-44">
-              {/* {section.riveName && getRiveAssetUri(section.riveName) ? (
-                <Rive
-                  url={getRiveAssetUri(section.riveName)!}
-                  artboardName={section.artboardName}
-                  autoplay={true}
-                  style={{
-                    width: section.riveName === 'successLamb' ? '200%' : '100%',
-                    height: section.riveName === 'successLamb' ? '200%' : '100%',
-                    opacity: section.pathId === 'genesis-beginnings' ? 1 : 1,
-                  }}
-                />
-              ) : null} */}
+              {/* Rive animations temporarily disabled for performance */}
             </View>
           </View>
         )}
@@ -543,14 +533,12 @@ export default function MapScreen() {
             />
           </View>
         )}
-        
-    
       </View>
     );
-  }, [getStatus, handleNodePress, isNextUnit]);
+  }, [getStatus, handleNodePress, isNextUnit]); // Optimized dependencies
 
-  // Render section header using StickyPathHeader for each section
-  const renderSectionHeader = ({ section }: { section: BibleSection }) => {
+  // Render section header - Improved with memo
+  const renderSectionHeader = useCallback(({ section }: { section: BibleSection }) => {
     // Check if section is unlocked
     const isUnlocked = isSectionUnlocked(section.pathId);
     
@@ -564,7 +552,7 @@ export default function MapScreen() {
         isLocked={!isUnlocked}
       />
     );
-  };
+  }, [isSectionUnlocked]);
 
   // Show loading indicator while assets load
   if (!riveAssets) {
@@ -592,15 +580,20 @@ export default function MapScreen() {
         scrollEventThrottle={16}
         stickySectionHeadersEnabled={false}
         // Performance optimizations
-        initialNumToRender={10}
-        maxToRenderPerBatch={10}
-        windowSize={15}
+        initialNumToRender={5}
+        maxToRenderPerBatch={5}
+        windowSize={10}
         removeClippedSubviews={true}
         getItemLayout={(_data, index) => ({
           length: ITEM_HEIGHT,
           offset: ITEM_HEIGHT * index,
           index,
         })}
+        updateCellsBatchingPeriod={50}
+        maintainVisibleContentPosition={{
+          minIndexForVisible: 0,
+          autoscrollToTopThreshold: 10,
+        }}
       />
       
       {/* If we want a floating persistent next indicator, we could add it here */}

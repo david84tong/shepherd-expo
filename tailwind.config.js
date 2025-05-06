@@ -109,6 +109,7 @@ module.exports = {
         'backButton': '0px 5.716px 0px 0px #FFE4A8', // Inset shadows are hard in RN
         'blueButtonShadow': '0px 5.716px 0px 0px #98E1FE', // Fixed blue button shadow
         'appleShadow': '0px 5.716px 0px 0px rgb(67, 67, 67)', // Inset shadows are hard in RN
+        'greyShadow': '0px 5.716px 0px 0px #98A1AE', // Inset shadows are hard in RN
 
         // Shadows for each dark color - solid shadow style with vertical offset
         'darkYellow': '0px 5px 0px 0px #F7B500',

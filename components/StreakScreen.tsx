@@ -16,6 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
+import { usePathStore } from '../app/stores/pathStore';
 
 /* ─────────────── helper ─────────────── */
 type DayStatus =
@@ -284,7 +285,11 @@ export const StreakScreen = () => {
   const subText = getStreakSubtext(streak);
 
   // Add a function to handle continue button press
+  const setPathInProgress = usePathStore((state) => state.setPathInProgress);
+
   const handleContinue = () => {
+    console.log('[StreakScreen] Continue pressed. Resetting pathInProgress and navigating to home.');
+    setPathInProgress(false);
     router.replace('/(tabs)');
   };
 

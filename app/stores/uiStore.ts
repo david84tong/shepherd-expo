@@ -1,4 +1,8 @@
 import { create } from 'zustand';
+import HalfModalType from '../../components/HalfModalSheet';
+// Define the callback type directly here
+export type BookChapterSelectorCallback = (bookId: number, chapter: number) => void;
+import { Reflection } from '../models/User'; // Import Reflection type
 
 interface UIState {
   isModalDimActive: boolean;
@@ -14,19 +18,27 @@ interface UIState {
 
   // Book Chapter Selector sheet state
   isBookChapterSelectorVisible: boolean;
-  bookChapterSelectorProps: {
-    currentBookId: number;
-    currentChapter: number;
-    onSelectCallback: ((bookId: number, chapter: number) => void) | null;
+  bookChapterSelectorParams: {
+    initialBookId: number;
+    initialChapter: number;
+    onSelect: BookChapterSelectorCallback | null;
   };
   
   // Book Chapter Selector actions
   showBookChapterSelector: (
-    currentBookId: number, 
-    currentChapter: number, 
-    onSelect: (bookId: number, chapter: number) => void
+    initialBookId: number,
+    initialChapter: number,
+    onSelect: BookChapterSelectorCallback
   ) => void;
   hideBookChapterSelector: () => void;
+
+  // New state for OldReflectionSheet
+  isOldReflectionSheetVisible: boolean;
+  reflectionToShow: Reflection | null;
+
+  // New actions for OldReflectionSheet
+  showOldReflectionSheet: (reflection: Reflection) => void;
+  hideOldReflectionSheet: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -59,29 +71,36 @@ export const useUIStore = create<UIState>((set) => ({
 
   // Book Chapter Selector state
   isBookChapterSelectorVisible: false,
-  bookChapterSelectorProps: {
-    currentBookId: 1,
-    currentChapter: 1,
-    onSelectCallback: null
+  bookChapterSelectorParams: {
+    initialBookId: 1,
+    initialChapter: 1,
+    onSelect: null,
   },
 
   // Book Chapter Selector actions
-  showBookChapterSelector: (currentBookId, currentChapter, onSelect) => {
+  showBookChapterSelector: (initialBookId, initialChapter, onSelect) => {
     console.log('[UIStore] Showing book chapter selector');
     set({
       isBookChapterSelectorVisible: true,
-      bookChapterSelectorProps: {
-        currentBookId,
-        currentChapter,
-        onSelectCallback: onSelect
-      }
+      bookChapterSelectorParams: { initialBookId, initialChapter, onSelect },
     });
   },
 
   hideBookChapterSelector: () => {
     console.log('[UIStore] Hiding book chapter selector');
     set({
-      isBookChapterSelectorVisible: false
+      isBookChapterSelectorVisible: false,
+      bookChapterSelectorParams: { initialBookId: 1, initialChapter: 1, onSelect: null },
     });
-  }
+  },
+
+  // New state for OldReflectionSheet
+  isOldReflectionSheetVisible: false,
+  reflectionToShow: null,
+
+  // New actions for OldReflectionSheet
+  showOldReflectionSheet: (reflection) => 
+    set({ isOldReflectionSheetVisible: true, reflectionToShow: reflection }),
+  hideOldReflectionSheet: () => 
+    set({ isOldReflectionSheetVisible: false, reflectionToShow: null }),
 })); 

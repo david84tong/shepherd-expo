@@ -1,5 +1,5 @@
 const BASE_URL = 'https://bible-go-api.rkeplin.com/v1';
-
+// https://www.rkeplin.com/the-holy-bible-open-source-rest-api/
 // Define the actual structure returned by the new API
 interface ApiVerse {
   id: number;

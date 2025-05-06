@@ -42,10 +42,11 @@ export const useAppInitialization = () => {
   const setLastReadingPenaltyDate = useUserStore(state => state.setLastReadingPenaltyDate);
   const setLastPrayerPenaltyDate = useUserStore(state => state.setLastPrayerPenaltyDate);
   const setLastReflectionPenaltyDate = useUserStore(state => state.setLastReflectionPenaltyDate);
+  const fetchFromFirestore = useUserStore(state => state.fetchFromFirestore);
 
   useEffect(() => {
     const initializeApp = async () => {
-        console.log('🚀 Initializing app french...');
+        console.log('🚀 Initializing app...');
       try {
         setIsLoading(true);
         
@@ -116,22 +117,13 @@ export const useAppInitialization = () => {
             lambName: userData?.lamb?.name || 'Not set'
           });
 
-          // Fetch user from Firestore and set to userStore
+          // Fetch user from Firestore and update userStore
           try {
-            const firestoreUser = await getUserDocument();
-            if (firestoreUser && typeof firestoreUser === 'object' && firestoreUser !== null) {
-              // Check if we have a valid user object before setting it
-              if (firestoreUser.id) {
-                // Update individual fields instead of the whole object at once
-                if (firestoreUser.displayName) setDisplayName(firestoreUser.displayName);
-                if (firestoreUser.createdAt) setCreatedAt(firestoreUser.createdAt);
-                if (firestoreUser.updatedAt) setUpdatedAt(firestoreUser.updatedAt);
-                // Add other important fields if needed
-                
-                console.log('✅ User loaded from Firestore:', firestoreUser.id);
-              } else {
-                console.error('❌ Invalid user document structure (missing ID)');
-              }
+            const fetchSuccess = await fetchFromFirestore();
+            if (fetchSuccess) {
+              console.log('✅ User data successfully fetched from Firestore');
+            } else {
+              console.warn('⚠️ User data could not be fetched from Firestore');
             }
           } catch (firestoreError) {
             console.error('❌ Error fetching user from Firestore:', firestoreError);

@@ -75,12 +75,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   // Determine which type to use for rendering
   const effectiveType = successType ?? SuccessAnimationType.READING;
   
-  // Reset sawDailyBonus flag after determining effectiveType so it doesn't override future success screens
+  // Set sawDailyBonus to true immediately when bonus screen shows to prevent repeats
   useEffect(() => {
-    if (sawDailyBonus) {
-      setSawDailyBonus(false);
+    if (effectiveType === SuccessAnimationType.BONUS && !sawDailyBonus) {
+      console.log("BONUS screen showing for first time - immediately setting sawDailyBonus flag");
+      setSawDailyBonus(true);
     }
-  }, [sawDailyBonus, setSawDailyBonus]);
+  }, [effectiveType, sawDailyBonus, setSawDailyBonus]);
   
   // State to track if rewards have been applied
   const [rewardsApplied, setRewardsApplied] = useState(false);
@@ -288,13 +289,19 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Always add XP
       addXp(xpReward);
       
-      // If this is a BONUS reward, add 9 gems AND set sawDailyBonus flag
-      if (effectiveType === SuccessAnimationType.BONUS) {
+      // If this is a BONUS reward, add 9 gems
+      // Only add gems if this is truly the first time seeing the bonus (sawDailyBonus was false)
+      if (effectiveType === SuccessAnimationType.BONUS && !sawDailyBonus) {
         const currentGems = getGens();
         setGens(currentGems + 9);
         console.log(`Applied +9 Gems. Updated value - Gems: ${currentGems + 9}`);
+        
+        // Set the flag to indicate user has seen daily bonus
         setSawDailyBonus(true);
         console.log("Setting sawDailyBonus to true");
+      } else if (effectiveType === SuccessAnimationType.BONUS) {
+        // Log if we're not adding gems because bonus was already seen
+        console.log("Not adding gems - user has already seen bonus animation today");
       }
       
       // Create a new timestamp for the current time
@@ -323,9 +330,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       console.log(`Updated values - Hearts: ${lambHearts + heartsToAdd}, XP: ${lambXp + xpReward}`);
       console.log(`Updated activity timestamp for ${effectiveType}`);
     }
-
-    
-  }, [effectiveType, rewardsApplied, lambHearts, lambXp, heartReward, xpReward]);
+  }, [effectiveType, rewardsApplied, lambHearts, lambXp, heartReward, xpReward, sawDailyBonus, setSawDailyBonus]);
 
   // Play animations when component mounts or successType changes
   useEffect(() => {
@@ -453,10 +458,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     }, 700); // 500ms delay
   };
   
-  // Determine if we should show next action buttons (only after reading is completed)
-  const showNextButtons = effectiveType === SuccessAnimationType.READING && !prayerCompleted && !reflectionCompleted;
-
-  // Set lamb mood to 'lamb-full' if all actions are completed
+  // Determine if we should show next action buttons (only for reading completion)
+  const showNextButtons = effectiveType === SuccessAnimationType.READING && (!prayerCompleted || !reflectionCompleted);
 
   // If we're showing the streak screen, return it
   if (showStreakScreen) {
@@ -502,7 +505,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
           <Rive
             ref={riveRef}
             url={riveAssets[0].localUri!}
-            autoplay={false}
+            autoplay={true}
             style={{ width: '100%', height: '100%' }}
             {...(riveArtboard ? { artboardName: riveArtboard } : {})}
           />
@@ -552,32 +555,34 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         )}
       </Animated.View>
       
-      {/* Next Action Buttons - based on completion state */}
-      <View className="w-full mt-4 mb-2">
-        <View className="flex-row justify-center space-x-12">
-          {/* Show Pray button only if prayer is not completed */}
-          {!prayerCompleted && (
-            <PrimaryButton
-              title="Pray"
-              onPress={handleGoToPrayer}
-              style={reflectionCompleted ? "w-full" : "flex-1"}
-              buttonType="blue"
-            />
-          )}
-          <View className="w-4"></View>
-          {/* Show Reflect button only if reflection is not completed */}
-          {!reflectionCompleted && (
-            <PrimaryButton
-              title="Reflect"
-              onPress={handleGoToReflection}
-              style={prayerCompleted ? "w-full" : "flex-1"}
-            />
-          )}
+      {/* Next Action Buttons - only show if needed */}
+      {showNextButtons && (
+        <View className="w-full mt-4 mb-2">
+          <View className="flex-row justify-center space-x-4">
+            {/* Show Pray button only if prayer is not completed */}
+            {!prayerCompleted && (
+              <PrimaryButton
+                title="Pray"
+                onPress={handleGoToPrayer}
+                style={reflectionCompleted ? "w-full" : "flex-1"}
+                buttonType="blue"
+              />
+            )}
+            
+            {/* Show Reflect button only if reflection is not completed */}
+            {!reflectionCompleted && (
+              <PrimaryButton
+                title="Reflect"
+                onPress={handleGoToReflection}
+                style={prayerCompleted ? "w-full" : "flex-1"}
+              />
+            )}
+          </View>
         </View>
-      </View>
+      )}
       
       {/* Return Home - style based on whether action buttons are shown */}
-      {(!prayerCompleted || !reflectionCompleted) ? (
+      {showNextButtons ? (
         // Text link style when action buttons are shown
         <TouchableOpacity
           onPress={handlePress}

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { TouchableOpacity, View, Text, Image, ImageSourcePropType, Pressable } from 'react-native';
+import * as Haptics from 'expo-haptics';
 
 interface SecondaryButtonProps {
   icon: ImageSourcePropType;
@@ -31,6 +32,12 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   const shadowClass = (!isPressed && !completed) ? 'shadow-buttonShadow' : '';
   const opacityClass = completed ? 'opacity-70' : '';
   
+  const handlePress = () => {
+    // Trigger medium haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    if (onPress) onPress();
+  };
+  
   return (
     <View className={`mt-6 h-[80px] w-full ${style || ''}`}>
       <Pressable
@@ -42,12 +49,12 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
         style={({ pressed }) => [
           { elevation: (pressed || completed) ? 0 : 6 }
         ]}
-        onPress={onPress}
+        onPress={handlePress}
         disabled={disabled}
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}
       >
-        <Image source={icon} className="w-[56px] h-[56px] mr-2 -ml-2" resizeMode="contain" />
+        <Image source={icon} className="w-[48px] h-[48px] mr-2 -ml-2" resizeMode="contain" />
         <View className="flex-1">
           <Text className="font-feather text-textPrimary text-heading">
             {title}
