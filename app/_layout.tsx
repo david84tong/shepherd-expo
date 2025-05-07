@@ -96,6 +96,7 @@ export default function RootLayout() {
   const [appReady, setAppReady] = useState(false);
   const [loadProgress, setLoadProgress] = useState(0);
   const [isOnboardingChecked, setIsOnboardingChecked] = useState(false);
+  const [initialRouteDetermined, setInitialRouteDetermined] = useState(false);
 
   // Global modal state
   const isModalDimActive = useUIStore((state) => state.isModalDimActive);
@@ -130,9 +131,12 @@ export default function RootLayout() {
   const checkOnboarding = async () => {
     try {
       if (isSignedIn()) {
+        console.log('User is signed in, redirecting to tabs...');
+        setInitialRouteDetermined(true);
         if (!(segments as string[]).includes('(tabs)')) {
-          console.log('User is signed in, redirecting to tabs...');
-          router.replace('/(tabs)');
+          setTimeout(() => {
+            router.replace('/(tabs)');
+          }, 0);
         }
         setIsOnboardingChecked(true);
         return;
@@ -141,17 +145,21 @@ export default function RootLayout() {
       const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
 
       if (onboardingCompleted !== 'true') {
+        console.log('User not signed in or onboarding not completed, redirecting to welcome screen...');
+        setInitialRouteDetermined(true);
         if (!(segments as string[]).includes('onboarding')) {
-          console.log(
-            'User not signed in or onboarding not completed, redirecting to welcome screen...'
-          );
-          router.replace('/onboarding/1');
+          setTimeout(() => {
+            router.replace('/onboarding/1');
+          }, 0);
         }
       } else {
         // Se onboarding já foi completado, mas não está logado, vai para login
+        console.log('Onboarding completed but not signed in, redirecting to login...');
+        setInitialRouteDetermined(true);
         if (!(segments as string[]).includes('login')) {
-          console.log('Onboarding completed but not signed in, redirecting to login...');
-          router.replace('/login');
+          setTimeout(() => {
+            router.replace('/login');
+          }, 0);
         }
       }
 
@@ -159,9 +167,13 @@ export default function RootLayout() {
     } catch (error) {
       console.error('Error checking onboarding status:', error);
       setIsOnboardingChecked(true);
+      setInitialRouteDetermined(true);
 
+      // Safe fallback
       if (!(segments as string[]).includes('onboarding')) {
-        router.replace('/onboarding/1');
+        setTimeout(() => {
+          router.replace('/onboarding/1');
+        }, 0);
       }
     }
   };

@@ -118,7 +118,7 @@ export default function OnboardingPathScreen() {
     {
       id: 'way-of-wisdom',
       title: 'The Way of Wisdom',
-      subtitle: 'Gain clarity and discernment',
+      subtitle: 'Start with Psalms as your daily guide',
       image: wisdomImg,
       order: [
         'psalms-wisdom', // 💡 daily heart-training starts here

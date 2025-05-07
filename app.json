@@ -78,7 +78,15 @@
     },
     "extra": {
       "router": {
-        "origin": false
+        "origin": false,
+        "ignoreFiles": [
+          "app/api/**/*.{ts,tsx}",
+          "app/hooks/**/*.{ts,tsx}",
+          "app/models/**/*.{ts,tsx}", 
+          "app/stores/**/*.{ts,tsx}",
+          "app/types/**/*.{ts,tsx}",
+          "app/utils/**/*.{ts,tsx}"
+        ]
       },
       "eas": {
         "projectId": "e55bbb73-0fba-4eb9-92ec-9433da72c8c7"

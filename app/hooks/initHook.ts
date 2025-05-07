@@ -2,7 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import auth from '@react-native-firebase/auth';
 import { Timestamp } from '@react-native-firebase/firestore';
 import { useEffect, useState } from 'react';
-
+import * as Sentry from "@sentry/react-native";
 import { useUserStore } from '../stores/userStore';
 
 // Key to check if app has been initialized
@@ -48,6 +48,16 @@ export const useAppInitialization = () => {
   useEffect(() => {
     const initializeApp = async () => {
       console.log('🚀 Initializing app...');
+      Sentry.init({
+        dsn: "https://c9b3a3c9ed0846a755ee7175b07982f8@o4509279727321088.ingest.us.sentry.io/4509279728828416",
+        // Adds more context data to events (IP address, cookies, user, etc.)
+        // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
+        sendDefaultPii: true,
+        // Set tracesSampleRate to 1.0 to capture 100% of transactions for tracing.
+        // We recommend adjusting this value in production.
+        tracesSampleRate: 1.0,
+      });
+      
       try {
         setIsLoading(true);
 
@@ -56,7 +66,7 @@ export const useAppInitialization = () => {
 
         if (!hasInitialized) {
           console.log('🚀 First app open, initializing user...');
-
+          
           // Generate anonymous user ID
           const anonymousUserId = generateUUID();
 
