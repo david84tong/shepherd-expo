@@ -1,9 +1,10 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   View,
   Text,
   ScrollView,
+  ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
@@ -12,14 +13,15 @@ import {
   NativeScrollEvent,
   Easing as RNEasing,
 } from 'react-native';
-import { fetchChapter, ChapterResponse, Verse } from './api/bible';
+import { fetchChapter, ChapterResponse, FetchError, Verse } from './api/bible';
+import PrimaryButton from '../components/PrimaryButton';
 import SideButton from '~/components/SideButton';
 import { usePathStore } from './stores/pathStore';
 import { useHomeStore, SuccessAnimationType } from './stores/homeStore';
 import { useUserStore } from './stores/userStore';
 import { useUIStore } from './stores/uiStore';
 import { router, useLocalSearchParams } from 'expo-router';
-import { BIBLE_PATHS, Unit, BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from './models/Path';
+import { BIBLE_PATHS, Path, Unit, BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from './models/Path';
 import firestore from '@react-native-firebase/firestore';
 import Reanimated, { 
   useSharedValue, 
@@ -28,18 +30,13 @@ import Reanimated, {
   withRepeat, 
   withSequence, 
   withDelay, 
-  Easing as ReanimatedEasing
-} from 'react-native-reanimated';
+  Easing as ReanimatedEasing  // Use ReanimatedEasing for clarity
+} from 'react-native-reanimated'; // Use Reanimated for dot indicator
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
 const DEFAULT_FONT_SIZE = 16;
 const MIN_FONT_SIZE = 12;
 const MAX_FONT_SIZE = 28;
-
-// Helper to get book name from book ID
-const BIBLE_BOOK_IDS_REVERSE = Object.fromEntries(
-  Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => [id, name])
-);
 
 // Define component props
 interface BibleReaderProps {
@@ -102,6 +99,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
+  // Track heights to determine if scrolling is needed
+  const [contentHeight, setContentHeight] = useState(0);
+  const [containerHeight, setContainerHeight] = useState(0);
   
   // Animation values for button container (using RNAnimated for these)
   const buttonsAnim = useRef(new RNAnimated.Value(0)).current; // 0: hidden, 1: visible
@@ -169,78 +169,27 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     }
   }, [isEmbedded, effectiveParams?.source]);
 
-  // Memoized loadChapter function
-  const loadChapter = useCallback(async (version: string, book: string, bookId: number, chapter: number) => {
-    setLoading(true);
-    setError(null);
-    console.log(`📚 LOADING CHAPTER - version:${version}, book:${book} (${bookId}), chapter:${chapter}`);
-
-    try {
-      const result = await fetchChapter(version, bookId, chapter);
-      if ('error' in result) {
-        console.error(`❌ Error loading chapter: ${result.message}`);
-        setError(result.message);
-        setChapterData(null);
-      } else {
-        console.log(`✅ Successfully loaded: ${result.book} ${result.chapter}`);
-        setChapterData(result);
-        setCurrentBook(result.book);
-        setCurrentBookId(bookId); // Ensure currentBookId is updated to the loaded bookId
-        setCurrentChapter(result.chapter);
-        setCurrentVersion(result.version);
-        // Update the store with the successfully loaded chapter info, including potentially canonicalized book name
-        setSavedReading(result.book, bookId, result.chapter);
-        setError(null);
-      }
-    } catch (error) {
-      console.error("Failed to load chapter", error);
-      setError("Failed to load chapter");
-      setChapterData(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [setLoading, setError, setChapterData, setCurrentBook, setCurrentBookId, setCurrentChapter, setCurrentVersion, setSavedReading]);
-
-  // Effect for initial setup and reacting to prop/param changes for the *target* chapter
   useEffect(() => {
-    console.log("🔄 BibleReader: useEffect[InitialSetup] triggered.");
-    let bookIdToUse: number | undefined = undefined;
-    let chapterToUse: number | undefined = undefined;
-    let bookNameToUse: string | undefined = undefined;
+    const loadInitialData = async () => {
+      setLoading(true);
+      setError(null);
 
-    const urlBookIdString = !isEmbedded && effectiveParams?.bookId ? effectiveParams.bookId as string : null;
-    const urlBookId = urlBookIdString ? parseInt(urlBookIdString, 10) : null;
-    const urlChaptersString = !isEmbedded && effectiveParams?.chapters ? effectiveParams.chapters as string : null;
-    const urlChapters = urlChaptersString ? urlChaptersString.split(',').map(c => parseInt(c, 10)) : null;
-    const urlTitle = !isEmbedded && effectiveParams?.title ? effectiveParams.title as string : null;
-
-    if (initialBookId !== undefined && initialChapter !== undefined) {
-      bookIdToUse = initialBookId;
-      chapterToUse = initialChapter;
-      bookNameToUse = initialBookName || BIBLE_BOOK_IDS_REVERSE[initialBookId] || savedBook; // Fallback to existing savedBook if name not provided
-      console.log(`InitialSetup: Using initial props - Target Book: ${bookNameToUse}, ID: ${bookIdToUse}, Ch: ${chapterToUse}`);
-    } else if (!isEmbedded && urlBookId !== null && !isNaN(urlBookId) && urlChapters !== null && urlChapters.length > 0 && !isNaN(urlChapters[0])) {
-      bookIdToUse = urlBookId;
-      chapterToUse = urlChapters[0];
-      bookNameToUse = urlTitle || BIBLE_BOOK_IDS_REVERSE[urlBookId] || savedBook; // Fallback to existing savedBook
-      console.log(`InitialSetup: Using URL params - Target Book: ${bookNameToUse}, ID: ${bookIdToUse}, Ch: ${chapterToUse}`);
-    }
-
-    if (bookIdToUse !== undefined && chapterToUse !== undefined && bookNameToUse !== undefined) {
-      // Update the store if the determined target differs from current store state.
-      // This ensures that changes in initial props/URL params correctly update the reading target.
-      if (bookIdToUse !== savedBookId || chapterToUse !== savedChapter || bookNameToUse !== savedBook) {
-        console.log(`InitialSetup: Updating store to initial/URL params - Book: ${bookNameToUse}, ID: ${bookIdToUse}, Ch: ${chapterToUse}`);
-        setSavedReading(bookNameToUse, bookIdToUse, chapterToUse);
+      console.log("🔄 BibleReader: Loading initial data");
+      if (!isEmbedded) {
+        console.log("📋 URL Params:", effectiveParams);
       }
-    } else {
-      console.log("InitialSetup: No new initial props/URL params. Existing store state will drive loading.");
-      // If there are no initial/URL params, and chapterData is null (e.g., first ever load and store is at default)
-      // we need to ensure the first load from store happens. The useEffectLoadChapterFromStore should handle this.
-    }
+      
+      // Get route params from useLocalSearchParams if not embedded
+      const urlBookId = !isEmbedded && effectiveParams?.bookId ? parseInt(effectiveParams.bookId as string, 10) : null;
+      const urlChapters = !isEmbedded && effectiveParams?.chapters ? (effectiveParams.chapters as string).split(',').map(c => parseInt(c, 10)) : null;
+      const urlTitle = !isEmbedded && effectiveParams?.title ? effectiveParams.title as string : null;
+      
+      // If embedded, use props; otherwise check URL params then fall back to saved state
+      const bookIdToLoad = initialBookId || (urlBookId && !isNaN(urlBookId) ? urlBookId : currentBookId);
+      const chapterToLoad = initialChapter || (urlChapters && urlChapters.length > 0 && !isNaN(urlChapters[0]) ? urlChapters[0] : currentChapter);
+      
+      console.log(`🎯 Loading: bookId: ${bookIdToLoad}, chapter: ${chapterToLoad}`);
 
-    // Load font size (runs once on mount, or if key changes - essentially on mount)
-    const loadFont = async () => {
       try {
         const savedSize = await AsyncStorage.getItem(FONT_SIZE_KEY);
         if (savedSize !== null) {
@@ -252,39 +201,14 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       } catch (e) {
         console.error("Failed to load font size from AsyncStorage", e);
       }
+
+      // Load from determined values, not default state
+      await loadChapter(currentVersion, initialBookName || 'Loading...', bookIdToLoad, chapterToLoad);
     };
-    loadFont();
-  }, [
-    initialBookId, initialChapter, initialBookName, // Props
-    effectiveParams, isEmbedded,                   // For URL params logic
-    savedBookId, savedChapter, savedBook,          // To compare against for conditional setSavedReading
-    setSavedReading                               // Store setter
-  ]);
 
-  // Effect for loading chapter data from the store OR when translation changes
-  useEffect(() => {
-    // This effect now also handles translation changes implicitly because `savedTranslation` is a dependency.
-    console.log(`🔄 BibleReader: useEffect[LoadChapterFromStore] triggered. Loading: ${savedBook} Ch:${savedChapter} (ID:${savedBookId}) Ver:${savedTranslation}`);
-    if (savedBookId !== undefined && savedChapter !== undefined && savedBook !== undefined && savedTranslation !== undefined) {
-      loadChapter(savedTranslation, savedBook, savedBookId, savedChapter);
-    } else {
-      console.warn("useEffect[LoadChapterFromStore]: Store values for book/chapter/translation are incomplete. Skipping loadChapter.");
-    }
-  }, [savedBookId, savedChapter, savedBook, savedTranslation, loadChapter]); // loadChapter is memoized
+    loadInitialData();
+  }, [initialBookId, initialChapter, currentVersion]);
 
-  useEffect(() => {
-    // Reset scroll status when chapter data changes
-    setHasScrolledToBottom(false);
-    
-    // If we have chapter data, check if it's a small chapter that fits in view
-    if (!loading && chapterData && chapterData.verses.length < 10) {
-      // For very small chapters (less than 10 verses), assume they fit in view
-      console.log(`[ChapterEffect] Small chapter with ${chapterData.verses.length} verses detected. Showing buttons without scroll.`);
-      setHasScrolledToBottom(true);
-    }
-  }, [chapterData, loading]);
-
-  // Keep the existing useEffect for animation
   useEffect(() => {
     console.log(`[AnimationEffect] hasScrolledToBottom changed to: ${hasScrolledToBottom}. Animating buttons.`);
     RNAnimated.timing(buttonsAnim, {
@@ -293,82 +217,95 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       easing: RNEasing.out(RNEasing.quad),
       useNativeDriver: true,
     }).start();
-  }, [hasScrolledToBottom, buttonsAnim]);
+  }, [hasScrolledToBottom, buttonsAnim]); // Added buttonsAnim to dependency array as it's used in effect
+
+  // Automatically mark bottom as reached if content fits without scrolling
+  useEffect(() => {
+    const threshold = pathInProgress ? 10 : 100;
+    if (contentHeight && containerHeight) {
+      if (contentHeight <= containerHeight + threshold && !hasScrolledToBottom) {
+        console.log('[AutoBottom] Content fits on screen – showing bottom buttons.');
+        setHasScrolledToBottom(true);
+      }
+    }
+  }, [contentHeight, containerHeight, pathInProgress, hasScrolledToBottom]);
 
   // Reset hasScrolledToBottom when chapter, bookId or version changes.
   // This will trigger the animation to hide the buttons via the other useEffect.
   useEffect(() => {
     console.log('[ChapterChangeEffect] Chapter, BookID, or Version changed. Setting hasScrolledToBottom = false.');
-    // Reset hasScrolledToBottom, but the chapterData useEffect will set it true again
-    // if the new chapter is short enough to fit without scrolling
     setHasScrolledToBottom(false);
+    // buttonsAnim.setValue(0); // No longer needed, the other useEffect handles animation to 0
   }, [currentChapter, currentBookId, currentVersion]);
 
-  // This useEffect specifically handles reloads when savedTranslation changes AFTER initial load
-  // and the currently displayed version differs.
-  // With the main useEffect now also depending on savedTranslation, this might be redundant
-  // or could be simplified. For now, let's keep it but ensure its conditions are robust.
+  // Reload chapter when the translation changes in settings
   useEffect(() => {
+    // Only reload if we're not already loading and we have chapter data
     if (!loading && chapterData && currentVersion !== savedTranslation) {
-      console.log(`📚 User changed translation from ${currentVersion} (loaded) to ${savedTranslation} (desired). Reloading chapter.`);
-      // Call loadChapter with the new savedTranslation.
-      // currentBook, currentBookId, currentChapter reflect the currently viewed chapter.
+      console.log(`📚 Translation changed from ${currentVersion} to ${savedTranslation}. Reloading chapter.`);
+      setCurrentVersion(savedTranslation);
       loadChapter(savedTranslation, currentBook, currentBookId, currentChapter);
     }
-  }, [savedTranslation, loading, chapterData, currentVersion, currentBook, currentBookId, currentChapter]);
+  }, [savedTranslation]);
+
+  const loadChapter = async (version: string, book: string, bookId: number, chapter: number) => {
+    setLoading(true);
+    setError(null);
+    
+    console.log(`📚 LOADING CHAPTER - version:${version}, book:${book}, bookId:${bookId}, chapter:${chapter}`);
+
+    try {
+      // Key line: bookId is now being passed properly to the API
+      const result = await fetchChapter(version, bookId, chapter);
+
+      if ('error' in result) {
+        console.error(`❌ Error loading chapter: ${result.message}`);
+        setError(result.message);
+        setChapterData(null);
+      } else {
+        console.log(`✅ Successfully loaded: ${result.book} ${result.chapter}`);
+        setChapterData(result);
+        
+        // Update the UI state with actual data
+        setCurrentBook(result.book);
+        setCurrentBookId(bookId);
+        setCurrentChapter(result.chapter);
+        setCurrentVersion(result.version);
+        
+        // Save to the store for persistence
+        setSavedReading(result.book, bookId, result.chapter);
+        
+        setError(null);
+      }
+    } catch (error) {
+      console.error("Failed to load chapter", error);
+      setError("Failed to load chapter");
+      setChapterData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const navigateToPreviousChapter = () => {
     if (loading || !chapterData) return;
-    console.log(`NavPrev: Current local state before action: BookID=${currentBookId}, Ch=${currentChapter}`);
     
-    let prevChapter = currentChapter - 1;
-    let prevBookId = currentBookId;
-    let prevBookName = currentBook; // Use current local book name
-
-    if (prevChapter < 1) {
-      // Attempt to find the previous book and its last chapter
-      const currentBookOrderIndex = Object.values(BIBLE_BOOK_IDS).indexOf(currentBookId);
-      if (currentBookOrderIndex > 0) {
-        const prevBookEntry = Object.entries(BIBLE_BOOK_IDS)[currentBookOrderIndex - 1];
-        prevBookName = prevBookEntry[0];
-        prevBookId = prevBookEntry[1];
-        prevChapter = BIBLE_CHAPTER_COUNTS[prevBookId] || 1; // Go to last chapter of prev book
-        console.log(`NavPrev: Moving to previous book: ${prevBookName} Ch:${prevChapter}`);
-      } else {
-        console.log("NavPrev: At the very first book and chapter. Cannot go back further.");
-        return; // Already at the first chapter of the first book
-      }
+    if (currentChapter > 1) {
+      loadChapter(currentVersion, currentBook, currentBookId, currentChapter - 1);
+    } else {
+      // Would need to go to previous book's last chapter
+      console.log("At first chapter - would need to go to previous book");
     }
-    console.log(`NavPrev: Setting store to Book: ${prevBookName}, ID: ${prevBookId}, Ch: ${prevChapter}`);
-    setSavedReading(prevBookName, prevBookId, prevChapter);
   };
 
   const navigateToNextChapter = () => {
-    if (loading || !chapterData) return;
-    console.log(`NavNext: Current local state before action: BookID=${currentBookId}, Ch=${currentChapter}`);
-
-    const totalChaptersInCurrentBook = BIBLE_CHAPTER_COUNTS[currentBookId];
-    let nextChapter = currentChapter + 1;
-    let nextBookId = currentBookId;
-    let nextBookName = currentBook; // Use current local book name
-
-    if (totalChaptersInCurrentBook && nextChapter > totalChaptersInCurrentBook) {
-      // Attempt to find the next book and go to its first chapter
-      const currentBookOrderIndex = Object.values(BIBLE_BOOK_IDS).indexOf(currentBookId);
-      const bookEntries = Object.entries(BIBLE_BOOK_IDS);
-      if (currentBookOrderIndex < bookEntries.length - 1) {
-        const nextBookEntry = bookEntries[currentBookOrderIndex + 1];
-        nextBookName = nextBookEntry[0];
-        nextBookId = nextBookEntry[1];
-        nextChapter = 1; // Go to first chapter of next book
-        console.log(`NavNext: Moving to next book: ${nextBookName} Ch:${nextChapter}`);
-      } else {
-        console.log("NavNext: At the very last book and chapter. Cannot go further.");
-        return; // Already at the last chapter of the last book
-      }
+    console.log('Next button pressed, current chapter:', currentChapter);
+    if (loading || !chapterData) {
+      console.log('Loading or no chapter data, skipping navigation');
+      return;
     }
-    console.log(`NavNext: Setting store to Book: ${nextBookName}, ID: ${nextBookId}, Ch: ${nextChapter}`);
-    setSavedReading(nextBookName, nextBookId, nextChapter);
+    
+    // Simple chapter navigation for now
+    loadChapter(currentVersion, currentBook, currentBookId, currentChapter + 1);
   };
 
   const updateFontSize = async (newSize: number) => {
@@ -527,31 +464,12 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     return false;
   }, [pathInProgress, currentPath, currentChapter, hasScrolledToBottom]);
 
-  const handleContentLayout = (event: { nativeEvent: { layout: { width: number; height: number } } }) => {
-    if (!loading && chapterData && scrollViewRef.current) {
-      // Get the layout dimensions of the content container
-      const { height: layoutHeight } = event.nativeEvent.layout;
-      
-      // Force an initial scroll event to check content size
-      scrollViewRef.current.scrollTo({ y: 0, animated: false });
-    }
-  };
-
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
     
     const threshold = pathInProgress ? 10 : 100; 
     const scrolledToBottomThreshold = contentSize.height - threshold;
     const bottomReached = layoutMeasurement.height + contentOffset.y >= scrolledToBottomThreshold;
-
-    // If content doesn't require scrolling, automatically show buttons
-    if (contentSize.height <= layoutMeasurement.height) {
-      if (!hasScrolledToBottom) {
-        console.log('[handleScroll] Content fits without scrolling. Showing buttons.');
-        setHasScrolledToBottom(true);
-      }
-      return;
-    }
 
     // console.log(`[ScrollEvent] pathInProgress: ${pathInProgress}, threshold: ${threshold}, offset.y: ${contentOffset.y.toFixed(2)}, layoutH: ${layoutMeasurement.height.toFixed(2)}, contentH: ${contentSize.height.toFixed(2)}, calcBottom: ${(layoutMeasurement.height + contentOffset.y).toFixed(2)}, scrollBottomThr: ${scrolledToBottomThreshold.toFixed(2)}, bottomReached: ${bottomReached}`);
 
@@ -587,7 +505,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           contentContainerStyle={styles.scrollContainer}
           onScroll={handleScroll}
           scrollEventThrottle={16} 
-          onLayout={handleContentLayout}
+          // Update content height whenever it changes
+          onContentSizeChange={(_, height) => setContentHeight(height)}
+          // Capture the visible container height
+          onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}
         >
           {chapterData.verses.map((verse: Verse) => (
             <Text key={verse.verse} style={verseTextStyle} selectable={true}>
@@ -747,125 +668,125 @@ export default function BibleReaderScreen() {
 
 // Styles
 const styles = StyleSheet.create({
-  backButton: {
+  newHeaderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 244, 217, 0.95)',
-    borderRadius: 22,
-    elevation: 3,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+    backgroundColor: '#FFF4D9',
+    borderBottomWidth: 1,
+    borderBottomColor: '#FFE4A8',
+  },
+  headerLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backButton: {
+    width: 44,
     height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 244, 217, 0.95)',
+    alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 3,
-    width: 44,
+    elevation: 3,
   },
   backButtonText: {
+    fontSize: 24,
     color: '#3C584A',
     fontFamily: 'Inter-Bold',
-    fontSize: 24,
-  },
-  contentArea: {
-    backgroundColor: '#FFF4D9',
-    flex: 1,
-  },
-  disabledButtonText: {
-    color: '#DCB280',
-  },
-  disabledNavButton: {
-    backgroundColor: 'rgba(220, 178, 128, 0.1)',
-  },
-  finishButtonContainer: {
-    bottom: 20, // Adjust spacing as needed
-    left: 20,
-    position: 'absolute',
-    right: 20,
-  },
-  floatingNavContainer: {
-    alignItems: 'center',
-    bottom: 30,
-    flexDirection: 'row',
-    position: 'absolute',
-    right: 20,
-    zIndex: 10,
-  },
-  floatingNavContainerEmbedded: {
-    bottom: 100, // Move up when tab bar is present
-  },
-  fontSizeAdjustText: {
-    color: '#3C584A',
-    fontFamily: 'Inter-Medium',
-    fontSize: 20,
   },
   headerButton: {
     backgroundColor: 'rgba(220, 178, 128, 0.2)',
     borderRadius: 15,
-    marginRight: 8,
-    paddingHorizontal: 12,
     paddingVertical: 5,
+    paddingHorizontal: 12,
+    marginRight: 8,
   },
   headerButtonText: {
     color: '#3C584A',
-    fontFamily: 'Inter-Medium',
     fontSize: 14,
     fontWeight: '500',
-  },
-  headerLeft: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  headerRight: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  iconButton: {
-    marginLeft: 8,
-    padding: 8,
+    fontFamily: 'Inter-Medium',
   },
   navButton: {
-    alignItems: 'center',
     backgroundColor: '#FFE4A8',
     borderRadius: 24,
-    elevation: 4,
+    width: 48,
     height: 48,
+    alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
-    width: 48,
+    elevation: 4,
   },
   navButtonText: {
     color: '#3C584A',
     fontSize: 24,
     fontWeight: '700',
   },
-  newHeaderContainer: {
-    alignItems: 'center',
+  disabledNavButton: {
+    backgroundColor: 'rgba(220, 178, 128, 0.1)',
+  },
+  iconButton: {
+    padding: 8,
+    marginLeft: 8,
+  },
+  fontSizeAdjustText: {
+    fontSize: 20,
+    color: '#3C584A',
+    fontFamily: 'Inter-Medium',
+  },
+  disabledButtonText: {
+    color: '#DCB280',
+  },
+  contentArea: {
+    flex: 1,
     backgroundColor: '#FFF4D9',
-    borderBottomColor: '#FFE4A8',
-    borderBottomWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
   },
   scrollContainer: {
-    paddingBottom: 30,
     paddingHorizontal: 20,
     paddingTop: 10,
-  },
-  verseNumber: {
-    color: '#DCB280',
-    fontFamily: 'Inter-Bold',
-    fontWeight: 'bold',
+    paddingBottom: 30,
   },
   verseText: {
-    color: '#3C584A',
-    fontFamily: 'Inter-Regular',
     lineHeight: 24,
     marginBottom: 10,
+    color: '#3C584A',
+    fontFamily: 'Inter-Regular',
+  },
+  verseNumber: {
+    fontWeight: 'bold',
+    color: '#DCB280',
+    fontFamily: 'Inter-Bold',
+  },
+  floatingNavContainer: {
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  floatingNavContainerEmbedded: {
+    bottom: 100, // Move up when tab bar is present
+  },
+  finishButtonContainer: {
+    position: 'absolute',
+    bottom: 20, // Adjust spacing as needed
+    left: 20,
+    right: 20,
   },
 }); 
