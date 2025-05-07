@@ -364,7 +364,6 @@ export default function HomeScreen() {
     });
 
     if (mode === 'DEFAULT') {
-
       animateToDefault();
       setArtboardName('lamb-idle');
       // Update artboard based on lamb mood from userStore
@@ -375,16 +374,15 @@ export default function HomeScreen() {
       } else {
         setArtboardName('lamb-idle'); // Default fallback
       }
-
     } else if (mode === 'PRAYER') {
       // Handle prayer mode activation when coming from other screens
       console.log('Activating Prayer mode from external navigation');
       setShowBgRive(true);
 
-      // Remove haptic feedback for mode change
-
-      // Set the Rive resource
-      setArtboardName('lamb-drinking');
+      // Only set the artboard name if it's not already set to lamb-drinking
+      if (artboardName !== 'lamb-drinking') {
+        setArtboardName('lamb-drinking');
+      }
 
       // Animate lamb size
       Animated.timing(lambSizeAnim, {
@@ -398,8 +396,6 @@ export default function HomeScreen() {
     } else if (mode === 'REFLECTION') {
       // Handle reflection mode activation when coming from other screens
       console.log('Activating Reflection mode from external navigation');
-
-      // Remove haptic feedback for mode change
 
       // Animate lamb size
       Animated.timing(lambSizeAnim, {
