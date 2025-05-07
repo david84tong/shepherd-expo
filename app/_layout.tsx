@@ -1,6 +1,5 @@
 import '../global.css';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts } from 'expo-font';
 import { Stack, SplashScreen, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState, useRef, useMemo } from 'react';
@@ -14,7 +13,6 @@ import { useAppInitialization } from './hooks/initHook';
 import { useUIStore } from './stores/uiStore';
 import { useNotificationStore } from './stores/notificationStore';
 import { DebugButton } from '../components/DebugModal';
-import { ONBOARDING_COMPLETED_KEY } from './types/onboarding';
 import { usePreloadAssets, useAssetsStore } from './stores/assetsStore';
 import { checkStreakAndApplyPenalties } from './hooks/streakHook';
 
@@ -175,32 +173,23 @@ export default function RootLayout() {
         return;
       }
 
-      const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-
-      if (onboardingCompleted !== 'true') {
-        console.log('User not signed in or onboarding not completed, redirecting to welcome screen...');
-        setInitialRouteDetermined(true);
-        if (!(segments as string[]).includes('onboarding')) {
-          router.replace('/onboarding/1');
-        }
-      } else {
-        console.log('Onboarding completed but not signed in, redirecting to login...');
-        setInitialRouteDetermined(true);
-        if (!(segments as string[]).includes('login')) {
-          router.replace('/login');
-        }
+      // For non-authenticated users, always go to login first
+      console.log('User not signed in, redirecting to login screen...');
+      setInitialRouteDetermined(true);
+      if (!(segments as string[]).includes('login')) {
+        router.replace('/login');
       }
-
       setIsOnboardingChecked(true);
+
     } catch (error) {
       console.error('Error checking onboarding status:', error);
       setHasError(true);
       setIsOnboardingChecked(true);
       setInitialRouteDetermined(true);
 
-      // Safe fallback to onboarding
-      if (!(segments as string[]).includes('onboarding')) {
-        router.replace('/onboarding/1');
+      // Safe fallback to login
+      if (!(segments as string[]).includes('login')) {
+        router.replace('/login');
       }
     }
   };
