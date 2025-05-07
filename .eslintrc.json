@@ -39,6 +39,7 @@
     "react/react-in-jsx-scope": "off",
     "react-native/no-inline-styles": "off",
     "react-native/no-color-literals": "off",
-    "react-hooks/exhaustive-deps": "off"
+    "react-hooks/exhaustive-deps": "off",
+    "@typescript-eslint/no-explicit-any": "off"
   }
 } 

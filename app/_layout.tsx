@@ -14,6 +14,7 @@ import { useAppInitialization } from './hooks/initHook';
 import { useUIStore } from './stores/uiStore';
 import { DebugButton } from '../components/DebugModal';
 import { ONBOARDING_COMPLETED_KEY } from './types/onboarding';
+import { usePreloadAssets, useAssetsStore } from './stores/assetsStore';
 
 // Import the sheet components
 import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet';
@@ -127,6 +128,9 @@ export default function RootLayout() {
   // App initialization
   const { isInitialized, isLoading } = useAppInitialization();
 
+  usePreloadAssets(); // Garante preload global dos assets
+  const assetsLoaded = useAssetsStore((s) => s.loaded);
+
   // Check onboarding status
   const checkOnboarding = async () => {
     try {
@@ -134,9 +138,10 @@ export default function RootLayout() {
         console.log('User is signed in, redirecting to tabs...');
         setInitialRouteDetermined(true);
         if (!(segments as string[]).includes('(tabs)')) {
-          setTimeout(() => {
+          // Wait for next tick to ensure layout is mounted
+          requestAnimationFrame(() => {
             router.replace('/(tabs)');
-          }, 0);
+          });
         }
         setIsOnboardingChecked(true);
         return;
@@ -148,18 +153,20 @@ export default function RootLayout() {
         console.log('User not signed in or onboarding not completed, redirecting to welcome screen...');
         setInitialRouteDetermined(true);
         if (!(segments as string[]).includes('onboarding')) {
-          setTimeout(() => {
+          // Wait for next tick to ensure layout is mounted
+          requestAnimationFrame(() => {
             router.replace('/onboarding/1');
-          }, 0);
+          });
         }
       } else {
         // Se onboarding já foi completado, mas não está logado, vai para login
         console.log('Onboarding completed but not signed in, redirecting to login...');
         setInitialRouteDetermined(true);
         if (!(segments as string[]).includes('login')) {
-          setTimeout(() => {
+          // Wait for next tick to ensure layout is mounted
+          requestAnimationFrame(() => {
             router.replace('/login');
-          }, 0);
+          });
         }
       }
 
@@ -171,9 +178,10 @@ export default function RootLayout() {
 
       // Safe fallback
       if (!(segments as string[]).includes('onboarding')) {
-        setTimeout(() => {
+        // Wait for next tick to ensure layout is mounted
+        requestAnimationFrame(() => {
           router.replace('/onboarding/1');
-        }, 0);
+        });
       }
     }
   };
@@ -271,6 +279,9 @@ export default function RootLayout() {
       });
     }
   }, [fontsLoaded, appReady, isOnboardingChecked, segments]);
+
+  // Gate de renderização: só renderiza o layout se os assets estiverem prontos
+  if (!assetsLoaded) return null;
 
   // Loading states
   if (!fontsLoaded && !fontError) return null;
