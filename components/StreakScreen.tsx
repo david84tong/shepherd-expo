@@ -15,7 +15,7 @@ import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '~/app/stores/userStore';
 import Rive, { RiveRef } from 'rive-react-native';
 import PrimaryButton from './PrimaryButton';
-
+import { getStreakSubtext } from '../app/hooks/streakHook';
 /* ─────────────── helper ─────────────── */
 type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE';
 
