@@ -18,7 +18,7 @@ import {
 
 import { usePrayerStore } from '../app/stores/prayerStore';
 import PrimaryButton from './PrimaryButton';
-import { useUIStore } from '~/app/stores/uiStore';
+import { useUIStore } from '../app/stores/uiStore';
 
 interface PrayerSheetProps {
   prayerSheetRef: React.RefObject<PrayerSheetRef>;
@@ -39,6 +39,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
   onPrayerGenerated,
 }) => {
   const [prayerInput, setPrayerInput] = useState('');
+  const [isCustomInput, setIsCustomInput] = useState(true);
 
   // Add internal ref for the actual BottomSheet
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -57,12 +58,24 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
 
   // Access UI store
   const hidePrayerSheet = useUIStore(state => state.hidePrayerSheet);
+  const prayerGeneratedCallback = useUIStore(state => state.prayerGeneratedCallback);
+
+  // Handle text input change
+  const handleTextInputChange = useCallback((text: string) => {
+    setPrayerInput(text);
+    setIsCustomInput(true); // When user types, it's a custom input
+  }, []);
 
   // Handle prayer topic selection
   const handlePrayerTopicPress = useCallback(
-    (topic: string) => {
+    (topic: string, isCustom: boolean = false) => {
       setPrayerInput(topic);
-      incrementTopicCount(topic);
+      setIsCustomInput(isCustom); // Track if this is a custom or predefined topic
+      
+      // Only increment count for custom prayers, not predefined topics
+      if (isCustom) {
+        incrementTopicCount(topic);
+      }
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     },
     [incrementTopicCount]
@@ -72,28 +85,37 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
   const handlePrayerGenerate = useCallback(() => {
     if (!prayerInput.trim()) return;
 
-    console.log(`Generating prayer for: ${prayerInput}`);
+    console.log(`Generating prayer for: ${prayerInput}, isCustomInput: ${isCustomInput}`);
 
-    // Save the prayer to store
+    // Save the prayer to store only if it's not from predefined topics
     incrementTopicCount(prayerInput);
-    addRecentPrayer(prayerInput);
+    
+    // Only add to recent prayers if it's a custom input
+    if (isCustomInput) {
+      addRecentPrayer(prayerInput);
+    }
 
     // Close the bottom sheet
     bottomSheetRef.current?.close();
 
     // Trigger the onPrayerGenerated callback after the sheet is closed
     setTimeout(() => {
-      if (onPrayerGenerated) {
+      if (prayerGeneratedCallback) {
+        console.log('Executing prayer generated callback from UIStore');
+        prayerGeneratedCallback();
+      } else if (onPrayerGenerated) {
+        console.log('Executing prayer generated callback from props');
         onPrayerGenerated();
       } else {
         // Fallback if no callback provided - show the alert as before
+        console.log('No callback provided, showing alert');
         Alert.alert('Prayer Generated', `Your prayer for "${prayerInput}" has been generated.`, [
           { text: 'Amen', style: 'default' },
         ]);
       }
       setPrayerInput('');
     }, 300);
-  }, [prayerInput, incrementTopicCount, addRecentPrayer, onPrayerGenerated]);
+  }, [prayerInput, incrementTopicCount, addRecentPrayer, onPrayerGenerated, prayerGeneratedCallback, isCustomInput]);
 
   // Close the prayer sheet
   const handleClose = useCallback(() => {
@@ -181,7 +203,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
               <Text style={styles.prayerInputLabel}>I want to pray for</Text>
               <TextInput
                 value={prayerInput}
-                onChangeText={setPrayerInput}
+                onChangeText={handleTextInputChange}
                 placeholder="guidance..."
                 placeholderTextColor="#B89B4C"
                 style={styles.prayerInputText}
@@ -192,7 +214,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
           {/* Recent prayers section - show if there are any */}
           {recentPrayers.length > 0 && (
             <View style={styles.recentPrayersContainer}>
-              <Text style={styles.prayerTopicsLabel}>Recent prayers:</Text>
+              <Text style={styles.prayerTopicsLabel}>Custom prayers:</Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -200,7 +222,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
                 {recentPrayers.slice(0, 5).map((prayer, index) => (
                   <TouchableOpacity
                     key={index}
-                    onPress={() => handlePrayerTopicPress(prayer)}
+                    onPress={() => handlePrayerTopicPress(prayer, true)}
                     style={styles.recentPrayerButton}>
                     <Text style={styles.recentPrayerText} numberOfLines={1}>
                       {prayer}
@@ -230,7 +252,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
           </View>
 
           {/* Generate button */}
-          <View className="mt-18">
+          <View className="absolute -bottom-48 left-0 right-0">
             <PrimaryButton
               title="Generate a prayer"
               onPress={handlePrayerGenerate}
@@ -249,6 +271,7 @@ const styles = StyleSheet.create({
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
     fontWeight: '600',
+    opacity: 0,
   },
   handleIndicator: {
     backgroundColor: '#DCB280',

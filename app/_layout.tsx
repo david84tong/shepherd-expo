@@ -18,10 +18,17 @@ import { ONBOARDING_COMPLETED_KEY } from './types/onboarding';
 // Import the sheet components
 import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet';
 import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
-import GlobalPrayerSheet from '../components/GlobalPrayerSheet';
+import GlobalPrayerSheet, { PrayerSheetRef as GlobalPrayerSheetRefInternal } from '../components/GlobalPrayerSheet';
 import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
 import OldReflectionSheet from '../components/OldReflectionSheet';
 import { Reflection } from './models/User';
+
+// Define missing ref types
+type PrayerSheetRef = {
+  show: () => void;
+  hide: () => void;
+  expand: () => void;
+};
 
 // Error logging setup
 if (__DEV__) {
@@ -100,7 +107,7 @@ export default function RootLayout() {
   // Sheet refs
   const halfModalRef = useRef<HalfModalSheetRef>(null);
   const settingsSheetRef = useRef<SettingsSheetRef>(null);
-  const prayerSheetRef = useRef<PrayerSheetRef>(null);
+  const prayerSheetRef = useRef<GlobalPrayerSheetRefInternal>(null);
 
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
@@ -225,6 +232,14 @@ export default function RootLayout() {
     }
   }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet]);
   
+  // Effect to watch isPrayerSheetVisible and control the sheet ref
+  useEffect(() => {
+    if (isPrayerSheetVisible && prayerSheetRef.current) {
+      console.log('[RootLayout] Opening prayer sheet via ref');
+      prayerSheetRef.current.show();
+    }
+  }, [isPrayerSheetVisible]);
+  
   // Effect for preloading resources
   useEffect(() => {
     if (fontsLoaded && !appReady) {
@@ -234,7 +249,7 @@ export default function RootLayout() {
 
   // Effect for checking onboarding and streak status
   useEffect(() => {
-    if (fontsLoaded && !isOnboardingChecked) {
+    if (fontsLoaded && appReady && !isOnboardingChecked) {
       checkOnboarding().then(() => {
         SplashScreen.hideAsync().catch((err) => console.log('Error hiding splash screen:', err));
 
@@ -243,7 +258,7 @@ export default function RootLayout() {
         }
       });
     }
-  }, [fontsLoaded, isOnboardingChecked, segments]);
+  }, [fontsLoaded, appReady, isOnboardingChecked, segments]);
 
   // Loading states
   if (!fontsLoaded && !fontError) return null;
@@ -319,7 +334,11 @@ export default function RootLayout() {
         />
         
         {/* Global sheets */}
-        <GlobalPrayerSheet prayerSheetRef={prayerSheetRef} snapPoints={prayerSnapPoints} />
+        <GlobalPrayerSheet 
+          prayerSheetRef={prayerSheetRef} 
+          snapPoints={prayerSnapPoints} 
+          onPrayerGenerated={useUIStore.getState().prayerGeneratedCallback || undefined} 
+        />
         <GlobalBookChapterSelectorSheet />
         <OldReflectionSheet />
         

@@ -34,7 +34,7 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   
   const handlePress = () => {
     // Trigger medium haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     if (onPress) onPress();
   };
   

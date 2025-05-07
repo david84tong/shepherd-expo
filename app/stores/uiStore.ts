@@ -48,18 +48,29 @@ export const useUIStore = create<UIState>((set) => ({
     console.log(`[UIStore] Setting isModalDimActive to: ${isActive}`); // Log state changes
     set({ isModalDimActive: isActive });
   },
+  
+  // Prayer sheet state and actions
   isPrayerSheetVisible: false,
   prayerGeneratedCallback: null,
-  showPrayerSheet: () => {},
-  hidePrayerSheet: () => {},
+  showPrayerSheet: (onPrayerGeneratedCallback) => {
+    console.log('[UIStore] Showing prayer sheet');
+    set({
+      isPrayerSheetVisible: true,
+      prayerGeneratedCallback: onPrayerGeneratedCallback || null,
+    });
+  },
+  hidePrayerSheet: () => {
+    console.log('[UIStore] Hiding prayer sheet');
+    set({ isPrayerSheetVisible: false, prayerGeneratedCallback: null });
+  },
+  
+  // Book Chapter Selector state and actions
   isBookChapterSelectorVisible: false,
   bookChapterSelectorParams: {
     initialBookId: 1,
     initialChapter: 1,
     onSelect: null,
   },
-
-  // Book Chapter Selector actions
   showBookChapterSelector: (initialBookId, initialChapter, onSelect) => {
     console.log('[UIStore] Showing book chapter selector');
     set({
@@ -67,7 +78,6 @@ export const useUIStore = create<UIState>((set) => ({
       bookChapterSelectorParams: { initialBookId, initialChapter, onSelect },
     });
   },
-
   hideBookChapterSelector: () => {
     console.log('[UIStore] Hiding book chapter selector');
     set({
