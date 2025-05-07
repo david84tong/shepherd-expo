@@ -1,33 +1,27 @@
-import {
-  View,
-  Text,
-  SafeAreaView,
-  Platform,
-  Button,
-  Animated,
-  Easing,
-  TouchableOpacity,
-  Dimensions,
-  ActivityIndicator,
-  Image,
-} from 'react-native';
-import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
-import { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigation } from '@react-navigation/native';
 import { Asset, useAssets } from 'expo-asset';
-import SecondaryButton from '../../components/SecondaryButton';
-import PrimaryButton from '../../components/PrimaryButton';
-import PrayerComponent from '../../components/PrayerComponent';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  Animated,
+  Dimensions,
+  Easing,
+  Image,
+  Platform,
+  SafeAreaView,
+  Text,
+  View
+} from 'react-native';
+import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
 import JournalComponent from '../../components/JournalComponent';
+import PrayerComponent from '../../components/PrayerComponent';
 import ProgressPill from '../../components/ProgressPill';
-import { useHomeStore, HomeMode, SuccessAnimationType } from '../stores/homeStore'; // Import Zustand store
+import SecondaryButton from '../../components/SecondaryButton';
+import { HomeMode, useHomeStore } from '../stores/homeStore'; // Import Zustand store
 import { usePathStore } from '../stores/pathStore'; // Import path store
-import { useUserStore } from '../stores/userStore'; // Import user store
-import { usePrayerStore } from '../stores/prayerStore'; // Import prayer store
 import { useUIStore } from '../stores/uiStore'; // Import UI store
-import { Unit, BIBLE_PATHS } from '../models/Path'; // Import Unit type and BIBLE_PATHS
-import * as Haptics from 'expo-haptics';
+import { useUserStore } from '../stores/userStore'; // Import user store
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
@@ -230,7 +224,7 @@ export default function HomeScreen() {
     mode: HomeMode
   ) => {
     // Remove haptic feedback when animating to a new state
-    
+
     const fadeOutAnims = [grassOpacityAnim, pathOpacityAnim, waterOpacityAnim, journalOpacityAnim]
       .filter((anim) => anim !== targetOpacityAnim)
       .map((anim) => Animated.timing(anim, { toValue: 0, duration, useNativeDriver: true }));
@@ -307,7 +301,7 @@ export default function HomeScreen() {
   const animateToDefault = (duration: number = 800) => {
     console.log('Animating back to default state');
     // Remove haptic feedback when returning to default state
-    
+
     const resetPositionAnims = [
       Animated.timing(previewAnim, {
         toValue: 0,
@@ -371,7 +365,7 @@ export default function HomeScreen() {
     });
 
     if (mode === 'DEFAULT') {
-      
+
       animateToDefault();
       setArtboardName('lamb-idle');
       // Update artboard based on lamb mood from userStore
@@ -382,7 +376,7 @@ export default function HomeScreen() {
       } else {
         setArtboardName('lamb-idle'); // Default fallback
       }
- 
+
     } else if (mode === 'PRAYER') {
       // Handle prayer mode activation when coming from other screens
       console.log('Activating Prayer mode from external navigation');
@@ -423,16 +417,16 @@ export default function HomeScreen() {
   // --- Event Handlers ---
   const handleReadPress = () => {
     console.log('Read the word button pressed');
-    
+
     // Remove heavy haptic feedback
-    
+
     // Animate mode transition
     animateToState(0.5, pathOpacityAnim, 800, 'PREVIEW');
     setArtboardName('lamb-reading');
-    
+
     // Update the mode in the store
     setMode('PREVIEW');
-    
+
     // Animate the Rive view a bit
     Animated.sequence([
       Animated.timing(riveScaleAnim, {
@@ -450,9 +444,9 @@ export default function HomeScreen() {
 
   const handlePrayerPress = () => {
     console.log('Prayer button pressed');
-    
+
     // Remove rigid haptic feedback
-    
+
     // Show the global prayer sheet and set mode to PRAYER when prayer is generated
     showPrayerSheet(() => {
       setMode('PRAYER');
@@ -461,16 +455,16 @@ export default function HomeScreen() {
 
   const handleReflectionPress = () => {
     console.log('Reflection button pressed');
-    
+
     // Remove heavy haptic feedback
-    
+
     // Update the mode in the store
     setMode('REFLECTION');
-    
+
     // Animate to reflection state
     animateToState(0.5, journalOpacityAnim, 800, 'REFLECTION');
     setArtboardName('lamb-writing');
-    
+
     // Rotate the lamb slightly when transitioning to reflection
     Animated.timing(riveRotateAnim, {
       toValue: 0.05, // Slightly rotated
@@ -546,7 +540,7 @@ export default function HomeScreen() {
       // Always set artboard based on lamb mood in DEFAULT mode
       setArtboardName(moodToArtboard[lambMood] || 'lamb-idle');
     }
-  }, [readingCompleted, prayerCompleted, reflectionCompleted, mode, lambMood]);
+  }, [mode, lambMood]);
 
   // --- Load and cache images ---
   const cacheImages = useMemo(
