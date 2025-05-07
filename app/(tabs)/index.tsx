@@ -2,7 +2,6 @@ import { useNavigation } from '@react-navigation/native';
 import { Asset, useAssets } from 'expo-asset';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Animated,
   Dimensions,
   Easing,
@@ -27,23 +26,35 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
 const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
 
-// Backgrounds
-const grassBg = require('../../assets/backgrounds/defaultBackground.png');
-const waterBg = require('../../assets/backgrounds/waterBackground.png');
-const pathBg = require('../../assets/backgrounds/path1Background.png');
-const journalBg = require('../../assets/backgrounds/mainBackground.png'); // Add a background for reflection
-
-// Icons
-const breadIcon = require('../../assets/icons/breadIcon.png');
-const dropIcon = require('../../assets/icons/waterIcon.png');
-const quillIcon = require('../../assets/icons/journalIcon.png');
-const flameIcon = require('../../assets/icons/flameIcon.png');
-const gemIcon = require('../../assets/icons/greenGemIcon.png');
-const heartIcon = require('../../assets/icons/heartIcon.png');
-const starIcon = require('../../assets/icons/starIcon.png'); // Import star icon
-
 // Max hearts constant
 const MAX_HEARTS = 100;
+
+// Backgrounds e ícones - lista única para pré-carregamento
+const imageAssets = [
+  require('../../assets/backgrounds/defaultBackground.png'),
+  require('../../assets/backgrounds/waterBackground.png'),
+  require('../../assets/backgrounds/path1Background.png'),
+  require('../../assets/backgrounds/mainBackground.png'),
+  require('../../assets/icons/breadIcon.png'),
+  require('../../assets/icons/waterIcon.png'),
+  require('../../assets/icons/journalIcon.png'),
+  require('../../assets/icons/flameIcon.png'),
+  require('../../assets/icons/greenGemIcon.png'),
+  require('../../assets/icons/heartIcon.png'),
+  require('../../assets/icons/starIcon.png'),
+];
+
+const grassBg = imageAssets[0];
+const waterBg = imageAssets[1];
+const pathBg = imageAssets[2];
+const journalBg = imageAssets[3];
+const breadIcon = imageAssets[4];
+const dropIcon = imageAssets[5];
+const quillIcon = imageAssets[6];
+const flameIcon = imageAssets[7];
+const gemIcon = imageAssets[8];
+const heartIcon = imageAssets[9];
+const starIcon = imageAssets[10];
 
 export default function HomeScreen() {
   const riveRef = useRef<RiveRef>(null);
@@ -545,33 +556,18 @@ export default function HomeScreen() {
   // --- Load and cache images ---
   const cacheImages = useMemo(
     () => async () => {
-      // Define all the assets to preload
-      const images = [
-        grassBg,
-        waterBg,
-        pathBg,
-        journalBg,
-        breadIcon,
-        dropIcon,
-        quillIcon,
-        flameIcon,
-        gemIcon,
-        heartIcon,
-        starIcon,
-      ];
-
       try {
         console.log('Preloading images for faster rendering');
 
         // Create assets from modules for better caching
-        const imageAssets = images.map((image) => Asset.fromModule(image).downloadAsync());
+        const imagePromises = imageAssets.map((image) => Asset.fromModule(image).downloadAsync());
 
         // Wait for all assets to download and cache
-        await Promise.all(imageAssets);
+        await Promise.all(imagePromises);
 
         // Explicitly process asset sources for better native caching
 
-        console.log('Image preloading complete, cached', images.length, 'images');
+        console.log('Image preloading complete, cached', imagePromises.length, 'images');
         setAssetsLoaded(true);
       } catch (error) {
         console.error('Failed to cache images:', error);
@@ -587,14 +583,12 @@ export default function HomeScreen() {
     cacheImages();
   }, []);
 
-  // Show loading indicator while assets load
-  if (!assetsLoaded || !riveAssets) {
-    return (
-      <View className="flex-1 items-center justify-center bg-surfaceCream">
-        <ActivityIndicator size="large" color="#3C584A" />
-        <Text className="font-feather text-textPrimary mt-4">Loading Shepherd...</Text>
-      </View>
-    );
+  // Pré-carregue todos os assets de imagem antes de renderizar a UI principal
+  const [assets, error] = useAssets(imageAssets);
+
+  // Mostre apenas um fundo sólido enquanto carrega (sem spinner)
+  if (!assets) {
+    return <View className="flex-1 bg-surfaceCream" />;
   }
 
   return (
@@ -713,7 +707,6 @@ export default function HomeScreen() {
             shadowOffset: { width: 0, height: 0 },
             shadowOpacity: showGlow ? 0.6 : 0,
             shadowRadius: 15, // Adjust radius for softness
-            elevation: showGlow ? 10 : 0, // Android shadow
           }}>
           <Animated.View className="items-center justify-center overflow-hidden" style={{}}>
             {riveError ? (
