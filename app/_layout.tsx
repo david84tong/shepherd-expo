@@ -1,6 +1,5 @@
 import '../global.css';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useFonts } from 'expo-font';
 import { Stack, SplashScreen, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState, useRef, useMemo } from 'react';
@@ -14,7 +13,8 @@ import { useAppInitialization } from './hooks/initHook';
 import { useUIStore } from './stores/uiStore';
 import { useNotificationStore } from './stores/notificationStore';
 import { DebugButton } from '../components/DebugModal';
-import { ONBOARDING_COMPLETED_KEY } from './types/onboarding';
+import { usePreloadAssets, useAssetsStore } from './stores/assetsStore';
+import { checkStreakAndApplyPenalties } from './hooks/streakHook';
 
 // Import the sheet components
 import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet';
@@ -22,7 +22,6 @@ import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
 import GlobalPrayerSheet, { PrayerSheetRef as GlobalPrayerSheetRefInternal } from '../components/GlobalPrayerSheet';
 import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
 import OldReflectionSheet from '../components/OldReflectionSheet';
-import { Reflection } from './models/User';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -98,6 +97,8 @@ export default function RootLayout() {
   const [loadProgress, setLoadProgress] = useState(0);
   const [isOnboardingChecked, setIsOnboardingChecked] = useState(false);
   const [initialRouteDetermined, setInitialRouteDetermined] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('Loading Shepherd...');
+  const [hasError, setHasError] = useState(false);
 
   // Global modal state
   const isModalDimActive = useUIStore((state) => state.isModalDimActive);
@@ -128,56 +129,8 @@ export default function RootLayout() {
   // App initialization
   const { isInitialized, isLoading } = useAppInitialization();
 
-  // Check onboarding status
-  const checkOnboarding = async () => {
-    try {
-      if (isSignedIn()) {
-        console.log('User is signed in, redirecting to tabs...');
-        setInitialRouteDetermined(true);
-        if (!(segments as string[]).includes('(tabs)')) {
-          setTimeout(() => {
-            router.replace('/(tabs)');
-          }, 0);
-        }
-        setIsOnboardingChecked(true);
-        return;
-      }
-
-      const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-
-      if (onboardingCompleted !== 'true') {
-        console.log('User not signed in or onboarding not completed, redirecting to welcome screen...');
-        setInitialRouteDetermined(true);
-        if (!(segments as string[]).includes('onboarding')) {
-          setTimeout(() => {
-            router.replace('/onboarding/1');
-          }, 0);
-        }
-      } else {
-        // Se onboarding já foi completado, mas não está logado, vai para login
-        console.log('Onboarding completed but not signed in, redirecting to login...');
-        setInitialRouteDetermined(true);
-        if (!(segments as string[]).includes('login')) {
-          setTimeout(() => {
-            router.replace('/login');
-          }, 0);
-        }
-      }
-
-      setIsOnboardingChecked(true);
-    } catch (error) {
-      console.error('Error checking onboarding status:', error);
-      setIsOnboardingChecked(true);
-      setInitialRouteDetermined(true);
-
-      // Safe fallback
-      if (!(segments as string[]).includes('onboarding')) {
-        setTimeout(() => {
-          router.replace('/onboarding/1');
-        }, 0);
-      }
-    }
-  };
+  usePreloadAssets(); // Garante preload global dos assets
+  const assetsLoaded = useAssetsStore((s) => s.loaded);
 
   // Preload resources
   const preloadResources = () => {
@@ -185,6 +138,17 @@ export default function RootLayout() {
     const interval = setInterval(() => {
       progress += 0.1;
       setLoadProgress(Math.min(progress, 0.95));
+
+      // Update loading message based on progress
+      if (progress < 0.3) {
+        setLoadingMessage('Loading fonts...');
+      } else if (progress < 0.6) {
+        setLoadingMessage('Loading assets...');
+      } else if (progress < 0.9) {
+        setLoadingMessage('Initializing app...');
+      } else {
+        setLoadingMessage('Almost ready...');
+      }
 
       if (progress >= 1) {
         clearInterval(interval);
@@ -196,10 +160,43 @@ export default function RootLayout() {
     }, 200);
   };
 
+  // Check onboarding status with timeout
+  const checkOnboarding = async () => {
+    try {
+      if (isSignedIn()) {
+        console.log('User is signed in, redirecting to tabs...');
+        setInitialRouteDetermined(true);
+        if (!(segments as string[]).includes('(tabs)')) {
+          router.replace('/(tabs)');
+        }
+        setIsOnboardingChecked(true);
+        return;
+      }
+
+      // For non-authenticated users, always go to login first
+      console.log('User not signed in, redirecting to login screen...');
+      setInitialRouteDetermined(true);
+      if (!(segments as string[]).includes('login')) {
+        router.replace('/login');
+      }
+      setIsOnboardingChecked(true);
+
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+      setHasError(true);
+      setIsOnboardingChecked(true);
+      setInitialRouteDetermined(true);
+
+      // Safe fallback to login
+      if (!(segments as string[]).includes('login')) {
+        router.replace('/login');
+      }
+    }
+  };
+
   // Check streak status on app startup
   const checkStreakStatus = async () => {
     try {
-      const { checkStreakAndApplyPenalties } = require('../app/hooks/streakHook');
       const result = await checkStreakAndApplyPenalties();
 
       if (result && result.heartPenalty > 0) {
@@ -272,42 +269,47 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, appReady]);
 
-  // Effect for checking onboarding and streak status
+  // Consolidated initialization effect
   useEffect(() => {
-    if (fontsLoaded && appReady && !isOnboardingChecked) {
-      checkOnboarding().then(() => {
-        SplashScreen.hideAsync().catch((err) => console.log('Error hiding splash screen:', err));
+    const initializeApp = async () => {
+      try {
+        // Wait for fonts to load
+        if (!fontsLoaded && !fontError) return;
 
+        console.log('Fonts loaded, initializing app...');
+
+        // Start resource loading
+        preloadResources();
+
+        // Check onboarding status
+        await checkOnboarding();
+
+        // Only proceed with these if we're in the tabs section
         if ((segments as string[]).includes('(tabs)')) {
-          checkStreakStatus();
+          await checkStreakStatus();
         }
-      });
-    }
-  }, [fontsLoaded, appReady, isOnboardingChecked, segments]);
 
-  // Effect to load the app
-  useEffect(() => {
-    if (fontsLoaded || fontError) {
-      console.log('Fonts loaded, initializing app...');
+        // Initialize notifications
+        await initializeNotifications();
 
-      // Simulate resource loading for smoother startup animation
-      preloadResources();
+        // Hide splash screen after everything is done
+        await SplashScreen.hideAsync();
+      } catch (error) {
+        console.error('Error during app initialization:', error);
+        setHasError(true);
+        // Still try to hide splash screen even if there's an error
+        await SplashScreen.hideAsync();
+      }
+    };
 
-      // Check onboarding status
-      checkOnboarding();
-
-      // Check streak status - this will also check and schedule notifications
-      checkStreakStatus();
-      
-      // Initialize notifications system
-      initializeNotifications();
-    }
+    initializeApp();
   }, [fontsLoaded, fontError]);
 
-  // Loading states
-  if (!fontsLoaded && !fontError) return null;
-  if (isLoading) return <AppLoading />;
-  if (!isInitialized) return null;
+  // Loading states with error handling
+  if (!fontsLoaded && !fontError) return <AppLoading loadingMessage="Loading fonts..." />;
+  if (isLoading) return <AppLoading loadingMessage={loadingMessage} progress={loadProgress} />;
+  if (!isInitialized) return <AppLoading loadingMessage="Initializing app..." />;
+  if (hasError) return <AppLoading loadingMessage="Something went wrong. Please try again..." />;
 
   console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
 

@@ -4,9 +4,10 @@ import { View, Text, ActivityIndicator, Animated, Easing } from 'react-native';
 
 interface AppLoadingProps {
   progress?: number;
+  loadingMessage?: string;
 }
 
-const AppLoading: React.FC<AppLoadingProps> = ({ progress = 0 }) => {
+const AppLoading: React.FC<AppLoadingProps> = ({ progress = 0, loadingMessage = 'Loading Shepherd...' }) => {
   // Create an animated value for the pulse effect
   const pulseAnim = React.useRef(new Animated.Value(1)).current;
 
@@ -53,7 +54,7 @@ const AppLoading: React.FC<AppLoadingProps> = ({ progress = 0 }) => {
       </Animated.View>
 
       {/* Loading text */}
-      <Text className="font-feather text-textPrimary text-xl mb-6">Loading Shepherd...</Text>
+      <Text className="font-feather text-textPrimary text-xl mb-6">{loadingMessage}</Text>
 
       {/* Loading indicator */}
       <ActivityIndicator size="large" color="#3C584A" />

@@ -781,7 +781,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 30,
+    paddingBottom: 60,
   },
   verseText: {
     lineHeight: 24,

@@ -1,5 +1,4 @@
 import { useNavigation } from '@react-navigation/native';
-import { Asset, useAssets } from 'expo-asset';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
@@ -21,6 +20,8 @@ import { HomeMode, useHomeStore } from '../stores/homeStore'; // Import Zustand 
 import { usePathStore } from '../stores/pathStore'; // Import path store
 import { useUIStore } from '../stores/uiStore'; // Import UI store
 import { useUserStore } from '../stores/userStore'; // Import user store
+import { useAssetsStore, imageAssets } from '../stores/assetsStore';
+import { useAssets } from 'expo-asset';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
@@ -30,20 +31,6 @@ const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
 const MAX_HEARTS = 100;
 
 // Backgrounds e ícones - lista única para pré-carregamento
-const imageAssets = [
-  require('../../assets/backgrounds/defaultBackground.png'),
-  require('../../assets/backgrounds/waterBackground.png'),
-  require('../../assets/backgrounds/path1Background.png'),
-  require('../../assets/backgrounds/mainBackground.png'),
-  require('../../assets/icons/breadIcon.png'),
-  require('../../assets/icons/waterIcon.png'),
-  require('../../assets/icons/journalIcon.png'),
-  require('../../assets/icons/flameIcon.png'),
-  require('../../assets/icons/greenGemIcon.png'),
-  require('../../assets/icons/heartIcon.png'),
-  require('../../assets/icons/starIcon.png'),
-];
-
 const grassBg = imageAssets[0];
 const waterBg = imageAssets[1];
 const pathBg = imageAssets[2];
@@ -94,7 +81,8 @@ export default function HomeScreen() {
   ]);
 
   // Add state for asset loading
-  const [assetsLoaded, setAssetsLoaded] = useState(false);
+  const assetsLoaded = useAssetsStore((s) => s.loaded);
+  const assets = useAssetsStore((s) => s.assets);
 
   // --- Animation Values ---
   const uiAnim = useRef(new Animated.Value(0)).current; // 0: default, 0.5: preview, 1: full overlay
@@ -376,7 +364,6 @@ export default function HomeScreen() {
     });
 
     if (mode === 'DEFAULT') {
-
       animateToDefault();
       setArtboardName('lamb-idle');
       // Update artboard based on lamb mood from userStore
@@ -387,16 +374,15 @@ export default function HomeScreen() {
       } else {
         setArtboardName('lamb-idle'); // Default fallback
       }
-
     } else if (mode === 'PRAYER') {
       // Handle prayer mode activation when coming from other screens
       console.log('Activating Prayer mode from external navigation');
       setShowBgRive(true);
 
-      // Remove haptic feedback for mode change
-
-      // Set the Rive resource
-      setArtboardName('lamb-drinking');
+      // Only set the artboard name if it's not already set to lamb-drinking
+      if (artboardName !== 'lamb-drinking') {
+        setArtboardName('lamb-drinking');
+      }
 
       // Animate lamb size
       Animated.timing(lambSizeAnim, {
@@ -410,8 +396,6 @@ export default function HomeScreen() {
     } else if (mode === 'REFLECTION') {
       // Handle reflection mode activation when coming from other screens
       console.log('Activating Reflection mode from external navigation');
-
-      // Remove haptic feedback for mode change
 
       // Animate lamb size
       Animated.timing(lambSizeAnim, {
@@ -553,43 +537,8 @@ export default function HomeScreen() {
     }
   }, [mode, lambMood]);
 
-  // --- Load and cache images ---
-  const cacheImages = useMemo(
-    () => async () => {
-      try {
-        console.log('Preloading images for faster rendering');
-
-        // Create assets from modules for better caching
-        const imagePromises = imageAssets.map((image) => Asset.fromModule(image).downloadAsync());
-
-        // Wait for all assets to download and cache
-        await Promise.all(imagePromises);
-
-        // Explicitly process asset sources for better native caching
-
-        console.log('Image preloading complete, cached', imagePromises.length, 'images');
-        setAssetsLoaded(true);
-      } catch (error) {
-        console.error('Failed to cache images:', error);
-        // Continue even if caching fails
-        setAssetsLoaded(true);
-      }
-    },
-    []
-  ); // Empty dependency array ensures this function only gets created once
-
-  // Call cache images when component mounts
-  useEffect(() => {
-    cacheImages();
-  }, []);
-
-  // Pré-carregue todos os assets de imagem antes de renderizar a UI principal
-  const [assets, error] = useAssets(imageAssets);
-
-  // Mostre apenas um fundo sólido enquanto carrega (sem spinner)
-  if (!assets) {
-    return <View className="flex-1 bg-surfaceCream" />;
-  }
+  // Gate of rendering: only render the screen if the assets are ready
+  if (!assetsLoaded || !assets) return null;
 
   return (
     <View className="flex-1">

@@ -33,6 +33,11 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Shepherd needs camera access to create your player card and generate personalized workout plans based on your physique.",
         "NSPhotoLibraryUsageDescription": "Shepherd needs photo library access to create your player card and assess your fitness level for personalized workout recommendations."
+      },
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.shepherd.widget.streak"
+        ]
       }
     },
     "android": {

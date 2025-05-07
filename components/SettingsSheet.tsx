@@ -143,7 +143,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       useUserStore.getState().resetUserStore();
       bottomSheetRef.current?.close();
       setIsModalDimActive(false);
-      router.replace('/onboarding/1');
+      router.replace('/login');
     } catch (error) {
       console.error('Error signing out:', error);
     }

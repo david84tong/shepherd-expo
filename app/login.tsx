@@ -5,6 +5,9 @@ import { useAuth } from './hooks/authHook';
 import { useUserStore } from './stores/userStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { AntDesign } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ONBOARDING_COMPLETED_KEY } from './types/onboarding';
+import * as Haptics from 'expo-haptics';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -57,34 +60,49 @@ export default function LoginScreen() {
     }
   };
 
+  // Begin journey handler
+  const handleBeginJourney = async () => {
+    try {
+      // Trigger haptic feedback
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      // Remove the onboarding completed key
+      await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
+      // Navigate to onboarding
+      router.replace('/onboarding/1');
+    } catch (error) {
+      console.error('Error starting journey:', error);
+      Alert.alert('Error', 'Could not start journey. Please try again.');
+    }
+  };
+
   return (
-    <SafeAreaView className="flex-1 bg-[#FFF3D9] justify-center px-6">
+    <SafeAreaView className="flex-1 bg-[#FFF4D9] justify-center px-6">
       <View className="items-center mb-10">
         <Image source={require('../assets/icon.png')} className="w-20 h-20 mb-4 rounded-full" />
-        <Text className="text-base font-din text-slate-600 text-center">Welcome back! Please sign in to continue.</Text>
+        <Text className="text-base font-din text-slate-600 text-center">Welcome to Shepherd! Choose how you&apos;d like to begin.</Text>
       </View>
       <View className="mb-6">
         <TouchableOpacity
-          className="bg-black rounded-full p-4 items-center flex-row justify-center mb-4"
+          className="flex-row items-center justify-center bg-black w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow"
           onPress={handleAppleLogin}
           disabled={loading}
         >
           {loadingProvider === 'apple' ? (
-            <ActivityIndicator color="white" style={{ marginRight: 10 }} />
+            <ActivityIndicator color="white" size="small" style={{ marginRight: 10 }} />
           ) : (
             <AntDesign name="apple1" size={24} color="white" style={{ marginRight: 10 }} />
           )}
-          <Text className="text-white font-din-bold text-base">Sign in with Apple</Text>
+          <Text className="font-din text-white text-[18px] font-bold">
+            {loadingProvider === 'apple' ? "Signing in..." : "Sign in with Apple"}
+          </Text>
         </TouchableOpacity>
+
         <TouchableOpacity
-          className="border border-gray-300 rounded-full p-4 items-center flex-row justify-center"
-          onPress={handleAnonymousLogin}
+          className="flex-row items-center justify-center bg-[#F7B500] w-full py-4 px-6 rounded-[16px] mb-4 shadow-buttonShadow"
+          onPress={handleBeginJourney}
           disabled={loading}
         >
-          {loadingProvider === 'anon' ? (
-            <ActivityIndicator color="#3C584A" style={{ marginRight: 10 }} />
-          ) : null}
-          <Text className="text-slate-700 font-din-bold text-base">Continue as guest</Text>
+          <Text className="font-din text-white text-[18px] font-bold">Begin Your Journey</Text>
         </TouchableOpacity>
       </View>
       <View className="items-center mt-6">
