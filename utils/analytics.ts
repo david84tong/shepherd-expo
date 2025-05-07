@@ -64,12 +64,12 @@ export enum AnalyticsEvent {
 }
 
 // Mixpanel token - replace with your project token
-const MIXPANEL_TOKEN = '12345abcdef'; // Replace with your actual Mixpanel token
+const MIXPANEL_TOKEN = '7178bfcd1e0972001d3e6c066e8fb18b'; // Replace with your actual Mixpanel token
 
 /**
  * Analytics wrapper class for tracking user events
  * This provides a consistent interface for tracking events across the app
- * and abstracts the underlying analytics implementation
+ * and abstracts the underlying anal  ytics implementation
  */
 class Analytics {
   private static instance: Analytics;
@@ -146,7 +146,7 @@ class Analytics {
       this.isInitialized = true;
       
       // Log app open event
-      this.logEvent(AnalyticsEvent.APP_OPEN, EventCategory.ENGAGEMENT);
+      this.logEvent(AnalyticsEvent.APP_OPEN);
       
       console.log('✅ Analytics (Mixpanel) initialized successfully');
     } catch (error) {
@@ -159,7 +159,6 @@ class Analytics {
    */
   public logEvent(
     eventName: string | AnalyticsEvent,
-    category: string | EventCategory,
     params: Record<string, any> = {}
   ): void {
     if (!this.isInitialized) {
@@ -178,14 +177,13 @@ class Analytics {
       // Combine default params with provided params
       const eventParams = {
         ...params,
-        category,
         timestamp: now.toISOString(),
         userId: this.userId || 'anonymous',
       };
       
       // Log to console in development
       if (__DEV__) {
-        console.log(`📊 ANALYTICS [${category}]: ${eventName}`, eventParams);
+        console.log(`📊 ANALYTICS ${eventName}`, eventParams);
       }
       
       // Track event in Mixpanel
@@ -202,7 +200,6 @@ class Analytics {
   public logScreenView(screenName: string, params: Record<string, any> = {}): void {
     this.logEvent(
       AnalyticsEvent.SCREEN_VIEW,
-      EventCategory.NAVIGATION,
       {
         screenName,
         ...params,
@@ -216,9 +213,8 @@ class Analytics {
   public logButtonPress(buttonId: string, screenName: string, params: Record<string, any> = {}): void {
     this.logEvent(
       AnalyticsEvent.BUTTON_PRESS,
-      EventCategory.USER_ACTION,
       {
-        buttonId,
+        buttonId, 
         screenName,
         ...params,
       }
@@ -234,7 +230,6 @@ class Analytics {
   ): void {
     this.logEvent(
       activityType,
-      EventCategory.SPIRITUAL_ACTIVITY,
       details
     );
   }
@@ -249,7 +244,6 @@ class Analytics {
   ): void {
     this.logEvent(
       AnalyticsEvent.APP_ERROR,
-      EventCategory.ERROR,
       {
         errorMessage,
         errorCode,

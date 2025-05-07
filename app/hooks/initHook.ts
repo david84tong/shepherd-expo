@@ -4,6 +4,9 @@ import { Timestamp } from '@react-native-firebase/firestore';
 import { useEffect, useState } from 'react';
 import * as Sentry from "@sentry/react-native";
 import { useUserStore } from '../stores/userStore';
+import { Mixpanel } from "mixpanel-react-native";
+
+import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
 
 // Key to check if app has been initialized
 const APP_INITIALIZED_KEY = 'shepherd-app-initialized';
@@ -48,6 +51,10 @@ export const useAppInitialization = () => {
   useEffect(() => {
     const initializeApp = async () => {
       console.log('🚀 Initializing app...');
+      const trackAutomaticEvents = false;
+      const mixpanel = new Mixpanel("7178bfcd1e0972001d3e6c066e8fb18b", trackAutomaticEvents);
+      mixpanel.init();
+      // Initialize Sentry for error tracking
       Sentry.init({
         dsn: "https://c9b3a3c9ed0846a755ee7175b07982f8@o4509279727321088.ingest.us.sentry.io/4509279728828416",
         // Adds more context data to events (IP address, cookies, user, etc.)
@@ -61,11 +68,22 @@ export const useAppInitialization = () => {
       try {
         setIsLoading(true);
 
+        // Initialize analytics
+        await analytics.init();
+
         // Check if app has been initialized before
         const hasInitialized = await AsyncStorage.getItem(APP_INITIALIZED_KEY);
 
+        // Log first app open event
+        analytics.logEvent(
+          "First App Open Boy",
+          { isFirstLaunch: true }
+        );
+        mixpanel.track("First App Open Boy");
+
         if (!hasInitialized) {
           console.log('🚀 First app open, initializing user...');
+          
           
           // Generate anonymous user ID
           const anonymousUserId = generateUUID();
@@ -91,12 +109,35 @@ export const useAppInitialization = () => {
           // Mark app as initialized
           await AsyncStorage.setItem(APP_INITIALIZED_KEY, 'true');
           console.log('✅ User initialized with ID:', anonymousUserId);
+          
+          // Set analytics user ID
+          analytics.setUserId(anonymousUserId);
+          analytics.setUserProperties({
+            firstOpenDate: new Date().toISOString(),
+            isAnonymous: true,
+            displayName: 'Anonymous User'
+          });
         } else {
           console.log('📱 App already initialized');
+
+          // Log regular app open event
+          analytics.logEvent(AnalyticsEvent.APP_OPEN);
 
           // Get current user data
           const userData = getUser();
           const firebaseUser = auth().currentUser;
+          
+          // Set analytics user ID if authenticated
+          if (firebaseUser?.uid) {
+            analytics.setUserId(firebaseUser.uid);
+            analytics.setUserProperties({
+              displayName: userData.displayName || 'Not set',
+              email: firebaseUser.email || 'Not available',
+              isAnonymous: false
+            });
+          } else if (userData?.id) {
+            analytics.setUserId(userData.id);
+          }
 
           // Log user state
           console.log('📊 Current User Data:', {
@@ -138,12 +179,22 @@ export const useAppInitialization = () => {
             }
           } catch (firestoreError) {
             console.error('❌ Error fetching user from Firestore:', firestoreError);
+            // Log error to analytics
+            analytics.logError('Error fetching user from Firestore', undefined, {
+              errorDetails: String(firestoreError)
+            });
           }
         }
 
         setIsInitialized(true);
       } catch (error) {
         console.error('❌ Error initializing app:', error);
+        // Log initialization error to analytics if analytics was initialized
+        if (analytics.isInitialized) {
+          analytics.logError('App initialization failed', undefined, {
+            errorDetails: String(error)
+          });
+        }
       } finally {
         setIsLoading(false);
       }
