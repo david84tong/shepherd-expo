@@ -11,7 +11,7 @@ import Animated, {
 export default function ProgressBar() {
   const pathname = usePathname();
   const currentPage = parseInt(pathname?.split('/').pop() || '1', 10);
-  const totalPages = 5; // Adjust based on your total number of pages
+  const totalPages = 11; // Updated to 11 screens
 
   // Animated progress value
   const progressValue = useSharedValue(0);

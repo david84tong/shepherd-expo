@@ -6,6 +6,7 @@ import Rive from 'rive-react-native';
 
 import PrimaryButton from '../../components/PrimaryButton';
 import { useOnboardingStore } from '../stores/onboardingStore';
+import ProgressBar from './components/ProgressBar';
 
 export default function OnboardingWelcomeScreen() {
   const router = useRouter();
@@ -44,7 +45,7 @@ export default function OnboardingWelcomeScreen() {
   }, []);
 
   const handleContinue = async () => {
-    router.push('onboarding/2' as any);
+    router.push('/onboarding/2' as const);
   };
 
   // Common animation styles
@@ -78,6 +79,11 @@ export default function OnboardingWelcomeScreen() {
         resizeMode="cover"
       />
       <View className="flex-1 px-6">
+        {/* Progress Bar */}
+        <View className="mt-4">
+          <ProgressBar />
+        </View>
+        
         {/* Question Text */}
         <Animated.View style={getAnimatedStyle(titleAnimation)} className="mt-12">
           <Text className="font-feather text-h1 text-center text-textPrimary mb-4">

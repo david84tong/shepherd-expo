@@ -1,4 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import { View, Pressable } from 'react-native';
 
@@ -186,9 +187,21 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
   return (
     <View className={`w-full px-16 my-4 ${alignmentClass}`}>
       <Pressable
-        onPress={() => !isDisabled && onPress(unit)}
+        onPress={() => {
+          if (!isDisabled) {
+            // Add light haptic feedback when tapping a node
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onPress(unit);
+          }
+        }}
         disabled={isDisabled}
-        onPressIn={() => setIsPressed(true)}
+        onPressIn={() => {
+          setIsPressed(true);
+          // Optional: add even lighter feedback on press in
+          if (!isDisabled) {
+            Haptics.selectionAsync();
+          }
+        }}
         onPressOut={() => setIsPressed(false)}
         className={`
           w-36 h-36 rounded-full items-center justify-center border-2
@@ -202,7 +215,7 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
         }}
       >
         <Ionicons 
-          name={(unit.icon || "book") as any} 
+          name={(unit.icon || "book") as React.ComponentProps<typeof Ionicons>['name']} 
           size={42} 
           color={getTextIconColor()} 
         />

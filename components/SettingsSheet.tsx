@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useRef, useImperativeHandle, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView } from 'react-native';
 import BottomSheet, { BottomSheetView, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import Clipboard from '@react-native-clipboard/clipboard';
 import * as Haptics from 'expo-haptics';
@@ -8,90 +8,18 @@ import auth from '@react-native-firebase/auth';
 import { useUserStore } from '../app/stores/userStore';
 import { useUIStore } from '../app/stores/uiStore';
 import { usePathStore } from '../app/stores/pathStore';
+import { useNotificationStore } from '../app/stores/notificationStore';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Notifications from 'expo-notifications';
 import Animated, { 
   useAnimatedStyle,
   withTiming,
-  FadeIn,
-  FadeOut,
-  SlideInDown,
-  SlideOutDown,
   Easing,
   useSharedValue,
   interpolate,
   withSequence,
-  withSpring,
 } from 'react-native-reanimated';
-
-// Add the function to schedule notifications
-const scheduleNotification = async (time: string) => {
-  // Skip if user selected 'none'
-  if (time === 'none') {
-    await Notifications.cancelAllScheduledNotificationsAsync();
-    return;
-  }
-  
-  try {
-    // Get permission first
-    const { status } = await Notifications.getPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('Notification permission not granted');
-      return;
-    }
-    
-    // Cancel any existing notifications
-    await Notifications.cancelAllScheduledNotificationsAsync();
-    
-    // Parse time ranges into hours for notifications
-    let hour = 8; // Default to 8 AM
-    let minute = 0;
-    
-    switch (time) {
-      case 'morning':
-        hour = 8; // 8 AM
-        break;
-      case 'afternoon':
-        hour = 14; // 2 PM
-        break;
-      case 'evening':
-        hour = 19; // 7 PM
-        break;
-      case 'night':
-        hour = 21; // 9 PM
-        break;
-      case 'custom':
-        // For custom times, the time string will be in format "HH:MM"
-        if (time.includes(':')) {
-          const [hourStr, minuteStr] = time.split(':');
-          hour = parseInt(hourStr, 10);
-          minute = parseInt(minuteStr, 10);
-        }
-        break;
-      default:
-        hour = 8; // Default to 8 AM
-    }
-    
-    // Schedule daily notification
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "Time to talk with the Shepherd",
-        body: "Take a moment to read scripture and connect with God.",
-        sound: true,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds: 60 * 60 * 24, // 24 hours
-        repeats: true,
-      },
-    });
-    
-    console.log(`Notification scheduled to repeat daily`);
-  } catch (error) {
-    console.error('Failed to schedule notification:', error);
-  }
-};
 
 interface SettingsSheetProps {
   settingsSheetRef: React.RefObject<SettingsSheetRef>;
@@ -111,6 +39,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 }) => {
   const router = useRouter();
   const [userId, setUserId] = useState<string>('Anonymous user');
+  const [isUserSignedIn, setIsUserSignedIn] = useState<boolean>(false);
   const setIsModalDimActive = useUIStore((state) => state.setIsModalDimActive);
   const [translationModalVisible, setTranslationModalVisible] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -118,6 +47,12 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   // Get user store data
   const notificationTime = useUserStore(state => state.notificationTime);
   const setNotificationTime = useUserStore(state => state.setNotificationTime);
+  
+  // Get notification store data
+  const notificationsEnabled = useNotificationStore(state => state.notificationsEnabled);
+  const setNotificationsEnabled = useNotificationStore(state => state.setNotificationsEnabled);
+  const scheduleStreakReminders = useNotificationStore(state => state.scheduleStreakReminders);
+  const cancelStreakNotifications = useNotificationStore(state => state.cancelStreakNotifications);
   
   // State for the time picker
   const [selectedTime, setSelectedTime] = useState(new Date());
@@ -145,6 +80,27 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       setSelectedTime(date);
     }
   }, [notificationTime]);
+  
+  // Check notification permissions on mount
+  useEffect(() => {
+    checkNotificationPermissions();
+  }, []);
+
+  // Check notification permissions
+  const checkNotificationPermissions = async () => {
+    try {
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status === 'granted') {
+        // If permissions are granted, ensure our store reflects that
+        setNotificationsEnabled(true);
+      } else {
+        // If permissions are not granted, disable notifications in our store
+        setNotificationsEnabled(false);
+      }
+    } catch (error) {
+      console.error('Error checking notification permissions:', error);
+    }
+  };
   
   // Get path store functions
   const savedTranslation = usePathStore(state => state.savedTranslation);
@@ -175,6 +131,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 
   // Close the settings sheet
   const handleClose = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     bottomSheetRef.current?.close();
   }, []);
 
@@ -216,18 +173,22 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   const prepareAndShow = useCallback(() => {
     // Get user ID directly from Firebase or userStore
     let currentUserId = 'Not authenticated';
+    let isUserSignedIn = false;
     
     // First try to get the current Firebase user's UID
     const currentUser = auth().currentUser;
     if (currentUser?.uid) {
       currentUserId = currentUser.uid;
+      isUserSignedIn = true;
     } else {
       // Fallback to userStore
       const user = useUserStore.getState().getUser();
       currentUserId = user?.id || 'Not authenticated';
+      isUserSignedIn = !!user?.id;
     }
     
     setUserId(currentUserId);
+    setIsUserSignedIn(isUserSignedIn);
     
     // Show the sheet
     bottomSheetRef.current?.expand();
@@ -247,6 +208,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 
   // Handle translation selection
   const handleTranslationChange = useCallback((translation: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     setSavedTranslation(translation);
     setTranslationModalVisible(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -281,20 +243,64 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   }, [notificationTime]);
 
   // Toggle notifications on/off
-  const toggleNotifications = (enableNotifications: boolean) => {
-    if (!enableNotifications) {
-      setNotificationTime('none');
-      scheduleNotification('none');
-    } else {
+  const toggleNotifications = async (enableNotifications: boolean) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    
+    if (enableNotifications) {
+      // Request permissions if enabling notifications
+      const { status } = await Notifications.getPermissionsAsync();
+      
+      if (status !== 'granted') {
+        // Request permissions if not already granted
+        const { status: newStatus } = await Notifications.requestPermissionsAsync();
+        
+        if (newStatus !== 'granted') {
+          // If still not granted, show alert and return
+          Alert.alert(
+            'Notification Permission Required',
+            'Please enable notifications in your device settings to receive streak reminders.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+      }
+      
+      // Update notification store
+      setNotificationsEnabled(true);
+      
+      // Schedule notifications
+      await scheduleStreakReminders();
+      
       // If turning on, show the time picker
       setShowTimePicker(true);
+      
+      // Default notification time if none set
+      if (notificationTime === 'none') {
+        setNotificationTime('19:00'); // Default to 7 PM
+      }
+    } else {
+      // If turning off, cancel all notifications
+      await cancelStreakNotifications();
+      
+      // Update notification store
+      setNotificationsEnabled(false);
+      
+      // Hide the time picker if it's open
+      if (showTimePicker) {
+        timePickerHeight.value = withTiming(0, { 
+          duration: 250, 
+          easing: Easing.out(Easing.cubic) 
+        });
+        setTimeout(() => {
+          setShowTimePicker(false);
+        }, 200);
+      }
     }
-    
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   };
 
   // Toggle time picker visibility with animation
   const toggleTimePicker = () => {
+    // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     
     // Animate the scale of the selector button
@@ -347,7 +353,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   });
 
   // Handle time selection and close picker
-  const handleTimeConfirm = () => {
+  const handleTimeConfirm = async () => {
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    
     if (selectedTime) {
       const hours = selectedTime.getHours();
       const minutes = selectedTime.getMinutes();
@@ -359,7 +368,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       setNotificationTime(timeString);
       
       // Reschedule notifications with the new time
-      scheduleNotification(timeString);
+      await scheduleStreakReminders();
       
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }
@@ -386,6 +395,12 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
     
     toggleNotifications(enableNotifications);
   };
+
+  // Update the cancel button in translation modal
+  const handleCancelTranslation = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setTranslationModalVisible(false);
+  }, []);
 
   return (
     <>
@@ -449,22 +464,22 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
               {/* Toggle for enabling/disabling notifications */}
               <View style={styles.notificationToggleContainer}>
                 <Text style={styles.notificationToggleText}>
-                  {notificationTime === 'none' ? 'Notifications disabled' : 'Notifications enabled'}
+                  {notificationsEnabled ? 'Notifications enabled' : 'Notifications disabled'}
                 </Text>
                 <TouchableOpacity 
                   style={[
                     styles.toggleButton,
-                    notificationTime !== 'none' ? styles.toggleButtonActive : {}
+                    notificationsEnabled ? styles.toggleButtonActive : {}
                   ]}
-                  onPress={() => animateToggle(notificationTime === 'none')}
+                  onPress={() => animateToggle(!notificationsEnabled)}
                 >
                   <Animated.View 
                     style={[
                       styles.toggleKnob, 
-                      notificationTime !== 'none' ? styles.toggleKnobActive : {},
+                      notificationsEnabled ? styles.toggleKnobActive : {},
                       {
                         transform: [
-                          { translateX: notificationTime !== 'none' ? 20 : 0 }
+                          { translateX: notificationsEnabled ? 20 : 0 }
                         ]
                       }
                     ]} 
@@ -472,7 +487,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                 </TouchableOpacity>
               </View>
               
-              {notificationTime !== 'none' && (
+              {notificationsEnabled && (
                 <Animated.View style={selectorButtonStyle}>
                   <TouchableOpacity 
                     style={[
@@ -490,7 +505,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
               )}
               
               {/* Embedded Time Picker with animation */}
-              {notificationTime !== 'none' && (
+              {notificationsEnabled && (
                 <Animated.View 
                   style={[
                     styles.timePickerContainer,
@@ -498,14 +513,18 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                     showTimePicker ? null : { height: 0, opacity: 0, overflow: 'hidden' }
                   ]}
                 >
-                  <DateTimePicker
-                    value={selectedTime}
-                    mode="time"
-                    is24Hour={false}
-                    display="spinner"
-                    onChange={(event, date) => date && setSelectedTime(date)}
-                    style={styles.timePicker}
-                  />
+                  <View style={styles.timePickerWrapper}>
+                    <DateTimePicker
+                      value={selectedTime}
+                      mode="time"
+                      is24Hour={false}
+                      display="spinner"
+                      onChange={(event, date) => date && setSelectedTime(date)}
+                      style={styles.timePicker}
+                      accentColor="#3C584A"
+                      themeVariant="light"
+                    />
+                  </View>
                   
                   <TouchableOpacity
                     style={styles.donePickingButton}
@@ -524,13 +543,15 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
               <Text style={styles.settingsText}>More settings coming soon...</Text>
             </View>
 
-            {/* Sign Out Button */}
-            <TouchableOpacity
-              onPress={handleSignOut}
-              style={styles.signOutButton}
-            >
-              <Text style={styles.signOutText}>Sign Out</Text>
-            </TouchableOpacity>
+            {/* Sign Out Button - Only show if user is signed in */}
+            {isUserSignedIn && (
+              <TouchableOpacity
+                onPress={handleSignOut}
+                style={styles.signOutButton}
+              >
+                <Text style={styles.signOutText}>Sign Out</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </BottomSheetView>
       </BottomSheet>
@@ -540,7 +561,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
         visible={translationModalVisible}
         transparent
         animationType="fade"
-        onRequestClose={() => setTranslationModalVisible(false)}
+        onRequestClose={handleCancelTranslation}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
@@ -571,7 +592,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
             
             <TouchableOpacity
               style={styles.cancelButton}
-              onPress={() => setTranslationModalVisible(false)}
+              onPress={handleCancelTranslation}
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
@@ -786,7 +807,7 @@ const styles = StyleSheet.create({
   timePickerContainer: {
     backgroundColor: 'rgba(255, 244, 217, 0.95)',
     borderRadius: 16,
-    marginTop: 10,
+    marginTop: 24,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#FFE4A8',
@@ -797,7 +818,7 @@ const styles = StyleSheet.create({
   },
   donePickingButton: {
     backgroundColor: '#F7B500',
-    padding: 14,
+    padding: 8,
     alignItems: 'center',
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
@@ -811,6 +832,13 @@ const styles = StyleSheet.create({
   timeSelectorActive: {
     backgroundColor: 'rgba(247, 181, 0, 0.15)',
     borderColor: '#F7B500',
+  },
+  timePickerWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#FFE4A8',
+    paddingVertical: 8,
   },
 });
 

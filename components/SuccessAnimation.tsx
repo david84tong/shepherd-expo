@@ -2,6 +2,7 @@ import firestore from '@react-native-firebase/firestore';
 import dayjs from 'dayjs';
 import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   View,
@@ -401,6 +402,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Default navigation behavior
   const handleGoHome = () => {
+    // Add medium haptic feedback for navigation
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
     // If this is the first reading of the day and effectiveType is READING, show streak screen
     if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
       console.log('First reading of the day - showing streak screen');
@@ -437,6 +441,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Handler for prayer button
   const handleGoToPrayer = () => {
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
     console.log('Navigating to Prayer from Success screen');
 
     // First update the state in the store
@@ -453,6 +460,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Handler for reflection button
   const handleGoToReflection = () => {
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
     console.log('Navigating to Reflection from Success screen');
 
     // First update the state in the store
@@ -603,7 +613,11 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       {/* Return Home - style based on whether action buttons are shown */}
       {showNextButtons ? (
         // Text link style when action buttons are shown
-        <TouchableOpacity onPress={handlePress} className="mt-4">
+        <TouchableOpacity 
+          onPress={handlePress} 
+          className="mt-4"
+          onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+        >
           <Text className="font-feather text-description text-center underline">Go Home</Text>
         </TouchableOpacity>
       ) : (
