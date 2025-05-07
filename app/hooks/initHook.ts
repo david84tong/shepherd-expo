@@ -74,16 +74,15 @@ export const useAppInitialization = () => {
         // Check if app has been initialized before
         const hasInitialized = await AsyncStorage.getItem(APP_INITIALIZED_KEY);
 
-        // Log first app open event
-        analytics.logEvent(
-          "First App Open Boy",
-          { isFirstLaunch: true }
-        );
-        mixpanel.track("First App Open Boy");
+   
 
         if (!hasInitialized) {
           console.log('🚀 First app open, initializing user...');
-          
+               // Log first app open event
+          analytics.logEvent(
+            "First App Open",
+            { isFirstLaunch: true }
+          );
           
           // Generate anonymous user ID
           const anonymousUserId = generateUUID();
