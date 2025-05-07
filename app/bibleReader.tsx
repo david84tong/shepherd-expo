@@ -4,7 +4,6 @@ import {
   View,
   Text,
   ScrollView,
-  ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
@@ -13,15 +12,14 @@ import {
   NativeScrollEvent,
   Easing as RNEasing,
 } from 'react-native';
-import { fetchChapter, ChapterResponse, FetchError, Verse } from './api/bible';
-import PrimaryButton from '../components/PrimaryButton';
+import { fetchChapter, ChapterResponse, Verse } from './api/bible';
 import SideButton from '~/components/SideButton';
 import { usePathStore } from './stores/pathStore';
 import { useHomeStore, SuccessAnimationType } from './stores/homeStore';
 import { useUserStore } from './stores/userStore';
 import { useUIStore } from './stores/uiStore';
 import { router, useLocalSearchParams } from 'expo-router';
-import { BIBLE_PATHS, Path, Unit, BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from './models/Path';
+import { BIBLE_PATHS, Unit, BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from './models/Path';
 import firestore from '@react-native-firebase/firestore';
 import Reanimated, { 
   useSharedValue, 
@@ -30,8 +28,8 @@ import Reanimated, {
   withRepeat, 
   withSequence, 
   withDelay, 
-  Easing as ReanimatedEasing  // Use ReanimatedEasing for clarity
-} from 'react-native-reanimated'; // Use Reanimated for dot indicator
+  Easing as ReanimatedEasing
+} from 'react-native-reanimated';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
 const DEFAULT_FONT_SIZE = 16;
@@ -749,125 +747,125 @@ export default function BibleReaderScreen() {
 
 // Styles
 const styles = StyleSheet.create({
-  newHeaderContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    backgroundColor: '#FFF4D9',
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFE4A8',
-  },
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
   backButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 244, 217, 0.95)',
     alignItems: 'center',
+    backgroundColor: 'rgba(255, 244, 217, 0.95)',
+    borderRadius: 22,
+    elevation: 3,
+    height: 44,
     justifyContent: 'center',
     marginRight: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 3,
-    elevation: 3,
+    width: 44,
   },
   backButtonText: {
-    fontSize: 24,
     color: '#3C584A',
     fontFamily: 'Inter-Bold',
+    fontSize: 24,
+  },
+  contentArea: {
+    backgroundColor: '#FFF4D9',
+    flex: 1,
+  },
+  disabledButtonText: {
+    color: '#DCB280',
+  },
+  disabledNavButton: {
+    backgroundColor: 'rgba(220, 178, 128, 0.1)',
+  },
+  finishButtonContainer: {
+    bottom: 20, // Adjust spacing as needed
+    left: 20,
+    position: 'absolute',
+    right: 20,
+  },
+  floatingNavContainer: {
+    alignItems: 'center',
+    bottom: 30,
+    flexDirection: 'row',
+    position: 'absolute',
+    right: 20,
+    zIndex: 10,
+  },
+  floatingNavContainerEmbedded: {
+    bottom: 100, // Move up when tab bar is present
+  },
+  fontSizeAdjustText: {
+    color: '#3C584A',
+    fontFamily: 'Inter-Medium',
+    fontSize: 20,
   },
   headerButton: {
     backgroundColor: 'rgba(220, 178, 128, 0.2)',
     borderRadius: 15,
-    paddingVertical: 5,
-    paddingHorizontal: 12,
     marginRight: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
   },
   headerButtonText: {
     color: '#3C584A',
+    fontFamily: 'Inter-Medium',
     fontSize: 14,
     fontWeight: '500',
-    fontFamily: 'Inter-Medium',
+  },
+  headerLeft: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  headerRight: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  iconButton: {
+    marginLeft: 8,
+    padding: 8,
   },
   navButton: {
+    alignItems: 'center',
     backgroundColor: '#FFE4A8',
     borderRadius: 24,
-    width: 48,
+    elevation: 4,
     height: 48,
-    alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
-    elevation: 4,
+    width: 48,
   },
   navButtonText: {
     color: '#3C584A',
     fontSize: 24,
     fontWeight: '700',
   },
-  disabledNavButton: {
-    backgroundColor: 'rgba(220, 178, 128, 0.1)',
-  },
-  iconButton: {
-    padding: 8,
-    marginLeft: 8,
-  },
-  fontSizeAdjustText: {
-    fontSize: 20,
-    color: '#3C584A',
-    fontFamily: 'Inter-Medium',
-  },
-  disabledButtonText: {
-    color: '#DCB280',
-  },
-  contentArea: {
-    flex: 1,
+  newHeaderContainer: {
+    alignItems: 'center',
     backgroundColor: '#FFF4D9',
+    borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
   },
   scrollContainer: {
+    paddingBottom: 30,
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 30,
-  },
-  verseText: {
-    lineHeight: 24,
-    marginBottom: 10,
-    color: '#3C584A',
-    fontFamily: 'Inter-Regular',
   },
   verseNumber: {
-    fontWeight: 'bold',
     color: '#DCB280',
     fontFamily: 'Inter-Bold',
+    fontWeight: 'bold',
   },
-  floatingNavContainer: {
-    position: 'absolute',
-    bottom: 30,
-    right: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  floatingNavContainerEmbedded: {
-    bottom: 100, // Move up when tab bar is present
-  },
-  finishButtonContainer: {
-    position: 'absolute',
-    bottom: 20, // Adjust spacing as needed
-    left: 20,
-    right: 20,
+  verseText: {
+    color: '#3C584A',
+    fontFamily: 'Inter-Regular',
+    lineHeight: 24,
+    marginBottom: 10,
   },
 }); 

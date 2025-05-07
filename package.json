@@ -45,6 +45,7 @@
     "expo-notifications": "^0.31.1",
     "expo-router": "~4.0.6",
     "expo-router-sitemap": "^0.1.1",
+    "expo-secure-store": "^14.2.3",
     "expo-splash-screen": "^0.29.24",
     "expo-status-bar": "~2.0.1",
     "expo-system-ui": "~4.0.9",
