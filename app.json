@@ -65,7 +65,8 @@
         {
           "image": "./assets/splash.png",
           "resizeMode": "contain",
-          "backgroundColor": "#FFF3D9"
+          "backgroundColor": "#FFF3D9",
+          "imageWidth": 196
         }
       ],
       "@react-native-firebase/app",
