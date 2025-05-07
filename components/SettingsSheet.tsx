@@ -313,6 +313,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                     display="spinner"
                     onChange={(event, date) => date && setSelectedTime(date)}
                     style={styles.timePicker}
+                    textColor="#3C584A"
                   />
                   <TouchableOpacity
                     style={styles.donePickingButton}
@@ -586,23 +587,32 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
     marginTop: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(60, 88, 74, 0.1)',
   },
   timeSelectorText: {
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
     color: '#3C584A',
+    fontWeight: '500',
   },
   timePickerContainer: {
-    backgroundColor: 'rgba(255, 244, 217, 0.95)',
+    backgroundColor: '#FFF4D9',
     borderRadius: 16,
     marginTop: 10,
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: '#FFE4A8',
+    shadowColor: 'rgba(0, 0, 0, 0.1)',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.8,
+    shadowRadius: 4,
+    elevation: 3,
   },
   timePicker: {
     width: '100%',
     height: 180,
+    backgroundColor: '#FFF4D9',
   },
   donePickingButton: {
     backgroundColor: '#F7B500',
@@ -620,6 +630,7 @@ const styles = StyleSheet.create({
   timeSelectorActive: {
     backgroundColor: 'rgba(247, 181, 0, 0.15)',
     borderColor: '#F7B500',
+    borderWidth: 1,
   },
 });
 
