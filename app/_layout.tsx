@@ -12,6 +12,7 @@ import AppLoading from '../components/AppLoading';
 import { isSignedIn } from './hooks/authHook';
 import { useAppInitialization } from './hooks/initHook';
 import { useUIStore } from './stores/uiStore';
+import { useNotificationStore } from './stores/notificationStore';
 import { DebugButton } from '../components/DebugModal';
 import { ONBOARDING_COMPLETED_KEY } from './types/onboarding';
 
@@ -223,6 +224,18 @@ export default function RootLayout() {
     }
   };
 
+  // Initialize notifications system
+  const initializeNotifications = async () => {
+    try {
+      console.log('Initializing notification system...');
+      const notificationStore = useNotificationStore.getState();
+      await notificationStore.initializeNotifications();
+      console.log('Notification system initialized successfully');
+    } catch (error) {
+      console.error('Error initializing notifications:', error);
+    }
+  };
+
   // Sheet activation functions - these only prepare params and call the component's show method
   const showHalfModal = (params: any) => {
     setHalfModalParams(params);
@@ -271,6 +284,25 @@ export default function RootLayout() {
       });
     }
   }, [fontsLoaded, appReady, isOnboardingChecked, segments]);
+
+  // Effect to load the app
+  useEffect(() => {
+    if (fontsLoaded || fontError) {
+      console.log('Fonts loaded, initializing app...');
+
+      // Simulate resource loading for smoother startup animation
+      preloadResources();
+
+      // Check onboarding status
+      checkOnboarding();
+
+      // Check streak status - this will also check and schedule notifications
+      checkStreakStatus();
+      
+      // Initialize notifications system
+      initializeNotifications();
+    }
+  }, [fontsLoaded, fontError]);
 
   // Loading states
   if (!fontsLoaded && !fontError) return null;

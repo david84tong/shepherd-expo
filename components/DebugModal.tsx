@@ -69,30 +69,128 @@ export function DebugButton({}: DebugButtonProps) {
   // WARNING: This will clear ALL app data including onboarding completion flag. Do NOT use for logout.
   const handleResetLocalStorage = useCallback(() => {
     Alert.alert(
-      'Reset Storage',
-      'This will clear ALL app data including your progress. Are you sure?',
+      'Delete Account & Data',
+      'This will delete your account, all Firestore data, and clear local storage. This action CANNOT be undone. Are you sure?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
-          text: 'Reset',
+          text: 'Delete Everything',
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.clear();
-              console.log('✅ Local storage cleared successfully');
+              // Get current user
+              const currentUser = auth().currentUser;
+              if (!currentUser) {
+                Alert.alert('Error', 'No user is currently signed in');
+                return;
+              }
+              
+              const userId = currentUser.uid;
+              console.log('Attempting to delete user:', userId);
+              
+              try {
+                // Delete Firestore user document first
+                await firestore().collection('users').doc(userId).delete();
+                console.log('✅ User document deleted from Firestore');
+              } catch (firestoreError) {
+                console.error('❌ Error deleting Firestore document:', firestoreError);
+                Alert.alert('Firestore Error', 'Failed to delete Firestore data. Continuing with other deletion steps.');
+              }
+              
+              try {
+                // Clear AsyncStorage
+                await AsyncStorage.clear();
+                console.log('✅ Local storage cleared successfully');
+              } catch (storageError) {
+                console.error('❌ Error clearing AsyncStorage:', storageError);
+                Alert.alert('Storage Error', 'Failed to clear local storage. Continuing with other deletion steps.');
+              }
+              
+              // Reset user store regardless of other errors
+              useUserStore.getState().resetUserStore();
+              console.log('✅ User store reset');
+              
+              try {
+                // Try to delete the account after sign out
+                // Note: This often fails due to Firebase security rules requiring recent authentication
+                if (currentUser) {
+                  await currentUser.delete();
+                  console.log('✅ User auth account deleted');
+                  
+                  // Only sign out if account deletion was successful
+                  await auth().signOut();
+                  console.log('✅ User signed out after account deletion');
+                }
+              } catch (authError: any) {
+                console.error('❌ Error with auth operations:', authError);
+                
+                // Handle the specific "requires-recent-login" error from Firebase
+                if (authError.code === 'auth/requires-recent-login') {
+                  Alert.alert(
+                    'Authentication Timeout',
+                    'This operation requires recent authentication. You will need to re-login and try again. Would you like to sign out and go to the login screen?',
+                    [
+                      { 
+                        text: 'Yes', 
+                        onPress: async () => {
+                          try {
+                            await auth().signOut();
+                            setModalVisible(false);
+                            router.replace('/login');
+                          } catch (e) {
+                            console.error('Failed to sign out:', e);
+                          }
+                        } 
+                      },
+                      { text: 'No', style: 'cancel' }
+                    ]
+                  );
+                  return; // Exit early if we're showing the re-auth message
+                } else {
+                  Alert.alert('Auth Error', `Error: ${authError.message || 'Unknown auth error'}`);
+                }
+              }
+              
+              // Always redirect to login screen regardless of errors
               Alert.alert(
-                'Success',
-                'Local storage has been cleared. Restart the app for changes to take effect.'
+                'Account Data Deleted',
+                'Your account data has been deleted. The app will now redirect to the login screen.',
+                [
+                  { 
+                    text: 'OK', 
+                    onPress: () => {
+                      setModalVisible(false);
+                      router.replace('/login');
+                    }
+                  }
+                ]
               );
             } catch (error) {
-              console.error('❌ Error clearing local storage:', error);
-              Alert.alert('Error', 'Failed to clear local storage.');
+              console.error('❌ Unhandled error in account deletion:', error);
+              Alert.alert(
+                'Error', 
+                'Something went wrong during account deletion. The app will try to sign you out anyway.',
+                [
+                  {
+                    text: 'OK',
+                    onPress: async () => {
+                      try {
+                        await auth().signOut();
+                        setModalVisible(false);
+                        router.replace('/login');
+                      } catch (e) {
+                        console.error('Final error handler signout failed:', e);
+                      }
+                    }
+                  }
+                ]
+              );
             }
           },
         },
       ]
     );
-  }, []);
+  }, [router]);
 
   // Handler for showing a test modal
   const handleShowPenaltyModal = useCallback(() => {
@@ -195,24 +293,6 @@ export function DebugButton({}: DebugButtonProps) {
 
     Alert.alert('Sync Dates', 'Activity dates synced with their respective penalty dates.');
   }, []);
-
-  // Add signOut handler
-  const handleSignOut = useCallback(async () => {
-    try {
-      await auth().signOut();
-      // Salva flag de onboarding completo
-      await AsyncStorage.setItem('@shepherd/onboarding_completed', 'true');
-      // Reset user store after sign out
-      useUserStore.getState().resetUserStore();
-      console.log('✅ User signed out successfully');
-      Alert.alert('Success', 'Signed out successfully');
-      setModalVisible(false);
-      router.replace('/login');
-    } catch (error) {
-      console.error('❌ Error signing out:', error);
-      Alert.alert('Error', 'Failed to sign out');
-    }
-  }, [router]);
 
   // Handler to reset HomeStore data and clear completedReadings
   const handleResetCompletionData = useCallback(() => {
@@ -452,16 +532,6 @@ export function DebugButton({}: DebugButtonProps) {
               {/* Local Storage */}
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">Data Management</Text>
-
-                {/* Sign Out Button */}
-                <TouchableOpacity
-                  className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
-                  onPress={handleSignOut}>
-                  <Text className="font-feather text-base text-textPrimary">Sign Out</Text>
-                  <Text className="font-din text-sm text-[#A57070] mt-1">
-                    Sign out current user and reset store
-                  </Text>
-                </TouchableOpacity>
 
                 {/* Reset Local Storage Button */}
                 <TouchableOpacity

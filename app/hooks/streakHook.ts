@@ -4,6 +4,7 @@ import { useCallback } from 'react';
 
 import { useHomeStore } from '../stores/homeStore';
 import { useUserStore } from '../stores/userStore';
+import { useNotificationStore } from '../stores/notificationStore';
 
 // Penalties for missing activities (hearts lost per day)
 const PENALTIES = {
@@ -309,6 +310,7 @@ export const checkStreakAndApplyPenalties = async () => {
 
     const userStore = useUserStore.getState();
     const homeStore = useHomeStore.getState();
+    const notificationStore = useNotificationStore.getState();
     const now = new Date();
 
     // Validate that we have the required data from userStore
@@ -321,6 +323,9 @@ export const checkStreakAndApplyPenalties = async () => {
         error: 'Invalid lamb data',
       };
     }
+
+    // Check and update notifications based on last reading date
+    await notificationStore.checkAndRescheduleNotifications(userStore.lastReadingDate);
 
     // Do NOT update lastActivityDate here, only after penalty calculation
     const lambHearts = userStore.lamb.hearts;
@@ -384,6 +389,7 @@ export const checkStreakAndApplyPenalties = async () => {
 export const useStreakManager = () => {
   const userStore = useUserStore();
   const homeStore = useHomeStore();
+  const notificationStore = useNotificationStore();
 
   const checkAndApplyPenalties = useCallback(async () => {
     try {
@@ -402,6 +408,9 @@ export const useStreakManager = () => {
       const lastPrayerPenaltyDate = userStore.getLastPrayerPenaltyDate();
       const lastReflectionPenaltyDate = userStore.getLastReflectionPenaltyDate();
       const now = new Date();
+
+      // Check and update notifications based on last reading date
+      await notificationStore.checkAndRescheduleNotifications(lastReadingDate);
 
       const result = calculateStreakAndPenalties({
         lambHearts,
@@ -443,7 +452,7 @@ export const useStreakManager = () => {
         daysMissed: 0,
       };
     }
-  }, [userStore, homeStore]);
+  }, [userStore, homeStore, notificationStore]);
 
   return {
     checkStreakAndApplyPenalties: checkAndApplyPenalties,

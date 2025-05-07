@@ -276,7 +276,7 @@ export const StreakScreen = () => {
   }));
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/Streak.riv')]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/successLamb.riv')]);
 
   const subText = getStreakSubtext(streak);
 
@@ -307,8 +307,9 @@ export const StreakScreen = () => {
           <View className="w-96 h-96 justify-center items-center">
             <Rive
               url={riveAssets[0].localUri!}
+              artboardName='streak'
               autoplay
-              style={{ width: '140%', height: '140%' }}
+              style={{ width: '200%', height: '200%' }}
               ref={riveRef}
             />
           </View>

@@ -2,19 +2,23 @@ import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
   withTiming,
   withSpring,
   useSharedValue,
   withDelay,
+  SharedValue,
 } from 'react-native-reanimated';
 
 import PrimaryButton from '../../components/PrimaryButton';
+import { useNotificationStore } from '../stores/notificationStore';
 
 export default function NotificationPermissionScreen() {
   const router = useRouter();
   const [showingAlert, setShowingAlert] = useState(false);
+  const notificationStore = useNotificationStore();
 
   // Create Reanimated shared values for each component
   const titleOpacity = useSharedValue(0);
@@ -36,7 +40,7 @@ export default function NotificationPermissionScreen() {
     buttonTranslateY.value = 40;
 
     // Staggered animations for each component
-    const animateComponent = (opacity: any, translateY: any, delay: number) => {
+    const animateComponent = (opacity: SharedValue<number>, translateY: SharedValue<number>, delay: number) => {
       opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
       translateY.value = withDelay(
         delay,
@@ -71,12 +75,18 @@ export default function NotificationPermissionScreen() {
 
   // Function to handle the don't allow button
   const handleDontAllow = () => {
-    router.push('/onboarding/11' as any);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    // Disable notifications in our store
+    notificationStore.setNotificationsEnabled(false);
+    
+    router.push('/onboarding/11');
   };
 
   // Function to handle the allow button
   const handleAllow = async () => {
     if (showingAlert) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setShowingAlert(true);
 
     try {
@@ -89,12 +99,23 @@ export default function NotificationPermissionScreen() {
       }
 
       if (finalStatus === 'granted') {
-        router.push('/onboarding/11' as any);
+        // Enable notifications in our store
+        notificationStore.setNotificationsEnabled(true);
+        
+        // Initialize notifications
+        await notificationStore.initializeNotifications();
+        
+        console.log('Notification permissions granted and notifications scheduled');
       } else {
-        router.push('/onboarding/11' as any);
+        // Disable notifications in our store
+        notificationStore.setNotificationsEnabled(false);
+        console.log('Notification permissions denied');
       }
+      
+      router.push('/onboarding/11');
     } catch (error) {
       console.error('Error requesting notification permissions:', error);
+      notificationStore.setNotificationsEnabled(false);
     } finally {
       setShowingAlert(false);
     }
@@ -102,7 +123,12 @@ export default function NotificationPermissionScreen() {
 
   // Function to handle the remind me button
   const handleRemindMe = () => {
-    router.push('/onboarding/11' as any);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    // Keep notifications disabled for now
+    notificationStore.setNotificationsEnabled(false);
+    
+    router.push('/onboarding/11');
   };
 
   return (
@@ -125,7 +151,7 @@ export default function NotificationPermissionScreen() {
               <Text className="font-bold text-black">From Shepherd</Text>
               <Text className="text-gray-400 text-xs">now</Text>
             </View>
-            <Text className="text-black text-sm">Reminder that God is with you.</Text>
+            <Text className="text-black text-sm">Your streak is gonna be broken!</Text>
           </View>
         </View>
 
@@ -134,7 +160,7 @@ export default function NotificationPermissionScreen() {
           <View className="bg-white rounded-[14px] w-[280px] overflow-hidden shadow-lg">
             <View className="p-4">
               <Text className="text-black text-[17px] font-feather text-center mb-2 mt-2">
-                "Shepherd" Would Like to Send You Notifications
+                &ldquo;Shepherd&rdquo; Would Like to Send You Notifications
               </Text>
               <Text className="text-[#666666] text-[15px] font-din text-center px-6 mb-2">
                 Notifications may include alerts, sounds, and icon badges. These can be configured
@@ -146,7 +172,7 @@ export default function NotificationPermissionScreen() {
               <TouchableOpacity
                 className="flex-1 py-[12px] border-r border-gray-200"
                 onPress={handleDontAllow}>
-                <Text className="text-[#007AFF] text-[17px] text-center font-din">Don't Allow</Text>
+                <Text className="text-[#007AFF] text-[17px] text-center font-din">Don&apos;t Allow</Text>
               </TouchableOpacity>
 
               <TouchableOpacity className="flex-1 py-[12px]" onPress={handleAllow}>
@@ -169,7 +195,7 @@ export default function NotificationPermissionScreen() {
           { position: 'absolute', bottom: 48, width: '100%', paddingHorizontal: 20 },
         ]}>
         <PrimaryButton
-          title="REMIND ME TO PRACTICE"
+          title="Remind Me!"
           onPress={handleRemindMe}
           primaryColor="bg-accentGold"
           textColor="text-white"

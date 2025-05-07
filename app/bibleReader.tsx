@@ -13,6 +13,7 @@ import {
   NativeScrollEvent,
   Easing as RNEasing,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { fetchChapter, ChapterResponse, FetchError, Verse } from './api/bible';
 import PrimaryButton from '../components/PrimaryButton';
 import SideButton from '~/components/SideButton';
@@ -289,6 +290,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const navigateToPreviousChapter = () => {
     if (loading || !chapterData) return;
     
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
     if (currentChapter > 1) {
       loadChapter(currentVersion, currentBook, currentBookId, currentChapter - 1);
     } else {
@@ -304,12 +308,18 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       return;
     }
     
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
     // Simple chapter navigation for now
     loadChapter(currentVersion, currentBook, currentBookId, currentChapter + 1);
   };
 
   const updateFontSize = async (newSize: number) => {
     if (newSize >= MIN_FONT_SIZE && newSize <= MAX_FONT_SIZE) {
+      // Add haptic feedback
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      
       setFontSize(newSize);
       try {
         await AsyncStorage.setItem(FONT_SIZE_KEY, newSize.toString());
@@ -328,6 +338,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   };
 
   const handleFinishReading = () => {
+    // Add haptic feedback - medium for completion
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
     console.log('Finish Reading Pressed - Updating completion status');
     let nextUnit: Unit | null = null;
     let shouldStayInPath = false;
@@ -524,11 +537,17 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   };
 
   const handleOpenSelector = () => {
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
     console.log('🔍 DEBUG: Opening selector');
     showBookChapterSelector(currentBookId, currentChapter, handleSelectBookChapter);
   };
 
   const handleSelectBookChapter = (bookId: number, chapter: number) => {
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
     console.log(`📖 New selection: Book ID ${bookId}, Chapter ${chapter}`);
     // Find book name from reverse map for logging/UI update (optional here)
     const bookNames: Record<number, string> = Object.fromEntries(
@@ -542,6 +561,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   // Handle back navigation based on context
   const handleBackNavigation = () => {
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
     if (onNavigateBack) {
       // Custom back navigation when embedded
       onNavigateBack();
