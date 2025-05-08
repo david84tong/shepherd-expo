@@ -37,7 +37,6 @@ Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
 Purchases.configure({
   apiKey: Platform.select({
     ios: 'appl_HaJSTaiQWLDPXKMjOPocMXEOKrm',
-    android: 'YOUR_ANDROID_API_KEY',
   }) || 'appl_HaJSTaiQWLDPXKMjOPocMXEOKrm', // Fallback key to satisfy TypeScript
 });
 

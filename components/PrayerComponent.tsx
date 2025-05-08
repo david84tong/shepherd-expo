@@ -1,5 +1,4 @@
 import firestore from '@react-native-firebase/firestore';
-import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
@@ -88,7 +87,6 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   const typingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Load Rive assets (if needed in the future)
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
 
   // Run animation when component becomes visible
   useEffect(() => {
@@ -99,17 +97,17 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
       // Get latest prayer topic and generate prayer text
       const currentPrayerTopic = usePrayerStore.getState().recentPrayers[0] || '';
       console.log('Current prayer topic:', currentPrayerTopic);
-      
+
       // Generate fresh prayer text based on the current topic
       let newPrayerText = DEFAULT_PRAYER_TEMPLATE;
-      
+
       if (currentPrayerTopic) {
         newPrayerText = `Dear God, I come before you today with a humble heart. Please help me with ${currentPrayerTopic.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
         console.log('Generated custom prayer text for:', currentPrayerTopic);
       } else {
         console.log('No prayer topic found, using default prayer');
       }
-      
+
       setPrayerText(newPrayerText);
 
       // Reset states immediately
@@ -275,7 +273,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     // Mark prayer as completed
     setPrayerCompleted(true);
     setPathInProgress(false);
-    
+
     // Create current timestamp using Firestore Timestamp
     const now = firestore.Timestamp.now();
 
@@ -296,7 +294,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     } catch (error) {
       console.error('Error saving prayer data:', error);
     }
-    
+
     // Check if all three tasks are completed for bonus, but only if not already seen
     if (readingCompleted && reflectionCompleted && !sawDailyBonus) {
       console.log('All three disciplines completed - showing BONUS success');
@@ -306,18 +304,18 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
       setSuccessType(SuccessAnimationType.PRAYER);
     }
 
-    // Delayed navigation to ensure state updates first
+    // Primeiro fechamos o overlay suavemente
+    onClose && onClose();
+
+    // Depois navegamos para a tela de sucesso com um pequeno delay
     setTimeout(() => {
       try {
-        // Use absolute path format to ensure proper navigation
         router.push('/success');
         console.log('Successfully navigated to success screen');
       } catch (error) {
         console.error('Error navigating to success screen:', error);
-        // Fallback to onClose if navigation fails
-        onClose && onClose();
       }
-    }, 100); // Short delay to ensure state updates first
+    }, 300); // Aumentamos o delay para garantir que a animação de fechamento termine
   };
 
   // New handler specifically for back button

@@ -537,6 +537,25 @@ export default function HomeScreen() {
     }
   }, [mode, lambMood]);
 
+  // Add this near the top of the component, after other useRef declarations
+  const riveKey = useRef('lamb-animation').current;
+
+  // Add this before the return statement
+  const riveComponent = useMemo(() => {
+    if (!riveAssets) return null;
+    
+    return (
+      <Rive
+        key={riveKey}
+        ref={riveRef}
+        url={riveAssets[0].localUri!}
+        artboardName={artboardName}
+        onError={handleRiveError}
+        style={{ width: '100%', height: '100%' }}
+      />
+    );
+  }, [riveAssets, artboardName, riveKey]);
+
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
 
@@ -682,15 +701,7 @@ export default function HomeScreen() {
                       },
                     ],
                   }}>
-                  {riveAssets && (
-                    <Rive
-                      ref={riveRef}
-                      url={riveAssets[0].localUri!}
-                      artboardName={artboardName}
-                      onError={handleRiveError}
-                      style={{ width: '100%', height: '100%' }}
-                    />
-                  )}
+                  {riveComponent}
                 </Animated.View>
               </Animated.View>
             )}
