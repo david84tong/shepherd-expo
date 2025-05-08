@@ -36,9 +36,9 @@ import Reanimated, {
 import { heightScreen } from '~/utils/dimensions';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
-const DEFAULT_FONT_SIZE = 16;
-const MIN_FONT_SIZE = 12;
-const MAX_FONT_SIZE = 28;
+const DEFAULT_FONT_SIZE = 20;
+const MIN_FONT_SIZE = 14;
+const MAX_FONT_SIZE = 30;
 
 // Define component props
 interface BibleReaderProps {
@@ -197,6 +197,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         if (savedSize !== null) {
           const parsedSize = parseInt(savedSize, 10);
           if (!isNaN(parsedSize) && parsedSize >= MIN_FONT_SIZE && parsedSize <= MAX_FONT_SIZE) {
+            console.log(`🔍 Font size found in AsyncStorage: ${parsedSize}`);
             setFontSize(parsedSize);
           }
         }

@@ -526,6 +526,7 @@ export default function MapScreen() {
     const status = getStatus(section.pathId, item.id);
     const alignment = ['center', 'start', 'center', 'end'][index % 4] as 'start' | 'center' | 'end';
     const shouldIndicateNext = isNextUnit(item);
+    const sectionIsUnlocked = isSectionUnlocked(section.pathId);
 
     // Position within each section (repeating pattern)
     // Show sheep only at second node position of every section
@@ -568,15 +569,14 @@ export default function MapScreen() {
           >
             <Image
               source={section.image}
-              style={{ width: 128, height: 128 }}
+              style={{ width: 128, height: 128, opacity: sectionIsUnlocked ? 1 : 0.5 }}
               resizeMode="contain"
-              className="opacity-100"
             />
           </View>
         )}
       </View>
     );
-  }, [getStatus, handleNodePress, isNextUnit]); // Optimized dependencies
+  }, [getStatus, handleNodePress, isNextUnit, isSectionUnlocked]); // Added isSectionUnlocked to dependencies
 
   // Render section header - Improved with memo
   const renderSectionHeader = useCallback(({ section }: { section: BibleSection }) => {
@@ -591,6 +591,7 @@ export default function MapScreen() {
         description={section.description || ''}
         sectionNumber={section.index + 1}
         isLocked={!isUnlocked}
+        opacity={!isUnlocked ? 0.5 : 1}
       />
     );
   }, [isSectionUnlocked]);

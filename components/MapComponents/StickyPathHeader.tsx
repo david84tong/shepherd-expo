@@ -10,6 +10,7 @@ interface StickyPathHeaderProps {
   description: string;
   sectionNumber: number;
   isLocked?: boolean;
+  opacity?: number;
 }
 
 const StickyPathHeader: React.FC<StickyPathHeaderProps> = ({
@@ -19,9 +20,15 @@ const StickyPathHeader: React.FC<StickyPathHeaderProps> = ({
   description,
   sectionNumber,
   isLocked = false,
+  opacity = 1,
 }) => {
   // Get the light background color based on path color
   const getBgColor = () => {
+    // For locked sections, use gray background
+    if (isLocked) {
+      return 'bg-gray-200';
+    }
+
     switch (color) {
       case 'yellow':
         return 'bg-lightYellow';
@@ -54,6 +61,11 @@ const StickyPathHeader: React.FC<StickyPathHeaderProps> = ({
 
   // Get the dark color for text/icon and border
   const getDarkColor = () => {
+    // For locked sections, use gray color
+    if (isLocked) {
+      return '#9CA3AF'; // gray-400
+    }
+
     switch (color) {
       case 'yellow':
         return '#F7B500';
@@ -86,6 +98,11 @@ const StickyPathHeader: React.FC<StickyPathHeaderProps> = ({
 
   // Get the border class for the dark color
   const getBorderClass = () => {
+    // For locked sections, use gray border
+    if (isLocked) {
+      return 'border-gray-400';
+    }
+
     switch (color) {
       case 'yellow':
         return 'border-darkYellow';
@@ -121,7 +138,7 @@ const StickyPathHeader: React.FC<StickyPathHeaderProps> = ({
       <View className="px-4 pt-10">
         <View
           className={`flex-row items-center w-full ${getBgColor()} ${getBorderClass()} border-2 rounded-3xl px-5 py-4`}
-          style={{ minHeight: 72, opacity: isLocked ? 0.5 : 1 }}>
+          style={{ minHeight: 72, opacity: isLocked ? opacity : 1 }}>
           <View className="flex-1 justify-center">
             <Text
               className="font-din uppercase text-2xl mb-1 text-textPrimary"
@@ -156,15 +173,16 @@ const StickyPathHeader: React.FC<StickyPathHeaderProps> = ({
         <View className="items-center">
           <View
             className="w-1 h-4 bg-gray-300"
-            style={{ borderRadius: 2, marginTop: -2, marginBottom: 2 }}
+            style={{ borderRadius: 2, marginTop: -2, marginBottom: 2, opacity: isLocked ? opacity : 1 }}
           />
           <View
             className="w-3 h-3 rounded-full"
             style={{
-              backgroundColor: getDarkColor(),
+              backgroundColor: isLocked ? '#9CA3AF' : getDarkColor(),
               marginBottom: -6,
               borderWidth: 2,
               borderColor: '#fff',
+              opacity: isLocked ? opacity : 1
             }}
           />
         </View>
