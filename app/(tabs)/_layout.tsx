@@ -1,8 +1,9 @@
 import * as Haptics from 'expo-haptics';
-import { Tabs } from 'expo-router';
+import { Redirect, Tabs } from 'expo-router';
 import { useEffect, useRef } from 'react';
 import { Animated, Image, Platform, Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 
+import { isSignedIn } from '../hooks/authHook';
 import { useHomeStore } from '../stores/homeStore';
 import { usePathStore } from '../stores/pathStore';
 
@@ -65,7 +66,14 @@ function CustomTabBarButton(props: any) {
   );
 }
 
-export default function TabLayout() {
+export default function TabsLayout() {
+  const signedIn = isSignedIn();
+
+  // Se não estiver logado, redireciona para o login
+  if (!signedIn) {
+    return <Redirect href="/(auth)" />;
+  }
+
   const mode = useHomeStore((state) => state.mode);
   const pathInProgress = usePathStore((state) => state.pathInProgress);
   const tabBarAnim = useRef(new Animated.Value(1)).current;
@@ -187,7 +195,3 @@ export default function TabLayout() {
   );
 }
 
-// Removed the custom styles for iconContainer as they likely caused issues
-const styles = StyleSheet.create({
-  // iconContainer style is now handled by NativeWind className in the component
-});

@@ -139,11 +139,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   const handleSignOut = useCallback(async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-      await auth().signOut();
-      useUserStore.getState().resetUserStore();
-      bottomSheetRef.current?.close();
-      setIsModalDimActive(false);
-      router.replace('/login');
+      await auth().signOut().then(() => {
+        useUserStore.getState().resetUserStore();
+        bottomSheetRef.current?.close();
+        setIsModalDimActive(false);
+        router.replace('/login');
+      }).catch((error) => {
+        console.error('Error signing out:', error);
+      });
     } catch (error) {
       console.error('Error signing out:', error);
     }
