@@ -16,6 +16,7 @@ import { checkStreakAndApplyPenalties } from './hooks/streakHook';
 import { usePreloadAssets } from './stores/assetsStore';
 import { useNotificationStore } from './stores/notificationStore';
 import { useUIStore } from './stores/uiStore';
+import { useUserStore } from './stores/userStore';
 
 // Import the sheet components
 import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
@@ -168,34 +169,14 @@ export default function RootLayout() {
   // Check onboarding status with timeout
   const checkOnboarding = async () => {
     try {
-      if (isSignedIn()) {
-        console.log('User is signed in, redirecting to tabs...');
-        setInitialRouteDetermined(true);
-        if (!(segments as string[]).includes('(tabs)')) {
-          setTimeout(() => router.replace('/(tabs)'), 0);
-        }
-        setIsOnboardingChecked(true);
-        return;
-      }
-
-      // For non-authenticated users, always go to login first
-      console.log('User not signed in, redirecting to login screen...');
+      // Apenas inicializa o estado da aplicação
       setInitialRouteDetermined(true);
-      if (!(segments as string[]).includes('login')) {
-        setTimeout(() => router.replace('/login'), 0);
-      }
       setIsOnboardingChecked(true);
-
     } catch (error) {
-      console.error('Error checking onboarding status:', error);
+      console.error('Error during initialization:', error);
       setHasError(true);
-      setIsOnboardingChecked(true);
       setInitialRouteDetermined(true);
-
-      // Safe fallback to login
-      if (!(segments as string[]).includes('login')) {
-        setTimeout(() => router.replace('/login'), 0);
-      }
+      setIsOnboardingChecked(true);
     }
   };
 
