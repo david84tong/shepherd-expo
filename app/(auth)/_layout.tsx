@@ -4,7 +4,6 @@ import { isSignedIn } from '../hooks/authHook';
 export default function AuthLayout() {
   const signedIn = isSignedIn();
 
-  // Se já está logado, redireciona para o grupo protegido
   if (signedIn) {
     return <Redirect href="/(tabs)" />;
   }

@@ -33,6 +33,7 @@ import Reanimated, {
   withDelay, 
   Easing as ReanimatedEasing  // Use ReanimatedEasing for clarity
 } from 'react-native-reanimated'; // Use Reanimated for dot indicator
+import { heightScreen } from '~/utils/dimensions';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
 const DEFAULT_FONT_SIZE = 16;
@@ -806,9 +807,9 @@ const styles = StyleSheet.create({
     bottom: 100, // Move up when tab bar is present
   },
   finishButtonContainer: {
-    position: 'absolute',
-    bottom: 20, // Adjust spacing as needed
+    bottom: heightScreen * 0.03, // Adjust spacing as needed
     left: 20,
+    position: 'absolute',
     right: 20,
   },
 }); 
