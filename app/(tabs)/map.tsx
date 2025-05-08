@@ -17,6 +17,7 @@ import PathNode, { NodeStatus } from '../../components/MapComponents/PathNode';
 import StickyPathHeader from '../../components/MapComponents/StickyPathHeader';
 import { BIBLE_BOOK_IDS, BIBLE_PATHS, Unit } from '../models/Path';
 import { PathInfo, usePathStore } from '../stores/pathStore';
+import { heightScreen } from '~/utils/dimensions';
 
 // Define our custom section type
 type BibleSection = {
@@ -614,7 +615,7 @@ export default function MapScreen() {
         renderSectionHeader={renderSectionHeader}
         SectionSeparatorComponent={null}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={{ paddingBottom: heightScreen * 0.1 }}
         onViewableItemsChanged={onViewableItemsChanged}
         viewabilityConfig={viewabilityConfig}
         scrollEventThrottle={16}

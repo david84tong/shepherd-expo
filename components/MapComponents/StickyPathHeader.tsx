@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { View, Text } from 'react-native';
+import { widthScreen } from '~/utils/dimensions';
 
 interface StickyPathHeaderProps {
   title: string;
@@ -125,7 +126,10 @@ const StickyPathHeader: React.FC<StickyPathHeaderProps> = ({
             <Text
               className="font-din uppercase text-2xl mb-1 text-textPrimary"
               style={{ color: getDarkColor(), opacity: 0.7 }}>{`SECTION ${sectionNumber}`}</Text>
-            <Text className="font-feather text-2xl font-bold" style={{ color: getDarkColor() }}>
+            <Text
+              className="font-feather text-2xl font-bold"
+              style={{ color: getDarkColor(), maxWidth: widthScreen * 0.6 }}
+            >
               {title}
             </Text>
           </View>
