@@ -146,7 +146,7 @@ export default function NotificationPermissionScreen() {
         
         // Schedule test notifications (15s and 30s)
         console.log('🧪 Scheduling test notifications (15s and 30s)');
-        await notificationStore.scheduleStreakReminders(true);
+        await notificationStore.scheduleStreakReminders(false);
         
         // Save to onboarding store
         await setNotificationPreference({
@@ -156,12 +156,7 @@ export default function NotificationPermissionScreen() {
         
         console.log('Notification permissions granted and test notifications scheduled');
         
-        // Show alert about test notifications
-        Alert.alert(
-          "Test Notifications Scheduled",
-          "Two test notifications have been scheduled:\n• First will arrive in 1 minute\n• Second will arrive in 2 minutes\n\nPlease wait to see them arrive.",
-          [{ text: "OK", onPress: () => router.push('/onboarding/10') }]
-        );
+   
         
         // Don't navigate yet - let the alert handle it
         return;
