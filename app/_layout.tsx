@@ -297,9 +297,14 @@ export default function RootLayout() {
         // Initialize notifications
         await initializeNotifications();
 
-        // Hide splash screen and show Rive animation
-        await SplashScreen.hideAsync();
+        // Show Rive animation first
         setShowRiveAnimation(true);
+        
+        // Wait a bit to ensure Rive animation is ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Then hide splash screen
+        await SplashScreen.hideAsync();
       } catch (error) {
         console.error('Error during app initialization:', error);
         setHasError(true);
