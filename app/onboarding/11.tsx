@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -16,6 +16,8 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
+import Rive, { Fit, Alignment } from 'rive-react-native';
+import { useAssets } from 'expo-asset';
 
 export default function SaveProgressScreen() {
   const router = useRouter();
@@ -33,6 +35,9 @@ export default function SaveProgressScreen() {
   
   const buttonsOpacity = useSharedValue(0);
   const buttonsTranslateY = useSharedValue(40);
+
+  // Load Rive assets
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
 
   useEffect(() => {
     // Reset animation values
@@ -95,7 +100,7 @@ export default function SaveProgressScreen() {
       
       // Map the stored path to a spiritual goal if available
        // Fallback to intent if no path selected
-       let spiritualGoal = allResponses.intent || 'Understand';
+       const spiritualGoal = allResponses.intent || 'Understand';
       // Create user object from onboarding responses
       const userData = {
         id: uid, // Use id consistently instead of uid
@@ -249,12 +254,17 @@ export default function SaveProgressScreen() {
         </Text>
         
         {/* Icon */}
-        <View className="bg-white rounded-full mb-8 shadow-md overflow-hidden w-24 h-24 items-center justify-center">
-          <Image 
-            source={require('../../assets/icon.png')} 
-            className="w-24 h-24 rounded-full"
-            resizeMode="cover"
-          />
+        <View className="mb-8 overflow-hidden w-56 h-48 items-center justify-center">
+          {riveAssets && riveAssets[0]?.localUri && (
+            <Rive
+              url={riveAssets[0].localUri}
+              artboardName="lamb-workout"
+              autoplay={true}
+              fit={Fit.Contain}
+              alignment={Alignment.Center}
+              style={{ width: 200, height: 200 }}
+            />
+          )}
         </View>
       </Animated.View>
       

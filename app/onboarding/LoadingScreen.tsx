@@ -185,7 +185,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
       {/* Pulsing Rive animation */}
       <View
         
-        className="w-56 h-56 mb-24"
+        className="w-56 h-56 mb-24 ml-8"
       >
         <Rive
           url={assets[0].localUri!}

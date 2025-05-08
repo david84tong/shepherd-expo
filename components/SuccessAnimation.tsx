@@ -459,7 +459,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     console.log('Adding delay before navigation to ensure assets load');
     setTimeout(() => {
       // Navigate back to the home tab - the useEffect in index.tsx will respond to mode change
-      router.push('/(tabs)');
+      // router.push('/(tabs)');
     }, 500); // 500ms delay
   };
 
@@ -476,7 +476,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     setPathInProgress(false);
     triggerStreakScreen();
 
-    router.push('/(tabs)');
 
     // Add delay to give assets time to load
     console.log('Adding delay before navigation to ensure assets load');

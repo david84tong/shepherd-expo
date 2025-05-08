@@ -22,7 +22,7 @@ interface NotificationState {
   notificationsEnabled: boolean;
   
   // Action: Schedule streak reminder notifications
-  scheduleStreakReminders: () => Promise<void>;
+  scheduleStreakReminders: (test?: boolean) => Promise<void>;
   
   // Action: Cancel all streak notifications
   cancelStreakNotifications: () => Promise<void>;
@@ -38,6 +38,9 @@ interface NotificationState {
   
   // Action: Initialize notification system
   initializeNotifications: () => Promise<void>;
+  
+  // Helper function to list scheduled notifications for debugging
+  listScheduledNotifications: () => Promise<void>;
 }
 
 // Configure notification behavior
@@ -46,10 +49,8 @@ export const configureNotifications = async () => {
     // Set notification handler
     Notifications.setNotificationHandler({
       handleNotification: async () => ({
-        shouldShowAlert: true,
         shouldPlaySound: true,
         shouldSetBadge: true,
-        // Add required properties
         shouldShowBanner: true,
         shouldShowList: true,
       }),
@@ -109,82 +110,155 @@ export const useNotificationStore = create<NotificationState>()(
         }
       },
       
-      scheduleStreakReminders: async () => {
+      // Helper function to list scheduled notifications for debugging
+      listScheduledNotifications: async () => {
         try {
-          // First, check if notifications are enabled in the store
+          const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
+          
+          console.log(`--- Currently scheduled notifications: ${scheduledNotifications.length} ---`);
+          scheduledNotifications.forEach((notification, index) => {
+            // Safely extract trigger date if possible
+            let triggerDate = 'unknown trigger';
+            if (notification.trigger && 'date' in notification.trigger) {
+              triggerDate = new Date(notification.trigger.date).toLocaleString();
+            }
+            
+            console.log(`[${index + 1}] ID: ${notification.identifier}`);
+            console.log(`    Title: ${notification.content.title}`);
+            console.log(`    Trigger: ${triggerDate}`);
+            console.log(`    Data: ${JSON.stringify(notification.content.data)}`);
+          });
+          console.log("--- End of scheduled notifications ---");
+        } catch (error) {
+          console.error('Failed to list scheduled notifications:', error);
+        }
+      },
+      
+      scheduleStreakReminders: async (test = false) => {
+        try {
           if (!get().notificationsEnabled) {
             console.log('Notifications are disabled in the store');
             return;
           }
-          
-          // Get permission status
           const { status } = await Notifications.getPermissionsAsync();
           if (status !== 'granted') {
             console.log('Notification permission not granted');
             return;
           }
-          
-          // Cancel existing streak notifications before scheduling new ones
-          await get().cancelStreakNotifications();
-          
-          // Get current date
-          const today = new Date();
-          const todayString = today.toISOString().split('T')[0]; // YYYY-MM-DD
-          
-          // Set the time for the first warning (7 PM today)
-          const warningTime = new Date(today);
-          warningTime.setHours(19, 0, 0, 0); // 7:00 PM
-          
-          // If it's already past 7 PM, schedule for tomorrow
-          if (today.getHours() >= 19) {
-            warningTime.setDate(warningTime.getDate() + 1);
+
+          const now = new Date();
+          const todayString = now.toISOString().split('T')[0];
+
+          if (test) {
+            const WARNING_DELAY_SEC = 60; // 1 minute
+            const BROKEN_DELAY_SEC = 120; // 2 minutes
+
+            const warningTimeTest = new Date(now.getTime() + WARNING_DELAY_SEC * 1000);
+            const brokenStreakTimeTest = new Date(now.getTime() + BROKEN_DELAY_SEC * 1000);
+
+            console.log(`[TEST] Scheduling streak warning notification in ${WARNING_DELAY_SEC}s → ${warningTimeTest.toLocaleTimeString()}`);
+            console.log(`[TEST] Scheduling broken streak notification in ${BROKEN_DELAY_SEC}s → ${brokenStreakTimeTest.toLocaleTimeString()}`);
+
+            await Notifications.cancelAllScheduledNotificationsAsync();
+            console.log('[TEST] All existing notifications cleared. Scheduling test notifications...');
+
+            const testTriggerWarning: Notifications.TimeIntervalNotificationTrigger = {
+              type: 'timeInterval',
+              seconds: WARNING_DELAY_SEC,
+              repeats: false,
+            };
+            const testTriggerBroken: Notifications.TimeIntervalNotificationTrigger = {
+              type: 'timeInterval',
+              seconds: BROKEN_DELAY_SEC,
+              repeats: false,
+            };
+
+            if (Platform.OS === 'android') {
+              testTriggerWarning.channelId = 'streak-reminders';
+              testTriggerBroken.channelId = 'streak-reminders';
+            }
+
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: 'Your streak is gonna be broken! (Test)',
+                body: "Don't forget to read your Bible today to maintain your streak.",
+                data: { type: 'streak-warning', isTest: true },
+                sound: true,
+              },
+              trigger: testTriggerWarning,
+              identifier: `${NOTIFICATION_IDS.STREAK_WARNING}-test`,
+            });
+
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: 'Your lamb is dying! (Test)',
+                body: 'Be a good shepherd and come back.',
+                subtitle: 'Feed your lamb and your soul',
+                data: { type: 'streak-broken', isTest: true },
+                sound: true,
+              },
+              trigger: testTriggerBroken,
+              identifier: `${NOTIFICATION_IDS.STREAK_BROKEN}-test`,
+            });
+
+            console.log("[TEST] Verifying scheduled notifications (after test scheduling has completed)...");
+            await get().listScheduledNotifications();
+            set({ lastScheduledDate: todayString });
+            
+          } else {
+            await get().cancelStreakNotifications();
+
+            let warningTimeProd = new Date(now);
+            warningTimeProd.setHours(21, 0, 0, 0); // 9:00 PM today
+            if (warningTimeProd <= now || (warningTimeProd.getTime() - now.getTime()) < 60000) {
+              warningTimeProd.setDate(warningTimeProd.getDate() + 1);
+            }
+
+            let brokenStreakTimeProd = new Date(now);
+            brokenStreakTimeProd.setDate(brokenStreakTimeProd.getDate() + 1);
+            brokenStreakTimeProd.setHours(12, 0, 0, 0); // Noon next day
+            if (brokenStreakTimeProd <= now || (brokenStreakTimeProd.getTime() - now.getTime()) < 60000) {
+              brokenStreakTimeProd.setDate(brokenStreakTimeProd.getDate() + 1);
+            }
+
+            console.log(`Scheduling streak warning notification for: ${warningTimeProd.toLocaleString()}`);
+            console.log(`Scheduling broken streak notification for: ${brokenStreakTimeProd.toLocaleString()}`);
+
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: "Your streak is gonna be broken!",
+                body: "Don't forget to read your Bible today to maintain your streak.",
+                data: { type: 'streak-warning', isTest: false },
+                sound: true,
+              },
+              trigger: {
+                date: warningTimeProd,
+                repeats: false,
+                channelId: 'streak-reminders',
+              },
+              identifier: NOTIFICATION_IDS.STREAK_WARNING,
+            });
+            console.log(`Scheduled streak warning notification for ${warningTimeProd.toLocaleString()}`);
+
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: "Your lamb is dying!",
+                body: "Be a good shepherd and come back.",
+                subtitle: "Feed your lamb and your soul",
+                data: { type: 'streak-broken', isTest: false },
+                sound: true,
+              },
+              trigger: {
+                date: brokenStreakTimeProd,
+                repeats: false,
+                channelId: 'streak-reminders',
+              },
+              identifier: NOTIFICATION_IDS.STREAK_BROKEN,
+            });
+            console.log(`Scheduled broken streak notification for ${brokenStreakTimeProd.toLocaleString()}`);
+
+            set({ lastScheduledDate: todayString });
           }
-          
-          // Schedule the streak warning notification (7 PM)
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: "Your streak is gonna be broken!",
-              body: "Don't forget to read your Bible today to maintain your streak.",
-              data: { type: 'streak-warning' },
-              sound: true,
-            },
-            trigger: {
-              date: warningTime,
-              repeats: true,
-              channelId: 'streak-reminders',
-            },
-            identifier: NOTIFICATION_IDS.STREAK_WARNING,
-          });
-          
-          console.log(`Scheduled streak warning notification for ${warningTime.toLocaleString()}`);
-          
-          // Set the time for the broken streak notification (next day)
-          const brokenStreakTime = new Date(today);
-          brokenStreakTime.setDate(brokenStreakTime.getDate() + 1);
-          brokenStreakTime.setHours(12, 0, 0, 0); // Noon the next day
-          
-          // Schedule the broken streak notification
-          await Notifications.scheduleNotificationAsync({
-            content: {
-              title: "Your lamb is dying!",
-              body: "Be a good shepherd and come back.",
-              subtitle: "Feed your lamb and your soul",
-              data: { type: 'streak-broken' },
-              sound: true,
-            },
-            trigger: {
-              date: brokenStreakTime,
-              repeats: true,
-              channelId: 'streak-reminders',
-            },
-            identifier: NOTIFICATION_IDS.STREAK_BROKEN,
-          });
-          
-          console.log(`Scheduled broken streak notification for ${brokenStreakTime.toLocaleString()}`);
-          
-          // Save the date when notifications were scheduled
-          set({ lastScheduledDate: todayString });
-          
         } catch (error) {
           console.error('Failed to schedule streak notifications:', error);
         }
@@ -212,8 +286,7 @@ export const useNotificationStore = create<NotificationState>()(
           
           // Check if user has read today
           let hasReadToday = false;
-          
-          if (lastReadingDate) {
+          if (lastReadingDate && typeof lastReadingDate.toDate === 'function') {
             const lastReadingDateObj = lastReadingDate.toDate();
             const lastReadingDateString = lastReadingDateObj.toISOString().split('T')[0];
             hasReadToday = lastReadingDateString === todayString;

@@ -80,7 +80,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   };
 
   // Prayer text to display (with the user's topic)
-  const [prayerText, setPrayerText] = useState(generatePrayerText());
+  const [prayerText, setPrayerText] = useState('');
 
   // State for typing animation
   const [typedText, setTypedText] = useState('');
@@ -96,8 +96,20 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 
     if (visible) {
       console.log('PrayerComponent: Showing prayer component');
-      // Generate fresh prayer text
-      const newPrayerText = generatePrayerText();
+      // Get latest prayer topic and generate prayer text
+      const currentPrayerTopic = usePrayerStore.getState().recentPrayers[0] || '';
+      console.log('Current prayer topic:', currentPrayerTopic);
+      
+      // Generate fresh prayer text based on the current topic
+      let newPrayerText = DEFAULT_PRAYER_TEMPLATE;
+      
+      if (currentPrayerTopic) {
+        newPrayerText = `Dear God, I come before you today with a humble heart. Please help me with ${currentPrayerTopic.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
+        console.log('Generated custom prayer text for:', currentPrayerTopic);
+      } else {
+        console.log('No prayer topic found, using default prayer');
+      }
+      
       setPrayerText(newPrayerText);
 
       // Reset states immediately

@@ -167,7 +167,7 @@ export default function RootLayout() {
         console.log('User is signed in, redirecting to tabs...');
         setInitialRouteDetermined(true);
         if (!(segments as string[]).includes('(tabs)')) {
-          router.replace('/(tabs)');
+          setTimeout(() => router.replace('/(tabs)'), 0);
         }
         setIsOnboardingChecked(true);
         return;
@@ -177,7 +177,7 @@ export default function RootLayout() {
       console.log('User not signed in, redirecting to login screen...');
       setInitialRouteDetermined(true);
       if (!(segments as string[]).includes('login')) {
-        router.replace('/login');
+        setTimeout(() => router.replace('/login'), 0);
       }
       setIsOnboardingChecked(true);
 
@@ -189,7 +189,7 @@ export default function RootLayout() {
 
       // Safe fallback to login
       if (!(segments as string[]).includes('login')) {
-        router.replace('/login');
+        setTimeout(() => router.replace('/login'), 0);
       }
     }
   };

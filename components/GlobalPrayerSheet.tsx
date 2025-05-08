@@ -87,19 +87,24 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
 
     console.log(`Generating prayer for: ${prayerInput}, isCustomInput: ${isCustomInput}`);
 
-    // Save the prayer to store only if it's not from predefined topics
+    // Save the prayer topic to store - always increment count no matter the source
     incrementTopicCount(prayerInput);
     
-    // Only add to recent prayers if it's a custom input
-    if (isCustomInput) {
-      addRecentPrayer(prayerInput);
-    }
+    // Always add to recent prayers as the first item to make sure it's available
+    // to the PrayerComponent
+    addRecentPrayer(prayerInput);
+    console.log(`Added "${prayerInput}" to recent prayers`);
 
     // Close the bottom sheet
     bottomSheetRef.current?.close();
 
     // Trigger the onPrayerGenerated callback after the sheet is closed
+    // Use a slight delay to ensure state updates properly propagate
     setTimeout(() => {
+      // Make sure the prayer input value is still in recentPrayers[0]
+      const currentPrayers = usePrayerStore.getState().recentPrayers;
+      console.log('Current recent prayers before callback:', currentPrayers);
+      
       if (prayerGeneratedCallback) {
         console.log('Executing prayer generated callback from UIStore');
         prayerGeneratedCallback();
@@ -113,8 +118,10 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
           { text: 'Amen', style: 'default' },
         ]);
       }
+      
+      // Clear input state after callback execution
       setPrayerInput('');
-    }, 300);
+    }, 500); // Slightly longer delay to ensure state propagation
   }, [prayerInput, incrementTopicCount, addRecentPrayer, onPrayerGenerated, prayerGeneratedCallback, isCustomInput]);
 
   // Close the prayer sheet
@@ -252,7 +259,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
           </View>
 
           {/* Generate button */}
-          <View className="absolute -bottom-48 left-0 right-0">
+          <View className="absolute -bottom-32 left-0 right-0">
             <PrimaryButton
               title="Generate a prayer"
               onPress={handlePrayerGenerate}
@@ -277,8 +284,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#DCB280',
     height: 4,
   },
+  prayerContent: {
+    flex: 1,
+    paddingHorizontal: 20, // Add horizontal padding
+  },
   prayerContentContainer: {
     flex: 1,
+  },
+  prayerEmoji: {
+    fontSize: 36,
+  },
+  prayerEmojiContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
   },
   prayerHeader: {
     flexDirection: 'row',
@@ -289,52 +307,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#FFE4A8',
   },
-  prayerTitle: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Black',
-    color: '#3C584A',
-  },
-  prayerContent: {
-    flex: 1,
-    paddingHorizontal: 20, // Add horizontal padding
-  },
-  
-  prayerEmoji: {
-    fontSize: 36,
-  },
-  prayerEmojiContainer: {
-    alignItems: 'center',
-    marginVertical: 20,
-  },
-  prayerGenerateButton: {
-    alignItems: 'center',
-    backgroundColor: '#FFF4D9',
-    borderRadius: 30,
-    elevation: 6,
-    padding: 16,
-    shadowColor: '#FFE4A8',
-    shadowOffset: { width: 0, height: 5.716 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-  },
-  prayerGenerateButtonDisabled: {
-    backgroundColor: '#E0E0E0',
-    elevation: 0,
-    shadowColor: 'transparent',
-  },
-  prayerGenerateContainer: {
-    // Use padding instead of marginTop: auto to ensure it's reachable when keyboard is up
-    paddingVertical: 20,
-  },
-  prayerGenerateText: {
-    color: '#3C584A',
-    fontFamily: 'Nunito-Black',
-    fontSize: 18,
-  },
-  prayerGenerateTextDisabled: {
-    color: 'rgba(60, 88, 74, 0.5)',
-  },
-
   prayerInputContainer: {
     marginBottom: 30,
   },
@@ -357,7 +329,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingBottom: 8,
   },
-
+  prayerTitle: {
+    fontSize: 18,
+    fontFamily: 'Nunito-Black',
+    color: '#3C584A',
+  },
   prayerTopicButton: {
     backgroundColor: 'white',
     borderColor: '#E9E2C7',

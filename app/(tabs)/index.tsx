@@ -203,7 +203,7 @@ export default function HomeScreen() {
     'lamb-angry': 'lamb-angry',
     'lamb-chubby dying': 'lamb-chubby dying',
     'lamb-skinny dying': 'lamb-skinny dying',
-    'smoking': 'smoke',
+    'smoking': 'lamb-fainted',
     'lamb-full': 'lamb-full'
   };
 

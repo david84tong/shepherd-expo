@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Alert } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
@@ -141,8 +141,12 @@ export default function NotificationPermissionScreen() {
         // Enable notifications in our store
         notificationStore.setNotificationsEnabled(true);
         
-        // Initialize notifications
+        // Initialize notifications with test mode enabled
         await notificationStore.initializeNotifications();
+        
+        // Schedule test notifications (15s and 30s)
+        console.log('🧪 Scheduling test notifications (15s and 30s)');
+        await notificationStore.scheduleStreakReminders(true);
         
         // Save to onboarding store
         await setNotificationPreference({
@@ -150,7 +154,17 @@ export default function NotificationPermissionScreen() {
           time: '19:00' // Default to 7PM
         });
         
-        console.log('Notification permissions granted and notifications scheduled');
+        console.log('Notification permissions granted and test notifications scheduled');
+        
+        // Show alert about test notifications
+        Alert.alert(
+          "Test Notifications Scheduled",
+          "Two test notifications have been scheduled:\n• First will arrive in 1 minute\n• Second will arrive in 2 minutes\n\nPlease wait to see them arrive.",
+          [{ text: "OK", onPress: () => router.push('/onboarding/10') }]
+        );
+        
+        // Don't navigate yet - let the alert handle it
+        return;
       } else {
         // Track denied permission
         analytics.logEvent(AnalyticsEvent.USER_PREFERENCE_CHANGE, {
