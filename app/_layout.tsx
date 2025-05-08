@@ -419,7 +419,7 @@ export default function RootLayout() {
         <GlobalBookChapterSelectorSheet />
         <OldReflectionSheet />
 
-        <DebugButton />
+        {__DEV__ && <DebugButton />}
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );

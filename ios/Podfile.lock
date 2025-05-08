@@ -1718,6 +1718,11 @@ PODS:
   - nanopb/decode (3.30910.0)
   - nanopb/encode (3.30910.0)
   - PromisesObjC (2.4.0)
+  - PurchasesHybridCommon (13.31.0):
+    - RevenueCat (= 5.23.0)
+  - PurchasesHybridCommonUI (13.31.0):
+    - PurchasesHybridCommon (= 13.31.0)
+    - RevenueCatUI (= 5.23.0)
   - RCT-Folly (2024.10.14.00):
     - boost
     - DoubleConversion
@@ -3271,6 +3276,9 @@ PODS:
     - React-perflogger
     - React-utils (= 0.76.9)
   - RecaptchaInterop (101.0.0)
+  - RevenueCat (5.23.0)
+  - RevenueCatUI (5.23.0):
+    - RevenueCat (= 5.23.0)
   - rive-react-native (9.2.1):
     - React-Core
     - RiveRuntime (= 6.7.4)
@@ -3321,6 +3329,12 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - RNPaywalls (8.9.7):
+    - PurchasesHybridCommonUI (= 13.31.0)
+    - React-Core
+  - RNPurchases (8.9.7):
+    - PurchasesHybridCommon (= 13.31.0)
+    - React-Core
   - RNReanimated (3.16.7):
     - DoubleConversion
     - glog
@@ -3571,6 +3585,8 @@ DEPENDENCIES:
   - "RNFBFunctions (from `../node_modules/@react-native-firebase/functions`)"
   - "RNFBRemoteConfig (from `../node_modules/@react-native-firebase/remote-config`)"
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
+  - RNPaywalls (from `../node_modules/react-native-purchases-ui`)
+  - RNPurchases (from `../node_modules/react-native-purchases`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - "RNSentry (from `../node_modules/@sentry/react-native`)"
@@ -3607,7 +3623,11 @@ SPEC REPOS:
     - Mixpanel-swift
     - nanopb
     - PromisesObjC
+    - PurchasesHybridCommon
+    - PurchasesHybridCommonUI
     - RecaptchaInterop
+    - RevenueCat
+    - RevenueCatUI
     - RiveRuntime
     - SDWebImage
     - SDWebImageAVIFCoder
@@ -3823,6 +3843,10 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-firebase/remote-config"
   RNGestureHandler:
     :path: "../node_modules/react-native-gesture-handler"
+  RNPaywalls:
+    :path: "../node_modules/react-native-purchases-ui"
+  RNPurchases:
+    :path: "../node_modules/react-native-purchases"
   RNReanimated:
     :path: "../node_modules/react-native-reanimated"
   RNScreens:
@@ -3898,6 +3922,8 @@ SPEC CHECKSUMS:
   MixpanelReactNative: 49e8993649d0c3a8f198f59ed73d481f9f7be888
   nanopb: fad817b59e0457d11a5dfbde799381cd727c1275
   PromisesObjC: f5707f49cb48b9636751c5b2e7d227e43fba9f47
+  PurchasesHybridCommon: f694edb3e77b863b6dd92b1097d2558182d11f77
+  PurchasesHybridCommonUI: bb30412198867b207ed50402f9d6d5af0e9d618a
   RCT-Folly: ea9d9256ba7f9322ef911169a9f696e5857b9e17
   RCTDeprecation: ebe712bb05077934b16c6bf25228bdec34b64f83
   RCTRequired: ca91e5dd26b64f577b528044c962baf171c6b716
@@ -3956,6 +3982,8 @@ SPEC CHECKSUMS:
   ReactCodegen: 049be6309e06c1027544819670913680f2029b8e
   ReactCommon: b2eb96a61b826ff327a773a74357b302cf6da678
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
+  RevenueCat: a4db48f41c10fcdd6fd1ef455875e091b32bf70d
+  RevenueCatUI: 667b706e2138014a2d62572630cd9363dcf366a2
   rive-react-native: 7d5145e9581744c0849f3153320b8a24f96f07f3
   RiveRuntime: 1748a5e12764dbb732894ac719691f6abd4cad22
   RNCAsyncStorage: aa75595c1aefa18f868452091fa0c411a516ce11
@@ -3967,6 +3995,8 @@ SPEC CHECKSUMS:
   RNFBFunctions: 10cb49ccb3dd3ae511e857ab0f1726f739214c23
   RNFBRemoteConfig: 8d3675f18c052483ce294bb97b857428467fb41e
   RNGestureHandler: 2dd124adb171aab16629e9387cf1830957d242c2
+  RNPaywalls: 4cb2216acfabac2a3596732afd87fb8e6726b15e
+  RNPurchases: e20d58889e85fa6d248de647176d2cc9968e2628
   RNReanimated: 9b650d028b9422148b548e80512043a372876c00
   RNScreens: ad2d0cfb3f15c9ed56ffb43651366ec0dcd70c36
   RNSentry: 1f4af74b647ae349a6b3f9a338a31059440ac17a
