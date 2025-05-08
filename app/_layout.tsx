@@ -1,27 +1,29 @@
-import '../global.css';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useFonts } from 'expo-font';
-import { Stack, SplashScreen, useRouter, useSegments } from 'expo-router';
-import { useEffect, useState, useRef, useMemo } from 'react';
-import { LogBox, View } from 'react-native';
+import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { LogBox, View, StyleSheet } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Rive from 'rive-react-native';
+import '../global.css';
 
-import { HalfModalType } from './halfModal';
 import AppLoading from '../components/AppLoading';
+import { DebugButton } from '../components/DebugModal';
+import { HalfModalType } from './halfModal';
 import { isSignedIn } from './hooks/authHook';
 import { useAppInitialization } from './hooks/initHook';
-import { useUIStore } from './stores/uiStore';
-import { useNotificationStore } from './stores/notificationStore';
-import { DebugButton } from '../components/DebugModal';
-import { usePreloadAssets, useAssetsStore } from './stores/assetsStore';
 import { checkStreakAndApplyPenalties } from './hooks/streakHook';
+import { usePreloadAssets } from './stores/assetsStore';
+import { useNotificationStore } from './stores/notificationStore';
+import { useUIStore } from './stores/uiStore';
 
 // Import the sheet components
-import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet';
-import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
-import GlobalPrayerSheet, { PrayerSheetRef as GlobalPrayerSheetRefInternal } from '../components/GlobalPrayerSheet';
 import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
+import GlobalPrayerSheet, { PrayerSheetRef as GlobalPrayerSheetRefInternal } from '../components/GlobalPrayerSheet';
+import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet';
 import OldReflectionSheet from '../components/OldReflectionSheet';
+import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
+import { useAssets } from 'expo-asset';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -91,6 +93,9 @@ export default function RootLayout() {
     'Nunito-Medium': require('../assets/fonts/Nunito-Medium.ttf'),
     'Nunito-Regular': require('../assets/fonts/Nunito-Regular.ttf'),
   });
+  const [riveAssets] = useAssets([
+    require('../assets/riveAnimations/shepherd-splash_screen.riv'),
+  ]);
 
   // Loading states
   const [appReady, setAppReady] = useState(false);
@@ -99,6 +104,7 @@ export default function RootLayout() {
   const [initialRouteDetermined, setInitialRouteDetermined] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Loading Shepherd...');
   const [hasError, setHasError] = useState(false);
+  const [showRiveAnimation, setShowRiveAnimation] = useState(false);
 
   // Global modal state
   const isModalDimActive = useUIStore((state) => state.isModalDimActive);
@@ -130,7 +136,6 @@ export default function RootLayout() {
   const { isInitialized, isLoading } = useAppInitialization();
 
   usePreloadAssets(); // Garante preload global dos assets
-  const assetsLoaded = useAssetsStore((s) => s.loaded);
 
   // Preload resources
   const preloadResources = () => {
@@ -253,7 +258,7 @@ export default function RootLayout() {
       (global as any).showOldReflectionSheet = showOldReflectionSheet;
     }
   }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet]);
-  
+
   // Effect to watch isPrayerSheetVisible and control the sheet ref
   useEffect(() => {
     if (isPrayerSheetVisible && prayerSheetRef.current) {
@@ -261,7 +266,7 @@ export default function RootLayout() {
       prayerSheetRef.current.show();
     }
   }, [isPrayerSheetVisible]);
-  
+
   // Effect for preloading resources
   useEffect(() => {
     if (fontsLoaded && !appReady) {
@@ -292,7 +297,13 @@ export default function RootLayout() {
         // Initialize notifications
         await initializeNotifications();
 
-        // Hide splash screen after everything is done
+        // Show Rive animation first
+        setShowRiveAnimation(true);
+        
+        // Wait a bit to ensure Rive animation is ready
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Then hide splash screen
         await SplashScreen.hideAsync();
       } catch (error) {
         console.error('Error during app initialization:', error);
@@ -310,6 +321,22 @@ export default function RootLayout() {
   if (isLoading) return <AppLoading loadingMessage={loadingMessage} progress={loadProgress} />;
   if (!isInitialized) return <AppLoading loadingMessage="Initializing app..." />;
   if (hasError) return <AppLoading loadingMessage="Something went wrong. Please try again..." />;
+
+  // Show Rive animation if it's time
+  if (showRiveAnimation && riveAssets) {
+    return (
+      <View style={styles.riveContainer}>
+        <Rive
+          url={riveAssets[0].localUri!}
+          style={styles.riveAnimation}
+          autoplay={true}
+          onPause={() => {
+            setShowRiveAnimation(false);
+          }}
+        />
+      </View>
+    );
+  }
 
   console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
 
@@ -376,7 +403,7 @@ export default function RootLayout() {
 
         {/* Hide progress indicators on LoadingScreen */}
         {segments.join('/') !== 'onboarding/LoadingScreen' && (
-          <View 
+          <View
             style={{
               position: 'absolute',
               top: 0,
@@ -396,23 +423,36 @@ export default function RootLayout() {
           snapPoints={halfModalSnapPoints}
           params={halfModalParams}
         />
-        
+
         <SettingsSheet
           settingsSheetRef={settingsSheetRef}
           snapPoints={settingsSnapPoints}
         />
-        
+
         {/* Global sheets */}
-        <GlobalPrayerSheet 
-          prayerSheetRef={prayerSheetRef} 
-          snapPoints={prayerSnapPoints} 
-          onPrayerGenerated={useUIStore.getState().prayerGeneratedCallback || undefined} 
+        <GlobalPrayerSheet
+          prayerSheetRef={prayerSheetRef}
+          snapPoints={prayerSnapPoints}
+          onPrayerGenerated={useUIStore.getState().prayerGeneratedCallback || undefined}
         />
         <GlobalBookChapterSelectorSheet />
         <OldReflectionSheet />
-        
+
         <DebugButton />
       </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  riveAnimation: {
+    height: '100%',
+    width: '100%',
+  },
+  riveContainer: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    backgroundColor: '#FFF4D9',
+    justifyContent: 'center',
+  },
+});

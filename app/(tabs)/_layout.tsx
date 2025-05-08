@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { Tabs } from 'expo-router';
 import { useEffect, useRef } from 'react';
-import { Animated, Platform, StyleSheet, View, ViewStyle, Image, Pressable } from 'react-native';
+import { Animated, Image, Platform, Pressable, StyleSheet, View, ViewStyle } from 'react-native';
 
 import { useHomeStore } from '../stores/homeStore';
 import { usePathStore } from '../stores/pathStore';
@@ -114,6 +114,7 @@ export default function TabLayout() {
 
   return (
     <Tabs
+      initialRouteName='index'
       screenOptions={{
         tabBarStyle: animatedTabBarStyle,
         tabBarActiveTintColor: '#3C584A',
