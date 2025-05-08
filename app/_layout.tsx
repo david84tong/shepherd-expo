@@ -2,29 +2,28 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LogBox, View, StyleSheet } from 'react-native';
+import { LogBox, Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Purchases from 'react-native-purchases';
 import Rive from 'rive-react-native';
 import '../global.css';
 
 import AppLoading from '../components/AppLoading';
 import { DebugButton } from '../components/DebugModal';
 import { HalfModalType } from './halfModal';
-import { isSignedIn } from './hooks/authHook';
 import { useAppInitialization } from './hooks/initHook';
 import { checkStreakAndApplyPenalties } from './hooks/streakHook';
 import { usePreloadAssets } from './stores/assetsStore';
 import { useNotificationStore } from './stores/notificationStore';
 import { useUIStore } from './stores/uiStore';
-import { useUserStore } from './stores/userStore';
 
 // Import the sheet components
+import { useAssets } from 'expo-asset';
 import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
 import GlobalPrayerSheet, { PrayerSheetRef as GlobalPrayerSheetRefInternal } from '../components/GlobalPrayerSheet';
 import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet';
 import OldReflectionSheet from '../components/OldReflectionSheet';
 import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
-import { useAssets } from 'expo-asset';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -32,6 +31,15 @@ type PrayerSheetRef = {
   hide: () => void;
   expand: () => void;
 };
+
+// Configure RevenueCat
+Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
+Purchases.configure({
+  apiKey: Platform.select({
+    ios: 'appl_HaJSTaiQWLDPXKMjOPocMXEOKrm',
+    android: 'YOUR_ANDROID_API_KEY',
+  }) || 'appl_HaJSTaiQWLDPXKMjOPocMXEOKrm', // Fallback key to satisfy TypeScript
+});
 
 // Error logging setup
 if (__DEV__) {
@@ -100,7 +108,6 @@ export default function RootLayout() {
 
   // Loading states
   const [appReady, setAppReady] = useState(false);
-  const [loadProgress, setLoadProgress] = useState(0);
   const [isOnboardingChecked, setIsOnboardingChecked] = useState(false);
   const [initialRouteDetermined, setInitialRouteDetermined] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('Loading Shepherd...');
@@ -134,37 +141,9 @@ export default function RootLayout() {
   }>({});
 
   // App initialization
-  const { isInitialized, isLoading } = useAppInitialization();
+  const { isInitialized } = useAppInitialization();
 
   usePreloadAssets(); // Garante preload global dos assets
-
-  // Preload resources
-  const preloadResources = () => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 0.1;
-      setLoadProgress(Math.min(progress, 0.95));
-
-      // Update loading message based on progress
-      if (progress < 0.3) {
-        setLoadingMessage('Loading fonts...');
-      } else if (progress < 0.6) {
-        setLoadingMessage('Loading assets...');
-      } else if (progress < 0.9) {
-        setLoadingMessage('Initializing app...');
-      } else {
-        setLoadingMessage('Almost ready...');
-      }
-
-      if (progress >= 1) {
-        clearInterval(interval);
-        setTimeout(() => {
-          setLoadProgress(1);
-          setAppReady(true);
-        }, 500);
-      }
-    }, 200);
-  };
 
   // Check onboarding status with timeout
   const checkOnboarding = async () => {
@@ -248,13 +227,6 @@ export default function RootLayout() {
     }
   }, [isPrayerSheetVisible]);
 
-  // Effect for preloading resources
-  useEffect(() => {
-    if (fontsLoaded && !appReady) {
-      preloadResources();
-    }
-  }, [fontsLoaded, appReady]);
-
   // Consolidated initialization effect
   useEffect(() => {
     const initializeApp = async () => {
@@ -263,9 +235,6 @@ export default function RootLayout() {
         if (!fontsLoaded && !fontError) return;
 
         console.log('Fonts loaded, initializing app...');
-
-        // Start resource loading
-        preloadResources();
 
         // Check onboarding status
         await checkOnboarding();
@@ -280,10 +249,10 @@ export default function RootLayout() {
 
         // Show Rive animation first
         setShowRiveAnimation(true);
-        
+
         // Wait a bit to ensure Rive animation is ready
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         // Then hide splash screen
         await SplashScreen.hideAsync();
       } catch (error) {
@@ -298,9 +267,28 @@ export default function RootLayout() {
   }, [fontsLoaded, fontError]);
 
   // Loading states with error handling
-  if (!fontsLoaded && !fontError) return <AppLoading loadingMessage="Loading fonts..." />;
-  if (isLoading) return <AppLoading loadingMessage={loadingMessage} progress={loadProgress} />;
-  if (!isInitialized) return <AppLoading loadingMessage="Initializing app..." />;
+  if (!fontsLoaded && !fontError) {
+    return riveAssets?.[0]?.localUri ? (
+      <View style={styles.riveContainer}>
+        <Rive
+          url={riveAssets[0].localUri}
+          style={styles.riveAnimation}
+          autoplay={true}
+        />
+      </View>
+    ) : null;
+  }
+  if (!isInitialized) {
+    return riveAssets?.[0]?.localUri ? (
+      <View style={styles.riveContainer}>
+        <Rive
+          url={riveAssets[0].localUri}
+          style={styles.riveAnimation}
+          autoplay={true}
+        />
+      </View>
+    ) : null;
+  }
   if (hasError) return <AppLoading loadingMessage="Something went wrong. Please try again..." />;
 
   // Show Rive animation if it's time
@@ -392,8 +380,8 @@ export default function RootLayout() {
               right: 0,
               height: 4,
               backgroundColor: '#3C584A',
-              opacity: loadProgress < 1 ? 0.7 : 0,
-              width: `${loadProgress * 100}%`,
+              opacity: 0.7,
+              width: '100%',
             }}
           />
         )}

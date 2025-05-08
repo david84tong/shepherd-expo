@@ -6,9 +6,11 @@ import { useRouter } from 'expo-router';
 import { useCallback, useMemo } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
+import PrimaryButton from '../../components/PrimaryButton';
 
 // Import the icons similar to those in index.tsx
 const breadIcon = require('../../assets/icons/breadIcon.png');
@@ -202,6 +204,34 @@ export default function ProfileScreen() {
     }
   };
 
+  // Handle subscription button press
+  const handleSubscriptionPress = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    try {
+      const paywallResult: PAYWALL_RESULT = await RevenueCatUI.presentPaywall({
+        fontFamily: 'Feather', // Using the app's font
+      });
+
+      // Handle the paywall result
+      switch (paywallResult) {
+        case PAYWALL_RESULT.PURCHASED:
+          console.log('Purchase completed successfully');
+          break;
+        case PAYWALL_RESULT.RESTORED:
+          console.log('Purchase restored successfully');
+          break;
+        case PAYWALL_RESULT.CANCELLED:
+          console.log('Purchase cancelled by user');
+          break;
+        case PAYWALL_RESULT.ERROR:
+          console.log('Error occurred during purchase');
+          break;
+      }
+    } catch (error) {
+      console.error('Error presenting paywall:', error);
+    }
+  }, []);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
@@ -349,6 +379,30 @@ export default function ProfileScreen() {
             <Text className="font-din text-description">
               {selectedPath?.title || 'No path selected'}
             </Text>
+          </View>
+
+          {/* Subscription Management Section */}
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="font-feather text-heading text-textPrimary">Manage Subscription</Text>
+              {user?.proStatus === 'pro' && (
+                <View className="bg-lightYellow px-4 py-1 rounded-full">
+                  <Text className="font-din text-accentGold">Pro</Text>
+                </View>
+              )}
+            </View>
+            <Text className="font-din text-description mb-4">
+              {user?.proStatus === 'pro'
+                ? 'You have access to all premium features!'
+                : 'Unlock premium features and enhance your spiritual journey.'}
+            </Text>
+            {user?.proStatus !== 'pro' && (
+              <PrimaryButton
+                title="Upgrade to Pro"
+                onPress={handleSubscriptionPress}
+                style="mt-0"
+              />
+            )}
           </View>
 
           {/* Store Section */}
