@@ -317,13 +317,14 @@ export default function RootLayout() {
             contentStyle: {
               backgroundColor: '#FFF4D9',
             },
+            animation: 'slide_from_bottom'
           }}
         >
           <Stack.Screen
             name="(tabs)"
             options={{
               headerShown: false,
-              animation: 'slide_from_right',
+              animation: 'slide_from_bottom'
             }}
           />
           <Stack.Screen
@@ -349,7 +350,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="bibleReader"
             options={{
-              animation: 'slide_from_right',
+              animation: 'slide_from_bottom',
               animationDuration: 350,
               headerShown: false,
             }}
@@ -357,7 +358,7 @@ export default function RootLayout() {
           <Stack.Screen
             name="bible"
             options={{
-              animation: 'slide_from_right',
+              animation: 'slide_from_bottom',
               animationDuration: 350,
               headerShown: false,
             }}

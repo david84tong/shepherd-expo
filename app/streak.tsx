@@ -8,6 +8,7 @@ export default function StreakRoute() {
     <>
       <Stack.Screen
         options={{
+          animation: 'slide_from_bottom',
           headerShown: false,
           title: 'Streak',
         }}
