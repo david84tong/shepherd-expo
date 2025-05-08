@@ -117,10 +117,8 @@ export function useAuth() {
 
       // Log successful sign in
       if (analytics.isInitialized) {
-        analytics.logEvent('auth_success', 'user_action', { 
-          method: 'apple', 
-          uid: uid.substring(0, 8) // Only log a portion of the UID for privacy
-        });
+        analytics.logEvent('auth_success')
+
       }
 
       return userCredential.user;
@@ -189,10 +187,7 @@ export function useAuth() {
 
       // Log successful anonymous sign in
       if (analytics.isInitialized) {
-        analytics.logEvent('auth_success', 'user_action', { 
-          method: 'anonymous', 
-          uid: uid.substring(0, 8) // Only log a portion of the UID for privacy
-        });
+        analytics.logEvent('auth_success')
       }
 
       return userCredential.user;

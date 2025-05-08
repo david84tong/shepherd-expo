@@ -428,15 +428,15 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
             {/* User ID Section */}
             <View style={styles.settingsSection}>
               <Text style={styles.settingsSectionTitle}>User ID</Text>
-              <View style={styles.userIdContainer}>
+              <TouchableOpacity 
+                onPress={handleCopyUserId}
+                style={styles.userIdContainer}
+              >
                 <Text style={styles.userIdText} numberOfLines={1} ellipsizeMode="tail">{userId}</Text>
-                <TouchableOpacity 
-                  onPress={handleCopyUserId}
-                  style={styles.copyButton}
-                >
+                <View style={styles.copyButton}>
                   <Feather name="copy" size={16} color="#3C584A" />
-                </TouchableOpacity>
-              </View>
+                </View>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.divider} />

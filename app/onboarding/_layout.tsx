@@ -52,7 +52,7 @@ export default function OnboardingLayout() {
   const shouldShowProgressBar = pathname &&
     pathname !== '/onboarding/1' &&
     pathname !== '/onboarding/11' &&
-    pathname !== '/onboarding/LoadingScreen' &&
+    !pathname.includes('Loading') &&
     !pathname.includes('/onboarding/auth');
 
   console.log(`[OnboardingLayout] Path: ${pathname}, Should show progress bar: ${shouldShowProgressBar}`);
@@ -184,6 +184,7 @@ export default function OnboardingLayout() {
       {/* Animated Progress Bar */}
       {pathname &&
         !pathname.startsWith('/onboarding/1') &&
+        !pathname.includes('/onboarding/LoadingScreen') &&
         !pathname.includes('/onboarding/auth') && (
           <Animated.View
             style={[

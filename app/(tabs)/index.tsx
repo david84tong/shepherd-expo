@@ -730,7 +730,7 @@ export default function HomeScreen() {
 
           <SecondaryButton
             icon={breadIcon}
-            title="Daily Bread – Read"
+            title="Daily Bread – Read3"
             subtitle="Feed your soul with scripture"
             points={5}
             onPress={handleReadPress}

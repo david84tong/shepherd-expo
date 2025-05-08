@@ -14,9 +14,8 @@ import Animated, {
   withSpring,
   useSharedValue,
   withDelay,
-  FadeIn,
-  FadeOut,
 } from 'react-native-reanimated';
+import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
 
 export default function SaveProgressScreen() {
   const router = useRouter();
@@ -91,30 +90,52 @@ export default function SaveProgressScreen() {
   // Create user object from onboarding responses
   const createUserFromResponses = async (uid: string, displayName: string) => {
     try {
+      // Get all responses from store to ensure we have latest data
+      const allResponses = useOnboardingStore.getState().getAllResponses();
+      
+      // Map the stored path to a spiritual goal if available
+       // Fallback to intent if no path selected
+       let spiritualGoal = allResponses.intent || 'Understand';
       // Create user object from onboarding responses
       const userData = {
         id: uid, // Use id consistently instead of uid
         displayName,
-        spiritualGoal: responses.intent?.includes('read-bible') ? 'Understand'
-          : responses.intent?.includes('talk-to-god') ? 'Overcome'
-          : responses.intent?.includes('reflection-quiet-time') ? 'Explore'
-          : 'Walk',
-        experienceLevel: responses.bibleFamiliarity === 'never' ? 'new'
-          : responses.bibleFamiliarity === 'a-little' ? 'new'
-          : responses.bibleFamiliarity === 'a-lot' ? 'mature'
-          : 'growing',
+        spiritualGoal,
+        experienceLevel:
+          allResponses.bibleFamiliarity === 'never'
+            ? 'new'
+            : allResponses.bibleFamiliarity === 'a-little'
+              ? 'new'
+              : allResponses.bibleFamiliarity === 'a-lot'
+                ? 'mature'
+                : 'growing',
         frequencyGoal: 'daily',
-        denomination: responses.religiousAffiliation,
-        ageRange: responses.ageRange,
+        denomination: allResponses.religiousAffiliation,
+        ageRange: allResponses.ageRange,
+        // Set notification preferences if provided
+        notificationEnabled: allResponses.notificationEnabled !== undefined ? 
+          allResponses.notificationEnabled : false,
+        notificationTime: allResponses.notificationTime || undefined,
+        // Set selected path details if available
+        selectedPath: allResponses.selectedPath || undefined,
         lamb: {
           level: 1,
           xp: 0,
           mood: 'lamb-idle',
           hearts: 50,
-          name: responses.lambName || '',
-          skin: 'default'
-        }
+          name: allResponses.lambName || '',
+          skin: 'default',
+        },
       };
+
+      // Track user creation in analytics
+      analytics.logEvent(AnalyticsEvent.ONBOARDING_STEP_COMPLETED, {
+        step: 'user_creation',
+        spiritualGoal,
+        experienceLevel: userData.experienceLevel,
+        screen: 'SaveProgressScreen',
+        category: EventCategory.ONBOARDING
+      });
 
       // Create user in Firestore
       const success = await createUser(uid, userData);

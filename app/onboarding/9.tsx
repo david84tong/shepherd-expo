@@ -14,11 +14,14 @@ import Animated, {
 
 import PrimaryButton from '../../components/PrimaryButton';
 import { useNotificationStore } from '../stores/notificationStore';
+import { useOnboardingStore } from '../stores/onboardingStore';
+import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
 
 export default function NotificationPermissionScreen() {
   const router = useRouter();
   const [showingAlert, setShowingAlert] = useState(false);
   const notificationStore = useNotificationStore();
+  const { setNotificationPreference } = useOnboardingStore();
 
   // Create Reanimated shared values for each component
   const titleOpacity = useSharedValue(0);
@@ -31,6 +34,12 @@ export default function NotificationPermissionScreen() {
   const buttonTranslateY = useSharedValue(40);
 
   useEffect(() => {
+    // Log screen view when component mounts
+    analytics.logScreenView('NotificationPermissionScreen', { 
+      step: 9,
+      category: EventCategory.ONBOARDING
+    });
+    
     // Reset animation values
     titleOpacity.value = 0;
     titleTranslateY.value = 40;
@@ -74,13 +83,26 @@ export default function NotificationPermissionScreen() {
   }));
 
   // Function to handle the don't allow button
-  const handleDontAllow = () => {
+  const handleDontAllow = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    // Track analytics event
+    analytics.logEvent(AnalyticsEvent.USER_PREFERENCE_CHANGE, {
+      preference: 'notifications',
+      value: 'denied',
+      screen: 'NotificationPermissionScreen',
+      category: EventCategory.ONBOARDING
+    });
     
     // Disable notifications in our store
     notificationStore.setNotificationsEnabled(false);
     
-    router.push('/onboarding/11');
+    // Save to onboarding store
+    await setNotificationPreference({
+      enabled: false
+    });
+    
+    router.push('/onboarding/10');
   };
 
   // Function to handle the allow button
@@ -90,45 +112,103 @@ export default function NotificationPermissionScreen() {
     setShowingAlert(true);
 
     try {
+      // Track initial analytics event
+      analytics.logEvent(AnalyticsEvent.USER_PREFERENCE_CHANGE, {
+        preference: 'notifications',
+        value: 'requesting',
+        screen: 'NotificationPermissionScreen',
+        category: EventCategory.ONBOARDING
+      });
+      
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
       console.log('existingStatus', existingStatus);
+      
       if (existingStatus !== 'granted') {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
 
       if (finalStatus === 'granted') {
+        // Track successful permission grant
+        analytics.logEvent(AnalyticsEvent.USER_PREFERENCE_CHANGE, {
+          preference: 'notifications',
+          value: 'granted',
+          screen: 'NotificationPermissionScreen',
+          category: EventCategory.ONBOARDING
+        });
+        
         // Enable notifications in our store
         notificationStore.setNotificationsEnabled(true);
         
         // Initialize notifications
         await notificationStore.initializeNotifications();
         
+        // Save to onboarding store
+        await setNotificationPreference({
+          enabled: true,
+          time: '19:00' // Default to 7PM
+        });
+        
         console.log('Notification permissions granted and notifications scheduled');
       } else {
+        // Track denied permission
+        analytics.logEvent(AnalyticsEvent.USER_PREFERENCE_CHANGE, {
+          preference: 'notifications',
+          value: 'denied',
+          screen: 'NotificationPermissionScreen',
+          category: EventCategory.ONBOARDING
+        });
+        
         // Disable notifications in our store
         notificationStore.setNotificationsEnabled(false);
+        
+        // Save to onboarding store
+        await setNotificationPreference({
+          enabled: false
+        });
+        
         console.log('Notification permissions denied');
       }
       
-      router.push('/onboarding/11');
+      router.push('/onboarding/10');
     } catch (error) {
       console.error('Error requesting notification permissions:', error);
+      
+      // Disable notifications in case of error
       notificationStore.setNotificationsEnabled(false);
+      
+      // Save to onboarding store
+      await setNotificationPreference({
+        enabled: false
+      });
     } finally {
       setShowingAlert(false);
     }
   };
 
   // Function to handle the remind me button
-  const handleRemindMe = () => {
+  const handleRemindMe = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    // Track analytics event
+    analytics.logEvent(AnalyticsEvent.USER_PREFERENCE_CHANGE, {
+      preference: 'notifications',
+      value: 'remind_later',
+      screen: 'NotificationPermissionScreen',
+      category: EventCategory.ONBOARDING
+    });
     
     // Keep notifications disabled for now
     notificationStore.setNotificationsEnabled(false);
     
-    router.push('/onboarding/11');
+    // Save to onboarding store - mark as remind later
+    await setNotificationPreference({
+      enabled: false,
+      time: 'remind_later'
+    });
+    
+    router.push('/onboarding/10');
   };
 
   return (

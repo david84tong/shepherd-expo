@@ -3,7 +3,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useFonts } from 'expo-font';
 import { Stack, SplashScreen, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState, useRef, useMemo } from 'react';
-import { LogBox } from 'react-native';
+import { LogBox, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { HalfModalType } from './halfModal';
@@ -316,7 +316,14 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
-        <Stack>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: {
+              backgroundColor: '#FFF4D9',
+            },
+          }}
+        >
           <Stack.Screen
             name="(tabs)"
             options={{
@@ -366,6 +373,22 @@ export default function RootLayout() {
             options={{ headerShown: false, animation: 'slide_from_bottom' }}
           />
         </Stack>
+
+        {/* Hide progress indicators on LoadingScreen */}
+        {segments.join('/') !== 'onboarding/LoadingScreen' && (
+          <View 
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: 4,
+              backgroundColor: '#3C584A',
+              opacity: loadProgress < 1 ? 0.7 : 0,
+              width: `${loadProgress * 100}%`,
+            }}
+          />
+        )}
 
         {/* Render the self-contained bottom sheet components */}
         <HalfModalSheet

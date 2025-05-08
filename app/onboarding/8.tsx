@@ -14,6 +14,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
+import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
 
 // Path images
 const walkInLightImg = require('../../assets/onboarding/chronological.png');
@@ -31,7 +32,7 @@ export type PathOption = {
 
 export default function OnboardingPathScreen() {
   const router = useRouter();
-  const { setResponse } = useOnboardingStore();
+  const { setResponse, setPathSelection } = useOnboardingStore();
   const { setUser } = useUserStore();
   const { setSelectedPath } = usePathStore();
   const [selectedPathId, setSelectedPathId] = useState('knowing-jesus');
@@ -45,6 +46,12 @@ export default function OnboardingPathScreen() {
 
   
   useEffect(() => {
+    // Log screen view when component mounts
+    analytics.logScreenView('OnboardingPathScreen', { 
+      step: 8,
+      category: EventCategory.ONBOARDING
+    });
+    
     // Reset animation values
     titleOpacity.value = 0;
     titleTranslateY.value = 40;
@@ -86,12 +93,34 @@ export default function OnboardingPathScreen() {
     } catch (error) {
       console.log('Haptics not available');
     }
+    
+    // Track path selection in analytics
+    analytics.logEvent(AnalyticsEvent.ONBOARDING_STEP_COMPLETED, {
+      step: 'path_selection',
+      selectedPath: pathId,
+      category: EventCategory.ONBOARDING
+    });
+    
     setSelectedPathId(pathId);
-    await setResponse('selectedPath', pathId as any);
-    setUser({ selectedPathId: pathId });
-    // Save full PathOption to pathStore
+    
+    // Find the selected path object
     const selectedPathObj = paths.find((p) => p.id === pathId);
-    if (selectedPathObj) setSelectedPath(selectedPathObj);
+    
+    if (selectedPathObj) {
+      // Save to onboarding store using enhanced method
+      await setPathSelection({
+        id: selectedPathObj.id,
+        title: selectedPathObj.title,
+        subtitle: selectedPathObj.subtitle,
+        order: selectedPathObj.order
+      });
+      
+      // For backward compatibility
+      await setResponse('selectedPath', pathId);
+      
+      // Save to path store
+      setSelectedPath(selectedPathObj);
+    }
   };
 
   const paths: PathOption[] = [
@@ -105,8 +134,8 @@ export default function OnboardingPathScreen() {
         'acts-early-church', // See faith in action
         'pauline-epistles', // Romans & grace foundations
         'genesis-beginnings', // Creation, fall, promise
-        'exodus-deliverance-law', // God’s rescue & covenant
-        'psalms-wisdom', // God’s love & honest prayer
+        'exodus-deliverance-law', // God's rescue & covenant
+        'psalms-wisdom', // God's love & honest prayer
         'general-epistles', // Identity & assurance
         'revelation-end-new', // Hope & new creation
         'kingdoms-prophets', // Story-arc context
@@ -143,7 +172,7 @@ export default function OnboardingPathScreen() {
       order: [
         'genesis-beginnings', // Fall, Cain, Noah
         'exodus-deliverance-law', // Golden Calf & the Law
-        'gospels-life-of-christ', // Jesus’ temptation & teaching
+        'gospels-life-of-christ', // Jesus' temptation & teaching
         'pauline-epistles', // Romans 7, Gal 5, Eph 6
         'general-epistles', // James & 1 Peter on trials
         'psalms-wisdom', // Honest prayers & heart-level wisdom
@@ -178,11 +207,15 @@ export default function OnboardingPathScreen() {
 
   const handleContinue = useCallback(() => {
     if (selectedPathId) {
-      // Log the continue button press with selected path
-      const pathData = paths.find(p => p.id === selectedPathId);
-    
+      // Track continue button press in analytics
+      analytics.logButtonPress('continue_button', 'OnboardingPathScreen', {
+        selectedPath: selectedPathId,
+        step: 8,
+        category: EventCategory.ONBOARDING
+      });
       
       setUser({ selectedPathId: selectedPathId });
+      console.log(selectedPathId, "selectedPathId")
       router.push('/onboarding/9' as any);
     }
   }, [selectedPathId, setUser, router]);
@@ -239,6 +272,14 @@ export default function OnboardingPathScreen() {
       <PrimaryButton
         title="Continue"
         onPress={() => {
+          // Track continue button press in analytics
+          analytics.logButtonPress('continue_button', 'OnboardingPathScreen', {
+            selectedPath: selectedPathId,
+            step: 8,
+            category: EventCategory.ONBOARDING
+          });
+          
+          console.log(selectedPathId, "selectedPathId")
           setUser({ selectedPathId });
           router.push('/onboarding/9' as any);
         }}
