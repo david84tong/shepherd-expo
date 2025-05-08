@@ -406,6 +406,21 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     // If this is the first reading of the day and effectiveType is READING, show streak screen
+    
+    triggerStreakScreen();
+    // Set unmounting flag first
+    isUnmounting.current = true;
+
+    // Reset states (except successType until after navigation)
+    console.log('handleGoHome - Resetting states');
+    setPathInProgress(false);
+    setHomeMode('DEFAULT');
+
+    // Navigate without changing the successType - it will be reset in the cleanup effect
+    router.replace('/(tabs)');
+  };
+
+  const triggerStreakScreen = () => {
     if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
       console.log('First reading of the day - showing streak screen');
       // Start transition with fade out animation
@@ -422,17 +437,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       });
       return;
     }
-
-    // Set unmounting flag first
-    isUnmounting.current = true;
-
-    // Reset states (except successType until after navigation)
-    console.log('handleGoHome - Resetting states');
-    setPathInProgress(false);
-    setHomeMode('DEFAULT');
-
-    // Navigate without changing the successType - it will be reset in the cleanup effect
-    router.replace('/(tabs)');
   };
 
   // Determine the action for the button press
@@ -449,6 +453,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     // First update the state in the store
     setHomeMode('PRAYER');
     setPathInProgress(true); // Make sure path is in progress to show the component
+    triggerStreakScreen();
 
     // Add delay to give assets time to load
     console.log('Adding delay before navigation to ensure assets load');
@@ -469,6 +474,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     // Make sure path is in progress to show the component
     setHomeMode('DEFAULT');
     setPathInProgress(false);
+    triggerStreakScreen();
+
     router.push('/(tabs)');
 
     // Add delay to give assets time to load
