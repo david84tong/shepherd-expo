@@ -208,9 +208,7 @@ export default function ProfileScreen() {
   const handleSubscriptionPress = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     try {
-      const paywallResult: PAYWALL_RESULT = await RevenueCatUI.presentPaywall({
-        fontFamily: 'Feather', // Using the app's font
-      });
+      const paywallResult: PAYWALL_RESULT = await RevenueCatUI.presentPaywall();
 
       // Handle the paywall result
       switch (paywallResult) {
