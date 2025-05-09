@@ -151,7 +151,7 @@ export default function LoginScreen() {
       >
         {/* Enhanced gradient with stronger colors and explicit styling */}
         <LinearGradient
-          colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0)']}
+          colors={['rgba(0,0,0,0.65)', 'rgba(0,0,0,0.35)', 'rgba(0,0,0,0)']}
           locations={[0, 0.5, 1]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
@@ -170,7 +170,7 @@ export default function LoginScreen() {
           <Text className="text-accentGold font-feather text-h1 text-center mb-2 -mt-12">
               Shepherd
             </Text>
-          <Animated.View style={titleStyle} className="items-center">
+          <Animated.View style={titleStyle} className="items-center -mt-12">
             {/* Shepherd title */}
       
             <View className="flex-row items-center justify-center mt-1 w-full">
@@ -202,7 +202,7 @@ export default function LoginScreen() {
           </Animated.View>
           
           {/* Rive Animation in the middle */}
-          <Animated.View style={lambStyle} className="h-[200px] w-full justify-center items-center -mt-4">
+          <Animated.View style={lambStyle} className="h-[200px] w-full justify-center items-center -mt-24">
             <Rive
               url={riveAssets[0].localUri!}
               artboardName="lamb-reading"
