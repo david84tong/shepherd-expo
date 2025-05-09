@@ -92,6 +92,9 @@ module.exports = {
       },
       fontSize: {
         // Mapping semantic styles to Tailwind sizes
+        hugeTitle: '48px',
+        bigTitle: '42px',
+
         title: '36px',
         h1: '28px', // H1
         h2: '24px', // H1

@@ -1,67 +1,52 @@
-import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator, Image } from 'react-native';
+import React, { useState, useRef, useLayoutEffect } from 'react';
+import { View, Text, Alert, ActivityIndicator, TouchableOpacity, ImageBackground } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useAuth } from '../hooks/authHook';
-import { useUserStore } from '../stores/userStore';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { AntDesign } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_COMPLETED_KEY } from '../types/onboarding';
 import * as Haptics from 'expo-haptics';
+import { useAssets } from 'expo-asset';
+import Rive from 'rive-react-native';
+import PrimaryButton from '../../components/PrimaryButton';
+import { LinearGradient } from 'expo-linear-gradient';
+import analytics from '~/utils/analytics';
+import Animated, { 
+  useAnimatedStyle, 
+  withTiming, 
+  withSpring,
+  useSharedValue,
+  withDelay,
+} from 'react-native-reanimated';
+
+// We'll use the background directly in the source prop
 
 export default function LoginScreen() {
   const router = useRouter();
-  const { signInWithApple, signInAnonymously } = useAuth();
-  const setUser = useUserStore((state) => state.setUser);
   const [loading, setLoading] = useState(false);
-  const [loadingProvider, setLoadingProvider] = useState('');
+  
+  // Load Rive assets
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+  
+  // Track if animations have been initialized
+  const animationsInitialized = useRef(false);
 
-  // Apple login
-  const handleAppleLogin = async () => {
-    setLoading(true);
-    setLoadingProvider('apple');
-    try {
-      const user = await signInWithApple();
-      if (user) {
-        setUser({
-          id: user.uid,
-          displayName: user.displayName || '',
-          email: user.email || '',
-        });
-        router.replace('/(tabs)');
-      }
-    } catch (error) {
-      Alert.alert('Apple Sign In failed', 'Please try again or use another method.');
-    } finally {
-      setLoading(false);
-      setLoadingProvider('');
-    }
-  };
-
-  // Anonymous login
-  const handleAnonymousLogin = async () => {
-    setLoading(true);
-    setLoadingProvider('anon');
-    try {
-      const user = await signInAnonymously();
-      if (user) {
-        setUser({
-          id: user.uid,
-          displayName: user.displayName || '',
-          email: user.email || '',
-        });
-        router.replace('/(tabs)');
-      }
-    } catch (error) {
-      Alert.alert('Anonymous Sign In failed', 'Please try again.');
-    } finally {
-      setLoading(false);
-      setLoadingProvider('');
-    }
-  };
+  // Create animated values for components
+  const screenOpacity = useSharedValue(0);
+  const titleOpacity = useSharedValue(0);
+  const titleTranslateY = useSharedValue(-20);
+  
+  const lambOpacity = useSharedValue(0);
+  const lambScale = useSharedValue(0.9);
+  
+  const buttonOpacity = useSharedValue(0);
+  const buttonTranslateY = useSharedValue(20);
+  
+  const linkOpacity = useSharedValue(0);
 
   // Begin journey handler
   const handleBeginJourney = async () => {
+    analytics.logEvent("WelcomeScreen_Tapped_BeginJourney");
+
     try {
       // Trigger haptic feedback
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -74,40 +59,161 @@ export default function LoginScreen() {
       Alert.alert('Error', 'Could not start journey. Please try again.');
     }
   };
+  
+  // Run animations
+  useLayoutEffect(() => {
+    analytics.logEvent("WelcomeScreen_Screenload");
+    if (animationsInitialized.current) return;
+    
+    // Fade in the screen
+    screenOpacity.value = withTiming(1, { duration: 400 });
+    
+    const triggerAnimations = () => {
+      // Animate components with staggered timing
+      
+      // Title animation
+      titleOpacity.value = withDelay(200, withTiming(1, { duration: 500 }));
+      titleTranslateY.value = withDelay(200, withSpring(0, {
+        damping: 14,
+        stiffness: 80,
+        mass: 0.7
+      }));
+      
+      // Lamb animation - subtle grow effect
+      lambOpacity.value = withDelay(400, withTiming(1, { duration: 600 }));
+      lambScale.value = withDelay(400, withSpring(1, {
+        damping: 14,
+        stiffness: 80,
+        mass: 0.8
+      }));
+      
+      // Button slide up from bottom
+      buttonOpacity.value = withDelay(600, withTiming(1, { duration: 500 }));
+      buttonTranslateY.value = withDelay(600, withSpring(0, {
+        damping: 14,
+        stiffness: 90
+      }));
+      
+      // Link fade in last
+      linkOpacity.value = withDelay(700, withTiming(1, { duration: 400 }));
+      
+      animationsInitialized.current = true;
+    };
+    
+    // Start animations after a short delay
+    const timer = setTimeout(triggerAnimations, 100);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Create animated styles
+  const screenStyle = useAnimatedStyle(() => ({
+    opacity: screenOpacity.value,
+    flex: 1
+  }));
+  
+  const titleStyle = useAnimatedStyle(() => ({
+    opacity: titleOpacity.value,
+    transform: [{ translateY: titleTranslateY.value }]
+  }));
+  
+  const lambStyle = useAnimatedStyle(() => ({
+    opacity: lambOpacity.value,
+    transform: [{ scale: lambScale.value }]
+  }));
+  
+  const buttonStyle = useAnimatedStyle(() => ({
+    opacity: buttonOpacity.value,
+    transform: [{ translateY: buttonTranslateY.value }]
+  }));
+  
+  const linkStyle = useAnimatedStyle(() => ({
+    opacity: linkOpacity.value
+  }));
+
+  // Show loading indicator while assets load
+  if (!riveAssets) {
+    return (
+      <View className="flex-1 items-center justify-center bg-surfaceCream">
+        <ActivityIndicator size="large" color="#3C584A" />
+        <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FFF4D9] justify-center px-6">
-      <View className="items-center mb-10">
-        <Image source={require('../../assets/icon.png')} className="w-20 h-20 mb-4 rounded-full" />
-        <Text className="text-base font-din text-slate-600 text-center">Welcome to Shepherd! Choose how you&apos;d like to begin.</Text>
-      </View>
-      <View className="mb-6">
-        <TouchableOpacity
-          className="flex-row items-center justify-center bg-black w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow"
-          onPress={handleAppleLogin}
-          disabled={loading}
-        >
-          {loadingProvider === 'apple' ? (
-            <ActivityIndicator color="white" size="small" style={{ marginRight: 10 }} />
-          ) : (
-            <AntDesign name="apple1" size={24} color="white" style={{ marginRight: 10 }} />
-          )}
-          <Text className="font-din text-white text-[18px] font-bold">
-            {loadingProvider === 'apple' ? "Signing in..." : "Sign in with Apple"}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          className="flex-row items-center justify-center bg-[#F7B500] w-full py-4 px-6 rounded-[16px] mb-4 shadow-buttonShadow"
-          onPress={handleBeginJourney}
-          disabled={loading}
-        >
-          <Text className="font-din text-white text-[18px] font-bold">Begin Your Journey</Text>
-        </TouchableOpacity>
-      </View>
-      <View className="items-center mt-6">
-        <Text className="font-din text-slate-500 text-center text-xs">By signing in, you agree to our Terms of Use and Privacy Policy.</Text>
-      </View>
-    </SafeAreaView>
+    <Animated.View style={screenStyle} className="flex-1">
+      {/* Using direct require for background to avoid linter errors */}
+      <ImageBackground 
+        source={require('../../assets/backgrounds/mainBackground.png')}
+        className="flex-1"
+        resizeMode="cover"
+      >
+        {/* Enhanced gradient with stronger colors and explicit styling */}
+        <LinearGradient
+          colors={['rgba(0,0,0,0.75)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0)']}
+          locations={[0, 0.5, 1]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            zIndex: 5
+          }}
+        />
+        
+        <SafeAreaView className="flex-1 justify-between px-6 pt-10 pb-10 relative z-10">
+          {/* Title at the top */}
+          <Animated.View style={titleStyle} className="items-center">
+          <Text className="text-accentGold text-h1 font-feather mb-16 -mt-12">Shepherd</Text>
+            <Text className=" text-center mb-4">
+              <Text className="text-white font-nunito-bold text-hugeTitle">Bible Study</Text>{"\n"}
+              <Text className="text-white font-nunito-bold text-hugeTitle">Made </Text>
+              <Text className="text-accentGold font-feather text-hugeTitle" style={{ borderBottomColor: '#F7B500', borderBottomWidth: 4, paddingBottom: 2 }}>Joyful</Text>
+            </Text>
+          </Animated.View>
+          
+          {/* Rive Animation in the middle */}
+          <Animated.View style={lambStyle} className="h-[200px] w-full justify-center items-center -mt-32">
+            <Rive
+              url={riveAssets[0].localUri!}
+              artboardName="lamb-reading"
+              autoplay
+              style={{ width: '120%', height: '120%' }}
+            />
+          </Animated.View>
+          
+          {/* Button at the bottom */}
+          <View className="w-full">
+            <Animated.View style={buttonStyle}>
+              <PrimaryButton
+                onPress={handleBeginJourney}
+                disabled={loading}
+                title="Begin My Journey"
+              />
+            </Animated.View>
+            <Animated.View style={linkStyle}>
+              <TouchableOpacity 
+                onPress={() => {
+                  analytics.logEvent("WelcomeScreen_Tapped_Login");
+                  router.push({
+                    pathname: "/onboarding/11",
+                    params: { isLogin: "true" }
+                  });
+                }} 
+                className="mt-4"
+                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+              >
+                <Text className="font-feather text-body text-center underline mt-4 text-white">Login</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        </SafeAreaView>
+      </ImageBackground>
+    </Animated.View>
   );
 } 
+

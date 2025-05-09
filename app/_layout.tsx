@@ -331,7 +331,7 @@ export default function RootLayout() {
             name="login"
             options={{
               headerShown: false,
-              animation: 'fade',
+              animation: 'slide_from_bottom',
               animationDuration: 200,
               gestureEnabled: false,
               contentStyle: { backgroundColor: '#FFF4D9' },

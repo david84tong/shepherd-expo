@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { View, Pressable } from 'react-native';
 
 import { BIBLE_PATHS, Unit } from '../../app/models/Path';
-
+import analytics from '../../utils/analytics';
 // Define node status
 export type NodeStatus = 'locked' | 'active' | 'completed';
 
@@ -192,6 +192,10 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
             // Add light haptic feedback when tapping a node
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
             onPress(unit);
+            analytics.logEvent("PathNode_Tapped", {
+              unit: unit.id,
+              unitName: unit.title
+            });
           }
         }}
         disabled={isDisabled}

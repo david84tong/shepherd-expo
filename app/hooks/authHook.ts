@@ -5,7 +5,6 @@ import firestore from '@react-native-firebase/firestore';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
 import { useState, useEffect } from 'react';
-import { Platform } from 'react-native';
 
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
@@ -14,6 +13,17 @@ import analytics from '../../utils/analytics';
 export const isSignedIn = () => {
   const currentUser = auth().currentUser;
   return currentUser !== null;
+};
+
+// Helper function to check if a user document exists in Firestore
+export const checkUserExists = async (uid: string): Promise<boolean> => {
+  try {
+    const userDoc = await firestore().collection('users').doc(uid).get();
+    return userDoc.exists;
+  } catch (error) {
+    console.error("Error checking if user exists:", error);
+    return false;
+  }
 };
 
 // useAuth.ts hook
@@ -35,7 +45,7 @@ export function useAuth() {
     return () => unsubscribe();
   }, []);
 
-  const signInWithApple = async () => {
+  const signInWithApple = async (isLoginMode = false) => {
     console.log('[Auth] signInWithApple() called');
     try {
       setLoading(true);
@@ -76,12 +86,23 @@ export function useAuth() {
       }
       
       // Create a Firebase credential
-      const firebaseCredential = auth.AppleAuthProvider.credential(identityToken, authorizationCode);
+      const firebaseCredential = auth.AppleAuthProvider.credential(identityToken, authorizationCode || undefined);
       console.log('[Auth] Firebase credential created successfully');
 
       // Sign in to Firebase with the Apple credential
       const userCredential = await auth().signInWithCredential(firebaseCredential);
       console.log('[Auth] Firebase sign-in successful, uid:', userCredential.user.uid);
+      
+      // In login mode, verify the user account exists
+      if (isLoginMode) {
+        const userExists = await checkUserExists(userCredential.user.uid);
+        if (!userExists) {
+          console.log('[Auth] Account not found during login attempt');
+          // Force sign out since this is a login attempt but no account exists
+          await auth().signOut();
+          throw new Error('No account found with this Apple ID. Please create a new account instead.');
+        }
+      }
       
       // Get user info from Firebase user and Apple credential
       const { uid, email: firebaseEmail } = userCredential.user;
@@ -277,6 +298,7 @@ export function useAuth() {
     isAuthenticated,
     signInWithApple,
     signInAnonymously,
+    checkUserExists,
   };
 }
 

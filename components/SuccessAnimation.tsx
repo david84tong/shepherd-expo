@@ -4,6 +4,7 @@ import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
+import analytics from '../utils/analytics';
 import {
   View,
   Text,
@@ -297,6 +298,17 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Always add XP
       addXp(xpReward);
       
+      // Track rewards for analytics
+      const rewardsData: any = {
+        successType: effectiveType,
+        heartsAwarded: heartsToAdd,
+        intentionalHeartReward: heartReward,
+        xpAwarded: xpReward,
+        isAtMaxHearts: isMax,
+        newLambHearts: lambHearts + heartsToAdd,
+        newLambXp: lambXp + xpReward
+      };
+      
       // If this is a BONUS reward, add 9 gems
       // Only add gems if this is truly the first time seeing the bonus (sawDailyBonus was false)
       if (effectiveType === SuccessAnimationType.BONUS && !sawDailyBonus) {
@@ -304,13 +316,21 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         setGens(currentGems + 9);
         console.log(`Applied +9 Gems. Updated value - Gems: ${currentGems + 9}`);
         
+        // Add gems data to analytics
+        rewardsData.gemsAwarded = 9;
+        rewardsData.newGemCount = currentGems + 9;
+        
         // Set the flag to indicate user has seen daily bonus
         setSawDailyBonus(true);
         console.log("Setting sawDailyBonus to true");
       } else if (effectiveType === SuccessAnimationType.BONUS) {
         // Log if we're not adding gems because bonus was already seen
         console.log("Not adding gems - user has already seen bonus animation today");
+        rewardsData.gemsAwarded = 0;
       }
+      
+      // Log the rewards data to analytics
+      analytics.logEvent("SuccessAnimation_RewardsApplied", rewardsData);
 
       // Create a new timestamp for the current time
       const now = firestore.Timestamp.now();
@@ -399,10 +419,65 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     return () => clearTimeout(timer);
   }, [effectiveType]); // Keep effectiveType dependency
 
+  // Log analytics when component mounts or successType changes
+  useEffect(() => {
+    if (!successType) return;
+    
+    let eventName = "";
+    let params = {};
+    
+    // Log different events based on success type
+    switch (successType) {
+      case SuccessAnimationType.READING:
+        eventName = "SuccessAnimation_Shown_Reading";
+        params = { 
+          xpReward: xpReward,
+          heartReward: actualHeartReward 
+        };
+        break;
+        
+      case SuccessAnimationType.PRAYER:
+        eventName = "SuccessAnimation_Shown_Prayer";
+        params = { 
+          xpReward: xpReward,
+          heartReward: actualHeartReward 
+        };
+        break;
+        
+      case SuccessAnimationType.REFLECTION:
+        eventName = "SuccessAnimation_Shown_Reflection";
+        params = { 
+          xpReward: xpReward,
+          heartReward: actualHeartReward 
+        };
+        break;
+        
+      case SuccessAnimationType.BONUS:
+        eventName = "SuccessAnimation_Shown_Bonus";
+        params = { 
+          xpReward: xpReward,
+          heartReward: actualHeartReward,
+          gemsAwarded: sawDailyBonus ? 0 : 9
+        };
+        break;
+    }
+    
+    // Log the event
+    if (eventName) {
+      analytics.logEvent(eventName, params);
+      console.log(`Analytics: Logged ${eventName}`, params);
+    }
+  }, [successType, xpReward, actualHeartReward, sawDailyBonus]);
+
   // Default navigation behavior
   const handleGoHome = () => {
     // Add medium haptic feedback for navigation
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    // Log the event
+    analytics.logEvent("SuccessAnimation_Tapped_GoHome", {
+      fromType: successType
+    });
     
     // If this is the first reading of the day and effectiveType is READING, show streak screen
     if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
@@ -422,6 +497,12 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   const triggerStreakScreen = () => {
       console.log('First reading of the day - showing streak screen');
+      // Log analytics for streak screen
+      analytics.logEvent("SuccessAnimation_Showing_StreakScreen", {
+        fromType: effectiveType,
+        isFirstReadingOfDay: isFirstReadingOfDay
+      });
+      
       // Start transition with fade out animation
       setIsTransitioning(true);
 
@@ -448,6 +529,11 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     console.log('Navigating to Prayer from Success screen');
+
+    // Log analytics
+    analytics.logEvent("SuccessAnimation_Tapped_PrayButton", {
+      fromType: successType
+    });
 
     // Set tappedPrayAboutVerse regardless of where we're coming from
     console.log('Setting tappedPrayAboutVerse to true');
@@ -476,6 +562,11 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     console.log('Navigating to Reflection from Success screen');
+
+    // Log analytics
+    analytics.logEvent("SuccessAnimation_Tapped_ReflectButton", {
+      fromType: successType
+    });
 
     // If this came from a reading or prayer success, set the tappedReflectAboutVerse flag
     if (effectiveType === SuccessAnimationType.READING || effectiveType === SuccessAnimationType.PRAYER) {

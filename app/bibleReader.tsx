@@ -22,7 +22,7 @@ import { useHomeStore, SuccessAnimationType } from './stores/homeStore';
 import { useUserStore } from './stores/userStore';
 import { useUIStore } from './stores/uiStore';
 import { router, useLocalSearchParams } from 'expo-router';
-import { BIBLE_PATHS, Path, Unit, BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from './models/Path';
+import { BIBLE_PATHS, Unit, BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from './models/Path';
 import firestore from '@react-native-firebase/firestore';
 import Reanimated, { 
   useSharedValue, 
@@ -34,6 +34,7 @@ import Reanimated, {
   Easing as ReanimatedEasing  // Use ReanimatedEasing for clarity
 } from 'react-native-reanimated'; // Use Reanimated for dot indicator
 import { heightScreen } from '~/utils/dimensions';
+import analytics from '../utils/analytics';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -294,7 +295,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
+    analytics.logEvent("BibleReader_Tapped_PreviousChapter", {
+      chapter: currentChapter
+    });
     if (currentChapter > 1) {
       loadChapter(currentVersion, currentBook, currentBookId, currentChapter - 1);
     } else {
@@ -309,7 +312,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       console.log('Loading or no chapter data, skipping navigation');
       return;
     }
-    
+    analytics.logEvent("BibleReader_Tapped_NextChapter", {
+      chapter: currentChapter
+    });
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
@@ -340,6 +345,12 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   };
 
   const handleFinishReading = () => {
+    analytics.logEvent("BibleReader_Tapped_FinishReading", {
+      book: currentBook,
+      bookId: currentBookId,
+      version: currentVersion,      
+      chapter: currentChapter
+    });
     // Add haptic feedback - medium for completion
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     

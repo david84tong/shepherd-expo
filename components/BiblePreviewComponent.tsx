@@ -6,6 +6,7 @@ import BackButton from './BackButton';
 import PrimaryButton from './PrimaryButton';
 import { Unit, BIBLE_PATHS } from '../app/models/Path'; // Import Unit and BIBLE_PATHS
 import { usePathStore } from '../app/stores/pathStore';
+import analytics from '../utils/analytics';
 
 interface BiblePreviewProps {
   /** Whether the preview overlay should be shown. */
@@ -303,7 +304,15 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         className="absolute -bottom-24 left-0 right-0 w-full px-5 pb-8 pt-4 items-center bg-transparent z-20"
         style={{ opacity: buttonOpacity, transform: [{ translateY: buttonAnim }] }}
       >
-        <PrimaryButton title="Start Reading" onPress={handleStart} />
+        <PrimaryButton title="Start Reading" onPress={
+          () => {
+            analytics.logEvent("BiblePreview_Tapped_StartReading", {
+              unit: nextUnit?.id,
+              unitName: nextUnit?.title 
+            });
+            handleStart();
+          }
+          } />
         <TouchableOpacity 
           onPress={handleJustReadBible}
           className="mt-4 py-2"

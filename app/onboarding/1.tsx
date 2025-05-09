@@ -18,7 +18,7 @@ import { useAnalytics } from '../hooks/useAnalytics';
 import PrimaryButton from '../../components/PrimaryButton';
 import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
 
-
+import analytics from '../../utils/analytics';
 
 const FIRST_WELCOME_TEXT = "Every Shepherd starts with one lost lamb...";
 const SECOND_WELCOME_TEXT = "This one's yours.";
@@ -50,9 +50,9 @@ export default function OnboardingWelcomeScreen() {
   
   // Log screen view when component mounts
   useEffect(() => {
-    logScreenView('OnboardingWelcomeScreen', {
+    analytics.logEvent("LambLostScreenViewed", {
+      screenName: 'OnboardingWelcomeScreen',
       step: 1,
-      screenName: 'Welcome'
     });
   }, [logScreenView]);
   
@@ -280,18 +280,18 @@ export default function OnboardingWelcomeScreen() {
 
     if (textPhase === 2) {
       // Log button press for starting journey
-      logButtonPress('startJourney', 'OnboardingWelcomeScreen', {
+      analytics.logEvent("Onboarding_Tapped_StartJourney", {
         step: 1,
         screenName: 'Welcome',
         textPhase: textPhase,
-        action: 'Begin Journey'
+        action: 'Continue'
       });
       
       // Start the zoom animation sequence
       startZoomAndTransition();
     } else if (isLambTapped) {
       // Log button press for claiming lamb
-      logButtonPress('claimLostLamb', 'OnboardingWelcomeScreen', {
+      analytics.logEvent("Onboarding_Tapped_ClaimLostLamb", {
         step: 1,
         screenName: 'Welcome',
         textPhase: textPhase,

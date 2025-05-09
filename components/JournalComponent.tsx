@@ -277,6 +277,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     analytics.logEvent('JournalScreen_SaveReflection', {
       reflection_length: reflectionContent.length,
       reflection_content: reflectionContent,
+      prompt: currentPath?.reflection
     });
     Keyboard.dismiss();
     setPathInProgress(false);
@@ -328,6 +329,9 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         onPress={() => {
           setPathInProgress(false);
           // Reset tappedReflectAboutVerse flag when canceling
+          analytics.logEvent("Journal_Tapped_Cancel", {
+            prompt: currentPath?.reflection 
+          });
           useHomeStore.getState().setTappedReflectAboutVerse(false);
           console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
           onClose();

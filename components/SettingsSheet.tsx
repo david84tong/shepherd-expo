@@ -15,6 +15,8 @@ import { useNotificationStore } from '../app/stores/notificationStore';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Notifications from 'expo-notifications';
+import analytics from '../utils/analytics';
+
 import Animated, { 
   useAnimatedStyle,
   withTiming,
@@ -140,6 +142,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 
   // Handle sign out
   const handleSignOut = useCallback(async () => {
+    analytics.logEvent("Settings_Tapped_SignOut", {
+      userId: userId
+    });
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
       await auth().signOut().then(() => {
@@ -218,6 +223,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
     setSavedTranslation(translation);
     setTranslationModalVisible(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    analytics.logEvent("Settings_Tapped_TranslationChange", {
+      translation: translation
+    });
   }, [setSavedTranslation]);
 
   // Function to get display text for notification time
@@ -419,6 +427,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 
   // Delete account and related data
   const handleDeleteAccount = useCallback(() => {
+    analytics.logEvent("Settings_Tapped_DeleteAccount", {
+      userId: userId,
+      email: auth().currentUser?.email
+    });
     Alert.alert(
       'Delete Account & Data',
       'This will delete your account, all Firestore data, and clear local storage. This action CANNOT be undone. Are you sure?',

@@ -15,6 +15,7 @@ import { useUserStore } from '../app/stores/userStore';
 import BackButton from './BackButton';
 import PrimaryButton from './PrimaryButton';
 import { BIBLE_BOOK_IDS } from '../app/models/Path';
+import analytics from '../utils/analytics';
 
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
@@ -385,6 +386,9 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     
     // Invoke the callback provided by the parent
     onClose();
+    analytics.logEvent("Prayer_Tapped_Cancel", {
+      prayer: prayerText
+    });
   };
 
   return (
@@ -441,7 +445,14 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
           transform: [{ translateY: buttonAnim }, { translateX: shakeTranslateX }],
         }}>
         <View className="mt-64">
-          <PrimaryButton title="Amen" onPress={handleDonePress} disabled={isTimerActive} />
+          <PrimaryButton title="Amen" onPress={
+            () => {
+              analytics.logEvent("Prayer_Tapped_Amen", {
+                prayer: prayerText
+              });
+              handleDonePress();
+            }
+            } disabled={isTimerActive} />
         </View>
       </Animated.View>
     </View>
