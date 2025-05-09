@@ -1,5 +1,5 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
-import { View, Text, Alert, ActivityIndicator, TouchableOpacity, ImageBackground } from 'react-native';
+import { View, Text, Alert, ActivityIndicator, TouchableOpacity, ImageBackground, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -151,7 +151,7 @@ export default function LoginScreen() {
       >
         {/* Enhanced gradient with stronger colors and explicit styling */}
         <LinearGradient
-          colors={['rgba(0,0,0,0.75)', 'rgba(0,0,0,0.2)', 'rgba(0,0,0,0)']}
+          colors={['rgba(0,0,0,0.8)', 'rgba(0,0,0,0.4)', 'rgba(0,0,0,0)']}
           locations={[0, 0.5, 1]}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
@@ -167,17 +167,42 @@ export default function LoginScreen() {
         
         <SafeAreaView className="flex-1 justify-between px-6 pt-10 pb-10 relative z-10">
           {/* Title at the top */}
-          <Animated.View style={titleStyle} className="items-center">
-          <Text className="text-accentGold text-h1 font-feather mb-16 -mt-12">Shepherd</Text>
-            <Text className=" text-center mb-4">
-              <Text className="text-white font-nunito-bold text-hugeTitle">Bible Study</Text>{"\n"}
-              <Text className="text-white font-nunito-bold text-hugeTitle">Made </Text>
-              <Text className="text-accentGold font-feather text-hugeTitle" style={{ borderBottomColor: '#F7B500', borderBottomWidth: 4, paddingBottom: 2 }}>Joyful</Text>
+          <Text className="text-accentGold font-feather text-h1 text-center mb-2 -mt-12">
+              Shepherd
             </Text>
+          <Animated.View style={titleStyle} className="items-center">
+            {/* Shepherd title */}
+      
+            <View className="flex-row items-center justify-center mt-1 w-full">
+            <Image 
+                source={require('../../assets/onboarding/leftReef.png')} 
+                className="w-32  h-full  -mr-4" 
+                resizeMode="contain"
+              />
+            {/* Bible Study text with icons */}
+            <View className="flex-col items-center justify-center mt-1">
+            <Text className="text-white font-nunito-bold text-title text-center">
+              Bible Study
+            </Text>
+            
+            {/* Made Joyful with Bible icons */}
+            <View className="flex-row items-center justify-center mt-1">
+
+              <Text className="text-white font-nunito-bold text-title">Made </Text>
+              <Text className="text-accentGold font-feather text-title" style={{ borderBottomColor: '#F7B500', borderBottomWidth: 4, paddingBottom: 2 }}>Joyful</Text>
+             
+              </View>
+              </View>
+              <Image 
+                source={require('../../assets/onboarding/rightReef.png')} 
+                className="w-32 h-full -ml-4" 
+                resizeMode="contain"
+              />
+            </View>
           </Animated.View>
           
           {/* Rive Animation in the middle */}
-          <Animated.View style={lambStyle} className="h-[200px] w-full justify-center items-center -mt-32">
+          <Animated.View style={lambStyle} className="h-[200px] w-full justify-center items-center -mt-4">
             <Rive
               url={riveAssets[0].localUri!}
               artboardName="lamb-reading"
