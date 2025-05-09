@@ -107,12 +107,9 @@ export default function OnboardingPathScreen() {
   const handleContinue = useCallback(() => {
     if (selectedPathId) {
       // Track continue button press in analytics
-      analytics.logButtonPress('continue_button', 'OnboardingPathScreen', {
-        selectedPath: selectedPathId,
-        step: 8,
-        category: EventCategory.ONBOARDING
+      analytics.logEvent("OnboardingPathScreen_Tapped_Continue", {
+        value: selectedPathId,
       });
-      
       setUser({ selectedPathId: selectedPathId });
       console.log(selectedPathId, "selectedPathId")
       router.push('/onboarding/9' as any);
