@@ -6,6 +6,8 @@ import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import { OnboardingResponses } from '../models/Onboarding';
+import analytics from '../../utils/analytics';
+
 import Animated, { 
   useAnimatedStyle, 
   withTiming, 
@@ -57,6 +59,8 @@ export default function OnboardingReadingTimeScreen() {
     animateComponent(optionsOpacity, optionsTranslateY, 400);
   }, []);
 
+
+
   // Create animated styles for each component
   const iconStyle = useAnimatedStyle(() => ({
     opacity: iconOpacity.value,
@@ -86,8 +90,11 @@ export default function OnboardingReadingTimeScreen() {
     } as const;
     
     // Set in user store
-    setFrequencyGoal(durationMap[duration as keyof typeof durationMap]);
-    
+    setFrequencyGoal(duration);
+
+    analytics.logEvent("OnboardingDurationScreen_Tapped_Option", {
+      value: duration,
+    });
     // Trigger light haptic feedback
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
@@ -139,13 +146,13 @@ export default function OnboardingReadingTimeScreen() {
  
       {/* Question Text */}
       <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-4">
+        <Text className="font-feather text-h1 text-center text-textPrimary mb-0">
           How many minutes per day can you spend with God?
         </Text>
       </Animated.View>
 
       {/* Options Container */}
-      <Animated.View style={optionsStyle} className="space-y-4 mt-8">
+      <Animated.View style={optionsStyle} className="space-y-4 mt-4">
         {options.map((option) => (
           <PrimaryButton
             key={option.id}

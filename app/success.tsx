@@ -14,7 +14,7 @@ export default function SuccessScreen() {
       <Stack.Screen
         options={{
           headerShown: false,
-          animation: 'slide_from_bottom'
+          animation: 'slide_from_right'
         }}
       />
       <SuccessAnimation message={message} subMessage={subMessage} />

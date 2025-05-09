@@ -4,8 +4,7 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { View, Text, TextInput, Keyboard, ActivityIndicator } from 'react-native';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
-import { useAnalytics } from '../hooks/useAnalytics';
-import { useOnboardingScreenTracking, logOnboardingButtonPress } from './components/analytics-helper';
+import analytics from '../../utils/analytics';
 import PrimaryButton from '../../components/PrimaryButton';
 import Rive from 'rive-react-native';
 import Animated, { 
@@ -25,12 +24,9 @@ export default function OnboardingLambNameScreen() {
   const setLambName = useUserStore((state) => state.setLambName);
   const [inputLambName, setInputLambName] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
-  
-  // Initialize analytics
-  const analytics = useAnalytics();
+
   
   // Use the helper hook for screen tracking
-  useOnboardingScreenTracking(2);
   
   // Load Rive assets
   const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
@@ -146,8 +142,11 @@ export default function OnboardingLambNameScreen() {
   const handleContinue = async () => {
     if (inputLambName.trim()) {
       // Log button press using helper function
+      const name = inputLambName.trim();
+      analytics.logEvent("OnboardingNameScreen_Tapped_Continue", {
+        name: name,
+      });
     
-      
       // Save the lamb name to the user store
       setLambName(inputLambName.trim());
       setResponse('lambName', inputLambName.trim());

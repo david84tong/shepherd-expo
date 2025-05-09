@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, View, Text, Image, ImageSourcePropType, Pressable } from 'react-native';
+import { View, Text, Image, ImageSourcePropType, Pressable } from 'react-native';
 import * as Haptics from 'expo-haptics';
-
+import analytics from '../utils/analytics';
 interface SecondaryButtonProps {
   icon: ImageSourcePropType;
   title: string;
@@ -30,11 +30,12 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   const bgColor = completed ? 'bg-lightGreen' : 'bg-surfaceCream';
   const borderColor = completed ? 'border-darkGreen' : 'border-border';
   const shadowClass = !isPressed && !completed ? 'shadow-buttonShadow' : '';
-  const opacityClass = completed ? 'opacity-70' : '';
+  const opacityClass = disabled ? 'opacity-50' : completed ? 'opacity-70' : '';
   
   const handlePress = () => {
     // Trigger medium haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    analytics.logEvent(`${title}_Tapped`);
     if (onPress) onPress();
   };
   
@@ -47,7 +48,7 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
           ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}
         `}
         style={({ pressed }) => [
-          { elevation: (pressed || completed) ? 0 : 6 }
+          { elevation: (pressed || completed || disabled) ? 0 : 6 }
         ]}
         onPress={handlePress}
         disabled={disabled}

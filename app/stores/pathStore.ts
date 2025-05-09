@@ -1,8 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Unit } from '../models/Path'; // Import Unit type
-import { PathOption } from '../onboarding/8';
+import { Unit, PathOption } from '../models/Path'; // Import Unit and PathOption types
 
 // Type definition for a complete path object
 export interface PathInfo {
@@ -13,6 +12,8 @@ export interface PathInfo {
   bookId: number;
   startChapter: number;
   endChapter: number;
+  prayer: string;
+  reflection: string;
 }
 
 interface PathState {

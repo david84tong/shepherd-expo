@@ -14,7 +14,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import { OnboardingResponses } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
-
+import analytics from '../../utils/analytics';
 export default function OnboardingAgeRangeScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
@@ -72,6 +72,10 @@ export default function OnboardingAgeRangeScreen() {
     } catch (error) {
       console.log('Haptics not available');
     }
+
+    analytics.logEvent("OnboardingAgeRangeScreen_Tapped_Option", {
+      value: ageRange,
+    });
 
     setSelectedOption(ageRange);
     await setResponse('ageRange', ageRange);

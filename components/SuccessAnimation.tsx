@@ -23,9 +23,9 @@ import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '../app/stores/userStore';
 
 // Import icons
-const gemIcon = require('../assets/icons/greenGemIcon.png');
-const heartIcon = require('../assets/icons/heartIcon.png');
-const starIcon = require('../assets/icons/starIcon.png');
+import gemIcon from '../assets/icons/greenGemIcon.png';
+import heartIcon from '../assets/icons/heartIcon.png';
+import starIcon from '../assets/icons/starIcon.png';
 
 // Get screen dimensions to ensure full screen sizing
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -313,7 +313,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       }
 
       // Create a new timestamp for the current time
-      // @ts-ignore - Firestore type issue workaround
       const now = firestore.Timestamp.now();
 
       // Always update lastActivityDate regardless of activity type
@@ -406,8 +405,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
     // If this is the first reading of the day and effectiveType is READING, show streak screen
-    
-    triggerStreakScreen();
+    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
+        triggerStreakScreen();
+    }
     // Set unmounting flag first
     isUnmounting.current = true;
 
@@ -421,7 +421,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   };
 
   const triggerStreakScreen = () => {
-    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
       console.log('First reading of the day - showing streak screen');
       // Start transition with fade out animation
       setIsTransitioning(true);
@@ -436,7 +435,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         setShowStreakScreen(true);
       });
       return;
-    }
+    
   };
 
   // Determine the action for the button press
@@ -450,17 +449,25 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     
     console.log('Navigating to Prayer from Success screen');
 
+    // Set tappedPrayAboutVerse regardless of where we're coming from
+    console.log('Setting tappedPrayAboutVerse to true');
+    useHomeStore.getState().setTappedPrayAboutVerse(true);
+
     // First update the state in the store
     setHomeMode('PRAYER');
     setPathInProgress(true); // Make sure path is in progress to show the component
-    triggerStreakScreen();
+    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
+     triggerStreakScreen();
+    } else {
+      setTimeout(() => {
+        // Navigate back to the home tab - the useEffect in index.tsx will respond to mode change
+        router.push('/(tabs)');
+      }, 500); // 500ms delay
+    }
 
     // Add delay to give assets time to load
     console.log('Adding delay before navigation to ensure assets load');
-    setTimeout(() => {
-      // Navigate back to the home tab - the useEffect in index.tsx will respond to mode change
-      // router.push('/(tabs)');
-    }, 500); // 500ms delay
+ 
   };
 
   // Handler for reflection button
@@ -470,11 +477,22 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     
     console.log('Navigating to Reflection from Success screen');
 
+    // If this came from a reading or prayer success, set the tappedReflectAboutVerse flag
+    if (effectiveType === SuccessAnimationType.READING || effectiveType === SuccessAnimationType.PRAYER) {
+      console.log('Setting tappedReflectAboutVerse to true');
+      useHomeStore.getState().setTappedReflectAboutVerse(true);
+    }
+
     // First update the state in the store
     // Make sure path is in progress to show the component
     setHomeMode('DEFAULT');
     setPathInProgress(false);
-    triggerStreakScreen();
+
+    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
+       triggerStreakScreen();
+    } else {
+      router.push('/(tabs)');
+    }
 
 
     // Add delay to give assets time to load
@@ -483,11 +501,14 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Navigate back to the home tab - the useEffect in index.tsx will respond to mode change
       setHomeMode('REFLECTION');
       setPathInProgress(true);
-    }, 700); // 500ms delay
+
+    }, 100); // 500ms delay
   };
   
-  // Determine if we should show next action buttons (only for reading completion)
-  const showNextButtons = effectiveType === SuccessAnimationType.READING && (!prayerCompleted || !reflectionCompleted);
+  // Determine if we should show next action buttons 
+  // Show after reading completion OR after prayer completion (if reflection not done)
+  const showNextButtons = (effectiveType === SuccessAnimationType.READING || effectiveType === SuccessAnimationType.PRAYER) && 
+    (!prayerCompleted || !reflectionCompleted);
 
   // If we're showing the streak screen, return it
   if (showStreakScreen) {
@@ -593,13 +614,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       {/* Next Action Buttons - only show if needed */}
       {showNextButtons && (
         <View className="w-full mt-4 mb-2">
-          <View className="flex-row justify-center space-x-4">
+          <View className="flex justify-center space-x-4 h-48">
             {/* Show Pray button only if prayer is not completed */}
             {!prayerCompleted && (
               <PrimaryButton
-                title="Pray"
+                title="Pray about this verse"
                 onPress={handleGoToPrayer}
-                style={reflectionCompleted ? "w-full" : "flex-1"}
+                style={reflectionCompleted ? "w-full" : "flex-1 h-32"}
                 buttonType="blue"
               />
             )}
@@ -607,18 +628,43 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             {/* Show Reflect button only if reflection is not completed */}
             {!reflectionCompleted && (
               <PrimaryButton
-                title="Reflect"
+                title="Reflect on this verse"
                 onPress={handleGoToReflection}
-                style={prayerCompleted ? "w-full" : "flex-1"}
+                style={(prayerCompleted || effectiveType === SuccessAnimationType.PRAYER) ? "w-full" : "flex-1 h-24"}
               />
             )}
           </View>
         </View>
       )}
       
-      {/* Return Home - style based on whether action buttons are shown */}
-      {showNextButtons ? (
-        // Text link style when action buttons are shown
+      {/* Special case for Reflection success with prayer not completed */}
+      {effectiveType === SuccessAnimationType.REFLECTION && !prayerCompleted ? (
+        <View className="w-full">
+          {/* Pray button as primary action */}
+          <PrimaryButton
+            title="Pray about today's verse"
+            onPress={handleGoToPrayer}
+            buttonType="blue"
+          />
+          
+          {/* Go Home link below the pray button */}
+          <TouchableOpacity 
+            onPress={handlePress} 
+            className="mt-4"
+            onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+          >
+            <Text className="font-feather text-description text-center underline mt-4">Go Home</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        /* Regular Return Home button for all other cases, except when showing other action buttons */
+        !showNextButtons && (
+          <PrimaryButton title={buttonText} onPress={handlePress} style="mt-4" />
+        )
+      )}
+      
+      {/* Text link version of Return Home for original action button case */}
+      {showNextButtons && (
         <TouchableOpacity 
           onPress={handlePress} 
           className="mt-4"
@@ -626,9 +672,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         >
           <Text className="font-feather text-description text-center underline">Go Home</Text>
         </TouchableOpacity>
-      ) : (
-        // Regular button when no action buttons are shown
-        <PrimaryButton title={buttonText} onPress={handlePress} style="mt-4" />
       )}
     </Animated.View>
   );

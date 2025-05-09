@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import Rive, { Fit, Alignment } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
-
+import analytics from '../../utils/analytics';
 interface LoadingScreenProps {
   initialMessage?: string;
   onLoadingComplete?: () => void;
@@ -38,6 +38,10 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   // Load the Rive asset
   const [assets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
 
+  useEffect(() => {
+    analytics.logEvent("OnboardingLoadingScreen_Viewed");
+  }, []);
+  
   // Handle text changes based on progress
   useEffect(() => {
     // Calculate which message to show based on progress
@@ -111,7 +115,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
       // Navigate to home or specified redirect
       console.log('Onboarding complete, navigating to:', redirectTo);
       router.replace(redirectTo);
-      
+      analytics.logEvent("OnboardingLoadingScreen_Completed");
     } catch (error) {
       console.error('Error finalizing onboarding:', error);
       // Navigate anyway as fallback

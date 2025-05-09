@@ -194,45 +194,6 @@ class Analytics {
     }
   }
 
-  /**
-   * Log a screen view event
-   */
-  public logScreenView(screenName: string, params: Record<string, any> = {}): void {
-    this.logEvent(
-      AnalyticsEvent.SCREEN_VIEW,
-      {
-        screenName,
-        ...params,
-      }
-    );
-  }
-
-  /**
-   * Log a button press event
-   */
-  public logButtonPress(buttonId: string, screenName: string, params: Record<string, any> = {}): void {
-    this.logEvent(
-      AnalyticsEvent.BUTTON_PRESS,
-      {
-        buttonId, 
-        screenName,
-        ...params,
-      }
-    );
-  }
-
-  /**
-   * Log a spiritual activity event
-   */
-  public logSpiritualActivity(
-    activityType: AnalyticsEvent,
-    details: Record<string, any> = {}
-  ): void {
-    this.logEvent(
-      activityType,
-      details
-    );
-  }
 
   /**
    * Log an error event

@@ -14,6 +14,18 @@ import { usePrayerStore } from '../app/stores/prayerStore';
 import { useUserStore } from '../app/stores/userStore';
 import BackButton from './BackButton';
 import PrimaryButton from './PrimaryButton';
+import { BIBLE_BOOK_IDS } from '../app/models/Path';
+
+// Helper function to get book name from book ID
+const getBookNameFromId = (bookId: number): string => {
+  // Find the book name by looking through the BIBLE_BOOK_IDS object
+  for (const [bookName, id] of Object.entries(BIBLE_BOOK_IDS)) {
+    if (id === bookId) {
+      return bookName;
+    }
+  }
+  return 'Scripture'; // Fallback if book ID not found
+};
 
 // Default prayer template if no user prayer is available
 const DEFAULT_PRAYER_TEMPLATE =
@@ -60,8 +72,11 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
   const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
+  const tappedPrayAboutVerse = useHomeStore((state) => state.tappedPrayAboutVerse);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
-
+  
+  // Get current path from pathStore for scripture-specific prayer
+  const currentPath = usePathStore((state) => state.currentPath);
 
   // Get userStore functions for saving prayer
   const addCompletedPrayer = useUserStore((state) => state.addCompletedPrayer);
@@ -71,8 +86,15 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   const { recentPrayers } = usePrayerStore();
   const prayerTopic = recentPrayers.length > 0 ? recentPrayers[0] : '';
 
-  // Generate prayer text based on the user's selected topic
+  // Generate prayer text based on the user's selected topic or currentPath
   const generatePrayerText = () => {
+    // If we're praying about the verse (coming from reading success)
+    if (tappedPrayAboutVerse && currentPath && currentPath.prayer) {
+      console.log('Using path-specific prayer text from currentPath');
+      return currentPath.prayer;
+    }
+
+    // Otherwise use topic-based prayer or default
     if (!prayerTopic) return DEFAULT_PRAYER_TEMPLATE;
 
     return `Dear God, I come before you today with a humble heart. Please help me with ${prayerTopic.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
@@ -94,18 +116,27 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 
     if (visible) {
       console.log('PrayerComponent: Showing prayer component');
-      // Get latest prayer topic and generate prayer text
-      const currentPrayerTopic = usePrayerStore.getState().recentPrayers[0] || '';
-      console.log('Current prayer topic:', currentPrayerTopic);
-
-      // Generate fresh prayer text based on the current topic
-      let newPrayerText = DEFAULT_PRAYER_TEMPLATE;
-
-      if (currentPrayerTopic) {
-        newPrayerText = `Dear God, I come before you today with a humble heart. Please help me with ${currentPrayerTopic.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
-        console.log('Generated custom prayer text for:', currentPrayerTopic);
+      console.log('tappedPrayAboutVerse =', tappedPrayAboutVerse);
+      
+      let newPrayerText = '';
+      
+      // Check if this is a scripture-specific prayer
+      if (tappedPrayAboutVerse && currentPath && currentPath.prayer) {
+        console.log('Using scripture-specific prayer:', currentPath.prayer);
+        newPrayerText = currentPath.prayer;
       } else {
-        console.log('No prayer topic found, using default prayer');
+        // Get latest prayer topic and generate prayer text
+        const currentPrayerTopic = usePrayerStore.getState().recentPrayers[0] || '';
+        console.log('Current prayer topic:', currentPrayerTopic);
+
+        // Generate fresh prayer text based on the current topic
+        if (currentPrayerTopic) {
+          newPrayerText = `Dear God, I come before you today with a humble heart. Please help me with ${currentPrayerTopic.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
+          console.log('Generated custom prayer text for:', currentPrayerTopic);
+        } else {
+          console.log('No prayer topic found, using default prayer');
+          newPrayerText = DEFAULT_PRAYER_TEMPLATE;
+        }
       }
 
       setPrayerText(newPrayerText);
@@ -127,7 +158,10 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
               setTypedText((prev) => newPrayerText.substring(0, prevIndex + 1));
               return prevIndex + 1;
             } else {
-              if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+              if (typingIntervalRef.current) {
+                clearInterval(typingIntervalRef.current);
+                typingIntervalRef.current = null;
+              }
               return prevIndex;
             }
           });
@@ -186,7 +220,10 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
       // Cleanup timers on unmount or visibility change
       return () => {
         clearTimeout(typingTimer);
-        if (typingIntervalRef.current) clearInterval(typingIntervalRef.current);
+        if (typingIntervalRef.current) {
+          clearInterval(typingIntervalRef.current);
+          typingIntervalRef.current = null;
+        }
         timerProgress.stopAnimation(); // Stop progress animation if component hides
         shakeAnimation.stopAnimation();
       };
@@ -213,10 +250,27 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     buttonOpacity,
     shakeAnimation,
     prayerTopic,
+    tappedPrayAboutVerse,
+    currentPath,
   ]);
 
   // Function to render prayer text with highlighted topic
   const renderPrayerText = () => {
+    // Only log when typing is complete, not on every character
+    if (typedText && typedText.length === prayerText.length) {
+      console.log('Typing completed.');
+    }
+    
+    if (!typedText) {
+      return <Text className="text-body text-textPrimary font-din">{typedText}</Text>;
+    }
+    
+    // If this is a scripture prayer, just display it without highlighting
+    if (tappedPrayAboutVerse && currentPath && currentPath.prayer) {
+      return <Text className="text-body text-textPrimary font-din">{typedText}</Text>;
+    }
+
+    // For topic-based prayers, highlight the topic
     if (!prayerTopic || !typedText) {
       return <Text className="text-body text-textPrimary font-din">{typedText}</Text>;
     }
@@ -268,62 +322,69 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   if (!visible) return null;
 
   const handleDonePress = () => {
-    console.log('PrayerComponent: Amen button pressed, updating completion status');
+    console.log('Prayer completed');
+    
+    // Disable Button while praying
+    if (isTimerActive) return;
 
-    // Mark prayer as completed
-    setPrayerCompleted(true);
+    // Disable animations if we're already done
+    shakeAnimation.setValue(0);
+    
+    // Set path in progress to false
     setPathInProgress(false);
+    
+    // Reset tappedPrayAboutVerse flag
+    useHomeStore.getState().setTappedPrayAboutVerse(false);
+    console.log('Reset tappedPrayAboutVerse flag to false');
 
-    // Create current timestamp using Firestore Timestamp
+    // Flip isPraying in the HomeStore to hide this component
+    setPrayerCompleted(true);
+
+    // Create current timestamp 
     const now = firestore.Timestamp.now();
-
+    
     // Save prayer data to userStore
     console.log('Saving prayer data to userStore');
     try {
-      // Save the completed prayer with Firestore timestamp
+      // Add completed prayer with topic and scripture context if applicable
       addCompletedPrayer({
         date: now,
-        type: 'standard', // You could add more prayer types later
-        topic: prayerTopic || 'general', // Save the prayer topic
+        topic: tappedPrayAboutVerse && currentPath ? 
+          `${getBookNameFromId(currentPath.bookId) || 'shimate'} ${currentPath.startChapter}-${currentPath.endChapter}` : 
+          (prayerTopic || 'general prayer'),
+        type: tappedPrayAboutVerse ? 'scripture' : 'general',
       });
-
+      
       // Update last prayer date
       setLastPrayerDate(now);
-
-      console.log('Prayer saved successfully');
+      
+      console.log('Prayer data saved successfully');
     } catch (error) {
       console.error('Error saving prayer data:', error);
     }
 
-    // Check if all three tasks are completed for bonus, but only if not already seen
+    // Navigate to success screen, or trigger animation on home
     if (readingCompleted && reflectionCompleted && !sawDailyBonus) {
-      console.log('All three disciplines completed - showing BONUS success');
       setSuccessType(SuccessAnimationType.BONUS);
     } else {
-      console.log('Normal prayer completion - showing PRAYER success');
       setSuccessType(SuccessAnimationType.PRAYER);
     }
 
-    // Primeiro fechamos o overlay suavemente
-    onClose && onClose();
-
-    // Depois navegamos para a tela de sucesso com um pequeno delay
-    setTimeout(() => {
-      try {
-        router.push('/success');
-        console.log('Successfully navigated to success screen');
-      } catch (error) {
-        console.error('Error navigating to success screen:', error);
-      }
-    }, 300); // Aumentamos o delay para garantir que a animação de fechamento termine
+    // Navigate to success screen
+    router.push('/success');
   };
 
   // New handler specifically for back button
   const handleBackPress = () => {
-    console.log('PrayerComponent: Back button pressed, just closing');
+    console.log('Back button pressed - canceling prayer');
     setPathInProgress(false);
-    // Just call onClose without showing success screen
-    onClose && onClose();
+    
+    // Reset tappedPrayAboutVerse flag when canceling
+    useHomeStore.getState().setTappedPrayAboutVerse(false);
+    console.log('Reset tappedPrayAboutVerse flag to false (from back button)');
+    
+    // Invoke the callback provided by the parent
+    onClose();
   };
 
   return (
@@ -338,6 +399,24 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
           opacity: cardOpacity,
           transform: [{ translateY: cardAnim }],
         }}>
+        {/* Header title */}
+        <Text className="text-heading font-feather text-textPrimary mb-1 text-center">
+          {tappedPrayAboutVerse && currentPath && currentPath.unitTitle 
+            ? currentPath.unitTitle 
+            : "Prayer"}
+        </Text>
+        
+        {/* Subtitle with book and chapter range */}
+        {tappedPrayAboutVerse && currentPath && currentPath.bookId && (
+          <Text className="text-body font-din text-description mb-4 text-center">
+            {currentPath.bookId && typeof currentPath.startChapter === 'number' && typeof currentPath.endChapter === 'number'
+              ? `${getBookNameFromId(currentPath.bookId) || ''} ${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}`
+              : 'Scripture Reading'
+            }
+          </Text>
+        )}
+        {!tappedPrayAboutVerse && <View className="mb-4" />}
+
         <View className="w-full bg-surfaceCream/50 rounded-[18px] p-4 mb-4">
           {renderPrayerText()}
         </View>

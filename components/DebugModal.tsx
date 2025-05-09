@@ -1,14 +1,13 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import { useRouter, usePathname } from 'expo-router';
 import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert } from 'react-native';
 
+import SuccessAnimation from './SuccessAnimation'; // Import the full SuccessAnimation component
 import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
 import { HalfModalType } from '../app/halfModal';
-import { useHomeStore } from '../app/stores/homeStore';
+import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { useUserStore } from '../app/stores/userStore';
 
 // Debug screen destinations
@@ -36,15 +35,13 @@ const ONBOARDING_SCREENS: DebugScreen[] = [
 // Feature screens for debugging
 const FEATURE_SCREENS: DebugScreen[] = [{ name: 'Streak Screen', route: '/streak' }];
 
-// Define props for DebugButton (currently none needed)
-interface DebugButtonProps {}
-
 // DebugButton component
-export function DebugButton({}: DebugButtonProps) {
+export function DebugButton() {
   // Export the component
   const router = useRouter();
   const pathname = usePathname();
   const [modalVisible, setModalVisible] = useState(false);
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
 
   // Reference to the success bottom sheet modal
   const successSheetRef = useRef<BottomSheetModal>(null);
@@ -52,145 +49,20 @@ export function DebugButton({}: DebugButtonProps) {
   // Snap points for success animation
   const successSnapPoints = useMemo(() => ['90%'], []);
 
-  // Present the success animation sheet
+  // Present the success animation directly (not using bottom sheet)
   const handleShowSuccessSheet = useCallback(() => {
     setModalVisible(false);
+    // Set success type to READING for demo purposes
+    useHomeStore.getState().setSuccessType(SuccessAnimationType.READING);
     setTimeout(() => {
-      successSheetRef.current?.present();
+      setSuccessModalVisible(true);
     }, 300);
   }, []);
 
-  // Dismiss the success animation sheet
+  // Dismiss the success animation
   const handleDismissSuccessSheet = useCallback(() => {
-    successSheetRef.current?.dismiss();
+    setSuccessModalVisible(false);
   }, []);
-
-  // Reset local storage handler
-  // WARNING: This will clear ALL app data including onboarding completion flag. Do NOT use for logout.
-  const handleResetLocalStorage = useCallback(() => {
-    Alert.alert(
-      'Delete Account & Data',
-      'This will delete your account, all Firestore data, and clear local storage. This action CANNOT be undone. Are you sure?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Delete Everything',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              // Get current user
-              const currentUser = auth().currentUser;
-              if (!currentUser) {
-                Alert.alert('Error', 'No user is currently signed in');
-                return;
-              }
-              
-              const userId = currentUser.uid;
-              console.log('Attempting to delete user:', userId);
-              
-              try {
-                // Delete Firestore user document first
-                await firestore().collection('users').doc(userId).delete();
-                console.log('✅ User document deleted from Firestore');
-              } catch (firestoreError) {
-                console.error('❌ Error deleting Firestore document:', firestoreError);
-                Alert.alert('Firestore Error', 'Failed to delete Firestore data. Continuing with other deletion steps.');
-              }
-              
-              try {
-                // Clear AsyncStorage
-                await AsyncStorage.clear();
-                console.log('✅ Local storage cleared successfully');
-              } catch (storageError) {
-                console.error('❌ Error clearing AsyncStorage:', storageError);
-                Alert.alert('Storage Error', 'Failed to clear local storage. Continuing with other deletion steps.');
-              }
-              
-              // Reset user store regardless of other errors
-              useUserStore.getState().resetUserStore();
-              console.log('✅ User store reset');
-              
-              try {
-                // Try to delete the account after sign out
-                // Note: This often fails due to Firebase security rules requiring recent authentication
-                if (currentUser) {
-                  await currentUser.delete();
-                  console.log('✅ User auth account deleted');
-                  
-                  // Only sign out if account deletion was successful
-                  await auth().signOut();
-                  console.log('✅ User signed out after account deletion');
-                }
-              } catch (authError: any) {
-                console.error('❌ Error with auth operations:', authError);
-                
-                // Handle the specific "requires-recent-login" error from Firebase
-                if (authError.code === 'auth/requires-recent-login') {
-                  Alert.alert(
-                    'Authentication Timeout',
-                    'This operation requires recent authentication. You will need to re-login and try again. Would you like to sign out and go to the login screen?',
-                    [
-                      { 
-                        text: 'Yes', 
-                        onPress: async () => {
-                          try {
-                            await auth().signOut();
-                            setModalVisible(false);
-                            router.replace('/login');
-                          } catch (e) {
-                            console.error('Failed to sign out:', e);
-                          }
-                        } 
-                      },
-                      { text: 'No', style: 'cancel' }
-                    ]
-                  );
-                  return; // Exit early if we're showing the re-auth message
-                } else {
-                  Alert.alert('Auth Error', `Error: ${authError.message || 'Unknown auth error'}`);
-                }
-              }
-              
-              // Always redirect to login screen regardless of errors
-              Alert.alert(
-                'Account Data Deleted',
-                'Your account data has been deleted. The app will now redirect to the login screen.',
-                [
-                  { 
-                    text: 'OK', 
-                    onPress: () => {
-                      setModalVisible(false);
-                      router.replace('/login');
-                    }
-                  }
-                ]
-              );
-            } catch (error) {
-              console.error('❌ Unhandled error in account deletion:', error);
-              Alert.alert(
-                'Error', 
-                'Something went wrong during account deletion. The app will try to sign you out anyway.',
-                [
-                  {
-                    text: 'OK',
-                    onPress: async () => {
-                      try {
-                        await auth().signOut();
-                        setModalVisible(false);
-                        router.replace('/login');
-                      } catch (e) {
-                        console.error('Final error handler signout failed:', e);
-                      }
-                    }
-                  }
-                ]
-              );
-            }
-          },
-        },
-      ]
-    );
-  }, [router]);
 
   // Handler for showing a test modal
   const handleShowPenaltyModal = useCallback(() => {
@@ -533,18 +405,6 @@ export function DebugButton({}: DebugButtonProps) {
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">Data Management</Text>
 
-                {/* Reset Local Storage Button */}
-                <TouchableOpacity
-                  className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
-                  onPress={handleResetLocalStorage}>
-                  <Text className="font-feather text-base text-textPrimary">
-                    Reset Local Storage
-                  </Text>
-                  <Text className="font-din text-sm text-[#A57070] mt-1">
-                    Clear AsyncStorage including completion data
-                  </Text>
-                </TouchableOpacity>
-
                 {/* Reset Completion Data Button */}
                 <TouchableOpacity
                   className="bg-[#FFEDED] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
@@ -612,7 +472,20 @@ export function DebugButton({}: DebugButtonProps) {
         </SafeAreaView>
       </Modal>
 
-      {/* Success Animation Bottom Sheet - Note: This relies on BottomSheetModalProvider being higher up */}
+      {/* Success Animation Modal - Full Screen */}
+      <Modal
+        animationType="fade"
+        transparent={false}
+        visible={successModalVisible}
+        onRequestClose={handleDismissSuccessSheet}>
+        <SuccessAnimation
+          message="Great job!"
+          subMessage="You triggered the success animation from debug menu."
+          onClose={handleDismissSuccessSheet}
+        />
+      </Modal>
+
+      {/* Keep the bottom sheet for backwards compatibility */}
       <BottomSheetModal
         ref={successSheetRef}
         index={0}

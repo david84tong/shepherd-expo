@@ -122,7 +122,7 @@ export default function SaveProgressScreen() {
           allResponses.notificationEnabled : false,
         notificationTime: allResponses.notificationTime || undefined,
         // Set selected path details if available
-        selectedPath: allResponses.selectedPath || undefined,
+        selectedPathId: allResponses.selectedPath || undefined,
         lamb: {
           level: 1,
           xp: 0,
@@ -133,15 +133,9 @@ export default function SaveProgressScreen() {
         },
       };
 
-      // Track user creation in analytics
-      analytics.logEvent(AnalyticsEvent.ONBOARDING_STEP_COMPLETED, {
-        step: 'user_creation',
-        spiritualGoal,
-        experienceLevel: userData.experienceLevel,
-        screen: 'SaveProgressScreen',
-        category: EventCategory.ONBOARDING
-      });
-
+      analytics.logEvent("OnboardingSignUp_Completed");
+      analytics.setUserId(uid);
+      analytics.setUserProperties(userData);
       // Create user in Firestore
       const success = await createUser(uid, userData);
       if (!success) {
@@ -155,6 +149,7 @@ export default function SaveProgressScreen() {
 
   // Handle sign in with Apple
   const handleAppleSignIn = async () => {
+    analytics.logEvent("OnboardingSignUp_Tapped_Apple");
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setLoading(true);
@@ -171,7 +166,7 @@ export default function SaveProgressScreen() {
       }
     } catch (error: any) {
       console.error("Apple sign in error:", error);
-      
+
       // Provide more specific feedback based on the error
       let errorMessage = "There was a problem signing in with Apple.";
       
@@ -186,7 +181,10 @@ export default function SaveProgressScreen() {
       } else if (error.message?.includes("operation couldn't be completed")) {
         errorMessage = "Sign in process could not be completed. Please try again.";
       }
-      
+      analytics.logEvent("OnboardingSignUp_Failed_Apple", {
+        error: error.message,
+      });
+
       Alert.alert(
         "Sign In Failed",
         `${errorMessage} You can try again or use the anonymous option to continue.`,
@@ -202,7 +200,7 @@ export default function SaveProgressScreen() {
   // Handle anonymous sign in
   const handleSkip = async (showConfirmation = true) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
+    analytics.logEvent("OnboardingSignUp_Tapped_Skip");
     if (showConfirmation) {
       Alert.alert(
         "Skip Sign In?",

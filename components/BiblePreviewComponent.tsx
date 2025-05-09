@@ -194,6 +194,8 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         bookId: ref.bookId,
         startChapter,
         endChapter,
+        prayer: nextUnit.prayer,
+        reflection: nextUnit.reflectionPrompt,
       });
 
       // Navigate to bibleReader with correct params

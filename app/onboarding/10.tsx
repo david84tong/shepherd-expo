@@ -13,7 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
-import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
+import analytics from '../../utils/analytics';
 
 // Function to schedule the notification
 const scheduleNotification = async (timeOption: string) => {
@@ -95,10 +95,7 @@ export default function OnboardingReminderTimeScreen() {
 
   useEffect(() => {
     // Log screen view when component mounts
-    analytics.logScreenView('OnboardingReminderTimeScreen', { 
-      step: 10,
-      category: EventCategory.ONBOARDING
-    });
+    analytics.logEvent("OnboardingReminderTimeScreen_Viewed");
     
     // Reset animation values
     iconOpacity.value = 0;
@@ -160,11 +157,8 @@ export default function OnboardingReminderTimeScreen() {
     }
     
     // Track analytics event
-    analytics.logEvent(AnalyticsEvent.BUTTON_PRESS, {
-      action: 'notification_time_selected',
+    analytics.logEvent("OnboardingReminderTimeScreen_Tapped_Option", {
       value: time,
-      screen: 'OnboardingReminderTimeScreen',
-      category: EventCategory.ONBOARDING
     });
     
     setSelectedOption(time);

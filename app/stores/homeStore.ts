@@ -23,6 +23,8 @@ interface HomeState {
   prayerCompleted: boolean;
   reflectionCompleted: boolean;
   sawDailyBonus: boolean;
+  tappedPrayAboutVerse: boolean;
+  tappedReflectAboutVerse: boolean;
 
   // Setter functions
   setMode: (mode: HomeMode) => void;
@@ -31,6 +33,8 @@ interface HomeState {
   setPrayerCompleted: (completed: boolean) => void;
   setReflectionCompleted: (completed: boolean) => void;
   setSawDailyBonus: (saw: boolean) => void;
+  setTappedPrayAboutVerse: (tapped: boolean) => void;
+  setTappedReflectAboutVerse: (tapped: boolean) => void;
   resetCompletionStates: () => void; // Reset all completion states
 }
 
@@ -50,6 +54,8 @@ export const useHomeStore = create<HomeState>()(
       prayerCompleted: false,
       reflectionCompleted: false,
       sawDailyBonus: false,
+      tappedPrayAboutVerse: false,
+      tappedReflectAboutVerse: false,
 
       // Setter functions
       setMode: (mode) => set({ mode }),
@@ -58,12 +64,16 @@ export const useHomeStore = create<HomeState>()(
       setPrayerCompleted: (completed) => set({ prayerCompleted: completed }),
       setReflectionCompleted: (completed) => set({ reflectionCompleted: completed }),
       setSawDailyBonus: (saw) => set({ sawDailyBonus: saw }),
+      setTappedPrayAboutVerse: (tapped) => set({ tappedPrayAboutVerse: tapped }),
+      setTappedReflectAboutVerse: (tapped) => set({ tappedReflectAboutVerse: tapped }),
       resetCompletionStates: () =>
         set({
           readingCompleted: false,
           prayerCompleted: false,
           reflectionCompleted: false,
           sawDailyBonus: false,
+          tappedPrayAboutVerse: false,
+          tappedReflectAboutVerse: false,
         }),
     }),
     {
@@ -75,6 +85,8 @@ export const useHomeStore = create<HomeState>()(
         prayerCompleted: state.prayerCompleted,
         reflectionCompleted: state.reflectionCompleted,
         sawDailyBonus: state.sawDailyBonus,
+        tappedPrayAboutVerse: state.tappedPrayAboutVerse,
+        tappedReflectAboutVerse: state.tappedReflectAboutVerse,
       }),
     }
   )

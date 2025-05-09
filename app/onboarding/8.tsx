@@ -11,24 +11,11 @@ import Animated, {
 } from 'react-native-reanimated';
 
 import PrimaryButton from '../../components/PrimaryButton';
+import { PATH_OPTIONS } from '../models/Path';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
-
-// Path images
-const walkInLightImg = require('../../assets/onboarding/chronological.png');
-const wisdomImg = require('../../assets/onboarding/dailyWisdom.png');
-const overcomingImg = require('../../assets/onboarding/overcomingFlesh.png');
-const knowingJesusImg = require('../../assets/onboarding/walkingWithJesus.png');
-
-export type PathOption = {
-  id: string;
-  title: string;
-  subtitle: string;
-  image: any;
-  order: string[];
-};
 
 export default function OnboardingPathScreen() {
   const router = useRouter();
@@ -47,10 +34,7 @@ export default function OnboardingPathScreen() {
   
   useEffect(() => {
     // Log screen view when component mounts
-    analytics.logScreenView('OnboardingPathScreen', { 
-      step: 8,
-      category: EventCategory.ONBOARDING
-    });
+    analytics.logEvent("OnboardingPathScreen_Viewed");
     
     // Reset animation values
     titleOpacity.value = 0;
@@ -94,17 +78,14 @@ export default function OnboardingPathScreen() {
       console.log('Haptics not available');
     }
     
-    // Track path selection in analytics
-    analytics.logEvent(AnalyticsEvent.ONBOARDING_STEP_COMPLETED, {
-      step: 'path_selection',
-      selectedPath: pathId,
-      category: EventCategory.ONBOARDING
+    analytics.logEvent("OnboardingPathScreen_Tapped_Option", {
+      value: pathId,
     });
     
     setSelectedPathId(pathId);
     
     // Find the selected path object
-    const selectedPathObj = paths.find((p) => p.id === pathId);
+    const selectedPathObj = PATH_OPTIONS.find((p) => p.id === pathId);
     
     if (selectedPathObj) {
       // Save to onboarding store using enhanced method
@@ -122,88 +103,6 @@ export default function OnboardingPathScreen() {
       setSelectedPath(selectedPathObj);
     }
   };
-
-  const paths: PathOption[] = [
-    {
-      id: 'knowing-jesus',
-      title: 'Knowing Jesus',
-      subtitle: 'Deepen your relationship with Christ',
-      image: knowingJesusImg,
-      order: [
-        'gospels-life-of-christ', // Meet Jesus first
-        'acts-early-church', // See faith in action
-        'pauline-epistles', // Romans & grace foundations
-        'genesis-beginnings', // Creation, fall, promise
-        'exodus-deliverance-law', // God's rescue & covenant
-        'psalms-wisdom', // God's love & honest prayer
-        'general-epistles', // Identity & assurance
-        'revelation-end-new', // Hope & new creation
-        'kingdoms-prophets', // Story-arc context
-        'major-prophets', // Messianic promises
-        'minor-prophets', // Justice & mercy echo-chamber
-        'wilderness-testing-provision',
-      ],
-    },
-    {
-      id: 'way-of-wisdom',
-      title: 'The Way of Wisdom',
-      subtitle: 'Start with Psalms as your daily guide',
-      image: wisdomImg,
-      order: [
-        'psalms-wisdom', // 💡 daily heart-training starts here
-        'gospels-life-of-christ', // Parables & Sermon on the Mount
-        'general-epistles', // James: faith in action
-        'pauline-epistles', // Short practical letters
-        'acts-early-church', // Everyday courage & generosity
-        'genesis-beginnings', // Foundational life lessons
-        'exodus-deliverance-law', // Ten Words ≥ daily ethics
-        'kingdoms-prophets', // Narrative case-studies
-        'major-prophets', // Long-form meditation
-        'minor-prophets', // Short, punchy convictions
-        'wilderness-testing-provision', // Sabbaths, vows, spiritual rhythms
-        'revelation-end-new',
-      ],
-    },
-    {
-      id: 'overcoming',
-      title: 'Overcoming the Flesh',
-      subtitle: 'Learn to resist temptation',
-      image: overcomingImg,
-      order: [
-        'genesis-beginnings', // Fall, Cain, Noah
-        'exodus-deliverance-law', // Golden Calf & the Law
-        'gospels-life-of-christ', // Jesus' temptation & teaching
-        'pauline-epistles', // Romans 7, Gal 5, Eph 6
-        'general-epistles', // James & 1 Peter on trials
-        'psalms-wisdom', // Honest prayers & heart-level wisdom
-        'wilderness-testing-provision', // Discipline in the desert
-        'minor-prophets', // Sin-judgment-hope cycle
-        'kingdoms-prophets', // Kings who rise/fall
-        'major-prophets', // Big-picture holiness & hope
-        'acts-early-church', // Spiritual warfare in mission
-        'revelation-end-new',
-      ],
-    },
-    {
-      id: 'walk-in-light',
-      title: 'Journey Through',
-      subtitle: 'Read the Bible chronologically',
-      image: walkInLightImg,
-      order: [
-        'genesis-beginnings',
-        'exodus-deliverance-law',
-        'wilderness-testing-provision',
-        'kingdoms-prophets',
-        'major-prophets',
-        'minor-prophets',
-        'gospels-life-of-christ',
-        'acts-early-church',
-        'pauline-epistles',
-        'general-epistles',
-        'revelation-end-new',
-      ],
-    },
-  ];
 
   const handleContinue = useCallback(() => {
     if (selectedPathId) {
@@ -235,7 +134,7 @@ export default function OnboardingPathScreen() {
       {/* Path Options Grid */}
       <Animated.View style={optionsStyle} className="flex-1">
         <View className="flex-row flex-wrap justify-between gap-y-4 w-[100%] pb-24 overflow-hidden shadow-buttonShadow">
-          {paths.map((path) => (
+          {PATH_OPTIONS.map((path) => (
             <View
               key={path.id}
               className={`bg-surfaceCream w-[46%] rounded-xl border-border border-4 overflow-hidden ${
@@ -271,21 +170,11 @@ export default function OnboardingPathScreen() {
       {/* Continue Button */}
       <PrimaryButton
         title="Continue"
-        onPress={() => {
-          // Track continue button press in analytics
-          analytics.logButtonPress('continue_button', 'OnboardingPathScreen', {
-            selectedPath: selectedPathId,
-            step: 8,
-            category: EventCategory.ONBOARDING
-          });
-          
-          console.log(selectedPathId, "selectedPathId")
-          setUser({ selectedPathId });
-          router.push('/onboarding/9' as any);
-        }}
+        onPress={handleContinue}
         disabled={!selectedPathId}
         style="mt-6 mb-12"
       />
     </View>
   );
 }
+

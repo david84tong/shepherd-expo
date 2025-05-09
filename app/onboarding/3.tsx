@@ -13,7 +13,7 @@ import Animated, {
   FadeIn,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useAnalytics } from '../hooks/useAnalytics';
+import analytics from '../../utils/analytics';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import { toBool } from '../utils/toBool';
@@ -43,15 +43,11 @@ export default function OnboardingIntentScreen() {
   const continueTranslateY = useSharedValue(20); // Smaller initial offset
 
   // Initialize analytics
-  const { logScreenView, logButtonPress } = useAnalytics();
   
   // Log screen view when component mounts
   useEffect(() => {
-    logScreenView('OnboardingIntentScreen', {
-      step: 3,
-      screenName: 'Intent Screen'
-    });
-  }, [logScreenView]);
+    analytics.logEvent("OnboardingIntentScreen_Viewed");
+  }, []);
 
   // Run animations only once during initial layout
   useLayoutEffect(() => {
@@ -145,13 +141,9 @@ export default function OnboardingIntentScreen() {
       console.log('Haptics not available');
     }
     
-    // Log the selection with analytics
-    logButtonPress('intentSelect', 'OnboardingIntentScreen', {
-      step: 3,
-      selection: intent,
-      action: 'Select Option'
+    analytics.logEvent("OnboardingIntentScreen_Tapped_Option", {
+      value: intent,
     });
-    
     setSelectedIntents(prev => {
       const newSelection = prev.includes(intent)
         ? prev.filter((i) => i !== intent)

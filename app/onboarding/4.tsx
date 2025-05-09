@@ -14,6 +14,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import analytics from '~/utils/analytics';
 
 export default function OnboardingBibleFamiliarityScreen() {
   const router = useRouter();
@@ -83,7 +84,7 @@ export default function OnboardingBibleFamiliarityScreen() {
     } as const;
     
     // Set in user store
-    setExperienceLevel(experienceMap[familiarity]);
+    setExperienceLevel(familiarity || 'Beginner');
     
     // Trigger light haptic feedback
     try {
@@ -94,6 +95,10 @@ export default function OnboardingBibleFamiliarityScreen() {
       console.log('Haptics not available');
     }
     
+    analytics.logEvent("OnboardingFamilarityScreen_Tapped_Continue", {
+      familiarity: familiarity,
+    });
+
     setSelectedOption(familiarity);
     await setResponse('bibleFamiliarity', familiarity);
     router.push('/onboarding/5');

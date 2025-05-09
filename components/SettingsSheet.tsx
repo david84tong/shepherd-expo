@@ -1,10 +1,13 @@
 import React, { useCallback, useState, useRef, useImperativeHandle, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView, Linking } from 'react-native';
 import BottomSheet, { BottomSheetView, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import Clipboard from '@react-native-clipboard/clipboard';
 import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
+import { FontAwesome6 } from '@expo/vector-icons';
 import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUserStore } from '../app/stores/userStore';
 import { useUIStore } from '../app/stores/uiStore';
 import { usePathStore } from '../app/stores/pathStore';
@@ -405,6 +408,141 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
     setTranslationModalVisible(false);
   }, []);
 
+  // Open Discord link
+  const handleOpenDiscord = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Linking.openURL('https://discord.gg/W9MZdVaKBs').catch(err => {
+      console.error('Error opening Discord link:', err);
+      Alert.alert('Could not open link', 'Please check your internet connection and try again.');
+    });
+  }, []);
+
+  // Delete account and related data
+  const handleDeleteAccount = useCallback(() => {
+    Alert.alert(
+      'Delete Account & Data',
+      'This will delete your account, all Firestore data, and clear local storage. This action CANNOT be undone. Are you sure?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Everything',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Get current user
+              const currentUser = auth().currentUser;
+              if (!currentUser) {
+                Alert.alert('Error', 'No user is currently signed in');
+                return;
+              }
+              
+              const userId = currentUser.uid;
+              console.log('Attempting to delete user:', userId);
+              
+              try {
+                // Delete Firestore user document first
+                await firestore().collection('users').doc(userId).delete();
+                console.log('✅ User document deleted from Firestore');
+              } catch (firestoreError) {
+                console.error('❌ Error deleting Firestore document:', firestoreError);
+                Alert.alert('Firestore Error', 'Failed to delete Firestore data. Continuing with other deletion steps.');
+              }
+              
+              try {
+                // Clear AsyncStorage
+                await AsyncStorage.clear();
+                console.log('✅ Local storage cleared successfully');
+              } catch (storageError) {
+                console.error('❌ Error clearing AsyncStorage:', storageError);
+                Alert.alert('Storage Error', 'Failed to clear local storage. Continuing with other deletion steps.');
+              }
+              
+              // Reset user store regardless of other errors
+              useUserStore.getState().resetUserStore();
+              console.log('✅ User store reset');
+              
+              try {
+                // Try to delete the account after sign out
+                // Note: This often fails due to Firebase security rules requiring recent authentication
+                if (currentUser) {
+                  await currentUser.delete();
+                  console.log('✅ User auth account deleted');
+                  
+                  // Only sign out if account deletion was successful
+                  await auth().signOut();
+                  console.log('✅ User signed out after account deletion');
+                }
+              } catch (authError: any) {
+                console.error('❌ Error with auth operations:', authError);
+                
+                // Handle the specific "requires-recent-login" error from Firebase
+                if (authError.code === 'auth/requires-recent-login') {
+                  Alert.alert(
+                    'Authentication Timeout',
+                    'This operation requires recent authentication. You will need to re-login and try again. Would you like to sign out and go to the login screen?',
+                    [
+                      { 
+                        text: 'Yes', 
+                        onPress: async () => {
+                          try {
+                            await auth().signOut();
+                            bottomSheetRef.current?.close();
+                            router.replace('/login');
+                          } catch (e) {
+                            console.error('Failed to sign out:', e);
+                          }
+                        } 
+                      },
+                      { text: 'No', style: 'cancel' }
+                    ]
+                  );
+                  return; // Exit early if we're showing the re-auth message
+                } else {
+                  Alert.alert('Auth Error', `Error: ${authError.message || 'Unknown auth error'}`);
+                }
+              }
+              
+              // Always redirect to login screen regardless of errors
+              Alert.alert(
+                'Account Data Deleted',
+                'Your account data has been deleted. The app will now redirect to the login screen.',
+                [
+                  { 
+                    text: 'OK', 
+                    onPress: () => {
+                      bottomSheetRef.current?.close();
+                      router.replace('/login');
+                    }
+                  }
+                ]
+              );
+            } catch (error) {
+              console.error('❌ Unhandled error in account deletion:', error);
+              Alert.alert(
+                'Error', 
+                'Something went wrong during account deletion. The app will try to sign you out anyway.',
+                [
+                  {
+                    text: 'OK',
+                    onPress: async () => {
+                      try {
+                        await auth().signOut();
+                        bottomSheetRef.current?.close();
+                        router.replace('/login');
+                      } catch (e) {
+                        console.error('Final error handler signout failed:', e);
+                      }
+                    }
+                  }
+                ]
+              );
+            }
+          },
+        },
+      ]
+    );
+  }, [router]);
+
   return (
     <>
       <BottomSheet
@@ -426,24 +564,12 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
             </TouchableOpacity>
           </View>
 
-          {/* Sheet Content */}
-          <View style={styles.settingsContent}>
-            {/* User ID Section */}
-            <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>User ID</Text>
-              <TouchableOpacity 
-                onPress={handleCopyUserId}
-                style={styles.userIdContainer}
-              >
-                <Text style={styles.userIdText} numberOfLines={1} ellipsizeMode="tail">{userId}</Text>
-                <View style={styles.copyButton}>
-                  <Feather name="copy" size={16} color="#3C584A" />
-                </View>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.divider} />
-
+          {/* Sheet Content - Wrapped in ScrollView */}
+          <ScrollView 
+            style={styles.settingsContent}
+            showsVerticalScrollIndicator={false}
+            bounces={true}
+          >
             {/* Bible Translation Section */}
             <View style={styles.settingsSection}>
               <Text style={styles.settingsSectionTitle}>Bible Translation</Text>
@@ -462,20 +588,21 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 
             {/* Notification Time Section */}
             <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>Notification Time</Text>
+              <Text style={styles.settingsSectionTitle}>Notifications</Text>
               
               {/* Toggle for enabling/disabling notifications */}
-              <View style={styles.notificationToggleContainer}>
-                <Text style={styles.notificationToggleText}>
+              <TouchableOpacity 
+                style={styles.translationSelector}
+                onPress={() => animateToggle(!notificationsEnabled)}
+                activeOpacity={0.7}
+              >
+                <Text style={styles.translationText}>
                   {notificationsEnabled ? 'Notifications enabled' : 'Notifications disabled'}
                 </Text>
-                <TouchableOpacity 
-                  style={[
-                    styles.toggleButton,
-                    notificationsEnabled ? styles.toggleButtonActive : {}
-                  ]}
-                  onPress={() => animateToggle(!notificationsEnabled)}
-                >
+                <View style={[
+                  styles.toggleButton,
+                  notificationsEnabled ? styles.toggleButtonActive : {}
+                ]}>
                   <Animated.View 
                     style={[
                       styles.toggleKnob, 
@@ -487,8 +614,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                       }
                     ]} 
                   />
-                </TouchableOpacity>
-              </View>
+                </View>
+              </TouchableOpacity>
               
               {notificationsEnabled && (
                 <Animated.View style={selectorButtonStyle}>
@@ -540,22 +667,62 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
             </View>
 
             <View style={styles.divider} />
-
-            {/* Placeholder for future settings */}
-            <View style={{ marginBottom: 20 }}>
-              <Text style={styles.settingsText}>More settings coming soon...</Text>
+     
+              
+            {/* Join Discord */}
+            <View style={styles.settingsSection}>
+              <Text style={styles.settingsSectionTitle}>Community</Text>
+              <TouchableOpacity 
+                style={styles.discordButton}
+                onPress={handleOpenDiscord}
+              >
+                <View style={styles.discordButtonContent}>
+                  <FontAwesome6 name="discord" size={20} color="#5865F2" />
+                  <Text style={styles.discordButtonText}>Join the Shepherd Family!</Text>
+                </View>
+                <Feather name="external-link" size={18} color="#3C584A" />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.divider} />
+            
+            {/* User ID Section - Moved to bottom */}
+            <View style={styles.settingsSection}>
+              <Text style={styles.settingsSectionTitle}>User ID</Text>
+              <TouchableOpacity 
+                onPress={handleCopyUserId}
+                style={styles.userIdContainer}
+              >
+                <Text style={styles.userIdText} numberOfLines={1} ellipsizeMode="tail">{userId}</Text>
+                <View style={styles.copyButton}>
+                  <Feather name="copy" size={16} color="#3C584A" />
+                </View>
+              </TouchableOpacity>
             </View>
 
             {/* Sign Out Button - Only show if user is signed in */}
             {isUserSignedIn && (
-              <TouchableOpacity
-                onPress={handleSignOut}
-                style={styles.signOutButton}
-              >
-                <Text style={styles.signOutText}>Sign Out</Text>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity
+                  onPress={handleSignOut}
+                  style={styles.signOutButton}
+                >
+                  <Text style={styles.signOutText}>Sign Out</Text>
+                </TouchableOpacity>
+                
+                {/* Delete Account Button */}
+                <TouchableOpacity
+                  onPress={handleDeleteAccount}
+                  style={styles.deleteAccountButton}
+                >
+                  <Text style={styles.deleteAccountText}>Delete Account</Text>
+                </TouchableOpacity>
+              </>
             )}
-          </View>
+            
+            {/* Add some bottom padding for better scrolling */}
+            <View style={{height: 20}} />
+          </ScrollView>
         </BottomSheetView>
       </BottomSheet>
 
@@ -662,6 +829,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#DF4533',
   },
+  deleteAccountButton: {
+    backgroundColor: 'rgba(223, 69, 51, 0.2)',
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#DF4533',
+    marginBottom: 20,
+  },
+  deleteAccountText: {
+    fontFamily: 'Nunito-Black',
+    fontSize: 16,
+    color: '#DF4533',
+  },
   settingsSection: {
     marginBottom: 20,
   },
@@ -688,7 +868,7 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: '#FFE4A8',
-    marginVertical: 20,
+    marginVertical: 12,
   },
   translationSelector: {
     flexDirection: 'row',
@@ -842,6 +1022,26 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#FFE4A8',
     paddingVertical: 8,
+  },
+  discordButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(88, 101, 242, 0.1)',
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#5865F2',
+  },
+  discordButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  discordButtonText: {
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    color: '#3C584A',
+    marginLeft: 10,
   },
 });
 

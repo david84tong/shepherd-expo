@@ -188,10 +188,6 @@ export default function HomeScreen() {
     () => uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [1, 0], extrapolate: 'clamp' }),
     []
   );
-  const bottomCardTranslateY = useMemo(
-    () => uiAnim.interpolate({ inputRange: [0, 0.5], outputRange: [0, 300], extrapolate: 'clamp' }),
-    []
-  );
 
   // --- Conditional Glow Style ---
   const showGlow = lambHearts > 80;
@@ -439,6 +435,12 @@ export default function HomeScreen() {
 
   const handlePrayerPress = () => {
     console.log('Prayer button pressed');
+    
+    // Don't proceed if reading is not completed
+    if (!readingCompleted) {
+      console.log('Prayer button disabled: Reading not completed');
+      return;
+    }
 
     // Remove rigid haptic feedback
 
@@ -450,6 +452,12 @@ export default function HomeScreen() {
 
   const handleReflectionPress = () => {
     console.log('Reflection button pressed');
+
+    // Don't proceed if reading is not completed
+    if (!readingCompleted) {
+      console.log('Reflection button disabled: Reading not completed');
+      return;
+    }
 
     // Remove heavy haptic feedback
 
@@ -637,13 +645,13 @@ export default function HomeScreen() {
 
       <SafeAreaView className="flex-1">
         {/* Header: Contains logic for showing Back OR Title/Stats */}
-        <View className="flex-row justify-between items-center px-4 pt-1 pb-2 h-[42px] relative">
+        <View className="flex-row justify-between items-center px-4 pt-1.5 pb-2 h-[42px] relative">
           {/* Animated Back Button */}
 
           {/* Animated Default Header Elements (Title + Stats) */}
           <Animated.View
             className="absolute inset-0 flex-row items-center justify-between px-8 w-full"
-            style={[{ opacity: headerDefaultOpacityAnim }]}
+            style={{ opacity: headerDefaultOpacityAnim }}
             pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}>
             <View className="flex-row items-center flex-1 justify-between">
               <Text
@@ -722,7 +730,6 @@ export default function HomeScreen() {
               android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
             }),
             opacity: bottomCardOpacity,
-            transform: [{ translateY: bottomCardTranslateY }],
           }}>
           <View className="flex-row items-center gap-2.5 mb-0 px-1">
             <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
@@ -754,6 +761,7 @@ export default function HomeScreen() {
             points={5}
             onPress={handlePrayerPress}
             completed={prayerCompleted}
+            disabled={!readingCompleted}
           />
           <SecondaryButton
             icon={quillIcon}
@@ -762,6 +770,7 @@ export default function HomeScreen() {
             points={5}
             onPress={handleReflectionPress}
             completed={reflectionCompleted}
+            disabled={!readingCompleted}
           />
         </Animated.View>
 

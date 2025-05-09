@@ -16,6 +16,7 @@ import { useUserStore } from '~/app/stores/userStore';
 import Rive, { RiveRef } from 'rive-react-native';
 import PrimaryButton from './PrimaryButton';
 import { getStreakSubtext } from '../app/hooks/streakHook';
+import analytics from '../utils/analytics';
 /* ─────────────── helper ─────────────── */
 type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE';
 
@@ -284,6 +285,9 @@ export const StreakScreen = () => {
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
 
   const handleContinue = () => {
+    analytics.logEvent("StreakScreen_Tapped_Continue", {
+      streak: streak,
+    });
     console.log('[StreakScreen] Continue pressed. Resetting pathInProgress and navigating to home.');
     setPathInProgress(false);
     router.replace('/(tabs)');
@@ -372,7 +376,7 @@ export const StreakScreen = () => {
 
       {/* Continue button */}
       <Animated.View style={buttonStyle} className="px-6 pb-10 mt-8">
-        <PrimaryButton title="CONTINUE" onPress={handleContinue} />
+        <PrimaryButton title="Continue" onPress={handleContinue} />
       </Animated.View>
 
       {/* Development debug info */}

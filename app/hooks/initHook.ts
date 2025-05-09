@@ -4,9 +4,11 @@ import { Timestamp } from '@react-native-firebase/firestore';
 import { useEffect, useState } from 'react';
 import * as Sentry from "@sentry/react-native";
 import { useUserStore } from '../stores/userStore';
+import { usePathStore } from '../stores/pathStore';
 import { Mixpanel } from "mixpanel-react-native";
+import { PATH_OPTIONS } from '../models/Path';
 
-import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
+import analytics, { AnalyticsEvent } from '../../utils/analytics';
 
 // Key to check if app has been initialized
 const APP_INITIALIZED_KEY = 'shepherd-app-initialized';
@@ -48,6 +50,9 @@ export const useAppInitialization = () => {
   const setLastReflectionPenaltyDate = useUserStore(state => state.setLastReflectionPenaltyDate);
   const fetchFromFirestore = useUserStore(state => state.fetchFromFirestore);
 
+  // Get path store actions
+  const setSelectedPath = usePathStore(state => state.setSelectedPath);
+
   useEffect(() => {
     const initializeApp = async () => {
       console.log('🚀 Initializing app...');
@@ -73,8 +78,6 @@ export const useAppInitialization = () => {
 
         // Check if app has been initialized before
         const hasInitialized = await AsyncStorage.getItem(APP_INITIALIZED_KEY);
-
-   
 
         if (!hasInitialized) {
           console.log('🚀 First app open, initializing user...');
@@ -150,6 +153,7 @@ export const useAppInitialization = () => {
             spiritualGoal: userData.spiritualGoal || 'Not set',
             experienceLevel: userData.experienceLevel || 'Not set',
             frequencyGoal: userData.frequencyGoal || 'Not set',
+            selectedPathId: userData.selectedPathId || 'Not set',
 
             // Stats
             streakCount: userData.streakCount || 0,
@@ -173,6 +177,21 @@ export const useAppInitialization = () => {
             const fetchSuccess = await fetchFromFirestore();
             if (fetchSuccess) {
               console.log('✅ User data successfully fetched from Firestore');
+              
+              // Initialize selected path based on user's selectedPathId
+              const updatedUserData = getUser();
+              if (updatedUserData.selectedPathId) {
+                console.log(`🛣️ Setting selected path from Firestore: ${updatedUserData.selectedPathId}`);
+                const pathOption = PATH_OPTIONS.find(path => path.id === updatedUserData.selectedPathId);
+                if (pathOption) {
+                  setSelectedPath(pathOption);
+                  console.log(`✅ Selected path set to: ${pathOption.title}`);
+                } else {
+                  console.warn(`⚠️ Path with ID ${updatedUserData.selectedPathId} not found in PATH_OPTIONS`);
+                }
+              } else {
+                console.log('ℹ️ No selectedPathId found in user data');
+              }
             } else {
               console.warn('⚠️ User data could not be fetched from Firestore');
             }

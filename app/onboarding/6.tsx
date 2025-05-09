@@ -23,6 +23,8 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import analytics from '../../utils/analytics';
+
 
 export default function OnboardingReligiousAffiliationScreen() {
   const router = useRouter();
@@ -96,7 +98,9 @@ export default function OnboardingReligiousAffiliationScreen() {
     } catch (error) {
       console.log('Haptics not available');
     }
-    
+    analytics.logEvent("OnboardingReligiousAffiliationScreen_Tapped_Option", {
+      value: affiliation,
+    });
     setSelectedOption(affiliation);
     await setResponse('religiousAffiliation', affiliation as OnboardingResponses['religiousAffiliation']);
     router.push('/onboarding/7' as any);

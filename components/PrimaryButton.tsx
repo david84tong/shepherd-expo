@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import { Text, View, Pressable } from 'react-native';
-
+import analytics from '../utils/analytics';
 interface PrimaryButtonProps {
   title: string;
   onPress: () => void;
@@ -69,6 +69,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   // Handle press with haptic feedback
   const handlePress = () => {
     triggerHaptic();
+    analytics.logEvent(`${title}_Tapped`);
     onPress();
   };
 

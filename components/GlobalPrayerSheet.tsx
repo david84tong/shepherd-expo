@@ -72,13 +72,10 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
       setPrayerInput(topic);
       setIsCustomInput(isCustom); // Track if this is a custom or predefined topic
       
-      // Only increment count for custom prayers, not predefined topics
-      if (isCustom) {
-        incrementTopicCount(topic);
-      }
+      // No need to increment count here, we'll only increment when actually generating the prayer
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     },
-    [incrementTopicCount]
+    []
   );
 
   // Handle prayer generation
@@ -87,13 +84,21 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
 
     console.log(`Generating prayer for: ${prayerInput}, isCustomInput: ${isCustomInput}`);
 
-    // Save the prayer topic to store - always increment count no matter the source
+    // Check if this is a predefined topic or a truly custom entry
+    const isPredefinedTopic = orderedTopics.some(
+      topic => topic.toLowerCase() === prayerInput.toLowerCase()
+    );
+    
+    // Always increment the count regardless of source
     incrementTopicCount(prayerInput);
     
-    // Always add to recent prayers as the first item to make sure it's available
-    // to the PrayerComponent
-    addRecentPrayer(prayerInput);
-    console.log(`Added "${prayerInput}" to recent prayers`);
+    // Only add to recent prayers if it's truly custom (not in predefined topics)
+    if (!isPredefinedTopic && isCustomInput) {
+      addRecentPrayer(prayerInput);
+      console.log(`Added "${prayerInput}" to recent prayers as a custom prayer`);
+    } else {
+      console.log(`Not adding "${prayerInput}" to recent prayers as it's a predefined topic`);
+    }
 
     // Close the bottom sheet
     bottomSheetRef.current?.close();
@@ -122,7 +127,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
       // Clear input state after callback execution
       setPrayerInput('');
     }, 500); // Slightly longer delay to ensure state propagation
-  }, [prayerInput, incrementTopicCount, addRecentPrayer, onPrayerGenerated, prayerGeneratedCallback, isCustomInput]);
+  }, [prayerInput, incrementTopicCount, addRecentPrayer, onPrayerGenerated, prayerGeneratedCallback, isCustomInput, orderedTopics]);
 
   // Close the prayer sheet
   const handleClose = useCallback(() => {

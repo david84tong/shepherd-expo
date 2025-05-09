@@ -35,10 +35,7 @@ export default function NotificationPermissionScreen() {
 
   useEffect(() => {
     // Log screen view when component mounts
-    analytics.logScreenView('NotificationPermissionScreen', { 
-      step: 9,
-      category: EventCategory.ONBOARDING
-    });
+    analytics.logEvent("OnboardingNotificationPermissionScreen_Viewed");
     
     // Reset animation values
     titleOpacity.value = 0;
@@ -87,12 +84,8 @@ export default function NotificationPermissionScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
     // Track analytics event
-    analytics.logEvent(AnalyticsEvent.USER_PREFERENCE_CHANGE, {
-      preference: 'notifications',
-      value: 'denied',
-      screen: 'NotificationPermissionScreen',
-      category: EventCategory.ONBOARDING
-    });
+    analytics.logEvent("OnboardingNotificationPermissionScreen_Tapped_Deny");
+
     
     // Disable notifications in our store
     notificationStore.setNotificationsEnabled(false);
@@ -107,19 +100,14 @@ export default function NotificationPermissionScreen() {
 
   // Function to handle the allow button
   const handleAllow = async () => {
+    analytics.logEvent("OnboardingNotificationPermissionScreen_Tapped_Allow");
     if (showingAlert) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setShowingAlert(true);
 
     try {
       // Track initial analytics event
-      analytics.logEvent(AnalyticsEvent.USER_PREFERENCE_CHANGE, {
-        preference: 'notifications',
-        value: 'requesting',
-        screen: 'NotificationPermissionScreen',
-        category: EventCategory.ONBOARDING
-      });
-      
+ 
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
       console.log('existingStatus', existingStatus);
@@ -130,16 +118,9 @@ export default function NotificationPermissionScreen() {
       }
 
       if (finalStatus === 'granted') {
-        // Track successful permission grant
-        analytics.logEvent(AnalyticsEvent.USER_PREFERENCE_CHANGE, {
-          preference: 'notifications',
-          value: 'granted',
-          screen: 'NotificationPermissionScreen',
-          category: EventCategory.ONBOARDING
-        });
-        
+        analytics.logEvent("OnboardingNotificationPermissionScreen_Granted");
         // Enable notifications in our store
-        notificationStore.setNotificationsEnabled(true);
+        notificationStore.setNotificationsEnabled(false);
         
         // Initialize notifications with test mode enabled
         await notificationStore.initializeNotifications();
@@ -161,13 +142,8 @@ export default function NotificationPermissionScreen() {
         // Don't navigate yet - let the alert handle it
         return;
       } else {
-        // Track denied permission
-        analytics.logEvent(AnalyticsEvent.USER_PREFERENCE_CHANGE, {
-          preference: 'notifications',
-          value: 'denied',
-          screen: 'NotificationPermissionScreen',
-          category: EventCategory.ONBOARDING
-        });
+        analytics.logEvent("OnboardingNotificationPermissionScreen_Denied");
+
         
         // Disable notifications in our store
         notificationStore.setNotificationsEnabled(false);
@@ -278,7 +254,7 @@ export default function NotificationPermissionScreen() {
       </Animated.View>
 
       {/* Bottom button */}
-      <Animated.View
+      {/* <Animated.View
         style={[
           buttonStyle,
           { position: 'absolute', bottom: 48, width: '100%', paddingHorizontal: 20 },
@@ -290,7 +266,7 @@ export default function NotificationPermissionScreen() {
           textColor="text-white"
           style="mt-0"
         />
-      </Animated.View>
+      </Animated.View> */}
     </View>
   );
 }
