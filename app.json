@@ -21,7 +21,7 @@
     },
     "ios": {
       "bundleIdentifier": "second.round.shepherd",
-      "buildNumber": "36",
+      "buildNumber": "37",
       "googleServicesFile": "./GoogleService-Info.plist",
       "deploymentTarget": "15.1",
       "appleTeamId": "FY756JUW9K",
