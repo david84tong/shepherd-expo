@@ -138,13 +138,13 @@ export default function OnboardingBibleFamiliarityScreen() {
   
       {/* Question Text */}
       <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-4">
-          How familiar are you with the Bible?
+        <Text className="font-feather text-h2 text-center text-textPrimary mb-0">
+          How familiar are you with the Bible??
         </Text>
       </Animated.View>
 
       {/* Options Container */}
-      <Animated.View style={optionsStyle} className="space-y-4 mt-8">
+      <Animated.View style={optionsStyle} className="space-y-4 mt-4">
         {options.map((option) => (
           <PrimaryButton
             key={option.id}

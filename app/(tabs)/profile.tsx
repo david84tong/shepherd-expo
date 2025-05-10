@@ -3,19 +3,20 @@ import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import dayjs from 'dayjs';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
+import useSubscriptionStore from '../stores/subscriptionStore';
 import PrimaryButton from '../../components/PrimaryButton';
 
-// Import the icons similar to those in index.tsx
-const breadIcon = require('../../assets/icons/breadIcon.png');
-const quillIcon = require('../../assets/icons/journalIcon.png');
-const dropIcon = require('../../assets/icons/waterIcon.png');
+// Import the icons using import statements
+import breadIcon from '../../assets/icons/breadIcon.png';
+import quillIcon from '../../assets/icons/journalIcon.png';
+import dropIcon from '../../assets/icons/waterIcon.png';
+import sheepIcon from '../../assets/icons/sheepIcon.png';
 
 // Define activity type for the timeline
 type ActivityType = {
@@ -49,6 +50,13 @@ export default function ProfileScreen() {
     getUser,
   } = useUserStore();
 
+  // Get subscription state and actions from the store
+  const { 
+    isProMember,
+    presentPaywall,
+    getCustomerInfo,
+  } = useSubscriptionStore();
+
   const lamb = getLamb();
   const streak = getStreakCount();
   const createdAtTimestamp = getCreatedAt();
@@ -56,7 +64,14 @@ export default function ProfileScreen() {
   const completedPrayers = getCompletedPrayers();
   const completedReflections = getCompletedReflections();
   const user = getUser();
-  const userId = user?.id || 'Anonymous user';
+  const userId = user?.id || null;
+
+  // Fetch customer info when the component mounts or when app comes to foreground
+  useEffect(() => {
+    getCustomerInfo();
+    // Optional: Add listener for app state changes to refresh customer info
+    // when app comes to foreground
+  }, [getCustomerInfo]);
 
   // Format join date - handle both Timestamp and undefined cases
   const joinDate = useMemo(() => {
@@ -81,7 +96,7 @@ export default function ProfileScreen() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (typeof global !== 'undefined' && (global as any).showSettings) {
       (global as any).showSettings({
-        userId,
+        userId: userId || 'Anonymous user',
       });
     } else {
       console.error('showSettings not available on global object');
@@ -204,31 +219,11 @@ export default function ProfileScreen() {
     }
   };
 
-  // Handle subscription button press
+  // Handle subscription button press using the store action
   const handleSubscriptionPress = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    try {
-      const paywallResult: PAYWALL_RESULT = await RevenueCatUI.presentPaywall();
-
-      // Handle the paywall result
-      switch (paywallResult) {
-        case PAYWALL_RESULT.PURCHASED:
-          console.log('Purchase completed successfully');
-          break;
-        case PAYWALL_RESULT.RESTORED:
-          console.log('Purchase restored successfully');
-          break;
-        case PAYWALL_RESULT.CANCELLED:
-          console.log('Purchase cancelled by user');
-          break;
-        case PAYWALL_RESULT.ERROR:
-          console.log('Error occurred during purchase');
-          break;
-      }
-    } catch (error) {
-      console.error('Error presenting paywall:', error);
-    }
-  }, []);
+    await presentPaywall();
+  }, [presentPaywall]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -253,7 +248,7 @@ export default function ProfileScreen() {
                 </Text>
               </View>
               <Image
-                source={require('../../assets/icons/sheepIcon.png')}
+                source={sheepIcon}
                 className="w-12 h-12 rounded-full"
               />
             </View>
@@ -383,18 +378,18 @@ export default function ProfileScreen() {
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
             <View className="flex-row justify-between items-center mb-2">
               <Text className="font-feather text-heading text-textPrimary">Manage Subscription</Text>
-              {user?.proStatus === 'pro' && (
+              {isProMember && (
                 <View className="bg-lightYellow px-4 py-1 rounded-full">
                   <Text className="font-din text-accentGold">Pro</Text>
                 </View>
               )}
             </View>
             <Text className="font-din text-description mb-4">
-              {user?.proStatus === 'pro'
+              {isProMember
                 ? 'You have access to all premium features!'
-                : 'Unlock premium features and enhance your spiritual journey.'}
+                : 'Unlock premium features and enhance your spiritual journey'}
             </Text>
-            {user?.proStatus !== 'pro' && (
+            {!isProMember && (
               <PrimaryButton
                 title="Upgrade to Pro"
                 onPress={handleSubscriptionPress}

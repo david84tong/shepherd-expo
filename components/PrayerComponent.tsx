@@ -75,7 +75,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
   const tappedPrayAboutVerse = useHomeStore((state) => state.tappedPrayAboutVerse);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
-  
+
   // Get current path from pathStore for scripture-specific prayer
   const currentPath = usePathStore((state) => state.currentPath);
 
@@ -117,25 +117,36 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 
     if (visible) {
       console.log('PrayerComponent: Showing prayer component');
-      console.log('tappedPrayAboutVerse =', tappedPrayAboutVerse);
+      
+      // Get the CURRENT value from the store, not the one from the hook
+      // This ensures we have the latest value after GlobalPrayerSheet might have set it to false
+      const currentTappedPrayAboutVerse = useHomeStore.getState().tappedPrayAboutVerse;
+      console.log('Current tappedPrayAboutVerse from store =', currentTappedPrayAboutVerse);
+      
+      // DEBUG: Print ALL recent prayers in the store
+      const allRecentPrayers = usePrayerStore.getState().recentPrayers;
+      console.log('DEBUG - All recent prayers in store:', allRecentPrayers);
       
       let newPrayerText = '';
       
-      // Check if this is a scripture-specific prayer
-      if (tappedPrayAboutVerse && currentPath && currentPath.prayer) {
+      // Check if this is a scripture-specific prayer - using current store value
+      if (currentTappedPrayAboutVerse && currentPath && currentPath.prayer) {
         console.log('Using scripture-specific prayer:', currentPath.prayer);
         newPrayerText = currentPath.prayer;
       } else {
-        // Get latest prayer topic and generate prayer text
-        const currentPrayerTopic = usePrayerStore.getState().recentPrayers[0] || '';
-        console.log('Current prayer topic:', currentPrayerTopic);
+      // Get latest prayer topic and generate prayer text
+      const currentPrayerTopic = usePrayerStore.getState().recentPrayers[0] || '';
+        console.log('DEBUG - Current prayer topic:', currentPrayerTopic);
+        console.log('DEBUG - Direct recentPrayers[0]:', usePrayerStore.getState().recentPrayers[0]);
 
-        // Generate fresh prayer text based on the current topic
-        if (currentPrayerTopic) {
-          newPrayerText = `Dear God, I come before you today with a humble heart. Please help me with ${currentPrayerTopic.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
-          console.log('Generated custom prayer text for:', currentPrayerTopic);
-        } else {
-          console.log('No prayer topic found, using default prayer');
+      // Generate fresh prayer text based on the current topic
+      if (currentPrayerTopic) {
+        newPrayerText = `Dear God, I come before you today with a humble heart. Please help me with ${currentPrayerTopic.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
+        console.log('Generated custom prayer text for:', currentPrayerTopic);
+          console.log('DEBUG - Generated prayer text:', newPrayerText);
+      } else {
+        console.log('No prayer topic found, using default prayer');
+          console.log('DEBUG - Using DEFAULT_PRAYER_TEMPLATE');
           newPrayerText = DEFAULT_PRAYER_TEMPLATE;
         }
       }
@@ -266,8 +277,11 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
       return <Text className="text-body text-textPrimary font-din">{typedText}</Text>;
     }
     
+    // Get current value from store to be consistent with the useEffect
+    const currentTappedPrayAboutVerse = useHomeStore.getState().tappedPrayAboutVerse;
+    
     // If this is a scripture prayer, just display it without highlighting
-    if (tappedPrayAboutVerse && currentPath && currentPath.prayer) {
+    if (currentTappedPrayAboutVerse && currentPath && currentPath.prayer) {
       return <Text className="text-body text-textPrimary font-din">{typedText}</Text>;
     }
 
@@ -324,7 +338,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 
   const handleDonePress = () => {
     console.log('Prayer completed');
-    
+
     // Disable Button while praying
     if (isTimerActive) return;
 
@@ -333,7 +347,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     
     // Set path in progress to false
     setPathInProgress(false);
-    
+
     // Reset tappedPrayAboutVerse flag
     useHomeStore.getState().setTappedPrayAboutVerse(false);
     console.log('Reset tappedPrayAboutVerse flag to false');
@@ -343,22 +357,25 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 
     // Create current timestamp 
     const now = firestore.Timestamp.now();
-    
+
     // Save prayer data to userStore
     console.log('Saving prayer data to userStore');
     try {
+      // Get current value from store 
+      const currentTappedPrayAboutVerse = useHomeStore.getState().tappedPrayAboutVerse;
+      
       // Add completed prayer with topic and scripture context if applicable
       addCompletedPrayer({
         date: now,
-        topic: tappedPrayAboutVerse && currentPath ? 
+        topic: currentTappedPrayAboutVerse && currentPath ? 
           `${getBookNameFromId(currentPath.bookId) || 'shimate'} ${currentPath.startChapter}-${currentPath.endChapter}` : 
           (prayerTopic || 'general prayer'),
-        type: tappedPrayAboutVerse ? 'scripture' : 'general',
+        type: currentTappedPrayAboutVerse ? 'scripture' : 'general',
       });
-      
+
       // Update last prayer date
       setLastPrayerDate(now);
-      
+
       console.log('Prayer data saved successfully');
     } catch (error) {
       console.error('Error saving prayer data:', error);
@@ -372,7 +389,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     }
 
     // Navigate to success screen
-    router.push('/success');
+        router.push('/success');
   };
 
   // New handler specifically for back button

@@ -2,6 +2,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import dayjs from 'dayjs';
 import React, { useEffect, useMemo, useState, useRef, useLayoutEffect } from 'react';
 import { View, Text, Image, ActivityIndicator } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -13,6 +14,7 @@ import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '~/app/stores/userStore';
+import { useNotificationStore } from '~/app/stores/notificationStore';
 import Rive, { RiveRef } from 'rive-react-native';
 import PrimaryButton from './PrimaryButton';
 import { getStreakSubtext } from '../app/hooks/streakHook';
@@ -72,6 +74,7 @@ export const StreakScreen = () => {
   const buttonOpacity = useSharedValue(0);
   const buttonTranslateY = useSharedValue(20);
   const riveRef = useRef<RiveRef>(null);
+  const insets = useSafeAreaInsets();
 
   // 1. grab data from the store
   const createdAt = useUserStore((s) => s.getCreatedAt()); // Firestore Timestamp or Date
@@ -79,6 +82,36 @@ export const StreakScreen = () => {
   const setStreakCount = useUserStore((state) => state.setStreakCount);
   const syncWithFirestore = useUserStore((state) => state.syncWithFirestore);
   const [debugInfo, setDebugInfo] = useState<any>(null);
+  
+  // Get notification store methods
+  const { rescheduleStreakNotificationsForNextDay, listScheduledNotifications } = useNotificationStore();
+
+  // Reset streak notifications when StreakScreen is shown 
+  // since this means the user has completed their streak activity for the day
+  useEffect(() => {
+    const resetStreakNotifications = async () => {
+      try {
+        console.log('📱 StreakScreen: Rescheduling streak notifications for the next day');
+        
+        // Reschedule streak notifications for the next day
+        const success = await rescheduleStreakNotificationsForNextDay();
+        
+        if (success) {
+          console.log('📱 StreakScreen: Successfully rescheduled streak notifications');
+        } else {
+          console.log('📱 StreakScreen: Failed to reschedule streak notifications');
+        }
+        
+        // Log all scheduled notifications for debugging
+        await listScheduledNotifications();
+      } catch (error) {
+        console.error('📱 StreakScreen: Error rescheduling streak notifications:', error);
+      }
+    };
+
+    // Call the async function
+    resetStreakNotifications();
+  }, [rescheduleStreakNotificationsForNextDay, listScheduledNotifications]);
 
   // 2. normalize → dayjs (memoized to prevent recalculation)
   const today = useMemo(() => dayjs().startOf('day'), []);
@@ -186,6 +219,11 @@ export const StreakScreen = () => {
   useEffect(() => {
     setStreakCount(streak);
     console.log('streak', streak);
+    
+    // Track notification rescheduling with the current streak value
+    analytics.logEvent("StreakScreen_RescheduledNotifications", {
+      streak: streak
+    });
   }, [streak, setStreakCount]);
 
   // Setup animations when component mounts
@@ -308,12 +346,12 @@ export const StreakScreen = () => {
       {/* Large flame with streak number */}
       <Animated.View style={flameContainerStyle} className="items-center mt-10 mb-2">
         <View className="relative justify-center items-center mb-1">
-          <View className="w-96 h-96 justify-center items-center">
+          <View className={`${insets.top > 20 ? 'w-96 h-96' : 'w-56 h-56'} justify-center items-center`}>
             <Rive
               url={riveAssets[0].localUri!}
               artboardName='streak'
               autoplay
-              style={{ width: '200%', height: '200%' }}
+              style={{ width: insets.top < 20 ? '100%' : '200%', height: insets.top < 20 ? '100%' : '200%' }}
               ref={riveRef}
             />
           </View>

@@ -11,11 +11,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUserStore } from '../app/stores/userStore';
 import { useUIStore } from '../app/stores/uiStore';
 import { usePathStore } from '../app/stores/pathStore';
-import { useNotificationStore } from '../app/stores/notificationStore';
+import { useNotificationStore, NOTIFICATION_IDS, NotificationTimeOption } from '../app/stores/notificationStore';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Notifications from 'expo-notifications';
 import analytics from '../utils/analytics';
+import Purchases from 'react-native-purchases';
+import useSubscriptionStore from '../app/stores/subscriptionStore';
 
 import Animated, { 
   useAnimatedStyle,
@@ -58,6 +60,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   const setNotificationsEnabled = useNotificationStore(state => state.setNotificationsEnabled);
   const scheduleStreakReminders = useNotificationStore(state => state.scheduleStreakReminders);
   const cancelStreakNotifications = useNotificationStore(state => state.cancelStreakNotifications);
+  const scheduleDailyReminder = useNotificationStore(state => state.scheduleDailyReminder);
+  const cancelDailyReminder = useNotificationStore(state => state.cancelDailyReminder);
   
   // State for the time picker
   const [selectedTime, setSelectedTime] = useState(new Date());
@@ -263,17 +267,31 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
     if (enableNotifications) {
       // Request permissions if enabling notifications
       const { status } = await Notifications.getPermissionsAsync();
+      console.log(`Current notification permission status: ${status}`);
       
       if (status !== 'granted') {
         // Request permissions if not already granted
         const { status: newStatus } = await Notifications.requestPermissionsAsync();
+        console.log(`New notification permission status after request: ${newStatus}`);
         
         if (newStatus !== 'granted') {
-          // If still not granted, show alert and return
+          // If still not granted, show alert with option to go to settings
           Alert.alert(
             'Notification Permission Required',
-            'Please enable notifications in your device settings to receive streak reminders.',
-            [{ text: 'OK' }]
+            'Please enable notifications in your device settings to receive Bible reading reminders.',
+            [
+              { 
+                text: 'Open Settings', 
+                onPress: () => {
+                  Linking.openSettings();
+                  analytics.logEvent("Settings_Opened_SystemSettings_Notifications");
+                } 
+              },
+              { 
+                text: 'Cancel',
+                style: 'cancel'
+              }
+            ]
           );
           return;
         }
@@ -295,6 +313,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
     } else {
       // If turning off, cancel all notifications
       await cancelStreakNotifications();
+      await cancelDailyReminder();
       
       // Update notification store
       setNotificationsEnabled(false);
@@ -381,9 +400,41 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       // Update the time in userStore
       setNotificationTime(timeString);
       
-      // Reschedule notifications with the new time
-      await scheduleStreakReminders();
+      // Map time to NotificationTimeOption when possible, for standard times
+      let timeOption: NotificationTimeOption;
+      if (hours === 8 && minutes === 0) {
+        timeOption = 'morning';
+      } else if (hours === 14 && minutes === 0) {
+        timeOption = 'afternoon';
+      } else if (hours === 19 && minutes === 0) {
+        timeOption = 'evening';
+      } else if (hours === 21 && minutes === 0) {
+        timeOption = 'night';
+      } else {
+        // For custom times that don't match our predefined options,
+        // still use 'morning' etc. as defined in the notificationStore
+        // based on the hour of day
+        if (hours >= 5 && hours < 12) {
+          timeOption = 'morning';
+        } else if (hours >= 12 && hours < 17) {
+          timeOption = 'afternoon';
+        } else if (hours >= 17 && hours < 21) {
+          timeOption = 'evening';
+        } else {
+          timeOption = 'night';
+        }
+      }
       
+      // Log the time selection for analytics
+      analytics.logEvent("Settings_Changed_NotificationTime", {
+        time: timeString,
+        timeOption: timeOption
+      });
+      
+      // Schedule only the daily reminder notification using the store method
+      await scheduleDailyReminder(timeOption);
+      
+      // Provide success feedback
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }
     
@@ -555,6 +606,41 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
     );
   }, [router]);
 
+  // Get subscription state and actions from the store
+  const { 
+    isProMember,
+    presentPaywall,
+    getCustomerInfo,
+  } = useSubscriptionStore();
+
+  // Handle subscription button press using the store action
+  const handleSubscriptionPress = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    await presentPaywall();
+  }, [presentPaywall]);
+  
+  // Handle promo code redemption
+  const handlePromoCodePress = useCallback(async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      
+      // Track analytics event
+      analytics.logEvent("Settings_Tapped_PromoCode");
+      
+      // Present the code redemption sheet
+      await Purchases.presentCodeRedemptionSheet();
+      
+      // Refresh customer info after redemption
+      await getCustomerInfo();
+    } catch (error) {
+      console.error('Error presenting promo code sheet:', error);
+      Alert.alert(
+        'Error',
+        'Unable to open the redemption screen. Please try again later.'
+      );
+    }
+  }, [getCustomerInfo]);
+
   return (
     <>
       <BottomSheet
@@ -697,6 +783,45 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
             </View>
             
             <View style={styles.divider} />
+            
+            {/* Subscription Section */}
+            <View className="mb-6">
+              <Text className="font-feather text-xl text-[#5D5531] mb-2">Subscription</Text>
+              <View className="bg-white rounded-xl p-4 shadow-sm mb-2">
+                <View className="flex-row justify-between items-center">
+                  <View className="flex-1 mr-4">
+                    <Text className="font-feather text-base text-textPrimary">
+                      {isProMember ? 'Super Shepherd (Active)' : 'Upgrade to Super Shepherd'}
+                    </Text>
+                    <Text className="font-din text-description mt-1">
+                      {isProMember 
+                        ? 'Thank you for supporting our mission!' 
+                        : 'Unlock premium features and support our mission'}
+                    </Text>
+                  </View>
+                  {!isProMember && (
+                    <TouchableOpacity
+                      onPress={handleSubscriptionPress}
+                      className="bg-[#FFE07D] px-4 py-2 rounded-lg">
+                      <Text className="font-feather text-textPrimary">Upgrade</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+              
+              {/* Promo Code Button */}
+              <TouchableOpacity
+                onPress={handlePromoCodePress}
+                className="bg-white rounded-xl p-4 shadow-sm flex-row justify-between items-center">
+                <View>
+                  <Text className="font-feather text-base text-textPrimary">Redeem Promo Code</Text>
+                  <Text className="font-din text-description mt-1">
+                    Enter a promotional code to unlock premium features
+                  </Text>
+                </View>
+                <Feather name="tag" size={20} color="#B89B4C" />
+              </TouchableOpacity>
+            </View>
             
             {/* User ID Section - Moved to bottom */}
             <View style={styles.settingsSection}>
@@ -1050,6 +1175,26 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   discordButtonText: {
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    color: '#3C584A',
+    marginLeft: 10,
+  },
+  promoCodeButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(247, 181, 0, 0.1)',
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#F7B500',
+  },
+  promoCodeButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  promoCodeButtonText: {
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
     color: '#3C584A',

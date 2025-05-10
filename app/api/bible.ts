@@ -74,11 +74,11 @@ export const fetchChapter = async (
 
     // Parse the raw response (which is ApiVerse[])
     const rawData: RawApiResponse = await response.json();
-
+    
     // Validate the raw data structure
     if (!Array.isArray(rawData)) {
       console.error(`Invalid data format received for ${url}: Expected array, got:`, rawData);
-      return { error: true, message: 'Invalid data format received from API (expected array).' };
+      return { error: true, message: 'Invalid data format received from API (expected array). 2 ' };
     }
 
     if (rawData.length === 0) {

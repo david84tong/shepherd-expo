@@ -17,11 +17,41 @@ const PENALTIES = {
  * Calculates days between two dates, ignoring time
  */
 const getDaysDifference = (date1: Date, date2: Date): number => {
-  const date1Midnight = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
-  const date2Midnight = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
+  // Convert both dates to local date strings (YYYY-MM-DD format)
+  const date1Str = date1.toISOString().split('T')[0];
+  const date2Str = date2.toISOString().split('T')[0];
+  
+  // If the dates are different calendar days, they're at least 1 day apart
+  if (date1Str !== date2Str) {
+    // Use the midnight-based calculation for accurate day difference
+    const date1Midnight = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
+    const date2Midnight = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
+    const diffTime = Math.abs(date1Midnight.getTime() - date2Midnight.getTime());
+    return Math.round(diffTime / (1000 * 60 * 60 * 24));
+  }
+  
+  // Same calendar day
+  return 0;
+};
 
-  const diffTime = Math.abs(date1Midnight.getTime() - date2Midnight.getTime());
-  return Math.round(diffTime / (1000 * 60 * 60 * 24));
+// Check if two dates are on different calendar days, even if just minutes apart
+const isNewCalendarDay = (date1: Date, date2: Date): boolean => {
+  if (!date1 || !date2) return false;
+  const date1Str = date1.toISOString().split('T')[0];
+  const date2Str = date2.toISOString().split('T')[0];
+  return date1Str !== date2Str;
+};
+
+// Utility function to check if we need to reset completion states
+const shouldResetCompletions = (lastActivityDate: any, now: Date): boolean => {
+  if (!lastActivityDate) return true; // No previous activity, first time
+  
+  // Get the date objects
+  const lastActivityDateObj = getDateFromTimestamp(lastActivityDate);
+  if (!lastActivityDateObj) return true;
+  
+  // Check if it's a new calendar day
+  return isNewCalendarDay(now, lastActivityDateObj);
 };
 
 // Utility: Convert Firestore Timestamp/Date/serialized to Date
@@ -182,18 +212,23 @@ function calculateStreakAndPenalties({
 
   setLambMood(getLambMoodByHearts(lambHearts));
 
-  // Skip if user was active today
-  if (daysSinceActivity === 0) {
+  // Check if we need to reset completion states for a new calendar day
+  const isNewDay = shouldResetCompletions(lastActivityDate, now);
+  if (isNewDay) {
+    if (debug) console.log('📅 New calendar day detected - resetting completion states');
+    resetCompletionStates();
+  } else if (debug) {
+    console.log('📅 Same calendar day - keeping completion states');
+  }
+
+  // Skip if user was active today (based on calendar day)
+  if (daysSinceActivity === 0 && !isNewDay) {
     return {
       streakBroken: isReadingMoreThan24HoursAgo,
       heartPenalty: 0,
       daysMissed: 0,
+      newDay: isNewDay,
     };
-  }
-
-  // Reset completion states if it's a new day
-  if (daysSinceActivity > 0) {
-    resetCompletionStates();
   }
 
   // Calculate total heart penalties (ignoring first day)
@@ -278,6 +313,7 @@ function calculateStreakAndPenalties({
       readingPenalized: applyReadingPenalty,
       prayerPenalized: applyPrayerPenalty,
       reflectionPenalized: applyReflectionPenalty,
+      newDay: isNewDay,
     };
   } else {
     setLambMood(getLambMoodByHearts(lambHearts));
@@ -288,6 +324,7 @@ function calculateStreakAndPenalties({
       readingPenalized: false,
       prayerPenalized: false,
       reflectionPenalized: false,
+      newDay: isNewDay,
     };
   }
 }
@@ -327,10 +364,16 @@ export const checkStreakAndApplyPenalties = async () => {
     // Check and update notifications based on last reading date
     await notificationStore.checkAndRescheduleNotifications(userStore.lastReadingDate);
 
+    // Check if we need to reset completion states for a new day
+    const lastActivityDate = userStore.lastActivityDate;
+    if (shouldResetCompletions(lastActivityDate, now)) {
+      console.log('📅 New day detected in checkStreakAndApplyPenalties - resetting completion states');
+      homeStore.resetCompletionStates();
+    }
+
     // Do NOT update lastActivityDate here, only after penalty calculation
     const lambHearts = userStore.lamb.hearts;
     const streakCount = userStore.streakCount || 0;
-    const lastActivityDate = userStore.lastActivityDate;
     const lastReadingDate = userStore.lastReadingDate;
     const lastPrayerDate = userStore.lastPrayerDate;
     const lastReflectionDate = userStore.lastReflectionDate;
@@ -361,7 +404,7 @@ export const checkStreakAndApplyPenalties = async () => {
     });
 
     // Sync changes back to Firestore if authenticated and there were significant changes
-    if (isAuthenticated() && (result.heartPenalty > 0 || result.streakBroken)) {
+    if (isAuthenticated() && (result.heartPenalty > 0 || result.streakBroken || result.newDay)) {
       try {
         console.log('Syncing streak changes back to Firestore');
         await syncUserDataToFirestore();
@@ -411,6 +454,12 @@ export const useStreakManager = () => {
 
       // Check and update notifications based on last reading date
       await notificationStore.checkAndRescheduleNotifications(lastReadingDate);
+      
+      // Check if we need to reset completion states for a new day
+      if (shouldResetCompletions(lastActivityDate, now)) {
+        console.log('📅 New day detected in useStreakManager - resetting completion states');
+        homeStore.resetCompletionStates();
+      }
 
       const result = calculateStreakAndPenalties({
         lambHearts,
@@ -435,7 +484,7 @@ export const useStreakManager = () => {
       });
 
       // Sync changes back to Firestore if authenticated and there were significant changes
-      if (isAuthenticated() && (result.heartPenalty > 0 || result.streakBroken)) {
+      if (isAuthenticated() && (result.heartPenalty > 0 || result.streakBroken || result.newDay)) {
         console.log('Syncing streak changes back to Firestore');
         await userStore.syncWithFirestore();
       }

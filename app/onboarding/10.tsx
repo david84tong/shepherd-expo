@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, Alert, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboardingStore } from '../stores/onboardingStore';
@@ -14,69 +14,19 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import analytics from '../../utils/analytics';
-
-// Function to schedule the notification
-const scheduleNotification = async (timeOption: string) => {
-  // Skip if user selected 'none'
-  if (timeOption === 'none') {
-    return;
-  }
-  
-  try {
-    // Get permission first
-    const { status } = await Notifications.getPermissionsAsync();
-    if (status !== 'granted') {
-      console.log('Notification permission not granted');
-      return;
-    }
-    
-    // Cancel any existing notifications
-    await Notifications.cancelAllScheduledNotificationsAsync();
-    
-    // Parse time ranges into hours for notifications
-    let hour = 8; // Default to 8 AM
-    
-    switch (timeOption) {
-      case 'morning':
-        hour = 8; // 8 AM
-        break;
-      case 'afternoon':
-        hour = 14; // 2 PM
-        break;
-      case 'evening':
-        hour = 19; // 7 PM
-        break;
-      case 'night':
-        hour = 21; // 9 PM
-        break;
-      default:
-        hour = 8; // Default to 8 AM
-    }
-    
-    // Schedule daily notification
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "Time to talk with the Shepherd",
-        body: "Take a moment to read scripture and connect with God.",
-        sound: true,
-      },
-      trigger: {
-        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds: 60 * 60 * 24, // 24 hours
-        repeats: true,
-      },
-    });
-    
-    console.log(`Notification scheduled to repeat daily`);
-  } catch (error) {
-    console.error('Failed to schedule notification:', error);
-  }
-};
+import { useNotificationStore, NotificationTimeOption } from '../stores/notificationStore';
 
 export default function OnboardingReminderTimeScreen() {
   const router = useRouter();
   const { setNotificationPreference } = useOnboardingStore();
   const { setNotificationTime } = useUserStore();
+  const { 
+    scheduleDailyReminder, 
+    setPreferredNotificationTime, 
+    scheduleStreakReminders,
+    setNotificationsEnabled,
+    listScheduledNotifications
+  } = useNotificationStore();
   const [selectedOption, setSelectedOption] = useState<string | undefined>(undefined);
   const [pressedButton, setPressedButton] = useState<string | null>(null);
 
@@ -172,8 +122,79 @@ export default function OnboardingReminderTimeScreen() {
     // Save to user store
     setNotificationTime(time);
     
-    // Schedule the notification
-    await scheduleNotification(time);
+    const isNotificationsEnabled = time !== 'none';
+    
+    if (isNotificationsEnabled) {
+      console.log('📱 Onboarding: User wants notifications, checking permissions');
+      
+      // Check for notification permissions
+      const { status } = await Notifications.getPermissionsAsync();
+      console.log(`📱 Current notification permission status: ${status}`);
+      
+      if (status !== 'granted') {
+        // Request permission if not already granted
+        console.log('📱 Onboarding: Requesting notification permissions');
+        const { status: newStatus } = await Notifications.requestPermissionsAsync();
+        console.log(`📱 New notification permission status: ${newStatus}`);
+        
+        if (newStatus !== 'granted') {
+          // Alert user that notifications won't work without permission
+          console.log('📱 Onboarding: Notification permission denied');
+          Alert.alert(
+            'Notification Permission Required',
+            'Without notification permission, we cannot send you reading reminders. You can enable this in your device settings.',
+            [
+              {
+                text: 'Open Settings',
+                onPress: () => {
+                  analytics.logEvent("Onboarding_Opened_SystemSettings_Notifications");
+                  Linking.openSettings();
+                }
+              },
+              {
+                text: 'Continue Anyway',
+                style: 'default',
+                onPress: () => {
+                  router.push('/onboarding/11');
+                }
+              }
+            ]
+          );
+          return;
+        }
+      }
+      
+      console.log('📱 Onboarding: Scheduling both daily reminder and streak notifications');
+      
+      // Enable notifications in the store
+      setNotificationsEnabled(true);
+      
+      // Set the preferred notification time in the store
+      setPreferredNotificationTime(time as NotificationTimeOption);
+      
+      // Schedule the daily reminder notification using the notificationStore
+      try {
+        await scheduleDailyReminder(time as NotificationTimeOption);
+        console.log(`📱 Onboarding: Successfully scheduled daily reminder for ${time}`);
+      } catch (error) {
+        console.error('📱 Onboarding: Error scheduling daily reminder:', error);
+      }
+      
+      // Also schedule streak warning notifications
+      try {
+        await scheduleStreakReminders();
+        console.log('📱 Onboarding: Successfully scheduled streak notifications');
+      } catch (error) {
+        console.error('📱 Onboarding: Error scheduling streak notifications:', error);
+      }
+      
+      // List all scheduled notifications for debugging
+      await listScheduledNotifications();
+    } else {
+      console.log('📱 Onboarding: User opted out of notifications');
+      // Disable notifications in the store
+      setNotificationsEnabled(false);
+    }
     
     // Navigate to the next screen
     router.push('/onboarding/11');
@@ -226,14 +247,14 @@ export default function OnboardingReminderTimeScreen() {
     <View className="flex-1 bg-surfaceCream px-6 pt-16">
       {/* Question Text */}
       <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-4">
+        <Text className="font-feather text-h2 text-center text-textPrimary mb-4 ">
           When would you like to be reminded to read?
         </Text>
       </Animated.View>
       
       {/* Subtext */}
       <Animated.View style={subtextStyle}>
-        <Text className="font-din text-center text-description text-body mb-8">
+        <Text className="font-din text-center text-description text-body mb-4">
           This can be edited later in settings
         </Text>
       </Animated.View>

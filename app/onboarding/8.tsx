@@ -2,6 +2,7 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Image, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -15,7 +16,7 @@ import { PATH_OPTIONS } from '../models/Path';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
-import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
+import analytics from '../../utils/analytics';
 
 export default function OnboardingPathScreen() {
   const router = useRouter();
@@ -31,6 +32,7 @@ export default function OnboardingPathScreen() {
   const optionsOpacity = useSharedValue(0);
   const optionsTranslateY = useSharedValue(40);
 
+  const insets = useSafeAreaInsets();
   
   useEffect(() => {
     // Log screen view when component mounts
@@ -147,7 +149,7 @@ export default function OnboardingPathScreen() {
                 className={`transform ${pressedId === path.id ? 'translate-y-[3px]' : 'translate-y-0'}`}
                 style={({ pressed }) => [{ elevation: pressed ? 0 : 6 }]}>
                 {/* Path Image */}
-                <Image source={path.image} className="w-[100%] h-40 shadow-md" resizeMode="cover" />
+                <Image source={path.image} className={`w-[100%] h-${insets.top > 20 ? '40' : '28'} shadow-md`} resizeMode="cover" />
 
                 {/* Path Text Content */}
                 <View className="p-3">

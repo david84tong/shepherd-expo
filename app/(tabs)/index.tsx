@@ -661,7 +661,7 @@ export default function HomeScreen() {
                   textShadowOffset: { width: 0, height: 1 },
                   textShadowRadius: 2,
                 }}>
-                {lambName || 'Shepherd'}
+                {'Shepherd'}
               </Text>
               <View className="flex-row gap-2 left-8">
                 <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />

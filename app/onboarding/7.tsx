@@ -126,7 +126,7 @@ export default function OnboardingAgeRangeScreen() {
     <View className="flex-1 bg-surfaceCream px-6 pt-12">
       {/* Question Text */}
       <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-4">
+        <Text className="font-feather text-h2 text-center text-textPrimary mb-4">
           What is your age range?
         </Text>
       </Animated.View>
