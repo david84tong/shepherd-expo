@@ -34,6 +34,9 @@ export default function OnboardingPathScreen() {
 
   const insets = useSafeAreaInsets();
   
+  // Calculate image height dynamically based on insets
+  const imageHeight = insets.top > 20 ? 160 : 112; // Use numeric values instead of tailwind classes
+  
   useEffect(() => {
     // Log screen view when component mounts
     analytics.logEvent("OnboardingPathScreen_Viewed");
@@ -147,9 +150,16 @@ export default function OnboardingPathScreen() {
                 }}
                 onPressOut={() => setPressedId(undefined)}
                 className={`transform ${pressedId === path.id ? 'translate-y-[3px]' : 'translate-y-0'}`}
-                style={({ pressed }) => [{ elevation: pressed ? 0 : 6 }]}>
+                style={({ pressed }) => [
+                  { elevation: pressed ? 0 : 6 },
+                ]}>
                 {/* Path Image */}
-                <Image source={path.image} className={`w-[100%] h-${insets.top > 20 ? '40' : '28'} shadow-md`} resizeMode="cover" />
+                <Image 
+                  source={path.image} 
+                  style={{ width: '100%', height: imageHeight }} 
+                  className="shadow-md" 
+                  resizeMode="cover" 
+                />
 
                 {/* Path Text Content */}
                 <View className="p-3">

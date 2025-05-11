@@ -390,11 +390,19 @@ export default function ProfileScreen() {
                 : 'Unlock premium features and enhance your spiritual journey'}
             </Text>
             {!isProMember && (
-              <PrimaryButton
-                title="Upgrade to Pro"
-                onPress={handleSubscriptionPress}
-                style="mt-0"
-              />
+              <>
+                <PrimaryButton
+                  title="Upgrade to Pro"
+                  onPress={handleSubscriptionPress}
+                  style="mt-0 mb-3"
+                />
+                <TouchableOpacity
+                  onPress={() => router.push('/PricingScreen' as any)}
+                  className="flex-row items-center justify-center bg-white border border-accentGold py-3 rounded-card">
+                  <Text className="font-feather text-body text-textPrimary mr-2">View Pricing Details</Text>
+                  <Feather name="chevron-right" size={18} color="#3C584A" />
+                </TouchableOpacity>
+              </>
             )}
           </View>
 

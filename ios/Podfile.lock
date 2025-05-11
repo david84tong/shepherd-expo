@@ -3287,6 +3287,27 @@ PODS:
     - React-Core
   - RNCClipboard (1.16.2):
     - React-Core
+  - RNCMaskedView (0.3.2):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.10.14.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - RNDateTimePicker (8.3.0):
     - React-Core
   - RNFBApp (21.14.0):
@@ -3578,6 +3599,7 @@ DEPENDENCIES:
   - rive-react-native (from `../node_modules/rive-react-native`)
   - "RNCAsyncStorage (from `../node_modules/@react-native-async-storage/async-storage`)"
   - "RNCClipboard (from `../node_modules/@react-native-clipboard/clipboard`)"
+  - "RNCMaskedView (from `../node_modules/@react-native-masked-view/masked-view`)"
   - "RNDateTimePicker (from `../node_modules/@react-native-community/datetimepicker`)"
   - "RNFBApp (from `../node_modules/@react-native-firebase/app`)"
   - "RNFBAuth (from `../node_modules/@react-native-firebase/auth`)"
@@ -3829,6 +3851,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-async-storage/async-storage"
   RNCClipboard:
     :path: "../node_modules/@react-native-clipboard/clipboard"
+  RNCMaskedView:
+    :path: "../node_modules/@react-native-masked-view/masked-view"
   RNDateTimePicker:
     :path: "../node_modules/@react-native-community/datetimepicker"
   RNFBApp:
@@ -3988,6 +4012,7 @@ SPEC CHECKSUMS:
   RiveRuntime: 1748a5e12764dbb732894ac719691f6abd4cad22
   RNCAsyncStorage: aa75595c1aefa18f868452091fa0c411a516ce11
   RNCClipboard: e1d17c9d093d8129ef50b39b63a17a0e8ccd0ade
+  RNCMaskedView: 724ec5813f4e333e573f45091ffd8b274c09651f
   RNDateTimePicker: 29264364ea7b8cc0fb355b3843cf276a4ff78966
   RNFBApp: 4105e54d9ca4a1c10893a032268470f670181110
   RNFBAuth: 68dcd5fc893659b68b63646b1ff54d59001cb21a

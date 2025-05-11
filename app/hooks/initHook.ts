@@ -123,12 +123,12 @@ export const useAppInitialization = () => {
           setCreatedAt(currentTime);
           setUpdatedAt(currentTime);
           setLastActivityDate(currentTime);
-          setLastReadingDate(currentTime);
-          setLastPrayerDate(currentTime);
-          setLastReflectionDate(currentTime);
-          setLastReadingPenaltyDate(currentTime);
-          setLastPrayerPenaltyDate(currentTime);
-          setLastReflectionPenaltyDate(currentTime);
+          // setLastReadingDate(currentTime);
+          // setLastPrayerDate(currentTime);
+          // setLastReflectionDate(currentTime);
+          // setLastReadingPenaltyDate(currentTime);
+          // setLastPrayerPenaltyDate(currentTime);
+          // setLastReflectionPenaltyDate(currentTime);
 
           await AsyncStorage.setItem(APP_INITIALIZED_KEY, 'true');
           console.log('✅ User initialized with ID:', anonymousUserId);

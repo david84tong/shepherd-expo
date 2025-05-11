@@ -389,7 +389,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     }
 
     // Navigate to success screen
-        router.push('/success');
+        router.replace('/success');
   };
 
   // New handler specifically for back button

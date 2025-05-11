@@ -55,7 +55,7 @@ const shouldResetCompletions = (lastActivityDate: any, now: Date): boolean => {
 };
 
 // Utility: Convert Firestore Timestamp/Date/serialized to Date
-function getDateFromTimestamp(timestamp: any): Date | null {
+export function getDateFromTimestamp(timestamp: any): Date | null {
   if (!timestamp) return null;
   try {
     if (timestamp instanceof Date) return timestamp;
@@ -213,7 +213,7 @@ function calculateStreakAndPenalties({
   setLambMood(getLambMoodByHearts(lambHearts));
 
   // Check if we need to reset completion states for a new calendar day
-  const isNewDay = shouldResetCompletions(lastActivityDate, now);
+  const isNewDay = shouldResetCompletions(lastReadingDate, now);
   if (isNewDay) {
     if (debug) console.log('📅 New calendar day detected - resetting completion states');
     resetCompletionStates();

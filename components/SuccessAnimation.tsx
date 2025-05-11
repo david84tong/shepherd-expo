@@ -591,7 +591,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     } else {
       setTimeout(() => {
         // Navigate back to the home tab - the useEffect in index.tsx will respond to mode change
-        router.push('/(tabs)');
+        router.replace('/(tabs)');
       }, 500); // 500ms delay
     }
 
@@ -626,7 +626,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
        triggerStreakScreen();
     } else {
-      router.push('/(tabs)');
+      router.replace('/(tabs)');
     }
 
 
