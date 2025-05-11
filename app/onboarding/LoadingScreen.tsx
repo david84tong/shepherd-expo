@@ -1,12 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, Text, ActivityIndicator, Animated, Easing } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import Rive, { Fit, Alignment } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
 import analytics from '../../utils/analytics';
+
 interface LoadingScreenProps {
   initialMessage?: string;
   onLoadingComplete?: () => void;
@@ -21,14 +22,23 @@ const LOADING_MESSAGES = [
 ];
 
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ 
-  initialMessage = LOADING_MESSAGES[0],
+  initialMessage,
   onLoadingComplete,
-  redirectTo = '/(tabs)' // Default to home tabs if not specified
+  redirectTo
 }) => {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  
+  // Get route parameters
+  const initialMessageFromParams = params.initialMessage as string;
+  const redirectAfterLoading = params.redirectAfterLoading as string;
+  
+  // Use params if available, otherwise use props
   const [progress, setProgress] = useState(0);
   const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-  const [currentMessage, setCurrentMessage] = useState(initialMessage);
+  const [currentMessage, setCurrentMessage] = useState(
+    initialMessageFromParams || initialMessage || LOADING_MESSAGES[0]
+  );
 
   // Animation values
   const fadeAnim = useRef(new Animated.Value(1)).current;
@@ -44,32 +54,35 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   
   // Handle text changes based on progress
   useEffect(() => {
-    // Calculate which message to show based on progress
-    const messageIndex = Math.min(
-      Math.floor((progress / 100) * LOADING_MESSAGES.length),
-      LOADING_MESSAGES.length - 1
-    );
-    
-    if (messageIndex !== currentMessageIndex) {
-      // Fade out current text
-      Animated.timing(fadeAnim, {
-        toValue: 0,
-        duration: 200,
-        useNativeDriver: true,
-      }).start(() => {
-        // Change text while invisible
-        setCurrentMessageIndex(messageIndex);
-        setCurrentMessage(LOADING_MESSAGES[messageIndex]);
-        
-        // Fade in new text
+    // Use custom message if provided, otherwise cycle through default messages
+    if (!initialMessageFromParams) {
+      // Calculate which message to show based on progress
+      const messageIndex = Math.min(
+        Math.floor((progress / 100) * LOADING_MESSAGES.length),
+        LOADING_MESSAGES.length - 1
+      );
+      
+      if (messageIndex !== currentMessageIndex) {
+        // Fade out current text
         Animated.timing(fadeAnim, {
-          toValue: 1,
-          duration: 400,
+          toValue: 0,
+          duration: 200,
           useNativeDriver: true,
-        }).start();
-      });
+        }).start(() => {
+          // Change text while invisible
+          setCurrentMessageIndex(messageIndex);
+          setCurrentMessage(LOADING_MESSAGES[messageIndex]);
+          
+          // Fade in new text
+          Animated.timing(fadeAnim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }).start();
+        });
+      }
     }
-  }, [progress, currentMessageIndex]);
+  }, [progress, currentMessageIndex, initialMessageFromParams]);
 
   // Setup pulse animation
   useEffect(() => {
@@ -97,39 +110,56 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
     };
   }, [pulseAnim]);
   
-  // Function to finalize onboarding and navigate to home
+  // Function to finalize and navigate
   const finalizeAndNavigate = async () => {
     try {
-      // Double-check onboarding is marked as completed
-      const isCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-      
-      if (isCompleted !== 'true') {
-        await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+      // Handle different navigation behaviors based on redirectAfterLoading
+      if (redirectAfterLoading === "back") {
+        // Navigate back to PricingScreen with a param to indicate we're coming from loading
+        router.navigate({
+          pathname: "/PricingScreen", 
+          params: { fromLoading: "true" }
+        });
+      } else if (redirectTo || redirectAfterLoading) {
+        // Navigate to specified redirect
+        const targetPath = redirectAfterLoading || redirectTo;
+        console.log('Loading complete, navigating to:', targetPath);
+        router.replace(targetPath);
+      } else {
+        // Default behavior for onboarding
+        const isCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+        
+        if (isCompleted !== 'true') {
+          await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+        }
+        
+        // Call completion handler if provided
+        if (onLoadingComplete) {
+          onLoadingComplete();
+        }
+        
+        // Navigate to home as default
+        console.log('Onboarding complete, navigating to home');
+        router.replace('/PricingScreen');        
       }
       
-      // Call completion handler if provided
-      if (onLoadingComplete) {
-        onLoadingComplete();
-      }
-      
-      // Navigate to home or specified redirect
-      console.log('Onboarding complete, navigating to:', redirectTo);
-      router.replace(redirectTo);
       analytics.logEvent("OnboardingLoadingScreen_Completed");
     } catch (error) {
-      console.error('Error finalizing onboarding:', error);
-      // Navigate anyway as fallback
-      router.replace('/(tabs)');
+      console.error('Error finalizing loading screen:', error);
+      
+      router.replace('/PricingScreen');        
     }
   };
   
   // Handle progress simulation
   useEffect(() => {
-    let interval: NodeJS.Timeout;
     let lastProgress = 0;
     
+    // Simulate loading progress - faster for subscription flow
+    const incrementSpeed = redirectAfterLoading === "back" ? 40 : 120; // Faster for subscription flow
+    
     // Simulate loading progress
-    interval = setInterval(() => {
+    const interval: NodeJS.Timeout = setInterval(() => {
       if (progress < 100) {
         // Generate next progress value with slight randomization for natural feel
         const increment = Math.max(1, Math.floor(Math.random() * 3));
@@ -168,12 +198,12 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
           finalizeAndNavigate();
         }, 400);
       }
-    }, 120); // Adjust speed of progress
+    }, incrementSpeed); // Adjust speed of progress
     
     return () => {
       clearInterval(interval);
     };
-  }, [progress, onLoadingComplete, redirectTo, router]);
+  }, [progress, onLoadingComplete, redirectTo, redirectAfterLoading, router]);
   
   // Show loading indicator while assets are loading
   if (!assets) {
@@ -187,10 +217,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   return (
     <View className="flex-1 items-center justify-center bg-surfaceCream px-8">
       {/* Pulsing Rive animation */}
-      <View
-        
-        className="w-56 h-56 mb-24 ml-8"
-      >
+      <View className="w-56 h-56 mb-24 ml-8">
         <Rive
           url={assets[0].localUri!}
           artboardName="lamb-writing"

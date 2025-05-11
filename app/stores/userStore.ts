@@ -247,7 +247,12 @@ export const useUserStore = create<UserStore>()(
       setVersesReadTotal: (versesReadTotal) => set({ versesReadTotal }),
       setChaptersReadTotal: (chaptersReadTotal) => set({ chaptersReadTotal }),
       setBibleVersion: (bibleVersion) => set({ bibleVersion }),
-      setProStatus: (proStatus) => set({ proStatus }),
+      setProStatus: (proStatus) => {
+        set({ proStatus });
+        if (isAuthenticated()) {
+          updateField('proStatus', proStatus);
+        }
+      },
       setCreatedAt: (createdAt) => set({ createdAt }),
       setUpdatedAt: (updatedAt) => set({ updatedAt }),
       setGens: (gens) => {

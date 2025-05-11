@@ -2,6 +2,7 @@ import Purchases, { PurchasesPackage, CustomerInfo, LOG_LEVEL } from 'react-nati
 import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { create } from 'zustand';
 import { Alert } from 'react-native';
+import { useUserStore } from './userStore';
 
 interface SubscriptionState {
   customerInfo: CustomerInfo | null;
@@ -63,11 +64,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           console.log('[SubscriptionStore] Purchase completed successfully from paywall. Updating customer info...');
           Alert.alert("Success", "Purchase completed!");
           await get().getCustomerInfo(); 
+          // Update user's pro status in userStore
+          useUserStore.getState().setProStatus('pro');
           break;
         case PAYWALL_RESULT.RESTORED:
           console.log('[SubscriptionStore] Purchase restored successfully from paywall. Updating customer info...');
           Alert.alert("Success", "Purchases restored!");
           await get().getCustomerInfo(); 
+          // Update user's pro status in userStore
+          useUserStore.getState().setProStatus('pro');
           break;
         case PAYWALL_RESULT.CANCELLED:
           console.log('[SubscriptionStore] Paywall cancelled by user.');
@@ -97,7 +102,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       const { customerInfo, productIdentifier } = await Purchases.purchasePackage(pack);
       console.log('[SubscriptionStore] Successfully purchased product:', productIdentifier);
       console.log('[SubscriptionStore] Updated CustomerInfo after purchase:', JSON.stringify(customerInfo, null, 2));
-      set({ customerInfo, isProMember: customerInfo.entitlements.active[ENTITLEMENT_ID]?.isActive || false });
+      
+      const isPro = customerInfo.entitlements.active[ENTITLEMENT_ID]?.isActive || false;
+      set({ customerInfo, isProMember: isPro });
+      
+      // Update user's pro status in userStore
+      if (isPro) {
+        useUserStore.getState().setProStatus('pro');
+      }
+      
       Alert.alert("Success", "Purchase successful!");
       console.log('[SubscriptionStore] Pro status after purchase:', get().isProMember);
     } catch (e: any) {
@@ -118,6 +131,11 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       const isPro = customerInfo.entitlements.active[ENTITLEMENT_ID]?.isActive || false;
       console.log(`[SubscriptionStore] User is pro member (${ENTITLEMENT_ID}): ${isPro}`);
       set({ customerInfo, isProMember: isPro });
+      
+      // Update user's pro status in userStore based on current entitlement status
+      // This ensures if a user cancels their subscription, their status is properly updated
+      useUserStore.getState().setProStatus(isPro ? 'pro' : 'free');
+      
       console.log('[SubscriptionStore] Customer info and pro status updated in store.');
     } catch (e) {
       console.error('[SubscriptionStore] Error fetching customer info:', e);

@@ -372,10 +372,7 @@ export default function SaveProgressScreen() {
           </TouchableOpacity>
         )}
         
-        {/* Privacy note */}
-        <Text className="font-din text-[12px] text-description text-center mt-6 px-8">
-          We only use your Apple ID for authentication. Your email and personal details stay private.
-        </Text>
+   
       </Animated.View>
     </View>
   );
