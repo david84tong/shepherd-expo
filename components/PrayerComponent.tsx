@@ -16,6 +16,7 @@ import BackButton from './BackButton';
 import PrimaryButton from './PrimaryButton';
 import { BIBLE_BOOK_IDS } from '../app/models/Path';
 import analytics from '../utils/analytics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
@@ -55,6 +56,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   onClose,
   buttonClassName, // Note: buttonClassName is not used currently, PrimaryButton handles its own styles
 }) => {
+  const { bottom: bottomPadding } = useSafeAreaInsets()
   // Animation values for button entry
   const buttonAnim = useRef(new Animated.Value(50)).current; // Start 50 units below final position
   const buttonOpacity = useRef(new Animated.Value(0)).current; // Start fully transparent
@@ -117,35 +119,35 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 
     if (visible) {
       console.log('PrayerComponent: Showing prayer component');
-      
+
       // Get the CURRENT value from the store, not the one from the hook
       // This ensures we have the latest value after GlobalPrayerSheet might have set it to false
       const currentTappedPrayAboutVerse = useHomeStore.getState().tappedPrayAboutVerse;
       console.log('Current tappedPrayAboutVerse from store =', currentTappedPrayAboutVerse);
-      
+
       // DEBUG: Print ALL recent prayers in the store
       const allRecentPrayers = usePrayerStore.getState().recentPrayers;
       console.log('DEBUG - All recent prayers in store:', allRecentPrayers);
-      
+
       let newPrayerText = '';
-      
+
       // Check if this is a scripture-specific prayer - using current store value
       if (currentTappedPrayAboutVerse && currentPath && currentPath.prayer) {
         console.log('Using scripture-specific prayer:', currentPath.prayer);
         newPrayerText = currentPath.prayer;
       } else {
-      // Get latest prayer topic and generate prayer text
-      const currentPrayerTopic = usePrayerStore.getState().recentPrayers[0] || '';
+        // Get latest prayer topic and generate prayer text
+        const currentPrayerTopic = usePrayerStore.getState().recentPrayers[0] || '';
         console.log('DEBUG - Current prayer topic:', currentPrayerTopic);
         console.log('DEBUG - Direct recentPrayers[0]:', usePrayerStore.getState().recentPrayers[0]);
 
-      // Generate fresh prayer text based on the current topic
-      if (currentPrayerTopic) {
-        newPrayerText = `Dear God, I come before you today with a humble heart. Please help me with ${currentPrayerTopic.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
-        console.log('Generated custom prayer text for:', currentPrayerTopic);
+        // Generate fresh prayer text based on the current topic
+        if (currentPrayerTopic) {
+          newPrayerText = `Dear God, I come before you today with a humble heart. Please help me with ${currentPrayerTopic.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
+          console.log('Generated custom prayer text for:', currentPrayerTopic);
           console.log('DEBUG - Generated prayer text:', newPrayerText);
-      } else {
-        console.log('No prayer topic found, using default prayer');
+        } else {
+          console.log('No prayer topic found, using default prayer');
           console.log('DEBUG - Using DEFAULT_PRAYER_TEMPLATE');
           newPrayerText = DEFAULT_PRAYER_TEMPLATE;
         }
@@ -272,14 +274,14 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     if (typedText && typedText.length === prayerText.length) {
       console.log('Typing completed.');
     }
-    
+
     if (!typedText) {
       return <Text className="text-body text-textPrimary font-din">{typedText}</Text>;
     }
-    
+
     // Get current value from store to be consistent with the useEffect
     const currentTappedPrayAboutVerse = useHomeStore.getState().tappedPrayAboutVerse;
-    
+
     // If this is a scripture prayer, just display it without highlighting
     if (currentTappedPrayAboutVerse && currentPath && currentPath.prayer) {
       return <Text className="text-body text-textPrimary font-din">{typedText}</Text>;
@@ -344,7 +346,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 
     // Disable animations if we're already done
     shakeAnimation.setValue(0);
-    
+
     // Set path in progress to false
     setPathInProgress(false);
 
@@ -363,12 +365,12 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     try {
       // Get current value from store 
       const currentTappedPrayAboutVerse = useHomeStore.getState().tappedPrayAboutVerse;
-      
+
       // Add completed prayer with topic and scripture context if applicable
       addCompletedPrayer({
         date: now,
-        topic: currentTappedPrayAboutVerse && currentPath ? 
-          `${getBookNameFromId(currentPath.bookId) || 'shimate'} ${currentPath.startChapter}-${currentPath.endChapter}` : 
+        topic: currentTappedPrayAboutVerse && currentPath ?
+          `${getBookNameFromId(currentPath.bookId) || 'shimate'} ${currentPath.startChapter}-${currentPath.endChapter}` :
           (prayerTopic || 'general prayer'),
         type: currentTappedPrayAboutVerse ? 'scripture' : 'general',
       });
@@ -389,18 +391,18 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     }
 
     // Navigate to success screen
-        router.replace('/success');
+    router.replace('/success');
   };
 
   // New handler specifically for back button
   const handleBackPress = () => {
     console.log('Back button pressed - canceling prayer');
     setPathInProgress(false);
-    
+
     // Reset tappedPrayAboutVerse flag when canceling
     useHomeStore.getState().setTappedPrayAboutVerse(false);
     console.log('Reset tappedPrayAboutVerse flag to false (from back button)');
-    
+
     // Invoke the callback provided by the parent
     onClose();
     analytics.logEvent("Prayer_Tapped_Cancel", {
@@ -422,11 +424,11 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
         }}>
         {/* Header title */}
         <Text className="text-heading font-feather text-textPrimary mb-1 text-center">
-          {tappedPrayAboutVerse && currentPath && currentPath.unitTitle 
-            ? currentPath.unitTitle 
+          {tappedPrayAboutVerse && currentPath && currentPath.unitTitle
+            ? currentPath.unitTitle
             : "Prayer"}
         </Text>
-        
+
         {/* Subtitle with book and chapter range */}
         {tappedPrayAboutVerse && currentPath && currentPath.bookId && (
           <Text className="text-body font-din text-description mb-4 text-center">
@@ -456,9 +458,10 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 
       {/* Animated Button Container */}
       <Animated.View
-        className="w-full px-5 mb-10 absolute -bottom-24"
+        className="w-full px-5 absolute"
         style={{
           opacity: buttonOpacity,
+          bottom: bottomPadding + 20,
           transform: [{ translateY: buttonAnim }, { translateX: shakeTranslateX }],
         }}>
         <View className="mt-64">
@@ -469,7 +472,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
               });
               handleDonePress();
             }
-            } disabled={isTimerActive} />
+          } disabled={isTimerActive} />
         </View>
       </Animated.View>
     </View>

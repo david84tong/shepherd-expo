@@ -24,13 +24,13 @@ import { useUIStore } from './stores/uiStore';
 import { router, useLocalSearchParams } from 'expo-router';
 import { BIBLE_PATHS, Unit, BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from './models/Path';
 import firestore from '@react-native-firebase/firestore';
-import Reanimated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withTiming, 
-  withRepeat, 
-  withSequence, 
-  withDelay, 
+import Reanimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withRepeat,
+  withSequence,
+  withDelay,
   Easing as ReanimatedEasing  // Use ReanimatedEasing for clarity
 } from 'react-native-reanimated'; // Use Reanimated for dot indicator
 import { heightScreen } from '~/utils/dimensions';
@@ -105,21 +105,21 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // Track heights to determine if scrolling is needed
   const [contentHeight, setContentHeight] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
-  
+
   // Animation values for button container (using RNAnimated for these)
   const buttonsAnim = useRef(new RNAnimated.Value(0)).current; // 0: hidden, 1: visible
-  
+
   // Reference to the ScrollView
   const scrollViewRef = useRef<ScrollView>(null);
-  
+
   // Get UI store for the book chapter selector
   const showBookChapterSelector = useUIStore(state => state.showBookChapterSelector);
-  
+
   // Get saved reading state from pathStore
-  const { 
-    savedBook, 
-    savedBookId, 
-    savedChapter, 
+  const {
+    savedBook,
+    savedBookId,
+    savedChapter,
     savedTranslation,
     setSavedReading,
     setPathInProgress,
@@ -131,20 +131,20 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     markUnitAsCompleted,
     setNextUnitPreview
   } = usePathStore();
-  
+
   // Initialize with props if provided, otherwise use saved state
   const [currentBook, setCurrentBook] = useState<string>(initialBookName || savedBook);
   const [currentBookId, setCurrentBookId] = useState<number>(initialBookId || savedBookId);
   const [currentChapter, setCurrentChapter] = useState<number>(initialChapter || savedChapter);
   const [currentVersion, setCurrentVersion] = useState<string>(savedTranslation);
-  
+
   const setHomeMode = useHomeStore((state) => state.setMode);
   const setSuccessType = useHomeStore((state) => state.setSuccessType);
   const setReadingCompleted = useHomeStore((state) => state.setReadingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
   const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
-  
+
   // Get userStore functions for saving reading
   const addCompletedReading = useUserStore(state => state.addCompletedReading);
   const setLastReadingDate = useUserStore(state => state.setLastReadingDate);
@@ -152,7 +152,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const setChaptersReadTotal = useUserStore(state => state.setChaptersReadTotal);
   const getVersesReadTotal = useUserStore(state => state.getVersesReadTotal);
   const getChaptersReadTotal = useUserStore(state => state.getChaptersReadTotal);
-  
+
   // Always call hooks unconditionally, even if we don't use the results
   const params = useLocalSearchParams();
   const effectiveParams = !isEmbedded ? params : null;
@@ -181,16 +181,16 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       if (!isEmbedded) {
         console.log("📋 URL Params:", effectiveParams);
       }
-      
+
       // Get route params from useLocalSearchParams if not embedded
       const urlBookId = !isEmbedded && effectiveParams?.bookId ? parseInt(effectiveParams.bookId as string, 10) : null;
       const urlChapters = !isEmbedded && effectiveParams?.chapters ? (effectiveParams.chapters as string).split(',').map(c => parseInt(c, 10)) : null;
       const urlTitle = !isEmbedded && effectiveParams?.title ? effectiveParams.title as string : null;
-      
+
       // If embedded, use props; otherwise check URL params then fall back to saved state
       const bookIdToLoad = initialBookId || (urlBookId && !isNaN(urlBookId) ? urlBookId : currentBookId);
       const chapterToLoad = initialChapter || (urlChapters && urlChapters.length > 0 && !isNaN(urlChapters[0]) ? urlChapters[0] : currentChapter);
-      
+
       console.log(`🎯 Loading: bookId: ${bookIdToLoad}, chapter: ${chapterToLoad}`);
 
       try {
@@ -255,7 +255,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const loadChapter = async (version: string, book: string, bookId: number, chapter: number) => {
     setLoading(true);
     setError(null);
-    
+
     console.log(`📚 LOADING CHAPTER - version:${version}, book:${book}, bookId:${bookId}, chapter:${chapter}`);
 
     try {
@@ -269,16 +269,16 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       } else {
         console.log(`✅ Successfully loaded: ${result.book} ${result.chapter}`);
         setChapterData(result);
-        
+
         // Update the UI state with actual data
         setCurrentBook(result.book);
         setCurrentBookId(bookId);
         setCurrentChapter(result.chapter);
         setCurrentVersion(result.version);
-        
+
         // Save to the store for persistence
         setSavedReading(result.book, bookId, result.chapter);
-        
+
         setError(null);
       }
     } catch (error) {
@@ -292,7 +292,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   const navigateToPreviousChapter = () => {
     if (loading || !chapterData) return;
-    
+
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     analytics.logEvent("BibleReader_Tapped_PreviousChapter", {
@@ -317,7 +317,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     });
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
+
     // Simple chapter navigation for now
     loadChapter(currentVersion, currentBook, currentBookId, currentChapter + 1);
   };
@@ -326,7 +326,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     if (newSize >= MIN_FONT_SIZE && newSize <= MAX_FONT_SIZE) {
       // Add haptic feedback
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      
+
       setFontSize(newSize);
       try {
         await AsyncStorage.setItem(FONT_SIZE_KEY, newSize.toString());
@@ -348,19 +348,19 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     analytics.logEvent("BibleReader_Tapped_FinishReading", {
       book: currentBook,
       bookId: currentBookId,
-      version: currentVersion,      
+      version: currentVersion,
       chapter: currentChapter
     });
     // Add haptic feedback - medium for completion
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+
     console.log('Finish Reading Pressed - Updating completion status');
     let nextUnit: Unit | null = null;
     let shouldStayInPath = false;
 
     // Create current timestamp
     const now = firestore.Timestamp.now();
-    
+
     // Save reading data to userStore
     console.log('Saving reading data to userStore');
     try {
@@ -371,19 +371,19 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         chapters: [`${currentChapter}`] as unknown as [string],
         isUnit: pathInProgress
       });
-      
+
       // Update last reading date
       setLastReadingDate(now);
-      
+
       // Update total verses and chapters read
       const currentVerses = getVersesReadTotal();
       const currentChapters = getChaptersReadTotal();
-      
+
       // Add the number of verses in this chapter
       const versesInChapter = chapterData ? chapterData.verses.length : 0;
       setVersesReadTotal(currentVerses + versesInChapter);
       setChaptersReadTotal(currentChapters + 1);
-      
+
       console.log(`Reading saved successfully. Added ${versesInChapter} verses and 1 chapter.`);
       console.log(`New totals: ${currentVerses + versesInChapter} verses, ${currentChapters + 1} chapters`);
     } catch (error) {
@@ -420,7 +420,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       }
 
       if (nextUnit) {
-        shouldStayInPath = true; 
+        shouldStayInPath = true;
         console.log(`🚀 Setting next unit preview and staying in path.`);
       } else {
         console.log(`🏁 Reached the end of all paths.`);
@@ -468,9 +468,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const isAtEndChapter = useMemo(() => {
     if (!pathInProgress || !currentPath) {
       console.log('[isAtEndChapter] Not in path or no currentPath data. Returning false.');
-      return false; 
+      return false;
     }
-    
+
     const isActuallyAtEnd = currentBookId === currentPath.bookId && currentChapter === currentPath.endChapter;
     console.log(`[isAtEndChapter] Calculation: pathInProgress=${pathInProgress}, currentPath.bookId=${currentPath.bookId}, currentBookId=${currentBookId}, currentPath.endChapter=${currentPath.endChapter}, currentChapter=${currentChapter}. Result: ${isActuallyAtEnd}`);
     return isActuallyAtEnd;
@@ -492,8 +492,8 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    
-    const threshold = pathInProgress ? 10 : 100; 
+
+    const threshold = pathInProgress ? 10 : 100;
     const scrolledToBottomThreshold = contentSize.height - threshold;
     const bottomReached = layoutMeasurement.height + contentOffset.y >= scrolledToBottomThreshold;
 
@@ -502,7 +502,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     if (bottomReached && !hasScrolledToBottom) {
       console.log(`[handleScroll] Bottom of current view reached. pathInProgress: ${pathInProgress}, isAtEndChapter: ${isAtEndChapter}. Setting hasScrolledToBottom = true.`);
       setHasScrolledToBottom(true);
-    } 
+    }
     // Note: hasScrolledToBottom is reset to false only when a new chapter/version loads.
   };
 
@@ -510,7 +510,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const verseTextStyle = useMemo(() => {
     return [styles.verseText, { fontSize: fontSize }];
   }, [fontSize]);
-  
+
   const verseNumberStyle = useMemo(() => {
     return [styles.verseNumber, { fontSize: fontSize }];
   }, [fontSize]);
@@ -526,11 +526,11 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
     if (chapterData) {
       return (
-        <ScrollView 
+        <ScrollView
           ref={scrollViewRef}
           contentContainerStyle={styles.scrollContainer}
           onScroll={handleScroll}
-          scrollEventThrottle={16} 
+          scrollEventThrottle={16}
           // Update content height whenever it changes
           onContentSizeChange={(_, height) => setContentHeight(height)}
           // Capture the visible container height
@@ -552,7 +552,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const handleOpenSelector = () => {
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
+
     console.log('🔍 DEBUG: Opening selector');
     showBookChapterSelector(currentBookId, currentChapter, handleSelectBookChapter);
   };
@@ -560,14 +560,14 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const handleSelectBookChapter = (bookId: number, chapter: number) => {
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
+
     console.log(`📖 New selection: Book ID ${bookId}, Chapter ${chapter}`);
     // Find book name from reverse map for logging/UI update (optional here)
     const bookNames: Record<number, string> = Object.fromEntries(
       Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => [id, name])
     );
     const bookName = bookNames[bookId] || 'Unknown Book';
-    
+
     // Load the newly selected chapter
     loadChapter(currentVersion, bookName, bookId, chapter);
   };
@@ -576,17 +576,17 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const handleBackNavigation = () => {
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
+
     if (onNavigateBack) {
       // Custom back navigation when embedded
       onNavigateBack();
     } else if (!isEmbedded && effectiveParams?.source === 'map') {
       // Navigation back to map when coming from map
       console.log('📱 Navigating back to map, setting pathInProgress to false');
-      
+
       // Always set pathInProgress to false BEFORE navigating back
       setPathInProgress(false);
-      
+
       // Allow state update to complete before navigation
       setTimeout(() => {
         router.back();
@@ -594,7 +594,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     } else {
       // Always reset pathInProgress for any other back navigation too
       setPathInProgress(false);
-      
+
       // Default back navigation with small delay to allow state update
       setTimeout(() => {
         router.back();
@@ -624,13 +624,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
               <Text style={styles.backButtonText}>←</Text>
             </TouchableOpacity>
           )}
-          
+
           <TouchableOpacity style={styles.headerButton} onPress={handleOpenSelector}>
             <Text style={styles.headerButtonText}>
               {chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'Loading...'}
             </Text>
           </TouchableOpacity>
-          
+
           {/* <TouchableOpacity style={styles.headerButton} onPress={handleOpenSelector}>
             <Text style={styles.headerButtonText}>
               {chapterData ? chapterData.version : '...'}
@@ -679,7 +679,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       </RNAnimated.View>
 
       {/* Finish Reading Button - Now Animated */}
-      {!isEmbedded && <RNAnimated.View 
+      {!isEmbedded && <RNAnimated.View
         style={[
           styles.finishButtonContainer,
           buttonsContainerStyle // Apply the same animation
@@ -698,14 +698,14 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 // Standalone screen that uses the component
 export default function BibleReaderScreen() {
   const params = useLocalSearchParams();
-  
+
   // Extract params for initial state
   const urlBookId = params.bookId ? parseInt(params.bookId as string, 10) : undefined;
   const urlChapters = params.chapters ? (params.chapters as string).split(',').map(c => parseInt(c, 10)) : undefined;
   const initialChapter = urlChapters && urlChapters.length > 0 ? urlChapters[0] : undefined;
-  
+
   return (
-    <BibleReader 
+    <BibleReader
       initialBookId={urlBookId}
       initialChapter={initialChapter}
     />
@@ -805,7 +805,7 @@ const styles = StyleSheet.create({
   scrollContainer: {
     paddingHorizontal: 20,
     paddingTop: 10,
-    paddingBottom: 60,
+    paddingBottom: 100,
   },
   verseText: {
     lineHeight: 24,

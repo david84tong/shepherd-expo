@@ -346,7 +346,7 @@ export default function StatsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
-      <ScrollView className="flex-1 bg-surfaceCream">
+      <ScrollView className="flex-1 bg-surfaceCream" contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
         <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
           <Text className="font-feather text-h2 text-textPrimary">Heart Posture</Text>
