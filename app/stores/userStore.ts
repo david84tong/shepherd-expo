@@ -95,19 +95,16 @@ function undefinedToNull(obj: any): any {
 // Utility to convert Firestore timestamp objects to Timestamp instances
 function convertTimestamps(obj: any): any {
   if (!obj || typeof obj !== 'object') return obj;
-
-  // If this object itself looks like a Firestore timestamp, convert it immediately
-  if ('_seconds' in obj && '_nanoseconds' in obj) {
-    return new Timestamp(obj._seconds, obj._nanoseconds);
-  }
-
-  if (Array.isArray(obj)) {
-    return obj.map(convertTimestamps);
-  }
-
-  const out: any = { ...obj };
+  const out = { ...obj };
   for (const key in out) {
-    out[key] = convertTimestamps(out[key]);
+    if (
+      out[key] &&
+      typeof out[key] === 'object' &&
+      '_seconds' in out[key] &&
+      '_nanoseconds' in out[key]
+    ) {
+      out[key] = new Timestamp(out[key]._seconds, out[key]._nanoseconds);
+    }
   }
   return out;
 }
