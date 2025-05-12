@@ -22,10 +22,14 @@ import analytics from '~/utils/analytics';
 // Import the sheet components
 import { useAssets } from 'expo-asset';
 import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
-import GlobalPrayerSheet, { PrayerSheetRef as GlobalPrayerSheetRefInternal } from '../components/GlobalPrayerSheet';
+import GlobalPrayerSheet, {
+  PrayerSheetRef as GlobalPrayerSheetRefInternal,
+} from '../components/GlobalPrayerSheet';
 import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet';
 import OldReflectionSheet from '../components/OldReflectionSheet';
 import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
+import useForceUpdateCheck from './hooks/useForceUpdateCheck';
+import ForceUpdateModal from '~/components/ForceUpdateModal';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -37,9 +41,10 @@ type PrayerSheetRef = {
 // Configure RevenueCat
 Purchases.setLogLevel(Purchases.LOG_LEVEL.DEBUG);
 Purchases.configure({
-  apiKey: Platform.select({
-    ios: 'appl_HaJSTaiQWLDPXKMjOPocMXEOKrm',
-  }) || 'appl_HaJSTaiQWLDPXKMjOPocMXEOKrm', // Fallback key to satisfy TypeScript
+  apiKey:
+    Platform.select({
+      ios: 'appl_HaJSTaiQWLDPXKMjOPocMXEOKrm',
+    }) || 'appl_HaJSTaiQWLDPXKMjOPocMXEOKrm', // Fallback key to satisfy TypeScript
 });
 
 // Error logging setup
@@ -95,6 +100,7 @@ export const unstable_settings = {
 export default function RootLayout() {
   const router = useRouter();
   const segments = useSegments();
+  const { visibleForceUpdate } = useForceUpdateCheck();
   const [fontsLoaded, fontError] = useFonts({
     'Feather Bold': require('../assets/fonts/Feather Bold.ttf'),
     'DIN Next Rounded LT W01 Regular': require('../assets/fonts/DIN Next Rounded LT W01 Regular.ttf'),
@@ -104,9 +110,7 @@ export default function RootLayout() {
     'Nunito-Regular': require('../assets/fonts/Nunito-Regular.ttf'),
     'Nunito-BlackItalic': require('../assets/fonts/Nunito-BlackItalic.ttf'),
   });
-  const [riveAssets] = useAssets([
-    require('../assets/riveAnimations/shepherd-splash_screen.riv'),
-  ]);
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/shepherd-splash_screen.riv')]);
 
   // Loading states
   const [appReady, setAppReady] = useState(false);
@@ -121,7 +125,7 @@ export default function RootLayout() {
   const isPrayerSheetVisible = useUIStore((state) => state.isPrayerSheetVisible);
   const showPrayerSheet = useUIStore((state) => state.showPrayerSheet);
   const showBookChapterSelector = useUIStore((state) => state.showBookChapterSelector);
-  const showOldReflectionSheet = useUIStore(state => state.showOldReflectionSheet);
+  const showOldReflectionSheet = useUIStore((state) => state.showOldReflectionSheet);
 
   // Sheet refs
   const halfModalRef = useRef<HalfModalSheetRef>(null);
@@ -153,20 +157,20 @@ export default function RootLayout() {
       // Check if onboarding has been completed by looking for the key in AsyncStorage
       const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
       console.log('Onboarding completed status:', onboardingCompleted);
-      
+
       // If onboarding is completed, the value will be 'true'
       const isOnboardingCompleted = onboardingCompleted === 'true';
-      
+
       setInitialRouteDetermined(true);
       setIsOnboardingChecked(true);
-      
+
       // Log the status for debugging
       if (isOnboardingCompleted) {
         console.log('User has completed onboarding');
       } else {
         console.log('User has NOT completed onboarding');
       }
-      
+
       return isOnboardingCompleted;
     } catch (error) {
       console.error('Error checking onboarding status:', error);
@@ -179,7 +183,7 @@ export default function RootLayout() {
 
   // Check streak status on app startup
   const checkStreakStatus = async () => {
-    try {        
+    try {
       const result = await checkStreakAndApplyPenalties();
 
       if (result && result.heartPenalty > 0) {
@@ -202,10 +206,6 @@ export default function RootLayout() {
           showHalfModal(params);
         }, 1500);
       }
-      
-   
-      
-   
     } catch (error) {
       console.error('Error checking streak status:', error);
     }
@@ -272,15 +272,15 @@ export default function RootLayout() {
         setShowRiveAnimation(true);
 
         // Wait a bit to ensure Rive animation is ready
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         // Then hide splash screen
         await SplashScreen.hideAsync();
 
         // Navigate based on onboarding status after splash screen is hidden
         if (isOnboardingCompleted) {
-            await checkStreakStatus();
-          }
+          await checkStreakStatus();
+        }
       } catch (error) {
         console.error('Error during app initialization:', error);
         setHasError(true);
@@ -296,22 +296,14 @@ export default function RootLayout() {
   if (!fontsLoaded && !fontError) {
     return riveAssets?.[0]?.localUri ? (
       <View style={styles.riveContainer}>
-        <Rive
-          url={riveAssets[0].localUri}
-          style={styles.riveAnimation}
-          autoplay={true}
-        />
+        <Rive url={riveAssets[0].localUri} style={styles.riveAnimation} autoplay={true} />
       </View>
     ) : null;
   }
   if (!isInitialized) {
     return riveAssets?.[0]?.localUri ? (
       <View style={styles.riveContainer}>
-        <Rive
-          url={riveAssets[0].localUri}
-          style={styles.riveAnimation}
-          autoplay={true}
-        />
+        <Rive url={riveAssets[0].localUri} style={styles.riveAnimation} autoplay={true} />
       </View>
     ) : null;
   }
@@ -334,7 +326,6 @@ export default function RootLayout() {
   }
 
   console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
@@ -344,14 +335,13 @@ export default function RootLayout() {
             contentStyle: {
               backgroundColor: '#FFF4D9',
             },
-            animation: 'slide_from_right'
-          }}
-        >
+            animation: 'slide_from_right',
+          }}>
           <Stack.Screen
             name="(tabs)"
             options={{
               headerShown: false,
-              animation: 'slide_from_right'
+              animation: 'slide_from_right',
             }}
           />
           <Stack.Screen
@@ -420,10 +410,7 @@ export default function RootLayout() {
           params={halfModalParams}
         />
 
-        <SettingsSheet
-          settingsSheetRef={settingsSheetRef}
-          snapPoints={settingsSnapPoints}
-        />
+        <SettingsSheet settingsSheetRef={settingsSheetRef} snapPoints={settingsSnapPoints} />
 
         {/* Global sheets */}
         <GlobalPrayerSheet
@@ -436,6 +423,7 @@ export default function RootLayout() {
 
         {__DEV__ && <DebugButton />}
       </BottomSheetModalProvider>
+      {visibleForceUpdate && isInitialized ? <ForceUpdateModal visible={visibleForceUpdate} /> : null}
     </GestureHandlerRootView>
   );
 }
