@@ -19,6 +19,7 @@ import {
 import { usePrayerStore } from '../app/stores/prayerStore';
 import PrimaryButton from './PrimaryButton';
 import { useUIStore } from '../app/stores/uiStore';
+import { useHomeStore } from '../app/stores/homeStore';
 
 interface PrayerSheetProps {
   prayerSheetRef: React.RefObject<PrayerSheetRef>;
@@ -47,6 +48,9 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
   // Access prayer store
   const { prayerTopics, recentPrayers, incrementTopicCount, addRecentPrayer, getOrderedTopics } =
     usePrayerStore();
+
+  // Access home store
+  const setTappedPrayAboutVerse = useHomeStore(state => state.setTappedPrayAboutVerse);
 
   // Get ordered topics
   const [orderedTopics, setOrderedTopics] = useState(getOrderedTopics().map((topic) => topic.name));
@@ -92,13 +96,18 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
     // Always increment the count regardless of source
     incrementTopicCount(prayerInput);
     
-    // Only add to recent prayers if it's truly custom (not in predefined topics)
+    // Always add to recent prayers for prayer generation to work,
+    // but we'll filter the display in the UI
+    addRecentPrayer(prayerInput);
+    
     if (!isPredefinedTopic && isCustomInput) {
-      addRecentPrayer(prayerInput);
       console.log(`Added "${prayerInput}" to recent prayers as a custom prayer`);
     } else {
-      console.log(`Not adding "${prayerInput}" to recent prayers as it's a predefined topic`);
+      console.log(`Added "${prayerInput}" to recent prayers (for functionality) but it's a predefined topic`);
     }
+
+    // Set tappedPrayAboutVerse to false when a prayer is generated
+    setTappedPrayAboutVerse(false);
 
     // Close the bottom sheet
     bottomSheetRef.current?.close();
@@ -127,7 +136,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
       // Clear input state after callback execution
       setPrayerInput('');
     }, 500); // Slightly longer delay to ensure state propagation
-  }, [prayerInput, incrementTopicCount, addRecentPrayer, onPrayerGenerated, prayerGeneratedCallback, isCustomInput, orderedTopics]);
+  }, [prayerInput, incrementTopicCount, addRecentPrayer, onPrayerGenerated, prayerGeneratedCallback, isCustomInput, orderedTopics, setTappedPrayAboutVerse]);
 
   // Close the prayer sheet
   const handleClose = useCallback(() => {
@@ -223,7 +232,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
             </View>
           </View>
 
-          {/* Recent prayers section - show if there are any */}
+          {/* Recent prayers section - show if there are any TRULY CUSTOM prayers */}
           {recentPrayers.length > 0 && (
             <View style={styles.recentPrayersContainer}>
               <Text style={styles.prayerTopicsLabel}>Custom prayers:</Text>
@@ -231,16 +240,24 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingRight: 20 }}>
-                {recentPrayers.slice(0, 5).map((prayer, index) => (
-                  <TouchableOpacity
-                    key={index}
-                    onPress={() => handlePrayerTopicPress(prayer, true)}
-                    style={styles.recentPrayerButton}>
-                    <Text style={styles.recentPrayerText} numberOfLines={1}>
-                      {prayer}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+                {recentPrayers
+                  .filter(prayer => 
+                    // Only show prayers that are not in the predefined topics list
+                    !orderedTopics.some(topic => 
+                      topic.toLowerCase() === prayer.toLowerCase()
+                    )
+                  )
+                  .slice(0, 5)
+                  .map((prayer, index) => (
+                    <TouchableOpacity
+                      key={index}
+                      onPress={() => handlePrayerTopicPress(prayer, true)}
+                      style={styles.recentPrayerButton}>
+                      <Text style={styles.recentPrayerText} numberOfLines={1}>
+                        {prayer}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
               </ScrollView>
             </View>
           )}
@@ -250,7 +267,6 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
             <Text style={styles.prayerTopicsLabel}>Or pick one of these:</Text>
             <View style={styles.prayerTopicsGrid}>
               {orderedTopics
-                .filter((topic) => !recentPrayers.includes(topic))
                 .slice(0, 8)
                 .map((topic) => (
                   <TouchableOpacity

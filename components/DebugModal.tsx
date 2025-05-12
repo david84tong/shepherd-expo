@@ -215,6 +215,7 @@ export function DebugButton() {
       { name: 'Settings', route: '/settings' },
       { name: 'Prayer', route: '/prayer' },
       { name: 'Reflection', route: '/reflection' },
+      { name: 'Pricing', route: '/PricingScreen' },
     ],
   };
 

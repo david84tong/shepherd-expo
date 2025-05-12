@@ -125,6 +125,14 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const cardOpacity = useRef(new Animated.Value(0)).current;
   const cardAnim = useRef(new Animated.Value(30)).current;
 
+  // Add animations for buttons
+  const buttonsOpacity = useRef(new Animated.Value(0)).current;
+  const buttonsTranslateY = useRef(new Animated.Value(20)).current;
+  
+  // Add animation for home button/link
+  const homeButtonOpacity = useRef(new Animated.Value(0)).current;
+  const homeButtonTranslateY = useRef(new Animated.Value(15)).current;
+
   // Add Rive animation effects
   const riveScaleAnim = useRef(new Animated.Value(0.9)).current;
   const riveRotateAnim = useRef(new Animated.Value(0.05)).current;
@@ -379,6 +387,10 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     cardAnim.setValue(30);
     riveScaleAnim.setValue(0.9);
     riveRotateAnim.setValue(0.05);
+    buttonsOpacity.setValue(0);
+    buttonsTranslateY.setValue(20);
+    homeButtonOpacity.setValue(0);
+    homeButtonTranslateY.setValue(15);
 
     const timer = setTimeout(() => {
       if (riveRef.current) {
@@ -415,6 +427,38 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         }),
       ]).start();
     }, 800); // Delay to start after the main animation
+    
+    // Animate the action buttons (pray/reflect)
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(buttonsOpacity, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+        Animated.timing(buttonsTranslateY, {
+          toValue: 0,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 1200); // Delay to start after rewards card animation
+    
+    // Animate the home button/link
+    setTimeout(() => {
+      Animated.parallel([
+        Animated.timing(homeButtonOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(homeButtonTranslateY, {
+          toValue: 0,
+          duration: 400,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }, 1400); // Delay to start after action buttons animation
 
     return () => clearTimeout(timer);
   }, [effectiveType]); // Keep effectiveType dependency
@@ -547,7 +591,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     } else {
       setTimeout(() => {
         // Navigate back to the home tab - the useEffect in index.tsx will respond to mode change
-        router.push('/(tabs)');
+        router.replace('/(tabs)');
       }, 500); // 500ms delay
     }
 
@@ -582,7 +626,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
        triggerStreakScreen();
     } else {
-      router.push('/(tabs)');
+      router.replace('/(tabs)');
     }
 
 
@@ -704,7 +748,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       
       {/* Next Action Buttons - only show if needed */}
       {showNextButtons && (
-        <View className="w-full mt-4 mb-2">
+        <Animated.View 
+          className="w-full mt-4 mb-2"
+          style={{
+            opacity: buttonsOpacity,
+            transform: [{ translateY: buttonsTranslateY }],
+          }}
+        >
           <View className="flex justify-center space-x-4 h-48">
             {/* Show Pray button only if prayer is not completed */}
             {!prayerCompleted && (
@@ -725,12 +775,18 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
               />
             )}
           </View>
-        </View>
+        </Animated.View>
       )}
       
       {/* Special case for Reflection success with prayer not completed */}
       {effectiveType === SuccessAnimationType.REFLECTION && !prayerCompleted ? (
-        <View className="w-full">
+        <Animated.View 
+          className="w-full"
+          style={{
+            opacity: buttonsOpacity,
+            transform: [{ translateY: buttonsTranslateY }],
+          }}
+        >
           {/* Pray button as primary action */}
           <PrimaryButton
             title="Pray about today's verse"
@@ -739,30 +795,52 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
           />
           
           {/* Go Home link below the pray button */}
-          <TouchableOpacity 
-            onPress={handlePress} 
-            className="mt-4"
-            onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+          <Animated.View
+            style={{
+              opacity: homeButtonOpacity,
+              transform: [{ translateY: homeButtonTranslateY }],
+            }}
           >
-            <Text className="font-feather text-description text-center underline mt-4">Go Home</Text>
-          </TouchableOpacity>
-        </View>
+            <TouchableOpacity 
+              onPress={handlePress} 
+              className="mt-4"
+              onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+            >
+              <Text className="font-feather text-description text-center underline mt-4">Go Home</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </Animated.View>
       ) : (
         /* Regular Return Home button for all other cases, except when showing other action buttons */
         !showNextButtons && (
-          <PrimaryButton title={buttonText} onPress={handlePress} style="mt-4" />
+          <Animated.View
+            style={{
+              width: '100%',
+              opacity: homeButtonOpacity,
+              transform: [{ translateY: homeButtonTranslateY }],
+            }}
+          >
+            <PrimaryButton title={buttonText} onPress={handlePress} style="mt-4" />
+          </Animated.View>
         )
       )}
       
       {/* Text link version of Return Home for original action button case */}
       {showNextButtons && (
-        <TouchableOpacity 
-          onPress={handlePress} 
-          className="mt-4"
-          onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+        <Animated.View
+          style={{
+            opacity: homeButtonOpacity,
+            transform: [{ translateY: homeButtonTranslateY }],
+          }}
         >
-          <Text className="font-feather text-description text-center underline">Go Home</Text>
-        </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={handlePress} 
+            className="mt-4"
+            onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+          >
+            <Text className="font-feather text-description text-center underline">Go Home</Text>
+          </TouchableOpacity>
+        </Animated.View>
       )}
     </Animated.View>
   );

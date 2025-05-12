@@ -184,7 +184,7 @@ export default function OnboardingLambNameScreen() {
       {/* Rive Animation */}
       <Animated.View
         style={lambStyle}
-        className="h-[160px] w-full justify-center items-center my-8">
+        className="h-[160px] w-full justify-center items-center my-4">
         <Rive
           url={riveAssets[0].localUri!}
           artboardName="lamb-idle"
@@ -209,7 +209,7 @@ export default function OnboardingLambNameScreen() {
       </Animated.View>
 
       {/* Continue Button */}
-      <Animated.View style={buttonStyle} className="mt-6">
+      <Animated.View style={buttonStyle} className="mt-0">
         <PrimaryButton
           title="Continue"
           onPress={handleContinue}

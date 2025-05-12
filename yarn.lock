@@ -2733,6 +2733,11 @@
   resolved "https://registry.npmjs.org/@react-native-firebase/remote-config/-/remote-config-21.14.0.tgz"
   integrity sha512-Zl7ltvDf4oBz3ftb16k6iH98wGfg2852mIzS1ctpL2vZXWnalVmTJW7ct1Hbx7HV+Y07sYzaBTmEUagf9vBY4Q==
 
+"@react-native-masked-view/masked-view@^0.3.2":
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/@react-native-masked-view/masked-view/-/masked-view-0.3.2.tgz#7064533a573e3539ec912f59c1f457371bf49dd9"
+  integrity sha512-XwuQoW7/GEgWRMovOQtX3A4PrXhyaZm0lVUiY8qJDvdngjLms9Cpdck6SmGAUNqQwcj2EadHC1HwL0bEyoa/SQ==
+
 "@react-native/assets-registry@0.76.9":
   version "0.76.9"
   resolved "https://registry.npmjs.org/@react-native/assets-registry/-/assets-registry-0.76.9.tgz"

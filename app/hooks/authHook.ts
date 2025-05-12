@@ -33,7 +33,7 @@ export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Get user from the store
-  const { getUser, setUser: updateUser, setCreatedAt, setUpdatedAt } = useUserStore();
+  const { getUser, setUser: updateUser, setCreatedAt, setUpdatedAt, fetchFromFirestore } = useUserStore();
   const user = getUser();
 
   // Listen to auth state changes
@@ -102,8 +102,20 @@ export function useAuth() {
           await auth().signOut();
           throw new Error('No account found with this Apple ID. Please create a new account instead.');
         }
+        
+        // In login mode, fetch the user's data from Firestore instead of creating new data
+        console.log('[Auth] Login mode: fetching existing user data from Firestore');
+        const success = await fetchFromFirestore();
+        if (!success) {
+          console.error('[Auth] Failed to fetch user data from Firestore');
+          throw new Error('Failed to fetch your account data. Please try again.');
+        }
+        
+        // Return the user credential after successful fetch
+        return userCredential.user;
       }
       
+      // If not in login mode (new user registration), proceed with user creation
       // Get user info from Firebase user and Apple credential
       const { uid, email: firebaseEmail } = userCredential.user;
       
@@ -139,7 +151,6 @@ export function useAuth() {
       // Log successful sign in
       if (analytics.isInitialized) {
         analytics.logEvent('auth_success')
-
       }
 
       return userCredential.user;

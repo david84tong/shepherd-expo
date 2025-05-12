@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Image, Alert, Linking } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
@@ -106,44 +106,51 @@ export default function NotificationPermissionScreen() {
     setShowingAlert(true);
 
     try {
-      // Track initial analytics event
- 
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
-      console.log('existingStatus', existingStatus);
+      console.log('📱 Existing notification status:', existingStatus);
       
       if (existingStatus !== 'granted') {
+        console.log('📱 Requesting notification permissions...');
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
+        console.log('📱 New notification status after request:', status);
       }
 
       if (finalStatus === 'granted') {
         analytics.logEvent("OnboardingNotificationPermissionScreen_Granted");
+        
+        console.log('📱 Notification permissions GRANTED in onboarding');
+        
         // Enable notifications in our store
-        notificationStore.setNotificationsEnabled(false);
+        notificationStore.setNotificationsEnabled(true);
         
-        // Initialize notifications with test mode enabled
-        await notificationStore.initializeNotifications();
-        
-        // Schedule test notifications (15s and 30s)
-        console.log('🧪 Scheduling test notifications (15s and 30s)');
-        await notificationStore.scheduleStreakReminders(false);
-        
-        // Save to onboarding store
+        // Save to onboarding store - user enabled notifications
         await setNotificationPreference({
           enabled: true,
           time: '19:00' // Default to 7PM
         });
         
-        console.log('Notification permissions granted and test notifications scheduled');
+        // Schedule streak warning notifications first
+        console.log('📱 Onboarding: Scheduling streak warning notifications');
+        await notificationStore.scheduleStreakReminders();
         
-   
+        // Schedule daily reminder using the evening timeframe
+        console.log('📱 Onboarding: Scheduling daily reminder for evening');
+        await notificationStore.scheduleDailyReminder('evening');
         
-        // Don't navigate yet - let the alert handle it
+        // List all scheduled notifications to confirm
+        console.log('📱 Listing all scheduled notifications:');
+        await notificationStore.listScheduledNotifications();
+        
+        console.log('📱 All notifications successfully scheduled during onboarding');
+        
+        router.push('/onboarding/10');
         return;
       } else {
         analytics.logEvent("OnboardingNotificationPermissionScreen_Denied");
-
+        
+        console.log('📱 Notification permissions DENIED in onboarding');
         
         // Disable notifications in our store
         notificationStore.setNotificationsEnabled(false);
@@ -153,12 +160,29 @@ export default function NotificationPermissionScreen() {
           enabled: false
         });
         
-        console.log('Notification permissions denied');
+        // Show alert offering to open system settings
+        Alert.alert(
+          'Enable Notifications',
+          'To receive daily reminders and streak notifications, please enable notifications in your device settings.',
+          [
+            {
+              text: 'Open Settings',
+              onPress: () => {
+                analytics.logEvent("Onboarding_Opened_SystemSettings_Notifications");
+                Linking.openSettings();
+              }
+            },
+            {
+              text: 'Continue Anyway',
+              style: 'cancel'
+            }
+          ]
+        );
       }
       
       router.push('/onboarding/10');
     } catch (error) {
-      console.error('Error requesting notification permissions:', error);
+      console.error('📱 Error requesting notification permissions:', error);
       
       // Disable notifications in case of error
       notificationStore.setNotificationsEnabled(false);
@@ -167,6 +191,8 @@ export default function NotificationPermissionScreen() {
       await setNotificationPreference({
         enabled: false
       });
+      
+      router.push('/onboarding/10');
     } finally {
       setShowingAlert(false);
     }

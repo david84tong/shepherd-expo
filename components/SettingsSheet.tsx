@@ -11,11 +11,14 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUserStore } from '../app/stores/userStore';
 import { useUIStore } from '../app/stores/uiStore';
 import { usePathStore } from '../app/stores/pathStore';
-import { useNotificationStore } from '../app/stores/notificationStore';
+import { useNotificationStore, NotificationTimeOption } from '../app/stores/notificationStore';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Notifications from 'expo-notifications';
 import analytics from '../utils/analytics';
+import Purchases from 'react-native-purchases';
+import useSubscriptionStore from '../app/stores/subscriptionStore';
+import { useStreakManager, checkStreakAndApplyPenalties, getDateFromTimestamp } from '../app/hooks/streakHook';
 
 import Animated, { 
   useAnimatedStyle,
@@ -58,6 +61,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   const setNotificationsEnabled = useNotificationStore(state => state.setNotificationsEnabled);
   const scheduleStreakReminders = useNotificationStore(state => state.scheduleStreakReminders);
   const cancelStreakNotifications = useNotificationStore(state => state.cancelStreakNotifications);
+  const scheduleDailyReminder = useNotificationStore(state => state.scheduleDailyReminder);
+  const cancelDailyReminder = useNotificationStore(state => state.cancelDailyReminder);
   
   // State for the time picker
   const [selectedTime, setSelectedTime] = useState(new Date());
@@ -151,7 +156,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
         useUserStore.getState().resetUserStore();
         bottomSheetRef.current?.close();
         setIsModalDimActive(false);
-        router.replace('/login');
+        router.replace({ pathname: '/(auth)' });
       }).catch((error) => {
         console.error('Error signing out:', error);
       });
@@ -263,17 +268,31 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
     if (enableNotifications) {
       // Request permissions if enabling notifications
       const { status } = await Notifications.getPermissionsAsync();
+      console.log(`Current notification permission status: ${status}`);
       
       if (status !== 'granted') {
         // Request permissions if not already granted
         const { status: newStatus } = await Notifications.requestPermissionsAsync();
+        console.log(`New notification permission status after request: ${newStatus}`);
         
         if (newStatus !== 'granted') {
-          // If still not granted, show alert and return
+          // If still not granted, show alert with option to go to settings
           Alert.alert(
             'Notification Permission Required',
-            'Please enable notifications in your device settings to receive streak reminders.',
-            [{ text: 'OK' }]
+            'Please enable notifications in your device settings to receive Bible reading reminders.',
+            [
+              { 
+                text: 'Open Settings', 
+                onPress: () => {
+                  Linking.openSettings();
+                  analytics.logEvent("Settings_Opened_SystemSettings_Notifications");
+                } 
+              },
+              { 
+                text: 'Cancel',
+                style: 'cancel'
+              }
+            ]
           );
           return;
         }
@@ -295,6 +314,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
     } else {
       // If turning off, cancel all notifications
       await cancelStreakNotifications();
+      await cancelDailyReminder();
       
       // Update notification store
       setNotificationsEnabled(false);
@@ -381,9 +401,41 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       // Update the time in userStore
       setNotificationTime(timeString);
       
-      // Reschedule notifications with the new time
-      await scheduleStreakReminders();
+      // Map time to NotificationTimeOption when possible, for standard times
+      let timeOption: NotificationTimeOption;
+      if (hours === 8 && minutes === 0) {
+        timeOption = 'morning';
+      } else if (hours === 14 && minutes === 0) {
+        timeOption = 'afternoon';
+      } else if (hours === 19 && minutes === 0) {
+        timeOption = 'evening';
+      } else if (hours === 21 && minutes === 0) {
+        timeOption = 'night';
+      } else {
+        // For custom times that don't match our predefined options,
+        // still use 'morning' etc. as defined in the notificationStore
+        // based on the hour of day
+        if (hours >= 5 && hours < 12) {
+          timeOption = 'morning';
+        } else if (hours >= 12 && hours < 17) {
+          timeOption = 'afternoon';
+        } else if (hours >= 17 && hours < 21) {
+          timeOption = 'evening';
+        } else {
+          timeOption = 'night';
+        }
+      }
       
+      // Log the time selection for analytics
+      analytics.logEvent("Settings_Changed_NotificationTime", {
+        time: timeString,
+        timeOption: timeOption
+      });
+      
+      // Schedule only the daily reminder notification using the store method
+      await scheduleDailyReminder(timeOption);
+      
+      // Provide success feedback
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     }
     
@@ -499,7 +551,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                           try {
                             await auth().signOut();
                             bottomSheetRef.current?.close();
-                            router.replace('/login');
+                            router.replace({ pathname: '/(auth)' });
                           } catch (e) {
                             console.error('Failed to sign out:', e);
                           }
@@ -523,7 +575,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                     text: 'OK', 
                     onPress: () => {
                       bottomSheetRef.current?.close();
-                      router.replace('/login');
+                      router.replace({ pathname: '/(auth)' });
                     }
                   }
                 ]
@@ -540,7 +592,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                       try {
                         await auth().signOut();
                         bottomSheetRef.current?.close();
-                        router.replace('/login');
+                        router.replace({ pathname: '/(auth)' });
                       } catch (e) {
                         console.error('Final error handler signout failed:', e);
                       }
@@ -554,6 +606,106 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       ]
     );
   }, [router]);
+
+  // Get subscription state and actions from the store
+  const { 
+    isProMember,
+    presentPaywall,
+    getCustomerInfo,
+  } = useSubscriptionStore();
+
+  // Handle subscription button press using the store action
+  const handleSubscriptionPress = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    await presentPaywall();
+  }, [presentPaywall]);
+  
+  // Handle promo code redemption
+  const handlePromoCodePress = useCallback(async () => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      
+      // Track analytics event
+      analytics.logEvent("Settings_Tapped_PromoCode");
+      
+      // Present the code redemption sheet
+      await Purchases.presentCodeRedemptionSheet();
+      
+      // Refresh customer info after redemption
+      await getCustomerInfo();
+    } catch (error) {
+      console.error('Error presenting promo code sheet:', error);
+      Alert.alert(
+        'Error',
+        'Unable to open the redemption screen. Please try again later.'
+      );
+    }
+  }, [getCustomerInfo]);
+
+  // Add state for developer panel
+  const [showDevPanel, setShowDevPanel] = useState(false);
+  const [devPanelExpanded, setDevPanelExpanded] = useState(true);
+  const [streakData, setStreakData] = useState<any>(null);
+  const [devPanelLoading, setDevPanelLoading] = useState(false);
+  
+  // Get streak manager
+  const { checkStreakAndApplyPenalties: checkStreak } = useStreakManager();
+
+  // Get user data
+  const userData = useUserStore(state => ({
+    lambHearts: state.lamb?.hearts || 0,
+    lambMood: state.lamb?.mood || 'lamb-idle',
+    streakCount: state.streakCount || 0,
+    lastActivityDate: state.lastActivityDate,
+    lastReadingDate: state.lastReadingDate,
+    lastPrayerDate: state.lastPrayerDate,
+    lastReflectionDate: state.lastReflectionDate,
+    lastReadingPenaltyDate: state.lastReadingPenaltyDate,
+    lastPrayerPenaltyDate: state.lastPrayerPenaltyDate,
+    lastReflectionPenaltyDate: state.lastReflectionPenaltyDate,
+  }));
+
+  // Format date for display
+  const formatDate = (timestamp: any) => {
+    if (!timestamp) return 'N/A';
+    const date = getDateFromTimestamp(timestamp);
+    if (!date) return 'Invalid';
+    return date.toLocaleString();
+  };
+
+  // Toggle developer panel
+  const toggleDevPanel = useCallback(() => {
+    const newState = !showDevPanel;
+    setShowDevPanel(newState);
+    
+    // Check for streak data when panel is opened
+    if (newState) {
+      refreshStreakData();
+    }
+    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+  }, [showDevPanel]);
+
+  // Refresh streak data
+  const refreshStreakData = useCallback(async () => {
+    setDevPanelLoading(true);
+    try {
+      // Direct call to check streak and apply penalties
+      const result = await checkStreakAndApplyPenalties();
+      setStreakData(result);
+    } catch (error) {
+      console.error('Error fetching streak data:', error);
+      Alert.alert('Error', 'Failed to fetch streak data');
+    } finally {
+      setDevPanelLoading(false);
+    }
+  }, []);
+
+  // Toggle expand/collapse of developer panel
+  const toggleDevPanelExpanded = useCallback(() => {
+    setDevPanelExpanded(!devPanelExpanded);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  }, [devPanelExpanded]);
 
   return (
     <>
@@ -698,6 +850,45 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
             
             <View style={styles.divider} />
             
+            {/* Subscription Section */}
+            <View className="mb-6">
+              <Text className="font-feather text-xl text-[#5D5531] mb-2">Subscription</Text>
+              <View className="bg-white rounded-xl p-4 shadow-sm mb-2">
+                <View className="flex-row justify-between items-center">
+                  <View className="flex-1 mr-4">
+                    <Text className="font-feather text-base text-textPrimary">
+                      {isProMember ? 'Super Shepherd (Active)' : 'Upgrade to Super Shepherd'}
+                    </Text>
+                    <Text className="font-din text-description mt-1">
+                      {isProMember 
+                        ? 'Thank you for supporting our mission!' 
+                        : 'Unlock premium features and support our mission'}
+                    </Text>
+                  </View>
+                  {!isProMember && (
+                    <TouchableOpacity
+                      onPress={handleSubscriptionPress}
+                      className="bg-[#FFE07D] px-4 py-2 rounded-lg">
+                      <Text className="font-feather text-textPrimary">Upgrade</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+              
+              {/* Promo Code Button */}
+              <TouchableOpacity
+                onPress={handlePromoCodePress}
+                className="bg-white rounded-xl p-4 shadow-sm flex-row justify-between items-center">
+                <View>
+                  <Text className="font-feather text-base text-textPrimary">Redeem Promo Code</Text>
+                  <Text className="font-din text-description mt-1">
+                    Enter a promotional code to unlock premium features
+                  </Text>
+                </View>
+                <Feather name="tag" size={20} color="#B89B4C" />
+              </TouchableOpacity>
+            </View>
+            
             {/* User ID Section - Moved to bottom */}
             <View style={styles.settingsSection}>
               <Text style={styles.settingsSectionTitle}>User ID</Text>
@@ -732,8 +923,151 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
               </>
             )}
             
-            {/* Add some bottom padding for better scrolling */}
-            <View style={{height: 20}} />
+            {/* Developer Panel Toggle */}
+            <TouchableOpacity
+              onPress={toggleDevPanel}
+              style={styles.developerToggleButton}
+            >
+              <Text style={styles.developerToggleText}>
+                {showDevPanel ? "Hide Developer Panel" : "Show Developer Panel"}
+              </Text>
+            </TouchableOpacity>
+            
+            {/* Developer Panel */}
+            {showDevPanel && (
+              <View style={styles.developerPanel}>
+                <View style={styles.developerPanelHeader}>
+                  <Text style={styles.developerPanelTitle}>Developer Panel</Text>
+                  <TouchableOpacity 
+                    onPress={refreshStreakData}
+                    style={styles.refreshButton}
+                    disabled={devPanelLoading}
+                  >
+                    <Feather name="refresh-cw" size={16} color="#3C584A" />
+                  </TouchableOpacity>
+                </View>
+                
+                {/* Basic Data */}
+                <View style={styles.developerPanelSection}>
+                  <Text style={styles.developerPanelSectionTitle}>Streak Data</Text>
+                  <View style={styles.developerDataRow}>
+                    <Text style={styles.developerDataLabel}>Streak Count:</Text>
+                    <Text style={styles.developerDataValue}>{userData.streakCount}</Text>
+                  </View>
+                  <View style={styles.developerDataRow}>
+                    <Text style={styles.developerDataLabel}>Lamb Hearts:</Text>
+                    <Text style={styles.developerDataValue}>{userData.lambHearts}</Text>
+                  </View>
+                  <View style={styles.developerDataRow}>
+                    <Text style={styles.developerDataLabel}>Lamb Mood:</Text>
+                    <Text style={styles.developerDataValue}>{userData.lambMood}</Text>
+                  </View>
+                </View>
+                
+                {/* Expandable Details Section */}
+                <TouchableOpacity 
+                  onPress={toggleDevPanelExpanded}
+                  style={styles.developerPanelExpandButton}
+                >
+                  <Text style={styles.developerPanelExpandText}>
+                    {devPanelExpanded ? "Hide Details" : "Show All Details"}
+                  </Text>
+                  <Feather 
+                    name={devPanelExpanded ? "chevron-up" : "chevron-down"} 
+                    size={16} 
+                    color="#3C584A" 
+                  />
+                </TouchableOpacity>
+                
+                {/* Extended Details */}
+                {devPanelExpanded && (
+                  <>
+                    {/* Last Activity Dates */}
+                    <View style={styles.developerPanelSection}>
+                      <Text style={styles.developerPanelSectionTitle}>Last Activity Dates</Text>
+                      <View style={styles.developerDataRow}>
+                        <Text style={styles.developerDataLabel}>Last Activity:</Text>
+                        <Text style={styles.developerDataValue}>{formatDate(userData.lastActivityDate)}</Text>
+                      </View>
+                      <View style={styles.developerDataRow}>
+                        <Text style={styles.developerDataLabel}>Last Reading:</Text>
+                        <Text style={styles.developerDataValue}>{formatDate(userData.lastReadingDate)}</Text>
+                      </View>
+                      <View style={styles.developerDataRow}>
+                        <Text style={styles.developerDataLabel}>Last Prayer:</Text>
+                        <Text style={styles.developerDataValue}>{formatDate(userData.lastPrayerDate)}</Text>
+                      </View>
+                      <View style={styles.developerDataRow}>
+                        <Text style={styles.developerDataLabel}>Last Reflection:</Text>
+                        <Text style={styles.developerDataValue}>{formatDate(userData.lastReflectionDate)}</Text>
+                      </View>
+                    </View>
+                    
+                    {/* Last Penalty Dates */}
+                    <View style={styles.developerPanelSection}>
+                      <Text style={styles.developerPanelSectionTitle}>Last Penalty Dates</Text>
+                      <View style={styles.developerDataRow}>
+                        <Text style={styles.developerDataLabel}>Reading Penalty:</Text>
+                        <Text style={styles.developerDataValue}>{formatDate(userData.lastReadingPenaltyDate)}</Text>
+                      </View>
+                      <View style={styles.developerDataRow}>
+                        <Text style={styles.developerDataLabel}>Prayer Penalty:</Text>
+                        <Text style={styles.developerDataValue}>{formatDate(userData.lastPrayerPenaltyDate)}</Text>
+                      </View>
+                      <View style={styles.developerDataRow}>
+                        <Text style={styles.developerDataLabel}>Reflection Penalty:</Text>
+                        <Text style={styles.developerDataValue}>{formatDate(userData.lastReflectionPenaltyDate)}</Text>
+                      </View>
+                    </View>
+                    
+                    {/* Streak Check Results */}
+                    {streakData && (
+                      <View style={styles.developerPanelSection}>
+                        <Text style={styles.developerPanelSectionTitle}>Last Streak Check Results</Text>
+                        <View style={styles.developerDataRow}>
+                          <Text style={styles.developerDataLabel}>Streak Broken:</Text>
+                          <Text style={styles.developerDataValue}>{streakData.streakBroken ? "Yes" : "No"}</Text>
+                        </View>
+                        <View style={styles.developerDataRow}>
+                          <Text style={styles.developerDataLabel}>Heart Penalty:</Text>
+                          <Text style={styles.developerDataValue}>{streakData.heartPenalty || 0}</Text>
+                        </View>
+                        <View style={styles.developerDataRow}>
+                          <Text style={styles.developerDataLabel}>Days Missed:</Text>
+                          <Text style={styles.developerDataValue}>{streakData.daysMissed || 0}</Text>
+                        </View>
+                        <View style={styles.developerDataRow}>
+                          <Text style={styles.developerDataLabel}>New Day:</Text>
+                          <Text style={styles.developerDataValue}>{streakData.newDay ? "Yes" : "No"}</Text>
+                        </View>
+                        {streakData.error && (
+                          <View style={styles.developerDataRow}>
+                            <Text style={styles.developerDataLabel}>Error:</Text>
+                            <Text style={[styles.developerDataValue, {color: 'red'}]}>
+                              {String(streakData.error)}
+                            </Text>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                  </>
+                )}
+                
+                {/* Force Streak Check Button */}
+                <TouchableOpacity
+                  onPress={refreshStreakData}
+                  style={styles.forceCheckButton}
+                  disabled={devPanelLoading}
+                >
+                  <Text style={styles.forceCheckButtonText}>
+                    {devPanelLoading ? "Checking..." : "Force Streak Check"}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            {/* Extra padding at bottom */}
+            <View style={{height: 40}} />
           </ScrollView>
         </BottomSheetView>
       </BottomSheet>
@@ -1054,6 +1388,120 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#3C584A',
     marginLeft: 10,
+  },
+  promoCodeButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(247, 181, 0, 0.1)',
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#F7B500',
+  },
+  promoCodeButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  promoCodeButtonText: {
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    color: '#3C584A',
+    marginLeft: 10,
+  },
+  // Developer Panel styles
+  developerToggleButton: {
+    backgroundColor: 'rgba(60, 88, 74, 0.05)',
+    padding: 12,
+    borderRadius: 10,
+    alignItems: 'center',
+    marginTop: 20,
+    marginBottom: 10,
+    borderLeftWidth: 4,
+    borderLeftColor: '#3C584A',
+  },
+  developerToggleText: {
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 14,
+    color: '#3C584A',
+    fontWeight: '600',
+  },
+  developerPanel: {
+    backgroundColor: 'rgba(60, 88, 74, 0.05)',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+  },
+  developerPanelHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  developerPanelTitle: {
+    fontFamily: 'Nunito-Black',
+    fontSize: 16,
+    color: '#3C584A',
+  },
+  refreshButton: {
+    padding: 5,
+  },
+  developerPanelSection: {
+    marginBottom: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(60, 88, 74, 0.1)',
+    paddingBottom: 10,
+  },
+  developerPanelSectionTitle: {
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 14,
+    color: '#3C584A',
+    fontWeight: '600',
+    marginBottom: 5,
+  },
+  developerDataRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 5,
+  },
+  developerDataLabel: {
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 12,
+    color: '#3C584A',
+    opacity: 0.8,
+  },
+  developerDataValue: {
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 12,
+    color: '#3C584A',
+    fontWeight: '600',
+  },
+  developerPanelExpandButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    marginBottom: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(60, 88, 74, 0.1)',
+  },
+  developerPanelExpandText: {
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 14,
+    color: '#3C584A',
+  },
+  forceCheckButton: {
+    backgroundColor: 'rgba(247, 181, 0, 0.15)',
+    padding: 10,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  forceCheckButtonText: {
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 14,
+    color: '#3C584A',
+    fontWeight: '600',
   },
 });
 

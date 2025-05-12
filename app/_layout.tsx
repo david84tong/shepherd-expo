@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases from 'react-native-purchases';
 import Rive from 'rive-react-native';
 import '../global.css';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import AppLoading from '../components/AppLoading';
 import { DebugButton } from '../components/DebugModal';
@@ -16,7 +17,8 @@ import { checkStreakAndApplyPenalties } from './hooks/streakHook';
 import { usePreloadAssets } from './stores/assetsStore';
 import { useNotificationStore } from './stores/notificationStore';
 import { useUIStore } from './stores/uiStore';
-
+import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
+import analytics from '~/utils/analytics';
 // Import the sheet components
 import { useAssets } from 'expo-asset';
 import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
@@ -100,6 +102,7 @@ export default function RootLayout() {
     'Nunito-Black': require('../assets/fonts/Nunito-Black.ttf'),
     'Nunito-Medium': require('../assets/fonts/Nunito-Medium.ttf'),
     'Nunito-Regular': require('../assets/fonts/Nunito-Regular.ttf'),
+    'Nunito-BlackItalic': require('../assets/fonts/Nunito-BlackItalic.ttf'),
   });
   const [riveAssets] = useAssets([
     require('../assets/riveAnimations/shepherd-splash_screen.riv'),
@@ -147,20 +150,36 @@ export default function RootLayout() {
   // Check onboarding status with timeout
   const checkOnboarding = async () => {
     try {
-      // Apenas inicializa o estado da aplicação
+      // Check if onboarding has been completed by looking for the key in AsyncStorage
+      const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+      console.log('Onboarding completed status:', onboardingCompleted);
+      
+      // If onboarding is completed, the value will be 'true'
+      const isOnboardingCompleted = onboardingCompleted === 'true';
+      
       setInitialRouteDetermined(true);
       setIsOnboardingChecked(true);
+      
+      // Log the status for debugging
+      if (isOnboardingCompleted) {
+        console.log('User has completed onboarding');
+      } else {
+        console.log('User has NOT completed onboarding');
+      }
+      
+      return isOnboardingCompleted;
     } catch (error) {
-      console.error('Error during initialization:', error);
+      console.error('Error checking onboarding status:', error);
       setHasError(true);
       setInitialRouteDetermined(true);
       setIsOnboardingChecked(true);
+      return false;
     }
   };
 
   // Check streak status on app startup
   const checkStreakStatus = async () => {
-    try {
+    try {        
       const result = await checkStreakAndApplyPenalties();
 
       if (result && result.heartPenalty > 0) {
@@ -174,12 +193,19 @@ export default function RootLayout() {
           penalty: result.heartPenalty,
           daysMissed: result.daysMissed,
         };
-
+        analytics.logEvent('heart_penalty_modal_shown', {
+          penalty: result.heartPenalty,
+          daysMissed: result.daysMissed,
+        });
         // Show the half modal with a delay
         setTimeout(() => {
           showHalfModal(params);
         }, 1500);
       }
+      
+   
+      
+   
     } catch (error) {
       console.error('Error checking streak status:', error);
     }
@@ -235,13 +261,9 @@ export default function RootLayout() {
 
         console.log('Fonts loaded, initializing app...');
 
-        // Check onboarding status
-        await checkOnboarding();
-
-        // Only proceed with these if we're in the tabs section
-        if ((segments as string[]).includes('(tabs)')) {
-          await checkStreakStatus();
-        }
+        // Check onboarding status and get the result
+        const isOnboardingCompleted = await checkOnboarding();
+        console.log('Onboarding completed check result:', isOnboardingCompleted);
 
         // Initialize notifications
         await initializeNotifications();
@@ -254,6 +276,11 @@ export default function RootLayout() {
 
         // Then hide splash screen
         await SplashScreen.hideAsync();
+
+        // Navigate based on onboarding status after splash screen is hidden
+        if (isOnboardingCompleted) {
+            await checkStreakStatus();
+          }
       } catch (error) {
         console.error('Error during app initialization:', error);
         setHasError(true);
@@ -263,7 +290,7 @@ export default function RootLayout() {
     };
 
     initializeApp();
-  }, [fontsLoaded, fontError]);
+  }, [fontsLoaded, fontError, router]);
 
   // Loading states with error handling
   if (!fontsLoaded && !fontError) {

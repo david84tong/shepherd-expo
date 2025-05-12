@@ -1,7 +1,9 @@
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import { Text, View, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import analytics from '../utils/analytics';
+
 interface PrimaryButtonProps {
   title: string;
   onPress: () => void;
@@ -27,6 +29,10 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
 }) => {
   // Simple state to track pressed state
   const [isPressed, setIsPressed] = useState(false);
+  const insets = useSafeAreaInsets();
+
+  // Calculate height dynamically
+  const buttonContainerHeight = insets.top > 20 ? 70 : 56;
 
   // Set colors based on button type
   let bgColor = 'bg-accentGold';
@@ -74,14 +80,17 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   };
 
   return (
-    <View className={`mt-4 h-[70px] w-full ${style || ''}`}>
+    <View
+      className={`mt-4 w-full ${style || ''}`}
+      style={[{ height: buttonContainerHeight }, shadowStyle ? {} : { elevation: 0 }]}
+    >
       <Pressable
         className={
           `flex-row items-center justify-center px-5 h-full w-full rounded-[20px] border-[3px] ` +
           `${disabled || !isActive ? 'bg-[#E5E5E5] border-[#D0D0D0]' : `${bgColor} ${borderColor}`} ` +
           `transform ${!isPressed && isActive && !disabled ? buttonShadow : ''} ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
         }
-        style={({ pressed }) => [{ elevation: pressed ? 3 : isActive && !disabled ? 6 : 0 }]}
+        style={({ pressed }) => [{ elevation: pressed ? 3 : isActive && !disabled ? 6 : 0 }, shadowStyle ? {} : {}]}
         onPress={handlePress}
         disabled={disabled}
         onPressIn={() => setIsPressed(true)}

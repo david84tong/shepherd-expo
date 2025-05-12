@@ -167,11 +167,13 @@ export default function SaveProgressScreen() {
         console.log("Apple sign in successful");
         
         if (isLoginMode) {
-          // User exists (verified in the auth hook), proceed to home screen
+          // User exists and data has been fetched in the auth hook
+          // Just mark onboarding as completed and navigate to tabs
           await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
-          router.replace('/onboarding/LoadingScreen');
+          // Navigate directly to the main app tabs
+          router.replace('/(tabs)');
         } else {
-          // In onboarding mode, create new user
+          // In onboarding mode, create new user from responses
           console.log("Creating user...");
           await createUserFromResponses(user.uid, user.displayName || 'Anonymous User');
           await completeOnboarding();
@@ -198,6 +200,8 @@ export default function SaveProgressScreen() {
         errorMessage = "Sign in process could not be completed. Please try again.";
       } else if (error.message?.includes("No account found")) {
         errorMessage = "We couldn't find an account with this Apple ID. Please create a new account instead.";
+      } else if (error.message?.includes("Failed to fetch your account data")) {
+        errorMessage = "We couldn't retrieve your account data. Please try again.";
       }
       
       const analyticsEventName = isLoginMode ? "Login_Failed_Apple" : "OnboardingSignUp_Failed_Apple";
@@ -368,10 +372,7 @@ export default function SaveProgressScreen() {
           </TouchableOpacity>
         )}
         
-        {/* Privacy note */}
-        <Text className="font-din text-[12px] text-description text-center mt-6 px-8">
-          We only use your Apple ID for authentication. Your email and personal details stay private.
-        </Text>
+   
       </Animated.View>
     </View>
   );

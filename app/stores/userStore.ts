@@ -236,18 +236,120 @@ export const useUserStore = create<UserStore>()(
           return newState;
         });
       },
-      setLastActivityDate: (lastActivityDate) => set({ lastActivityDate }),
-      setLastReadingDate: (lastReadingDate) => set({ lastReadingDate }),
-      setLastPrayerDate: (lastPrayerDate) => set({ lastPrayerDate }),
-      setLastReflectionDate: (lastReflectionDate) => set({ lastReflectionDate }),
-      setLastReadingPenaltyDate: (lastReadingPenaltyDate) => set({ lastReadingPenaltyDate }),
-      setLastPrayerPenaltyDate: (lastPrayerPenaltyDate) => set({ lastPrayerPenaltyDate }),
-      setLastReflectionPenaltyDate: (lastReflectionPenaltyDate) =>
-        set({ lastReflectionPenaltyDate }),
+      setLastActivityDate: (lastActivityDate) => {
+        set((state) => {
+          const newState = {
+            ...state,
+            lastActivityDate,
+          };
+          
+          // Only sync with Firestore if authenticated
+          if (isAuthenticated()) {
+            updateField('lastActivityDate', lastActivityDate);
+          }
+          
+          return newState;
+        });
+      },
+      setLastReadingDate: (lastReadingDate) => {
+        set((state) => {
+          const newState = {
+            ...state,
+            lastReadingDate,
+          };
+          
+          // Only sync with Firestore if authenticated
+          if (isAuthenticated()) {
+            updateField('lastReadingDate', lastReadingDate);
+          }
+          
+          return newState;
+        });
+      },
+      setLastPrayerDate: (lastPrayerDate) => {
+        set((state) => {
+          const newState = {
+            ...state,
+            lastPrayerDate,
+          };
+          
+          // Only sync with Firestore if authenticated
+          if (isAuthenticated()) {
+            updateField('lastPrayerDate', lastPrayerDate);
+          }
+          
+          return newState;
+        });
+      },
+      setLastReflectionDate: (lastReflectionDate) => {
+        set((state) => {
+          const newState = {
+            ...state,
+            lastReflectionDate,
+          };
+          
+          // Only sync with Firestore if authenticated
+          if (isAuthenticated()) {
+            updateField('lastReflectionDate', lastReflectionDate);
+          }
+          
+          return newState;
+        });
+      },
+      setLastReadingPenaltyDate: (lastReadingPenaltyDate) => {
+        set((state) => {
+          const newState = {
+            ...state,
+            lastReadingPenaltyDate,
+          };
+          
+          // Only sync with Firestore if authenticated
+          if (isAuthenticated()) {
+            updateField('lastReadingPenaltyDate', lastReadingPenaltyDate);
+          }
+          
+          return newState;
+        });
+      },
+      setLastPrayerPenaltyDate: (lastPrayerPenaltyDate) => {
+        set((state) => {
+          const newState = {
+            ...state,
+            lastPrayerPenaltyDate,
+          };
+          
+          // Only sync with Firestore if authenticated
+          if (isAuthenticated()) {
+            updateField('lastPrayerPenaltyDate', lastPrayerPenaltyDate);
+          }
+          
+          return newState;
+        });
+      },
+      setLastReflectionPenaltyDate: (lastReflectionPenaltyDate) => {
+        set((state) => {
+          const newState = {
+            ...state,
+            lastReflectionPenaltyDate,
+          };
+          
+          // Only sync with Firestore if authenticated
+          if (isAuthenticated()) {
+            updateField('lastReflectionPenaltyDate', lastReflectionPenaltyDate);
+          }
+          
+          return newState;
+        });
+      },
       setVersesReadTotal: (versesReadTotal) => set({ versesReadTotal }),
       setChaptersReadTotal: (chaptersReadTotal) => set({ chaptersReadTotal }),
       setBibleVersion: (bibleVersion) => set({ bibleVersion }),
-      setProStatus: (proStatus) => set({ proStatus }),
+      setProStatus: (proStatus) => {
+        set({ proStatus });
+        if (isAuthenticated()) {
+          updateField('proStatus', proStatus);
+        }
+      },
       setCreatedAt: (createdAt) => set({ createdAt }),
       setUpdatedAt: (updatedAt) => set({ updatedAt }),
       setGens: (gens) => {

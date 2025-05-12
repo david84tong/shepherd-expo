@@ -405,7 +405,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         {/* Save Button */}
         <View className="flex-1 items-end w-[280px] ml-8 mt-4">
           <PrimaryButton 
-            title="Hold This Thought" 
+            title="Save Thought" 
             onPress={handleSave} 
             disabled={!isButtonEnabled}
           />

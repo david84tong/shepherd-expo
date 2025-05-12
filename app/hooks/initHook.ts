@@ -5,8 +5,10 @@ import { useEffect, useState } from 'react';
 import * as Sentry from "@sentry/react-native";
 import { useUserStore } from '../stores/userStore';
 import { usePathStore } from '../stores/pathStore';
+import useSubscriptionStore from '../stores/subscriptionStore';
 import { Mixpanel } from "mixpanel-react-native";
 import { PATH_OPTIONS } from '../models/Path';
+import { Platform } from 'react-native';
 
 import analytics, { AnalyticsEvent } from '../../utils/analytics';
 
@@ -52,6 +54,8 @@ export const useAppInitialization = () => {
 
   // Get path store actions
   const setSelectedPath = usePathStore(state => state.setSelectedPath);
+  // Get subscription store actions
+  const initializeRevenueCat = useSubscriptionStore(state => state.initializeRevenueCat);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -69,6 +73,32 @@ export const useAppInitialization = () => {
         // We recommend adjusting this value in production.
         tracesSampleRate: 1.0,
       });
+
+      // RevenueCat Initialization - using actual keys now
+      // IMPORTANT: Store these keys securely, e.g., environment variables, not hardcoded for production builds.
+      const REVENUECAT_API_KEY_IOS = 'appl_HaJSTaiQWLDPXKMjOPocMXEOKrm';
+      const REVENUECAT_API_KEY_ANDROID = ''; // Add your Android key if you have one
+
+      let revenueCatKey = '';
+      if (Platform.OS === 'ios') {
+        revenueCatKey = REVENUECAT_API_KEY_IOS;
+      } else if (Platform.OS === 'android') {
+        revenueCatKey = REVENUECAT_API_KEY_ANDROID;
+      }
+
+      // Determine current user ID for RevenueCat
+      let currentUserIdForRevenueCat: string | null = null;
+      const firebaseUserOnInit = auth().currentUser;
+      if (firebaseUserOnInit) {
+        currentUserIdForRevenueCat = firebaseUserOnInit.uid;
+      } else {
+        // Try to get anonymous ID if exists, otherwise null for first-time init
+        currentUserIdForRevenueCat = await AsyncStorage.getItem('shepherd-anonymous-user-id');
+      }
+      
+      // Call initializeRevenueCat from the subscription store
+      // It will set log level and configure Purchases
+      initializeRevenueCat(revenueCatKey, currentUserIdForRevenueCat);
       
       try {
         setIsLoading(true);
@@ -78,59 +108,54 @@ export const useAppInitialization = () => {
 
         // Check if app has been initialized before
         const hasInitialized = await AsyncStorage.getItem(APP_INITIALIZED_KEY);
+        let appUserId = currentUserIdForRevenueCat; // Use the ID we determined for RevenueCat
 
         if (!hasInitialized) {
           console.log('🚀 First app open, initializing user...');
-               // Log first app open event
-          analytics.logEvent(
-            "First App Open",
-            { isFirstLaunch: true }
-          );
+          analytics.logEvent("First App Open", { isFirstLaunch: true });
           
-          // Generate anonymous user ID
           const anonymousUserId = generateUUID();
+          appUserId = anonymousUserId; // This is the definitive ID for a new user
 
-          // Create timestamp for user creation
           const currentTime = Timestamp.now();
-
-          // Set up user with timestamps and anonymous ID
           await AsyncStorage.setItem('shepherd-anonymous-user-id', anonymousUserId);
           setDisplayName('Anonymous User');
           setCreatedAt(currentTime);
           setUpdatedAt(currentTime);
-
-          // Set all activity dates to now
           setLastActivityDate(currentTime);
-          setLastReadingDate(currentTime);
-          setLastPrayerDate(currentTime);
-          setLastReflectionDate(currentTime);
-          setLastReadingPenaltyDate(currentTime);
-          setLastPrayerPenaltyDate(currentTime);
-          setLastReflectionPenaltyDate(currentTime);
+          // setLastReadingDate(currentTime);
+          // setLastPrayerDate(currentTime);
+          // setLastReflectionDate(currentTime);
+          // setLastReadingPenaltyDate(currentTime);
+          // setLastPrayerPenaltyDate(currentTime);
+          // setLastReflectionPenaltyDate(currentTime);
 
-          // Mark app as initialized
           await AsyncStorage.setItem(APP_INITIALIZED_KEY, 'true');
           console.log('✅ User initialized with ID:', anonymousUserId);
           
-          // Set analytics user ID
           analytics.setUserId(anonymousUserId);
           analytics.setUserProperties({
             firstOpenDate: new Date().toISOString(),
             isAnonymous: true,
             displayName: 'Anonymous User'
           });
+          
+          // If it was a truly new anonymous user, re-identify with RevenueCat if it used a different temp ID
+          // or if it initialized with null before this ID was generated.
+          if (currentUserIdForRevenueCat !== anonymousUserId) {
+             console.log('RevenueCat: Logging in new anonymous user after ID generation:', anonymousUserId);
+             await initializeRevenueCat(revenueCatKey, anonymousUserId); // Re-init or logIn with the new ID
+          }
+
         } else {
           console.log('📱 App already initialized');
-
-          // Log regular app open event
           analytics.logEvent(AnalyticsEvent.APP_OPEN);
 
-          // Get current user data
           const userData = getUser();
           const firebaseUser = auth().currentUser;
           
-          // Set analytics user ID if authenticated
           if (firebaseUser?.uid) {
+            appUserId = firebaseUser.uid;
             analytics.setUserId(firebaseUser.uid);
             analytics.setUserProperties({
               displayName: userData.displayName || 'Not set',
@@ -138,9 +163,9 @@ export const useAppInitialization = () => {
               isAnonymous: false
             });
           } else if (userData?.id) {
+            appUserId = userData.id;
             analytics.setUserId(userData.id);
           }
-
           // Log user state
           console.log('📊 Current User Data:', {
             // Auth Status
@@ -177,8 +202,6 @@ export const useAppInitialization = () => {
             const fetchSuccess = await fetchFromFirestore();
             if (fetchSuccess) {
               console.log('✅ User data successfully fetched from Firestore');
-              
-              // Initialize selected path based on user's selectedPathId
               const updatedUserData = getUser();
               if (updatedUserData.selectedPathId) {
                 console.log(`🛣️ Setting selected path from Firestore: ${updatedUserData.selectedPathId}`);
@@ -197,7 +220,6 @@ export const useAppInitialization = () => {
             }
           } catch (firestoreError) {
             console.error('❌ Error fetching user from Firestore:', firestoreError);
-            // Log error to analytics
             analytics.logError('Error fetching user from Firestore', undefined, {
               errorDetails: String(firestoreError)
             });
@@ -207,7 +229,6 @@ export const useAppInitialization = () => {
         setIsInitialized(true);
       } catch (error) {
         console.error('❌ Error initializing app:', error);
-        // Log initialization error to analytics if analytics was initialized
         if (analytics.isInitialized) {
           analytics.logError('App initialization failed', undefined, {
             errorDetails: String(error)
@@ -219,7 +240,7 @@ export const useAppInitialization = () => {
     };
 
     initializeApp();
-  }, []);
+  }, [initializeRevenueCat, fetchFromFirestore, getUser, setSelectedPath, setDisplayName, setCreatedAt, setUpdatedAt, setLastActivityDate, setLastReadingDate, setLastPrayerDate, setLastReflectionDate, setLastReadingPenaltyDate, setLastPrayerPenaltyDate, setLastReflectionPenaltyDate]);
 
   return { isInitialized, isLoading };
 };

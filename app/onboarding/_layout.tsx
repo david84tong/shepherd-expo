@@ -170,7 +170,7 @@ export default function OnboardingLayout() {
             options={{
               contentStyle: {
                 backgroundColor: '#FFF4D9',
-                marginTop: screen === '1' ? 0 : 48,
+                marginTop: screen === '1' ? 0 : (insets.top > 20 ? 36 : 0),
               },
               ...(screen === '1' && {
                 gestureEnabled: false,
