@@ -121,7 +121,6 @@ export const syncUserDocument = async (userDoc: Partial<UserDoc>) => {
       id: userId,
       email: currentUser.email,
       updatedAt: Timestamp.now(),
-      createdAt: userDoc.createdAt || Timestamp.now(),
     };
     const docToSyncCleaned = undefinedToNull(docToSync);
 

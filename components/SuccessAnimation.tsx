@@ -212,7 +212,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // 1. It's the only reading today (or first), AND
       // 2. Either there are earlier readings OR this is truly the first reading ever
       const isFirstOfDay =
-        todaysReadingsCount <= 1 && (hasEarlierReadings || completedReadings.length === 1);
+        todaysReadingsCount <= 1 
 
       console.log('DEBUG: Is first reading of day:', isFirstOfDay);
       console.log('=== END DEBUG ===');
@@ -526,6 +526,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     // If this is the first reading of the day and effectiveType is READING, show streak screen
     if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
         triggerStreakScreen();
+        return; // Prevent navigation so StreakScreen can show
     }
     // Set unmounting flag first
     isUnmounting.current = true;

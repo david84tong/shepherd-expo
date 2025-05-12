@@ -152,6 +152,7 @@ function calculateStreakAndPenalties({
   const lastPrayerPenaltyDateObj = getDateFromTimestamp(lastPrayerPenaltyDate);
   const lastReflectionPenaltyDateObj = getDateFromTimestamp(lastReflectionPenaltyDate);
 
+  console.log('lastActivityDateObj', lastActivityDateObj);
   // Calculate days since last activities
   const daysSinceActivity = lastActivityDateObj ? getDaysDifference(now, lastActivityDateObj) : 0;
   const daysSinceReading = lastReadingDateObj
@@ -536,3 +537,5 @@ export const STREAK_SUBTEXTS: Record<number, string> = {
 export const getStreakSubtext = (day: number): string => {
   return STREAK_SUBTEXTS[day] || 'Keep going—one day at a time.';
 };
+
+export { calculateStreakAndPenalties };

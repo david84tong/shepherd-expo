@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import auth from '@react-native-firebase/auth';
-import { Timestamp } from '@react-native-firebase/firestore';
+import firestore, { Timestamp } from '@react-native-firebase/firestore';
 import { useEffect, useState } from 'react';
 import * as Sentry from "@sentry/react-native";
 import { useUserStore } from '../stores/userStore';
@@ -11,6 +11,7 @@ import { PATH_OPTIONS } from '../models/Path';
 import { Platform } from 'react-native';
 
 import analytics, { AnalyticsEvent } from '../../utils/analytics';
+import {  checkStreakAndApplyPenalties } from './streakHook';
 
 // Key to check if app has been initialized
 const APP_INITIALIZED_KEY = 'shepherd-app-initialized';
@@ -200,6 +201,14 @@ export const useAppInitialization = () => {
           // Fetch user from Firestore and update userStore
           try {
             const fetchSuccess = await fetchFromFirestore();
+              // After fetchFromFirestore
+            console.log("AFTER FETCH - lastActivityDate:", 
+              useUserStore.getState().lastActivityDate,
+              "raw Zustand value:", JSON.stringify(useUserStore.getState().lastActivityDate)
+            );
+
+       
+          await useUserStore.getState().syncWithFirestore();
             if (fetchSuccess) {
               console.log('✅ User data successfully fetched from Firestore');
               const updatedUserData = getUser();
@@ -224,6 +233,7 @@ export const useAppInitialization = () => {
               errorDetails: String(firestoreError)
             });
           }
+          await checkStreakAndApplyPenalties();
         }
 
         setIsInitialized(true);

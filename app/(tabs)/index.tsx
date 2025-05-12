@@ -8,7 +8,8 @@ import {
   Platform,
   SafeAreaView,
   Text,
-  View
+  View,
+  InteractionManager
 } from 'react-native';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
@@ -548,10 +549,21 @@ export default function HomeScreen() {
   // Add this near the top of the component, after other useRef declarations
   const riveKey = useRef('lamb-animation').current;
 
+  // Defer loading of the heavy Rive component until after initial interactions
+  const [riveReady, setRiveReady] = useState(false);
+
+  // Run once on mount to defer heavy work
+  useEffect(() => {
+    const task = InteractionManager.runAfterInteractions(() => {
+      setRiveReady(true);
+    });
+    return () => task.cancel();
+  }, []);
+
   // Add this before the return statement
   const riveComponent = useMemo(() => {
-    if (!riveAssets) return null;
-    
+    if (!riveAssets || !riveReady) return null;
+
     return (
       <Rive
         key={riveKey}
@@ -562,7 +574,7 @@ export default function HomeScreen() {
         style={{ width: '100%', height: '100%' }}
       />
     );
-  }, [riveAssets, artboardName, riveKey]);
+  }, [riveAssets, artboardName, riveKey, riveReady]);
 
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
