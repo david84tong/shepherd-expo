@@ -29,6 +29,7 @@
     "@react-native-firebase/remote-config": "^21.13.0",
     "@react-native-masked-view/masked-view": "^0.3.2",
     "@sentry/react-native": "^6.13.1",
+    "compare-versions": "^6.1.1",
     "dayjs": "^1.11.13",
     "expo": "~52.0.46",
     "expo-apple-authentication": "^7.2.4",
