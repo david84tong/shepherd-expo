@@ -118,7 +118,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
         // Navigate back to PricingScreen with a param to indicate we're coming from loading
         router.navigate({
           pathname: "/PricingScreen", 
-          params: { fromLoading: "true" }
+          params: { fromLoading: "true", animateFromBottom: "true" }
         });
       } else if (redirectTo || redirectAfterLoading) {
         // Navigate to specified redirect
@@ -138,16 +138,23 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
           onLoadingComplete();
         }
         
-        // Navigate to home as default
-        console.log('Onboarding complete, navigating to home');
-        router.replace('/PricingScreen');        
+        // Navigate to pricing screen with animation param
+        console.log('Onboarding complete, navigating to pricing screen');
+        router.replace({
+          pathname: '/PricingScreen',
+          params: { animateFromBottom: "true" }
+        });
       }
       
       analytics.logEvent("OnboardingLoadingScreen_Completed");
     } catch (error) {
       console.error('Error finalizing loading screen:', error);
       
-      router.replace('/PricingScreen');        
+      // Fallback navigation
+      router.replace({
+        pathname: '/PricingScreen',
+        params: { animateFromBottom: "true" }
+      });
     }
   };
   
