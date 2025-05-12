@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboardingStore } from '../stores/onboardingStore';
@@ -8,9 +8,9 @@ import PrimaryButton from '../../components/PrimaryButton';
 import { OnboardingResponses } from '../models/Onboarding';
 import analytics from '../../utils/analytics';
 
-import Animated, { 
-  useAnimatedStyle, 
-  withTiming, 
+import Animated, {
+  useAnimatedStyle,
+  withTiming,
   withSpring,
   useSharedValue,
   withDelay,
@@ -26,10 +26,10 @@ export default function OnboardingReadingTimeScreen() {
   // Create Reanimated shared values for each component
   const iconOpacity = useSharedValue(0);
   const iconTranslateY = useSharedValue(40);
-  
+
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(40);
-  
+
   const optionsOpacity = useSharedValue(0);
   const optionsTranslateY = useSharedValue(40);
 
@@ -41,12 +41,12 @@ export default function OnboardingReadingTimeScreen() {
     titleTranslateY.value = 40;
     optionsOpacity.value = 0;
     optionsTranslateY.value = 40;
-    
+
     // Staggered animations for each component
     const animateComponent = (opacity: any, translateY: any, delay: number) => {
       opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
-      translateY.value = withDelay(delay, 
-        withSpring(0, { 
+      translateY.value = withDelay(delay,
+        withSpring(0, {
           damping: 20,
           stiffness: 90,
         })
@@ -88,7 +88,7 @@ export default function OnboardingReadingTimeScreen() {
       '30-60': 60,
       '60+': 90
     } as const;
-    
+
     // Set in user store
     setFrequencyGoal(duration);
 
@@ -103,7 +103,7 @@ export default function OnboardingReadingTimeScreen() {
     } catch (error) {
       console.log('Haptics not available');
     }
-    
+
     setSelectedOption(duration);
     await setResponse('streakCommitment', duration as any);
     router.push('/onboarding/6');
@@ -143,7 +143,7 @@ export default function OnboardingReadingTimeScreen() {
   return (
     <View className="flex-1 bg-surfaceCream px-6 pt-12">
       {/* Decorative Background Elements */}
- 
+
       {/* Question Text */}
       <Animated.View style={titleStyle}>
         <Text className="font-feather text-h1 text-center text-textPrimary mb-0">
@@ -152,18 +152,21 @@ export default function OnboardingReadingTimeScreen() {
       </Animated.View>
 
       {/* Options Container */}
-      <Animated.View style={optionsStyle} className="space-y-4 mt-4">
-        {options.map((option) => (
-          <PrimaryButton
-            key={option.id}
-            title={option.title}
-            onPress={() => handleSelection(option.id)}
-            isActive={true}
-            primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
-            textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
-          />
-        ))}
-      </Animated.View>
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
+        <Animated.View style={optionsStyle} className="space-y-4 mt-4">
+
+          {options.map((option) => (
+            <PrimaryButton
+              key={option.id}
+              title={option.title}
+              onPress={() => handleSelection(option.id)}
+              isActive={true}
+              primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
+              textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
+            />
+          ))}
+        </Animated.View>
+      </ScrollView>
     </View>
   );
 }

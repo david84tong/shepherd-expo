@@ -75,7 +75,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
     (topic: string, isCustom: boolean = false) => {
       setPrayerInput(topic);
       setIsCustomInput(isCustom); // Track if this is a custom or predefined topic
-      
+
       // No need to increment count here, we'll only increment when actually generating the prayer
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     },
@@ -92,14 +92,14 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
     const isPredefinedTopic = orderedTopics.some(
       topic => topic.toLowerCase() === prayerInput.toLowerCase()
     );
-    
+
     // Always increment the count regardless of source
     incrementTopicCount(prayerInput);
-    
+
     // Always add to recent prayers for prayer generation to work,
     // but we'll filter the display in the UI
     addRecentPrayer(prayerInput);
-    
+
     if (!isPredefinedTopic && isCustomInput) {
       console.log(`Added "${prayerInput}" to recent prayers as a custom prayer`);
     } else {
@@ -118,7 +118,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
       // Make sure the prayer input value is still in recentPrayers[0]
       const currentPrayers = usePrayerStore.getState().recentPrayers;
       console.log('Current recent prayers before callback:', currentPrayers);
-      
+
       if (prayerGeneratedCallback) {
         console.log('Executing prayer generated callback from UIStore');
         prayerGeneratedCallback();
@@ -132,7 +132,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
           { text: 'Amen', style: 'default' },
         ]);
       }
-      
+
       // Clear input state after callback execution
       setPrayerInput('');
     }, 500); // Slightly longer delay to ensure state propagation
@@ -210,7 +210,8 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
 
         <ScrollView
           style={styles.prayerContent}
-          contentContainerStyle={{ paddingBottom: 30 }}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 120 }}
           keyboardShouldPersistTaps="handled" // Ensure taps work inside scrollview when keyboard is up
         >
           {/* Prayer hands emoji */}
@@ -241,9 +242,9 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={{ paddingRight: 20 }}>
                 {recentPrayers
-                  .filter(prayer => 
+                  .filter(prayer =>
                     // Only show prayers that are not in the predefined topics list
-                    !orderedTopics.some(topic => 
+                    !orderedTopics.some(topic =>
                       topic.toLowerCase() === prayer.toLowerCase()
                     )
                   )
@@ -280,7 +281,10 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
           </View>
 
           {/* Generate button */}
-          <View className="absolute -bottom-32 left-0 right-0">
+          <View style={{
+            width: "100%",
+            marginTop: 20
+          }}>
             <PrimaryButton
               title="Generate a prayer"
               onPress={handlePrayerGenerate}

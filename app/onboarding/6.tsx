@@ -9,15 +9,15 @@
 // Prefer not to say
 
 import React, { useState, useEffect } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import { OnboardingResponses } from '../models/Onboarding';
-import Animated, { 
-  useAnimatedStyle, 
-  withTiming, 
+import Animated, {
+  useAnimatedStyle,
+  withTiming,
   withSpring,
   useSharedValue,
   withDelay,
@@ -35,7 +35,7 @@ export default function OnboardingReligiousAffiliationScreen() {
   // Create Reanimated shared values for each component
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(40);
-  
+
   const optionsOpacity = useSharedValue(0);
   const optionsTranslateY = useSharedValue(40);
 
@@ -45,12 +45,12 @@ export default function OnboardingReligiousAffiliationScreen() {
     titleTranslateY.value = 40;
     optionsOpacity.value = 0;
     optionsTranslateY.value = 40;
-    
+
     // Staggered animations for each component
     const animateComponent = (opacity: any, translateY: any, delay: number) => {
       opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
-      translateY.value = withDelay(delay, 
-        withSpring(0, { 
+      translateY.value = withDelay(delay,
+        withSpring(0, {
           damping: 20,
           stiffness: 90,
         })
@@ -86,10 +86,10 @@ export default function OnboardingReligiousAffiliationScreen() {
       'other': 'Other',
       'prefer-not-to-say': 'Other'
     } as const;
-    
+
     // Set in user store
     setDenomination(denominationMap[affiliation as keyof typeof denominationMap]);
-    
+
     // Trigger light haptic feedback
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
@@ -153,16 +153,20 @@ export default function OnboardingReligiousAffiliationScreen() {
 
       {/* Options Container */}
       <Animated.View style={optionsStyle} className="space-y-4 mt-0">
-        {options.map((option) => (
-          <PrimaryButton
-            key={option.id}
-            title={option.title}
-            onPress={() => handleSelection(option.id)}
-            isActive={true}
-            primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
-            textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
-          />
-        ))}
+        <ScrollView contentContainerStyle={{ paddingBottom: 160 }} showsVerticalScrollIndicator={false}>
+          <View className="space-y-4">
+            {options.map((option) => (
+              <PrimaryButton
+                key={option.id}
+                title={option.title}
+                onPress={() => handleSelection(option.id)}
+                isActive={true}
+                primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
+                textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
+              />
+            ))}
+          </View>
+        </ScrollView>
       </Animated.View>
     </View>
   );
