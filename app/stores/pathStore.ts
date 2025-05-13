@@ -71,7 +71,7 @@ export const usePathStore = create<PathState>()(
       savedBook: 'John',
       savedBookId: 43, // John is book ID 43 in the API
       savedChapter: 3, 
-      savedTranslation: 'WEB', // Default translation
+      savedTranslation: 'ESV', // Default translation
       
       // Set saved reading state
       setSavedReading: (book, bookId, chapter) => 

@@ -668,7 +668,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       showsVerticalScrollIndicator={false}
     >
       <Animated.View
-        className="flex-1 items-center justify-center pt-12 pb-16 px-5 bg-surfaceCream"
+        className="flex-1 items-center justify-center pt-4 pb-8 px-5 bg-surfaceCream"
         style={{ opacity: fadeToStreakAnim }}>
         {isTransitioning && (
           <View className="absolute inset-0 items-center justify-center bg-surfaceCream">
@@ -677,11 +677,11 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         )}
 
         {/* Rive animation - centered */}
-        <View className="w-full h-96 my-8 items-center justify-center ">
+        <View className="w-full h-96 my-4 items-center justify-center ">
           <Animated.View
             style={{
               width: '140%',
-              height: '160%',
+              height: '140%',
               transform: [
                 { scale: riveScaleAnim },
                 {

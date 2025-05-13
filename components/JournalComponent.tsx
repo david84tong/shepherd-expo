@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import Rive from 'rive-react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import BackButton from './BackButton';
 import PrimaryButton from './PrimaryButton';
@@ -89,6 +90,9 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
 
   // Load Rive assets
   const [riveAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
+
+  const insets = useSafeAreaInsets();
+  const isSmallDevice = insets.top < 25 || SCREEN_HEIGHT < 700; // Detect small/non-notch devices like iPhone SE
 
   // Get appropriate placeholder text based on whether this is verse reflection
   const getPlaceholderText = () => {
@@ -272,6 +276,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   }
 
   const handleSave = () => {
+    console.log('handleSave called');
     // Don't save if not enough characters
     if (reflectionContent.length < MIN_CHARS_REQUIRED) return;
     analytics.logEvent('JournalScreen_SaveReflection', {
@@ -324,30 +329,43 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       className="absolute flex w-full"
       style={{ opacity: containerOpacity }}
       pointerEvents="box-none">
-      {/* Back Button */}
-      <BackButton
-        onPress={() => {
-          setPathInProgress(false);
-          // Reset tappedReflectAboutVerse flag when canceling
-          analytics.logEvent("Journal_Tapped_Cancel", {
-            prompt: currentPath?.reflection 
-          });
-          useHomeStore.getState().setTappedReflectAboutVerse(false);
-          console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
-          onClose();
-        }}
-      />
+      {/* Header Row: Back + (Save on small devices) */}
+      <View className="flex-row items-center justify-between px-4 mt-0">
+        <BackButton
+          onPress={() => {
+            setPathInProgress(false);
+            analytics.logEvent("Journal_Tapped_Cancel", {
+              prompt: currentPath?.reflection 
+            });
+            useHomeStore.getState().setTappedReflectAboutVerse(false);
+            console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
+            onClose();
+          }}
+        />
+        {isSmallDevice && (
+          <View style={{ zIndex: 30, marginLeft: 64, marginTop: 24 }}>
+            <PrimaryButton
+              title="Save Thought"
+              onPress={() => {
+                console.log('Small device Save button pressed');
+                handleSave();
+              }}
+              disabled={!isButtonEnabled}
+              style="w-36"
+            />
+          </View>
+        )}
+      </View>
 
       {/* Animated Card with TextInput */}
       <Animated.View 
-        className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto mt-[120px] border-4 border-border pb-4"
+        className={`w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto ${isSmallDevice ? 'mt-[20px]' : 'mt-[120px]'} border-4 border-border pb-4`}
         style={cardStyle}
       >
-        <Text className="text-bodybr font-feather text-textPrimary mb-2 text-center leading-tight">
+        <Text className="text-body font-feather text-textPrimary mb-2 text-center leading-tight">
           {tappedReflectAboutVerse ? currentPath?.reflection ?? 'Reflection' : 'Reflection'}
         </Text>
         
-        {/* Add subtitle with book and chapter when reflecting on scripture */}
         {tappedReflectAboutVerse && currentPath && currentPath.bookId && (
           <Text className="text-body font-din text-description mb-2 text-center">
             {currentPath?.bookId && typeof currentPath?.startChapter === 'number'
@@ -402,14 +420,16 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
           />
         </View>
 
-        {/* Save Button */}
-        <View className="flex-1 items-end w-[280px] ml-8 mt-4">
-          <PrimaryButton 
-            title="Save Thought" 
-            onPress={handleSave} 
-            disabled={!isButtonEnabled}
-          />
-        </View>
+        {/* Save Button (hidden on small devices since it's in header) */}
+        {!isSmallDevice && (
+          <View className="flex-1 items-end w-[280px] ml-8 mt-4">
+            <PrimaryButton 
+              title="Save Thought" 
+              onPress={handleSave} 
+              disabled={!isButtonEnabled}
+            />
+          </View>
+        )}
       </Animated.View>
     </Animated.View>
   );

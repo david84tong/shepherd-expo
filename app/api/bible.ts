@@ -1,4 +1,4 @@
-const BASE_URL = 'https://bible-go-api.rkeplin.com/v1';
+const BASE_URL = 'https://skylar.gg';
 // https://www.rkeplin.com/the-holy-bible-open-source-rest-api/
 // Define the actual structure returned by the new API
 interface ApiVerse {
@@ -10,7 +10,14 @@ interface ApiVerse {
 }
 
 // Raw response is now just an array of ApiVerse
-type RawApiResponse = ApiVerse[];
+type RawApiResponseArray = ApiVerse[];
+
+// New API response shape (object)
+interface ApiChapterObject {
+  book: { id: string | number; name: string };
+  chapter: string | number;
+  verses: { content: string; verse: number }[];
+}
 
 // Keep our desired Verse structure
 export interface Verse {
@@ -46,7 +53,7 @@ export const fetchChapter = async (
   chapter: number
 ): Promise<ChapterResponse | FetchError> => {
   // Construct the URL for the new API
-  const url = `${BASE_URL}/books/${bookId}/chapters/${chapter}?translation=${translation}`;
+  const url = `${BASE_URL}/books/${bookId}/chapters/${chapter}/${translation}`;
   console.log(`Fetching: ${url}`);
 
   try {
@@ -72,33 +79,34 @@ export const fetchChapter = async (
       };
     }
 
-    // Parse the raw response (which is ApiVerse[])
-    const rawData: RawApiResponse = await response.json();
-    
-    // Validate the raw data structure
-    if (!Array.isArray(rawData)) {
-      console.error(`Invalid data format received for ${url}: Expected array, got:`, rawData);
-      return { error: true, message: 'Invalid data format received from API (expected array). 2 ' };
+    const rawJson = await response.json();
+
+    let transformedVerses: Verse[] = [];
+    let bookName = '';
+
+    if (Array.isArray(rawJson)) {
+      // Old/array format
+      const rawData: RawApiResponseArray = rawJson;
+      if (rawData.length === 0) {
+        console.warn(`API returned empty data array for ${url}`);
+        return { error: true, message: 'API returned no verses for this chapter.' };
+      }
+      transformedVerses = rawData.map((v) => ({ verse: v.verseId, text: v.verse }));
+      bookName = rawData[0].book.name;
+    } else if (rawJson && rawJson.verses) {
+      // New object format
+      const dataObj = rawJson as ApiChapterObject;
+      transformedVerses = dataObj.verses.map((v) => ({ verse: v.verse, text: v.content }));
+      bookName = dataObj.book.name;
+    } else {
+      console.error(`Invalid data format received for ${url}:`, rawJson);
+      return { error: true, message: 'Invalid data format received from API.' };
     }
-
-    if (rawData.length === 0) {
-      console.warn(`API returned empty data array for ${url}`);
-      return { error: true, message: 'API returned no verses for this chapter.' };
-    }
-
-    // Transform the raw API data into our desired ChapterResponse structure
-    const transformedVerses: Verse[] = rawData.map((apiVerse) => ({
-      verse: apiVerse.verseId, // Use verseId from new API
-      text: apiVerse.verse, // Use verse from new API
-    }));
-
-    // Get book name from the first verse
-    const bookName = rawData[0].book.name;
 
     const chapterResponse: ChapterResponse = {
       book: bookName,
-      chapter, // Use the requested chapter number
-      version: translation, // Use the requested translation
+      chapter,
+      version: translation,
       verses: transformedVerses,
     };
 
