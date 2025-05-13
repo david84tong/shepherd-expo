@@ -30,6 +30,7 @@ import OldReflectionSheet from '../components/OldReflectionSheet';
 import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
 import useForceUpdateCheck from './hooks/useForceUpdateCheck';
 import ForceUpdateModal from '~/components/ForceUpdateModal';
+import { disableFontScaling } from './helper/disableFontScaling';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -163,6 +164,7 @@ export default function RootLayout() {
 
       setInitialRouteDetermined(true);
       setIsOnboardingChecked(true);
+      disableFontScaling();
 
       // Log the status for debugging
       if (isOnboardingCompleted) {

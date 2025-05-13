@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -133,16 +133,20 @@ export default function OnboardingAgeRangeScreen() {
 
       {/* Options Container */}
       <Animated.View style={optionsStyle} className="space-y-4 mt-0">
-        {options.map((option) => (
-          <PrimaryButton
-            key={option.id}
-            title={option.title}
-            onPress={() => handleSelection(option.id as OnboardingResponses['ageRange'])}
-            isActive
-            primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
-            textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
-          />
-        ))}
+        <ScrollView contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>
+          <View className="space-y-4">
+            {options.map((option) => (
+              <PrimaryButton
+                key={option.id}
+                title={option.title}
+                onPress={() => handleSelection(option.id as OnboardingResponses['ageRange'])}
+                isActive
+                primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
+                textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
+              />
+            ))}
+          </View>
+        </ScrollView>
       </Animated.View>
     </View>
   );

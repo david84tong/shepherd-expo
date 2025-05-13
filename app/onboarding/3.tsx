@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { View, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -43,7 +43,7 @@ export default function OnboardingIntentScreen() {
   const continueTranslateY = useSharedValue(20); // Smaller initial offset
 
   // Initialize analytics
-  
+
   // Log screen view when component mounts
   useEffect(() => {
     analytics.logEvent("OnboardingIntentScreen_Viewed");
@@ -140,7 +140,7 @@ export default function OnboardingIntentScreen() {
     } catch (error) {
       console.log('Haptics not available');
     }
-    
+
     analytics.logEvent("OnboardingIntentScreen_Tapped_Option", {
       value: intent,
     });
@@ -222,39 +222,41 @@ export default function OnboardingIntentScreen() {
 
       {/* Buttons Container - with padding at bottom to make space for fixed button */}
       <Animated.View style={buttonsStyle} className="space-y-4 mt-8 mb-20">
-        {buttons.map((button) => (
-          <Pressable
-            key={button.id}
-            onPress={() => handleSelection(button.id)}
-            onPressIn={() => setPressedButton(button.id)}
-            onPressOut={() => setPressedButton(null)}
-            className={`
+        <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+          {buttons.map((button) => (
+            <Pressable
+              key={button.id}
+              onPress={() => handleSelection(button.id)}
+              onPressIn={() => setPressedButton(button.id)}
+              onPressOut={() => setPressedButton(null)}
+              className={`
               h-[80px] bg-white rounded-card border-[3px] border-border px-4
               flex-row items-center shadow-buttonShadow mt-4
               ${pressedButton === button.id ? 'translate-y-[3px] shadow-none' : 'translate-y-0'}
               ${selectedIntents.includes(button.id) ? 'border-accentGold bg-surfaceCream' : ''}
             `}>
-            <View className={`${button.bgColor} rounded-xl p-3`}>
-              <Ionicons name={button.icon as any} size={24} color={button.color} />
-            </View>
-            <View className="ml-4 flex-1">
-              <Text className="font-feather text-lg text-textPrimary">{button.title}</Text>
-              <Text className="font-din text-md text-description mt-1">{button.description}</Text>
-            </View>
-            <View
-              className={`
+              <View className={`${button.bgColor} rounded-xl p-3`}>
+                <Ionicons name={button.icon as any} size={24} color={button.color} />
+              </View>
+              <View className="ml-4 flex-1">
+                <Text className="font-feather text-lg text-textPrimary">{button.title}</Text>
+                <Text className="font-din text-md text-description mt-1">{button.description}</Text>
+              </View>
+              <View
+                className={`
               w-6 h-6 rounded-full border-2 items-center justify-center
               ${selectedIntents.includes(button.id)
-                  ? 'bg-accentGold border-accentGold'
-                  : 'border-description'
-                }
+                    ? 'bg-accentGold border-accentGold'
+                    : 'border-description'
+                  }
             `}>
-              {selectedIntents.includes(button.id) && (
-                <Ionicons name="checkmark" size={16} color="white" />
-              )}
-            </View>
-          </Pressable>
-        ))}
+                {selectedIntents.includes(button.id) && (
+                  <Ionicons name="checkmark" size={16} color="white" />
+                )}
+              </View>
+            </Pressable>
+          ))}
+        </ScrollView>
       </Animated.View>
 
       {/* Continue Button - Fixed at bottom */}

@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, Alert, Linking } from 'react-native';
+import { View, Text, Pressable, Alert, Linking, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
-import Animated, { 
-  useAnimatedStyle, 
-  withTiming, 
+import Animated, {
+  useAnimatedStyle,
+  withTiming,
   withSpring,
   useSharedValue,
   withDelay,
@@ -20,9 +20,9 @@ export default function OnboardingReminderTimeScreen() {
   const router = useRouter();
   const { setNotificationPreference } = useOnboardingStore();
   const { setNotificationTime } = useUserStore();
-  const { 
-    scheduleDailyReminder, 
-    setPreferredNotificationTime, 
+  const {
+    scheduleDailyReminder,
+    setPreferredNotificationTime,
     scheduleStreakReminders,
     setNotificationsEnabled,
     listScheduledNotifications
@@ -33,20 +33,20 @@ export default function OnboardingReminderTimeScreen() {
   // Create Reanimated shared values for each component
   const iconOpacity = useSharedValue(0);
   const iconTranslateY = useSharedValue(40);
-  
+
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(40);
-  
+
   const subtextOpacity = useSharedValue(0);
   const subtextTranslateY = useSharedValue(40);
-  
+
   const optionsOpacity = useSharedValue(0);
   const optionsTranslateY = useSharedValue(40);
 
   useEffect(() => {
     // Log screen view when component mounts
     analytics.logEvent("OnboardingReminderTimeScreen_Viewed");
-    
+
     // Reset animation values
     iconOpacity.value = 0;
     iconTranslateY.value = 40;
@@ -56,12 +56,12 @@ export default function OnboardingReminderTimeScreen() {
     subtextTranslateY.value = 40;
     optionsOpacity.value = 0;
     optionsTranslateY.value = 40;
-    
+
     // Staggered animations for each component
     const animateComponent = (opacity: any, translateY: any, delay: number) => {
       opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
-      translateY.value = withDelay(delay, 
-        withSpring(0, { 
+      translateY.value = withDelay(delay,
+        withSpring(0, {
           damping: 20,
           stiffness: 90,
         })
@@ -85,7 +85,7 @@ export default function OnboardingReminderTimeScreen() {
     opacity: titleOpacity.value,
     transform: [{ translateY: titleTranslateY.value }]
   }));
-  
+
   const subtextStyle = useAnimatedStyle(() => ({
     opacity: subtextOpacity.value,
     transform: [{ translateY: subtextTranslateY.value }]
@@ -105,38 +105,38 @@ export default function OnboardingReminderTimeScreen() {
     } catch (error) {
       console.log('Haptics not available');
     }
-    
+
     // Track analytics event
     analytics.logEvent("OnboardingReminderTimeScreen_Tapped_Option", {
       value: time,
     });
-    
+
     setSelectedOption(time);
-    
+
     // Save to onboarding store using the typed method
     await setNotificationPreference({
       enabled: time !== 'none',
       time: time
     });
-    
+
     // Save to user store
     setNotificationTime(time);
-    
+
     const isNotificationsEnabled = time !== 'none';
-    
+
     if (isNotificationsEnabled) {
       console.log('📱 Onboarding: User wants notifications, checking permissions');
-      
+
       // Check for notification permissions
       const { status } = await Notifications.getPermissionsAsync();
       console.log(`📱 Current notification permission status: ${status}`);
-      
+
       if (status !== 'granted') {
         // Request permission if not already granted
         console.log('📱 Onboarding: Requesting notification permissions');
         const { status: newStatus } = await Notifications.requestPermissionsAsync();
         console.log(`📱 New notification permission status: ${newStatus}`);
-        
+
         if (newStatus !== 'granted') {
           // Alert user that notifications won't work without permission
           console.log('📱 Onboarding: Notification permission denied');
@@ -163,15 +163,15 @@ export default function OnboardingReminderTimeScreen() {
           return;
         }
       }
-      
+
       console.log('📱 Onboarding: Scheduling both daily reminder and streak notifications');
-      
+
       // Enable notifications in the store
       setNotificationsEnabled(true);
-      
+
       // Set the preferred notification time in the store
       setPreferredNotificationTime(time as NotificationTimeOption);
-      
+
       // Schedule the daily reminder notification using the notificationStore
       try {
         await scheduleDailyReminder(time as NotificationTimeOption);
@@ -179,7 +179,7 @@ export default function OnboardingReminderTimeScreen() {
       } catch (error) {
         console.error('📱 Onboarding: Error scheduling daily reminder:', error);
       }
-      
+
       // Also schedule streak warning notifications
       try {
         await scheduleStreakReminders();
@@ -187,7 +187,7 @@ export default function OnboardingReminderTimeScreen() {
       } catch (error) {
         console.error('📱 Onboarding: Error scheduling streak notifications:', error);
       }
-      
+
       // List all scheduled notifications for debugging
       await listScheduledNotifications();
     } else {
@@ -195,7 +195,7 @@ export default function OnboardingReminderTimeScreen() {
       // Disable notifications in the store
       setNotificationsEnabled(false);
     }
-    
+
     // Navigate to the next screen
     router.push('/onboarding/11');
   };
@@ -251,7 +251,7 @@ export default function OnboardingReminderTimeScreen() {
           When would you like to be reminded to read?
         </Text>
       </Animated.View>
-      
+
       {/* Subtext */}
       <Animated.View style={subtextStyle}>
         <Text className="font-din text-center text-description text-body mb-4">
@@ -260,33 +260,38 @@ export default function OnboardingReminderTimeScreen() {
       </Animated.View>
 
       {/* Options Container */}
-      <Animated.View style={optionsStyle} className="space-y-4 mt-4">
-        {options.map((option) => (
-          <Pressable
-            key={option.id}
-            onPress={() => handleSelection(option.id)}
-            onPressIn={() => setPressedButton(option.id)}
-            onPressOut={() => setPressedButton(null)}
-            className={`
+      <ScrollView contentContainerStyle={{ paddingBottom: 90 }} showsVerticalScrollIndicator={false}>
+        <Animated.View style={optionsStyle} className="space-y-4 mt-4">
+          <View className="space-y-4">
+            {options.map((option) => (
+              <Pressable
+                key={option.id}
+                onPress={() => handleSelection(option.id)}
+                onPressIn={() => setPressedButton(option.id)}
+                onPressOut={() => setPressedButton(null)}
+                className={`
               my-2
               h-[80px] bg-white rounded-card border-[3px] border-border px-4
               flex-row items-center shadow-buttonShadow
               ${pressedButton === option.id ? 'translate-y-[3px] shadow-none' : 'translate-y-0'}
               ${selectedOption === option.id ? 'border-accentGold bg-surfaceCream' : ''}
             `}
-          >
-            <View className={`${option.bgColor} rounded-xl p-3`}>
-              <Ionicons name={option.icon as any} size={24} color={option.color} />
-            </View>
-            <View className="ml-4 flex-1">
-              <Text className="font-feather text-lg text-textPrimary">{option.title}</Text>
-              <Text className="font-din text-md text-description mt-1">
-                {option.description}
-              </Text>
-            </View>
-          </Pressable>
-        ))}
-      </Animated.View>
+              >
+                <View className={`${option.bgColor} rounded-xl p-3`}>
+                  <Ionicons name={option.icon as any} size={24} color={option.color} />
+                </View>
+                <View className="ml-4 flex-1">
+                  <Text className="font-feather text-lg text-textPrimary">{option.title}</Text>
+                  <Text className="font-din text-md text-description mt-1">
+                    {option.description}
+                  </Text>
+                </View>
+              </Pressable>
+            ))}
+          </View>
+        </Animated.View>
+      </ScrollView>
+
     </View>
   );
 }

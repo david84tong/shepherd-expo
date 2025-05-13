@@ -13,6 +13,7 @@ import {
   Animated,
   Image,
   ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import Rive, { RiveRef } from 'rive-react-native';
 
@@ -83,7 +84,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Determine which type to use for rendering
   const effectiveType = successType ?? SuccessAnimationType.READING;
-  
+
   // Set sawDailyBonus to true immediately when bonus screen shows to prevent repeats
   useEffect(() => {
     if (effectiveType === SuccessAnimationType.BONUS && !sawDailyBonus) {
@@ -91,7 +92,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       setSawDailyBonus(true);
     }
   }, [effectiveType, sawDailyBonus, setSawDailyBonus]);
-  
+
   // State to track if rewards have been applied
   const [rewardsApplied, setRewardsApplied] = useState(false);
   // Calculate actual heart reward (don't exceed MAX_HEARTS)
@@ -128,7 +129,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   // Add animations for buttons
   const buttonsOpacity = useRef(new Animated.Value(0)).current;
   const buttonsTranslateY = useRef(new Animated.Value(20)).current;
-  
+
   // Add animation for home button/link
   const homeButtonOpacity = useRef(new Animated.Value(0)).current;
   const homeButtonTranslateY = useRef(new Animated.Value(15)).current;
@@ -212,7 +213,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // 1. It's the only reading today (or first), AND
       // 2. Either there are earlier readings OR this is truly the first reading ever
       const isFirstOfDay =
-        todaysReadingsCount <= 1 
+        todaysReadingsCount <= 1
 
       console.log('DEBUG: Is first reading of day:', isFirstOfDay);
       console.log('=== END DEBUG ===');
@@ -305,7 +306,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
       // Always add XP
       addXp(xpReward);
-      
+
       // Track rewards for analytics
       const rewardsData: any = {
         successType: effectiveType,
@@ -316,18 +317,18 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         newLambHearts: lambHearts + heartsToAdd,
         newLambXp: lambXp + xpReward
       };
-      
+
       // If this is a BONUS reward, add 9 gems
       // Only add gems if this is truly the first time seeing the bonus (sawDailyBonus was false)
       if (effectiveType === SuccessAnimationType.BONUS && !sawDailyBonus) {
         const currentGems = getGens();
         setGens(currentGems + 9);
         console.log(`Applied +9 Gems. Updated value - Gems: ${currentGems + 9}`);
-        
+
         // Add gems data to analytics
         rewardsData.gemsAwarded = 9;
         rewardsData.newGemCount = currentGems + 9;
-        
+
         // Set the flag to indicate user has seen daily bonus
         setSawDailyBonus(true);
         console.log("Setting sawDailyBonus to true");
@@ -336,7 +337,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         console.log("Not adding gems - user has already seen bonus animation today");
         rewardsData.gemsAwarded = 0;
       }
-      
+
       // Log the rewards data to analytics
       analytics.logEvent("SuccessAnimation_RewardsApplied", rewardsData);
 
@@ -427,7 +428,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         }),
       ]).start();
     }, 800); // Delay to start after the main animation
-    
+
     // Animate the action buttons (pray/reflect)
     setTimeout(() => {
       Animated.parallel([
@@ -443,7 +444,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         }),
       ]).start();
     }, 1200); // Delay to start after rewards card animation
-    
+
     // Animate the home button/link
     setTimeout(() => {
       Animated.parallel([
@@ -466,46 +467,46 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   // Log analytics when component mounts or successType changes
   useEffect(() => {
     if (!successType) return;
-    
+
     let eventName = "";
     let params = {};
-    
+
     // Log different events based on success type
     switch (successType) {
       case SuccessAnimationType.READING:
         eventName = "SuccessAnimation_Shown_Reading";
-        params = { 
+        params = {
           xpReward: xpReward,
-          heartReward: actualHeartReward 
+          heartReward: actualHeartReward
         };
         break;
-        
+
       case SuccessAnimationType.PRAYER:
         eventName = "SuccessAnimation_Shown_Prayer";
-        params = { 
+        params = {
           xpReward: xpReward,
-          heartReward: actualHeartReward 
+          heartReward: actualHeartReward
         };
         break;
-        
+
       case SuccessAnimationType.REFLECTION:
         eventName = "SuccessAnimation_Shown_Reflection";
-        params = { 
+        params = {
           xpReward: xpReward,
-          heartReward: actualHeartReward 
+          heartReward: actualHeartReward
         };
         break;
-        
+
       case SuccessAnimationType.BONUS:
         eventName = "SuccessAnimation_Shown_Bonus";
-        params = { 
+        params = {
           xpReward: xpReward,
           heartReward: actualHeartReward,
           gemsAwarded: sawDailyBonus ? 0 : 9
         };
         break;
     }
-    
+
     // Log the event
     if (eventName) {
       analytics.logEvent(eventName, params);
@@ -517,16 +518,16 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const handleGoHome = () => {
     // Add medium haptic feedback for navigation
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+
     // Log the event
     analytics.logEvent("SuccessAnimation_Tapped_GoHome", {
       fromType: successType
     });
-    
+
     // If this is the first reading of the day and effectiveType is READING, show streak screen
     if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
-        triggerStreakScreen();
-        return; // Prevent navigation so StreakScreen can show
+      triggerStreakScreen();
+      return; // Prevent navigation so StreakScreen can show
     }
     // Set unmounting flag first
     isUnmounting.current = true;
@@ -541,27 +542,27 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   };
 
   const triggerStreakScreen = () => {
-      console.log('First reading of the day - showing streak screen');
-      // Log analytics for streak screen
-      analytics.logEvent("SuccessAnimation_Showing_StreakScreen", {
-        fromType: effectiveType,
-        isFirstReadingOfDay: isFirstReadingOfDay
-      });
-      
-      // Start transition with fade out animation
-      setIsTransitioning(true);
+    console.log('First reading of the day - showing streak screen');
+    // Log analytics for streak screen
+    analytics.logEvent("SuccessAnimation_Showing_StreakScreen", {
+      fromType: effectiveType,
+      isFirstReadingOfDay: isFirstReadingOfDay
+    });
 
-      // Fade out current content
-      Animated.timing(fadeToStreakAnim, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }).start(() => {
-        // After fade out completes, show streak screen
-        setShowStreakScreen(true);
-      });
-      return;
-    
+    // Start transition with fade out animation
+    setIsTransitioning(true);
+
+    // Fade out current content
+    Animated.timing(fadeToStreakAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => {
+      // After fade out completes, show streak screen
+      setShowStreakScreen(true);
+    });
+    return;
+
   };
 
   // Determine the action for the button press
@@ -572,7 +573,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const handleGoToPrayer = () => {
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+
     console.log('Navigating to Prayer from Success screen');
 
     // Log analytics
@@ -588,7 +589,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     setHomeMode('PRAYER');
     setPathInProgress(true); // Make sure path is in progress to show the component
     if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
-     triggerStreakScreen();
+      triggerStreakScreen();
     } else {
       setTimeout(() => {
         // Navigate back to the home tab - the useEffect in index.tsx will respond to mode change
@@ -598,14 +599,14 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
     // Add delay to give assets time to load
     console.log('Adding delay before navigation to ensure assets load');
- 
+
   };
 
   // Handler for reflection button
   const handleGoToReflection = () => {
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+
     console.log('Navigating to Reflection from Success screen');
 
     // Log analytics
@@ -625,7 +626,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     setPathInProgress(false);
 
     if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
-       triggerStreakScreen();
+      triggerStreakScreen();
     } else {
       router.replace('/(tabs)');
     }
@@ -640,10 +641,10 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
     }, 100); // 500ms delay
   };
-  
+
   // Determine if we should show next action buttons 
   // Show after reading completion OR after prayer completion (if reflection not done)
-  const showNextButtons = (effectiveType === SuccessAnimationType.READING || effectiveType === SuccessAnimationType.PRAYER) && 
+  const showNextButtons = (effectiveType === SuccessAnimationType.READING || effectiveType === SuccessAnimationType.PRAYER) &&
     (!prayerCompleted || !reflectionCompleted);
 
   // If we're showing the streak screen, return it
@@ -662,188 +663,193 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   }
 
   return (
-    <Animated.View
-      className="flex-1 items-center justify-center pt-12 pb-16 px-5 bg-surfaceCream"
-      style={{ opacity: fadeToStreakAnim }}>
-      {isTransitioning && (
-        <View className="absolute inset-0 items-center justify-center bg-surfaceCream">
-          <ActivityIndicator size="large" color="#F2B705" />
-        </View>
-      )}
-
-      {/* Rive animation - centered */}
-      <View className="w-full h-96 my-8 items-center justify-center ">
-        <Animated.View
-          style={{
-            width: '140%',
-            height: '160%',
-            transform: [
-              { scale: riveScaleAnim },
-              {
-                rotate: riveRotateAnim.interpolate({
-                  inputRange: [-1, 0, 1],
-                  outputRange: ['-15deg', '0deg', '15deg'],
-                }),
-              },
-            ],
-          }}>
-          <Rive
-            ref={riveRef}
-            url={riveAssets[0].localUri!}
-            autoplay={true}
-            style={{ width: '100%', height: '100%' }}
-            {...(riveArtboard ? { artboardName: riveArtboard } : {})}
-          />
-        </Animated.View>
-      </View>
-
-      {/* Success message - enlarged */}
-      <Text className="font-feather text-[32px] text-textPrimary mb-4 text-center -mt-16">
-        {message}
-      </Text>
-      <Text className="font-din text-xl text-secondaryText text-center mb-6 px-6">
-        {subMessage}
-      </Text>
-
-      {/* Rewards Card */}
+    <ScrollView
+      contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
+      showsVerticalScrollIndicator={false}
+    >
       <Animated.View
-        className="w-full bg-surfaceCream/50 rounded-[18px] p-4 my-4 border-2 border-border"
-        style={{
-          opacity: cardOpacity,
-          transform: [{ translateY: cardAnim }],
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 3,
-          elevation: 3,
-        }}>
-        <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
-          {rewardTitle}
+        className="flex-1 items-center justify-center pt-12 pb-16 px-5 bg-surfaceCream"
+        style={{ opacity: fadeToStreakAnim }}>
+        {isTransitioning && (
+          <View className="absolute inset-0 items-center justify-center bg-surfaceCream">
+            <ActivityIndicator size="large" color="#F2B705" />
+          </View>
+        )}
+
+        {/* Rive animation - centered */}
+        <View className="w-full h-96 my-8 items-center justify-center ">
+          <Animated.View
+            style={{
+              width: '140%',
+              height: '160%',
+              transform: [
+                { scale: riveScaleAnim },
+                {
+                  rotate: riveRotateAnim.interpolate({
+                    inputRange: [-1, 0, 1],
+                    outputRange: ['-15deg', '0deg', '15deg'],
+                  }),
+                },
+              ],
+            }}>
+            <Rive
+              ref={riveRef}
+              url={riveAssets[0].localUri!}
+              autoplay={true}
+              style={{ width: '100%', height: '100%' }}
+              {...(riveArtboard ? { artboardName: riveArtboard } : {})}
+            />
+          </Animated.View>
+        </View>
+
+        {/* Success message - enlarged */}
+        <Text className="font-feather text-[32px] text-textPrimary mb-4 text-center -mt-16">
+          {message}
+        </Text>
+        <Text className="font-din text-xl text-secondaryText text-center mb-6 px-6">
+          {subMessage}
         </Text>
 
-        {effectiveType === SuccessAnimationType.BONUS ? (
-          // Special bonus reward display
-          <View className="flex-row items-center justify-center mb-2">
-            <Image source={gemIcon} className="w-6 h-6 mr-2" />
-            <Text className="font-din text-textPrimary text-xl">+9 Gems</Text>
-          </View>
-        ) : (
-          // Standard rewards display for other success types
-          <>
-            {/* Only show hearts reward if not at max hearts */}
-            {!isAtMaxHearts && actualHeartReward > 0 && (
-              <View className="flex-row items-center justify-center mb-2">
-                <Image source={heartIcon} className="w-6 h-6 mr-2" />
-                <Text className="font-din text-textPrimary text-xl">
-                  +{actualHeartReward} Hearts
-                </Text>
-              </View>
-            )}
-            <View className="flex-row items-center justify-center">
-              <Image source={starIcon} className="w-6 h-6 mr-2" />
-              <Text className="font-din text-textPrimary text-xl">+{xpReward} Soul Points</Text>
+        {/* Rewards Card */}
+        <Animated.View
+          className="w-full bg-surfaceCream/50 rounded-[18px] p-4 my-4 border-2 border-border"
+          style={{
+            opacity: cardOpacity,
+            transform: [{ translateY: cardAnim }],
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.1,
+            shadowRadius: 3,
+            elevation: 3,
+          }}>
+          <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
+            {rewardTitle}
+          </Text>
+
+          {effectiveType === SuccessAnimationType.BONUS ? (
+            // Special bonus reward display
+            <View className="flex-row items-center justify-center mb-2">
+              <Image source={gemIcon} className="w-6 h-6 mr-2" />
+              <Text className="font-din text-textPrimary text-xl">+9 Gems</Text>
             </View>
-          </>
-        )}
-      </Animated.View>
-      
-      {/* Next Action Buttons - only show if needed */}
-      {showNextButtons && (
-        <Animated.View 
-          className="w-full mt-4 mb-2"
-          style={{
-            opacity: buttonsOpacity,
-            transform: [{ translateY: buttonsTranslateY }],
-          }}
-        >
-          <View className="flex justify-center space-x-4 h-48">
-            {/* Show Pray button only if prayer is not completed */}
-            {!prayerCompleted && (
-              <PrimaryButton
-                title="Pray about this verse"
-                onPress={handleGoToPrayer}
-                style={reflectionCompleted ? "w-full" : "flex-1 h-32"}
-                buttonType="blue"
-              />
-            )}
-            
-            {/* Show Reflect button only if reflection is not completed */}
-            {!reflectionCompleted && (
-              <PrimaryButton
-                title="Reflect on this verse"
-                onPress={handleGoToReflection}
-                style={(prayerCompleted || effectiveType === SuccessAnimationType.PRAYER) ? "w-full" : "flex-1 h-24"}
-              />
-            )}
-          </View>
+          ) : (
+            // Standard rewards display for other success types
+            <>
+              {/* Only show hearts reward if not at max hearts */}
+              {!isAtMaxHearts && actualHeartReward > 0 && (
+                <View className="flex-row items-center justify-center mb-2">
+                  <Image source={heartIcon} className="w-6 h-6 mr-2" />
+                  <Text className="font-din text-textPrimary text-xl">
+                    +{actualHeartReward} Hearts
+                  </Text>
+                </View>
+              )}
+              <View className="flex-row items-center justify-center">
+                <Image source={starIcon} className="w-6 h-6 mr-2" />
+                <Text className="font-din text-textPrimary text-xl">+{xpReward} Soul Points</Text>
+              </View>
+            </>
+          )}
         </Animated.View>
-      )}
-      
-      {/* Special case for Reflection success with prayer not completed */}
-      {effectiveType === SuccessAnimationType.REFLECTION && !prayerCompleted ? (
-        <Animated.View 
-          className="w-full"
-          style={{
-            opacity: buttonsOpacity,
-            transform: [{ translateY: buttonsTranslateY }],
-          }}
-        >
-          {/* Pray button as primary action */}
-          <PrimaryButton
-            title="Pray about today's verse"
-            onPress={handleGoToPrayer}
-            buttonType="blue"
-          />
-          
-          {/* Go Home link below the pray button */}
+
+        {/* Next Action Buttons - only show if needed */}
+        {showNextButtons && (
+          <Animated.View
+            className="w-full mt-4 mb-2"
+            style={{
+              opacity: buttonsOpacity,
+              transform: [{ translateY: buttonsTranslateY }],
+            }}
+          >
+            <View className="flex justify-center space-x-4 h-48">
+              {/* Show Pray button only if prayer is not completed */}
+              {!prayerCompleted && (
+                <PrimaryButton
+                  title="Pray about this verse"
+                  onPress={handleGoToPrayer}
+                  style={reflectionCompleted ? "w-full" : "flex-1 h-32"}
+                  buttonType="blue"
+                />
+              )}
+
+              {/* Show Reflect button only if reflection is not completed */}
+              {!reflectionCompleted && (
+                <PrimaryButton
+                  title="Reflect on this verse"
+                  onPress={handleGoToReflection}
+                  style={(prayerCompleted || effectiveType === SuccessAnimationType.PRAYER) ? "w-full" : "flex-1 h-24"}
+                />
+              )}
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Special case for Reflection success with prayer not completed */}
+        {effectiveType === SuccessAnimationType.REFLECTION && !prayerCompleted ? (
+          <Animated.View
+            className="w-full"
+            style={{
+              opacity: buttonsOpacity,
+              transform: [{ translateY: buttonsTranslateY }],
+            }}
+          >
+            {/* Pray button as primary action */}
+            <PrimaryButton
+              title="Pray about today's verse"
+              onPress={handleGoToPrayer}
+              buttonType="blue"
+            />
+
+            {/* Go Home link below the pray button */}
+            <Animated.View
+              style={{
+                opacity: homeButtonOpacity,
+                transform: [{ translateY: homeButtonTranslateY }],
+              }}
+            >
+              <TouchableOpacity
+                onPress={handlePress}
+                className="mt-4"
+                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+              >
+                <Text className="font-feather text-description text-center underline mt-4">Go Home</Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </Animated.View>
+        ) : (
+          /* Regular Return Home button for all other cases, except when showing other action buttons */
+          !showNextButtons && (
+            <Animated.View
+              style={{
+                width: '100%',
+                opacity: homeButtonOpacity,
+                transform: [{ translateY: homeButtonTranslateY }],
+              }}
+            >
+              <PrimaryButton title={buttonText} onPress={handlePress} style="mt-4" />
+            </Animated.View>
+          )
+        )}
+
+        {/* Text link version of Return Home for original action button case */}
+        {showNextButtons && (
           <Animated.View
             style={{
               opacity: homeButtonOpacity,
               transform: [{ translateY: homeButtonTranslateY }],
             }}
           >
-            <TouchableOpacity 
-              onPress={handlePress} 
+            <TouchableOpacity
+              onPress={handlePress}
               className="mt-4"
               onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
             >
-              <Text className="font-feather text-description text-center underline mt-4">Go Home</Text>
+              <Text className="font-feather text-description text-center underline">Go Home</Text>
             </TouchableOpacity>
           </Animated.View>
-        </Animated.View>
-      ) : (
-        /* Regular Return Home button for all other cases, except when showing other action buttons */
-        !showNextButtons && (
-          <Animated.View
-            style={{
-              width: '100%',
-              opacity: homeButtonOpacity,
-              transform: [{ translateY: homeButtonTranslateY }],
-            }}
-          >
-            <PrimaryButton title={buttonText} onPress={handlePress} style="mt-4" />
-          </Animated.View>
-        )
-      )}
-      
-      {/* Text link version of Return Home for original action button case */}
-      {showNextButtons && (
-        <Animated.View
-          style={{
-            opacity: homeButtonOpacity,
-            transform: [{ translateY: homeButtonTranslateY }],
-          }}
-        >
-          <TouchableOpacity 
-            onPress={handlePress} 
-            className="mt-4"
-            onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
-          >
-            <Text className="font-feather text-description text-center underline">Go Home</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      )}
-    </Animated.View>
+        )}
+      </Animated.View>
+    </ScrollView>
   );
 };
 

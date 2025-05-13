@@ -9,7 +9,8 @@ import {
   SafeAreaView,
   Text,
   View,
-  InteractionManager
+  InteractionManager,
+  ScrollView
 } from 'react-native';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
@@ -436,7 +437,7 @@ export default function HomeScreen() {
 
   const handlePrayerPress = () => {
     console.log('Prayer button pressed');
-    
+
     // Don't proceed if reading is not completed
     if (!readingCompleted) {
       console.log('Prayer button disabled: Reading not completed');
@@ -673,7 +674,7 @@ export default function HomeScreen() {
                   textShadowOffset: { width: 0, height: 1 },
                   textShadowRadius: 2,
                 }}>
-                { lambName ? `${lambName}` : 'Shepherd'}
+                {lambName ? `${lambName}` : 'Shepherd'}
               </Text>
               <View className="flex-row gap-2 left-8">
                 <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
@@ -729,6 +730,7 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* Bottom Section - Action Buttons Card */}
+
         <Animated.View
           className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-28"
           style={{
@@ -743,47 +745,52 @@ export default function HomeScreen() {
             }),
             opacity: bottomCardOpacity,
           }}>
-          <View className="flex-row items-center gap-2.5 mb-0 px-1">
-            <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
-              <View
-                className="h-full bg-red rounded-full"
-                style={{ width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%` }}
-              />
+          <ScrollView
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 120 }}
+          >
+            <View className="flex-row items-center gap-2.5 mb-0 px-1">
+              <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
+                <View
+                  className="h-full bg-red rounded-full"
+                  style={{ width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%` }}
+                />
+              </View>
+              <View className="flex-row items-center gap-1">
+                <Text className="font-feather text-body text-description">
+                  {lambHearts}/{MAX_HEARTS}
+                </Text>
+                <Image source={heartIcon} className="w-8 h-8" />
+              </View>
             </View>
-            <View className="flex-row items-center gap-1">
-              <Text className="font-feather text-body text-description">
-                {lambHearts}/{MAX_HEARTS}
-              </Text>
-              <Image source={heartIcon} className="w-8 h-8" />
-            </View>
-          </View>
 
-          <SecondaryButton
-            icon={breadIcon}
-            title="Daily Bread – Read"
-            subtitle="Feed your soul with scripture"
-            points={5}
-            onPress={handleReadPress}
-            completed={readingCompleted}
-          />
-          <SecondaryButton
-            icon={dropIcon}
-            title="Living Water – Pray"
-            subtitle="Refresh your spirit with prayer"
-            points={5}
-            onPress={handlePrayerPress}
-            completed={prayerCompleted}
-            disabled={!readingCompleted}
-          />
-          <SecondaryButton
-            icon={quillIcon}
-            title="Quiet Time – Reflect"
-            subtitle="Pause and meet with God"
-            points={5}
-            onPress={handleReflectionPress}
-            completed={reflectionCompleted}
-            disabled={!readingCompleted}
-          />
+            <SecondaryButton
+              icon={breadIcon}
+              title="Daily Bread – Read"
+              subtitle="Feed your soul with scripture"
+              points={5}
+              onPress={handleReadPress}
+              completed={readingCompleted}
+            />
+            <SecondaryButton
+              icon={dropIcon}
+              title="Living Water – Pray"
+              subtitle="Refresh your spirit with prayer"
+              points={5}
+              onPress={handlePrayerPress}
+              completed={prayerCompleted}
+              disabled={!readingCompleted}
+            />
+            <SecondaryButton
+              icon={quillIcon}
+              title="Quiet Time – Reflect"
+              subtitle="Pause and meet with God"
+              points={5}
+              onPress={handleReflectionPress}
+              completed={reflectionCompleted}
+              disabled={!readingCompleted}
+            />
+          </ScrollView>
         </Animated.View>
 
         {/* Overlays */}
