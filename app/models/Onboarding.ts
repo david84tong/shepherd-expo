@@ -97,6 +97,7 @@ export type OnboardingResponses = {
 
   /** Screen 16 – "What will you name your lamb?" */
   lambName?: string;
+  username?: string;
 
   /* ────────── PHASE 5 ────────── */
 

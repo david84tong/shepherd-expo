@@ -1,6 +1,5 @@
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
-
 export interface UserDoc {
   //onboarding questions
   id: string;
@@ -15,6 +14,7 @@ export interface UserDoc {
   denomination?: string;
   ageRange: string;
   displayName: string;
+  username: string;
   lamb: Lamb;
   streakCount: number;
   lastActivityDate: FirebaseFirestoreTypes.Timestamp;
