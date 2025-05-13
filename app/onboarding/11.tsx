@@ -8,9 +8,9 @@ import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Animated, { 
-  useAnimatedStyle, 
-  withTiming, 
+import Animated, {
+  useAnimatedStyle,
+  withTiming,
   withSpring,
   useSharedValue,
   withDelay,
@@ -22,8 +22,8 @@ import { useAssets } from 'expo-asset';
 export default function SaveProgressScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const isLoginMode = params.isLogin === "true";
-  
+  const isLoginMode = params.isLogin === 'true';
+
   const [loading, setLoading] = useState(false);
   const { signInWithApple, signInAnonymously } = useAuth();
   const { clearResponses, responses } = useOnboardingStore();
@@ -32,10 +32,10 @@ export default function SaveProgressScreen() {
   // Animation shared values
   const headerOpacity = useSharedValue(0);
   const headerTranslateY = useSharedValue(40);
-  
+
   const benefitsOpacity = useSharedValue(0);
   const benefitsTranslateY = useSharedValue(40);
-  
+
   const buttonsOpacity = useSharedValue(0);
   const buttonsTranslateY = useSharedValue(40);
 
@@ -50,12 +50,13 @@ export default function SaveProgressScreen() {
     benefitsTranslateY.value = 40;
     buttonsOpacity.value = 0;
     buttonsTranslateY.value = 40;
-    
+
     // Staggered animations for each component
     const animateComponent = (opacity: any, translateY: any, delay: number) => {
       opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
-      translateY.value = withDelay(delay, 
-        withSpring(0, { 
+      translateY.value = withDelay(
+        delay,
+        withSpring(0, {
           damping: 20,
           stiffness: 90,
         })
@@ -71,17 +72,17 @@ export default function SaveProgressScreen() {
   // Create animated styles
   const headerStyle = useAnimatedStyle(() => ({
     opacity: headerOpacity.value,
-    transform: [{ translateY: headerTranslateY.value }]
+    transform: [{ translateY: headerTranslateY.value }],
   }));
 
   const benefitsStyle = useAnimatedStyle(() => ({
     opacity: benefitsOpacity.value,
-    transform: [{ translateY: benefitsTranslateY.value }]
+    transform: [{ translateY: benefitsTranslateY.value }],
   }));
 
   const buttonsStyle = useAnimatedStyle(() => ({
     opacity: buttonsOpacity.value,
-    transform: [{ translateY: buttonsTranslateY.value }]
+    transform: [{ translateY: buttonsTranslateY.value }],
   }));
 
   // Mark onboarding as completed and navigate to home
@@ -100,7 +101,7 @@ export default function SaveProgressScreen() {
     try {
       // Get all responses from store to ensure we have latest data
       const allResponses = useOnboardingStore.getState().getAllResponses();
-      
+
       // Map the stored path to a spiritual goal if available
       // Fallback to intent if no path selected
       const spiritualGoal = allResponses.intent || 'Understand';
@@ -121,8 +122,8 @@ export default function SaveProgressScreen() {
         denomination: allResponses.religiousAffiliation,
         ageRange: allResponses.ageRange,
         // Set notification preferences if provided
-        notificationEnabled: allResponses.notificationEnabled !== undefined ? 
-          allResponses.notificationEnabled : false,
+        notificationEnabled:
+          allResponses.notificationEnabled !== undefined ? allResponses.notificationEnabled : false,
         notificationTime: allResponses.notificationTime || undefined,
         // Set selected path details if available
         selectedPathId: allResponses.selectedPath || undefined,
@@ -134,9 +135,10 @@ export default function SaveProgressScreen() {
           name: allResponses.lambName || '',
           skin: 'default',
         },
+        username: allResponses.username || '',
       };
 
-      analytics.logEvent("OnboardingSignUp_Completed");
+      analytics.logEvent('OnboardingSignUp_Completed');
       analytics.setUserId(uid);
       analytics.setUserProperties(userData);
       // Create user in Firestore
@@ -152,20 +154,20 @@ export default function SaveProgressScreen() {
 
   // Handle sign in with Apple
   const handleAppleSignIn = async () => {
-    const eventName = isLoginMode ? "Login_Tapped_Apple" : "OnboardingSignUp_Tapped_Apple";
+    const eventName = isLoginMode ? 'Login_Tapped_Apple' : 'OnboardingSignUp_Tapped_Apple';
     analytics.logEvent(eventName);
-    
+
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
       setLoading(true);
-      console.log("Starting Apple sign in process...");
-      
+      console.log('Starting Apple sign in process...');
+
       // Pass the isLoginMode flag to the signInWithApple method
       const user = await signInWithApple(isLoginMode);
-      
+
       if (user) {
-        console.log("Apple sign in successful");
-        
+        console.log('Apple sign in successful');
+
         if (isLoginMode) {
           // User exists and data has been fetched in the auth hook
           // Just mark onboarding as completed and navigate to tabs
@@ -174,45 +176,48 @@ export default function SaveProgressScreen() {
           router.replace('/(tabs)');
         } else {
           // In onboarding mode, create new user from responses
-          console.log("Creating user...");
+          console.log('Creating user...');
           await createUserFromResponses(user.uid, user.displayName || 'Anonymous User');
           await completeOnboarding();
         }
       } else {
-        console.error("Apple sign in returned no user");
-        throw new Error("No user data returned from Apple");
+        console.error('Apple sign in returned no user');
+        throw new Error('No user data returned from Apple');
       }
     } catch (error: any) {
-      console.error("Apple sign in error:", error);
+      console.error('Apple sign in error:', error);
 
       // Provide more specific feedback based on the error
-      let errorMessage = "There was a problem signing in with Apple.";
-      
-      if (error.message?.includes("canceled") || error.message?.includes("cancelled")) {
-        errorMessage = "Sign in was canceled. Please try again.";
-      } else if (error.message?.includes("network")) {
-        errorMessage = "Network error. Please check your internet connection and try again.";
-      } else if (error.message?.includes("configuration")) {
-        errorMessage = "Authentication configuration error. Please try another method.";
-      } else if (error.message?.includes("incomplete")) {
-        errorMessage = "Sign in process was interrupted. Please try again.";
+      let errorMessage = 'There was a problem signing in with Apple.';
+
+      if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
+        errorMessage = 'Sign in was canceled. Please try again.';
+      } else if (error.message?.includes('network')) {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (error.message?.includes('configuration')) {
+        errorMessage = 'Authentication configuration error. Please try another method.';
+      } else if (error.message?.includes('incomplete')) {
+        errorMessage = 'Sign in process was interrupted. Please try again.';
       } else if (error.message?.includes("operation couldn't be completed")) {
-        errorMessage = "Sign in process could not be completed. Please try again.";
-      } else if (error.message?.includes("No account found")) {
-        errorMessage = "We couldn't find an account with this Apple ID. Please create a new account instead.";
-      } else if (error.message?.includes("Failed to fetch your account data")) {
+        errorMessage = 'Sign in process could not be completed. Please try again.';
+      } else if (error.message?.includes('No account found')) {
+        errorMessage =
+          "We couldn't find an account with this Apple ID. Please create a new account instead.";
+      } else if (error.message?.includes('Failed to fetch your account data')) {
         errorMessage = "We couldn't retrieve your account data. Please try again.";
       }
-      
-      const analyticsEventName = isLoginMode ? "Login_Failed_Apple" : "OnboardingSignUp_Failed_Apple";
+
+      const analyticsEventName = isLoginMode
+        ? 'Login_Failed_Apple'
+        : 'OnboardingSignUp_Failed_Apple';
       analytics.logEvent(analyticsEventName, {
         error: error.message,
       });
 
       Alert.alert(
-        "Sign In Failed",
-        `${errorMessage} ${isLoginMode ? "" : "You can try again or use the anonymous option to continue."}`,
-        [{ text: "OK" }]
+        'Sign In Failed',
+        `${errorMessage} ${isLoginMode ? '' : 'You can try again or use the anonymous option to continue.'}`,
+        [{ text: 'OK' }]
       );
     } finally {
       setLoading(false);
@@ -222,19 +227,19 @@ export default function SaveProgressScreen() {
   // Handle anonymous sign in - only available in onboarding mode
   const handleSkip = async (showConfirmation = true) => {
     if (isLoginMode) return; // Don't allow anonymous login in login mode
-    
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    analytics.logEvent("OnboardingSignUp_Tapped_Skip");
+    analytics.logEvent('OnboardingSignUp_Tapped_Skip');
     if (showConfirmation) {
       Alert.alert(
-        "Skip Sign In?",
+        'Skip Sign In?',
         "Without an account, your progress won't be saved if you delete the app or change devices.",
         [
-          { text: "Go Back", style: "cancel" },
-          { 
-            text: "Skip Anyway", 
-            onPress: () => createAnonymousAccount()
-          }
+          { text: 'Go Back', style: 'cancel' },
+          {
+            text: 'Skip Anyway',
+            onPress: () => createAnonymousAccount(),
+          },
         ]
       );
     } else {
@@ -242,7 +247,7 @@ export default function SaveProgressScreen() {
       createAnonymousAccount();
     }
   };
-  
+
   // Function to create anonymous account (extracted to avoid duplication)
   const createAnonymousAccount = async () => {
     try {
@@ -253,12 +258,10 @@ export default function SaveProgressScreen() {
         await completeOnboarding();
       }
     } catch (error) {
-      console.error("Anonymous sign in error:", error);
-      Alert.alert(
-        "Error",
-        "There was a problem creating anonymous account. Please try again.",
-        [{ text: "OK" }]
-      );
+      console.error('Anonymous sign in error:', error);
+      Alert.alert('Error', 'There was a problem creating anonymous account. Please try again.', [
+        { text: 'OK' },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -269,20 +272,20 @@ export default function SaveProgressScreen() {
       {/* Header */}
       <Animated.View style={headerStyle} className="items-center mt-16 mb-8">
         <Text className="font-feather text-h1 text-center text-textPrimary mb-3">
-          {isLoginMode ? "Welcome Back" : "Save Your Progress"}
+          {isLoginMode ? 'Welcome Back' : 'Save Your Progress'}
         </Text>
         <Text className="font-din text-body text-center text-description mb-6">
-          {isLoginMode 
-            ? "Sign in to your existing account to continue your journey." 
-            : "Sign in to keep your reading streak and Bible progress synced across devices."}
+          {isLoginMode
+            ? 'Sign in to your existing account to continue your journey.'
+            : 'Sign in to keep your reading streak and Bible progress synced across devices.'}
         </Text>
-        
+
         {/* Icon */}
         <View className="mb-8 overflow-hidden w-56 h-48 items-center justify-center">
           {riveAssets && riveAssets[0]?.localUri && (
             <Rive
               url={riveAssets[0].localUri}
-              artboardName={"lamb-workout"}
+              artboardName={'lamb-workout'}
               autoplay={true}
               fit={Fit.Contain}
               alignment={Alignment.Center}
@@ -291,7 +294,7 @@ export default function SaveProgressScreen() {
           )}
         </View>
       </Animated.View>
-      
+
       {/* Benefits - only show in onboarding mode */}
       {!isLoginMode && (
         <Animated.View style={benefitsStyle} className="mb-8">
@@ -299,25 +302,31 @@ export default function SaveProgressScreen() {
             <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
               <AntDesign name="check" size={18} color="#24CA17" />
             </View>
-            <Text className="font-din text-body text-textPrimary flex-1">Save your reading progress</Text>
+            <Text className="font-din text-body text-textPrimary flex-1">
+              Save your reading progress
+            </Text>
           </View>
-          
+
           <View className="flex-row items-center mb-4">
             <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
               <AntDesign name="check" size={18} color="#24CA17" />
             </View>
-            <Text className="font-din text-body text-textPrimary flex-1">Transfer between devices</Text>
+            <Text className="font-din text-body text-textPrimary flex-1">
+              Transfer between devices
+            </Text>
           </View>
-          
+
           <View className="flex-row items-center mb-4">
             <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
               <AntDesign name="check" size={18} color="#24CA17" />
             </View>
-            <Text className="font-din text-body text-textPrimary flex-1">Keep your reading streak safe</Text>
+            <Text className="font-din text-body text-textPrimary flex-1">
+              Keep your reading streak safe
+            </Text>
           </View>
         </Animated.View>
       )}
-      
+
       {/* Login message for login mode */}
       {isLoginMode && (
         <Animated.View style={benefitsStyle} className="mb-8">
@@ -326,53 +335,48 @@ export default function SaveProgressScreen() {
           </Text>
         </Animated.View>
       )}
-      
+
       {/* Sign in button and Skip button */}
       <Animated.View style={buttonsStyle}>
         <View className="items-center mb-4">
-          <TouchableOpacity 
+          <TouchableOpacity
             className="flex-row items-center justify-center bg-black w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow"
             onPress={handleAppleSignIn}
-            disabled={loading}
-          >
+            disabled={loading}>
             {loading ? (
               <ActivityIndicator color="white" size="small" style={{ marginRight: 10 }} />
             ) : (
               <AntDesign name="apple1" size={24} color="white" style={{ marginRight: 10 }} />
             )}
             <Text className="font-din text-white text-[18px] font-bold">
-              {loading ? "Signing in..." : "Sign in with Apple"}
+              {loading ? 'Signing in...' : 'Sign in with Apple'}
             </Text>
           </TouchableOpacity>
         </View>
-        
+
         {/* Skip button - only show in onboarding mode */}
         {!isLoginMode && (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => handleSkip(true)}
             className="items-center"
-            disabled={loading}
-          >
+            disabled={loading}>
             <Text className="font-din text-description underline text-[16px]">
-              {loading ? "Please wait..." : "Skip for now"}
+              {loading ? 'Please wait...' : 'Skip for now'}
             </Text>
           </TouchableOpacity>
         )}
-        
+
         {/* Back button - only show in login mode */}
         {isLoginMode && (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => router.back()}
             className="items-center"
-            disabled={loading}
-          >
+            disabled={loading}>
             <Text className="font-din text-description underline text-[16px]">
-              {loading ? "Please wait..." : "Back to Home"}
+              {loading ? 'Please wait...' : 'Back to Home'}
             </Text>
           </TouchableOpacity>
         )}
-        
-   
       </Animated.View>
     </View>
   );
