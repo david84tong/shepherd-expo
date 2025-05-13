@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import dayjs from 'dayjs';
 import React, { useEffect, useMemo, useState, useRef, useLayoutEffect } from 'react';
-import { View, Text, Image, ActivityIndicator } from 'react-native';
+import { View, Text, Image, ActivityIndicator, Alert } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle,
@@ -19,6 +19,7 @@ import Rive, { RiveRef } from 'rive-react-native';
 import PrimaryButton from './PrimaryButton';
 import { getStreakSubtext } from '../app/hooks/streakHook';
 import analytics from '../utils/analytics';
+import * as StoreReview from 'expo-store-review';
 /* ─────────────── helper ─────────────── */
 type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE';
 
@@ -82,7 +83,7 @@ export const StreakScreen = () => {
   const setStreakCount = useUserStore((state) => state.setStreakCount);
   const syncWithFirestore = useUserStore((state) => state.syncWithFirestore);
   const [debugInfo, setDebugInfo] = useState<any>(null);
-  
+
   // Get notification store methods
   const { rescheduleStreakNotificationsForNextDay, listScheduledNotifications } = useNotificationStore();
 
@@ -92,16 +93,16 @@ export const StreakScreen = () => {
     const resetStreakNotifications = async () => {
       try {
         console.log('📱 StreakScreen: Rescheduling streak notifications for the next day');
-        
+
         // Reschedule streak notifications for the next day
         const success = await rescheduleStreakNotificationsForNextDay();
-        
+
         if (success) {
           console.log('📱 StreakScreen: Successfully rescheduled streak notifications');
         } else {
           console.log('📱 StreakScreen: Failed to reschedule streak notifications');
         }
-        
+
         // Log all scheduled notifications for debugging
         await listScheduledNotifications();
       } catch (error) {
@@ -219,7 +220,7 @@ export const StreakScreen = () => {
   useEffect(() => {
     setStreakCount(streak);
     console.log('streak', streak);
-    
+
     // Track notification rescheduling with the current streak value
     analytics.logEvent("StreakScreen_RescheduledNotifications", {
       streak: streak
@@ -322,12 +323,17 @@ export const StreakScreen = () => {
   // Add a function to handle continue button press
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     analytics.logEvent("StreakScreen_Tapped_Continue", {
       streak: streak,
     });
     console.log('[StreakScreen] Continue pressed. Resetting pathInProgress and navigating to home.');
     setPathInProgress(false);
+
+    const isAvailable = await StoreReview.isAvailableAsync();
+    if (isAvailable) {
+      StoreReview.requestReview();
+    }
     router.replace('/(tabs)');
   };
 

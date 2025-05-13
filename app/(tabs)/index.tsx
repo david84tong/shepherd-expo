@@ -24,6 +24,10 @@ import { useUIStore } from '../stores/uiStore'; // Import UI store
 import { useUserStore } from '../stores/userStore'; // Import user store
 import { useAssetsStore, imageAssets } from '../stores/assetsStore';
 import { useAssets } from 'expo-asset';
+import useSubscriptionStore from '../stores/subscriptionStore';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
@@ -49,6 +53,7 @@ export default function HomeScreen() {
   const riveRef = useRef<RiveRef>(null);
   const [riveError, setRiveError] = useState<RNRiveError | null>(null);
   const navigation = useNavigation();
+  const router = useRouter();
 
   // Use Zustand store for mode management
   const mode = useHomeStore((state) => state.mode);
@@ -75,6 +80,15 @@ export default function HomeScreen() {
   const [showBgRive, setShowBgRive] = useState(false);
   // Lamb size animation
   const lambSizeAnim = useRef(new Animated.Value(256)).current; // Start with full size (256px)
+
+  // Get subscription state and actions from the store
+  const { isProMember } = useSubscriptionStore();
+
+  // Handle subscription button press using the store action
+  const handleSubscriptionPress = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/PricingScreen' as any);
+  }
 
   // Load Rive assets
   const [riveAssets] = useAssets([
@@ -409,81 +423,98 @@ export default function HomeScreen() {
 
   // --- Event Handlers ---
   const handleReadPress = () => {
-    console.log('Read the word button pressed');
+    if (!isProMember && readingCompleted) {
+      handleSubscriptionPress()
+    }
+    else {
 
-    // Remove heavy haptic feedback
 
-    // Animate mode transition
-    animateToState(0.5, pathOpacityAnim, 800, 'PREVIEW');
-    setArtboardName('lamb-reading');
+      console.log('Read the word button pressed');
 
-    // Update the mode in the store
-    setMode('PREVIEW');
+      // Remove heavy haptic feedback
 
-    // Animate the Rive view a bit
-    Animated.sequence([
-      Animated.timing(riveScaleAnim, {
-        toValue: 1.05,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(riveScaleAnim, {
-        toValue: 1,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start();
+      // Animate mode transition
+      animateToState(0.5, pathOpacityAnim, 800, 'PREVIEW');
+      setArtboardName('lamb-reading');
+
+      // Update the mode in the store
+      setMode('PREVIEW');
+
+      // Animate the Rive view a bit
+      Animated.sequence([
+        Animated.timing(riveScaleAnim, {
+          toValue: 1.05,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(riveScaleAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
   };
 
   const handlePrayerPress = () => {
     console.log('Prayer button pressed');
+    if (!isProMember && prayerCompleted) {
+      handleSubscriptionPress()
+    } else {
 
-    // Don't proceed if reading is not completed
-    if (!readingCompleted) {
-      console.log('Prayer button disabled: Reading not completed');
-      return;
+
+      // Don't proceed if reading is not completed
+      if (!readingCompleted) {
+        console.log('Prayer button disabled: Reading not completed');
+        return;
+      }
+
+      // Remove rigid haptic feedback
+
+      // Show the global prayer sheet and set mode to PRAYER when prayer is generated
+      showPrayerSheet(() => {
+        setMode('PRAYER');
+      });
     }
-
-    // Remove rigid haptic feedback
-
-    // Show the global prayer sheet and set mode to PRAYER when prayer is generated
-    showPrayerSheet(() => {
-      setMode('PRAYER');
-    });
   };
 
   const handleReflectionPress = () => {
-    console.log('Reflection button pressed');
 
-    // Don't proceed if reading is not completed
-    if (!readingCompleted) {
-      console.log('Reflection button disabled: Reading not completed');
-      return;
-    }
+    if (!isProMember && reflectionCompleted) {
+      handleSubscriptionPress()
+    } else {
+      console.log('Reflection button pressed');
 
-    // Remove heavy haptic feedback
+      // Don't proceed if reading is not completed
+      if (!readingCompleted) {
+        console.log('Reflection button disabled: Reading not completed');
+        return;
+      }
 
-    // Update the mode in the store
-    setMode('REFLECTION');
+      // Remove heavy haptic feedback
 
-    // Animate to reflection state
-    animateToState(0.5, journalOpacityAnim, 800, 'REFLECTION');
-    setArtboardName('lamb-writing');
+      // Update the mode in the store
+      setMode('REFLECTION');
 
-    // Rotate the lamb slightly when transitioning to reflection
-    Animated.timing(riveRotateAnim, {
-      toValue: 0.05, // Slightly rotated
-      duration: 500,
-      useNativeDriver: true,
-    }).start(() => {
-      // Return to normal rotation after a delay
+      // Animate to reflection state
+      animateToState(0.5, journalOpacityAnim, 800, 'REFLECTION');
+      setArtboardName('lamb-writing');
+
+      // Rotate the lamb slightly when transitioning to reflection
       Animated.timing(riveRotateAnim, {
-        toValue: 0,
+        toValue: 0.05, // Slightly rotated
         duration: 500,
-        delay: 500,
         useNativeDriver: true,
-      }).start();
-    });
+      }).start(() => {
+        // Return to normal rotation after a delay
+        Animated.timing(riveRotateAnim, {
+          toValue: 0,
+          duration: 500,
+          delay: 500,
+          useNativeDriver: true,
+        }).start();
+      });
+    }
   };
 
   // --- Handlers for Closing Overlays ---

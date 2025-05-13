@@ -18,6 +18,8 @@ import StickyPathHeader from '../../components/MapComponents/StickyPathHeader';
 import { BIBLE_BOOK_IDS, BIBLE_PATHS, Unit } from '../models/Path';
 import { PathInfo, usePathStore } from '../stores/pathStore';
 import { heightScreen } from '~/utils/dimensions';
+import * as Haptics from 'expo-haptics';
+import useSubscriptionStore from '../stores/subscriptionStore';
 
 // Define our custom section type
 type BibleSection = {
@@ -193,6 +195,14 @@ export default function MapScreen() {
       setCurrentSectionIndex(sections[0].index || 0);
     }
   }, [sections]);
+
+  const isProMember = useSubscriptionStore(state => state.isProMember)
+
+  // Handle subscription button press using the store action
+  const handleSubscriptionPress = async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    router.push('/PricingScreen' as any);
+  }
 
   // Track if we need to suppress haptic feedback (e.g., on first render)
   const isFirstRender = useRef(true);
@@ -396,6 +406,13 @@ export default function MapScreen() {
       console.log(`Next unit on screen: ${item.id} (${item.title})`);
     }
 
+    function onNodeClick(unit: Unit) {
+      if (!isProMember && section.index > 0) {
+        handleSubscriptionPress()
+      } else {
+        handleNodePress(unit)
+      }
+    }
     return (
       <View className="relative">
         <PathNode
@@ -403,7 +420,7 @@ export default function MapScreen() {
           unit={item}
           status={status}
           alignment={alignment}
-          onPress={handleNodePress}
+          onPress={onNodeClick}
         />
 
         {/* Sheep decoration at second node position in every section - Only render when visible */}
