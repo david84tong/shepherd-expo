@@ -443,7 +443,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     setReadingCompleted(true);
 
     // Check if all tasks are completed
-    if (sawDailyBonus) {
+    if (effectiveParams?.isLastUnitInSection === 'true') {
+      setSuccessType(SuccessAnimationType.SECTION_COMPLETE)
+    } else if (sawDailyBonus) {
       setSuccessType(SuccessAnimationType.READING);
     } else if (prayerCompleted && reflectionCompleted) {
       // Only show BONUS type if the daily bonus hasn't been seen yet
@@ -459,7 +461,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       pathname: "/success",
       params: {
         message: sawDailyBonus ? "Reading Complete!" : (prayerCompleted && reflectionCompleted ? "Daily Trifecta Complete!" : "Reading Complete!"),
-        subMessage: sawDailyBonus ? "You've finished today's chapter. Great progress!" : (prayerCompleted && reflectionCompleted ? "Amazing! You've completed all three spiritual disciplines today." : "You've finished today's chapter. Great progress!")
+        subMessage: sawDailyBonus ? "You've finished today's chapter. Great progress!" : (prayerCompleted && reflectionCompleted ? "Amazing! You've completed all three spiritual disciplines today." : "You've finished today's chapter. Great progress!"),
       }
     });
   };

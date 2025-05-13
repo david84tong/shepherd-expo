@@ -59,6 +59,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Load Rive assets
   const [riveAssets] = useAssets([require('../assets/riveAnimations/successLamb.riv')]);
+  const [homeLambAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
+
 
   // -------- Other hooks below (must appear before any conditional return) --------
   // Get completion states
@@ -226,7 +228,15 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   }, [effectiveType]);
 
   // Get values based on successType - make sure we are handling all possible types
-  if (effectiveType === SuccessAnimationType.READING) {
+  if (effectiveType === SuccessAnimationType.SECTION_COMPLETE) {
+    console.log('Setting up SECTION_COMPLETE success screen');
+    message = 'Section Complete!';
+    subMessage = "You finished today's Bible reading & fed your lamb.";
+    heartReward = 3;
+    xpReward = 5;
+    riveArtboard = undefined;
+    rewardTitle = 'READING REWARDS';
+  } else if (effectiveType === SuccessAnimationType.READING) {
     console.log('Setting up READING success screen');
     message = 'Reading Complete!';
     subMessage = "You finished today's Bible reading & fed your lamb.";
@@ -653,7 +663,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   }
 
   // Show loading indicator if assets aren't loaded yet
-  if (!riveAssets) {
+  if (!riveAssets || !homeLambAssets) {
     return (
       <View className="flex-1 items-center justify-center bg-surfaceCream">
         <ActivityIndicator size="large" color="#3C584A" />
@@ -661,7 +671,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       </View>
     );
   }
-
   return (
     <ScrollView
       contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
@@ -692,13 +701,27 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                 },
               ],
             }}>
-            <Rive
-              ref={riveRef}
-              url={riveAssets[0].localUri!}
-              autoplay={true}
-              style={{ width: '100%', height: '100%' }}
-              {...(riveArtboard ? { artboardName: riveArtboard } : {})}
-            />
+            {effectiveType === SuccessAnimationType.SECTION_COMPLETE ? (
+              <Rive
+                ref={riveRef}
+                url={homeLambAssets?.[0].localUri!}
+                autoplay={true}
+                artboardName='lamb-milestone'
+                style={{
+                  width: '100%', height: '100%', maxWidth: 300,
+                  maxHeight: 300,
+                  alignSelf: 'center'
+                }}
+              />
+            ) : (
+              <Rive
+                ref={riveRef}
+                url={riveAssets?.[0].localUri!}
+                autoplay={true}
+                style={{ width: '100%', height: '100%' }}
+                {...(riveArtboard ? { artboardName: riveArtboard } : {})}
+              />
+            )}
           </Animated.View>
         </View>
 
