@@ -16,7 +16,7 @@ const CenteredIcon = ({ children }: { children: React.ReactNode }) => (
 // Custom Tab Bar Button component with animation
 function CustomTabBarButton(props: any) {
   const { children, onPress, accessibilityState } = props;
-  const focused = accessibilityState.selected;
+  const focused = accessibilityState?.selected;
   // Animated value for focus state (0 or 1)
   const focusAnim = useRef(new Animated.Value(focused ? 1 : 0)).current;
 

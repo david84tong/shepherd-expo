@@ -220,7 +220,8 @@ export default function MapScreen() {
     require('../../assets/riveAnimations/successLamb.riv'),
   ]);
 
-  const handleNodePress = (unit: Unit) => {
+  const handleNodePress = (unit: Unit, isLastUnitInSection: boolean) => {
+
     console.log('Pressed unit:', unit.title, unit.reference);
     console.log('Reference details:', JSON.stringify(unit.reference));
 
@@ -299,6 +300,7 @@ export default function MapScreen() {
           // Add a flag to help identify where this navigation came from
           source: 'map',
           timestamp: Date.now().toString(), // Force new params by adding timestamp
+          isLastUnitInSection: isLastUnitInSection.toString()
         },
       });
     } else {
@@ -416,11 +418,14 @@ export default function MapScreen() {
       console.log(`Next unit on screen: ${item.id} (${item.title})`);
     }
 
+    const isLastUnitInSection = index === section.data.length - 1;
+
+
     function onNodeClick(unit: Unit) {
       if (!isProMember && section.index > 0) {
         handleSubscriptionPress()
       } else {
-        handleNodePress(unit)
+        handleNodePress(unit, isLastUnitInSection)
       }
     }
     return (
@@ -432,6 +437,7 @@ export default function MapScreen() {
           alignment={alignment}
           onPress={onNodeClick}
         />
+
 
         {/* Sheep decoration at second node position in every section - Only render when visible */}
         {isSecondNodeInSection && section.riveName && section.artboardName && false && (
