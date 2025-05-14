@@ -10,9 +10,9 @@ import Rive from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import { LinearGradient } from 'expo-linear-gradient';
 import analytics from '~/utils/analytics';
-import Animated, { 
-  useAnimatedStyle, 
-  withTiming, 
+import Animated, {
+  useAnimatedStyle,
+  withTiming,
   withSpring,
   useSharedValue,
   withDelay,
@@ -23,10 +23,10 @@ import Animated, {
 export default function LoginScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  
+
   // Load Rive assets
   const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
-  
+
   // Track if animations have been initialized
   const animationsInitialized = useRef(false);
 
@@ -34,13 +34,13 @@ export default function LoginScreen() {
   const screenOpacity = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(-20);
-  
+
   const lambOpacity = useSharedValue(0);
   const lambScale = useSharedValue(0.9);
-  
+
   const buttonOpacity = useSharedValue(0);
   const buttonTranslateY = useSharedValue(20);
-  
+
   const linkOpacity = useSharedValue(0);
 
   // Begin journey handler
@@ -49,7 +49,7 @@ export default function LoginScreen() {
 
     try {
       // Trigger haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
       // Remove the onboarding completed key
       await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
       // Navigate to onboarding
@@ -59,18 +59,18 @@ export default function LoginScreen() {
       Alert.alert('Error', 'Could not start journey. Please try again.');
     }
   };
-  
+
   // Run animations
   useLayoutEffect(() => {
     analytics.logEvent("WelcomeScreen_Screenload");
     if (animationsInitialized.current) return;
-    
+
     // Fade in the screen
     screenOpacity.value = withTiming(1, { duration: 400 });
-    
+
     const triggerAnimations = () => {
       // Animate components with staggered timing
-      
+
       // Title animation
       titleOpacity.value = withDelay(200, withTiming(1, { duration: 500 }));
       titleTranslateY.value = withDelay(200, withSpring(0, {
@@ -78,7 +78,7 @@ export default function LoginScreen() {
         stiffness: 80,
         mass: 0.7
       }));
-      
+
       // Lamb animation - subtle grow effect
       lambOpacity.value = withDelay(400, withTiming(1, { duration: 600 }));
       lambScale.value = withDelay(400, withSpring(1, {
@@ -86,47 +86,47 @@ export default function LoginScreen() {
         stiffness: 80,
         mass: 0.8
       }));
-      
+
       // Button slide up from bottom
       buttonOpacity.value = withDelay(600, withTiming(1, { duration: 500 }));
       buttonTranslateY.value = withDelay(600, withSpring(0, {
         damping: 14,
         stiffness: 90
       }));
-      
+
       // Link fade in last
       linkOpacity.value = withDelay(700, withTiming(1, { duration: 400 }));
-      
+
       animationsInitialized.current = true;
     };
-    
+
     // Start animations after a short delay
     const timer = setTimeout(triggerAnimations, 100);
-    
+
     return () => clearTimeout(timer);
   }, []);
-  
+
   // Create animated styles
   const screenStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
     flex: 1
   }));
-  
+
   const titleStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,
     transform: [{ translateY: titleTranslateY.value }]
   }));
-  
+
   const lambStyle = useAnimatedStyle(() => ({
     opacity: lambOpacity.value,
     transform: [{ scale: lambScale.value }]
   }));
-  
+
   const buttonStyle = useAnimatedStyle(() => ({
     opacity: buttonOpacity.value,
     transform: [{ translateY: buttonTranslateY.value }]
   }));
-  
+
   const linkStyle = useAnimatedStyle(() => ({
     opacity: linkOpacity.value
   }));
@@ -144,7 +144,7 @@ export default function LoginScreen() {
   return (
     <Animated.View style={screenStyle} className="flex-1">
       {/* Using direct require for background to avoid linter errors */}
-      <ImageBackground 
+      <ImageBackground
         source={require('../../assets/backgrounds/mainBackground.png')}
         className="flex-1"
         resizeMode="cover"
@@ -164,43 +164,43 @@ export default function LoginScreen() {
             zIndex: 5
           }}
         />
-        
+
         <SafeAreaView className="flex-1 justify-between px-6 pt-10 pb-10 relative z-10">
           {/* Title at the top */}
           <Text className="text-accentGold font-feather text-h1 text-center mb-2 -mt-12">
-              Shepherd
-            </Text>
+            Shepherd
+          </Text>
           <Animated.View style={titleStyle} className="items-center -mt-12">
             {/* Shepherd title */}
-      
+
             <View className="flex-row items-center justify-center mt-1 w-full">
-            <Image 
-                source={require('../../assets/onboarding/leftReef.png')} 
-                className="w-32  h-full  -mr-4" 
+              <Image
+                source={require('../../assets/onboarding/leftReef.png')}
+                className="w-32  h-full  -mr-4"
                 resizeMode="contain"
               />
-            {/* Bible Study text with icons */}
-            <View className="flex-col items-center justify-center mt-1">
-            <Text className="text-white font-nunito-bold text-title text-center">
-              Bible Study
-            </Text>
-            
-            {/* Made Joyful with Bible icons */}
-            <View className="flex-row items-center justify-center mt-1">
+              {/* Bible Study text with icons */}
+              <View className="flex-col items-center justify-center mt-1">
+                <Text className="text-white font-nunito-bold text-title text-center">
+                  Bible Study
+                </Text>
 
-              <Text className="text-white font-nunito-bold text-title">Made </Text>
-              <Text className="text-accentGold font-feather text-title" style={{ borderBottomColor: '#F7B500', borderBottomWidth: 4, paddingBottom: 2 }}>Joyful</Text>
-             
+                {/* Made Joyful with Bible icons */}
+                <View className="flex-row items-center justify-center mt-1">
+
+                  <Text className="text-white font-nunito-bold text-title">Made </Text>
+                  <Text className="text-accentGold font-feather text-title" style={{ borderBottomColor: '#F7B500', }}>Joyful</Text>
+
+                </View>
               </View>
-              </View>
-              <Image 
-                source={require('../../assets/onboarding/rightReef.png')} 
-                className="w-32 h-full -ml-4" 
+              <Image
+                source={require('../../assets/onboarding/rightReef.png')}
+                className="w-32 h-full -ml-4"
                 resizeMode="contain"
               />
             </View>
           </Animated.View>
-          
+
           {/* Rive Animation in the middle */}
           <Animated.View style={lambStyle} className="h-[200px] w-full justify-center items-center -mt-24">
             <Rive
@@ -210,7 +210,7 @@ export default function LoginScreen() {
               style={{ width: '120%', height: '120%' }}
             />
           </Animated.View>
-          
+
           {/* Button at the bottom */}
           <View className="w-full">
             <Animated.View style={buttonStyle}>
@@ -221,14 +221,14 @@ export default function LoginScreen() {
               />
             </Animated.View>
             <Animated.View style={linkStyle}>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => {
                   analytics.logEvent("WelcomeScreen_Tapped_Login");
                   router.push({
                     pathname: "/onboarding/11",
                     params: { isLogin: "true" }
                   });
-                }} 
+                }}
                 className="mt-4"
                 onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
               >
@@ -240,5 +240,5 @@ export default function LoginScreen() {
       </ImageBackground>
     </Animated.View>
   );
-} 
+}
 

@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
+  Dimensions,
   Easing,
   Text,
   View,
@@ -17,6 +18,8 @@ import PrimaryButton from './PrimaryButton';
 import { BIBLE_BOOK_IDS } from '../app/models/Path';
 import analytics from '../utils/analytics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const screenHeight = Dimensions.get('window').height;
 
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
@@ -411,7 +414,14 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   };
 
   return (
-    <View className="flex flex-col h-full w-full absolute" pointerEvents="box-none">
+    <View style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: screenHeight,
+    }}
+      pointerEvents="box-none">
       {/* Back Button */}
       <BackButton onPress={handleBackPress} containerClassName="-pt-[4px]" />
 

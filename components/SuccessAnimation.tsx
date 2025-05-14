@@ -691,8 +691,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         <View className="w-full h-96 my-4 items-center justify-center ">
           <Animated.View
             style={{
-              width: '140%',
-              height: '140%',
+              width: '130%',
+              height: '130%',
+              marginTop: 10,
               transform: [
                 { scale: riveScaleAnim },
                 {

@@ -208,7 +208,7 @@ export default function RootLayout() {
           showHalfModal(params);
         }, 3000);
       }
-      
+
 
     } catch (error) {
       console.error('Error checking streak status:', error);
@@ -396,7 +396,7 @@ export default function RootLayout() {
           <View
             style={{
               position: 'absolute',
-              top: 0,
+              top: -10,
               left: 0,
               right: 0,
               height: 4,
