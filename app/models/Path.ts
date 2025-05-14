@@ -952,23 +952,53 @@ export const BIBLE_PATHS: Path[] = [
     units: [
       {
         id: 'gos-1',
-        title: 'Birth & Boyhood',
-        reference: createRef('Luke', generateChapters(1, 3)),
+        title: 'Announcements & Prophecies',
+        reference: createRef('Luke', generateChapters(1, 1)),
         description:
-          'Angelic announcements overshadow Nazareth and Bethlehem. A twelve-year-old Jesus astounds temple teachers, foreshadowing His mission.',
+          'Gabriel visits Zechariah and Mary; prophetic songs erupt with hope for Israel. The long-awaited sunrise is about to break.',
+        icon: 'megaphone',
+        prayer: `God of Promise, open my ears like Mary to say, "Let it be to me according to Your word."`,
+        reflectionPrompt: `Which promise from Luke 1 fuels your faith today?`,
+      },
+      {
+        id: 'gos-1b',
+        title: 'Nativity & Childhood',
+        reference: createRef('Luke', generateChapters(2, 2)),
+        description:
+          'Angels announce good news to shepherds; Simeon and Anna bless the infant Messiah; twelve-year-old Jesus amazes teachers in the temple.',
         icon: 'star',
-        prayer: `Incarnate Word, as angels proclaimed good news, let my life echo "Glory to God" through humble obedience.`,
-        reflectionPrompt: `How does Jesus' humility in birth challenge your view of greatness?`,
+        prayer: `Incarnate Word, let the wonder of Your birth ignite fresh praise and child-like trust in my heart.`,
+        reflectionPrompt: `What aspect of the nativity story moves you to worship?`,
+      },
+      {
+        id: 'gos-1c',
+        title: 'Preparation & Baptism',
+        reference: createRef('Luke', generateChapters(3, 3)),
+        description:
+          'John calls for repentance; crowds are baptized; heaven opens as the Father affirms His beloved Son and the Spirit descends.',
+        icon: 'water',
+        prayer: `Purifying Fire, prepare my heart for Your kingdom and plunge me into Your renewing Spirit.`,
+        reflectionPrompt: `How can you bear "fruit in keeping with repentance" this week?`,
       },
       {
         id: 'gos-2',
-        title: 'Baptism & Early Call',
-        reference: createRef('Matthew', generateChapters(3, 5)),
+        title: 'Baptism & Temptation',
+        reference: createRef('Matthew', generateChapters(1, 3)),
         description:
-          "Heaven opens over the Jordan as the Spirit descends like a dove. Wilderness temptations test the Son's obedience before public ministry begins.",
+          'From genealogy to Jordan: Matthew traces royal roots, John baptizes, and Jesus resists wilderness temptation—launching His public mission.',
         icon: 'water',
-        prayer: `Beloved Son, in baptism and wilderness You modeled surrendered sonship. Empower me to resist temptation with written truth.`,
-        reflectionPrompt: `Which Scripture will you wield against a recurring temptation?`,
+        prayer: `Beloved Son, as You rose from Jordan waters and faced desert trials, steady my identity in the Father and arm me with living Scripture.`,
+        reflectionPrompt: `Where is the Spirit inviting you to stand on identity rather than performance?`,
+      },
+      {
+        id: 'gos-2b',
+        title: 'Early Ministry & Beatitudes',
+        reference: createRef('Matthew', generateChapters(4, 5)),
+        description:
+          'Galilean light dawns as disciples are called. Crowds gather on a hillside to hear kingdom upside-down blessings known as the Beatitudes.',
+        icon: 'people',
+        prayer: `King of the Kingdom, form poverty of spirit and pure heart in me that I may inherit the blessed life You describe.`,
+        reflectionPrompt: `Which Beatitude feels most counter-cultural to you today?`,
       },
       {
         id: 'gos-3',
@@ -992,23 +1022,53 @@ export const BIBLE_PATHS: Path[] = [
       },
       {
         id: 'gos-5',
-        title: 'Signs & Power',
-        reference: createRef('Mark', generateChapters(1, 5)),
+        title: 'Authority & Healing',
+        reference: createRef('Mark', generateChapters(1, 3)),
         description:
-          'Demons are silenced, storms are stilled, and paralytics walk. Each miracle is a billboard for the authority of the King.',
+          'Mark races through healings, exorcisms, and table fellowship—immediately showcasing a Messiah with unrivaled authority.',
         icon: 'flash',
         prayer: `Lord of Power, display Your authority over chaos in my circumstances so others marvel at who You are.`,
         reflectionPrompt: `What storm do you need to invite Jesus to speak "Peace, be still" over?`,
       },
       {
-        id: 'gos-6',
-        title: 'Upper Room & Prayer',
-        reference: createRef('John', generateChapters(12, 17)),
+        id: 'gos-5b',
+        title: 'Parables & Storms',
+        reference: createRef('Mark', generateChapters(4, 5)),
         description:
-          "Foot-washing models servant leadership on the eve of betrayal. Jesus' high-priestly prayer secures unity and joy for future disciples.",
+          `Seed parables hint at hidden kingdom growth. Then wind and waves—and even legions of demons—bow to Jesus' command.`,
+        icon: 'boat',
+        prayer: `Seed-Sowing Savior, grow quiet fruit in me and calm every inner sea that still resists Your word.`,
+        reflectionPrompt: `Which small seed of obedience could God multiply in your life?`,
+      },
+      {
+        id: 'gos-6',
+        title: 'Triumphal Entry & Foot-washing',
+        reference: createRef('John', generateChapters(12, 13)),
+        description:
+          'Hosanna shouts usher Jesus into Jerusalem; in an upper-room shock, He washes dusty feet, redefining greatness as service.',
         icon: 'home',
-        prayer: `Servant Leader, wash my feet and teach me to serve others with the same grace You've shown me.`,
+        prayer: `Servant King, cleanse my pride and teach me to take the towel for those around me.`,
         reflectionPrompt: `Whose feet (figuratively) can you wash this week?`,
+      },
+      {
+        id: 'gos-6b',
+        title: 'Farewell & Vine',
+        reference: createRef('John', generateChapters(14, 15)),
+        description:
+          'Comforting promises of Spirit and home intertwine with the call to abide in the true Vine and love one another deeply.',
+        icon: 'leaf',
+        prayer: `True Vine, graft me into Your life so that abiding love bears lasting fruit.`,
+        reflectionPrompt: `What practice helps you remain in Christ's love today?`,
+      },
+      {
+        id: 'gos-6c',
+        title: 'Spirit & High-Priestly Prayer',
+        reference: createRef('John', generateChapters(16, 17)),
+        description:
+          'Jesus promises the Spirit who guides into truth and prays that future believers would be one as the Trinity is one.',
+        icon: 'cloud',
+        prayer: `Interceding Savior, let Your prayer for unity and Spirit-led truth find an answered "Amen" in my life.`,
+        reflectionPrompt: `How can you pursue unity with another believer this week?`,
       },
       {
         id: 'gos-7',
@@ -1374,447 +1434,11 @@ export const BIBLE_PATHS: Path[] = [
   },
 ];
 
-/* ------------------------------------------------------------------
-   ▸ Devotional content
-   ------------------------------------------------------------------ */
+// Automatically generate shorter version of the full reading plan – each unit
+// now covers 1-2 chapters max. This reduces daily reading length while keeping
+// path metadata intact. If you need to tweak chapter count just pass a second
+// arg (e.g., generateShorterBiblePaths(BIBLE_PATHS, 1) for single-chapter days).
 
-// A curated prayer and reflection prompt for each learning unit.
-// These are spiritually-rich yet concise so they surface well in UI cards.
-const UNIT_DEVOTIONS: Record<string, { prayer: string; reflectionPrompt: string }> = {
-  /* ------------------------------  GENESIS  ------------------------------ */
-  'gen-2': {
-    prayer: `Merciful Father, You see my hidden motives as clearly as the first altar where Abel's blood cried out. Cleanse envy and anger from my heart. Teach me to offer You my best in humble faith, trusting Your justice and grace. In Jesus' name, amen.`,
-    reflectionPrompt: `Where might jealousy or comparison be souring your worship, and how can you instead present God a wholehearted offering?`,
-  },
-  'gen-3': {
-    prayer: `Covenant-Keeping God, You placed a rainbow in the clouds to promise mercy after judgment. Thank You for rescuing Noah and offering me the same deliverance in Christ. Help me walk blamelessly in a corrupt world today.`,
-    reflectionPrompt: `What "ark" of obedience is God inviting you to build now—before the storm arrives?`,
-  },
-  'gen-4': {
-    prayer: `Lord of the Nations, human pride scatters but Your purpose still gathers a people for Your name. Guard my ambition from building towers to myself. Make me a channel of blessing like Abram, blessing every tribe and tongue.`,
-    reflectionPrompt: `In what area of life are you stacking bricks of self-promotion rather than trusting God's timing?`,
-  },
-  'gen-5': {
-    prayer: `Faithful God of Abraham, You call ordinary pilgrims into extraordinary promises. Strengthen my faith to obey without knowing all the details. May my life point others to Your unfailing covenant love.`,
-    reflectionPrompt: `What first step of obedience is God highlighting for you—however small—that would demonstrate trust in His promise?`,
-  },
-  'gen-6': {
-    prayer: `God of Generations, You laughed with Sarah and Abraham over impossible births. Thank You for bringing life out of barrenness. Teach me to steward the gifts You've entrusted, passing faith to the next generation.`,
-    reflectionPrompt: `How can you intentionally nurture faith in someone younger this week?`,
-  },
-  'gen-7': {
-    prayer: `God of Jacob and Esau, You work through messy families and surprising choices. Heal my broken relationships and rename my identity in Your grace. Make reconciliation greater than rivalry.`,
-    reflectionPrompt: `Where do you sense God inviting you to seek forgiveness or extend mercy within your family story?`,
-  },
-  'gen-8': {
-    prayer: `God Who Wrestles, thank You that You meet me in the dark nights of fear. As Jacob limped toward daylight with a new name, mark me with humble dependence that clings to Your blessing.`,
-    reflectionPrompt: `What personal struggle could become a place of deeper encounter with God if you hold on to Him?`,
-  },
-  'gen-9': {
-    prayer: `Sovereign Redeemer, You guided Joseph from pit to palace. Turn my setbacks into setups for Your purposes. Help me forgive those who wrong me and trust Your unseen hand.`,
-    reflectionPrompt: `How might God be using an unfair circumstance in your life to shape future fruit?`,
-  },
-  'gen-10': {
-    prayer: `God of Providence, You wove famine into forgiveness and saved many lives through Joseph. Teach me to see trials through the lens of Your larger story and respond with compassionate generosity.`,
-    reflectionPrompt: `Who needs to hear words of grace from you that could turn past hurt into present healing?`,
-  },
-  'gen-11': {
-    prayer: `Eternal God, as Jacob blessed his sons and Joseph trusted in future deliverance, orient my hope beyond the grave. May my final words and daily choices alike testify that You will surely come.`,
-    reflectionPrompt: `If today were your last, what legacy of faith would you want to leave—and what step can you take toward that today?`,
-  },
-
-  /* ------------------------------  EXODUS  ------------------------------ */
-  'exo-1': {
-    prayer: `Deliverer God, You heard Israel's groans in bondage. Hear oppressed hearts today and raise deliverers. Form courage in me like Moses to confront injustice with humility.`,
-    reflectionPrompt: `Where is God nudging you to step out of comfort and speak up for someone in chains?`,
-  },
-  'exo-2': {
-    prayer: `Lord of Signs and Wonders, Your power shamed Egypt's idols. Expose the false gods in my own culture and heart. Let my trust rest in Your unmatched authority.`,
-    reflectionPrompt: `What modern "plague" might God be using to reveal misplaced trust in your life?`,
-  },
-  'exo-3': {
-    prayer: `Passover Lamb, thank You that Your blood marks my rescue and a path through impossible seas. Lead me into freedom that worships You with every breath.`,
-    reflectionPrompt: `What area of life still feels pursued by "pharaoh"—and how can you plant your feet in God's finished salvation?`,
-  },
-  'exo-4': {
-    prayer: `Jehovah Jireh, bread from heaven and water from rock remind me that You supply daily grace. Quiet my complaining spirit and teach gratitude in scarcity and plenty.`,
-    reflectionPrompt: `How can you practice thankfulness today for God's everyday provisions?`,
-  },
-  'exo-5': {
-    prayer: `Holy Lawgiver, Your thunderous words set people free to love well. Write Your commandments on my heart by the Spirit so obedience becomes delight.`,
-    reflectionPrompt: `Which of the Ten Words is the Spirit highlighting for renewal in your life right now?`,
-  },
-  'exo-6': {
-    prayer: `Immanuel, You desire to dwell among us. Prepare the tabernacle of my heart—every detail offered for Your glory.`,
-    reflectionPrompt: `What "fabric or furnishing" of your daily rhythm needs rearranging to host God's presence?`,
-  },
-  'exo-7': {
-    prayer: `Compassionate and Gracious God, when I craft golden calves of impatience, please forgive and renew covenant with me. Show me Your glory that I might reflect it.`,
-    reflectionPrompt: `Identify a golden calf of hurry or control in your life. What would repentance look like?`,
-  },
-  'exo-8': {
-    prayer: `Faithful Finisher, You filled the completed tabernacle with glory. Complete the good work begun in me so Your presence shines through everything I build.`,
-    reflectionPrompt: `Where do you sense God inviting excellence and faithfulness to "finish the work" He assigned?`,
-  },
-
-  /* ---------------------------  WILDERNESS  --------------------------- */
-  'wild-1': {
-    prayer: `Holy God, every sacrifice whispers of Christ, the perfect offering. Thank You for making atonement that draws me near. Teach me to live as a living sacrifice today.`,
-    reflectionPrompt: `What would it look like for you to present your body and schedule as worship?`,
-  },
-  'wild-2': {
-    prayer: `Lord of Fire, Your holiness consumes strange fire. Purify my worship from performance, letting reverence and joy burn together.`,
-    reflectionPrompt: `Is there any area where casual familiarity has dulled holy awe?`,
-  },
-  'wild-3': {
-    prayer: `Forgiving Judge, on the Day of Atonement You covered sin and cleansed the camp. Cover my conscience and empower me to love my neighbor as myself.`,
-    reflectionPrompt: `Who is God calling you to reconcile with as evidence of forgiven life?`,
-  },
-  'wild-4': {
-    prayer: `Lord of Sabbaths, Your festivals weave worship into calendars. Teach me to pause regularly and remember that all I own belongs to You.`,
-    reflectionPrompt: `How can you build intentional celebration and rest into the next week?`,
-  },
-  'wild-5': {
-    prayer: `God of Order, even censuses reveal Your care for every name. Remind me that I am positioned around Your presence, not the other way around.`,
-    reflectionPrompt: `What would it mean to re-center your life visually around God's "tabernacle" today?`,
-  },
-  'wild-6': {
-    prayer: `Patient Teacher, when I grumble You invite faith. Replace my complaints with trust, especially when giants loom large.`,
-    reflectionPrompt: `Which fear feels like a giant in your promised land, and what truth counters it?`,
-  },
-  'wild-7': {
-    prayer: `Sovereign Protector, You turn curses into blessings. Guard my heart from compromise and open my eyes to Your prophetic assurances.`,
-    reflectionPrompt: `Where might subtle compromise threaten your devotion, and how can you guard against it?`,
-  },
-  'wild-8': {
-    prayer: `Faithful Shepherd, in wilderness discipline You still prepare inheritance. Help me root out idolatry and cling to Your promise of rest.`,
-    reflectionPrompt: `What idol is God exposing that must be surrendered before entering new territory?`,
-  },
-  'wild-9': {
-    prayer: `God of the Shema, engrave love for You on my heart, home, and habits. May obedience flow from affectionate remembrance of Your story.`,
-    reflectionPrompt: `How will you talk about God's faithfulness in your house this week?`,
-  },
-  'wild-10': {
-    prayer: `God of Choice, You set life and death before me. Empower me to choose life through Spirit-led obedience and heart circumcision.`,
-    reflectionPrompt: `What life-giving decision is God placing before you right now?`,
-  },
-  'wild-11': {
-    prayer: `Lord of Legacy, as Moses viewed the land from afar, teach me to finish well—passing leadership and songs of blessing to those after me.`,
-    reflectionPrompt: `Who are you intentionally mentoring to carry the mission beyond your years?`,
-  },
-
-  /* ---------------------  KINGDOMS & PROPHETS  --------------------- */
-  'kp-1': {
-    prayer: `Captain of Hosts, like Joshua I want courage that flows from Your promises. Lead me to step onto flooded Jordans trusting they will part.`,
-    reflectionPrompt: `What risky obedience is God asking that requires courageous faith?`,
-  },
-  'kp-2': {
-    prayer: `Faithful Judge, cycles of compromise reveal my need for a Savior-King. Deliver me from apathy and raise zeal for wholehearted devotion.`,
-    reflectionPrompt: `Which recurring sin cycle do you need to surrender to the true Judge today?`,
-  },
-  'kp-3': {
-    prayer: `King of Kings, guard my heart from Saul-like insecurity. Teach me to value obedience over outward success.`,
-    reflectionPrompt: `Where are you tempted to sacrifice appearance for obedience?`,
-  },
-  'kp-4': {
-    prayer: `Refuge in Wilderness, shape me like David in caves—forming character before crown. Help me honor even flawed authority while trusting Your timing.`,
-    reflectionPrompt: `How can patience in hidden seasons prepare you for future influence?`,
-  },
-  'kp-5': {
-    prayer: `Covenant Keeper, Your promise to David finds "Yes" in Jesus. Forgive my private sins that endanger public witness, and restore steadfast spirit within me.`,
-    reflectionPrompt: `Bring one hidden area into God's light today—what step will you take?`,
-  },
-  'kp-6': {
-    prayer: `God of Wisdom, grant me a discerning heart like Solomon's, yet keep me from divided loyalties. Let my worship remain undistracted.`,
-    reflectionPrompt: `What competing affection might be quietly turning your heart from undivided devotion?`,
-  },
-  'kp-7': {
-    prayer: `Unifying Lord, human harshness splits kingdoms, but Your Spirit unites. Heal divisions in Your church and my relationships.`,
-    reflectionPrompt: `Which conversation could you initiate to sow reconciliation where there's division?`,
-  },
-  'kp-8': {
-    prayer: `God Who Answers by Fire, make my life an altar drenched yet ignitable. May courage to confront idolatry burn bright in me.`,
-    reflectionPrompt: `Where is God calling you to publicly stand for His honor?`,
-  },
-  'kp-9': {
-    prayer: `Lord of History, Assyria's exile warns me that sin has consequences. Keep my heart steadfast and my hope in Your preserving power.`,
-    reflectionPrompt: `What warning from Scripture do you need to heed before drift becomes downfall?`,
-  },
-  'kp-10': {
-    prayer: `God of Hope, even in Babylon You preserve royal seed. When circumstances feel like exile, lift my eyes to future restoration in Christ.`,
-    reflectionPrompt: `How can you practice faithful presence in a place that feels like exile?`,
-  },
-
-  /* ----------------------  PSALMS WISDOM PATH  ---------------------- */
-  'psw-1': {
-    prayer: `Lord of Two Paths, plant me by streams of Your Word. Keep me from walking, standing, or sitting in sin's counsel.`,
-    reflectionPrompt: `What practical step can deepen your daily delight in Scripture?`,
-  },
-  'psw-2': {
-    prayer: `My Refuge and Fortress, when foundations shake, hide me in Your presence until the storm passes.`,
-    reflectionPrompt: `Recall a present fear. How can you verbalize trust like the psalmist?`,
-  },
-  'psw-3': {
-    prayer: `Creator and Lawgiver, let the heavens' song and Torah's perfection revive my soul, leading me to hidden-fault repentance.`,
-    reflectionPrompt: `How does creation currently invite you to praise the Creator?`,
-  },
-  'psw-4': {
-    prayer: `God of Justice, teach me to fret not over evildoers but to dwell in the land cultivating faithfulness.`,
-    reflectionPrompt: `Where is envy towards the wicked stealing your peace?`,
-  },
-  'psw-5': {
-    prayer: `Lord, remind me that wealth cannot redeem a soul. Anchor my security in eternity, not possessions.`,
-    reflectionPrompt: `How might generosity loosen the grip of materialism in your life?`,
-  },
-  'psw-6': {
-    prayer: `Everlasting God, teach me to number my days that I may gain a heart of wisdom even amid adversity.`,
-    reflectionPrompt: `What would "numbering your days" change about today's priorities?`,
-  },
-  'psw-7': {
-    prayer: `Spirit of Truth, open my eyes to wondrous things in Your law; let Your Word be sweeter than honey to me.`,
-    reflectionPrompt: `Which verse recently lit up for you, and how will you live it out?`,
-  },
-  'psw-8': {
-    prayer: `Great King, let everything that has breath in me praise You—may my final word today be hallelujah.`,
-    reflectionPrompt: `List three reasons to praise God right now; how will you vocalize them?`,
-  },
-
-  /* ----------------------  MAJOR PROPHETS  ---------------------- */
-  'maj-1': {
-    prayer: `Holy, Holy, Holy Lord, like Isaiah I confess unclean lips. Purge me with coal from Your altar and send me wherever You will.`,
-    reflectionPrompt: `Where do you sense God asking "Whom shall I send?"—and what is your response?`,
-  },
-  'maj-2': {
-    prayer: `Servant-King Jesus, wounded for our transgressions, teach me to mirror servant humility and hope to weary exiles.`,
-    reflectionPrompt: `Which aspect of the Servant's character do you need to embody today?`,
-  },
-  'maj-3': {
-    prayer: `Potter of Nations, shape my words and life to uproot lies and plant truth, even when unpopular.`,
-    reflectionPrompt: `What truth are you hesitating to speak out of fear?`,
-  },
-  'maj-4': {
-    prayer: `Man of Sorrows, in lament You are near. Help me wrestle honestly yet anchor in the hope of a heart-written covenant.`,
-    reflectionPrompt: `Bring one unresolved pain before God—what lament and hope will you voice?`,
-  },
-  'maj-5': {
-    prayer: `Glorious One, wheels within wheels proclaim Your sovereignty. Expand my vision of Your holiness until idols crumble.`,
-    reflectionPrompt: `How does a bigger view of God transform a current worry?`,
-  },
-  'maj-6': {
-    prayer: `Breath of Life, speak to valley bones. Revive dead hopes and set me under the care of the Good Shepherd-Prince.`,
-    reflectionPrompt: `Where do you need to invite God's breath to resurrect dry bones in your life?`,
-  },
-  'maj-7': {
-    prayer: `Ancient of Days, grant me steadfast faith like Daniel amidst cultural pressure. May my loyalty to You outshine any threat.`,
-    reflectionPrompt: `What small act of faithfulness today paves the way for future courage?`,
-  },
-
-  /* ----------------------  MINOR PROPHETS  ---------------------- */
-  'min-1': {
-    prayer: `Relentless Lover, thank You for pursuing unfaithful hearts. Bind me to You in covenant love that transforms my waywardness.`,
-    reflectionPrompt: `Where have you sensed God's faithful pursuit despite your wandering?`,
-  },
-  'min-2': {
-    prayer: `God of the Day of the LORD, turn my alarm into repentance and my repentance into renewal by Your Spirit.`,
-    reflectionPrompt: `What locust-eaten place of loss needs God's promised restoration?`,
-  },
-  'min-3': {
-    prayer: `God of Justice, let righteousness roll like a river through my life. Break complacency and align my worship with compassion.`,
-    reflectionPrompt: `How can you practice justice for the marginalized this week?`,
-  },
-  'min-4': {
-    prayer: `Humble King, teach me to act justly, love mercy, and walk humbly with You in every arena of life.`,
-    reflectionPrompt: `Which of those three actions feels most challenging right now?`,
-  },
-  'min-5': {
-    prayer: `Sovereign Lord, amid unanswered questions let me rejoice in You, the God of my salvation.`,
-    reflectionPrompt: `How can you choose rejoicing even before circumstances change?`,
-  },
-  'min-6': {
-    prayer: `Mighty Savior, refine me with holy fire and quiet me with singing love.`,
-    reflectionPrompt: `What impurity is God revealing that His refining fire can remove?`,
-  },
-  'min-7': {
-    prayer: `Builder of the House, stir my spirit to prioritize Your temple over personal paneled houses.`,
-    reflectionPrompt: `How can you invest time or resources in God's kingdom project this week?`,
-  },
-  'min-8': {
-    prayer: `Lord of Hosts, through night visions assure me that You stand behind Your people. Strengthen my hands for the work.`,
-    reflectionPrompt: `What encouraging sign has God given you recently to keep building?`,
-  },
-  'min-9': {
-    prayer: `Faithful Witness, turn my cynical questions into reverent expectation of the Sun of Righteousness rising.`,
-    reflectionPrompt: `Where do you need to replace spiritual apathy with anticipation of Christ's coming?`,
-  },
-
-  /* ----------------------  GOSPELS PATH  ---------------------- */
-  'gos-1': {
-    prayer: `Incarnate Word, as angels proclaimed good news, let my life echo "Glory to God" through humble obedience.`,
-    reflectionPrompt: `How does Jesus' humility in birth challenge your view of greatness?`,
-  },
-  'gos-2': {
-    prayer: `Beloved Son, in baptism and wilderness You modeled surrendered sonship. Empower me to resist temptation with written truth.`,
-    reflectionPrompt: `Which Scripture will you wield against a recurring temptation?`,
-  },
-  'gos-3': {
-    prayer: `Rabbi Jesus, reshape my values through Beatitudes. Teach me to build on rock by doing Your words.`,
-    reflectionPrompt: `Which teaching from the Sermon on the Mount do you sense God asking you to practice today?`,
-  },
-  'gos-4': {
-    prayer: `Shepherd of the Lost, thank You for chasing prodigals. Make my heart celebrate repentance and seek the forgotten.`,
-    reflectionPrompt: `Who in your life feels far from God and needs welcoming love?`,
-  },
-  'gos-5': {
-    prayer: `Lord of Power, display Your authority over chaos in my circumstances so others marvel at who You are.`,
-    reflectionPrompt: `What storm do you need to invite Jesus to speak "Peace, be still" over?`,
-  },
-  'gos-6': {
-    prayer: `Servant Leader, wash my feet and teach me to serve others with the same grace You've shown me.`,
-    reflectionPrompt: `Whose feet (figuratively) can you wash this week?`,
-  },
-  'gos-7': {
-    prayer: `Crucified Savior, thank You for bearing my sin. May the cross crucify my pride and free me to love sacrificially.`,
-    reflectionPrompt: `What part of self needs to die so Christ's love can live through you?`,
-  },
-  'gos-8': {
-    prayer: `Risen Lord, breathe peace into my doubts and commission me to make disciples. Empower me by Your Spirit.`,
-    reflectionPrompt: `How will resurrection hope shape one conversation today?`,
-  },
-
-  /* ----------------------  ACTS PATH  ---------------------- */
-  'act-1': {
-    prayer: `Spirit of Pentecost, fill me afresh that my words boldly proclaim Jesus across cultural lines.`,
-    reflectionPrompt: `Where is God prompting you to witness today?`,
-  },
-  'act-2': {
-    prayer: `Lord of Growth, strengthen me to rejoice when opposition arises, knowing Your word cannot be chained.`,
-    reflectionPrompt: `How can you respond to opposition with worship instead of worry?`,
-  },
-  'act-3': {
-    prayer: `God of Transformation, You turned Saul to Paul. Convert my blind spots into blazing testimony of grace.`,
-    reflectionPrompt: `What former weakness could become a testimony if surrendered to Christ?`,
-  },
-  'act-4': {
-    prayer: `Breaker of Barriers, help me welcome those I once called "unclean," celebrating Your impartial salvation.`,
-    reflectionPrompt: `Who is outside your comfort zone that God may be calling you to love?`,
-  },
-  'act-5': {
-    prayer: `Missionary God, guide my steps like Paul and Barnabas. Let grace, not legalism, define my message.`,
-    reflectionPrompt: `Where can you share grace today instead of adding burdens?`,
-  },
-  'act-6': {
-    prayer: `Lord of Open Doors, give Macedonian vision for new fields and songs in midnight prisons.`,
-    reflectionPrompt: `What closed door might be redirecting you to a new mission field?`,
-  },
-  'act-7': {
-    prayer: `Spirit of Encouragement, may my friendships deepen like Paul's farewell tears, strengthening others for the race.`,
-    reflectionPrompt: `Who encourages your faith, and how can you thank them today?`,
-  },
-  'act-8': {
-    prayer: `Unhindered King, even chains advance the gospel. Grant me resilience to proclaim hope in every trial.`,
-    reflectionPrompt: `How can you use your current circumstance—good or hard—for gospel witness?`,
-  },
-
-  /* ----------------------  PAULINE EPISTLES  ---------------------- */
-  'paul-1': {
-    prayer: `God of the Gospel, root me in justification by faith so grace drives holy living.`,
-    reflectionPrompt: `How does knowing you are "declared righteous" change today's struggle?`,
-  },
-  'paul-2': {
-    prayer: `Lord of the Church, heal divisions and teach me to love with cross-shaped patience.`,
-    reflectionPrompt: `What practical act of love can build unity where you worship?`,
-  },
-  'paul-3': {
-    prayer: `Spirit of Freedom, keep me from adding law to grace. Let Christ be formed in me through faith working by love.`,
-    reflectionPrompt: `Where are you tempted to measure worth by performance instead of grace?`,
-  },
-  'paul-4': {
-    prayer: `God of Unity, reveal the height and depth of Christ's love, empowering me to walk in worthy humility.`,
-    reflectionPrompt: `How will you guard the unity of the Spirit in your relationships today?`,
-  },
-  'paul-5': {
-    prayer: `Joyful Lord, teach me contentment in all circumstances because to live is Christ and to die is gain.`,
-    reflectionPrompt: `What current hardship can become an opportunity for joy?`,
-  },
-  'paul-6': {
-    prayer: `Supreme Christ, let Your pre-eminence dethrone every rival in my mind and habits.`,
-    reflectionPrompt: `Which "ism" or distraction competes for Christ's supremacy in you?`,
-  },
-  'paul-7': {
-    prayer: `God of Hope, comfort me with the promise of Your return so I grieve with hope and live with expectancy.`,
-    reflectionPrompt: `How does Christ's return shape your use of time today?`,
-  },
-  'paul-8': {
-    prayer: `Steadfast Lord, strengthen my heart against deception and idleness, fixing my eyes on Your faithfulness.`,
-    reflectionPrompt: `Where might discouragement be breeding laziness instead of diligence?`,
-  },
-  'paul-9': {
-    prayer: `Guardian of Truth, help me fight the good fight of faith, guarding the gospel with a pure heart and good conscience.`,
-    reflectionPrompt: `What false teaching or distraction do you need to confront in love?`,
-  },
-  'paul-10': {
-    prayer: `Grace Instructor, train me to say "No" to ungodliness and "Yes" to good works that adorn the gospel.`,
-    reflectionPrompt: `Identify one "good work" the Spirit is prompting you to pursue this week.`,
-  },
-
-  /* ----------------------  GENERAL EPISTLES  ---------------------- */
-  'genep-1': {
-    prayer: `Great High Priest, anchor my drifting heart with the sure hope behind the veil.`,
-    reflectionPrompt: `How does Jesus' superior priesthood encourage you to persevere?`,
-  },
-  'genep-2': {
-    prayer: `Lord of Wisdom, make my faith visible through compassionate action and bridled speech.`,
-    reflectionPrompt: `What deed of mercy can embody your faith today?`,
-  },
-  'genep-3': {
-    prayer: `God of Hope, empower joyful holiness amid trials, that my life declares Your excellencies.`,
-    reflectionPrompt: `How can holiness become a witness in your current hardship?`,
-  },
-  'genep-4': {
-    prayer: `God is Love, help me walk in light and love, discerning truth and overcoming the evil one.`,
-    reflectionPrompt: `In which relationship do you need to choose sacrificial love?`,
-  },
-  'genep-5': {
-    prayer: `Lord of Truth, keep me contending for the faith while extending hospitality without fear.`,
-    reflectionPrompt: `Where can you combine truth and love for someone today?`,
-  },
-
-  /* ----------------------  REVELATION PATH  ---------------------- */
-  'rev-1': {
-    prayer: `Christ among the Lampstands, refine my witness so Your light burns bright in my church and life.`,
-    reflectionPrompt: `What commendation and correction from the seven letters speaks most to you?`,
-  },
-  'rev-2': {
-    prayer: `Throned Lamb, lift my eyes above earthly turmoil to the rainbow-encircled throne where worship never stops.`,
-    reflectionPrompt: `How can you join the heavenly chorus in the middle of daily tasks?`,
-  },
-  'rev-3': {
-    prayer: `Sovereign Judge, teach me to trumpet warning and witness, trusting Your measured mercy.`,
-    reflectionPrompt: `What aspect of spiritual warfare do these chapters highlight for your prayer life?`,
-  },
-  'rev-4': {
-    prayer: `Righteous King, help me leave Babylon's seduction and worship the pure beauty of holiness.`,
-    reflectionPrompt: `Where might worldly allurements be dulling your longing for Christ?`,
-  },
-  'rev-5': {
-    prayer: `Alpha and Omega, hasten the day of new creation. Until then, keep me conquering by the blood of the Lamb and word of testimony.`,
-    reflectionPrompt: `What part of Revelation's finale fuels your endurance today?`,
-  },
-};
-
-// Attach prayers & reflection prompts to any units that are missing them
-BIBLE_PATHS.forEach((path) => {
-  path.units.forEach((unit) => {
-    const devo = UNIT_DEVOTIONS[unit.id];
-    if (devo) {
-      if (!unit.prayer) unit.prayer = devo.prayer;
-      if (!unit.reflectionPrompt) unit.reflectionPrompt = devo.reflectionPrompt;
-    }
-  });
-});
-
-// Exporting the devotions map can help with future tooling/tests if needed
-export { UNIT_DEVOTIONS };
 
 // Path options for onboarding
 export type PathOption = {
@@ -1907,3 +1531,58 @@ export const PATH_OPTIONS: PathOption[] = [
     ],
   },
 ];
+
+/* ---------- Utility to build "shorter" paths (1–2 chapters per unit) ---------- */
+
+// Helper to chunk an array into smaller arrays (size <= n)
+const chunk = <T,>(arr: T[], size: number): T[][] => {
+  const res: T[][] = [];
+  for (let i = 0; i < arr.length; i += size) {
+    res.push(arr.slice(i, i + size));
+  }
+  return res;
+};
+
+/**
+ * Split a Unit into multiple sub-units so that each resulting reference covers at
+ * most `chaptersPerUnit` chapters (default 2). Metadata is copied, with "Part X"
+ * suffix added to the title & id.
+ */
+const splitUnit = (unit: Unit, chaptersPerUnit = 2): Unit[] => {
+  // Only handle simple single-book references for now; if an array or multi-book
+  // reference comes in we leave it unchanged.
+  if (Array.isArray(unit.reference)) return [unit];
+
+  const { chapters } = unit.reference;
+  if (chapters.length <= chaptersPerUnit) return [unit];
+
+  const chapterChunks = chunk(chapters, chaptersPerUnit);
+  const totalParts = chapterChunks.length;
+  return chapterChunks.map((chapArr, idx) => {
+    const part = idx + 1;
+    return {
+      ...unit,
+      id: `${unit.id}-p${part}`,
+      title: `${unit.title} (Part ${part})`,
+      description: `Part ${part}${totalParts > 1 ? ` of ${totalParts}` : ''}: ${unit.description}`,
+      reference: { ...unit.reference, chapters: chapArr },
+      // Keep same prayer & reflectionPrompt
+    };
+  });
+};
+
+/**
+ * Generate shorter paths where each day = ≤ chaptersPerUnit chapters.
+ */
+export const generateShorterBiblePaths = (
+  paths: Path[],
+  chaptersPerUnit = 2
+): Path[] => {
+  return paths.map((p) => {
+    const newUnits: Unit[] = p.units.flatMap((u) => splitUnit(u, chaptersPerUnit));
+    return { ...p, units: newUnits };
+  });
+};
+
+// Finally, export the shorter reading plan constant (1-2 chapters per unit)
+export const SHORTER_BIBLE_PATHS_2: Path[] = generateShorterBiblePaths(BIBLE_PATHS, 2);

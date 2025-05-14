@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useRef, useImperativeHandle, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView, Linking } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView, Linking, ActivityIndicator } from 'react-native';
 import BottomSheet, { BottomSheetView, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import Clipboard from '@react-native-clipboard/clipboard';
 import * as Haptics from 'expo-haptics';
@@ -19,6 +19,7 @@ import analytics from '../utils/analytics';
 import Purchases from 'react-native-purchases';
 import useSubscriptionStore from '../app/stores/subscriptionStore';
 import { useStreakManager, checkStreakAndApplyPenalties, getDateFromTimestamp } from '../app/hooks/streakHook';
+import * as Application from 'expo-application';
 
 import Animated, { 
   useAnimatedStyle,
@@ -707,6 +708,39 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   }, [devPanelExpanded]);
 
+  // Get user store frequency goal
+  const frequencyGoal = useUserStore(state => state.frequencyGoal);
+  
+  // Function to get display text for reading time
+  const getReadingTimeDisplay = useCallback(() => {
+    switch (frequencyGoal) {
+      case '1-5':
+        return '1-5 mins (1 chapter)';
+      case '6-10':
+        return '6-10 mins (3-4 chapters)';
+      case '15-25':
+      case '11-15': // Handle both possible values
+        return '11-15 mins (6-8 chapters)';
+      default:
+        return '5-10 mins';
+    }
+  }, [frequencyGoal]);
+  
+  // Handle navigation to reading time selection
+  const handleEditReadingTime = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    bottomSheetRef.current?.close();
+    router.push({
+      pathname: '/onboarding/5',
+      params: { fromSettings: 'true' }
+    });
+    analytics.logEvent("Settings_Tapped_EditReadingTime");
+  }, [router]);
+
+  // Get app version and build number for developer panel
+  const appVersion = Application.nativeApplicationVersion || 'Unknown';
+  const buildNumber = Application.nativeBuildVersion || 'Unknown';
+
   return (
     <>
       <BottomSheet
@@ -743,6 +777,22 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
               >
                 <Text style={styles.translationText}>
                   {translations.find(t => t.id === savedTranslation)?.name || 'English Standard Version (ESV)'}
+                </Text>
+                <Feather name="chevron-right" size={18} color="#3C584A" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.divider} />
+            
+            {/* Daily Reading Time Section */}
+            <View style={styles.settingsSection}>
+              <Text style={styles.settingsSectionTitle}>Daily Reading Time</Text>
+              <TouchableOpacity 
+                style={styles.translationSelector}
+                onPress={handleEditReadingTime}
+              >
+                <Text style={styles.translationText}>
+                  {getReadingTimeDisplay()}
                 </Text>
                 <Feather name="chevron-right" size={18} color="#3C584A" />
               </TouchableOpacity>
@@ -938,13 +988,30 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
               <View style={styles.developerPanel}>
                 <View style={styles.developerPanelHeader}>
                   <Text style={styles.developerPanelTitle}>Developer Panel</Text>
-                  <TouchableOpacity 
-                    onPress={refreshStreakData}
-                    style={styles.refreshButton}
-                    disabled={devPanelLoading}
-                  >
-                    <Feather name="refresh-cw" size={16} color="#3C584A" />
-                  </TouchableOpacity>
+                  {devPanelLoading ? (
+                    <ActivityIndicator size="small" color="#3C584A" />
+                  ) : (
+                    <TouchableOpacity 
+                      onPress={refreshStreakData}
+                      style={styles.refreshButton}
+                      disabled={devPanelLoading}
+                    >
+                      <Feather name="refresh-cw" size={16} color="#3C584A" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+                
+                {/* App Version Info Section */}
+                <View style={styles.developerPanelSection}>
+                  <Text style={styles.developerPanelSectionTitle}>App Information</Text>
+                  <View style={styles.developerDataRow}>
+                    <Text style={styles.developerDataLabel}>Version:</Text>
+                    <Text style={styles.developerDataValue}>{appVersion}</Text>
+                  </View>
+                  <View style={styles.developerDataRow}>
+                    <Text style={styles.developerDataLabel}>Build:</Text>
+                    <Text style={styles.developerDataValue}>{buildNumber}</Text>
+                  </View>
                 </View>
                 
                 {/* Basic Data */}
@@ -969,17 +1036,17 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                   onPress={toggleDevPanelExpanded}
                   style={styles.developerPanelExpandButton}
                 >
-                  <Text style={styles.developerPanelExpandText}>
-                    {devPanelExpanded ? "Hide Details" : "Show All Details"}
+                  <Text style={styles.developerExpandText}>
+                    {devPanelExpanded ? 'Hide Details' : 'Show Details'}
                   </Text>
                   <Feather 
-                    name={devPanelExpanded ? "chevron-up" : "chevron-down"} 
+                    name={devPanelExpanded ? 'chevron-up' : 'chevron-down'} 
                     size={16} 
                     color="#3C584A" 
                   />
                 </TouchableOpacity>
                 
-                {/* Extended Details */}
+                {/* Streak Data Section (Toggle Expanded) */}
                 {devPanelExpanded && (
                   <>
                     {/* Last Activity Dates */}
@@ -1485,7 +1552,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: 'rgba(60, 88, 74, 0.1)',
   },
-  developerPanelExpandText: {
+  developerExpandText: {
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 14,
     color: '#3C584A',
@@ -1502,6 +1569,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#3C584A',
     fontWeight: '600',
+  },
+  developerSectionTitle: {
+    fontFamily: 'Nunito-Black',
+    fontSize: 16,
+    color: '#3C584A',
+    marginBottom: 5,
   },
 });
 

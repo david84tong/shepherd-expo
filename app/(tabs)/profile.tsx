@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import * as Application from 'expo-application';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
@@ -51,7 +52,7 @@ export default function ProfileScreen() {
   } = useUserStore();
 
   // Get subscription state and actions from the store
-  const {
+  const { 
     isProMember,
     presentPaywall,
     getCustomerInfo,
@@ -225,10 +226,14 @@ export default function ProfileScreen() {
     await presentPaywall();
   }, [presentPaywall]);
 
+  // Get app version and build number
+  const appVersion = Application.nativeApplicationVersion || 'Unknown';
+  const buildNumber = Application.nativeBuildVersion || 'Unknown';
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
-        <ScrollView className="flex-1 bg-surfaceCream" contentContainerStyle={{ paddingBottom: 80 }}>
+        <ScrollView className="flex-1 bg-surfaceCream" contentContainerStyle={{ paddingBottom: 50 }}>
           {/* Header */}
           <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
             <Text className="font-feather text-h2 text-textPrimary">Profile</Text>
@@ -308,7 +313,7 @@ export default function ProfileScreen() {
                   const showDateHeader =
                     index === 0 ||
                     formatActivityDate(activity.date) !==
-                    formatActivityDate(allActivities[index - 1].date);
+                      formatActivityDate(allActivities[index - 1].date);
 
                   return (
                     <View key={`${activity.type}-${index}`}>
@@ -393,15 +398,9 @@ export default function ProfileScreen() {
               <>
                 <PrimaryButton
                   title="Upgrade to Pro"
-                  onPress={handleSubscriptionPress}
+                  onPress={() => router.push('/PricingScreen' as any)}
                   style="mt-0 mb-3"
                 />
-                <TouchableOpacity
-                  onPress={() => router.push('/PricingScreen' as any)}
-                  className="flex-row items-center justify-center bg-white border border-accentGold py-3 rounded-card">
-                  <Text className="font-feather text-body text-textPrimary mr-2">View Pricing Details</Text>
-                  <Feather name="chevron-right" size={18} color="#3C584A" />
-                </TouchableOpacity>
               </>
             )}
           </View>
@@ -416,6 +415,13 @@ export default function ProfileScreen() {
             </View>
             <Text className="font-din text-description mt-2">
               Customize your lamb and unlock special items!
+            </Text>
+          </View>
+          
+          {/* Version Info */}
+          <View className="mx-6 mt-2 mb-10 items-center">
+            <Text className="font-din text-description text-center text-textSecondary opacity-60">
+              Version {appVersion} (Build {buildNumber})
             </Text>
           </View>
         </ScrollView>

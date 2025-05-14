@@ -15,8 +15,9 @@ import {
 
 import PathNode, { NodeStatus } from '../../components/MapComponents/PathNode';
 import StickyPathHeader from '../../components/MapComponents/StickyPathHeader';
-import { BIBLE_BOOK_IDS, BIBLE_PATHS, Unit } from '../models/Path';
+import { BIBLE_BOOK_IDS, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS, Unit } from '../../app/models/Path';
 import { PathInfo, usePathStore } from '../stores/pathStore';
+import { useUserStore } from '../stores/userStore';
 import { heightScreen } from '~/utils/dimensions';
 import * as Haptics from 'expo-haptics';
 import useSubscriptionStore from '../stores/subscriptionStore';
@@ -141,17 +142,23 @@ const ITEM_HEIGHT = 180; // adjust if needed
 export default function MapScreen() {
   const router = useRouter();
 
+  // Get user reading time preference
+  const frequencyGoal = useUserStore(state => state.frequencyGoal);
+  
   // Get selectedPath from the store inside the component
   const selectedPath = usePathStore((state) => state.selectedPath);
 
   // Calculate sections inside the component using useMemo
   const sections = useMemo(() => {
-    let orderedPaths = BIBLE_PATHS;
+    // Choose paths based on user's frequencyGoal
+    const pathsToUse = frequencyGoal === '1-5' ? SHORTER_BIBLE_PATHS_2 : BIBLE_PATHS;
+    
+    let orderedPaths = pathsToUse;
     if (selectedPath && Array.isArray(selectedPath.order) && selectedPath.order.length > 0) {
       console.log('[MapScreen Component] Reordering paths based on selectedPath:', selectedPath.id);
-      const pathMap = Object.fromEntries(BIBLE_PATHS.map((p) => [p.id, p]));
+      const pathMap = Object.fromEntries(pathsToUse.map((p) => [p.id, p]));
       orderedPaths = selectedPath.order.map((id) => pathMap[id]).filter(Boolean);
-      const remaining = BIBLE_PATHS.filter((p) => !selectedPath.order.includes(p.id));
+      const remaining = pathsToUse.filter((p) => !selectedPath.order.includes(p.id));
       orderedPaths = [...orderedPaths, ...remaining];
     } else {
       console.log('[MapScreen Component] Using default path order.');
@@ -169,7 +176,7 @@ export default function MapScreen() {
       riveName: path.riveName,
       artboardName: path.artboardName,
     }));
-  }, [selectedPath]); // Recalculate sections when selectedPath changes
+  }, [selectedPath, frequencyGoal]); // Added frequencyGoal as dependency
 
   const [currentSectionTitle, setCurrentSectionTitle] = useState(sections[0]?.title || 'Map');
   const [currentSectionIcon, setCurrentSectionIcon] = useState(sections[0]?.icon || 'book');
@@ -339,8 +346,11 @@ export default function MapScreen() {
 
   // Find the next available unit
   const nextAvailableUnit = useCallback(() => {
+    // Choose paths based on user's frequencyGoal
+    const pathsToUse = frequencyGoal === '1-5' ? SHORTER_BIBLE_PATHS_2 : BIBLE_PATHS;
+    
     // Find first unit or next unlocked unit that isn't completed
-    for (const path of BIBLE_PATHS) {
+    for (const path of pathsToUse) {
       for (let i = 0; i < path.units.length; i++) {
         const unit = path.units[i];
         // Skip if already completed
@@ -354,7 +364,7 @@ export default function MapScreen() {
       }
     }
     return null;
-  }, [completedUnitIds]);
+  }, [completedUnitIds, frequencyGoal]); // Added frequencyGoal as dependency
 
   // Track visible items to locate next unit on screen
   const [nextItemLayout, setNextItemLayout] = useState<{ id: string; x: number; y: number } | null>(

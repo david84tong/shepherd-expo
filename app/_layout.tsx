@@ -206,8 +206,10 @@ export default function RootLayout() {
         // Show the half modal with a delay
         setTimeout(() => {
           showHalfModal(params);
-        }, 1500);
+        }, 3000);
       }
+      
+
     } catch (error) {
       console.error('Error checking streak status:', error);
     }

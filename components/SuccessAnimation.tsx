@@ -82,6 +82,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const setGens = useUserStore((state) => state.setGens);
   const setLambMood = useUserStore((state) => state.setLambMood);
 
+
+
   // Determine which type to use for rendering
   const effectiveType = successType ?? SuccessAnimationType.READING;
 

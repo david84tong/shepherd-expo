@@ -238,21 +238,22 @@ function calculateStreakAndPenalties({
   let applyPrayerPenalty = false;
   let applyReflectionPenalty = false;
 
+
   // For each activity, check if we should apply a penalty
-  if (daysSinceReading > 0 && daysSinceReadingPenalty > 0) {
+  if (isReadingMoreThan24HoursAgo && daysSinceReadingPenalty > 0) {
     heartPenalty += daysSinceReadingPenalty * PENALTIES.READING;
     applyReadingPenalty = true;
     if (debug)
-      console.log(`💔 Reading penalty applied: ${daysSinceReading * PENALTIES.READING} hearts`);
+      console.log(`💔 Reading penalty applied: ${daysSinceReadingPenalty * PENALTIES.READING} hearts`);
   } else if (debug) {
     console.log(
-      `⏹️ No reading penalty: days since reading = ${daysSinceReading}, days since penalty = ${daysSinceReadingPenalty}`
+      `⏹️ No reading penalty: readingMoreThan24h = ${isReadingMoreThan24HoursAgo}, days since penalty = ${daysSinceReadingPenalty}`
     );
   }
 
   if (daysSincePrayer > 0 && daysSincePrayerPenalty > 0) {
-    heartPenalty += daysSincePrayerPenalty * PENALTIES.PRAYER;
-    applyPrayerPenalty = true;
+    // heartPenalty += daysSincePrayerPenalty * PENALTIES.PRAYER;
+    // applyPrayerPenalty = true;
     if (debug)
       console.log(`💔 Prayer penalty applied: ${daysSincePrayer * PENALTIES.PRAYER} hearts`);
   } else if (debug) {
@@ -262,8 +263,8 @@ function calculateStreakAndPenalties({
   }
 
   if (daysSinceReflection > 0 && daysSinceReflectionPenalty > 0) {
-    heartPenalty += daysSinceReflectionPenalty * PENALTIES.REFLECTION;
-    applyReflectionPenalty = true;
+    // heartPenalty += daysSinceReflectionPenalty * PENALTIES.REFLECTION;
+    // applyReflectionPenalty = true;
     if (debug)
       console.log(
         `💔 Reflection penalty applied: ${daysSinceReflection * PENALTIES.REFLECTION} hearts`
@@ -275,7 +276,7 @@ function calculateStreakAndPenalties({
   }
 
   // Check if Bible reading streak is broken (more than 1 day)
-  const isReadingStreakBroken = daysSinceReading >= 1 && applyReadingPenalty;
+  const isReadingStreakBroken = isReadingMoreThan24HoursAgo && applyReadingPenalty;
 
   // Apply penalties and update streak
   if (heartPenalty > 0 || isReadingStreakBroken || isReadingMoreThan24HoursAgo) {

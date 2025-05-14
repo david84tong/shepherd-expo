@@ -141,8 +141,8 @@ export const useNotificationStore = create<NotificationState>()(
               await get().scheduleStreakReminders();
             } else {
               console.log('📱 Streak reminders already scheduled today, skipping');
-          }
-          
+            }
+            
             // Re-schedule the daily reminder if needed
             const preferredTime = get().preferredNotificationTime;
             if (preferredTime && preferredTime !== 'none') {

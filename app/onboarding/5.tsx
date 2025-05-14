@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import PrimaryButton from '../../components/PrimaryButton';
-import { OnboardingResponses } from '../models/Onboarding';
 import analytics from '../../utils/analytics';
+import { Feather } from '@expo/vector-icons';
 
 import Animated, {
   useAnimatedStyle,
@@ -16,12 +15,17 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import firestore from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
 
 export default function OnboardingReadingTimeScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const fromSettings = params.fromSettings === 'true';
+  
   const { setResponse } = useOnboardingStore();
-  const { setFrequencyGoal } = useUserStore();
-  const [selectedOption, setSelectedOption] = useState<string | undefined>(undefined);
+  const { frequencyGoal, setFrequencyGoal } = useUserStore();
+  const [selectedOption, setSelectedOption] = useState<string | undefined>(frequencyGoal);
 
   // Create Reanimated shared values for each component
   const iconOpacity = useSharedValue(0);
@@ -59,8 +63,6 @@ export default function OnboardingReadingTimeScreen() {
     animateComponent(optionsOpacity, optionsTranslateY, 400);
   }, []);
 
-
-
   // Create animated styles for each component
   const iconStyle = useAnimatedStyle(() => ({
     opacity: iconOpacity.value,
@@ -76,6 +78,12 @@ export default function OnboardingReadingTimeScreen() {
     opacity: optionsOpacity.value,
     transform: [{ translateY: optionsTranslateY.value }]
   }));
+
+  // Handle navigation back when coming from settings
+  const handleBackFromSettings = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    router.back();
+  };
 
   const handleSelection = async (duration: string) => {
     // Map duration to minutes
@@ -94,7 +102,9 @@ export default function OnboardingReadingTimeScreen() {
 
     analytics.logEvent("OnboardingDurationScreen_Tapped_Option", {
       value: duration,
+      fromSettings: fromSettings
     });
+    
     // Trigger light haptic feedback
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
@@ -105,48 +115,69 @@ export default function OnboardingReadingTimeScreen() {
     }
 
     setSelectedOption(duration);
-    await setResponse('streakCommitment', duration as any);
-    router.push('/onboarding/6');
+    
+    // Also update in Firestore directly
+    const user = auth().currentUser;
+    if (user) {
+      try {
+        await firestore()
+          .collection('users')
+          .doc(user.uid)
+          .update({ 
+            frequencyGoal: duration,
+            updatedAt: firestore.FieldValue.serverTimestamp()
+          });
+        console.log('Updated frequency goal in Firestore');
+      } catch (error) {
+        console.error('Error updating frequency goal in Firestore:', error);
+      }
+    }
+    
+    // If coming from settings, just go back
+    if (fromSettings) {
+      // Show a success feedback before going back
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      setTimeout(() => {
+        router.back();
+      }, 300);
+    } else {
+      // Normal onboarding flow
+      await setResponse('streakCommitment', duration as any);
+      router.push('/onboarding/6');
+    }
   };
 
   const options = [
     {
       id: '1-5',
-      title: '1-5 mins',
+      title: '1-5 mins (1 chapter)',
     },
     {
       id: '6-10',
-      title: '6-10 mins',
+      title: '6-10 mins (3-4 chapters)',
     },
     {
-      id: '11-15',
-      title: '11-15 mins',
-    },
-    {
-      id: '16-20',
-      title: '16-20 mins',
-    },
-    {
-      id: '20-30',
-      title: '20-30 mins',
-    },
-    {
-      id: '30-60',
-      title: '30-60 mins',
-    },
-    {
-      id: '60+',
-      title: '60+ mins',
+      id: '15-25',
+      title: '11-15 mins (6-8 chapters)',
     },
   ] as const;
 
   return (
     <View className="flex-1 bg-surfaceCream px-6 pt-12">
-      {/* Decorative Background Elements */}
+      {/* Close button (only when coming from settings) */}
+      {fromSettings && (
+        <TouchableOpacity 
+          onPress={handleBackFromSettings}
+          className="absolute top-12 right-6 z-10 p-2"
+          hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
+        >
+          <Feather name="x" size={24} color="#3C584A" />
+        </TouchableOpacity>
+      )}
 
       {/* Question Text */}
       <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-0">
+        <Text className="font-feather text-h2 text-center text-textPrimary mb-0">
           How many minutes per day can you spend with God?
         </Text>
       </Animated.View>
@@ -154,7 +185,6 @@ export default function OnboardingReadingTimeScreen() {
       {/* Options Container */}
       <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         <Animated.View style={optionsStyle} className="space-y-4 mt-4">
-
           {options.map((option) => (
             <PrimaryButton
               key={option.id}

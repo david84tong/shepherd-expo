@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import dayjs from 'dayjs';
 import React, { useEffect, useMemo, useState, useRef, useLayoutEffect } from 'react';
-import { View, Text, Image, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, Image, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle,
@@ -61,6 +61,36 @@ const buildWeekCells = (
   });
 };
 
+// New robust streak calculation function
+const calculateStreakLogic = (
+  targetDay: dayjs.Dayjs,
+  completedDays: Set<string>,
+  accountCreationDate: dayjs.Dayjs
+): number => {
+  let currentStreak = 0;
+  let currentDateToIterate = dayjs(targetDay); // Use a mutable copy for iteration
+
+  const targetDayStr = currentDateToIterate.format('YYYY-MM-DD');
+  const dayBeforeTargetStr = currentDateToIterate.subtract(1, 'day').format('YYYY-MM-DD');
+
+  // If the target day (e.g., today) is NOT completed,
+  // BUT the day before it WAS completed, this means the streak ended yesterday.
+  // In this case, we should calculate the streak based on yesterday.
+  if (!completedDays.has(targetDayStr) && completedDays.has(dayBeforeTargetStr)) {
+    currentDateToIterate = currentDateToIterate.subtract(1, 'day');
+  }
+
+  // Now, count consecutive completed days backwards from 'currentDateToIterate'
+  while (completedDays.has(currentDateToIterate.format('YYYY-MM-DD'))) {
+    if (currentDateToIterate.isBefore(accountCreationDate, 'day')) {
+      break; // Don't count days before account creation
+    }
+    currentStreak++;
+    currentDateToIterate = currentDateToIterate.subtract(1, 'day');
+  }
+  return currentStreak;
+};
+
 export const StreakScreen = () => {
   // Animation states
   const animationsInitialized = useRef(false);
@@ -80,17 +110,23 @@ export const StreakScreen = () => {
   // 1. grab data from the store
   const createdAt = useUserStore((s) => s.getCreatedAt()); // Firestore Timestamp or Date
   const completedReadings = useUserStore((s) => s.getCompletedReadings());
+  const lastReadingDate = useUserStore((s) => s.lastReadingDate);
   const setStreakCount = useUserStore((state) => state.setStreakCount);
   const syncWithFirestore = useUserStore((state) => state.syncWithFirestore);
-  const [debugInfo, setDebugInfo] = useState<any>(null);
+  const [debugDisplayInfo, setDebugDisplayInfo] = useState<any>(null); // Renamed for clarity
 
   // Get notification store methods
-  const { rescheduleStreakNotificationsForNextDay, listScheduledNotifications } = useNotificationStore();
+  const { 
+    rescheduleStreakNotificationsForNextDay, 
+    listScheduledNotifications,
+    preferredNotificationTime,
+    scheduleDailyReminder
+  } = useNotificationStore();
 
   // Reset streak notifications when StreakScreen is shown 
   // since this means the user has completed their streak activity for the day
   useEffect(() => {
-    const resetStreakNotifications = async () => {
+    const resetNotifications = async () => {
       try {
         console.log('📱 StreakScreen: Rescheduling streak notifications for the next day');
 
@@ -103,16 +139,25 @@ export const StreakScreen = () => {
           console.log('📱 StreakScreen: Failed to reschedule streak notifications');
         }
 
+        // Also reschedule daily reminder if user has a notification time preference
+        if (preferredNotificationTime && preferredNotificationTime !== 'none') {
+          console.log('📱 StreakScreen: Rescheduling daily reminder for next day');
+          await scheduleDailyReminder(preferredNotificationTime);
+          console.log('📱 StreakScreen: Daily reminder successfully rescheduled');
+        } else {
+          console.log('📱 StreakScreen: No preferred notification time set, skipping daily reminder');
+        }
+        
         // Log all scheduled notifications for debugging
         await listScheduledNotifications();
       } catch (error) {
-        console.error('📱 StreakScreen: Error rescheduling streak notifications:', error);
+        console.error('📱 StreakScreen: Error rescheduling notifications:', error);
       }
     };
 
     // Call the async function
-    resetStreakNotifications();
-  }, [rescheduleStreakNotificationsForNextDay, listScheduledNotifications]);
+    resetNotifications();
+  }, [rescheduleStreakNotificationsForNextDay, listScheduledNotifications, preferredNotificationTime, scheduleDailyReminder]);
 
   // 2. normalize → dayjs (memoized to prevent recalculation)
   const today = useMemo(() => dayjs().startOf('day'), []);
@@ -131,7 +176,9 @@ export const StreakScreen = () => {
           ? dayjs(d.toDate()).format('YYYY-MM-DD')
           : d instanceof Date
             ? dayjs(d).format('YYYY-MM-DD')
-            : 'invalid date';
+            : d && typeof (d as any)._seconds === 'number' // Check for plain object with _seconds
+              ? dayjs.unix((d as any)._seconds).format('YYYY-MM-DD')
+              : 'invalid date';
 
       return {
         book: r.book,
@@ -145,17 +192,39 @@ export const StreakScreen = () => {
       completedReadings
         .map((r) => {
           const d = r.date;
-          return d && typeof d.toDate === 'function'
-            ? dayjs(d.toDate()).format('YYYY-MM-DD')
-            : d instanceof Date
-              ? dayjs(d).format('YYYY-MM-DD')
-              : null;
+          if (d && typeof d.toDate === 'function') { // Firestore Timestamp
+            return dayjs(d.toDate()).format('YYYY-MM-DD');
+          } else if (d instanceof Date) { // JS Date
+            return dayjs(d).format('YYYY-MM-DD');
+          } else if (d && typeof (d as any)._seconds === 'number') { // Plain object with _seconds
+            return dayjs.unix((d as any)._seconds).format('YYYY-MM-DD');
+          }
+          return null;
         })
         .filter(Boolean) as string[]
     );
 
     return { completedSet: set, completedDates: dates };
   }, [completedReadings]);
+
+  // Extend completedSet with lastReadingDate to ensure streak updates immediately after a reading
+  const augmentedCompletedSet = useMemo(() => {
+    if (!lastReadingDate) return completedSet;
+    let dateObj: Date | null = null;
+    if (typeof (lastReadingDate as any)?.toDate === 'function') {
+      dateObj = (lastReadingDate as any).toDate();
+    } else if (lastReadingDate instanceof Date) {
+      dateObj = lastReadingDate as Date;
+    }
+    if (!dateObj) return completedSet;
+
+    const dateStr = dayjs(dateObj).format('YYYY-MM-DD');
+    if (completedSet.has(dateStr)) return completedSet;
+
+    const newSet = new Set<string>(completedSet);
+    newSet.add(dateStr);
+    return newSet;
+  }, [completedSet, lastReadingDate]);
 
   // 3. build the centered grid (today in the middle)
   const weekCells = useMemo(
@@ -165,56 +234,18 @@ export const StreakScreen = () => {
 
   // 4. calculate streak (memoized to prevent recalculation)
   const streak = useMemo(() => {
-    const todayStr = today.format('YYYY-MM-DD');
-    const yesterdayStr = today.subtract(1, 'day').format('YYYY-MM-DD');
-    const twoDaysAgoStr = today.subtract(2, 'day').format('YYYY-MM-DD');
+    const newCalculatedStreak = calculateStreakLogic(today, augmentedCompletedSet, createdDate);
 
-    // Check if consecutive days are in the completedSet
-    const hasTodayCompleted = completedSet.has(todayStr);
-    const hasYesterdayCompleted = completedSet.has(yesterdayStr);
-    const hasTwoDaysAgoCompleted = completedSet.has(twoDaysAgoStr);
-
-    // Calculate streak - start from today and go backwards
-    let calculatedStreak = 0;
-    if (hasTodayCompleted) {
-      calculatedStreak++;
-      if (hasYesterdayCompleted) {
-        calculatedStreak++;
-        if (hasTwoDaysAgoCompleted) {
-          calculatedStreak++;
-        }
-      }
-    } else if (hasYesterdayCompleted) {
-      // If today isn't complete but yesterday is, start from yesterday
-      calculatedStreak = 1;
-      if (hasTwoDaysAgoCompleted) {
-        calculatedStreak++;
-      }
-    }
-
-    // Store debug info but only once, not on every render
-    if (!debugInfo) {
-      setDebugInfo({
-        today: todayStr,
-        yesterday: yesterdayStr,
-        twoDaysAgo: twoDaysAgoStr,
-        hasTodayCompleted,
-        hasYesterdayCompleted,
-        hasTwoDaysAgoCompleted,
-        completedDates: Array.from(completedSet),
-        createdDate: createdDate.format('YYYY-MM-DD'),
-      });
-
-      console.log('Debug streak info:', {
-        streak: calculatedStreak,
-        completedDates: Array.from(completedSet),
-        createdDate: createdDate.format('YYYY-MM-DD'),
-        today: todayStr,
+    if (__DEV__) {
+      console.log('[StreakScreen] Streak Calculation Details:', {
+        streakValue: newCalculatedStreak,
+        today: today.format('YYYY-MM-DD'),
+        completedDates: Array.from(augmentedCompletedSet),
+        accountCreated: createdDate.format('YYYY-MM-DD'),
       });
     }
-
-    return calculatedStreak;
-  }, [today, createdDate, completedSet, debugInfo]);
+    return newCalculatedStreak;
+  }, [today, createdDate, augmentedCompletedSet]);
 
   // Update the user's streakCount in the store whenever streak changes
   useEffect(() => {
@@ -226,6 +257,20 @@ export const StreakScreen = () => {
       streak: streak
     });
   }, [streak, setStreakCount]);
+
+  // Effect to update debug display info when relevant data changes
+  useEffect(() => {
+    if (__DEV__) {
+      setDebugDisplayInfo({
+        streak: streak,
+        completedDates: Array.from(augmentedCompletedSet),
+        createdDate: createdDate.format('YYYY-MM-DD'),
+        today: today.format('YYYY-MM-DD'),
+        hasTodayCompleted: augmentedCompletedSet.has(today.format('YYYY-MM-DD')),
+        hasYesterdayCompleted: augmentedCompletedSet.has(today.subtract(1,'day').format('YYYY-MM-DD')),
+      });
+    }
+  }, [streak, augmentedCompletedSet, createdDate, today]);
 
   // Setup animations when component mounts
   useLayoutEffect(() => {
@@ -424,7 +469,7 @@ export const StreakScreen = () => {
       </Animated.View>
 
       {/* Development debug info */}
-      {__DEV__ && debugInfo && (
+      {__DEV__ && debugDisplayInfo && (
         <View
           style={{
             position: 'absolute',
@@ -436,11 +481,13 @@ export const StreakScreen = () => {
             borderRadius: 5,
           }}>
           <Text style={{ color: 'white', fontSize: 10 }}>
-            Streak: {streak} | Dates completed: {debugInfo.completedDates?.join(', ')}
+            Streak: {debugDisplayInfo.streak} | Dates completed: {debugDisplayInfo.completedDates?.join(', ')}
           </Text>
           <Text style={{ color: 'white', fontSize: 10 }}>
-            Today: {debugInfo.today} | Yesterday: {debugInfo.yesterday} | 2 Days Ago:{' '}
-            {debugInfo.twoDaysAgo}
+            Today: {debugDisplayInfo.today} | Created: {debugDisplayInfo.createdDate}
+          </Text>
+          <Text style={{ color: 'white', fontSize: 10 }}>
+            HasToday: {String(debugDisplayInfo.hasTodayCompleted)} | HasYesterday: {String(debugDisplayInfo.hasYesterdayCompleted)}
           </Text>
         </View>
       )}

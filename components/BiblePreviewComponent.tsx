@@ -4,8 +4,9 @@ import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, Animated, ScrollView } from 'react-native';
 import BackButton from './BackButton';
 import PrimaryButton from './PrimaryButton';
-import { Unit, BIBLE_PATHS } from '../app/models/Path'; // Import Unit and BIBLE_PATHS
+import { Unit, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS } from '../app/models/Path'; // Import both path constants
 import { usePathStore } from '../app/stores/pathStore';
+import { useUserStore } from '../app/stores/userStore'; // Import useUserStore
 import analytics from '../utils/analytics';
 
 interface BiblePreviewProps {
@@ -24,6 +25,9 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   const cardAnim = useRef(new Animated.Value(-100)).current; // Y offset for entry
   const cardOpacity = useRef(new Animated.Value(0)).current;
 
+  // Get user's reading time preference from userStore
+  const frequencyGoal = useUserStore(state => state.frequencyGoal);
+  
   // Get saved reading & path in progress state from path store
   const {
     savedBook,
@@ -37,14 +41,17 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   // Use selectedPath to determine the correct order for BIBLE_PATHS
   const selectedPath = usePathStore((state) => state.selectedPath);
   const orderedPaths = useMemo(() => {
+    // Determine which paths to use based on user's reading time preference
+    const pathsToUse = frequencyGoal === '1-5' ? SHORTER_BIBLE_PATHS_2 : BIBLE_PATHS;
+    
     if (selectedPath && Array.isArray(selectedPath.order) && selectedPath.order.length > 0) {
-      const pathMap = Object.fromEntries(BIBLE_PATHS.map((p) => [p.id, p]));
+      const pathMap = Object.fromEntries(pathsToUse.map((p) => [p.id, p]));
       const ordered = selectedPath.order.map((id) => pathMap[id]).filter(Boolean);
-      const remaining = BIBLE_PATHS.filter((p) => !selectedPath.order.includes(p.id));
+      const remaining = pathsToUse.filter((p) => !selectedPath.order.includes(p.id));
       return [...ordered, ...remaining];
     }
-    return BIBLE_PATHS;
-  }, [selectedPath]);
+    return pathsToUse;
+  }, [selectedPath, frequencyGoal]); // Include frequencyGoal as dependency
 
   // Find the next uncompleted unit from the ordered paths
   const nextUnit = useMemo(() => {
@@ -172,7 +179,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
       // Find the path that contains this unit
       let pathId = '';
       let pathTitle = '';
-      for (const path of BIBLE_PATHS) {
+      for (const path of SHORTER_BIBLE_PATHS_2) {
         if (path.units.some((u) => u.id === nextUnit.id)) {
           pathId = path.id;
           pathTitle = path.title;
