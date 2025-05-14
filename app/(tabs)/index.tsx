@@ -735,6 +735,9 @@ export default function HomeScreen() {
               </Text>
             ) : (
               <Animated.View
+                onTouchStart={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                }}
                 style={{
                   width: lambSizeAnim,
                   height: lambSizeAnim,
