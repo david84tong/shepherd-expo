@@ -16,15 +16,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import { toBool } from '../utils/toBool';
 
-export default function OnboardingLambNameScreen() {
+export default function OnboardingUsernameScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { setResponse } = useOnboardingStore();
-  const setLambName = useUserStore((state) => state.setLambName);
-  const [inputLambName, setInputLambName] = useState('');
+  const setUser = useUserStore((state) => state.setUser);
+  const [inputUsername, setInputUsername] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
-
-  // Use the helper hook for screen tracking
 
   // Load Rive assets
   const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
@@ -35,16 +33,13 @@ export default function OnboardingLambNameScreen() {
   // Create Reanimated shared values for each component
   const screenOpacity = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
-  const titleTranslateY = useSharedValue(20); // Smaller initial offset
-
+  const titleTranslateY = useSharedValue(20);
   const lambOpacity = useSharedValue(0);
-  const lambTranslateY = useSharedValue(20); // Smaller initial offset
-
+  const lambTranslateY = useSharedValue(20);
   const inputOpacity = useSharedValue(0);
-  const inputTranslateY = useSharedValue(20); // Smaller initial offset
-
+  const inputTranslateY = useSharedValue(20);
   const buttonOpacity = useSharedValue(0);
-  const buttonTranslateY = useSharedValue(20); // Smaller initial offset
+  const buttonTranslateY = useSharedValue(20);
 
   // Run animations only once during initial layout
   useLayoutEffect(() => {
@@ -70,18 +65,18 @@ export default function OnboardingLambNameScreen() {
 
       // Staggered animations for each component with shorter delays
       const animateComponent = (opacity: any, translateY: any, delay: number) => {
-        opacity.value = withDelay(delay, withTiming(1, { duration: 300 })); // Faster timing
+        opacity.value = withDelay(delay, withTiming(1, { duration: 300 }));
         translateY.value = withDelay(
           delay,
           withSpring(0, {
-            damping: 16, // More damping for faster settling
-            stiffness: 100, // Stiffer spring for faster animation
-            mass: 0.8, // Lighter mass for quicker movement
+            damping: 16,
+            stiffness: 100,
+            mass: 0.8,
           })
         );
       };
 
-      // Use much shorter delays between components for faster overall animation
+      // Use short delays between components for faster overall animation
       animateComponent(titleOpacity, titleTranslateY, 50);
       animateComponent(lambOpacity, lambTranslateY, 100);
       animateComponent(inputOpacity, inputTranslateY, 150);
@@ -89,12 +84,12 @@ export default function OnboardingLambNameScreen() {
 
       // Mark animations as initialized
       animationsInitialized.current = true;
-    }, 50); // Much shorter initial delay
+    }, 50);
 
     return () => clearTimeout(timer);
-  }, []); // Empty dependency array so it only runs once
+  }, []);
 
-  // Keyboard listeners (separated from animation logic)
+  // Keyboard listeners
   useEffect(() => {
     const keyboardWillShow = Keyboard.addListener('keyboardWillShow', () =>
       setKeyboardVisible(true)
@@ -113,7 +108,7 @@ export default function OnboardingLambNameScreen() {
   const screenStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
     flex: 1,
-    backgroundColor: '#FFF4D9', // Explicitly set the cream background color
+    backgroundColor: '#FFF4D9',
   }));
 
   // Create animated styles for each component
@@ -138,19 +133,19 @@ export default function OnboardingLambNameScreen() {
   }));
 
   const handleContinue = async () => {
-    if (inputLambName.trim()) {
-      // Log button press using helper function
-      const name = inputLambName.trim();
-      analytics.logEvent('OnboardingNameScreen_Tapped_Continue', {
-        name: name,
+    if (inputUsername.trim()) {
+      // Log button press
+      const username = inputUsername.trim();
+      analytics.logEvent('OnboardingUsernameScreen_Tapped_Continue', {
+        username: username,
       });
 
-      // Save the lamb name to the user store
-      setLambName(inputLambName.trim());
-      setResponse('lambName', inputLambName.trim());
+      // Save the displayName to the user store (this will sync with Firebase)
+      setUser({ username: username });
+      setResponse('username', username); // Use lambName key for onboarding store
       screenOpacity.value = withTiming(0, { duration: 300 });
       router.push({
-        pathname: '/onboarding/username',
+        pathname: '/onboarding/3',
         params: {
           animated: true,
           animation: 'fade',
@@ -175,7 +170,10 @@ export default function OnboardingLambNameScreen() {
       {/* Question Text */}
       <Animated.View style={titleStyle}>
         <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-0">
-          What should we call your lamb?
+          Choose your username
+        </Text>
+        <Text className="font-din text-body text-center text-textSecondary mb-4">
+          This is how other shepherds will know you
         </Text>
       </Animated.View>
 
@@ -191,29 +189,22 @@ export default function OnboardingLambNameScreen() {
         />
       </Animated.View>
 
-      {/* Name Input */}
+      {/* Username Input */}
       <Animated.View style={inputStyle}>
         <TextInput
           className="font-feather text-3xl text-center text-textPrimary bg-white p-6 rounded-2xl border-4 border-border"
-          placeholder="Enter name"
-          placeholderTextColor="#A0A0A0"
-          maxLength={9}
-          value={inputLambName}
-          onChangeText={setInputLambName}
-          autoCorrect={false}
+          placeholder="Enter username"
+          value={inputUsername}
+          onChangeText={setInputUsername}
+          maxLength={20}
           autoCapitalize="none"
-          spellCheck={false}
+          autoCorrect={false}
         />
       </Animated.View>
 
       {/* Continue Button */}
-      <Animated.View style={buttonStyle} className="mt-0">
-        <PrimaryButton
-          title="Continue"
-          onPress={handleContinue}
-          disabled={!inputLambName.trim()}
-          isActive={!!inputLambName.trim()}
-        />
+      <Animated.View style={buttonStyle} className={`mt-8 ${isKeyboardVisible ? 'mb-4' : 'mb-8'}`}>
+        <PrimaryButton title="Continue" onPress={handleContinue} disabled={!inputUsername.trim()} />
       </Animated.View>
     </Animated.View>
   );

@@ -2,11 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, View } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ONBOARDING_COMPLETED_KEY, ONBOARDING_STORAGE_KEY } from '../models/Onboarding';
@@ -18,6 +14,7 @@ import { debugOnboardingStorage, useOnboardingStore } from '../stores/onboarding
 const IMPLEMENTED_SCREENS = [
   '1',
   '2',
+  'username',
   '3',
   '4',
   '5',
@@ -46,16 +43,19 @@ export default function OnboardingLayout() {
   // Animated style for progress bar
   const progressStyle = useAnimatedStyle(() => ({
     opacity: progressOpacity.value,
-  }))
+  }));
 
   // --- DEBUG LOGGING START ---
-  const shouldShowProgressBar = pathname &&
+  const shouldShowProgressBar =
+    pathname &&
     pathname !== '/onboarding/1' &&
     pathname !== '/onboarding/11' &&
     !pathname.includes('Loading') &&
     !pathname.includes('/onboarding/auth');
 
-  console.log(`[OnboardingLayout] Path: ${pathname}, Should show progress bar: ${shouldShowProgressBar}`);
+  console.log(
+    `[OnboardingLayout] Path: ${pathname}, Should show progress bar: ${shouldShowProgressBar}`
+  );
   // --- DEBUG LOGGING END ---
 
   // Update current screen based on pathname with smoother transitions
@@ -139,9 +139,7 @@ export default function OnboardingLayout() {
   // If still initializing, could show a loading indicator here
   if (isLoading) {
     // Return a minimal loading component instead of continuing to render
-    return (
-      <View style={{ flex: 1, backgroundColor: '#FFF4D9' }} />
-    );
+    return <View style={{ flex: 1, backgroundColor: '#FFF4D9' }} />;
   }
 
   return (
@@ -170,7 +168,7 @@ export default function OnboardingLayout() {
             options={{
               contentStyle: {
                 backgroundColor: '#FFF4D9',
-                marginTop: screen === '1' ? 0 : (insets.top > 20 ? 36 : 0),
+                marginTop: screen === '1' ? 0 : insets.top > 20 ? 36 : 0,
               },
               ...(screen === '1' && {
                 gestureEnabled: false,
