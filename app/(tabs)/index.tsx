@@ -586,10 +586,7 @@ export default function HomeScreen() {
 
   // Run once on mount to defer heavy work
   useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
-      setRiveReady(true);
-    });
-    return () => task.cancel();
+    setRiveReady(true);
   }, []);
 
   // Add this before the return statement
