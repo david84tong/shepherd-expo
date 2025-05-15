@@ -252,14 +252,14 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   return (
     <View className="flex-1 items-center justify-center bg-surfaceCream px-8">
       {/* Pulsing Rive animation */}
-      <View className="w-56 h-56 mb-24 ml-8">
+      <View className="w-56 h-56 mb-24 flex items-center justify-center">
         <Rive
           url={assets[0].localUri!}
           artboardName="lamb-writing"
           autoplay={true}
           fit={Fit.Contain}
           alignment={Alignment.Center}
-          style={{ width: 160, height: 160 }}
+          style={{ width: 240, height: 240 }}
         />
       </View>
       

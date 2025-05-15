@@ -178,16 +178,16 @@ export default function OnboardingUsernameScreen() {
       </Animated.View>
 
       {/* Rive Animation */}
-      <Animated.View
+      {/* <Animated.View
         style={lambStyle}
         className="h-[160px] w-full justify-center items-center my-4">
         <Rive
           url={riveAssets[0].localUri!}
-          artboardName="lamb-idle"
+
           autoplay
           style={{ width: '80%', height: '80%' }}
         />
-      </Animated.View>
+      </Animated.View> */}
 
       {/* Username Input */}
       <Animated.View style={inputStyle}>

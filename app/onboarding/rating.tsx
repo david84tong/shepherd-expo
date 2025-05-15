@@ -144,7 +144,7 @@ const Rating = () => {
   
   const handleIRatedPress = () => {
     analytics.logEvent("RatingScreen_Tapped_IRated");
-    router.push('/onboarding/11');
+    router.push('/onboarding/LoadingScreen');
   };
   
   return (

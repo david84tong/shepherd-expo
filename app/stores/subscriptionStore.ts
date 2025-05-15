@@ -5,6 +5,9 @@ import { Alert } from 'react-native';
 import { useUserStore } from './userStore';
 import analytics from '~/utils/analytics';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
+import Toast from 'react-native-toast-message';
 
 interface SubscriptionState {
   customerInfo: CustomerInfo | null;
@@ -62,6 +65,9 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       const paywallResult: PAYWALL_RESULT = await RevenueCatUI.presentPaywall();
       console.log('[SubscriptionStore] Paywall presented, result:', paywallResult);
 
+      // Variables for onboarding status check - moved outside switch cases to fix linter errors
+      let onboardingCompleted: string | null = null;
+
       switch (paywallResult) {
         case PAYWALL_RESULT.PURCHASED:
           console.log('[SubscriptionStore] Purchase completed successfully from paywall. Updating customer info...');
@@ -71,9 +77,29 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           await get().getCustomerInfo(); 
           // Update user's pro status in userStore
           useUserStore.getState().setProStatus('pro');
-          // Navigate to home screen after successful purchase
-          router.replace('/(tabs)');
-          // Return PURCHASED so PricingScreen can redirect
+          
+          // Show success toast
+          Toast.show({
+            type: 'success',
+            text1: 'Congratulations! 🎉',
+            text2: 'You are now a Shepherd Super user!',
+            position: 'top',
+            visibilityTime: 4000,
+          });
+          
+          // Check if onboarding is completed
+          onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+          
+          // Navigate based on onboarding status
+          if (onboardingCompleted === 'true') {
+            // Onboarding completed, go to home tabs
+            router.replace('/(tabs)');
+          } else {
+            // Onboarding not completed, go to sign up screen
+            router.replace('/onboarding/11');
+          }
+          
+          // Return PURCHASED so PricingScreen can handle it
           return PAYWALL_RESULT.PURCHASED;
         case PAYWALL_RESULT.RESTORED:
           console.log('[SubscriptionStore] Purchase restored successfully from paywall. Updating customer info...');
@@ -84,8 +110,28 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           await get().getCustomerInfo(); 
           // Update user's pro status in userStore
           useUserStore.getState().setProStatus('pro');
-          // Navigate to home screen after successful restore
-          router.replace('/(tabs)');
+          
+          // Show success toast
+          Toast.show({
+            type: 'success',
+            text1: 'Subscription Restored! 🎉',
+            text2: 'Welcome back to Shepherd Super!',
+            position: 'top',
+            visibilityTime: 4000,
+          });
+          
+          // Check if onboarding is completed
+          onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+          
+          // Navigate based on onboarding status
+          if (onboardingCompleted === 'true') {
+            // Onboarding completed, go to home tabs
+            router.replace('/(tabs)');
+          } else {
+            // Onboarding not completed, go to sign up screen
+            router.replace('/onboarding/11');
+          }
+          
           // Return RESTORED so PricingScreen can redirect
           return PAYWALL_RESULT.RESTORED;
         case PAYWALL_RESULT.CANCELLED:
@@ -144,6 +190,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       // Update user's pro status in userStore
       if (isPro) {
         useUserStore.getState().setProStatus('pro');
+        
+        // Show success toast
+        Toast.show({
+          type: 'success',
+          text1: 'Congratulations! 🎉',
+          text2: 'You are now a Shepherd Super user!',
+          position: 'top',
+          visibilityTime: 4000,
+        });
       }
       
       analytics.logEvent('subscription_purchase_success', { 
@@ -157,11 +212,26 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       Alert.alert("Success", "Purchase successful!");
       console.log('[SubscriptionStore] Pro status after purchase:', get().isProMember);
       
-      // Navigate to home screen after successful purchase
+      // Navigate based on onboarding status if user is now a pro member
       if (isPro) {
-        setTimeout(() => {
-          router.replace('/(tabs)');
-        }, 500); // Short delay to allow Alert to be seen
+        try {
+          const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+          setTimeout(() => {
+            if (onboardingCompleted === 'true') {
+              // Onboarding completed, go to home tabs
+              router.replace('/(tabs)');
+            } else {
+              // Onboarding not completed, go to sign up screen
+              router.replace('/onboarding/11');
+            }
+          }, 500); // Short delay to allow Alert to be seen
+        } catch (error) {
+          console.error('[SubscriptionStore] Error checking onboarding status:', error);
+          // Default to tabs if we can't determine onboarding status
+          setTimeout(() => {
+            router.replace('/(tabs)');
+          }, 500);
+        }
       }
       
       // Call the onSuccess callback if provided

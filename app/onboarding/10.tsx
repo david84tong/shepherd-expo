@@ -155,7 +155,7 @@ export default function OnboardingReminderTimeScreen() {
                 text: 'Continue Anyway',
                 style: 'default',
                 onPress: () => {
-                  router.push('/onboarding/11');
+                  router.push('/onboarding/rating');
                 }
               }
             ]
@@ -197,7 +197,7 @@ export default function OnboardingReminderTimeScreen() {
     }
 
     // Navigate to the next screen
-    router.push('/onboarding/11');
+    router.push('/onboarding/rating');
   };
 
   const options = [
