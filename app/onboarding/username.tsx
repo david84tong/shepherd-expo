@@ -22,6 +22,7 @@ export default function OnboardingUsernameScreen() {
   const setUser = useUserStore((state) => state.setUser);
   const [inputUsername, setInputUsername] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const inputRef = useRef<TextInput>(null);
 
   // Load Rive assets
   const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
@@ -39,6 +40,18 @@ export default function OnboardingUsernameScreen() {
   const inputTranslateY = useSharedValue(20);
   const buttonOpacity = useSharedValue(0);
   const buttonTranslateY = useSharedValue(20);
+
+  // Auto-focus the input field when component mounts
+  useEffect(() => {
+    // Short timeout to ensure animations have started before focusing
+    const timer = setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // Run animations only once during initial layout
   useLayoutEffect(() => {
@@ -191,11 +204,11 @@ export default function OnboardingUsernameScreen() {
       {/* Username Input */}
       <Animated.View style={inputStyle}>
         <TextInput
+          ref={inputRef}
           className="font-feather text-3xl text-center text-textPrimary bg-white p-6 rounded-2xl border-4 border-border"
           placeholder="@username"
-          placeholderTextColor="gray"
+          placeholderTextColor="#B89B4C"
           value={inputUsername}
-          placeholderTextColor="#A0A0A0"
           onChangeText={setInputUsername}
           maxLength={20}
           autoCapitalize="none"

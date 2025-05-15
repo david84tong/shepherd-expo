@@ -303,7 +303,7 @@ export default function OnboardingWelcomeScreen() {
   };
 
   // Load the Rive asset - Moved after all other hooks
-  const [assets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+  const [assets] = useAssets([require('../../assets/riveAnimations/makeLamb.riv')]);
 
   // Show loading indicator while assets are loading
   if (!assets) {

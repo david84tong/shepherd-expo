@@ -4,12 +4,14 @@ import { useRouter, usePathname } from 'expo-router';
 import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert } from 'react-native';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import SuccessAnimation from './SuccessAnimation'; // Import the full SuccessAnimation component
 import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
 import { HalfModalType } from '../app/halfModal';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { useUserStore } from '../app/stores/userStore';
+import { usePathStore } from '../app/stores/pathStore';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -245,6 +247,69 @@ export function DebugButton() {
             userStore.syncWithFirestore();
 
             Alert.alert('Reset Complete', 'HomeStore data and completed readings have been reset.');
+          },
+        },
+      ]
+    );
+  }, []);
+
+  // Handler to delete all app data
+  const handleDeleteAllData = useCallback(() => {
+    Alert.alert(
+      'Delete All Data',
+      'WARNING: This will delete ALL user data and reset the app to a fresh state. This action cannot be undone. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Everything',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              // Clear AsyncStorage first to ensure clean slate
+              console.log('Clearing all AsyncStorage data...');
+              await AsyncStorage.clear();
+              
+              // Reset home store
+              const homeStore = useHomeStore.getState();
+              homeStore.resetCompletionStates();
+              homeStore.setMode('DEFAULT');
+              homeStore.setSuccessType(null);
+
+              // Reset user store completely
+              const userStore = useUserStore.getState();
+              userStore.resetUserStore(); // Use existing method instead of resetUserData
+              userStore.setCompletedReadings([] as any);
+              userStore.setCompletedPrayers([] as any);
+              userStore.setCompletedReflections([] as any);
+              userStore.setLambHearts(0);
+              userStore.setStreakCount(0); // Use setStreakCount instead of resetStreak
+
+              // Reset path store by setting values to defaults
+              const pathStore = usePathStore.getState();
+              pathStore.setSelectedPath(null as any);
+              pathStore.setCurrentPath(null);
+              pathStore.setPathInProgress(false);
+
+              // Sync changes to Firestore
+              userStore.syncWithFirestore();
+
+              Toast.show({
+                type: 'success',
+                text1: 'All data deleted',
+                text2: 'The app has been reset to a fresh state.',
+                position: 'top',
+                visibilityTime: 4000,
+              });
+            } catch (error) {
+              console.error('Failed to delete all data:', error);
+              Toast.show({
+                type: 'error',
+                text1: 'Failed to delete all data',
+                text2: 'An error occurred while trying to reset the app.',
+                position: 'top',
+                visibilityTime: 4000,
+              });
+            }
           },
         },
       ]
@@ -496,6 +561,18 @@ export function DebugButton() {
                   </Text>
                   <Text className="font-din text-sm text-[#A57070] mt-1">
                     Reset HomeStore and clear completed readings
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Delete All Data Button */}
+                <TouchableOpacity
+                  className="bg-[#FF6666] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF0000]"
+                  onPress={handleDeleteAllData}>
+                  <Text className="font-feather text-base text-white">
+                    Delete All Data
+                  </Text>
+                  <Text className="font-din text-sm text-white/80 mt-1">
+                    WARNING: Permanently delete all user data and reset app
                   </Text>
                 </TouchableOpacity>
               </View>

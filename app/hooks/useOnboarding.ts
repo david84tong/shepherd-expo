@@ -56,8 +56,8 @@ export const useOnboarding = () => {
           ...onboardingResponse,
           [pageId]: value,
         };
-        setOnboardingResponse(updatedResponse);
-        await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(updatedResponse));
+        // setOnboardingResponse(updatedResponse);
+        // await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(updatedResponse));
       } catch (error) {
         console.error('Error saving onboarding response:', error);
       }
@@ -67,8 +67,8 @@ export const useOnboarding = () => {
 
   const completeOnboarding = useCallback(async () => {
     try {
-      await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
-      setIsCompleted(true);
+      // await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+      // setIsCompleted(true);
     } catch (error) {
       console.error('Error completing onboarding:', error);
     }

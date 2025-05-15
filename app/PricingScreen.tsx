@@ -116,6 +116,7 @@ const PricingScreen = () => {
       const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
       console.log(onboardingCompleted, "onboardingCompleted")
       if (onboardingCompleted === 'true') {
+        console.log("onboardingCompleted")
         // Onboarding completed, go back normally
         if (router.canGoBack()) {
           router.back();

@@ -23,6 +23,7 @@ export default function OnboardingLambNameScreen() {
   const setLambName = useUserStore((state) => state.setLambName);
   const [inputLambName, setInputLambName] = useState('');
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const inputRef = useRef<TextInput>(null);
 
   // Use the helper hook for screen tracking
 
@@ -45,6 +46,18 @@ export default function OnboardingLambNameScreen() {
 
   const buttonOpacity = useSharedValue(0);
   const buttonTranslateY = useSharedValue(20); // Smaller initial offset
+
+  // Auto-focus the input field when component mounts
+  useEffect(() => {
+    // Short timeout to ensure animations have started before focusing
+    const timer = setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+      }
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   // Run animations only once during initial layout
   useLayoutEffect(() => {
@@ -194,9 +207,10 @@ export default function OnboardingLambNameScreen() {
       {/* Name Input */}
       <Animated.View style={inputStyle}>
         <TextInput
+          ref={inputRef}
           className="font-feather text-3xl text-center text-textPrimary bg-white p-6 rounded-2xl border-4 border-border"
           placeholder="Enter name"
-          placeholderTextColor="#A0A0A0"
+          placeholderTextColor="#B89B4C"
           maxLength={9}
           value={inputLambName}
           onChangeText={setInputLambName}
