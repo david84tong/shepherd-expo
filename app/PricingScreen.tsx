@@ -9,6 +9,7 @@ import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming, withDel
 import PrimaryButton from '../components/PrimaryButton';
 import useSubscriptionStore from './stores/subscriptionStore';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import analytics from '../utils/analytics';
 
 interface AnimatedItemProps {
   index?: number;
@@ -52,6 +53,15 @@ const PricingScreen = () => {
   const [animationReady, setAnimationReady] = useState(false); // Ensures animations run after mount
 
   const animateScreenFromBottom = params.animateFromBottom === "true";
+  const fromLoading = params.fromLoading === "true";
+
+  // Track screen view
+  useEffect(() => {
+    analytics.logEvent("PricingScreen_Viewed", {
+      fromLoading: fromLoading || false,
+      animateFromBottom: animateScreenFromBottom || false
+    });
+  }, [fromLoading, animateScreenFromBottom]);
 
   // Screen container just fades in quickly
   const screenOpacity = useSharedValue(0);
@@ -75,12 +85,19 @@ const PricingScreen = () => {
 
   const toggleSwitch = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setTrialEnabled(previousState => !previousState);
+    const newValue = !trialEnabled;
+    setTrialEnabled(newValue);
+    analytics.logEvent("PricingScreen_TrialToggled", {
+      enabled: newValue
+    });
   };
 
   const handleSubscribe = async () => {
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      analytics.logEvent("PricingScreen_SubscribeButton_Tapped", {
+        trialEnabled: trialEnabled
+      });
       showPaywall();
     } catch (error) {
       console.error('Error during subscription process:', error);
@@ -90,6 +107,7 @@ const PricingScreen = () => {
 
   const handleBack = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    analytics.logEvent("PricingScreen_BackButton_Tapped");
     if (router.canGoBack()) {
       router.back()
     } else {
@@ -100,18 +118,32 @@ const PricingScreen = () => {
   const showPaywall = async () => {
     try {
       setIsLoading(true);
+      analytics.logEvent("PricingScreen_ShowPaywall_Started", {
+        trialEnabled: trialEnabled
+      });
+      
       const result = await presentPaywall();
-      if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+      
+      if (result === PAYWALL_RESULT.PURCHASED) {
+        analytics.logEvent("PricingScreen_Subscription_Purchased");
         router.replace('/(tabs)');
+      } else if (result === PAYWALL_RESULT.RESTORED) {
+        analytics.logEvent("PricingScreen_Subscription_Restored");
+        router.replace('/(tabs)');
+      } else {
+        analytics.logEvent("PricingScreen_Paywall_Dismissed", {
+          result: result
+        });
       }
     } catch (error) {
       console.error('Error presenting paywall:', error);
+      analytics.logEvent("PricingScreen_Paywall_Error", {
+        errorMessage: (error as Error)?.message || "Unknown error"
+      });
     } finally {
       setIsLoading(false);
     }
   };
-
-
 
   // Conditional rendering of animated items to ensure animations trigger correctly
   const renderAnimatedContent = () => {
