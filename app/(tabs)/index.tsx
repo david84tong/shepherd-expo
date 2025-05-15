@@ -9,7 +9,6 @@ import {
   SafeAreaView,
   Text,
   View,
-  InteractionManager,
   ScrollView
 } from 'react-native';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
@@ -24,7 +23,6 @@ import { useUIStore } from '../stores/uiStore'; // Import UI store
 import { useUserStore } from '../stores/userStore'; // Import user store
 import { useAssetsStore, imageAssets } from '../stores/assetsStore';
 import { useAssets } from 'expo-asset';
-import useSubscriptionStore from '../stores/subscriptionStore';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 
@@ -82,7 +80,11 @@ export default function HomeScreen() {
   const lambSizeAnim = useRef(new Animated.Value(256)).current; // Start with full size (256px)
 
   // Get subscription state and actions from the store
-  const { isProMember } = useSubscriptionStore();
+  // const { isProMember } = useSubscriptionStore();
+  
+  // Get pro status from user store
+  const proStatus = useUserStore((state) => state.getProStatus());
+  const isPro = proStatus === 'pro';
 
   // Handle subscription button press using the store action
   const handleSubscriptionPress = async () => {
@@ -93,7 +95,8 @@ export default function HomeScreen() {
   // Load Rive assets
   const [riveAssets] = useAssets([
     require('../../assets/riveAnimations/homeLamb.riv'),
-    require('../../assets/riveAnimations/bg-green.riv')
+    require('../../assets/riveAnimations/bg-green.riv'),
+    require('../../assets/riveAnimations/goldLamb.riv') // Add goldLamb to preloaded assets
   ]);
 
   // Add state for asset loading
@@ -366,6 +369,7 @@ export default function HomeScreen() {
 
   // --- useEffect to react to external mode changes ---
   useEffect(() => {
+    console.log(isPro, "what is pro")
     console.log('HomeScreen: Mode changed to', mode);
     console.log('DEBUG - Current completion status:', {
       readingCompleted,
@@ -423,12 +427,10 @@ export default function HomeScreen() {
 
   // --- Event Handlers ---
   const handleReadPress = () => {
-    if (!isProMember && readingCompleted) {
+    if (!isPro && readingCompleted) {
       handleSubscriptionPress()
     }
     else {
-
-
       console.log('Read the word button pressed');
 
       // Remove heavy haptic feedback
@@ -458,11 +460,9 @@ export default function HomeScreen() {
 
   const handlePrayerPress = () => {
     console.log('Prayer button pressed');
-    if (!isProMember && prayerCompleted) {
+    if (!isPro && prayerCompleted) {
       handleSubscriptionPress()
     } else {
-
-
       // Don't proceed if reading is not completed
       if (!readingCompleted) {
         console.log('Prayer button disabled: Reading not completed');
@@ -479,8 +479,7 @@ export default function HomeScreen() {
   };
 
   const handleReflectionPress = () => {
-
-    if (!isProMember && reflectionCompleted) {
+    if (!isPro && reflectionCompleted) {
       handleSubscriptionPress()
     } else {
       console.log('Reflection button pressed');
@@ -593,17 +592,20 @@ export default function HomeScreen() {
   const riveComponent = useMemo(() => {
     if (!riveAssets || !riveReady) return null;
 
+    // Use the appropriate Rive asset based on pro status
+    const lambAssetIndex = isPro ? 2 : 0; // Index 2 for goldLamb, 0 for homeLamb
+
     return (
       <Rive
         key={riveKey}
         ref={riveRef}
-        url={riveAssets[0].localUri!}
+        url={riveAssets[lambAssetIndex].localUri!}
         artboardName={artboardName}
         onError={handleRiveError}
         style={{ width: '100%', height: '100%', marginTop: 10 }}
       />
     );
-  }, [riveAssets, artboardName, riveKey, riveReady]);
+  }, [riveAssets, artboardName, riveKey, riveReady, isPro]);
 
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;

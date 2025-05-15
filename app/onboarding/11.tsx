@@ -281,7 +281,7 @@ export default function SaveProgressScreen() {
         </Text>
 
         {/* Icon */}
-        <View className="mb-8 overflow-hidden w-56 h-48 items-center justify-center">
+        <View className="mb-8 overflow-hidden w-64 h-64 items-center justify-center">
           {riveAssets && riveAssets[0]?.localUri && (
             <Rive
               url={riveAssets[0].localUri}
@@ -289,7 +289,7 @@ export default function SaveProgressScreen() {
               autoplay={true}
               fit={Fit.Contain}
               alignment={Alignment.Center}
-              style={{ width: 200, height: 200 }}
+              style={{ width: 240, height: 240 }}
             />
           )}
         </View>
