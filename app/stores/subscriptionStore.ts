@@ -15,7 +15,8 @@ interface SubscriptionState {
   presentPaywall: () => Promise<PAYWALL_RESULT | null>;
   purchasePackage: (pack: PurchasesPackage, onSuccess?: () => void) => Promise<void>;
   getCustomerInfo: () => Promise<void>;
-  handleReferralCode: (code: string) => Promise<void>
+  handleReferralCode: (code: string) => Promise<void>;
+  getUsedReferralCodes: () => Promise<string[]>;
   // Add other state and actions here
 }
 
@@ -275,55 +276,90 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     if (code.length !== 6) {
       throw new Error('Invalid code format');
     }
+
     // Get current user
     const user = auth().currentUser;
     if (!user) {
       throw new Error('User not authenticated');
     }
+
     // Get user doc ref
     const userRef = firestore().collection('users').doc(user.uid);
-   
+    const userDoc = await userRef.get();
+    const userData = userDoc.data();
+
+    // Check if user has already used this code
+    if (userData?.usedReferralCodes?.includes(code)) {
+      throw new Error('You have already used this referral code');
+    }
+
+    // Check subscription type restrictions
+    const usedReferralCodes = userData?.usedReferralCodes || [];
+    const hasUsedWeekly = usedReferralCodes.includes('WEEKLY');
+    const hasUsedMonthly = usedReferralCodes.includes('MONTHL');
+    const hasUsedPermanent = usedReferralCodes.includes('WXES4S');
+
     switch (code.toUpperCase()) {
       case 'WXES4S':
+        if (hasUsedPermanent) {
+          throw new Error('You have already used a permanent subscription code');
+        }
         // Permanent pro access
         await userRef.update({
-          isPro: true, 
+          isPro: true,
           proExpiryDate: null, // null means permanent
-          referralCodeUsed: code
+          usedReferralCodes: firestore.FieldValue.arrayUnion(code)
         });
         break;
 
       case 'MONTHL':
+        if (hasUsedMonthly) {
+          throw new Error('You have already used a monthly subscription code');
+        }
         // One month pro access
         const monthExpiry = new Date();
         monthExpiry.setMonth(monthExpiry.getMonth() + 1);
         
         await userRef.update({
-          isPro: true, 
+          isPro: true,
           proExpiryDate: monthExpiry,
-          referralCodeUsed: code
+          usedReferralCodes: firestore.FieldValue.arrayUnion(code)
         });
         break;
 
       case 'WEEKLY':
+        if (hasUsedWeekly) {
+          throw new Error('You have already used a weekly subscription code');
+        }
         // One week pro access
         const weekExpiry = new Date();
         weekExpiry.setDate(weekExpiry.getDate() + 7);
         
         await userRef.update({
-          isPro: true, 
+          isPro: true,
           proExpiryDate: weekExpiry,
-          referralCodeUsed: code
+          usedReferralCodes: firestore.FieldValue.arrayUnion(code)
         });
         break;
 
       default:
         throw new Error('Invalid referral code');
     }
+    
     set({ isProMember: true });
     useUserStore.getState().setProStatus('pro');
-    
   },
+
+  getUsedReferralCodes: async () => {
+    const user = auth().currentUser;
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    const userDoc = await firestore().collection('users').doc(user.uid).get();
+    const userData = userDoc.data();
+    return userData?.usedReferralCodes || [];
+  }
 }));
 
 export default useSubscriptionStore;

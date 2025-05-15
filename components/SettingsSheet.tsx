@@ -70,7 +70,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 
   // States for the referral code and modal
   const [referralModalVisible, setReferralModalVisible] = useState(false);
-  const [referralCode, setReferralCode] = useState('');
+  const [availableCodes, setAvailableCodes] = useState<string[]>(['WEEKLY', 'MONTHL', 'WXES4S']);
+  const [isLoadingCodes, setIsLoadingCodes] = useState(false);
 
   // Animation shared values
   const timePickerHeight = useSharedValue(0);
@@ -615,10 +616,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   // Get subscription state and actions from the store
   const {
     handleReferralCode,
-    refreshProStatus,
     isProMember,
     presentPaywall,
     getCustomerInfo,
+    getUsedReferralCodes,
   } = useSubscriptionStore();
 
   // Handle subscription button press using the store action
@@ -747,11 +748,31 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   const appVersion = Application.nativeApplicationVersion || 'Unknown';
   const buildNumber = Application.nativeBuildVersion || 'Unknown';
 
-
-  const handleReferralSubmit = async () => {
+  // Function to check available codes
+  const checkAvailableCodes = useCallback(async () => {
+    setIsLoadingCodes(true);
     try {
+      const usedCodes = await getUsedReferralCodes();
+      const allCodes = ['WEEKLY', 'MONTHL', 'WXES4S'];
+      const available = allCodes.filter(code => !usedCodes.includes(code));
+      setAvailableCodes(available);
+    } catch (error) {
+      console.error('Error checking available codes:', error);
+    } finally {
+      setIsLoadingCodes(false);
+    }
+  }, [getUsedReferralCodes]);
 
-      await handleReferralCode(referralCode);
+  // Check available codes when modal opens
+  const handleOpenReferralModal = useCallback(async () => {
+    setReferralModalVisible(true);
+    checkAvailableCodes();
+  }, [checkAvailableCodes]);
+
+  // Handle referral code submission
+  const handleReferralSubmit = async (selectedCode: string) => {
+    try {
+      await handleReferralCode(selectedCode);
 
       Alert.alert(
         'Success!',
@@ -759,17 +780,17 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
         [{ text: 'OK', onPress: () => setReferralModalVisible(false) }]
       );
 
-      // Clear the input
-      setReferralCode('');
+      // Refresh available codes after successful submission
+      checkAvailableCodes();
 
     } catch (error: any) {
-      // Show error message
       Alert.alert(
         'Error',
         error.message || 'Failed to apply referral code'
       );
     }
   };
+
   return (
     <>
       <BottomSheet
@@ -969,7 +990,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 
               {/* Referral Code Button */}
               <TouchableOpacity
-                onPress={() => setReferralModalVisible(true)}
+                onPress={handleOpenReferralModal}
                 className="bg-white rounded-xl p-4 mt-2 shadow-sm flex-row justify-between items-center">
                 <View>
                   <Text className="font-feather text-base text-textPrimary">Referral Code</Text>
@@ -1239,29 +1260,39 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
           <View className="bg-surfaceCream rounded-2xl p-5 w-[85%] max-w-[350px]">
             {/* Title */}
             <Text className="font-feather text-xl text-textPrimary text-center mb-4">
-              Enter Referral Code
+              Select Referral Code
             </Text>
 
-            {/* Code Input */}
-            <TextInput
-              className="bg-white rounded-xl p-4 mb-4 font-din text-lg text-center text-textPrimary"
-              maxLength={6}
-              autoCapitalize="characters"
-              value={referralCode}
-              onChangeText={setReferralCode}
-              placeholder="Enter 6-digit code"
-              placeholderTextColor="#B89B4C"
-            />
-
-            {/* Submit Button */}
-            <TouchableOpacity
-              onPress={handleReferralSubmit}
-              disabled={referralCode.length !== 6}
-              className="bg-primary rounded-xl p-4 mb-3">
-              <Text className="font-feather text-textPrimary text-center" style={{ opacity: referralCode.length === 6 ? 1 : 0.5 }}>
-                Submit
-              </Text>
-            </TouchableOpacity>
+            {/* Code List */}
+            <View className="mb-4">
+              {isLoadingCodes ? (
+                <ActivityIndicator size="large" color="#B89B4C" />
+              ) : availableCodes.length > 0 ? (
+                availableCodes.map((code) => (
+                  <TouchableOpacity
+                    key={code}
+                    onPress={() => handleReferralSubmit(code)}
+                    className="bg-white rounded-xl p-4 mb-2 flex-row justify-between items-center active:opacity-80"
+                  >
+                    <View>
+                      <Text className="font-din text-lg text-textPrimary">{code}</Text>
+                      <Text className="font-din text-sm text-description">
+                        {code === 'WEEKLY' ? '7 days access' :
+                          code === 'MONTHL' ? '30 days access' :
+                            'Permanent access'}
+                      </Text>
+                    </View>
+                    <Feather name="chevron-right" size={20} color="#B89B4C" />
+                  </TouchableOpacity>
+                ))
+              ) : (
+                <View className="p-4 bg-white/50 rounded-xl">
+                  <Text className="font-din text-center text-textPrimary">
+                    No available referral codes
+                  </Text>
+                </View>
+              )}
+            </View>
 
             {/* Cancel Button */}
             <TouchableOpacity
