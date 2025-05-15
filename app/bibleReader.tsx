@@ -195,6 +195,11 @@ type BibleReaderStyles = {
   lineHeightButtonTextSelected: TextStyle;
 };
 
+// Add type for storing selections by chapter
+type SelectionsMap = {
+  [key: string]: Set<number>;
+};
+
 // Export the component for reuse
 export const BibleReader: React.FC<BibleReaderProps> = ({
   isEmbedded = false,
@@ -271,6 +276,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   // Animation value for modal slide up
   const slideAnim = useRef(new RNAnimated.Value(0)).current;
+
+  // In the component, add state for selections history
+  const [selectionsHistory, setSelectionsHistory] = useState<SelectionsMap>({});
 
   // When coming to this tab from a preview, clear the path in progress state
   useEffect(() => {
@@ -379,6 +387,23 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const loadChapter = async (version: string, book: string, bookId: number, chapter: number) => {
     setLoading(true);
     setError(null);
+
+    // Create a key for the current chapter
+    const currentChapterKey = `${bookId}-${chapter}`;
+    const previousChapterKey = `${currentBookId}-${currentChapter}`;
+
+    // Save current selections before changing chapter
+    if (selectedVerses.size > 0) {
+      setSelectionsHistory(prev => ({
+        ...prev,
+        [previousChapterKey]: new Set(selectedVerses)
+      }));
+    }
+
+    // Restore selections for the new chapter if they exist
+    const savedSelections = selectionsHistory[currentChapterKey];
+    setSelectedVerses(savedSelections ? new Set(savedSelections) : new Set());
+    setIsSelectionMode(savedSelections ? savedSelections.size > 0 : false);
 
     console.log(`📚 LOADING CHAPTER - version:${version}, book:${book}, bookId:${bookId}, chapter:${chapter}`);
 
@@ -687,7 +712,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     return [styles.verseNumber, { fontSize: fontSize }];
   }, [fontSize]);
 
-  // Add handler for verse selection
+  // Update the handleVersePress function with correct types
   const handleVersePress = (verseNumber: number) => {
     if (!isSelectionMode) return;
 
@@ -699,6 +724,25 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         newSet.add(verseNumber);
       }
       return newSet;
+    });
+
+    // Save the updated selections separately to avoid type issues
+    const currentChapterKey = `${currentBookId}-${currentChapter}`;
+    setSelectionsHistory(prevHistory => {
+      const newHistory = { ...prevHistory };
+      const currentSelections = new Set(selectedVerses);
+      if (currentSelections.has(verseNumber)) {
+        currentSelections.delete(verseNumber);
+      } else {
+        currentSelections.add(verseNumber);
+      }
+
+      if (currentSelections.size > 0) {
+        newHistory[currentChapterKey] = currentSelections;
+      } else {
+        delete newHistory[currentChapterKey];
+      }
+      return newHistory;
     });
   };
 
