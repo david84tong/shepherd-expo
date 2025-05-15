@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, } from 'react';
 import {
   Animated,
   Dimensions,
@@ -9,7 +9,8 @@ import {
   SafeAreaView,
   Text,
   View,
-  ScrollView
+  ScrollView,
+  TouchableOpacity
 } from 'react-native';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
@@ -25,6 +26,8 @@ import { useAssetsStore, imageAssets } from '../stores/assetsStore';
 import { useAssets } from 'expo-asset';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import analytics, { AnalyticsEvent } from '~/utils/analytics';
 
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
@@ -588,6 +591,12 @@ export default function HomeScreen() {
     setRiveReady(true);
   }, []);
 
+  // Add screen view analytics tracking
+  useEffect(() => {
+    // Log screen view when component mounts
+    analytics.logEvent("HomeScreen_Viewed");
+  }, []);
+
   // Add this before the return statement
   const riveComponent = useMemo(() => {
     if (!riveAssets || !riveReady) return null;
@@ -762,8 +771,57 @@ export default function HomeScreen() {
           </Animated.View>
         </Animated.View>
 
-        {/* Bottom Section - Action Buttons Card */}
+        {/* SUPER badge for pro users */}
+        { (
+          <TouchableOpacity 
+            onPress={() => {
+              if (!isPro) {
+                analytics.logEvent("HomeScreen_TappedProBadge");
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/PricingScreen' as any);
+              }
+            }}
+            activeOpacity={0.8}
+            style={{
+              position: 'absolute',
+              left: 24,
+              // Place it roughly at the bottom of the lamb viewport
+              top: SCREEN_HEIGHT * 0.35,
+              paddingHorizontal: 8,
+              paddingVertical: 2,
+              borderRadius: 32,
+              zIndex: 20,
+            }}
+          >
+            <LinearGradient
+              colors={['#F7B500', '#FFF45B']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={{
+                position: 'absolute',
+              
+                paddingHorizontal: 8,
+                paddingVertical: 2,
+                borderRadius: 32,
+                zIndex: 20,
+                opacity: isPro ? 1 : 0.5
+              }}
+            >
+              <Text
+                className="font-nunito-italic text-lg text-white text-center p-0 m-0"
+                style={{
+                  textShadowColor: 'rgba(0,0,0,0.15)',
+                  textShadowOffset: { width: 1, height: 1 },
+                  textShadowRadius: 3,
+                }}
+              >
+                SUPER
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
 
+        {/* Bottom Section - Action Buttons Card */}
         <Animated.View
           className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-28"
           style={{
