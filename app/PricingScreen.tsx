@@ -10,6 +10,8 @@ import PrimaryButton from '../components/PrimaryButton';
 import useSubscriptionStore from './stores/subscriptionStore';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import analytics from '../utils/analytics';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
 
 interface AnimatedItemProps {
   index?: number;
@@ -105,13 +107,33 @@ const PricingScreen = () => {
     }
   };
 
-  const handleBack = () => {
+  const handleBack = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     analytics.logEvent("PricingScreen_BackButton_Tapped");
-    if (router.canGoBack()) {
-      router.back()
-    } else {
-      router.replace('/(tabs)');
+    
+    try {
+      // Check if onboarding is completed
+      const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+      
+      if (onboardingCompleted === 'true') {
+        // Onboarding completed, go back normally
+        if (router.canGoBack()) {
+          router.back();
+        } else {
+          router.replace('/(tabs)');
+        }
+      } else {
+        // Onboarding not completed, redirect to signup screen
+        router.replace('/onboarding/11');
+      }
+    } catch (error) {
+      console.error('Error checking onboarding status:', error);
+      // Default fallback in case of error
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)');
+      }
     }
   };
 
