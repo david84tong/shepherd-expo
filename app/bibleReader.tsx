@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,11 @@ import {
   NativeScrollEvent,
   Easing as RNEasing,
   Alert,
+  Pressable,
+  ViewStyle,
+  TextStyle,
+  Modal,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchChapter, ChapterResponse, FetchError, Verse } from './api/bible';
@@ -36,11 +41,65 @@ import Reanimated, {
 } from 'react-native-reanimated'; // Use Reanimated for dot indicator
 import { heightScreen } from '~/utils/dimensions';
 import analytics from '../utils/analytics';
+import Slider from '@react-native-community/slider';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
 const MIN_FONT_SIZE = 14;
 const MAX_FONT_SIZE = 30;
+
+// Add constants for line height
+const LINE_HEIGHT_KEY = 'userBibleLineHeight';
+const DEFAULT_LINE_HEIGHT = 24;
+const MIN_LINE_HEIGHT = 20;
+const MAX_LINE_HEIGHT = 40;
+
+// Replace line height slider related constants with presets
+const LINE_HEIGHT_PRESETS = {
+  COMPACT: 20,
+  REGULAR: 24,
+  RELAXED: 32,
+} as const;
+
+type LineHeightPreset = keyof typeof LINE_HEIGHT_PRESETS;
+
+// Add theme colors constant
+const THEME_COLORS = {
+  white: {
+    background: '#FFFFFF',
+    modalBackground: '#FFFFFF',
+    text: '#3C584A',
+    border: '#E5E5E5',
+    verseHighlight: 'rgba(220, 178, 128, 0.2)',
+    sliderTrack: '#E5E5E5',
+  },
+  light: {
+    background: '#FFF4D9',
+    modalBackground: '#FFF4D9',
+    text: '#3C584A',
+    border: '#FFE4A8',
+    verseHighlight: 'rgba(220, 178, 128, 0.2)',
+    sliderTrack: '#E5E5E5',
+  },
+  medium: {
+    background: '#FFE4A8',
+    modalBackground: '#FFE4A8',
+    text: '#3C584A',
+    border: '#FFD280',
+    verseHighlight: 'rgba(255, 245, 210, 0.6)',
+    sliderTrack: '#FFF4D9',
+  },
+  dark: {
+    background: '#2C2C2C',
+    modalBackground: '#2C2C2C',
+    text: '#FFFFFF',
+    border: '#3C3C3C',
+    verseHighlight: 'rgba(107, 107, 107, 0.34)',
+    sliderTrack: '#3C3C3C',
+  },
+} as const;
+
+type ThemeType = keyof typeof THEME_COLORS;
 
 // Define component props
 interface BibleReaderProps {
@@ -90,6 +149,52 @@ const PulsingDotsIndicator = () => {
   );
 };
 
+// Add type for styles
+type BibleReaderStyles = {
+  container: ViewStyle;
+  newHeaderContainer: ViewStyle;
+  headerLeft: ViewStyle;
+  headerRight: ViewStyle;
+  backButton: ViewStyle;
+  backButtonText: TextStyle;
+  headerButton: ViewStyle;
+  headerButtonText: TextStyle;
+  navButton: ViewStyle;
+  navButtonText: TextStyle;
+  disabledNavButton: ViewStyle;
+  iconButton: ViewStyle;
+  fontSizeAdjustText: TextStyle;
+  disabledButtonText: TextStyle;
+  contentArea: ViewStyle;
+  scrollContainer: ViewStyle;
+  verseText: TextStyle;
+  verseNumber: TextStyle;
+  floatingNavContainer: ViewStyle;
+  floatingNavContainerEmbedded: ViewStyle;
+  finishButtonContainer: ViewStyle;
+  verseContainer: ViewStyle;
+  selectedVerse: ViewStyle;
+  fontSizeButton: ViewStyle;
+  fontSizeButtonText: TextStyle;
+  sliderContainer: ViewStyle;
+  slider: ViewStyle;
+  sliderLabel: TextStyle;
+  sliderLabelLarge: TextStyle;
+  modalOverlay: ViewStyle;
+  modalContent: ViewStyle;
+  modalHandle: ViewStyle;
+  themeButtonsContainer: ViewStyle;
+  themeButton: ViewStyle;
+  selectedThemeButton: ViewStyle;
+  selectedThemeButtonDark: ViewStyle;
+  lineHeightContainer: ViewStyle;
+  lineHeightButtons: ViewStyle;
+  lineHeightButton: ViewStyle;
+  lineHeightButtonSelected: ViewStyle;
+  lineHeightButtonText: TextStyle;
+  lineHeightButtonTextSelected: TextStyle;
+};
+
 // Export the component for reuse
 export const BibleReader: React.FC<BibleReaderProps> = ({
   isEmbedded = false,
@@ -106,6 +211,12 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // Track heights to determine if scrolling is needed
   const [contentHeight, setContentHeight] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
+  const [selectedVerses, setSelectedVerses] = useState<Set<number>>(new Set());
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState<ThemeType>('light');
+  const [lineHeightPreset, setLineHeightPreset] = useState<LineHeightPreset>('REGULAR');
+  const lineHeight = LINE_HEIGHT_PRESETS[lineHeightPreset];
 
   // Animation values for button container (using RNAnimated for these)
   const buttonsAnim = useRef(new RNAnimated.Value(0)).current; // 0: hidden, 1: visible
@@ -158,6 +269,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const params = useLocalSearchParams();
   const effectiveParams = !isEmbedded ? params : null;
 
+  // Animation value for modal slide up
+  const slideAnim = useRef(new RNAnimated.Value(0)).current;
+
   // When coming to this tab from a preview, clear the path in progress state
   useEffect(() => {
     if (!isEmbedded) {
@@ -196,6 +310,8 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
       try {
         const savedSize = await AsyncStorage.getItem(FONT_SIZE_KEY);
+        const savedLineHeight = await AsyncStorage.getItem(LINE_HEIGHT_KEY);
+
         if (savedSize !== null) {
           const parsedSize = parseInt(savedSize, 10);
           if (!isNaN(parsedSize) && parsedSize >= MIN_FONT_SIZE && parsedSize <= MAX_FONT_SIZE) {
@@ -203,8 +319,15 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
             setFontSize(parsedSize);
           }
         }
+
+        if (savedLineHeight !== null) {
+          const parsedLineHeight = parseInt(savedLineHeight, 10);
+          if (!isNaN(parsedLineHeight) && parsedLineHeight >= MIN_LINE_HEIGHT && parsedLineHeight <= MAX_LINE_HEIGHT) {
+            setLineHeightPreset('REGULAR');
+          }
+        }
       } catch (e) {
-        console.error("Failed to load font size from AsyncStorage", e);
+        console.error("Failed to load settings from AsyncStorage", e);
       }
 
       // Load from determined values, not default state
@@ -299,14 +422,14 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     analytics.logEvent("BibleReader_Tapped_PreviousChapter", {
       chapter: currentChapter
     });
-    
+
     if (currentChapter > 1) {
       // Still have previous chapters in this book
       loadChapter(currentVersion, currentBook, currentBookId, currentChapter - 1);
     } else {
       // At first chapter, need to go to previous book's last chapter
       const previousBookId = currentBookId - 1;
-      
+
       // Check if previous book exists
       if (previousBookId >= 1) {
         // Get the name and last chapter number of the previous book
@@ -315,7 +438,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         );
         const previousBookName = bookNames[previousBookId] || 'Previous Book';
         const lastChapterInPreviousBook = BIBLE_CHAPTER_COUNTS[previousBookId];
-        
+
         console.log(`At first chapter of ${currentBook}. Navigating to ${previousBookName} ${lastChapterInPreviousBook}`);
         loadChapter(currentVersion, previousBookName, previousBookId, lastChapterInPreviousBook);
       } else {
@@ -341,12 +464,12 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
     // Check if we're at the last chapter of the current book
     const chaptersInCurrentBook = BIBLE_CHAPTER_COUNTS[currentBookId];
-    
+
     if (currentChapter >= chaptersInCurrentBook) {
       // We've reached the end of the book, go to the next book chapter 1
       // Find the next book ID (books are ordered numerically in the API)
       const nextBookId = currentBookId + 1;
-      
+
       // Validate that the next book exists
       if (nextBookId <= Object.keys(BIBLE_CHAPTER_COUNTS).length) {
         // Get the name of the next book for logging
@@ -354,7 +477,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => [id, name])
         );
         const nextBookName = bookNames[nextBookId] || 'Next Book';
-        
+
         console.log(`End of ${currentBook} reached. Navigating to ${nextBookName} 1`);
         loadChapter(currentVersion, nextBookName, nextBookId, 1);
       } else {
@@ -557,12 +680,36 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   // Memoize style calculations to prevent unnecessary style object recreations
   const verseTextStyle = useMemo(() => {
-    return [styles.verseText, { fontSize: fontSize }];
-  }, [fontSize]);
+    return [styles.verseText, { fontSize: fontSize, lineHeight: lineHeight }];
+  }, [fontSize, lineHeight]);
 
   const verseNumberStyle = useMemo(() => {
     return [styles.verseNumber, { fontSize: fontSize }];
   }, [fontSize]);
+
+  // Add handler for verse selection
+  const handleVersePress = (verseNumber: number) => {
+    if (!isSelectionMode) return;
+
+    setSelectedVerses(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(verseNumber)) {
+        newSet.delete(verseNumber);
+      } else {
+        newSet.add(verseNumber);
+      }
+      return newSet;
+    });
+  };
+
+  // Add handler for long press
+  const handleVerseLongPress = (verseNumber: number) => {
+    // Add haptic feedback for long press
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    setIsSelectionMode(true);
+    setSelectedVerses(new Set([verseNumber]));
+  };
 
   const renderBibleContent = () => {
     if (loading) {
@@ -580,16 +727,24 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           contentContainerStyle={styles.scrollContainer}
           onScroll={handleScroll}
           scrollEventThrottle={16}
-          // Update content height whenever it changes
           onContentSizeChange={(_, height) => setContentHeight(height)}
-          // Capture the visible container height
           onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}
         >
           {chapterData.verses.map((verse: Verse) => (
-            <Text key={verse.verse} style={verseTextStyle} selectable={true}>
-              <Text style={verseNumberStyle}>{verse.verse} </Text>
-              {verse.text}
-            </Text>
+            <Pressable
+              key={verse.verse}
+              onPress={() => handleVersePress(verse.verse)}
+              onLongPress={() => handleVerseLongPress(verse.verse)}
+              style={[
+                styles.verseContainer,
+                selectedVerses.has(verse.verse) && [styles.selectedVerse, { backgroundColor: THEME_COLORS[currentTheme].verseHighlight }]
+              ]}
+            >
+              <Text style={[verseTextStyle, { color: THEME_COLORS[currentTheme].text }]} selectable={true}>
+                <Text style={[verseNumberStyle, { color: '#DCB280' }]}>{verse.verse} </Text>
+                {verse.text}
+              </Text>
+            </Pressable>
           ))}
         </ScrollView>
       );
@@ -664,40 +819,78 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     ],
   };
 
+  const handlePresentModal = useCallback(() => {
+    setIsModalVisible(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    RNAnimated.timing(slideAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+      easing: RNEasing.out(RNEasing.cubic),
+    }).start();
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    RNAnimated.timing(slideAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+      easing: RNEasing.in(RNEasing.cubic),
+    }).start(() => {
+      setIsModalVisible(false);
+    });
+  }, []);
+
+  const handleFontSizeChange = useCallback((value: number) => {
+    const newSize = Math.round(value);
+    updateFontSize(newSize);
+  }, []);
+
+  const handleThemeChange = (theme: ThemeType) => {
+    setCurrentTheme(theme);
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  };
+
+  // Add the handler for line height changes
+  const handleLineHeightChange = useCallback(async (preset: LineHeightPreset) => {
+    setLineHeightPreset(preset);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      await AsyncStorage.setItem(LINE_HEIGHT_KEY, LINE_HEIGHT_PRESETS[preset].toString());
+    } catch (e) {
+      console.error("Failed to save line height to AsyncStorage", e);
+    }
+  }, []);
+
   return (
-    <SafeAreaView className="flex-1 bg-main-bg">
-      <View style={styles.newHeaderContainer}>
+    <SafeAreaView style={[styles.container, { backgroundColor: THEME_COLORS[currentTheme].background }]}>
+      <View style={[styles.newHeaderContainer, {
+        backgroundColor: THEME_COLORS[currentTheme].background,
+        borderBottomColor: THEME_COLORS[currentTheme].border
+      }]}>
         <View style={styles.headerLeft}>
           {!isEmbedded && (
             <TouchableOpacity onPress={handleBackNavigation} style={styles.backButton}>
-              <Text style={styles.backButtonText}>←</Text>
+              <Text style={[styles.backButtonText, { color: THEME_COLORS[currentTheme].text }]}>←</Text>
             </TouchableOpacity>
           )}
 
           <TouchableOpacity style={styles.headerButton} onPress={handleOpenSelector}>
-            <Text style={styles.headerButtonText}>
+            <Text style={[styles.headerButtonText, { color: THEME_COLORS[currentTheme].text }]}>
               {chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'Loading...'}
             </Text>
           </TouchableOpacity>
-
-          {/* <TouchableOpacity style={styles.headerButton} onPress={handleOpenSelector}>
-            <Text style={styles.headerButtonText}>
-              {chapterData ? chapterData.version : '...'}
-            </Text>
-          </TouchableOpacity> */}
         </View>
 
         <View style={styles.headerRight}>
-          <TouchableOpacity onPress={decreaseFontSize} style={styles.iconButton} disabled={fontSize <= MIN_FONT_SIZE}>
-            <Text style={[styles.fontSizeAdjustText, fontSize <= MIN_FONT_SIZE && styles.disabledButtonText]}>-</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={increaseFontSize} style={styles.iconButton} disabled={fontSize >= MAX_FONT_SIZE}>
-            <Text style={[styles.fontSizeAdjustText, fontSize >= MAX_FONT_SIZE && styles.disabledButtonText]}>+</Text>
+          <TouchableOpacity onPress={handlePresentModal} style={styles.fontSizeButton}>
+            <Text style={[styles.fontSizeButtonText, { color: THEME_COLORS[currentTheme].text }]}>Aa</Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <View style={styles.contentArea}>
+      <View style={[styles.contentArea, { backgroundColor: THEME_COLORS[currentTheme].background }]}>
         {renderBibleContent()}
       </View>
 
@@ -740,6 +933,139 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           disabled={!isFinishEnabled || !hasScrolledToBottom} // Ensure finish button is also tied to hasScrolledToBottom for enabled state
         />
       </RNAnimated.View>}
+
+      {/* Modal */}
+      <Modal
+        visible={isModalVisible}
+        transparent
+        animationType="none"
+        onRequestClose={handleCloseModal}
+      >
+        <TouchableWithoutFeedback onPress={handleCloseModal}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <RNAnimated.View
+                style={[
+                  styles.modalContent,
+                  {
+                    backgroundColor: THEME_COLORS[currentTheme].modalBackground,
+                    transform: [{
+                      translateY: slideAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [300, 0],
+                      }),
+                    }],
+                  },
+                ]}
+              >
+                <View style={[styles.modalHandle, { backgroundColor: THEME_COLORS[currentTheme].border }]} />
+
+                {/* Font Size Controls */}
+                <View style={styles.sliderContainer}>
+                  <Text style={[styles.sliderLabel, { color: THEME_COLORS[currentTheme].text }]}>A</Text>
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={MIN_FONT_SIZE}
+                    maximumValue={MAX_FONT_SIZE}
+                    value={fontSize}
+                    onValueChange={handleFontSizeChange}
+                    minimumTrackTintColor="#DCB280"
+                    maximumTrackTintColor={THEME_COLORS[currentTheme].sliderTrack}
+                    thumbTintColor="#DCB280"
+                  />
+                  <Text style={[styles.sliderLabelLarge, { color: THEME_COLORS[currentTheme].text }]}>A</Text>
+                </View>
+
+                {/* Line Height Controls */}
+                <View style={styles.lineHeightContainer}>
+                  <View style={styles.lineHeightButtons}>
+                    <TouchableOpacity
+                      style={[
+                        styles.lineHeightButton,
+                        lineHeightPreset === 'COMPACT' && styles.lineHeightButtonSelected,
+                        { borderColor: THEME_COLORS[currentTheme].border }
+                      ]}
+                      onPress={() => handleLineHeightChange('COMPACT')}
+                    >
+                      <Text style={[
+                        styles.lineHeightButtonText,
+                        { color: THEME_COLORS[currentTheme].text },
+                        lineHeightPreset === 'COMPACT' && styles.lineHeightButtonTextSelected
+                      ]}>Compact</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.lineHeightButton,
+                        lineHeightPreset === 'REGULAR' && styles.lineHeightButtonSelected,
+                        { borderColor: THEME_COLORS[currentTheme].border }
+                      ]}
+                      onPress={() => handleLineHeightChange('REGULAR')}
+                    >
+                      <Text style={[
+                        styles.lineHeightButtonText,
+                        { color: THEME_COLORS[currentTheme].text },
+                        lineHeightPreset === 'REGULAR' && styles.lineHeightButtonTextSelected
+                      ]}>Regular</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[
+                        styles.lineHeightButton,
+                        lineHeightPreset === 'RELAXED' && styles.lineHeightButtonSelected,
+                        { borderColor: THEME_COLORS[currentTheme].border }
+                      ]}
+                      onPress={() => handleLineHeightChange('RELAXED')}
+                    >
+                      <Text style={[
+                        styles.lineHeightButtonText,
+                        { color: THEME_COLORS[currentTheme].text },
+                        lineHeightPreset === 'RELAXED' && styles.lineHeightButtonTextSelected
+                      ]}>Relaxed</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+
+                {/* Theme Buttons */}
+                <View style={styles.themeButtonsContainer}>
+                  <TouchableOpacity
+                    style={[
+                      styles.themeButton,
+                      { backgroundColor: THEME_COLORS.white.background },
+                      currentTheme === 'white' && [styles.selectedThemeButton, { borderColor: THEME_COLORS.white.border }]
+                    ]}
+                    onPress={() => handleThemeChange('white')}
+                  />
+                  <TouchableOpacity
+                    style={[
+                      styles.themeButton,
+                      { backgroundColor: THEME_COLORS.light.background },
+                      currentTheme === 'light' && [styles.selectedThemeButton, { borderColor: THEME_COLORS.light.border }]
+                    ]}
+                    onPress={() => handleThemeChange('light')}
+                  />
+                  <TouchableOpacity
+                    style={[
+                      styles.themeButton,
+                      { backgroundColor: THEME_COLORS.medium.background },
+                      currentTheme === 'medium' && [styles.selectedThemeButton, { borderColor: THEME_COLORS.medium.border }]
+                    ]}
+                    onPress={() => handleThemeChange('medium')}
+                  />
+                  <TouchableOpacity
+                    style={[
+                      styles.themeButton,
+                      { backgroundColor: THEME_COLORS.dark.background },
+                      currentTheme === 'dark' && [styles.selectedThemeButton, { borderColor: THEME_COLORS.dark.border }]
+                    ]}
+                    onPress={() => handleThemeChange('dark')}
+                  />
+                </View>
+              </RNAnimated.View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -762,7 +1088,10 @@ export default function BibleReaderScreen() {
 }
 
 // Styles
-const styles = StyleSheet.create({
+const styles = StyleSheet.create<BibleReaderStyles>({
+  container: {
+    flex: 1,
+  },
   newHeaderContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -771,7 +1100,6 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: '#FFF4D9',
     borderBottomWidth: 1,
-    borderBottomColor: '#FFE4A8',
   },
   headerLeft: {
     flexDirection: 'row',
@@ -883,5 +1211,128 @@ const styles = StyleSheet.create({
     left: 20,
     position: 'absolute',
     right: 20,
+  },
+  verseContainer: {
+    paddingVertical: 2,
+    paddingHorizontal: 4,
+    borderRadius: 4,
+  },
+  selectedVerse: {
+  },
+  fontSizeButton: {
+    backgroundColor: 'rgba(220, 178, 128, 0.2)',
+    borderRadius: 15,
+    paddingVertical: 5,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  fontSizeButtonText: {
+    color: '#3C584A',
+    fontSize: 16,
+    fontWeight: '600',
+    fontFamily: 'Inter-SemiBold',
+  },
+  sliderContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+    paddingHorizontal: 0,
+    marginTop: 0,
+    marginBottom: 32,
+  },
+  slider: {
+    flex: 1,
+    width: '100%',
+    height: 40,
+    marginHorizontal: 10,
+  },
+  sliderLabel: {
+    fontSize: 14,
+    color: '#3C584A',
+    fontFamily: 'Inter-Medium',
+    width: 20,
+    textAlign: 'center',
+  },
+  sliderLabelLarge: {
+    fontSize: 20,
+    color: '#3C584A',
+    fontFamily: 'Inter-Medium',
+    width: 20,
+    textAlign: 'center',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    backgroundColor: '#FFF4D9',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 48,
+    alignItems: 'center',
+    width: '100%',
+  },
+  modalHandle: {
+    width: 40,
+    height: 4,
+    borderRadius: 2,
+    marginBottom: 20,
+  },
+  themeButtonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: 0,
+    paddingHorizontal: 10,
+  },
+  themeButton: {
+    width: 75,
+    height: 45,
+    borderRadius: 50,
+    marginHorizontal: 6,
+    borderWidth: 1,
+    borderColor: '#E5E5E5',
+  },
+  selectedThemeButton: {
+    borderWidth: 2,
+  },
+  selectedThemeButtonDark: {
+    borderWidth: 2,
+  },
+  lineHeightContainer: {
+    marginTop: 0,
+    marginBottom: 32,
+    width: '100%',
+    paddingHorizontal: 16,
+  },
+  lineHeightButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  lineHeightButton: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  lineHeightButtonSelected: {
+    backgroundColor: '#DCB280',
+    borderColor: '#DCB280',
+  },
+  lineHeightButtonText: {
+    fontSize: 14,
+    fontFamily: 'Inter-Regular',
+  },
+  lineHeightButtonTextSelected: {
+    color: '#FFFFFF',
+    fontFamily: 'Inter-Medium',
   },
 }); 
