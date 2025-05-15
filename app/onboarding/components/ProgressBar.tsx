@@ -8,23 +8,47 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+// Define the screens in order (excluding special screens like auth and LoadingScreen)
+const ORDERED_SCREENS = [
+  '1',
+  '2',
+  'username',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  '10',
+  '11',
+];
+
 export default function ProgressBar() {
   const pathname = usePathname();
-  const currentPage = parseInt(pathname?.split('/').pop() || '1', 10);
-  const totalPages = 11; // Updated to 11 screens
+  const currentScreen = pathname?.split('/').pop() || '1';
+
+  // Get the current screen index (0-based)
+  const currentIndex = ORDERED_SCREENS.indexOf(currentScreen);
+
+  // Calculate total steps (excluding special screens)
+  const totalSteps = ORDERED_SCREENS.length;
 
   // Animated progress value
   const progressValue = useSharedValue(0);
 
-  // Update progress when currentPage changes
+  // Update progress when currentScreen changes
   useEffect(() => {
-    const targetProgress = Math.min((currentPage / totalPages) * 100, 100);
+    // If screen is not in order list, maintain current progress
+    if (currentIndex === -1) return;
+
+    const targetProgress = Math.min(((currentIndex + 1) / totalSteps) * 100, 100);
+
     // Use faster animation with easing for smoother transition
     progressValue.value = withTiming(targetProgress, {
       duration: 250, // Faster animation
       easing: Easing.bezier(0.25, 0.1, 0.25, 1), // Smoother easing curve
     });
-  }, [currentPage, totalPages, progressValue]);
+  }, [currentIndex, totalSteps, progressValue]);
 
   // Create animated style for the progress bar
   const progressStyle = useAnimatedStyle(() => {
@@ -41,3 +65,5 @@ export default function ProgressBar() {
     </View>
   );
 }
+
+ 

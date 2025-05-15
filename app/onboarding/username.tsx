@@ -195,6 +195,7 @@ export default function OnboardingUsernameScreen() {
           placeholder="@username"
           placeholderTextColor="gray"
           value={inputUsername}
+          placeholderTextColor="#A0A0A0"
           onChangeText={setInputUsername}
           maxLength={20}
           autoCapitalize="none"
