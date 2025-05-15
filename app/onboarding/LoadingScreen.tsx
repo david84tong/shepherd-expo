@@ -49,8 +49,11 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   const [assets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
 
   useEffect(() => {
-    analytics.logEvent("OnboardingLoadingScreen_Viewed");
-  }, []);
+    analytics.logEvent("OnboardingLoadingScreen_Viewed", {
+      initialMessage: initialMessageFromParams || initialMessage,
+      redirectTarget: redirectAfterLoading || redirectTo || "PricingScreen"
+    });
+  }, [initialMessageFromParams, initialMessage, redirectAfterLoading, redirectTo]);
   
   // Handle text changes based on progress
   useEffect(() => {
@@ -116,6 +119,11 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
       // Handle different navigation behaviors based on redirectAfterLoading
       if (redirectAfterLoading === "back") {
         // Navigate back to PricingScreen with a param to indicate we're coming from loading
+        analytics.logEvent("LoadingScreen_Redirect_Completed", {
+          redirectTarget: "PricingScreen",
+          redirectType: "back"
+        });
+        
         router.navigate({
           pathname: "/PricingScreen", 
           params: { fromLoading: "true", animateFromBottom: "true" }
@@ -124,6 +132,12 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
         // Navigate to specified redirect
         const targetPath = redirectAfterLoading || redirectTo;
         console.log('Loading complete, navigating to:', targetPath);
+        
+        analytics.logEvent("LoadingScreen_Redirect_Completed", {
+          redirectTarget: targetPath,
+          redirectType: "custom"
+        });
+        
         router.replace(targetPath);
       } else {
         // Default behavior for onboarding
@@ -140,15 +154,29 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
         
         // Navigate to pricing screen with animation param
         console.log('Onboarding complete, navigating to pricing screen');
+        
+        analytics.logEvent("LoadingScreen_Redirect_Completed", {
+          redirectTarget: "PricingScreen",
+          redirectType: "default",
+          onboardingCompleted: true
+        });
+        
         router.replace({
           pathname: '/PricingScreen',
           params: { animateFromBottom: "true" }
         });
       }
       
-      analytics.logEvent("OnboardingLoadingScreen_Completed");
+      analytics.logEvent("OnboardingLoadingScreen_Completed", {
+        progress: 100,
+        finalMessage: currentMessage
+      });
     } catch (error) {
       console.error('Error finalizing loading screen:', error);
+      
+      analytics.logEvent("LoadingScreen_Redirect_Error", {
+        errorMessage: (error as Error)?.message || "Unknown error"
+      });
       
       // Fallback navigation
       router.replace({

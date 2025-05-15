@@ -12,6 +12,7 @@ import {
   NativeSyntheticEvent,
   NativeScrollEvent,
   Easing as RNEasing,
+  Alert,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchChapter, ChapterResponse, FetchError, Verse } from './api/bible';
@@ -298,11 +299,31 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     analytics.logEvent("BibleReader_Tapped_PreviousChapter", {
       chapter: currentChapter
     });
+    
     if (currentChapter > 1) {
+      // Still have previous chapters in this book
       loadChapter(currentVersion, currentBook, currentBookId, currentChapter - 1);
     } else {
-      // Would need to go to previous book's last chapter
-      console.log("At first chapter - would need to go to previous book");
+      // At first chapter, need to go to previous book's last chapter
+      const previousBookId = currentBookId - 1;
+      
+      // Check if previous book exists
+      if (previousBookId >= 1) {
+        // Get the name and last chapter number of the previous book
+        const bookNames: Record<number, string> = Object.fromEntries(
+          Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => [id, name])
+        );
+        const previousBookName = bookNames[previousBookId] || 'Previous Book';
+        const lastChapterInPreviousBook = BIBLE_CHAPTER_COUNTS[previousBookId];
+        
+        console.log(`At first chapter of ${currentBook}. Navigating to ${previousBookName} ${lastChapterInPreviousBook}`);
+        loadChapter(currentVersion, previousBookName, previousBookId, lastChapterInPreviousBook);
+      } else {
+        console.log('Already at the beginning of the Bible');
+        // Provide user feedback
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert("Beginning of the Bible", "You're at Genesis 1, the first chapter of the Bible.");
+      }
     }
   };
 
@@ -318,8 +339,34 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    // Simple chapter navigation for now
-    loadChapter(currentVersion, currentBook, currentBookId, currentChapter + 1);
+    // Check if we're at the last chapter of the current book
+    const chaptersInCurrentBook = BIBLE_CHAPTER_COUNTS[currentBookId];
+    
+    if (currentChapter >= chaptersInCurrentBook) {
+      // We've reached the end of the book, go to the next book chapter 1
+      // Find the next book ID (books are ordered numerically in the API)
+      const nextBookId = currentBookId + 1;
+      
+      // Validate that the next book exists
+      if (nextBookId <= Object.keys(BIBLE_CHAPTER_COUNTS).length) {
+        // Get the name of the next book for logging
+        const bookNames: Record<number, string> = Object.fromEntries(
+          Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => [id, name])
+        );
+        const nextBookName = bookNames[nextBookId] || 'Next Book';
+        
+        console.log(`End of ${currentBook} reached. Navigating to ${nextBookName} 1`);
+        loadChapter(currentVersion, nextBookName, nextBookId, 1);
+      } else {
+        console.log('Reached the end of the Bible');
+        // Provide user feedback
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert("End of the Bible", "You've reached Revelation 22, the last chapter of the Bible.");
+      }
+    } else {
+      // Standard next chapter navigation
+      loadChapter(currentVersion, currentBook, currentBookId, currentChapter + 1);
+    }
   };
 
   const updateFontSize = async (newSize: number) => {
