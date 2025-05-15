@@ -3,10 +3,12 @@ import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import dayjs from 'dayjs';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image } from 'react-native';
+import { useCallback, useMemo, useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image, Linking, Alert } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Application from 'expo-application';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import analytics from '../../utils/analytics';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
@@ -39,6 +41,8 @@ function toDateSafe(ts: any): Date {
   return new Date(ts);
 }
 
+const DISCORD_CARD_DISMISSED_KEY = 'shepherd_discord_card_dismissed_v1';
+
 export default function ProfileScreen() {
   const router = useRouter();
   const {
@@ -67,12 +71,28 @@ export default function ProfileScreen() {
   const user = getUser();
   const userId = user?.id || null;
 
+  const [showDiscordCard, setShowDiscordCard] = useState(true);
+
   // Fetch customer info when the component mounts or when app comes to foreground
   useEffect(() => {
     getCustomerInfo();
     // Optional: Add listener for app state changes to refresh customer info
     // when app comes to foreground
   }, [getCustomerInfo]);
+
+  useEffect(() => {
+    const checkDismissalStatus = async () => {
+      try {
+        const dismissed = await AsyncStorage.getItem(DISCORD_CARD_DISMISSED_KEY);
+        if (dismissed === 'true') {
+          setShowDiscordCard(false);
+        }
+      } catch (error) {
+        console.error('Failed to load discord card dismissal status', error);
+      }
+    };
+    checkDismissalStatus();
+  }, []);
 
   // Format join date - handle both Timestamp and undefined cases
   const joinDate = useMemo(() => {
@@ -106,6 +126,28 @@ export default function ProfileScreen() {
 
   // Get selected path from pathStore
   const selectedPath = usePathStore((state) => state.selectedPath);
+
+  const handleDismissDiscordCard = useCallback(async () => {
+    try {
+      await AsyncStorage.setItem(DISCORD_CARD_DISMISSED_KEY, 'true');
+      setShowDiscordCard(false);
+      analytics.logEvent('Profile_DiscordCard_Dismissed');
+    } catch (error) {
+      console.error('Failed to save discord card dismissal status', error);
+    }
+  }, []);
+
+  const handleJoinDiscord = useCallback(async () => {
+    analytics.logEvent('Profile_DiscordCard_Joined');
+    await handleDismissDiscordCard(); 
+    try {
+      // Replace 'YOUR_DISCORD_INVITE_LINK' with your actual Discord server invite link
+      await Linking.openURL('https://discord.gg/YOUR_DISCORD_INVITE_LINK');
+    } catch (err) {
+      console.error("Failed to open Discord link", err);
+      Alert.alert("Error", "Could not open the Discord link. Please ensure Discord is installed or try again later.");
+    }
+  }, [handleDismissDiscordCard]);
 
   // Combine all activities and sort by date (newest first)
   const allActivities = useMemo<ActivityType[]>(() => {
@@ -404,6 +446,38 @@ export default function ProfileScreen() {
               </>
             )}
           </View>
+
+          {/* Discord Card */}
+          {showDiscordCard && (
+            <View className="mx-6 mt-4 bg-lightPurple rounded-[20px] p-6 shadow-card relative">
+              <TouchableOpacity
+                onPress={handleDismissDiscordCard}
+                className="absolute top-3 right-3 p-1 z-10 bg-darkPurple/10 rounded-full">
+                <Feather name="x" size={20} color="#3C584A" /> 
+              </TouchableOpacity>
+
+              <View className="flex-row items-center mb-4">
+                <View className="bg-darkPurple p-3 rounded-full mr-4 shadow-md">
+                  <Feather name="message-square" size={28} color="white" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-feather text-xl text-darkPurple">Join our Shepherd Family!</Text>
+                  <Text className="font-din text-body text-darkPurple opacity-80 mt-1 leading-tight">
+                    Connect, share insights, and grow together on our Discord server.
+                  </Text>
+                </View>
+              </View>
+
+              <PrimaryButton
+                title="Join the Flock"
+                onPress={handleJoinDiscord}
+                primaryColor="bg-darkPurple" 
+                textColor="text-white"
+                shadowStyle="shadow-darkPurple" // Assuming you have this in tailwind.config.js
+                style="mt-2" 
+              />
+            </View>
+          )}
 
           {/* Store Section */}
           <View className="mx-6 mt-4 mb-8 bg-white/50 rounded-[20px] p-6 shadow-card">

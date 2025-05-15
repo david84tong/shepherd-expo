@@ -141,12 +141,8 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
         router.replace(targetPath);
       } else {
         // Default behavior for onboarding
-        const isCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
         
-        if (isCompleted !== 'true') {
-          await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
-        }
-        
+  
         // Call completion handler if provided
         if (onLoadingComplete) {
           onLoadingComplete();

@@ -90,7 +90,7 @@ export default function SaveProgressScreen() {
     try {
       await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
       await clearResponses(); // Clear onboarding responses after completion
-      router.replace('/onboarding/LoadingScreen');
+      router.replace('/(tabs)');
     } catch (error) {
       console.error('Error completing onboarding:', error);
     }
