@@ -6,7 +6,6 @@ import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
 import PrimaryButton from '../../components/PrimaryButton';
-import Rive from 'rive-react-native';
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -178,23 +177,25 @@ export default function OnboardingUsernameScreen() {
       </Animated.View>
 
       {/* Rive Animation */}
-      <Animated.View
+      {/* <Animated.View
         style={lambStyle}
         className="h-[160px] w-full justify-center items-center my-4">
         <Rive
           url={riveAssets[0].localUri!}
-          artboardName="lamb-idle"
+
           autoplay
           style={{ width: '80%', height: '80%' }}
         />
-      </Animated.View>
+      </Animated.View> */}
 
       {/* Username Input */}
       <Animated.View style={inputStyle}>
         <TextInput
           className="font-feather text-3xl text-center text-textPrimary bg-white p-6 rounded-2xl border-4 border-border"
-          placeholder="Enter username"
+          placeholder="@username"
+          placeholderTextColor="gray"
           value={inputUsername}
+          placeholderTextColor="#A0A0A0"
           onChangeText={setInputUsername}
           maxLength={20}
           autoCapitalize="none"

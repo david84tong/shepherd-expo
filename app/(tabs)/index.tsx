@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, } from 'react';
 import {
   Animated,
   Dimensions,
@@ -9,8 +9,8 @@ import {
   SafeAreaView,
   Text,
   View,
-  InteractionManager,
-  ScrollView
+  ScrollView,
+  TouchableOpacity
 } from 'react-native';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
@@ -24,9 +24,10 @@ import { useUIStore } from '../stores/uiStore'; // Import UI store
 import { useUserStore } from '../stores/userStore'; // Import user store
 import { useAssetsStore, imageAssets } from '../stores/assetsStore';
 import { useAssets } from 'expo-asset';
-import useSubscriptionStore from '../stores/subscriptionStore';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import analytics, { AnalyticsEvent } from '~/utils/analytics';
 
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
@@ -82,7 +83,11 @@ export default function HomeScreen() {
   const lambSizeAnim = useRef(new Animated.Value(256)).current; // Start with full size (256px)
 
   // Get subscription state and actions from the store
-  const { isProMember } = useSubscriptionStore();
+  // const { isProMember } = useSubscriptionStore();
+  
+  // Get pro status from user store
+  const proStatus = useUserStore((state) => state.getProStatus());
+  const isPro = proStatus === 'pro';
 
   // Handle subscription button press using the store action
   const handleSubscriptionPress = async () => {
@@ -93,7 +98,8 @@ export default function HomeScreen() {
   // Load Rive assets
   const [riveAssets] = useAssets([
     require('../../assets/riveAnimations/homeLamb.riv'),
-    require('../../assets/riveAnimations/bg-green.riv')
+    require('../../assets/riveAnimations/bg-green.riv'),
+    require('../../assets/riveAnimations/goldLamb.riv') // Add goldLamb to preloaded assets
   ]);
 
   // Add state for asset loading
@@ -366,6 +372,7 @@ export default function HomeScreen() {
 
   // --- useEffect to react to external mode changes ---
   useEffect(() => {
+    console.log(isPro, "what is pro")
     console.log('HomeScreen: Mode changed to', mode);
     console.log('DEBUG - Current completion status:', {
       readingCompleted,
@@ -423,12 +430,10 @@ export default function HomeScreen() {
 
   // --- Event Handlers ---
   const handleReadPress = () => {
-    if (!isProMember && readingCompleted) {
+    if (!isPro && readingCompleted) {
       handleSubscriptionPress()
     }
     else {
-
-
       console.log('Read the word button pressed');
 
       // Remove heavy haptic feedback
@@ -458,11 +463,9 @@ export default function HomeScreen() {
 
   const handlePrayerPress = () => {
     console.log('Prayer button pressed');
-    if (!isProMember && prayerCompleted) {
+    if (!isPro && prayerCompleted) {
       handleSubscriptionPress()
     } else {
-
-
       // Don't proceed if reading is not completed
       if (!readingCompleted) {
         console.log('Prayer button disabled: Reading not completed');
@@ -479,8 +482,7 @@ export default function HomeScreen() {
   };
 
   const handleReflectionPress = () => {
-
-    if (!isProMember && reflectionCompleted) {
+    if (!isPro && reflectionCompleted) {
       handleSubscriptionPress()
     } else {
       console.log('Reflection button pressed');
@@ -586,27 +588,33 @@ export default function HomeScreen() {
 
   // Run once on mount to defer heavy work
   useEffect(() => {
-    const task = InteractionManager.runAfterInteractions(() => {
-      setRiveReady(true);
-    });
-    return () => task.cancel();
+    setRiveReady(true);
+  }, []);
+
+  // Add screen view analytics tracking
+  useEffect(() => {
+    // Log screen view when component mounts
+    analytics.logEvent("HomeScreen_Viewed");
   }, []);
 
   // Add this before the return statement
   const riveComponent = useMemo(() => {
     if (!riveAssets || !riveReady) return null;
 
+    // Use the appropriate Rive asset based on pro status
+    const lambAssetIndex = isPro ? 2 : 0; // Index 2 for goldLamb, 0 for homeLamb
+
     return (
       <Rive
         key={riveKey}
         ref={riveRef}
-        url={riveAssets[0].localUri!}
+        url={riveAssets[lambAssetIndex].localUri!}
         artboardName={artboardName}
         onError={handleRiveError}
         style={{ width: '100%', height: '100%', marginTop: 10 }}
       />
     );
-  }, [riveAssets, artboardName, riveKey, riveReady]);
+  }, [riveAssets, artboardName, riveKey, riveReady, isPro]);
 
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
@@ -763,8 +771,57 @@ export default function HomeScreen() {
           </Animated.View>
         </Animated.View>
 
-        {/* Bottom Section - Action Buttons Card */}
+        {/* SUPER badge for pro users */}
+        { (
+          <TouchableOpacity 
+            onPress={() => {
+              if (!isPro) {
+                analytics.logEvent("HomeScreen_TappedProBadge");
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                router.push('/PricingScreen' as any);
+              }
+            }}
+            activeOpacity={0.8}
+            style={{
+              position: 'absolute',
+              left: 24,
+              // Place it roughly at the bottom of the lamb viewport
+              top: SCREEN_HEIGHT * 0.35,
+              paddingHorizontal: 8,
+              paddingVertical: 2,
+              borderRadius: 32,
+              zIndex: 20,
+            }}
+          >
+            <LinearGradient
+              colors={['#F7B500', '#FFF45B']}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 0, y: 1 }}
+              style={{
+                position: 'absolute',
+              
+                paddingHorizontal: 8,
+                paddingVertical: 2,
+                borderRadius: 32,
+                zIndex: 20,
+                opacity: isPro ? 1 : 0.5
+              }}
+            >
+              <Text
+                className="font-nunito-italic text-lg text-white text-center p-0 m-0"
+                style={{
+                  textShadowColor: 'rgba(0,0,0,0.15)',
+                  textShadowOffset: { width: 1, height: 1 },
+                  textShadowRadius: 3,
+                }}
+              >
+                SUPER
+              </Text>
+            </LinearGradient>
+          </TouchableOpacity>
+        )}
 
+        {/* Bottom Section - Action Buttons Card */}
         <Animated.View
           className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-28"
           style={{

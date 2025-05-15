@@ -126,13 +126,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   const translations = [
     { id: 'WEB', name: 'World English Bible (WEB)' },
     { id: 'KJV', name: 'King James Version (KJV)' },
-    { id: 'ASV', name: 'American Standard-ASV1901 (ASV)' },
-    { id: 'BBE', name: 'Bible in Basic English (BBE)' },
-    { id: 'DARBY', name: 'Darby English Bible (DARBY)' },
-    { id: 'YLT', name: 'Young\'s Literal Translation (YLT)' },
-    { id: 'NLT', name: 'New Living Translation (NLT)' },
     { id: 'NIV', name: 'New International Version (NIV)' },
     { id: 'ESV', name: 'English Standard Version (ESV)' },
+    { id: 'ICB', name: 'International Children\'s Bible (ICB)' },
   ];
 
   // Add internal ref for the actual BottomSheet

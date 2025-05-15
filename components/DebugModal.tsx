@@ -3,6 +3,7 @@ import firestore from '@react-native-firebase/firestore';
 import { useRouter, usePathname } from 'expo-router';
 import React, { useState, useRef, useMemo, useCallback } from 'react';
 import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert } from 'react-native';
+import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 
 import SuccessAnimation from './SuccessAnimation'; // Import the full SuccessAnimation component
 import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
@@ -34,6 +35,28 @@ const ONBOARDING_SCREENS: DebugScreen[] = [
 
 // Feature screens for debugging
 const FEATURE_SCREENS: DebugScreen[] = [{ name: 'Streak Screen', route: '/streak' }];
+
+// Custom toast config with tailwind styling
+const toastConfig: ToastConfig = {
+  success: ({ text1, text2 }: ToastConfigParams<any>) => (
+    <View className="bg-surfaceCream rounded-xl px-4 py-3 mx-4 mb-4 border-l-4 border-darkGreen shadow-md">
+      <Text className="font-feather text-base text-textPrimary">{text1}</Text>
+      {text2 && <Text className="font-din text-sm text-description mt-1">{text2}</Text>}
+    </View>
+  ),
+  error: ({ text1, text2 }: ToastConfigParams<any>) => (
+    <View className="bg-surfaceCream rounded-xl px-4 py-3 mx-4 mb-4 border-l-4 border-red shadow-md">
+      <Text className="font-feather text-base text-textPrimary">{text1}</Text>
+      {text2 && <Text className="font-din text-sm text-description mt-1">{text2}</Text>}
+    </View>
+  ),
+  info: ({ text1, text2 }: ToastConfigParams<any>) => (
+    <View className="bg-surfaceCream rounded-xl px-4 py-3 mx-4 mb-4 border-l-4 border-accentGold shadow-md">
+      <Text className="font-feather text-base text-textPrimary">{text1}</Text>
+      {text2 && <Text className="font-din text-sm text-description mt-1">{text2}</Text>}
+    </View>
+  ),
+};
 
 // DebugButton component
 export function DebugButton() {
@@ -81,6 +104,37 @@ export function DebugButton() {
     } else {
       console.error('showHalfModal not available on global object');
     }
+  }, []);
+
+  // Toast message handlers
+  const showSuccessToast = useCallback(() => {
+    Toast.show({
+      type: 'success',
+      text1: 'Daily bread completed!',
+      text2: 'You\'ve earned 5 hearts for your lamb.',
+      position: 'top',
+      visibilityTime: 4000,
+    });
+  }, []);
+
+  const showErrorToast = useCallback(() => {
+    Toast.show({
+      type: 'error',
+      text1: 'Prayer couldn\'t be saved',
+      text2: 'Please check your connection and try again.',
+      position: 'top',
+      visibilityTime: 4000,
+    });
+  }, []);
+
+  const showInfoToast = useCallback(() => {
+    Toast.show({
+      type: 'info',
+      text1: 'Streak reminder set',
+      text2: 'We\'ll remind you to read Scripture daily.',
+      position: 'top',
+      visibilityTime: 4000,
+    });
   }, []);
 
   // Handler to set all activity dates to N days ago
@@ -216,6 +270,7 @@ export function DebugButton() {
       { name: 'Prayer', route: '/prayer' },
       { name: 'Reflection', route: '/reflection' },
       { name: 'Pricing', route: '/PricingScreen' },
+      { name: 'Rating', route: '/onboarding/rating' },
     ],
   };
 
@@ -273,6 +328,32 @@ export function DebugButton() {
             </View>
 
             <ScrollView className="p-4">
+              {/* Toast Message Section */}
+              <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">
+                  Toast Messages
+                </Text>
+                <View className="flex-row flex-wrap gap-2">
+                  <TouchableOpacity
+                    className="bg-[#E8F3E0] px-3 py-2 rounded-lg border border-darkGreen mb-1"
+                    onPress={showSuccessToast}>
+                    <Text className="font-din text-sm text-textPrimary">Success Toast</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    className="bg-[#FFEDED] px-3 py-2 rounded-lg border border-red mb-1"
+                    onPress={showErrorToast}>
+                    <Text className="font-din text-sm text-textPrimary">Error Toast</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-accentGold mb-1"
+                    onPress={showInfoToast}>
+                    <Text className="font-din text-sm text-textPrimary">Info Toast</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">
                   Animations & Modals
@@ -500,6 +581,9 @@ export function DebugButton() {
           onClose={handleDismissSuccessSheet}
         />
       </BottomSheetModal>
+
+      {/* Register custom toast config */}
+      <Toast config={toastConfig} />
     </>
   );
 }

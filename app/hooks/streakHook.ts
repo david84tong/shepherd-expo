@@ -5,7 +5,7 @@ import { useCallback } from 'react';
 import { useHomeStore } from '../stores/homeStore';
 import { useUserStore } from '../stores/userStore';
 import { useNotificationStore } from '../stores/notificationStore';
-
+import analytics from '../../utils/analytics';
 // Penalties for missing activities (hearts lost per day)
 const PENALTIES = {
   READING: 3, // -3 hearts per day missing Bible reading
@@ -13,33 +13,31 @@ const PENALTIES = {
   REFLECTION: 1, // -1 heart per day missing reflection
 };
 
-/**
- * Calculates days between two dates, ignoring time
- */
-const getDaysDifference = (date1: Date, date2: Date): number => {
-  // Convert both dates to local date strings (YYYY-MM-DD format)
-  const date1Str = date1.toISOString().split('T')[0];
-  const date2Str = date2.toISOString().split('T')[0];
-  
-  // If the dates are different calendar days, they're at least 1 day apart
-  if (date1Str !== date2Str) {
-    // Use the midnight-based calculation for accurate day difference
-    const date1Midnight = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
-    const date2Midnight = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
-    const diffTime = Math.abs(date1Midnight.getTime() - date2Midnight.getTime());
-    return Math.round(diffTime / (1000 * 60 * 60 * 24));
-  }
-  
-  // Same calendar day
-  return 0;
+/** Utility — returns true if two Date objects fall on the same
+ *  local-timezone calendar day (year / month / date match). */
+const isSameLocalCalendarDay = (d1: Date, d2: Date): boolean => {
+  return (
+    d1.getFullYear() === d2.getFullYear() &&
+    d1.getMonth() === d2.getMonth() &&
+    d1.getDate() === d2.getDate()
+  );
 };
 
-// Check if two dates are on different calendar days, even if just minutes apart
+/** Calculates whole-day distance between two dates (local time). */
+const getDaysDifference = (date1: Date, date2: Date): number => {
+  if (isSameLocalCalendarDay(date1, date2)) return 0;
+
+  const date1Midnight = new Date(date1.getFullYear(), date1.getMonth(), date1.getDate());
+  const date2Midnight = new Date(date2.getFullYear(), date2.getMonth(), date2.getDate());
+  const diffTime = Math.abs(date1Midnight.getTime() - date2Midnight.getTime());
+  return Math.round(diffTime / (1000 * 60 * 60 * 24));
+};
+
+// Check if two dates fall on different local calendar days
 const isNewCalendarDay = (date1: Date, date2: Date): boolean => {
+  console.log('isNewCalendarDay (local)', date1.toString(), date2.toString());
   if (!date1 || !date2) return false;
-  const date1Str = date1.toISOString().split('T')[0];
-  const date2Str = date2.toISOString().split('T')[0];
-  return date1Str !== date2Str;
+  return !isSameLocalCalendarDay(date1, date2);
 };
 
 // Utility function to check if we need to reset completion states
@@ -235,12 +233,17 @@ function calculateStreakAndPenalties({
   // Calculate total heart penalties (ignoring first day)
   let heartPenalty = 0;
   let applyReadingPenalty = false;
-  let applyPrayerPenalty = false;
-  let applyReflectionPenalty = false;
+  const applyPrayerPenalty = false;
+  const applyReflectionPenalty = false;
 
 
   // For each activity, check if we should apply a penalty
   if (isReadingMoreThan24HoursAgo && daysSinceReadingPenalty > 0) {
+    analytics.logEvent("StreakManager_ReadingPenaltyApplied", {
+      daysSinceReadingPenalty: daysSinceReadingPenalty,
+      penalty: PENALTIES.READING
+    });
+
     heartPenalty += daysSinceReadingPenalty * PENALTIES.READING;
     applyReadingPenalty = true;
     if (debug)
@@ -365,6 +368,7 @@ export const checkStreakAndApplyPenalties = async () => {
 
     // Check and update notifications based on last reading date
     await notificationStore.checkAndRescheduleNotifications(userStore.lastReadingDate);
+      // homeStore.resetCompletionStates();
 
     // Check if we need to reset completion states for a new day
     const lastActivityDate = userStore.lastActivityDate;
@@ -460,6 +464,7 @@ export const useStreakManager = () => {
       // Check if we need to reset completion states for a new day
       if (shouldResetCompletions(lastActivityDate, now)) {
         console.log('📅 New day detected in useStreakManager - resetting completion states');
+        analytics.logEvent("StreakManager_ResettingCompletitionStates");
         homeStore.resetCompletionStates();
       }
 

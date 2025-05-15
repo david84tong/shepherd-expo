@@ -31,6 +31,7 @@ import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
 import useForceUpdateCheck from './hooks/useForceUpdateCheck';
 import ForceUpdateModal from '~/components/ForceUpdateModal';
 import { disableFontScaling } from './helper/disableFontScaling';
+import Toast from 'react-native-toast-message';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -428,6 +429,9 @@ export default function RootLayout() {
         {__DEV__ && <DebugButton />}
       </BottomSheetModalProvider>
       {visibleForceUpdate && isInitialized ? <ForceUpdateModal visible={visibleForceUpdate} /> : null}
+      
+      {/* Toast Message component */}
+      <Toast />
     </GestureHandlerRootView>
   );
 }
