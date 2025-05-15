@@ -5,6 +5,8 @@ import { Alert } from 'react-native';
 import { useUserStore } from './userStore';
 import analytics from '~/utils/analytics';
 import { router } from 'expo-router';
+import auth from "@react-native-firebase/auth";
+import firestore from '@react-native-firebase/firestore';
 
 interface SubscriptionState {
   customerInfo: CustomerInfo | null;
@@ -13,6 +15,7 @@ interface SubscriptionState {
   presentPaywall: () => Promise<PAYWALL_RESULT | null>;
   purchasePackage: (pack: PurchasesPackage, onSuccess?: () => void) => Promise<void>;
   getCustomerInfo: () => Promise<void>;
+  handleReferralCode: (code: string) => Promise<void>
   // Add other state and actions here
 }
 
@@ -211,7 +214,52 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       
       // Update user's pro status in userStore based on current entitlement status
       // This ensures if a user cancels their subscription, their status is properly updated
-      useUserStore.getState().setProStatus(isPro ? 'pro' : 'free');
+      const currentUser = auth().currentUser;
+     
+    if (currentUser) {
+      try {
+        const userDoc = await firestore().collection('users').doc(currentUser.uid).get();
+        const userData = userDoc.data();
+       
+        if (userData) {
+          const isProFromFirebase = userData.isPro;
+        
+          // Check if proExpiryDate exists and has the correct format
+          let proExpiryDate: Date | null = null;
+          if (userData.proExpiryDate) {
+            // Handle both Timestamp and raw seconds/nanoseconds format
+            if (userData.proExpiryDate.toDate) {
+              proExpiryDate = userData.proExpiryDate.toDate();
+            } else if (userData.proExpiryDate._seconds) {
+              // Convert raw seconds and nanoseconds to Date
+              proExpiryDate = new Date(
+                userData.proExpiryDate._seconds * 1000 + 
+                userData.proExpiryDate._nanoseconds / 1000000
+              );
+            }
+          }
+        
+          // Check if pro status has expired
+          if (proExpiryDate && proExpiryDate < new Date()) {
+            // Pro status has expired
+            await firestore().collection('users').doc(currentUser.uid).update({
+              isPro: false,
+       
+            });
+            set({ isProMember: false });
+            useUserStore.getState().setProStatus('free');
+            return;
+          }
+          // If not expired, set pro status based on either RevenueCat OR Firebase
+         
+          const finalProStatus = isPro || isProFromFirebase;
+          set({ customerInfo, isProMember: finalProStatus });
+          useUserStore.getState().setProStatus(finalProStatus ? 'pro' : 'free');
+        }
+      } catch (error) {
+        console.log('[SubscriptionStore] Error fetching user data from Firestore:', error);
+      }
+    }
       
       console.log('[SubscriptionStore] Customer info and pro status updated in store.');
     } catch (e) {
@@ -221,6 +269,60 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         message: e?.toString()
       });
     }
+  },
+  handleReferralCode: async (code: string) => {
+    // Validate code format
+    if (code.length !== 6) {
+      throw new Error('Invalid code format');
+    }
+    // Get current user
+    const user = auth().currentUser;
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+    // Get user doc ref
+    const userRef = firestore().collection('users').doc(user.uid);
+   
+    switch (code.toUpperCase()) {
+      case 'WXES4S':
+        // Permanent pro access
+        await userRef.update({
+          isPro: true, 
+          proExpiryDate: null, // null means permanent
+          referralCodeUsed: code
+        });
+        break;
+
+      case 'MONTHL':
+        // One month pro access
+        const monthExpiry = new Date();
+        monthExpiry.setMonth(monthExpiry.getMonth() + 1);
+        
+        await userRef.update({
+          isPro: true, 
+          proExpiryDate: monthExpiry,
+          referralCodeUsed: code
+        });
+        break;
+
+      case 'WEEKLY':
+        // One week pro access
+        const weekExpiry = new Date();
+        weekExpiry.setDate(weekExpiry.getDate() + 7);
+        
+        await userRef.update({
+          isPro: true, 
+          proExpiryDate: weekExpiry,
+          referralCodeUsed: code
+        });
+        break;
+
+      default:
+        throw new Error('Invalid referral code');
+    }
+    set({ isProMember: true });
+    useUserStore.getState().setProStatus('pro');
+    
   },
 }));
 

@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useRef, useImperativeHandle, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView, Linking, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Modal, ScrollView, Linking, ActivityIndicator, TextInput } from 'react-native';
 import BottomSheet, { BottomSheetView, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import Clipboard from '@react-native-clipboard/clipboard';
 import * as Haptics from 'expo-haptics';
@@ -21,7 +21,7 @@ import useSubscriptionStore from '../app/stores/subscriptionStore';
 import { useStreakManager, checkStreakAndApplyPenalties, getDateFromTimestamp } from '../app/hooks/streakHook';
 import * as Application from 'expo-application';
 
-import Animated, { 
+import Animated, {
   useAnimatedStyle,
   withTiming,
   Easing,
@@ -52,11 +52,11 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   const setIsModalDimActive = useUIStore((state) => state.setIsModalDimActive);
   const [translationModalVisible, setTranslationModalVisible] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
-  
+
   // Get user store data
   const notificationTime = useUserStore(state => state.notificationTime);
   const setNotificationTime = useUserStore(state => state.setNotificationTime);
-  
+
   // Get notification store data
   const notificationsEnabled = useNotificationStore(state => state.notificationsEnabled);
   const setNotificationsEnabled = useNotificationStore(state => state.setNotificationsEnabled);
@@ -64,14 +64,18 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   const cancelStreakNotifications = useNotificationStore(state => state.cancelStreakNotifications);
   const scheduleDailyReminder = useNotificationStore(state => state.scheduleDailyReminder);
   const cancelDailyReminder = useNotificationStore(state => state.cancelDailyReminder);
-  
+
   // State for the time picker
   const [selectedTime, setSelectedTime] = useState(new Date());
-  
+
+  // States for the referral code and modal
+  const [referralModalVisible, setReferralModalVisible] = useState(false);
+  const [referralCode, setReferralCode] = useState('');
+
   // Animation shared values
   const timePickerHeight = useSharedValue(0);
   const toggleScale = useSharedValue(1);
-  
+
   // Initialize selectedTime based on notificationTime on mount
   useEffect(() => {
     if (notificationTime && notificationTime !== 'none' && !['morning', 'afternoon', 'evening', 'night'].includes(notificationTime)) {
@@ -91,7 +95,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       setSelectedTime(date);
     }
   }, [notificationTime]);
-  
+
   // Check notification permissions on mount
   useEffect(() => {
     checkNotificationPermissions();
@@ -112,7 +116,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       console.error('Error checking notification permissions:', error);
     }
   };
-  
+
   // Get path store functions
   const savedTranslation = usePathStore(state => state.savedTranslation);
   const setSavedTranslation = usePathStore(state => state.setSavedTranslation);
@@ -142,7 +146,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 
   // Close the settings sheet
   const handleClose = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     bottomSheetRef.current?.close();
   }, []);
 
@@ -152,7 +156,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       userId: userId
     });
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
       await auth().signOut().then(() => {
         useUserStore.getState().resetUserStore();
         bottomSheetRef.current?.close();
@@ -169,7 +173,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   // Handle copying the user ID
   const handleCopyUserId = useCallback(() => {
     Clipboard.setString(userId);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
     Alert.alert('Copied!', 'User ID copied to clipboard');
   }, [userId]);
 
@@ -191,7 +195,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
     // Get user ID directly from Firebase or userStore
     let currentUserId = 'Not authenticated';
     let isUserSignedIn = false;
-    
+
     // First try to get the current Firebase user's UID
     const currentUser = auth().currentUser;
     if (currentUser?.uid) {
@@ -203,13 +207,13 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       currentUserId = user?.id || 'Not authenticated';
       isUserSignedIn = !!user?.id;
     }
-    
+
     setUserId(currentUserId);
     setIsUserSignedIn(isUserSignedIn);
-    
+
     // Show the sheet
     bottomSheetRef.current?.expand();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
   }, []);
 
   // Expose methods via ref
@@ -225,10 +229,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 
   // Handle translation selection
   const handleTranslationChange = useCallback((translation: string) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     setSavedTranslation(translation);
     setTranslationModalVisible(false);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
     analytics.logEvent("Settings_Tapped_TranslationChange", {
       translation: translation
     });
@@ -239,7 +243,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
     if (!notificationTime || notificationTime === 'none') {
       return 'No notifications';
     }
-    
+
     switch (notificationTime) {
       case 'morning':
         return 'Morning (7-9 AM)';
@@ -264,32 +268,32 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 
   // Toggle notifications on/off
   const toggleNotifications = async (enableNotifications: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+
     if (enableNotifications) {
       // Request permissions if enabling notifications
       const { status } = await Notifications.getPermissionsAsync();
       console.log(`Current notification permission status: ${status}`);
-      
+
       if (status !== 'granted') {
         // Request permissions if not already granted
         const { status: newStatus } = await Notifications.requestPermissionsAsync();
         console.log(`New notification permission status after request: ${newStatus}`);
-        
+
         if (newStatus !== 'granted') {
           // If still not granted, show alert with option to go to settings
           Alert.alert(
             'Notification Permission Required',
             'Please enable notifications in your device settings to receive Bible reading reminders.',
             [
-              { 
-                text: 'Open Settings', 
+              {
+                text: 'Open Settings',
                 onPress: () => {
                   Linking.openSettings();
                   analytics.logEvent("Settings_Opened_SystemSettings_Notifications");
-                } 
+                }
               },
-              { 
+              {
                 text: 'Cancel',
                 style: 'cancel'
               }
@@ -298,16 +302,16 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
           return;
         }
       }
-      
+
       // Update notification store
       setNotificationsEnabled(true);
-      
+
       // Schedule notifications
       await scheduleStreakReminders();
-      
+
       // If turning on, show the time picker
       setShowTimePicker(true);
-      
+
       // Default notification time if none set
       if (notificationTime === 'none') {
         setNotificationTime('19:00'); // Default to 7 PM
@@ -316,15 +320,15 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       // If turning off, cancel all notifications
       await cancelStreakNotifications();
       await cancelDailyReminder();
-      
+
       // Update notification store
       setNotificationsEnabled(false);
-      
+
       // Hide the time picker if it's open
       if (showTimePicker) {
-        timePickerHeight.value = withTiming(0, { 
-          duration: 250, 
-          easing: Easing.out(Easing.cubic) 
+        timePickerHeight.value = withTiming(0, {
+          duration: 250,
+          easing: Easing.out(Easing.cubic)
         });
         setTimeout(() => {
           setShowTimePicker(false);
@@ -336,25 +340,25 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   // Toggle time picker visibility with animation
   const toggleTimePicker = () => {
     // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+
     // Animate the scale of the selector button
     toggleScale.value = withSequence(
       withTiming(0.95, { duration: 100, easing: Easing.inOut(Easing.quad) }),
       withTiming(1, { duration: 100, easing: Easing.inOut(Easing.quad) })
     );
-    
+
     // First update state, then animate
     const newPickerState = !showTimePicker;
     setShowTimePicker(newPickerState);
-    
+
     // Animate picker height with slight delay to ensure state has updated
     setTimeout(() => {
       timePickerHeight.value = withTiming(
-        newPickerState ? 230 : 0, 
-        { 
-          duration: 300, 
-          easing: Easing.bezierFn(0.25, 1, 0.5, 1) 
+        newPickerState ? 230 : 0,
+        {
+          duration: 300,
+          easing: Easing.bezierFn(0.25, 1, 0.5, 1)
         }
       );
     }, 10);
@@ -370,17 +374,17 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
         [0, 0.5, 1]
       ),
       transform: [
-        { 
+        {
           scale: interpolate(
             timePickerHeight.value,
             [0, 230],
             [0.95, 1]
-          ) 
+          )
         }
       ]
     };
   });
-  
+
   const selectorButtonStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: toggleScale.value }]
@@ -390,18 +394,18 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   // Handle time selection and close picker
   const handleTimeConfirm = async () => {
     // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+
     if (selectedTime) {
       const hours = selectedTime.getHours();
       const minutes = selectedTime.getMinutes();
-      
+
       // Format as "HH:MM"
       const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
-      
+
       // Update the time in userStore
       setNotificationTime(timeString);
-      
+
       // Map time to NotificationTimeOption when possible, for standard times
       let timeOption: NotificationTimeOption;
       if (hours === 8 && minutes === 0) {
@@ -426,26 +430,26 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
           timeOption = 'night';
         }
       }
-      
+
       // Log the time selection for analytics
       analytics.logEvent("Settings_Changed_NotificationTime", {
         time: timeString,
         timeOption: timeOption
       });
-      
+
       // Schedule only the daily reminder notification using the store method
       await scheduleDailyReminder(timeOption);
-      
+
       // Provide success feedback
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
     }
-    
+
     // Animate picker closing
-    timePickerHeight.value = withTiming(0, { 
-      duration: 250, 
-      easing: Easing.out(Easing.cubic) 
+    timePickerHeight.value = withTiming(0, {
+      duration: 250,
+      easing: Easing.out(Easing.cubic)
     });
-    
+
     // Close the picker after animation
     setTimeout(() => {
       setShowTimePicker(false);
@@ -459,19 +463,19 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       withTiming(1.1, { duration: 100 }),
       withTiming(1, { duration: 150 })
     );
-    
+
     toggleNotifications(enableNotifications);
   };
 
   // Update the cancel button in translation modal
   const handleCancelTranslation = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     setTranslationModalVisible(false);
   }, []);
 
   // Open Discord link
   const handleOpenDiscord = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     Linking.openURL('https://discord.gg/W9MZdVaKBs').catch(err => {
       console.error('Error opening Discord link:', err);
       Alert.alert('Could not open link', 'Please check your internet connection and try again.');
@@ -500,10 +504,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                 Alert.alert('Error', 'No user is currently signed in');
                 return;
               }
-              
+
               const userId = currentUser.uid;
               console.log('Attempting to delete user:', userId);
-              
+
               try {
                 // Delete Firestore user document first
                 await firestore().collection('users').doc(userId).delete();
@@ -512,7 +516,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                 console.error('❌ Error deleting Firestore document:', firestoreError);
                 Alert.alert('Firestore Error', 'Failed to delete Firestore data. Continuing with other deletion steps.');
               }
-              
+
               try {
                 // Clear AsyncStorage
                 await AsyncStorage.clear();
@@ -521,33 +525,33 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                 console.error('❌ Error clearing AsyncStorage:', storageError);
                 Alert.alert('Storage Error', 'Failed to clear local storage. Continuing with other deletion steps.');
               }
-              
+
               // Reset user store regardless of other errors
               useUserStore.getState().resetUserStore();
               console.log('✅ User store reset');
-              
+
               try {
                 // Try to delete the account after sign out
                 // Note: This often fails due to Firebase security rules requiring recent authentication
                 if (currentUser) {
                   await currentUser.delete();
                   console.log('✅ User auth account deleted');
-                  
+
                   // Only sign out if account deletion was successful
                   await auth().signOut();
                   console.log('✅ User signed out after account deletion');
                 }
               } catch (authError: any) {
                 console.error('❌ Error with auth operations:', authError);
-                
+
                 // Handle the specific "requires-recent-login" error from Firebase
                 if (authError.code === 'auth/requires-recent-login') {
                   Alert.alert(
                     'Authentication Timeout',
                     'This operation requires recent authentication. You will need to re-login and try again. Would you like to sign out and go to the login screen?',
                     [
-                      { 
-                        text: 'Yes', 
+                      {
+                        text: 'Yes',
                         onPress: async () => {
                           try {
                             await auth().signOut();
@@ -556,7 +560,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                           } catch (e) {
                             console.error('Failed to sign out:', e);
                           }
-                        } 
+                        }
                       },
                       { text: 'No', style: 'cancel' }
                     ]
@@ -566,14 +570,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                   Alert.alert('Auth Error', `Error: ${authError.message || 'Unknown auth error'}`);
                 }
               }
-              
+
               // Always redirect to login screen regardless of errors
               Alert.alert(
                 'Account Data Deleted',
                 'Your account data has been deleted. The app will now redirect to the login screen.',
                 [
-                  { 
-                    text: 'OK', 
+                  {
+                    text: 'OK',
                     onPress: () => {
                       bottomSheetRef.current?.close();
                       router.replace({ pathname: '/(auth)' });
@@ -584,7 +588,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
             } catch (error) {
               console.error('❌ Unhandled error in account deletion:', error);
               Alert.alert(
-                'Error', 
+                'Error',
                 'Something went wrong during account deletion. The app will try to sign you out anyway.',
                 [
                   {
@@ -609,7 +613,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   }, [router]);
 
   // Get subscription state and actions from the store
-  const { 
+  const {
+    handleReferralCode,
+    refreshProStatus,
     isProMember,
     presentPaywall,
     getCustomerInfo,
@@ -617,21 +623,21 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 
   // Handle subscription button press using the store action
   const handleSubscriptionPress = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
     await presentPaywall();
   }, [presentPaywall]);
-  
+
   // Handle promo code redemption
   const handlePromoCodePress = useCallback(async () => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-      
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
+
       // Track analytics event
       analytics.logEvent("Settings_Tapped_PromoCode");
-      
+
       // Present the code redemption sheet
       await Purchases.presentCodeRedemptionSheet();
-      
+
       // Refresh customer info after redemption
       await getCustomerInfo();
     } catch (error) {
@@ -648,7 +654,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   const [devPanelExpanded, setDevPanelExpanded] = useState(true);
   const [streakData, setStreakData] = useState<any>(null);
   const [devPanelLoading, setDevPanelLoading] = useState(false);
-  
+
   // Get streak manager
   const { checkStreakAndApplyPenalties: checkStreak } = useStreakManager();
 
@@ -678,13 +684,13 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   const toggleDevPanel = useCallback(() => {
     const newState = !showDevPanel;
     setShowDevPanel(newState);
-    
+
     // Check for streak data when panel is opened
     if (newState) {
       refreshStreakData();
     }
-    
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
   }, [showDevPanel]);
 
   // Refresh streak data
@@ -705,12 +711,12 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   // Toggle expand/collapse of developer panel
   const toggleDevPanelExpanded = useCallback(() => {
     setDevPanelExpanded(!devPanelExpanded);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
   }, [devPanelExpanded]);
 
   // Get user store frequency goal
   const frequencyGoal = useUserStore(state => state.frequencyGoal);
-  
+
   // Function to get display text for reading time
   const getReadingTimeDisplay = useCallback(() => {
     switch (frequencyGoal) {
@@ -725,10 +731,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
         return '5-10 mins';
     }
   }, [frequencyGoal]);
-  
+
   // Handle navigation to reading time selection
   const handleEditReadingTime = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     bottomSheetRef.current?.close();
     router.push({
       pathname: '/onboarding/5',
@@ -741,6 +747,29 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   const appVersion = Application.nativeApplicationVersion || 'Unknown';
   const buildNumber = Application.nativeBuildVersion || 'Unknown';
 
+
+  const handleReferralSubmit = async () => {
+    try {
+
+      await handleReferralCode(referralCode);
+
+      Alert.alert(
+        'Success!',
+        'Referral code applied successfully',
+        [{ text: 'OK', onPress: () => setReferralModalVisible(false) }]
+      );
+
+      // Clear the input
+      setReferralCode('');
+
+    } catch (error: any) {
+      // Show error message
+      Alert.alert(
+        'Error',
+        error.message || 'Failed to apply referral code'
+      );
+    }
+  };
   return (
     <>
       <BottomSheet
@@ -763,7 +792,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
           </View>
 
           {/* Sheet Content - Wrapped in ScrollView */}
-          <ScrollView 
+          <ScrollView
             style={styles.settingsContent}
             showsVerticalScrollIndicator={false}
             bounces={true}
@@ -771,7 +800,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
             {/* Bible Translation Section */}
             <View style={styles.settingsSection}>
               <Text style={styles.settingsSectionTitle}>Bible Translation</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.translationSelector}
                 onPress={() => setTranslationModalVisible(true)}
               >
@@ -783,11 +812,11 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
             </View>
 
             <View style={styles.divider} />
-            
+
             {/* Daily Reading Time Section */}
             <View style={styles.settingsSection}>
               <Text style={styles.settingsSectionTitle}>Daily Reading Time</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.translationSelector}
                 onPress={handleEditReadingTime}
               >
@@ -803,9 +832,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
             {/* Notification Time Section */}
             <View style={styles.settingsSection}>
               <Text style={styles.settingsSectionTitle}>Notifications</Text>
-              
+
               {/* Toggle for enabling/disabling notifications */}
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.translationSelector}
                 onPress={() => animateToggle(!notificationsEnabled)}
                 activeOpacity={0.7}
@@ -817,23 +846,23 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                   styles.toggleButton,
                   notificationsEnabled ? styles.toggleButtonActive : {}
                 ]}>
-                  <Animated.View 
+                  <Animated.View
                     style={[
-                      styles.toggleKnob, 
+                      styles.toggleKnob,
                       notificationsEnabled ? styles.toggleKnobActive : {},
                       {
                         transform: [
                           { translateX: notificationsEnabled ? 20 : 0 }
                         ]
                       }
-                    ]} 
+                    ]}
                   />
                 </View>
               </TouchableOpacity>
-              
+
               {notificationsEnabled && (
                 <Animated.View style={selectorButtonStyle}>
-                  <TouchableOpacity 
+                  <TouchableOpacity
                     style={[
                       styles.timeSelector,
                       showTimePicker && styles.timeSelectorActive
@@ -847,10 +876,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                   </TouchableOpacity>
                 </Animated.View>
               )}
-              
+
               {/* Embedded Time Picker with animation */}
               {notificationsEnabled && (
-                <Animated.View 
+                <Animated.View
                   style={[
                     styles.timePickerContainer,
                     timePickerAnimatedStyle,
@@ -869,7 +898,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                       themeVariant="light"
                     />
                   </View>
-                  
+
                   <TouchableOpacity
                     style={styles.donePickingButton}
                     onPress={handleTimeConfirm}
@@ -881,12 +910,12 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
             </View>
 
             <View style={styles.divider} />
-     
-              
+
+
             {/* Join Discord */}
             <View style={styles.settingsSection}>
               <Text style={styles.settingsSectionTitle}>Community</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.discordButton}
                 onPress={handleOpenDiscord}
               >
@@ -897,9 +926,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                 <Feather name="external-link" size={18} color="#3C584A" />
               </TouchableOpacity>
             </View>
-            
+
             <View style={styles.divider} />
-            
+
             {/* Subscription Section */}
             <View className="mb-6">
               <Text className="font-feather text-xl text-[#5D5531] mb-2">Subscription</Text>
@@ -910,8 +939,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                       {isProMember ? 'Super Shepherd (Active)' : 'Upgrade to Super Shepherd'}
                     </Text>
                     <Text className="font-din text-description mt-1">
-                      {isProMember 
-                        ? 'Thank you for supporting our mission!' 
+                      {isProMember
+                        ? 'Thank you for supporting our mission!'
                         : 'Unlock premium features and support our mission'}
                     </Text>
                   </View>
@@ -924,7 +953,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                   )}
                 </View>
               </View>
-              
+
               {/* Promo Code Button */}
               <TouchableOpacity
                 onPress={handlePromoCodePress}
@@ -937,12 +966,27 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                 </View>
                 <Feather name="tag" size={20} color="#B89B4C" />
               </TouchableOpacity>
+
+              {/* Referral Code Button */}
+              <TouchableOpacity
+                onPress={() => setReferralModalVisible(true)}
+                className="bg-white rounded-xl p-4 mt-2 shadow-sm flex-row justify-between items-center">
+                <View>
+                  <Text className="font-feather text-base text-textPrimary">Referral Code</Text>
+                  <Text className="font-din text-description mt-1">
+                    Enter a referral code to unlock special features
+                  </Text>
+                </View>
+                <Feather name="gift" size={20} color="#B89B4C" />
+              </TouchableOpacity>
             </View>
-            
+
+
+
             {/* User ID Section - Moved to bottom */}
             <View style={styles.settingsSection}>
               <Text style={styles.settingsSectionTitle}>User ID</Text>
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={handleCopyUserId}
                 style={styles.userIdContainer}
               >
@@ -962,7 +1006,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                 >
                   <Text style={styles.signOutText}>Sign Out</Text>
                 </TouchableOpacity>
-                
+
                 {/* Delete Account Button */}
                 <TouchableOpacity
                   onPress={handleDeleteAccount}
@@ -972,7 +1016,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                 </TouchableOpacity>
               </>
             )}
-            
+
             {/* Developer Panel Toggle */}
             <TouchableOpacity
               onPress={toggleDevPanel}
@@ -982,7 +1026,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                 {showDevPanel ? "Hide Developer Panel" : "Show Developer Panel"}
               </Text>
             </TouchableOpacity>
-            
+
             {/* Developer Panel */}
             {showDevPanel && (
               <View style={styles.developerPanel}>
@@ -991,7 +1035,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                   {devPanelLoading ? (
                     <ActivityIndicator size="small" color="#3C584A" />
                   ) : (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={refreshStreakData}
                       style={styles.refreshButton}
                       disabled={devPanelLoading}
@@ -1000,7 +1044,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                     </TouchableOpacity>
                   )}
                 </View>
-                
+
                 {/* App Version Info Section */}
                 <View style={styles.developerPanelSection}>
                   <Text style={styles.developerPanelSectionTitle}>App Information</Text>
@@ -1013,7 +1057,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                     <Text style={styles.developerDataValue}>{buildNumber}</Text>
                   </View>
                 </View>
-                
+
                 {/* Basic Data */}
                 <View style={styles.developerPanelSection}>
                   <Text style={styles.developerPanelSectionTitle}>Streak Data</Text>
@@ -1030,22 +1074,22 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                     <Text style={styles.developerDataValue}>{userData.lambMood}</Text>
                   </View>
                 </View>
-                
+
                 {/* Expandable Details Section */}
-                <TouchableOpacity 
+                <TouchableOpacity
                   onPress={toggleDevPanelExpanded}
                   style={styles.developerPanelExpandButton}
                 >
                   <Text style={styles.developerExpandText}>
                     {devPanelExpanded ? 'Hide Details' : 'Show Details'}
                   </Text>
-                  <Feather 
-                    name={devPanelExpanded ? 'chevron-up' : 'chevron-down'} 
-                    size={16} 
-                    color="#3C584A" 
+                  <Feather
+                    name={devPanelExpanded ? 'chevron-up' : 'chevron-down'}
+                    size={16}
+                    color="#3C584A"
                   />
                 </TouchableOpacity>
-                
+
                 {/* Streak Data Section (Toggle Expanded) */}
                 {devPanelExpanded && (
                   <>
@@ -1069,7 +1113,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                         <Text style={styles.developerDataValue}>{formatDate(userData.lastReflectionDate)}</Text>
                       </View>
                     </View>
-                    
+
                     {/* Last Penalty Dates */}
                     <View style={styles.developerPanelSection}>
                       <Text style={styles.developerPanelSectionTitle}>Last Penalty Dates</Text>
@@ -1086,7 +1130,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                         <Text style={styles.developerDataValue}>{formatDate(userData.lastReflectionPenaltyDate)}</Text>
                       </View>
                     </View>
-                    
+
                     {/* Streak Check Results */}
                     {streakData && (
                       <View style={styles.developerPanelSection}>
@@ -1110,7 +1154,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                         {streakData.error && (
                           <View style={styles.developerDataRow}>
                             <Text style={styles.developerDataLabel}>Error:</Text>
-                            <Text style={[styles.developerDataValue, {color: 'red'}]}>
+                            <Text style={[styles.developerDataValue, { color: 'red' }]}>
                               {String(streakData.error)}
                             </Text>
                           </View>
@@ -1119,7 +1163,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                     )}
                   </>
                 )}
-                
+
                 {/* Force Streak Check Button */}
                 <TouchableOpacity
                   onPress={refreshStreakData}
@@ -1132,9 +1176,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                 </TouchableOpacity>
               </View>
             )}
-            
+
             {/* Extra padding at bottom */}
-            <View style={{height: 40}} />
+            <View style={{ height: 40 }} />
           </ScrollView>
         </BottomSheetView>
       </BottomSheet>
@@ -1149,7 +1193,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>Select Bible Translation</Text>
-            
+
             <ScrollView style={styles.translationScrollView} showsVerticalScrollIndicator={false}>
               {translations.map(translation => (
                 <TouchableOpacity
@@ -1172,12 +1216,60 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                 </TouchableOpacity>
               ))}
             </ScrollView>
-            
+
             <TouchableOpacity
               style={styles.cancelButton}
               onPress={handleCancelTranslation}
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+
+      {/* Referral Code Modal*/}
+      <Modal
+        visible={referralModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setReferralModalVisible(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-center items-center">
+          <View className="bg-surfaceCream rounded-2xl p-5 w-[85%] max-w-[350px]">
+            {/* Title */}
+            <Text className="font-feather text-xl text-textPrimary text-center mb-4">
+              Enter Referral Code
+            </Text>
+
+            {/* Code Input */}
+            <TextInput
+              className="bg-white rounded-xl p-4 mb-4 font-din text-lg text-center text-textPrimary"
+              maxLength={6}
+              autoCapitalize="characters"
+              value={referralCode}
+              onChangeText={setReferralCode}
+              placeholder="Enter 6-digit code"
+              placeholderTextColor="#B89B4C"
+            />
+
+            {/* Submit Button */}
+            <TouchableOpacity
+              onPress={handleReferralSubmit}
+              disabled={referralCode.length !== 6}
+              className="bg-primary rounded-xl p-4 mb-3">
+              <Text className="font-feather text-textPrimary text-center" style={{ opacity: referralCode.length === 6 ? 1 : 0.5 }}>
+                Submit
+              </Text>
+            </TouchableOpacity>
+
+            {/* Cancel Button */}
+            <TouchableOpacity
+              onPress={() => setReferralModalVisible(false)}
+              className="bg-textPrimary/10 rounded-xl p-4">
+              <Text className="font-din text-textPrimary text-center">
+                Cancel
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
