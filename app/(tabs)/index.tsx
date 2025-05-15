@@ -27,7 +27,7 @@ import { useAssets } from 'expo-asset';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import analytics, { AnalyticsEvent } from '~/utils/analytics';
+import analytics from '~/utils/analytics';
 
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
@@ -772,7 +772,7 @@ export default function HomeScreen() {
         </Animated.View>
 
         {/* SUPER badge for pro users */}
-        { (
+        {mode === 'DEFAULT' && (
           <TouchableOpacity 
             onPress={() => {
               if (!isPro) {
@@ -799,7 +799,6 @@ export default function HomeScreen() {
               end={{ x: 0, y: 1 }}
               style={{
                 position: 'absolute',
-              
                 paddingHorizontal: 8,
                 paddingVertical: 2,
                 borderRadius: 32,
