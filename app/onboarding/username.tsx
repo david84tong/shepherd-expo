@@ -181,7 +181,7 @@ export default function OnboardingUsernameScreen() {
     <Animated.View style={screenStyle} className="px-6 pt-12">
       {/* Question Text */}
       <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-0">
+        <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-8">
           Choose your username
         </Text>
         <Text className="font-din text-body text-center text-textSecondary mb-4">
@@ -205,7 +205,7 @@ export default function OnboardingUsernameScreen() {
       <Animated.View style={inputStyle}>
         <TextInput
           ref={inputRef}
-          className="font-feather text-3xl text-center text-textPrimary bg-white p-6 rounded-2xl border-4 border-border"
+          className="font-feather text-3xl text-center text-textPrimary bg-white mt-12 p-6 rounded-2xl border-4 border-border"
           placeholder="@username"
           placeholderTextColor="#B89B4C"
           value={inputUsername}

@@ -9,6 +9,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import analytics from '../../utils/analytics';
+import { FontAwesome6 } from '@expo/vector-icons';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
@@ -142,7 +143,7 @@ export default function ProfileScreen() {
     await handleDismissDiscordCard(); 
     try {
       // Replace 'YOUR_DISCORD_INVITE_LINK' with your actual Discord server invite link
-      await Linking.openURL('https://discord.gg/YOUR_DISCORD_INVITE_LINK');
+      await Linking.openURL('https://discord.gg/W9MZdVaKBs');
     } catch (err) {
       console.error("Failed to open Discord link", err);
       Alert.alert("Error", "Could not open the Discord link. Please ensure Discord is installed or try again later.");
@@ -285,7 +286,37 @@ export default function ProfileScreen() {
               <Feather name="settings" size={20} color="#B89B4C" />
             </TouchableOpacity>
           </View>
+     {/* Discord Card */}
+     {showDiscordCard && (
+            <View className="mx-6 mt-4 bg-lightPurple rounded-[20px] p-6 shadow-card relative">
+              <TouchableOpacity
+                onPress={handleDismissDiscordCard}
+                className="absolute top-3 right-3 p-1 z-10 bg-darkPurple/10 rounded-full">
+                <Feather name="x" size={20} color="#3C584A" /> 
+              </TouchableOpacity>
 
+              <View className="flex-row items-center mb-4">
+                <View className="bg-white p-3 rounded-full mr-4 shadow-md">
+                <FontAwesome6 name="discord" size={20} color="#5865F2" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-feather text-xl text-darkPurple">Join our Shepherd Family!</Text>
+                  <Text className="font-din text-body text-darkPurple opacity-80 mt-1 leading-tight">
+                    Connect, share insights, and grow together on our Discord server.
+                  </Text>
+                </View>
+              </View>
+
+              <PrimaryButton
+                title="Join the Herd"
+                onPress={handleJoinDiscord}
+                primaryColor="bg-darkPurple" 
+                textColor="text-white"
+                shadowStyle="shadow-darkPurple" // Assuming you have this in tailwind.config.js
+                style="mt-2" 
+              />
+            </View>
+          )}
           {/* Lamb Stats Card */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
             <View className="flex-row justify-between items-center mb-6">
@@ -447,37 +478,7 @@ export default function ProfileScreen() {
             )}
           </View>
 
-          {/* Discord Card */}
-          {showDiscordCard && (
-            <View className="mx-6 mt-4 bg-lightPurple rounded-[20px] p-6 shadow-card relative">
-              <TouchableOpacity
-                onPress={handleDismissDiscordCard}
-                className="absolute top-3 right-3 p-1 z-10 bg-darkPurple/10 rounded-full">
-                <Feather name="x" size={20} color="#3C584A" /> 
-              </TouchableOpacity>
-
-              <View className="flex-row items-center mb-4">
-                <View className="bg-darkPurple p-3 rounded-full mr-4 shadow-md">
-                  <Feather name="message-square" size={28} color="white" />
-                </View>
-                <View className="flex-1">
-                  <Text className="font-feather text-xl text-darkPurple">Join our Shepherd Family!</Text>
-                  <Text className="font-din text-body text-darkPurple opacity-80 mt-1 leading-tight">
-                    Connect, share insights, and grow together on our Discord server.
-                  </Text>
-                </View>
-              </View>
-
-              <PrimaryButton
-                title="Join the Flock"
-                onPress={handleJoinDiscord}
-                primaryColor="bg-darkPurple" 
-                textColor="text-white"
-                shadowStyle="shadow-darkPurple" // Assuming you have this in tailwind.config.js
-                style="mt-2" 
-              />
-            </View>
-          )}
+     
 
           {/* Store Section */}
           <View className="mx-6 mt-4 mb-8 bg-white/50 rounded-[20px] p-6 shadow-card">

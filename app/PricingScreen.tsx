@@ -10,8 +10,7 @@ import PrimaryButton from '../components/PrimaryButton';
 import useSubscriptionStore from './stores/subscriptionStore';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import analytics from '../utils/analytics';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
+import { isSignedIn } from './hooks/authHook';
 
 interface AnimatedItemProps {
   index?: number;
@@ -111,30 +110,14 @@ const PricingScreen = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     analytics.logEvent("PricingScreen_BackButton_Tapped");
     
-    try {
-      // Check if onboarding is completed
-      const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-      console.log(onboardingCompleted, "onboardingCompleted")
-      if (onboardingCompleted === 'true') {
-        console.log("onboardingCompleted")
-        // Onboarding completed, go back normally
-        if (router.canGoBack()) {
-          router.back();
-        } else {
-          router.replace('/(tabs)');
-        }
-      } else {
-        // Onboarding not completed, redirect to signup screen
-        router.replace('/onboarding/11');
-      }
-    } catch (error) {
-      console.error('Error checking onboarding status:', error);
-      // Default fallback in case of error
+    if (isSignedIn()) {
       if (router.canGoBack()) {
         router.back();
       } else {
         router.replace('/(tabs)');
       }
+    } else {
+      router.replace('/onboarding/11');
     }
   };
 

@@ -12,6 +12,7 @@ import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import Toast from 'react-native-toast-message';
+import { isSignedIn } from '../hooks/authHook';
 
 
 interface SubscriptionState {
@@ -98,13 +99,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
           
           // Navigate based on onboarding status
-          if (onboardingCompleted === 'true') {
-            // Onboarding completed, go to home tabs
-            router.replace('/(tabs)');
-          } else {
-            // Onboarding not completed, go to sign up screen
-            router.replace('/onboarding/11');
-          }
+          setTimeout(handlePostPurchaseNavigation, 100);
           
           // Return PURCHASED so PricingScreen can handle it
           return PAYWALL_RESULT.PURCHASED;
@@ -131,13 +126,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
           
           // Navigate based on onboarding status
-          if (onboardingCompleted === 'true') {
-            // Onboarding completed, go to home tabs
-            router.replace('/(tabs)');
-          } else {
-            // Onboarding not completed, go to sign up screen
-            router.replace('/onboarding/11');
-          }
+          setTimeout(handlePostPurchaseNavigation, 500);
           
           // Return RESTORED so PricingScreen can redirect
           return PAYWALL_RESULT.RESTORED;
@@ -221,24 +210,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       
       // Navigate based on onboarding status if user is now a pro member
       if (isPro) {
-        try {
-          const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-          setTimeout(() => {
-            if (onboardingCompleted === 'true') {
-              // Onboarding completed, go to home tabs
-              router.replace('/(tabs)');
-            } else {
-              // Onboarding not completed, go to sign up screen
-              router.replace('/onboarding/11');
-            }
-          }, 500); // Short delay to allow Alert to be seen
-        } catch (error) {
-          console.error('[SubscriptionStore] Error checking onboarding status:', error);
-          // Default to tabs if we can't determine onboarding status
-          setTimeout(() => {
-            router.replace('/(tabs)');
-          }, 500);
-        }
+        setTimeout(handlePostPurchaseNavigation, 500);
       }
       
       // Call the onSuccess callback if provided
@@ -434,5 +406,16 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     return userData?.usedReferralCodes || [];
   }
 }));
+
+// Helper function for navigation after purchase/restore
+function handlePostPurchaseNavigation() {
+  if (isSignedIn()) {
+    console.log("isSignedIn")
+    router.replace('/(tabs)');
+  } else {
+    console.log("notSignedIn")
+    router.replace('/onboarding/11');
+  }
+}
 
 export default useSubscriptionStore;
