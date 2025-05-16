@@ -376,18 +376,49 @@ export const useUserStore = create<UserStore>()(
         }
       },
       setNotificationTime: async (time: string) => {
+        // Update local state
         set({ notificationTime: time });
     
+        // Get current user
         const user = get().getUser?.();
         if (user?.id) {
           try {
+            // Update Firestore
             await firestore()
               .collection('users')
               .doc(user.id)
-              .update({ notificationTime: time });
+              .update({ 
+                notificationTime: time,
+                updatedAt: firestore.Timestamp.now()
+              });
+
+            // Also update AsyncStorage to ensure persistence
+            const currentState = get();
+            await AsyncStorage.setItem(
+              'shepherd-user-storage',
+              JSON.stringify({
+                ...currentState,
+                notificationTime: time
+              })
+            );
+
+            console.log('✅ Successfully persisted notification time:', time);
           } catch (error) {
-            console.error('Error updating notificationTime in Firestore:', error);
+            console.error('Error updating notificationTime:', error);
+            // If Firestore update fails, revert local state
+            set({ notificationTime: user.notificationTime });
+            throw error;
           }
+        } else {
+          // If no user ID, just update AsyncStorage
+          const currentState = get();
+          await AsyncStorage.setItem(
+            'shepherd-user-storage',
+            JSON.stringify({
+              ...currentState,
+              notificationTime: time
+            })
+          );
         }
       },
       setCompletedReflections: (completedReflections) => set({ completedReflections }),
