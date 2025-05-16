@@ -483,6 +483,21 @@ export function DebugButton() {
                       <Text className="font-din text-sm text-textPrimary">{screen.name}</Text>
                     </TouchableOpacity>
                   ))}
+                  
+                  {/* Kids Bible Reader Button */}
+                  <TouchableOpacity
+                    className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-[#F7B500] mb-1"
+                    onPress={() => {
+                      setModalVisible(false);
+                      setTimeout(() => {
+                        router.push({
+                          pathname: '/newBibleReader',
+                          params: { bookId: 43, chapter: 3, translation: 'ESV' }
+                        } as any);
+                      }, 300);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">Kids Bible Reader</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
 
