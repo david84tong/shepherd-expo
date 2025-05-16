@@ -11,7 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUserStore } from '../app/stores/userStore';
 import { useUIStore } from '../app/stores/uiStore';
 import { usePathStore } from '../app/stores/pathStore';
-import { useNotificationStore, NotificationTimeOption } from '../app/stores/notificationStore';
+import { useNotificationStore, NotificationTimeOption, NOTIFICATION_IDS } from '../app/stores/notificationStore';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Notifications from 'expo-notifications';
@@ -20,6 +20,7 @@ import Purchases from 'react-native-purchases';
 import useSubscriptionStore from '../app/stores/subscriptionStore';
 import { useStreakManager, checkStreakAndApplyPenalties, getDateFromTimestamp } from '../app/hooks/streakHook';
 import * as Application from 'expo-application';
+import { useOnboardingStore } from '../app/stores/onboardingStore';
 
 import Animated, {
   useAnimatedStyle,
@@ -79,22 +80,38 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 
   // Initialize selectedTime based on notificationTime on mount
   useEffect(() => {
-    if (notificationTime && notificationTime !== 'none' && !['morning', 'afternoon', 'evening', 'night'].includes(notificationTime)) {
-      // For custom time format "HH:MM"
-      if (notificationTime.includes(':')) {
-        const [hours, minutes] = notificationTime.split(':').map(part => parseInt(part, 10));
-        const date = new Date();
-        date.setHours(hours);
-        date.setMinutes(minutes);
-        setSelectedTime(date);
-      }
-    } else {
+    if (!notificationTime || notificationTime === 'none') {
       // Set to a default time
       const date = new Date();
-      date.setHours(8); // Default to 8 AM
+      date.setHours(19); // Default to 7 PM
       date.setMinutes(0);
       setSelectedTime(date);
+      return;
     }
+
+    // For custom time format "HH:MM"
+    if (notificationTime.includes(':')) {
+      const [hours, minutes] = notificationTime.split(':').map(part => parseInt(part, 10));
+      const date = new Date();
+      date.setHours(hours);
+      date.setMinutes(minutes);
+      setSelectedTime(date);
+      return;
+    }
+
+    // For preset times (morning, afternoon, evening, night)
+    const presetTimes = {
+      morning: 8,
+      afternoon: 14,
+      evening: 19,
+      night: 21
+    };
+
+    const hour = presetTimes[notificationTime as keyof typeof presetTimes] || 19;
+    const date = new Date();
+    date.setHours(hour);
+    date.setMinutes(0);
+    setSelectedTime(date);
   }, [notificationTime]);
 
   // Check notification permissions on mount
@@ -241,6 +258,16 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       return 'No notifications';
     }
 
+    // For custom time format "HH:MM"
+    if (notificationTime.includes(':')) {
+      const [hours, minutes] = notificationTime.split(':').map(part => parseInt(part, 10));
+      const time = new Date();
+      time.setHours(hours);
+      time.setMinutes(minutes);
+      return time.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    }
+
+    // For preset times
     switch (notificationTime) {
       case 'morning':
         return 'Morning (7-9 AM)';
@@ -251,14 +278,6 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       case 'night':
         return 'Night (9-11 PM)';
       default:
-        // For custom time format "HH:MM"
-        if (notificationTime.includes(':')) {
-          const [hours, minutes] = notificationTime.split(':').map(part => parseInt(part, 10));
-          const time = new Date();
-          time.setHours(hours);
-          time.setMinutes(minutes);
-          return time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        }
         return notificationTime;
     }
   }, [notificationTime]);
@@ -400,45 +419,73 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
       // Format as "HH:MM"
       const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
 
-      // Update the time in userStore
-      setNotificationTime(timeString);
+      try {
+        // 1. First update the userStore with the exact time string
+        await setNotificationTime(timeString);
 
-      // Map time to NotificationTimeOption when possible, for standard times
-      let timeOption: NotificationTimeOption;
-      if (hours === 8 && minutes === 0) {
-        timeOption = 'morning';
-      } else if (hours === 14 && minutes === 0) {
-        timeOption = 'afternoon';
-      } else if (hours === 19 && minutes === 0) {
-        timeOption = 'evening';
-      } else if (hours === 21 && minutes === 0) {
-        timeOption = 'night';
-      } else {
-        // For custom times that don't match our predefined options,
-        // still use 'morning' etc. as defined in the notificationStore
-        // based on the hour of day
-        if (hours >= 5 && hours < 12) {
-          timeOption = 'morning';
-        } else if (hours >= 12 && hours < 17) {
-          timeOption = 'afternoon';
-        } else if (hours >= 17 && hours < 21) {
-          timeOption = 'evening';
-        } else {
-          timeOption = 'night';
+        // 2. Cancel any existing notifications
+        await cancelDailyReminder();
+
+        // 3. Schedule notification for the exact time
+        await Notifications.scheduleNotificationAsync({
+          content: {
+            title: "Time to talk with the Shepherd",
+            body: "Take a moment to read scripture and connect with God.",
+            sound: true,
+            data: { type: 'daily-reminder' }
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DAILY,
+            hour: hours,
+            minute: minutes,
+          },
+          identifier: NOTIFICATION_IDS.DAILY_REMINDER
+        });
+
+        // 4. Update the notification store with custom time
+        const notificationStore = useNotificationStore.getState();
+        notificationStore.setPreferredNotificationTime('custom');
+        await notificationStore.scheduleDailyReminder('custom');
+
+        // 5. Update the onboarding store
+        const onboardingStore = useOnboardingStore.getState();
+        await onboardingStore.setNotificationPreference({
+          enabled: true,
+          time: timeString
+        });
+
+        // 6. Ensure the notification is enabled in all stores
+        setNotificationsEnabled(true);
+
+        // 7. Log the time selection for analytics
+        analytics.logEvent("Settings_Changed_NotificationTime", {
+          time: timeString,
+          isCustomTime: true
+        });
+
+        // 8. Verify the notification was scheduled
+        const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
+        const dailyReminder = scheduledNotifications.find(n => n.identifier === NOTIFICATION_IDS.DAILY_REMINDER);
+
+        if (!dailyReminder) {
+          console.error('Daily reminder was not scheduled properly');
+          throw new Error('Failed to schedule notification');
         }
+
+        // 9. Force sync with Firestore
+        const userStore = useUserStore.getState();
+        if (userStore.getUser?.()) {
+          await userStore.syncWithFirestore();
+        }
+
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
+      } catch (error) {
+        console.error('Failed to update notification time:', error);
+        Alert.alert(
+          'Error',
+          'Failed to update notification time. Please try again.'
+        );
       }
-
-      // Log the time selection for analytics
-      analytics.logEvent("Settings_Changed_NotificationTime", {
-        time: timeString,
-        timeOption: timeOption
-      });
-
-      // Schedule only the daily reminder notification using the store method
-      await scheduleDailyReminder(timeOption);
-
-      // Provide success feedback
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
     }
 
     // Animate picker closing

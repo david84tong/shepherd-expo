@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import firestore from '@react-native-firebase/firestore';
 import { Platform } from 'react-native';
+import { useUserStore } from './userStore';
 
 // Define notification IDs for easier management
 export const NOTIFICATION_IDS = {
@@ -16,7 +17,7 @@ export const NOTIFICATION_IDS = {
 type FirestoreTimestamp = ReturnType<typeof firestore.Timestamp.now>;
 
 // Type for notification preferences
-export type NotificationTimeOption = 'morning' | 'afternoon' | 'evening' | 'night' | 'none';
+export type NotificationTimeOption = 'morning' | 'afternoon' | 'evening' | 'night' | 'none' | 'custom';
 
 interface NotificationState {
   // Store the last date when notifications were scheduled
@@ -206,37 +207,58 @@ export const useNotificationStore = create<NotificationState>()(
           // Cancel any existing daily reminder
           await get().cancelDailyReminder();
           
-          // Parse time ranges into hours for notifications
-          let hour = 8; // Default to 8 AM
+          // Get user's notification time from userStore
+          const userStore = useUserStore.getState();
+          const userNotificationTime = userStore.notificationTime;
           
-          switch (timeOption) {
-            case 'morning':
-              hour = 8; // 8 AM
-              break;
-            case 'afternoon':
-              hour = 14; // 2 PM
-              break;
-            case 'evening':
-              hour = 19; // 7 PM
-              break;
-            case 'night':
-              hour = 21; // 9 PM
-              break;
-            default:
-              hour = 8; // Default to 8 AM
+          let hour = 8; // Default to 8 AM
+          let minute = 0;
+          
+          // If timeOption is 'custom', use the time from userStore
+          if (timeOption === 'custom' && userNotificationTime && userNotificationTime.includes(':')) {
+            const [hours, minutes] = userNotificationTime.split(':').map(part => parseInt(part, 10));
+            hour = hours;
+            minute = minutes;
+            console.log(`📱 Using custom time from userStore: ${hour}:${minute}`);
+          } else {
+            // Parse time ranges into hours for notifications
+            switch (timeOption) {
+              case 'morning':
+                hour = 8; // 8 AM
+                break;
+              case 'afternoon':
+                hour = 14; // 2 PM
+                break;
+              case 'evening':
+                hour = 19; // 7 PM
+                break;
+              case 'night':
+                hour = 21; // 9 PM
+                break;
+              default:
+                // If we get here with a custom time string (HH:MM), parse it
+                if (typeof timeOption === 'string' && timeOption.includes(':')) {
+                  const [hours, minutes] = timeOption.split(':').map(part => parseInt(part, 10));
+                  hour = hours;
+                  minute = minutes;
+                  console.log(`📱 Using provided custom time: ${hour}:${minute}`);
+                } else {
+                  hour = 8; // Default to 8 AM
+                }
+            }
           }
           
           // Set up scheduled time for today
           const now = new Date();
           const scheduledTime = new Date();
-          scheduledTime.setHours(hour, 0, 0, 0);
+          scheduledTime.setHours(hour, minute, 0, 0);
           
           // If the scheduled time has already passed today, schedule for tomorrow
           if (scheduledTime <= now) {
             scheduledTime.setDate(scheduledTime.getDate() + 1);
           }
           
-          console.log(`Scheduling daily reminder for ${timeOption} at ${scheduledTime.toLocaleString()}`);
+          console.log(`📱 Scheduling daily reminder for ${timeOption} at ${scheduledTime.toLocaleString()}`);
           
           // Calculate hours until notification
           const hoursUntilNotification = (scheduledTime.getTime() - now.getTime()) / (1000 * 60 * 60);
@@ -253,20 +275,30 @@ export const useNotificationStore = create<NotificationState>()(
             trigger: {
               type: Notifications.SchedulableTriggerInputTypes.DAILY,
               hour,
-              minute: 0,
+              minute,
             },
             identifier: NOTIFICATION_IDS.DAILY_REMINDER
           });
           
-          console.log(`📱 Daily reminder notification scheduled for ${hour}:00`);
+          console.log(`📱 Daily reminder notification scheduled for ${hour}:${minute.toString().padStart(2, '0')}`);
           console.log(`📱 Notification ID: ${NOTIFICATION_IDS.DAILY_REMINDER}`);
           console.log(`📱 Notification trigger type: DAILY`);
           
           // Save the selected time preference
           set({ preferredNotificationTime: timeOption });
+
+          // Verify the notification was scheduled
+          const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
+          const dailyReminder = scheduledNotifications.find(n => n.identifier === NOTIFICATION_IDS.DAILY_REMINDER);
+          
+          if (!dailyReminder) {
+            console.error('Daily reminder was not scheduled properly');
+            throw new Error('Failed to schedule notification');
+          }
           
         } catch (error) {
           console.error('Failed to schedule daily reminder notification:', error);
+          throw error;
         }
       },
       
