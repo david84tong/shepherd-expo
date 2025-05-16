@@ -19,6 +19,8 @@ import {
   Modal,
   TouchableWithoutFeedback,
   Switch,
+  ToastAndroid,
+  Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchChapter, ChapterResponse, FetchError, Verse } from './api/bible';
@@ -38,12 +40,15 @@ import Reanimated, {
   withRepeat,
   withSequence,
   withDelay,
-  Easing as ReanimatedEasing  // Use ReanimatedEasing for clarity
-} from 'react-native-reanimated'; // Use Reanimated for dot indicator
+  Easing as ReanimatedEasing
+} from 'react-native-reanimated';
 import { heightScreen } from '~/utils/dimensions';
 import analytics from '../utils/analytics';
 import Slider from '@react-native-community/slider';
+import CardReaderView from '~/components/CardReaderView';
+import Clipboard from '@react-native-clipboard/clipboard';
 
+// Constants
 const FONT_SIZE_KEY = 'userBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
 const MIN_FONT_SIZE = 14;
@@ -769,6 +774,17 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     setSelectedVerses(new Set([verseNumber]));
   };
 
+  // Add this function near the top of the component to handle toast messages
+  const showToast = (message: string) => {
+    if (Platform.OS === 'android') {
+      ToastAndroid.show(message, ToastAndroid.SHORT);
+    } else {
+      // For iOS, we'll use a custom toast implementation
+      Alert.alert(message);
+      // In a real app, you might want to implement a custom toast for iOS
+    }
+  };
+
   const renderBibleContent = () => {
     if (loading) {
       return <PulsingDotsIndicator />;
@@ -777,6 +793,28 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     if (error) {
       return <Text className="text-red-500 mt-10 text-center font-feather px-4">Error loading chapter: {error}</Text>;
     }
+
+    // Add copy function
+    const handleCopyVerse = (verse: Verse) => {
+      // Construct verse text with reference
+      const verseText = `${chapterData?.book} ${chapterData?.chapter}:${verse.verse} - ${verse.text}`;
+      
+      // Copy to clipboard
+      Clipboard.setString(verseText);
+      
+      // Show toast notification
+      showToast("Verse copied to clipboard");
+      
+      // Add haptic feedback
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      
+      // Log analytics
+      analytics.logEvent("BibleReader_CopiedVerse", {
+        book: chapterData?.book,
+        chapter: chapterData?.chapter,
+        verse: verse.verse
+      });
+    };
 
     if (chapterData) {
       return (
@@ -936,6 +974,59 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       console.error('Failed to save reader preference:', error);
     }
   }, [handleCloseModal]);
+
+  // Inside the component body, add loading state and toast/clipboard functions
+  const [switchingReaderType, setSwitchingReaderType] = useState(false);
+
+  // Function to switch from card view back to default reader
+  const handleSwitchToDefaultReader = useCallback(async () => {
+    setSwitchingReaderType(true);
+    try {
+      await AsyncStorage.setItem(READER_PREFERENCE_KEY, 'default');
+      setShowCardView(false);
+      // Allow animation to complete before finishing the switch
+      setTimeout(() => {
+        setSwitchingReaderType(false);
+      }, 300);
+    } catch (e) {
+      console.error("Failed to save reader preference", e);
+      setSwitchingReaderType(false);
+    }
+  }, []);
+
+  // Add conditional rendering for reader types
+  if (switchingReaderType) {
+    // Show a loading indicator while switching reader types
+    return (
+      <SafeAreaView className="flex-1 bg-background items-center justify-center">
+        <View className="items-center">
+          <ActivityIndicator size="large" color="#DCB280" />
+          <Text className="text-text mt-4 font-feather text-base">Switching Reader...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // If using card view, render the CardReaderView component
+  if (showCardView) {
+    return (
+      <CardReaderView 
+        bookId={currentBookId}
+        chapter={currentChapter}
+        translation={currentVersion}
+        onNavigateBackToDefaultReader={handleSwitchToDefaultReader}
+      />
+    );
+  }
+
+  // For the default reader view
+  if (loading) {
+    return <PulsingDotsIndicator />;
+  }
+
+  if (error) {
+    return <Text className="text-red-500 mt-10 text-center font-feather px-4">Error loading chapter: {error}</Text>;
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: THEME_COLORS[currentTheme].background }]}>

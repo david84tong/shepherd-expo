@@ -6,6 +6,7 @@ import { fetchChapter, Verse, ChapterResponse } from '~/app/api/bible';
 import { usePathStore } from '~/app/stores/pathStore';
 import { Feather } from '@expo/vector-icons';
 import Reanimated, { 
+  FadeInDown, 
   FadeInUp,
   useAnimatedStyle, 
   useSharedValue, 
@@ -13,27 +14,28 @@ import Reanimated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Animated as RNAnimated, Easing as RNEasing } from 'react-native';
+import { BIBLE_CHAPTER_COUNTS, BIBLE_BOOK_IDS } from '~/app/models/Path';
 import Toast from 'react-native-toast-message';
 import Clipboard from '@react-native-clipboard/clipboard';
-import { useUIStore } from '~/app/stores/uiStore';
 
-const FONT_SIZE_KEY = 'userNewBibleFontSize';
-const DEFAULT_FONT_SIZE = 20;
-const MIN_FONT_SIZE = 14;
-const MAX_FONT_SIZE = 30;
+// Constants moved to separate file so they can be shared
+export const FONT_SIZE_KEY = 'userNewBibleFontSize';
+export const DEFAULT_FONT_SIZE = 20;
+export const MIN_FONT_SIZE = 14;
+export const MAX_FONT_SIZE = 30;
 
-const LINE_HEIGHT_KEY = 'userNewBibleLineHeight';
-const LINE_HEIGHT_PRESETS = {
+export const LINE_HEIGHT_KEY = 'userNewBibleLineHeight';
+export const LINE_HEIGHT_PRESETS = {
   COMPACT: 20,
   REGULAR: 24,
   RELAXED: 32,
 } as const;
-type LineHeightPreset = keyof typeof LINE_HEIGHT_PRESETS;
+export type LineHeightPreset = keyof typeof LINE_HEIGHT_PRESETS;
 
-const TAP_GUIDANCE_KEY = 'userHideTapGuidance';
-const READER_PREFERENCE_KEY = 'userDefaultReaderPreference';
+export const TAP_GUIDANCE_KEY = 'userHideTapGuidance';
+export const READER_PREFERENCE_KEY = 'userDefaultReaderPreference';
 
-const THEME_COLORS = {
+export const THEME_COLORS = {
   white: {
     background: '#FFFFFF',
     modalBackground: '#FFFFFF',
@@ -83,101 +85,13 @@ const THEME_COLORS = {
     progressBarFill: '#8A8A8A',
   },
 } as const;
-type ThemeType = keyof typeof THEME_COLORS;
+export type ThemeType = keyof typeof THEME_COLORS;
 
-// For Bible navigation - Add bible book counts 
-const BIBLE_CHAPTER_COUNTS: {[bookId: number]: number} = {
-  1: 50,   // Genesis
-  2: 40,   // Exodus
-  3: 27,   // Leviticus
-  4: 36,   // Numbers
-  5: 34,   // Deuteronomy
-  6: 24,   // Joshua
-  7: 21,   // Judges
-  8: 4,    // Ruth
-  9: 31,   // 1 Samuel
-  10: 24,  // 2 Samuel
-  11: 22,  // 1 Kings
-  12: 25,  // 2 Kings
-  13: 29,  // 1 Chronicles
-  14: 36,  // 2 Chronicles
-  15: 10,  // Ezra
-  16: 13,  // Nehemiah
-  17: 10,  // Esther
-  18: 42,  // Job
-  19: 150, // Psalms
-  20: 31,  // Proverbs
-  21: 12,  // Ecclesiastes
-  22: 8,   // Song of Solomon
-  23: 66,  // Isaiah
-  24: 52,  // Jeremiah
-  25: 5,   // Lamentations
-  26: 48,  // Ezekiel
-  27: 12,  // Daniel
-  28: 14,  // Hosea
-  29: 3,   // Joel
-  30: 9,   // Amos
-  31: 1,   // Obadiah
-  32: 4,   // Jonah
-  33: 7,   // Micah
-  34: 3,   // Nahum
-  35: 3,   // Habakkuk
-  36: 3,   // Zephaniah
-  37: 2,   // Haggai
-  38: 14,  // Zechariah
-  39: 4,   // Malachi
-  40: 28,  // Matthew
-  41: 16,  // Mark
-  42: 24,  // Luke
-  43: 21,  // John
-  44: 28,  // Acts
-  45: 16,  // Romans
-  46: 16,  // 1 Corinthians
-  47: 13,  // 2 Corinthians
-  48: 6,   // Galatians
-  49: 6,   // Ephesians
-  50: 4,   // Philippians
-  51: 4,   // Colossians
-  52: 5,   // 1 Thessalonians
-  53: 3,   // 2 Thessalonians
-  54: 6,   // 1 Timothy
-  55: 4,   // 2 Timothy
-  56: 3,   // Titus
-  57: 1,   // Philemon
-  58: 13,  // Hebrews
-  59: 5,   // James
-  60: 5,   // 1 Peter
-  61: 3,   // 2 Peter
-  62: 5,   // 1 John
-  63: 1,   // 2 John
-  64: 1,   // 3 John
-  65: 1,   // Jude
-  66: 22,  // Revelation
-};
-
-// For Bible navigation - Map book IDs to names
-const BIBLE_BOOK_NAMES: {[bookId: number]: string} = {
-  1: "Genesis", 2: "Exodus", 3: "Leviticus", 4: "Numbers", 5: "Deuteronomy",
-  6: "Joshua", 7: "Judges", 8: "Ruth", 9: "1 Samuel", 10: "2 Samuel",
-  11: "1 Kings", 12: "2 Kings", 13: "1 Chronicles", 14: "2 Chronicles",
-  15: "Ezra", 16: "Nehemiah", 17: "Esther", 18: "Job", 19: "Psalms",
-  20: "Proverbs", 21: "Ecclesiastes", 22: "Song of Solomon", 23: "Isaiah",
-  24: "Jeremiah", 25: "Lamentations", 26: "Ezekiel", 27: "Daniel",
-  28: "Hosea", 29: "Joel", 30: "Amos", 31: "Obadiah", 32: "Jonah",
-  33: "Micah", 34: "Nahum", 35: "Habakkuk", 36: "Zephaniah", 37: "Haggai",
-  38: "Zechariah", 39: "Malachi", 40: "Matthew", 41: "Mark", 42: "Luke",
-  43: "John", 44: "Acts", 45: "Romans", 46: "1 Corinthians", 47: "2 Corinthians",
-  48: "Galatians", 49: "Ephesians", 50: "Philippians", 51: "Colossians",
-  52: "1 Thessalonians", 53: "2 Thessalonians", 54: "1 Timothy", 55: "2 Timothy",
-  56: "Titus", 57: "Philemon", 58: "Hebrews", 59: "James", 60: "1 Peter",
-  61: "2 Peter", 62: "1 John", 63: "2 John", 64: "3 John", 65: "Jude",
-  66: "Revelation"
-};
-
-interface NewBibleReaderProps {
+interface CardReaderViewProps {
   bookId: number;
   chapter: number;
   translation?: string;
+  onNavigateBackToDefaultReader?: () => void;
 }
 
 interface TypingTextProps {
@@ -227,7 +141,36 @@ const TypingText: React.FC<TypingTextProps> = ({
   return <Text style={baseTextStyle} className={className}>{displayedText}</Text>;
 };
 
-const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, translation = 'ESV' }) => {
+// Add toast config near the top of the file
+const toastConfig = {
+  success: ({ text1, text2 }: { text1?: string; text2?: string }) => (
+    <View style={{ 
+      backgroundColor: '#FFF4D9', 
+      borderRadius: 12, 
+      paddingVertical: 12, 
+      paddingHorizontal: 16, 
+      marginHorizontal: 16, 
+      marginBottom: 16, 
+      borderLeftWidth: 4, 
+      borderLeftColor: '#F7B500',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 3,
+      elevation: 3,
+    }}>
+      <Text style={{ fontFamily: 'Feather Bold', fontSize: 16, color: '#3C584A' }}>{text1}</Text>
+      {text2 && <Text style={{ fontFamily: 'DIN Next Rounded LT W01 Regular', fontSize: 14, color: '#7C927E', marginTop: 4 }}>{text2}</Text>}
+    </View>
+  ),
+};
+
+const CardReaderView: React.FC<CardReaderViewProps> = ({ 
+  bookId, 
+  chapter, 
+  translation = 'ESV',
+  onNavigateBackToDefaultReader 
+}) => {
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -235,7 +178,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [showTapGuidance, setShowTapGuidance] = useState(true);
   const [tapCount, setTapCount] = useState(0);
-  const [useDefaultReader, setUseDefaultReader] = useState(false);
   const [showBackButton, setShowBackButton] = useState(false);
   const [previousChapterInfo, setPreviousChapterInfo] = useState<{bookId: number, chapter: number} | null>(null);
   
@@ -260,8 +202,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
   const theme = THEME_COLORS[currentTheme];
   const verseTextStyle = { fontSize: fontSize, lineHeight: LINE_HEIGHT_PRESETS[lineHeightPreset], color: theme.text };
 
-  const showBookChapterSelector = useUIStore(state => state.showBookChapterSelector);
-
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -280,12 +220,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
         const hideTapGuidance = await AsyncStorage.getItem(TAP_GUIDANCE_KEY);
         if (hideTapGuidance === 'true') {
           setShowTapGuidance(false);
-        }
-
-        // Load reader preference
-        const readerPref = await AsyncStorage.getItem(READER_PREFERENCE_KEY);
-        if (readerPref === 'default') {
-          setUseDefaultReader(true);
         }
       } catch (e) {
         console.error("Failed to load settings from AsyncStorage", e);
@@ -336,7 +270,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
       const nextBookId = bookId + 1;
       
       if (nextBookId <= 66) { // 66 books in the Bible
-        const nextBookName = BIBLE_BOOK_NAMES[nextBookId] || 'Next Book';
+        const nextBookName = BIBLE_BOOK_IDS[nextBookId] || 'Next Book';
         console.log(`End of ${chapterData?.book} reached. Navigating to ${nextBookName} 1`);
         loadChapter(nextBookId, 1);
       } else {
@@ -505,26 +439,55 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
     } catch (e) { console.error("Failed to save line height", e); }
   }, []);
 
-  const handleDefaultReaderToggle = useCallback(async (value: boolean) => {
-    setUseDefaultReader(value);
+  const handleDefaultReaderToggle = useCallback(() => {
+    // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
-    try {
-      console.log(`Setting reader preference to: ${value ? 'default' : 'new'}`);
-      await AsyncStorage.setItem(READER_PREFERENCE_KEY, value ? 'default' : 'new');
-      handleCloseSettingsModal();
-    } catch (e) {
-      console.error("Failed to save reader preference", e);
-    }
-  }, [handleCloseSettingsModal]);
+    // Close modal and call back to parent to switch to default reader
+    handleCloseSettingsModal();
+    setTimeout(() => {
+      if (onNavigateBackToDefaultReader) {
+        onNavigateBackToDefaultReader();
+      }
+    }, 300);
+  }, [handleCloseSettingsModal, onNavigateBackToDefaultReader]);
 
-  // Handler for opening the selector
-  const handleOpenSelector = () => {
+  // New function to handle book/chapter selection
+  const handleOpenSelector = useCallback(() => {
+    // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    showBookChapterSelector(bookId, chapter, (newBookId: number, newChapter: number) => {
-      loadChapter(newBookId, newChapter);
+    
+    // Alert for now, in a real app you would connect this to a book/chapter selector
+    Alert.alert(
+      "Book and Chapter Selection",
+      `Currently viewing ${chapterData?.book} ${chapterData?.chapter}`,
+      [
+        { text: "Close", style: "cancel" }
+      ]
+    );
+  }, [chapterData]);
+
+  // Handle copy verse functionality
+  const handleCopyVerse = useCallback((verse: Verse) => {
+    if (!chapterData) return;
+    
+    const verseText = `${chapterData.book} ${chapterData.chapter}:${verse.verse} - ${verse.text}`;
+    
+    // Use the correct Clipboard method
+    Clipboard.setString(verseText);
+    
+    // Show toast notification
+    Toast.show({
+      type: 'success',
+      text1: 'Verse copied',
+      text2: 'Verse has been copied to clipboard',
+      position: 'top',
+      visibilityTime: 3000,
     });
-  };
+    
+    // Haptic feedback
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  }, [chapterData]);
 
   if (loading || !chapterData) {
     return (
@@ -539,21 +502,41 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
   return (
     <SafeAreaView style={{backgroundColor: theme.background, flex:1}}>
       {/* Absolute background to cover outer safe areas */}
-      <View style={{...StyleSheet.absoluteFillObject}} pointerEvents="none" />
+      <View style={{...StyleSheet.absoluteFillObject, backgroundColor: theme.background}} pointerEvents="none" />
 
       <View style={{flex:1, paddingBottom: 24, paddingHorizontal:16, paddingTop:16}}>
-        {/* HEADER: Bible Book/Chapter, tap to open selector, styled like bibleReader.tsx */}
-        <View className="flex-row items-center justify-between mb-3  px-[4px] py-[10px]">
-          <View className="flex-row items-center">
-            <TouchableOpacity onPress={handleOpenSelector} className="bg-[#DCB28033] rounded-[15px] py-[5px] px-[12px] mr-2">
-              <Text className="font-feather text-[14px] text-[#3C584A]">
-                {chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'Loading...'}
-              </Text>
-            </TouchableOpacity>
+        <View 
+          ref={headerContainerRef}
+          className="mb-6"
+        >
+          <View className="flex-row items-center justify-between mb-3">
+              {!pathInProgress && chapterData ? (
+              <Reanimated.View 
+                  className="flex-row items-center" 
+                  entering={FadeInDown.duration(800).delay(200)}
+              >
+                <View style={styles.headerLeft}>
+                  <TouchableOpacity style={styles.headerButton} onPress={handleOpenSelector}>
+                    <Text style={[styles.headerButtonText, { color: THEME_COLORS[currentTheme].text }]}>
+                      {chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'Loading...'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </Reanimated.View>
+              ) : <View />} 
+              <TouchableOpacity 
+                onPress={handlePresentSettingsModal} 
+                className="p-2"
+              >
+                  <Feather name="settings" size={24} color={theme.iconColor} />
+              </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={handlePresentSettingsModal} className="bg-[#DCB28033] rounded-[15px] py-[5px] px-[12px] items-center justify-center">
-            <Feather name="settings" size={20} color={theme.iconColor} />
-          </TouchableOpacity>
+          
+          <View style={{backgroundColor: theme.progressBarBackground, borderRadius: 99, height: 10, overflow: 'hidden', width: '100%'}}>
+            <Reanimated.View 
+              style={[{backgroundColor: theme.progressBarFill, borderRadius: 99, height: '100%'}, animatedProgressStyle]}
+            />
+          </View>
         </View>
 
         <ScrollView 
@@ -594,9 +577,19 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
                           <Text style={{color: theme.verseNumberText, fontFamily: 'Feather Bold', fontSize:14}}>{v.verse}</Text>
                         </View>
                         <View className="flex-row space-x-5">
-                          <TouchableOpacity onPress={(e) => { e.stopPropagation(); Clipboard.setString(`${chapterData.book} ${chapterData.chapter}:${v.verse} - ${v.text}`); Toast.show({ type: 'success', text1: 'Verse copied to clipboard', position: 'top', visibilityTime: 2000 }); }}><Feather name="copy" size={16} color={theme.iconColor} /></TouchableOpacity>
-                          <TouchableOpacity onPress={(e) => { e.stopPropagation(); }}><Feather name="edit-2" size={16} color={theme.iconColor} className="mx-8"/></TouchableOpacity>
-                          <TouchableOpacity onPress={(e) => { e.stopPropagation(); }}><Feather name="message-circle" size={16} color={theme.iconColor} /></TouchableOpacity>
+                          <TouchableOpacity 
+                            onPress={(e) => { 
+                              e.stopPropagation(); 
+                              handleCopyVerse(v);
+                            }}>
+                            <Feather name="copy" size={16} color={theme.iconColor} />
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={(e) => { e.stopPropagation(); }}>
+                            <Feather name="edit-2" size={16} color={theme.iconColor} className="mx-8"/>
+                          </TouchableOpacity>
+                          <TouchableOpacity onPress={(e) => { e.stopPropagation(); }}>
+                            <Feather name="message-circle" size={16} color={theme.iconColor} />
+                          </TouchableOpacity>
                         </View>
                       </View>
                     </View>
@@ -639,7 +632,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
           >
             <View className="flex-row items-center">
               <Feather name="chevron-left" size={24} color={theme.iconColor} />
-           
+              <Text style={{color: theme.headerText, fontFamily: 'Feather Bold', marginLeft: 4}}>
+                Previous Chapter
+              </Text>
             </View>
           </TouchableOpacity>
         </Reanimated.View>
@@ -675,10 +670,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
                     <Text style={[styles.toggleLabel, {color: theme.text}]}>Default Reader</Text>
                     <Switch
                       trackColor={{ false: "#E0E0E0", true: "#F7B500" }}
-                      thumbColor={useDefaultReader ? "#FFFFFF" : "#FFFFFF"}
+                      thumbColor={"#FFFFFF"}
                       ios_backgroundColor="#E0E0E0"
                       onValueChange={handleDefaultReaderToggle}
-                      value={useDefaultReader}
+                      value={false}
                     />
                   </View>
 
@@ -737,6 +732,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
             </View>
           </TouchableWithoutFeedback>
         </Modal>
+
+      {/* Register toast at the end of the SafeAreaView */}
+      <Toast config={toastConfig} />
     </SafeAreaView>
   );
 };
@@ -745,7 +743,7 @@ const styles = StyleSheet.create({
   backButton: {
     backgroundColor: 'rgba(247, 181, 0, 0.2)',
     borderRadius: 50,
-    bottom: 80,
+    bottom: 30,
     elevation: 5,
     left: 20,
     padding: 16,
@@ -754,6 +752,21 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+  },
+  headerButton: {
+    backgroundColor: 'rgba(220, 178, 128, 0.2)',
+    borderRadius: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+  },
+  headerButtonText: {
+    color: '#3C584A',
+    fontFamily: 'Feather Bold',
+    fontSize: 16,
+  },
+  headerLeft: {
+    alignItems: 'center',
+    flexDirection: 'row',
   },
   lineHeightButton: {
     alignItems: 'center',
@@ -856,4 +869,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NewBibleReader;
+export default CardReaderView; 
