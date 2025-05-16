@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Modal, TouchableWithoutFeedback, SafeAreaView, StyleSheet, ScrollView, Switch } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Modal, TouchableWithoutFeedback, SafeAreaView, StyleSheet, ScrollView, Switch, Alert } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slider from '@react-native-community/slider';
 import { fetchChapter, Verse, ChapterResponse } from '~/app/api/bible';
@@ -83,6 +83,95 @@ const THEME_COLORS = {
 } as const;
 type ThemeType = keyof typeof THEME_COLORS;
 
+// For Bible navigation - Add bible book counts 
+const BIBLE_CHAPTER_COUNTS: {[bookId: number]: number} = {
+  1: 50,   // Genesis
+  2: 40,   // Exodus
+  3: 27,   // Leviticus
+  4: 36,   // Numbers
+  5: 34,   // Deuteronomy
+  6: 24,   // Joshua
+  7: 21,   // Judges
+  8: 4,    // Ruth
+  9: 31,   // 1 Samuel
+  10: 24,  // 2 Samuel
+  11: 22,  // 1 Kings
+  12: 25,  // 2 Kings
+  13: 29,  // 1 Chronicles
+  14: 36,  // 2 Chronicles
+  15: 10,  // Ezra
+  16: 13,  // Nehemiah
+  17: 10,  // Esther
+  18: 42,  // Job
+  19: 150, // Psalms
+  20: 31,  // Proverbs
+  21: 12,  // Ecclesiastes
+  22: 8,   // Song of Solomon
+  23: 66,  // Isaiah
+  24: 52,  // Jeremiah
+  25: 5,   // Lamentations
+  26: 48,  // Ezekiel
+  27: 12,  // Daniel
+  28: 14,  // Hosea
+  29: 3,   // Joel
+  30: 9,   // Amos
+  31: 1,   // Obadiah
+  32: 4,   // Jonah
+  33: 7,   // Micah
+  34: 3,   // Nahum
+  35: 3,   // Habakkuk
+  36: 3,   // Zephaniah
+  37: 2,   // Haggai
+  38: 14,  // Zechariah
+  39: 4,   // Malachi
+  40: 28,  // Matthew
+  41: 16,  // Mark
+  42: 24,  // Luke
+  43: 21,  // John
+  44: 28,  // Acts
+  45: 16,  // Romans
+  46: 16,  // 1 Corinthians
+  47: 13,  // 2 Corinthians
+  48: 6,   // Galatians
+  49: 6,   // Ephesians
+  50: 4,   // Philippians
+  51: 4,   // Colossians
+  52: 5,   // 1 Thessalonians
+  53: 3,   // 2 Thessalonians
+  54: 6,   // 1 Timothy
+  55: 4,   // 2 Timothy
+  56: 3,   // Titus
+  57: 1,   // Philemon
+  58: 13,  // Hebrews
+  59: 5,   // James
+  60: 5,   // 1 Peter
+  61: 3,   // 2 Peter
+  62: 5,   // 1 John
+  63: 1,   // 2 John
+  64: 1,   // 3 John
+  65: 1,   // Jude
+  66: 22,  // Revelation
+};
+
+// For Bible navigation - Map book IDs to names
+const BIBLE_BOOK_NAMES: {[bookId: number]: string} = {
+  1: "Genesis", 2: "Exodus", 3: "Leviticus", 4: "Numbers", 5: "Deuteronomy",
+  6: "Joshua", 7: "Judges", 8: "Ruth", 9: "1 Samuel", 10: "2 Samuel",
+  11: "1 Kings", 12: "2 Kings", 13: "1 Chronicles", 14: "2 Chronicles",
+  15: "Ezra", 16: "Nehemiah", 17: "Esther", 18: "Job", 19: "Psalms",
+  20: "Proverbs", 21: "Ecclesiastes", 22: "Song of Solomon", 23: "Isaiah",
+  24: "Jeremiah", 25: "Lamentations", 26: "Ezekiel", 27: "Daniel",
+  28: "Hosea", 29: "Joel", 30: "Amos", 31: "Obadiah", 32: "Jonah",
+  33: "Micah", 34: "Nahum", 35: "Habakkuk", 36: "Zephaniah", 37: "Haggai",
+  38: "Zechariah", 39: "Malachi", 40: "Matthew", 41: "Mark", 42: "Luke",
+  43: "John", 44: "Acts", 45: "Romans", 46: "1 Corinthians", 47: "2 Corinthians",
+  48: "Galatians", 49: "Ephesians", 50: "Philippians", 51: "Colossians",
+  52: "1 Thessalonians", 53: "2 Thessalonians", 54: "1 Timothy", 55: "2 Timothy",
+  56: "Titus", 57: "Philemon", 58: "Hebrews", 59: "James", 60: "1 Peter",
+  61: "2 Peter", 62: "1 John", 63: "2 John", 64: "3 John", 65: "Jude",
+  66: "Revelation"
+};
+
 interface NewBibleReaderProps {
   bookId: number;
   chapter: number;
@@ -145,6 +234,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
   const [showTapGuidance, setShowTapGuidance] = useState(true);
   const [tapCount, setTapCount] = useState(0);
   const [useDefaultReader, setUseDefaultReader] = useState(false);
+  const [showBackButton, setShowBackButton] = useState(false);
+  const [previousChapterInfo, setPreviousChapterInfo] = useState<{bookId: number, chapter: number} | null>(null);
   
   const progressValue = useSharedValue(0);
   const pathInProgress = usePathStore((s) => s.pathInProgress);
@@ -153,13 +244,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
   // Reference for the header container
   const headerContainerRef = useRef<View>(null);
   const [headerHeight, setHeaderHeight] = useState(0);
-
-  // Function to measure header height
-  const measureHeaderHeight = useCallback(() => {
-    headerContainerRef.current?.measure((x, y, width, height) => {
-      setHeaderHeight(height);
-    });
-  }, []);
 
   // Add state to track scrolling
   const [isScrolling, setIsScrolling] = useState(false);
@@ -206,22 +290,94 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
     loadSettings();
   }, []);
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true);
+  // Helper function to load a chapter
+  const loadChapter = useCallback(async (bookId: number, chapter: number) => {
+    setLoading(true);
+    setCurrentIndex(0); // Reset to first verse when loading a new chapter
+    setIsTypingComplete(false);
+    setSkipTyping(false);
+    progressValue.value = withTiming(0, { duration: 0 });
+    
+    try {
       const res = await fetchChapter(translation, bookId, chapter);
       if ('error' in res) {
         console.error(res.message);
+        setLoading(false);
+        return false;
       } else {
         setChapterData(res);
+        setLoading(false);
+        return true;
       }
+    } catch (error) {
+      console.error('Error loading chapter:', error);
       setLoading(false);
-      setIsTypingComplete(false);
-      setSkipTyping(false);
-      progressValue.value = withTiming(0, { duration: 0 });
-    };
-    load();
-  }, [bookId, chapter, translation]);
+      return false;
+    }
+  }, [translation, progressValue]);
+
+  // Function to navigate to the next chapter
+  const navigateToNextChapter = useCallback(() => {
+    // Add haptic feedback for navigation
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    // Store current chapter info for back button
+    setPreviousChapterInfo({ bookId, chapter });
+    setShowBackButton(true);
+    
+    const chaptersInCurrentBook = BIBLE_CHAPTER_COUNTS[bookId];
+    
+    if (chapter >= chaptersInCurrentBook) {
+      // At the last chapter of current book, go to next book
+      const nextBookId = bookId + 1;
+      
+      if (nextBookId <= 66) { // 66 books in the Bible
+        const nextBookName = BIBLE_BOOK_NAMES[nextBookId] || 'Next Book';
+        console.log(`End of ${chapterData?.book} reached. Navigating to ${nextBookName} 1`);
+        loadChapter(nextBookId, 1);
+      } else {
+        // Reached the end of the Bible
+        console.log('Reached the end of the Bible');
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        Alert.alert("End of the Bible", "You've reached Revelation 22, the last chapter of the Bible.");
+      }
+    } else {
+      // Go to next chapter in current book
+      loadChapter(bookId, chapter + 1);
+    }
+  }, [bookId, chapter, chapterData, loadChapter]);
+
+  // Function to navigate back to the previous chapter
+  const navigateToPreviousChapter = useCallback(() => {
+    if (!previousChapterInfo) return;
+    
+    // Add haptic feedback for navigation
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    const { bookId: prevBookId, chapter: prevChapter } = previousChapterInfo;
+    
+    // Load the previous chapter
+    loadChapter(prevBookId, prevChapter).then(success => {
+      if (success && chapterData) {
+        // Show all verses at once when returning to previous chapter
+        setTimeout(() => {
+          setCurrentIndex(chapterData.verses.length - 1);
+          setIsTypingComplete(true);
+          setShowBackButton(false);
+          setPreviousChapterInfo(null);
+        }, 300); // Small delay to ensure chapter data is loaded
+      }
+    });
+  }, [previousChapterInfo, loadChapter, chapterData]);
+
+  useEffect(() => {
+    // Reset back button state when chapter props change directly
+    setShowBackButton(false);
+    setPreviousChapterInfo(null);
+    
+    // Initial chapter load
+    loadChapter(bookId, chapter);
+  }, [bookId, chapter, loadChapter]);
 
   useEffect(() => {
     if (chapterData?.verses?.length) {
@@ -275,14 +431,19 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
       setSkipTyping(true); 
       return;
     }
+    
     if (currentIndex < chapterData.verses.length - 1) {
+      // Still have verses to show in current chapter
       setCurrentIndex((i) => i + 1);
       setSkipTyping(false);
       setIsTypingComplete(false);
       // Schedule auto-scroll after the next verse is added
       setTimeout(scrollToBottom, 150);
+    } else {
+      // Reached the end of the chapter, navigate to next chapter
+      navigateToNextChapter();
     }
-  }, [currentIndex, chapterData, isTypingComplete, scrollToBottom, showTapGuidance, tapCount, isScrolling]);
+  }, [currentIndex, chapterData, isTypingComplete, scrollToBottom, showTapGuidance, tapCount, isScrolling, navigateToNextChapter]);
 
   const handleTypingComplete = useCallback(() => {
     setIsTypingComplete(true);
@@ -372,12 +533,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
         <View 
           ref={headerContainerRef}
           className="mb-6"
-          onLayout={measureHeaderHeight}
+          onLayout={() => {}}
         >
           <View className="flex-row items-center justify-between mb-3">
               {!pathInProgress && chapterData ? (
               <Reanimated.View 
-                  className="items-center" 
+                  className="flex-row items-center" 
                   entering={FadeInDown.duration(800).delay(200)}
               >
                   <View style={{backgroundColor: theme.progressBarBackground, borderRadius: 99, paddingHorizontal: 24, paddingVertical: 8}}>
@@ -472,6 +633,24 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
           </TouchableWithoutFeedback>
         </ScrollView>
       </View>
+
+      {/* Back button at bottom of screen */}
+      {showBackButton && (
+        <Reanimated.View
+          entering={FadeInUp.duration(300)}
+          style={[styles.backButton, { backgroundColor: theme.progressBarBackground }]}
+        >
+          <TouchableOpacity
+            onPress={navigateToPreviousChapter}
+            accessibilityLabel="Go back to previous chapter"
+          >
+            <View className="flex-row items-center">
+              <Feather name="chevron-left" size={24} color={theme.iconColor} />
+           
+            </View>
+          </TouchableOpacity>
+        </Reanimated.View>
+      )}
 
       <Modal
           visible={isSettingsModalVisible}
@@ -570,6 +749,19 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
 };
 
 const styles = StyleSheet.create({
+  backButton: {
+    backgroundColor: 'rgba(247, 181, 0, 0.2)',
+    borderRadius: 50,
+    bottom: 80,
+    elevation: 5,
+    left: 20,
+    padding: 16,
+    position: 'absolute',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
   lineHeightButton: {
     alignItems: 'center',
     borderRadius: 8,
