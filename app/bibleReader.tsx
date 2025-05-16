@@ -57,9 +57,9 @@ const MAX_LINE_HEIGHT = 40;
 
 // Replace line height slider related constants with presets
 const LINE_HEIGHT_PRESETS = {
-  COMPACT: 20,
-  REGULAR: 24,
-  RELAXED: 32,
+  COMPACT: 1.2, // 20% more than font size
+  REGULAR: 1.4, // 40% more than font size
+  RELAXED: 1.8, // 80% more than font size
 } as const;
 
 type LineHeightPreset = keyof typeof LINE_HEIGHT_PRESETS;
@@ -227,7 +227,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [currentTheme, setCurrentTheme] = useState<ThemeType>('light');
   const [lineHeightPreset, setLineHeightPreset] = useState<LineHeightPreset>('REGULAR');
-  const lineHeight = LINE_HEIGHT_PRESETS[lineHeightPreset];
+  const [lineHeightMultiplier, setLineHeightMultiplier] = useState<number>(LINE_HEIGHT_PRESETS.REGULAR);
 
   // Animation values for button container (using RNAnimated for these)
   const buttonsAnim = useRef(new RNAnimated.Value(0)).current; // 0: hidden, 1: visible
@@ -718,8 +718,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   // Memoize style calculations to prevent unnecessary style object recreations
   const verseTextStyle = useMemo(() => {
-    return [styles.verseText, { fontSize: fontSize, lineHeight: lineHeight }];
-  }, [fontSize, lineHeight]);
+    const calculatedLineHeight = Math.round(fontSize * lineHeightMultiplier);
+    return [styles.verseText, { fontSize: fontSize, lineHeight: calculatedLineHeight }];
+  }, [fontSize, lineHeightMultiplier]);
 
   const verseNumberStyle = useMemo(() => {
     return [styles.verseNumber, { fontSize: fontSize }];
@@ -912,6 +913,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // Add the handler for line height changes
   const handleLineHeightChange = useCallback(async (preset: LineHeightPreset) => {
     setLineHeightPreset(preset);
+    setLineHeightMultiplier(LINE_HEIGHT_PRESETS[preset]);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
       await AsyncStorage.setItem(LINE_HEIGHT_KEY, LINE_HEIGHT_PRESETS[preset].toString());
