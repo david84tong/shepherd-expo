@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator, Modal, TouchableWithoutFeedback, SafeAreaView, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ActivityIndicator, Modal, TouchableWithoutFeedback, SafeAreaView, StyleSheet, ScrollView, Switch } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slider from '@react-native-community/slider';
 import { fetchChapter, Verse, ChapterResponse } from '~/app/api/bible';
@@ -29,6 +29,7 @@ const LINE_HEIGHT_PRESETS = {
 type LineHeightPreset = keyof typeof LINE_HEIGHT_PRESETS;
 
 const TAP_GUIDANCE_KEY = 'userHideTapGuidance';
+const READER_PREFERENCE_KEY = 'userDefaultReaderPreference';
 
 const THEME_COLORS = {
   white: {
@@ -56,7 +57,7 @@ const THEME_COLORS = {
     sliderTrack: '#E5E5E5',
     bubbleBackground: '#FFF4D9',
     bubbleBorder: '#F7B500',
-    verseNumberText: '#F7B500',
+    verseNumberText: '#000000',
     verseNumberBackground: 'rgba(247, 181, 0, 0.15)',
     iconColor: '#D4A04C',
     headerText: '#F7B500',
@@ -143,10 +144,26 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [showTapGuidance, setShowTapGuidance] = useState(true);
   const [tapCount, setTapCount] = useState(0);
+  const [useDefaultReader, setUseDefaultReader] = useState(false);
   
   const progressValue = useSharedValue(0);
   const pathInProgress = usePathStore((s) => s.pathInProgress);
   const scrollViewRef = useRef<ScrollView>(null);
+
+  // Reference for the header container
+  const headerContainerRef = useRef<View>(null);
+  const [headerHeight, setHeaderHeight] = useState(0);
+
+  // Function to measure header height
+  const measureHeaderHeight = useCallback(() => {
+    headerContainerRef.current?.measure((x, y, width, height) => {
+      setHeaderHeight(height);
+    });
+  }, []);
+
+  // Add state to track scrolling
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
   const [lineHeightPreset, setLineHeightPreset] = useState<LineHeightPreset>('REGULAR');
@@ -156,10 +173,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
 
   const theme = THEME_COLORS[currentTheme];
   const verseTextStyle = { fontSize: fontSize, lineHeight: LINE_HEIGHT_PRESETS[lineHeightPreset], color: theme.text };
-
-  // Add state to track scrolling
-  const [isScrolling, setIsScrolling] = useState(false);
-  const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -179,6 +192,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
         const hideTapGuidance = await AsyncStorage.getItem(TAP_GUIDANCE_KEY);
         if (hideTapGuidance === 'true') {
           setShowTapGuidance(false);
+        }
+
+        // Load reader preference
+        const readerPref = await AsyncStorage.getItem(READER_PREFERENCE_KEY);
+        if (readerPref === 'default') {
+          setUseDefaultReader(true);
         }
       } catch (e) {
         console.error("Failed to load settings from AsyncStorage", e);
@@ -211,13 +230,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
     }
   }, [currentIndex, chapterData, progressValue]);
 
-  const scrollToBottom = useCallback(() => {
-    // Small delay to ensure rendering is complete
-    setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
-    }, 100);
-  }, []);
-
   const handleScroll = useCallback(() => {
     setIsScrolling(true);
     
@@ -230,6 +242,13 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
     scrollTimeout.current = setTimeout(() => {
       setIsScrolling(false);
     }, 300);
+  }, []);
+
+  const scrollToBottom = useCallback(() => {
+    // Small delay to ensure rendering is complete
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
   }, []);
 
   const handleNextVerse = useCallback(() => {
@@ -321,6 +340,18 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
     } catch (e) { console.error("Failed to save line height", e); }
   }, []);
 
+  const handleDefaultReaderToggle = useCallback(async (value: boolean) => {
+    setUseDefaultReader(value);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    try {
+      console.log(`Setting reader preference to: ${value ? 'default' : 'new'}`);
+      await AsyncStorage.setItem(READER_PREFERENCE_KEY, value ? 'default' : 'new');
+      handleCloseSettingsModal();
+    } catch (e) {
+      console.error("Failed to save reader preference", e);
+    }
+  }, [handleCloseSettingsModal]);
 
   if (loading || !chapterData) {
     return (
@@ -338,107 +369,107 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
       <View style={{...StyleSheet.absoluteFillObject, backgroundColor: theme.background}} pointerEvents="none" />
 
       <View style={{flex:1, paddingBottom: 24, paddingHorizontal:16, paddingTop:16}}>
-        <View className="mb-6">
+        <View 
+          ref={headerContainerRef}
+          className="mb-6"
+          onLayout={measureHeaderHeight}
+        >
           <View className="flex-row items-center justify-between mb-3">
-            {!pathInProgress && chapterData ? (
+              {!pathInProgress && chapterData ? (
               <Reanimated.View 
-                className="items-center" 
-                entering={FadeInDown.duration(800).delay(200)}
+                  className="items-center" 
+                  entering={FadeInDown.duration(800).delay(200)}
               >
-                <View style={{backgroundColor: theme.progressBarBackground, borderRadius: 99, paddingHorizontal: 24, paddingVertical: 8}}>
+                  <View style={{backgroundColor: theme.progressBarBackground, borderRadius: 99, paddingHorizontal: 24, paddingVertical: 8}}>
                   <Text style={{color: theme.headerText, fontFamily: 'Feather Bold', fontSize: 24}}>
-                    {chapterData.book} {chapterData.chapter}
+                      {chapterData.book} {chapterData.chapter}
                   </Text>
-                </View>
+                  </View>
               </Reanimated.View>
-            ) : <View />} 
-            <TouchableOpacity 
-              onPress={handlePresentSettingsModal} 
-              className="p-2"
-            >
-              <Feather name="settings" size={24} color={theme.iconColor} />
-            </TouchableOpacity>
+              ) : <View />} 
+              <TouchableOpacity 
+                onPress={handlePresentSettingsModal} 
+                className="p-2"
+              >
+                  <Feather name="settings" size={24} color={theme.iconColor} />
+              </TouchableOpacity>
           </View>
           
-          <View style={{backgroundColor: theme.progressBarBackground, borderRadius: 99, height: 6, overflow: 'hidden', width: '100%'}}>
+          <View style={{backgroundColor: theme.progressBarBackground, borderRadius: 99, height: 10, overflow: 'hidden', width: '100%'}}>
             <Reanimated.View 
               style={[{backgroundColor: theme.progressBarFill, borderRadius: 99, height: '100%'}, animatedProgressStyle]}
             />
           </View>
         </View>
 
-        {/* Add a touchable layer beneath ScrollView */}
-        <TouchableOpacity
-          activeOpacity={1}
-          style={StyleSheet.absoluteFillObject}
-          onPress={handleNextVerse}
-        />
-
         <ScrollView 
           ref={scrollViewRef}
           className="flex-1" 
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 40 }}
+          contentContainerStyle={{ paddingBottom: 100 }}
           onScrollBeginDrag={() => setIsScrolling(true)}
           onScrollEndDrag={handleScroll}
           onMomentumScrollBegin={() => setIsScrolling(true)}
           onMomentumScrollEnd={handleScroll}
+          scrollEventThrottle={16}
+          bounces={true}
         >
-          {versesToShow.map((v, index) => (
-            <TouchableOpacity
-              key={v.verse}
-              activeOpacity={1}
-              onPress={handleNextVerse}
-            >
-              <Reanimated.View entering={FadeInUp.duration(450).delay(index * 100)}>
-                <View style={{backgroundColor: theme.bubbleBackground, borderColor: theme.bubbleBorder}} className="border-2 mt-4 p-4 rounded-2xl shadow-sm">
-                  {index === currentIndex ? (
-                    <TypingText
-                      text={v.text}
-                      baseTextStyle={{...verseTextStyle, fontFamily: 'DIN Next Rounded LT W01 Regular', marginBottom: 12}}
-                      speed={20}
-                      skipAnimation={skipTyping}
-                      onComplete={handleTypingComplete}
-                    />
-                  ) : (
-                    <Text style={{...verseTextStyle, fontFamily: 'DIN Next Rounded LT W01 Regular', marginBottom: 12}}>
-                      {v.text}
+          {/* Add a touchable wrapper that covers the whole scroll area */}
+          <TouchableWithoutFeedback onPress={handleNextVerse}>
+            <View style={{ minHeight: '100%' }}>
+              {versesToShow.map((v, index) => (
+                <View key={v.verse}>
+                  <Reanimated.View entering={FadeInUp.duration(300).delay(index * 60)}>
+                    <View style={{backgroundColor: theme.bubbleBackground, borderColor: theme.bubbleBorder}} className="border-2 mt-4 p-4 rounded-2xl shadow-sm">
+                      {index === currentIndex ? (
+                        <TypingText
+                          text={v.text}
+                          baseTextStyle={{...verseTextStyle, fontFamily: 'DIN Next Rounded LT W01 Regular', marginBottom: 12}}
+                          speed={20}
+                          skipAnimation={skipTyping}
+                          onComplete={handleTypingComplete}
+                        />
+                      ) : (
+                        <Text style={{...verseTextStyle, fontFamily: 'DIN Next Rounded LT W01 Regular', marginBottom: 12}}>
+                          {v.text}
+                        </Text>
+                      )}
+                      
+                      <View style={{borderTopColor: theme.bubbleBorder, opacity: 0.3}} className="flex-row items-center justify-between mt-0 pt-2">
+                        <View style={{backgroundColor: theme.verseNumberBackground, height: 32, width: 32}} className="items-center justify-center rounded-full">
+                          <Text style={{color: theme.verseNumberText, fontFamily: 'Feather Bold', fontSize:14}}>{v.verse}</Text>
+                        </View>
+                        <View className="flex-row space-x-5">
+                          <TouchableOpacity onPress={(e) => { e.stopPropagation(); }}><Feather name="copy" size={16} color={theme.iconColor} /></TouchableOpacity>
+                          <TouchableOpacity onPress={(e) => { e.stopPropagation(); }}><Feather name="edit-2" size={16} color={theme.iconColor} className="mx-8"/></TouchableOpacity>
+                          <TouchableOpacity onPress={(e) => { e.stopPropagation(); }}><Feather name="message-circle" size={16} color={theme.iconColor} /></TouchableOpacity>
+                        </View>
+                      </View>
+                    </View>
+                  </Reanimated.View>
+                </View>
+              ))}
+               
+              {currentIndex < chapterData.verses.length - 1 ? (
+                <View className="items-center mt-4">
+                  {showTapGuidance && (
+                    <Text style={{color: theme.headerText, fontFamily:'DIN Next Rounded LT W01 Regular', fontSize:16, opacity:0.7}}>
+                      {isTypingComplete ? "Tap for next verse →" : "Tap to show full verse"}
                     </Text>
                   )}
-                  
-                  <View style={{borderTopColor: theme.bubbleBorder, opacity: 0.3}} className="flex-row items-center justify-between mt-0 pt-2">
-                    <View style={{backgroundColor: theme.verseNumberBackground, height: 32, width: 32}} className="items-center justify-center rounded-full">
-                      <Text style={{color: theme.verseNumberText, fontFamily: 'Feather Bold', fontSize:14}}>{v.verse}</Text>
-                    </View>
-                    <View className="flex-row space-x-5">
-                      <TouchableOpacity onPress={(e) => { e.stopPropagation(); }}><Feather name="copy" size={16} color={theme.iconColor} /></TouchableOpacity>
-                      <TouchableOpacity onPress={(e) => { e.stopPropagation(); }}><Feather name="edit-2" size={16} color={theme.iconColor} className="mx-8"/></TouchableOpacity>
-                      <TouchableOpacity onPress={(e) => { e.stopPropagation(); }}><Feather name="message-circle" size={16} color={theme.iconColor} /></TouchableOpacity>
-                    </View>
-                  </View>
                 </View>
-              </Reanimated.View>
-            </TouchableOpacity>
-          ))}
-           
-          {currentIndex < chapterData.verses.length - 1 ? (
-            <TouchableOpacity 
-              className="items-center mt-4"
-              onPress={handleNextVerse}
-            >
-              {showTapGuidance && (
-                <Text style={{color: theme.headerText, fontFamily:'DIN Next Rounded LT W01 Regular', fontSize:16, opacity:0.7}}>
-                  {isTypingComplete ? "Tap for next verse →" : "Tap to show full verse"}
-                </Text>
+              ) : (
+                <View style={{backgroundColor: theme.progressBarBackground, paddingVertical:12}} className="items-center mt-6 rounded-xl">
+                  <Text style={{color: theme.headerText, fontFamily:'Feather Bold', fontSize:16}}>
+                    End of Chapter 🎉
+                  </Text>
+                </View>
               )}
-            </TouchableOpacity>
-          ) : (
-            <View style={{backgroundColor: theme.progressBarBackground, paddingVertical:12}} className="items-center mt-6 rounded-xl">
-              <Text style={{color: theme.headerText, fontFamily:'Feather Bold', fontSize:16}}>
-                End of Chapter 🎉
-              </Text>
+              
+              {/* Add invisible spacer to ensure touchable area extends to bottom padding */}
+              <View style={{ height: 80 }} />
             </View>
-          )}
+          </TouchableWithoutFeedback>
         </ScrollView>
       </View>
 
@@ -466,6 +497,18 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
                   ]}
                 >
                   <View style={[styles.modalHandle, { backgroundColor: theme.border }]} />
+                  
+                  {/* Default Reader Toggle */}
+                  <View style={styles.toggleContainer}>
+                    <Text style={[styles.toggleLabel, {color: theme.text}]}>Default Reader</Text>
+                    <Switch
+                      trackColor={{ false: "#E0E0E0", true: "#F7B500" }}
+                      thumbColor={useDefaultReader ? "#FFFFFF" : "#FFFFFF"}
+                      ios_backgroundColor="#E0E0E0"
+                      onValueChange={handleDefaultReaderToggle}
+                      value={useDefaultReader}
+                    />
+                  </View>
 
                   <Text style={[styles.modalSectionTitle, {color: theme.text}]}>Font Size</Text>
                   <View style={styles.sliderContainer}>
@@ -609,6 +652,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     marginTop: 8,
     width: '100%',
+  },
+  toggleContainer: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(247, 181, 0, 0.1)',
+    borderColor: '#F7B500',
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    padding: 12,
+    width: '100%',
+  },
+  toggleLabel: {
+    fontFamily: 'Feather Bold',
+    fontSize: 16,
   },
 });
 

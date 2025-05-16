@@ -18,6 +18,7 @@ import {
   TextStyle,
   Modal,
   TouchableWithoutFeedback,
+  Switch,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchChapter, ChapterResponse, FetchError, Verse } from './api/bible';
@@ -100,6 +101,9 @@ const THEME_COLORS = {
 } as const;
 
 type ThemeType = keyof typeof THEME_COLORS;
+
+// Add the same key constant in the shared constants section near the top
+const READER_PREFERENCE_KEY = 'userDefaultReaderPreference';
 
 // Define component props
 interface BibleReaderProps {
@@ -193,6 +197,8 @@ type BibleReaderStyles = {
   lineHeightButtonSelected: ViewStyle;
   lineHeightButtonText: TextStyle;
   lineHeightButtonTextSelected: TextStyle;
+  toggleContainer: ViewStyle;
+  toggleLabel: TextStyle;
 };
 
 // Add type for storing selections by chapter
@@ -280,6 +286,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // In the component, add state for selections history
   const [selectionsHistory, setSelectionsHistory] = useState<SelectionsMap>({});
 
+  // Inside the BibleReader component, add the reader toggle state
+  const [showCardView, setShowCardView] = useState(false);
+
   // When coming to this tab from a preview, clear the path in progress state
   useEffect(() => {
     if (!isEmbedded) {
@@ -334,6 +343,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
             setLineHeightPreset('REGULAR');
           }
         }
+
+        // Check if the card view preference exists
+        const readerPref = await AsyncStorage.getItem(READER_PREFERENCE_KEY);
+        setShowCardView(readerPref !== 'default');
       } catch (e) {
         console.error("Failed to load settings from AsyncStorage", e);
       }
@@ -907,6 +920,21 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     }
   }, []);
 
+  // Add the handler for toggling between reader types
+  const handleCardViewToggle = useCallback(async (value: boolean) => {
+    // Add haptic feedback
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    setShowCardView(value);
+    try {
+      console.log(`Setting reader preference to: ${value ? 'new' : 'default'}`);
+      await AsyncStorage.setItem(READER_PREFERENCE_KEY, value ? 'new' : 'default');
+      handleCloseModal(); // Use the existing close handler
+    } catch (error) {
+      console.error('Failed to save reader preference:', error);
+    }
+  }, [handleCloseModal]);
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: THEME_COLORS[currentTheme].background }]}>
       <View style={[styles.newHeaderContainer, {
@@ -1003,6 +1031,18 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                 ]}
               >
                 <View style={[styles.modalHandle, { backgroundColor: THEME_COLORS[currentTheme].border }]} />
+
+                {/* Card View Toggle */}
+                <View style={styles.toggleContainer}>
+                  <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>Card View</Text>
+                  <Switch
+                    trackColor={{ false: "#E0E0E0", true: "#F7B500" }}
+                    thumbColor={showCardView ? "#FFFFFF" : "#FFFFFF"}
+                    ios_backgroundColor="#E0E0E0"
+                    onValueChange={handleCardViewToggle}
+                    value={showCardView}
+                  />
+                </View>
 
                 {/* Font Size Controls */}
                 <View style={styles.sliderContainer}>
@@ -1378,5 +1418,21 @@ const styles = StyleSheet.create<BibleReaderStyles>({
   lineHeightButtonTextSelected: {
     color: '#FFFFFF',
     fontFamily: 'Inter-Medium',
+  },
+  toggleContainer: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(247, 181, 0, 0.1)',
+    borderColor: '#F7B500',
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+    padding: 12,
+    width: '100%',
+  },
+  toggleLabel: {
+    fontFamily: 'Feather Bold',
+    fontSize: 16,
   },
 }); 
