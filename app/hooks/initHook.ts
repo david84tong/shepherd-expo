@@ -1,6 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import auth from '@react-native-firebase/auth';
-import firestore, { Timestamp } from '@react-native-firebase/firestore';
+import { Timestamp } from '@react-native-firebase/firestore';
 import { useEffect, useState } from 'react';
 import * as Sentry from "@sentry/react-native";
 import { useUserStore } from '../stores/userStore';
@@ -33,6 +33,37 @@ const formatTimestamp = (timestamp: any) => {
   }
   return 'Invalid timestamp';
 };
+
+// This function can be called after init or when app comes to foreground
+export const onAppForegroundOrInit = async () => {
+  const getUser = useUserStore.getState().getUser;
+  const fetchFromFirestore = useUserStore.getState().fetchFromFirestore;
+  const setSelectedPath = usePathStore.getState().setSelectedPath;
+  const syncWithFirestore = useUserStore.getState().syncWithFirestore;
+  const userData = getUser();
+  try {
+    const fetchSuccess = await fetchFromFirestore();
+
+
+    if (fetchSuccess) {
+      const updatedUserData = getUser();
+      if (updatedUserData.selectedPathId) {
+        const pathOption = PATH_OPTIONS.find(path => path.id === updatedUserData.selectedPathId);
+        if (pathOption) {
+          setSelectedPath(pathOption);
+        }
+      }
+    }
+    console.log("onAppForegroundOrInit")
+  } catch (firestoreError) {
+    console.error('❌ Error fetching user from Firestore (foreground/init):', firestoreError);
+    analytics.logError('Error fetching user from Firestore (foreground/init)', undefined, {
+      errorDetails: String(firestoreError)
+    });
+  }
+  await checkStreakAndApplyPenalties();
+};
+
 
 export const useAppInitialization = () => {
   const [isInitialized, setIsInitialized] = useState(false);
@@ -233,6 +264,7 @@ export const useAppInitialization = () => {
               errorDetails: String(firestoreError)
             });
           }
+          console.log("checkStreakAndApplyPenalties")
           await checkStreakAndApplyPenalties();
         }
 

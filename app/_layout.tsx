@@ -2,7 +2,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LogBox, Platform, StyleSheet, View } from 'react-native';
+import { LogBox, Platform, StyleSheet, View, AppState, AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases from 'react-native-purchases';
 import Rive from 'rive-react-native';
@@ -12,7 +12,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import AppLoading from '../components/AppLoading';
 import { DebugButton } from '../components/DebugModal';
 import { HalfModalType } from './halfModal';
-import { useAppInitialization } from './hooks/initHook';
+import { useAppInitialization, onAppForegroundOrInit } from './hooks/initHook';
 import { checkStreakAndApplyPenalties } from './hooks/streakHook';
 import { usePreloadAssets } from './stores/assetsStore';
 import { useNotificationStore } from './stores/notificationStore';
@@ -151,7 +151,17 @@ export default function RootLayout() {
   // App initialization
   const { isInitialized } = useAppInitialization();
 
+  const appState = useRef(AppState.currentState);
+
   usePreloadAssets(); // Garante preload global dos assets
+
+  // Call onAppForegroundOrInit after initialization
+  useEffect(() => {
+    if (isInitialized) {
+      console.log("bada")
+      onAppForegroundOrInit();
+    }
+  }, [isInitialized]);
 
   // Check onboarding status with timeout
   const checkOnboarding = async () => {
@@ -296,6 +306,29 @@ export default function RootLayout() {
 
     initializeApp();
   }, [fontsLoaded, fontError, router]);
+
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (
+        appState.current.match(/inactive|background/) &&
+        nextAppState === 'active'
+      ) {
+        // App has come to the foreground!
+        // Call your functions here
+        
+        console.log('App has come to the foreground!');
+        // e.g. refresh user data, sync, analytics, etc.
+        onAppForegroundOrInit();
+      }
+      appState.current = nextAppState;
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   // Loading states with error handling
   if (!fontsLoaded && !fontError) {
