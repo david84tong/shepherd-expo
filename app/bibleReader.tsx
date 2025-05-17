@@ -42,6 +42,7 @@ import Reanimated, {
 import { heightScreen } from '~/utils/dimensions';
 import analytics from '../utils/analytics';
 import Slider from '@react-native-community/slider';
+import { debounce } from 'lodash';
 
 const FONT_SIZE_KEY = 'userBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -798,13 +799,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     return <Text className="text-text/70 mt-10">No data available.</Text>;
   };
 
-  const handleOpenSelector = () => {
+  const handleOpenSelector = debounce(() => {
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
     console.log('🔍 DEBUG: Opening selector');
     showBookChapterSelector(currentBookId, currentChapter, handleSelectBookChapter);
-  };
+  }, 300);
 
   const handleSelectBookChapter = (bookId: number, chapter: number) => {
     // Add haptic feedback
