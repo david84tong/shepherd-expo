@@ -204,10 +204,11 @@ export default function MapScreen() {
   }, [sections]);
 
   const isProMember = useSubscriptionStore(state => state.isProMember)
-
+  const subscriptionStore = useSubscriptionStore();
   // Handle subscription button press using the store action
   const handleSubscriptionPress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    subscriptionStore.setFromScreen('map');
     router.push('/PricingScreen' as any);
   }
 
@@ -224,7 +225,7 @@ export default function MapScreen() {
 
     console.log('Pressed unit:', unit.title, unit.reference);
     console.log('Reference details:', JSON.stringify(unit.reference));
-    console.log('unit selected', unit.startVerse, unit.endVerse);
+    console.log('unit selected', unit.startVerse, unit.endVerse, unit);
 
     // Get the current section/path information
     const currentPath = sections.find((section) => section.data.some((u) => u.id === unit.id));

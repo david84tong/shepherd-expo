@@ -187,6 +187,8 @@ interface NewBibleReaderProps {
   isInPathMode?: boolean;
   onNavigateBack?: () => void; // Callback for back navigation when in path mode
   onSwitchToDefaultReader?: () => void; // Notify parent to switch to default reader
+  onHandoffChapterData?: (data: ChapterResponse | null) => void; // Handoff chapter data to parent
+  onOpenSettings?: () => void; // Open shared settings sheet from parent
 }
 
 interface TypingTextProps {
@@ -243,6 +245,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   isInPathMode = false,
   onNavigateBack,
   onSwitchToDefaultReader,
+  onHandoffChapterData,
+  onOpenSettings,
 }) => {
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -574,6 +578,15 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   });
 
   const handlePresentSettingsModal = useCallback(() => {
+    // If a parent-provided settings handler exists, use it to open the
+    // shared sheet so both readers reference one source of truth.
+    if (onOpenSettings) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      onOpenSettings();
+      return;
+    }
+
+    // Fallback to legacy local modal when no parent handler is supplied.
     setIsSettingsModalVisible(true);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     RNAnimated.timing(slideAnim, {
@@ -582,7 +595,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       useNativeDriver: true,
       easing: RNEasing.out(RNEasing.cubic),
     }).start();
-  }, [slideAnim]);
+  }, [slideAnim, onOpenSettings]);
 
   const handleCloseSettingsModal = useCallback(() => {
     RNAnimated.timing(slideAnim, {
@@ -630,14 +643,28 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     try {
       console.log(`Setting reader preference to: ${value ? 'default' : 'new'}`);
       await AsyncStorage.setItem(READER_PREFERENCE_KEY, value ? 'default' : 'new');
+
+      // If the user toggled ON the default reader (value === true) we must
+      // close this settings modal immediately to avoid leaving the grey
+      // overlay visible after this component unmounts.
+      if (value) {
+        setIsSettingsModalVisible(false);
+        // Handoff chapter data to parent before switching
+        if (onHandoffChapterData) {
+          onHandoffChapterData(chapterData);
+        }
+      }
+
       // Notify parent to switch back to default reader
       if (value && onSwitchToDefaultReader) {
-        onSwitchToDefaultReader();
+        setTimeout(() => {
+          if (onSwitchToDefaultReader) onSwitchToDefaultReader();
+        }, 50);
       }
     } catch (e) {
       console.error("Failed to save reader preference", e);
     }
-  }, [onSwitchToDefaultReader]);
+  }, [onSwitchToDefaultReader, onHandoffChapterData, chapterData]);
 
   // Handler for opening the selector
   const handleOpenSelector = () => {
@@ -831,6 +858,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         </Reanimated.View>
       )}
 
+      {/* Render the local settings modal only when no shared handler is
+          provided. */}
+      {!onOpenSettings && (
       <Modal
           visible={isSettingsModalVisible}
           transparent
@@ -923,6 +953,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             </View>
           </TouchableWithoutFeedback>
         </Modal>
+      )}
     </SafeAreaView>
   );
 };
