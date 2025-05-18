@@ -1188,6 +1188,9 @@ PODS:
     - abseil/meta/type_traits
     - abseil/xcprivacy
   - abseil/xcprivacy (1.20240722.0)
+  - Adapty (3.1.0)
+  - AdaptyUI (3.1.0):
+    - Adapty (= 3.1.0)
   - boost (1.84.0)
   - BoringSSL-GRPC (0.0.37):
     - BoringSSL-GRPC/Implementation (= 0.0.37)
@@ -1203,7 +1206,7 @@ PODS:
   - EXJSONUtils (0.14.0)
   - EXManifests (0.15.8):
     - ExpoModulesCore
-  - EXNotifications (0.31.1):
+  - EXNotifications (0.31.2):
     - ExpoModulesCore
   - Expo (52.0.46):
     - ExpoModulesCore
@@ -1427,7 +1430,7 @@ PODS:
     - ExpoModulesCore
   - ExpoHaptics (14.0.1):
     - ExpoModulesCore
-  - ExpoHead (4.0.20):
+  - ExpoHead (4.0.21):
     - ExpoModulesCore
   - ExpoImage (2.0.7):
     - ExpoModulesCore
@@ -1675,7 +1678,7 @@ PODS:
     - gRPC-Core/Privacy (= 1.69.0)
   - gRPC-Core/Interface (1.69.0)
   - gRPC-Core/Privacy (1.69.0)
-  - GTMSessionFetcher/Core (4.4.0)
+  - GTMSessionFetcher/Core (4.5.0)
   - hermes-engine (0.76.9):
     - hermes-engine/Pre-built (= 0.76.9)
   - hermes-engine/Pre-built (0.76.9)
@@ -3003,9 +3006,18 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - react-native-adapty-sdk (3.1.0):
+    - Adapty (= 3.1.0)
+    - AdaptyUI (= 3.1.0)
+    - React
+  - react-native-adapty-ui (3.1.0):
+    - Adapty (>= 3.1.0)
+    - AdaptyUI (= 3.1.0)
+    - React-Core
+    - react-native-adapty-sdk (>= 3.1.0)
   - react-native-safe-area-context (4.12.0):
     - React-Core
-  - react-native-slider (4.5.6):
+  - react-native-slider (4.5.5):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -3373,10 +3385,10 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNPaywalls (8.9.7):
+  - RNPaywalls (8.10.0):
     - PurchasesHybridCommonUI (= 13.31.0)
     - React-Core
-  - RNPurchases (8.9.7):
+  - RNPurchases (8.10.0):
     - PurchasesHybridCommon (= 13.31.0)
     - React-Core
   - RNReanimated (3.16.7):
@@ -3488,7 +3500,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNSentry (6.13.1):
+  - RNSentry (6.14.0):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -3509,7 +3521,7 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - Sentry/HybridSDK (= 8.49.2)
+    - Sentry/HybridSDK (= 8.50.2)
     - Yoga
   - SDWebImage (5.19.7):
     - SDWebImage/Core (= 5.19.7)
@@ -3519,7 +3531,7 @@ PODS:
     - SDWebImage (~> 5.10)
   - SDWebImageSVGCoder (1.7.0):
     - SDWebImage/Core (~> 5.6)
-  - Sentry/HybridSDK (8.49.2)
+  - Sentry/HybridSDK (8.50.2)
   - SocketRocket (0.7.1)
   - Yoga (0.0.0)
 
@@ -3592,6 +3604,8 @@ DEPENDENCIES:
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
+  - react-native-adapty-sdk (from `../node_modules/react-native-adapty`)
+  - "react-native-adapty-ui (from `../node_modules/@adapty/react-native-ui`)"
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - "react-native-slider (from `../node_modules/@react-native-community/slider`)"
   - React-nativeconfig (from `../node_modules/react-native/ReactCommon`)
@@ -3642,6 +3656,8 @@ DEPENDENCIES:
 SPEC REPOS:
   trunk:
     - abseil
+    - Adapty
+    - AdaptyUI
     - BoringSSL-GRPC
     - Firebase
     - FirebaseABTesting
@@ -3816,6 +3832,10 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   React-microtasksnativemodule:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
+  react-native-adapty-sdk:
+    :path: "../node_modules/react-native-adapty"
+  react-native-adapty-ui:
+    :path: "../node_modules/@adapty/react-native-ui"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-slider:
@@ -3911,6 +3931,8 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   abseil: a05cc83bf02079535e17169a73c5be5ba47f714b
+  Adapty: c2245830c811b0156b12b617956904ed06966638
+  AdaptyUI: 7ac79ee12f71ca92370f1a8ad3d9dd1748ac6129
   boost: 1dca942403ed9342f98334bf4c3621f011aa7946
   BoringSSL-GRPC: dded2a44897e45f28f08ae87a55ee4bcd19bc508
   DoubleConversion: f16ae600a246532c4020132d54af21d0ddb2a385
@@ -3918,7 +3940,7 @@ SPEC CHECKSUMS:
   EXConstants: fcfc75800824ac2d5c592b5bc74130bad17b146b
   EXJSONUtils: 01fc7492b66c234e395dcffdd5f53439c5c29c93
   EXManifests: a19d50504b8826546a4782770317bc83fffec87d
-  EXNotifications: 9123abeeecc540790f2ae0e2f08bcb5e97b4ebaa
+  EXNotifications: f0c7597a22645faf9ce9e74f1b1078c16fb7575f
   Expo: a6ff273c618506b12129a0d06f2a08201bfbcf43
   expo-dev-client: db44302cdbe0ec55b0ef1849c9a23a76dec6dbac
   expo-dev-launcher: c67c6a87f8a8ff54abda104abdc057ee4565a3f4
@@ -3930,7 +3952,7 @@ SPEC CHECKSUMS:
   ExpoFileSystem: 42d363d3b96f9afab980dcef60d5657a4443c655
   ExpoFont: f354e926f8feae5e831ec8087f36652b44a0b188
   ExpoHaptics: 8d199b2f33245ea85289ff6c954c7ee7c00a5b5d
-  ExpoHead: cee2d16ef197aaadb0ac481cf221a663636eb074
+  ExpoHead: df924203fbf8e0913fc38b0f6aec71f9a9115482
   ExpoImage: d840b256050f4428d2942bc2b6e9251f9e0d7021
   ExpoKeepAwake: b0171a73665bfcefcfcc311742a72a956e6aa680
   ExpoLinearGradient: a3126d055dd021c1eb38a2cf28052ccbd1a2b3e2
@@ -3965,7 +3987,7 @@ SPEC CHECKSUMS:
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   "gRPC-C++": cc207623316fb041a7a3e774c252cf68a058b9e8
   gRPC-Core: 860978b7db482de8b4f5e10677216309b5ff6330
-  GTMSessionFetcher: 75b671f9e551e4c49153d4c4f8659ef4f559b970
+  GTMSessionFetcher: fc75fc972958dceedee61cb662ae1da7a83a91cf
   hermes-engine: 9e868dc7be781364296d6ee2f56d0c1a9ef0bb11
   leveldb-library: cc8b8f8e013647a295ad3f8cd2ddf49a6f19be19
   libavif: 84bbb62fb232c3018d6f1bab79beea87e35de7b7
@@ -4007,8 +4029,10 @@ SPEC CHECKSUMS:
   React-logger: c4052eb941cca9a097ef01b59543a656dc088559
   React-Mapbuffer: 9343a5c14536d4463c80f09a960653d754daae21
   React-microtasksnativemodule: 338bfa0a7d8cd1ed212b055f2143a6789252137a
+  react-native-adapty-sdk: 16cf431c5d6e824d9576d378f9b54747cf8c7f41
+  react-native-adapty-ui: 38e7351ae2b1d5a351a5e22af3a87d35e6def776
   react-native-safe-area-context: 8b8404e70b0cbf2a56428a17017c14c1dcc16448
-  react-native-slider: 44c397324dd504af83916711c356fca71f241c9a
+  react-native-slider: 41c65b428b0528186691999424c4b2ffa64a241e
   React-nativeconfig: 415626a63057638759bcc75e0a96e2e07771a479
   React-NativeModulesApple: d33b55553c6957ff94835574636838d78121a1c6
   React-perflogger: 72e653eb3aba9122f9e57cf012d22d2486f33358
@@ -4051,15 +4075,15 @@ SPEC CHECKSUMS:
   RNFBFunctions: 10cb49ccb3dd3ae511e857ab0f1726f739214c23
   RNFBRemoteConfig: 8d3675f18c052483ce294bb97b857428467fb41e
   RNGestureHandler: 2dd124adb171aab16629e9387cf1830957d242c2
-  RNPaywalls: 4cb2216acfabac2a3596732afd87fb8e6726b15e
-  RNPurchases: e20d58889e85fa6d248de647176d2cc9968e2628
+  RNPaywalls: 168e7a43679f639f7ed6fceb957c93b6936bc1af
+  RNPurchases: 08cc01ef638aa0873f45b781877838e0e7cf8945
   RNReanimated: 9b650d028b9422148b548e80512043a372876c00
   RNScreens: ad2d0cfb3f15c9ed56ffb43651366ec0dcd70c36
-  RNSentry: 1f4af74b647ae349a6b3f9a338a31059440ac17a
+  RNSentry: 280a9bb76f89a0568a6cb78bfb7a658bd1b36964
   SDWebImage: 8a6b7b160b4d710e2a22b6900e25301075c34cb3
   SDWebImageAVIFCoder: 00310d246aab3232ce77f1d8f0076f8c4b021d90
   SDWebImageSVGCoder: 15a300a97ec1c8ac958f009c02220ac0402e936c
-  Sentry: 47021097466aa130802420d485a34da445963d99
+  Sentry: d95f5f3b32d01324b3e27d3c52747005302cc026
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 1259c7a8cbaccf7b4c3ddf8ee36ca11be9dee407
 

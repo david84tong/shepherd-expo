@@ -32,6 +32,11 @@ import useForceUpdateCheck from './hooks/useForceUpdateCheck';
 import ForceUpdateModal from '~/components/ForceUpdateModal';
 import { disableFontScaling } from './helper/disableFontScaling';
 import Toast from 'react-native-toast-message';
+import { adapty, } from 'react-native-adapty';
+
+
+
+
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -307,6 +312,25 @@ export default function RootLayout() {
     initializeApp();
   }, [fontsLoaded, fontError, router]);
 
+  const activateAdapty = async () => {
+    try {
+      const isActivated = await adapty.isActivated();
+      console.log("isActivated ==>", isActivated);
+      if (isActivated) return
+
+      // if(adapty){
+      //   console.log("adapty ==>",adapty?.isActivated());
+
+      // }
+      await adapty.activate('public_live_6JQmP6iR.y5BUrJSqvfMEVYQBPBLz', {
+        lockMethodsUntilReady: true,
+      });
+      console.log('Adapty activated');
+    } catch (error) {
+      console.error('Error activating Adapty:', error);
+    }
+  };
+
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (
@@ -315,13 +339,16 @@ export default function RootLayout() {
       ) {
         // App has come to the foreground!
         // Call your functions here
-        
+
         console.log('App has come to the foreground!');
         // e.g. refresh user data, sync, analytics, etc.
         onAppForegroundOrInit();
       }
       appState.current = nextAppState;
     };
+    console.log('Activating Adapty');
+
+    activateAdapty();
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
 
@@ -462,7 +489,7 @@ export default function RootLayout() {
         {__DEV__ && <DebugButton />}
       </BottomSheetModalProvider>
       {visibleForceUpdate && isInitialized ? <ForceUpdateModal visible={visibleForceUpdate} /> : null}
-      
+
       {/* Toast Message component */}
       <Toast />
     </GestureHandlerRootView>
