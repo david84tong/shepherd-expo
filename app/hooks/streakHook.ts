@@ -174,15 +174,14 @@ function calculateStreakAndPenalties({
     ? getDaysDifference(now, lastReflectionPenaltyDateObj)
     : 0;
 
-  // Check if lastReadingDate is more than 24 hours ago
-  const isReadingMoreThan24HoursAgo = lastReadingDateObj
-    ? now.getTime() - lastReadingDateObj.getTime() > 24 * 60 * 60 * 1000
-    : false;
+  // REPLACE: Check if streak is broken using calendar days instead of hours
+  // A streak is broken if more than 1 calendar day has passed (missed a complete day)
+  const isReadingStreakBroken = daysSinceReading > 1;
 
-  // Reset streak immediately if reading is more than 24 hours ago
-  if (isReadingMoreThan24HoursAgo && streakCount > 0) {
+  // Reset streak immediately if reading streak is broken (missed a full calendar day)
+  if (isReadingStreakBroken && streakCount > 0) {
     if (debug)
-      console.log(`🔄 Resetting streak to 0: reading > 24hrs ago = ${isReadingMoreThan24HoursAgo}`);
+      console.log(`🔄 Resetting streak to 0: missed ${daysSinceReading - 1} calendar day(s)`);
     setStreakCount(0);
   }
 
@@ -206,7 +205,7 @@ function calculateStreakAndPenalties({
     console.log(
       `✍️ Days since reflection: ${daysSinceReflection}, Days since reflection penalty: ${daysSinceReflectionPenalty}`
     );
-    console.log(`⚠️ Reading more than 24 hours ago: ${isReadingMoreThan24HoursAgo}`);
+    console.log(`⚠️ Reading streak broken (missed full day): ${isReadingStreakBroken}`);
   }
 
   setLambMood(getLambMoodByHearts(lambHearts));
@@ -223,22 +222,21 @@ function calculateStreakAndPenalties({
   // Skip if user was active today (based on calendar day)
   if (daysSinceActivity === 0 && !isNewDay) {
     return {
-      streakBroken: isReadingMoreThan24HoursAgo,
+      streakBroken: isReadingStreakBroken,
       heartPenalty: 0,
       daysMissed: 0,
       newDay: isNewDay,
     };
   }
 
-  // Calculate total heart penalties (ignoring first day)
+  // REPLACE: Calculate total heart penalties (ignoring first day)
   let heartPenalty = 0;
   let applyReadingPenalty = false;
   const applyPrayerPenalty = false;
   const applyReflectionPenalty = false;
 
-
   // For each activity, check if we should apply a penalty
-  if (isReadingMoreThan24HoursAgo && daysSinceReadingPenalty > 0) {
+  if (isReadingStreakBroken && daysSinceReadingPenalty > 0) {
     analytics.logEvent("StreakManager_ReadingPenaltyApplied", {
       daysSinceReadingPenalty: daysSinceReadingPenalty,
       penalty: PENALTIES.READING
@@ -250,7 +248,7 @@ function calculateStreakAndPenalties({
       console.log(`💔 Reading penalty applied: ${daysSinceReadingPenalty * PENALTIES.READING} hearts`);
   } else if (debug) {
     console.log(
-      `⏹️ No reading penalty: readingMoreThan24h = ${isReadingMoreThan24HoursAgo}, days since penalty = ${daysSinceReadingPenalty}`
+      `⏹️ No reading penalty: readingStreakBroken = ${isReadingStreakBroken}, days since penalty = ${daysSinceReadingPenalty}`
     );
   }
 
@@ -278,21 +276,18 @@ function calculateStreakAndPenalties({
     );
   }
 
-  // Check if Bible reading streak is broken (more than 1 day)
-  const isReadingStreakBroken = isReadingMoreThan24HoursAgo && applyReadingPenalty;
-
   // Apply penalties and update streak
-  if (heartPenalty > 0 || isReadingStreakBroken || isReadingMoreThan24HoursAgo) {
+  if (heartPenalty > 0 || isReadingStreakBroken) {
     let newHearts = lambHearts - heartPenalty;
     if (newHearts < 0) newHearts = 0;
     setLambHearts(newHearts);
     setLambMood(getLambMoodByHearts(newHearts));
 
-    // Reset streak if reading streak is broken or more than 24 hours since last reading
-    if ((isReadingStreakBroken || isReadingMoreThan24HoursAgo) && streakCount > 0) {
+    // Reset streak if reading streak is broken
+    if (isReadingStreakBroken && streakCount > 0) {
       if (debug)
         console.log(
-          `🔄 Resetting streak to 0: streak broken = ${isReadingStreakBroken}, reading > 24hrs ago = ${isReadingMoreThan24HoursAgo}`
+          `🔄 Resetting streak to 0: missed ${daysSinceReading - 1} calendar day(s)`
         );
       setStreakCount(0);
     }
@@ -312,7 +307,7 @@ function calculateStreakAndPenalties({
     }
 
     return {
-      streakBroken: isReadingStreakBroken || isReadingMoreThan24HoursAgo,
+      streakBroken: isReadingStreakBroken,
       heartPenalty,
       daysMissed: daysSinceActivity,
       readingPenalized: applyReadingPenalty,
@@ -323,7 +318,7 @@ function calculateStreakAndPenalties({
   } else {
     setLambMood(getLambMoodByHearts(lambHearts));
     return {
-      streakBroken: isReadingMoreThan24HoursAgo,
+      streakBroken: isReadingStreakBroken,
       heartPenalty: 0,
       daysMissed: 0,
       readingPenalized: false,

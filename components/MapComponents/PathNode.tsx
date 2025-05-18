@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
-import { View, Pressable } from 'react-native';
+import { View, Pressable, Text } from 'react-native';
 
 import { BIBLE_PATHS, Unit } from '../../app/models/Path';
 import analytics from '../../utils/analytics';
@@ -238,6 +238,9 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
           </View>
         )}
       </Pressable>
+      
+      {/* Debug ID text */}
+      <Text className="text-xs text-center mt-1 opacity-70 font-mono">{unit.id}</Text>
     </View>
   );
 };
