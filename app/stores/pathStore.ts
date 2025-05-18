@@ -14,6 +14,8 @@ export interface PathInfo {
   endChapter: number;
   prayer: string;
   reflection: string;
+  startVerse?: number; // Optional starting verse number for verse-split units
+  endVerse?: number; // Optional ending verse number for verse-split units
 }
 
 interface PathState {

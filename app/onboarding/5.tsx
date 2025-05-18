@@ -150,11 +150,11 @@ export default function OnboardingReadingTimeScreen() {
   const options = [
     {
       id: '1-5',
-      title: '1-5 mins (1 chapter)',
+      title: '3-6 mins (1 chapter)',
     },
     {
       id: '6-10',
-      title: '6-10 mins (3-4 chapters)',
+      title: '7-10 mins (3-4 chapters)',
     },
     {
       id: '15-25',

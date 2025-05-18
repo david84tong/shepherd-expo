@@ -16,6 +16,12 @@ import { Animated as RNAnimated, Easing as RNEasing } from 'react-native';
 import Toast from 'react-native-toast-message';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { useUIStore } from '~/app/stores/uiStore';
+import { useHomeStore, SuccessAnimationType } from '~/app/stores/homeStore';
+import { useUserStore } from '~/app/stores/userStore';
+import { useRouter } from 'expo-router';
+import firestore from '@react-native-firebase/firestore';
+import { BIBLE_PATHS } from '~/app/models/Path';
+import analytics from '../utils/analytics';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -178,6 +184,9 @@ interface NewBibleReaderProps {
   bookId: number;
   chapter: number;
   translation?: string;
+  isInPathMode?: boolean;
+  onNavigateBack?: () => void; // Callback for back navigation when in path mode
+  onSwitchToDefaultReader?: () => void; // Notify parent to switch to default reader
 }
 
 interface TypingTextProps {
@@ -227,7 +236,14 @@ const TypingText: React.FC<TypingTextProps> = ({
   return <Text style={baseTextStyle} className={className}>{displayedText}</Text>;
 };
 
-const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, translation = 'ESV' }) => {
+const NewBibleReader: React.FC<NewBibleReaderProps> = ({ 
+  bookId, 
+  chapter, 
+  translation = 'ESV',
+  isInPathMode = false,
+  onNavigateBack,
+  onSwitchToDefaultReader,
+}) => {
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -241,6 +257,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
   
   const progressValue = useSharedValue(0);
   const pathInProgress = usePathStore((s) => s.pathInProgress);
+  const currentPath = usePathStore((s) => s.currentPath);
+  const setSavedReading = usePathStore((s) => s.setSavedReading);
   const scrollViewRef = useRef<ScrollView>(null);
 
   // Reference for the header container
@@ -261,6 +279,34 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
   const verseTextStyle = { fontSize: fontSize, lineHeight: LINE_HEIGHT_PRESETS[lineHeightPreset], color: theme.text };
 
   const showBookChapterSelector = useUIStore(state => state.showBookChapterSelector);
+
+  const hasFilteredRef = useRef(false);
+
+  const markUnitAsCompleted = usePathStore((s) => s.markUnitAsCompleted);
+  const setNextUnitPreview = usePathStore((s) => s.setNextUnitPreview);
+  const setPathInProgress = usePathStore((s) => s.setPathInProgress);
+
+  // home/user store helpers (mirrors BibleReader)
+  const setHomeMode = useHomeStore((s) => s.setMode);
+  const setSuccessType = useHomeStore((s) => s.setSuccessType);
+  const setReadingCompleted = useHomeStore((s) => s.setReadingCompleted);
+  const prayerCompleted = useHomeStore((s) => s.prayerCompleted);
+  const reflectionCompleted = useHomeStore((s) => s.reflectionCompleted);
+  const sawDailyBonus = useHomeStore((s) => s.sawDailyBonus);
+
+  const addCompletedReading = useUserStore((s) => s.addCompletedReading);
+  const setLastReadingDate = useUserStore((s) => s.setLastReadingDate);
+  const setVersesReadTotal = useUserStore((s) => s.setVersesReadTotal);
+  const setChaptersReadTotal = useUserStore((s) => s.setChaptersReadTotal);
+  const getVersesReadTotal = useUserStore((s) => s.getVersesReadTotal);
+  const getChaptersReadTotal = useUserStore((s) => s.getChaptersReadTotal);
+
+  const router = useRouter();
+
+  // Track translation changes in analytics
+  useEffect(() => {
+    analytics.setUserProperties({ translation });
+  }, [translation]);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -405,11 +451,77 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
   }, []);
 
   const scrollToBottom = useCallback(() => {
-    // Small delay to ensure rendering is complete
     setTimeout(() => {
       scrollViewRef.current?.scrollToEnd({ animated: true });
     }, 100);
   }, []);
+
+  // ---- FINISH READING HANDLER (needs to be in scope before handleNextVerse) ----
+  const handleFinishReading = useCallback(() => {
+    if (!currentPath || !chapterData) return;
+
+    // haptic
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // save reading
+    const now = firestore.Timestamp.now();
+    addCompletedReading({
+      date: now,
+      book: chapterData.book,
+      chapters: [String(chapterData.chapter)] as unknown as [string],
+      isUnit: true,
+    });
+    setLastReadingDate(now);
+
+    const totalVerses = getVersesReadTotal();
+    const totalChapters = getChaptersReadTotal();
+    setVersesReadTotal(totalVerses + chapterData.verses.length);
+    setChaptersReadTotal(totalChapters + 1);
+
+    // mark unit complete
+    markUnitAsCompleted(currentPath.unitId);
+
+    // next unit preview similar to default reader
+    let nextUnit: any = null;
+    const pathIdx = BIBLE_PATHS.findIndex(p => p.id === currentPath.pathId);
+    if (pathIdx !== -1) {
+      const p = BIBLE_PATHS[pathIdx];
+      const uIdx = p.units.findIndex(u => u.id === currentPath.unitId);
+      if (uIdx !== -1 && uIdx < p.units.length -1) nextUnit = p.units[uIdx+1];
+    }
+    setNextUnitPreview(nextUnit);
+    setPathInProgress(!!nextUnit);
+
+    // success screen logic identical to default
+    setHomeMode('DEFAULT');
+    setReadingCompleted(true);
+    if (sawDailyBonus) {
+      setSuccessType(SuccessAnimationType.READING);
+    } else if (prayerCompleted && reflectionCompleted) {
+      setSuccessType(SuccessAnimationType.BONUS);
+    } else {
+      setSuccessType(SuccessAnimationType.READING);
+    }
+
+    analytics.logEvent("CardBibleReader_Tapped_FinishReading", {
+      pathId: currentPath.pathId,
+      unitId: currentPath.unitId,
+      startVerse: currentPath.startVerse,
+      endVerse: currentPath.endVerse,
+      bookId: currentPath.bookId,
+      chapter: currentPath.startChapter,
+    });
+
+    router.replace({
+      pathname: '/success',
+      params: {
+        message: 'Reading Complete!',
+        subMessage: 'Great progress!',
+      }
+    });
+  }, [currentPath, chapterData, addCompletedReading, setLastReadingDate, getVersesReadTotal, getChaptersReadTotal, markUnitAsCompleted, setNextUnitPreview, setPathInProgress, setHomeMode, setReadingCompleted, sawDailyBonus, prayerCompleted, reflectionCompleted, setSuccessType]);
+
+  // -----------------------------
 
   const handleNextVerse = useCallback(() => {
     if (!chapterData || isScrolling) return;
@@ -444,10 +556,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
       // Schedule auto-scroll after the next verse is added
       setTimeout(scrollToBottom, 150);
     } else {
-      // Reached the end of the chapter, navigate to next chapter
-      navigateToNextChapter();
+      // Reached the end of the chapter
+      if (isInPathMode) {
+        handleFinishReading();
+      } else {
+        navigateToNextChapter();
+      }
     }
-  }, [currentIndex, chapterData, isTypingComplete, scrollToBottom, showTapGuidance, tapCount, isScrolling, navigateToNextChapter]);
+  }, [currentIndex, chapterData, isTypingComplete, scrollToBottom, showTapGuidance, tapCount, isScrolling, navigateToNextChapter, handleFinishReading, isInPathMode]);
 
   const handleTypingComplete = useCallback(() => {
     setIsTypingComplete(true);
@@ -508,15 +624,20 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
   const handleDefaultReaderToggle = useCallback(async (value: boolean) => {
     setUseDefaultReader(value);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+    analytics.logEvent("CardBibleReader_Tapped_ToggleDefaultReader", {
+      value: value ? 'default' : 'new'
+    });
     try {
       console.log(`Setting reader preference to: ${value ? 'default' : 'new'}`);
       await AsyncStorage.setItem(READER_PREFERENCE_KEY, value ? 'default' : 'new');
-      handleCloseSettingsModal();
+      // Notify parent to switch back to default reader
+      if (value && onSwitchToDefaultReader) {
+        onSwitchToDefaultReader();
+      }
     } catch (e) {
       console.error("Failed to save reader preference", e);
     }
-  }, [handleCloseSettingsModal]);
+  }, [onSwitchToDefaultReader]);
 
   // Handler for opening the selector
   const handleOpenSelector = () => {
@@ -525,6 +646,43 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
       loadChapter(newBookId, newChapter);
     });
   };
+
+  useEffect(() => {
+    if (
+      chapterData &&
+      isInPathMode &&
+      currentPath &&
+      currentPath.startVerse &&
+      currentPath.endVerse &&
+      bookId === currentPath.bookId &&
+      chapter === currentPath.startChapter &&
+      !hasFilteredRef.current
+    ) {
+      const { startVerse, endVerse } = currentPath;
+      console.log(`📖 [NewBibleReader] Filtering verses ${startVerse}-${endVerse}`);
+      const filtered = chapterData.verses.filter(
+        v => v.verse >= startVerse && v.verse <= endVerse
+      );
+      setChapterData({ ...chapterData, verses: filtered });
+      hasFilteredRef.current = true;
+    }
+  }, [chapterData, isInPathMode, currentPath, bookId, chapter]);
+
+  // Add this useEffect to sync chapter changes
+  useEffect(() => {
+    if (bookId && chapter) {
+      // This ensures the UI state in the selector modal stays in sync
+      const updateUIState = async () => {
+        // Allow the chapter data to load first
+        if (!loading && chapterData) {
+          console.log(`📚 [NewBibleReader] Syncing UI state for book ${bookId}, chapter ${chapter}`);
+          setSavedReading(chapterData.book, bookId, chapter);
+        }
+      };
+      
+      updateUIState();
+    }
+  }, [bookId, chapter, chapterData, loading, setSavedReading]);
 
   if (loading || !chapterData) {
     return (
@@ -542,9 +700,20 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
       <View style={{...StyleSheet.absoluteFillObject}} pointerEvents="none" />
 
       <View style={{flex:1, paddingBottom: 24, paddingHorizontal:16, paddingTop:16}}>
+
+        
         {/* HEADER: Bible Book/Chapter, tap to open selector, styled like bibleReader.tsx */}
         <View className="flex-row items-center justify-between mb-3  px-[4px] py-[10px]">
           <View className="flex-row items-center">
+            {isInPathMode && onNavigateBack && (
+              <TouchableOpacity
+                onPress={onNavigateBack}
+                className="mr-2 bg-[#DCB28033] rounded-[22px] p-[6px]"
+              >
+                <Feather name="arrow-left" size={20} color={theme.iconColor} />
+              </TouchableOpacity>
+            )}
+
             <TouchableOpacity onPress={handleOpenSelector} className="bg-[#DCB28033] rounded-[15px] py-[5px] px-[12px] mr-2">
               <Text className="font-feather text-[14px] text-[#3C584A]">
                 {chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'Loading...'}
@@ -555,7 +724,16 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
             <Feather name="settings" size={20} color={theme.iconColor} />
           </TouchableOpacity>
         </View>
-
+        {/* Add progress bar at the top */}
+        <View style={{height: 8, backgroundColor: theme.progressBarBackground, borderRadius: 2, marginBottom: 8, overflow: 'hidden'}}>
+          <Reanimated.View
+            style={[{
+              height: '100%',
+              backgroundColor: theme.progressBarFill,
+              borderRadius: 2,
+            }, animatedProgressStyle]}
+          />
+        </View>
         <ScrollView 
           ref={scrollViewRef}
           className="flex-1" 
@@ -595,8 +773,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
                         </View>
                         <View className="flex-row space-x-5">
                           <TouchableOpacity onPress={(e) => { e.stopPropagation(); Clipboard.setString(`${chapterData.book} ${chapterData.chapter}:${v.verse} - ${v.text}`); Toast.show({ type: 'success', text1: 'Verse copied to clipboard', position: 'top', visibilityTime: 2000 }); }}><Feather name="copy" size={16} color={theme.iconColor} /></TouchableOpacity>
-                          <TouchableOpacity onPress={(e) => { e.stopPropagation(); }}><Feather name="edit-2" size={16} color={theme.iconColor} className="mx-8"/></TouchableOpacity>
-                          <TouchableOpacity onPress={(e) => { e.stopPropagation(); }}><Feather name="message-circle" size={16} color={theme.iconColor} /></TouchableOpacity>
+                          {/* <TouchableOpacity onPress={(e) => { e.stopPropagation(); }}><Feather name="edit-2" size={16} color={theme.iconColor} className="mx-8"/></TouchableOpacity>
+                          <TouchableOpacity onPress={(e) => { e.stopPropagation(); }}><Feather name="message-circle" size={16} color={theme.iconColor} /></TouchableOpacity> */}
                         </View>
                       </View>
                     </View>
@@ -613,11 +791,19 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
                   )}
                 </View>
               ) : (
-                <View style={{backgroundColor: theme.progressBarBackground, paddingVertical:12}} className="items-center mt-6 rounded-xl">
-                  <Text style={{color: theme.headerText, fontFamily:'Feather Bold', fontSize:16}}>
-                    End of Chapter 🎉
-                  </Text>
-                </View>
+                <TouchableOpacity
+                  onPress={() => {
+                    console.log('📖 [NewBibleReader] Finish tapped');
+                    handleFinishReading();
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <View style={{backgroundColor: theme.progressBarBackground, paddingVertical:12}} className="items-center mt-6 rounded-xl">
+                    <Text style={{color: theme.headerText, fontFamily:'Feather Bold', fontSize:16}}>
+                      Finish Reading 🎉
+                    </Text>
+                  </View>
+                </TouchableOpacity>
               )}
               
               {/* Add invisible spacer to ensure touchable area extends to bottom padding */}
@@ -672,13 +858,13 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({ bookId, chapter, transl
                   
                   {/* Default Reader Toggle */}
                   <View style={styles.toggleContainer}>
-                    <Text style={[styles.toggleLabel, {color: theme.text}]}>Default Reader</Text>
+                    <Text style={[styles.toggleLabel, {color: theme.text}]}>Card View</Text>
                     <Switch
                       trackColor={{ false: "#E0E0E0", true: "#F7B500" }}
-                      thumbColor={useDefaultReader ? "#FFFFFF" : "#FFFFFF"}
+                      thumbColor={!useDefaultReader ? "#FFFFFF" : "#FFFFFF"}
                       ios_backgroundColor="#E0E0E0"
-                      onValueChange={handleDefaultReaderToggle}
-                      value={useDefaultReader}
+                      onValueChange={(value) => handleDefaultReaderToggle(!value)}
+                      value={!useDefaultReader}
                     />
                   </View>
 
@@ -748,7 +934,7 @@ const styles = StyleSheet.create({
     bottom: 80,
     elevation: 5,
     left: 20,
-    padding: 16,
+    padding: 4,
     position: 'absolute',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
