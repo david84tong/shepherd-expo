@@ -79,14 +79,6 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
     bottomSheetRef.current?.close();
   }, []);
 
-  // Handle sheet changes
-  const handleSheetChange = useCallback((index: number) => {
-    if (index === -1) {
-      // Sheet is closed - reset state
-      hideBookChapterSelector();
-    }
-  }, [hideBookChapterSelector]);
-
   // Custom backdrop renderer
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
@@ -129,6 +121,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
   // Effect to scroll to selected book when sheet opens
   useEffect(() => {
     if (isBookChapterSelectorVisible) {
+      bottomSheetRef.current?.snapToIndex(0);
       // Small delay to ensure layout is complete
       setTimeout(scrollToSelectedBook, 100);
     }
@@ -146,7 +139,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
       snapPoints={['70%']}
       enablePanDownToClose={true}
       enableOverDrag={false}
-      onChange={handleSheetChange}
+      onClose={hideBookChapterSelector}
       backgroundStyle={styles.sheetBackground}
       handleIndicatorStyle={styles.handleIndicator}
       backdropComponent={renderBackdrop}

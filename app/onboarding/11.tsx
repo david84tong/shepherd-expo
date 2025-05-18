@@ -18,6 +18,7 @@ import Animated, {
 import analytics from '../../utils/analytics';
 import Rive, { Fit, Alignment } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
+import Toast from 'react-native-toast-message';
 
 export default function SaveProgressScreen() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function SaveProgressScreen() {
   const { signInWithApple, signInAnonymously } = useAuth();
   const { clearResponses, responses } = useOnboardingStore();
   const { createUser } = useUserStore();
+  const [showNoAccountToast, setShowNoAccountToast] = useState(false);
 
   // Animation shared values
   const headerOpacity = useSharedValue(0);
@@ -203,6 +205,7 @@ export default function SaveProgressScreen() {
       } else if (error.message?.includes('No account found')) {
         errorMessage =
           "We couldn't find an account with this Apple ID. Please create a new account instead.";
+        setShowNoAccountToast(true);
       } else if (error.message?.includes('Failed to fetch your account data')) {
         errorMessage = "We couldn't retrieve your account data. Please try again.";
       }
@@ -369,7 +372,18 @@ export default function SaveProgressScreen() {
         {/* Back button - only show in login mode */}
         {isLoginMode && (
           <TouchableOpacity
-            onPress={() => router.back()}
+            onPress={() => {
+              if (showNoAccountToast) {
+                Toast.show({
+                  type: 'error',
+                  text1: 'Please go through onboarding.',
+                  position: 'top',
+                  visibilityTime: 3000,
+                });
+                setShowNoAccountToast(false);
+              }
+              router.back();
+            }}
             className="items-center"
             disabled={loading}>
             <Text className="font-din text-description underline text-[16px]">
