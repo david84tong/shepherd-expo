@@ -118,8 +118,8 @@ export default function SaveProgressScreen() {
               : allResponses.bibleFamiliarity === 'a-lot'
                 ? 'mature'
                 : 'growing',
-        frequencyGoal: 'daily',
-        denomination: allResponses.religiousAffiliation,
+        frequencyGoal: allResponses.frequencyGoal,
+      denomination: allResponses.religiousAffiliation,
         ageRange: allResponses.ageRange,
         // Set notification preferences if provided
         notificationEnabled:

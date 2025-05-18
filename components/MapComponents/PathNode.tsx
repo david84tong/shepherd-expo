@@ -198,11 +198,11 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
             });
           }
         }}
-        disabled={false}
-      onPressIn={() => {
+        disabled={isDisabled}
+        onPressIn={() => {
           setIsPressed(true);
           // Optional: add even lighter feedback on press in
-          if (isDisabled) {
+          if (!isDisabled) {
             Haptics.selectionAsync();
           }
         }}

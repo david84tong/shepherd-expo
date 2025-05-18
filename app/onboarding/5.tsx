@@ -142,7 +142,8 @@ export default function OnboardingReadingTimeScreen() {
       }, 300);
     } else {
       // Normal onboarding flow
-      await setResponse('streakCommitment', duration as any);
+      
+      await setResponse('frequencyGoal', duration);
       router.push('/onboarding/6');
     }
   };
