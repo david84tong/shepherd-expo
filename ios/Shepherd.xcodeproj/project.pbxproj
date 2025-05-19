@@ -16,7 +16,7 @@
 		9908FF702DDAC77E0077604F /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9908FF6F2DDAC77E0077604F /* SwiftUI.framework */; };
 		9908FF732DDAC77E0077604F /* ShepherdStreakWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9908FF722DDAC77E0077604F /* ShepherdStreakWidgetBundle.swift */; };
 		9908FF752DDAC77E0077604F /* ShepherdStreakWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9908FF742DDAC77E0077604F /* ShepherdStreakWidget.swift */; };
-		9908FF772DDAC7810077604F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9908FF762DDAC7810077604F /* Assets.xcassets */; };
+		9908FF772DDAC77E0077604F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9908FF762DDAC7810077604F /* Assets.xcassets */; };
 		9908FF7B2DDAC7810077604F /* ShepherdStreakWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9908FF6C2DDAC77E0077604F /* ShepherdStreakWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A9AB9F892D29F5EB50529DAC /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 30817DFA8AF5F0089F041032 /* PrivacyInfo.xcprivacy */; };
 		AABED5C1394A46FB9014A649 /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = 703EFCD6E1F94D6181656928 /* noop-file.swift */; };
@@ -780,7 +780,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
-				PRODUCT_BUNDLE_IDENTIFIER = second.round.shepherd.ShepherdStreakWidgetUse;
+				PRODUCT_BUNDLE_IDENTIFIER = second.round.shepherduse.ShepherdStreakWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
@@ -826,7 +826,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_FAST_MATH = YES;
 				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
-				PRODUCT_BUNDLE_IDENTIFIER = second.round.shepherd.ShepherdStreakWidgetUse;
+				PRODUCT_BUNDLE_IDENTIFIER = second.round.shepherduse.ShepherdStreakWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
