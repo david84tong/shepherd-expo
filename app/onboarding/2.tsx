@@ -47,18 +47,6 @@ export default function OnboardingLambNameScreen() {
   const buttonOpacity = useSharedValue(0);
   const buttonTranslateY = useSharedValue(20); // Smaller initial offset
 
-  // Auto-focus the input field when component mounts
-  useEffect(() => {
-    // Short timeout to ensure animations have started before focusing
-    const timer = setTimeout(() => {
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
-  }, []);
-
   // Run animations only once during initial layout
   useLayoutEffect(() => {
     if (animationsInitialized.current) return;

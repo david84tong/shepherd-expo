@@ -81,6 +81,7 @@ export type OnboardingResponses = {
 
   /** Screen 7 – "How much of the Bible have you read before?" */
   bibleFamiliarity?: 'never' | 'a-little' | 'a-lot';
+  frequencyGoal?: '1-5' | '6-10' | '11-15' | '15-25';
 
   /** Screen 8 – "How comfortable are you with prayer?" */
   prayerConfidence?: 'pray-regularly' | 'sometimes' | 'never-prayed';

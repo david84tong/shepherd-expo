@@ -203,10 +203,11 @@ export default function MapScreen() {
   }, [sections]);
 
   const isProMember = useSubscriptionStore((state) => state.isProMember);
-
+  const subscriptionStore = useSubscriptionStore();
   // Handle subscription button press using the store action
   const handleSubscriptionPress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    subscriptionStore.setFromScreen('map');
     router.push('/PricingScreen' as any);
   };
 
@@ -222,6 +223,7 @@ export default function MapScreen() {
   const handleNodePress = (unit: Unit, isLastUnitInSection: boolean) => {
     console.log('Pressed unit:', unit.title, unit.reference);
     console.log('Reference details:', JSON.stringify(unit.reference));
+    console.log('unit selected', unit.startVerse, unit.endVerse, unit);
 
     // Get the current section/path information
     const currentPath = sections.find((section) => section.data.some((u) => u.id === unit.id));
@@ -275,6 +277,33 @@ export default function MapScreen() {
       reflection: unit.reflectionPrompt,
     };
 
+    // Check for verse-level divisions (verse ranges)
+    // Units with verse ranges have IDs like "gen-24b-v12-27" where "v12-27" indicates verses 12-27
+    if (unit.id.includes('-v')) {
+      try {
+        // Extract verse range from the unit ID
+        const verseMatch = unit.id.match(/-v(\d+)-(\d+)$/);
+        if (verseMatch && verseMatch.length === 3) {
+          const startVerse = parseInt(verseMatch[1], 10);
+          const endVerse = parseInt(verseMatch[2], 10);
+
+          if (!isNaN(startVerse) && !isNaN(endVerse)) {
+            console.log(`Found verse range in unit ID: ${startVerse}-${endVerse}`);
+            pathInfo.startVerse = startVerse;
+            pathInfo.endVerse = endVerse;
+          }
+        }
+      } catch (error) {
+        console.error('Error parsing verse range from unit ID:', error);
+      }
+    }
+
+    // Fallback: if unit object already has startVerse/endVerse properties, use them
+    if (!pathInfo.startVerse && unit.startVerse && unit.endVerse) {
+      pathInfo.startVerse = unit.startVerse;
+      pathInfo.endVerse = unit.endVerse;
+    }
+
     setCurrentPath(pathInfo);
 
     // Set path in progress to hide tab bar when opening Bible
@@ -290,7 +319,7 @@ export default function MapScreen() {
     if (bookId && chaptersQuery) {
       // Use an absolute path format to target the Bible reader screen
       router.push({
-        pathname: '/bibleReader', // Use bibleReader (not /bible) for consistency
+        pathname: '/bibleReader',
         params: {
           bookId: bookId?.toString(),
           chapters: chaptersQuery,

@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
-import { View, Pressable } from 'react-native';
+import { View, Pressable, Text } from 'react-native';
 
 import { BIBLE_PATHS, Unit } from '../../app/models/Path';
 import analytics from '../../utils/analytics';
@@ -227,7 +227,7 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
         {/* Completed check icon */}
         {status === 'completed' && (
           <View className="absolute ml-4 mt-4 -bottom-1 -right-2 bg-lightGreen rounded-full p-1.5 border-4 border-darkGreen ">
-            <Ionicons name="checkmark" size={24} color="green" style={{ fontWeight: 'bold' }} />
+          <Ionicons name="checkmark" size={24} color="green" style={{ fontWeight: 'bold' }} />
           </View>
         )}
 
@@ -238,6 +238,8 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
           </View>
         )}
       </Pressable>
+      
+      {/* Debug ID text */}
     </View>
   );
 };

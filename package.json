@@ -58,6 +58,7 @@
     "expo-system-ui": "~4.0.9",
     "expo-web-browser": "~14.0.2",
     "firebase": "^10.5.2",
+    "lodash": "^4.17.21",
     "lottie-react-native": "7.1.0",
     "mixpanel-react-native": "^3.0.9",
     "nativewind": "latest",
@@ -77,7 +78,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
-    "@react-native-community/cli": "latest",
+    "@types/lodash": "^4.17.16",
     "@types/react": "~18.3.12",
     "@types/react-native": "^0.73.0",
     "@typescript-eslint/eslint-plugin": "^7.7.0",

@@ -234,27 +234,28 @@ const PricingScreen = () => {
                 className="w-64 h-64 mb-4 flex"
               />
             </Animated.View>
-          </AnimatedItem><AnimatedItem index={11} animateItemFromBottom={animateScreenFromBottom}><View className="mb-10">
-            <Text className="font-feather text-h2 text-textPrimary mb-6 text-center">How the trial works</Text>
-            <View className="bg-white rounded-2xl shadow-card p-5"><AnimatedItem index={0} animateItemFromBottom={animateScreenFromBottom}><View className="flex-row items-start mb-6">
-              <View className="w-10 h-10 bg-lightGreen rounded-full items-center justify-center mr-4 shadow-sm"><Feather name="unlock" size={20} color="#24CA17" /></View>
-              <View className="flex-1"><Text className="font-feather text-lg text-textPrimary mb-0.5">Today</Text><Text className="font-din text-body text-description leading-snug">Unlock premium access to all content for free. No payment needed to start.</Text></View>
-            </View></AnimatedItem><AnimatedItem index={1} animateItemFromBottom={animateScreenFromBottom}><View className="flex-row items-start mb-6">
-              <View className="w-10 h-10 bg-lightGreen rounded-full items-center justify-center mr-4 shadow-sm"><Feather name="bell" size={20} color="#24CA17" /></View>
-              <View className="flex-1"><Text className="font-feather text-lg text-textPrimary mb-0.5">Day 5</Text><Text className="font-din text-body text-description leading-snug">We&apos;ll send a reminder before your free trial ends.</Text></View>
-            </View></AnimatedItem><AnimatedItem index={2} animateItemFromBottom={animateScreenFromBottom}><View className="flex-row items-start"><View className="w-10 h-10 bg-lightGreen rounded-full items-center justify-center mr-4 shadow-sm"><Feather name="calendar" size={20} color="#24CA17" /></View>
-              <View className="flex-1"><Text className="font-feather text-lg text-textPrimary mb-0.5">Day 7</Text><Text className="font-din text-body text-description leading-snug">Your subscription begins. Cancel anytime before if you change your mind.</Text></View>
-            </View></AnimatedItem></View>
-          </View>
-
-          </AnimatedItem><AnimatedItem index={12} animateItemFromBottom={animateScreenFromBottom}><View className="bg-white rounded-2xl shadow-card p-5 mb-8 flex-row justify-between items-center">
+  
+          {/* </AnimatedItem><AnimatedItem index={12} animateItemFromBottom={animateScreenFromBottom}>
+            <View className="bg-white rounded-2xl shadow-card p-5 mb-8 flex-row justify-between items-center">
             <Text className="font-feather text-lg text-textPrimary">Unlock 7-day trial & reminder</Text>
             <Switch trackColor={{ false: '#E9E2C7', true: '#A8F093' }} thumbColor={trialEnabled ? '#24CA17' : '#FFF4D9'} ios_backgroundColor="#E9E2C7" onValueChange={toggleSwitch} value={trialEnabled} style={{ transform: [{ scaleX: 1.1 }, { scaleY: 1.1 }] }} />
-          </View></AnimatedItem><AnimatedItem index={13} animateItemFromBottom={animateScreenFromBottom}>
+          </View> */}
+            <View className="bg-white rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
+              <Text className="font-feather text-h2 text-textPrimary mt-2 mb-2 text-center">❤️ Support the mission</Text>
+              <Text className="font-din text-heading text-description text-center">We're a small team of 2 of christians, completely self-funded. </Text>
+              <Text className="font-feather text-heading text-textPrimary text-center mt-8">Help fund future features</Text>
+              <Text className="font-din text-body text-description text-start mt-2">- Social bible study (add friends)</Text>
+              <Text className="font-din text-body text-description text-center mt-2">- translating to other languages</Text>
+              <Text className="font-din text-body text-description text-start mt-2">- chat with bible</Text>
+              <Text className="font-din text-body text-description text-center mt-2">- prayer requests</Text>
+              <Text className="font-din text-body text-description text-center mt-2">- family/kid study plans</Text>
+              <Text className="font-din text-body text-description text-center mt-2">- more skins / backgrounds</Text>
+            </View>
+          </AnimatedItem><AnimatedItem index={13} animateItemFromBottom={animateScreenFromBottom}>
             <View className="bg-white rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
               <Feather name="star" size={48} color="#F7B500" />
-              <Text className="font-feather text-heading text-textPrimary mt-4 mb-2 text-center">10% of proceeds are donated!</Text>
-              <Text className="font-din text-heading text-description text-center">Help tithe to help fund mission trips, charities, and purchasing super accounts for those in need.</Text>
+              <Text className="font-feather text-heading text-textPrimary mt-4 mb-2 text-center">10% of all profits are donated!</Text>
+              <Text className="font-din text-heading text-description text-center">Tithe to help fund mission trips, charities, and purchasing super accounts for those in need.</Text>
             </View>
           </AnimatedItem>
         </ScrollView>
@@ -263,7 +264,7 @@ const PricingScreen = () => {
             {isLoading ? (
               <View className="py-3 flex-row justify-center items-center"><ActivityIndicator size="small" color="#F7B500" /><Text className="font-din text-lg text-textPrimary ml-3">Loading subscription options...</Text></View>
             ) : (
-              <PrimaryButton title="START MY FREE WEEK" onPress={handleSubscribe} />
+              <PrimaryButton title="Unlock Super Shepherd" onPress={handleSubscribe} />
             )}
             <Text className="font-din text-caption text-description/70 text-center mt-2 px-4 text-xs">By continuing, you agree to our Terms of Service</Text>
           </View>

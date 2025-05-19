@@ -66,7 +66,7 @@ export default function ProfileScreen() {
   } = useUserStore();
 
   // Get subscription state and actions from the store
-  const { isProMember, presentPaywall, getCustomerInfo } = useSubscriptionStore();
+  const { isProMember, presentPaywall, getCustomerInfo, setFromScreen } = useSubscriptionStore();
 
   const lamb = getLamb?.();
   const streak = getStreakCount?.();
@@ -475,9 +475,7 @@ export default function ProfileScreen() {
               </Text>
               {isProMember && (
                 <View className="bg-lightYellow px-4 py-1 rounded-full">
-                  <Text className="font-din text-accentGold">
-                    Pro (New Skins coming next week!)
-                  </Text>
+                  <Text className="font-din text-accentGold">Pro</Text>
                 </View>
               )}
             </View>
@@ -490,7 +488,10 @@ export default function ProfileScreen() {
               <>
                 <PrimaryButton
                   title="Upgrade to Pro"
-                  onPress={() => router.push('/PricingScreen' as any)}
+                  onPress={() => {
+                    setFromScreen('profile');
+                    router.push('/PricingScreen' as any);
+                  }}
                   style="mt-0 mb-3"
                 />
               </>

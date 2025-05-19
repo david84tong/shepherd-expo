@@ -7,7 +7,7 @@ import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import Rive, { Fit, Alignment } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
 import analytics from '../../utils/analytics';
-
+import useSubscriptionStore from '../stores/subscriptionStore';
 interface LoadingScreenProps {
   initialMessage?: string;
   onLoadingComplete?: () => void;
@@ -20,7 +20,6 @@ const LOADING_MESSAGES = [
   'Sprinkling some holy water',
   'Generating your custom plan',
 ];
-
 const LoadingScreen: React.FC<LoadingScreenProps> = ({
   initialMessage,
   onLoadingComplete,
@@ -28,6 +27,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
 }) => {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { setFromScreen } = useSubscriptionStore();
 
   // Get route parameters
   const initialMessageFromParams = params.initialMessage as string;
@@ -49,6 +49,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   const [assets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
 
   useEffect(() => {
+    setFromScreen('onboarding');
     analytics.logEvent('OnboardingLoadingScreen_Viewed', {
       initialMessage: initialMessageFromParams || initialMessage,
       redirectTarget: redirectAfterLoading || redirectTo || 'PricingScreen',

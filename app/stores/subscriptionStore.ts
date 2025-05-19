@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import Toast from 'react-native-toast-message';
 import { isSignedIn } from '../hooks/authHook';
+import { fromPairs } from 'lodash';
 
 interface SubscriptionState {
   customerInfo: CustomerInfo | null;
@@ -23,6 +24,8 @@ interface SubscriptionState {
   getCustomerInfo: () => Promise<void>;
   handleReferralCode: (code: string) => Promise<void>;
   getUsedReferralCodes: () => Promise<string[]>;
+  fromScreen: string;
+  setFromScreen: (screenName: string) => void;
   // Add other state and actions here
 }
 
@@ -31,6 +34,7 @@ const ENTITLEMENT_ID = 'Super Shepherd'; // Define the entitlement ID
 const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   customerInfo: null,
   isProMember: false,
+  fromScreen: '',
 
   initializeRevenueCat: async (apiKey: string, userId: string | null) => {
     console.log('[SubscriptionStore] initializeRevenueCat called.');
@@ -87,6 +91,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
             '[SubscriptionStore] Purchase completed successfully from paywall. Updating customer info...'
           );
           analytics.logEvent('subscription_purchase_success', {
+            fromScreen: get().fromScreen,
             source: 'paywall',
           });
           await get().getCustomerInfo();
@@ -219,6 +224,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         offering_id: pack.offeringIdentifier,
         product_id: productIdentifier,
         is_pro: isPro,
+        currentScreen: 'purchase_screen',
       });
 
       // Show success message
@@ -363,6 +369,10 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const hasUsedMonthly = usedReferralCodes.includes('MONTHL');
     const hasUsedPermanent = usedReferralCodes.includes('WXES4S');
 
+    // Prepare variables that might be needed in switch cases
+    let monthExpiry: Date;
+    let weekExpiry: Date;
+
     switch (code.toUpperCase()) {
       case 'WXES4S':
         if (hasUsedPermanent) {
@@ -381,7 +391,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           throw new Error('You have already used a monthly subscription code');
         }
         // One month pro access
-        const monthExpiry = new Date();
+        monthExpiry = new Date();
         monthExpiry.setMonth(monthExpiry.getMonth() + 1);
 
         await userRef.update({
@@ -396,7 +406,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           throw new Error('You have already used a weekly subscription code');
         }
         // One week pro access
-        const weekExpiry = new Date();
+        weekExpiry = new Date();
         weekExpiry.setDate(weekExpiry.getDate() + 7);
 
         await userRef.update({
@@ -413,7 +423,6 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     set({ isProMember: true });
     useUserStore.getState().setProStatus('pro');
   },
-
   getUsedReferralCodes: async () => {
     const user = auth().currentUser;
     if (!user) {
@@ -423,6 +432,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const userDoc = await firestore().collection('users').doc(user.uid).get();
     const userData = userDoc.data();
     return userData?.usedReferralCodes || [];
+  },
+
+  setFromScreen: (screenName: string) => {
+    console.log(`[SubscriptionStore] Setting fromScreen to: ${screenName}`);
+    set({ fromScreen: screenName });
+    analytics.logEvent('subscription_fromScreen', { screen: screenName });
   },
 }));
 

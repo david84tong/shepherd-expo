@@ -1,23 +1,21 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SafeAreaView } from 'react-native';
 
 import { BibleReader } from '../bibleReader';
 import { usePathStore } from '../stores/pathStore';
 
-/**
- * Bible tab that uses the BibleReader component
- */
+// Bible tab simply renders BibleReader. Reader selection now happens inside BibleReader.
 export default function BibleTab() {
   const { savedBookId, savedChapter, setPathInProgress } = usePathStore();
 
-  // When tab is activated, ensure tabbar visibility
-  React.useEffect(() => {
+  // Ensure tab bar shows by clearing path flag when entering tab
+  useEffect(() => {
     setPathInProgress(false);
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-main-bg">
-      <BibleReader isEmbedded initialBookId={savedBookId} initialChapter={savedChapter} />
+    <SafeAreaView className="flex-1 bg-surfaceCream">
+      <BibleReader initialBookId={savedBookId} initialChapter={savedChapter} />
     </SafeAreaView>
   );
 }
