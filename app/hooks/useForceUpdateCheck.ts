@@ -4,6 +4,11 @@ import { compareVersions } from 'compare-versions';
 import Constants from 'expo-constants';
 
 const useForceUpdateCheck = () => {
+  // Temporarily disable force update check
+  return { visibleForceUpdate: false };
+
+  // Original code commented out for now
+  /*
   const [visibleForceUpdate, setVisibleForceUpdate] = useState(false);
   useEffect(() => {
     const checkForUpdate = async () => {
@@ -33,6 +38,7 @@ const useForceUpdateCheck = () => {
     checkForUpdate();
   }, []);
   return { visibleForceUpdate };
+  */
 };
 
 export default useForceUpdateCheck;

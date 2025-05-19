@@ -62,6 +62,7 @@
     "react": "^18.3.1",
     "react-dom": "18.3.1",
     "react-native": "0.76.9",
+    "react-native-bottom-sheet": "^1.0.3",
     "react-native-gesture-handler": "~2.20.2",
     "react-native-purchases": "^8.9.7",
     "react-native-purchases-ui": "^8.9.7",

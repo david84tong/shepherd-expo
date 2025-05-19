@@ -16,7 +16,6 @@
 		9908FF702DDAC77E0077604F /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9908FF6F2DDAC77E0077604F /* SwiftUI.framework */; };
 		9908FF732DDAC77E0077604F /* ShepherdStreakWidgetBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9908FF722DDAC77E0077604F /* ShepherdStreakWidgetBundle.swift */; };
 		9908FF752DDAC77E0077604F /* ShepherdStreakWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9908FF742DDAC77E0077604F /* ShepherdStreakWidget.swift */; };
-		9908FF772DDAC77E0077604F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 9908FF762DDAC7810077604F /* Assets.xcassets */; };
 		9908FF7B2DDAC7810077604F /* ShepherdStreakWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9908FF6C2DDAC77E0077604F /* ShepherdStreakWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A9AB9F892D29F5EB50529DAC /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 30817DFA8AF5F0089F041032 /* PrivacyInfo.xcprivacy */; };
 		AABED5C1394A46FB9014A649 /* noop-file.swift in Sources */ = {isa = PBXBuildFile; fileRef = 703EFCD6E1F94D6181656928 /* noop-file.swift */; };
@@ -303,7 +302,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9908FF772DDAC7810077604F /* Assets.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -671,7 +669,10 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -737,7 +738,10 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				OTHER_LDFLAGS = "$(inherited)  ";
+				OTHER_LDFLAGS = (
+					"$(inherited)",
+					" ",
+				);
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;

@@ -28,6 +28,8 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import analytics from '~/utils/analytics';
+import { Feather } from '@expo/vector-icons';
+import WidgetHowToSheet from '../../components/WidgetHowToSheet';
 
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
@@ -626,6 +628,8 @@ export default function HomeScreen() {
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
 
+  const [showWidgetSheet, setShowWidgetSheet] = useState(false);
+
   return (
     <View className="flex-1">
       {/* Background Layers - Use expo-image for better performance */}
@@ -887,17 +891,18 @@ export default function HomeScreen() {
               completed={reflectionCompleted}
               disabled={!readingCompleted}
             />
-            
-            {/* Widget prompt button */}
+  
+            {/* Widget How-To Sheet test button */}
             <TouchableOpacity
-              onPress={handleWidgetPromptPress}
-              className="mt-6 flex-row items-center justify-center py-3 px-4 bg-surfaceCream border border-pillBorder rounded-xl"
+              onPress={() => setShowWidgetSheet(true)}
+              className="mt-6 flex-row items-center justify-center py-3 px-4 bg-amber-100 border border-amber-300 rounded-xl"
+              activeOpacity={0.7}
             >
-              <Text className="font-feather text-body text-textPrimary">
-                Add Streak Widget to Home Screen
+              <Feather name="smartphone" size={20} color="#B45309" style={{ marginRight: 8 }} />
+              <Text className="font-feather text-base text-amber-800">
+                How to Add Widget
               </Text>
             </TouchableOpacity>
-            
           </ScrollView>
         </Animated.View>
 
@@ -905,6 +910,7 @@ export default function HomeScreen() {
         <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
         <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
         <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
+        <WidgetHowToSheet visible={showWidgetSheet} onClose={() => setShowWidgetSheet(false)} />
       </SafeAreaView>
     </View>
   );

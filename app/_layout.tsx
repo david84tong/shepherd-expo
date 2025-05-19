@@ -32,8 +32,6 @@ import useForceUpdateCheck from './hooks/useForceUpdateCheck';
 import ForceUpdateModal from '~/components/ForceUpdateModal';
 import { disableFontScaling } from './helper/disableFontScaling';
 import Toast from 'react-native-toast-message';
-import WidgetPrompt from '../components/WidgetPrompt';
-import WidgetGuide from '../components/WidgetGuide';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -402,18 +400,6 @@ export default function RootLayout() {
             {/* Old Reflection Sheet */}
             {Boolean(showOldReflectionSheet) && <OldReflectionSheet />}
             
-            {/* Widget Components */}
-            <WidgetPrompt 
-              visible={isWidgetPromptVisible} 
-              onClose={hideWidgetPrompt} 
-              onShowGuide={showWidgetGuide} 
-            />
-            
-            <WidgetGuide 
-              visible={isWidgetGuideVisible}
-              onClose={hideWidgetGuide}
-            />
-
             {/* Toast container for notifications */}
             <Toast />
 
