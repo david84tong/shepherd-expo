@@ -1,118 +1,168 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Image, Platform, Modal } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Haptics from 'expo-haptics';
+// WidgetPrompt.jsx
+import React, { useEffect, useRef } from 'react';
+import { View, Text, TouchableOpacity, Animated, Dimensions, Image } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import WidgetGuide from './WidgetGuide';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import PrimaryButton from './PrimaryButton';
+import analytics from '../utils/analytics';
 
-const WIDGET_PROMPT_SHOWN_KEY = 'widget_prompt_shown';
+interface WidgetPromptProps {
+  visible: boolean;
+  onClose: () => void;
+  onShowGuide: () => void;
+}
 
-export default function WidgetPrompt() {
-  const [visible, setVisible] = useState(false);
-  const [showGuide, setShowGuide] = useState(false);
+/**
+ * A bottom sheet component that prompts the user to add the Shepherd Streak widget
+ */
+const WidgetPrompt: React.FC<WidgetPromptProps> = ({ visible, onClose, onShowGuide }) => {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { height: screenHeight } = Dimensions.get('window');
+  
+  // Animation values
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+  const slideUpAnim = useRef(new Animated.Value(screenHeight)).current;
 
   useEffect(() => {
-    // Only check and show if iOS
-    if (Platform.OS !== 'ios') return;
-    
-    // Check if we've already shown the prompt
-    checkIfPromptShown();
-  }, []);
-
-  const checkIfPromptShown = async () => {
-    try {
-      const hasShown = await AsyncStorage.getItem(WIDGET_PROMPT_SHOWN_KEY);
-      
-      // If we haven't shown it yet, show after a short delay
-      if (hasShown !== 'true') {
-        setTimeout(() => {
-          setVisible(true);
-        }, 3000); // Show after 3 seconds
-      }
-    } catch (error) {
-      console.error('Error checking widget prompt status:', error);
+    if (visible) {
+      // Animate in
+      Animated.parallel([
+        Animated.timing(backdropOpacity, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(slideUpAnim, {
+          toValue: 0,
+          tension: 50,
+          friction: 10,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      // Animate out
+      Animated.parallel([
+        Animated.timing(backdropOpacity, {
+          toValue: 0,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(slideUpAnim, {
+          toValue: screenHeight,
+          duration: 250,
+          useNativeDriver: true,
+        }),
+      ]).start();
     }
-  };
+  }, [visible, screenHeight]);
 
-  const handleDismiss = async () => {
+  const handleBackdropPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    setVisible(false);
-    
-    // Mark as shown
-    try {
-      await AsyncStorage.setItem(WIDGET_PROMPT_SHOWN_KEY, 'true');
-    } catch (error) {
-      console.error('Error saving widget prompt status:', error);
-    }
+    analytics.logEvent("WidgetPrompt_BackdropTapped");
+    onClose();
   };
 
-  const handleShowGuide = () => {
+  const handleAddWidget = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    setShowGuide(true);
+    analytics.logEvent("WidgetPrompt_AddWidget_Tapped");
+    onShowGuide();
   };
-  
-  const handleCloseGuide = async () => {
-    setShowGuide(false);
-    setVisible(false);
-    
-    // Mark as shown
-    try {
-      await AsyncStorage.setItem(WIDGET_PROMPT_SHOWN_KEY, 'true');
-    } catch (error) {
-      console.error('Error saving widget prompt status:', error);
-    }
+
+  const handleNoThanks = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    analytics.logEvent("WidgetPrompt_NoThanks_Tapped");
+    onClose();
   };
-  
-  // Don't render anything if not iOS or not visible
-  if (Platform.OS !== 'ios' || !visible) {
-    return null;
-  }
+
+  if (!visible) return null;
 
   return (
-    <>
-      <View className="absolute bottom-5 left-5 right-5 z-40">
+    <View 
+      className="absolute inset-0 justify-end z-50"
+      pointerEvents="box-none"
+    >
+      {/* Backdrop */}
+      <Animated.View 
+        style={{
+          position: 'absolute',
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(0,0,0,0.5)',
+          opacity: backdropOpacity,
+        }}
+        pointerEvents={visible ? 'auto' : 'none'}
+        onTouchEnd={handleBackdropPress}
+      />
+      
+      {/* Bottom Sheet */}
+      <Animated.View 
+        style={{
+          transform: [{ translateY: slideUpAnim }],
+          paddingBottom: insets.bottom,
+        }}
+        className="bg-white rounded-t-3xl overflow-hidden"
+      >
+        {/* Handle */}
+        <View className="w-full items-center pt-2 pb-4">
+          <View className="w-12 h-1 rounded-full bg-gray-300" />
+        </View>
+        
+        {/* Content */}
         <LinearGradient
-          colors={['#F9FAFB', '#E5E7EB']}
-          className="rounded-xl p-4 shadow-lg border border-[#E5E7EB]"
+          colors={['#FFD95C', '#FFB82E']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          className="px-5 pt-4 pb-8"
         >
-          <View className="flex-row items-center">
-            <Image 
-              source={require('../assets/goldLamb.png')} 
-              className="w-16 h-16 mr-3"
-            />
-            <View className="flex-1">
-              <Text className="font-bold text-base mb-1">Keep your lamb close!</Text>
-              <Text className="text-sm text-gray-600">
-                Add the Shepherd widget to see your streak status right on your home screen.
-              </Text>
+          <Text className="font-feather text-2xl font-semibold text-stone-800 text-center mb-1">
+            Shepherd widget
+          </Text>
+          <Text className="font-din text-base text-stone-700 text-center mb-6">
+            Add the streak widget to your home screen
+          </Text>
+
+          <View className="items-center justify-center mb-6 bg-white/20 rounded-xl p-4">
+            <View className="bg-white/70 rounded-lg p-3 w-56 h-56 items-center justify-center shadow-sm">
+              <Image 
+                source={require('../assets/images/sheep-widget-preview.png')} 
+                className="w-48 h-48 rounded-lg"
+                resizeMode="contain"
+              />
+              <View className="absolute bottom-2 bg-yellow-100 px-3 py-1 rounded-full">
+                <Text className="font-din text-sm font-medium text-amber-700">
+                  Streak: 12 days
+                </Text>
+              </View>
             </View>
           </View>
-          
-          <View className="mt-4 flex-row justify-end space-x-3">
+
+          <View className="mb-4">
             <TouchableOpacity
-              onPress={handleDismiss}
-              className="py-2 px-3"
+              onPress={handleAddWidget}
+              className="bg-amber-400 rounded-full py-4 items-center shadow-sm"
+              activeOpacity={0.8}
             >
-              <Text className="text-gray-500">Later</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity
-              onPress={handleShowGuide}
-              className="bg-primary rounded-lg py-2 px-4"
-            >
-              <Text className="text-white font-medium">Show Me How</Text>
+              <Text className="font-feather text-base font-medium text-stone-800">
+                SHOW ME HOW
+              </Text>
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            onPress={handleNoThanks}
+            className="items-center py-2"
+          >
+            <Text className="font-din text-stone-800 text-base underline">
+              Not now
+            </Text>
+          </TouchableOpacity>
         </LinearGradient>
-      </View>
-      
-      <Modal
-        visible={showGuide}
-        animationType="slide"
-        presentationStyle="fullScreen"
-      >
-        <WidgetGuide onClose={handleCloseGuide} />
-      </Modal>
-    </>
+      </Animated.View>
+    </View>
   );
-} 
+};
+
+export default WidgetPrompt;

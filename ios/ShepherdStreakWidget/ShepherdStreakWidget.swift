@@ -1,3 +1,10 @@
+//
+//  ShepherdStreakWidget.swift
+//  ShepherdStreakWidget
+//
+//  Created by Shriram Vasudevan on 5/18/25.
+//
+
 import WidgetKit
 import SwiftUI
 
@@ -135,8 +142,13 @@ struct ShepherdStreakWidgetEntryView : View {
         let state = entry.streakData.streakState
         
         ZStack {
-            // Background
-            Color("WidgetBackground")
+            // Background for iOS 17+
+            if #available(iOS 17.0, *) {
+                Color.clear
+                    .containerBackground(.fill.tertiary, for: .widget)
+            } else {
+                Color(UIColor.systemBackground)
+            }
             
             // Content
             VStack(spacing: 8) {
@@ -179,4 +191,25 @@ struct ShepherdStreakWidget: Widget {
         .description("Keep track of your daily streak")
         .supportedFamilies([.systemSmall])
     }
-} 
+}
+
+// Preview Provider
+#Preview {
+    Group {
+        // Active streak
+        ShepherdStreakWidgetEntryView(entry: StreakEntry(
+            date: Date(),
+            streakData: StreakData(currentStreak: 5, lastActivityDate: Date())
+        ))
+        .previewContext(WidgetPreviewContext(family: .systemSmall))
+        .previewDisplayName("Active Streak")
+        
+        // At risk streak
+        ShepherdStreakWidgetEntryView(entry: StreakEntry(
+            date: Date(),
+            streakData: StreakData(currentStreak: 7, lastActivityDate: Calendar.current.date(byAdding: .day, value: -1, to: Date())!)
+        ))
+        .previewContext(WidgetPreviewContext(family: .systemSmall))
+        .previewDisplayName("At Risk")
+    }
+}

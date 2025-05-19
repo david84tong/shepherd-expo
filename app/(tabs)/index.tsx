@@ -227,6 +227,7 @@ export default function HomeScreen() {
 
   // Get UI store functions
   const showPrayerSheet = useUIStore(state => state.showPrayerSheet);
+  const showWidgetPrompt = useUIStore(state => state.showWidgetPrompt);
 
   const handleRiveError = (error: RNRiveError) => {
     console.error('Rive Error:', error.message, error.type);
@@ -517,6 +518,12 @@ export default function HomeScreen() {
         }).start();
       });
     }
+  };
+
+  const handleWidgetPromptPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    analytics.logEvent("HomeScreen_Tapped_AddWidget");
+    showWidgetPrompt();
   };
 
   // --- Handlers for Closing Overlays ---
@@ -880,6 +887,17 @@ export default function HomeScreen() {
               completed={reflectionCompleted}
               disabled={!readingCompleted}
             />
+            
+            {/* Widget prompt button */}
+            <TouchableOpacity
+              onPress={handleWidgetPromptPress}
+              className="mt-6 flex-row items-center justify-center py-3 px-4 bg-surfaceCream border border-pillBorder rounded-xl"
+            >
+              <Text className="font-feather text-body text-textPrimary">
+                Add Streak Widget to Home Screen
+              </Text>
+            </TouchableOpacity>
+            
           </ScrollView>
         </Animated.View>
 
