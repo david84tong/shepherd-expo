@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useMemo, useRef, useState, } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -10,7 +10,7 @@ import {
   Text,
   View,
   ScrollView,
-  TouchableOpacity
+  TouchableOpacity,
 } from 'react-native';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
@@ -28,7 +28,6 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import analytics from '~/utils/analytics';
-
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
@@ -69,11 +68,11 @@ export default function HomeScreen() {
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
 
   // Get user stats from userStore
-  const lambHearts = useUserStore((state) => state.getLambHearts());
-  const streakCount = useUserStore((state) => state.getStreakCount());
-  const gens = useUserStore((state) => state.getGens());
-  const lambMood = useUserStore((state) => state.getLambMood());
-  const lambName = useUserStore((state) => state.getLambName()); // Get the lamb's name from userStore
+  const lambHearts = useUserStore((state) => state?.getLambHearts?.());
+  const streakCount = useUserStore((state) => state?.getStreakCount?.());
+  const gens = useUserStore((state) => state?.getGens?.());
+  const lambMood = useUserStore((state) => state?.getLambMood?.());
+  const lambName = useUserStore((state) => state?.getLambName?.()); // Get the lamb's name from userStore
 
   // State to manage the Rive resource name
   const [artboardName, setArtboardName] = useState('lamb-idle'); // Default artboard
@@ -84,22 +83,22 @@ export default function HomeScreen() {
 
   // Get subscription state and actions from the store
   // const { isProMember } = useSubscriptionStore();
-  
+
   // Get pro status from user store
-  const proStatus = useUserStore((state) => state.getProStatus());
+  const proStatus = useUserStore((state) => state?.getProStatus?.());
   const isPro = proStatus === 'pro';
 
   // Handle subscription button press using the store action
   const handleSubscriptionPress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push('/PricingScreen' as any);
-  }
+  };
 
   // Load Rive assets
   const [riveAssets] = useAssets([
     require('../../assets/riveAnimations/homeLamb.riv'),
     require('../../assets/riveAnimations/bg-green.riv'),
-    require('../../assets/riveAnimations/goldLamb.riv') // Add goldLamb to preloaded assets
+    require('../../assets/riveAnimations/goldLamb.riv'), // Add goldLamb to preloaded assets
   ]);
 
   // Add state for asset loading
@@ -221,15 +220,18 @@ export default function HomeScreen() {
     'lamb-angry': 'lamb-angry',
     'lamb-chubby dying': 'lamb-chubby dying',
     'lamb-skinny dying': 'lamb-skinny dying',
-    'smoking': 'lamb-fainted',
-    'lamb-full': 'lamb-full'
+    smoking: 'lamb-fainted',
+    'lamb-full': 'lamb-full',
   };
 
   // Get UI store functions
-  const showPrayerSheet = useUIStore(state => state.showPrayerSheet);
+  const showPrayerSheet = useUIStore((state) => state.showPrayerSheet);
 
   const handleRiveError = (error: RNRiveError) => {
     console.error('Rive Error:', error.message, error.type);
+    if (Platform.OS === 'android') {
+      return;
+    }
     setRiveError(error);
   };
 
@@ -258,7 +260,7 @@ export default function HomeScreen() {
     if (mode === 'PREVIEW') {
       setArtboardName('lamb-idle');
       // Update artboard based on lamb mood from userStore
-      const currentMood = useUserStore.getState().getLambMood();
+      const currentMood = useUserStore.getState()?.getLambMood?.();
       console.log('Current mood:', currentMood);
       if (currentMood && moodToArtboard[currentMood]) {
         setArtboardName(moodToArtboard[currentMood]);
@@ -372,7 +374,7 @@ export default function HomeScreen() {
 
   // --- useEffect to react to external mode changes ---
   useEffect(() => {
-    console.log(isPro, "what is pro")
+    console.log(isPro, 'what is pro');
     console.log('HomeScreen: Mode changed to', mode);
     console.log('DEBUG - Current completion status:', {
       readingCompleted,
@@ -386,7 +388,7 @@ export default function HomeScreen() {
       animateToDefault();
       setArtboardName('lamb-idle');
       // Update artboard based on lamb mood from userStore
-      const currentMood = useUserStore.getState().getLambMood();
+      const currentMood = useUserStore.getState()?.getLambMood?.();
       console.log('Current mood:', currentMood);
       if (currentMood && moodToArtboard[currentMood]) {
         setArtboardName(moodToArtboard[currentMood]);
@@ -431,9 +433,8 @@ export default function HomeScreen() {
   // --- Event Handlers ---
   const handleReadPress = () => {
     if (!isPro && readingCompleted) {
-      handleSubscriptionPress()
-    }
-    else {
+      handleSubscriptionPress();
+    } else {
       console.log('Read the word button pressed');
 
       // Remove heavy haptic feedback
@@ -464,7 +465,7 @@ export default function HomeScreen() {
   const handlePrayerPress = () => {
     console.log('Prayer button pressed');
     if (!isPro && prayerCompleted) {
-      handleSubscriptionPress()
+      handleSubscriptionPress();
     } else {
       // Don't proceed if reading is not completed
       if (!readingCompleted) {
@@ -483,7 +484,7 @@ export default function HomeScreen() {
 
   const handleReflectionPress = () => {
     if (!isPro && reflectionCompleted) {
-      handleSubscriptionPress()
+      handleSubscriptionPress();
     } else {
       console.log('Reflection button pressed');
 
@@ -594,7 +595,7 @@ export default function HomeScreen() {
   // Add screen view analytics tracking
   useEffect(() => {
     // Log screen view when component mounts
-    analytics.logEvent("HomeScreen_Viewed");
+    analytics.logEvent('HomeScreen_Viewed');
   }, []);
 
   // Add this before the return statement
@@ -608,7 +609,7 @@ export default function HomeScreen() {
       <Rive
         key={riveKey}
         ref={riveRef}
-        url={riveAssets[lambAssetIndex].localUri!}
+        url={riveAssets[lambAssetIndex].uri!}
         artboardName={artboardName}
         onError={handleRiveError}
         style={{ width: '100%', height: '100%', marginTop: 10 }}
@@ -652,10 +653,7 @@ export default function HomeScreen() {
           { position: 'absolute', width: '100%', height: '100%' },
           { opacity: grassOpacityAnim },
         ]}>
-        <Image
-          source={grassBg}
-          style={{ width: '100%', height: '100%' }}
-        />
+        <Image source={grassBg} style={{ width: '100%', height: '100%' }} />
       </Animated.View>
 
       <Animated.View
@@ -663,10 +661,7 @@ export default function HomeScreen() {
           { position: 'absolute', width: '100%', height: '100%' },
           { opacity: pathOpacityAnim },
         ]}>
-        <Image
-          source={pathBg}
-          style={{ width: '100%', height: '100%' }}
-        />
+        <Image source={pathBg} style={{ width: '100%', height: '100%' }} />
       </Animated.View>
 
       <Animated.View
@@ -674,10 +669,7 @@ export default function HomeScreen() {
           { position: 'absolute', width: '100%', height: '100%' },
           { opacity: journalOpacityAnim },
         ]}>
-        <Image
-          source={journalBg}
-          style={{ width: '100%', height: '100%' }}
-        />
+        <Image source={journalBg} style={{ width: '100%', height: '100%' }} />
       </Animated.View>
 
       {/* Prayer background Rive animation */}
@@ -688,7 +680,7 @@ export default function HomeScreen() {
         ]}>
         {showBgRive && riveAssets && (
           <Rive
-            url={riveAssets[1].localUri!}
+            url={riveAssets[1].uri!}
             autoplay={true}
             style={{ width: '160%', height: '160%', top: -300, left: -128 }}
           />
@@ -702,7 +694,7 @@ export default function HomeScreen() {
 
           {/* Animated Default Header Elements (Title + Stats) */}
           <Animated.View
-            className="absolute inset-0 flex-row items-center justify-between px-8 w-full"
+            className={`absolute inset-0 flex-row items-center justify-between px-8 w-full ${Platform.OS === 'android' ? 'pt-4' : 'pt-0'}`}
             style={{ opacity: headerDefaultOpacityAnim }}
             pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}>
             <View className="flex-row items-center flex-1 justify-between">
@@ -716,8 +708,8 @@ export default function HomeScreen() {
                 {lambName ? `${lambName}` : 'Shepherd'}
               </Text>
               <View className="flex-row gap-2 left-8">
-                <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
-                <ProgressPill value={0} label={gens.toString()} icon={gemIcon} />
+                <ProgressPill value={0} label={streakCount?.toString()} icon={flameIcon} />
+                <ProgressPill value={0} label={gens?.toString()} icon={gemIcon} />
               </View>
             </View>
           </Animated.View>
@@ -773,10 +765,10 @@ export default function HomeScreen() {
 
         {/* SUPER badge for pro users */}
         {mode === 'DEFAULT' && (
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => {
               if (!isPro) {
-                analytics.logEvent("HomeScreen_TappedProBadge");
+                analytics.logEvent('HomeScreen_TappedProBadge');
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 router.push('/PricingScreen' as any);
               }
@@ -786,13 +778,12 @@ export default function HomeScreen() {
               position: 'absolute',
               left: 24,
               // Place it roughly at the bottom of the lamb viewport
-              top: SCREEN_HEIGHT * 0.35,
+              top: SCREEN_HEIGHT * Platform.select({ ios: 0.35, android: 0.31 }),
               paddingHorizontal: 8,
               paddingVertical: 2,
               borderRadius: 32,
               zIndex: 20,
-            }}
-          >
+            }}>
             <LinearGradient
               colors={['#F7B500', '#FFF45B']}
               start={{ x: 0, y: 0 }}
@@ -803,17 +794,15 @@ export default function HomeScreen() {
                 paddingVertical: 2,
                 borderRadius: 32,
                 zIndex: 20,
-                opacity: isPro ? 1 : 0.5
-              }}
-            >
+                opacity: isPro ? 1 : 0.5,
+              }}>
               <Text
                 className="font-nunito-italic text-lg text-white text-center p-0 m-0"
                 style={{
                   textShadowColor: 'rgba(0,0,0,0.15)',
                   textShadowOffset: { width: 1, height: 1 },
                   textShadowRadius: 3,
-                }}
-              >
+                }}>
                 SUPER
               </Text>
             </LinearGradient>
@@ -822,7 +811,7 @@ export default function HomeScreen() {
 
         {/* Bottom Section - Action Buttons Card */}
         <Animated.View
-          className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-28"
+          className={`bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 ${Platform.OS === 'ios' ? '-mt-28' : '-mt-20'}`}
           style={{
             ...Platform.select({
               ios: {
@@ -837,8 +826,7 @@ export default function HomeScreen() {
           }}>
           <ScrollView
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 120 }}
-          >
+            contentContainerStyle={{ paddingBottom: 120 }}>
             <View className="flex-row items-center gap-2.5 mb-0 px-1">
               <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
                 <View

@@ -55,7 +55,7 @@ export default function OnboardingLambNameScreen() {
         inputRef.current.focus();
       }
     }, 300);
-    
+
     return () => clearTimeout(timer);
   }, []);
 
@@ -197,7 +197,7 @@ export default function OnboardingLambNameScreen() {
         style={lambStyle}
         className="h-[160px] w-full justify-center items-center my-4">
         <Rive
-          url={riveAssets[0].localUri!}
+          url={riveAssets[0].uri}
           artboardName="lamb-idle"
           autoplay
           style={{ width: '80%', height: '80%' }}

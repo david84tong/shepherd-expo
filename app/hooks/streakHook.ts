@@ -35,7 +35,7 @@ const getDaysDifference = (date1: Date, date2: Date): number => {
 
 // Check if two dates fall on different local calendar days
 const isNewCalendarDay = (date1: Date, date2: Date): boolean => {
-  console.log('isNewCalendarDay (local)', date1.toString(), date2.toString());
+  console.log('isNewCalendarDay (local)', date1?.toString(), date2?.toString());
   if (!date1 || !date2) return false;
   return !isSameLocalCalendarDay(date1, date2);
 };
@@ -43,11 +43,11 @@ const isNewCalendarDay = (date1: Date, date2: Date): boolean => {
 // Utility function to check if we need to reset completion states
 const shouldResetCompletions = (lastActivityDate: any, now: Date): boolean => {
   if (!lastActivityDate) return true; // No previous activity, first time
-  
+
   // Get the date objects
   const lastActivityDateObj = getDateFromTimestamp(lastActivityDate);
   if (!lastActivityDateObj) return true;
-  
+
   // Check if it's a new calendar day
   return isNewCalendarDay(now, lastActivityDateObj);
 };
@@ -209,7 +209,7 @@ function calculateStreakAndPenalties({
     console.log(`⚠️ Reading more than 24 hours ago: ${isReadingMoreThan24HoursAgo}`);
   }
 
-  setLambMood(getLambMoodByHearts(lambHearts));
+  setLambMood?.(getLambMoodByHearts(lambHearts));
 
   // Check if we need to reset completion states for a new calendar day
   const isNewDay = shouldResetCompletions(lastReadingDate, now);
@@ -236,18 +236,19 @@ function calculateStreakAndPenalties({
   const applyPrayerPenalty = false;
   const applyReflectionPenalty = false;
 
-
   // For each activity, check if we should apply a penalty
   if (isReadingMoreThan24HoursAgo && daysSinceReadingPenalty > 0) {
-    analytics.logEvent("StreakManager_ReadingPenaltyApplied", {
+    analytics.logEvent('StreakManager_ReadingPenaltyApplied', {
       daysSinceReadingPenalty: daysSinceReadingPenalty,
-      penalty: PENALTIES.READING
+      penalty: PENALTIES.READING,
     });
 
     heartPenalty += daysSinceReadingPenalty * PENALTIES.READING;
     applyReadingPenalty = true;
     if (debug)
-      console.log(`💔 Reading penalty applied: ${daysSinceReadingPenalty * PENALTIES.READING} hearts`);
+      console.log(
+        `💔 Reading penalty applied: ${daysSinceReadingPenalty * PENALTIES.READING} hearts`
+      );
   } else if (debug) {
     console.log(
       `⏹️ No reading penalty: readingMoreThan24h = ${isReadingMoreThan24HoursAgo}, days since penalty = ${daysSinceReadingPenalty}`
@@ -286,7 +287,7 @@ function calculateStreakAndPenalties({
     let newHearts = lambHearts - heartPenalty;
     if (newHearts < 0) newHearts = 0;
     setLambHearts(newHearts);
-    setLambMood(getLambMoodByHearts(newHearts));
+    setLambMood?.(getLambMoodByHearts(newHearts));
 
     // Reset streak if reading streak is broken or more than 24 hours since last reading
     if ((isReadingStreakBroken || isReadingMoreThan24HoursAgo) && streakCount > 0) {
@@ -321,7 +322,7 @@ function calculateStreakAndPenalties({
       newDay: isNewDay,
     };
   } else {
-    setLambMood(getLambMoodByHearts(lambHearts));
+    setLambMood?.(getLambMoodByHearts(lambHearts));
     return {
       streakBroken: isReadingMoreThan24HoursAgo,
       heartPenalty: 0,
@@ -343,7 +344,7 @@ export const checkStreakAndApplyPenalties = async () => {
         console.log(
           'User is authenticated, fetching latest data from Firestore before checking streak'
         );
-        await useUserStore.getState().fetchFromFirestore();
+        await useUserStore.getState().fetchFromFirestore?.();
       } catch (fetchError) {
         console.error('Error fetching from Firestore, continuing with local data:', fetchError);
         // Continue with local data if fetch fails
@@ -368,12 +369,14 @@ export const checkStreakAndApplyPenalties = async () => {
 
     // Check and update notifications based on last reading date
     await notificationStore.checkAndRescheduleNotifications(userStore.lastReadingDate);
-      // homeStore.resetCompletionStates();
+    // homeStore.resetCompletionStates();
 
     // Check if we need to reset completion states for a new day
     const lastActivityDate = userStore.lastActivityDate;
     if (shouldResetCompletions(lastActivityDate, now)) {
-      console.log('📅 New day detected in checkStreakAndApplyPenalties - resetting completion states');
+      console.log(
+        '📅 New day detected in checkStreakAndApplyPenalties - resetting completion states'
+      );
       homeStore.resetCompletionStates();
     }
 
@@ -444,7 +447,7 @@ export const useStreakManager = () => {
     try {
       // First, try to fetch latest data from Firestore if user is authenticated
       if (isAuthenticated()) {
-        await userStore.fetchFromFirestore();
+        await userStore.fetchFromFirestore?.();
       }
 
       const lambHearts = userStore.getLambHearts();
@@ -460,11 +463,11 @@ export const useStreakManager = () => {
 
       // Check and update notifications based on last reading date
       await notificationStore.checkAndRescheduleNotifications(lastReadingDate);
-      
+
       // Check if we need to reset completion states for a new day
       if (shouldResetCompletions(lastActivityDate, now)) {
         console.log('📅 New day detected in useStreakManager - resetting completion states');
-        analytics.logEvent("StreakManager_ResettingCompletitionStates");
+        analytics.logEvent('StreakManager_ResettingCompletitionStates');
         homeStore.resetCompletionStates();
       }
 

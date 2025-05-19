@@ -4,7 +4,16 @@ import dayjs from 'dayjs';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image, Linking, Alert } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  Image,
+  Linking,
+  Alert,
+} from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -57,19 +66,15 @@ export default function ProfileScreen() {
   } = useUserStore();
 
   // Get subscription state and actions from the store
-  const { 
-    isProMember,
-    presentPaywall,
-    getCustomerInfo,
-  } = useSubscriptionStore();
+  const { isProMember, presentPaywall, getCustomerInfo } = useSubscriptionStore();
 
-  const lamb = getLamb();
-  const streak = getStreakCount();
-  const createdAtTimestamp = getCreatedAt();
-  const completedReadings = getCompletedReadings();
+  const lamb = getLamb?.();
+  const streak = getStreakCount?.();
+  const createdAtTimestamp = getCreatedAt?.();
+  const completedReadings = getCompletedReadings?.();
   const completedPrayers = getCompletedPrayers();
   const completedReflections = getCompletedReflections();
-  const user = getUser();
+  const user = getUser?.();
   const userId = user?.id || null;
 
   const [showDiscordCard, setShowDiscordCard] = useState(true);
@@ -140,13 +145,16 @@ export default function ProfileScreen() {
 
   const handleJoinDiscord = useCallback(async () => {
     analytics.logEvent('Profile_DiscordCard_Joined');
-    await handleDismissDiscordCard(); 
+    await handleDismissDiscordCard();
     try {
       // Replace 'YOUR_DISCORD_INVITE_LINK' with your actual Discord server invite link
       await Linking.openURL('https://discord.gg/W9MZdVaKBs');
     } catch (err) {
-      console.error("Failed to open Discord link", err);
-      Alert.alert("Error", "Could not open the Discord link. Please ensure Discord is installed or try again later.");
+      console.error('Failed to open Discord link', err);
+      Alert.alert(
+        'Error',
+        'Could not open the Discord link. Please ensure Discord is installed or try again later.'
+      );
     }
   }, [handleDismissDiscordCard]);
 
@@ -161,20 +169,21 @@ export default function ProfileScreen() {
         title: `Read ${reading.book} ${reading.chapters?.join(', ') || ''}`,
       })) || [];
 
-    const prayers = completedPrayers?.map(prayer => {
-      let prayerTitle = `${prayer.type || 'Daily'} Prayer`;
-      if (prayer.topic && prayer.topic.toLowerCase() !== 'general') {
-        prayerTitle = `Prayed for ${prayer.topic}`;
-      }
-      return {
-        type: 'prayer' as const,
-        date: prayer.date,
-        data: prayer, // raw prayer object for potential future use
-        icon: dropIcon,
-        title: prayerTitle,
-        // content: prayer.content, // Only if prayer.content exists on the Prayer type
-      };
-    }) || [];
+    const prayers =
+      completedPrayers?.map((prayer) => {
+        let prayerTitle = `${prayer.type || 'Daily'} Prayer`;
+        if (prayer.topic && prayer.topic.toLowerCase() !== 'general') {
+          prayerTitle = `Prayed for ${prayer.topic}`;
+        }
+        return {
+          type: 'prayer' as const,
+          date: prayer.date,
+          data: prayer, // raw prayer object for potential future use
+          icon: dropIcon,
+          title: prayerTitle,
+          // content: prayer.content, // Only if prayer.content exists on the Prayer type
+        };
+      }) || [];
 
     const reflections =
       completedReflections?.map((reflection) => ({
@@ -276,7 +285,9 @@ export default function ProfileScreen() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
-        <ScrollView className="flex-1 bg-surfaceCream" contentContainerStyle={{ paddingBottom: 50 }}>
+        <ScrollView
+          className="flex-1 bg-surfaceCream"
+          contentContainerStyle={{ paddingBottom: 50 }}>
           {/* Header */}
           <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
             <Text className="font-feather text-h2 text-textPrimary">Profile</Text>
@@ -286,21 +297,23 @@ export default function ProfileScreen() {
               <Feather name="settings" size={20} color="#B89B4C" />
             </TouchableOpacity>
           </View>
-     {/* Discord Card */}
-     {showDiscordCard && (
+          {/* Discord Card */}
+          {showDiscordCard && (
             <View className="mx-6 mt-4 bg-lightPurple rounded-[20px] p-6 shadow-card relative">
               <TouchableOpacity
                 onPress={handleDismissDiscordCard}
                 className="absolute top-3 right-3 p-1 z-10 bg-darkPurple/10 rounded-full">
-                <Feather name="x" size={20} color="#3C584A" /> 
+                <Feather name="x" size={20} color="#3C584A" />
               </TouchableOpacity>
 
               <View className="flex-row items-center mb-4">
                 <View className="bg-white p-3 rounded-full mr-4 shadow-md">
-                <FontAwesome6 name="discord" size={20} color="#5865F2" />
+                  <FontAwesome6 name="discord" size={20} color="#5865F2" />
                 </View>
                 <View className="flex-1">
-                  <Text className="font-feather text-xl text-darkPurple">Join our Shepherd Family!</Text>
+                  <Text className="font-feather text-xl text-darkPurple">
+                    Join our Shepherd Family!
+                  </Text>
                   <Text className="font-din text-body text-darkPurple opacity-80 mt-1 leading-tight">
                     Connect, share insights, and grow together on our Discord server.
                   </Text>
@@ -310,10 +323,10 @@ export default function ProfileScreen() {
               <PrimaryButton
                 title="Join the Herd"
                 onPress={handleJoinDiscord}
-                primaryColor="bg-darkPurple" 
+                primaryColor="bg-darkPurple"
                 textColor="text-white"
                 shadowStyle="shadow-darkPurple" // Assuming you have this in tailwind.config.js
-                style="mt-2" 
+                style="mt-2"
               />
             </View>
           )}
@@ -325,10 +338,7 @@ export default function ProfileScreen() {
                   {lamb.name ? lamb.name : 'Your Lamb'}
                 </Text>
               </View>
-              <Image
-                source={sheepIcon}
-                className="w-12 h-12 rounded-full"
-              />
+              <Image source={sheepIcon} className="w-12 h-12 rounded-full" />
             </View>
 
             {/* Stats Grid */}
@@ -421,13 +431,18 @@ export default function ProfileScreen() {
                               {activity.title}
                             </Text>
                             {/* Display prayer topic or reflection content if available */}
-                            {(activity.type === 'prayer' && activity.data.topic && activity.title !== `Prayed for ${activity.data.topic}`) && (
-                              <Text className="font-din text-sm text-description mt-1">
-                                Topic: {activity.data.topic}
-                              </Text>
-                            )}
-                            {(activity.type === 'reflection' && activity.content) && (
-                              <Text className="font-din text-sm text-description mt-1" numberOfLines={1} ellipsizeMode="tail">
+                            {activity.type === 'prayer' &&
+                              activity.data.topic &&
+                              activity.title !== `Prayed for ${activity.data.topic}` && (
+                                <Text className="font-din text-sm text-description mt-1">
+                                  Topic: {activity.data.topic}
+                                </Text>
+                              )}
+                            {activity.type === 'reflection' && activity.content && (
+                              <Text
+                                className="font-din text-sm text-description mt-1"
+                                numberOfLines={1}
+                                ellipsizeMode="tail">
                                 {activity.content}
                               </Text>
                             )}
@@ -455,10 +470,14 @@ export default function ProfileScreen() {
           {/* Subscription Management Section */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
             <View className="flex-row justify-between items-center mb-2">
-              <Text className="font-feather text-heading text-textPrimary">Manage Subscription</Text>
+              <Text className="font-feather text-heading text-textPrimary">
+                Manage Subscription
+              </Text>
               {isProMember && (
                 <View className="bg-lightYellow px-4 py-1 rounded-full">
-                  <Text className="font-din text-accentGold">Pro (New Skins coming next week!)</Text>
+                  <Text className="font-din text-accentGold">
+                    Pro (New Skins coming next week!)
+                  </Text>
                 </View>
               )}
             </View>
@@ -478,8 +497,6 @@ export default function ProfileScreen() {
             )}
           </View>
 
-     
-
           {/* Store Section */}
           <View className="mx-6 mt-4 mb-8 bg-white/50 rounded-[20px] p-6 shadow-card">
             <View className="flex-row justify-between items-center">
@@ -492,7 +509,7 @@ export default function ProfileScreen() {
               Customize your lamb and unlock special items!
             </Text>
           </View>
-          
+
           {/* Version Info */}
           <View className="mx-6 mt-2 mb-10 items-center">
             <Text className="font-din text-description text-center text-textSecondary opacity-60">
