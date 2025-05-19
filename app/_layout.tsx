@@ -464,8 +464,8 @@ export default function RootLayout() {
 
         <WidgetPrompt />
       </BottomSheetModalProvider>
-      {visibleForceUpdate && isInitialized ? <ForceUpdateModal visible={visibleForceUpdate} /> : null}
-      
+      {/* {visibleForceUpdate && isInitialized ? <ForceUpdateModal visible={visibleForceUpdate} /> : null}
+       */}
       {/* Toast Message component */}
       <Toast />
     </GestureHandlerRootView>
