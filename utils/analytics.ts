@@ -5,7 +5,7 @@ import { useUserStore } from '../app/stores/userStore';
 import { Mixpanel } from 'mixpanel-react-native';
 
 // schema for analytics
-// Screenname: Verb 
+// Screenname: Verb
 // eg: WelcomeScreen: Tapped Continue
 // AgeScreen: Tapped Continue, params: { age: 25-35 }
 
@@ -23,14 +23,14 @@ export enum EventCategory {
 // Common events for consistency
 export enum AnalyticsEvent {
   // Navigation events
-  SCREEN_VIEW = 'screen_view', 
+  SCREEN_VIEW = 'screen_view',
   TAB_SELECTED = 'tab_selected',
-  
+
   // User action events
   BUTTON_PRESS = 'button_press',
   FEATURE_TOGGLE = 'feature_toggle',
   USER_PREFERENCE_CHANGE = 'user_preference_change',
-  
+
   // Spiritual activity events
   BIBLE_READING_STARTED = 'bible_reading_started',
   BIBLE_READING_COMPLETED = 'bible_reading_completed',
@@ -40,22 +40,22 @@ export enum AnalyticsEvent {
   REFLECTION_COMPLETED = 'reflection_completed',
   DAILY_BONUS_EARNED = 'daily_bonus_earned',
   STREAK_MILESTONE = 'streak_milestone',
-  
+
   // Engagement events
   APP_OPEN = 'app_open',
   APP_BACKGROUND = 'app_background',
   NOTIFICATION_RECEIVED = 'notification_received',
   NOTIFICATION_OPENED = 'notification_opened',
   SHARE_CONTENT = 'share_content',
-  
+
   // Error events
   APP_ERROR = 'app_error',
-  
+
   // Onboarding events
   ONBOARDING_STARTED = 'onboarding_started',
   ONBOARDING_STEP_COMPLETED = 'onboarding_step_completed',
   ONBOARDING_COMPLETED = 'onboarding_completed',
-  
+
   // In-app purchase events
   PURCHASE_INITIATED = 'purchase_initiated',
   PURCHASE_COMPLETED = 'purchase_completed',
@@ -111,43 +111,46 @@ class Analytics {
 
       // Get or create session ID
       this.sessionId = await this.getOrCreateSessionId();
-      
+
       // Set up default parameters that will be included with all events
       this.defaultParams = {
         platform: Platform.OS,
         platformVersion: Platform.Version,
         appVersion: Constants.expoConfig?.version ?? 'unknown',
-        buildNumber: Constants.expoConfig?.ios?.buildNumber ?? Constants.expoConfig?.android?.versionCode ?? 'unknown',
+        buildNumber:
+          Constants.expoConfig?.ios?.buildNumber ??
+          Constants.expoConfig?.android?.versionCode ??
+          'unknown',
         sessionId: this.sessionId,
         deviceName: Constants.deviceName,
       };
 
       // Get user ID if available
-      const user = useUserStore.getState().getUser();
+      const user = useUserStore.getState().getUser?.();
       this.userId = user ? user.id || 'anonymous' : 'anonymous';
-      
+
       // Set user identity in Mixpanel
       if (this.userId && this.userId !== 'anonymous') {
         this.mixpanel?.identify(this.userId);
       }
-      
+
       // Set super properties for all events
       this.mixpanel?.registerSuperProperties(this.defaultParams);
-      
+
       // Check if analytics is enabled
       const analyticsEnabled = await AsyncStorage.getItem('shepherd-analytics-enabled');
       this.isEnabled = analyticsEnabled !== 'false';
-      
+
       // Opt out of tracking if disabled
       if (!this.isEnabled) {
         this.mixpanel?.optOutTracking();
       }
-      
+
       this.isInitialized = true;
-      
+
       // Log app open event
       this.logEvent(AnalyticsEvent.APP_OPEN);
-      
+
       console.log('✅ Analytics (Mixpanel) initialized successfully');
     } catch (error) {
       console.error('❌ Failed to initialize analytics:', error);
@@ -157,10 +160,7 @@ class Analytics {
   /**
    * Log an event with optional parameters
    */
-  public logEvent(
-    eventName: string | AnalyticsEvent,
-    params: Record<string, any> = {}
-  ): void {
+  public logEvent(eventName: string | AnalyticsEvent, params: Record<string, any> = {}): void {
     if (!this.isInitialized) {
       console.warn('Analytics not initialized. Call init() first.');
       return;
@@ -173,27 +173,25 @@ class Analytics {
     try {
       // Get current timestamp
       const now = new Date();
-      
+
       // Combine default params with provided params
       const eventParams = {
         ...params,
         timestamp: now.toISOString(),
         userId: this.userId || 'anonymous',
       };
-      
+
       // Log to console in development
       if (__DEV__) {
         console.log(`📊 ANALYTICS ${eventName}`, eventParams);
       }
-      
+
       // Track event in Mixpanel
-      this.mixpanel?.track(eventName.toString(), eventParams);
-        
+      this.mixpanel?.track(eventName?.toString(), eventParams);
     } catch (error) {
       console.error('Failed to log analytics event:', error);
     }
   }
-
 
   /**
    * Log an error event
@@ -203,14 +201,11 @@ class Analytics {
     errorCode?: string | number,
     additionalInfo: Record<string, any> = {}
   ): void {
-    this.logEvent(
-      AnalyticsEvent.APP_ERROR,
-      {
-        errorMessage,
-        errorCode,
-        ...additionalInfo,
-      }
-    );
+    this.logEvent(AnalyticsEvent.APP_ERROR, {
+      errorMessage,
+      errorCode,
+      ...additionalInfo,
+    });
   }
 
   /**
@@ -218,7 +213,7 @@ class Analytics {
    */
   public setUserId(userId: string): void {
     this.userId = userId;
-    
+
     // Update identity in Mixpanel
     if (this.mixpanel && userId !== 'anonymous') {
       this.mixpanel.identify(userId);
@@ -230,7 +225,7 @@ class Analytics {
    */
   public setUserProperties(properties: Record<string, any>): void {
     if (!this.isInitialized || !this.isEnabled) return;
-    
+
     try {
       if (this.mixpanel && this.userId) {
         this.mixpanel.getPeople().set(properties);
@@ -245,9 +240,9 @@ class Analytics {
    */
   public resetUser(): void {
     if (!this.isInitialized) return;
-    
+
     this.userId = 'anonymous';
-    
+
     // Reset identity in Mixpanel
     if (this.mixpanel) {
       this.mixpanel.reset();
@@ -260,7 +255,7 @@ class Analytics {
   public async setEnabled(enabled: boolean): Promise<void> {
     this.isEnabled = enabled;
     await AsyncStorage.setItem('shepherd-analytics-enabled', enabled ? 'true' : 'false');
-    
+
     // Update Mixpanel tracking
     if (this.mixpanel) {
       if (enabled) {
@@ -286,7 +281,7 @@ class Analytics {
     if (storedSessionId) {
       return storedSessionId;
     }
-    
+
     // Create a new session ID
     const newSessionId = this.generateUUID();
     await AsyncStorage.setItem('shepherd-analytics-session-id', newSessionId);
@@ -297,10 +292,10 @@ class Analytics {
    * Generate a UUID v4
    */
   private generateUUID(): string {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-      const r = Math.random() * 16 | 0;
-      const v = c === 'x' ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v?.toString(16);
     });
   }
 }
@@ -309,4 +304,4 @@ class Analytics {
 export const analytics = Analytics.getInstance();
 
 // Export default for consistency
-export default analytics; 
+export default analytics;

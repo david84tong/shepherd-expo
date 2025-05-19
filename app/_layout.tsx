@@ -32,6 +32,9 @@ import useForceUpdateCheck from './hooks/useForceUpdateCheck';
 import ForceUpdateModal from '~/components/ForceUpdateModal';
 import { disableFontScaling } from './helper/disableFontScaling';
 import Toast from 'react-native-toast-message';
+// Import all Zustand stores for fast loading
+import './stores/userStore';
+import './stores/userStore';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -158,7 +161,7 @@ export default function RootLayout() {
   // Call onAppForegroundOrInit after initialization
   useEffect(() => {
     if (isInitialized) {
-      console.log("bada")
+      console.log('bada');
       onAppForegroundOrInit();
     }
   }, [isInitialized]);
@@ -219,8 +222,6 @@ export default function RootLayout() {
           showHalfModal(params);
         }, 3000);
       }
-
-
     } catch (error) {
       console.error('Error checking streak status:', error);
     }
@@ -309,13 +310,10 @@ export default function RootLayout() {
 
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === 'active'
-      ) {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         // App has come to the foreground!
         // Call your functions here
-        
+
         console.log('App has come to the foreground!');
         // e.g. refresh user data, sync, analytics, etc.
         onAppForegroundOrInit();
@@ -332,9 +330,9 @@ export default function RootLayout() {
 
   // Loading states with error handling
   if (!fontsLoaded && !fontError) {
-    return riveAssets?.[0]?.localUri ? (
+    return riveAssets?.[0]?.uri ? (
       <View style={styles.riveContainer}>
-        <Rive url={riveAssets[0].localUri} style={styles.riveAnimation} autoplay={true} />
+        <Rive url={riveAssets[0].uri} style={styles.riveAnimation} autoplay={true} />
       </View>
     ) : null;
   }
@@ -347,12 +345,12 @@ export default function RootLayout() {
   }
   if (hasError) return <AppLoading loadingMessage="Something went wrong. Please try again..." />;
 
-  // Show Rive animation if it's time
+  // // Show Rive animation if it's time
   if (showRiveAnimation && riveAssets) {
     return (
       <View style={styles.riveContainer}>
         <Rive
-          url={riveAssets[0].localUri!}
+          url={riveAssets[0].uri!}
           style={styles.riveAnimation}
           autoplay={true}
           onPause={() => {
@@ -461,8 +459,10 @@ export default function RootLayout() {
 
         {__DEV__ && <DebugButton />}
       </BottomSheetModalProvider>
-      {visibleForceUpdate && isInitialized ? <ForceUpdateModal visible={visibleForceUpdate} /> : null}
-      
+      {visibleForceUpdate && isInitialized ? (
+        <ForceUpdateModal visible={visibleForceUpdate} />
+      ) : null}
+
       {/* Toast Message component */}
       <Toast />
     </GestureHandlerRootView>
