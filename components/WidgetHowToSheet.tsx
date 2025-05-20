@@ -6,12 +6,10 @@ import {
   StyleSheet, 
   Image, 
   Dimensions, 
-  ScrollView,
   Animated,
 } from 'react-native';
 import EmptyModal from '../components/EmptyModal';
 import { Feather } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 
 // Image references
@@ -45,6 +43,13 @@ const steps = [
   },
 ];
 
+// Calculate screen dimensions once
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+// Fixed content height as a percentage of screen height
+const CONTENT_HEIGHT = SCREEN_HEIGHT * 0.35;
+// Fixed sheet height
+const SHEET_HEIGHT = SCREEN_HEIGHT * 0.65;
+
 interface WidgetHowToSheetProps {
   visible: boolean;
   onClose: () => void;
@@ -52,40 +57,22 @@ interface WidgetHowToSheetProps {
 
 export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetProps) {
   const [step, setStep] = useState(0);
-  const scrollViewRef = useRef<ScrollView>(null);
-  const translateY = useRef(new Animated.Value(0)).current;
-  const opacity = useRef(new Animated.Value(1)).current;
   const imageScale = useRef(new Animated.Value(1)).current;
   const imageOpacity = useRef(new Animated.Value(1)).current;
   
   // Reset animation values when modal becomes visible
   useEffect(() => {
     if (visible) {
-      translateY.setValue(0);
-      opacity.setValue(1);
       setStep(0);
       // Animate image when first shown
       animateImage();
     }
   }, [visible]);
 
-  // Handle closing animation
+  // Handle closing animation - now delegated to EmptyModal
   const handleClose = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Animated.parallel([
-      Animated.timing(translateY, {
-        toValue: 500,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-      Animated.timing(opacity, {
-        toValue: 0,
-        duration: 300,
-        useNativeDriver: true,
-      }),
-    ]).start(() => {
-      onClose();
-    });
+    onClose();
   };
 
   // Animate image when step changes
@@ -109,12 +96,11 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
     ]).start();
   };
 
-  // When the step changes, scroll to the top and animate the image
+  // When the step changes, animate the image
   const handleNextStep = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     if (step < steps.length - 1) {
       setStep(step + 1);
-      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
       animateImage();
     } else {
       handleClose();
@@ -125,18 +111,12 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
   const goToStep = (stepIndex: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     setStep(stepIndex);
-    scrollViewRef.current?.scrollTo({ y: 0, animated: false });
     animateImage();
   };
 
   return (
     <EmptyModal visible={visible} onClose={handleClose}>
-      <Animated.View 
-        style={[
-          styles.modalContent,
-          { transform: [{ translateY }], opacity }
-        ]}
-      >
+      <View style={styles.modalContent}>
         {/* Handle */}
         <View style={styles.handleContainer}>
           <View style={styles.handle} />
@@ -151,14 +131,9 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
           <View style={{ width: 40 }} />
         </View>
         
-        {/* Scrollable Content Area */}
-        <ScrollView 
-          ref={scrollViewRef}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollViewContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Image for Step - Now with animation */}
+        {/* Content Container - with fixed height */}
+        <View style={styles.contentContainer}>
+          {/* Image for Step */}
           <Animated.View 
             style={[
               styles.imageContainer,
@@ -168,38 +143,24 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
               }
             ]}
           >
-            <LinearGradient
-              colors={['rgba(252, 211, 77, 0.4)', 'rgba(251, 191, 36, 0.1)']}
-              style={styles.imageGradient}
-            >
-              <Image
-                source={steps[step].image}
-                style={styles.image}
-                resizeMode="contain"
-              />
-            </LinearGradient>
+            <Image
+              source={steps[step].image}
+              style={styles.image}
+              resizeMode="contain"
+            />
           </Animated.View>
           
-          {/* Main instruction */}
-          <Text style={styles.mainInstruction}>
-            {steps[step].instruction}
-          </Text>
-          
-          {/* Step indicator */}
-          <Text style={styles.stepIndicator}>
-            Step {step + 1} of {steps.length}
-          </Text>
-          
-          {/* Bottom padding to ensure content doesn't get cut off by fixed elements */}
-          <View style={{ height: 100 }} />
-        </ScrollView>
+          {/* Main instruction - in a fixed-height container */}
+          <View style={styles.instructionContainer}>
+            <Text style={styles.mainInstruction}>
+              {steps[step].instruction}
+            </Text>
+          </View>
+        </View>
         
-        {/* Fixed Bottom Area */}
-        <LinearGradient
-          colors={['rgba(254, 243, 199, 0)', '#FEF3C7']}
-          style={styles.bottomGradient}
-        >
-          {/* Progress indicators - Now clickable */}
+        {/* Progress and Button Container */}
+        <View style={styles.bottomContainer}>
+          {/* Progress indicators */}
           <View style={styles.progressContainer}>
             <View style={styles.progressTrack}>
               {steps.map((_, i) => (
@@ -228,8 +189,8 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
               {step < steps.length - 1 ? 'Next' : 'Done'}
             </Text>
           </TouchableOpacity>
-        </LinearGradient>
-      </Animated.View>
+        </View>
+      </View>
     </EmptyModal>
   );
 }
@@ -237,7 +198,7 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
 const styles = StyleSheet.create({
   modalContent: {
     width: '100%',
-    height: '100%',
+    height: SHEET_HEIGHT,
     display: 'flex',
     flexDirection: 'column',
   },
@@ -248,7 +209,7 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   handle: {
-    width: 40,
+    width: 36,
     height: 4,
     borderRadius: 100,
     backgroundColor: '#D1D5DB',
@@ -258,77 +219,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 24,
-    paddingVertical: 8,
+    paddingVertical: 6,
     marginBottom: 12,
   },
   closeButton: {
-    padding: 8,
+    padding: 6,
   },
   headerTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontFamily: 'feather',
     color: '#3C584A',
     fontWeight: '600',
   },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
+  contentContainer: {
+    height: CONTENT_HEIGHT,
     paddingHorizontal: 24,
-    paddingVertical: 8,
     alignItems: 'center',
+    justifyContent: 'flex-start',
+    marginBottom: 16,
   },
   imageContainer: {
-    width: Dimensions.get('window').width * 0.85,
-    height: Dimensions.get('window').width * 0.65,
-    marginBottom: 24,
-    marginTop: 16,
-    borderRadius: 24,
+    width: SCREEN_WIDTH * 0.8,
+    height: CONTENT_HEIGHT * 0.65,
+    borderRadius: 20,
     overflow: 'hidden',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 6,
-    elevation: 4,
-  },
-  imageGradient: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 24,
-    padding: 1, // Border effect
+    marginBottom: 16,
   },
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: 20,
-    backgroundColor: '#fff',
+    borderRadius: 18,
+  },
+  instructionContainer: {
+    height: CONTENT_HEIGHT * 0.35 - 16, // Account for marginBottom of imageContainer
+    justifyContent: 'center',
   },
   mainInstruction: {
     fontFamily: 'feather',
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '600',
     color: '#3C584A',
     textAlign: 'center',
     paddingHorizontal: 16,
-    marginBottom: 12,
-    lineHeight: 30,
+    lineHeight: 27,
   },
-  stepIndicator: {
-    fontFamily: 'din',
-    fontSize: 16,
-    color: '#B89B4C',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  bottomGradient: {
+  bottomContainer: {
     width: '100%',
     paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingTop: 16,
     paddingBottom: 32,
-    height: 140,
+    backgroundColor: '#FEF3C7',
   },
   progressContainer: {
-    marginBottom: 16,
+    marginBottom: 20,
   },
   progressTrack: {
     flexDirection: 'row',
@@ -336,9 +279,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   progressCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -347,8 +290,8 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowRadius: 1,
+    elevation: 1,
   },
   inactiveCircle: {
     backgroundColor: '#FFF4D9',
@@ -357,7 +300,7 @@ const styles = StyleSheet.create({
   },
   progressNumber: {
     fontFamily: 'feather',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
   },
   activeNumber: {
@@ -369,7 +312,7 @@ const styles = StyleSheet.create({
   progressLine: {
     height: 2,
     flex: 1,
-    marginHorizontal: 4,
+    marginHorizontal: 3,
   },
   activeLine: {
     backgroundColor: '#FCD34D',
@@ -380,17 +323,17 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: '#FCD34D',
     borderRadius: 100,
-    paddingVertical: 16,
+    paddingVertical: 14,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
   },
   buttonText: {
     fontFamily: 'feather',
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: '600',
     color: '#3C584A',
   },

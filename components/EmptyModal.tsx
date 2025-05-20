@@ -21,42 +21,61 @@ export default function EmptyModal({ visible, onClose, children }: EmptyModalPro
   const insets = useSafeAreaInsets();
   const backdropOpacity = useRef(new Animated.Value(0)).current;
   const translateY = useRef(new Animated.Value(SCREEN_HEIGHT)).current;
+  const animatedValue = useRef(new Animated.Value(0)).current;
+  
+  // Control whether modal is rendered at all - for proper unmounting
+  const [isRendered, setIsRendered] = React.useState(false);
 
   useEffect(() => {
     if (visible) {
+      setIsRendered(true);
+      // Slide up animation with natural spring effect
       Animated.parallel([
         Animated.timing(backdropOpacity, {
           toValue: 0.5,
-          duration: 250,
+          duration: 300,
           useNativeDriver: true,
         }),
         Animated.spring(translateY, {
           toValue: 0,
-          tension: 65,
-          friction: 15,
+          tension: 70,
+          friction: 12,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animatedValue, {
+          toValue: 1,
+          duration: 300,
           useNativeDriver: true,
         }),
       ]).start();
-    } else {
+    } else if (isRendered) {
+      // Slide down animation with ease-in
       Animated.parallel([
         Animated.timing(backdropOpacity, {
           toValue: 0,
-          duration: 200,
+          duration: 250,
           useNativeDriver: true,
         }),
         Animated.timing(translateY, {
           toValue: SCREEN_HEIGHT,
-          duration: 250,
+          duration: 350,
           useNativeDriver: true,
         }),
-      ]).start();
+        Animated.timing(animatedValue, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setIsRendered(false);
+      });
     }
   }, [visible]);
 
-  if (!visible) return null;
+  if (!visible && !isRendered) return null;
 
   return (
-    <Modal transparent visible={visible} animationType="none">
+    <Modal transparent visible={isRendered} animationType="none">
       <View style={styles.container}>
         {/* Backdrop */}
         <TouchableWithoutFeedback onPress={onClose}>
@@ -101,11 +120,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FEF3C7',
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
-    maxHeight: '80%', // Limit height but allow content to determine actual height
+    maxHeight: '90%', // Slightly increased to ensure content fits
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 10,
   },
 });

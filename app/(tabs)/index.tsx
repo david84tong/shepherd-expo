@@ -955,15 +955,17 @@ export default function HomeScreen() {
         {/* Dev Widget Button - Positioned absolutely at the bottom */}
         <TouchableOpacity
           onPress={() => setWidgetSheetVisible(true)}
-          className="absolute bottom-20 self-center bg-accentGold py-3 px-5 rounded-full shadow-md z-10"
+          className="absolute bottom-28 right-4 bg-accentGold py-4 px-6 rounded-full shadow-md z-50"
           style={{
-            shadowColor: 'rgba(0,0,0,0.2)',
-            shadowOffset: { width: 0, height: 2 },
-            shadowRadius: 4,
-            elevation: 3,
+            shadowColor: 'rgba(0,0,0,0.3)',
+            shadowOffset: { width: 0, height: 3 },
+            shadowRadius: 6,
+            elevation: 5,
+            borderWidth: 2,
+            borderColor: '#FCD34D',
           }}
         >
-          <Text className="font-feather text-darkGreen text-body">Widget Setup</Text>
+          <Text className="font-feather text-darkGreen text-lg font-bold">Widget Setup</Text>
         </TouchableOpacity>
 
         {/* Overlays */}
