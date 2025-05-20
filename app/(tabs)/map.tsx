@@ -204,10 +204,11 @@ export default function MapScreen() {
   }, [sections]);
 
   const isProMember = useSubscriptionStore(state => state.isProMember)
-
+  const subscriptionStore = useSubscriptionStore();
   // Handle subscription button press using the store action
   const handleSubscriptionPress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    subscriptionStore.setFromScreen('map');
     router.push('/PricingScreen' as any);
   }
 
@@ -224,7 +225,7 @@ export default function MapScreen() {
 
     console.log('Pressed unit:', unit.title, unit.reference);
     console.log('Reference details:', JSON.stringify(unit.reference));
-    console.log('unit selected', unit.startVerse, unit.endVerse);
+    console.log('unit selected', unit.startVerse, unit.endVerse, unit);
 
     // Get the current section/path information
     const currentPath = sections.find((section) => section.data.some((u) => u.id === unit.id));
@@ -558,17 +559,7 @@ export default function MapScreen() {
         }}
       />
 
-      {/* If we want a floating persistent next indicator, we could add it here */}
-      {nextUnit && (
-        <View className="absolute bottom-4 right-4 items-center">
-          <View className="bg-white px-2 py-1 rounded-full mb-1 shadow-sm">
-            <Text className="text-xs font-bold text-yellow-600">NEXT UNIT</Text>
-          </View>
-          <View className="bg-yellow-300 p-2 rounded-full shadow-sm border border-white">
-            <Ionicons name="arrow-up" size={20} color="#000" />
-          </View>
-        </View>
-      )}
+
     </SafeAreaView>
   );
 }

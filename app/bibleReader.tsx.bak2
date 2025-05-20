@@ -23,7 +23,8 @@ import {
   Platform,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { fetchChapter, Verse } from './api/bible';
+import { fetchChapter, FetchError, Verse } from './api/bible';
+import PrimaryButton from '../components/PrimaryButton';
 import SideButton from '~/components/SideButton';
 import { usePathStore } from './stores/pathStore';
 import { useHomeStore, SuccessAnimationType } from './stores/homeStore';
@@ -41,6 +42,7 @@ import Reanimated, {
   withDelay,
   Easing as ReanimatedEasing
 } from 'react-native-reanimated';
+import { heightScreen } from '~/utils/dimensions';
 import analytics from '../utils/analytics';
 import Slider from '@react-native-community/slider';
 import NewBibleReader from '~/components/NewBibleReader';
@@ -848,7 +850,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           {chapterData.verses.map((verse: Verse) => (
             <Pressable
               key={verse.verse}
-              onPress={() => handleVersePress(verse.verse)}
+              onPress={() => handleVersePress(verse)}
               onLongPress={() => handleVerseLongPress(verse.verse)}
               style={[
                 styles.verseContainer,
@@ -999,35 +1001,43 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
+    // If the user is turning ON Card View, immediately close this modal so the
+    // semi-transparent overlay doesn't remain hanging around after the reader
+    // component is swapped out.
     if (value) {
-      // Instantly hide modal when switching to Card View
+      // Instantly hide without waiting for the slide-out animation; we're about
+      // to unmount this component anyway.
       setIsModalVisible(false);
-      setShowCardView(true);
-      setUseDefaultReader(false);
-    } else {
-      // When switching to Default Reader, close modal and wait for overlay to disappear
-      setIsModalVisible(false);
+    }
+    
+    // Update local state first so UI responds instantly
+    setShowCardView(value);
+    setUseDefaultReader(!value);
+
+    try {
+      console.log(`Setting reader preference to: ${value ? 'new' : 'default'}`);
+      await AsyncStorage.setItem(READER_PREFERENCE_KEY, value ? 'new' : 'default');
+
+      // Re-fetch the current chapter so the default reader always has a fresh copy
+      // (this also resets the internal loading state so the UI shows a real
+      // loading indicator instead of a blank screen if anything is missing).
+      await loadChapter(currentVersion, currentBook, currentBookId, currentChapter);
+      
+      // Store a reference to the current chapter data in case the fetch fails
+      const tempChapterData = chapterData ? { ...chapterData } : null;
+       
+      // Add small delay to allow state updates to process
       setTimeout(() => {
-        (async () => {
-          setShowCardView(false);
-          setUseDefaultReader(true);
-          try {
-            console.log('Setting reader preference to: default');
-            await AsyncStorage.setItem(READER_PREFERENCE_KEY, 'default');
-            await loadChapter(currentVersion, currentBook, currentBookId, currentChapter);
-            const tempChapterData = chapterData ? { ...chapterData } : null;
-            setTimeout(() => {
-              if (!chapterData && tempChapterData && 'book' in tempChapterData) {
-                setChapterData(tempChapterData);
-              }
-              setSwitchingReaderType(false);
-            }, 300);
-            analytics.logEvent("BibleReader_SwitchedToDefaultReader");
-          } catch (error) {
-            console.error('Failed to save reader preference:', error);
-          }
-        })();
-      }, 350); // Wait for modal close animation to finish
+        // Ensure we still have chapter data for the default reader
+        if (!chapterData && tempChapterData && 'book' in tempChapterData) {
+          setChapterData(tempChapterData);
+        }
+        setSwitchingReaderType(false);
+      }, 300);
+      
+      analytics.logEvent("BibleReader_SwitchedToDefaultReader");
+    } catch (error) {
+      console.error('Failed to save reader preference:', error);
     }
   }, [currentVersion, currentBook, currentBookId, currentChapter, loadChapter]);
 
@@ -1044,10 +1054,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     setSwitchingReaderType(true);
     // Ensure modal is closed before switching
     setIsModalVisible(false);
-    // Force the slide animation value to 0 immediately
-    slideAnim.setValue(0);
     console.log('[BibleReader] Explicitly closing settings modal when switching to default reader');
-    console.log('[BibleReader] Debug - Before switch: useDefaultReader=' + useDefaultReader + ', showCardView=' + showCardView);
     analytics.logEvent("DefaultReader_Tapped_ToggleDefaultReader");
     try {
       // Switch from card to default reader
@@ -1056,29 +1063,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
       // Reload current chapter data to ensure full content
       await loadChapter(currentVersion, currentBook, currentBookId, currentChapter);
-      
-      // After loading is complete, ensure modal is still closed
-      setIsModalVisible(false);
-      slideAnim.setValue(0);
-      
       setSwitchingReaderType(false);
-      
-      // Check final state 
-      setTimeout(() => {
-        console.log('[BibleReader] Debug - After switch: useDefaultReader=' + useDefaultReader + ', showCardView=' + showCardView + ', isModalVisible=' + isModalVisible);
-      }, 100);
-      
       analytics.logEvent("BibleReader_SwitchedToDefaultReader");
     } catch (e) {
       console.error("Failed to switch to default reader", e);
       setSwitchingReaderType(false);
-      // Still make sure modal is closed
-      setIsModalVisible(false);
-      slideAnim.setValue(0);
     }
-  }, [currentVersion, currentBook, currentBookId, currentChapter, loadChapter, 
-    slideAnim, useDefaultReader, showCardView, isModalVisible
-  ]);
+  }, [currentVersion, currentBook, currentBookId, currentChapter, loadChapter]);
 
   // Add conditional rendering for reader types
   if (switchingReaderType) {
@@ -1208,7 +1199,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         borderBottomColor: THEME_COLORS[currentTheme].border
       }]}>
         <View style={styles.headerLeft}>
-          {!isEmbedded && pathInProgress && (
+          {!isEmbedded && (
             <TouchableOpacity onPress={handleBackNavigation} style={styles.backButton}>
               <Text style={[styles.backButtonText, { color: THEME_COLORS[currentTheme].text }]}>←</Text>
             </TouchableOpacity>
@@ -1229,7 +1220,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       </View>
 
       <View style={[styles.contentArea, { backgroundColor: THEME_COLORS[currentTheme].background }]}>
-        {effectiveChapterData && renderBibleContent(effectiveChapterData)}
+        {renderBibleContent(effectiveChapterData)}
       </View>
 
       {/* Bottom Navigation Row - Contains both Finish Reading and Nav Buttons */}
@@ -1395,67 +1386,67 @@ const styles = StyleSheet.create<BibleReaderStyles>({
     flex: 1,
   },
   newHeaderContainer: {
-    alignItems: 'center',
-    backgroundColor: '#FFF4D9',
-    borderBottomWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 15,
     paddingVertical: 10,
+    backgroundColor: '#FFF4D9',
+    borderBottomWidth: 1,
   },
   headerLeft: {
-    alignItems: 'center',
     flexDirection: 'row',
+    alignItems: 'center',
   },
   headerRight: {
-    alignItems: 'center',
     flexDirection: 'row',
+    alignItems: 'center',
   },
   backButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(255, 244, 217, 0.95)',
-    borderRadius: 22,
-    elevation: 3,
+    width: 44,
     height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 244, 217, 0.95)',
+    alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 3,
-    width: 44,
+    elevation: 3,
   },
   backButtonText: {
+    fontSize: 24,
     color: '#3C584A',
     fontFamily: 'Inter-Bold',
-    fontSize: 24,
   },
   headerButton: {
     backgroundColor: 'rgba(220, 178, 128, 0.2)',
     borderRadius: 15,
-    marginRight: 8,
-    paddingHorizontal: 12,
     paddingVertical: 5,
+    paddingHorizontal: 12,
+    marginRight: 8,
   },
   headerButtonText: {
     color: '#3C584A',
-    fontFamily: 'Inter-Medium',
     fontSize: 14,
     fontWeight: '500',
+    fontFamily: 'Inter-Medium',
   },
   navButton: {
-    alignItems: 'center',
     backgroundColor: '#FFE4A8',
     borderRadius: 24,
-    elevation: 4,
+    width: 48,
     height: 48,
+    alignItems: 'center',
     justifyContent: 'center',
     marginHorizontal: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 2,
-    width: 48,
+    elevation: 4,
   },
   navButtonText: {
     color: '#3C584A',
@@ -1478,24 +1469,24 @@ const styles = StyleSheet.create<BibleReaderStyles>({
     color: '#DCB280',
   },
   contentArea: {
-    backgroundColor: '#FFF4D9',
     flex: 1,
+    backgroundColor: '#FFF4D9',
   },
   scrollContainer: {
-    paddingBottom: 100,
     paddingHorizontal: 20,
     paddingTop: 10,
+    paddingBottom: 100,
   },
   verseText: {
-    color: '#3C584A',
-    fontFamily: 'Inter-Regular',
     lineHeight: 24,
     marginBottom: 10,
+    color: '#3C584A',
+    fontFamily: 'Inter-Regular',
   },
   verseNumber: {
+    fontWeight: 'bold',
     color: '#DCB280',
     fontFamily: 'Inter-Bold',
-    fontWeight: 'bold',
   },
   floatingNavContainer: {
     position: 'absolute',
@@ -1530,12 +1521,12 @@ const styles = StyleSheet.create<BibleReaderStyles>({
     fontFamily: 'Inter-SemiBold',
   },
   sliderContainer: {
-    alignItems: 'center',
     flexDirection: 'row',
-    marginBottom: 32,
-    marginTop: 0,
-    paddingHorizontal: 0,
+    alignItems: 'center',
     width: '100%',
+    paddingHorizontal: 0,
+    marginTop: 0,
+    marginBottom: 32,
   },
   slider: {
     flex: 1,
@@ -1600,10 +1591,10 @@ const styles = StyleSheet.create<BibleReaderStyles>({
     borderWidth: 2,
   },
   lineHeightContainer: {
-    marginBottom: 32,
     marginTop: 0,
-    paddingHorizontal: 16,
+    marginBottom: 32,
     width: '100%',
+    paddingHorizontal: 16,
   },
   lineHeightButtons: {
     flexDirection: 'row',

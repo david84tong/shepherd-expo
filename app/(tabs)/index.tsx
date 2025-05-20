@@ -8,10 +8,11 @@ import {
   Platform,
   SafeAreaView,
   Text,
+  TouchableOpacity,
   View,
-  ScrollView,
-  TouchableOpacity
+  ScrollView
 } from 'react-native';
+import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
 import JournalComponent from '../../components/JournalComponent';
@@ -28,8 +29,9 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import analytics from '~/utils/analytics';
-
-
+import { Feather } from '@expo/vector-icons';
+import WidgetHowToSheet from '../../components/WidgetHowToSheet';
+import useSubscriptionStore from '../stores/subscriptionStore';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
 const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
@@ -49,6 +51,28 @@ const flameIcon = imageAssets[7];
 const gemIcon = imageAssets[8];
 const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
+
+// Custom toast config with tailwind styling
+const toastConfig: ToastConfig = {
+  success: ({ text1, text2 }: ToastConfigParams<any>) => (
+    <View className="bg-surfaceCream rounded-xl px-4 py-3 mx-4 mb-4 border-l-4 border-darkGreen shadow-md">
+      <Text className="font-feather text-base text-textPrimary">{text1}</Text>
+      {text2 && <Text className="font-din text-sm text-description mt-1">{text2}</Text>}
+    </View>
+  ),
+  error: ({ text1, text2 }: ToastConfigParams<any>) => (
+    <View className="bg-surfaceCream rounded-xl px-4 py-3 mx-4 mb-4 border-l-4 border-red shadow-md">
+      <Text className="font-feather text-base text-textPrimary">{text1}</Text>
+      {text2 && <Text className="font-din text-sm text-description mt-1">{text2}</Text>}
+    </View>
+  ),
+  info: ({ text1, text2 }: ToastConfigParams<any>) => (
+    <View className="bg-surfaceCream rounded-xl px-4 py-3 mx-4 mb-4 border-l-4 border-accentGold shadow-md">
+      <Text className="font-feather text-base text-textPrimary">{text1}</Text>
+      {text2 && <Text className="font-din text-sm text-description mt-1">{text2}</Text>}
+    </View>
+  ),
+};
 
 export default function HomeScreen() {
   const riveRef = useRef<RiveRef>(null);
@@ -83,7 +107,7 @@ export default function HomeScreen() {
   const lambSizeAnim = useRef(new Animated.Value(256)).current; // Start with full size (256px)
 
   // Get subscription state and actions from the store
-  // const { isProMember } = useSubscriptionStore();
+  const { setFromScreen } = useSubscriptionStore();
   
   // Get pro status from user store
   const proStatus = useUserStore((state) => state.getProStatus());
@@ -221,12 +245,13 @@ export default function HomeScreen() {
     'lamb-angry': 'lamb-angry',
     'lamb-chubby dying': 'lamb-chubby dying',
     'lamb-skinny dying': 'lamb-skinny dying',
-    'smoking': 'lamb-fainted',
+    'smoking': 'lamb-dead',
     'lamb-full': 'lamb-full'
   };
 
   // Get UI store functions
   const showPrayerSheet = useUIStore(state => state.showPrayerSheet);
+  const showWidgetPrompt = useUIStore(state => state.showWidgetPrompt);
 
   const handleRiveError = (error: RNRiveError) => {
     console.error('Rive Error:', error.message, error.type);
@@ -431,6 +456,7 @@ export default function HomeScreen() {
   // --- Event Handlers ---
   const handleReadPress = () => {
     if (!isPro && readingCompleted) {
+      setFromScreen('home-read');
       handleSubscriptionPress()
     }
     else {
@@ -464,6 +490,7 @@ export default function HomeScreen() {
   const handlePrayerPress = () => {
     console.log('Prayer button pressed');
     if (!isPro && prayerCompleted) {
+      setFromScreen('home-prayer');
       handleSubscriptionPress()
     } else {
       // Don't proceed if reading is not completed
@@ -483,6 +510,7 @@ export default function HomeScreen() {
 
   const handleReflectionPress = () => {
     if (!isPro && reflectionCompleted) {
+      setFromScreen('home-reflection');
       handleSubscriptionPress()
     } else {
       console.log('Reflection button pressed');
@@ -517,6 +545,12 @@ export default function HomeScreen() {
         }).start();
       });
     }
+  };
+
+  const handleWidgetPromptPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    analytics.logEvent("HomeScreen_Tapped_AddWidget");
+    showWidgetPrompt();
   };
 
   // --- Handlers for Closing Overlays ---
@@ -616,12 +650,14 @@ export default function HomeScreen() {
     );
   }, [riveAssets, artboardName, riveKey, riveReady, isPro]);
 
+  const [showWidgetSheet, setShowWidgetSheet] = useState(false);
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
 
   return (
-    <View className="flex-1">
-      {/* Background Layers - Use expo-image for better performance */}
+    <>
+      <View className="flex-1">
+        {/* Background Layers - Use expo-image for better performance */}
       <Animated.View
         style={[
           { position: 'absolute', width: '100%', height: '100%' },
@@ -716,8 +752,37 @@ export default function HomeScreen() {
                 {lambName ? `${lambName}` : 'Shepherd'}
               </Text>
               <View className="flex-row gap-2 left-8">
-                <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
-                <ProgressPill value={0} label={gens.toString()} icon={gemIcon} />
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    analytics.logEvent("HomeScreen_Tapped_Streak");
+                    Toast.show({
+                      type: 'info',
+                      text1: 'Increase your streak!',
+                      text2: 'Complete your daily bread reading to build your streak.',
+                      position: 'top',
+                      visibilityTime: 4000,
+                    });
+                  }}
+                >
+                  <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    analytics.logEvent("HomeScreen_Tapped_Gems");
+                    // Show toast message using Toast component
+                    Toast.show({
+                      type: 'info',
+                      text1: 'Skin shop coming soon!',
+                      text2: 'Customize your lamb with special skins from the shop.',
+                      position: 'top',
+                      visibilityTime: 4000,
+                    });
+                  }}
+                >
+                  <ProgressPill value={0} label={gens.toString()} icon={gemIcon} />
+                </TouchableOpacity>
               </View>
             </View>
           </Animated.View>
@@ -742,31 +807,36 @@ export default function HomeScreen() {
                 Error loading animation: {riveError.message} ({riveError.type})
               </Text>
             ) : (
-              <Animated.View
-                onTouchStart={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-                style={{
-                  width: lambSizeAnim,
-                  height: lambSizeAnim,
-                }}>
+              <>
                 <Animated.View
+                  onTouchStart={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
                   style={{
-                    width: '100%',
-                    height: '100%',
-                    transform: [
-                      { scale: riveScaleAnim },
-                      {
-                        rotate: riveRotateAnim.interpolate({
-                          inputRange: [-1, 0, 1],
-                          outputRange: ['-60deg', '0deg', '60deg'],
-                        }),
-                      },
-                    ],
+                    width: lambSizeAnim,
+                    height: lambSizeAnim,
                   }}>
-                  {riveComponent}
+                  <Animated.View
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      transform: [
+                        { scale: riveScaleAnim },
+                        {
+                          rotate: riveRotateAnim.interpolate({
+                            inputRange: [-1, 0, 1],
+                            outputRange: ['-60deg', '0deg', '60deg'],
+                          }),
+                        },
+                      ],
+                    }}>
+                    {riveComponent}
+                  </Animated.View>
                 </Animated.View>
-              </Animated.View>
+                {artboardName === 'lamb-dead' && (
+                  <View style={{ height: 36 }} />
+                )}
+              </>
             )}
           </Animated.View>
         </Animated.View>
@@ -779,6 +849,7 @@ export default function HomeScreen() {
                 analytics.logEvent("HomeScreen_TappedProBadge");
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                 router.push('/PricingScreen' as any);
+                setFromScreen('home-super');
               }
             }}
             activeOpacity={0.8}
@@ -880,6 +951,18 @@ export default function HomeScreen() {
               completed={reflectionCompleted}
               disabled={!readingCompleted}
             />
+  
+            {/* Widget How-To Sheet test button */}
+            <TouchableOpacity
+              onPress={() => setShowWidgetSheet(true)}
+              className="mt-6 flex-row items-center justify-center py-3 px-4 bg-amber-100 border border-amber-300 rounded-xl"
+              activeOpacity={0.7}
+            >
+              <Feather name="smartphone" size={20} color="#B45309" style={{ marginRight: 8 }} />
+              <Text className="font-feather text-base text-amber-800">
+                How to Add Widget
+              </Text>
+            </TouchableOpacity>
           </ScrollView>
         </Animated.View>
 
@@ -887,7 +970,10 @@ export default function HomeScreen() {
         <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
         <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
         <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
+        <WidgetHowToSheet visible={showWidgetSheet} onClose={() => setShowWidgetSheet(false)} />
       </SafeAreaView>
     </View>
+    <Toast config={toastConfig} />
+  </>
   );
 }
