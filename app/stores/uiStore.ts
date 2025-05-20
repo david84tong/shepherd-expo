@@ -39,6 +39,16 @@ interface UIState {
   // New actions for OldReflectionSheet
   showOldReflectionSheet: (reflection: Reflection) => void;
   hideOldReflectionSheet: () => void;
+  
+  // Widget prompt and guide state
+  isWidgetPromptVisible: boolean;
+  isWidgetGuideVisible: boolean;
+  
+  // Widget prompt and guide actions
+  showWidgetPrompt: () => void;
+  hideWidgetPrompt: () => void;
+  showWidgetGuide: () => void;
+  hideWidgetGuide: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -95,4 +105,26 @@ export const useUIStore = create<UIState>((set) => ({
     set({ isOldReflectionSheetVisible: true, reflectionToShow: reflection }),
   hideOldReflectionSheet: () => 
     set({ isOldReflectionSheetVisible: false, reflectionToShow: null }),
+    
+  // Widget prompt and guide state
+  isWidgetPromptVisible: false,
+  isWidgetGuideVisible: false,
+  
+  // Widget prompt and guide actions
+  showWidgetPrompt: () => {
+    console.log('[UIStore] Showing widget prompt');
+    set({ isWidgetPromptVisible: true });
+  },
+  hideWidgetPrompt: () => {
+    console.log('[UIStore] Hiding widget prompt');
+    set({ isWidgetPromptVisible: false });
+  },
+  showWidgetGuide: () => {
+    console.log('[UIStore] Showing widget guide');
+    set({ isWidgetPromptVisible: false, isWidgetGuideVisible: true });
+  },
+  hideWidgetGuide: () => {
+    console.log('[UIStore] Hiding widget guide');
+    set({ isWidgetGuideVisible: false });
+  },
 })); 

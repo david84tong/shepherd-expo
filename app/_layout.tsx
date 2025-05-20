@@ -128,6 +128,14 @@ export default function RootLayout() {
   const showPrayerSheet = useUIStore((state) => state.showPrayerSheet);
   const showBookChapterSelector = useUIStore((state) => state.showBookChapterSelector);
   const showOldReflectionSheet = useUIStore((state) => state.showOldReflectionSheet);
+  
+  // Widget states from UI store
+  const isWidgetPromptVisible = useUIStore((state) => state.isWidgetPromptVisible);
+  const isWidgetGuideVisible = useUIStore((state) => state.isWidgetGuideVisible);
+  const showWidgetPrompt = useUIStore((state) => state.showWidgetPrompt);
+  const hideWidgetPrompt = useUIStore((state) => state.hideWidgetPrompt);
+  const showWidgetGuide = useUIStore((state) => state.showWidgetGuide);
+  const hideWidgetGuide = useUIStore((state) => state.hideWidgetGuide);
 
   // Sheet refs
   const halfModalRef = useRef<HalfModalSheetRef>(null);
@@ -248,25 +256,6 @@ export default function RootLayout() {
     settingsSheetRef.current?.show();
   };
 
-  // Expose global functions
-  useEffect(() => {
-    if (typeof global !== 'undefined') {
-      (global as any).showHalfModal = showHalfModal;
-      (global as any).showSettings = showSettings;
-      (global as any).showPrayerSheet = showPrayerSheet;
-      (global as any).showBookChapterSelector = showBookChapterSelector;
-      (global as any).showOldReflectionSheet = showOldReflectionSheet;
-    }
-  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet]);
-
-  // Effect to watch isPrayerSheetVisible and control the sheet ref
-  useEffect(() => {
-    if (isPrayerSheetVisible && prayerSheetRef.current) {
-      console.log('[RootLayout] Opening prayer sheet via ref');
-      prayerSheetRef.current.show();
-    }
-  }, [isPrayerSheetVisible]);
-
   // Consolidated initialization effect
   useEffect(() => {
     const initializeApp = async () => {
@@ -367,104 +356,71 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: {
-              backgroundColor: '#FFF4D9',
-            },
-            animation: 'slide_from_right',
-          }}>
-          <Stack.Screen
-            name="(tabs)"
-            options={{
-              headerShown: false,
-              animation: 'slide_from_right',
-            }}
-          />
-          <Stack.Screen
-            name="login"
-            options={{
-              headerShown: false,
-              animation: 'slide_from_bottom',
-              animationDuration: 200,
-              gestureEnabled: false,
-              contentStyle: { backgroundColor: '#FFF4D9' },
-            }}
-          />
-          <Stack.Screen
-            name="onboarding"
-            options={{
-              headerShown: false,
-              animation: 'fade',
-              animationDuration: 200,
-              gestureEnabled: false,
-              contentStyle: { backgroundColor: '#FFF4D9' },
-            }}
-          />
-          <Stack.Screen
-            name="bibleReader"
-            options={{
-              animation: 'slide_from_right',
-              animationDuration: 350,
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen
-            name="bible"
-            options={{
-              animation: 'slide_from_right',
-              animationDuration: 350,
-              headerShown: false,
-            }}
-          />
-          <Stack.Screen name="modal" options={{ presentation: 'modal' }} />
-          <Stack.Screen
-            name="success"
-            options={{ headerShown: false, animation: 'slide_from_right' }}
-          />
-        </Stack>
+        {visibleForceUpdate ? (
+          <ForceUpdateModal visible={visibleForceUpdate} />
+        ) : (
+          <>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                animation: 'fade',
+                animationDuration: 200,
+              }}
+            />
 
-        {/* Hide progress indicators on LoadingScreen */}
-        {segments.join('/') !== 'onboarding/LoadingScreen' && (
-          <View
-            style={{
-              position: 'absolute',
-              top: -10,
-              left: 0,
-              right: 0,
-              height: 4,
-              backgroundColor: '#3C584A',
-              opacity: 0.7,
-              width: '100%',
-            }}
-          />
+            {/* Half Modal Sheet for penalties, popups, etc. */}
+            <HalfModalSheet
+              halfModalRef={halfModalRef}
+              snapPoints={halfModalSnapPoints}
+              params={{
+                type: halfModalParams.type,
+                message: halfModalParams.message,
+                subMessage: halfModalParams.subMessage,
+                penalty: halfModalParams.penalty,
+                daysMissed: halfModalParams.daysMissed
+              }}
+            />
+
+            {/* Settings Sheet */}
+            <SettingsSheet 
+              settingsSheetRef={settingsSheetRef}
+              snapPoints={settingsSnapPoints} 
+            />
+
+            {/* Global Prayer Sheet (available from anywhere in the app) */}
+            <GlobalPrayerSheet
+              prayerSheetRef={prayerSheetRef}
+              snapPoints={prayerSnapPoints}
+              onPrayerGenerated={useUIStore.getState().prayerGeneratedCallback || undefined}
+            />
+
+            {/* Book/Chapter Selector Sheet */}
+            {Boolean(showBookChapterSelector) && <GlobalBookChapterSelectorSheet />}
+
+            {/* Old Reflection Sheet */}
+            {Boolean(showOldReflectionSheet) && <OldReflectionSheet />}
+            
+            {/* Toast container for notifications */}
+            <Toast />
+
+            {/* Dimmed background for modal overlays */}
+            {isModalDimActive && (
+              <View
+                style={{
+                  position: 'absolute',
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: 'rgba(0,0,0,0.5)',
+                  zIndex: 50,
+                }}
+              />
+            )}
+
+            {/* Debug button (visible only in development) */}
+            {__DEV__ && <DebugButton />}
+          </>
         )}
-
-        {/* Render the self-contained bottom sheet components */}
-        <HalfModalSheet
-          halfModalRef={halfModalRef}
-          snapPoints={halfModalSnapPoints}
-          params={halfModalParams}
-        />
-
-        <SettingsSheet settingsSheetRef={settingsSheetRef} snapPoints={settingsSnapPoints} />
-
-        {/* Global sheets */}
-        <GlobalPrayerSheet
-          prayerSheetRef={prayerSheetRef}
-          snapPoints={prayerSnapPoints}
-          onPrayerGenerated={useUIStore.getState().prayerGeneratedCallback || undefined}
-        />
-        <GlobalBookChapterSelectorSheet />
-        <OldReflectionSheet />
-
-        {__DEV__ && <DebugButton />}
       </BottomSheetModalProvider>
-      {visibleForceUpdate && isInitialized ? <ForceUpdateModal visible={visibleForceUpdate} /> : null}
-      
-      {/* Toast Message component */}
-      <Toast />
     </GestureHandlerRootView>
   );
 }
