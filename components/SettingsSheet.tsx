@@ -1019,20 +1019,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
               </View>
 
               {/* Promo Code Button */}
-              <TouchableOpacity
-                onPress={handlePromoCodePress}
-                className="bg-white rounded-xl p-4 shadow-sm flex-row justify-between items-center">
-                <View>
-                  <Text className="font-feather text-base text-textPrimary">Redeem Promo Code</Text>
-                  <Text className="font-din text-description mt-1">
-                    Enter a promotional code to unlock premium features
-                  </Text>
-                </View>
-                <Feather name="tag" size={20} color="#B89B4C" />
-              </TouchableOpacity>
+     
 
               {/* Referral Code Button */}
-              <TouchableOpacity
+              {/* <TouchableOpacity
                 onPress={handleOpenReferralModal}
                 className="bg-white rounded-xl p-4 mt-2 shadow-sm flex-row justify-between items-center">
                 <View>
@@ -1042,9 +1032,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
                   </Text>
                 </View>
                 <Feather name="gift" size={20} color="#B89B4C" />
-              </TouchableOpacity>
+              </TouchableOpacity> */}
             </View>
-
 
 
             {/* User ID Section - Moved to bottom */}

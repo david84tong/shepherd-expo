@@ -62,6 +62,7 @@ export default function ProfileScreen() {
     isProMember,
     presentPaywall,
     getCustomerInfo,
+    setFromScreen,
   } = useSubscriptionStore();
 
   const lamb = getLamb();
@@ -506,7 +507,7 @@ export default function ProfileScreen() {
               <Text className="font-feather text-heading text-textPrimary">Manage Subscription</Text>
               {isProMember && (
                 <View className="bg-lightYellow px-4 py-1 rounded-full">
-                  <Text className="font-din text-accentGold">Pro (New Skins coming next week!)</Text>
+                  <Text className="font-din text-accentGold">Pro</Text>
                 </View>
               )}
             </View>
@@ -519,7 +520,9 @@ export default function ProfileScreen() {
               <>
                 <PrimaryButton
                   title="Upgrade to Pro"
-                  onPress={() => router.push('/PricingScreen' as any)}
+                  onPress={() => {
+                    setFromScreen('profile');
+                    router.push('/PricingScreen' as any)}}
                   style="mt-0 mb-3"
                 />
               </>
