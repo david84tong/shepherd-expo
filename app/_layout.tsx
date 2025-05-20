@@ -257,7 +257,26 @@ export default function RootLayout() {
     settingsSheetRef.current?.show();
   };
 
-  // Add timeout for initialization if it takes too long. That’s just a safety net.
+  // Expose global functions
+  useEffect(() => {
+    if (typeof global !== 'undefined') {
+      (global as any).showHalfModal = showHalfModal;
+      (global as any).showSettings = showSettings;
+      (global as any).showPrayerSheet = showPrayerSheet;
+      (global as any).showBookChapterSelector = showBookChapterSelector;
+      (global as any).showOldReflectionSheet = showOldReflectionSheet;
+    }
+  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet]);
+
+  // Effect to watch isPrayerSheetVisible and control the sheet ref
+  useEffect(() => {
+    if (isPrayerSheetVisible && prayerSheetRef.current) {
+      console.log('[RootLayout] Opening prayer sheet via ref');
+      prayerSheetRef.current.show();
+    }
+  }, [isPrayerSheetVisible]);
+
+  // Add timeout for initialization if it takes too long. That's just a safety net.
   useEffect(() => {
     const initializationTimeout = setTimeout(() => {
       if (!appReady) {
