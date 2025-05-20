@@ -7,10 +7,12 @@ import * as WebBrowser from 'expo-web-browser';
 import { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
+
 import Constants from 'expo-constants';
 
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
+import useSubscriptionStore from '../stores/subscriptionStore';
 
 // Helper function to check if user is signed in
 export const isSignedIn = () => {
@@ -171,6 +173,11 @@ export function useAuth() {
         analytics.logEvent('auth_success');
       }
 
+      // Adapty: login user after successful sign in
+      // if (userCredential?.user?.uid) {
+      //   await useSubscriptionStore.getState().loginAdaptyUser(userCredential.user.uid);
+      // }
+
       return userCredential.user;
     } catch (err) {
       const error = err as Error;
@@ -239,6 +246,11 @@ export function useAuth() {
       if (analytics.isInitialized) {
         analytics.logEvent('auth_success');
       }
+
+      // Adapty: login user after successful anonymous sign in
+      // if (userCredential?.user?.uid) {
+      //   await useSubscriptionStore.getState().loginAdaptyUser(userCredential.user.uid);
+      // }
 
       return userCredential.user;
     } catch (err) {
@@ -339,6 +351,25 @@ export function useAuth() {
     }
   };
 
+  // Add a signOut function that logs out Adapty as well
+  const signOut = async () => {
+    try {
+      const currentUser = auth().currentUser;
+      const isAnonymous = currentUser?.isAnonymous;
+
+      await auth().signOut();
+
+      if (Platform.OS === 'android' && !isAnonymous) {
+        await GoogleSignin.revokeAccess?.();
+      }
+
+      // await subscriptionStore.logoutAdaptyUser();
+    } catch (error) {
+      console.error('[Auth] Error during sign out:', error);
+      throw error;
+    }
+  };
+
   return {
     user,
     loading,
@@ -348,6 +379,7 @@ export function useAuth() {
     signInWithGoogle,
     signInAnonymously,
     checkUserExists,
+    signOut,
   };
 }
 

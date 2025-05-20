@@ -54,6 +54,7 @@ import Animated, {
   interpolate,
   withSequence,
 } from 'react-native-reanimated';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 interface SettingsSheetProps {
   settingsSheetRef: React.RefObject<SettingsSheetRef>;
@@ -195,21 +196,27 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     });
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-      await auth()
-        .signOut()
-        .then(() => {
-          useUserStore.getState().resetUserStore();
-          bottomSheetRef.current?.close();
-          setIsModalDimActive(false);
-          router.replace({ pathname: '/(auth)' });
-        })
-        .catch((error) => {
-          console.error('Error signing out:', error);
-        });
+
+      // Check if we're on Android and if the user is not signed in with Google
+      const currentUser = auth().currentUser;
+      const isAnonymous = currentUser?.isAnonymous;
+
+      // Proceed with sign out
+      await auth().signOut();
+
+      // Only revoke Google access on Android
+      if (Platform.OS === 'android' && !isAnonymous) {
+        await GoogleSignin.revokeAccess?.();
+      }
+
+      useUserStore.getState().resetUserStore();
+      bottomSheetRef.current?.close();
+      setIsModalDimActive(false);
+      router.replace({ pathname: '/(auth)' });
     } catch (error) {
       console.error('Error signing out:', error);
     }
-  }, [router, setIsModalDimActive]);
+  }, [router, setIsModalDimActive, userId]);
 
   // Handle copying the user ID
   const handleCopyUserId = useCallback(() => {

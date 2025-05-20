@@ -32,9 +32,7 @@ import useForceUpdateCheck from './hooks/useForceUpdateCheck';
 import ForceUpdateModal from '~/components/ForceUpdateModal';
 import { disableFontScaling } from './helper/disableFontScaling';
 import Toast from 'react-native-toast-message';
-// Import all Zustand stores for fast loading
-import './stores/userStore';
-import './stores/userStore';
+import { adapty } from 'react-native-adapty';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -308,6 +306,25 @@ export default function RootLayout() {
     initializeApp();
   }, [fontsLoaded, fontError, router]);
 
+  const activateAdapty = async () => {
+    try {
+      const isActivated = await adapty.isActivated();
+      console.log('isActivated ==>', isActivated);
+      if (isActivated) return;
+
+      // if(adapty){
+      //   console.log("adapty ==>",adapty?.isActivated());
+
+      // }
+      await adapty.activate('public_live_6JQmP6iR.y5BUrJSqvfMEVYQBPBLz', {
+        lockMethodsUntilReady: true,
+      });
+      console.log('Adapty activated');
+    } catch (error) {
+      console.error('Error activating Adapty:', error);
+    }
+  };
+
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
@@ -320,6 +337,9 @@ export default function RootLayout() {
       }
       appState.current = nextAppState;
     };
+    console.log('Activating Adapty');
+
+    activateAdapty();
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
 
