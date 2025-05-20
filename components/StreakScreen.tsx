@@ -387,7 +387,7 @@ export const StreakScreen = () => {
     return (
       <View className="flex-1 items-center justify-center bg-surfaceCream">
         <ActivityIndicator size="large" color="#F2B705" />
-        <Text className="font-feather text-textPrimary mt-4">Loading streak animation...</Text>
+        {/* <Text className="font-feather text-textPrimary mt-4">Loading streak animation...</Text> */}
       </View>
     );
   }

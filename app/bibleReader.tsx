@@ -1369,7 +1369,12 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   );
   }
 
-
+  // Ensure pathInProgress is reset when unmounting (e.g., via swipe gesture)
+  useEffect(() => {
+    return () => {
+      setPathInProgress(false);
+    };
+  }, []);
 };
 
 // Standalone screen that uses the component
