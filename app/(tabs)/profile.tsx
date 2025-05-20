@@ -10,6 +10,7 @@ import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import analytics from '../../utils/analytics';
 import { FontAwesome6 } from '@expo/vector-icons';
+import { useAuth } from '../hooks/authHook';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
@@ -58,7 +59,7 @@ export default function ProfileScreen() {
   } = useUserStore();
 
   // Get subscription state and actions from the store
-  const { 
+  const {
     isProMember,
     presentPaywall,
     getCustomerInfo,
@@ -75,6 +76,12 @@ export default function ProfileScreen() {
   const userId = user?.id || null;
 
   const [showDiscordCard, setShowDiscordCard] = useState(true);
+  const { signInWithApple } = useAuth();
+  const [signInLoading, setSignInLoading] = useState(false);
+  const [signInError, setSignInError] = useState<string | null>(null);
+
+  // Detect if user is anonymous (no email and displayName is 'Anonymous User')
+  const isAnonymous = !user?.email
 
   // Fetch customer info when the component mounts or when app comes to foreground
   useEffect(() => {
@@ -142,7 +149,7 @@ export default function ProfileScreen() {
 
   const handleJoinDiscord = useCallback(async () => {
     analytics.logEvent('Profile_DiscordCard_Joined');
-    await handleDismissDiscordCard(); 
+    await handleDismissDiscordCard();
     try {
       // Replace 'YOUR_DISCORD_INVITE_LINK' with your actual Discord server invite link
       await Linking.openURL('https://discord.gg/W9MZdVaKBs');
@@ -275,6 +282,35 @@ export default function ProfileScreen() {
   const appVersion = Application.nativeApplicationVersion || 'Unknown';
   const buildNumber = Application.nativeBuildVersion || 'Unknown';
 
+  // Handle Apple sign in from profile
+  const handleAppleSignIn = async () => {
+    setSignInError(null);
+    setSignInLoading(true);
+    try {
+      await signInWithApple(false); // Not login mode, upgrade anonymous
+      // On success, user store will update and card will disappear
+    } catch (error: any) {
+      let errorMessage = 'There was a problem signing in with Apple.';
+      if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
+        errorMessage = 'Sign in was canceled. Please try again.';
+      } else if (error.message?.includes('network')) {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (error.message?.includes('configuration')) {
+        errorMessage = 'Authentication configuration error. Please try another method.';
+      } else if (error.message?.includes('incomplete')) {
+        errorMessage = 'Sign in process was interrupted. Please try again.';
+      } else if (error.message?.includes("operation couldn't be completed")) {
+        errorMessage = 'Sign in process could not be completed. Please try again.';
+      } else if (error.message?.includes('No account found')) {
+        errorMessage = "We couldn't find an account with this Apple ID. Please create a new account instead.";
+      } else if (error.message?.includes('Failed to fetch your account data')) {
+        errorMessage = "We couldn't retrieve your account data. Please try again.";
+      }
+      setSignInError(errorMessage);
+    } finally {
+      setSignInLoading(false);
+    }
+  }
   // Modal state for path selection
   const [showPathModal, setShowPathModal] = useState(false);
   // Assume onboarding_completed is a boolean in user object
@@ -305,18 +341,41 @@ export default function ProfileScreen() {
               <Feather name="settings" size={20} color="#B89B4C" />
             </TouchableOpacity>
           </View>
-     {/* Discord Card */}
-     {showDiscordCard && (
+
+          {/* Sign In to Save Progress Card (only for anonymous users) */}
+          {isAnonymous && (
+            <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+              <Text className="font-feather text-xl text-accentGold mb-2 text-center">Sign in to save your progress</Text>
+              <Text className="font-din text-body text-textPrimary mb-4 text-center">
+                Create a free account to sync your streak, XP, and lamb across devices. You can always sign in later!
+              </Text>
+              <PrimaryButton
+                title={signInLoading ? 'Signing in...' : 'Sign in with Apple'}
+                onPress={handleAppleSignIn}
+                primaryColor="bg-black"
+                textColor="text-white"
+                shadowStyle="shadow-darkApple"
+                style="mt-2"
+                disabled={signInLoading}
+              />
+              {signInError && (
+                <Text className="font-din text-red-500 text-center mt-2">{signInError}</Text>
+              )}
+            </View>
+          )}
+
+          {/* Discord Card */}
+          {showDiscordCard && (
             <View className="mx-6 mt-4 bg-lightPurple rounded-[20px] p-6 shadow-card relative">
               <TouchableOpacity
                 onPress={handleDismissDiscordCard}
                 className="absolute top-3 right-3 p-1 z-10 bg-darkPurple/10 rounded-full">
-                <Feather name="x" size={20} color="#3C584A" /> 
+                <Feather name="x" size={20} color="#3C584A" />
               </TouchableOpacity>
 
               <View className="flex-row items-center mb-4">
                 <View className="bg-white p-3 rounded-full mr-4 shadow-md">
-                <FontAwesome6 name="discord" size={20} color="#5865F2" />
+                  <FontAwesome6 name="discord" size={20} color="#5865F2" />
                 </View>
                 <View className="flex-1">
                   <Text className="font-feather text-xl text-darkPurple">Join our Shepherd Family!</Text>
@@ -329,10 +388,10 @@ export default function ProfileScreen() {
               <PrimaryButton
                 title="Join the Herd"
                 onPress={handleJoinDiscord}
-                primaryColor="bg-darkPurple" 
+                primaryColor="bg-darkPurple"
                 textColor="text-white"
                 shadowStyle="shadow-darkPurple" // Assuming you have this in tailwind.config.js
-                style="mt-2" 
+                style="mt-2"
               />
             </View>
           )}
@@ -405,7 +464,7 @@ export default function ProfileScreen() {
                   const showDateHeader =
                     index === 0 ||
                     formatActivityDate(activity.date) !==
-                      formatActivityDate(allActivities[index - 1].date);
+                    formatActivityDate(allActivities[index - 1].date);
 
                   return (
                     <View key={`${activity.type}-${index}`}>
@@ -522,14 +581,15 @@ export default function ProfileScreen() {
                   title="Upgrade to Pro"
                   onPress={() => {
                     setFromScreen('profile');
-                    router.push('/PricingScreen' as any)}}
+                    router.push('/PricingScreen' as any)
+                  }}
                   style="mt-0 mb-3"
                 />
               </>
             )}
           </View>
 
-     
+
 
           {/* Store Section */}
           <View className="mx-6 mt-4 mb-8 bg-white/50 rounded-[20px] p-6 shadow-card">
@@ -543,7 +603,7 @@ export default function ProfileScreen() {
               Customize your lamb and unlock special items!
             </Text>
           </View>
-          
+
           {/* Version Info */}
           <View className="mx-6 mt-2 mb-10 items-center">
             <Text className="font-din text-description text-center text-textSecondary opacity-60">
@@ -552,6 +612,6 @@ export default function ProfileScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </GestureHandlerRootView>
+    </GestureHandlerRootView >
   );
 }

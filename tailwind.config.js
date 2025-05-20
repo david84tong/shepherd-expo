@@ -128,6 +128,7 @@ module.exports = {
         darkCyan: '0px 5px 0px 0px #18B2B6',
         darkScarlet: '0px 5px 0px 0px #D72618',
         gray: '0px 5px 0px 0px #808080',
+        darkApple: '0px 5px 0px 0px #171717',
       },
       secondaryButtonShadow: {
         secondary: '', // Match spec
