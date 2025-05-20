@@ -119,6 +119,8 @@ export const useUserStore = create<UserStore>()(
         const state = get();
         console.log('Getting user state:', state);
         return {
+          id: state.id,
+          email: state.email,
           spiritualGoal: state.spiritualGoal,
           experienceLevel: state.experienceLevel,
           frequencyGoal: state.frequencyGoal,
@@ -634,6 +636,8 @@ export const useUserStore = create<UserStore>()(
       storage: createJSONStorage(() => customStorage),
       partialize: (state) => {
         const persistedState = {
+          id: state.id,
+          email: state.email,
           spiritualGoal: state.spiritualGoal,
           experienceLevel: state.experienceLevel,
           frequencyGoal: state.frequencyGoal,

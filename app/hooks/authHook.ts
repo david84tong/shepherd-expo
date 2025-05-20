@@ -139,7 +139,7 @@ export function useAuth() {
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
       console.log('[Auth] User document updated in Firestore');
       
-      // Update local store
+      // Update local store with the email and display name
       updateUser({
         id: uid,
         displayName,
