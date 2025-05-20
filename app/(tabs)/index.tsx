@@ -19,6 +19,7 @@ import JournalComponent from '../../components/JournalComponent';
 import PrayerComponent from '../../components/PrayerComponent';
 import ProgressPill from '../../components/ProgressPill';
 import SecondaryButton from '../../components/SecondaryButton';
+import WidgetHowToSheet from '../../components/WidgetHowToSheet';
 import { HomeMode, useHomeStore } from '../stores/homeStore'; // Import Zustand store
 import { usePathStore } from '../stores/pathStore'; // Import path store
 import { useUIStore } from '../stores/uiStore'; // Import UI store
@@ -644,6 +645,18 @@ export default function HomeScreen() {
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
 
+  // Add state for widget sheet
+  const [widgetSheetVisible, setWidgetSheetVisible] = useState(false);
+  
+  // Show widget sheet on initial load (runs only once)
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setWidgetSheetVisible(true);
+    }, 1000); // Small delay for smoother transition
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   return (
     <>
       <View className="flex-1">
@@ -939,10 +952,25 @@ export default function HomeScreen() {
           </ScrollView>
         </Animated.View>
 
+        {/* Dev Widget Button - Positioned absolutely at the bottom */}
+        <TouchableOpacity
+          onPress={() => setWidgetSheetVisible(true)}
+          className="absolute bottom-20 self-center bg-accentGold py-3 px-5 rounded-full shadow-md z-10"
+          style={{
+            shadowColor: 'rgba(0,0,0,0.2)',
+            shadowOffset: { width: 0, height: 2 },
+            shadowRadius: 4,
+            elevation: 3,
+          }}
+        >
+          <Text className="font-feather text-darkGreen text-body">Widget Setup</Text>
+        </TouchableOpacity>
+
         {/* Overlays */}
         <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
         <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
         <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
+        <WidgetHowToSheet visible={widgetSheetVisible} onClose={() => setWidgetSheetVisible(false)} />
       </SafeAreaView>
     </View>
     <Toast config={toastConfig} />
