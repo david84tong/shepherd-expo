@@ -1208,7 +1208,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         borderBottomColor: THEME_COLORS[currentTheme].border
       }]}>
         <View style={styles.headerLeft}>
-          {!isEmbedded && pathInProgress && (
+          {pathInProgress && (
             <TouchableOpacity onPress={handleBackNavigation} style={styles.backButton}>
               <Text style={[styles.backButtonText, { color: THEME_COLORS[currentTheme].text }]}>←</Text>
             </TouchableOpacity>
@@ -1236,18 +1236,18 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       <RNAnimated.View 
         style={[{
           position: 'absolute',
-          bottom: isEmbedded ? 100 : 40,
+          bottom: isEmbedded ? 100 : 50,
           left: 0,
           right: 0,
           flexDirection: 'row',
-          justifyContent: 'space-between',
+          justifyContent: 'flex-end',
           alignItems: 'center',
           paddingHorizontal: 20,
           zIndex: 10,
         }, buttonsContainerStyle]}
       >
-        {/* Finish Reading Button */}
-        {!isEmbedded && (
+        {/* Finish Reading Button (only in path mode) */}
+        {!isEmbedded && pathInProgress && (
           <View style={{flex: 1, marginRight: -100}}>
             <SideButton
               title="Finish Reading"
@@ -1256,7 +1256,6 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
             />
           </View>
         )}
-        
         {/* Navigation Buttons */}
         <View style={{flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center'}}>
           <TouchableOpacity
@@ -1268,18 +1267,12 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
             <Text style={[styles.navButtonText, (currentChapter <= 1 || loading) && styles.disabledButtonText]}>←</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[
-              styles.navButton,
-              (loading || (pathInProgress && isAtEndChapter)) && styles.disabledNavButton
-            ]}
+            style={[styles.navButton, (loading || (pathInProgress && isAtEndChapter)) && styles.disabledNavButton]}
             onPress={navigateToNextChapter}
             disabled={loading || (pathInProgress && isAtEndChapter)}
             activeOpacity={0.7}
           >
-            <Text style={[
-              styles.navButtonText,
-              (loading || (pathInProgress && isAtEndChapter)) && styles.disabledButtonText
-            ]}>→</Text>
+            <Text style={[styles.navButtonText, (loading || (pathInProgress && isAtEndChapter)) && styles.disabledButtonText]}>→</Text>
           </TouchableOpacity>
         </View>
       </RNAnimated.View>
