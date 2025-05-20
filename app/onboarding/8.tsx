@@ -18,12 +18,18 @@ import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
 
-export default function OnboardingPathScreen() {
+interface OnboardingPathScreenProps {
+  onPathSelected?: (pathObj: any) => void;
+  selectedPathId?: string;
+  hideContinueButton?: boolean;
+}
+
+export default function OnboardingPathScreen({ onPathSelected, selectedPathId: externalSelectedPathId, hideContinueButton }: OnboardingPathScreenProps) {
   const router = useRouter();
   const { setResponse, setPathSelection } = useOnboardingStore();
   const { setUser } = useUserStore();
   const { setSelectedPath } = usePathStore();
-  const [selectedPathId, setSelectedPathId] = useState('knowing-jesus');
+  const [selectedPathId, setSelectedPathId] = useState(externalSelectedPathId || 'knowing-jesus');
   const [pressedId, setPressedId] = useState<string | undefined>(undefined);
 
   // Create Reanimated shared values for each component
@@ -106,6 +112,10 @@ export default function OnboardingPathScreen() {
       
       // Save to path store
       setSelectedPath(selectedPathObj);
+      // If provided, call the callback for parent
+      if (onPathSelected) {
+        onPathSelected(selectedPathObj);
+      }
     }
   };
 
@@ -177,12 +187,14 @@ export default function OnboardingPathScreen() {
       </Animated.View>
 
       {/* Continue Button */}
-      <PrimaryButton
-        title="Continue"
-        onPress={handleContinue}
-        disabled={!selectedPathId}
-        style="mt-6 mb-12"
-      />
+      {!hideContinueButton && (
+        <PrimaryButton
+          title="Continue"
+          onPress={handleContinue}
+          disabled={!selectedPathId}
+          style="mt-6 mb-12"
+        />
+      )}
     </View>
   );
 }

@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image, Linking, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image, Linking, Alert, Modal } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,6 +15,7 @@ import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import PrimaryButton from '../../components/PrimaryButton';
+import OnboardingPathScreen from '../onboarding/8';
 
 // Import the icons using import statements
 import breadIcon from '../../assets/icons/breadIcon.png';
@@ -273,6 +274,23 @@ export default function ProfileScreen() {
   const appVersion = Application.nativeApplicationVersion || 'Unknown';
   const buildNumber = Application.nativeBuildVersion || 'Unknown';
 
+  // Modal state for path selection
+  const [showPathModal, setShowPathModal] = useState(false);
+  // Assume onboarding_completed is a boolean in user object
+  const onboardingCompleted = user?.onboarding_completed;
+
+  // Handler for updating path selection
+  const handlePathSelected = (pathObj) => {
+    if (!pathObj) return;
+    // Update pathStore
+    if (typeof pathObj === 'object' && pathObj.id) {
+      usePathStore.getState().setSelectedPath(pathObj);
+      // Update userStore as well
+      useUserStore.getState().setUser({ selectedPathId: pathObj.id });
+    }
+    setShowPathModal(false);
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
@@ -447,10 +465,40 @@ export default function ProfileScreen() {
           {/* Selected Path Card */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
             <Text className="font-feather text-heading text-textPrimary mb-2">Selected Path</Text>
-            <Text className="font-din text-description">
-              {selectedPath?.title || 'No path selected'}
-            </Text>
+            <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
+              <Text className="font-din text-description underline text-accentGold">
+                {selectedPath?.title || 'No path selected'}
+              </Text>
+            </TouchableOpacity>
           </View>
+
+          {/* Path Selection Modal */}
+          <Modal
+            visible={showPathModal}
+            animationType="slide"
+            transparent={false}
+            onRequestClose={() => setShowPathModal(false)}
+          >
+            <View style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
+              {/* Show X button if onboarding_completed */}
+              {onboardingCompleted && (
+                <TouchableOpacity
+                  onPress={() => setShowPathModal(false)}
+                  style={{ position: 'absolute', top: 48, right: 24, zIndex: 10, backgroundColor: '#fff', borderRadius: 20, padding: 8, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4 }}
+                  hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+                >
+                  <Feather name="x" size={24} color="#3C584A" />
+                </TouchableOpacity>
+              )}
+              <OnboardingPathScreen
+                // Pass a callback to handle path selection
+                onPathSelected={handlePathSelected}
+                // Optionally pass selectedPathId for highlighting
+                selectedPathId={selectedPath?.id}
+                hideContinueButton={false}
+              />
+            </View>
+          </Modal>
 
           {/* Subscription Management Section */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">

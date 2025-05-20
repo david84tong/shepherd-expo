@@ -223,7 +223,7 @@ export default function HomeScreen() {
     'lamb-angry': 'lamb-angry',
     'lamb-chubby dying': 'lamb-chubby dying',
     'lamb-skinny dying': 'lamb-skinny dying',
-    'smoking': 'lamb-fainted',
+    'smoking': 'lamb-dead',
     'lamb-full': 'lamb-full'
   };
 
@@ -625,10 +625,9 @@ export default function HomeScreen() {
     );
   }, [riveAssets, artboardName, riveKey, riveReady, isPro]);
 
+  const [showWidgetSheet, setShowWidgetSheet] = useState(false);
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
-
-  const [showWidgetSheet, setShowWidgetSheet] = useState(false);
 
   return (
     <View className="flex-1">
@@ -753,31 +752,36 @@ export default function HomeScreen() {
                 Error loading animation: {riveError.message} ({riveError.type})
               </Text>
             ) : (
-              <Animated.View
-                onTouchStart={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-                style={{
-                  width: lambSizeAnim,
-                  height: lambSizeAnim,
-                }}>
+              <>
                 <Animated.View
+                  onTouchStart={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
                   style={{
-                    width: '100%',
-                    height: '100%',
-                    transform: [
-                      { scale: riveScaleAnim },
-                      {
-                        rotate: riveRotateAnim.interpolate({
-                          inputRange: [-1, 0, 1],
-                          outputRange: ['-60deg', '0deg', '60deg'],
-                        }),
-                      },
-                    ],
+                    width: lambSizeAnim,
+                    height: lambSizeAnim,
                   }}>
-                  {riveComponent}
+                  <Animated.View
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      transform: [
+                        { scale: riveScaleAnim },
+                        {
+                          rotate: riveRotateAnim.interpolate({
+                            inputRange: [-1, 0, 1],
+                            outputRange: ['-60deg', '0deg', '60deg'],
+                          }),
+                        },
+                      ],
+                    }}>
+                    {riveComponent}
+                  </Animated.View>
                 </Animated.View>
-              </Animated.View>
+                {artboardName === 'lamb-dead' && (
+                  <View style={{ height: 36 }} />
+                )}
+              </>
             )}
           </Animated.View>
         </Animated.View>
