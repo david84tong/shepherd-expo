@@ -18,7 +18,7 @@ const LOADING_MESSAGES = [
   "Saving your responses",
   "Encrypting your data",
   "Sprinkling some holy water",
-  "Generating your custom plan"
+  "Generating your custom bible study plan"
 ];
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ 
   initialMessage,

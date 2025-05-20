@@ -362,13 +362,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Update specific activity timestamp based on success type
       if (effectiveType === SuccessAnimationType.READING) {
         setLastReadingDate(now);
-        analytics.logEvent("SuccessAnimation_Reading_Completed", {
-          heartsAwarded: heartsToAdd,
-          xpAwarded: xpReward,
-          isAtMaxHearts: isMax,
-          newLambHearts: lambHearts + heartsToAdd,
-          newLambXp: lambXp + xpReward
-        });
+      
       } else if (effectiveType === SuccessAnimationType.PRAYER) {
         setLastPrayerDate(now);
       } else if (effectiveType === SuccessAnimationType.REFLECTION) {
