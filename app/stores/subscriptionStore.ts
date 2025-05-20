@@ -13,6 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import Toast from 'react-native-toast-message';
 import { isSignedIn } from '../hooks/authHook';
+import { fromPairs } from 'lodash';
 
 
 interface SubscriptionState {
@@ -24,6 +25,8 @@ interface SubscriptionState {
   getCustomerInfo: () => Promise<void>;
   handleReferralCode: (code: string) => Promise<void>;
   getUsedReferralCodes: () => Promise<string[]>;
+  fromScreen: string;
+  setFromScreen: (screenName: string) => void;
   // Add other state and actions here
 }
 
@@ -32,6 +35,7 @@ const ENTITLEMENT_ID = 'Super Shepherd'; // Define the entitlement ID
 const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   customerInfo: null,
   isProMember: false,
+  fromScreen: '',
 
   initializeRevenueCat: async (apiKey: string, userId: string | null) => {
     console.log('[SubscriptionStore] initializeRevenueCat called.');
@@ -80,6 +84,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         case PAYWALL_RESULT.PURCHASED:
           console.log('[SubscriptionStore] Purchase completed successfully from paywall. Updating customer info...');
           analytics.logEvent("subscription_purchase_success", { 
+            fromScreen: get().fromScreen,
             source: 'paywall'
           });
           await get().getCustomerInfo(); 
@@ -201,7 +206,8 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         package_id: pack.identifier,
         offering_id: pack.offeringIdentifier,
         product_id: productIdentifier,
-        is_pro: isPro
+        is_pro: isPro,
+        currentScreen: 'purchase_screen'
       });
       
       // Show success message
@@ -270,23 +276,23 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         if (userData) {
           const isProFromFirebase = userData.isPro;
         
-          // Check if proExpiryDate exists and has the correct format
-          let proExpiryDate: Date | null = null;
-          if (userData.proExpiryDate) {
+          // Check if userProExpiryDate exists and has the correct format
+          let userProExpiryDate: Date | null = null;
+          if (userData?.userProExpiryDate) {
             // Handle both Timestamp and raw seconds/nanoseconds format
-            if (userData.proExpiryDate.toDate) {
-              proExpiryDate = userData.proExpiryDate.toDate();
-            } else if (userData.proExpiryDate._seconds) {
+            if (userData?.userProExpiryDate?.toDate) {
+              userProExpiryDate = userData?.userProExpiryDate?.toDate();
+            } else if (userData?.userProExpiryDate?._seconds) {
               // Convert raw seconds and nanoseconds to Date
-              proExpiryDate = new Date(
-                userData.proExpiryDate._seconds * 1000 + 
-                userData.proExpiryDate._nanoseconds / 1000000
+              userProExpiryDate = new Date(
+                userData?.userProExpiryDate?._seconds * 1000 + 
+                userData?.userProExpiryDate?._nanoseconds / 1000000
               );
             }
           }
         
           // Check if pro status has expired
-          if (proExpiryDate && proExpiryDate < new Date()) {
+          if (userProExpiryDate && userProExpiryDate < new Date()) {
             // Pro status has expired
             await firestore().collection('users').doc(currentUser.uid).update({
               isPro: false,
@@ -344,6 +350,10 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const hasUsedMonthly = usedReferralCodes.includes('MONTHL');
     const hasUsedPermanent = usedReferralCodes.includes('WXES4S');
 
+    // Prepare variables that might be needed in switch cases
+    let monthExpiry: Date;
+    let weekExpiry: Date;
+
     switch (code.toUpperCase()) {
       case 'WXES4S':
         if (hasUsedPermanent) {
@@ -352,7 +362,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         // Permanent pro access
         await userRef.update({
           isPro: true,
-          proExpiryDate: null, // null means permanent
+          userProExpiryDate: null, // null means permanent
           usedReferralCodes: firestore.FieldValue.arrayUnion(code)
         });
         break;
@@ -362,12 +372,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           throw new Error('You have already used a monthly subscription code');
         }
         // One month pro access
-        const monthExpiry = new Date();
+        monthExpiry = new Date();
         monthExpiry.setMonth(monthExpiry.getMonth() + 1);
         
         await userRef.update({
           isPro: true,
-          proExpiryDate: monthExpiry,
+          userProExpiryDate: monthExpiry,
           usedReferralCodes: firestore.FieldValue.arrayUnion(code)
         });
         break;
@@ -377,12 +387,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           throw new Error('You have already used a weekly subscription code');
         }
         // One week pro access
-        const weekExpiry = new Date();
+        weekExpiry = new Date();
         weekExpiry.setDate(weekExpiry.getDate() + 7);
         
         await userRef.update({
           isPro: true,
-          proExpiryDate: weekExpiry,
+          userProExpiryDate: weekExpiry,
           usedReferralCodes: firestore.FieldValue.arrayUnion(code)
         });
         break;
@@ -394,7 +404,6 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     set({ isProMember: true });
     useUserStore.getState().setProStatus('pro');
   },
-
   getUsedReferralCodes: async () => {
     const user = auth().currentUser;
     if (!user) {
@@ -404,6 +413,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const userDoc = await firestore().collection('users').doc(user.uid).get();
     const userData = userDoc.data();
     return userData?.usedReferralCodes || [];
+  },
+  
+  setFromScreen: (screenName: string) => {
+    console.log(`[SubscriptionStore] Setting fromScreen to: ${screenName}`);
+    set({ fromScreen: screenName });
+    analytics.logEvent('subscription_fromScreen', { screen: screenName });
   }
 }));
 

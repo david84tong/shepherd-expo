@@ -9,6 +9,7 @@ import {
   syncUserDocument,
   createUserDocument,
 } from '../../utils/firestore';
+import { syncStreakDataToWidget } from '../../utils/widgetSync';
 import { UserDoc, Lamb, Prayer, Reflection, Reading, UserStore } from '../models/User';
 
 // Helper function to check if user is authenticated
@@ -108,6 +109,23 @@ function convertTimestamps(obj: any): any {
   }
   return out;
 }
+
+// Add function to sync streak data with widget
+const syncStreakWithWidget = (streakCount: number, lastActivityDate: any) => {
+  // Get date from Firebase timestamp
+  let activityDate: Date | null = null;
+  if (lastActivityDate) {
+    if (lastActivityDate instanceof Date) {
+      activityDate = lastActivityDate;
+    } else if (typeof lastActivityDate.toDate === 'function') {
+      activityDate = lastActivityDate.toDate();
+    }
+  }
+  
+  // Sync with widget
+  syncStreakDataToWidget(streakCount, activityDate)
+    .catch(error => console.error('Failed to sync streak with widget:', error));
+};
 
 export const useUserStore = create<UserStore>()(
   persist(
@@ -239,36 +257,45 @@ export const useUserStore = create<UserStore>()(
       setDisplayName: (displayName) => set({ displayName }),
       setSelectedPathId: (selectedPathId) => set({ selectedPathId }),
       setLamb: (lamb) => set({ lamb }),
-      setStreakCount: (streakCount) => {
+      setStreakCount: (count: number) => {
+        const lastActivityDate = get().lastActivityDate;
+        
         set((state) => {
           const newState = {
             ...state,
-            streakCount,
+            streakCount: count,
           };
-
-          // Only sync with Firestore if authenticated
+          
+          // Sync to Firestore if authenticated
           if (isAuthenticated()) {
-            console.log('Updating streakCount in Firestore:', streakCount);
-            updateField('streakCount', streakCount);
+            updateField('streakCount', count);
           }
-
+          
           return newState;
         });
+        
+        // Sync with widget
+        syncStreakWithWidget(count, lastActivityDate);
       },
-      setLastActivityDate: (lastActivityDate) => {
+      setLastActivityDate: (date: any) => {
+        const streakCount = get().streakCount;
+        
         set((state) => {
           const newState = {
             ...state,
-            lastActivityDate,
+            lastActivityDate: date,
           };
           
-          // Only sync with Firestore if authenticated
+          // Sync to Firestore if authenticated
           if (isAuthenticated()) {
-            updateField('lastActivityDate', lastActivityDate);
+            updateField('lastActivityDate', date);
           }
           
           return newState;
         });
+        
+        // Sync with widget
+        syncStreakWithWidget(streakCount, date);
       },
       setLastReadingDate: (lastReadingDate) => {
         set((state) => {

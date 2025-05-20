@@ -2,7 +2,7 @@
   "expo": {
     "name": "Shepherd",
     "slug": "shepherd",
-    "version": "1.2.2",
+    "version": "1.2.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "shepherd",
@@ -36,9 +36,21 @@
       },
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.shepherd.widget.streak"
+          "group.second.round.shepherd.widget"
         ]
-      }
+      },
+      "associatedDomains": [],
+      "appExtensions": [
+        {
+          "targetName": "ShepherdStreakWidget",
+          "bundleIdentifier": "second.round.shepherd.widget",
+          "entitlements": {
+            "com.apple.security.application-groups": [
+              "group.second.round.shepherd.widget"
+            ]
+          }
+        }
+      ]
     },
     "android": {
       "adaptiveIcon": {
