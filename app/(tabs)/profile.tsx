@@ -1,10 +1,10 @@
-import { Feather } from '@expo/vector-icons';
+import { AntDesign, Feather } from '@expo/vector-icons';
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import dayjs from 'dayjs';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image, Linking, Alert, Modal } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image, Linking, Alert, Modal, ActivityIndicator } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -372,15 +372,22 @@ export default function ProfileScreen() {
               <Text className="font-din text-body text-textPrimary mb-4 text-center">
                 Create a free account to sync your streak, XP, and lamb across devices. You can always sign in later!
               </Text>
-              <PrimaryButton
-                title={signInLoading ? 'Signing in...' : 'Sign in with Apple'}
-                onPress={handleAppleSignIn}
-                primaryColor="bg-black"
-                textColor="text-white"
-                shadowStyle="shadow-darkApple"
-                style="mt-2"
-                disabled={signInLoading}
-              />
+
+              <View className="items-center mb-4">
+                <TouchableOpacity
+                  className="flex-row items-center justify-center bg-black w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow"
+                  onPress={handleAppleSignIn}
+                  disabled={signInLoading}>
+                  {signInLoading ? (
+                    <ActivityIndicator color="white" size="small" style={{ marginRight: 10 }} />
+                  ) : (
+                    <AntDesign name="apple1" size={24} color="white" style={{ marginRight: 10 }} />
+                  )}
+                  <Text className="font-din text-white text-[18px] font-bold">
+                    {signInLoading ? 'Signing in...' : 'Sign in with Apple'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
               {signInError && (
                 <Text className="font-din text-red-500 text-center mt-2">{signInError}</Text>
               )}

@@ -19,7 +19,10 @@ const ORDERED_SCREENS = [
   '6',
   '7',
   '8',
+  'explainer',
+  '9',
   '10',
+  'rating',
   '11',
 ];
 
@@ -65,4 +68,3 @@ export default function ProgressBar() {
     </View>
   );
 }
-

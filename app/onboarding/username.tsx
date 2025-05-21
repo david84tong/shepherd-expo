@@ -14,6 +14,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import { toBool } from '../utils/toBool';
+import { validateName } from '../../utils/validation';
 
 export default function OnboardingUsernameScreen() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function OnboardingUsernameScreen() {
   const { setResponse } = useOnboardingStore();
   const setUser = useUserStore((state) => state.setUser);
   const [inputUsername, setInputUsername] = useState('');
+  const [error, setError] = useState<string | undefined>();
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
@@ -132,8 +134,15 @@ export default function OnboardingUsernameScreen() {
     transform: [{ translateY: buttonTranslateY.value }],
   }));
 
+  const handleInputChange = (text: string) => {
+    setInputUsername(text);
+    const validation = validateName(text);
+    setError(validation.error);
+  };
+
   const handleContinue = async () => {
-    if (inputUsername.trim()) {
+    const validation = validateName(inputUsername);
+    if (validation.isValid) {
       // Log button press
       const username = inputUsername.trim();
       analytics.logEvent('OnboardingUsernameScreen_Tapped_Continue', {
@@ -142,7 +151,7 @@ export default function OnboardingUsernameScreen() {
 
       // Save the displayName to the user store (this will sync with Firebase)
       setUser({ username: username });
-      setResponse('username', username); // Use lambName key for onboarding store
+      setResponse('username', username);
       screenOpacity.value = withTiming(0, { duration: 300 });
       router.push({
         pathname: '/onboarding/3',
@@ -152,13 +161,15 @@ export default function OnboardingUsernameScreen() {
           immediate: false,
         },
       } as any);
+    } else {
+      setError(validation.error);
     }
   };
 
   // Show loading indicator while assets load
   if (!riveAssets) {
     return (
-      <View className="flex-1 items-center justify-center bg-surfaceCream">
+      <View className="flex-1 items-center justify-center bg-surfaceCream pt-4">
         <ActivityIndicator size="large" color="#3C584A" />
         <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
       </View>
@@ -166,7 +177,7 @@ export default function OnboardingUsernameScreen() {
   }
 
   return (
-    <Animated.View style={screenStyle} className="px-6 pt-12">
+    <Animated.View style={screenStyle} className="px-6  pt-6">
       {/* Question Text */}
       <Animated.View style={titleStyle}>
         <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-8">
@@ -197,16 +208,26 @@ export default function OnboardingUsernameScreen() {
           placeholder="@username"
           placeholderTextColor="#B89B4C"
           value={inputUsername}
-          onChangeText={setInputUsername}
-          maxLength={20}
+          onChangeText={handleInputChange}
+          maxLength={16}
           autoCapitalize="none"
           autoCorrect={false}
         />
+        {error && (
+          <Text className="font-din text-sm text-red-500 mt-2 text-center">
+            {error}
+          </Text>
+        )}
       </Animated.View>
 
       {/* Continue Button */}
       <Animated.View style={buttonStyle} className={`mt-8 ${isKeyboardVisible ? 'mb-4' : 'mb-8'}`}>
-        <PrimaryButton title="Continue" onPress={handleContinue} disabled={!inputUsername.trim()} />
+        <PrimaryButton 
+          title="Continue" 
+          onPress={handleContinue} 
+          disabled={!inputUsername.trim() || !!error}
+          isActive={!!inputUsername.trim() && !error}
+        />
       </Animated.View>
     </Animated.View>
   );
