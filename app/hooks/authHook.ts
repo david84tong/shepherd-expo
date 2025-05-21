@@ -15,7 +15,7 @@ export const isSignedIn = () => {
   return currentUser !== null;
 };
 
-// Helper function to check if a user document exists in Firestore
+// Helper function to check if pa user document exists in Firestore
 export const checkUserExists = async (uid: string): Promise<boolean> => {
   try {
     const userDoc = await firestore().collection('users').doc(uid).get();
@@ -139,7 +139,7 @@ export function useAuth() {
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
       console.log('[Auth] User document updated in Firestore');
       
-      // Update local store with the email and display name
+      // Update local store
       updateUser({
         id: uid,
         displayName,

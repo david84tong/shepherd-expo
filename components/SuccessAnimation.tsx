@@ -23,6 +23,7 @@ import { getLambMoodByHearts } from '../app/hooks/streakHook';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '../app/stores/userStore';
+import { calculateLevelFromXp } from '../utils/levelUtils';
 
 // Import icons
 import gemIcon from '../assets/icons/greenGemIcon.png';
@@ -68,6 +69,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
   const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
+  const sawStreakToday = useHomeStore((state) => state.sawStreakToday);
+  const setSawStreakToday = useHomeStore((state) => state.setSawStreakToday);
 
   // User store hooks
   const lambHearts = useUserStore((state) => state.getLambHearts());
@@ -103,6 +106,10 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const [actualHeartReward, setActualHeartReward] = useState(0);
   // Flag to check if at max hearts
   const [isAtMaxHearts, setIsAtMaxHearts] = useState(false);
+  // State to track if user leveled up
+  const [leveledUp, setLeveledUp] = useState(false);
+  // Track the new level if leveled up
+  const [newLevel, setNewLevel] = useState(0);
 
   // Log when component mounts or successType changes
   useEffect(() => {
@@ -235,7 +242,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Section Complete!';
     subMessage = "You finished today's Bible reading & fed your lamb.";
     heartReward = 3;
-    xpReward = 5;
+    xpReward = 100;
     riveArtboard = undefined;
     rewardTitle = 'READING REWARDS';
   } else if (effectiveType === SuccessAnimationType.READING) {
@@ -243,7 +250,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Reading Complete!';
     subMessage = "You finished today's Bible reading & fed your lamb.";
     heartReward = 3;
-    xpReward = 5;
+    xpReward = 25;
     riveArtboard = 'lamb-eating';
     rewardTitle = 'READING REWARDS';
   } else if (effectiveType === SuccessAnimationType.BONUS) {
@@ -251,7 +258,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Daily Trifecta Complete!';
     subMessage = "Amazing! You've completed all three spiritual disciplines today.";
     heartReward = 5;
-    xpReward = 10;
+    xpReward = 25;
     riveArtboard = 'chest';
     rewardTitle = 'BONUS REWARDS';
   } else if (effectiveType === SuccessAnimationType.REFLECTION) {
@@ -259,7 +266,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Reflection Complete!';
     subMessage = "You've recorded your thoughts and connected with the Word.";
     heartReward = 1;
-    xpReward = 2;
+    xpReward = 25;
     riveArtboard = 'heart-hold';
     rewardTitle = 'REFLECTION REWARDS';
   } else if (effectiveType === SuccessAnimationType.PRAYER) {
@@ -267,7 +274,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Prayer Complete!';
     subMessage = 'You spent quality time with the Shepherd in prayer.';
     heartReward = 2;
-    xpReward = 3;
+    xpReward = 25;
     rewardTitle = 'PRAYER REWARDS';
     riveArtboard = 'success-heart'; // Show heart animation by default
   } else {
@@ -316,8 +323,26 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         }
       }
 
+      // Check current level before adding XP using the level utility function
+      const currentLevel = calculateLevelFromXp(lambXp);
+      
       // Always add XP
       addXp(xpReward);
+      
+      // Calculate new level after XP is added
+      const newXpTotal = lambXp + xpReward;
+      const newLevelValue = calculateLevelFromXp(newXpTotal);
+      
+      // Check if level increased
+      if (newLevelValue > currentLevel) {
+        console.log(`Level up! ${currentLevel} -> ${newLevelValue}`);
+        setLeveledUp(true);
+        setNewLevel(newLevelValue);
+        
+        // Make sure level is correctly set in the user store
+        setLambXp(newXpTotal); // Ensure XP is updated
+        useUserStore.getState().setLambLevel(newLevelValue); // Explicitly set the new level
+      }
 
       // Track rewards for analytics
       const rewardsData: any = {
@@ -327,8 +352,20 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         xpAwarded: xpReward,
         isAtMaxHearts: isMax,
         newLambHearts: lambHearts + heartsToAdd,
-        newLambXp: lambXp + xpReward
+        newLambXp: lambXp + xpReward,
+        leveledUp: leveledUp,
+        newLevel: leveledUp ? newLevel : undefined
       };
+      
+      // Log level up event if applicable
+      if (leveledUp) {
+        analytics.logEvent("LambLevelUp", {
+          fromLevel: newLevel - 1,
+          toLevel: newLevel,
+          xpTotal: lambXp + xpReward,
+          activityType: effectiveType
+        });
+      }
 
       // If this is a BONUS reward, add 9 gems
       // Only add gems if this is truly the first time seeing the bonus (sawDailyBonus was false)
@@ -543,11 +580,12 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       fromType: successType
     });
 
-    // If this is the first reading of the day and effectiveType is READING, show streak screen
-    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
+    // If this is the first reading of the day, effectiveType is READING, and we haven't shown the streak screen today
+    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING && !sawStreakToday) {
       triggerStreakScreen();
       return; // Prevent navigation so StreakScreen can show
     }
+    
     // Set unmounting flag first
     isUnmounting.current = true;
 
@@ -561,12 +599,23 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   };
 
   const triggerStreakScreen = () => {
+    // If streak screen was already shown today, skip showing it again
+    if (sawStreakToday) {
+      console.log('Streak screen already shown today - skipping');
+      // Just continue with normal navigation
+      handleGoHome();
+      return;
+    }
+    
     console.log('First reading of the day - showing streak screen');
     // Log analytics for streak screen
     analytics.logEvent("SuccessAnimation_Showing_StreakScreen", {
       fromType: effectiveType,
       isFirstReadingOfDay: isFirstReadingOfDay
     });
+
+    // Mark that we've shown the streak screen today
+    setSawStreakToday(true);
 
     // Start transition with fade out animation
     setIsTransitioning(true);
@@ -581,7 +630,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       setShowStreakScreen(true);
     });
     return;
-
   };
 
   // Determine the action for the button press
@@ -607,7 +655,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     // First update the state in the store
     setHomeMode('PRAYER');
     setPathInProgress(true); // Make sure path is in progress to show the component
-    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
+    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING && !sawStreakToday) {
       triggerStreakScreen();
     } else {
       setTimeout(() => {
@@ -644,7 +692,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     setHomeMode('DEFAULT');
     setPathInProgress(false);
 
-    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
+    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING && !sawStreakToday) {
       triggerStreakScreen();
     } else {
       router.replace('/(tabs)');
@@ -783,6 +831,18 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                 <Image source={starIcon} className="w-6 h-6 mr-2" />
                 <Text className="font-din text-textPrimary text-xl">+{xpReward} Soul Points</Text>
               </View>
+              
+              {/* Show level up message if user leveled up */}
+              {leveledUp && (
+                <View className="mt-4 py-2 bg-lightYellow rounded-xl">
+                  <Text className="font-feather text-xl text-primary text-center">
+                    LEVEL UP!
+                  </Text>
+                  <Text className="font-din text-description text-center mt-1">
+                    Your lamb grew to level {newLevel}
+                  </Text>
+                </View>
+              )}
             </>
           )}
         </Animated.View>

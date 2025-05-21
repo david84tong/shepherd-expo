@@ -827,7 +827,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                 >
                   <View style={{backgroundColor: theme.progressBarBackground, paddingVertical:12}} className="items-center mt-6 rounded-xl">
                     <Text style={{color: theme.headerText, fontFamily:'Feather Bold', fontSize:16}}>
-                      Finish Reading 🎉
+                      {isInPathMode && currentPath && bookId === currentPath.bookId && chapter === currentPath.endChapter 
+                        ? "Next Section 🎉" 
+                        : "Next Chapter →"}
                     </Text>
                   </View>
                 </TouchableOpacity>

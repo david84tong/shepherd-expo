@@ -1,17 +1,21 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import firestore from '@react-native-firebase/firestore';
 import { useRouter, usePathname } from 'expo-router';
-import React, { useState, useRef, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert } from 'react-native';
+import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert, Platform } from 'react-native';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-import SuccessAnimation from './SuccessAnimation'; // Import the full SuccessAnimation component
-import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
-import { HalfModalType } from '../app/halfModal';
+import * as Haptics from 'expo-haptics';
+import analytics from '../utils/analytics';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { useUserStore } from '../app/stores/userStore';
 import { usePathStore } from '../app/stores/pathStore';
+import { useUIStore } from '../app/stores/uiStore';
+import SuccessAnimation from './SuccessAnimation'; // Import the full SuccessAnimation component
+import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
+import { HalfModalType } from '../app/halfModal';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { calculateExpForLevel, calculateXpForNextLevel } from '../utils/levelUtils';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -518,6 +522,48 @@ export function DebugButton() {
                         className="bg-[#FFE0E8] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
                         onPress={() => setLambHearts(hearts)}>
                         <Text className="font-din text-sm text-textPrimary">{`${hearts} ❤️`}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Set Lamb Level Buttons */}
+                <View className="mb-4">
+                  <Text className="font-feather text-base text-textPrimary mb-2">
+                    Set Lamb Level
+                  </Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {[1, 3, 7, 10, 20, 33].map((level) => (
+                      <TouchableOpacity
+                        key={level}
+                        className="bg-[#E8F3FF] px-3 py-2 rounded-lg border border-[#80BFFF] mb-1"
+                        onPress={() => {
+                          // Set level in UserStore
+                          const userStore = useUserStore.getState();
+                          
+                          // Calculate XP for this level using the level utility function
+                          const xpForLevel = calculateExpForLevel(level);
+                          
+                          // Set XP to be exactly 3 points away from next level
+                          const xpForNextLevel = calculateExpForLevel(level + 1);
+                          const newXp = xpForNextLevel - 3;
+                          
+                          // Update both level and XP in UserStore
+                          userStore.setLambLevel(level);
+                          userStore.setLambXp(newXp);
+                          
+                          // Force sync to Firestore
+                          userStore.syncWithFirestore();
+                          
+                          // Try to refresh the UI state by updating key properties
+                          const updatedLamb = userStore.getLamb();
+                          console.log(`Debug: Set lamb to level ${level} (${newXp} XP)`);
+                          console.log(`Debug: Level ${level} requires ${xpForLevel} XP, next level needs ${xpForNextLevel} XP`);
+                          console.log(`Debug: Updated lamb: ${JSON.stringify(updatedLamb)}`);
+                          
+                          Alert.alert('Level Set', `Lamb level set to ${level} (${newXp} XP)\nJust 3 XP away from level ${level+1}!`);
+                        }}>
+                        <Text className="font-din text-sm text-textPrimary">{`Level ${level} ⭐`}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>

@@ -1232,7 +1232,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         {effectiveChapterData && renderBibleContent(effectiveChapterData)}
       </View>
 
-      {/* Bottom Navigation Row - Contains both Finish Reading and Nav Buttons */}
+      {/* Bottom Navigation Row - Contains Next Chapter/Book and Nav Buttons */}
       <RNAnimated.View 
         style={[{
           position: 'absolute',
@@ -1246,13 +1246,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           zIndex: 10,
         }, buttonsContainerStyle]}
       >
-        {/* Finish Reading Button (only in path mode) */}
+        {/* Next Chapter/Book Button (in path mode) */}
         {!isEmbedded && pathInProgress && (
           <View style={{flex: 1, marginRight: -100}}>
             <SideButton
-              title="Finish Reading"
-              onPress={handleFinishReading}
-              disabled={!isFinishEnabled}
+              title={isAtEndChapter ? "Complete Unit" : "Next Chapter"}
+              onPress={isAtEndChapter ? handleFinishReading : navigateToNextChapter}
+              disabled={!hasScrolledToBottom || loading}
             />
           </View>
         )}

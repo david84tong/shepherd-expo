@@ -141,7 +141,7 @@ export default function SaveProgressScreen() {
         selectedPathId: allResponses.selectedPath || undefined,
         lamb: {
           level: 1,
-          xp: 0,
+          xp: 90,
           mood: 'lamb-idle',
           hearts: 50,
           name: allResponses.lambName || '',

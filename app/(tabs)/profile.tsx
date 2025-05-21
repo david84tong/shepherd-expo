@@ -11,6 +11,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import analytics from '../../utils/analytics';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useAuth } from '../hooks/authHook';
+import { getLevelData } from '../../utils/levelUtils';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
@@ -313,11 +314,11 @@ export default function ProfileScreen() {
   }
   // Modal state for path selection
   const [showPathModal, setShowPathModal] = useState(false);
-  // Assume onboarding_completed is a boolean in user object
-  const onboardingCompleted = user?.onboarding_completed;
+  // Check if onboarding is completed - defaulting to true if not found
+  const onboardingCompleted = (user as any)?.onboarding_completed ?? true;
 
   // Handler for updating path selection
-  const handlePathSelected = (pathObj) => {
+  const handlePathSelected = (pathObj: any) => {
     if (!pathObj) return;
     // Update pathStore
     if (typeof pathObj === 'object' && pathObj.id) {
@@ -327,6 +328,28 @@ export default function ProfileScreen() {
     }
     setShowPathModal(false);
   };
+
+  // Calculate level and XP progress data
+  const levelData = useMemo(() => {
+    if (!lamb || typeof lamb.xp !== 'number') {
+      return { 
+        level: 1, 
+        xp: 0, 
+        xpCurrent: 0,
+        xpForCurrentLevel: 0,
+        xpForNextLevel: 90, 
+        xpProgress: 0,
+        xpNeeded: 90,
+        progress: 0 
+      };
+    }
+    
+    const data = getLevelData(lamb.xp);
+    return {
+      ...data,
+      xpCurrent: data.xp // Alias for backwards compatibility
+    };
+  }, [lamb?.xp]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -412,7 +435,7 @@ export default function ProfileScreen() {
             {/* Stats Grid */}
             <View className="flex-row justify-between space-x-8">
               <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3 ">
-                <Text className="font-feather text-h2 text-textPrimary">{lamb.level}</Text>
+                <Text className="font-feather text-h2 text-textPrimary">{levelData.level}</Text>
                 <Text className="font-din text-description">Level</Text>
               </View>
               <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3 mx-4">
@@ -428,13 +451,13 @@ export default function ProfileScreen() {
             {/* XP Bar */}
             <View className="mt-6 mx-2">
               <View className="flex-row justify-between mb-2">
-                <Text className="font-din text-description">Experience</Text>
-                <Text className="font-din text-description">{lamb.xp} XP</Text>
+                <Text className="font-din text-description">Level {levelData.level}</Text>
+                <Text className="font-din text-description">{levelData.xpCurrent}/{levelData.xpForNextLevel} XP</Text>
               </View>
               <View className="h-4 bg-lightYellow rounded-full overflow-hidden">
                 <View
                   className="h-full bg-accentGold rounded-full"
-                  style={{ width: `${Math.min(((lamb.xp % 100) / 100) * 100, 100)}%` }}
+                  style={{ width: `${levelData.progress}%` }}
                 />
               </View>
             </View>
@@ -446,8 +469,87 @@ export default function ProfileScreen() {
             <Text className="font-din text-description">{joinDate}</Text>
           </View>
 
-          {/* Activity History Timeline Card */}
+          {/* Selected Path Card */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+            <Text className="font-feather text-heading text-textPrimary mb-2">Selected Path</Text>
+            <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
+              <Text className="font-din text-description underline text-accentGold">
+                {selectedPath?.title || 'No path selected'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Path Selection Modal */}
+          <Modal
+            visible={showPathModal}
+            animationType="slide"
+            transparent={false}
+            onRequestClose={() => setShowPathModal(false)}
+          >
+            <View style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
+              {/* Show X button if onboarding_completed */}
+              {onboardingCompleted && (
+                <TouchableOpacity
+                  onPress={() => setShowPathModal(false)}
+                  style={{ position: 'absolute', top: 48, right: 24, zIndex: 10, backgroundColor: '#fff', borderRadius: 20, padding: 8, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4 }}
+                  hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+                >
+                  <Feather name="x" size={24} color="#3C584A" />
+                </TouchableOpacity>
+              )}
+              <OnboardingPathScreen
+                // Pass a callback to handle path selection
+                onPathSelected={handlePathSelected}
+                // Optionally pass selectedPathId for highlighting
+                selectedPathId={selectedPath?.id}
+                hideContinueButton={false}
+              />
+            </View>
+          </Modal>
+
+          {/* Subscription Management Section */}
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+            <View className="flex-row justify-between items-center mb-2">
+              <Text className="font-feather text-heading text-textPrimary">Manage Subscription</Text>
+              {isProMember && (
+                <View className="bg-lightYellow px-4 py-1 rounded-full">
+                  <Text className="font-din text-accentGold">Pro</Text>
+                </View>
+              )}
+            </View>
+            <Text className="font-din text-description mb-4">
+              {isProMember
+                ? 'You have access to all premium features!'
+                : 'Unlock premium features and enhance your spiritual journey'}
+            </Text>
+            {!isProMember && (
+              <>
+                <PrimaryButton
+                  title="Upgrade to Pro"
+                  onPress={() => {
+                    setFromScreen('profile');
+                    router.push('/PricingScreen' as any)
+                  }}
+                  style="mt-0 mb-3"
+                />
+              </>
+            )}
+          </View>
+
+          {/* Store Section */}
+          <View className="mx-6 mt-4 mb-8 bg-white/50 rounded-[20px] p-6 shadow-card">
+            <View className="flex-row justify-between items-center">
+              <Text className="font-feather text-heading text-textPrimary">Store</Text>
+              <View className="bg-lightYellow px-4 py-1 rounded-full">
+                <Text className="font-feather text-accentGold">Unlocks at Level 10</Text>
+              </View>
+            </View>
+            <Text className="font-din text-description mt-2">
+              Customize your lamb and unlock special items!
+            </Text>
+          </View>
+       {/* Activity History Timeline Card */}
+       <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
             <Text className="font-feather text-heading text-textPrimary mb-4">Your Journey</Text>
 
             {allActivities.length === 0 ? (
@@ -521,89 +623,6 @@ export default function ProfileScreen() {
               </View>
             )}
           </View>
-
-          {/* Selected Path Card */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-            <Text className="font-feather text-heading text-textPrimary mb-2">Selected Path</Text>
-            <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
-              <Text className="font-din text-description underline text-accentGold">
-                {selectedPath?.title || 'No path selected'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Path Selection Modal */}
-          <Modal
-            visible={showPathModal}
-            animationType="slide"
-            transparent={false}
-            onRequestClose={() => setShowPathModal(false)}
-          >
-            <View style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
-              {/* Show X button if onboarding_completed */}
-              {onboardingCompleted && (
-                <TouchableOpacity
-                  onPress={() => setShowPathModal(false)}
-                  style={{ position: 'absolute', top: 48, right: 24, zIndex: 10, backgroundColor: '#fff', borderRadius: 20, padding: 8, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4 }}
-                  hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-                >
-                  <Feather name="x" size={24} color="#3C584A" />
-                </TouchableOpacity>
-              )}
-              <OnboardingPathScreen
-                // Pass a callback to handle path selection
-                onPathSelected={handlePathSelected}
-                // Optionally pass selectedPathId for highlighting
-                selectedPathId={selectedPath?.id}
-                hideContinueButton={false}
-              />
-            </View>
-          </Modal>
-
-          {/* Subscription Management Section */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-            <View className="flex-row justify-between items-center mb-2">
-              <Text className="font-feather text-heading text-textPrimary">Manage Subscription</Text>
-              {isProMember && (
-                <View className="bg-lightYellow px-4 py-1 rounded-full">
-                  <Text className="font-din text-accentGold">Pro</Text>
-                </View>
-              )}
-            </View>
-            <Text className="font-din text-description mb-4">
-              {isProMember
-                ? 'You have access to all premium features!'
-                : 'Unlock premium features and enhance your spiritual journey'}
-            </Text>
-            {!isProMember && (
-              <>
-                <PrimaryButton
-                  title="Upgrade to Pro"
-                  onPress={() => {
-                    setFromScreen('profile');
-                    router.push('/PricingScreen' as any)
-                  }}
-                  style="mt-0 mb-3"
-                />
-              </>
-            )}
-          </View>
-
-
-
-          {/* Store Section */}
-          <View className="mx-6 mt-4 mb-8 bg-white/50 rounded-[20px] p-6 shadow-card">
-            <View className="flex-row justify-between items-center">
-              <Text className="font-feather text-heading text-textPrimary">Store</Text>
-              <View className="bg-lightYellow px-4 py-1 rounded-full">
-                <Text className="font-din text-accentGold">Coming Soon</Text>
-              </View>
-            </View>
-            <Text className="font-din text-description mt-2">
-              Customize your lamb and unlock special items!
-            </Text>
-          </View>
-
           {/* Version Info */}
           <View className="mx-6 mt-2 mb-10 items-center">
             <Text className="font-din text-description text-center text-textSecondary opacity-60">
