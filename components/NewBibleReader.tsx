@@ -794,13 +794,18 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                 <TouchableOpacity
                   onPress={() => {
                     console.log('📖 [NewBibleReader] Finish tapped');
-                    handleFinishReading();
+                    if (isInPathMode) {
+                      handleFinishReading();
+                    } else {
+                      // If not in path mode, navigate to next chapter instead
+                      navigateToNextChapter();
+                    }
                   }}
                   activeOpacity={0.8}
                 >
                   <View style={{backgroundColor: theme.progressBarBackground, paddingVertical:12}} className="items-center mt-6 rounded-xl">
                     <Text style={{color: theme.headerText, fontFamily:'Feather Bold', fontSize:16}}>
-                      Finish Reading 🎉
+                      {isInPathMode ? "Finish Reading 🎉" : "Next Chapter →"}
                     </Text>
                   </View>
                 </TouchableOpacity>
