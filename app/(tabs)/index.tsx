@@ -98,6 +98,7 @@ export default function HomeScreen() {
   const gens = useUserStore((state) => state.getGens());
   const lambMood = useUserStore((state) => state.getLambMood());
   const lambName = useUserStore((state) => state.getLambName()); // Get the lamb's name from userStore
+  const lamb = useUserStore((state) => state.getLamb()); // Get the complete lamb object
 
   // State to manage the Rive resource name
   const [artboardName, setArtboardName] = useState('lamb-idle'); // Default artboard
@@ -631,7 +632,7 @@ export default function HomeScreen() {
     analytics.logEvent("HomeScreen_Viewed");
   }, []);
 
-  // Add this before the return statement
+  // Add the hooks with the other state hooks (right before line 619)
   const riveComponent = useMemo(() => {
     if (!riveAssets || !riveReady) return null;
 
@@ -651,6 +652,11 @@ export default function HomeScreen() {
   }, [riveAssets, artboardName, riveKey, riveReady, isPro]);
 
   const [showWidgetSheet, setShowWidgetSheet] = useState(false);
+  // Add level pill animation states
+  const [isLevelPillExpanded, setIsLevelPillExpanded] = useState(false);
+  const levelPillWidthAnim = useRef(new Animated.Value(0)).current;
+  const levelPillOpacityAnim = useRef(new Animated.Value(0)).current;
+  
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
 
@@ -755,7 +761,62 @@ export default function HomeScreen() {
                 <TouchableOpacity
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    analytics.logEvent("HomeScreen_Tapped_Streak");
+                    analytics.logEvent("HomeScreen_Tapped_Level");
+                    // Toggle expanded state
+                    setIsLevelPillExpanded(!isLevelPillExpanded);
+                    
+                    // Animate width and opacity
+                    Animated.parallel([
+                      Animated.timing(levelPillWidthAnim, {
+                        toValue: isLevelPillExpanded ? 0 : 1,
+                        duration: 300,
+                        easing: Easing.out(Easing.cubic),
+                        useNativeDriver: false
+                      }),
+                      Animated.timing(levelPillOpacityAnim, {
+                        toValue: isLevelPillExpanded ? 0 : 1,
+                        duration: 300,
+                        easing: Easing.out(Easing.cubic),
+                        useNativeDriver: false
+                      })
+                    ]).start();
+                  }}
+                >
+                  {!isLevelPillExpanded ? (
+                    <ProgressPill value={0} label={(lambHearts > 0 ? lamb.level : '0').toString()} icon={starIcon} />
+                  ) : (
+                    <Animated.View
+                      className="bg-pillBorder rounded-full overflow-hidden flex-row items-center justify-between p-1 pr-2"
+                      style={{
+                        width: levelPillWidthAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [40, 180]
+                        })
+                      }}
+                    >
+                      <View className="bg-white w-8 h-8 rounded-full items-center justify-center">
+                        <Image source={starIcon} className="w-5 h-5" />
+                      </View>
+                      <Animated.View 
+                        className="flex-1 pl-2"
+                        style={{ opacity: levelPillOpacityAnim }}
+                      >
+                        <Text className="font-feather text-body text-description">Level {lamb.level}</Text>
+                        <View className="h-2 bg-lightYellow rounded-full overflow-hidden mt-1">
+                          <View
+                            className="h-full bg-accentGold rounded-full"
+                            style={{ width: `${Math.min(((lamb.xp % 100) / 100) * 100, 100)}%` }}
+                          />
+                        </View>
+                        <Text className="font-din text-xs text-description mt-0.5">{lamb.xp % 100}/100 XP</Text>
+                      </Animated.View>
+                    </Animated.View>
+                  )}
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    analytics.logEvent("HomeScreen_Tapped_Star");
                     Toast.show({
                       type: 'info',
                       text1: 'Increase your streak!',
@@ -962,6 +1023,63 @@ export default function HomeScreen() {
               <Text className="font-feather text-base text-amber-800">
                 How to Add Widget
               </Text>
+            </TouchableOpacity>
+
+            {/* Replace the progress pill with star icon */}
+            <TouchableOpacity
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                analytics.logEvent("HomeScreen_Tapped_Level");
+                // Toggle expanded state
+                setIsLevelPillExpanded(!isLevelPillExpanded);
+                
+                // Animate width and opacity
+                Animated.parallel([
+                  Animated.timing(levelPillWidthAnim, {
+                    toValue: isLevelPillExpanded ? 0 : 1,
+                    duration: 300,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: false
+                  }),
+                  Animated.timing(levelPillOpacityAnim, {
+                    toValue: isLevelPillExpanded ? 0 : 1,
+                    duration: 300,
+                    easing: Easing.out(Easing.cubic),
+                    useNativeDriver: false
+                  })
+                ]).start();
+              }}
+            >
+              {!isLevelPillExpanded ? (
+                <ProgressPill value={0} label={streakCount.toString()} icon={starIcon} />
+              ) : (
+                <Animated.View
+                  className="bg-pillBorder rounded-full overflow-hidden flex-row items-center justify-between p-1 pr-2"
+                  style={{
+                    width: levelPillWidthAnim.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [40, 180]
+                    })
+                  }}
+                >
+                  <View className="bg-white w-8 h-8 rounded-full items-center justify-center">
+                    <Image source={starIcon} className="w-5 h-5" />
+                  </View>
+                  <Animated.View 
+                    className="flex-1 pl-2"
+                    style={{ opacity: levelPillOpacityAnim }}
+                  >
+                    <Text className="font-feather text-body text-description">Level {streakCount}</Text>
+                    <View className="h-2 bg-lightYellow rounded-full overflow-hidden mt-1">
+                      <View
+                        className="h-full bg-accentGold rounded-full"
+                        style={{ width: `${Math.min(((streakCount % 100) / 100) * 100, 100)}%` }}
+                      />
+                    </View>
+                    <Text className="font-din text-xs text-description mt-0.5">{streakCount % 100}/100 XP</Text>
+                  </Animated.View>
+                </Animated.View>
+              )}
             </TouchableOpacity>
           </ScrollView>
         </Animated.View>

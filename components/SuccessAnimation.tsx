@@ -684,6 +684,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     <ScrollView
       contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
       showsVerticalScrollIndicator={false}
+      className="bg-surfaceCream"
+      style={{ flex: 1, backgroundColor: '#FFF4DC' }}
     >
       <Animated.View
         className="flex-1 items-center justify-center pt-4 pb-8 px-5 bg-surfaceCream"
@@ -714,7 +716,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             {effectiveType === SuccessAnimationType.SECTION_COMPLETE ? (
               <Rive
                 ref={riveRef}
-                url={homeLambAssets?.[0].localUri!}
+                url={homeLambAssets && homeLambAssets[0] && homeLambAssets[0].localUri || ''}
                 autoplay={true}
                 artboardName='lamb-milestone'
                 style={{
@@ -726,7 +728,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             ) : (
               <Rive
                 ref={riveRef}
-                url={riveAssets?.[0].localUri!}
+                url={riveAssets && riveAssets[0] && riveAssets[0].localUri || ''}
                 autoplay={true}
                 style={{ width: '100%', height: '100%' }}
                 {...(riveArtboard ? { artboardName: riveArtboard } : {})}
