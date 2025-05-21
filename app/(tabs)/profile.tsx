@@ -13,17 +13,20 @@ import {
   Image,
   Linking,
   Alert,
+  Modal,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import analytics from '../../utils/analytics';
 import { FontAwesome6 } from '@expo/vector-icons';
+import { useAuth } from '../hooks/authHook';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import PrimaryButton from '../../components/PrimaryButton';
+import OnboardingPathScreen from '../onboarding/8';
 
 // Import the icons using import statements
 import breadIcon from '../../assets/icons/breadIcon.png';
@@ -78,6 +81,12 @@ export default function ProfileScreen() {
   const userId = user?.id || null;
 
   const [showDiscordCard, setShowDiscordCard] = useState(true);
+  const { signInWithApple } = useAuth();
+  const [signInLoading, setSignInLoading] = useState(false);
+  const [signInError, setSignInError] = useState<string | null>(null);
+
+  // Detect if user is anonymous (no email and displayName is 'Anonymous User')
+  const isAnonymous = !user?.email;
 
   // Fetch customer info when the component mounts or when app comes to foreground
   useEffect(() => {
@@ -282,6 +291,53 @@ export default function ProfileScreen() {
   const appVersion = Application.nativeApplicationVersion || 'Unknown';
   const buildNumber = Application.nativeBuildVersion || 'Unknown';
 
+  // Handle Apple sign in from profile
+  const handleAppleSignIn = async () => {
+    setSignInError(null);
+    setSignInLoading(true);
+    try {
+      await signInWithApple(false); // Not login mode, upgrade anonymous
+      // On success, user store will update and card will disappear
+    } catch (error: any) {
+      let errorMessage = 'There was a problem signing in with Apple.';
+      if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
+        errorMessage = 'Sign in was canceled. Please try again.';
+      } else if (error.message?.includes('network')) {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (error.message?.includes('configuration')) {
+        errorMessage = 'Authentication configuration error. Please try another method.';
+      } else if (error.message?.includes('incomplete')) {
+        errorMessage = 'Sign in process was interrupted. Please try again.';
+      } else if (error.message?.includes("operation couldn't be completed")) {
+        errorMessage = 'Sign in process could not be completed. Please try again.';
+      } else if (error.message?.includes('No account found')) {
+        errorMessage =
+          "We couldn't find an account with this Apple ID. Please create a new account instead.";
+      } else if (error.message?.includes('Failed to fetch your account data')) {
+        errorMessage = "We couldn't retrieve your account data. Please try again.";
+      }
+      setSignInError(errorMessage);
+    } finally {
+      setSignInLoading(false);
+    }
+  };
+  // Modal state for path selection
+  const [showPathModal, setShowPathModal] = useState(false);
+  // Assume onboarding_completed is a boolean in user object
+  const onboardingCompleted = user?.onboarding_completed;
+
+  // Handler for updating path selection
+  const handlePathSelected = (pathObj) => {
+    if (!pathObj) return;
+    // Update pathStore
+    if (typeof pathObj === 'object' && pathObj.id) {
+      usePathStore.getState().setSelectedPath(pathObj);
+      // Update userStore as well
+      useUserStore.getState().setUser({ selectedPathId: pathObj.id });
+    }
+    setShowPathModal(false);
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
@@ -297,6 +353,32 @@ export default function ProfileScreen() {
               <Feather name="settings" size={20} color="#B89B4C" />
             </TouchableOpacity>
           </View>
+
+          {/* Sign In to Save Progress Card (only for anonymous users) */}
+          {isAnonymous && (
+            <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+              <Text className="font-feather text-xl text-accentGold mb-2 text-center">
+                Sign in to save your progress
+              </Text>
+              <Text className="font-din text-body text-textPrimary mb-4 text-center">
+                Create a free account to sync your streak, XP, and lamb across devices. You can
+                always sign in later!
+              </Text>
+              <PrimaryButton
+                title={signInLoading ? 'Signing in...' : 'Sign in with Apple'}
+                onPress={handleAppleSignIn}
+                primaryColor="bg-black"
+                textColor="text-white"
+                shadowStyle="shadow-darkApple"
+                style="mt-2"
+                disabled={signInLoading}
+              />
+              {signInError && (
+                <Text className="font-din text-red-500 text-center mt-2">{signInError}</Text>
+              )}
+            </View>
+          )}
+
           {/* Discord Card */}
           {showDiscordCard && (
             <View className="mx-6 mt-4 bg-lightPurple rounded-[20px] p-6 shadow-card relative">
@@ -462,10 +544,49 @@ export default function ProfileScreen() {
           {/* Selected Path Card */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
             <Text className="font-feather text-heading text-textPrimary mb-2">Selected Path</Text>
-            <Text className="font-din text-description">
-              {selectedPath?.title || 'No path selected'}
-            </Text>
+            <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
+              <Text className="font-din text-description underline text-accentGold">
+                {selectedPath?.title || 'No path selected'}
+              </Text>
+            </TouchableOpacity>
           </View>
+
+          {/* Path Selection Modal */}
+          <Modal
+            visible={showPathModal}
+            animationType="slide"
+            transparent={false}
+            onRequestClose={() => setShowPathModal(false)}>
+            <View style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
+              {/* Show X button if onboarding_completed */}
+              {onboardingCompleted && (
+                <TouchableOpacity
+                  onPress={() => setShowPathModal(false)}
+                  style={{
+                    position: 'absolute',
+                    top: 48,
+                    right: 24,
+                    zIndex: 10,
+                    backgroundColor: '#fff',
+                    borderRadius: 20,
+                    padding: 8,
+                    shadowColor: '#000',
+                    shadowOpacity: 0.08,
+                    shadowRadius: 4,
+                  }}
+                  hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+                  <Feather name="x" size={24} color="#3C584A" />
+                </TouchableOpacity>
+              )}
+              <OnboardingPathScreen
+                // Pass a callback to handle path selection
+                onPathSelected={handlePathSelected}
+                // Optionally pass selectedPathId for highlighting
+                selectedPathId={selectedPath?.id}
+                hideContinueButton={false}
+              />
+            </View>
+          </Modal>
 
           {/* Subscription Management Section */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">

@@ -59,9 +59,21 @@
       },
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.shepherd.widget.streak"
+          "group.second.round.shepherd.widget"
         ]
-      }
+      },
+      "associatedDomains": [],
+      "appExtensions": [
+        {
+          "targetName": "ShepherdStreakWidget",
+          "bundleIdentifier": "second.round.shepherd.widget",
+          "entitlements": {
+            "com.apple.security.application-groups": [
+              "group.second.round.shepherd.widget"
+            ]
+          }
+        }
+      ]
     },
     "android": {
       "adaptiveIcon": {

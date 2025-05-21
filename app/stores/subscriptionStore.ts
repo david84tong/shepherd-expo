@@ -366,24 +366,23 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         try {
           const userDoc = await firestore().collection('users').doc(currentUser.uid).get();
           const userData = userDoc.data();
-          console.log('userData.isPro ====+>', userData.isPro);
 
           if (userData) {
             isProFromFirebase = userData.isPro;
             // Check if proExpiryDate exists and has the correct format
-            if (userData.proExpiryDate) {
-              if (userData.proExpiryDate.toDate) {
-                proExpiryDate = userData.proExpiryDate.toDate();
-              } else if (userData.proExpiryDate._seconds) {
+            if (userData.userProExpiryDate) {
+              if (userData.userProExpiryDate.toDate) {
+                proExpiryDate = userData.userProExpiryDate.toDate();
+              } else if (userData.userProExpiryDate._seconds) {
                 proExpiryDate = new Date(
-                  userData.proExpiryDate._seconds * 1000 +
-                    userData.proExpiryDate._nanoseconds / 1000000
+                  userData.userProExpiryDate._seconds * 1000 +
+                    userData.userProExpiryDate._nanoseconds / 1000000
                 );
               } else if (
-                typeof userData.proExpiryDate === 'string' ||
-                typeof userData.proExpiryDate === 'number'
+                typeof userData.userProExpiryDate === 'string' ||
+                typeof userData.userProExpiryDate === 'number'
               ) {
-                proExpiryDate = new Date(userData.proExpiryDate);
+                proExpiryDate = new Date(userData.userProExpiryDate);
               }
             }
             // Check if pro status has expired
@@ -411,8 +410,8 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
             }
             // If not expired, set pro status based on either RevenueCat OR Firebase
 
-            const finalProStatus = isPro || isProFromFirebase;
-            set({ customerInfo, isProMember: finalProStatus });
+            const finalProStatus = isProAdapty && isProFromFirebase;
+            set({ customerInfo: profile, isProMember: finalProStatus });
             useUserStore.getState().setProStatus(finalProStatus ? 'pro' : 'free');
           }
         } catch (error) {
@@ -483,7 +482,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         // Permanent pro access
         await userRef.update({
           isPro: true,
-          proExpiryDate: null, // null means permanent
+          userProExpiryDate: null, // null means permanent
           usedReferralCodes: firestore.FieldValue.arrayUnion(code),
         });
         break;
@@ -498,7 +497,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
         await userRef.update({
           isPro: true,
-          proExpiryDate: monthExpiry,
+          userProExpiryDate: monthExpiry,
           usedReferralCodes: firestore.FieldValue.arrayUnion(code),
         });
         break;
@@ -513,7 +512,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
         await userRef.update({
           isPro: true,
-          proExpiryDate: weekExpiry,
+          userProExpiryDate: weekExpiry,
           usedReferralCodes: firestore.FieldValue.arrayUnion(code),
         });
         break;

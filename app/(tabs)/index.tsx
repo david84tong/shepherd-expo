@@ -29,6 +29,8 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import analytics from '~/utils/analytics';
+import { Feather } from '@expo/vector-icons';
+import WidgetHowToSheet from '../../components/WidgetHowToSheet';
 import useSubscriptionStore from '../stores/subscriptionStore';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
@@ -243,12 +245,13 @@ export default function HomeScreen() {
     'lamb-angry': 'lamb-angry',
     'lamb-chubby dying': 'lamb-chubby dying',
     'lamb-skinny dying': 'lamb-skinny dying',
-    smoking: 'lamb-fainted',
+    smoking: 'lamb-dead',
     'lamb-full': 'lamb-full',
   };
 
   // Get UI store functions
   const showPrayerSheet = useUIStore((state) => state.showPrayerSheet);
+  const showWidgetPrompt = useUIStore((state) => state.showWidgetPrompt);
 
   const handleRiveError = (error: RNRiveError) => {
     console.error('Rive Error:', error.message, error.type);
@@ -546,6 +549,12 @@ export default function HomeScreen() {
     }
   };
 
+  const handleWidgetPromptPress = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    analytics.logEvent('HomeScreen_Tapped_AddWidget');
+    showWidgetPrompt();
+  };
+
   // --- Handlers for Closing Overlays ---
   const handleCloseOverlay = () => {
     console.log('Closing Overlay, triggering return to default');
@@ -643,6 +652,7 @@ export default function HomeScreen() {
     );
   }, [riveAssets, artboardName, riveKey, riveReady, isPro]);
 
+  const [showWidgetSheet, setShowWidgetSheet] = useState(false);
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
 
@@ -650,13 +660,55 @@ export default function HomeScreen() {
     <>
       <View className="flex-1">
         {/* Background Layers - Use expo-image for better performance */}
-        <Animated.View
-          style={[
-            { position: 'absolute', width: '100%', height: '100%' },
-            { opacity: grassOpacityAnim },
-          ]}>
-          <Image source={grassBg} style={{ width: '100%', height: '100%' }} />
-        </Animated.View>
+        {/* <Animated.View
+          className="items-center justify-center"
+          style={{
+            opacity: lambOpacityAnim,
+            transform: [{ translateX: lambTranslateX }, { translateY: lambTranslateY }],
+            height: BASE_LAMB_SIZE,
+            // Add conditional shadow for the glow effect
+            shadowColor: showGlow ? '#FDE047' : 'transparent', // yellow-300
+            shadowOffset: { width: 0, height: 0 },
+            shadowOpacity: showGlow ? 0.6 : 0,
+            shadowRadius: 15, // Adjust radius for softness
+          }}>
+          <Animated.View className="items-center justify-center overflow-hidden" style={{}}>
+            {riveError ? (
+              <Text className="text-red-500 p-4 text-center">
+                Error loading animation: {riveError.message} ({riveError.type})
+              </Text>
+            ) : (
+              <>
+                <Animated.View
+                  onTouchStart={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  style={{
+                    width: lambSizeAnim,
+                    height: lambSizeAnim,
+                  }}>
+                  <Animated.View
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      transform: [
+                        { scale: riveScaleAnim },
+                        {
+                          rotate: riveRotateAnim.interpolate({
+                            inputRange: [-1, 0, 1],
+                            outputRange: ['-60deg', '0deg', '60deg'],
+                          }),
+                        },
+                      ],
+                    }}>
+                    {riveComponent}
+                  </Animated.View>
+                </Animated.View>
+                {artboardName === 'lamb-dead' && <View style={{ height: 36 }} />}
+              </>
+            )}
+          </Animated.View>
+        </Animated.View> */}
 
         <Animated.View
           style={[
@@ -923,6 +975,15 @@ export default function HomeScreen() {
                 completed={reflectionCompleted}
                 disabled={!readingCompleted}
               />
+
+              {/* Widget How-To Sheet test button */}
+              <TouchableOpacity
+                onPress={() => setShowWidgetSheet(true)}
+                className="mt-6 flex-row items-center justify-center py-3 px-4 bg-amber-100 border border-amber-300 rounded-xl"
+                activeOpacity={0.7}>
+                <Feather name="smartphone" size={20} color="#B45309" style={{ marginRight: 8 }} />
+                <Text className="font-feather text-base text-amber-800">How to Add Widget</Text>
+              </TouchableOpacity>
             </ScrollView>
           </Animated.View>
 
@@ -930,6 +991,7 @@ export default function HomeScreen() {
           <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
           <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
           <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
+          <WidgetHowToSheet visible={showWidgetSheet} onClose={() => setShowWidgetSheet(false)} />
         </SafeAreaView>
       </View>
       <Toast config={toastConfig} />

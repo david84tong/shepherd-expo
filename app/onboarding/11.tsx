@@ -19,6 +19,7 @@ import analytics from '../../utils/analytics';
 import Rive, { Fit, Alignment } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
 import Toast from 'react-native-toast-message';
+import { useUIStore } from '../stores/uiStore';
 
 export default function SaveProgressScreen() {
   const router = useRouter();
@@ -92,6 +93,15 @@ export default function SaveProgressScreen() {
     try {
       await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
       await clearResponses(); // Clear onboarding responses after completion
+      
+      // After a short delay, show the widget prompt
+      setTimeout(() => {
+        const uiStore = useUIStore.getState();
+        if (uiStore.showWidgetPrompt) {
+          uiStore.showWidgetPrompt();
+        }
+      }, 2000);
+      
       router.replace('/(tabs)');
     } catch (error) {
       console.error('Error completing onboarding:', error);
