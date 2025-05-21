@@ -16,17 +16,40 @@ struct Provider: AppIntentTimelineProvider {
     }
 
     func snapshot(for configuration: ConfigurationAppIntent, in context: Context) async -> SimpleEntry {
-        let streak = userDefaults?.integer(forKey: "streak") ?? 0
-        return SimpleEntry(date: Date(), configuration: configuration, streak: streak)
+        
+        if let userDefaults = userDefaults {
+            
+            let streak = userDefaults.integer(forKey: "streak")
+            
+            return SimpleEntry(date: Date(), configuration: configuration, streak: streak)
+        } else {
+            
+            return SimpleEntry(date: Date(), configuration: configuration, streak: 0)
+        }
     }
     
     func timeline(for configuration: ConfigurationAppIntent, in context: Context) async -> Timeline<SimpleEntry> {
-        let streak = userDefaults?.integer(forKey: "streak") ?? 0
-        let entry = SimpleEntry(date: Date(), configuration: configuration, streak: streak)
         
-        // Atualiza a cada 15 minutos
-        let nextUpdate = Calendar.current.date(byAdding: .minute, value: 15, to: Date())!
-        return Timeline(entries: [entry], policy: .after(nextUpdate))
+        if let userDefaults = userDefaults {
+            let streak = userDefaults.integer(forKey: "streak")
+            
+            let entry = SimpleEntry(date: Date(), configuration: configuration, streak: streak)
+            
+            // Create entries for more frequent updates
+            let entries = [
+                entry,
+                SimpleEntry(date: Date().addingTimeInterval(15), configuration: configuration, streak: streak),
+                SimpleEntry(date: Date().addingTimeInterval(30), configuration: configuration, streak: streak),
+                SimpleEntry(date: Date().addingTimeInterval(45), configuration: configuration, streak: streak)
+            ]
+            
+            // Use .atEnd policy with a shorter interval
+            return Timeline(entries: entries, policy: .after(Date().addingTimeInterval(15)))
+        } else {
+            
+            let entry = SimpleEntry(date: Date(), configuration: configuration, streak: 0)
+            return Timeline(entries: [entry], policy: .after(Date().addingTimeInterval(15)))
+        }
     }
 
 //    func relevances() async -> WidgetRelevances<ConfigurationAppIntent> {

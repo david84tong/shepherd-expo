@@ -107,7 +107,7 @@ export default function HomeScreen() {
 
   // Get subscription state and actions from the store
   const { setFromScreen } = useSubscriptionStore();
-  
+
   // Get pro status from user store
   const proStatus = useUserStore((state) => state.getProStatus());
   const isPro = proStatus === 'pro';
@@ -647,335 +647,338 @@ export default function HomeScreen() {
 
   // Add state for widget sheet
   const [widgetSheetVisible, setWidgetSheetVisible] = useState(false);
-  
+
   // Show widget sheet on initial load (runs only once)
   useEffect(() => {
     const timer = setTimeout(() => {
       setWidgetSheetVisible(true);
     }, 1000); // Small delay for smoother transition
-    
+
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <>
+
+
       <View className="flex-1">
+
         {/* Background Layers - Use expo-image for better performance */}
-      <Animated.View
-        style={[
-          { position: 'absolute', width: '100%', height: '100%' },
-          { opacity: grassOpacityAnim },
-        ]}>
-        <Image source={grassBg} style={{ width: '100%', height: '100%' }} />
-      </Animated.View>
-
-      <Animated.View
-        style={[
-          { position: 'absolute', width: '100%', height: '100%' },
-          { opacity: pathOpacityAnim },
-        ]}>
-        <Image source={pathBg} style={{ width: '100%', height: '100%' }} />
-      </Animated.View>
-
-      <Animated.View
-        style={[
-          { position: 'absolute', width: '100%', height: '100%' },
-          { opacity: journalOpacityAnim },
-        ]}>
-        <Image source={journalBg} style={{ width: '100%', height: '100%' }} />
-      </Animated.View>
-
-      {/* Prayer background Rive animation */}
-      <Animated.View
-        style={[
-          { position: 'absolute', width: '100%', height: '100%' },
-          { opacity: grassOpacityAnim },
-        ]}>
-        <Image
-          source={grassBg}
-          style={{ width: '100%', height: '100%' }}
-        />
-      </Animated.View>
-
-      <Animated.View
-        style={[
-          { position: 'absolute', width: '100%', height: '100%' },
-          { opacity: pathOpacityAnim },
-        ]}>
-        <Image
-          source={pathBg}
-          style={{ width: '100%', height: '100%' }}
-        />
-      </Animated.View>
-
-      <Animated.View
-        style={[
-          { position: 'absolute', width: '100%', height: '100%' },
-          { opacity: journalOpacityAnim },
-        ]}>
-        <Image
-          source={journalBg}
-          style={{ width: '100%', height: '100%' }}
-        />
-      </Animated.View>
-
-      {/* Prayer background Rive animation */}
-      <Animated.View
-        style={[
-          { position: 'absolute', width: '100%', height: '100%', zIndex: 0 },
-          { opacity: waterOpacityAnim },
-        ]}>
-        {showBgRive && riveAssets && (
-          <Rive
-            url={riveAssets[1].localUri!}
-            autoplay={true}
-            style={{ width: '160%', height: '160%', top: -300, left: -128 }}
-          />
-        )}
-      </Animated.View>
-
-      <SafeAreaView className="flex-1">
-        {/* Header: Contains logic for showing Back OR Title/Stats */}
-        <View className="flex-row justify-between items-center px-4 pt-1.5 pb-2 h-[42px] relative">
-          {/* Animated Back Button */}
-
-          {/* Animated Default Header Elements (Title + Stats) */}
-          <Animated.View
-            className="absolute inset-0 flex-row items-center justify-between px-8 w-full"
-            style={{ opacity: headerDefaultOpacityAnim }}
-            pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}>
-            <View className="flex-row items-center flex-1 justify-between">
-              <Text
-                className="text-h1 font-feather text-white tracking-wide right-0"
-                style={{
-                  textShadowColor: 'rgba(0, 0, 0, 0.2)',
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 2,
-                }}>
-                {lambName ? `${lambName}` : 'Shepherd'}
-              </Text>
-              <View className="flex-row gap-2 left-8">
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    analytics.logEvent("HomeScreen_Tapped_Streak");
-                    Toast.show({
-                      type: 'info',
-                      text1: 'Increase your streak!',
-                      text2: 'Complete your daily bread reading to build your streak.',
-                      position: 'top',
-                      visibilityTime: 4000,
-                    });
-                  }}
-                >
-                  <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    analytics.logEvent("HomeScreen_Tapped_Gems");
-                    // Show toast message using Toast component
-                    Toast.show({
-                      type: 'info',
-                      text1: 'Skin shop coming soon!',
-                      text2: 'Customize your lamb with special skins from the shop.',
-                      position: 'top',
-                      visibilityTime: 4000,
-                    });
-                  }}
-                >
-                  <ProgressPill value={0} label={gens.toString()} icon={gemIcon} />
-                </TouchableOpacity>
-              </View>
-            </View>
-          </Animated.View>
-        </View>
-
-        {/* Top Section - Lamb Avatar */}
         <Animated.View
-          className="items-center justify-center"
-          style={{
-            opacity: lambOpacityAnim,
-            transform: [{ translateX: lambTranslateX }, { translateY: lambTranslateY }],
-            height: BASE_LAMB_SIZE,
-            // Add conditional shadow for the glow effect
-            shadowColor: showGlow ? '#FDE047' : 'transparent', // yellow-300
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: showGlow ? 0.6 : 0,
-            shadowRadius: 15, // Adjust radius for softness
-          }}>
-          <Animated.View className="items-center justify-center overflow-hidden" style={{}}>
-            {riveError ? (
-              <Text className="text-red-500 p-4 text-center">
-                Error loading animation: {riveError.message} ({riveError.type})
-              </Text>
-            ) : (
-              <Animated.View
-                onTouchStart={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                }}
-                style={{
-                  width: lambSizeAnim,
-                  height: lambSizeAnim,
-                }}>
-                <Animated.View
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    transform: [
-                      { scale: riveScaleAnim },
-                      {
-                        rotate: riveRotateAnim.interpolate({
-                          inputRange: [-1, 0, 1],
-                          outputRange: ['-60deg', '0deg', '60deg'],
-                        }),
-                      },
-                    ],
-                  }}>
-                  {riveComponent}
-                </Animated.View>
-              </Animated.View>
-            )}
-          </Animated.View>
+          style={[
+            { position: 'absolute', width: '100%', height: '100%' },
+            { opacity: grassOpacityAnim },
+          ]}>
+          <Image source={grassBg} style={{ width: '100%', height: '100%' }} />
         </Animated.View>
 
-        {/* SUPER badge for pro users */}
-        {mode === 'DEFAULT' && (
-          <TouchableOpacity 
-            onPress={() => {
-              if (!isPro) {
-                analytics.logEvent("HomeScreen_TappedProBadge");
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.push('/PricingScreen' as any);
-                setFromScreen('home-super');
-              }
-            }}
-            activeOpacity={0.8}
+        <Animated.View
+          style={[
+            { position: 'absolute', width: '100%', height: '100%' },
+            { opacity: pathOpacityAnim },
+          ]}>
+          <Image source={pathBg} style={{ width: '100%', height: '100%' }} />
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            { position: 'absolute', width: '100%', height: '100%' },
+            { opacity: journalOpacityAnim },
+          ]}>
+          <Image source={journalBg} style={{ width: '100%', height: '100%' }} />
+        </Animated.View>
+
+        {/* Prayer background Rive animation */}
+        <Animated.View
+          style={[
+            { position: 'absolute', width: '100%', height: '100%' },
+            { opacity: grassOpacityAnim },
+          ]}>
+          <Image
+            source={grassBg}
+            style={{ width: '100%', height: '100%' }}
+          />
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            { position: 'absolute', width: '100%', height: '100%' },
+            { opacity: pathOpacityAnim },
+          ]}>
+          <Image
+            source={pathBg}
+            style={{ width: '100%', height: '100%' }}
+          />
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            { position: 'absolute', width: '100%', height: '100%' },
+            { opacity: journalOpacityAnim },
+          ]}>
+          <Image
+            source={journalBg}
+            style={{ width: '100%', height: '100%' }}
+          />
+        </Animated.View>
+
+        {/* Prayer background Rive animation */}
+        <Animated.View
+          style={[
+            { position: 'absolute', width: '100%', height: '100%', zIndex: 0 },
+            { opacity: waterOpacityAnim },
+          ]}>
+          {showBgRive && riveAssets && (
+            <Rive
+              url={riveAssets[1].localUri!}
+              autoplay={true}
+              style={{ width: '160%', height: '160%', top: -300, left: -128 }}
+            />
+          )}
+        </Animated.View>
+
+        <SafeAreaView className="flex-1">
+          {/* Header: Contains logic for showing Back OR Title/Stats */}
+          <View className="flex-row justify-between items-center px-4 pt-1.5 pb-2 h-[42px] relative">
+            {/* Animated Back Button */}
+
+            {/* Animated Default Header Elements (Title + Stats) */}
+            <Animated.View
+              className="absolute inset-0 flex-row items-center justify-between px-8 w-full"
+              style={{ opacity: headerDefaultOpacityAnim }}
+              pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}>
+              <View className="flex-row items-center flex-1 justify-between">
+                <Text
+                  className="text-h1 font-feather text-white tracking-wide right-0"
+                  style={{
+                    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 2,
+                  }}>
+                  {lambName ? `${lambName}` : 'Shepherd'}
+                </Text>
+                <View className="flex-row gap-2 left-8">
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      analytics.logEvent("HomeScreen_Tapped_Streak");
+                      Toast.show({
+                        type: 'info',
+                        text1: 'Increase your streak!',
+                        text2: 'Complete your daily bread reading to build your streak.',
+                        position: 'top',
+                        visibilityTime: 4000,
+                      });
+                    }}
+                  >
+                    <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      analytics.logEvent("HomeScreen_Tapped_Gems");
+                      // Show toast message using Toast component
+                      Toast.show({
+                        type: 'info',
+                        text1: 'Skin shop coming soon!',
+                        text2: 'Customize your lamb with special skins from the shop.',
+                        position: 'top',
+                        visibilityTime: 4000,
+                      });
+                    }}
+                  >
+                    <ProgressPill value={0} label={gens.toString()} icon={gemIcon} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Animated.View>
+          </View>
+
+          {/* Top Section - Lamb Avatar */}
+          <Animated.View
+            className="items-center justify-center"
             style={{
-              position: 'absolute',
-              left: 24,
-              // Place it roughly at the bottom of the lamb viewport
-              top: SCREEN_HEIGHT * 0.35,
-              paddingHorizontal: 8,
-              paddingVertical: 2,
-              borderRadius: 32,
-              zIndex: 20,
-            }}
-          >
-            <LinearGradient
-              colors={['#F7B500', '#FFF45B']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
+              opacity: lambOpacityAnim,
+              transform: [{ translateX: lambTranslateX }, { translateY: lambTranslateY }],
+              height: BASE_LAMB_SIZE,
+              // Add conditional shadow for the glow effect
+              shadowColor: showGlow ? '#FDE047' : 'transparent', // yellow-300
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: showGlow ? 0.6 : 0,
+              shadowRadius: 15, // Adjust radius for softness
+            }}>
+            <Animated.View className="items-center justify-center overflow-hidden" style={{}}>
+              {riveError ? (
+                <Text className="text-red-500 p-4 text-center">
+                  Error loading animation: {riveError.message} ({riveError.type})
+                </Text>
+              ) : (
+                <Animated.View
+                  onTouchStart={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  }}
+                  style={{
+                    width: lambSizeAnim,
+                    height: lambSizeAnim,
+                  }}>
+                  <Animated.View
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      transform: [
+                        { scale: riveScaleAnim },
+                        {
+                          rotate: riveRotateAnim.interpolate({
+                            inputRange: [-1, 0, 1],
+                            outputRange: ['-60deg', '0deg', '60deg'],
+                          }),
+                        },
+                      ],
+                    }}>
+                    {riveComponent}
+                  </Animated.View>
+                </Animated.View>
+              )}
+            </Animated.View>
+          </Animated.View>
+
+          {/* SUPER badge for pro users */}
+          {mode === 'DEFAULT' && (
+            <TouchableOpacity
+              onPress={() => {
+                if (!isPro) {
+                  analytics.logEvent("HomeScreen_TappedProBadge");
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  router.push('/PricingScreen' as any);
+                  setFromScreen('home-super');
+                }
+              }}
+              activeOpacity={0.8}
               style={{
                 position: 'absolute',
+                left: 24,
+                // Place it roughly at the bottom of the lamb viewport
+                top: SCREEN_HEIGHT * 0.35,
                 paddingHorizontal: 8,
                 paddingVertical: 2,
                 borderRadius: 32,
                 zIndex: 20,
-                opacity: isPro ? 1 : 0.5
               }}
             >
-              <Text
-                className="font-nunito-italic text-lg text-white text-center p-0 m-0"
+              <LinearGradient
+                colors={['#F7B500', '#FFF45B']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
                 style={{
-                  textShadowColor: 'rgba(0,0,0,0.15)',
-                  textShadowOffset: { width: 1, height: 1 },
-                  textShadowRadius: 3,
+                  position: 'absolute',
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  borderRadius: 32,
+                  zIndex: 20,
+                  opacity: isPro ? 1 : 0.5
                 }}
               >
-                SUPER
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        )}
-
-        {/* Bottom Section - Action Buttons Card */}
-        <Animated.View
-          className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-28"
-          style={{
-            ...Platform.select({
-              ios: {
-                shadowColor: 'rgba(0,0,0,0.08)',
-                shadowOffset: { width: 0, height: 2 },
-                shadowRadius: 4,
-                shadowOpacity: 1,
-              },
-              android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
-            }),
-            opacity: bottomCardOpacity,
-          }}>
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 120 }}
-          >
-            <View className="flex-row items-center gap-2.5 mb-0 px-1">
-              <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
-                <View
-                  className="h-full bg-red rounded-full"
-                  style={{ width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%` }}
-                />
-              </View>
-              <View className="flex-row items-center gap-1">
-                <Text className="font-feather text-body text-description">
-                  {lambHearts}/{MAX_HEARTS}
+                <Text
+                  className="font-nunito-italic text-lg text-white text-center p-0 m-0"
+                  style={{
+                    textShadowColor: 'rgba(0,0,0,0.15)',
+                    textShadowOffset: { width: 1, height: 1 },
+                    textShadowRadius: 3,
+                  }}
+                >
+                  SUPER
                 </Text>
-                <Image source={heartIcon} className="w-8 h-8" />
+              </LinearGradient>
+            </TouchableOpacity>
+          )}
+
+          {/* Bottom Section - Action Buttons Card */}
+          <Animated.View
+            className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-28"
+            style={{
+              ...Platform.select({
+                ios: {
+                  shadowColor: 'rgba(0,0,0,0.08)',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowRadius: 4,
+                  shadowOpacity: 1,
+                },
+                android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
+              }),
+              opacity: bottomCardOpacity,
+            }}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 120 }}
+            >
+              <View className="flex-row items-center gap-2.5 mb-0 px-1">
+                <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
+                  <View
+                    className="h-full bg-red rounded-full"
+                    style={{ width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%` }}
+                  />
+                </View>
+                <View className="flex-row items-center gap-1">
+                  <Text className="font-feather text-body text-description">
+                    {lambHearts}/{MAX_HEARTS}
+                  </Text>
+                  <Image source={heartIcon} className="w-8 h-8" />
+                </View>
               </View>
-            </View>
 
-            <SecondaryButton
-              icon={breadIcon}
-              title="Daily Bread – Read"
-              subtitle="Feed your soul with scripture"
-              points={5}
-              onPress={handleReadPress}
-              completed={readingCompleted}
-            />
-            <SecondaryButton
-              icon={dropIcon}
-              title="Living Water – Pray"
-              subtitle="Refresh your spirit with prayer"
-              points={5}
-              onPress={handlePrayerPress}
-              completed={prayerCompleted}
-              disabled={!readingCompleted}
-            />
-            <SecondaryButton
-              icon={quillIcon}
-              title="Quiet Time – Reflect"
-              subtitle="Pause and meet with God"
-              points={5}
-              onPress={handleReflectionPress}
-              completed={reflectionCompleted}
-              disabled={!readingCompleted}
-            />
-          </ScrollView>
-        </Animated.View>
+              <SecondaryButton
+                icon={breadIcon}
+                title="Daily Bread – Read"
+                subtitle="Feed your soul with scripture"
+                points={5}
+                onPress={handleReadPress}
+                completed={readingCompleted}
+              />
+              <SecondaryButton
+                icon={dropIcon}
+                title="Living Water – Pray"
+                subtitle="Refresh your spirit with prayer"
+                points={5}
+                onPress={handlePrayerPress}
+                completed={prayerCompleted}
+                disabled={!readingCompleted}
+              />
+              <SecondaryButton
+                icon={quillIcon}
+                title="Quiet Time – Reflect"
+                subtitle="Pause and meet with God"
+                points={5}
+                onPress={handleReflectionPress}
+                completed={reflectionCompleted}
+                disabled={!readingCompleted}
+              />
+            </ScrollView>
+          </Animated.View>
 
-        {/* Dev Widget Button - Positioned absolutely at the bottom */}
-        <TouchableOpacity
-          onPress={() => setWidgetSheetVisible(true)}
-          className="absolute bottom-28 right-4 bg-accentGold py-4 px-6 rounded-full shadow-md z-50"
-          style={{
-            shadowColor: 'rgba(0,0,0,0.3)',
-            shadowOffset: { width: 0, height: 3 },
-            shadowRadius: 6,
-            elevation: 5,
-            borderWidth: 2,
-            borderColor: '#FCD34D',
-          }}
-        >
-          <Text className="font-feather text-darkGreen text-lg font-bold">Widget Setup</Text>
-        </TouchableOpacity>
+          {/* Dev Widget Button - Positioned absolutely at the bottom */}
+          <TouchableOpacity
+            onPress={() => setWidgetSheetVisible(true)}
+            className="absolute bottom-28 right-4 bg-accentGold py-4 px-6 rounded-full shadow-md z-50"
+            style={{
+              shadowColor: 'rgba(0,0,0,0.3)',
+              shadowOffset: { width: 0, height: 3 },
+              shadowRadius: 6,
+              elevation: 5,
+              borderWidth: 2,
+              borderColor: '#FCD34D',
+            }}
+          >
+            <Text className="font-feather text-darkGreen text-lg font-bold">Widget Setup</Text>
+          </TouchableOpacity>
 
-        {/* Overlays */}
-        <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
-        <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
-        <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
-        <WidgetHowToSheet visible={widgetSheetVisible} onClose={() => setWidgetSheetVisible(false)} />
-      </SafeAreaView>
-    </View>
-    <Toast config={toastConfig} />
-  </>
+          {/* Overlays */}
+          <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
+          <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
+          <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
+          <WidgetHowToSheet visible={widgetSheetVisible} onClose={() => setWidgetSheetVisible(false)} />
+        </SafeAreaView>
+      </View>
+      <Toast config={toastConfig} />
+    </>
   );
 }

@@ -3,6 +3,8 @@ import auth from '@react-native-firebase/auth';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
 import { create } from 'zustand';
 import { createJSONStorage, persist, StateStorage } from 'zustand/middleware';
+import { Platform } from 'react-native';
+import StreakWidgetModule from '../native/StreakWidgetModule';
 
 import {
   updateField,
@@ -91,6 +93,7 @@ function undefinedToNull(obj: any): any {
   }
   return obj;
 }
+
 
 // Utility to convert Firestore timestamp objects to Timestamp instances
 function convertTimestamps(obj: any): any {
@@ -248,6 +251,15 @@ export const useUserStore = create<UserStore>()(
           if (isAuthenticated()) {
             console.log('Updating streakCount in Firestore:', streakCount);
             updateField('streakCount', streakCount);
+          }
+
+          // Update the widget
+          if (Platform.OS === 'ios') {
+            try {
+              StreakWidgetModule.updateStreak(streakCount);
+            } catch (error) {
+              console.error('Error updating widget streak:', error);
+            }
           }
 
           return newState;
