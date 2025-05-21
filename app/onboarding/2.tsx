@@ -15,6 +15,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import { toBool } from '../utils/toBool';
+import { validateName } from '../../utils/validation';
 
 export default function OnboardingLambNameScreen() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function OnboardingLambNameScreen() {
   const { setResponse } = useOnboardingStore();
   const setLambName = useUserStore((state) => state.setLambName);
   const [inputLambName, setInputLambName] = useState('');
+  const [error, setError] = useState<string | undefined>();
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
@@ -138,8 +140,15 @@ export default function OnboardingLambNameScreen() {
     transform: [{ translateY: buttonTranslateY.value }],
   }));
 
+  const handleInputChange = (text: string) => {
+    setInputLambName(text);
+    const validation = validateName(text);
+    setError(validation.error);
+  };
+
   const handleContinue = async () => {
-    if (inputLambName.trim()) {
+    const validation = validateName(inputLambName);
+    if (validation.isValid) {
       // Log button press using helper function
       const name = inputLambName.trim();
       analytics.logEvent('OnboardingNameScreen_Tapped_Continue', {
@@ -147,8 +156,8 @@ export default function OnboardingLambNameScreen() {
       });
 
       // Save the lamb name to the user store
-      setLambName(inputLambName.trim());
-      setResponse('lambName', inputLambName.trim());
+      setLambName(name);
+      setResponse('lambName', name);
       screenOpacity.value = withTiming(0, { duration: 300 });
       router.push({
         pathname: '/onboarding/username',
@@ -158,6 +167,8 @@ export default function OnboardingLambNameScreen() {
           immediate: false,
         },
       } as any);
+    } else {
+      setError(validation.error);
     }
   };
 
@@ -199,13 +210,18 @@ export default function OnboardingLambNameScreen() {
           className="font-feather text-3xl text-center text-textPrimary bg-white p-6 rounded-2xl border-4 border-border"
           placeholder="Enter name"
           placeholderTextColor="#B89B4C"
-          maxLength={9}
+          maxLength={16}
           value={inputLambName}
-          onChangeText={setInputLambName}
+          onChangeText={handleInputChange}
           autoCorrect={false}
           autoCapitalize="none"
           spellCheck={false}
         />
+        {error && (
+          <Text className="font-din text-sm text-red-500 mt-2 text-center">
+            {error}
+          </Text>
+        )}
       </Animated.View>
 
       {/* Continue Button */}
@@ -213,8 +229,8 @@ export default function OnboardingLambNameScreen() {
         <PrimaryButton
           title="Continue"
           onPress={handleContinue}
-          disabled={!inputLambName.trim()}
-          isActive={!!inputLambName.trim()}
+          disabled={!inputLambName.trim() || !!error}
+          isActive={!!inputLambName.trim() && !error}
         />
       </Animated.View>
     </Animated.View>
