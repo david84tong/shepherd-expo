@@ -22,22 +22,17 @@ import { useRouter } from 'expo-router';
 import firestore from '@react-native-firebase/firestore';
 import { BIBLE_PATHS } from '~/app/models/Path';
 import analytics from '../utils/analytics';
+import { 
+  useReaderSettingsStore, 
+  CARD_LINE_HEIGHT_PRESETS,
+  LineHeightPreset,
+  MIN_FONT_SIZE,
+  MAX_FONT_SIZE
+} from '~/app/stores/readerSettingsStore';
 
-const FONT_SIZE_KEY = 'userNewBibleFontSize';
-const DEFAULT_FONT_SIZE = 20;
-const MIN_FONT_SIZE = 14;
-const MAX_FONT_SIZE = 30;
-
-const LINE_HEIGHT_KEY = 'userNewBibleLineHeight';
-const LINE_HEIGHT_PRESETS = {
-  COMPACT: 20,
-  REGULAR: 24,
-  RELAXED: 32,
-} as const;
-type LineHeightPreset = keyof typeof LINE_HEIGHT_PRESETS;
-
+// Add theme color key to match bibleReader.tsx
+const THEME_COLOR_KEY = 'userBibleThemeColor';
 const TAP_GUIDANCE_KEY = 'userHideTapGuidance';
-const READER_PREFERENCE_KEY = 'userDefaultReaderPreference';
 
 const THEME_COLORS = {
   white: {
@@ -273,14 +268,26 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
-  const [lineHeightPreset, setLineHeightPreset] = useState<LineHeightPreset>('REGULAR');
-  const [currentTheme, setCurrentTheme] = useState<ThemeType>('light');
+  // Get settings from the shared store
+  const readerSettings = useReaderSettingsStore();
+
   const [isSettingsModalVisible, setIsSettingsModalVisible] = useState(false);
   const slideAnim = useRef(new RNAnimated.Value(0)).current;
 
-  const theme = THEME_COLORS[currentTheme];
-  const verseTextStyle = { fontSize: fontSize, lineHeight: LINE_HEIGHT_PRESETS[lineHeightPreset], color: theme.text };
+  // Convert line height preset name to pixel value for the card view
+  const lineHeight = CARD_LINE_HEIGHT_PRESETS[readerSettings.lineHeightPreset || 'REGULAR'];
+  
+  // Get theme colors based on current theme - add fallback to prevent undefined
+  const themeKey = (readerSettings.theme && readerSettings.theme in THEME_COLORS) 
+    ? readerSettings.theme as ThemeType 
+    : 'light';
+  const theme = THEME_COLORS[themeKey];
+  
+  const verseTextStyle = { 
+    fontSize: readerSettings.fontSize || MIN_FONT_SIZE, 
+    lineHeight: lineHeight, 
+    color: theme.text 
+  };
 
   const showBookChapterSelector = useUIStore(state => state.showBookChapterSelector);
 
@@ -313,35 +320,18 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   }, [translation]);
 
   useEffect(() => {
-    const loadSettings = async () => {
+    const loadTapGuidance = async () => {
       try {
-        const savedSize = await AsyncStorage.getItem(FONT_SIZE_KEY);
-        if (savedSize !== null) setFontSize(parseInt(savedSize, 10));
-
-        const savedLineHeightValue = await AsyncStorage.getItem(LINE_HEIGHT_KEY);
-        if (savedLineHeightValue !== null) {
-            const preset = Object.keys(LINE_HEIGHT_PRESETS).find(
-                key => LINE_HEIGHT_PRESETS[key as LineHeightPreset] === parseInt(savedLineHeightValue)
-            ) as LineHeightPreset | undefined;
-            if (preset) setLineHeightPreset(preset);
-        }
-        
-        // Load tap guidance preference
+        // Only load tap guidance from AsyncStorage
         const hideTapGuidance = await AsyncStorage.getItem(TAP_GUIDANCE_KEY);
         if (hideTapGuidance === 'true') {
           setShowTapGuidance(false);
         }
-
-        // Load reader preference
-        const readerPref = await AsyncStorage.getItem(READER_PREFERENCE_KEY);
-        if (readerPref === 'default') {
-          setUseDefaultReader(true);
-        }
       } catch (e) {
-        console.error("Failed to load settings from AsyncStorage", e);
+        console.error("Failed to load tap guidance setting from AsyncStorage", e);
       }
     };
-    loadSettings();
+    loadTapGuidance();
   }, []);
 
   // Helper function to load a chapter
@@ -608,63 +598,46 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     });
   }, [slideAnim]);
 
-  const updateFontSize = async (newSize: number) => {
-    if (newSize >= MIN_FONT_SIZE && newSize <= MAX_FONT_SIZE) {
-      setFontSize(newSize);
-      try {
-        await AsyncStorage.setItem(FONT_SIZE_KEY, newSize.toString());
-      } catch (e) { console.error("Failed to save font size", e); }
-    }
-  };
-  
   const handleFontSizeChange = useCallback((value: number) => {
-    updateFontSize(Math.round(value));
-  }, []);
+    readerSettings.setFontSize(Math.round(value));
+  }, [readerSettings]);
 
-  const handleThemeChange = (newTheme: ThemeType) => {
-    setCurrentTheme(newTheme);
+  const handleThemeChange = useCallback((newTheme: ThemeType) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
+    readerSettings.setTheme(newTheme);
+  }, [readerSettings]);
 
-  const handleLineHeightChange = useCallback(async (preset: LineHeightPreset) => {
-    setLineHeightPreset(preset);
+  const handleLineHeightChange = useCallback((preset: LineHeightPreset) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    try {
-      await AsyncStorage.setItem(LINE_HEIGHT_KEY, LINE_HEIGHT_PRESETS[preset].toString());
-    } catch (e) { console.error("Failed to save line height", e); }
-  }, []);
+    readerSettings.setLineHeightPreset(preset);
+  }, [readerSettings]);
 
   const handleDefaultReaderToggle = useCallback(async (value: boolean) => {
-    setUseDefaultReader(value);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     analytics.logEvent("CardBibleReader_Tapped_ToggleDefaultReader", {
       value: value ? 'default' : 'new'
     });
-    try {
-      console.log(`Setting reader preference to: ${value ? 'default' : 'new'}`);
-      await AsyncStorage.setItem(READER_PREFERENCE_KEY, value ? 'default' : 'new');
 
-      // If the user toggled ON the default reader (value === true) we must
-      // close this settings modal immediately to avoid leaving the grey
-      // overlay visible after this component unmounts.
-      if (value) {
-        setIsSettingsModalVisible(false);
-        // Handoff chapter data to parent before switching
-        if (onHandoffChapterData) {
-          onHandoffChapterData(chapterData);
-        }
+    // Update the store
+    await readerSettings.setCardView(!value);
+
+    // Close this modal if we're switching to default reader
+    if (value) {
+      setIsSettingsModalVisible(false);
+      
+      // Handoff chapter data to parent before switching
+      if (onHandoffChapterData) {
+        onHandoffChapterData(chapterData);
       }
-
-      // Notify parent to switch back to default reader
-      if (value && onSwitchToDefaultReader) {
+      
+      // Notify parent to switch to default reader
+      if (onSwitchToDefaultReader) {
         setTimeout(() => {
           if (onSwitchToDefaultReader) onSwitchToDefaultReader();
         }, 50);
       }
-    } catch (e) {
-      console.error("Failed to save reader preference", e);
     }
-  }, [onSwitchToDefaultReader, onHandoffChapterData, chapterData]);
+  }, [readerSettings, onHandoffChapterData, chapterData, onSwitchToDefaultReader]);
 
   // Handler for opening the selector
   const handleOpenSelector = () => {
@@ -821,13 +794,18 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                 <TouchableOpacity
                   onPress={() => {
                     console.log('📖 [NewBibleReader] Finish tapped');
-                    handleFinishReading();
+                    if (isInPathMode) {
+                      handleFinishReading();
+                    } else {
+                      // If not in path mode, navigate to next chapter instead
+                      navigateToNextChapter();
+                    }
                   }}
                   activeOpacity={0.8}
                 >
                   <View style={{backgroundColor: theme.progressBarBackground, paddingVertical:12}} className="items-center mt-6 rounded-xl">
                     <Text style={{color: theme.headerText, fontFamily:'Feather Bold', fontSize:16}}>
-                      Finish Reading 🎉
+                      {isInPathMode ? "Finish Reading 🎉" : "Next Chapter →"}
                     </Text>
                   </View>
                 </TouchableOpacity>
@@ -905,7 +883,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                       style={styles.slider}
                       minimumValue={MIN_FONT_SIZE}
                       maximumValue={MAX_FONT_SIZE}
-                      value={fontSize}
+                      value={readerSettings.fontSize}
                       onValueChange={handleFontSizeChange}
                       minimumTrackTintColor={theme.progressBarFill} 
                       maximumTrackTintColor={theme.sliderTrack}
@@ -916,18 +894,18 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
                   <Text style={[styles.modalSectionTitle, {color: theme.text, marginTop: 16}]}>Line Spacing</Text>
                   <View style={styles.lineHeightButtons}>
-                    {(Object.keys(LINE_HEIGHT_PRESETS) as LineHeightPreset[]).map((preset) => (
+                    {(Object.keys(CARD_LINE_HEIGHT_PRESETS) as LineHeightPreset[]).map((preset) => (
                       <TouchableOpacity
                         key={preset}
                         style={[
                           styles.lineHeightButton,
-                          { borderColor: theme.border, backgroundColor: lineHeightPreset === preset ? theme.progressBarFill : 'transparent' },
+                          { borderColor: theme.border, backgroundColor: readerSettings.lineHeightPreset === preset ? theme.progressBarFill : 'transparent' },
                         ]}
                         onPress={() => handleLineHeightChange(preset)}
                       >
                         <Text style={[
                           styles.lineHeightButtonText,
-                          { color: lineHeightPreset === preset ? (currentTheme === 'dark' ? theme.modalBackground : theme.bubbleBackground) : theme.text },
+                          { color: readerSettings.lineHeightPreset === preset ? (readerSettings.theme === 'dark' ? theme.modalBackground : theme.bubbleBackground) : theme.text },
                         ]}>{preset.charAt(0).toUpperCase() + preset.slice(1).toLowerCase()}</Text>
                       </TouchableOpacity>
                     ))}
@@ -941,8 +919,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                         style={[
                           styles.themeButton,
                           { backgroundColor: THEME_COLORS[themeKey].bubbleBackground, borderColor: THEME_COLORS[themeKey].bubbleBorder },
-                          currentTheme === themeKey && styles.selectedThemeButton,
-                          currentTheme === themeKey && { borderColor: THEME_COLORS[themeKey].progressBarFill }
+                          readerSettings.theme === themeKey && styles.selectedThemeButton,
+                          readerSettings.theme === themeKey && { borderColor: THEME_COLORS[themeKey].progressBarFill }
                         ]}
                         onPress={() => handleThemeChange(themeKey)}
                       />

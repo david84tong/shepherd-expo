@@ -21,7 +21,10 @@ const IMPLEMENTED_SCREENS = [
   '6',
   '7',
   '8',
+  'explainer',
+  '9',
   '10', // Ensure 10 is included
+  'rating',
   '11',
   'auth',
   'lambFound',
@@ -168,7 +171,7 @@ export default function OnboardingLayout() {
             options={{
               contentStyle: {
                 backgroundColor: '#FFF4D9',
-                marginTop: screen === '1' ? 0 : insets.top > 20 ? 36 : 0,
+                marginTop: screen === '1' ? 0 : insets.top > 20 ? 48 : 0,
               },
               ...(screen === '1' && {
                 gestureEnabled: false,
@@ -181,7 +184,8 @@ export default function OnboardingLayout() {
 
       {/* Animated Progress Bar */}
       {pathname &&
-        !pathname.startsWith('/onboarding/1') &&
+        !(pathname == ('/onboarding/1')) && 
+         !(pathname == ('/onboarding/11')) &&
         !pathname.includes('/onboarding/LoadingScreen') &&
         !pathname.includes('/onboarding/auth') && (
           <Animated.View
