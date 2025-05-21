@@ -29,7 +29,6 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import analytics from '~/utils/analytics';
-import { Feather } from '@expo/vector-icons';
 import WidgetHowToSheet from '../../components/WidgetHowToSheet';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import { getLevelData } from '../../utils/levelUtils';
@@ -695,7 +694,7 @@ export default function HomeScreen() {
   const levelPillWidthAnim = useRef(new Animated.Value(0)).current;
   const levelPillOpacityAnim = useRef(new Animated.Value(0)).current;
   // Pre-calculate the expanded width for the pill (use a reasonable fixed width instead of screen-based)
-  const pillExpandedWidth = 400; // Fixed reasonable width that won't overflow
+  const pillExpandedWidth = 350; // Fixed reasonable width that won't overflow
   
   // Calculate level and XP progress for the level pill display
   const levelInfo = useMemo(() => {
@@ -805,20 +804,29 @@ export default function HomeScreen() {
             <View className="flex-row items-center flex-1 justify-between">
               {!isLevelPillExpanded && (
                 <Text
-                  className="text-h1 font-feather text-white tracking-wide right-0"
+                  className="text-h1 font-feather text-white tracking-wide right-2"
                   style={{
                     textShadowColor: 'rgba(0, 0, 0, 0.2)',
                     textShadowOffset: { width: 0, height: 1 },
                     textShadowRadius: 2,
                   }}>
-                  {lambName ? `${lambName}` : 'Shepherd'}
+                  {lambName 
+                    ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
+                    : 'Shepherd'}
                 </Text>
               )}
-              <View className="flex-row gap-2 justify-end">
+              <View className="flex-row gap-2 justify-end ml-2">
                 <TouchableOpacity
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     analytics.logEvent("HomeScreen_Tapped_Level");
+                    // Add detailed analytics for XP progress tap
+                    analytics.logEvent("HomeScreen_Tapped_XpProgress", {
+                      level: levelInfo.level,
+                      currentXp: levelInfo.xp,
+                      nextLevelXp: levelInfo.xpForNextLevel,
+                      progress: Math.round(levelInfo.progress)
+                    });
                     // Toggle expanded state
                     setIsLevelPillExpanded(!isLevelPillExpanded);
                     
@@ -844,10 +852,10 @@ export default function HomeScreen() {
                       <ProgressPill value={0} label={(lambHearts > 0 ? levelInfo.level : '0').toString()} icon={starIcon} />
                     ) : (
                       <Animated.View
-                        className="bg-pillBorder rounded-full overflow-hidden flex-row items-center justify-between -mt-4 p-2"
+                        className="bg-pillBorder rounded-full overflow-hidden flex-row items-center justify-between -mt-8 p-2"
                         style={{
                           position: 'absolute',
-                          right: -42,
+                          right: -36,
                           width: levelPillWidthAnim.interpolate({
                             inputRange: [0, 1],
                             outputRange: [40, pillExpandedWidth]
@@ -878,7 +886,7 @@ export default function HomeScreen() {
                             <View
                               className="h-full bg-accentGold rounded-full"
                               style={{ 
-                                width: `${Math.min(levelInfo.progress, 100)}%` 
+                                width: `${Math.max(Math.min(levelInfo.progress, 100), 1)}%` 
                               }}
                             />
                           </View>
@@ -1093,7 +1101,7 @@ export default function HomeScreen() {
             />
   
             {/* Widget How-To Sheet test button */}
-            <TouchableOpacity
+            {/* <TouchableOpacity
               onPress={() => setShowWidgetSheet(true)}
               className="mt-6 flex-row items-center justify-center py-3 px-4 bg-amber-100 border border-amber-300 rounded-xl"
               activeOpacity={0.7}
@@ -1102,7 +1110,7 @@ export default function HomeScreen() {
               <Text className="font-feather text-base text-amber-800">
                 How to Add Widget
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
 
       
           </ScrollView>

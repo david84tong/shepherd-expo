@@ -89,8 +89,12 @@ export default function OnboardingAgeRangeScreen() {
 
   const options = [
     {
-      id: 'under-18',
-      title: 'Under 18',
+      id: 'under-12',
+      title: 'Under 12',
+    },
+    {
+      id: '13-17',
+      title: '13-17',
     },
     {
       id: '18-24',
@@ -116,10 +120,7 @@ export default function OnboardingAgeRangeScreen() {
       id: '65-plus',
       title: '65+',
     },
-    {
-      id: 'prefer-not-to-say',
-      title: 'Prefer not to say',
-    },
+
   ] as const;
 
   return (

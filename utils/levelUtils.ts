@@ -49,10 +49,9 @@ export const calculateLevelProgress = (xp: number): number => {
   const xpForCurrentLevel = calculateExpForLevel(currentLevel);
   const xpForNextLevel = calculateExpForLevel(currentLevel + 1);
   
-  const xpProgress = xp - xpForCurrentLevel;
-  const xpNeeded = xpForNextLevel - xpForCurrentLevel;
-  
-  return Math.min((xpProgress / xpNeeded) * 100, 100);
+  // Calculate progress as a percentage of total XP toward next level XP
+  // This matches the displayed ratio in the UI (e.g., 90/240)
+  return Math.min((xp / xpForNextLevel) * 100, 100);
 }
 
 /**
@@ -64,7 +63,10 @@ export const getLevelData = (xp: number) => {
   const xpForNextLevel = calculateExpForLevel(level + 1);
   const xpProgress = xp - xpForCurrentLevel;
   const xpNeeded = xpForNextLevel - xpForCurrentLevel;
-  const progress = Math.min((xpProgress / xpNeeded) * 100, 100);
+  
+  // Calculate progress as a percentage of total XP toward next level XP
+  // This matches the displayed ratio in the UI (e.g., 90/240)
+  const progress = Math.min((xp / xpForNextLevel) * 100, 100);
   
   return {
     level,

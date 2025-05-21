@@ -101,7 +101,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
     <View className="flex-1 bg-surfaceCream pt-12" style={{paddingBottom: insets.bottom }}>
       {/* Title */}
       <Animated.View style={titleStyle} className="mb-8">
-        <Text className="font-feather text-3xl text-textPrimary text-center mb-0">
+        <Text className="font-feather text-3xl text-textPrimary text-center mb-0 mx-8">
           As you read, pray and reflect, your lamb grows...
         </Text>
       </Animated.View>
