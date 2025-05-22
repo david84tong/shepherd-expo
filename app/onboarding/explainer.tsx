@@ -12,6 +12,7 @@ import lamb1 from '../../assets/onboarding/babyLamb.png';
 import lamb10 from '../../assets/onboarding/babyLamb.png';
 import lamb20 from '../../assets/onboarding/lamb20.png';
 import lamb33 from '../../assets/onboarding/lambWithWings.png';
+import skins from '../../assets/onboarding/skins.png';
 
 export default function OnboardingExplainerScreen({ onContinue }: { onContinue?: () => void }) {
   const insets = useSafeAreaInsets();
@@ -19,8 +20,8 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
   // Animation shared values
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
-  const cardOpacities = [useSharedValue(0), useSharedValue(0), useSharedValue(0), useSharedValue(0)];
-  const cardTranslateYs = [useSharedValue(40), useSharedValue(40), useSharedValue(40), useSharedValue(40)];
+  const cardOpacities = [useSharedValue(0), useSharedValue(0), useSharedValue(0), useSharedValue(0), useSharedValue(0)];
+  const cardTranslateYs = [useSharedValue(40), useSharedValue(40), useSharedValue(40), useSharedValue(40), useSharedValue(40)];
 
   // Log screen view when component mounts
   useEffect(() => {
@@ -87,7 +88,11 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
     opacity: cardOpacities[3].value,
     transform: [{ translateY: cardTranslateYs[3].value }],
   }));
-  const cardStyles = [cardStyle0, cardStyle1, cardStyle2, cardStyle3];
+  const cardStyle4 = useAnimatedStyle(() => ({
+    opacity: cardOpacities[4].value,
+    transform: [{ translateY: cardTranslateYs[4].value }],
+  }));
+  const cardStyles = [cardStyle0, cardStyle1, cardStyle2, cardStyle3, cardStyle4];
 
   // Lamb card data
   const lambs = [
@@ -98,48 +103,52 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
   ];
 
   return (
-    <View className="flex-1 bg-surfaceCream pt-12" style={{paddingBottom: insets.bottom }}>
+    <View className="flex-1 bg-surfaceCream pt-12 w-full items-center" style={{paddingBottom: insets.bottom }}>
       {/* Title */}
-      <Animated.View style={titleStyle} className="mb-8">
-        <Text className="font-feather text-3xl text-textPrimary text-center mb-0 mx-8">
+      <Animated.View style={titleStyle} className="mb-8 px-6">
+        <Text className="font-feather text-2xl text-textPrimary text-center mb-0">
           As you read, pray and reflect, your lamb grows...
         </Text>
       </Animated.View>
 
       {/* Lamb grid */}
-      <View className="flex-row flex-wrap justify-center items-start gap-4 mt-12">
+      <View className="flex-row flex-wrap justify-center items-center gap-4 mb-4">
         {/* Row 1 */}
-        <Animated.View style={cardStyles[0]} className="w-[150px] h-[170px] m-2 bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-          <Image source={lamb1} className="w-20 h-20 mb-2 mt-8" />
+        <Animated.View style={cardStyles[0]} className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
+          <Image source={lamb1} className="w-20 h-20" resizeMode="contain" />
           <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
             <Text className="font-feather text-accentGold">LVL 1</Text>
           </View>
         </Animated.View>
-        <Animated.View style={cardStyles[1]} className="w-[150px] h-[170px] m-2 bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-          <Image source={lamb10} className="w-[110px] h-[110px] mb-2 mt-4" />
+        <Animated.View style={cardStyles[1]} className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
+          <Image source={lamb10} className="w-[100px] h-[100px]" resizeMode="contain" />
           <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
             <Text className="font-feather text-accentGold">LVL 10</Text>
           </View>
         </Animated.View>
         {/* Row 2 */}
-        <Animated.View style={cardStyles[2]} className="w-[150px] h-[170px] m-2 bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-        <Image source={lamb20} className="w-[150px] h-[150px] mb-2 mt-4" />
-        <View className="absolute top-2.5 left-2.5 bg-lightYellow px-4 py-1 rounded-full">
-            {/* <Text className="font-feather text-accentGold">Top 5%</Text> */}
-          </View>
+        <Animated.View style={cardStyles[2]} className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
+          <Image source={lamb20} className="w-[120px] h-[120px]" resizeMode="contain" />
           <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
             <Text className="font-feather text-accentGold">LVL 20</Text>
           </View>
         </Animated.View>
-        <Animated.View style={cardStyles[3]} className="w-[150px] h-[170px] m-2 bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-        <Image source={lamb33} className="w-[130px] h-[130px] mb-2 mt-4" />
-        <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
+        <Animated.View style={cardStyles[3]} className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
+          <Image source={lamb33} className="w-[120px] h-[120px]" resizeMode="contain" />
+          <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
             <Text className="font-feather text-accentGold">LVL 33</Text>
           </View>
-          
         </Animated.View>
       </View>
-
+      
+      {/* Skins section */}
+      <Animated.View style={cardStyles[4]} className="w-[340px] h-[140px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative mb-4">
+        <Image source={skins} className="w-full h-[120px]" resizeMode="contain" />
+        <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
+          <Text className="font-feather text-accentGold">Shop for skins at level 10</Text>
+        </View>
+      </Animated.View>
+      
       {/* Continue Button - fixed at bottom */}
       <View className="absolute left-6 right-6" style={{ bottom: Math.max(insets.bottom + 16, 24) }}>
         <PrimaryButton title="Continue" onPress={handleContinue} />
