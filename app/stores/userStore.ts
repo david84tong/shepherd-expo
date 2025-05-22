@@ -8,6 +8,7 @@ import {
   updateField,
   syncUserDocument,
   createUserDocument,
+  batchUpdate,
 } from '../../utils/firestore';
 import { syncStreakDataToWidget } from '../../utils/widgetSync';
 import { UserDoc, Lamb, Prayer, Reflection, Reading, UserStore } from '../models/User';
@@ -127,6 +128,27 @@ const syncStreakWithWidget = (streakCount: number, lastActivityDate: any) => {
     .catch(error => console.error('Failed to sync streak with widget:', error));
 };
 
+// --- Add cache for fetchFromFirestore ---
+let lastUserFetch: Promise<boolean> | null = null;
+let lastUserFetchTime: number = 0;
+const USER_FETCH_CACHE_DURATION = 5000; // 5 seconds
+
+// --- Debounce syncUserDocument ---
+let syncTimeout: NodeJS.Timeout | null = null;
+let pendingSyncData: Partial<UserDoc> | null = null;
+const SYNC_DEBOUNCE_MS = 2000;
+
+async function debouncedSyncUserDocument(data: Partial<UserDoc>) {
+  pendingSyncData = { ...pendingSyncData, ...data };
+  if (syncTimeout) clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(async () => {
+    if (pendingSyncData) {
+      await syncUserDocument(pendingSyncData);
+      pendingSyncData = null;
+    }
+  }, SYNC_DEBOUNCE_MS);
+}
+
 export const useUserStore = create<UserStore>()(
   persist(
     (set, get) => ({
@@ -169,21 +191,27 @@ export const useUserStore = create<UserStore>()(
 
       // Create new user
       createUser: async (id: string, userData: Partial<UserDoc>) => {
+        // Prepare all user data at once
         const newState = {
           ...initialState,
           ...userData,
-          id, // Just set id, no need for uid
+          id,
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
         } as UserDoc;
 
+        // Update local state immediately
         set(newState);
 
-        // Convert undefined to null before sending to Firestore
+        // Convert undefined to null and prepare data for Firestore
         const cleanedUserData = undefinedToNull({
           ...userData,
-          id, // Ensure id is explicitly set in Firestore doc
+          id,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
         });
+
+        // Single Firestore call to create/update the document
         const success = await createUserDocument(id, cleanedUserData);
         if (!success) {
           console.error('Failed to create user document in Firestore');
@@ -202,7 +230,12 @@ export const useUserStore = create<UserStore>()(
 
           // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
-            syncUserDocument(newState);
+            // Batch all updates into a single call
+            const updates = {
+              ...user,
+              updatedAt: Timestamp.now(),
+            };
+            batchUpdate(updates);
           }
 
           return newState;
@@ -286,9 +319,9 @@ export const useUserStore = create<UserStore>()(
             lastActivityDate: date,
           };
           
-          // Sync to Firestore if authenticated
+          // Batch update with Firestore
           if (isAuthenticated()) {
-            updateField('lastActivityDate', date);
+            batchUpdate({ lastActivityDate: date });
           }
           
           return newState;
@@ -304,9 +337,8 @@ export const useUserStore = create<UserStore>()(
             lastReadingDate,
           };
           
-          // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
-            updateField('lastReadingDate', lastReadingDate);
+            batchUpdate({ lastReadingDate });
           }
           
           return newState;
@@ -319,9 +351,8 @@ export const useUserStore = create<UserStore>()(
             lastPrayerDate,
           };
           
-          // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
-            updateField('lastPrayerDate', lastPrayerDate);
+            batchUpdate({ lastPrayerDate });
           }
           
           return newState;
@@ -334,9 +365,8 @@ export const useUserStore = create<UserStore>()(
             lastReflectionDate,
           };
           
-          // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
-            updateField('lastReflectionDate', lastReflectionDate);
+            batchUpdate({ lastReflectionDate });
           }
           
           return newState;
@@ -349,9 +379,8 @@ export const useUserStore = create<UserStore>()(
             lastReadingPenaltyDate,
           };
           
-          // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
-            updateField('lastReadingPenaltyDate', lastReadingPenaltyDate);
+            batchUpdate({ lastReadingPenaltyDate });
           }
           
           return newState;
@@ -364,9 +393,8 @@ export const useUserStore = create<UserStore>()(
             lastPrayerPenaltyDate,
           };
           
-          // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
-            updateField('lastPrayerPenaltyDate', lastPrayerPenaltyDate);
+            batchUpdate({ lastPrayerPenaltyDate });
           }
           
           return newState;
@@ -379,9 +407,8 @@ export const useUserStore = create<UserStore>()(
             lastReflectionPenaltyDate,
           };
           
-          // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
-            updateField('lastReflectionPenaltyDate', lastReflectionPenaltyDate);
+            batchUpdate({ lastReflectionPenaltyDate });
           }
           
           return newState;
@@ -472,7 +499,7 @@ export const useUserStore = create<UserStore>()(
           };
           // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
-            syncUserDocument(newState);
+            debouncedSyncUserDocument(newState);
           }
           return newState;
         });
@@ -562,100 +589,66 @@ export const useUserStore = create<UserStore>()(
           return false;
         }
         const state = get();
-        // Create an object with only the data fields, excluding functions
-        const dataToSync: Partial<UserDoc> = {
-          spiritualGoal: state.spiritualGoal,
-          experienceLevel: state.experienceLevel,
-          frequencyGoal: state.frequencyGoal,
-          denomination: state.denomination,
-          displayName: state.displayName,
-          selectedPathId: state.selectedPathId,
-          lamb: state.lamb,
-          streakCount: state.streakCount,
-          lastActivityDate: state.lastActivityDate,
-          lastReadingDate: state.lastReadingDate,
-          lastPrayerDate: state.lastPrayerDate,
-          lastReflectionDate: state.lastReflectionDate,
-          lastReadingPenaltyDate: state.lastReadingPenaltyDate,
-          lastPrayerPenaltyDate: state.lastPrayerPenaltyDate,
-          lastReflectionPenaltyDate: state.lastReflectionPenaltyDate,
-          notificationTime: state.notificationTime,
-          versesReadTotal: state.versesReadTotal,
-          chaptersReadTotal: state.chaptersReadTotal,
-          bibleVersion: state.bibleVersion,
-          proStatus: state.proStatus,
-          updatedAt: state.updatedAt, // Use current state's updatedAt
-          gens: state.gens,
-          completedReflections: state.completedReflections,
-          completedPrayers: state.completedPrayers,
-          completedReadings: state.completedReadings,
-          // Ensure id and email are included if they exist on state
-          id: state.id,
-          ...(state.email && { email: state.email }),
-          ...(state.denomination && { denomination: state.denomination }),
-        };
-
-        // Pass only the data object to syncUserDocument
-        return await syncUserDocument(dataToSync);
+        // Debounced sync
+        debouncedSyncUserDocument(state);
+        return true;
       },
 
       // Fetch user data from Firestore and update the store
       fetchFromFirestore: async () => {
-        if (!isAuthenticated()) {
-          console.log('User not authenticated, skipping Firestore fetch');
-          return false;
+        const now = Date.now();
+        if (lastUserFetch && now - lastUserFetchTime < USER_FETCH_CACHE_DURATION) {
+          return lastUserFetch;
         }
-
-        try {
-          console.log('Fetching latest user data from Firestore');
-          const currentUser = auth().currentUser;
-          if (!currentUser || !currentUser.uid) {
-            console.log('No valid user ID available, skipping Firestore fetch');
+        lastUserFetchTime = now;
+        lastUserFetch = (async () => {
+          if (!isAuthenticated()) {
+            console.log('User not authenticated, skipping Firestore fetch');
             return false;
           }
-
-          // First try to get the document directly
-          const userDoc = await firestore().collection('users').doc(currentUser.uid).get();
-
-          if (!userDoc.exists) {
-            console.log('User document does not exist in Firestore for ID:', currentUser.uid);
-
-            // If document doesn't exist, try to create it with local data
-            const currentState = get();
-            if (currentState && currentState.id) {
-              console.log('Creating user document from local state');
-              await syncUserDocument(currentState);
+          try {
+            console.log('Fetching latest user data from Firestore');
+            const currentUser = auth().currentUser;
+            if (!currentUser || !currentUser.uid) {
+              console.log('No valid user ID available, skipping Firestore fetch');
+              return false;
+            }
+            // First try to get the document directly
+            const userDoc = await firestore().collection('users').doc(currentUser.uid).get();
+            if (!userDoc.exists) {
+              console.log('User document does not exist in Firestore for ID:', currentUser.uid);
+              // If document doesn't exist, try to create it with local data
+              const currentState = get();
+              if (currentState && currentState.id) {
+                console.log('Creating user document from local state');
+                await syncUserDocument(currentState);
+                return true;
+              }
+              return false;
+            }
+            const userData = userDoc.data() as UserDoc;
+            if (userData) {
+              console.log('Got user data from Firestore, updating local store');
+              // Ensure the data has an id field (matching Firebase uid)
+              const updatedUserData = {
+                ...userData,
+                id: currentUser.uid,
+              };
+              // Convert all Firestore timestamp objects to Timestamp instances
+              const convertedUserData = convertTimestamps(updatedUserData);
+              set((state) => ({
+                ...state,
+                ...convertedUserData,
+              }));
               return true;
             }
             return false;
+          } catch (error) {
+            console.error('Error fetching user data from Firestore:', error);
+            return false;
           }
-
-          const userData = userDoc.data() as UserDoc;
-
-          if (userData) {
-            console.log('Got user data from Firestore, updating local store');
-
-            // Ensure the data has an id field (matching Firebase uid)
-            const updatedUserData = {
-              ...userData,
-              id: currentUser.uid,
-            };
-
-            // Convert all Firestore timestamp objects to Timestamp instances
-            const convertedUserData = convertTimestamps(updatedUserData);
-
-            set((state) => ({
-              ...state,
-              ...convertedUserData,
-            }));
-            return true;
-          }
-
-          return false;
-        } catch (error) {
-          console.error('Error fetching user data from Firestore:', error);
-          return false;
-        }
+        })();
+        return lastUserFetch;
       },
     }),
     {
