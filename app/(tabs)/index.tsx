@@ -920,7 +920,7 @@ export default function HomeScreen() {
                         // Show toast message using Toast component
                         Toast.show({
                           type: 'info',
-                          text1: 'Skin shop coming soon!',
+                          text1: 'Unlock skins at lvl 10!',
                           text2: 'Customize your lamb with special skins from the shop.',
                           position: 'top',
                           visibilityTime: 4000,

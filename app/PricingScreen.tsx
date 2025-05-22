@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ReactNode } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, Switch, ImageBackground, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ImageBackground, ActivityIndicator, Image } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -242,7 +242,7 @@ const PricingScreen = () => {
           </View> */}
             <View className="bg-white rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
               <Text className="font-feather text-h2 text-textPrimary mt-2 mb-2 text-center">❤️ Support the mission</Text>
-              <Text className="font-din text-heading text-description text-center">We're a small team of 2 of christians, completely self-funded. </Text>
+              <Text className="font-din text-heading text-description text-center">{`We're a small team of 2 of christians, completely self-funded. `}</Text>
               <Text className="font-feather text-heading text-textPrimary text-center mt-8">Help fund future features</Text>
               <Text className="font-din text-body text-description text-start mt-2">- Social bible study (add friends)</Text>
               <Text className="font-din text-body text-description text-center mt-2">- translating to other languages</Text>

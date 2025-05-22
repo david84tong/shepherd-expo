@@ -2,7 +2,7 @@
   "expo": {
     "name": "Shepherd",
     "slug": "shepherd",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "shepherd",
@@ -35,21 +35,11 @@
         "NSPhotoLibraryUsageDescription": "Shepherd needs photo library access to create your player card and assess your fitness level for personalized workout recommendations."
       },
       "entitlements": {
-        "com.apple.security.application-groups": [
-          "group.second.round.shepherd.widget"
-        ]
+    
       },
       "associatedDomains": [],
       "appExtensions": [
-        {
-          "targetName": "ShepherdStreakWidget",
-          "bundleIdentifier": "second.round.shepherd.widget",
-          "entitlements": {
-            "com.apple.security.application-groups": [
-              "group.second.round.shepherd.widget"
-            ]
-          }
-        }
+     
       ]
     },
     "android": {
