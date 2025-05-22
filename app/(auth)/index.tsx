@@ -17,6 +17,10 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
+import { useOnboardingStore } from '../stores/onboardingStore';
+import { useUserStore } from '../stores/userStore';
+import { getAnimationConfig, shouldAnimate } from '../../utils/accessibility';
 
 // We'll use the background directly in the source prop
 
@@ -140,9 +144,23 @@ export default function LoginScreen() {
       </View>
     );
   }
+  const CustomView = ({ children, style, className }: { children: React.ReactNode, style: any, className: string }) => {
+    if (shouldAnimate()) {
+      return (
+        <Animated.View style={style} className={className}>
+          {children}
+        </Animated.View>
+      )
+    }
+    return (
+      <View style={style} className={className}>
+        {children}
+      </View>
+    )
+  }
 
   return (
-    <Animated.View style={screenStyle} className="flex-1">
+    <CustomView style={screenStyle} className="flex-1">
       {/* Using direct require for background to avoid linter errors */}
       <ImageBackground
         source={require('../../assets/backgrounds/mainBackground.png')}
@@ -170,7 +188,7 @@ export default function LoginScreen() {
           <Text className="text-accentGold font-feather text-h1 text-center mb-2 -mt-12">
             Shepherd
           </Text>
-          <Animated.View style={titleStyle} className="items-center -mt-12">
+          <CustomView style={titleStyle} className="items-center -mt-12">
             {/* Shepherd title */}
 
             <View className="flex-row items-center justify-center mt-1 w-full">
@@ -199,28 +217,28 @@ export default function LoginScreen() {
                 resizeMode="contain"
               />
             </View>
-          </Animated.View>
+          </CustomView>
 
           {/* Rive Animation in the middle */}
-          <Animated.View style={lambStyle} className="h-[200px] w-full justify-center items-center -mt-24">
+          <CustomView style={lambStyle} className="h-[200px] w-full justify-center items-center -mt-24">
             <Rive
               url={riveAssets[0].localUri!}
               artboardName="lamb-reading"
               autoplay
               style={{ width: '120%', height: '120%' }}
             />
-          </Animated.View>
+          </CustomView>
 
           {/* Button at the bottom */}
           <View className="w-full">
-            <Animated.View style={buttonStyle}>
+            <CustomView style={buttonStyle}>
               <PrimaryButton
                 onPress={handleBeginJourney}
                 disabled={loading}
                 title="Begin My Journey"
               />
-            </Animated.View>
-            <Animated.View style={linkStyle}>
+            </CustomView>
+            <CustomView style={linkStyle}>
               <TouchableOpacity
                 onPress={() => {
                   analytics.logEvent("WelcomeScreen_Tapped_Login");
@@ -234,11 +252,11 @@ export default function LoginScreen() {
               >
                 <Text className="font-feather text-body text-center underline mt-4 text-white">Login</Text>
               </TouchableOpacity>
-            </Animated.View>
+            </CustomView>
           </View>
         </SafeAreaView>
       </ImageBackground>
-    </Animated.View>
+    </CustomView>
   );
 }
 
