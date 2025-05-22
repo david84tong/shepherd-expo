@@ -219,7 +219,7 @@ export function useAuth() {
 
       // Log successful anonymous sign in
       if (analytics.isInitialized) {
-        analytics.logEvent('auth_success')
+        analytics.logEvent('auth_success_anonymously_by_clicking_skip_button')
       }
 
       return userCredential.user;
