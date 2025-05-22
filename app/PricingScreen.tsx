@@ -99,7 +99,7 @@ const PricingScreen = () => {
       analytics.logEvent("PricingScreen_SubscribeButton_Tapped", {
         trialEnabled: trialEnabled
       });
-      showPaywall();
+      await showPaywall();
     } catch (error) {
       console.error('Error during subscription process:', error);
       setIsLoading(false);
@@ -109,7 +109,7 @@ const PricingScreen = () => {
   const handleBack = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     analytics.logEvent("PricingScreen_BackButton_Tapped");
-    
+
     if (isSignedIn()) {
       if (router.canGoBack()) {
         router.back();
@@ -127,20 +127,26 @@ const PricingScreen = () => {
       analytics.logEvent("PricingScreen_ShowPaywall_Started", {
         trialEnabled: trialEnabled
       });
-      
+
+      // Commented RevenueCat implementation
+
       const result = await presentPaywall();
-      
-      if (result === PAYWALL_RESULT.PURCHASED) {
-        analytics.logEvent("PricingScreen_Subscription_Purchased");
-        router.replace('/(tabs)');
-      } else if (result === PAYWALL_RESULT.RESTORED) {
-        analytics.logEvent("PricingScreen_Subscription_Restored");
-        router.replace('/(tabs)');
-      } else {
-        analytics.logEvent("PricingScreen_Paywall_Dismissed", {
-          result: result
-        });
-      }
+
+      // if (result === PAYWALL_RESULT.PURCHASED) {
+      //   analytics.logEvent("PricingScreen_Subscription_Purchased");
+      //   router.replace('/(tabs)');
+      // } else if (result === PAYWALL_RESULT.RESTORED) {
+      //   analytics.logEvent("PricingScreen_Subscription_Restored");
+      //   router.replace('/(tabs)');
+      // } else {
+      //   analytics.logEvent("PricingScreen_Paywall_Dismissed", {
+      //     result: result
+      //   });
+      // }
+
+
+      // Adapty implementation
+
     } catch (error) {
       console.error('Error presenting paywall:', error);
       analytics.logEvent("PricingScreen_Paywall_Error", {
@@ -150,7 +156,6 @@ const PricingScreen = () => {
       setIsLoading(false);
     }
   };
-
   // Conditional rendering of animated items to ensure animations trigger correctly
   const renderAnimatedContent = () => {
     if (!animationReady) return null;

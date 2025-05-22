@@ -32,6 +32,7 @@ import useForceUpdateCheck from './hooks/useForceUpdateCheck';
 import ForceUpdateModal from '~/components/ForceUpdateModal';
 import { disableFontScaling } from './helper/disableFontScaling';
 import Toast from 'react-native-toast-message';
+import { adapty } from 'react-native-adapty';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -167,7 +168,7 @@ export default function RootLayout() {
   // Call onAppForegroundOrInit after initialization
   useEffect(() => {
     if (isInitialized) {
-      console.log("bada")
+      console.log('bada');
       onAppForegroundOrInit();
     }
   }, [isInitialized]);
@@ -228,8 +229,6 @@ export default function RootLayout() {
           showHalfModal(params);
         }, 3000);
       }
-
-
     } catch (error) {
       console.error('Error checking streak status:', error);
     }
@@ -362,18 +361,37 @@ export default function RootLayout() {
   }, [fontsLoaded, riveAssets, appReady]);
 
   // Add effect to handle app state changes
+  const activateAdapty = async () => {
+    try {
+      const isActivated = await adapty.isActivated();
+      console.log('isActivated ==>', isActivated);
+      if (isActivated) return;
+
+      // if(adapty){
+      //   console.log("adapty ==>",adapty?.isActivated());
+
+      // }
+      await adapty.activate('public_live_6JQmP6iR.y5BUrJSqvfMEVYQBPBLz', {
+        lockMethodsUntilReady: true,
+      });
+      console.log('Adapty activated');
+    } catch (error) {
+      console.error('Error activating Adapty:', error);
+    }
+  };
+
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === 'active'
-      ) {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         // App has come to the foreground!
         console.log('App has come to the foreground!');
         onAppForegroundOrInit();
       }
       appState.current = nextAppState;
     };
+    console.log('Activating Adapty');
+
+    activateAdapty();
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
 
@@ -437,15 +455,12 @@ export default function RootLayout() {
                 message: halfModalParams.message,
                 subMessage: halfModalParams.subMessage,
                 penalty: halfModalParams.penalty,
-                daysMissed: halfModalParams.daysMissed
+                daysMissed: halfModalParams.daysMissed,
               }}
             />
 
             {/* Settings Sheet */}
-            <SettingsSheet
-              settingsSheetRef={settingsSheetRef}
-              snapPoints={settingsSnapPoints}
-            />
+            <SettingsSheet settingsSheetRef={settingsSheetRef} snapPoints={settingsSnapPoints} />
 
             {/* Global Prayer Sheet (available from anywhere in the app) */}
             <GlobalPrayerSheet
@@ -481,7 +496,9 @@ export default function RootLayout() {
           </>
         )}
       </BottomSheetModalProvider>
-      {visibleForceUpdate && isInitialized ? <ForceUpdateModal visible={visibleForceUpdate} /> : null}
+      {visibleForceUpdate && isInitialized ? (
+        <ForceUpdateModal visible={visibleForceUpdate} />
+      ) : null}
 
       {/* Toast Message component */}
       <Toast />
