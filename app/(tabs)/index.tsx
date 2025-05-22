@@ -29,9 +29,10 @@ import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import analytics from '~/utils/analytics';
-import { Feather } from '@expo/vector-icons';
 import WidgetHowToSheet from '../../components/WidgetHowToSheet';
 import useSubscriptionStore from '../stores/subscriptionStore';
+import { getLevelData } from '../../utils/levelUtils';
+
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
 const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
@@ -98,6 +99,7 @@ export default function HomeScreen() {
   const gens = useUserStore((state) => state.getGens());
   const lambMood = useUserStore((state) => state.getLambMood());
   const lambName = useUserStore((state) => state.getLambName()); // Get the lamb's name from userStore
+  const lamb = useUserStore((state) => state.getLamb()); // Get the complete lamb object
 
   // State to manage the Rive resource name
   const [artboardName, setArtboardName] = useState('lamb-idle'); // Default artboard
@@ -631,26 +633,84 @@ export default function HomeScreen() {
     analytics.logEvent("HomeScreen_Viewed");
   }, []);
 
-  // Add this before the return statement
+  // Add the hooks with the other state hooks (right before line 619)
   const riveComponent = useMemo(() => {
     if (!riveAssets || !riveReady) return null;
+
+    // Calculate lamb scale based on level (grows with level)
+    // Level 1: 55% size, Level 10+: 110% size (10% larger overall)
+    const lambLevel = lamb?.level || 1;
+    const minScale = 0.55; // 55% size at level 1 (was 50%)
+    const scaleFactor = Math.min(minScale + (lambLevel - 1) * 0.055, 1.1); // Max is now 110%
+    
+    console.log(`Lamb level: ${lambLevel}, Scale factor: ${scaleFactor}`);
 
     // Use the appropriate Rive asset based on pro status
     const lambAssetIndex = isPro ? 2 : 0; // Index 2 for goldLamb, 0 for homeLamb
 
-    return (
-      <Rive
-        key={riveKey}
-        ref={riveRef}
-        url={riveAssets[lambAssetIndex].localUri!}
-        artboardName={artboardName}
-        onError={handleRiveError}
-        style={{ width: '100%', height: '100%', marginTop: 10 }}
-      />
-    );
-  }, [riveAssets, artboardName, riveKey, riveReady, isPro]);
+    // Calculate position adjustment to keep lamb centered
+    // As the lamb gets smaller, we need to adjust its position to stay centered
+    const positionAdjustment = (1 - scaleFactor) * 50; // % adjustment for centering
+
+      return (
+    <View style={{
+      width: '100%',
+      height: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      <View 
+        style={{
+          width: `${scaleFactor * 100}%`, 
+          height: `${scaleFactor * 100}%`,
+          borderWidth: __DEV__ ? 1 : 0,
+          borderColor: __DEV__ ? 'rgba(255,0,0,0.2)' : 'transparent',
+          alignItems: 'center',
+          justifyContent: 'center',
+          // Add overflow hidden to prevent any rendering issues with larger size
+          overflow: 'hidden',
+        }}
+      >
+        <Rive
+          key={`${riveKey}-${lambLevel}`} // Add level to key to force refresh
+          ref={riveRef}
+          url={riveAssets[lambAssetIndex].localUri!}
+          artboardName={artboardName}
+          onError={handleRiveError}
+          style={{ 
+            width: '100%', 
+            height: '100%',
+            marginTop: 10
+          }}
+        />
+      </View>
+    </View>
+  );
+  }, [riveAssets, artboardName, riveKey, riveReady, isPro, lamb?.level]);
 
   const [showWidgetSheet, setShowWidgetSheet] = useState(false);
+  // Add level pill animation states
+  const [isLevelPillExpanded, setIsLevelPillExpanded] = useState(false);
+  const levelPillWidthAnim = useRef(new Animated.Value(0)).current;
+  const levelPillOpacityAnim = useRef(new Animated.Value(0)).current;
+  // Pre-calculate the expanded width for the pill (use a reasonable fixed width instead of screen-based)
+  const pillExpandedWidth = 350; // Fixed reasonable width that won't overflow
+  
+  // Calculate level and XP progress for the level pill display
+  const levelInfo = useMemo(() => {
+    if (!lamb || lamb.xp === undefined) return { 
+      level: 1, 
+      xp: 0, 
+      xpForCurrentLevel: 0,
+      xpForNextLevel: 90, 
+      xpProgress: 0,
+      xpNeeded: 90,
+      progress: 0 
+    };
+    
+    return getLevelData(lamb.xp);
+  }, [lamb?.xp]);
+
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
 
@@ -742,47 +802,135 @@ export default function HomeScreen() {
             style={{ opacity: headerDefaultOpacityAnim }}
             pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}>
             <View className="flex-row items-center flex-1 justify-between">
-              <Text
-                className="text-h1 font-feather text-white tracking-wide right-0"
-                style={{
-                  textShadowColor: 'rgba(0, 0, 0, 0.2)',
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 2,
-                }}>
-                {lambName ? `${lambName}` : 'Shepherd'}
-              </Text>
-              <View className="flex-row gap-2 left-8">
+              {!isLevelPillExpanded && (
+                <Text
+                  className="text-h1 font-feather text-white tracking-wide right-2"
+                  style={{
+                    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 2,
+                  }}>
+                  {lambName 
+                    ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
+                    : 'Shepherd'}
+                </Text>
+              )}
+              <View className="flex-row gap-2 justify-end ml-2">
                 <TouchableOpacity
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    analytics.logEvent("HomeScreen_Tapped_Streak");
-                    Toast.show({
-                      type: 'info',
-                      text1: 'Increase your streak!',
-                      text2: 'Complete your daily bread reading to build your streak.',
-                      position: 'top',
-                      visibilityTime: 4000,
+                    analytics.logEvent("HomeScreen_Tapped_Level");
+                    // Add detailed analytics for XP progress tap
+                    analytics.logEvent("HomeScreen_Tapped_XpProgress", {
+                      level: levelInfo.level,
+                      currentXp: levelInfo.xp,
+                      nextLevelXp: levelInfo.xpForNextLevel,
+                      progress: Math.round(levelInfo.progress)
                     });
+                    // Toggle expanded state
+                    setIsLevelPillExpanded(!isLevelPillExpanded);
+                    
+                    // Animate width and opacity
+                    Animated.parallel([
+                      Animated.timing(levelPillWidthAnim, {
+                        toValue: isLevelPillExpanded ? 0 : 1,
+                        duration: 500,
+                        easing: Easing.out(Easing.exp),
+                        useNativeDriver: false,
+                      }),
+                      Animated.timing(levelPillOpacityAnim, {
+                        toValue: isLevelPillExpanded ? 0 : 1,
+                        duration: 500,
+                        easing: Easing.out(Easing.exp),
+                        useNativeDriver: false,
+                      })
+                    ]).start();
                   }}
                 >
-                  <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
+                  <View style={{ position: 'relative', zIndex: 2 }}>
+                    {!isLevelPillExpanded ? (
+                      <ProgressPill value={0} label={(lambHearts > 0 ? levelInfo.level : '0').toString()} icon={starIcon} />
+                    ) : (
+                      <Animated.View
+                        className="bg-pillBorder rounded-full overflow-hidden flex-row items-center justify-between -mt-8 p-2"
+                        style={{
+                          position: 'absolute',
+                          right: -36,
+                          width: levelPillWidthAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [40, pillExpandedWidth]
+                          })
+                        }}
+                        onLayout={() => {
+                          // Debug log to verify the XP calculation
+                          console.log(`Level Pill Debug - Level: ${levelInfo.level}, Total XP: ${levelInfo.xp}`);
+                          console.log(`XP to next level: ${levelInfo.xpProgress}/${levelInfo.xpNeeded} (${Math.round(levelInfo.progress)}%)`);
+                        }}
+                      >
+                        <View className="bg-white w-8 h-8 rounded-full items-center justify-center">
+                          <Image source={starIcon} className="w-7 h-5" />
+                        </View>
+                        <Animated.View 
+                          className="flex-1 pl-2"
+                          style={{ opacity: levelPillOpacityAnim }}
+                        >
+                          <View className="flex-row items-center justify-between">
+                            <Text className="font-feather text-body text-description">Level {levelInfo.level}</Text>
+                            <Text className="font-din text-xs text-description mt-0.5 mr-2">
+                              {/* Show actual XP values: current XP / XP needed for next level */}
+                              {levelInfo.xp}/{levelInfo.xpForNextLevel} XP
+                            </Text>
+                          </View>
+
+                          <View className="h-3 bg-lightYellow rounded-full overflow-hidden mb-1 mr-2">
+                            <View
+                              className="h-full bg-accentGold rounded-full"
+                              style={{ 
+                                width: `${Math.max(Math.min(levelInfo.progress, 100), 1)}%` 
+                              }}
+                            />
+                          </View>
+                  
+                        </Animated.View>
+                      </Animated.View>
+                    )}
+                  </View>
                 </TouchableOpacity>
-                <TouchableOpacity 
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    analytics.logEvent("HomeScreen_Tapped_Gems");
-                    // Show toast message using Toast component
-                    Toast.show({
-                      type: 'info',
-                      text1: 'Skin shop coming soon!',
-                      text2: 'Customize your lamb with special skins from the shop.',
-                      position: 'top',
-                      visibilityTime: 4000,
-                    });
-                  }}
-                >
-                  <ProgressPill value={0} label={gens.toString()} icon={gemIcon} />
-                </TouchableOpacity>
+                {!isLevelPillExpanded && (
+                  <>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        analytics.logEvent("HomeScreen_Tapped_Star");
+                        Toast.show({
+                          type: 'info',
+                          text1: 'Increase your streak!',
+                          text2: 'Complete your daily bread reading to build your streak.',
+                          position: 'top',
+                          visibilityTime: 4000,
+                        });
+                      }}
+                    >
+                      <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        analytics.logEvent("HomeScreen_Tapped_Gems");
+                        // Show toast message using Toast component
+                        Toast.show({
+                          type: 'info',
+                          text1: 'Skin shop coming soon!',
+                          text2: 'Customize your lamb with special skins from the shop.',
+                          position: 'top',
+                          visibilityTime: 4000,
+                        });
+                      }}
+                    >
+                      <ProgressPill value={0} label={gens.toString()} icon={gemIcon} />
+                    </TouchableOpacity>
+                  </>
+                )}
               </View>
             </View>
           </Animated.View>
@@ -953,7 +1101,7 @@ export default function HomeScreen() {
             />
   
             {/* Widget How-To Sheet test button */}
-            <TouchableOpacity
+            {/* <TouchableOpacity
               onPress={() => setShowWidgetSheet(true)}
               className="mt-6 flex-row items-center justify-center py-3 px-4 bg-amber-100 border border-amber-300 rounded-xl"
               activeOpacity={0.7}
@@ -962,7 +1110,9 @@ export default function HomeScreen() {
               <Text className="font-feather text-base text-amber-800">
                 How to Add Widget
               </Text>
-            </TouchableOpacity>
+            </TouchableOpacity> */}
+
+      
           </ScrollView>
         </Animated.View>
 

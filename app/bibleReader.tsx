@@ -19,8 +19,8 @@ import {
   Modal,
   TouchableWithoutFeedback,
   Switch,
-  ToastAndroid,
   Platform,
+  ToastAndroid,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchChapter, Verse } from './api/bible';
@@ -46,31 +46,13 @@ import Slider from '@react-native-community/slider';
 import NewBibleReader from '~/components/NewBibleReader';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { debounce } from 'lodash';
+import { useReaderSettingsStore, LINE_HEIGHT_KEY, THEME_COLOR_KEY, READER_PREFERENCE_KEY, DEFAULT_FONT_SIZE, MIN_FONT_SIZE, MAX_FONT_SIZE, LINE_HEIGHT_PRESETS, LineHeightPreset, ThemeType as StoreThemeType } from './stores/readerSettingsStore';
 
 // Constants
-const FONT_SIZE_KEY = 'userBibleFontSize';
-const DEFAULT_FONT_SIZE = 20;
-const MIN_FONT_SIZE = 14;
-const MAX_FONT_SIZE = 30;
-
-// Add constants for line height
-const LINE_HEIGHT_KEY = 'userBibleLineHeight';
 const DEFAULT_LINE_HEIGHT = 24;
 const MIN_LINE_HEIGHT = 20;
 const MAX_LINE_HEIGHT = 40;
-
-// Add constant for theme color
-const THEME_COLOR_KEY = 'userBibleThemeColor';
 const DEFAULT_THEME = 'light';
-
-// Replace line height slider related constants with presets
-const LINE_HEIGHT_PRESETS = {
-  COMPACT: 1.2, // 20% more than font size
-  REGULAR: 1.4, // 40% more than font size
-  RELAXED: 1.8, // 80% more than font size
-} as const;
-
-type LineHeightPreset = keyof typeof LINE_HEIGHT_PRESETS;
 
 // Add theme colors constant
 const THEME_COLORS = {
@@ -110,8 +92,6 @@ const THEME_COLORS = {
 
 type ThemeType = keyof typeof THEME_COLORS;
 
-// Add the same key constant in the shared constants section near the top
-const READER_PREFERENCE_KEY = 'userDefaultReaderPreference';
 const DEFAULT_READER_MODE = 'new'; // Changed from 'default' to 'new' to make card view the default
 
 // Define component props
@@ -228,18 +208,18 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
   const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
-  // Track heights to determine if scrolling is needed
   const [contentHeight, setContentHeight] = useState(0);
   const [containerHeight, setContainerHeight] = useState(0);
   const [selectedVerses, setSelectedVerses] = useState<Set<number>>(new Set());
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [currentTheme, setCurrentTheme] = useState<ThemeType>('light');
-  const [lineHeightPreset, setLineHeightPreset] = useState<LineHeightPreset>('REGULAR');
-  const [lineHeightMultiplier, setLineHeightMultiplier] = useState<number>(LINE_HEIGHT_PRESETS.REGULAR);
+  const [pendingChapterData, setPendingChapterData] = useState<ChapterResponse | null>(null);
 
+  // Get settings directly from the store instead of local state
+  const readerSettings = useReaderSettingsStore();
+  const { fontSize, theme: currentTheme, lineHeightPreset, useCardView } = readerSettings;
+  
   // Animation values for button container (using RNAnimated for these)
   const buttonsAnim = useRef(new RNAnimated.Value(0)).current; // 0: hidden, 1: visible
 
@@ -297,28 +277,6 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // In the component, add state for selections history
   const [selectionsHistory, setSelectionsHistory] = useState<SelectionsMap>({});
 
-  // Inside the BibleReader component, add the reader toggle state
-  const [showCardView, setShowCardView] = useState(false);
-  const [useDefaultReader, setUseDefaultReader] = useState(false);
-
-  // Handoff state for chapter data
-  const [pendingChapterData, setPendingChapterData] = useState<ChapterResponse | null>(null);
-
-  // When coming to this tab from a preview, clear the path in progress state
-  useEffect(() => {
-    if (!isEmbedded) {
-      // Check if we're coming from the map, preview, or direct navigation
-      if (effectiveParams?.source === 'map' || effectiveParams?.source === 'debug-button' || effectiveParams?.source === 'preview') {
-        // Keep pathInProgress true if coming from map or preview
-        console.log(`📱 Navigation source: ${effectiveParams?.source}, keeping pathInProgress state.`);
-      } else {
-        // Only reset pathInProgress if not coming from map/preview/debug
-        console.log('📱 Navigation source not map/preview/debug, setting pathInProgress false');
-        setPathInProgress(false);
-      }
-    }
-  }, [isEmbedded, effectiveParams?.source]);
-
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
@@ -339,47 +297,6 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       const chapterToLoad = initialChapter || (urlChapters && urlChapters.length > 0 && !isNaN(urlChapters[0]) ? urlChapters[0] : currentChapter);
 
       console.log(`🎯 Loading: bookId: ${bookIdToLoad}, chapter: ${chapterToLoad}`);
-
-      try {
-        const savedSize = await AsyncStorage.getItem(FONT_SIZE_KEY);
-        const savedLineHeight = await AsyncStorage.getItem(LINE_HEIGHT_KEY);
-        const savedTheme = await AsyncStorage.getItem(THEME_COLOR_KEY);
-
-        if (savedSize !== null) {
-          const parsedSize = parseInt(savedSize, 10);
-          if (!isNaN(parsedSize) && parsedSize >= MIN_FONT_SIZE && parsedSize <= MAX_FONT_SIZE) {
-            console.log(`🔍 Font size found in AsyncStorage: ${parsedSize}`);
-            setFontSize(parsedSize);
-          }
-        }
-
-        if (savedLineHeight !== null) {
-          const parsedLineHeight = parseInt(savedLineHeight, 10);
-          if (!isNaN(parsedLineHeight) && parsedLineHeight >= MIN_LINE_HEIGHT && parsedLineHeight <= MAX_LINE_HEIGHT) {
-            setLineHeightPreset('REGULAR');
-          }
-        }
-
-        // Load saved theme if it exists
-        if (savedTheme !== null && Object.keys(THEME_COLORS).includes(savedTheme)) {
-          console.log(`🎨 Theme color found in AsyncStorage: ${savedTheme}`);
-          setCurrentTheme(savedTheme as ThemeType);
-        }
-
-        // Check if the card view preference exists
-        const readerPref = await AsyncStorage.getItem(READER_PREFERENCE_KEY);
-        // If no preference exists or preference is 'new', use card view
-        const isDefault = readerPref === 'default';
-        setUseDefaultReader(isDefault);
-        setShowCardView(!isDefault);
-        
-        // If no preference has been set yet, set the default to card view
-        if (readerPref === null) {
-          await AsyncStorage.setItem(READER_PREFERENCE_KEY, DEFAULT_READER_MODE);
-        }
-      } catch (e) {
-        console.error("Failed to load settings from AsyncStorage", e);
-      }
 
       // Load from determined values, not default state
       await loadChapter(currentVersion, initialBookName || 'Loading...', bookIdToLoad, chapterToLoad);
@@ -561,17 +478,14 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     }
   };
 
+  // Update the font size update function to use the store directly
   const updateFontSize = async (newSize: number) => {
     if (newSize >= MIN_FONT_SIZE && newSize <= MAX_FONT_SIZE) {
       // Add haptic feedback
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-      setFontSize(newSize);
-      try {
-        await AsyncStorage.setItem(FONT_SIZE_KEY, newSize.toString());
-      } catch (e) {
-        console.error("Failed to save font size to AsyncStorage", e);
-      }
+      
+      // Update the store (which will save to AsyncStorage)
+      readerSettings.setFontSize(newSize);
     }
   };
 
@@ -750,9 +664,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   // Memoize style calculations to prevent unnecessary style object recreations
   const verseTextStyle = useMemo(() => {
+    const lineHeightMultiplier = LINE_HEIGHT_PRESETS[lineHeightPreset];
     const calculatedLineHeight = Math.round(fontSize * lineHeightMultiplier);
     return [styles.verseText, { fontSize: fontSize, lineHeight: calculatedLineHeight }];
-  }, [fontSize, lineHeightMultiplier]);
+  }, [fontSize, lineHeightPreset]);
 
   const verseNumberStyle = useMemo(() => {
     return [styles.verseNumber, { fontSize: fontSize }];
@@ -967,72 +882,56 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     updateFontSize(newSize);
   }, []);
 
-  const handleThemeChange = useCallback(async (theme: ThemeType) => {
-    setCurrentTheme(theme);
+  // Update theme directly through the store
+  const handleThemeChange = useCallback((theme: ThemeType) => {
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     
-    // Save theme preference to AsyncStorage
-    try {
-      await AsyncStorage.setItem(THEME_COLOR_KEY, theme);
-      console.log(`🎨 Saved theme preference: ${theme}`);
-    } catch (e) {
-      console.error("Failed to save theme preference to AsyncStorage", e);
-    }
-  }, []);
+    // Update the store (which will save to AsyncStorage)
+    readerSettings.setTheme(theme);
+  }, [readerSettings]);
 
-  // Add the handler for line height changes
-  const handleLineHeightChange = useCallback(async (preset: LineHeightPreset) => {
-    setLineHeightPreset(preset);
-    setLineHeightMultiplier(LINE_HEIGHT_PRESETS[preset]);
+  // Update line height directly through the store
+  const handleLineHeightChange = useCallback((preset: LineHeightPreset) => {
+    // Update store (which will save to AsyncStorage)
+    readerSettings.setLineHeightPreset(preset);
+    
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    try {
-      await AsyncStorage.setItem(LINE_HEIGHT_KEY, LINE_HEIGHT_PRESETS[preset].toString());
-    } catch (e) {
-      console.error("Failed to save line height to AsyncStorage", e);
-    }
-  }, []);
+  }, [readerSettings]);
 
-  // Add the handler for toggling between reader types
+  // Update card view toggle handler to use the store directly
   const handleCardViewToggle = useCallback(async (value: boolean) => {
     console.log('[BibleReader] CardViewToggle value', value);
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    // Update the store (which will save to AsyncStorage)
+    readerSettings.setCardView(value);
 
     if (value) {
       // Instantly hide modal when switching to Card View
       setIsModalVisible(false);
-      setShowCardView(true);
-      setUseDefaultReader(false);
     } else {
       // When switching to Default Reader, close modal and wait for overlay to disappear
       setIsModalVisible(false);
       setTimeout(() => {
         (async () => {
-          setShowCardView(false);
-          setUseDefaultReader(true);
           try {
-            console.log('Setting reader preference to: default');
-            await AsyncStorage.setItem(READER_PREFERENCE_KEY, 'default');
             await loadChapter(currentVersion, currentBook, currentBookId, currentChapter);
             const tempChapterData = chapterData ? { ...chapterData } : null;
             setTimeout(() => {
               if (!chapterData && tempChapterData && 'book' in tempChapterData) {
                 setChapterData(tempChapterData);
               }
-              setSwitchingReaderType(false);
             }, 300);
             analytics.logEvent("BibleReader_SwitchedToDefaultReader");
           } catch (error) {
-            console.error('Failed to save reader preference:', error);
+            console.error('Failed to switch reader mode:', error);
           }
         })();
       }, 350); // Wait for modal close animation to finish
     }
-  }, [currentVersion, currentBook, currentBookId, currentChapter, loadChapter]);
-
-  // Inside the component body, add loading state and toast/clipboard functions
-  const [switchingReaderType, setSwitchingReaderType] = useState(false);
+  }, [currentVersion, currentBook, currentBookId, currentChapter, loadChapter, chapterData, readerSettings]);
 
   // Function to receive chapter data from Card View before switching
   const handleHandoffChapterData = useCallback((data: ChapterResponse | null) => {
@@ -1041,60 +940,29 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   // Function to switch from card view back to default reader
   const handleSwitchToDefaultReader = useCallback(async () => {
-    setSwitchingReaderType(true);
-    // Ensure modal is closed before switching
     setIsModalVisible(false);
-    // Force the slide animation value to 0 immediately
-    slideAnim.setValue(0);
     console.log('[BibleReader] Explicitly closing settings modal when switching to default reader');
-    console.log('[BibleReader] Debug - Before switch: useDefaultReader=' + useDefaultReader + ', showCardView=' + showCardView);
+    console.log('[BibleReader] Debug - Before switch: useCardView=' + useCardView);
     analytics.logEvent("DefaultReader_Tapped_ToggleDefaultReader");
     try {
       // Switch from card to default reader
-      setShowCardView(false);
-      setUseDefaultReader(true);
-
+      readerSettings.setCardView(false);
+      
       // Reload current chapter data to ensure full content
       await loadChapter(currentVersion, currentBook, currentBookId, currentChapter);
       
       // After loading is complete, ensure modal is still closed
       setIsModalVisible(false);
-      slideAnim.setValue(0);
-      
-      setSwitchingReaderType(false);
-      
-      // Check final state 
-      setTimeout(() => {
-        console.log('[BibleReader] Debug - After switch: useDefaultReader=' + useDefaultReader + ', showCardView=' + showCardView + ', isModalVisible=' + isModalVisible);
-      }, 100);
       
       analytics.logEvent("BibleReader_SwitchedToDefaultReader");
     } catch (e) {
       console.error("Failed to switch to default reader", e);
-      setSwitchingReaderType(false);
-      // Still make sure modal is closed
       setIsModalVisible(false);
-      slideAnim.setValue(0);
     }
-  }, [currentVersion, currentBook, currentBookId, currentChapter, loadChapter, 
-    slideAnim, useDefaultReader, showCardView, isModalVisible
-  ]);
-
-  // Add conditional rendering for reader types
-  if (switchingReaderType) {
-    // Show a loading indicator while switching reader types
-    return (
-      <SafeAreaView className="flex-1 bg-background items-center justify-center">
-        <View className="items-center">
-          <ActivityIndicator size="large" color="#DCB280" />
-          <Text className="text-text mt-4 font-feather text-base">Switching Reader...</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  }, [currentVersion, currentBook, currentBookId, currentChapter, loadChapter, useCardView, readerSettings]);
 
   // When in path mode or if user enabled Card View preference, render the NewBibleReader component
-  if (!useDefaultReader && (pathInProgress || showCardView)) {
+  if (useCardView || pathInProgress) {
     return (
       <>
         <NewBibleReader 
@@ -1136,10 +1004,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                     <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>Card View</Text>
                     <Switch
                       trackColor={{ false: "#E0E0E0", true: "#F7B500" }}
-                      thumbColor={showCardView ? "#FFFFFF" : "#FFFFFF"}
+                      thumbColor={useCardView ? "#FFFFFF" : "#FFFFFF"}
                       ios_backgroundColor="#E0E0E0"
                       onValueChange={handleCardViewToggle}
-                      value={showCardView}
+                      value={useCardView}
                     />
                   </View>
 
@@ -1192,47 +1060,47 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       </>
     );
   } else {
-      // Use pendingChapterData if available
-  const effectiveChapterData = pendingChapterData || chapterData;
-  if (loading && !effectiveChapterData) {
-    return <PulsingDotsIndicator />;
-  }
-  if (error && !effectiveChapterData) {
-    return <Text className="text-red-500 mt-10 text-center font-feather px-4">Error loading chapter: {error}</Text>;
-  }
+    // Use pendingChapterData if available
+    const effectiveChapterData = pendingChapterData || chapterData;
+    if (loading && !effectiveChapterData) {
+      return <PulsingDotsIndicator />;
+    }
+    if (error && !effectiveChapterData) {
+      return <Text className="text-red-500 mt-10 text-center font-feather px-4">Error loading chapter: {error}</Text>;
+    }
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor: THEME_COLORS[currentTheme].background }]}>
-      <View style={[styles.newHeaderContainer, {
-        backgroundColor: THEME_COLORS[currentTheme].background,
-        borderBottomColor: THEME_COLORS[currentTheme].border
-      }]}>
-        <View style={styles.headerLeft}>
-          {pathInProgress && (
-            <TouchableOpacity onPress={handleBackNavigation} style={styles.backButton}>
-              <Text style={[styles.backButtonText, { color: THEME_COLORS[currentTheme].text }]}>←</Text>
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: THEME_COLORS[currentTheme].background }]}>
+        <View style={[styles.newHeaderContainer, {
+          backgroundColor: THEME_COLORS[currentTheme].background,
+          borderBottomColor: THEME_COLORS[currentTheme].border
+        }]}>
+          <View style={styles.headerLeft}>
+            {pathInProgress && (
+              <TouchableOpacity onPress={handleBackNavigation} style={styles.backButton}>
+                <Text style={[styles.backButtonText, { color: THEME_COLORS[currentTheme].text }]}>←</Text>
+              </TouchableOpacity>
+            )}
+
+            <TouchableOpacity style={styles.headerButton} onPress={handleOpenSelector}>
+              <Text style={[styles.headerButtonText, { color: THEME_COLORS[currentTheme].text }]}>
+                {effectiveChapterData ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}` : 'Loading...'}
+              </Text>
             </TouchableOpacity>
-          )}
+          </View>
 
-          <TouchableOpacity style={styles.headerButton} onPress={handleOpenSelector}>
-            <Text style={[styles.headerButtonText, { color: THEME_COLORS[currentTheme].text }]}>
-              {effectiveChapterData ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}` : 'Loading...'}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity onPress={handlePresentModal} style={styles.fontSizeButton}>
+              <Text style={[styles.fontSizeButtonText, { color: THEME_COLORS[currentTheme].text }]}>Aa</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
-        <View style={styles.headerRight}>
-          <TouchableOpacity onPress={handlePresentModal} style={styles.fontSizeButton}>
-            <Text style={[styles.fontSizeButtonText, { color: THEME_COLORS[currentTheme].text }]}>Aa</Text>
-          </TouchableOpacity>
+        <View style={[styles.contentArea, { backgroundColor: THEME_COLORS[currentTheme].background }]}>
+          {effectiveChapterData && renderBibleContent(effectiveChapterData)}
         </View>
-      </View>
 
-      <View style={[styles.contentArea, { backgroundColor: THEME_COLORS[currentTheme].background }]}>
-        {effectiveChapterData && renderBibleContent(effectiveChapterData)}
-      </View>
-
-      {/* Bottom Navigation Row - Contains both Finish Reading and Nav Buttons */}
+      {/* Bottom Navigation Row - Contains Next Chapter/Book and Nav Buttons */}
       <RNAnimated.View 
         style={[{
           position: 'absolute',
@@ -1246,13 +1114,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           zIndex: 10,
         }, buttonsContainerStyle]}
       >
-        {/* Finish Reading Button (only in path mode) */}
+        {/* Next Chapter/Book Button (in path mode) */}
         {!isEmbedded && pathInProgress && (
           <View style={{flex: 1, marginRight: -100}}>
             <SideButton
-              title="Finish Reading"
-              onPress={handleFinishReading}
-              disabled={!isFinishEnabled}
+              title={isAtEndChapter ? "Complete Unit" : "Next Chapter"}
+              onPress={isAtEndChapter ? handleFinishReading : navigateToNextChapter}
+              disabled={!hasScrolledToBottom || loading}
             />
           </View>
         )}
@@ -1277,89 +1145,89 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         </View>
       </RNAnimated.View>
 
-      {/* Settings Modal for DEFAULT reader branch!!! */}
-      <Modal
-        visible={isModalVisible}
-        transparent
-        animationType="none"
-        onRequestClose={handleCloseModal}
-      >
-        <TouchableWithoutFeedback onPress={handleCloseModal}>
-          <View style={styles.modalOverlay}>
-            <TouchableWithoutFeedback>
-              <RNAnimated.View
-                style={[styles.modalContent, {
-                  backgroundColor: THEME_COLORS[currentTheme].modalBackground,
-                  transform: [{
-                    translateY: slideAnim.interpolate({
-                      inputRange: [0, 1],
-                      outputRange: [300, 0],
-                    }),
-                  }],
-                }]}
-              >
-                <View style={[styles.modalHandle, { backgroundColor: THEME_COLORS[currentTheme].border }]} />
+        {/* Settings Modal for DEFAULT reader branch!!! */}
+        <Modal
+          visible={isModalVisible}
+          transparent
+          animationType="none"
+          onRequestClose={handleCloseModal}
+        >
+          <TouchableWithoutFeedback onPress={handleCloseModal}>
+            <View style={styles.modalOverlay}>
+              <TouchableWithoutFeedback>
+                <RNAnimated.View
+                  style={[styles.modalContent, {
+                    backgroundColor: THEME_COLORS[currentTheme].modalBackground,
+                    transform: [{
+                      translateY: slideAnim.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [300, 0],
+                      }),
+                    }],
+                  }]}
+                >
+                  <View style={[styles.modalHandle, { backgroundColor: THEME_COLORS[currentTheme].border }]} />
 
-                {/* Card View Toggle */}
-                <View style={styles.toggleContainer}>
-                  <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>Card View</Text>
-                  <Switch
-                    trackColor={{ false: "#E0E0E0", true: "#F7B500" }}
-                    thumbColor={showCardView ? "#FFFFFF" : "#FFFFFF"}
-                    ios_backgroundColor="#E0E0E0"
-                    onValueChange={handleCardViewToggle}
-                    value={showCardView}
-                  />
-                </View>
+                  {/* Card View Toggle */}
+                  <View style={styles.toggleContainer}>
+                    <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>Card View</Text>
+                    <Switch
+                      trackColor={{ false: "#E0E0E0", true: "#F7B500" }}
+                      thumbColor={useCardView ? "#FFFFFF" : "#FFFFFF"}
+                      ios_backgroundColor="#E0E0E0"
+                      onValueChange={handleCardViewToggle}
+                      value={useCardView}
+                    />
+                  </View>
 
-                {/* Font Size Controls */}
-                <View style={styles.sliderContainer}>
-                  <Text style={[styles.sliderLabel, { color: THEME_COLORS[currentTheme].text }]}>A</Text>
-                  <Slider
-                    style={styles.slider}
-                    minimumValue={MIN_FONT_SIZE}
-                    maximumValue={MAX_FONT_SIZE}
-                    value={fontSize}
-                    onValueChange={handleFontSizeChange}
-                    minimumTrackTintColor="#DCB280"
-                    maximumTrackTintColor={THEME_COLORS[currentTheme].sliderTrack}
-                    thumbTintColor="#DCB280"
-                  />
-                  <Text style={[styles.sliderLabelLarge, { color: THEME_COLORS[currentTheme].text }]}>A</Text>
-                </View>
+                  {/* Font Size Controls */}
+                  <View style={styles.sliderContainer}>
+                    <Text style={[styles.sliderLabel, { color: THEME_COLORS[currentTheme].text }]}>A</Text>
+                    <Slider
+                      style={styles.slider}
+                      minimumValue={MIN_FONT_SIZE}
+                      maximumValue={MAX_FONT_SIZE}
+                      value={fontSize}
+                      onValueChange={handleFontSizeChange}
+                      minimumTrackTintColor="#DCB280"
+                      maximumTrackTintColor={THEME_COLORS[currentTheme].sliderTrack}
+                      thumbTintColor="#DCB280"
+                    />
+                    <Text style={[styles.sliderLabelLarge, { color: THEME_COLORS[currentTheme].text }]}>A</Text>
+                  </View>
 
-                {/* Line Height Controls */}
-                <View style={styles.lineHeightContainer}>
-                  <View style={styles.lineHeightButtons}>
-                    {(['COMPACT','REGULAR','RELAXED'] as const).map(p=> (
+                  {/* Line Height Controls */}
+                  <View style={styles.lineHeightContainer}>
+                    <View style={styles.lineHeightButtons}>
+                      {(['COMPACT','REGULAR','RELAXED'] as const).map(p=> (
+                        <TouchableOpacity
+                          key={p}
+                          style={[styles.lineHeightButton, lineHeightPreset === p && styles.lineHeightButtonSelected, { borderColor: THEME_COLORS[currentTheme].border }]}
+                          onPress={() => handleLineHeightChange(p)}
+                        >
+                          <Text style={[styles.lineHeightButtonText, { color: THEME_COLORS[currentTheme].text }, lineHeightPreset === p && styles.lineHeightButtonTextSelected]}>{p.charAt(0)+p.slice(1).toLowerCase()}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </View>
+
+                  {/* Theme Buttons */}
+                  <View style={styles.themeButtonsContainer}>
+                    {(Object.keys(THEME_COLORS) as ThemeType[]).map(k=> (
                       <TouchableOpacity
-                        key={p}
-                        style={[styles.lineHeightButton, lineHeightPreset === p && styles.lineHeightButtonSelected, { borderColor: THEME_COLORS[currentTheme].border }]}
-                        onPress={() => handleLineHeightChange(p)}
-                      >
-                        <Text style={[styles.lineHeightButtonText, { color: THEME_COLORS[currentTheme].text }, lineHeightPreset === p && styles.lineHeightButtonTextSelected]}>{p.charAt(0)+p.slice(1).toLowerCase()}</Text>
-                      </TouchableOpacity>
+                        key={k}
+                        style={[styles.themeButton,{backgroundColor:THEME_COLORS[k].background},currentTheme===k&&[styles.selectedThemeButton,{borderColor:THEME_COLORS[k].border}]]}
+                        onPress={()=>handleThemeChange(k)}
+                      />
                     ))}
                   </View>
-                </View>
-
-                {/* Theme Buttons */}
-                <View style={styles.themeButtonsContainer}>
-                  {(Object.keys(THEME_COLORS) as ThemeType[]).map(k=> (
-                    <TouchableOpacity
-                      key={k}
-                      style={[styles.themeButton,{backgroundColor:THEME_COLORS[k].background},currentTheme===k&&[styles.selectedThemeButton,{borderColor:THEME_COLORS[k].border}]]}
-                      onPress={()=>handleThemeChange(k)}
-                    />
-                  ))}
-                </View>
-              </RNAnimated.View>
-            </TouchableWithoutFeedback>
-          </View>
-        </TouchableWithoutFeedback>
-      </Modal>
-    </SafeAreaView>
-  );
+                </RNAnimated.View>
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+      </SafeAreaView>
+    );
   }
 
   // Ensure pathInProgress is reset when unmounting (e.g., via swipe gesture)

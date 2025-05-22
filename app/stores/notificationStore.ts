@@ -11,6 +11,7 @@ export const NOTIFICATION_IDS = {
   STREAK_WARNING: 'streak-warning',
   STREAK_BROKEN: 'streak-broken',
   DAILY_REMINDER: 'daily-reminder',
+  ADAPTIVE_REMINDER: 'adaptive-reminder',
 };
 
 // Type for the timestamp from Firestore
@@ -29,11 +30,17 @@ interface NotificationState {
   // Store the preferred notification time
   preferredNotificationTime: NotificationTimeOption | null;
   
+  // Store the last adaptive notification time
+  lastAdaptiveNotificationTime: Date | null;
+  
   // Action: Schedule streak reminder notifications
   scheduleStreakReminders: (test?: boolean) => Promise<void>;
   
   // Action: Schedule daily reading reminder
   scheduleDailyReminder: (timeOption: NotificationTimeOption) => Promise<void>;
+  
+  // Action: Schedule adaptive notifications based on current usage time
+  scheduleAdaptiveNotifications: () => Promise<void>;
   
   // Action: Cancel all streak notifications
   cancelStreakNotifications: () => Promise<void>;
@@ -108,6 +115,7 @@ export const useNotificationStore = create<NotificationState>()(
       lastScheduledDate: null,
       notificationsEnabled: true,
       preferredNotificationTime: null,
+      lastAdaptiveNotificationTime: null,
       
       setNotificationsEnabled: (enabled) => set({ notificationsEnabled: enabled }),
       
@@ -140,6 +148,18 @@ export const useNotificationStore = create<NotificationState>()(
             if (get().lastScheduledDate !== todayString) {
               console.log('📱 Scheduling streak reminders because they haven\'t been scheduled today');
               await get().scheduleStreakReminders();
+              
+              // Also schedule adaptive notifications if we don't have any yet
+              const scheduledNotifications = await Notifications.getAllScheduledNotificationsAsync();
+              const hasAdaptiveNotifications = scheduledNotifications.some(n => 
+                n.identifier === NOTIFICATION_IDS.ADAPTIVE_REMINDER || 
+                n.identifier.startsWith(`${NOTIFICATION_IDS.ADAPTIVE_REMINDER}-day-`)
+              );
+              
+              if (!hasAdaptiveNotifications) {
+                console.log('📱 No adaptive notifications found, scheduling them now');
+                await get().scheduleAdaptiveNotifications();
+              }
             } else {
               console.log('📱 Streak reminders already scheduled today, skipping');
             }
@@ -507,7 +527,89 @@ export const useNotificationStore = create<NotificationState>()(
         }
       },
       
-      // Action: Specifically reschedule streak notifications for the next day (after streak completion)
+      // Schedule adaptive notifications based on current usage time
+      scheduleAdaptiveNotifications: async () => {
+        try {
+          // Check if notifications are enabled
+          if (!get().notificationsEnabled) {
+            console.log('📱 Adaptive notifications: Notifications are disabled');
+            return;
+          }
+
+          // Get permission
+          const { status } = await Notifications.getPermissionsAsync();
+          if (status !== 'granted') {
+            console.log('📱 Adaptive notifications: Permission not granted');
+            return;
+          }
+
+          // Calculate time for tomorrow, 30 minutes earlier than current time
+          const now = new Date();
+          const adaptiveTime = new Date(now);
+          adaptiveTime.setDate(adaptiveTime.getDate() + 1); // Set to tomorrow
+          adaptiveTime.setMinutes(adaptiveTime.getMinutes() - 30); // 30 minutes earlier
+
+          console.log(`📱 Adaptive notifications: Setting time to ${adaptiveTime.toLocaleString()}`);
+
+          // Store this time for future reference
+          set({ lastAdaptiveNotificationTime: adaptiveTime });
+
+          // Cancel existing adaptive notifications
+          await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.ADAPTIVE_REMINDER);
+          
+          // Cancel the daily reminder notifications (but not streak warnings)
+          await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.DAILY_REMINDER);
+          console.log('📱 Cancelled existing daily reminder notifications');
+
+          // Schedule notification for tomorrow at the adaptive time
+          await Notifications.scheduleNotificationAsync({
+            content: {
+              title: "It's your perfect time for reflection",
+              body: "Take a moment to read scripture and connect with God.",
+              sound: true,
+              data: { type: 'adaptive-reminder' }
+            },
+            trigger: {
+              type: Notifications.SchedulableTriggerInputTypes.DATE,
+              date: adaptiveTime,
+            },
+            identifier: NOTIFICATION_IDS.ADAPTIVE_REMINDER
+          });
+
+          console.log(`📱 Adaptive notification scheduled for ${adaptiveTime.toLocaleString()}`);
+
+          // Schedule notifications for the rest of the week at the same time
+          const daysToSchedule = 6; // Schedule for the next 6 days (week total)
+          for (let i = 1; i <= daysToSchedule; i++) {
+            const futureDate = new Date(adaptiveTime);
+            futureDate.setDate(futureDate.getDate() + i);
+            
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: "It's your perfect time for reflection",
+                body: "Take a moment to read scripture and connect with God.",
+                sound: true,
+                data: { type: 'adaptive-reminder', dayOffset: i }
+              },
+              trigger: {
+                type: Notifications.SchedulableTriggerInputTypes.DATE,
+                date: futureDate,
+              },
+              identifier: `${NOTIFICATION_IDS.ADAPTIVE_REMINDER}-day-${i}`
+            });
+            
+            console.log(`📱 Adaptive notification scheduled for day ${i+1}: ${futureDate.toLocaleString()}`);
+          }
+
+          // Verify the notifications were scheduled
+          await get().listScheduledNotifications();
+
+        } catch (error) {
+          console.error('📱 Failed to schedule adaptive notifications:', error);
+        }
+      },
+      
+      // Update the rescheduleStreakNotificationsForNextDay function to also call scheduleAdaptiveNotifications
       rescheduleStreakNotificationsForNextDay: async () => {
         try {
           // Cancel current streak notifications
@@ -516,7 +618,11 @@ export const useNotificationStore = create<NotificationState>()(
           // Schedule new streak notifications for the next day
           await get().scheduleStreakReminders();
           
-          console.log('📱 Streak notifications rescheduled for the next day');
+          // Also schedule adaptive notifications based on current time
+          // This will replace the daily reminders but keep streak warnings
+          await get().scheduleAdaptiveNotifications();
+          
+          console.log('📱 Streak notifications and adaptive notifications rescheduled for the next day');
           return true;
         } catch (error) {
           console.error('Failed to reschedule streak notifications for the next day:', error);

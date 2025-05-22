@@ -113,6 +113,7 @@ export default function SaveProgressScreen() {
     try {
       // Get all responses from store to ensure we have latest data
       const allResponses = useOnboardingStore.getState().getAllResponses();
+      console.log('Onboarding responses:', JSON.stringify(allResponses)); // Debug log to check all responses
 
       // Map the stored path to a spiritual goal if available
       // Fallback to intent if no path selected
@@ -141,14 +142,16 @@ export default function SaveProgressScreen() {
         selectedPathId: allResponses.selectedPath || undefined,
         lamb: {
           level: 1,
-          xp: 0,
+          xp: 90,
           mood: 'lamb-idle',
           hearts: 50,
-          name: allResponses.lambName || '',
+          name: allResponses.lambName || '', // Make sure 'lambName' is accessed correctly
           skin: 'default',
         },
-        username: allResponses.username || '',
+        username: allResponses.username || '', // Make sure 'username' is accessed correctly
       };
+
+      console.log('Creating user data:', JSON.stringify(userData)); // Debug log to check user data
 
       analytics.logEvent('OnboardingSignUp_Completed');
       analytics.setUserId(uid);

@@ -169,7 +169,7 @@ export default function OnboardingUsernameScreen() {
   // Show loading indicator while assets load
   if (!riveAssets) {
     return (
-      <View className="flex-1 items-center justify-center bg-surfaceCream">
+      <View className="flex-1 items-center justify-center bg-surfaceCream pt-4">
         <ActivityIndicator size="large" color="#3C584A" />
         <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
       </View>
@@ -177,7 +177,7 @@ export default function OnboardingUsernameScreen() {
   }
 
   return (
-    <Animated.View style={screenStyle} className="px-6 pt-12">
+    <Animated.View style={screenStyle} className="px-6  pt-6">
       {/* Question Text */}
       <Animated.View style={titleStyle}>
         <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-8">

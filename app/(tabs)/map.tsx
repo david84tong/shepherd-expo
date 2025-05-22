@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useAssets } from 'expo-asset';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -21,6 +20,7 @@ import { useUserStore } from '../stores/userStore';
 import { heightScreen } from '~/utils/dimensions';
 import * as Haptics from 'expo-haptics';
 import useSubscriptionStore from '../stores/subscriptionStore';
+import { useHomeStore } from '../stores/homeStore';
 
 // Define our custom section type
 type BibleSection = {
@@ -148,6 +148,9 @@ export default function MapScreen() {
   // Get selectedPath from the store inside the component
   const selectedPath = usePathStore((state) => state.selectedPath);
 
+  // Get reading completion status from the home store
+  const readingCompleted = useHomeStore((state) => state.readingCompleted);
+
   // Calculate sections inside the component using useMemo
   const sections = useMemo(() => {
     // Choose paths based on user's frequencyGoal
@@ -203,8 +206,10 @@ export default function MapScreen() {
     }
   }, [sections]);
 
-  const isProMember = useSubscriptionStore(state => state.isProMember)
+  // Get pro status from subscription store
+  const isProMember = useSubscriptionStore(state => state.isProMember);
   const subscriptionStore = useSubscriptionStore();
+  
   // Handle subscription button press using the store action
   const handleSubscriptionPress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -449,16 +454,23 @@ export default function MapScreen() {
 
     const isLastUnitInSection = index === section.data.length - 1;
 
-
-    function onNodeClick(unit: Unit) {
-      console.log('onNodeClick', unit);
-      if (!isProMember && section.index > 0) {
-        handleSubscriptionPress()
+    // Handle node click with additional checks for non-pro users and reading completion
+    function onNodePress(unit: Unit) {
+      console.log('onNodePress', unit);
+      console.log('Debug - Pro status:', isProMember, 'Reading completed:', readingCompleted, 'Section index:', section.index);
+      
+      // Only show pricing screen if ALL of these conditions are true:
+      // 1. User is not a pro member (proStatus !== "pro")
+      // 2. User has completed their daily reading (readingCompleted is true)
+      // 3. They're trying to access a non-first path (section.index > 0)
+      if (!isProMember && readingCompleted && section.index > 0) {
+        console.log('Showing pricing screen: user is not pro, has completed reading, and is trying to access a non-first path');
+        handleSubscriptionPress();
       } else {
+        handleNodePress(unit, isLastUnitInSection);
       }
-      handleNodePress(unit, isLastUnitInSection)
-
     }
+
     return (
       <View className="relative">
         <PathNode
@@ -466,9 +478,8 @@ export default function MapScreen() {
           unit={item}
           status={status}
           alignment={alignment}
-          onPress={onNodeClick}
+          onPress={onNodePress}
         />
-
 
         {/* Sheep decoration at second node position in every section - Only render when visible */}
         {isSecondNodeInSection && section.riveName && section.artboardName && false && (
@@ -497,7 +508,7 @@ export default function MapScreen() {
         )}
       </View>
     );
-  }, [getStatus, handleNodePress, isNextUnit, isSectionUnlocked]); // Added isSectionUnlocked to dependencies
+  }, [getStatus, handleNodePress, isNextUnit, isSectionUnlocked, isProMember, readingCompleted]); // Updated dependencies
 
   // Render section header - Improved with memo
   const renderSectionHeader = useCallback(({ section }: { section: BibleSection }) => {
