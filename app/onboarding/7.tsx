@@ -93,11 +93,11 @@ export default function OnboardingAgeRangeScreen() {
       title: "I'm a parent/guardian",
     },
     {
-      id: 'under-13',
-      title: 'Under 13',
+      id: 'under-12',
+      title: '12 or under',
     },
     {
-      id: '14-17',
+      id: '13-17',
       title: '13-17',
     },
     {
