@@ -996,7 +996,7 @@ export default function HomeScreen() {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   // router.push('/PricingScreen' as any);
                   // setFromScreen('home-super');
-                  useSubscriptionStore.getState().presentPaywall();
+                  useSubscriptionStore.getState().presentHalfOffPaywall();
                 }
               }}
               activeOpacity={0.8}
@@ -1032,7 +1032,7 @@ export default function HomeScreen() {
                     textShadowRadius: 3,
                   }}
                 >
-                  SUPER
+                  🎁
                 </Text>
               </LinearGradient>
             </TouchableOpacity>

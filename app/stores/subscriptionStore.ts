@@ -56,7 +56,7 @@ interface SubscriptionState {
   initializeRevenueCat: (apiKey: string, userId: string | null) => Promise<void>;
   presentPaywall: () => Promise<PAYWALL_RESULT | null>;
   presentHalfOffPaywall: () => Promise<PAYWALL_RESULT | null>;
-
+  presentFreeTrialPaywall: () => Promise<PAYWALL_RESULT | null>;
   purchasePackage: (pack: PurchasesPackage, onSuccess?: () => void) => Promise<void>;
   getCustomerInfo: () => Promise<void>;
   handleReferralCode: (code: string) => Promise<void>;
@@ -114,9 +114,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       );
     }
   },
-  presentHalfOffPaywall: async () => {
+  presentFreeTrialPaywall: async () => {
     try {
-      const paywall = await adapty.getPaywall('half_off');
+      analytics.logEvent('presentFreeTrialPaywall', {
+        fromScreen: get().fromScreen,
+      });
+      const paywall = await adapty.getPaywall('free-trial');
       console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
       const view = await createPaywallView(paywall);
 
@@ -172,10 +175,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       return PAYWALL_RESULT.ERROR;
     }
   },
-
-  presentPaywall: async () => {
+  presentHalfOffPaywall: async () => {
+    analytics.logEvent('presentHalfOffPaywall', {
+      fromScreen: get().fromScreen,
+    });
     try {
-      const paywall = await adapty.getPaywall('shepherd_paywall');
+      const paywall = await adapty.getPaywall('halfoff');
       console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
       const view = await createPaywallView(paywall);
 
@@ -183,9 +188,6 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
       view.registerEventHandlers({
         onCloseButtonPress() {
-         setTimeout(() => {
-          get().presentHalfOffPaywall();
-         }, 500);
           result = PAYWALL_RESULT.CANCELLED;
           return true;
         },
@@ -206,11 +208,83 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           console.log('===>purrchase started');
         },
         onPurchaseCancelled() {
-          result = PAYWALL_RESULT.CANCELLED;
-          console.log('cancelled');
+          setTimeout(() => {
+            get().presentFreeTrialPaywall();
+           }, 500);
+            result = PAYWALL_RESULT.CANCELLED;
+            return true;
         },
         onPurchaseFailed() {
           result = PAYWALL_RESULT.ERROR;
+        },
+        onRestoreFailed() {
+          result = PAYWALL_RESULT.ERROR;
+        },
+        onRenderingFailed() {
+          result = PAYWALL_RESULT.ERROR;
+        },
+        onLoadingProductsFailed() {
+          result = PAYWALL_RESULT.ERROR;
+        },
+      });
+      await view.present();
+      const products = await adapty.getPaywallProducts(paywall);
+      console.log('products ==>', products);
+      return result;
+    } catch (error) {
+      console.error('Adapty paywall error:', error);
+      analytics.logEvent('PricingScreen_Paywall_Error', {
+        errorMessage: (error as Error)?.message || 'Unknown error',
+      });
+      return PAYWALL_RESULT.ERROR;
+    }
+  },
+
+  presentPaywall: async () => {
+    analytics.logEvent('presentPaywall', {
+      fromScreen: get().fromScreen,
+    });
+    try {
+      const paywall = await adapty.getPaywall('shepherd_paywall');
+      console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
+      const view = await createPaywallView(paywall);
+
+      let result: PAYWALL_RESULT | null = null;
+
+      view.registerEventHandlers({
+        onCloseButtonPress() {        
+          result = PAYWALL_RESULT.CANCELLED;
+          return true;
+        },
+        onPurchaseCompleted() {
+          result = PAYWALL_RESULT.PURCHASED;
+          moveUserToProMode();
+          return true;
+        },
+        onRestoreCompleted() {
+          result = PAYWALL_RESULT.RESTORED;
+          moveUserToProMode(true);
+          return true;
+        },
+        onProductSelected() {
+          console.log('===>product selected');
+        },
+        onPurchaseStarted() {
+          console.log('===>purrchase started');
+        },
+        onPurchaseCancelled() {
+          setTimeout(() => {
+            get().presentHalfOffPaywall();
+           }, 500);
+            result = PAYWALL_RESULT.CANCELLED;
+            return true;
+        },
+        onPurchaseFailed() {
+          setTimeout(() => {
+            get().presentHalfOffPaywall();
+           }, 500);
+            result = PAYWALL_RESULT.CANCELLED;
+            return true;
         },
         onRestoreFailed() {
           result = PAYWALL_RESULT.ERROR;
