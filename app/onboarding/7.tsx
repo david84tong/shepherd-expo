@@ -89,6 +89,10 @@ export default function OnboardingAgeRangeScreen() {
 
   const options = [
     {
+      id: 'parent',
+      title: "I'm a parent/guardian",
+    },
+    {
       id: 'under-12',
       title: 'Under 12',
     },
@@ -113,13 +117,9 @@ export default function OnboardingAgeRangeScreen() {
       title: '45-54',
     },
     {
-      id: '55-64',
+      id: '55-64+',
       title: '55-64',
-    },
-    {
-      id: '65-plus',
-      title: '65+',
-    },
+    },   
 
   ] as const;
 

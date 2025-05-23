@@ -32,7 +32,6 @@ import analytics from '~/utils/analytics';
 import WidgetHowToSheet from '../../components/WidgetHowToSheet';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import { getLevelData } from '../../utils/levelUtils';
-
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
 const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
@@ -109,7 +108,7 @@ export default function HomeScreen() {
   const lambSizeAnim = useRef(new Animated.Value(256)).current; // Start with full size (256px)
 
   // Get subscription state and actions from the store
-  const { setFromScreen } = useSubscriptionStore();
+  const { setFromScreen, presentHalfOffPaywall } = useSubscriptionStore();
   
   // Get pro status from user store
   const proStatus = useUserStore((state) => state.getProStatus());
@@ -996,8 +995,9 @@ export default function HomeScreen() {
               if (!isPro) {
                 analytics.logEvent("HomeScreen_TappedProBadge");
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.push('/PricingScreen' as any);
-                setFromScreen('home-super');
+                // router.push('/PricingScreen' as any);
+                // setFromScreen('home-super');
+                presentHalfOffPaywall();
               }
             }}
             activeOpacity={0.8}

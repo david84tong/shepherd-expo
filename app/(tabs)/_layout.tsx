@@ -67,15 +67,15 @@ function CustomTabBarButton(props: any) {
 }
 
 export default function TabsLayout() {
+  // Hooks must be invoked in the same order on every render.  
+  // Move them all before any conditional early-returns.
   const signedIn = isSignedIn();
 
-  // Se não estiver logado, redireciona para o login
-  if (!signedIn) {
-    return <Redirect href="/(auth)" />;
-  }
-
+  // Zustand selectors – always call, even if the user ends up being redirected.
   const mode = useHomeStore((state) => state.mode);
   const pathInProgress = usePathStore((state) => state.pathInProgress);
+
+  // Ref that drives tab-bar show / hide animation
   const tabBarAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
@@ -85,6 +85,11 @@ export default function TabsLayout() {
       useNativeDriver: true,
     }).start();
   }, [mode, pathInProgress]);
+
+  // After hooks are declared it's now safe to early-return based on auth state.
+  if (!signedIn) {
+    return <Redirect href="/(auth)" />;
+  }
 
   // Using absolute positioning to prevent the "chin" gap
   const animatedTabBarStyle = {

@@ -400,6 +400,16 @@ export default function RootLayout() {
     };
   }, []);
 
+  // Add state for isCreator
+  const [isCreator, setIsCreator] = useState(false);
+
+  // Check isCreator from AsyncStorage
+  useEffect(() => {
+    AsyncStorage.getItem('isCreator').then((val) => {
+      setIsCreator(val === 'true');
+    });
+  }, []);
+
   // Loading states with error handling
   if (!fontsLoaded && !fontError) {
     return null; // Let the native splash screen show
@@ -491,8 +501,8 @@ export default function RootLayout() {
               />
             )}
 
-            {/* Debug button (visible only in development) */}
-            {__DEV__ && <DebugButton />}
+            {/* Debug button (visible only in development or for creators) */}
+            {(__DEV__ || isCreator) && <DebugButton />}
           </>
         )}
       </BottomSheetModalProvider>
