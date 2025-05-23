@@ -116,7 +116,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   },
   presentHalfOffPaywall: async () => {
     try {
-      const paywall = await adapty.getPaywall('halfoff-main');
+      const paywall = await adapty.getPaywall('half_off');
       console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
       const view = await createPaywallView(paywall);
 
@@ -183,6 +183,9 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
       view.registerEventHandlers({
         onCloseButtonPress() {
+         setTimeout(() => {
+          get().presentHalfOffPaywall();
+         }, 500);
           result = PAYWALL_RESULT.CANCELLED;
           return true;
         },

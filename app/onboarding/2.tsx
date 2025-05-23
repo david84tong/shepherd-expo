@@ -16,6 +16,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { toBool } from '../utils/toBool';
 import { validateName } from '../../utils/validation';
+import CustomAnimatedView from '../components/CustomAnimatedView';
 
 export default function OnboardingLambNameScreen() {
   const router = useRouter();
@@ -183,16 +184,16 @@ export default function OnboardingLambNameScreen() {
   }
 
   return (
-    <Animated.View style={screenStyle} className="px-6 pt-12">
+    <CustomAnimatedView style={screenStyle} className="px-6 pt-12">
       {/* Question Text */}
-      <Animated.View style={titleStyle}>
+      <CustomAnimatedView style={titleStyle}>
         <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-0">
           What should we call your lamb?
         </Text>
-      </Animated.View>
+      </CustomAnimatedView>
 
       {/* Rive Animation */}
-      <Animated.View
+      <CustomAnimatedView
         style={lambStyle}
         className="h-[160px] w-full justify-center items-center my-4">
         <Rive
@@ -201,10 +202,10 @@ export default function OnboardingLambNameScreen() {
           autoplay
           style={{ width: '80%', height: '80%' }}
         />
-      </Animated.View>
+      </CustomAnimatedView>
 
       {/* Name Input */}
-      <Animated.View style={inputStyle}>
+      <CustomAnimatedView style={inputStyle}>
         <TextInput
           ref={inputRef}
           className="font-feather text-3xl text-center text-textPrimary bg-white p-6 rounded-2xl border-4 border-border"
@@ -222,17 +223,17 @@ export default function OnboardingLambNameScreen() {
             {error}
           </Text>
         )}
-      </Animated.View>
+      </CustomAnimatedView>
 
       {/* Continue Button */}
-      <Animated.View style={buttonStyle} className="mt-0">
+      <CustomAnimatedView style={buttonStyle} className="mt-0">
         <PrimaryButton
           title="Continue"
           onPress={handleContinue}
           disabled={!inputLambName.trim() || !!error}
           isActive={!!inputLambName.trim() && !error}
         />
-      </Animated.View>
-    </Animated.View>
+      </CustomAnimatedView>
+    </CustomAnimatedView>
   );
 }
