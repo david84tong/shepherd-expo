@@ -154,7 +154,7 @@ export default function OnboardingAgeRangeScreen() {
       {Platform.OS === 'android' ? (
         <Animated.View style={optionsStyle} className="space-y-4 mt-0">
           <PrimaryButton
-            title={selectedDate.toLocaleDateString()}
+            title="Select Your Birth Date"
             onPress={() =>
               setShowDatePicker(true)}
             isActive
@@ -175,7 +175,8 @@ export default function OnboardingAgeRangeScreen() {
                   handleSelection(ageRange);
                 }
               }}
-              maximumDate={new Date()}
+              minimumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 100))}
+              maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 6))}
             />
           )}
         </Animated.View>
