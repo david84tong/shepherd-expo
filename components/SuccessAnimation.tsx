@@ -758,8 +758,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             {effectiveType === SuccessAnimationType.SECTION_COMPLETE ? (
               <Rive
                 ref={riveRef}
-                url={homeLambAssets && homeLambAssets[0] && homeLambAssets[0].uri || ''}
+                // url={homeLambAssets && homeLambAssets[0] && homeLambAssets[0].uri || ''}
                 autoplay={true}
+                resourceName={'home_lamb'}
                 artboardName='lamb-milestone'
                 style={{
                   width: '100%', height: '100%', maxWidth: 300,
@@ -770,7 +771,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             ) : (
               <Rive
                 ref={riveRef}
-                url={riveAssets && riveAssets[0] && riveAssets[0].uri || ''}
+                // url={riveAssets && riveAssets[0] && riveAssets[0].uri || ''}
+                resourceName={'success_lamb'}
                 autoplay={true}
                 style={{ width: '100%', height: '100%' }}
                 {...(riveArtboard ? { artboardName: riveArtboard } : {})}
@@ -797,7 +799,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,
             shadowRadius: 3,
-            elevation: 3,
+
           }}>
           <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
             {rewardTitle}

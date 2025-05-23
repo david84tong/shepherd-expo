@@ -50,87 +50,7 @@ const initialLamb: Lamb = {
 };
 export type ProStatus = 'free' | 'trial' | 'pro';
 
-export interface UserStore {
-  // Getters
-  getUser(): UserDoc | null;
-  getSpiritualGoal(): string;
-  getExperienceLevel(): string;
-  getFrequencyGoal(): string;
-  getDenomination(): string;
-  getDisplayName(): string;
-  getSelectedPathId(): string;
-  getLamb(): Lamb;
-  getStreakCount(): number;
-  getLastActivityDate(): Date | null;
-  getVersesReadTotal(): number;
-  getChaptersReadTotal(): number;
-  getBibleVersion(): string;
-  getProStatus(): ProStatus;
-  getCreatedAt(): Date;
-  getUpdatedAt(): Date;
-  getGens(): number;
-  getLastReadingDate(): Date | null;
-  getLastPrayerDate(): Date | null;
-  getLastReflectionDate(): Date | null;
-  getLastReadingPenaltyDate(): Date | null;
-  getLastPrayerPenaltyDate(): Date | null;
-  getLastReflectionPenaltyDate(): Date | null;
-  getCompletedReflections(): Reflection[];
-  getCompletedPrayers(): Prayer[];
-  getCompletedReadings(): Reading[];
-  getLambLevel(): number;
-  getLambXp(): number;
-  getLambMood(): string;
-  getLambHearts(): number;
-  getLambName(): string;
-  getLambSkin(): string;
 
-  // Setters
-  createUser(id: string, userData: Partial<UserDoc>): Promise<boolean>;
-  setUser(user: Partial<UserDoc>): void;
-  resetUserStore(): void;
-  setSpiritualGoal(goal: string): void;
-  setExperienceLevel(level: string): void;
-  setFrequencyGoal(goal: string): void;
-  setDenomination(denomination: string): void;
-  setDisplayName(name: string): void;
-  setSelectedPathId(pathId: string): void;
-  setLamb(lamb: Lamb): void;
-  setStreakCount(count: number): void;
-  setLastActivityDate(date: Date): void;
-  setLastReadingDate(date: Date): void;
-  setLastPrayerDate(date: Date): void;
-  setLastReflectionDate(date: Date): void;
-  setLastReadingPenaltyDate(date: Date): void;
-  setLastPrayerPenaltyDate(date: Date): void;
-  setLastReflectionPenaltyDate(date: Date): void;
-  setVersesReadTotal(total: number): void;
-  setChaptersReadTotal(total: number): void;
-  setBibleVersion(version: string): void;
-  setProStatus(status: ProStatus): void;
-  setCreatedAt(date: Date): void;
-  setUpdatedAt(date: Date): void;
-  setGens(gens: number): void;
-  setNotificationTime(time: string): Promise<void>;
-  setCompletedReflections(reflections: Reflection[]): void;
-  setCompletedPrayers(prayers: Prayer[]): void;
-  setCompletedReadings(readings: Reading[]): void;
-  addCompletedReflection(reflection: Reflection): void;
-  addCompletedPrayer(prayer: Prayer): void;
-  addCompletedReading(reading: Reading): void;
-  setLambLevel(level: number): void;
-  setLambXp(xp: number): void;
-  setLambMood(mood: string): void;
-  setLambHearts(hearts: number): void;
-  setLambName(name: string): void;
-  setLambSkin(skin: string): void;
-
-  // Utility
-  incrementStreak(): void;
-  addXp(amount: number): void;
-  syncWithFirestore(): Promise<boolean>;
-  fetchFromFirestore(): Promise<boolean>;
-}
 
 
 // Initial user state (only used if no persisted state exists)
@@ -373,7 +293,7 @@ export const useUserStore = create<UserStore>()(
       setUser: (user) => {
         set((state) => {
           const newState = {
-            ...state,
+            
             ...user,
           };
 
@@ -439,7 +359,7 @@ export const useUserStore = create<UserStore>()(
         
         set((state) => {
           const newState = {
-            ...state,
+            
             streakCount: count,
           };
           
@@ -459,7 +379,7 @@ export const useUserStore = create<UserStore>()(
         
         set((state) => {
           const newState = {
-            ...state,
+            
             lastActivityDate: date,
           };
           
@@ -477,7 +397,7 @@ export const useUserStore = create<UserStore>()(
       setLastReadingDate: (lastReadingDate) => {
         set((state) => {
           const newState = {
-            ...state,
+            
             lastReadingDate,
           };
           
@@ -492,7 +412,7 @@ export const useUserStore = create<UserStore>()(
       setLastPrayerDate: (lastPrayerDate) => {
         set((state) => {
           const newState = {
-            ...state,
+            
             lastPrayerDate,
           };
           
@@ -507,7 +427,7 @@ export const useUserStore = create<UserStore>()(
       setLastReflectionDate: (lastReflectionDate) => {
         set((state) => {
           const newState = {
-            ...state,
+            
             lastReflectionDate,
           };
           
@@ -522,7 +442,7 @@ export const useUserStore = create<UserStore>()(
       setLastReadingPenaltyDate: (lastReadingPenaltyDate) => {
         set((state) => {
           const newState = {
-            ...state,
+            
             lastReadingPenaltyDate,
           };
           
@@ -537,7 +457,7 @@ export const useUserStore = create<UserStore>()(
       setLastPrayerPenaltyDate: (lastPrayerPenaltyDate) => {
         set((state) => {
           const newState = {
-            ...state,
+            
             lastPrayerPenaltyDate,
           };
           
@@ -552,7 +472,7 @@ export const useUserStore = create<UserStore>()(
       setLastReflectionPenaltyDate: (lastReflectionPenaltyDate) => {
         set((state) => {
           const newState = {
-            ...state,
+            
             lastReflectionPenaltyDate,
           };
           
@@ -644,7 +564,7 @@ export const useUserStore = create<UserStore>()(
       addCompletedReading: (reading) => {
         set((state) => {
           const newState = {
-            ...state,
+            
             completedReadings: [...state.completedReadings, reading] as unknown as [Reading],
           };
           // Only sync with Firestore if authenticated
@@ -688,7 +608,7 @@ export const useUserStore = create<UserStore>()(
         console.log('Setting lamb name:', name);
         set((state) => {
           const newState = {
-            ...state,
+            
             lamb: { ...state.lamb, name },
           };
 
@@ -712,7 +632,7 @@ export const useUserStore = create<UserStore>()(
         set((state) => {
           const newStreakCount = state.streakCount + 1;
           const newState = {
-            ...state,
+            
             streakCount: newStreakCount,
           };
 
@@ -822,7 +742,7 @@ export const useUserStore = create<UserStore>()(
             const convertedUserData = convertTimestamps(updatedUserData);
 
             set((state) => ({
-              ...state,
+              
               ...convertedUserData,
             }));
             return true;
@@ -837,48 +757,7 @@ export const useUserStore = create<UserStore>()(
     }),
     {
       name: 'shepherd-user-storage',
-      storage: createJSONStorage(() => customStorage),
-      partialize: (state) => {
-        const persistedState = {
-          id: state.id,
-          email: state.email,
-          spiritualGoal: state.spiritualGoal,
-          experienceLevel: state.experienceLevel,
-          frequencyGoal: state.frequencyGoal,
-          denomination: state.denomination,
-          displayName: state.displayName,
-          selectedPathId: state.selectedPathId,
-          lamb: state.lamb,
-          streakCount: state.streakCount,
-          lastActivityDate: state.lastActivityDate,
-          lastReadingDate: state.lastReadingDate,
-          lastPrayerDate: state.lastPrayerDate,
-          lastReflectionDate: state.lastReflectionDate,
-          lastReadingPenaltyDate: state.lastReadingPenaltyDate,
-          lastPrayerPenaltyDate: state.lastPrayerPenaltyDate,
-          lastReflectionPenaltyDate: state.lastReflectionPenaltyDate,
-          notificationTime: state.notificationTime,
-          versesReadTotal: state.versesReadTotal,
-          chaptersReadTotal: state.chaptersReadTotal,
-          bibleVersion: state.bibleVersion,
-          proStatus: state.proStatus,
-          createdAt: state.createdAt,
-          updatedAt: state.updatedAt,
-          gens: state.gens,
-          completedReflections: state.completedReflections,
-          completedPrayers: state.completedPrayers,
-          completedReadings: state.completedReadings,
-        };
-        console.log('Persisting state:', persistedState);
-        return persistedState;
-      },
-      version: 1,
-      onRehydrateStorage: () => (state) => {
-        console.log('User store rehydrated with state:', state);
-        if (!state) {
-          console.log('No state was rehydrated, using initial state');
-        }
-      },
+      storage: createJSONStorage(() => AsyncStorage),
     }
   )
 );

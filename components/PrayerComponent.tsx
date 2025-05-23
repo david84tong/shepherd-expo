@@ -5,6 +5,7 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Platform,
   Text,
   View,
 } from 'react-native';
@@ -474,7 +475,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
           bottom: bottomPadding + 20,
           transform: [{ translateY: buttonAnim }, { translateX: shakeTranslateX }],
         }}>
-        <View className="mt-64">
+        <View className="mt-64" style={{ marginBottom: Platform.OS === 'android' ? bottomPadding + 20 : 0 }}>
           <PrimaryButton title="Amen" onPress={
             () => {
               analytics.logEvent("Prayer_Tapped_Amen", {
