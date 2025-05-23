@@ -1,4 +1,3 @@
-import { Image } from 'expo-image';
 import React, { useEffect } from 'react';
 import { View, Text, ActivityIndicator, Animated, Easing } from 'react-native';
 
@@ -45,12 +44,12 @@ const AppLoading: React.FC<AppLoadingProps> = ({ progress = 0, loadingMessage = 
           transform: [{ scale: pulseAnim }],
         }}
         className="w-28 h-28 mb-8">
-        <Image
+        {/* <Image
           source={require('../assets/icon.png')}
           style={{ width: 112, height: 112 }}
           contentFit="contain"
           transition={300}
-        />
+        /> */}
       </Animated.View>
 
       {/* Loading text */}

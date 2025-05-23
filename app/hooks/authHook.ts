@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
+import useSubscriptionStore from '../stores/subscriptionStore';
 
 // Helper function to check if user is signed in
 export const isSignedIn = () => {
@@ -153,6 +154,11 @@ export function useAuth() {
         analytics.logEvent('auth_success')
       }
 
+      // Adapty: login user after successful sign in
+      // if (userCredential?.user?.uid) {
+      //   await useSubscriptionStore.getState().loginAdaptyUser(userCredential.user.uid);
+      // }
+
       return userCredential.user;
     } catch (err) {
       const error = err as Error;
@@ -219,8 +225,13 @@ export function useAuth() {
 
       // Log successful anonymous sign in
       if (analytics.isInitialized) {
-        analytics.logEvent('auth_success')
+        analytics.logEvent('auth_success_anonymously_by_clicking_skip_button')
       }
+
+      // Adapty: login user after successful anonymous sign in
+      // if (userCredential?.user?.uid) {
+      //   await useSubscriptionStore.getState().loginAdaptyUser(userCredential.user.uid);
+      // }
 
       return userCredential.user;
     } catch (err) {
@@ -302,6 +313,17 @@ export function useAuth() {
   //   }
   // };
 
+  // Add a signOut function that logs out Adapty as well
+  const signOut = async () => {
+    try {
+      await auth().signOut();
+      // await subscriptionStore.logoutAdaptyUser();
+    } catch (error) {
+      console.error('[Auth] Error during sign out:', error);
+      throw error;
+    }
+  };
+
   return {
     user,
     loading,
@@ -310,6 +332,7 @@ export function useAuth() {
     signInWithApple,
     signInAnonymously,
     checkUserExists,
+    signOut,
   };
 }
 
