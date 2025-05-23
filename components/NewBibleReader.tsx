@@ -250,7 +250,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [showTapGuidance, setShowTapGuidance] = useState(true);
   const [tapCount, setTapCount] = useState(0);
-  const [useDefaultReader, setUseDefaultReader] = useState(false);
   const [showBackButton, setShowBackButton] = useState(false);
   const [previousChapterInfo, setPreviousChapterInfo] = useState<{ bookId: number, chapter: number } | null>(null);
 
@@ -615,14 +614,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const handleDefaultReaderToggle = useCallback(async (value: boolean) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     analytics.logEvent("CardBibleReader_Tapped_ToggleDefaultReader", {
-      value: value ? 'default' : 'new'
+      value: value ? 'card' : 'default'
     });
 
     // Update the store
-    await readerSettings.setCardView(!value);
+    await readerSettings.setCardView(value);
 
-    // Close this modal if we're switching to default reader
-    if (value) {
+    // Close this modal if we're switching to default reader (card view OFF)
+    if (!value) {
       setIsSettingsModalVisible(false);
 
       // Handoff chapter data to parent before switching
@@ -872,10 +871,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                     <Text style={[styles.toggleLabel, { color: theme.text }]}>Card View</Text>
                     <Switch
                       trackColor={{ false: "#E0E0E0", true: "#F7B500" }}
-                      thumbColor={!useDefaultReader ? "#FFFFFF" : "#FFFFFF"}
+                      thumbColor={readerSettings.useCardView ? "#FFFFFF" : "#FFFFFF"}
                       ios_backgroundColor="#E0E0E0"
-                      onValueChange={(value) => handleDefaultReaderToggle(!value)}
-                      value={!useDefaultReader}
+                      onValueChange={(value) => handleDefaultReaderToggle(value)}
+                      value={readerSettings.useCardView}
                     />
                   </View>
 

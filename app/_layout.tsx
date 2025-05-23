@@ -19,6 +19,7 @@ import { useNotificationStore } from './stores/notificationStore';
 import { useUIStore } from './stores/uiStore';
 import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
 import analytics from '~/utils/analytics';
+import { useOnboardingStore } from './stores/onboardingStore';
 // Import the sheet components
 import { useAssets } from 'expo-asset';
 import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
@@ -184,6 +185,10 @@ export default function RootLayout() {
       // If onboarding is completed, the value will be 'true'
       const isOnboardingCompleted = onboardingCompleted === 'true';
 
+      // Initialize onboarding store to load saved screen
+      const onboardingStore = useOnboardingStore.getState();
+      const savedScreen = await onboardingStore.initializeFromStorage();
+
       setInitialRouteDetermined(true);
       setIsOnboardingChecked(true);
       disableFontScaling();
@@ -193,6 +198,10 @@ export default function RootLayout() {
         console.log('User has completed onboarding');
       } else {
         console.log('User has NOT completed onboarding');
+        console.log(`📍 Saved onboarding screen: ${savedScreen}`);
+        
+        // Note: Navigation will be handled by the onboarding layout after mounting
+        // to avoid "navigation before mounting" errors
       }
 
       return isOnboardingCompleted;

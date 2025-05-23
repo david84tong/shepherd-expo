@@ -35,12 +35,19 @@ export default function OnboardingLayout() {
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { currentScreen, setCurrentScreen } = useOnboardingStore();
+  const { 
+    currentScreen, 
+    setCurrentScreen, 
+    isInitialized,
+    needsNavigationToSavedScreen,
+    savedScreenToNavigateTo,
+    clearSavedScreenNavigation
+  } = useOnboardingStore();
   const [previousScreen, setPreviousScreen] = useState('');
   const progressOpacity = useSharedValue(1);
 
   // Initialize app and create user on first open
-  const { isInitialized, isLoading } = useAppInitialization();
+  const { isInitialized: appIsInitialized, isLoading } = useAppInitialization();
 
   // IMPORTANT: All hooks must be declared before any conditional returns
   // Animated style for progress bar
@@ -63,33 +70,56 @@ export default function OnboardingLayout() {
 
   // Update current screen based on pathname with smoother transitions
   useEffect(() => {
-    if (pathname) {
+    // Only update screen from pathname if store is initialized
+    // This prevents overriding the saved screen during app startup
+    if (pathname && isInitialized) {
       const screen = pathname.split('/').pop() || '1';
 
-      // Save previous screen for transition handling
-      if (currentScreen && currentScreen !== screen) {
-        setPreviousScreen(currentScreen);
-      }
+      // Only update if the screen is actually different from what's saved
+      // This prevents unnecessary updates during navigation
+      if (screen !== currentScreen) {
+        // Save previous screen for transition handling
+        if (currentScreen && currentScreen !== screen) {
+          setPreviousScreen(currentScreen);
+        }
 
-      // Animate progress bar opacity during transition
-      if (screen !== '1' && currentScreen !== screen) {
-        // Briefly fade out progress bar during transition
-        progressOpacity.value = withTiming(0.4, { duration: 150 }, () => {
-          // Then fade it back in with the new value
-          progressOpacity.value = withTiming(1, { duration: 250 });
-        });
-      }
+        // Animate progress bar opacity during transition
+        if (screen !== '1' && currentScreen !== screen) {
+          // Briefly fade out progress bar during transition
+          progressOpacity.value = withTiming(0.4, { duration: 150 }, () => {
+            // Then fade it back in with the new value
+            progressOpacity.value = withTiming(1, { duration: 250 });
+          });
+        }
 
-      setCurrentScreen(screen);
+        setCurrentScreen(screen);
+      }
     }
-  }, [pathname, setCurrentScreen, progressOpacity]);
+  }, [pathname, setCurrentScreen, progressOpacity, isInitialized, currentScreen]);
 
   // Log initialization status for debugging
   useEffect(() => {
-    if (isInitialized) {
+    if (appIsInitialized) {
       console.log('🔍 App initialization complete, user data ready');
     }
-  }, [isInitialized]);
+  }, [appIsInitialized]);
+
+  // Handle navigation to saved screen after mounting
+  useEffect(() => {
+    if (isInitialized && needsNavigationToSavedScreen && savedScreenToNavigateTo && router) {
+      console.log(`🚀 Navigating to saved onboarding screen: ${savedScreenToNavigateTo}`);
+      
+      // Small delay to ensure router is fully ready
+      setTimeout(() => {
+        try {
+          router.replace(`/onboarding/${savedScreenToNavigateTo}` as any);
+          clearSavedScreenNavigation(); // Clear the flag after navigation
+        } catch (error) {
+          console.error('❌ Error navigating to saved screen:', error);
+        }
+      }, 200);
+    }
+  }, [isInitialized, needsNavigationToSavedScreen, savedScreenToNavigateTo, router, clearSavedScreenNavigation]);
 
   const checkStorageAndDebug = async () => {
     try {

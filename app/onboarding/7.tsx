@@ -112,7 +112,7 @@ export default function OnboardingAgeRangeScreen() {
     },
     {
       id: 'under-12',
-      title: 'Under 12',
+      title: '12 or under',
     },
     {
       id: '13-17',
