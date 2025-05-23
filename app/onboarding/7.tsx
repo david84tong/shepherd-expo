@@ -169,7 +169,7 @@ export default function OnboardingAgeRangeScreen() {
               display="default"
               onChange={(event, date) => {
                 setShowDatePicker(false);
-                if (date) {
+                if (event.type === "set" && date) {
                   setSelectedDate(date);
                   const ageRange = calculateAgeRange(date);
                   handleSelection(ageRange);
