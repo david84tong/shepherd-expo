@@ -2,7 +2,7 @@
   "expo": {
     "name": "Shepherd",
     "slug": "shepherd",
-    "version": "1.2.3",
+    "version": "1.2.4",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "shepherd",
@@ -58,7 +58,7 @@
       },
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.second.round.shepherd.widget"
+          "group.shepherd.widget.streak"
         ]
       },
       "associatedDomains": [],
@@ -68,7 +68,8 @@
           "bundleIdentifier": "second.round.shepherd.widget",
           "entitlements": {
             "com.apple.security.application-groups": [
-              "group.second.round.shepherd.widget"
+              "group.shepherd.widget.streak"
+              
             ]
           }
         }

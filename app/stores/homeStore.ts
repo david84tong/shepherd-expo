@@ -26,6 +26,7 @@ interface HomeState {
   sawDailyBonus: boolean;
   tappedPrayAboutVerse: boolean;
   tappedReflectAboutVerse: boolean;
+  sawStreakToday: boolean; // Track if streak screen was shown today
 
   // Setter functions
   setMode: (mode: HomeMode) => void;
@@ -36,6 +37,7 @@ interface HomeState {
   setSawDailyBonus: (saw: boolean) => void;
   setTappedPrayAboutVerse: (tapped: boolean) => void;
   setTappedReflectAboutVerse: (tapped: boolean) => void;
+  setSawStreakToday: (saw: boolean) => void; // Setter for sawStreakToday
   resetCompletionStates: () => void; // Reset all completion states
 }
 
@@ -57,6 +59,7 @@ export const useHomeStore = create<HomeState>()(
       sawDailyBonus: false,
       tappedPrayAboutVerse: false,
       tappedReflectAboutVerse: false,
+      sawStreakToday: false,
 
       // Setter functions
       setMode: (mode) => set({ mode }),
@@ -67,6 +70,7 @@ export const useHomeStore = create<HomeState>()(
       setSawDailyBonus: (saw) => set({ sawDailyBonus: saw }),
       setTappedPrayAboutVerse: (tapped) => set({ tappedPrayAboutVerse: tapped }),
       setTappedReflectAboutVerse: (tapped) => set({ tappedReflectAboutVerse: tapped }),
+      setSawStreakToday: (saw) => set({ sawStreakToday: saw }),
       resetCompletionStates: () =>
         set({
           readingCompleted: false,
@@ -75,6 +79,7 @@ export const useHomeStore = create<HomeState>()(
           sawDailyBonus: false,
           tappedPrayAboutVerse: false,
           tappedReflectAboutVerse: false,
+          sawStreakToday: false,
         }),
     }),
     {
@@ -88,6 +93,7 @@ export const useHomeStore = create<HomeState>()(
         sawDailyBonus: state.sawDailyBonus,
         tappedPrayAboutVerse: state.tappedPrayAboutVerse,
         tappedReflectAboutVerse: state.tappedReflectAboutVerse,
+        sawStreakToday: state.sawStreakToday,
       }),
     }
   )

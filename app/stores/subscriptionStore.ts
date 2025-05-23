@@ -18,6 +18,7 @@ import { adapty } from 'react-native-adapty';
 import { createPaywallView } from '@adapty/react-native-ui';
 
 async function moveUserToProMode(isRestored?: boolean) {
+  console.log('===>purrchase completed');
   let onboardingCompleted: string | null = null;
   useUserStore.getState().setProStatus('pro');
   // Set isPro: true and proExpiryDate: null in Firestore for the current user
@@ -34,7 +35,7 @@ async function moveUserToProMode(isRestored?: boolean) {
       console.log('[moveUserToProMode] Firestore isPro set to true');
     }
   } catch (e) {
-    console.log('[moveUserToProMode] Error setting isPro in Firestore:', e);
+    console.error('[moveUserToProMode] Error setting isPro in Firestore:', e);
   }
   // Show success toast
   Toast.show({
@@ -54,6 +55,8 @@ interface SubscriptionState {
   isProMember: boolean;
   initializeRevenueCat: (apiKey: string, userId: string | null) => Promise<void>;
   presentPaywall: () => Promise<PAYWALL_RESULT | null>;
+  presentHalfOffPaywall: () => Promise<PAYWALL_RESULT | null>;
+
   purchasePackage: (pack: PurchasesPackage, onSuccess?: () => void) => Promise<void>;
   getCustomerInfo: () => Promise<void>;
   handleReferralCode: (code: string) => Promise<void>;
@@ -80,7 +83,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     );
 
     if (!apiKey) {
-      console.log('[SubscriptionStore] RevenueCat API key is missing!');
+      console.error('[SubscriptionStore] RevenueCat API key is missing!');
       return;
     }
 
@@ -104,32 +107,33 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       console.log('[SubscriptionStore] Fetching initial customer info after configuration.');
       await get().getCustomerInfo(); // Fetch customer info on init
     } catch (e) {
-      console.log('[SubscriptionStore] RevenueCat SDK configuration or login failed:', e);
+      console.error('[SubscriptionStore] RevenueCat SDK configuration or login failed:', e);
       Alert.alert(
         'Error',
         'Failed to initialize subscription service. Please check your connection and try again.'
       );
     }
   },
-
-  presentPaywall: async () => {
+  presentHalfOffPaywall: async () => {
     try {
-      const paywall = await adapty.getPaywall('shepherd_paywall');
+      const paywall = await adapty.getPaywall('half_off');
       console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
       const view = await createPaywallView(paywall);
 
+      let result: PAYWALL_RESULT | null = null;
+
       view.registerEventHandlers({
         onCloseButtonPress() {
-          // ...
+          result = PAYWALL_RESULT.CANCELLED;
           return true;
         },
         onPurchaseCompleted() {
-          // ...
+          result = PAYWALL_RESULT.PURCHASED;
           moveUserToProMode();
           return true;
         },
         onRestoreCompleted() {
-          // ...
+          result = PAYWALL_RESULT.RESTORED;
           moveUserToProMode(true);
           return true;
         },
@@ -140,126 +144,101 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           console.log('===>purrchase started');
         },
         onPurchaseCancelled() {
+          result = PAYWALL_RESULT.CANCELLED;
           console.log('cancelled');
         },
         onPurchaseFailed() {
-          /* ... */
+          result = PAYWALL_RESULT.ERROR;
         },
         onRestoreFailed() {
-          /* ... */
+          result = PAYWALL_RESULT.ERROR;
         },
         onRenderingFailed() {
-          /* ... */
+          result = PAYWALL_RESULT.ERROR;
         },
         onLoadingProductsFailed() {
-          /* ... */
+          result = PAYWALL_RESULT.ERROR;
         },
       });
       await view.present();
       const products = await adapty.getPaywallProducts(paywall);
-      console.log('products ==>', JSON.stringify(products));
+      console.log('products ==>', products);
+      return result;
     } catch (error) {
-      console.log('Adapty paywall error:', error);
+      console.error('Adapty paywall error:', error);
       analytics.logEvent('PricingScreen_Paywall_Error', {
         errorMessage: (error as Error)?.message || 'Unknown error',
       });
+      return PAYWALL_RESULT.ERROR;
     }
+  },
 
-    // console.log("[SubscriptionStore] presentPaywall called.");
-    // analytics.logEvent('paywall_viewed');
-    // try {
-    //   const paywallResult: PAYWALL_RESULT = await RevenueCatUI.presentPaywall();
-    //   console.log('[SubscriptionStore] Paywall presented, result:', paywallResult);
+  presentPaywall: async () => {
+    try {
+      const paywall = await adapty.getPaywall('shepherd_paywall');
+      console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
+      const view = await createPaywallView(paywall);
 
-    //   // Variables for onboarding status check - moved outside switch cases to fix linter errors
-    //   let onboardingCompleted: string | null = null;
+      let result: PAYWALL_RESULT | null = null;
 
-    //   switch (paywallResult) {
-    //     case PAYWALL_RESULT.PURCHASED:
-    //       console.log('[SubscriptionStore] Purchase completed successfully from paywall. Updating customer info...');
-    //       analytics.logEvent("subscription_purchase_success", {
-    //         source: 'paywall'
-    //       });
-    //       await get().getCustomerInfo();
-    //       // Update user's pro status in userStore
-    //       useUserStore.getState().setProStatus('pro');
-
-    //       // Show success toast
-    //       Toast.show({
-    //         type: 'success',
-    //         text1: 'Congratulations! 🎉',
-    //         text2: 'You are now a Shepherd Super user!',
-    //         position: 'top',
-    //         visibilityTime: 4000,
-    //       });
-
-    //       // Check if onboarding is completed
-    //       onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-
-    //       // Navigate based on onboarding status
-    //       setTimeout(handlePostPurchaseNavigation, 100);
-
-    //       // Return PURCHASED so PricingScreen can handle it
-    //       return PAYWALL_RESULT.PURCHASED;
-    //     case PAYWALL_RESULT.RESTORED:
-    //       console.log('[SubscriptionStore] Purchase restored successfully from paywall. Updating customer info...');
-    //       analytics.logEvent('subscription_restored', {
-    //         source: 'paywall'
-    //       });
-    //       Alert.alert("Success", "Purchases restored!");
-    //       await get().getCustomerInfo();
-    //       // Update user's pro status in userStore
-    //       useUserStore.getState().setProStatus('pro');
-
-    //       // Show success toast
-    //       Toast.show({
-    //         type: 'success',
-    //         text1: 'Subscription Restored! 🎉',
-    //         text2: 'Welcome back to Shepherd Super!',
-    //         position: 'top',
-    //         visibilityTime: 4000,
-    //       });
-
-    //       // Check if onboarding is completed
-    //       onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-
-    //       // Navigate based on onboarding status
-    //       setTimeout(handlePostPurchaseNavigation, 500);
-
-    //       // Return RESTORED so PricingScreen can redirect
-    //       return PAYWALL_RESULT.RESTORED;
-    //     case PAYWALL_RESULT.CANCELLED:
-    //       console.log('[SubscriptionStore] Paywall cancelled by user.');
-    //       analytics.logEvent('purchase_cancelled', {
-    //         source: 'paywall'
-    //       });
-    //       break;
-    //     case PAYWALL_RESULT.ERROR:
-    //       console.log('[SubscriptionStore] Error occurred during paywall presentation or purchase.');
-    //       analytics.logEvent('purchase_failed', {
-    //         source: 'paywall',
-    //         error: 'presentation_error'
-    //       });
-    //       Alert.alert("Error", "An error occurred during the purchase process.");
-    //       break;
-    //   }
-    //   return paywallResult;
-    // } catch (error) {
-    //   console.log('[SubscriptionStore] Error presenting paywall:', error);
-    //   analytics.logEvent('purchase_failed', {
-    //     source: 'paywall',
-    //     error: 'exception',
-    //     message: error?.toString()
-    //   });
-    //   Alert.alert("Error", "Could not display subscription options. Please try again later.");
-    //   return null;
-    // }
+      view.registerEventHandlers({
+        onCloseButtonPress() {
+         setTimeout(() => {
+          get().presentHalfOffPaywall();
+         }, 500);
+          result = PAYWALL_RESULT.CANCELLED;
+          return true;
+        },
+        onPurchaseCompleted() {
+          result = PAYWALL_RESULT.PURCHASED;
+          moveUserToProMode();
+          return true;
+        },
+        onRestoreCompleted() {
+          result = PAYWALL_RESULT.RESTORED;
+          moveUserToProMode(true);
+          return true;
+        },
+        onProductSelected() {
+          console.log('===>product selected');
+        },
+        onPurchaseStarted() {
+          console.log('===>purrchase started');
+        },
+        onPurchaseCancelled() {
+          result = PAYWALL_RESULT.CANCELLED;
+          console.log('cancelled');
+        },
+        onPurchaseFailed() {
+          result = PAYWALL_RESULT.ERROR;
+        },
+        onRestoreFailed() {
+          result = PAYWALL_RESULT.ERROR;
+        },
+        onRenderingFailed() {
+          result = PAYWALL_RESULT.ERROR;
+        },
+        onLoadingProductsFailed() {
+          result = PAYWALL_RESULT.ERROR;
+        },
+      });
+      await view.present();
+      const products = await adapty.getPaywallProducts(paywall);
+      console.log('products ==>', products);
+      return result;
+    } catch (error) {
+      console.error('Adapty paywall error:', error);
+      analytics.logEvent('PricingScreen_Paywall_Error', {
+        errorMessage: (error as Error)?.message || 'Unknown error',
+      });
+      return PAYWALL_RESULT.ERROR;
+    }
   },
 
   purchasePackage: async (pack: PurchasesPackage, onSuccess?: () => void) => {
     console.log('[SubscriptionStore] purchasePackage called.');
     if (!pack) {
-      console.log('[SubscriptionStore] No package selected for purchase.');
+      console.error('[SubscriptionStore] No package selected for purchase.');
       analytics.logEvent('purchase_failed', {
         error: 'no_package_selected',
       });
@@ -272,7 +251,6 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     );
     analytics.logEvent('purchase_initiated', {
       package_id: pack.identifier,
-      offering_id: pack.offeringIdentifier,
       product_id: pack.product.identifier,
     });
 
@@ -303,7 +281,6 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
       analytics.logEvent('subscription_purchase_success', {
         package_id: pack.identifier,
-        offering_id: pack.offeringIdentifier,
         product_id: productIdentifier,
         is_pro: isPro,
         currentScreen: 'purchase_screen',
@@ -332,7 +309,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           reason: 'user_cancelled',
         });
       } else {
-        console.log('[SubscriptionStore] Error purchasing package:', pack.identifier, e);
+        console.error('[SubscriptionStore] Error purchasing package:', pack.identifier, e);
         analytics.logEvent('subscription_purchase_failed', {
           package_id: pack.identifier,
           offering_id: pack.offeringIdentifier,
@@ -370,19 +347,19 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           if (userData) {
             isProFromFirebase = userData.isPro;
             // Check if proExpiryDate exists and has the correct format
-            if (userData.userProExpiryDate) {
-              if (userData.userProExpiryDate.toDate) {
-                proExpiryDate = userData.userProExpiryDate.toDate();
-              } else if (userData.userProExpiryDate._seconds) {
+            if (userData.proExpiryDate) {
+              if (userData.proExpiryDate.toDate) {
+                proExpiryDate = userData.proExpiryDate.toDate();
+              } else if (userData.proExpiryDate._seconds) {
                 proExpiryDate = new Date(
-                  userData.userProExpiryDate._seconds * 1000 +
-                    userData.userProExpiryDate._nanoseconds / 1000000
+                  userData.proExpiryDate._seconds * 1000 +
+                    userData.proExpiryDate._nanoseconds / 1000000
                 );
               } else if (
-                typeof userData.userProExpiryDate === 'string' ||
-                typeof userData.userProExpiryDate === 'number'
+                typeof userData.proExpiryDate === 'string' ||
+                typeof userData.proExpiryDate === 'number'
               ) {
-                proExpiryDate = new Date(userData.userProExpiryDate);
+                proExpiryDate = new Date(userData.proExpiryDate);
               }
             }
             // Check if pro status has expired
@@ -397,22 +374,6 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
               useUserStore.getState().setProStatus('free');
               console.log('[SubscriptionStore] Pro status expired in Firestore, set to free.');
             }
-
-            // Check if pro status has expired
-            if (proExpiryDate && proExpiryDate < new Date()) {
-              // Pro status has expired
-              await firestore().collection('users').doc(currentUser.uid).update({
-                isPro: false,
-              });
-              set({ isProMember: false });
-              useUserStore.getState().setProStatus('free');
-              return;
-            }
-            // If not expired, set pro status based on either RevenueCat OR Firebase
-
-            const finalProStatus = isProAdapty && isProFromFirebase;
-            set({ customerInfo: profile, isProMember: finalProStatus });
-            useUserStore.getState().setProStatus(finalProStatus ? 'pro' : 'free');
           }
         } catch (error) {
           console.log('[SubscriptionStore] Error fetching user data from Firestore:', error);
@@ -435,7 +396,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         '[SubscriptionStore] Customer info and pro status updated in store (Adapty + Firestore).'
       );
     } catch (e) {
-      console.log('[SubscriptionStore] Error fetching Adapty profile or Firestore:', e);
+      console.error('[SubscriptionStore] Error fetching Adapty profile or Firestore:', e);
       analytics.logEvent('subscription_error', {
         error: 'adapty_or_firestore_profile_fetch_failed',
         message: e?.toString(),
@@ -468,12 +429,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const usedReferralCodes = userData?.usedReferralCodes || [];
     const hasUsedWeekly = usedReferralCodes.includes('WEEKLY');
     const hasUsedMonthly = usedReferralCodes.includes('MONTHL');
+    const hasUsedCreator = usedReferralCodes.includes('CREATEL');
     const hasUsedPermanent = usedReferralCodes.includes('WXES4S');
 
     // Prepare variables that might be needed in switch cases
     let monthExpiry: Date;
     let weekExpiry: Date;
-
+    analytics.logEvent('handleReferralCode', {
+      code: code,
+    });
     switch (code.toUpperCase()) {
       case 'WXES4S':
         if (hasUsedPermanent) {
@@ -516,6 +480,18 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           usedReferralCodes: firestore.FieldValue.arrayUnion(code),
         });
         break;
+      case 'CREATEL':
+        if (hasUsedCreator) {
+          throw new Error('You have already used a creator subscription code');
+        }
+        // One month pro access
+        await userRef.update({
+          isPro: true,
+          usedReferralCodes: firestore.FieldValue.arrayUnion(code),
+        });
+        // Save creator status to AsyncStorage
+        await AsyncStorage.setItem('isCreator', 'true');
+        break;
 
       default:
         throw new Error('Invalid referral code');
@@ -549,7 +525,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       // Optionally refresh customer info after login
       await get().getCustomerInfo();
     } catch (e) {
-      console.log('[SubscriptionStore] Error identifying Adapty user:', e);
+      console.error('[SubscriptionStore] Error identifying Adapty user:', e);
     }
   },
   logoutAdaptyUser: async () => {
@@ -560,7 +536,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       // Optionally refresh customer info after logout
       await get().getCustomerInfo();
     } catch (e) {
-      console.log('[SubscriptionStore] Error logging out Adapty user:', e);
+      console.error('[SubscriptionStore] Error logging out Adapty user:', e);
     }
   },
 }));

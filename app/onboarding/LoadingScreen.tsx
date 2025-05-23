@@ -15,15 +15,15 @@ interface LoadingScreenProps {
 }
 
 const LOADING_MESSAGES = [
-  'Saving your responses',
-  'Encrypting your data',
-  'Sprinkling some holy water',
-  'Generating your custom plan',
+  "Saving your responses",
+  "Encrypting your data",
+  "Sprinkling some holy water",
+  "Generating your custom bible study plan"
 ];
 const LoadingScreen: React.FC<LoadingScreenProps> = ({
   initialMessage,
   onLoadingComplete,
-  redirectTo,
+  redirectTo
 }) => {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -50,9 +50,9 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
 
   useEffect(() => {
     setFromScreen('onboarding');
-    analytics.logEvent('OnboardingLoadingScreen_Viewed', {
+    analytics.logEvent("OnboardingLoadingScreen_Viewed", {
       initialMessage: initialMessageFromParams || initialMessage,
-      redirectTarget: redirectAfterLoading || redirectTo || 'PricingScreen',
+      redirectTarget: redirectAfterLoading || redirectTo || "PricingScreen"
     });
   }, [initialMessageFromParams, initialMessage, redirectAfterLoading, redirectTo]);
 
@@ -118,30 +118,31 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   const finalizeAndNavigate = async () => {
     try {
       // Handle different navigation behaviors based on redirectAfterLoading
-      if (redirectAfterLoading === 'back') {
+      if (redirectAfterLoading === "back") {
         // Navigate back to PricingScreen with a param to indicate we're coming from loading
-        analytics.logEvent('LoadingScreen_Redirect_Completed', {
-          redirectTarget: 'PricingScreen',
-          redirectType: 'back',
+        analytics.logEvent("LoadingScreen_Redirect_Completed", {
+          redirectTarget: "PricingScreen",
+          redirectType: "back"
         });
 
         router.navigate({
-          pathname: '/PricingScreen',
-          params: { fromLoading: 'true', animateFromBottom: 'true' },
+          pathname: "/PricingScreen",
+          params: { fromLoading: "true", animateFromBottom: "true" }
         });
       } else if (redirectTo || redirectAfterLoading) {
         // Navigate to specified redirect
         const targetPath = redirectAfterLoading || redirectTo;
         console.log('Loading complete, navigating to:', targetPath);
 
-        analytics.logEvent('LoadingScreen_Redirect_Completed', {
+        analytics.logEvent("LoadingScreen_Redirect_Completed", {
           redirectTarget: targetPath,
-          redirectType: 'custom',
+          redirectType: "custom"
         });
 
         router.replace(targetPath);
       } else {
         // Default behavior for onboarding
+
 
         // Call completion handler if provided
         if (onLoadingComplete) {
@@ -151,33 +152,33 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
         // Navigate to pricing screen with animation param
         console.log('Onboarding complete, navigating to pricing screen');
 
-        analytics.logEvent('LoadingScreen_Redirect_Completed', {
-          redirectTarget: 'PricingScreen',
-          redirectType: 'default',
-          onboardingCompleted: true,
+        analytics.logEvent("LoadingScreen_Redirect_Completed", {
+          redirectTarget: "PricingScreen",
+          redirectType: "default",
+          onboardingCompleted: true
         });
 
         router.replace({
           pathname: '/PricingScreen',
-          params: { animateFromBottom: 'true' },
+          params: { animateFromBottom: "true" }
         });
       }
 
-      analytics.logEvent('OnboardingLoadingScreen_Completed', {
+      analytics.logEvent("OnboardingLoadingScreen_Completed", {
         progress: 100,
-        finalMessage: currentMessage,
+        finalMessage: currentMessage
       });
     } catch (error) {
-      console.log('Error finalizing loading screen:', error);
+      console.error('Error finalizing loading screen:', error);
 
-      analytics.logEvent('LoadingScreen_Redirect_Error', {
-        errorMessage: (error as Error)?.message || 'Unknown error',
+      analytics.logEvent("LoadingScreen_Redirect_Error", {
+        errorMessage: (error as Error)?.message || "Unknown error"
       });
 
       // Fallback navigation
       router.replace({
         pathname: '/PricingScreen',
-        params: { animateFromBottom: 'true' },
+        params: { animateFromBottom: "true" }
       });
     }
   };
@@ -187,7 +188,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
     let lastProgress = 0;
 
     // Simulate loading progress - faster for subscription flow
-    const incrementSpeed = redirectAfterLoading === 'back' ? 40 : 120; // Faster for subscription flow
+    const incrementSpeed = redirectAfterLoading === "back" ? 40 : 120; // Faster for subscription flow
 
     // Simulate loading progress
     const interval: NodeJS.Timeout = setInterval(() => {
@@ -250,8 +251,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
       {/* Pulsing Rive animation */}
       <View className="w-56 h-56 mb-24 flex items-center justify-center">
         <Rive
-          // url={assets[0].uri!}
-          resourceName={'home_lamb'}
+          url={assets[0].uri!}
           artboardName="lamb-writing"
           autoplay={true}
           fit={Fit.Contain}
@@ -266,7 +266,8 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
           opacity: fadeAnim,
           transform: [{ scale: scaleAnim }],
         }}
-        className="mb-8 min-h-[30px]">
+        className="mb-8 min-h-[30px]"
+      >
         <Text className="font-feather text-textPrimary text-2xl text-center">
           {currentMessage}...
         </Text>
@@ -279,11 +280,13 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
             className="h-full bg-accentGold rounded-full"
             style={{
               width: `${progress}%`,
-              transform: [{ scale: scaleAnim }],
+              transform: [{ scale: scaleAnim }]
             }}
           />
         </View>
-        <Text className="font-feather text-description text-h1 mt-4">{progress}%</Text>
+        <Text className="font-feather text-description text-h1 mt-4">
+          {progress}%
+        </Text>
       </View>
     </View>
   );

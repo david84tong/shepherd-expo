@@ -1,4 +1,3 @@
-import { Ionicons } from '@expo/vector-icons';
 import { useAssets } from 'expo-asset';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -10,7 +9,7 @@ import {
   SectionList,
   Text,
   View,
-  ViewToken,
+  ViewToken
 } from 'react-native';
 
 import PathNode, { NodeStatus } from '../../components/MapComponents/PathNode';
@@ -21,6 +20,7 @@ import { useUserStore } from '../stores/userStore';
 import { heightScreen } from '~/utils/dimensions';
 import * as Haptics from 'expo-haptics';
 import useSubscriptionStore from '../stores/subscriptionStore';
+import { useHomeStore } from '../stores/homeStore';
 
 // Define our custom section type
 type BibleSection = {
@@ -59,7 +59,7 @@ type BibleSection = {
 //       className={`absolute ${alignment === 'start' ? 'right-1' : 'left-1'} top-4 w-28 h-28 bg-yellow-300 rounded-full items-center justify-center border-4 border-white`}
 //       style={{ zIndex: 50 }}>
 //       <Rive
-//         url={riveAssets[0].localUri!}
+//         url={riveAssets[0].uri!}
 //         artboardName="lamb-idle"
 //         autoplay
 //         style={{ width: '100%', height: '100%' }}
@@ -135,6 +135,7 @@ const useUnitStatus = (sections: BibleSection[]) => {
   return { getStatus, isSectionUnlocked };
 };
 
+
 // Define a rough constant height for each node item (including margins)
 const ITEM_HEIGHT = 180; // adjust if needed
 
@@ -142,10 +143,13 @@ export default function MapScreen() {
   const router = useRouter();
 
   // Get user reading time preference
-  const frequencyGoal = useUserStore((state) => state.frequencyGoal);
+  const frequencyGoal = useUserStore(state => state.frequencyGoal);
 
   // Get selectedPath from the store inside the component
   const selectedPath = usePathStore((state) => state.selectedPath);
+
+  // Get reading completion status from the home store
+  const readingCompleted = useHomeStore((state) => state.readingCompleted);
 
   // Calculate sections inside the component using useMemo
   const sections = useMemo(() => {
@@ -202,14 +206,16 @@ export default function MapScreen() {
     }
   }, [sections]);
 
-  const isProMember = useSubscriptionStore((state) => state.isProMember);
+  // Get pro status from subscription store
+  const isProMember = useSubscriptionStore(state => state.isProMember);
   const subscriptionStore = useSubscriptionStore();
+
   // Handle subscription button press using the store action
   const handleSubscriptionPress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     subscriptionStore.setFromScreen('map');
     router.push('/PricingScreen' as any);
-  };
+  }
 
   // Track if we need to suppress haptic feedback (e.g., on first render)
   const isFirstRender = useRef(true);
@@ -221,6 +227,7 @@ export default function MapScreen() {
   ]);
 
   const handleNodePress = (unit: Unit, isLastUnitInSection: boolean) => {
+
     console.log('Pressed unit:', unit.title, unit.reference);
     console.log('Reference details:', JSON.stringify(unit.reference));
     console.log('unit selected', unit.startVerse, unit.endVerse, unit);
@@ -294,7 +301,7 @@ export default function MapScreen() {
           }
         }
       } catch (error) {
-        console.log('Error parsing verse range from unit ID:', error);
+        console.error('Error parsing verse range from unit ID:', error);
       }
     }
 
@@ -327,7 +334,7 @@ export default function MapScreen() {
           // Add a flag to help identify where this navigation came from
           source: 'map',
           timestamp: Date.now()?.toString(), // Force new params by adding timestamp
-          isLastUnitInSection: isLastUnitInSection?.toString(),
+          isLastUnitInSection: isLastUnitInSection?.toString()
         },
       });
     } else {
@@ -415,102 +422,111 @@ export default function MapScreen() {
     if (!riveAssets || !riveName) return null;
 
     if (riveName === 'homeLamb') {
-      return riveAssets[0].localUri!;
+      return riveAssets[0].uri!;
     } else if (riveName === 'successLamb') {
-      return riveAssets[1].localUri!;
+      return riveAssets[1].uri!;
     }
 
     return null;
   };
 
   // Render a node item - Optimized with useCallback and better dependencies
-  const renderItem = useCallback(
-    ({ item, index, section }: { item: Unit; index: number; section: BibleSection }) => {
-      const status = getStatus(section.pathId, item.id);
-      const alignment = ['center', 'start', 'center', 'end'][index % 4] as
-        | 'start'
-        | 'center'
-        | 'end';
-      const shouldIndicateNext = isNextUnit(item);
-      const sectionIsUnlocked = isSectionUnlocked(section.pathId);
+  const renderItem = useCallback(({ item, index, section }: {
+    item: Unit,
+    index: number,
+    section: BibleSection
+  }) => {
+    const status = getStatus(section.pathId, item.id);
+    const alignment = ['center', 'start', 'center', 'end'][index % 4] as 'start' | 'center' | 'end';
+    const shouldIndicateNext = isNextUnit(item);
+    const sectionIsUnlocked = isSectionUnlocked(section.pathId);
 
-      // Position within each section (repeating pattern)
-      // Show sheep only at second node position of every section
-      const isSecondNodeInSection = index === 1;
+    // Position within each section (repeating pattern)
+    // Show sheep only at second node position of every section
+    const isSecondNodeInSection = index === 1;
 
-      // Show journal icon only at fourth node position of every section
-      const isFourthNodeInSection = index === 3;
+    // Show journal icon only at fourth node position of every section
+    const isFourthNodeInSection = index === 3;
 
-      if (shouldIndicateNext) {
-        console.log(`Next unit on screen: ${item.id} (${item.title})`);
+    if (shouldIndicateNext) {
+      console.log(`Next unit on screen: ${item.id} (${item.title})`);
+    }
+
+    const isLastUnitInSection = index === section.data.length - 1;
+
+    // Handle node click with additional checks for non-pro users and reading completion
+    function onNodePress(unit: Unit) {
+      console.log('onNodePress', unit);
+      console.log('Debug - Pro status:', isProMember, 'Reading completed:', readingCompleted, 'Section index:', section.index);
+
+      // Only show pricing screen if ALL of these conditions are true:
+      // 1. User is not a pro member (proStatus !== "pro")
+      // 2. User has completed their daily reading (readingCompleted is true)
+      // 3. They're trying to access a non-first path (section.index > 0)
+      if (!isProMember && readingCompleted && section.index > 0) {
+        console.log('Showing pricing screen: user is not pro, has completed reading, and is trying to access a non-first path');
+        handleSubscriptionPress();
+      } else {
+        handleNodePress(unit, isLastUnitInSection);
       }
+    }
 
-      const isLastUnitInSection = index === section.data.length - 1;
+    return (
+      <View className="relative">
+        <PathNode
+          key={item.id}
+          unit={item}
+          status={status}
+          alignment={alignment}
+          onPress={onNodePress}
+        />
 
-      function onNodeClick(unit: Unit) {
-        if (!isProMember && section.index > 0) {
-          handleSubscriptionPress();
-        } else {
-          handleNodePress(unit, isLastUnitInSection);
-        }
-      }
-      return (
-        <View className="relative">
-          <PathNode
-            key={item.id}
-            unit={item}
-            status={status}
-            alignment={alignment}
-            onPress={onNodeClick}
-          />
-
-          {/* Sheep decoration at second node position in every section - Only render when visible */}
-          {isSecondNodeInSection && section.riveName && section.artboardName && false && (
-            <View
-              className={`absolute ${section.riveName === 'successLamb' ? 'right-24' : 'right-2'} top-1/2 -translate-y-1/2`}
-              style={{ zIndex: 10 }}>
-              <View className="w-44 h-44">
-                {/* Rive animations temporarily disabled for performance */}
-              </View>
+        {/* Sheep decoration at second node position in every section - Only render when visible */}
+        {isSecondNodeInSection && section.riveName && section.artboardName && false && (
+          <View
+            className={`absolute ${section.riveName === 'successLamb' ? 'right-24' : 'right-2'} top-1/2 -translate-y-1/2`}
+            style={{ zIndex: 10 }}
+          >
+            <View className="w-44 h-44">
+              {/* Rive animations temporarily disabled for performance */}
             </View>
-          )}
+          </View>
+        )}
 
-          {/* Journal icon at fourth node position in every section */}
-          {isFourthNodeInSection && section.image && (
-            <View className="absolute left-8 top-1/2 -translate-y-1/2" style={{ zIndex: 10 }}>
-              <Image
-                source={section.image}
-                style={{ width: 128, height: 128, opacity: sectionIsUnlocked ? 1 : 0.5 }}
-                resizeMode="contain"
-              />
-            </View>
-          )}
-        </View>
-      );
-    },
-    [getStatus, handleNodePress, isNextUnit, isSectionUnlocked]
-  ); // Added isSectionUnlocked to dependencies
+        {/* Journal icon at fourth node position in every section */}
+        {isFourthNodeInSection && section.image && (
+          <View
+            className="absolute left-8 top-1/2 -translate-y-1/2"
+            style={{ zIndex: 10 }}
+          >
+            <Image
+              source={section.image}
+              style={{ width: 128, height: 128, opacity: sectionIsUnlocked ? 1 : 0.5 }}
+              resizeMode="contain"
+            />
+          </View>
+        )}
+      </View>
+    );
+  }, [getStatus, handleNodePress, isNextUnit, isSectionUnlocked, isProMember, readingCompleted]); // Updated dependencies
 
   // Render section header - Improved with memo
-  const renderSectionHeader = useCallback(
-    ({ section }: { section: BibleSection }) => {
-      // Check if section is unlocked
-      const isUnlocked = isSectionUnlocked(section.pathId);
+  const renderSectionHeader = useCallback(({ section }: { section: BibleSection }) => {
+    // Check if section is unlocked
+    const isUnlocked = isSectionUnlocked(section.pathId);
 
-      return (
-        <StickyPathHeader
-          title={section.title || ''}
-          icon={section.icon || 'book'}
-          color={section.color || 'green'}
-          description={section.description || ''}
-          sectionNumber={section.index + 1}
-          isLocked={!isUnlocked}
-          opacity={!isUnlocked ? 0.5 : 1}
-        />
-      );
-    },
-    [isSectionUnlocked]
-  );
+    return (
+      <StickyPathHeader
+        title={section.title || ''}
+        icon={section.icon || 'book'}
+        color={section.color || 'green'}
+        description={section.description || ''}
+        sectionNumber={section.index + 1}
+        isLocked={!isUnlocked}
+        opacity={!isUnlocked ? 0.5 : 1}
+      />
+    );
+  }, [isSectionUnlocked]);
 
   // Show loading indicator while assets load
   if (!riveAssets) {

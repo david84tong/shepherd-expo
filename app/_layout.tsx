@@ -33,7 +33,7 @@ import ForceUpdateModal from '~/components/ForceUpdateModal';
 import { disableFontScaling } from './helper/disableFontScaling';
 import Toast from 'react-native-toast-message';
 import { adapty } from 'react-native-adapty';
-import { useUserStore } from './stores/userStore';
+import './stores/userStore';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -324,7 +324,7 @@ export default function RootLayout() {
       // }
 
       // Wait for Rive assets to be ready
-      if (!riveAssets?.[0]?.localUri) {
+      if (!riveAssets?.[0]?.uri) {
         console.log('Waiting for Rive assets to load...');
         return;
       }
@@ -362,7 +362,7 @@ export default function RootLayout() {
 
   // Call initializeApp when fonts and Rive assets are ready
   useEffect(() => {
-    if (riveAssets?.[0]?.localUri && !appReady) {
+    if (riveAssets?.[0]?.uri && !appReady) {
       console.log('Assets ready, initializing app...');
       initializeApp();
     }
@@ -385,7 +385,8 @@ export default function RootLayout() {
     }
   };
 
-  // Add effect to handle app state changes
+
+
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
@@ -406,11 +407,20 @@ export default function RootLayout() {
     };
   }, []);
 
-  // // Loading states with error handling
-  // if (!fontsLoaded && !fontError) {
-  //   return null; // Let the native splash screen show
-  // }
-  console.log('isRiveReady ==>', isRiveReady);
+  // Add state for isCreator
+  const [isCreator, setIsCreator] = useState(false);
+
+  // Check isCreator from AsyncStorage
+  useEffect(() => {
+    AsyncStorage.getItem('isCreator').then((val) => {
+      setIsCreator(val === 'true');
+    });
+  }, []);
+
+  // Loading states with error handling
+  if (!fontsLoaded && !fontError) {
+    return null; // Let the native splash screen show
+  }
 
   if (!isRiveReady) {
     return <View className="flex-1 items-center justify-center bg-surfaceCream" />; // Let the native splash screen show
@@ -500,8 +510,8 @@ export default function RootLayout() {
               />
             )}
 
-            {/* Debug button (visible only in development) */}
-            {__DEV__ && <DebugButton />}
+            {/* Debug button (visible only in development or for creators) */}
+            {(__DEV__ || isCreator) && <DebugButton />}
           </>
         )}
       </BottomSheetModalProvider>

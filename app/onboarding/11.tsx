@@ -20,6 +20,7 @@ import Rive, { Fit, Alignment } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
 import Toast from 'react-native-toast-message';
 import { useUIStore } from '../stores/uiStore';
+import { adapty } from 'react-native-adapty';
 
 export default function SaveProgressScreen() {
   const router = useRouter();
@@ -113,13 +114,11 @@ export default function SaveProgressScreen() {
     try {
       // Get all responses from store to ensure we have latest data
       const allResponses = useOnboardingStore.getState().getAllResponses();
+      console.log('Onboarding responses:', JSON.stringify(allResponses));
 
-      // Map the stored path to a spiritual goal if available
-      // Fallback to intent if no path selected
       const spiritualGoal = allResponses.intent || 'Understand';
-      // Create user object from onboarding responses
       const userData = {
-        id: uid, // Use id consistently instead of uid
+        id: uid,
         displayName,
         spiritualGoal,
         experienceLevel:
@@ -133,15 +132,13 @@ export default function SaveProgressScreen() {
         frequencyGoal: allResponses.frequencyGoal,
         denomination: allResponses.religiousAffiliation,
         ageRange: allResponses.ageRange,
-        // Set notification preferences if provided
         notificationEnabled:
           allResponses.notificationEnabled !== undefined ? allResponses.notificationEnabled : false,
         notificationTime: allResponses.notificationTime || undefined,
-        // Set selected path details if available
         selectedPathId: allResponses.selectedPath || undefined,
         lamb: {
           level: 1,
-          xp: 0,
+          xp: 90,
           mood: 'lamb-idle',
           hearts: 50,
           name: allResponses.lambName || '',
@@ -150,9 +147,49 @@ export default function SaveProgressScreen() {
         username: allResponses.username || '',
       };
 
-      analytics.logEvent('OnboardingSignUp_Completed');
+      console.log('Creating user data:', JSON.stringify(userData));
+
+      // Identify user in Mixpanel
       analytics.setUserId(uid);
-      analytics.setUserProperties(userData);
+      analytics.setUserProperties({
+        ...userData,
+        $name: displayName,
+        spiritual_goal: spiritualGoal,
+        experience_level: userData.experienceLevel,
+        denomination: userData.denomination,
+        age_range: userData.ageRange,
+        notification_enabled: userData.notificationEnabled,
+        notification_time: userData.notificationTime,
+        selected_path: userData.selectedPathId,
+        lamb_level: userData.lamb.level,
+        lamb_xp: userData.lamb.xp,
+        lamb_name: userData.lamb.name,
+      });
+
+      // Identify user in Adapty
+      try {
+        await adapty.identify(uid);
+        await adapty.updateProfile({
+          firstName: displayName,
+          codableCustomAttributes: {
+            spiritual_goal: spiritualGoal,
+            experience_level: userData.experienceLevel,
+            denomination: userData.denomination,
+            age_range: userData.ageRange,
+            notification_enabled: userData.notificationEnabled,
+            notification_time: userData.notificationTime,
+            selected_path: userData.selectedPathId,
+            lamb_level: userData.lamb.level,
+            lamb_xp: userData.lamb.xp,
+            lamb_name: userData.lamb.name,
+          },
+        });
+      } catch (adaptyError) {
+        console.error('Error identifying user in Adapty:', adaptyError);
+      }
+
+      analytics.logEvent('OnboardingSignUp_Completed');
+      
       // Create user in Firestore
       const success = await createUser(uid, userData);
       console.log('uid, userData =>', { uid, userData })

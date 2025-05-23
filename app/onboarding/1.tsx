@@ -24,7 +24,7 @@ const FIRST_WELCOME_TEXT = 'Every Shepherd starts with one lost lamb...';
 const SECOND_WELCOME_TEXT = "This one's yours.";
 const SECOND_STAGE_PROMPT = 'Tap to wake it up';
 const TYPING_SPEED = 75; // Speed for all typing effects
-const ZOOM_DURATION = 4000; // 5 seconds for a very slow zoom
+const ZOOM_DURATION = 3000; // Slow zoom effect (3 seconds)
 const TRANSITION_DURATION = 350; // Faster transition animation duration
 
 // Function to trigger a light haptic feedback
@@ -112,7 +112,7 @@ export default function OnboardingWelcomeScreen() {
     // Fade in gradient
     Animated.timing(gradientOpacityAnim, {
       toValue: 1,
-      duration: 2000,
+      duration: 1200,
       easing: Easing.bezier(0.4, 0, 0.2, 1),
       useNativeDriver: false,
     }).start();
@@ -131,10 +131,12 @@ export default function OnboardingWelcomeScreen() {
         easing: Easing.bezier(0.1, 0, 0, 1),
         useNativeDriver: true,
       }),
-    ]).start(() => {
-      // Animation complete: Activate the second stage
+    ]).start();
+    
+    // Enable interaction much earlier (750ms) for faster response
+    setTimeout(() => {
       setSecondStageActive(true);
-    });
+    }, 750);
   };
 
   // Typewriter effect based on current text phase

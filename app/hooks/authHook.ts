@@ -20,7 +20,7 @@ export const isSignedIn = () => {
   return currentUser !== null;
 };
 
-// Helper function to check if a user document exists in Firestore
+// Helper function to check if pa user document exists in Firestore
 export const checkUserExists = async (uid: string): Promise<boolean> => {
   try {
     const userDoc = await firestore().collection('users').doc(uid).get();
@@ -158,8 +158,8 @@ export function useAuth() {
 
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
       console.log('[Auth] User document updated in Firestore');
-
-      // Update local store with the email and display name
+      
+      // Update local store
       updateUser({
         id: uid,
         displayName,
@@ -244,7 +244,7 @@ export function useAuth() {
 
       // Log successful anonymous sign in
       if (analytics.isInitialized) {
-        analytics.logEvent('auth_success');
+        analytics.logEvent('auth_success_anonymously_by_clicking_skip_button')
       }
 
       // Adapty: login user after successful anonymous sign in

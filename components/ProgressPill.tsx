@@ -36,8 +36,8 @@ const ProgressPill: React.FC<ProgressPillProps> = ({
         style={{
           flexDirection: 'row',
           alignItems: 'center',
-          paddingHorizontal: 16,
-          paddingVertical: 6,
+          paddingHorizontal: 10,
+          paddingVertical: 2,
         }}>
         <Text className="font-feather text-body text-textPrimary mr-1">{label}</Text>
         <Image source={icon} className="w-6 h-6" />

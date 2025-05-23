@@ -1021,7 +1021,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               {/* Promo Code Button */}
 
               {/* Referral Code Button */}
-              {/* <TouchableOpacity
+              <TouchableOpacity
                 onPress={handleOpenReferralModal}
                 className="bg-white rounded-xl p-4 mt-2 shadow-sm flex-row justify-between items-center">
                 <View>
@@ -1031,7 +1031,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   </Text>
                 </View>
                 <Feather name="gift" size={20} color="#B89B4C" />
-              </TouchableOpacity> */}
+              </TouchableOpacity>
             </View>
 
             {/* User ID Section - Moved to bottom */}
@@ -1337,7 +1337,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
 const styles = StyleSheet.create({
   sheetBackground: {
-    backgroundColor: '#FFF4D9',
+    backgroundColor: '#FFF4D9', // surfaceCream
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },

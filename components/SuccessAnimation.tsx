@@ -23,6 +23,7 @@ import { getLambMoodByHearts } from '../app/hooks/streakHook';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '../app/stores/userStore';
+import { calculateLevelFromXp } from '../utils/levelUtils';
 
 // Import icons
 import gemIcon from '../assets/icons/greenGemIcon.png';
@@ -61,16 +62,19 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const [riveAssets] = useAssets([require('../assets/riveAnimations/successLamb.riv')]);
   const [homeLambAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
 
+
   // -------- Other hooks below (must appear before any conditional return) --------
   // Get completion states
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
   const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
+  const sawStreakToday = useHomeStore((state) => state.sawStreakToday);
+  const setSawStreakToday = useHomeStore((state) => state.setSawStreakToday);
 
   // User store hooks
-  const lambHearts = useUserStore((state) => state?.getLambHearts?.());
-  const lambXp = useUserStore((state) => state?.getLambXp?.());
+  const lambHearts = useUserStore((state) => state.getLambHearts?.());
+  const lambXp = useUserStore((state) => state.getLambXp());
   const setLambHearts = useUserStore((state) => state.setLambHearts);
   const setLambXp = useUserStore((state) => state.setLambXp);
   const addXp = useUserStore((state) => state.addXp);
@@ -83,13 +87,15 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const setGens = useUserStore((state) => state.setGens);
   const setLambMood = useUserStore((state) => state.setLambMood);
 
+
+
   // Determine which type to use for rendering
   const effectiveType = successType ?? SuccessAnimationType.READING;
 
   // Set sawDailyBonus to true immediately when bonus screen shows to prevent repeats
   useEffect(() => {
     if (effectiveType === SuccessAnimationType.BONUS && !sawDailyBonus) {
-      console.log('BONUS screen showing for first time - immediately setting sawDailyBonus flag');
+      console.log("BONUS screen showing for first time - immediately setting sawDailyBonus flag");
       setSawDailyBonus(true);
     }
   }, [effectiveType, sawDailyBonus, setSawDailyBonus]);
@@ -100,6 +106,10 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const [actualHeartReward, setActualHeartReward] = useState(0);
   // Flag to check if at max hearts
   const [isAtMaxHearts, setIsAtMaxHearts] = useState(false);
+  // State to track if user leveled up
+  const [leveledUp, setLeveledUp] = useState(false);
+  // Track the new level if leveled up
+  const [newLevel, setNewLevel] = useState(0);
 
   // Log when component mounts or successType changes
   useEffect(() => {
@@ -171,7 +181,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     console.log('DEBUG: today:', today.format('YYYY-MM-DD HH:mm:ss'));
 
     // Get the completed readings directly
-    const completedReadings = useUserStore.getState().getCompletedReadings?.();
+    const completedReadings = useUserStore.getState().getCompletedReadings();
     console.log('DEBUG: Total completed readings:', completedReadings.length);
 
     // If this is the first reading ever, it's definitely the first of the day
@@ -213,14 +223,15 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // This is the first reading of day if:
       // 1. It's the only reading today (or first), AND
       // 2. Either there are earlier readings OR this is truly the first reading ever
-      const isFirstOfDay = todaysReadingsCount <= 1;
+      const isFirstOfDay =
+        todaysReadingsCount <= 1
 
       console.log('DEBUG: Is first reading of day:', isFirstOfDay);
       console.log('=== END DEBUG ===');
 
       return isFirstOfDay;
     } catch (error) {
-      console.log('Error processing reading dates:', error);
+      console.error('Error processing reading dates:', error);
       return false;
     }
   }, [effectiveType]);
@@ -231,7 +242,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Section Complete!';
     subMessage = "You finished today's Bible reading & fed your lamb.";
     heartReward = 3;
-    xpReward = 5;
+    xpReward = 100;
     riveArtboard = undefined;
     rewardTitle = 'READING REWARDS';
   } else if (effectiveType === SuccessAnimationType.READING) {
@@ -239,7 +250,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Reading Complete!';
     subMessage = "You finished today's Bible reading & fed your lamb.";
     heartReward = 3;
-    xpReward = 5;
+    xpReward = 25;
     riveArtboard = 'lamb-eating';
     rewardTitle = 'READING REWARDS';
   } else if (effectiveType === SuccessAnimationType.BONUS) {
@@ -247,7 +258,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Daily Trifecta Complete!';
     subMessage = "Amazing! You've completed all three spiritual disciplines today.";
     heartReward = 5;
-    xpReward = 10;
+    xpReward = 25;
     riveArtboard = 'chest';
     rewardTitle = 'BONUS REWARDS';
   } else if (effectiveType === SuccessAnimationType.REFLECTION) {
@@ -255,7 +266,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Reflection Complete!';
     subMessage = "You've recorded your thoughts and connected with the Word.";
     heartReward = 1;
-    xpReward = 2;
+    xpReward = 25;
     riveArtboard = 'heart-hold';
     rewardTitle = 'REFLECTION REWARDS';
   } else if (effectiveType === SuccessAnimationType.PRAYER) {
@@ -263,22 +274,22 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Prayer Complete!';
     subMessage = 'You spent quality time with the Shepherd in prayer.';
     heartReward = 2;
-    xpReward = 3;
+    xpReward = 25;
     rewardTitle = 'PRAYER REWARDS';
     riveArtboard = 'success-heart'; // Show heart animation by default
   } else {
     // This should not happen, but log an error if it does
-    console.log('Invalid or missing success type:', effectiveType);
+    console.error('Invalid or missing success type:', effectiveType);
   }
 
   // After rewards are calculated, set artboard for PRAYER or other types
   if (effectiveType === SuccessAnimationType.PRAYER) {
     if (actualHeartReward > 0 && xpReward > 0) {
-      riveArtboard = 'success-hearts';
+      riveArtboard = "success-hearts";
     } else if (xpReward > 0 && actualHeartReward === 0) {
       riveArtboard = 'success-stars';
     } else if (actualHeartReward > 0 && xpReward === 0) {
-      riveArtboard = 'success-hearts';
+      riveArtboard = "success-hearts";
     } else {
       riveArtboard = undefined;
     }
@@ -301,19 +312,37 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Update user state with new values
       if (heartsToAdd > 0) {
         setLambHearts(lambHearts + heartsToAdd);
-        setLambMood?.(getLambMoodByHearts(lambHearts + heartsToAdd));
+        setLambMood(getLambMoodByHearts(lambHearts + heartsToAdd));
       }
 
       if (lambHearts + heartsToAdd >= 50) {
         console.log('Checking if lamb has full hp');
         if (readingCompleted && prayerCompleted && reflectionCompleted) {
           console.log('Setting lamb-full mood');
-          setLambMood?.('lamb-full');
+          setLambMood('lamb-full');
         }
       }
 
+      // Check current level before adding XP using the level utility function
+      const currentLevel = calculateLevelFromXp(lambXp);
+
       // Always add XP
       addXp(xpReward);
+
+      // Calculate new level after XP is added
+      const newXpTotal = lambXp + xpReward;
+      const newLevelValue = calculateLevelFromXp(newXpTotal);
+
+      // Check if level increased
+      if (newLevelValue > currentLevel) {
+        console.log(`Level up! ${currentLevel} -> ${newLevelValue}`);
+        setLeveledUp(true);
+        setNewLevel(newLevelValue);
+
+        // Make sure level is correctly set in the user store
+        setLambXp(newXpTotal); // Ensure XP is updated
+        useUserStore.getState().setLambLevel(newLevelValue); // Explicitly set the new level
+      }
 
       // Track rewards for analytics
       const rewardsData: any = {
@@ -324,7 +353,19 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         isAtMaxHearts: isMax,
         newLambHearts: lambHearts + heartsToAdd,
         newLambXp: lambXp + xpReward,
+        leveledUp: leveledUp,
+        newLevel: leveledUp ? newLevel : undefined
       };
+
+      // Log level up event if applicable
+      if (leveledUp) {
+        analytics.logEvent("LambLevelUp", {
+          fromLevel: newLevel - 1,
+          toLevel: newLevel,
+          xpTotal: lambXp + xpReward,
+          activityType: effectiveType
+        });
+      }
 
       // If this is a BONUS reward, add 9 gems
       // Only add gems if this is truly the first time seeing the bonus (sawDailyBonus was false)
@@ -339,15 +380,15 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
         // Set the flag to indicate user has seen daily bonus
         setSawDailyBonus(true);
-        console.log('Setting sawDailyBonus to true');
+        console.log("Setting sawDailyBonus to true");
       } else if (effectiveType === SuccessAnimationType.BONUS) {
         // Log if we're not adding gems because bonus was already seen
-        console.log('Not adding gems - user has already seen bonus animation today');
+        console.log("Not adding gems - user has already seen bonus animation today");
         rewardsData.gemsAwarded = 0;
       }
 
       // Log the rewards data to analytics
-      analytics.logEvent('SuccessAnimation_RewardsApplied', rewardsData);
+      analytics.logEvent("SuccessAnimation_RewardsApplied", rewardsData);
 
       // Create a new timestamp for the current time
       const now = firestore.Timestamp.now();
@@ -358,13 +399,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Update specific activity timestamp based on success type
       if (effectiveType === SuccessAnimationType.READING) {
         setLastReadingDate(now);
-        analytics.logEvent("SuccessAnimation_Reading_Completed", {
-          heartsAwarded: heartsToAdd,
-          xpAwarded: xpReward,
-          isAtMaxHearts: isMax,
-          newLambHearts: lambHearts + heartsToAdd,
-          newLambXp: lambXp + xpReward
-        });
+
       } else if (effectiveType === SuccessAnimationType.PRAYER) {
         setLastPrayerDate(now);
       } else if (effectiveType === SuccessAnimationType.REFLECTION) {
@@ -375,22 +410,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       setRewardsApplied(true);
 
       // Sync user state to Firestore after rewards are applied
-      useUserStore.getState().syncWithFirestore();
+      useUserStore.getState().syncWithFirestore?.();
 
       console.log(`Applied ${heartsToAdd} hearts (of intended ${heartReward}) and ${xpReward} XP`);
       console.log(`Updated values - Hearts: ${lambHearts + heartsToAdd}, XP: ${lambXp + xpReward}`);
       console.log(`Updated activity timestamp for ${effectiveType}`);
     }
-  }, [
-    effectiveType,
-    rewardsApplied,
-    lambHearts,
-    lambXp,
-    heartReward,
-    xpReward,
-    sawDailyBonus,
-    setSawDailyBonus,
-  ]);
+  }, [effectiveType, rewardsApplied, lambHearts, lambXp, heartReward, xpReward, sawDailyBonus, setSawDailyBonus]);
 
   // Play animations when component mounts or successType changes
   useEffect(() => {
@@ -492,41 +518,41 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   useEffect(() => {
     if (!successType) return;
 
-    let eventName = '';
+    let eventName = "";
     let params = {};
 
     // Log different events based on success type
     switch (successType) {
       case SuccessAnimationType.READING:
-        eventName = 'SuccessAnimation_Shown_Reading';
+        eventName = "SuccessAnimation_Shown_Reading";
         params = {
           xpReward: xpReward,
-          heartReward: actualHeartReward,
+          heartReward: actualHeartReward
         };
         break;
 
       case SuccessAnimationType.PRAYER:
-        eventName = 'SuccessAnimation_Shown_Prayer';
+        eventName = "SuccessAnimation_Shown_Prayer";
         params = {
           xpReward: xpReward,
-          heartReward: actualHeartReward,
+          heartReward: actualHeartReward
         };
         break;
 
       case SuccessAnimationType.REFLECTION:
-        eventName = 'SuccessAnimation_Shown_Reflection';
+        eventName = "SuccessAnimation_Shown_Reflection";
         params = {
           xpReward: xpReward,
-          heartReward: actualHeartReward,
+          heartReward: actualHeartReward
         };
         break;
 
       case SuccessAnimationType.BONUS:
-        eventName = 'SuccessAnimation_Shown_Bonus';
+        eventName = "SuccessAnimation_Shown_Bonus";
         params = {
           xpReward: xpReward,
           heartReward: actualHeartReward,
-          gemsAwarded: sawDailyBonus ? 0 : 9,
+          gemsAwarded: sawDailyBonus ? 0 : 9
         };
         break;
     }
@@ -544,15 +570,16 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     // Log the event
-    analytics.logEvent('SuccessAnimation_Tapped_GoHome', {
-      fromType: successType,
+    analytics.logEvent("SuccessAnimation_Tapped_GoHome", {
+      fromType: successType
     });
 
-    // If this is the first reading of the day and effectiveType is READING, show streak screen
-    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
+    // If this is the first reading of the day, effectiveType is READING, and we haven't shown the streak screen today
+    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING && !sawStreakToday) {
       triggerStreakScreen();
       return; // Prevent navigation so StreakScreen can show
     }
+
     // Set unmounting flag first
     isUnmounting.current = true;
 
@@ -566,12 +593,23 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   };
 
   const triggerStreakScreen = () => {
+    // If streak screen was already shown today, skip showing it again
+    if (sawStreakToday) {
+      console.log('Streak screen already shown today - skipping');
+      // Just continue with normal navigation
+      handleGoHome();
+      return;
+    }
+
     console.log('First reading of the day - showing streak screen');
     // Log analytics for streak screen
-    analytics.logEvent('SuccessAnimation_Showing_StreakScreen', {
+    analytics.logEvent("SuccessAnimation_Showing_StreakScreen", {
       fromType: effectiveType,
-      isFirstReadingOfDay: isFirstReadingOfDay,
+      isFirstReadingOfDay: isFirstReadingOfDay
     });
+
+    // Mark that we've shown the streak screen today
+    setSawStreakToday(true);
 
     // Start transition with fade out animation
     setIsTransitioning(true);
@@ -600,8 +638,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     console.log('Navigating to Prayer from Success screen');
 
     // Log analytics
-    analytics.logEvent('SuccessAnimation_Tapped_PrayButton', {
-      fromType: successType,
+    analytics.logEvent("SuccessAnimation_Tapped_PrayButton", {
+      fromType: successType
     });
 
     // Set tappedPrayAboutVerse regardless of where we're coming from
@@ -611,7 +649,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     // First update the state in the store
     setHomeMode('PRAYER');
     setPathInProgress(true); // Make sure path is in progress to show the component
-    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
+    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING && !sawStreakToday) {
       triggerStreakScreen();
     } else {
       setTimeout(() => {
@@ -622,6 +660,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
     // Add delay to give assets time to load
     console.log('Adding delay before navigation to ensure assets load');
+
   };
 
   // Handler for reflection button
@@ -632,15 +671,12 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     console.log('Navigating to Reflection from Success screen');
 
     // Log analytics
-    analytics.logEvent('SuccessAnimation_Tapped_ReflectButton', {
-      fromType: successType,
+    analytics.logEvent("SuccessAnimation_Tapped_ReflectButton", {
+      fromType: successType
     });
 
     // If this came from a reading or prayer success, set the tappedReflectAboutVerse flag
-    if (
-      effectiveType === SuccessAnimationType.READING ||
-      effectiveType === SuccessAnimationType.PRAYER
-    ) {
+    if (effectiveType === SuccessAnimationType.READING || effectiveType === SuccessAnimationType.PRAYER) {
       console.log('Setting tappedReflectAboutVerse to true');
       useHomeStore.getState().setTappedReflectAboutVerse(true);
     }
@@ -650,11 +686,12 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     setHomeMode('DEFAULT');
     setPathInProgress(false);
 
-    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING) {
+    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING && !sawStreakToday) {
       triggerStreakScreen();
     } else {
       router.replace('/(tabs)');
     }
+
 
     // Add delay to give assets time to load
     console.log('Adding delay before navigation to ensure assets load');
@@ -662,14 +699,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Navigate back to the home tab - the useEffect in index.tsx will respond to mode change
       setHomeMode('REFLECTION');
       setPathInProgress(true);
+
     }, 100); // 500ms delay
   };
 
-  // Determine if we should show next action buttons
+  // Determine if we should show next action buttons 
   // Show after reading completion OR after prayer completion (if reflection not done)
-  const showNextButtons =
-    (effectiveType === SuccessAnimationType.READING ||
-      effectiveType === SuccessAnimationType.PRAYER) &&
+  const showNextButtons = (effectiveType === SuccessAnimationType.READING || effectiveType === SuccessAnimationType.PRAYER) &&
     (!prayerCompleted || !reflectionCompleted);
 
   // If we're showing the streak screen, return it
@@ -689,7 +725,10 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   return (
     <ScrollView
       contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
-      showsVerticalScrollIndicator={false}>
+      showsVerticalScrollIndicator={false}
+      className="bg-surfaceCream"
+      style={{ flex: 1, backgroundColor: '#FFF4DC' }}
+    >
       <Animated.View
         className="flex-1 items-center justify-center pt-4 pb-8 px-5 bg-surfaceCream"
         style={{ opacity: fadeToStreakAnim }}>
@@ -719,23 +758,19 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             {effectiveType === SuccessAnimationType.SECTION_COMPLETE ? (
               <Rive
                 ref={riveRef}
-                // url={homeLambAssets?.[0].uri!}
-                resourceName={'home_lamb'}
+                url={homeLambAssets && homeLambAssets[0] && homeLambAssets[0].uri || ''}
                 autoplay={true}
-                artboardName="lamb-milestone"
+                artboardName='lamb-milestone'
                 style={{
-                  width: '100%',
-                  height: '100%',
-                  maxWidth: 300,
+                  width: '100%', height: '100%', maxWidth: 300,
                   maxHeight: 300,
-                  alignSelf: 'center',
+                  alignSelf: 'center'
                 }}
               />
             ) : (
               <Rive
                 ref={riveRef}
-                resourceName={'success_lamb'}
-                // url={riveAssets?.[0].uri!}
+                url={riveAssets && riveAssets[0] && riveAssets[0].uri || ''}
                 autoplay={true}
                 style={{ width: '100%', height: '100%' }}
                 {...(riveArtboard ? { artboardName: riveArtboard } : {})}
@@ -763,7 +798,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             shadowOpacity: 0.1,
             shadowRadius: 3,
             elevation: 3,
-            backgroundColor: '#FFF4D9',
           }}>
           <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
             {rewardTitle}
@@ -791,6 +825,18 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                 <Image source={starIcon} className="w-6 h-6 mr-2" />
                 <Text className="font-din text-textPrimary text-xl">+{xpReward} Soul Points</Text>
               </View>
+
+              {/* Show level up message if user leveled up */}
+              {leveledUp && (
+                <View className="mt-4 py-2 bg-lightYellow rounded-xl">
+                  <Text className="font-feather text-xl text-primary text-center">
+                    LEVEL UP!
+                  </Text>
+                  <Text className="font-din text-description text-center mt-1">
+                    Your lamb grew to level {newLevel}
+                  </Text>
+                </View>
+              )}
             </>
           )}
         </Animated.View>
@@ -802,14 +848,15 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             style={{
               opacity: buttonsOpacity,
               transform: [{ translateY: buttonsTranslateY }],
-            }}>
+            }}
+          >
             <View className="flex justify-center space-x-4 h-48">
               {/* Show Pray button only if prayer is not completed */}
               {!prayerCompleted && (
                 <PrimaryButton
                   title="Pray about this verse"
                   onPress={handleGoToPrayer}
-                  style={reflectionCompleted ? 'w-full' : 'flex-1 h-32'}
+                  style={reflectionCompleted ? "w-full" : "flex-1 h-32"}
                   buttonType="blue"
                 />
               )}
@@ -819,11 +866,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                 <PrimaryButton
                   title="Reflect on this verse"
                   onPress={handleGoToReflection}
-                  style={
-                    prayerCompleted || effectiveType === SuccessAnimationType.PRAYER
-                      ? 'w-full'
-                      : 'flex-1 h-24'
-                  }
+                  style={(prayerCompleted || effectiveType === SuccessAnimationType.PRAYER) ? "w-full" : "flex-1 h-24"}
                 />
               )}
             </View>
@@ -837,7 +880,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             style={{
               opacity: buttonsOpacity,
               transform: [{ translateY: buttonsTranslateY }],
-            }}>
+            }}
+          >
             {/* Pray button as primary action */}
             <PrimaryButton
               title="Pray about today's verse"
@@ -850,14 +894,14 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
               style={{
                 opacity: homeButtonOpacity,
                 transform: [{ translateY: homeButtonTranslateY }],
-              }}>
+              }}
+            >
               <TouchableOpacity
                 onPress={handlePress}
                 className="mt-4"
-                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
-                <Text className="font-feather text-description text-center underline mt-4">
-                  Go Home
-                </Text>
+                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+              >
+                <Text className="font-feather text-description text-center underline mt-4">Go Home</Text>
               </TouchableOpacity>
             </Animated.View>
           </Animated.View>
@@ -869,7 +913,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                 width: '100%',
                 opacity: homeButtonOpacity,
                 transform: [{ translateY: homeButtonTranslateY }],
-              }}>
+              }}
+            >
               <PrimaryButton title={buttonText} onPress={handlePress} style="mt-4" />
             </Animated.View>
           )
@@ -881,11 +926,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             style={{
               opacity: homeButtonOpacity,
               transform: [{ translateY: homeButtonTranslateY }],
-            }}>
+            }}
+          >
             <TouchableOpacity
               onPress={handlePress}
               className="mt-4"
-              onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
+              onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+            >
               <Text className="font-feather text-description text-center underline">Go Home</Text>
             </TouchableOpacity>
           </Animated.View>
