@@ -82,7 +82,7 @@ const syncUserDataToFirestore = async () => {
 
   try {
     console.log('Syncing user data to Firestore');
-    return await useUserStore.getState().syncWithFirestore();
+    return await useUserStore.getState().syncWithFirestore?.();
   } catch (error) {
     console.log('Error syncing user data to Firestore:', error);
     return false;
@@ -444,7 +444,7 @@ export const useStreakManager = () => {
         await userStore.fetchFromFirestore?.();
       }
 
-      const lambHearts = userStore.getLambHearts();
+      const lambHearts = userStore.getLambHearts?.();
       const streakCount = userStore.getStreakCount();
       const lastActivityDate = userStore.getLastActivityDate();
       const lastReadingDate = userStore.lastReadingDate;
@@ -490,7 +490,7 @@ export const useStreakManager = () => {
       // Sync changes back to Firestore if authenticated and there were significant changes
       if (isAuthenticated() && (result.heartPenalty > 0 || result.streakBroken || result.newDay)) {
         console.log('Syncing streak changes back to Firestore');
-        await userStore.syncWithFirestore();
+        await userStore.syncWithFirestore?.();
       }
 
       return result;

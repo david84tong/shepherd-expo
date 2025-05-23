@@ -189,7 +189,7 @@ export default function SaveProgressScreen() {
       }
 
       analytics.logEvent('OnboardingSignUp_Completed');
-      
+
       // Create user in Firestore
       const success = await createUser(uid, userData);
       console.log('uid, userData =>', { uid, userData })
@@ -406,7 +406,7 @@ export default function SaveProgressScreen() {
 
         {/* Icon */}
         <View className="mb-8 overflow-hidden w-64 h-64 items-center justify-center">
-          {riveAssets && riveAssets[0]?.localUri && (
+          {riveAssets && riveAssets[0]?.uri && (
             <Rive
               // url={riveAssets[0].uri}
               resourceName={'home_lamb'}
