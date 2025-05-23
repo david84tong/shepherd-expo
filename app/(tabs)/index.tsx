@@ -784,14 +784,14 @@ export default function HomeScreen() {
             { position: 'absolute', width: '100%', height: '100%', zIndex: 0 },
             { opacity: waterOpacityAnim },
           ]}>
-          {showBgRive && riveAssets && (
+          {/* {showBgRive && riveAssets && (
             <Rive
               // url={riveAssets[1].uri!}
               resourceName={'bg_green'}
               autoplay={true}
               style={{ width: '160%', height: '160%', top: -300, left: -128 }}
             />
-          )}
+          )} */}
         </Animated.View>
 
         <SafeAreaView className="flex-1">
@@ -999,7 +999,7 @@ export default function HomeScreen() {
                 if (!isPro) {
                   analytics.logEvent("HomeScreen_TappedProBadge");
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  
+
                   // Check if user has seen half-off paywall before
                   const subscriptionStore = useSubscriptionStore.getState();
                   if (subscriptionStore.shouldShowFreeTrialPaywall()) {

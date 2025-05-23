@@ -81,8 +81,12 @@ export default function OnboardingAgeRangeScreen() {
   };
 
 
-  const handleSelection = async (ageRange: OnboardingResponses['ageRange']) => {
+  const handleSelection = async (ageRange: OnboardingResponses['ageRange'], isDatePicker = false) => {
     // Trigger light haptic feedback
+    if (ageRange === 'under-12' && Platform.OS === 'android' && !isDatePicker) {
+      setShowDatePicker(true)
+      return
+    }
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
         console.log('Haptics not available');
@@ -151,7 +155,7 @@ export default function OnboardingAgeRangeScreen() {
       </Animated.View>
 
       {/* Options Container */}
-      {Platform.OS === 'android' ? (
+      {/* {Platform.OS === 'android' ? (
         <Animated.View style={optionsStyle} className="space-y-4 mt-0">
           <PrimaryButton
             title="Select Your Birth Date"
@@ -180,11 +184,14 @@ export default function OnboardingAgeRangeScreen() {
             />
           )}
         </Animated.View>
-      ) : (
-        <Animated.View style={optionsStyle} className="space-y-4 mt-0">
-          <ScrollView contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>
-            <View className="space-y-4">
-              {options.map((option) => (
+      ) : ( */}
+      <Animated.View style={optionsStyle} className="space-y-4 mt-0">
+        <ScrollView contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>
+          <View className="space-y-4">
+            {options.map((option) => {
+              console.log("option ==>", option?.id);
+
+              return (
                 <PrimaryButton
                   key={option.id}
                   title={option.title}
@@ -193,10 +200,28 @@ export default function OnboardingAgeRangeScreen() {
                   primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
                   textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
                 />
-              ))}
-            </View>
-          </ScrollView>
-        </Animated.View>
+              )
+            })}
+          </View>
+        </ScrollView>
+      </Animated.View>
+      {/* )} */}
+      {showDatePicker && (
+        <DateTimePicker
+          value={selectedDate}
+          mode="date"
+          display="default"
+          onChange={(event, date) => {
+            setShowDatePicker(false);
+            if (event.type === "set" && date) {
+              setSelectedDate(date);
+              const ageRange = calculateAgeRange(date);
+              handleSelection(ageRange, true);
+            }
+          }}
+          maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 1))}
+          minimumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 12))}
+        />
       )}
     </View>
   );
