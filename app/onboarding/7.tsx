@@ -9,7 +9,7 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-
+import { adapty } from 'react-native-adapty';
 import PrimaryButton from '../../components/PrimaryButton';
 import { OnboardingResponses } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
@@ -82,6 +82,12 @@ export default function OnboardingAgeRangeScreen() {
 
     // Save to user store
     setUser({ ageRange });
+    await adapty.updateProfile({
+      codableCustomAttributes: {     
+        age_range: ageRange,       
+      },
+    });
+
 
     // Navigate to next screen
     router.push('/onboarding/8' as any);
@@ -118,7 +124,7 @@ export default function OnboardingAgeRangeScreen() {
     },
     {
       id: '55-64+',
-      title: '55-64',
+      title: '55-64+',
     },   
 
   ] as const;

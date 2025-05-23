@@ -1,11 +1,14 @@
 import * as Haptics from 'expo-haptics';
 import { Redirect, Tabs } from 'expo-router';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, Platform, Pressable, StyleSheet, View, ViewStyle } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { isSignedIn } from '../hooks/authHook';
 import { useHomeStore } from '../stores/homeStore';
 import { usePathStore } from '../stores/pathStore';
+import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
+import { useOnboardingStore } from '../stores/onboardingStore';
 
 // Helper component to center the icon
 const CenteredIcon = ({ children }: { children: React.ReactNode }) => (
@@ -70,6 +73,23 @@ export default function TabsLayout() {
   // Hooks must be invoked in the same order on every render.  
   // Move them all before any conditional early-returns.
   const signedIn = isSignedIn();
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+  const { savedScreenToNavigateTo } = useOnboardingStore();
+
+  // Check onboarding status
+  useEffect(() => {
+    const checkOnboarding = async () => {
+      try {
+        const completed = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+        setOnboardingCompleted(completed === 'true');
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        setOnboardingCompleted(false);
+      }
+    };
+    
+    checkOnboarding();
+  }, []);
 
   // Zustand selectors – always call, even if the user ends up being redirected.
   const mode = useHomeStore((state) => state.mode);
@@ -86,9 +106,30 @@ export default function TabsLayout() {
     }).start();
   }, [mode, pathInProgress]);
 
-  // After hooks are declared it's now safe to early-return based on auth state.
+  // Wait for onboarding status to be determined
+  if (onboardingCompleted === null) {
+    return null; // Show nothing while loading
+  }
+
+  // Check authentication first - if not signed in, go to auth welcome screen
   if (!signedIn) {
+    // Only redirect to saved onboarding screen if they were in the middle of onboarding
+    // and have a saved screen (meaning they started onboarding but didn't complete it)
+    if (!onboardingCompleted && savedScreenToNavigateTo && savedScreenToNavigateTo !== '1') {
+      console.log(`[TabsLayout] User not signed in but has saved onboarding progress, redirecting to: /onboarding/${savedScreenToNavigateTo}`);
+      return <Redirect href={`/onboarding/${savedScreenToNavigateTo}` as any} />;
+    }
+    
+    // For brand new users or users who haven't started onboarding, show auth welcome screen
+    console.log('[TabsLayout] User not signed in, redirecting to auth welcome screen');
     return <Redirect href="/(auth)" />;
+  }
+
+  // If user is signed in but hasn't completed onboarding (edge case), redirect to onboarding
+  if (!onboardingCompleted) {
+    const targetScreen = savedScreenToNavigateTo || '1';
+    console.log(`[TabsLayout] User signed in but onboarding not completed, redirecting to: /onboarding/${targetScreen}`);
+    return <Redirect href={`/onboarding/${targetScreen}` as any} />;
   }
 
   // Using absolute positioning to prevent the "chin" gap

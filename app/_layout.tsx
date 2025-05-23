@@ -177,16 +177,20 @@ export default function RootLayout() {
   // Check onboarding status with timeout
   const checkOnboarding = async () => {
     try {
+      console.log(`[RootLayout] 🔄 Checking onboarding status...`);
+      
       // Check if onboarding has been completed by looking for the key in AsyncStorage
       const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-      console.log('Onboarding completed status:', onboardingCompleted);
+      console.log('[RootLayout] Onboarding completed status:', onboardingCompleted);
 
       // If onboarding is completed, the value will be 'true'
       const isOnboardingCompleted = onboardingCompleted === 'true';
 
       // Initialize onboarding store to load saved screen
+      console.log(`[RootLayout] 🏪 Initializing onboarding store...`);
       const onboardingStore = useOnboardingStore.getState();
       const savedScreen = await onboardingStore.initializeFromStorage();
+      console.log(`[RootLayout] 📍 Onboarding store initialized, saved screen: ${savedScreen}`);
 
       setInitialRouteDetermined(true);
       setIsOnboardingChecked(true);
@@ -194,18 +198,18 @@ export default function RootLayout() {
 
       // Log the status for debugging
       if (isOnboardingCompleted) {
-        console.log('User has completed onboarding');
+        console.log('[RootLayout] ✅ User has completed onboarding');
       } else {
-        console.log('User has NOT completed onboarding');
-        console.log(`📍 Saved onboarding screen: ${savedScreen}`);
+        console.log('[RootLayout] ❌ User has NOT completed onboarding');
+        console.log(`[RootLayout] 📍 Saved onboarding screen: ${savedScreen}`);
         
-        // Note: Navigation will be handled by the onboarding layout after mounting
-        // to avoid "navigation before mounting" errors
+        // Let the onboarding layout handle navigation to avoid timing issues
+        console.log('[RootLayout] 📝 Navigation will be handled by onboarding layout');
       }
 
       return isOnboardingCompleted;
     } catch (error) {
-      console.error('Error checking onboarding status:', error);
+      console.error('[RootLayout] ❌ Error checking onboarding status:', error);
       setHasError(true);
       setInitialRouteDetermined(true);
       setIsOnboardingChecked(true);

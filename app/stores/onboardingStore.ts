@@ -235,13 +235,20 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   
   initializeFromStorage: async () => {
     try {
+      console.log(`[OnboardingStore] 🔄 Initializing from storage...`);
       const data = await AsyncStorage.getItem(ONBOARDING_STORAGE_KEY);
+      console.log(`[OnboardingStore] 📱 Raw data from AsyncStorage:`, data);
+      
       const parsedData = data ? JSON.parse(data) : null;
+      console.log(`[OnboardingStore] 📋 Parsed data:`, parsedData);
       
       if (parsedData) {
         // Handle both old and new data structures
         const currentScreen = parsedData.currentScreen || '1';
         const responses = parsedData.responses || parsedData; // Fallback for old structure
+        
+        console.log(`[OnboardingStore] 📍 Extracted current screen: ${currentScreen}`);
+        console.log(`[OnboardingStore] 💾 Extracted responses:`, responses);
         
         set({
           responses: responses,
@@ -258,6 +265,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
         }
         return currentScreen;
       } else {
+        console.log(`[OnboardingStore] 🟢 No saved data found`);
         set({ isInitialized: true });
         console.log('🟢 No onboarding state found in storage, starting fresh');
         return '1';

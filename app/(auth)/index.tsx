@@ -10,17 +10,13 @@ import Rive from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import { LinearGradient } from 'expo-linear-gradient';
 import analytics from '~/utils/analytics';
-import Animated, {
+import {
   useAnimatedStyle,
   withTiming,
   withSpring,
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
-import { useOnboardingStore } from '../stores/onboardingStore';
-import { useUserStore } from '../stores/userStore';
-import { getAnimationConfig, shouldAnimate } from '../../utils/accessibility';
 import CustomAnimatedView from '../components/CustomAnimatedView';
 
 // We'll use the background directly in the source prop
