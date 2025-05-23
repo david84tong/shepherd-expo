@@ -26,7 +26,7 @@ export const checkUserExists = async (uid: string): Promise<boolean> => {
     const userDoc = await firestore().collection('users').doc(uid).get();
     return userDoc.exists;
   } catch (error) {
-    console.error('Error checking if user exists:', error);
+    console.log('Error checking if user exists:', error);
     return false;
   }
 };
@@ -65,7 +65,7 @@ export function useAuth() {
       // Check if Apple Sign In is available on the device
       const isAvailable = await AppleAuthentication.isAvailableAsync();
       if (!isAvailable) {
-        console.error('[Auth] Apple Authentication is not available on this device');
+        console.log('[Auth] Apple Authentication is not available on this device');
         throw new Error('Apple Authentication is not available on this device');
       }
 
@@ -123,7 +123,7 @@ export function useAuth() {
         console.log('[Auth] Login mode: fetching existing user data from Firestore');
         const success = await fetchFromFirestore?.();
         if (!success) {
-          console.error('[Auth] Failed to fetch user data from Firestore');
+          console.log('[Auth] Failed to fetch user data from Firestore');
           throw new Error('Failed to fetch your account data. Please try again.');
         }
 
@@ -181,7 +181,7 @@ export function useAuth() {
       return userCredential.user;
     } catch (err) {
       const error = err as Error;
-      console.error('[Auth] Apple sign in error details:', {
+      console.log('[Auth] Apple sign in error details:', {
         message: error.message,
         name: error.name,
         stack: error.stack,
@@ -255,7 +255,7 @@ export function useAuth() {
       return userCredential.user;
     } catch (err) {
       const error = err as Error;
-      console.error('[Auth] Anonymous sign in error:', error.message, error.stack);
+      console.log('[Auth] Anonymous sign in error:', error.message, error.stack);
 
       // Log authentication error
       if (analytics.isInitialized) {
@@ -325,10 +325,16 @@ export function useAuth() {
         createdAt: firestore.Timestamp.now(),
         updatedAt: firestore.Timestamp.now(),
       };
+      console.log("userDoc ====>",userDoc);
+      
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
+      console.log('userDoc set in firestore');
+      
       updateUser({ id: uid, displayName: userDoc.displayName, email: userDoc.email });
+      console.log('userDoc updated in store');
       setCreatedAt(firestore.Timestamp.now());
       setUpdatedAt(firestore.Timestamp.now());
+      console.log('createdAt and updatedAt set in store');
 
       if (analytics.isInitialized) {
         analytics.logEvent('auth_success', {
@@ -365,7 +371,7 @@ export function useAuth() {
 
       // await subscriptionStore.logoutAdaptyUser();
     } catch (error) {
-      console.error('[Auth] Error during sign out:', error);
+      console.log('[Auth] Error during sign out:', error);
       throw error;
     }
   };

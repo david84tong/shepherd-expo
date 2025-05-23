@@ -57,13 +57,13 @@ export default function LoginScreen() {
 
     try {
       // Trigger haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
       // Remove the onboarding completed key
       await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
       // Navigate to onboarding
       router.replace('/onboarding/1');
     } catch (error) {
-      console.error('Error starting journey:', error);
+      console.log('Error starting journey:', error);
       Alert.alert('Error', 'Could not start journey. Please try again.');
     }
   };
@@ -221,10 +221,12 @@ export default function LoginScreen() {
 
           {/* Rive Animation in the middle */}
           <Animated.View
+
             style={lambStyle}
             className="h-[200px] w-full justify-center items-center -mt-24">
             <Rive
-              url={riveAssets[0].uri}
+              resourceName={'home_lamb'}
+              // url={riveAssets[0].uri}
               artboardName="lamb-reading"
               autoplay
               style={{ width: '120%', height: '120%' }}

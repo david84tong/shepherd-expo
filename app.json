@@ -15,9 +15,8 @@
       "**/*"
     ],
     "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FFF4D9"
+    "image": "./assets/custom_splash_icon.png",
+      "resizeMode": "cover"
     },
     "fonts": [
       {
@@ -103,17 +102,23 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/splash.png",
-          "resizeMode": "contain",
-          "backgroundColor": "#FFF3D9",
-          "imageWidth": 196
+          "image": "./assets/custom_splash_icon.png",
+          "resizeMode": "cover",
+          "imageWidth": 230,
+          "imageHeight": 230
         }
       ],
       "@react-native-firebase/app",
       "expo-font",
       "expo-apple-authentication",
       "expo-asset",
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-custom-assets",
+        {
+          "assetsPaths": ["./assets/riveAnimations/"]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

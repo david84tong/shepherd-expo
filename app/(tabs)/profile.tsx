@@ -14,6 +14,7 @@ import {
   Linking,
   Alert,
   Modal,
+  Platform,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Application from 'expo-application';
@@ -68,6 +69,7 @@ export default function ProfileScreen() {
     getUser,
   } = useUserStore();
 
+
   // Get subscription state and actions from the store
   const { isProMember, presentPaywall, getCustomerInfo, setFromScreen } = useSubscriptionStore();
 
@@ -75,18 +77,21 @@ export default function ProfileScreen() {
   const streak = getStreakCount?.();
   const createdAtTimestamp = getCreatedAt?.();
   const completedReadings = getCompletedReadings?.();
-  const completedPrayers = getCompletedPrayers();
-  const completedReflections = getCompletedReflections();
+  const completedPrayers = getCompletedPrayers?.();
+  const completedReflections = getCompletedReflections?.();
   const user = getUser?.();
   const userId = user?.id || null;
 
   const [showDiscordCard, setShowDiscordCard] = useState(true);
-  const { signInWithApple } = useAuth();
+  const { signInWithApple, signInWithGoogle } = useAuth();
   const [signInLoading, setSignInLoading] = useState(false);
   const [signInError, setSignInError] = useState<string | null>(null);
+  const [showGoogleSignIn, setShowGoogleSignIn] = useState(false);
 
   // Detect if user is anonymous (no email and displayName is 'Anonymous User')
   const isAnonymous = !user?.email;
+
+  console.log('isAnonymous ==>', isAnonymous);
 
   // Fetch customer info when the component mounts or when app comes to foreground
   useEffect(() => {
@@ -103,7 +108,7 @@ export default function ProfileScreen() {
           setShowDiscordCard(false);
         }
       } catch (error) {
-        console.error('Failed to load discord card dismissal status', error);
+        console.log('Failed to load discord card dismissal status', error);
       }
     };
     checkDismissalStatus();
@@ -122,7 +127,7 @@ export default function ProfileScreen() {
         year: 'numeric',
       });
     } catch (error) {
-      console.error('Error formatting createdAt date:', error, createdAtTimestamp);
+      console.log('Error formatting createdAt date:', error, createdAtTimestamp);
       return 'Error displaying date';
     }
   }, [createdAtTimestamp]);
@@ -135,7 +140,7 @@ export default function ProfileScreen() {
         userId: userId || 'Anonymous user',
       });
     } else {
-      console.error('showSettings not available on global object');
+      console.log('showSettings not available on global object');
     }
   }, [userId]);
 
@@ -148,7 +153,7 @@ export default function ProfileScreen() {
       setShowDiscordCard(false);
       analytics.logEvent('Profile_DiscordCard_Dismissed');
     } catch (error) {
-      console.error('Failed to save discord card dismissal status', error);
+      console.log('Failed to save discord card dismissal status', error);
     }
   }, []);
 
@@ -159,7 +164,7 @@ export default function ProfileScreen() {
       // Replace 'YOUR_DISCORD_INVITE_LINK' with your actual Discord server invite link
       await Linking.openURL('https://discord.gg/W9MZdVaKBs');
     } catch (err) {
-      console.error('Failed to open Discord link', err);
+      console.log('Failed to open Discord link', err);
       Alert.alert(
         'Error',
         'Could not open the Discord link. Please ensure Discord is installed or try again later.'
@@ -231,7 +236,7 @@ export default function ProfileScreen() {
       // Otherwise, format the date
       return dayjs(date).format('MMM D, YYYY');
     } catch (error) {
-      console.error('Error formatting activity date:', error, timestamp);
+      console.log('Error formatting activity date:', error, timestamp);
       return 'Unknown date';
     }
   };
@@ -276,7 +281,7 @@ export default function ProfileScreen() {
       const diffYears = Math.floor(diffMonths / 12);
       return `${diffYears}y ago`;
     } catch (error) {
-      console.error('Error formatting relative time:', error, timestamp);
+      console.log('Error formatting relative time:', error, timestamp);
       return '';
     }
   };
@@ -321,6 +326,35 @@ export default function ProfileScreen() {
       setSignInLoading(false);
     }
   };
+
+  // Handle Google sign in from profile
+  const handleGoogleSignIn = async () => {
+    setSignInError(null);
+    setSignInLoading(true);
+    try {
+      await signInWithGoogle(false); // Not login mode, upgrade anonymous
+      // On success, user store will update and card will disappear
+    } catch (error: any) {
+      let errorMessage = 'There was a problem signing in with Google.';
+      if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
+        errorMessage = 'Sign in was canceled. Please try again.';
+      } else if (error.message?.includes('network')) {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (error.message?.includes('configuration')) {
+        errorMessage = 'Authentication configuration error. Please try another method.';
+      } else if (error.message?.includes('incomplete')) {
+        errorMessage = 'Sign in process was interrupted. Please try again.';
+      } else if (error.message?.includes('No account found')) {
+        errorMessage =
+          "We couldn't find an account with this Google account. Please create a new account instead.";
+      }
+      setSignInError(errorMessage);
+    } finally {
+      setSignInLoading(false);
+    }
+  };
+
+
   // Modal state for path selection
   const [showPathModal, setShowPathModal] = useState(false);
   // Assume onboarding_completed is a boolean in user object
@@ -354,7 +388,7 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Sign In to Save Progress Card (only for anonymous users) */}
+          {/* Sign In to Save Progress Card (for anonymous users) */}
           {isAnonymous && (
             <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
               <Text className="font-feather text-xl text-accentGold mb-2 text-center">
@@ -364,15 +398,26 @@ export default function ProfileScreen() {
                 Create a free account to sync your streak, XP, and lamb across devices. You can
                 always sign in later!
               </Text>
-              <PrimaryButton
-                title={signInLoading ? 'Signing in...' : 'Sign in with Apple'}
-                onPress={handleAppleSignIn}
-                primaryColor="bg-black"
-                textColor="text-white"
-                shadowStyle="shadow-darkApple"
-                style="mt-2"
-                disabled={signInLoading}
-              />
+              {Platform.OS === 'ios' ? (
+                <PrimaryButton
+                  title={signInLoading ? 'Signing in...' : 'Sign in with Apple'}
+                  onPress={handleAppleSignIn}
+                  primaryColor="bg-black"
+                  textColor="text-white"
+                  shadowStyle="shadow-darkApple"
+                  style="mt-2"
+                  disabled={signInLoading}
+                />
+              ) : (
+                <PrimaryButton
+                  title={signInLoading ? 'Signing in...' : 'Sign in with Google'}
+                  onPress={handleGoogleSignIn}
+                  primaryColor="bg-white"
+                  textColor="text-[#4285F4]"
+                  shadowStyle="shadow-appleShadow"
+                  disabled={signInLoading}
+                />
+              )}
               {signInError && (
                 <Text className="font-din text-red-500 text-center mt-2">{signInError}</Text>
               )}
@@ -417,7 +462,7 @@ export default function ProfileScreen() {
             <View className="flex-row justify-between items-center mb-6">
               <View className="bg-lightYellow px-4 py-1 rounded-lg opacity-80">
                 <Text className="font-feather text-heading text-primary">
-                  {lamb.name ? lamb.name : 'Your Lamb'}
+                  {lamb?.name ? lamb?.name : 'Your Lamb'}
                 </Text>
               </View>
               <Image source={sheepIcon} className="w-12 h-12 rounded-full" />
@@ -426,7 +471,7 @@ export default function ProfileScreen() {
             {/* Stats Grid */}
             <View className="flex-row justify-between space-x-8">
               <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3 ">
-                <Text className="font-feather text-h2 text-textPrimary">{lamb.level}</Text>
+                <Text className="font-feather text-h2 text-textPrimary">{lamb?.level}</Text>
                 <Text className="font-din text-description">Level</Text>
               </View>
               <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3 mx-4">
@@ -435,7 +480,7 @@ export default function ProfileScreen() {
               </View>
 
               <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3">
-                <Text className="font-feather text-h2 text-textPrimary">{lamb.hearts}</Text>
+                <Text className="font-feather text-h2 text-textPrimary">{lamb?.hearts}</Text>
                 <Text className="font-din text-description">Hearts</Text>
               </View>
             </View>
@@ -443,12 +488,12 @@ export default function ProfileScreen() {
             <View className="mt-6 mx-2">
               <View className="flex-row justify-between mb-2">
                 <Text className="font-din text-description">Experience</Text>
-                <Text className="font-din text-description">{lamb.xp} XP</Text>
+                <Text className="font-din text-description">{lamb?.xp} XP</Text>
               </View>
               <View className="h-4 bg-lightYellow rounded-full overflow-hidden">
                 <View
                   className="h-full bg-accentGold rounded-full"
-                  style={{ width: `${Math.min(((lamb.xp % 100) / 100) * 100, 100)}%` }}
+                  style={{ width: `${Math.min(((lamb?.xp % 100) / 100) * 100, 100)}%` }}
                 />
               </View>
             </View>
@@ -478,7 +523,7 @@ export default function ProfileScreen() {
                   const showDateHeader =
                     index === 0 ||
                     formatActivityDate(activity.date) !==
-                      formatActivityDate(allActivities[index - 1].date);
+                    formatActivityDate(allActivities[index - 1].date);
 
                   return (
                     <View key={`${activity.type}-${index}`}>

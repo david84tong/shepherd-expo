@@ -103,7 +103,7 @@ export const configureNotifications = async () => {
 
     return true;
   } catch (error) {
-    console.error('Error configuring notifications:', error);
+    console.log('Error configuring notifications:', error);
     return false;
   }
 };
@@ -168,7 +168,7 @@ export const useNotificationStore = create<NotificationState>()(
 
           console.log('📱 Notification system initialization complete');
         } catch (error) {
-          console.error('Failed to initialize notifications:', error);
+          console.log('Failed to initialize notifications:', error);
         }
       },
 
@@ -194,7 +194,7 @@ export const useNotificationStore = create<NotificationState>()(
           });
           console.log('--- End of scheduled notifications ---');
         } catch (error) {
-          console.error('Failed to list scheduled notifications:', error);
+          console.log('Failed to list scheduled notifications:', error);
         }
       },
 
@@ -316,11 +316,11 @@ export const useNotificationStore = create<NotificationState>()(
           );
 
           if (!dailyReminder) {
-            console.error('Daily reminder was not scheduled properly');
+            console.log('Daily reminder was not scheduled properly');
             throw new Error('Failed to schedule notification');
           }
         } catch (error) {
-          console.error('Failed to schedule daily reminder notification:', error);
+          console.log('Failed to schedule daily reminder notification:', error);
           throw error;
         }
       },
@@ -331,7 +331,7 @@ export const useNotificationStore = create<NotificationState>()(
           await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.DAILY_REMINDER);
           console.log('Daily reminder notification canceled');
         } catch (error) {
-          console.error('Failed to cancel daily reminder notification:', error);
+          console.log('Failed to cancel daily reminder notification:', error);
         }
       },
 
@@ -489,7 +489,7 @@ export const useNotificationStore = create<NotificationState>()(
             set({ lastScheduledDate: todayString });
           }
         } catch (error) {
-          console.error('Failed to schedule streak notifications:', error);
+          console.log('Failed to schedule streak notifications:', error);
         }
       },
 
@@ -500,7 +500,7 @@ export const useNotificationStore = create<NotificationState>()(
           await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.STREAK_BROKEN);
           console.log('Streak notifications canceled');
         } catch (error) {
-          console.error('Failed to cancel streak notifications:', error);
+          console.log('Failed to cancel streak notifications:', error);
         }
       },
 
@@ -558,7 +558,7 @@ export const useNotificationStore = create<NotificationState>()(
             console.log('📱 No action needed - streak notifications already scheduled for today');
           }
         } catch (error) {
-          console.error('Failed to check and reschedule notifications:', error);
+          console.log('Failed to check and reschedule notifications:', error);
         }
       },
 
@@ -574,7 +574,7 @@ export const useNotificationStore = create<NotificationState>()(
           console.log('📱 Streak notifications rescheduled for the next day');
           return true;
         } catch (error) {
-          console.error('Failed to reschedule streak notifications for the next day:', error);
+          console.log('Failed to reschedule streak notifications for the next day:', error);
           return false;
         }
       },

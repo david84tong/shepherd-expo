@@ -153,7 +153,7 @@ class Analytics {
 
       console.log('✅ Analytics (Mixpanel) initialized successfully');
     } catch (error) {
-      console.error('❌ Failed to initialize analytics:', error);
+      console.log('❌ Failed to initialize analytics:', error);
     }
   }
 
@@ -189,7 +189,7 @@ class Analytics {
       // Track event in Mixpanel
       this.mixpanel?.track(eventName?.toString(), eventParams);
     } catch (error) {
-      console.error('Failed to log analytics event:', error);
+      console.log('Failed to log analytics event:', error);
     }
   }
 
@@ -231,7 +231,7 @@ class Analytics {
         this.mixpanel.getPeople().set(properties);
       }
     } catch (error) {
-      console.error('Failed to set user properties:', error);
+      console.log('Failed to set user properties:', error);
     }
   }
 

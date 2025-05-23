@@ -63,7 +63,7 @@ export function getDateFromTimestamp(timestamp: any): Date | null {
     }
     return null;
   } catch (error) {
-    console.error('DEBUG - Error converting timestamp:', error);
+    console.log('DEBUG - Error converting timestamp:', error);
     return null;
   }
 }
@@ -84,7 +84,7 @@ const syncUserDataToFirestore = async () => {
     console.log('Syncing user data to Firestore');
     return await useUserStore.getState().syncWithFirestore();
   } catch (error) {
-    console.error('Error syncing user data to Firestore:', error);
+    console.log('Error syncing user data to Firestore:', error);
     return false;
   }
 };
@@ -340,7 +340,7 @@ export const checkStreakAndApplyPenalties = async () => {
         );
         await useUserStore.getState().fetchFromFirestore?.();
       } catch (fetchError) {
-        console.error('Error fetching from Firestore, continuing with local data:', fetchError);
+        console.log('Error fetching from Firestore, continuing with local data:', fetchError);
         // Continue with local data if fetch fails
       }
     }
@@ -352,7 +352,7 @@ export const checkStreakAndApplyPenalties = async () => {
 
     // Validate that we have the required data from userStore
     if (!userStore.lamb || typeof userStore.lamb !== 'object') {
-      console.error('Invalid lamb object in userStore:', userStore.lamb);
+      console.log('Invalid lamb object in userStore:', userStore.lamb);
       return {
         streakBroken: false,
         heartPenalty: 0,
@@ -412,16 +412,16 @@ export const checkStreakAndApplyPenalties = async () => {
         console.log('Syncing streak changes back to Firestore');
         await syncUserDataToFirestore();
       } catch (syncError) {
-        console.error('Error syncing streak changes to Firestore:', syncError);
+        console.log('Error syncing streak changes to Firestore:', syncError);
         // Continue even if sync fails - changes are still applied locally
       }
     }
 
     return result;
   } catch (error) {
-    console.error('❌ Error checking streak and applying penalties:', error);
-    console.error('❌ Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-    console.error('❌ Error stack:', (error as Error).stack);
+    console.log('❌ Error checking streak and applying penalties:', error);
+    console.log('❌ Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+    console.log('❌ Error stack:', (error as Error).stack);
     return {
       error,
       streakBroken: false,
@@ -495,9 +495,9 @@ export const useStreakManager = () => {
 
       return result;
     } catch (error) {
-      console.error('❌ Error checking streak and applying penalties:', error);
-      console.error('❌ Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
-      console.error('❌ Error stack:', (error as Error).stack);
+      console.log('❌ Error checking streak and applying penalties:', error);
+      console.log('❌ Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
+      console.log('❌ Error stack:', (error as Error).stack);
       return {
         error,
         streakBroken: false,

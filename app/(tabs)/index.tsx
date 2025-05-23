@@ -35,6 +35,7 @@ import useSubscriptionStore from '../stores/subscriptionStore';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
 const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
+import auth from '@react-native-firebase/auth';
 
 // Max hearts constant
 const MAX_HEARTS = 100;
@@ -80,6 +81,9 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   const router = useRouter();
 
+  const currentUser = auth().currentUser;
+  console.log('currentUser======>', currentUser);
+
   // Use Zustand store for mode management
   const mode = useHomeStore((state) => state.mode);
   const setMode = useHomeStore((state) => state.setMode);
@@ -98,7 +102,7 @@ export default function HomeScreen() {
   const gens = useUserStore((state) => state?.getGens?.());
   const lambMood = useUserStore((state) => state?.getLambMood?.());
   const lambName = useUserStore((state) => state?.getLambName?.()); // Get the lamb's name from userStore
-
+  console.log('lambHearts streakCount======>', lambHearts, streakCount, gens, lambMood, lambName);
   // State to manage the Rive resource name
   const [artboardName, setArtboardName] = useState('lamb-idle'); // Default artboard
   // State to control background Rive animation
@@ -254,7 +258,7 @@ export default function HomeScreen() {
   const showWidgetPrompt = useUIStore((state) => state.showWidgetPrompt);
 
   const handleRiveError = (error: RNRiveError) => {
-    console.error('Rive Error:', error.message, error.type);
+    console.log('Rive Error:', error.message, error.type);
     if (Platform.OS === 'android') {
       return;
     }
@@ -644,7 +648,8 @@ export default function HomeScreen() {
       <Rive
         key={riveKey}
         ref={riveRef}
-        url={riveAssets[lambAssetIndex].uri!}
+        resourceName={lambAssetIndex === 2 ? 'gold_lamb' : 'home_lamb'}
+        // url={riveAssets[lambAssetIndex].uri!}
         artboardName={artboardName}
         onError={handleRiveError}
         style={{ width: '100%', height: '100%', marginTop: 10 }}
@@ -759,7 +764,8 @@ export default function HomeScreen() {
           ]}>
           {showBgRive && riveAssets && (
             <Rive
-              url={riveAssets[1].uri!}
+              // url={riveAssets[1].uri!}
+              resourceName={'bg_green'}
               autoplay={true}
               style={{ width: '160%', height: '160%', top: -300, left: -128 }}
             />
@@ -799,7 +805,7 @@ export default function HomeScreen() {
                         visibilityTime: 4000,
                       });
                     }}>
-                    <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
+                    <ProgressPill value={0} label={(streakCount || 0).toString()} icon={flameIcon} />
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => {
@@ -814,7 +820,7 @@ export default function HomeScreen() {
                         visibilityTime: 4000,
                       });
                     }}>
-                    <ProgressPill value={0} label={gens.toString()} icon={gemIcon} />
+                    <ProgressPill value={0} label={(gens || 0).toString()} icon={gemIcon} />
                   </TouchableOpacity>
                 </View>
               </View>

@@ -294,7 +294,7 @@ export default function MapScreen() {
           }
         }
       } catch (error) {
-        console.error('Error parsing verse range from unit ID:', error);
+        console.log('Error parsing verse range from unit ID:', error);
       }
     }
 

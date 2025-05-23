@@ -156,7 +156,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         setNotificationsEnabled(false);
       }
     } catch (error) {
-      console.error('Error checking notification permissions:', error);
+      console.log('Error checking notification permissions:', error);
     }
   };
 
@@ -185,7 +185,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Close the settings sheet
   const handleClose = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     bottomSheetRef.current?.close();
   }, []);
 
@@ -195,7 +195,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       userId: userId,
     });
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
 
       // Check if we're on Android and if the user is not signed in with Google
       const currentUser = auth().currentUser;
@@ -214,14 +214,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       setIsModalDimActive(false);
       router.replace({ pathname: '/(auth)' });
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.log('Error signing out:', error);
     }
   }, [router, setIsModalDimActive, userId]);
 
   // Handle copying the user ID
   const handleCopyUserId = useCallback(() => {
     Clipboard.setString(userId);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
     Alert.alert('Copied!', 'User ID copied to clipboard');
   }, [userId]);
 
@@ -256,7 +256,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
     // Show the sheet
     bottomSheetRef.current?.expand();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
   }, []);
 
   // Expose methods via ref
@@ -273,10 +273,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Handle translation selection
   const handleTranslationChange = useCallback(
     (translation: string) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
       setSavedTranslation(translation);
       setTranslationModalVisible(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
       analytics.logEvent('Settings_Tapped_TranslationChange', {
         translation: translation,
       });
@@ -316,7 +316,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Toggle notifications on/off
   const toggleNotifications = async (enableNotifications: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
 
     if (enableNotifications) {
       // Request permissions if enabling notifications
@@ -388,7 +388,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Toggle time picker visibility
   const toggleTimePicker = () => {
     // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
 
     // Animate the scale of the selector button
     toggleScale.value = withSequence(
@@ -434,7 +434,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Handle time selection and close picker
   const handleTimeConfirm = async (event?: any, selectedDate?: Date) => {
     // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
 
     // For Android, we need to handle the selected date from the event
     const finalSelectedTime = Platform.OS === 'android' ? selectedDate : selectedTime;
@@ -495,7 +495,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         );
 
         if (!dailyReminder) {
-          console.error('Daily reminder was not scheduled properly');
+          console.log('Daily reminder was not scheduled properly');
           throw new Error('Failed to schedule notification');
         }
 
@@ -518,9 +518,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
           }, 200);
         }
 
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
       } catch (error) {
-        console.error('Failed to update notification time:', error);
+        console.log('Failed to update notification time:', error);
         Alert.alert('Error', 'Failed to update notification time. Please try again.');
       }
     }
@@ -539,15 +539,15 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Update the cancel button in translation modal
   const handleCancelTranslation = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     setTranslationModalVisible(false);
   }, []);
 
   // Open Discord link
   const handleOpenDiscord = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     Linking.openURL('https://discord.gg/W9MZdVaKBs').catch((err) => {
-      console.error('Error opening Discord link:', err);
+      console.log('Error opening Discord link:', err);
       Alert.alert('Could not open link', 'Please check your internet connection and try again.');
     });
   }, []);
@@ -583,7 +583,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 await firestore().collection('users').doc(userId).delete();
                 console.log('✅ User document deleted from Firestore');
               } catch (firestoreError) {
-                console.error('❌ Error deleting Firestore document:', firestoreError);
+                console.log('❌ Error deleting Firestore document:', firestoreError);
                 Alert.alert(
                   'Firestore Error',
                   'Failed to delete Firestore data. Continuing with other deletion steps.'
@@ -595,7 +595,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 await AsyncStorage.clear();
                 console.log('✅ Local storage cleared successfully');
               } catch (storageError) {
-                console.error('❌ Error clearing AsyncStorage:', storageError);
+                console.log('❌ Error clearing AsyncStorage:', storageError);
                 Alert.alert(
                   'Storage Error',
                   'Failed to clear local storage. Continuing with other deletion steps.'
@@ -618,7 +618,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   console.log('✅ User signed out after account deletion');
                 }
               } catch (authError: any) {
-                console.error('❌ Error with auth operations:', authError);
+                console.log('❌ Error with auth operations:', authError);
 
                 // Handle the specific "requires-recent-login" error from Firebase
                 if (authError.code === 'auth/requires-recent-login') {
@@ -634,7 +634,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                             bottomSheetRef.current?.close();
                             router.replace({ pathname: '/(auth)' });
                           } catch (e) {
-                            console.error('Failed to sign out:', e);
+                            console.log('Failed to sign out:', e);
                           }
                         },
                       },
@@ -662,7 +662,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 ]
               );
             } catch (error) {
-              console.error('❌ Unhandled error in account deletion:', error);
+              console.log('❌ Unhandled error in account deletion:', error);
               Alert.alert(
                 'Error',
                 'Something went wrong during account deletion. The app will try to sign you out anyway.',
@@ -675,7 +675,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                         bottomSheetRef.current?.close();
                         router.replace({ pathname: '/(auth)' });
                       } catch (e) {
-                        console.error('Final error handler signout failed:', e);
+                        console.log('Final error handler signout failed:', e);
                       }
                     },
                   },
@@ -694,14 +694,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Handle subscription button press using the store action
   const handleSubscriptionPress = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
     await presentPaywall();
   }, [presentPaywall]);
 
   // Handle promo code redemption
   const handlePromoCodePress = useCallback(async () => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
 
       // Track analytics event
       analytics.logEvent('Settings_Tapped_PromoCode');
@@ -712,7 +712,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       // Refresh customer info after redemption
       await getCustomerInfo();
     } catch (error) {
-      console.error('Error presenting promo code sheet:', error);
+      console.log('Error presenting promo code sheet:', error);
       Alert.alert('Error', 'Unable to open the redemption screen. Please try again later.');
     }
   }, [getCustomerInfo]);
@@ -758,7 +758,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       refreshStreakData();
     }
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
   }, [showDevPanel]);
 
   // Refresh streak data
@@ -769,7 +769,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       const result = await checkStreakAndApplyPenalties();
       setStreakData(result);
     } catch (error) {
-      console.error('Error fetching streak data:', error);
+      console.log('Error fetching streak data:', error);
       Alert.alert('Error', 'Failed to fetch streak data');
     } finally {
       setDevPanelLoading(false);
@@ -779,7 +779,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Toggle expand/collapse of developer panel
   const toggleDevPanelExpanded = useCallback(() => {
     setDevPanelExpanded(!devPanelExpanded);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
   }, [devPanelExpanded]);
 
   // Get user store frequency goal
@@ -802,7 +802,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Handle navigation to reading time selection
   const handleEditReadingTime = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     bottomSheetRef.current?.close();
     router.push({
       pathname: '/onboarding/5',

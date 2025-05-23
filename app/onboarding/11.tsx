@@ -93,7 +93,7 @@ export default function SaveProgressScreen() {
     try {
       await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
       await clearResponses(); // Clear onboarding responses after completion
-      
+
       // After a short delay, show the widget prompt
       setTimeout(() => {
         const uiStore = useUIStore.getState();
@@ -101,10 +101,10 @@ export default function SaveProgressScreen() {
           uiStore.showWidgetPrompt();
         }
       }, 2000);
-      
+
       router.replace('/(tabs)');
     } catch (error) {
-      console.error('Error completing onboarding:', error);
+      console.log('Error completing onboarding:', error);
     }
   };
 
@@ -131,7 +131,7 @@ export default function SaveProgressScreen() {
                 ? 'mature'
                 : 'growing',
         frequencyGoal: allResponses.frequencyGoal,
-      denomination: allResponses.religiousAffiliation,
+        denomination: allResponses.religiousAffiliation,
         ageRange: allResponses.ageRange,
         // Set notification preferences if provided
         notificationEnabled:
@@ -155,11 +155,14 @@ export default function SaveProgressScreen() {
       analytics.setUserProperties(userData);
       // Create user in Firestore
       const success = await createUser(uid, userData);
+      console.log('uid, userData =>', { uid, userData })
+      console.log("success ====>", success);
+
       if (!success) {
         throw new Error('Failed to create user document');
       }
     } catch (error) {
-      console.error('Error creating user:', error);
+      console.log('Error creating user:', error);
       throw error;
     }
   };
@@ -193,11 +196,11 @@ export default function SaveProgressScreen() {
           await completeOnboarding();
         }
       } else {
-        console.error('Apple sign in returned no user');
+        console.log('Apple sign in returned no user');
         throw new Error('No user data returned from Apple');
       }
     } catch (error: any) {
-      console.error('Apple sign in error:', error);
+      console.log('Apple sign in error:', error);
 
       // Provide more specific feedback based on the error
       let errorMessage = 'There was a problem signing in with Apple.';
@@ -264,14 +267,16 @@ export default function SaveProgressScreen() {
           // In onboarding mode, create new user from responses
           console.log('Creating user...');
           await createUserFromResponses(user.uid, user.displayName || 'Anonymous User');
+          console.log('User created from responses');
           await completeOnboarding();
+          console.log('Onboarding completed');
         }
       } else {
-        console.error('Google sign in returned no user');
+        console.log('Google sign in returned no user');
         throw new Error('No user data returned from Google');
       }
     } catch (error: any) {
-      console.error('Google sign in error:', error);
+      console.log('Google sign in error:', error);
 
       // Provide more specific feedback based on the error
       let errorMessage = 'There was a problem signing in with Google.';
@@ -340,7 +345,7 @@ export default function SaveProgressScreen() {
         await completeOnboarding();
       }
     } catch (error) {
-      console.error('Anonymous sign in error:', error);
+      console.log('Anonymous sign in error:', error);
       Alert.alert('Error', 'There was a problem creating anonymous account. Please try again.', [
         { text: 'OK' },
       ]);
@@ -366,7 +371,8 @@ export default function SaveProgressScreen() {
         <View className="mb-8 overflow-hidden w-64 h-64 items-center justify-center">
           {riveAssets && riveAssets[0]?.localUri && (
             <Rive
-              url={riveAssets[0].uri}
+              // url={riveAssets[0].uri}
+              resourceName={'home_lamb'}
               artboardName={'lamb-workout'}
               autoplay={true}
               fit={Fit.Contain}

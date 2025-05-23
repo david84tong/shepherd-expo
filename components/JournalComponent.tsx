@@ -318,7 +318,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
 
       console.log('Reflection saved successfully');
     } catch (error) {
-      console.error('Error saving reflection data:', error);
+      console.log('Error saving reflection data:', error);
     }
 
     if (readingCompleted && prayerCompleted && !sawDailyBonus) {
@@ -416,7 +416,8 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         {/* Rive Animation */}
         <View className="w-[100px] h-[100px] -ml-5 -mb-2">
           <Rive
-            url={riveAssets[0].uri!}
+            // url={riveAssets[0].uri!}
+            resourceName={'home_lamb'}
             artboardName="lamb-writing"
             autoplay
             style={{ width: '130%', height: '130%' }}

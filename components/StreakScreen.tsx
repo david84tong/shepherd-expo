@@ -153,7 +153,7 @@ export const StreakScreen = () => {
         // Log all scheduled notifications for debugging
         await listScheduledNotifications();
       } catch (error) {
-        console.error('📱 StreakScreen: Error rescheduling notifications:', error);
+        console.log('📱 StreakScreen: Error rescheduling notifications:', error);
       }
     };
 
@@ -414,7 +414,8 @@ export const StreakScreen = () => {
           <View
             className={`${insets.top > 20 ? 'w-96 h-96' : 'w-56 h-56'} justify-center items-center`}>
             <Rive
-              url={riveAssets[0].uri!}
+              // url={riveAssets[0].uri!}
+              resourceName={'success_lamb'}
               artboardName="streak"
               autoplay
               style={{

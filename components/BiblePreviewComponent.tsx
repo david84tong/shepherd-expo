@@ -309,7 +309,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
 
       {/* Absolutely Positioned Buttons Container at the bottom */}
       <Animated.View
-        className="absolute -bottom-24 left-0 right-0 w-full px-5 pb-8 pt-4 items-center bg-transparent z-20"
+        className="absolute bottom-0 left-0 right-0 w-full px-5 pb-8 pt-4 items-center bg-transparent z-20"
         style={{ opacity: buttonOpacity, transform: [{ translateY: buttonAnim }] }}>
         <PrimaryButton
           title="Start Reading"

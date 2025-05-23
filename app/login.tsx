@@ -64,13 +64,13 @@ export default function LoginScreen() {
   const handleBeginJourney = async () => {
     try {
       // Trigger haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
       // Remove the onboarding completed key
       await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
       // Navigate to onboarding
       router.replace('/onboarding/1');
     } catch (error) {
-      console.error('Error starting journey:', error);
+      console.log('Error starting journey:', error);
       Alert.alert('Error', 'Could not start journey. Please try again.');
     }
   };

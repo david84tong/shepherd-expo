@@ -48,9 +48,93 @@ const initialLamb: Lamb = {
   name: '', // Start with empty name
   skin: 'default',
 };
+export type ProStatus = 'free' | 'trial' | 'pro';
+
+export interface UserStore {
+  // Getters
+  getUser(): UserDoc | null;
+  getSpiritualGoal(): string;
+  getExperienceLevel(): string;
+  getFrequencyGoal(): string;
+  getDenomination(): string;
+  getDisplayName(): string;
+  getSelectedPathId(): string;
+  getLamb(): Lamb;
+  getStreakCount(): number;
+  getLastActivityDate(): Date | null;
+  getVersesReadTotal(): number;
+  getChaptersReadTotal(): number;
+  getBibleVersion(): string;
+  getProStatus(): ProStatus;
+  getCreatedAt(): Date;
+  getUpdatedAt(): Date;
+  getGens(): number;
+  getLastReadingDate(): Date | null;
+  getLastPrayerDate(): Date | null;
+  getLastReflectionDate(): Date | null;
+  getLastReadingPenaltyDate(): Date | null;
+  getLastPrayerPenaltyDate(): Date | null;
+  getLastReflectionPenaltyDate(): Date | null;
+  getCompletedReflections(): Reflection[];
+  getCompletedPrayers(): Prayer[];
+  getCompletedReadings(): Reading[];
+  getLambLevel(): number;
+  getLambXp(): number;
+  getLambMood(): string;
+  getLambHearts(): number;
+  getLambName(): string;
+  getLambSkin(): string;
+
+  // Setters
+  createUser(id: string, userData: Partial<UserDoc>): Promise<boolean>;
+  setUser(user: Partial<UserDoc>): void;
+  resetUserStore(): void;
+  setSpiritualGoal(goal: string): void;
+  setExperienceLevel(level: string): void;
+  setFrequencyGoal(goal: string): void;
+  setDenomination(denomination: string): void;
+  setDisplayName(name: string): void;
+  setSelectedPathId(pathId: string): void;
+  setLamb(lamb: Lamb): void;
+  setStreakCount(count: number): void;
+  setLastActivityDate(date: Date): void;
+  setLastReadingDate(date: Date): void;
+  setLastPrayerDate(date: Date): void;
+  setLastReflectionDate(date: Date): void;
+  setLastReadingPenaltyDate(date: Date): void;
+  setLastPrayerPenaltyDate(date: Date): void;
+  setLastReflectionPenaltyDate(date: Date): void;
+  setVersesReadTotal(total: number): void;
+  setChaptersReadTotal(total: number): void;
+  setBibleVersion(version: string): void;
+  setProStatus(status: ProStatus): void;
+  setCreatedAt(date: Date): void;
+  setUpdatedAt(date: Date): void;
+  setGens(gens: number): void;
+  setNotificationTime(time: string): Promise<void>;
+  setCompletedReflections(reflections: Reflection[]): void;
+  setCompletedPrayers(prayers: Prayer[]): void;
+  setCompletedReadings(readings: Reading[]): void;
+  addCompletedReflection(reflection: Reflection): void;
+  addCompletedPrayer(prayer: Prayer): void;
+  addCompletedReading(reading: Reading): void;
+  setLambLevel(level: number): void;
+  setLambXp(xp: number): void;
+  setLambMood(mood: string): void;
+  setLambHearts(hearts: number): void;
+  setLambName(name: string): void;
+  setLambSkin(skin: string): void;
+
+  // Utility
+  incrementStreak(): void;
+  addXp(amount: number): void;
+  syncWithFirestore(): Promise<boolean>;
+  fetchFromFirestore(): Promise<boolean>;
+}
+
 
 // Initial user state (only used if no persisted state exists)
-const initialState: Partial<UserDoc> = {
+const initialState: Partial<UserDoc & UserStore> = {
   spiritualGoal: 'Walk',
   experienceLevel: 'new',
   frequencyGoal: 'daily',
@@ -74,7 +158,94 @@ const initialState: Partial<UserDoc> = {
   completedReflections: [] as unknown as [Reflection],
   completedPrayers: [] as unknown as [Prayer],
   completedReadings: [] as unknown as [Reading],
+
+
+   
+  
 };
+
+const allInitialStateFunctions = {
+
+   // Getters
+   getUser: () => {},
+   getSpiritualGoal: () => '',
+   getExperienceLevel: () => '',
+   getFrequencyGoal: () => '',
+   getDenomination: () => '',
+   getDisplayName: () => '',
+   getSelectedPathId: () => '',
+   getLamb: () => initialState.lamb,
+   getStreakCount: () => 0,
+   getLastActivityDate: () => null,
+   getVersesReadTotal: () => 0,
+   getChaptersReadTotal: () => 0,
+   getBibleVersion: () => '',
+   getProStatus: () => 'free' as ProStatus,
+   getCreatedAt: () => new Date(),
+   getUpdatedAt: () => new Date(),
+   getGens: () => 0,
+   getLastReadingDate: () => null,
+   getLastPrayerDate: () => null,
+   getLastReflectionDate: () => null,
+   getLastReadingPenaltyDate: () => null,
+   getLastPrayerPenaltyDate: () => null,
+   getLastReflectionPenaltyDate: () => null,
+   getCompletedReflections: () => [],
+   getCompletedPrayers: () => [],
+   getCompletedReadings: () => [],
+   getLambLevel: () => 0,
+   getLambXp: () => 0,
+   getLambMood: () => '',
+   getLambHearts: () => 0,
+   getLambName: () => '',
+   getLambSkin: () => '',
+ 
+   // Setters
+   createUser: async (id: string, userData: Partial<UserDoc>): Promise<boolean> => false,
+   setUser: (user: Partial<UserDoc>) => {},
+   resetUserStore: () => {},
+   setSpiritualGoal: (spiritualGoal: string) => {},
+   setExperienceLevel: (experienceLevel: string) => {},
+   setFrequencyGoal: (frequencyGoal: string) => {},
+   setDenomination: (denomination: string) => {},
+   setDisplayName: (displayName: string) => {},
+   setSelectedPathId: (selectedPathId: string) => {}, 
+   setLamb: (lamb: typeof initialState.lamb) => {},
+   setStreakCount: (count: number) => {},
+   setLastActivityDate: (date: any) => {},
+   setLastReadingDate: (lastReadingDate: any) => {},
+   setLastPrayerDate: (lastPrayerDate: any) => {},
+   setLastReflectionDate: (lastReflectionDate: any) => {},
+   setLastReadingPenaltyDate: (lastReadingPenaltyDate: any) => {},
+   setLastPrayerPenaltyDate: (lastPrayerPenaltyDate: any) => {},
+   setLastReflectionPenaltyDate: (lastReflectionPenaltyDate: any) => {},
+   setVersesReadTotal: (versesReadTotal: number) => {},
+   setChaptersReadTotal: (chaptersReadTotal: number) => {},
+   setBibleVersion: (bibleVersion: string) => {},
+   setProStatus: (proStatus: 'free' | 'trial' | 'pro') => {},
+   setCreatedAt: (createdAt: any) => {},
+   setUpdatedAt: (updatedAt: any) => {},
+   setGens: (gens: number) => {},
+   setNotificationTime: (time: string) => Promise.resolve(),
+   setCompletedReflections: (completedReflections: any[]) => {},
+   setCompletedPrayers: (completedPrayers: any[]) => {},
+   setCompletedReadings: (completedReadings: any[]) => {},
+   addCompletedReflection: (reflection: any) => {},
+   addCompletedPrayer: (prayer: any) => {},
+   addCompletedReading: (reading: any) => {},
+   setLambLevel: (level: number) => {},
+   setLambXp: (xp: number) => {},
+   setLambMood: (mood: string) => {},
+   setLambHearts: (hearts: number) => {},
+   setLambName: (name: string) => {},
+   setLambSkin: (skin: string) => {},
+ 
+   // Utility functions
+   incrementStreak: () => {},
+   addXp: (amount: number) => {},
+   syncWithFirestore: () => Promise.resolve(false),
+   fetchFromFirestore: () => Promise.resolve(false),
+}
 
 // Add this utility at the top (after imports)
 function undefinedToNull(obj: any): any {
@@ -124,13 +295,14 @@ const syncStreakWithWidget = (streakCount: number, lastActivityDate: any) => {
   
   // Sync with widget
   syncStreakDataToWidget(streakCount, activityDate)
-    .catch(error => console.error('Failed to sync streak with widget:', error));
+    .catch(error => console.log('Failed to sync streak with widget:', error));
 };
 
 export const useUserStore = create<UserStore>()(
   persist(
     (set, get) => ({
       ...(initialState as UserDoc),
+...allInitialStateFunctions,
 
       // Get complete user object
       getUser: () => {
@@ -169,6 +341,8 @@ export const useUserStore = create<UserStore>()(
 
       // Create new user
       createUser: async (id: string, userData: Partial<UserDoc>) => {
+        console.log('BEGIN CREATE USER');
+        
         const newState = {
           ...initialState,
           ...userData,
@@ -180,13 +354,16 @@ export const useUserStore = create<UserStore>()(
         set(newState);
 
         // Convert undefined to null before sending to Firestore
+        console.log('userData===> in createUser',userData)
         const cleanedUserData = undefinedToNull({
           ...userData,
           id, // Ensure id is explicitly set in Firestore doc
         });
+
+        console.log('cleanedUserData===>',cleanedUserData)
         const success = await createUserDocument(id, cleanedUserData);
         if (!success) {
-          console.error('Failed to create user document in Firestore');
+          console.log('Failed to create user document in Firestore');
         }
 
         return success;
@@ -433,7 +610,7 @@ export const useUserStore = create<UserStore>()(
 
             console.log('✅ Successfully persisted notification time:', time);
           } catch (error) {
-            console.error('Error updating notificationTime:', error);
+            console.log('Error updating notificationTime:', error);
             // If Firestore update fails, revert local state
             set({ notificationTime: user.notificationTime });
             throw error;
@@ -653,7 +830,7 @@ export const useUserStore = create<UserStore>()(
 
           return false;
         } catch (error) {
-          console.error('Error fetching user data from Firestore:', error);
+          console.log('Error fetching user data from Firestore:', error);
           return false;
         }
       },

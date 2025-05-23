@@ -104,7 +104,7 @@ export function DebugButton() {
     if (typeof global !== 'undefined' && (global as any).showHalfModal) {
       (global as any).showHalfModal(params);
     } else {
-      console.error('showHalfModal not available on global object');
+      console.log('showHalfModal not available on global object');
     }
   }, []);
 
@@ -268,7 +268,7 @@ export function DebugButton() {
               // Clear AsyncStorage first to ensure clean slate
               console.log('Clearing all AsyncStorage data...');
               await AsyncStorage.clear();
-              
+
               // Reset home store
               const homeStore = useHomeStore.getState();
               homeStore.resetCompletionStates();
@@ -301,7 +301,7 @@ export function DebugButton() {
                 visibilityTime: 4000,
               });
             } catch (error) {
-              console.error('Failed to delete all data:', error);
+              console.log('Failed to delete all data:', error);
               Toast.show({
                 type: 'error',
                 text1: 'Failed to delete all data',
@@ -356,7 +356,7 @@ export function DebugButton() {
       if (typeof global !== 'undefined' && (global as any).showPrayerModal) {
         (global as any).showPrayerModal();
       } else {
-        console.error('showPrayerModal not available on global object');
+        console.log('showPrayerModal not available on global object');
       }
     }, 300);
   }, []);
@@ -404,13 +404,13 @@ export function DebugButton() {
                     onPress={showSuccessToast}>
                     <Text className="font-din text-sm text-textPrimary">Success Toast</Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     className="bg-[#FFEDED] px-3 py-2 rounded-lg border border-red mb-1"
                     onPress={showErrorToast}>
                     <Text className="font-din text-sm text-textPrimary">Error Toast</Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-accentGold mb-1"
                     onPress={showInfoToast}>
@@ -483,7 +483,7 @@ export function DebugButton() {
                       <Text className="font-din text-sm text-textPrimary">{screen.name}</Text>
                     </TouchableOpacity>
                   ))}
-                  
+
                   {/* Kids Bible Reader Button */}
                   <TouchableOpacity
                     className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-[#F7B500] mb-1"

@@ -76,7 +76,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       
       console.log(`✅ Saved response for ${String(key)}:`, value);
     } catch (error) {
-      console.error('❌ Error saving onboarding response:', error);
+      console.log('❌ Error saving onboarding response:', error);
     }
   },
   
@@ -115,7 +115,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       
       console.log('✅ Saved path selection:', pathData.id);
     } catch (error) {
-      console.error('❌ Error saving path selection:', error);
+      console.log('❌ Error saving path selection:', error);
     }
   },
   
@@ -152,7 +152,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       
       console.log('✅ Saved notification preferences:', notificationData);
     } catch (error) {
-      console.error('❌ Error saving notification preferences:', error);
+      console.log('❌ Error saving notification preferences:', error);
     }
   },
   
@@ -189,7 +189,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       
       console.log('✅ Saved auth method:', authData);
     } catch (error) {
-      console.error('❌ Error saving auth method:', error);
+      console.log('❌ Error saving auth method:', error);
     }
   },
   
@@ -205,7 +205,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       );
       console.log(`✅ Set current screen to ${screen}`);
     } catch (error) {
-      console.error('❌ Error saving current screen:', error);
+      console.log('❌ Error saving current screen:', error);
     }
   },
   
@@ -215,7 +215,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       await AsyncStorage.removeItem(ONBOARDING_STORAGE_KEY);
       console.log('✅ Cleared all onboarding responses');
     } catch (error) {
-      console.error('❌ Error clearing onboarding responses:', error);
+      console.log('❌ Error clearing onboarding responses:', error);
     }
   },
   
@@ -233,7 +233,7 @@ export const debugOnboardingStorage = async () => {
     console.log('📊 Onboarding storage:', parsedData);
     return parsedData;
   } catch (error) {
-    console.error('❌ Error reading onboarding storage:', error);
+    console.log('❌ Error reading onboarding storage:', error);
     return null;
   }
 };

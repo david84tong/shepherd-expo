@@ -97,7 +97,8 @@ export default function OnboardingWelcomeScreen() {
           className="flex-1 justify-center items-center">
           <View className="h-[200px] w-full justify-center items-center">
             <Rive
-              url={riveAssets[0].uri!}
+              // url={riveAssets[0].uri!}
+              resourceName={'home_lamb'}
               artboardName="lamb-idle"
               autoplay
               style={{ width: '80%', height: '80%' }}

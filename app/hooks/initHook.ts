@@ -55,7 +55,7 @@ export const onAppForegroundOrInit = async () => {
     }
     console.log('onAppForegroundOrInit');
   } catch (firestoreError) {
-    console.error('❌ Error fetching user from Firestore (foreground/init):', firestoreError);
+    console.log('❌ Error fetching user from Firestore (foreground/init):', firestoreError);
     analytics.logError('Error fetching user from Firestore (foreground/init)', undefined, {
       errorDetails: String(firestoreError),
     });
@@ -185,12 +185,11 @@ export const useAppInitialization = () => {
 
           const userData = getUser?.();
           const firebaseUser = auth().currentUser;
-
           if (firebaseUser?.uid) {
             appUserId = firebaseUser.uid;
             analytics.setUserId(firebaseUser.uid);
             analytics.setUserProperties({
-              displayName: userData.displayName || 'Not set',
+              displayName: userData?.displayName || 'Not set',
               email: firebaseUser.email || 'Not available',
               isAnonymous: false,
             });
@@ -206,20 +205,20 @@ export const useAppInitialization = () => {
             firebaseEmail: firebaseUser?.email || 'Not available',
 
             // User Profile
-            displayName: userData.displayName || 'Not set',
-            spiritualGoal: userData.spiritualGoal || 'Not set',
-            experienceLevel: userData.experienceLevel || 'Not set',
-            frequencyGoal: userData.frequencyGoal || 'Not set',
-            selectedPathId: userData.selectedPathId || 'Not set',
+            displayName: userData?.displayName || 'Not set',
+            spiritualGoal: userData?.spiritualGoal || 'Not set',
+            experienceLevel: userData?.experienceLevel || 'Not set',
+            frequencyGoal: userData?.frequencyGoal || 'Not set',
+            selectedPathId: userData?.selectedPathId || 'Not set',
 
             // Stats
-            streakCount: userData.streakCount || 0,
-            versesReadTotal: userData.versesReadTotal || 0,
-            chaptersReadTotal: userData.chaptersReadTotal || 0,
+            streakCount: userData?.streakCount || 0,
+            versesReadTotal: userData?.versesReadTotal || 0,
+            chaptersReadTotal: userData?.chaptersReadTotal || 0,
 
             // Timestamps
-            createdAt: formatTimestamp(userData.createdAt),
-            lastActivityDate: formatTimestamp(userData.lastActivityDate),
+            createdAt: formatTimestamp(userData?.createdAt),
+            lastActivityDate: formatTimestamp(userData?.lastActivityDate),
 
             // Lamb Status
             lambLevel: userData?.lamb?.level || 1,
@@ -266,7 +265,7 @@ export const useAppInitialization = () => {
               console.warn('⚠️ User data could not be fetched from Firestore');
             }
           } catch (firestoreError) {
-            console.error('❌ Error fetching user from Firestore:', firestoreError);
+            console.log('❌ Error fetching user from Firestore:', firestoreError);
             analytics.logError('Error fetching user from Firestore', undefined, {
               errorDetails: String(firestoreError),
             });
@@ -277,7 +276,7 @@ export const useAppInitialization = () => {
 
         setIsInitialized(true);
       } catch (error) {
-        console.error('❌ Error initializing app:', error);
+        console.log('❌ Error initializing app:', error);
         if (analytics.isInitialized) {
           analytics.logError('App initialization failed', undefined, {
             errorDetails: String(error),

@@ -34,7 +34,7 @@ async function moveUserToProMode(isRestored?: boolean) {
       console.log('[moveUserToProMode] Firestore isPro set to true');
     }
   } catch (e) {
-    console.error('[moveUserToProMode] Error setting isPro in Firestore:', e);
+    console.log('[moveUserToProMode] Error setting isPro in Firestore:', e);
   }
   // Show success toast
   Toast.show({
@@ -157,9 +157,9 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       });
       await view.present();
       const products = await adapty.getPaywallProducts(paywall);
-      console.log('products ==>', products);
+      console.log('products ==>', JSON.stringify(products));
     } catch (error) {
-      console.error('Adapty paywall error:', error);
+      console.log('Adapty paywall error:', error);
       analytics.logEvent('PricingScreen_Paywall_Error', {
         errorMessage: (error as Error)?.message || 'Unknown error',
       });
@@ -245,7 +245,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     //   }
     //   return paywallResult;
     // } catch (error) {
-    //   console.error('[SubscriptionStore] Error presenting paywall:', error);
+    //   console.log('[SubscriptionStore] Error presenting paywall:', error);
     //   analytics.logEvent('purchase_failed', {
     //     source: 'paywall',
     //     error: 'exception',
@@ -259,7 +259,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   purchasePackage: async (pack: PurchasesPackage, onSuccess?: () => void) => {
     console.log('[SubscriptionStore] purchasePackage called.');
     if (!pack) {
-      console.error('[SubscriptionStore] No package selected for purchase.');
+      console.log('[SubscriptionStore] No package selected for purchase.');
       analytics.logEvent('purchase_failed', {
         error: 'no_package_selected',
       });
@@ -332,7 +332,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           reason: 'user_cancelled',
         });
       } else {
-        console.error('[SubscriptionStore] Error purchasing package:', pack.identifier, e);
+        console.log('[SubscriptionStore] Error purchasing package:', pack.identifier, e);
         analytics.logEvent('subscription_purchase_failed', {
           package_id: pack.identifier,
           offering_id: pack.offeringIdentifier,
@@ -435,7 +435,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         '[SubscriptionStore] Customer info and pro status updated in store (Adapty + Firestore).'
       );
     } catch (e) {
-      console.error('[SubscriptionStore] Error fetching Adapty profile or Firestore:', e);
+      console.log('[SubscriptionStore] Error fetching Adapty profile or Firestore:', e);
       analytics.logEvent('subscription_error', {
         error: 'adapty_or_firestore_profile_fetch_failed',
         message: e?.toString(),
@@ -549,7 +549,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       // Optionally refresh customer info after login
       await get().getCustomerInfo();
     } catch (e) {
-      console.error('[SubscriptionStore] Error identifying Adapty user:', e);
+      console.log('[SubscriptionStore] Error identifying Adapty user:', e);
     }
   },
   logoutAdaptyUser: async () => {
@@ -560,7 +560,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       // Optionally refresh customer info after logout
       await get().getCustomerInfo();
     } catch (e) {
-      console.error('[SubscriptionStore] Error logging out Adapty user:', e);
+      console.log('[SubscriptionStore] Error logging out Adapty user:', e);
     }
   },
 }));

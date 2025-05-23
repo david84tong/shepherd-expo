@@ -220,7 +220,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
       return isFirstOfDay;
     } catch (error) {
-      console.error('Error processing reading dates:', error);
+      console.log('Error processing reading dates:', error);
       return false;
     }
   }, [effectiveType]);
@@ -268,7 +268,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     riveArtboard = 'success-heart'; // Show heart animation by default
   } else {
     // This should not happen, but log an error if it does
-    console.error('Invalid or missing success type:', effectiveType);
+    console.log('Invalid or missing success type:', effectiveType);
   }
 
   // After rewards are calculated, set artboard for PRAYER or other types
@@ -719,7 +719,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             {effectiveType === SuccessAnimationType.SECTION_COMPLETE ? (
               <Rive
                 ref={riveRef}
-                url={homeLambAssets?.[0].uri!}
+                // url={homeLambAssets?.[0].uri!}
+                resourceName={'home_lamb'}
                 autoplay={true}
                 artboardName="lamb-milestone"
                 style={{
@@ -733,7 +734,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             ) : (
               <Rive
                 ref={riveRef}
-                url={riveAssets?.[0].uri!}
+                resourceName={'success_lamb'}
+                // url={riveAssets?.[0].uri!}
                 autoplay={true}
                 style={{ width: '100%', height: '100%' }}
                 {...(riveArtboard ? { artboardName: riveArtboard } : {})}

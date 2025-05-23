@@ -2,7 +2,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LogBox, Platform, StyleSheet, View, AppState, AppStateStatus, Text } from 'react-native';
+import { LogBox, Platform, StyleSheet, View, AppState, AppStateStatus, Text, Alert } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases from 'react-native-purchases';
 import Rive from 'rive-react-native';
@@ -33,6 +33,7 @@ import ForceUpdateModal from '~/components/ForceUpdateModal';
 import { disableFontScaling } from './helper/disableFontScaling';
 import Toast from 'react-native-toast-message';
 import { adapty } from 'react-native-adapty';
+import { useUserStore } from './stores/userStore';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -56,18 +57,18 @@ if (__DEV__) {
   LogBox.ignoreLogs(['Warning: ...']); // Ignore specific warnings if needed
 } else {
   // Production error logging
-  const originalConsoleError = console.error;
+  const originalConsoleError = console.log;
   console.error = (...args) => {
     originalConsoleError(...args);
     if (args[0] && typeof args[0] === 'string') {
-      console.error(`An error occurred: ${args[0].substring(0, 100)}...`);
+      console.log(`An error occurred: ${args[0].substring(0, 100)}...`);
     }
   };
 
   // Set up global error handler
   ErrorUtils.setGlobalHandler((error, isFatal) => {
     if (isFatal) {
-      console.error(
+      console.log(
         `A critical error occurred in the app: ${error.message}\n\nPlease restart the app.`
       );
     }
@@ -196,7 +197,7 @@ export default function RootLayout() {
 
       return isOnboardingCompleted;
     } catch (error) {
-      console.error('Error checking onboarding status:', error);
+      console.log('Error checking onboarding status:', error);
       setHasError(true);
       setInitialRouteDetermined(true);
       setIsOnboardingChecked(true);
@@ -230,7 +231,7 @@ export default function RootLayout() {
         }, 3000);
       }
     } catch (error) {
-      console.error('Error checking streak status:', error);
+      console.log('Error checking streak status:', error);
     }
   };
 
@@ -242,7 +243,7 @@ export default function RootLayout() {
       await notificationStore.initializeNotifications();
       console.log('Notification system initialized successfully');
     } catch (error) {
-      console.error('Error initializing notifications:', error);
+      console.log('Error initializing notifications:', error);
     }
   };
 
@@ -291,7 +292,7 @@ export default function RootLayout() {
   // Add error boundary for initialization
   useEffect(() => {
     const handleError = (error: Error) => {
-      console.error('App initialization error:', error);
+      console.log('App initialization error:', error);
       setHasError(true);
       setAppReady(true);
       SplashScreen.hideAsync();
@@ -329,11 +330,16 @@ export default function RootLayout() {
       }
       console.log('CALLED TO RESOLVED');
 
-      // Initialize app components
-      await checkOnboarding();
-      await checkStreakStatus();
-      await initializeNotifications();
+      try {
 
+
+        // Initialize app components
+        await checkOnboarding();
+        await checkStreakStatus();
+        await initializeNotifications();
+      } catch (error) {
+
+      }
       // Set Rive ready
       setIsRiveReady(true);
 
@@ -346,7 +352,8 @@ export default function RootLayout() {
       // Set app as ready
       setAppReady(true);
     } catch (error) {
-      console.error('Error during app initialization:', error);
+      console.log('Error during app initialization:', error);
+      Alert.alert('Error during app initialization:', error);
       setHasError(true);
       setAppReady(true);
       SplashScreen.hideAsync();
@@ -374,7 +381,7 @@ export default function RootLayout() {
       });
       console.log('Adapty activated');
     } catch (error) {
-      console.error('Error activating Adapty:', error);
+      console.log('Error activating Adapty:', error);
     }
   };
 
@@ -406,17 +413,19 @@ export default function RootLayout() {
   console.log('isRiveReady ==>', isRiveReady);
 
   if (!isRiveReady) {
-    return null; // Let the native splash screen show
+    return <View className="flex-1 items-center justify-center bg-surfaceCream" />; // Let the native splash screen show
   }
 
   if (hasError) return <AppLoading loadingMessage="Something went wrong. Please try again..." />;
 
   // Show Rive animation
   if (showRiveAnimation && riveAssets?.[0]?.uri) {
+
     return (
       <View style={[styles.riveContainer, { backgroundColor: '#FFF4D9' }]}>
         <Rive
-          url={riveAssets[0].uri!}
+          // url={riveAssets[0].uri!}
+          resourceName="shepherd_splash_screen"
           style={styles.riveAnimation}
           autoplay={true}
           onPause={() => {
@@ -432,7 +441,7 @@ export default function RootLayout() {
 
   console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, }}>
       <BottomSheetModalProvider>
         {visibleForceUpdate ? (
           <ForceUpdateModal visible={visibleForceUpdate} />

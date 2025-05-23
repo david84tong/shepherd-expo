@@ -384,7 +384,8 @@ export default function OnboardingWelcomeScreen() {
                   onError={(error) => {
                     console.log('------>', error);
                   }}
-                  url={assets[0].uri} // Use url prop with localUri
+                  resourceName={'make_lamb'}
+                  // url={assets[0].uri} // Use url prop with localUri
                   // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
                   stateMachineName="State Machine 1"
                   artboardName={'lamb-wakingup-click'}

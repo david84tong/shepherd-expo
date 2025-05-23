@@ -82,7 +82,7 @@ export default function OnboardingReadingTimeScreen() {
 
   // Handle navigation back when coming from settings
   const handleBackFromSettings = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     router.back();
   };
 
@@ -127,20 +127,20 @@ export default function OnboardingReadingTimeScreen() {
         });
         console.log('Updated frequency goal in Firestore');
       } catch (error) {
-        console.error('Error updating frequency goal in Firestore:', error);
+        console.log('Error updating frequency goal in Firestore:', error);
       }
     }
 
     // If coming from settings, just go back
     if (fromSettings) {
       // Show a success feedback before going back
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
       setTimeout(() => {
         router.back();
       }, 300);
     } else {
       // Normal onboarding flow
-      
+
       await setResponse('frequencyGoal', duration);
       router.push('/onboarding/6');
     }

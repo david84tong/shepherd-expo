@@ -168,7 +168,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
         finalMessage: currentMessage,
       });
     } catch (error) {
-      console.error('Error finalizing loading screen:', error);
+      console.log('Error finalizing loading screen:', error);
 
       analytics.logEvent('LoadingScreen_Redirect_Error', {
         errorMessage: (error as Error)?.message || 'Unknown error',
@@ -201,7 +201,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
 
         // Provide haptic feedback for each percentage point change
         if (Math.floor(nextProgress) > Math.floor(lastProgress)) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
         }
 
         // Small animation pulse on progress change
@@ -222,7 +222,7 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
       } else {
         // Loading complete
         clearInterval(interval);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
 
         // Wait a moment before calling completion handler and navigating
         setTimeout(() => {
@@ -250,7 +250,8 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
       {/* Pulsing Rive animation */}
       <View className="w-56 h-56 mb-24 flex items-center justify-center">
         <Rive
-          url={assets[0].uri!}
+          // url={assets[0].uri!}
+          resourceName={'home_lamb'}
           artboardName="lamb-writing"
           autoplay={true}
           fit={Fit.Contain}

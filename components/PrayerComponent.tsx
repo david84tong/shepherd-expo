@@ -383,7 +383,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 
       console.log('Prayer data saved successfully');
     } catch (error) {
-      console.error('Error saving prayer data:', error);
+      console.log('Error saving prayer data:', error);
     }
 
     // Navigate to success screen, or trigger animation on home

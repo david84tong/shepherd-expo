@@ -405,7 +405,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           await AsyncStorage.setItem(READER_PREFERENCE_KEY, DEFAULT_READER_MODE);
         }
       } catch (e) {
-        console.error('Failed to load settings from AsyncStorage', e);
+        console.log('Failed to load settings from AsyncStorage', e);
       }
 
       // Load from determined values, not default state
@@ -496,7 +496,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       const result = await fetchChapter(version, bookId, chapter);
 
       if ('error' in result) {
-        console.error(`❌ Error loading chapter: ${result.message}`);
+        console.log(`❌ Error loading chapter: ${result.message}`);
         setError(result.message);
         setChapterData(null);
       } else {
@@ -515,7 +515,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         setError(null);
       }
     } catch (error) {
-      console.error('Failed to load chapter', error);
+      console.log('Failed to load chapter', error);
       setError('Failed to load chapter');
       setChapterData(null);
     } finally {
@@ -618,7 +618,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       try {
         await AsyncStorage.setItem(FONT_SIZE_KEY, newSize?.toString());
       } catch (e) {
-        console.error('Failed to save font size to AsyncStorage', e);
+        console.log('Failed to save font size to AsyncStorage', e);
       }
     }
   };
@@ -676,7 +676,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         `New totals: ${currentVerses + versesInChapter} verses, ${currentChapters + 1} chapters`
       );
     } catch (error) {
-      console.error('Error saving reading data:', error);
+      console.log('Error saving reading data:', error);
     }
 
     // If we are in a path and at the end chapter, mark the UNIT as completed
@@ -1045,7 +1045,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       await AsyncStorage.setItem(THEME_COLOR_KEY, theme);
       console.log(`🎨 Saved theme preference: ${theme}`);
     } catch (e) {
-      console.error('Failed to save theme preference to AsyncStorage', e);
+      console.log('Failed to save theme preference to AsyncStorage', e);
     }
   }, []);
 
@@ -1057,7 +1057,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     try {
       await AsyncStorage.setItem(LINE_HEIGHT_KEY, LINE_HEIGHT_PRESETS[preset]?.toString());
     } catch (e) {
-      console.error('Failed to save line height to AsyncStorage', e);
+      console.log('Failed to save line height to AsyncStorage', e);
     }
   }, []);
 
@@ -1093,7 +1093,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
               }, 300);
               analytics.logEvent('BibleReader_SwitchedToDefaultReader');
             } catch (error) {
-              console.error('Failed to save reader preference:', error);
+              console.log('Failed to save reader preference:', error);
             }
           })();
         }, 350); // Wait for modal close animation to finish
@@ -1120,9 +1120,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     console.log('[BibleReader] Explicitly closing settings modal when switching to default reader');
     console.log(
       '[BibleReader] Debug - Before switch: useDefaultReader=' +
-        useDefaultReader +
-        ', showCardView=' +
-        showCardView
+      useDefaultReader +
+      ', showCardView=' +
+      showCardView
     );
     analytics.logEvent('DefaultReader_Tapped_ToggleDefaultReader');
     try {
@@ -1143,17 +1143,17 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       setTimeout(() => {
         console.log(
           '[BibleReader] Debug - After switch: useDefaultReader=' +
-            useDefaultReader +
-            ', showCardView=' +
-            showCardView +
-            ', isModalVisible=' +
-            isModalVisible
+          useDefaultReader +
+          ', showCardView=' +
+          showCardView +
+          ', isModalVisible=' +
+          isModalVisible
         );
       }, 100);
 
       analytics.logEvent('BibleReader_SwitchedToDefaultReader');
     } catch (e) {
-      console.error('Failed to switch to default reader', e);
+      console.log('Failed to switch to default reader', e);
       setSwitchingReaderType(false);
       // Still make sure modal is closed
       setIsModalVisible(false);
