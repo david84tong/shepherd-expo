@@ -961,8 +961,15 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     }
   }, [currentVersion, currentBook, currentBookId, currentChapter, loadChapter, useCardView, readerSettings]);
 
-  // When in path mode or if user enabled Card View preference, render the NewBibleReader component
-  if (useCardView || pathInProgress) {
+  // Ensure pathInProgress is reset when unmounting (e.g., via swipe gesture)
+  useEffect(() => {
+    return () => {
+      setPathInProgress(false);
+    };
+  }, [setPathInProgress]);
+
+  // When user enabled Card View preference, render the NewBibleReader component
+  if (useCardView) {
     return (
       <>
         <NewBibleReader 
@@ -1229,13 +1236,6 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       </SafeAreaView>
     );
   }
-
-  // Ensure pathInProgress is reset when unmounting (e.g., via swipe gesture)
-  useEffect(() => {
-    return () => {
-      setPathInProgress(false);
-    };
-  }, []);
 };
 
 // Standalone screen that uses the component

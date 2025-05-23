@@ -36,11 +36,17 @@ interface ExtendedOnboardingResponses extends Omit<OnboardingResponses, 'selecte
 interface OnboardingState {
   responses: ExtendedOnboardingResponses;
   currentScreen: string;
+  isInitialized: boolean;
+  needsNavigationToSavedScreen: boolean;
+  savedScreenToNavigateTo: string | null;
   
   // General methods
   setResponse: <T>(key: keyof ExtendedOnboardingResponses, value: T) => Promise<void>;
   setCurrentScreen: (screen: string) => Promise<void>;
   clearResponses: () => Promise<void>;
+  initializeFromStorage: () => Promise<string>;
+  setSavedScreenNavigation: (screen: string) => void;
+  clearSavedScreenNavigation: () => void;
   
   // Specific methods for screens 8, 9, 10
   setPathSelection: (pathData: PathResponse) => Promise<void>;
@@ -54,6 +60,9 @@ interface OnboardingState {
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   responses: {},
   currentScreen: '1',
+  isInitialized: false,
+  needsNavigationToSavedScreen: false,
+  savedScreenToNavigateTo: null,
   
   // General methods
   setResponse: async (key, value) => {
@@ -222,6 +231,53 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   // Helper to get all responses
   getAllResponses: () => {
     return get().responses;
+  },
+  
+  initializeFromStorage: async () => {
+    try {
+      const data = await AsyncStorage.getItem(ONBOARDING_STORAGE_KEY);
+      const parsedData = data ? JSON.parse(data) : null;
+      
+      if (parsedData) {
+        // Handle both old and new data structures
+        const currentScreen = parsedData.currentScreen || '1';
+        const responses = parsedData.responses || parsedData; // Fallback for old structure
+        
+        set({
+          responses: responses,
+          currentScreen: currentScreen,
+          isInitialized: true,
+          // Set navigation flag if we need to navigate to a saved screen (not screen 1)
+          needsNavigationToSavedScreen: currentScreen !== '1',
+          savedScreenToNavigateTo: currentScreen !== '1' ? currentScreen : null,
+        });
+        
+        console.log(`✅ Loaded onboarding state from storage - Screen: ${currentScreen}`);
+        if (currentScreen !== '1') {
+          console.log(`📍 Will navigate to saved screen: ${currentScreen}`);
+        }
+        return currentScreen;
+      } else {
+        set({ isInitialized: true });
+        console.log('🟢 No onboarding state found in storage, starting fresh');
+        return '1';
+      }
+    } catch (error) {
+      console.error('❌ Error loading onboarding state:', error);
+      set({ isInitialized: true });
+      return '1';
+    }
+  },
+  
+  setSavedScreenNavigation: (screen) => {
+    set({ savedScreenToNavigateTo: screen });
+  },
+  
+  clearSavedScreenNavigation: () => {
+    set({ 
+      savedScreenToNavigateTo: null,
+      needsNavigationToSavedScreen: false 
+    });
   },
 }));
 

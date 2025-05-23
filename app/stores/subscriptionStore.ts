@@ -1,5 +1,5 @@
-import Purchases, { PurchasesPackage, CustomerInfo, LOG_LEVEL } from 'react-native-purchases';
-import RevenueCatUI, { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import Purchases, { PurchasesPackage, LOG_LEVEL } from 'react-native-purchases';
+import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { create } from 'zustand';
 import { Alert } from 'react-native';
 import { useUserStore } from './userStore';
@@ -13,9 +13,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import Toast from 'react-native-toast-message';
 import { isSignedIn } from '../hooks/authHook';
-import { fromPairs } from 'lodash';
 import { adapty } from 'react-native-adapty';
 import { createPaywallView } from '@adapty/react-native-ui';
+
+// Add constant for tracking half-off paywall view
+const HALF_OFF_PAYWALL_SEEN_KEY = 'half_off_paywall_seen';
 
 async function moveUserToProMode(isRestored?: boolean) {
   console.log('===>purrchase completed');
@@ -53,6 +55,7 @@ async function moveUserToProMode(isRestored?: boolean) {
 interface SubscriptionState {
   customerInfo: any | null; // Allow AdaptyProfile or CustomerInfo
   isProMember: boolean;
+  hasSeenHalfOffPaywall: boolean;
   initializeRevenueCat: (apiKey: string, userId: string | null) => Promise<void>;
   presentPaywall: () => Promise<PAYWALL_RESULT | null>;
   presentHalfOffPaywall: () => Promise<PAYWALL_RESULT | null>;
@@ -66,6 +69,10 @@ interface SubscriptionState {
   // Adapty login/logout
   loginAdaptyUser: (userId: string) => Promise<void>;
   logoutAdaptyUser: () => Promise<void>;
+  // New methods for half-off paywall tracking
+  checkHasSeenHalfOffPaywall: () => Promise<void>;
+  markHalfOffPaywallAsSeen: () => Promise<void>;
+  shouldShowFreeTrialPaywall: () => boolean;
   // Add other state and actions here
 }
 
@@ -74,6 +81,7 @@ const ENTITLEMENT_ID = 'Super Shepherd'; // Define the entitlement ID
 const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   customerInfo: null,
   isProMember: false,
+  hasSeenHalfOffPaywall: false,
   fromScreen: '',
 
   initializeRevenueCat: async (apiKey: string, userId: string | null) => {
@@ -106,6 +114,9 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
       console.log('[SubscriptionStore] Fetching initial customer info after configuration.');
       await get().getCustomerInfo(); // Fetch customer info on init
+      
+      // Check if user has seen half-off paywall before
+      await get().checkHasSeenHalfOffPaywall();
     } catch (e) {
       console.error('[SubscriptionStore] RevenueCat SDK configuration or login failed:', e);
       Alert.alert(
@@ -179,6 +190,10 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     analytics.logEvent('presentHalfOffPaywall', {
       fromScreen: get().fromScreen,
     });
+    
+    // Mark that user has now seen the half-off paywall
+    await get().markHalfOffPaywallAsSeen();
+    
     try {
       const paywall = await adapty.getPaywall('halfoff');
       console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
@@ -503,7 +518,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const usedReferralCodes = userData?.usedReferralCodes || [];
     const hasUsedWeekly = usedReferralCodes.includes('WEEKLY');
     const hasUsedMonthly = usedReferralCodes.includes('MONTHL');
-    const hasUsedCreator = usedReferralCodes.includes('CREATEL');
+    const hasUsedCreator = usedReferralCodes.includes('CREATE');
     const hasUsedPermanent = usedReferralCodes.includes('WXES4S');
 
     // Prepare variables that might be needed in switch cases
@@ -554,7 +569,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           usedReferralCodes: firestore.FieldValue.arrayUnion(code),
         });
         break;
-      case 'CREATEL':
+      case 'CREATE':
         if (hasUsedCreator) {
           throw new Error('You have already used a creator subscription code');
         }
@@ -612,6 +627,32 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     } catch (e) {
       console.error('[SubscriptionStore] Error logging out Adapty user:', e);
     }
+  },
+  checkHasSeenHalfOffPaywall: async () => {
+    try {
+      const hasSeenString = await AsyncStorage.getItem(HALF_OFF_PAYWALL_SEEN_KEY);
+      const hasSeen = hasSeenString === 'true';
+      set({ hasSeenHalfOffPaywall: hasSeen });
+      console.log(`[SubscriptionStore] User has seen half-off paywall: ${hasSeen}`);
+    } catch (error) {
+      console.error('[SubscriptionStore] Error checking half-off paywall status:', error);
+      set({ hasSeenHalfOffPaywall: false });
+    }
+  },
+  markHalfOffPaywallAsSeen: async () => {
+    try {
+      await AsyncStorage.setItem(HALF_OFF_PAYWALL_SEEN_KEY, 'true');
+      set({ hasSeenHalfOffPaywall: true });
+      console.log('[SubscriptionStore] Marked half-off paywall as seen');
+      analytics.logEvent('halfoff_paywall_first_view', {
+        fromScreen: get().fromScreen,
+      });
+    } catch (error) {
+      console.error('[SubscriptionStore] Error marking half-off paywall as seen:', error);
+    }
+  },
+  shouldShowFreeTrialPaywall: () => {
+    return get().hasSeenHalfOffPaywall;
   },
 }));
 

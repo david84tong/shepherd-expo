@@ -739,11 +739,11 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         )}
 
         {/* Rive animation - centered */}
-        <View className="w-full h-96 my-4 items-center justify-center ">
+        <View className="w-full h-[275px] my-4 items-center justify-center ">
           <Animated.View
             style={{
-              width: '130%',
-              height: '130%',
+              width: '120%',
+              height: '120%',
               marginTop: 10,
               transform: [
                 { scale: riveScaleAnim },

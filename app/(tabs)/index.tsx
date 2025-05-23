@@ -994,9 +994,18 @@ export default function HomeScreen() {
                 if (!isPro) {
                   analytics.logEvent("HomeScreen_TappedProBadge");
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  // router.push('/PricingScreen' as any);
-                  // setFromScreen('home-super');
-                  useSubscriptionStore.getState().presentHalfOffPaywall();
+                  
+                  // Check if user has seen half-off paywall before
+                  const subscriptionStore = useSubscriptionStore.getState();
+                  if (subscriptionStore.shouldShowFreeTrialPaywall()) {
+                    // User has seen half-off paywall before, show free trial
+                    console.log('[HomeScreen] Showing free trial paywall (user has seen half-off before)');
+                    subscriptionStore.presentFreeTrialPaywall();
+                  } else {
+                    // First time or user hasn't seen half-off paywall, show half-off
+                    console.log('[HomeScreen] Showing half-off paywall (first time)');
+                    subscriptionStore.presentHalfOffPaywall();
+                  }
                 }
               }}
               activeOpacity={0.8}
