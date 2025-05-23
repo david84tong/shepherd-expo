@@ -1,7 +1,8 @@
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, Platform, TouchableOpacity } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -15,11 +16,14 @@ import { OnboardingResponses } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
+
 export default function OnboardingAgeRangeScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
   const { setUser } = useUserStore();
   const [selectedOption, setSelectedOption] = useState<OnboardingResponses['ageRange']>(undefined);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
 
   // Create Reanimated shared values for each component
   const titleOpacity = useSharedValue(0);
@@ -62,6 +66,20 @@ export default function OnboardingAgeRangeScreen() {
     opacity: optionsOpacity.value,
     transform: [{ translateY: optionsTranslateY.value }],
   }));
+
+  const calculateAgeRange = (date: Date): OnboardingResponses['ageRange'] => {
+    const today = new Date();
+    const age = today.getFullYear() - date.getFullYear();
+
+    if (age < 18) return 'under-18';
+    if (age >= 18 && age <= 24) return '18-24';
+    if (age >= 25 && age <= 34) return '25-34';
+    if (age >= 35 && age <= 44) return '35-44';
+    if (age >= 45 && age <= 54) return '45-54';
+    if (age >= 55 && age <= 64) return '55-64';
+    return '65-plus';
+  };
+
 
   const handleSelection = async (ageRange: OnboardingResponses['ageRange']) => {
     // Trigger light haptic feedback
@@ -119,7 +137,7 @@ export default function OnboardingAgeRangeScreen() {
     {
       id: '55-64+',
       title: '55-64',
-    },   
+    },
 
   ] as const;
 
@@ -133,22 +151,52 @@ export default function OnboardingAgeRangeScreen() {
       </Animated.View>
 
       {/* Options Container */}
-      <Animated.View style={optionsStyle} className="space-y-4 mt-0">
-        <ScrollView contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>
-          <View className="space-y-4">
-            {options.map((option) => (
-              <PrimaryButton
-                key={option.id}
-                title={option.title}
-                onPress={() => handleSelection(option.id as OnboardingResponses['ageRange'])}
-                isActive
-                primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
-                textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
-              />
-            ))}
-          </View>
-        </ScrollView>
-      </Animated.View>
+      {Platform.OS === 'android' ? (
+        <Animated.View style={optionsStyle} className="space-y-4 mt-0">
+          <PrimaryButton
+            title={selectedDate.toLocaleDateString()}
+            onPress={() =>
+              setShowDatePicker(true)}
+            isActive
+            primaryColor={selectedOption ? 'bg-surfaceCream' : 'bg-white'}
+            textColor={selectedOption ? 'text-accentGold' : 'text-textPrimary'}
+          />
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={selectedDate}
+              mode="date"
+              display="default"
+              onChange={(event, date) => {
+                setShowDatePicker(false);
+                if (date) {
+                  setSelectedDate(date);
+                  const ageRange = calculateAgeRange(date);
+                  handleSelection(ageRange);
+                }
+              }}
+              maximumDate={new Date()}
+            />
+          )}
+        </Animated.View>
+      ) : (
+        <Animated.View style={optionsStyle} className="space-y-4 mt-0">
+          <ScrollView contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>
+            <View className="space-y-4">
+              {options.map((option) => (
+                <PrimaryButton
+                  key={option.id}
+                  title={option.title}
+                  onPress={() => handleSelection(option.id as OnboardingResponses['ageRange'])}
+                  isActive
+                  primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
+                  textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
+                />
+              ))}
+            </View>
+          </ScrollView>
+        </Animated.View>
+      )}
     </View>
   );
 }
