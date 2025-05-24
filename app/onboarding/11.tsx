@@ -21,6 +21,7 @@ import { useAssets } from 'expo-asset';
 import Toast from 'react-native-toast-message';
 import { useUIStore } from '../stores/uiStore';
 import { adapty } from 'react-native-adapty';
+import { IS_ANDROID, IS_IOS } from '../utils/utils';
 
 export default function SaveProgressScreen() {
   const router = useRouter();
@@ -170,13 +171,13 @@ export default function SaveProgressScreen() {
       // Identify user in Adapty
       try {
         await adapty.identify(uid);
-        
+
         // Prepare custom attributes, filtering out undefined/null values
         const customAttributes: Record<string, string | number | boolean> = {};
-             
+
         if (userData.ageRange) customAttributes.age_range = userData.ageRange;
-  
-        
+
+
         await adapty.updateProfile({
           codableCustomAttributes: customAttributes,
         });
@@ -406,8 +407,8 @@ export default function SaveProgressScreen() {
         <View className="mb-8 overflow-hidden w-64 h-64 items-center justify-center">
           {riveAssets && riveAssets[0]?.uri && (
             <Rive
-              // url={riveAssets[0].uri}
-              resourceName={'home_lamb'}
+              url={IS_IOS ? riveAssets[0].uri! : undefined}
+              resourceName={IS_ANDROID ? 'home_lamb' : undefined}
               artboardName={'lamb-workout'}
               autoplay={true}
               fit={Fit.Contain}

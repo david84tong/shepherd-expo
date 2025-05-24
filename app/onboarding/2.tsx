@@ -17,6 +17,7 @@ import Animated, {
 import { toBool } from '../utils/toBool';
 import { validateName } from '../../utils/validation';
 import CustomAnimatedView from '../components/CustomAnimatedView';
+import { IS_ANDROID, IS_IOS } from '../utils/utils';
 
 export default function OnboardingLambNameScreen() {
   const router = useRouter();
@@ -197,8 +198,8 @@ export default function OnboardingLambNameScreen() {
         style={lambStyle}
         className="h-[160px] w-full justify-center items-center my-4">
         <Rive
-          // url={riveAssets[0].uri}
-          resourceName={'home_lamb'}
+          url={IS_IOS ? riveAssets[0].uri : undefined}
+          resourceName={IS_ANDROID ? 'home_lamb' : undefined}
           artboardName="lamb-idle"
           autoplay
           style={{ width: '80%', height: '80%' }}

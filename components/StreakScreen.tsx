@@ -20,6 +20,7 @@ import PrimaryButton from './PrimaryButton';
 import { getStreakSubtext } from '../app/hooks/streakHook';
 import analytics from '../utils/analytics';
 import * as StoreReview from 'expo-store-review';
+import { IS_ANDROID, IS_IOS } from '~/app/utils/utils';
 /* ─────────────── helper ─────────────── */
 type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE';
 
@@ -414,8 +415,8 @@ export const StreakScreen = () => {
           <View
             className={`${insets.top > 20 ? 'w-96 h-96' : 'w-56 h-56'} justify-center items-center`}>
             <Rive
-              // url={riveAssets[0].uri!}
-              resourceName={'success_lamb'}
+              url={IS_IOS ? riveAssets[0].uri! : undefined}
+              resourceName={IS_ANDROID ? 'success_lamb' : undefined}
               artboardName="streak"
               autoplay
               style={{

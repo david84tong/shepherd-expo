@@ -19,6 +19,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
 
 import analytics from '../../utils/analytics';
+import { IS_ANDROID, IS_IOS } from '../utils/utils';
 
 const FIRST_WELCOME_TEXT = 'Every Shepherd starts with one lost lamb...';
 const SECOND_WELCOME_TEXT = "This one's yours.";
@@ -132,7 +133,7 @@ export default function OnboardingWelcomeScreen() {
         useNativeDriver: true,
       }),
     ]).start();
-    
+
     // Enable interaction much earlier (750ms) for faster response
     setTimeout(() => {
       setSecondStageActive(true);
@@ -386,8 +387,8 @@ export default function OnboardingWelcomeScreen() {
                   onError={(error) => {
                     console.log('------>', error);
                   }}
-                  resourceName={'make_lamb'}
-                  // url={assets[0].uri} // Use url prop with localUri
+                  resourceName={IS_ANDROID ? 'make_lamb' : undefined}
+                  url={IS_IOS ? assets[0].uri! : undefined} // Use url prop with localUri
                   // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
                   stateMachineName="State Machine 1"
                   artboardName={'lamb-wakingup-click'}

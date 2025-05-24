@@ -26,6 +26,7 @@ import {
   withDelay,
 } from 'react-native-reanimated';
 import CustomAnimatedView from '../components/CustomAnimatedView';
+import { IS_ANDROID, IS_IOS } from '../utils/utils';
 
 // We'll use the background directly in the source prop
 
@@ -223,8 +224,8 @@ export default function LoginScreen() {
           {/* Rive Animation in the middle */}
           <CustomAnimatedView style={lambStyle} className="h-[200px] w-full justify-center items-center -mt-24">
             <Rive
-              resourceName={'home_lamb'}
-              // url={riveAssets[0].uri}
+              resourceName={IS_ANDROID ? 'home_lamb' : undefined}
+              url={IS_IOS ? riveAssets[0].uri! : undefined}
               artboardName="lamb-reading"
               autoplay
               style={{ width: '120%', height: '120%' }}

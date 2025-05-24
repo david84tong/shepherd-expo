@@ -7,6 +7,7 @@ import Rive from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import ProgressBar from './components/ProgressBar';
+import { IS_ANDROID, IS_IOS } from '../utils/utils';
 
 export default function OnboardingWelcomeScreen() {
   const router = useRouter();
@@ -97,8 +98,8 @@ export default function OnboardingWelcomeScreen() {
           className="flex-1 justify-center items-center">
           <View className="h-[200px] w-full justify-center items-center">
             <Rive
-              // url={riveAssets[0].uri!}
-              resourceName={'home_lamb'}
+              url={IS_IOS ? riveAssets[0].uri! : undefined}
+              resourceName={IS_ANDROID ? 'home_lamb' : undefined}
               artboardName="lamb-idle"
               autoplay
               style={{ width: '80%', height: '80%' }}

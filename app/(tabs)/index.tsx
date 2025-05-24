@@ -36,6 +36,7 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
 const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
 import auth from '@react-native-firebase/auth';
+import { IS_ANDROID, IS_IOS } from '../utils/utils';
 
 // Max hearts constant
 const MAX_HEARTS = 100;
@@ -679,8 +680,8 @@ export default function HomeScreen() {
           <Rive
             key={riveKey}
             ref={riveRef}
-            resourceName={lambAssetIndex === 2 ? 'gold_lamb' : 'home_lamb'}
-            // url={riveAssets[lambAssetIndex].uri!}
+            resourceName={IS_ANDROID ? lambAssetIndex === 2 ? 'gold_lamb' : 'home_lamb' : undefined}
+            url={IS_IOS ? riveAssets[lambAssetIndex].uri! : undefined}
             artboardName={artboardName}
             onError={handleRiveError}
             style={{ width: '100%', height: '100%', marginTop: 10 }}
@@ -778,8 +779,8 @@ export default function HomeScreen() {
           ]}>
           {showBgRive && riveAssets && (
             <Rive
-              // url={riveAssets[1].uri!}
-              resourceName={'bg_green'}
+              url={IS_IOS ? riveAssets[1].uri! : undefined}
+              resourceName={IS_ANDROID ? 'bg_green' : undefined}
               autoplay={true}
               style={{ width: '160%', height: '160%', top: -300, left: -128 }}
             />
