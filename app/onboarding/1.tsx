@@ -380,34 +380,20 @@ export default function OnboardingWelcomeScreen() {
             {/* Lamb Animation */}
             <View className="flex-1 items-center justify-center mt-72">
               <View className="w-[225px] h-[225px] w-full justify-center items-center relative">
-                <Rive
-                  ref={riveRef}
-                  // resourceName={assets[0].uri}
-                  onError={(error) => {
-                    console.log('------>', error);
-                  }}
-                  resourceName={'make_lamb'}
-                  // url={assets[0].uri} // Use url prop with localUri
-                  // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
-                  stateMachineName="State Machine 1"
-                  artboardName={'lamb-wakingup-click'}
-                  fit={Fit.Contain}
-                  alignment={Alignment.Center}
-                  style={{ width: '100%', height: '100%' }}
-                />
-                {/* <Rive
-                  ref={riveRef}
-                  onError={(error) => {
-                    console.log('------>', error);
-                  }}
-                  // resourceName={assets[0].uri}
-                  url={assets[0].uri}
-                  artboardName={'lamb-wakingup'}
-                  stateMachineName="State Machine 1"
-                  fit={Fit.Contain}
-                  alignment={Alignment.Center}
-                  style={{ width: '100%', height: '100%' }}
-                /> */}
+                {assets[0].localUri && (
+                  <Rive
+                    ref={riveRef}
+                    url={assets[0].localUri}
+                    onError={(error) => {
+                      console.log('------>', error);
+                    }}
+                    stateMachineName="State Machine 1"
+                    artboardName={'lamb-wakingup-click'}
+                    fit={Fit.Contain}
+                    alignment={Alignment.Center}
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                )}
                 {/* Transparent overlay for tap detection */}
                 <Pressable
                   onPress={handleLambTap}

@@ -252,12 +252,9 @@ const PricingScreen = () => {
                 className="w-64 h-64 mb-4 flex"
               />
             </Animated.View>
+          </AnimatedItem>
 
-            {/* </AnimatedItem><AnimatedItem index={12} animateItemFromBottom={animateScreenFromBottom}>
-            <View className="bg-white rounded-2xl shadow-card p-5 mb-8 flex-row justify-between items-center">
-            <Text className="font-feather text-lg text-textPrimary">Unlock 7-day trial & reminder</Text>
-            <Switch trackColor={{ false: '#E9E2C7', true: '#A8F093' }} thumbColor={trialEnabled ? '#24CA17' : '#FFF4D9'} ios_backgroundColor="#E9E2C7" onValueChange={toggleSwitch} value={trialEnabled} style={{ transform: [{ scaleX: 1.1 }, { scaleY: 1.1 }] }} />
-          </View> */}
+          <AnimatedItem index={12} animateItemFromBottom={animateScreenFromBottom}>
             <View className="bg-white rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
               <Text className="font-feather text-h2 text-textPrimary mt-2 mb-2 text-center">❤️ Support the mission</Text>
               <Text className="font-din text-heading text-description text-center">{`We're a small team of 2 of christians, completely self-funded. `}</Text>
@@ -269,7 +266,9 @@ const PricingScreen = () => {
               <Text className="font-din text-body text-description text-center mt-2">- family/kid study plans</Text>
               <Text className="font-din text-body text-description text-center mt-2">- more skins / backgrounds</Text>
             </View>
-          </AnimatedItem><AnimatedItem index={13} animateItemFromBottom={animateScreenFromBottom}>
+          </AnimatedItem>
+
+          <AnimatedItem index={13} animateItemFromBottom={animateScreenFromBottom}>
             <View className="bg-white rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
               <Feather name="star" size={48} color="#F7B500" />
               <Text className="font-feather text-heading text-textPrimary mt-4 mb-2 text-center">10% of all profits are donated!</Text>
