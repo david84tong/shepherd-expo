@@ -108,22 +108,22 @@ export const StreakScreen = () => {
   const insets = useSafeAreaInsets();
 
   // 1. grab data from the store
-  const createdAt = useUserStore((s) => s.getCreatedAt?.()); // Firestore Timestamp or Date
-  const completedReadings = useUserStore((s) => s.getCompletedReadings?.());
+  const createdAt = useUserStore((s) => s.getCreatedAt()); // Firestore Timestamp or Date
+  const completedReadings = useUserStore((s) => s.getCompletedReadings());
   const lastReadingDate = useUserStore((s) => s.lastReadingDate);
   const setStreakCount = useUserStore((state) => state.setStreakCount);
   const syncWithFirestore = useUserStore((state) => state.syncWithFirestore);
   const [debugDisplayInfo, setDebugDisplayInfo] = useState<any>(null); // Renamed for clarity
 
   // Get notification store methods
-  const {
-    rescheduleStreakNotificationsForNextDay,
+  const { 
+    rescheduleStreakNotificationsForNextDay, 
     listScheduledNotifications,
     preferredNotificationTime,
-    scheduleDailyReminder,
+    scheduleDailyReminder
   } = useNotificationStore();
 
-  // Reset streak notifications when StreakScreen is shown
+  // Reset streak notifications when StreakScreen is shown 
   // since this means the user has completed their streak activity for the day
   useEffect(() => {
     const resetNotifications = async () => {
@@ -145,26 +145,19 @@ export const StreakScreen = () => {
           await scheduleDailyReminder(preferredNotificationTime);
           console.log('📱 StreakScreen: Daily reminder successfully rescheduled');
         } else {
-          console.log(
-            '📱 StreakScreen: No preferred notification time set, skipping daily reminder'
-          );
+          console.log('📱 StreakScreen: No preferred notification time set, skipping daily reminder');
         }
-
+        
         // Log all scheduled notifications for debugging
         await listScheduledNotifications();
       } catch (error) {
-        console.log('📱 StreakScreen: Error rescheduling notifications:', error);
+        console.error('📱 StreakScreen: Error rescheduling notifications:', error);
       }
     };
 
     // Call the async function
     resetNotifications();
-  }, [
-    rescheduleStreakNotificationsForNextDay,
-    listScheduledNotifications,
-    preferredNotificationTime,
-    scheduleDailyReminder,
-  ]);
+  }, [rescheduleStreakNotificationsForNextDay, listScheduledNotifications, preferredNotificationTime, scheduleDailyReminder]);
 
   // 2. normalize → dayjs (memoized to prevent recalculation)
   const today = useMemo(() => dayjs().startOf('day'), []);
@@ -199,14 +192,11 @@ export const StreakScreen = () => {
       completedReadings
         .map((r) => {
           const d = r.date;
-          if (d && typeof d.toDate === 'function') {
-            // Firestore Timestamp
+          if (d && typeof d.toDate === 'function') { // Firestore Timestamp
             return dayjs(d.toDate()).format('YYYY-MM-DD');
-          } else if (d instanceof Date) {
-            // JS Date
+          } else if (d instanceof Date) { // JS Date
             return dayjs(d).format('YYYY-MM-DD');
-          } else if (d && typeof (d as any)._seconds === 'number') {
-            // Plain object with _seconds
+          } else if (d && typeof (d as any)._seconds === 'number') { // Plain object with _seconds
             return dayjs.unix((d as any)._seconds).format('YYYY-MM-DD');
           }
           return null;
@@ -263,8 +253,8 @@ export const StreakScreen = () => {
     console.log('streak', streak);
 
     // Track notification rescheduling with the current streak value
-    analytics.logEvent('StreakScreen_RescheduledNotifications', {
-      streak: streak,
+    analytics.logEvent("StreakScreen_RescheduledNotifications", {
+      streak: streak
     });
   }, [streak, setStreakCount]);
 
@@ -277,9 +267,7 @@ export const StreakScreen = () => {
         createdDate: createdDate.format('YYYY-MM-DD'),
         today: today.format('YYYY-MM-DD'),
         hasTodayCompleted: augmentedCompletedSet.has(today.format('YYYY-MM-DD')),
-        hasYesterdayCompleted: augmentedCompletedSet.has(
-          today.subtract(1, 'day').format('YYYY-MM-DD')
-        ),
+        hasYesterdayCompleted: augmentedCompletedSet.has(today.subtract(1,'day').format('YYYY-MM-DD')),
       });
     }
   }, [streak, augmentedCompletedSet, createdDate, today]);
@@ -381,12 +369,10 @@ export const StreakScreen = () => {
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
 
   const handleContinue = async () => {
-    analytics.logEvent('StreakScreen_Tapped_Continue', {
+    analytics.logEvent("StreakScreen_Tapped_Continue", {
       streak: streak,
     });
-    console.log(
-      '[StreakScreen] Continue pressed. Resetting pathInProgress and navigating to home.'
-    );
+    console.log('[StreakScreen] Continue pressed. Resetting pathInProgress and navigating to home.');
     setPathInProgress(false);
 
     const isAvailable = await StoreReview.isAvailableAsync();
@@ -411,17 +397,12 @@ export const StreakScreen = () => {
       {/* Large flame with streak number */}
       <Animated.View style={flameContainerStyle} className="items-center mt-10 mb-2">
         <View className="relative justify-center items-center mb-1">
-          <View
-            className={`${insets.top > 20 ? 'w-96 h-96' : 'w-56 h-56'} justify-center items-center`}>
+          <View className={`${insets.top > 20 ? 'w-96 h-96' : 'w-56 h-56'} justify-center items-center`}>
             <Rive
-              // url={riveAssets[0].uri!}
-              resourceName={'success_lamb'}
-              artboardName="streak"
+              url={riveAssets[0].localUri!}
+              artboardName='streak'
               autoplay
-              style={{
-                width: insets.top < 20 ? '100%' : '200%',
-                height: insets.top < 20 ? '100%' : '200%',
-              }}
+              style={{ width: insets.top < 20 ? '100%' : '200%', height: insets.top < 20 ? '100%' : '200%' }}
               ref={riveRef}
             />
           </View>
@@ -500,15 +481,13 @@ export const StreakScreen = () => {
             borderRadius: 5,
           }}>
           <Text style={{ color: 'white', fontSize: 10 }}>
-            Streak: {debugDisplayInfo.streak} | Dates completed:{' '}
-            {debugDisplayInfo.completedDates?.join(', ')}
+            Streak: {debugDisplayInfo.streak} | Dates completed: {debugDisplayInfo.completedDates?.join(', ')}
           </Text>
           <Text style={{ color: 'white', fontSize: 10 }}>
             Today: {debugDisplayInfo.today} | Created: {debugDisplayInfo.createdDate}
           </Text>
           <Text style={{ color: 'white', fontSize: 10 }}>
-            HasToday: {String(debugDisplayInfo.hasTodayCompleted)} | HasYesterday:{' '}
-            {String(debugDisplayInfo.hasYesterdayCompleted)}
+            HasToday: {String(debugDisplayInfo.hasTodayCompleted)} | HasYesterday: {String(debugDisplayInfo.hasYesterdayCompleted)}
           </Text>
         </View>
       )}

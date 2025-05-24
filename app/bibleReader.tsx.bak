@@ -380,7 +380,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           await AsyncStorage.setItem(READER_PREFERENCE_KEY, DEFAULT_READER_MODE);
         }
       } catch (e) {
-        console.log("Failed to load settings from AsyncStorage", e);
+        console.error("Failed to load settings from AsyncStorage", e);
       }
 
       // Load from determined values, not default state
@@ -458,7 +458,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       const result = await fetchChapter(version, bookId, chapter);
 
       if ('error' in result) {
-        console.log(`❌ Error loading chapter: ${result.message}`);
+        console.error(`❌ Error loading chapter: ${result.message}`);
         setError(result.message);
         setChapterData(null);
       } else {
@@ -477,7 +477,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         setError(null);
       }
     } catch (error) {
-      console.log("Failed to load chapter", error);
+      console.error("Failed to load chapter", error);
       setError("Failed to load chapter");
       setChapterData(null);
     } finally {
@@ -570,9 +570,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
       setFontSize(newSize);
       try {
-        await AsyncStorage.setItem(FONT_SIZE_KEY, newSize?.toString());
+        await AsyncStorage.setItem(FONT_SIZE_KEY, newSize.toString());
       } catch (e) {
-        console.log("Failed to save font size to AsyncStorage", e);
+        console.error("Failed to save font size to AsyncStorage", e);
       }
     }
   };
@@ -628,7 +628,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       console.log(`Reading saved successfully. Added ${versesInChapter} verses and 1 chapter.`);
       console.log(`New totals: ${currentVerses + versesInChapter} verses, ${currentChapters + 1} chapters`);
     } catch (error) {
-      console.log('Error saving reading data:', error);
+      console.error('Error saving reading data:', error);
     }
 
     // If we are in a path and at the end chapter, mark the UNIT as completed
@@ -979,7 +979,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       await AsyncStorage.setItem(THEME_COLOR_KEY, theme);
       console.log(`🎨 Saved theme preference: ${theme}`);
     } catch (e) {
-      console.log("Failed to save theme preference to AsyncStorage", e);
+      console.error("Failed to save theme preference to AsyncStorage", e);
     }
   }, []);
 
@@ -989,9 +989,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     setLineHeightMultiplier(LINE_HEIGHT_PRESETS[preset]);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
-      await AsyncStorage.setItem(LINE_HEIGHT_KEY, LINE_HEIGHT_PRESETS[preset]?.toString());
+      await AsyncStorage.setItem(LINE_HEIGHT_KEY, LINE_HEIGHT_PRESETS[preset].toString());
     } catch (e) {
-      console.log("Failed to save line height to AsyncStorage", e);
+      console.error("Failed to save line height to AsyncStorage", e);
     }
   }, []);
 
@@ -1037,7 +1037,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       
       analytics.logEvent("BibleReader_SwitchedToDefaultReader");
     } catch (error) {
-      console.log('Failed to save reader preference:', error);
+      console.error('Failed to save reader preference:', error);
     }
   }, [currentVersion, currentBook, currentBookId, currentChapter, loadChapter]);
 
@@ -1063,7 +1063,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       setSwitchingReaderType(false);
       analytics.logEvent("BibleReader_SwitchedToDefaultReader");
     } catch (e) {
-      console.log("Failed to switch to default reader", e);
+      console.error("Failed to switch to default reader", e);
       setSwitchingReaderType(false);
     }
   }, [currentVersion, currentBook, currentBookId, currentChapter, loadChapter]);

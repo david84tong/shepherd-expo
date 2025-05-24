@@ -300,7 +300,7 @@ export const useNotificationStore = create<NotificationState>()(
             identifier: NOTIFICATION_IDS.DAILY_REMINDER
           });
           
-          console.log(`📱 Daily reminder notification scheduled for ${hour}:${minute?.toString().padStart(2, '0')}`);
+          console.log(`📱 Daily reminder notification scheduled for ${hour}:${minute.toString().padStart(2, '0')}`);
           console.log(`📱 Notification ID: ${NOTIFICATION_IDS.DAILY_REMINDER}`);
           console.log(`📱 Notification trigger type: DAILY`);
           

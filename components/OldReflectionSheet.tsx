@@ -33,41 +33,41 @@ function formatRelativeTime(timestamp: any): string {
     const date = toDateSafe(timestamp);
     const now = new Date();
     const diffMs = now.getTime() - date.getTime();
-
+    
     // Less than a minute
     if (diffMs < 60000) {
       return 'just now';
     }
-
+    
     // Minutes
     const diffMins = Math.floor(diffMs / 60000);
     if (diffMins < 60) {
       return `${diffMins}m ago`;
     }
-
+    
     // Hours
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24) {
       return `${diffHours}h ago`;
     }
-
+    
     // Days
     const diffDays = Math.floor(diffHours / 24);
     if (diffDays < 30) {
       return `${diffDays}d ago`;
     }
-
+    
     // Months
     const diffMonths = Math.floor(diffDays / 30);
     if (diffMonths < 12) {
       return `${diffMonths}mo ago`;
     }
-
+    
     // Years
     const diffYears = Math.floor(diffMonths / 12);
     return `${diffYears}y ago`;
   } catch (error) {
-    console.log('Error formatting relative time:', error, timestamp);
+    console.error('Error formatting relative time:', error, timestamp);
     return 'Recent Reflection';
   }
 }
@@ -78,7 +78,7 @@ function formatFullDate(timestamp: any): string {
     const date = toDateSafe(timestamp);
     return dayjs(date).format('MMMM D, YYYY · h:mm A');
   } catch (error) {
-    console.log('Error formatting full date:', error);
+    console.error('Error formatting full date:', error);
     return '';
   }
 }
@@ -119,9 +119,9 @@ const OldReflectionSheet: React.FC = () => {
       setTimeout(() => {
         bottomSheetRef.current?.expand();
       }, 100);
-
+      
       // Provide haptic feedback when sheet opens
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     } else {
       console.log('OldReflectionSheet: Closing sheet');
       bottomSheetRef.current?.close();
@@ -193,12 +193,12 @@ const OldReflectionSheet: React.FC = () => {
           <Text style={styles.relativeTimeText}>
             {formatRelativeTime(reflectionData.date)}
           </Text>
-
+          
           <Text style={styles.reflectionText}>
             {reflectionData?.content || 'No content found.'}
           </Text>
         </ScrollView>
-
+        
         {/* Character count bubble */}
         <View style={styles.charCountContainer}>
           <Text style={styles.charCountText}>
