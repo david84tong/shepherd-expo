@@ -22,6 +22,7 @@ import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '../app/stores/userStore';
 import { BIBLE_BOOK_IDS } from '../app/models/Path';
 import analytics from '~/utils/analytics';
+import { IS_ANDROID, IS_IOS } from '~/app/utils/utils';
 
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
@@ -416,8 +417,8 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         {/* Rive Animation */}
         <View className="w-[100px] h-[100px] -ml-5 -mb-2">
           <Rive
-            // url={riveAssets[0].uri!}
-            resourceName={'home_lamb'}
+            url={IS_IOS ? riveAssets[0].uri! : undefined}
+            resourceName={IS_ANDROID ? 'home_lamb' : undefined}
             artboardName="lamb-writing"
             autoplay
             style={{ width: '130%', height: '130%' }}

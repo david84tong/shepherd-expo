@@ -8,6 +8,7 @@ import Rive, { Fit, Alignment } from 'rive-react-native';
 import { useAssets } from 'expo-asset';
 import analytics from '../../utils/analytics';
 import useSubscriptionStore from '../stores/subscriptionStore';
+import { IS_ANDROID, IS_IOS } from '../utils/utils';
 interface LoadingScreenProps {
   initialMessage?: string;
   onLoadingComplete?: () => void;
@@ -251,9 +252,9 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
       {/* Pulsing Rive animation */}
       <View className="w-56 h-56 mb-24 flex items-center justify-center">
         <Rive
-          // url={assets[0].uri!}
+          url={IS_IOS ? assets[0].uri! : undefined}
           artboardName="lamb-writing"
-          resourceName='home_lamb'
+          resourceName={IS_ANDROID ? 'home_lamb' : undefined}
           autoplay={true}
           fit={Fit.Contain}
           alignment={Alignment.Center}

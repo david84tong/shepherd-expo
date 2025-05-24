@@ -43,6 +43,7 @@ import ForceUpdateModal from '~/components/ForceUpdateModal';
 import { disableFontScaling } from './helper/disableFontScaling';
 import { adapty } from 'react-native-adapty';
 import './stores/userStore';
+import { IS_ANDROID, IS_IOS } from './utils/utils';
 
 // Import highlight store setup function
 import { setupHighlightListeners } from './stores/highlightStore';
@@ -359,7 +360,7 @@ export default function RootLayout() {
         await checkOnboarding();
         await checkStreakStatus();
         await initializeNotifications();
-      } catch (error) {}
+      } catch (error) { }
       // Set Rive ready
       setIsRiveReady(true);
       setShowRiveAnimation(true);
@@ -439,8 +440,8 @@ export default function RootLayout() {
     return (
       <View style={[styles.riveContainer, { backgroundColor: '#FFF4D9' }]}>
         <Rive
-          // url={riveAssets[0].uri!}
-          resourceName="shepherd_splash_screen"
+          url={IS_IOS ? riveAssets[0].uri! : undefined}
+          resourceName={IS_ANDROID ? "shepherd_splash_screen" : undefined}
           style={styles.riveAnimation}
           autoplay={true}
           onPause={() => {

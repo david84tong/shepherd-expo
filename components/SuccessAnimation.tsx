@@ -29,6 +29,7 @@ import { calculateLevelFromXp } from '../utils/levelUtils';
 import gemIcon from '../assets/icons/greenGemIcon.png';
 import heartIcon from '../assets/icons/heartIcon.png';
 import starIcon from '../assets/icons/starIcon.png';
+import { IS_ANDROID, IS_IOS } from '~/app/utils/utils';
 
 // Get screen dimensions to ensure full screen sizing
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -758,9 +759,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             {effectiveType === SuccessAnimationType.SECTION_COMPLETE ? (
               <Rive
                 ref={riveRef}
-                // url={homeLambAssets && homeLambAssets[0] && homeLambAssets[0].uri || ''}
+                url={IS_IOS ? homeLambAssets && homeLambAssets[0] && homeLambAssets[0].uri || '' : undefined}
                 autoplay={true}
-                resourceName={'home_lamb'}
+                resourceName={IS_ANDROID ? 'home_lamb' : undefined}
                 artboardName='lamb-milestone'
                 style={{
                   width: '100%', height: '100%', maxWidth: 300,
@@ -771,8 +772,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             ) : (
               <Rive
                 ref={riveRef}
-                // url={riveAssets && riveAssets[0] && riveAssets[0].uri || ''}
-                resourceName={'success_lamb'}
+                url={IS_IOS ? riveAssets && riveAssets[0] && riveAssets[0].uri || '' : undefined}
+                resourceName={IS_ANDROID ? 'success_lamb' : undefined}
                 autoplay={true}
                 style={{ width: '100%', height: '100%' }}
                 {...(riveArtboard ? { artboardName: riveArtboard } : {})}
