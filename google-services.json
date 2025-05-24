@@ -1,46 +1,29 @@
 {
   "project_info": {
-    "project_number": "226457915179",
-    "project_id": "shepherd-c74ad",
-    "storage_bucket": "shepherd-c74ad.firebasestorage.app"
+    "project_number": "000000000000",
+    "project_id": "shepherd-app-dummy",
+    "storage_bucket": "shepherd-app-dummy.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:226457915179:android:94f1bf9d419f9def767f6e",
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
         "android_client_info": {
-          "package_name": "second.round.shepherd"
+          "package_name": "com.shepherd.app"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "226457915179-tbsa7rptki8iedbirm5mp0ug9dob8kf0.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyAW3iqun6RRw6W6UWnrrELVAhHzEuZT3h4"
+          "current_key": "dummy_api_key"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "226457915179-tbsa7rptki8iedbirm5mp0ug9dob8kf0.apps.googleusercontent.com",
-              "client_type": 3
-            },
-            {
-              "client_id": "226457915179-29r2g02c7l3runlrfg3buac114i9i3gn.apps.googleusercontent.com",
-              "client_type": 2,
-              "ios_info": {
-                "bundle_id": "io.tryshepherd.ios"
-              }
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }
   ],
   "configuration_version": "1"
-}
+} 

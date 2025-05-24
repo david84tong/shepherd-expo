@@ -20,9 +20,9 @@ import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
 
 import analytics from '../../utils/analytics';
 
-const FIRST_WELCOME_TEXT = 'Every Shepherd starts with one lost lamb...';
+const FIRST_WELCOME_TEXT = "Every Shepherd starts with one lost lamb...";
 const SECOND_WELCOME_TEXT = "This one's yours.";
-const SECOND_STAGE_PROMPT = 'Tap to wake it up';
+const SECOND_STAGE_PROMPT = "Tap to wake it up";
 const TYPING_SPEED = 75; // Speed for all typing effects
 const ZOOM_DURATION = 3000; // Slow zoom effect (3 seconds)
 const TRANSITION_DURATION = 350; // Faster transition animation duration
@@ -44,18 +44,18 @@ export default function OnboardingWelcomeScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
   const insets = useSafeAreaInsets();
-
+  
   // Initialize analytics
   const { logScreenView, logButtonPress, logEvent, AnalyticsEvent, EventCategory } = useAnalytics();
-
+  
   // Log screen view when component mounts
   useEffect(() => {
-    analytics.logEvent('LambLostScreenViewed', {
+    analytics.logEvent("LambLostScreenViewed", {
       screenName: 'OnboardingWelcomeScreen',
       step: 1,
     });
   }, [logScreenView]);
-
+  
   // State for UI and flow
   const [displayText, setDisplayText] = useState('');
   const [secondStageActive, setSecondStageActive] = useState(false);
@@ -236,15 +236,15 @@ export default function OnboardingWelcomeScreen() {
     });
 
     if (!secondStageActive || isLambTapped) return;
-
+    
     // Log the lamb tap interaction
     logEvent('lamb_tap', EventCategory.USER_ACTION, {
       step: 1,
       screenName: 'Welcome',
       stage: 'second_stage',
-      action: 'Tapped Lamb',
+      action: 'Tapped Lamb'
     });
-
+    
     riveRef.current?.fireState('State Machine 1', 'tap');
     setIsAnimating(false);
     setIsLambTapped(true);
@@ -282,24 +282,24 @@ export default function OnboardingWelcomeScreen() {
 
     if (textPhase === 2) {
       // Log button press for starting journey
-      analytics.logEvent('Onboarding_Tapped_StartJourney', {
+      analytics.logEvent("Onboarding_Tapped_StartJourney", {
         step: 1,
         screenName: 'Welcome',
         textPhase: textPhase,
-        action: 'Continue',
+        action: 'Continue'
       });
-
+      
       // Start the zoom animation sequence
       startZoomAndTransition();
     } else if (isLambTapped) {
       // Log button press for claiming lamb
-      analytics.logEvent('Onboarding_Tapped_ClaimLostLamb', {
+      analytics.logEvent("Onboarding_Tapped_ClaimLostLamb", {
         step: 1,
         screenName: 'Welcome',
         textPhase: textPhase,
-        action: 'Claim Lost Lamb',
+        action: 'Claim Lost Lamb'
       });
-
+      
       handleTransitionToNextScreen();
     }
   };

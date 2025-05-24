@@ -85,7 +85,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       
       console.log(`✅ Saved response for ${String(key)}:`, value);
     } catch (error) {
-      console.log('❌ Error saving onboarding response:', error);
+      console.error('❌ Error saving onboarding response:', error);
     }
   },
   
@@ -124,7 +124,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       
       console.log('✅ Saved path selection:', pathData.id);
     } catch (error) {
-      console.log('❌ Error saving path selection:', error);
+      console.error('❌ Error saving path selection:', error);
     }
   },
   
@@ -161,7 +161,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       
       console.log('✅ Saved notification preferences:', notificationData);
     } catch (error) {
-      console.log('❌ Error saving notification preferences:', error);
+      console.error('❌ Error saving notification preferences:', error);
     }
   },
   
@@ -198,7 +198,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       
       console.log('✅ Saved auth method:', authData);
     } catch (error) {
-      console.log('❌ Error saving auth method:', error);
+      console.error('❌ Error saving auth method:', error);
     }
   },
   
@@ -214,7 +214,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       );
       console.log(`✅ Set current screen to ${screen}`);
     } catch (error) {
-      console.log('❌ Error saving current screen:', error);
+      console.error('❌ Error saving current screen:', error);
     }
   },
   
@@ -224,7 +224,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       await AsyncStorage.removeItem(ONBOARDING_STORAGE_KEY);
       console.log('✅ Cleared all onboarding responses');
     } catch (error) {
-      console.log('❌ Error clearing onboarding responses:', error);
+      console.error('❌ Error clearing onboarding responses:', error);
     }
   },
   
@@ -266,7 +266,12 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
         return currentScreen;
       } else {
         console.log(`[OnboardingStore] 🟢 No saved data found`);
-        set({ isInitialized: true });
+        set({ 
+          isInitialized: true,
+          currentScreen: '1',
+          needsNavigationToSavedScreen: false,
+          savedScreenToNavigateTo: null,
+        });
         console.log('🟢 No onboarding state found in storage, starting fresh');
         return '1';
       }
@@ -297,7 +302,33 @@ export const debugOnboardingStorage = async () => {
     console.log('📊 Onboarding storage:', parsedData);
     return parsedData;
   } catch (error) {
-    console.log('❌ Error reading onboarding storage:', error);
+    console.error('❌ Error reading onboarding storage:', error);
     return null;
+  }
+};
+
+// Debug helper to completely reset app state for testing
+export const resetAppForTesting = async () => {
+  try {
+    console.log('🧹 Clearing all app data for testing...');
+    
+    // Import the keys we need to clear
+    const { ONBOARDING_COMPLETED_KEY } = require('../models/Onboarding');
+    
+    // Clear onboarding data
+    await AsyncStorage.removeItem(ONBOARDING_STORAGE_KEY);
+    await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
+    
+    // Reset onboarding store state
+    const onboardingStore = useOnboardingStore.getState();
+    onboardingStore.clearResponses();
+    
+    console.log('✅ App data cleared! App should behave like a fresh install.');
+    console.log('📝 Restart the app to test first-time user experience.');
+    
+    return true;
+  } catch (error) {
+    console.error('❌ Error clearing app data:', error);
+    return false;
   }
 };

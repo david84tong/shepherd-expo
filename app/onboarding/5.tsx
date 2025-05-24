@@ -22,7 +22,7 @@ export default function OnboardingReadingTimeScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const fromSettings = params.fromSettings === 'true';
-
+  
   const { setResponse } = useOnboardingStore();
   const { frequencyGoal, setFrequencyGoal } = useUserStore();
   const [selectedOption, setSelectedOption] = useState<string | undefined>(frequencyGoal);
@@ -49,8 +49,7 @@ export default function OnboardingReadingTimeScreen() {
     // Staggered animations for each component
     const animateComponent = (opacity: any, translateY: any, delay: number) => {
       opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
-      translateY.value = withDelay(
-        delay,
+      translateY.value = withDelay(delay,
         withSpring(0, {
           damping: 20,
           stiffness: 90,
@@ -67,22 +66,22 @@ export default function OnboardingReadingTimeScreen() {
   // Create animated styles for each component
   const iconStyle = useAnimatedStyle(() => ({
     opacity: iconOpacity.value,
-    transform: [{ translateY: iconTranslateY.value }],
+    transform: [{ translateY: iconTranslateY.value }]
   }));
 
   const titleStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,
-    transform: [{ translateY: titleTranslateY.value }],
+    transform: [{ translateY: titleTranslateY.value }]
   }));
 
   const optionsStyle = useAnimatedStyle(() => ({
     opacity: optionsOpacity.value,
-    transform: [{ translateY: optionsTranslateY.value }],
+    transform: [{ translateY: optionsTranslateY.value }]
   }));
 
   // Handle navigation back when coming from settings
   const handleBackFromSettings = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     router.back();
   };
 
@@ -95,17 +94,17 @@ export default function OnboardingReadingTimeScreen() {
       '16-20': 20,
       '20-30': 30,
       '30-60': 60,
-      '60+': 90,
+      '60+': 90
     } as const;
 
     // Set in user store
     setFrequencyGoal(duration);
 
-    analytics.logEvent('OnboardingDurationScreen_Tapped_Option', {
+    analytics.logEvent("OnboardingDurationScreen_Tapped_Option", {
       value: duration,
-      fromSettings: fromSettings,
+      fromSettings: fromSettings
     });
-
+    
     // Trigger light haptic feedback
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
@@ -116,31 +115,34 @@ export default function OnboardingReadingTimeScreen() {
     }
 
     setSelectedOption(duration);
-
+    
     // Also update in Firestore directly
     const user = auth().currentUser;
     if (user) {
       try {
-        await firestore().collection('users').doc(user.uid).update({
-          frequencyGoal: duration,
-          updatedAt: firestore.FieldValue.serverTimestamp(),
-        });
+        await firestore()
+          .collection('users')
+          .doc(user.uid)
+          .update({ 
+            frequencyGoal: duration,
+            updatedAt: firestore.FieldValue.serverTimestamp()
+          });
         console.log('Updated frequency goal in Firestore');
       } catch (error) {
-        console.log('Error updating frequency goal in Firestore:', error);
+        console.error('Error updating frequency goal in Firestore:', error);
       }
     }
-
+    
     // If coming from settings, just go back
     if (fromSettings) {
       // Show a success feedback before going back
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       setTimeout(() => {
         router.back();
       }, 300);
     } else {
       // Normal onboarding flow
-
+      
       await setResponse('frequencyGoal', duration);
       router.push('/onboarding/6');
     }
@@ -165,10 +167,11 @@ export default function OnboardingReadingTimeScreen() {
     <View className="flex-1 bg-surfaceCream px-6 pt-12">
       {/* Close button (only when coming from settings) */}
       {fromSettings && (
-        <TouchableOpacity
+        <TouchableOpacity 
           onPress={handleBackFromSettings}
-          className="absolute top-7 right-3 z-10 p-2"
-          hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}>
+          className="absolute top-12 right-6 z-10 p-2"
+          hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}
+        >
           <Feather name="x" size={24} color="#3C584A" />
         </TouchableOpacity>
       )}
@@ -181,9 +184,7 @@ export default function OnboardingReadingTimeScreen() {
       </Animated.View>
 
       {/* Options Container */}
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
         <Animated.View style={optionsStyle} className="space-y-4 mt-4">
           {options.map((option) => (
             <PrimaryButton

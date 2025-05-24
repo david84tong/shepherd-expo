@@ -110,7 +110,7 @@ const PricingScreen = () => {
       });
       await showPaywall();
     } catch (error) {
-      console.log('Error during subscription process:', error);
+      console.error('Error during subscription process:', error);
       setIsLoading(false);
     }
   };
@@ -157,7 +157,7 @@ const PricingScreen = () => {
       // Adapty implementation
 
     } catch (error) {
-      console.log('Error presenting paywall:', error);
+      console.error('Error presenting paywall:', error);
       analytics.logEvent("PricingScreen_Paywall_Error", {
         errorMessage: (error as Error)?.message || "Unknown error"
       });

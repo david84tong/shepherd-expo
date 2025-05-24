@@ -29,7 +29,7 @@ export const useOnboarding = () => {
         setOnboardingResponse(JSON.parse(savedResponse));
       }
     } catch (error) {
-      console.log('Error checking onboarding status:', error);
+      console.error('Error checking onboarding status:', error);
     }
   };
 
@@ -59,7 +59,7 @@ export const useOnboarding = () => {
         // setOnboardingResponse(updatedResponse);
         // await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(updatedResponse));
       } catch (error) {
-        console.log('Error saving onboarding response:', error);
+        console.error('Error saving onboarding response:', error);
       }
     },
     [onboardingResponse, setOnboardingResponse]
@@ -70,7 +70,7 @@ export const useOnboarding = () => {
       // await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
       // setIsCompleted(true);
     } catch (error) {
-      console.log('Error completing onboarding:', error);
+      console.error('Error completing onboarding:', error);
     }
   }, []);
 
@@ -81,7 +81,7 @@ export const useOnboarding = () => {
       setCurrentPageIndex(0);
       setOnboardingResponse({} as OnboardingResponse);
     } catch (error) {
-      console.log('Error resetting onboarding:', error);
+      console.error('Error resetting onboarding:', error);
     }
   }, [setOnboardingResponse]);
 

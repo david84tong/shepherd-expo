@@ -1,13 +1,5 @@
 import React, { useState, useRef, useLayoutEffect } from 'react';
-import {
-  View,
-  Text,
-  Alert,
-  ActivityIndicator,
-  TouchableOpacity,
-  ImageBackground,
-  Image,
-} from 'react-native';
+import { View, Text, Alert, ActivityIndicator, TouchableOpacity, ImageBackground, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -54,7 +46,7 @@ export default function LoginScreen() {
 
   // Begin journey handler
   const handleBeginJourney = async () => {
-    analytics.logEvent('WelcomeScreen_Tapped_BeginJourney');
+    analytics.logEvent("WelcomeScreen_Tapped_BeginJourney");
 
     try {
       // Trigger haptic feedback
@@ -64,14 +56,14 @@ export default function LoginScreen() {
       // Navigate to onboarding
       router.replace('/onboarding/1');
     } catch (error) {
-      console.log('Error starting journey:', error);
+      console.error('Error starting journey:', error);
       Alert.alert('Error', 'Could not start journey. Please try again.');
     }
   };
 
   // Run animations
   useLayoutEffect(() => {
-    analytics.logEvent('WelcomeScreen_Screenload');
+    analytics.logEvent("WelcomeScreen_Screenload");
     if (animationsInitialized.current) return;
 
     // Fade in the screen
@@ -82,35 +74,26 @@ export default function LoginScreen() {
 
       // Title animation
       titleOpacity.value = withDelay(200, withTiming(1, { duration: 500 }));
-      titleTranslateY.value = withDelay(
-        200,
-        withSpring(0, {
-          damping: 14,
-          stiffness: 80,
-          mass: 0.7,
-        })
-      );
+      titleTranslateY.value = withDelay(200, withSpring(0, {
+        damping: 14,
+        stiffness: 80,
+        mass: 0.7
+      }));
 
       // Lamb animation - subtle grow effect
       lambOpacity.value = withDelay(400, withTiming(1, { duration: 600 }));
-      lambScale.value = withDelay(
-        400,
-        withSpring(1, {
-          damping: 14,
-          stiffness: 80,
-          mass: 0.8,
-        })
-      );
+      lambScale.value = withDelay(400, withSpring(1, {
+        damping: 14,
+        stiffness: 80,
+        mass: 0.8
+      }));
 
       // Button slide up from bottom
       buttonOpacity.value = withDelay(600, withTiming(1, { duration: 500 }));
-      buttonTranslateY.value = withDelay(
-        600,
-        withSpring(0, {
-          damping: 14,
-          stiffness: 90,
-        })
-      );
+      buttonTranslateY.value = withDelay(600, withSpring(0, {
+        damping: 14,
+        stiffness: 90
+      }));
 
       // Link fade in last
       linkOpacity.value = withDelay(700, withTiming(1, { duration: 400 }));
@@ -127,26 +110,26 @@ export default function LoginScreen() {
   // Create animated styles
   const screenStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
-    flex: 1,
+    flex: 1
   }));
 
   const titleStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,
-    transform: [{ translateY: titleTranslateY.value }],
+    transform: [{ translateY: titleTranslateY.value }]
   }));
 
   const lambStyle = useAnimatedStyle(() => ({
     opacity: lambOpacity.value,
-    transform: [{ scale: lambScale.value }],
+    transform: [{ scale: lambScale.value }]
   }));
 
   const buttonStyle = useAnimatedStyle(() => ({
     opacity: buttonOpacity.value,
-    transform: [{ translateY: buttonTranslateY.value }],
+    transform: [{ translateY: buttonTranslateY.value }]
   }));
 
   const linkStyle = useAnimatedStyle(() => ({
-    opacity: linkOpacity.value,
+    opacity: linkOpacity.value
   }));
 
   // Show loading indicator while assets load
@@ -165,7 +148,8 @@ export default function LoginScreen() {
       <ImageBackground
         source={require('../../assets/backgrounds/mainBackground.png')}
         className="flex-1"
-        resizeMode="cover">
+        resizeMode="cover"
+      >
         {/* Enhanced gradient with stronger colors and explicit styling */}
         <LinearGradient
           colors={['rgba(0,0,0,0.65)', 'rgba(0,0,0,0.35)', 'rgba(0,0,0,0)']}
@@ -178,7 +162,7 @@ export default function LoginScreen() {
             right: 0,
             top: 0,
             bottom: 0,
-            zIndex: 5,
+            zIndex: 5
           }}
         />
 
@@ -204,12 +188,10 @@ export default function LoginScreen() {
 
                 {/* Made Joyful with Bible icons */}
                 <View className="flex-row items-center justify-center mt-1">
+
                   <Text className="text-white font-nunito-bold text-title">Made </Text>
-                  <Text
-                    className="text-accentGold font-feather text-title"
-                    style={{ borderBottomColor: '#F7B500' }}>
-                    Joyful
-                  </Text>
+                  <Text className="text-accentGold font-feather text-title" style={{ borderBottomColor: '#F7B500', }}>Joyful</Text>
+
                 </View>
               </View>
               <Image
@@ -223,8 +205,7 @@ export default function LoginScreen() {
           {/* Rive Animation in the middle */}
           <CustomAnimatedView style={lambStyle} className="h-[200px] w-full justify-center items-center -mt-24">
             <Rive
-              resourceName={'home_lamb'}
-              // url={riveAssets[0].uri}
+              url={riveAssets[0].localUri!}
               artboardName="lamb-reading"
               autoplay
               style={{ width: '120%', height: '120%' }}
@@ -243,17 +224,16 @@ export default function LoginScreen() {
             <CustomAnimatedView style={linkStyle}>
               <TouchableOpacity
                 onPress={() => {
-                  analytics.logEvent('WelcomeScreen_Tapped_Login');
+                  analytics.logEvent("WelcomeScreen_Tapped_Login");
                   router.push({
-                    pathname: '/onboarding/11',
-                    params: { isLogin: 'true' },
+                    pathname: "/onboarding/11",
+                    params: { isLogin: "true" }
                   });
                 }}
                 className="mt-4"
-                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
-                <Text className="font-feather text-body text-center underline mt-4 text-white">
-                  Login
-                </Text>
+                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
+              >
+                <Text className="font-feather text-body text-center underline mt-4 text-white">Login</Text>
               </TouchableOpacity>
             </CustomAnimatedView>
           </View>
@@ -262,3 +242,4 @@ export default function LoginScreen() {
     </CustomAnimatedView>
   );
 }
+

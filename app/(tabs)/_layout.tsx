@@ -74,14 +74,16 @@ export default function TabsLayout() {
   // Move them all before any conditional early-returns.
   const signedIn = isSignedIn();
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
-  const { savedScreenToNavigateTo } = useOnboardingStore();
+  const { savedScreenToNavigateTo, isInitialized } = useOnboardingStore();
 
   // Check onboarding status
   useEffect(() => {
     const checkOnboarding = async () => {
       try {
         const completed = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-        setOnboardingCompleted(completed === 'true');
+        const isCompleted = completed === 'true';
+        console.log('[TabsLayout] 📋 Onboarding completion check:', { completed, isCompleted });
+        setOnboardingCompleted(isCompleted);
       } catch (error) {
         console.error('Error checking onboarding status:', error);
         setOnboardingCompleted(false);
@@ -106,22 +108,33 @@ export default function TabsLayout() {
     }).start();
   }, [mode, pathInProgress]);
 
-  // Wait for onboarding status to be determined
-  if (onboardingCompleted === null) {
+  // Wait for both onboarding status and store to be determined
+  if (onboardingCompleted === null || !isInitialized) {
+    console.log('[TabsLayout] ⏳ Waiting for initialization...', { onboardingCompleted, isInitialized });
     return null; // Show nothing while loading
   }
 
+  // Log current state for debugging
+  console.log('[TabsLayout] 📊 Current state:', {
+    signedIn,
+    onboardingCompleted,
+    savedScreenToNavigateTo,
+    isInitialized
+  });
+
   // Check authentication first - if not signed in, go to auth welcome screen
   if (!signedIn) {
-    // Only redirect to saved onboarding screen if they were in the middle of onboarding
-    // and have a saved screen (meaning they started onboarding but didn't complete it)
-    if (!onboardingCompleted && savedScreenToNavigateTo && savedScreenToNavigateTo !== '1') {
-      console.log(`[TabsLayout] User not signed in but has saved onboarding progress, redirecting to: /onboarding/${savedScreenToNavigateTo}`);
+    // Only redirect to saved onboarding screen if they were ACTIVELY in the middle of onboarding
+    // This means they have a saved screen that's NOT screen 1 (welcome screen)
+    const hasOnboardingProgress = !onboardingCompleted && savedScreenToNavigateTo && savedScreenToNavigateTo !== '1';
+    
+    if (hasOnboardingProgress) {
+      console.log(`[TabsLayout] 🔄 User not signed in but has saved onboarding progress, redirecting to: /onboarding/${savedScreenToNavigateTo}`);
       return <Redirect href={`/onboarding/${savedScreenToNavigateTo}` as any} />;
     }
     
-    // For brand new users or users who haven't started onboarding, show auth welcome screen
-    console.log('[TabsLayout] User not signed in, redirecting to auth welcome screen');
+    // For brand new users or users who haven't started onboarding beyond screen 1, show auth welcome screen
+    console.log('[TabsLayout] 👋 User not signed in, redirecting to auth welcome screen');
     return <Redirect href="/(auth)" />;
   }
 

@@ -5,10 +5,10 @@ import Slider from '@react-native-community/slider';
 import { fetchChapter, Verse, ChapterResponse } from '~/app/api/bible';
 import { usePathStore } from '~/app/stores/pathStore';
 import { Feather } from '@expo/vector-icons';
-import Reanimated, {
+import Reanimated, { 
   FadeInUp,
-  useAnimatedStyle,
-  useSharedValue,
+  useAnimatedStyle, 
+  useSharedValue, 
   withTiming,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
@@ -22,8 +22,8 @@ import { useRouter } from 'expo-router';
 import firestore from '@react-native-firebase/firestore';
 import { BIBLE_PATHS } from '~/app/models/Path';
 import analytics from '../utils/analytics';
-import {
-  useReaderSettingsStore,
+import { 
+  useReaderSettingsStore, 
   CARD_LINE_HEIGHT_PRESETS,
   LineHeightPreset,
   MIN_FONT_SIZE,
@@ -51,7 +51,7 @@ const THEME_COLORS = {
     progressBarBackground: 'rgba(220, 178, 128, 0.2)',
     progressBarFill: '#DCB280',
   },
-  light: {
+  light: { 
     background: '#FFF9E6',
     modalBackground: '#FFF4D9',
     text: '#4A3B25',
@@ -87,7 +87,7 @@ const THEME_COLORS = {
 type ThemeType = keyof typeof THEME_COLORS;
 
 // For Bible navigation - Add bible book counts 
-const BIBLE_CHAPTER_COUNTS: { [bookId: number]: number } = {
+const BIBLE_CHAPTER_COUNTS: {[bookId: number]: number} = {
   1: 50,   // Genesis
   2: 40,   // Exodus
   3: 27,   // Leviticus
@@ -157,7 +157,7 @@ const BIBLE_CHAPTER_COUNTS: { [bookId: number]: number } = {
 };
 
 // For Bible navigation - Map book IDs to names
-const BIBLE_BOOK_NAMES: { [bookId: number]: string } = {
+const BIBLE_BOOK_NAMES: {[bookId: number]: string} = {
   1: "Genesis", 2: "Exodus", 3: "Leviticus", 4: "Numbers", 5: "Deuteronomy",
   6: "Joshua", 7: "Judges", 8: "Ruth", 9: "1 Samuel", 10: "2 Samuel",
   11: "1 Kings", 12: "2 Kings", 13: "1 Chronicles", 14: "2 Chronicles",
@@ -188,18 +188,18 @@ interface NewBibleReaderProps {
 
 interface TypingTextProps {
   text: string;
-  className?: string;
-  baseTextStyle: object;
+  className?: string; 
+  baseTextStyle: object; 
   speed?: number;
   onComplete?: () => void;
   skipAnimation?: boolean;
 }
 
-const TypingText: React.FC<TypingTextProps> = ({
-  text,
-  className,
+const TypingText: React.FC<TypingTextProps> = ({ 
+  text, 
+  className, 
   baseTextStyle,
-  speed = 30,
+  speed = 30, 
   onComplete,
   skipAnimation = false
 }) => {
@@ -233,9 +233,9 @@ const TypingText: React.FC<TypingTextProps> = ({
   return <Text style={baseTextStyle} className={className}>{displayedText}</Text>;
 };
 
-const NewBibleReader: React.FC<NewBibleReaderProps> = ({
-  bookId,
-  chapter,
+const NewBibleReader: React.FC<NewBibleReaderProps> = ({ 
+  bookId, 
+  chapter, 
   translation = 'ESV',
   isInPathMode = false,
   onNavigateBack,
@@ -251,8 +251,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const [showTapGuidance, setShowTapGuidance] = useState(true);
   const [tapCount, setTapCount] = useState(0);
   const [showBackButton, setShowBackButton] = useState(false);
-  const [previousChapterInfo, setPreviousChapterInfo] = useState<{ bookId: number, chapter: number } | null>(null);
-
+  const [previousChapterInfo, setPreviousChapterInfo] = useState<{bookId: number, chapter: number} | null>(null);
+  
   const progressValue = useSharedValue(0);
   const pathInProgress = usePathStore((s) => s.pathInProgress);
   const currentPath = usePathStore((s) => s.currentPath);
@@ -275,17 +275,17 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Convert line height preset name to pixel value for the card view
   const lineHeight = CARD_LINE_HEIGHT_PRESETS[readerSettings.lineHeightPreset || 'REGULAR'];
-
+  
   // Get theme colors based on current theme - add fallback to prevent undefined
-  const themeKey = (readerSettings.theme && readerSettings.theme in THEME_COLORS)
-    ? readerSettings.theme as ThemeType
+  const themeKey = (readerSettings.theme && readerSettings.theme in THEME_COLORS) 
+    ? readerSettings.theme as ThemeType 
     : 'light';
   const theme = THEME_COLORS[themeKey];
-
-  const verseTextStyle = {
-    fontSize: readerSettings.fontSize || MIN_FONT_SIZE,
-    lineHeight: lineHeight,
-    color: theme.text
+  
+  const verseTextStyle = { 
+    fontSize: readerSettings.fontSize || MIN_FONT_SIZE, 
+    lineHeight: lineHeight, 
+    color: theme.text 
   };
 
   const showBookChapterSelector = useUIStore(state => state.showBookChapterSelector);
@@ -340,7 +340,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     setIsTypingComplete(false);
     setSkipTyping(false);
     progressValue.value = withTiming(0, { duration: 0 });
-
+    
     try {
       const res = await fetchChapter(translation, bookId, chapter);
       if ('error' in res) {
@@ -363,17 +363,17 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const navigateToNextChapter = useCallback(() => {
     // Add haptic feedback for navigation
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
+    
     // Store current chapter info for back button
     setPreviousChapterInfo({ bookId, chapter });
     setShowBackButton(true);
-
+    
     const chaptersInCurrentBook = BIBLE_CHAPTER_COUNTS[bookId];
-
+    
     if (chapter >= chaptersInCurrentBook) {
       // At the last chapter of current book, go to next book
       const nextBookId = bookId + 1;
-
+      
       if (nextBookId <= 66) { // 66 books in the Bible
         const nextBookName = BIBLE_BOOK_NAMES[nextBookId] || 'Next Book';
         console.log(`End of ${chapterData?.book} reached. Navigating to ${nextBookName} 1`);
@@ -393,12 +393,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Function to navigate back to the previous chapter
   const navigateToPreviousChapter = useCallback(() => {
     if (!previousChapterInfo) return;
-
+    
     // Add haptic feedback for navigation
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
+    
     const { bookId: prevBookId, chapter: prevChapter } = previousChapterInfo;
-
+    
     // Load the previous chapter
     loadChapter(prevBookId, prevChapter).then(success => {
       if (success && chapterData) {
@@ -417,7 +417,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     // Reset back button state when chapter props change directly
     setShowBackButton(false);
     setPreviousChapterInfo(null);
-
+    
     // Initial chapter load
     loadChapter(bookId, chapter);
   }, [bookId, chapter, loadChapter]);
@@ -431,12 +431,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   const handleScroll = useCallback(() => {
     setIsScrolling(true);
-
+    
     // Clear any existing timeout
     if (scrollTimeout.current) {
       clearTimeout(scrollTimeout.current);
     }
-
+    
     // Set a timeout to mark scrolling as finished after 300ms of no scroll events
     scrollTimeout.current = setTimeout(() => {
       setIsScrolling(false);
@@ -480,7 +480,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     if (pathIdx !== -1) {
       const p = BIBLE_PATHS[pathIdx];
       const uIdx = p.units.findIndex(u => u.id === currentPath.unitId);
-      if (uIdx !== -1 && uIdx < p.units.length - 1) nextUnit = p.units[uIdx + 1];
+      if (uIdx !== -1 && uIdx < p.units.length -1) nextUnit = p.units[uIdx+1];
     }
     setNextUnitPreview(nextUnit);
     setPathInProgress(!!nextUnit);
@@ -518,29 +518,29 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   const handleNextVerse = useCallback(() => {
     if (!chapterData || isScrolling) return;
-
+    
     // Trigger haptic feedback for every tap
     Haptics.selectionAsync();
-
+    
     // Track tap count and hide guidance after 2 taps
     if (showTapGuidance) {
       const newTapCount = tapCount + 1;
       setTapCount(newTapCount);
-
+      
       if (newTapCount >= 2) {
         setShowTapGuidance(false);
         // Save preference to AsyncStorage
-        AsyncStorage.setItem(TAP_GUIDANCE_KEY, 'true').catch(e =>
+        AsyncStorage.setItem(TAP_GUIDANCE_KEY, 'true').catch(e => 
           console.error("Failed to save tap guidance setting", e)
         );
       }
     }
-
+    
     if (!isTypingComplete) {
-      setSkipTyping(true);
+      setSkipTyping(true); 
       return;
     }
-
+    
     if (currentIndex < chapterData.verses.length - 1) {
       // Still have verses to show in current chapter
       setCurrentIndex((i) => i + 1);
@@ -623,12 +623,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     // Close this modal if we're switching to default reader (card view OFF)
     if (!value) {
       setIsSettingsModalVisible(false);
-
+      
       // Handoff chapter data to parent before switching
       if (onHandoffChapterData) {
         onHandoffChapterData(chapterData);
       }
-
+      
       // Notify parent to switch to default reader
       if (onSwitchToDefaultReader) {
         setTimeout(() => {
@@ -678,14 +678,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           setSavedReading(chapterData.book, bookId, chapter);
         }
       };
-
+      
       updateUIState();
     }
   }, [bookId, chapter, chapterData, loading, setSavedReading]);
 
   if (loading || !chapterData) {
     return (
-      <SafeAreaView style={{ backgroundColor: theme.background, flex: 1 }} className="items-center justify-center">
+      <SafeAreaView style={{backgroundColor: theme.background, flex:1}} className="items-center justify-center">
         <ActivityIndicator size="large" color={theme.progressBarFill} />
       </SafeAreaView>
     );
@@ -694,13 +694,13 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const versesToShow: Verse[] = chapterData.verses.slice(0, currentIndex + 1);
 
   return (
-    <SafeAreaView style={{ backgroundColor: theme.background, flex: 1 }}>
+    <SafeAreaView style={{backgroundColor: theme.background, flex:1}}>
       {/* Absolute background to cover outer safe areas */}
-      <View style={{ ...StyleSheet.absoluteFillObject }} pointerEvents="none" />
+      <View style={{...StyleSheet.absoluteFillObject}} pointerEvents="none" />
 
-      <View style={{ flex: 1, paddingBottom: 24, paddingHorizontal: 16, paddingTop: 16 }}>
+      <View style={{flex:1, paddingBottom: 24, paddingHorizontal:16, paddingTop:16}}>
 
-
+        
         {/* HEADER: Bible Book/Chapter, tap to open selector, styled like bibleReader.tsx */}
         <View className="flex-row items-center justify-between mb-3  px-[4px] py-[10px]">
           <View className="flex-row items-center">
@@ -724,7 +724,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           </TouchableOpacity>
         </View>
         {/* Add progress bar at the top */}
-        <View style={{ height: 8, backgroundColor: theme.progressBarBackground, borderRadius: 2, marginBottom: 8, overflow: 'hidden' }}>
+        <View style={{height: 8, backgroundColor: theme.progressBarBackground, borderRadius: 2, marginBottom: 8, overflow: 'hidden'}}>
           <Reanimated.View
             style={[{
               height: '100%',
@@ -733,9 +733,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             }, animatedProgressStyle]}
           />
         </View>
-        <ScrollView
+        <ScrollView 
           ref={scrollViewRef}
-          className="flex-1"
+          className="flex-1" 
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 100 }}
           onScrollBeginDrag={() => setIsScrolling(true)}
@@ -751,24 +751,24 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
               {versesToShow.map((v, index) => (
                 <View key={v.verse}>
                   <Reanimated.View entering={FadeInUp.duration(300).delay(index * 60)}>
-                    <View style={{ backgroundColor: theme.bubbleBackground, borderColor: theme.bubbleBorder }} className="border-2 mt-4 p-4 rounded-2xl shadow-sm">
+                    <View style={{backgroundColor: theme.bubbleBackground, borderColor: theme.bubbleBorder}} className="border-2 mt-4 p-4 rounded-2xl shadow-sm">
                       {index === currentIndex ? (
                         <TypingText
                           text={v.text}
-                          baseTextStyle={{ ...verseTextStyle, fontFamily: 'DIN Next Rounded LT W01 Regular', marginBottom: 12 }}
+                          baseTextStyle={{...verseTextStyle, fontFamily: 'DIN Next Rounded LT W01 Regular', marginBottom: 12}}
                           speed={20}
                           skipAnimation={skipTyping}
                           onComplete={handleTypingComplete}
                         />
                       ) : (
-                        <Text style={{ ...verseTextStyle, fontFamily: 'DIN Next Rounded LT W01 Regular', marginBottom: 12 }}>
+                        <Text style={{...verseTextStyle, fontFamily: 'DIN Next Rounded LT W01 Regular', marginBottom: 12}}>
                           {v.text}
                         </Text>
                       )}
-
-                      <View style={{ borderTopColor: theme.bubbleBorder, opacity: 0.3 }} className="flex-row items-center justify-between mt-0 pt-2">
-                        <View style={{ backgroundColor: theme.verseNumberBackground, height: 32, width: 32 }} className="items-center justify-center rounded-full">
-                          <Text style={{ color: theme.verseNumberText, fontFamily: 'Feather Bold', fontSize: 14 }}>{v.verse}</Text>
+                      
+                      <View style={{borderTopColor: theme.bubbleBorder, opacity: 0.3}} className="flex-row items-center justify-between mt-0 pt-2">
+                        <View style={{backgroundColor: theme.verseNumberBackground, height: 32, width: 32}} className="items-center justify-center rounded-full">
+                          <Text style={{color: theme.verseNumberText, fontFamily: 'Feather Bold', fontSize:14}}>{v.verse}</Text>
                         </View>
                         <View className="flex-row space-x-5">
                           <TouchableOpacity onPress={(e) => { e.stopPropagation(); Clipboard.setString(`${chapterData.book} ${chapterData.chapter}:${v.verse} - ${v.text}`); Toast.show({ type: 'success', text1: 'Verse copied to clipboard', position: 'top', visibilityTime: 2000 }); }}><Feather name="copy" size={16} color={theme.iconColor} /></TouchableOpacity>
@@ -780,11 +780,11 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                   </Reanimated.View>
                 </View>
               ))}
-
+               
               {currentIndex < chapterData.verses.length - 1 ? (
                 <View className="items-center mt-4">
                   {showTapGuidance && (
-                    <Text style={{ color: theme.headerText, fontFamily: 'DIN Next Rounded LT W01 Regular', fontSize: 16, opacity: 0.7 }}>
+                    <Text style={{color: theme.headerText, fontFamily:'DIN Next Rounded LT W01 Regular', fontSize:16, opacity:0.7}}>
                       {isTypingComplete ? "Tap for next verse →" : "Tap to show full verse"}
                     </Text>
                   )}
@@ -802,17 +802,17 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                   }}
                   activeOpacity={0.8}
                 >
-                  <View style={{ backgroundColor: theme.progressBarBackground, paddingVertical: 12 }} className="items-center mt-6 rounded-xl">
-                    <Text style={{ color: theme.headerText, fontFamily: 'Feather Bold', fontSize: 16 }}>
+                  <View style={{backgroundColor: theme.progressBarBackground, paddingVertical:12}} className="items-center mt-6 rounded-xl">
+                    <Text style={{color: theme.headerText, fontFamily:'Feather Bold', fontSize:16}}>
                       {isInPathMode ? "Finish Reading 🎉" : "Next Chapter →"}
-                      {isInPathMode && currentPath && bookId === currentPath.bookId && chapter === currentPath.endChapter
-                        ? "Next Section 🎉"
+                      {isInPathMode && currentPath && bookId === currentPath.bookId && chapter === currentPath.endChapter 
+                        ? "Next Section 🎉" 
                         : "Next Chapter →"}
                     </Text>
                   </View>
                 </TouchableOpacity>
               )}
-
+              
               {/* Add invisible spacer to ensure touchable area extends to bottom padding */}
               <View style={{ height: 80 }} />
             </View>
@@ -832,7 +832,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           >
             <View className="flex-row items-center">
               <Feather name="chevron-left" size={24} color={theme.iconColor} />
-
+           
             </View>
           </TouchableOpacity>
         </Reanimated.View>
@@ -841,12 +841,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       {/* Render the local settings modal only when no shared handler is
           provided. */}
       {!onOpenSettings && (
-        <Modal
+      <Modal
           visible={isSettingsModalVisible}
           transparent
           animationType="none"
           onRequestClose={handleCloseSettingsModal}
-        >
+      >
           <TouchableWithoutFeedback onPress={handleCloseSettingsModal}>
             <View style={styles.modalOverlay}>
               <TouchableWithoutFeedback>
@@ -858,17 +858,17 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                       transform: [{
                         translateY: slideAnim.interpolate({
                           inputRange: [0, 1],
-                          outputRange: [400, 0],
+                          outputRange: [400, 0], 
                         }),
                       }],
                     },
                   ]}
                 >
                   <View style={[styles.modalHandle, { backgroundColor: theme.border }]} />
-
+                  
                   {/* Default Reader Toggle */}
                   <View style={styles.toggleContainer}>
-                    <Text style={[styles.toggleLabel, { color: theme.text }]}>Card View</Text>
+                    <Text style={[styles.toggleLabel, {color: theme.text}]}>Card View</Text>
                     <Switch
                       trackColor={{ false: "#E0E0E0", true: "#F7B500" }}
                       thumbColor={readerSettings.useCardView ? "#FFFFFF" : "#FFFFFF"}
@@ -878,7 +878,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                     />
                   </View>
 
-                  <Text style={[styles.modalSectionTitle, { color: theme.text }]}>Font Size</Text>
+                  <Text style={[styles.modalSectionTitle, {color: theme.text}]}>Font Size</Text>
                   <View style={styles.sliderContainer}>
                     <Text style={[styles.sliderLabel, { color: theme.text }]}>A</Text>
                     <Slider
@@ -887,14 +887,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                       maximumValue={MAX_FONT_SIZE}
                       value={readerSettings.fontSize}
                       onValueChange={handleFontSizeChange}
-                      minimumTrackTintColor={theme.progressBarFill}
+                      minimumTrackTintColor={theme.progressBarFill} 
                       maximumTrackTintColor={theme.sliderTrack}
-                      thumbTintColor={theme.progressBarFill}
+                      thumbTintColor={theme.progressBarFill} 
                     />
                     <Text style={[styles.sliderLabelLarge, { color: theme.text }]}>A</Text>
                   </View>
 
-                  <Text style={[styles.modalSectionTitle, { color: theme.text, marginTop: 16 }]}>Line Spacing</Text>
+                  <Text style={[styles.modalSectionTitle, {color: theme.text, marginTop: 16}]}>Line Spacing</Text>
                   <View style={styles.lineHeightButtons}>
                     {(Object.keys(CARD_LINE_HEIGHT_PRESETS) as LineHeightPreset[]).map((preset) => (
                       <TouchableOpacity
@@ -913,7 +913,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                     ))}
                   </View>
 
-                  <Text style={[styles.modalSectionTitle, { color: theme.text, marginTop: 24 }]}>Theme</Text>
+                  <Text style={[styles.modalSectionTitle, {color: theme.text, marginTop: 24}]}>Theme</Text>
                   <View style={styles.themeButtonsContainer}>
                     {(Object.keys(THEME_COLORS) as ThemeType[]).map((themeKey) => (
                       <TouchableOpacity
@@ -974,7 +974,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingBottom: 40,
+    paddingBottom: 40, 
     paddingHorizontal: 20,
     paddingTop: 12,
     width: '100%',
@@ -1008,7 +1008,7 @@ const styles = StyleSheet.create({
   sliderContainer: {
     alignItems: 'center',
     flexDirection: 'row',
-    height: 50,
+    height: 50, 
     width: '100%',
   },
   sliderLabel: {

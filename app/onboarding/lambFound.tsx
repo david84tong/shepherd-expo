@@ -83,7 +83,7 @@ export default function OnboardingWelcomeScreen() {
         <View className="mt-4">
           <ProgressBar />
         </View>
-
+        
         {/* Question Text */}
         <Animated.View style={getAnimatedStyle(titleAnimation)} className="mt-12">
           <Text className="font-feather text-h1 text-center text-textPrimary mb-4">
@@ -97,8 +97,7 @@ export default function OnboardingWelcomeScreen() {
           className="flex-1 justify-center items-center">
           <View className="h-[200px] w-full justify-center items-center">
             <Rive
-              // url={riveAssets[0].uri!}
-              resourceName={'home_lamb'}
+              url={riveAssets[0].localUri!}
               artboardName="lamb-idle"
               autoplay
               style={{ width: '80%', height: '80%' }}
