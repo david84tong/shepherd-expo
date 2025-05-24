@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, Alert, ActivityIndicator, Platform, Dimensions } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -28,11 +28,12 @@ export default function SaveProgressScreen() {
   const isLoginMode = params.isLogin === 'true';
 
   const [loading, setLoading] = useState(false);
-  const { signInWithApple, signInAnonymously } = useAuth();
+  const { signInWithApple, signInWithGoogle, signInAnonymously } = useAuth();
   const { clearResponses, responses } = useOnboardingStore();
   const { createUser } = useUserStore();
   const [showNoAccountToast, setShowNoAccountToast] = useState(false);
-
+  const ageRange = useOnboardingStore.getState().getAllResponses().ageRange;
+  const isSmaleAge = ageRange === 'under-18'
   // Animation shared values
   const headerOpacity = useSharedValue(0);
   const headerTranslateY = useSharedValue(40);
@@ -94,7 +95,7 @@ export default function SaveProgressScreen() {
     try {
       await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
       await clearResponses(); // Clear onboarding responses after completion
-      
+
       // After a short delay, show the widget prompt
       setTimeout(() => {
         const uiStore = useUIStore.getState();
@@ -102,10 +103,10 @@ export default function SaveProgressScreen() {
           uiStore.showWidgetPrompt();
         }
       }, 2000);
-      
+
       router.replace('/(tabs)');
     } catch (error) {
-      console.error('Error completing onboarding:', error);
+      console.log('Error completing onboarding:', error);
     }
   };
 
@@ -130,7 +131,7 @@ export default function SaveProgressScreen() {
                 ? 'mature'
                 : 'growing',
         frequencyGoal: allResponses.frequencyGoal,
-      denomination: allResponses.religiousAffiliation,
+        denomination: allResponses.religiousAffiliation,
         ageRange: allResponses.ageRange,
         notificationEnabled:
           allResponses.notificationEnabled !== undefined ? allResponses.notificationEnabled : false,
@@ -184,14 +185,17 @@ export default function SaveProgressScreen() {
       }
 
       analytics.logEvent('OnboardingSignUp_Completed');
-      
+
       // Create user in Firestore
       const success = await createUser(uid, userData);
+      console.log('uid, userData =>', { uid, userData })
+      console.log("success ====>", success);
+
       if (!success) {
         throw new Error('Failed to create user document');
       }
     } catch (error) {
-      console.error('Error creating user:', error);
+      console.log('Error creating user:', error);
       throw error;
     }
   };
@@ -225,11 +229,11 @@ export default function SaveProgressScreen() {
           await completeOnboarding();
         }
       } else {
-        console.error('Apple sign in returned no user');
+        console.log('Apple sign in returned no user');
         throw new Error('No user data returned from Apple');
       }
     } catch (error: any) {
-      console.error('Apple sign in error:', error);
+      console.log('Apple sign in error:', error);
 
       // Provide more specific feedback based on the error
       let errorMessage = 'There was a problem signing in with Apple.';
@@ -269,6 +273,78 @@ export default function SaveProgressScreen() {
     }
   };
 
+  // Handle sign in with Google
+  const handleGoogleSignIn = async () => {
+    const eventName = isLoginMode ? 'Login_Tapped_Google' : 'OnboardingSignUp_Tapped_Google';
+    analytics.logEvent(eventName);
+
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setLoading(true);
+      console.log('Starting Google sign in process...');
+
+      // Pass the isLoginMode flag to the signInWithGoogle method
+      const user = await signInWithGoogle(isLoginMode);
+      console.log('user ==>', user);
+
+      if (user) {
+        console.log('Google sign in successful');
+
+        if (isLoginMode) {
+          // User exists and data has been fetched in the auth hook
+          // Just mark onboarding as completed and navigate to tabs
+          await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+          // Navigate directly to the main app tabs
+          router.replace('/(tabs)');
+        } else {
+          // In onboarding mode, create new user from responses
+          console.log('Creating user...');
+          await createUserFromResponses(user.uid, user.displayName || 'Anonymous User');
+          console.log('User created from responses');
+          await completeOnboarding();
+          console.log('Onboarding completed');
+        }
+      } else {
+        console.log('Google sign in returned no user');
+        throw new Error('No user data returned from Google');
+      }
+    } catch (error: any) {
+      console.log('Google sign in error:', error);
+
+      // Provide more specific feedback based on the error
+      let errorMessage = 'There was a problem signing in with Google.';
+
+      if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
+        errorMessage = 'Sign in was canceled. Please try again.';
+      } else if (error.message?.includes('network')) {
+        errorMessage = 'Network error. Please check your internet connection and try again.';
+      } else if (error.message?.includes('configuration')) {
+        errorMessage = 'Authentication configuration error. Please try another method.';
+      } else if (error.message?.includes('incomplete')) {
+        errorMessage = 'Sign in process was interrupted. Please try again.';
+      } else if (error.message?.includes('No account found')) {
+        errorMessage =
+          "We couldn't find an account with this Google account. Please create a new account instead.";
+      }
+
+      const analyticsEventName = isLoginMode
+        ? 'Login_Failed_Google'
+        : 'OnboardingSignUp_Failed_Google';
+      analytics.logEvent(analyticsEventName, {
+        error: error.message,
+      });
+
+      Alert.alert(
+        'Sign In Failed',
+        `${errorMessage} ${isLoginMode ? '' : 'You can try again or use the anonymous option to continue.'}`,
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+  console.log("isSmaleAge ==>", isSmaleAge);
+
   // Handle anonymous sign in - only available in onboarding mode
   const handleSkip = async (showConfirmation = true) => {
     if (isLoginMode) return; // Don't allow anonymous login in login mode
@@ -303,7 +379,7 @@ export default function SaveProgressScreen() {
         await completeOnboarding();
       }
     } catch (error) {
-      console.error('Anonymous sign in error:', error);
+      console.log('Anonymous sign in error:', error);
       Alert.alert('Error', 'There was a problem creating anonymous account. Please try again.', [
         { text: 'OK' },
       ]);
@@ -311,6 +387,7 @@ export default function SaveProgressScreen() {
       setLoading(false);
     }
   };
+
 
   return (
     <View className="flex-1 bg-surfaceCream px-6">
@@ -327,9 +404,10 @@ export default function SaveProgressScreen() {
 
         {/* Icon */}
         <View className="mb-8 overflow-hidden w-64 h-64 items-center justify-center">
-          {riveAssets && riveAssets[0]?.localUri && (
+          {riveAssets && riveAssets[0]?.uri && (
             <Rive
-              url={riveAssets[0].localUri}
+              // url={riveAssets[0].uri}
+              resourceName={'home_lamb'}
               artboardName={'lamb-workout'}
               autoplay={true}
               fit={Fit.Contain}
@@ -383,27 +461,46 @@ export default function SaveProgressScreen() {
 
       {/* Sign in button and Skip button */}
       <Animated.View style={buttonsStyle}>
-        <View className="items-center mb-4">
-          <TouchableOpacity
-            className="flex-row items-center justify-center bg-black w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow"
-            onPress={handleAppleSignIn}
-            disabled={loading}>
-            {loading ? (
-              <ActivityIndicator color="white" size="small" style={{ marginRight: 10 }} />
+        {
+          isSmaleAge && Platform.OS === 'android' ? null : <View className="items-center mb-4">
+            {Platform.OS === 'ios' ? (
+              <TouchableOpacity
+                className="flex-row items-center justify-center bg-black w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow"
+                onPress={handleAppleSignIn}
+                disabled={loading}>
+                {loading ? (
+                  <ActivityIndicator color="white" size="small" style={{ marginRight: 10 }} />
+                ) : (
+                  <AntDesign name="apple1" size={24} color="white" style={{ marginRight: 10 }} />
+                )}
+                <Text className="font-din text-white text-[18px] font-bold">
+                  {loading ? 'Signing in...' : 'Sign in with Apple'}
+                </Text>
+              </TouchableOpacity>
             ) : (
-              <AntDesign name="apple1" size={24} color="white" style={{ marginRight: 10 }} />
+              <TouchableOpacity
+                className="flex-row items-center justify-center bg-white w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow border border-gray-300"
+                onPress={handleGoogleSignIn}
+                disabled={loading}>
+                {loading ? (
+                  <ActivityIndicator color="#4285F4" size="small" style={{ marginRight: 10 }} />
+                ) : (
+                  <AntDesign name="google" size={24} color="#4285F4" style={{ marginRight: 10 }} />
+                )}
+                <Text className="font-din text-[#4285F4] text-[18px] font-bold">
+                  {loading ? 'Signing in...' : 'Sign in with Google'}
+                </Text>
+              </TouchableOpacity>
             )}
-            <Text className="font-din text-white text-[18px] font-bold">
-              {loading ? 'Signing in...' : 'Sign in with Apple'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+          </View>
+        }
 
         {/* Skip button - only show in onboarding mode */}
         {!isLoginMode && (
           <TouchableOpacity
             onPress={() => handleSkip(true)}
             className="items-center"
+            style={{ marginTop: isSmaleAge && Platform.OS === 'android' ? Dimensions.get('window').height * 0.05 : 0 }}
             disabled={loading}>
             <Text className="font-din text-description underline text-[16px]">
               {loading ? 'Please wait...' : 'Skip for now'}

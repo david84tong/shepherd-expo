@@ -73,7 +73,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const setSawStreakToday = useHomeStore((state) => state.setSawStreakToday);
 
   // User store hooks
-  const lambHearts = useUserStore((state) => state.getLambHearts());
+  const lambHearts = useUserStore((state) => state.getLambHearts?.());
   const lambXp = useUserStore((state) => state.getLambXp());
   const setLambHearts = useUserStore((state) => state.setLambHearts);
   const setLambXp = useUserStore((state) => state.setLambXp);
@@ -325,20 +325,20 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
       // Check current level before adding XP using the level utility function
       const currentLevel = calculateLevelFromXp(lambXp);
-      
+
       // Always add XP
       addXp(xpReward);
-      
+
       // Calculate new level after XP is added
       const newXpTotal = lambXp + xpReward;
       const newLevelValue = calculateLevelFromXp(newXpTotal);
-      
+
       // Check if level increased
       if (newLevelValue > currentLevel) {
         console.log(`Level up! ${currentLevel} -> ${newLevelValue}`);
         setLeveledUp(true);
         setNewLevel(newLevelValue);
-        
+
         // Make sure level is correctly set in the user store
         setLambXp(newXpTotal); // Ensure XP is updated
         useUserStore.getState().setLambLevel(newLevelValue); // Explicitly set the new level
@@ -356,7 +356,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         leveledUp: leveledUp,
         newLevel: leveledUp ? newLevel : undefined
       };
-      
+
       // Log level up event if applicable
       if (leveledUp) {
         analytics.logEvent("LambLevelUp", {
@@ -399,7 +399,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Update specific activity timestamp based on success type
       if (effectiveType === SuccessAnimationType.READING) {
         setLastReadingDate(now);
-      
+
       } else if (effectiveType === SuccessAnimationType.PRAYER) {
         setLastPrayerDate(now);
       } else if (effectiveType === SuccessAnimationType.REFLECTION) {
@@ -410,7 +410,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       setRewardsApplied(true);
 
       // Sync user state to Firestore after rewards are applied
-      useUserStore.getState().syncWithFirestore();
+      useUserStore.getState().syncWithFirestore?.();
 
       console.log(`Applied ${heartsToAdd} hearts (of intended ${heartReward}) and ${xpReward} XP`);
       console.log(`Updated values - Hearts: ${lambHearts + heartsToAdd}, XP: ${lambXp + xpReward}`);
@@ -579,7 +579,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       triggerStreakScreen();
       return; // Prevent navigation so StreakScreen can show
     }
-    
+
     // Set unmounting flag first
     isUnmounting.current = true;
 
@@ -600,7 +600,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       handleGoHome();
       return;
     }
-    
+
     console.log('First reading of the day - showing streak screen');
     // Log analytics for streak screen
     analytics.logEvent("SuccessAnimation_Showing_StreakScreen", {
@@ -758,8 +758,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             {effectiveType === SuccessAnimationType.SECTION_COMPLETE ? (
               <Rive
                 ref={riveRef}
-                url={homeLambAssets && homeLambAssets[0] && homeLambAssets[0].localUri || ''}
+                // url={homeLambAssets && homeLambAssets[0] && homeLambAssets[0].uri || ''}
                 autoplay={true}
+                resourceName={'home_lamb'}
                 artboardName='lamb-milestone'
                 style={{
                   width: '100%', height: '100%', maxWidth: 300,
@@ -770,7 +771,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             ) : (
               <Rive
                 ref={riveRef}
-                url={riveAssets && riveAssets[0] && riveAssets[0].localUri || ''}
+                // url={riveAssets && riveAssets[0] && riveAssets[0].uri || ''}
+                resourceName={'success_lamb'}
                 autoplay={true}
                 style={{ width: '100%', height: '100%' }}
                 {...(riveArtboard ? { artboardName: riveArtboard } : {})}
@@ -797,7 +799,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             shadowOffset: { width: 0, height: 2 },
             shadowOpacity: 0.1,
             shadowRadius: 3,
-            elevation: 3,
+
           }}>
           <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
             {rewardTitle}
@@ -825,7 +827,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                 <Image source={starIcon} className="w-6 h-6 mr-2" />
                 <Text className="font-din text-textPrimary text-xl">+{xpReward} Soul Points</Text>
               </View>
-              
+
               {/* Show level up message if user leveled up */}
               {leveledUp && (
                 <View className="mt-4 py-2 bg-lightYellow rounded-xl">

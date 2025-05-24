@@ -219,7 +219,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // Get settings directly from the store instead of local state
   const readerSettings = useReaderSettingsStore();
   const { fontSize, theme: currentTheme, lineHeightPreset, useCardView } = readerSettings;
-  
+
   // Animation values for button container (using RNAnimated for these)
   const buttonsAnim = useRef(new RNAnimated.Value(0)).current; // 0: hidden, 1: visible
 
@@ -483,7 +483,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     if (newSize >= MIN_FONT_SIZE && newSize <= MAX_FONT_SIZE) {
       // Add haptic feedback
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      
+
       // Update the store (which will save to AsyncStorage)
       readerSettings.setFontSize(newSize);
     }
@@ -732,16 +732,16 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     const handleCopyVerse = (verse: Verse) => {
       // Construct verse text with reference
       const verseText = `${chapterData.book} ${chapterData.chapter}:${verse.verse} - ${verse.text}`;
-      
+
       // Copy to clipboard
       Clipboard.setString(verseText);
-      
+
       // Show toast notification
       showToast("Verse copied to clipboard");
-      
+
       // Add haptic feedback
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
+
       // Log analytics
       analytics.logEvent("BibleReader_CopiedVerse", {
         book: chapterData.book,
@@ -886,7 +886,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const handleThemeChange = useCallback((theme: ThemeType) => {
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
+
     // Update the store (which will save to AsyncStorage)
     readerSettings.setTheme(theme);
   }, [readerSettings]);
@@ -895,7 +895,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const handleLineHeightChange = useCallback((preset: LineHeightPreset) => {
     // Update store (which will save to AsyncStorage)
     readerSettings.setLineHeightPreset(preset);
-    
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
   }, [readerSettings]);
 
@@ -904,7 +904,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     console.log('[BibleReader] CardViewToggle value', value);
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+
     // Update the store (which will save to AsyncStorage)
     readerSettings.setCardView(value);
 
@@ -947,13 +947,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     try {
       // Switch from card to default reader
       readerSettings.setCardView(false);
-      
+
       // Reload current chapter data to ensure full content
       await loadChapter(currentVersion, currentBook, currentBookId, currentChapter);
-      
+
       // After loading is complete, ensure modal is still closed
       setIsModalVisible(false);
-      
+
       analytics.logEvent("BibleReader_SwitchedToDefaultReader");
     } catch (e) {
       console.error("Failed to switch to default reader", e);
@@ -972,7 +972,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   if (useCardView) {
     return (
       <>
-        <NewBibleReader 
+        <NewBibleReader
           bookId={currentBookId}
           chapter={currentChapter}
           translation={currentVersion}
@@ -1037,13 +1037,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                   {/* Line Height Controls */}
                   <View style={styles.lineHeightContainer}>
                     <View style={styles.lineHeightButtons}>
-                      {(['COMPACT','REGULAR','RELAXED'] as const).map(p=> (
+                      {(['COMPACT', 'REGULAR', 'RELAXED'] as const).map(p => (
                         <TouchableOpacity
                           key={p}
                           style={[styles.lineHeightButton, lineHeightPreset === p && styles.lineHeightButtonSelected, { borderColor: THEME_COLORS[currentTheme].border }]}
                           onPress={() => handleLineHeightChange(p)}
                         >
-                          <Text style={[styles.lineHeightButtonText, { color: THEME_COLORS[currentTheme].text }, lineHeightPreset === p && styles.lineHeightButtonTextSelected]}>{p.charAt(0)+p.slice(1).toLowerCase()}</Text>
+                          <Text style={[styles.lineHeightButtonText, { color: THEME_COLORS[currentTheme].text }, lineHeightPreset === p && styles.lineHeightButtonTextSelected]}>{p.charAt(0) + p.slice(1).toLowerCase()}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -1051,11 +1051,11 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
                   {/* Theme Buttons */}
                   <View style={styles.themeButtonsContainer}>
-                    {(Object.keys(THEME_COLORS) as ThemeType[]).map(k=> (
+                    {(Object.keys(THEME_COLORS) as ThemeType[]).map(k => (
                       <TouchableOpacity
                         key={k}
-                        style={[styles.themeButton,{backgroundColor:THEME_COLORS[k].background},currentTheme===k&&[styles.selectedThemeButton,{borderColor:THEME_COLORS[k].border}]]}
-                        onPress={()=>handleThemeChange(k)}
+                        style={[styles.themeButton, { backgroundColor: THEME_COLORS[k].background }, currentTheme === k && [styles.selectedThemeButton, { borderColor: THEME_COLORS[k].border }]]}
+                        onPress={() => handleThemeChange(k)}
                       />
                     ))}
                   </View>
@@ -1107,50 +1107,50 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           {effectiveChapterData && renderBibleContent(effectiveChapterData)}
         </View>
 
-      {/* Bottom Navigation Row - Contains Next Chapter/Book and Nav Buttons */}
-      <RNAnimated.View 
-        style={[{
-          position: 'absolute',
-          bottom: isEmbedded ? 100 : 50,
-          left: 0,
-          right: 0,
-          flexDirection: 'row',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          paddingHorizontal: 20,
-          zIndex: 10,
-        }, buttonsContainerStyle]}
-      >
-        {/* Next Chapter/Book Button (in path mode) */}
-        {!isEmbedded && pathInProgress && (
-          <View style={{flex: 1, marginRight: -100}}>
-            <SideButton
-              title={isAtEndChapter ? "Complete Unit" : "Next Chapter"}
-              onPress={isAtEndChapter ? handleFinishReading : navigateToNextChapter}
-              disabled={!hasScrolledToBottom || loading}
-            />
+        {/* Bottom Navigation Row - Contains Next Chapter/Book and Nav Buttons */}
+        <RNAnimated.View
+          style={[{
+            position: 'absolute',
+            bottom: isEmbedded ? 100 : 50,
+            left: 0,
+            right: 0,
+            flexDirection: 'row',
+            justifyContent: 'flex-end',
+            alignItems: 'center',
+            paddingHorizontal: 20,
+            zIndex: 10,
+          }, buttonsContainerStyle]}
+        >
+          {/* Next Chapter/Book Button (in path mode) */}
+          {!isEmbedded && pathInProgress && (
+            <View style={{ flex: 1, marginRight: -100 }}>
+              <SideButton
+                title={isAtEndChapter ? "Complete Unit" : "Next Chapter"}
+                onPress={isAtEndChapter ? handleFinishReading : navigateToNextChapter}
+                disabled={!hasScrolledToBottom || loading}
+              />
+            </View>
+          )}
+          {/* Navigation Buttons */}
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
+            <TouchableOpacity
+              style={[styles.navButton, (currentChapter <= 1 || loading) && styles.disabledNavButton]}
+              onPress={navigateToPreviousChapter}
+              disabled={currentChapter <= 1 || loading}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.navButtonText, (currentChapter <= 1 || loading) && styles.disabledButtonText]}>←</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.navButton, (loading || (pathInProgress && isAtEndChapter)) && styles.disabledNavButton]}
+              onPress={navigateToNextChapter}
+              disabled={loading || (pathInProgress && isAtEndChapter)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.navButtonText, (loading || (pathInProgress && isAtEndChapter)) && styles.disabledButtonText]}>→</Text>
+            </TouchableOpacity>
           </View>
-        )}
-        {/* Navigation Buttons */}
-        <View style={{flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center'}}>
-          <TouchableOpacity
-            style={[styles.navButton, (currentChapter <= 1 || loading) && styles.disabledNavButton]}
-            onPress={navigateToPreviousChapter}
-            disabled={currentChapter <= 1 || loading}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.navButtonText, (currentChapter <= 1 || loading) && styles.disabledButtonText]}>←</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.navButton, (loading || (pathInProgress && isAtEndChapter)) && styles.disabledNavButton]}
-            onPress={navigateToNextChapter}
-            disabled={loading || (pathInProgress && isAtEndChapter)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.navButtonText, (loading || (pathInProgress && isAtEndChapter)) && styles.disabledButtonText]}>→</Text>
-          </TouchableOpacity>
-        </View>
-      </RNAnimated.View>
+        </RNAnimated.View>
 
         {/* Settings Modal for DEFAULT reader branch!!! */}
         <Modal
@@ -1206,13 +1206,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                   {/* Line Height Controls */}
                   <View style={styles.lineHeightContainer}>
                     <View style={styles.lineHeightButtons}>
-                      {(['COMPACT','REGULAR','RELAXED'] as const).map(p=> (
+                      {(['COMPACT', 'REGULAR', 'RELAXED'] as const).map(p => (
                         <TouchableOpacity
                           key={p}
                           style={[styles.lineHeightButton, lineHeightPreset === p && styles.lineHeightButtonSelected, { borderColor: THEME_COLORS[currentTheme].border }]}
                           onPress={() => handleLineHeightChange(p)}
                         >
-                          <Text style={[styles.lineHeightButtonText, { color: THEME_COLORS[currentTheme].text }, lineHeightPreset === p && styles.lineHeightButtonTextSelected]}>{p.charAt(0)+p.slice(1).toLowerCase()}</Text>
+                          <Text style={[styles.lineHeightButtonText, { color: THEME_COLORS[currentTheme].text }, lineHeightPreset === p && styles.lineHeightButtonTextSelected]}>{p.charAt(0) + p.slice(1).toLowerCase()}</Text>
                         </TouchableOpacity>
                       ))}
                     </View>
@@ -1220,11 +1220,11 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
                   {/* Theme Buttons */}
                   <View style={styles.themeButtonsContainer}>
-                    {(Object.keys(THEME_COLORS) as ThemeType[]).map(k=> (
+                    {(Object.keys(THEME_COLORS) as ThemeType[]).map(k => (
                       <TouchableOpacity
                         key={k}
-                        style={[styles.themeButton,{backgroundColor:THEME_COLORS[k].background},currentTheme===k&&[styles.selectedThemeButton,{borderColor:THEME_COLORS[k].border}]]}
-                        onPress={()=>handleThemeChange(k)}
+                        style={[styles.themeButton, { backgroundColor: THEME_COLORS[k].background }, currentTheme === k && [styles.selectedThemeButton, { borderColor: THEME_COLORS[k].border }]]}
+                        onPress={() => handleThemeChange(k)}
                       />
                     ))}
                   </View>
