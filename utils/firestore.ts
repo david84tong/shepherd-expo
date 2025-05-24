@@ -72,7 +72,7 @@ export const createUserDocument = async (id: string, userData: Partial<UserDoc>)
     console.log('Successfully created user document with ID:', id);
     return true;
   } catch (error) {
-    console.error('Error creating user document:', error);
+    console.log('Error creating user document:', error);
     return false;
   }
 };
@@ -99,7 +99,7 @@ export const updateField = async (fieldPath: string, value: any) => {
 
     return true;
   } catch (error) {
-    console.error(`Error updating user field ${fieldPath}:`, error);
+    console.log(`Error updating user field ${fieldPath}:`, error);
     return false;
   }
 };
@@ -129,7 +129,7 @@ export const syncUserDocument = async (userDoc: Partial<UserDoc>) => {
     console.log('Successfully synced with Firestore');
     return true;
   } catch (error) {
-    console.error('Error syncing with Firestore:', error);
+    console.log('Error syncing with Firestore:', error);
     return false;
   }
 };
@@ -150,7 +150,7 @@ export const getUserDocument = async () => {
 
     return doc.exists ? (doc.data() as UserDoc) : null;
   } catch (error) {
-    console.error('Error getting user document:', error);
+    console.log('Error getting user document:', error);
     return null;
   }
 };
