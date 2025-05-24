@@ -110,7 +110,7 @@ const PricingScreen = () => {
       });
       await showPaywall();
     } catch (error) {
-      console.log('Error during subscription process:', error);
+      console.error('Error during subscription process:', error);
       setIsLoading(false);
     }
   };
@@ -157,7 +157,7 @@ const PricingScreen = () => {
       // Adapty implementation
 
     } catch (error) {
-      console.log('Error presenting paywall:', error);
+      console.error('Error presenting paywall:', error);
       analytics.logEvent("PricingScreen_Paywall_Error", {
         errorMessage: (error as Error)?.message || "Unknown error"
       });
@@ -252,8 +252,8 @@ const PricingScreen = () => {
                 className="w-64 h-64 mb-4 flex"
               />
             </Animated.View>
-
-            {/* </AnimatedItem><AnimatedItem index={12} animateItemFromBottom={animateScreenFromBottom}>
+  
+          {/* </AnimatedItem><AnimatedItem index={12} animateItemFromBottom={animateScreenFromBottom}>
             <View className="bg-white rounded-2xl shadow-card p-5 mb-8 flex-row justify-between items-center">
             <Text className="font-feather text-lg text-textPrimary">Unlock 7-day trial & reminder</Text>
             <Switch trackColor={{ false: '#E9E2C7', true: '#A8F093' }} thumbColor={trialEnabled ? '#24CA17' : '#FFF4D9'} ios_backgroundColor="#E9E2C7" onValueChange={toggleSwitch} value={trialEnabled} style={{ transform: [{ scaleX: 1.1 }, { scaleY: 1.1 }] }} />

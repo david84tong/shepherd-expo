@@ -332,18 +332,18 @@ export default function ProfileScreen() {
   // Calculate level and XP progress data
   const levelData = useMemo(() => {
     if (!lamb || typeof lamb.xp !== 'number') {
-      return {
-        level: 1,
-        xp: 0,
+      return { 
+        level: 1, 
+        xp: 0, 
         xpCurrent: 0,
         xpForCurrentLevel: 0,
-        xpForNextLevel: 90,
+        xpForNextLevel: 90, 
         xpProgress: 0,
         xpNeeded: 90,
-        progress: 0
+        progress: 0 
       };
     }
-
+    
     const data = getLevelData(lamb.xp);
     return {
       ...data,
@@ -555,8 +555,8 @@ export default function ProfileScreen() {
               Customize your lamb and unlock special items!
             </Text>
           </View>
-          {/* Activity History Timeline Card */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+       {/* Activity History Timeline Card */}
+       <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
             <Text className="font-feather text-heading text-textPrimary mb-4">Your Journey</Text>
 
             {allActivities.length === 0 ? (

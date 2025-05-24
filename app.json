@@ -15,32 +15,10 @@
       "**/*"
     ],
     "splash": {
-    "image": "./assets/custom_splash_icon.png",
-      "resizeMode": "cover"
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFF4D9"
     },
-    "fonts": [
-      {
-        "asset": "./assets/fonts/Feather Bold.ttf"
-      },
-      {
-        "asset": "./assets/fonts/DIN Next Rounded LT W01 Regular.ttf"
-      },
-      {
-        "asset": "./assets/fonts/Nunito-Bold.ttf"
-      },
-      {
-        "asset": "./assets/fonts/Nunito-Black.ttf"
-      },
-      {
-        "asset": "./assets/fonts/Nunito-Medium.ttf"
-      },
-      {
-        "asset": "./assets/fonts/Nunito-Regular.ttf"
-      },
-      {
-        "asset": "./assets/fonts/Nunito-BlackItalic.ttf"
-      }
-    ],
     "ios": {
       "bundleIdentifier": "second.round.shepherd",
       "buildNumber": "41",
@@ -103,23 +81,15 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/custom_splash_icon.png",
-          "resizeMode": "cover",
-          "imageWidth": 230,
-          "imageHeight": 230
+          "image": "./assets/splash.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#FFF3D9",
+          "imageWidth": 196
         }
       ],
       "@react-native-firebase/app",
       "expo-font",
-      "expo-apple-authentication",
-      "expo-asset",
-      "expo-secure-store",
-      [
-        "expo-custom-assets",
-        {
-          "assetsPaths": ["./assets/riveAnimations/"]
-        }
-      ]
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -131,7 +101,7 @@
         "ignoreFiles": [
           "app/api/**/*.{ts,tsx}",
           "app/hooks/**/*.{ts,tsx}",
-          "app/models/**/*.{ts,tsx}",
+          "app/models/**/*.{ts,tsx}", 
           "app/stores/**/*.{ts,tsx}",
           "app/types/**/*.{ts,tsx}",
           "app/utils/**/*.{ts,tsx}"
@@ -139,8 +109,7 @@
       },
       "eas": {
         "projectId": "e55bbb73-0fba-4eb9-92ec-9433da72c8c7"
-      },
-      "googleWebClientId": "226457915179-tbsa7rptki8iedbirm5mp0ug9dob8kf0.apps.googleusercontent.com"
+      }
     },
     "owner": "second-round"
   }

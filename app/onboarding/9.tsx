@@ -36,7 +36,7 @@ export default function NotificationPermissionScreen() {
   useEffect(() => {
     // Log screen view when component mounts
     analytics.logEvent("OnboardingNotificationPermissionScreen_Viewed");
-
+    
     // Reset animation values
     titleOpacity.value = 0;
     titleTranslateY.value = 40;
@@ -82,19 +82,19 @@ export default function NotificationPermissionScreen() {
   // Function to handle the don't allow button
   const handleDontAllow = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
+    
     // Track analytics event
     analytics.logEvent("OnboardingNotificationPermissionScreen_Tapped_Deny");
 
-
+    
     // Disable notifications in our store
     notificationStore.setNotificationsEnabled(false);
-
+    
     // Save to onboarding store
     await setNotificationPreference({
       enabled: false
     });
-
+    
     router.push('/onboarding/10');
   };
 
@@ -109,7 +109,7 @@ export default function NotificationPermissionScreen() {
       const { status: existingStatus } = await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
       console.log('📱 Existing notification status:', existingStatus);
-
+      
       if (existingStatus !== 'granted') {
         console.log('📱 Requesting notification permissions...');
         const { status } = await Notifications.requestPermissionsAsync();
@@ -119,47 +119,47 @@ export default function NotificationPermissionScreen() {
 
       if (finalStatus === 'granted') {
         analytics.logEvent("OnboardingNotificationPermissionScreen_Granted");
-
+        
         console.log('📱 Notification permissions GRANTED in onboarding');
-
+        
         // Enable notifications in our store
         notificationStore.setNotificationsEnabled(true);
-
+        
         // Save to onboarding store - user enabled notifications
         await setNotificationPreference({
           enabled: true,
           time: '19:00' // Default to 7PM
         });
-
+        
         // Schedule streak warning notifications first
         console.log('📱 Onboarding: Scheduling streak warning notifications');
         await notificationStore.scheduleStreakReminders();
-
+        
         // Schedule daily reminder using the evening timeframe
         console.log('📱 Onboarding: Scheduling daily reminder for evening');
         await notificationStore.scheduleDailyReminder('evening');
-
+        
         // List all scheduled notifications to confirm
         console.log('📱 Listing all scheduled notifications:');
         await notificationStore.listScheduledNotifications();
-
+        
         console.log('📱 All notifications successfully scheduled during onboarding');
-
+        
         router.push('/onboarding/10');
         return;
       } else {
         analytics.logEvent("OnboardingNotificationPermissionScreen_Denied");
-
+        
         console.log('📱 Notification permissions DENIED in onboarding');
-
+        
         // Disable notifications in our store
         notificationStore.setNotificationsEnabled(false);
-
+        
         // Save to onboarding store
         await setNotificationPreference({
           enabled: false
         });
-
+        
         // Show alert offering to open system settings
         Alert.alert(
           'Enable Notifications',
@@ -179,19 +179,19 @@ export default function NotificationPermissionScreen() {
           ]
         );
       }
-
+      
       router.push('/onboarding/10');
     } catch (error) {
-      console.log('📱 Error requesting notification permissions:', error);
-
+      console.error('📱 Error requesting notification permissions:', error);
+      
       // Disable notifications in case of error
       notificationStore.setNotificationsEnabled(false);
-
+      
       // Save to onboarding store
       await setNotificationPreference({
         enabled: false
       });
-
+      
       router.push('/onboarding/10');
     } finally {
       setShowingAlert(false);
@@ -201,7 +201,7 @@ export default function NotificationPermissionScreen() {
   // Function to handle the remind me button
   const handleRemindMe = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
+    
     // Track analytics event
     analytics.logEvent(AnalyticsEvent.USER_PREFERENCE_CHANGE, {
       preference: 'notifications',
@@ -209,16 +209,16 @@ export default function NotificationPermissionScreen() {
       screen: 'NotificationPermissionScreen',
       category: EventCategory.ONBOARDING
     });
-
+    
     // Keep notifications disabled for now
     notificationStore.setNotificationsEnabled(false);
-
+    
     // Save to onboarding store - mark as remind later
     await setNotificationPreference({
       enabled: false,
       time: 'remind_later'
     });
-
+    
     router.push('/onboarding/10');
   };
 

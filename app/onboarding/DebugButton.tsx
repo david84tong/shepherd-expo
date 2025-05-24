@@ -6,7 +6,7 @@ import { HalfModalType } from '../../app/halfModal';
 
 // ... existing code ...
 
-export function DebugButton({ }: DebugButtonProps) {
+export function DebugButton({}: DebugButtonProps) {
   // ... existing code ...
 
   // Handler for showing sitemap
@@ -30,7 +30,7 @@ export function DebugButton({ }: DebugButtonProps) {
     if (typeof global !== 'undefined' && (global as any).showHalfModal) {
       (global as any).showHalfModal(params);
     } else {
-      console.log('showHalfModal not available on global object');
+      console.error('showHalfModal not available on global object');
     }
   }, []);
 

@@ -28,7 +28,7 @@ export default function HalfModalScreen() {
   const params = useLocalSearchParams();
   const setIsModalDimActive = useUIStore((state) => state.setIsModalDimActive);
   const getLambName = useUserStore((state) => state.getLambName);
-  const lambName = getLambName?.();
+  const lambName = getLambName();
 
   // Bottom sheet reference and configuration
   const bottomSheetRef = useRef<BottomSheet>(null);
