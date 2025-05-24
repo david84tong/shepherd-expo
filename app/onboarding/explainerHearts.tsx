@@ -9,20 +9,21 @@ import Rive from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import { useOnboardingStore } from '../stores/onboardingStore';
+import { IS_ANDROID, IS_IOS } from '../utils/utils';
 
 export default function OnboardingExplainerHeartsScreen({ onContinue }: { onContinue?: () => void }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  
+
   // Get lamb name from onboarding store
   const { responses } = useOnboardingStore();
   const lambName = responses.lambName || 'your lamb';
-  
+
   // Load Rive assets
   const [riveAssets] = useAssets([
     require('../../assets/riveAnimations/homeLamb.riv'),
   ]);
-  
+
   // Animation shared values
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
@@ -63,12 +64,12 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
 
     // Log continue button press
     analytics.logEvent("OnboardingExplainerHeartsScreen_Tapped_Continue");
-    
+
     // Call the provided onContinue function if it exists
     if (onContinue) {
       onContinue();
     }
-    
+
     // Navigate to notification permission screen
     router.push('/onboarding/explainer');
   };
@@ -78,7 +79,7 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
     opacity: titleOpacity.value,
     transform: [{ translateY: titleTranslateY.value }],
   }));
-  
+
   const cardStyle0 = useAnimatedStyle(() => ({
     opacity: cardOpacities[0].value,
     transform: [{ translateY: cardTranslateYs[0].value }],
@@ -103,7 +104,7 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
     opacity: cardOpacities[5].value,
     transform: [{ translateY: cardTranslateYs[5].value }],
   }));
-  
+
   const cardStyles = [cardStyle0, cardStyle1, cardStyle2, cardStyle3, cardStyle4, cardStyle5];
 
   // Lamb states based on heart levels
@@ -117,7 +118,7 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
   ];
 
   return (
-    <View className="flex-1 bg-surfaceCream pt-12 w-full items-center" style={{paddingBottom: insets.bottom }}>
+    <View className="flex-1 bg-surfaceCream pt-12 w-full items-center" style={{ paddingBottom: insets.bottom }}>
       {/* Title */}
       <Animated.View style={titleStyle} className="mb-8 px-6">
         <Text className="font-feather text-2xl text-textPrimary text-center mb-0 mt-16">
@@ -128,7 +129,7 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
       {/* Lamb grid */}
       <View className="flex-row flex-wrap justify-center items-center gap-4 mb-4">
         {lambStates.map((state, index) => (
-          <Animated.View 
+          <Animated.View
             key={index}
             style={[
               cardStyles[index],
@@ -139,13 +140,14 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
                 shadowOpacity: state.glow ? 0.6 : 0,
                 shadowRadius: 15,
               }
-            ]} 
+            ]}
             className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-lightRed items-center justify-center relative"
           >
             {riveAssets && (
               <View className="w-36 h-36">
                 <Rive
-                  url={riveAssets[0].localUri!}
+                  resourceName={IS_ANDROID ? 'home_lamb' : undefined}
+                  url={IS_IOS ? riveAssets[0].uri! : undefined}
                   artboardName={state.artboard}
                   style={{ width: '100%', height: '100%' }}
                 />
@@ -157,8 +159,8 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
           </Animated.View>
         ))}
       </View>
-  
-      
+
+
       {/* Continue Button - fixed at bottom */}
       <View className="absolute left-6 right-6" style={{ bottom: Math.max(insets.bottom + 16, 24) }}>
         <PrimaryButton title="Continue" onPress={handleContinue} />

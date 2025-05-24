@@ -9,6 +9,8 @@ import Rive from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import skins from '../../assets/onboarding/skins.png';
+import { IS_IOS } from '../utils/utils';
+import { IS_ANDROID } from '../utils/utils';
 
 export default function OnboardingExplainerScreen({ onContinue }: { onContinue?: () => void }) {
   const insets = useSafeAreaInsets();
@@ -20,7 +22,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
 
   ]);
 
-  
+
   // Animation shared values
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
@@ -61,12 +63,12 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
 
     // Log continue button press
     analytics.logEvent("OnboardingExplainerScreen_Tapped_Continue");
-    
+
     // Call the provided onContinue function if it exists
     if (onContinue) {
       onContinue();
     }
-    
+
     // Navigate to notification permission screen
     router.push('/onboarding/9');
   };
@@ -107,7 +109,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
   ];
 
   return (
-    <View className="flex-1 bg-surfaceCream pt-12 w-full items-center" style={{paddingBottom: insets.bottom }}>
+    <View className="flex-1 bg-surfaceCream pt-12 w-full items-center" style={{ paddingBottom: insets.bottom }}>
       {/* Title */}
       <Animated.View style={titleStyle} className="mb-8 px-6">
         <Text className="font-feather text-2xl text-textPrimary text-center mb-0">
@@ -118,7 +120,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
       {/* Lamb grid */}
       <View className="flex-row flex-wrap justify-center items-center gap-4 mb-4">
         {/* Row 1 */}
-        <Animated.View 
+        <Animated.View
           style={[
             cardStyles[0],
             {
@@ -128,13 +130,14 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
               shadowOpacity: 0,
               shadowRadius: 0,
             }
-          ]} 
+          ]}
           className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
         >
           {riveAssets && (
             <View className="w-20 h-20">
               <Rive
-                url={riveAssets[0].localUri!}
+                resourceName={IS_ANDROID ? 'home_lamb' : undefined}
+                url={IS_IOS ? riveAssets[0].uri! : undefined}
                 artboardName="lamb-idle"
                 style={{ width: '100%', height: '100%' }}
               />
@@ -144,7 +147,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
             <Text className="font-feather text-accentGold">LVL 1</Text>
           </View>
         </Animated.View>
-        <Animated.View 
+        <Animated.View
           style={[
             cardStyles[1],
             {
@@ -154,13 +157,14 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
               shadowOpacity: 0,
               shadowRadius: 0,
             }
-          ]} 
+          ]}
           className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
         >
           {riveAssets && (
             <View className="w-[110px] h-[110px]">
               <Rive
-                url={riveAssets[0].localUri!}
+                resourceName={IS_ANDROID ? 'home_lamb' : undefined}
+                url={IS_IOS ? riveAssets[0].uri! : undefined}
                 artboardName="lamb-idle"
                 style={{ width: '100%', height: '100%' }}
               />
@@ -171,26 +175,27 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
           </View>
         </Animated.View>
         {/* Row 2 */}
-        <Animated.View 
+        <Animated.View
           style={[
             cardStyles[2],
             {
               // Remove card-level shadow since we want glow behind the lamb
             }
-          ]} 
+          ]}
           className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
         >
           {riveAssets && (
             <>
               {/* Multiple background elements for blur effect */}
-           
+
 
               {/* BlurView that blurs all the elements above */}
-             <Image source={require('../../assets/redShadow.png')} className="absolute w-[200px] h-[200px]" />
+              <Image source={require('../../assets/redShadow.png')} className="absolute w-[200px] h-[200px]" />
 
               <View className="w-[120px] h-[120px]" style={{ zIndex: 10 }}>
                 <Rive
-                  url={riveAssets[0].localUri!}
+                  resourceName={IS_ANDROID ? 'home_lamb' : undefined}
+                  url={IS_IOS ? riveAssets[0].uri! : undefined}
                   artboardName="lamb-idle"
                   style={{ width: '100%', height: '100%' }}
                 />
@@ -201,21 +206,22 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
             <Text className="font-feather text-accentGold">LVL 20</Text>
           </View>
         </Animated.View>
-        <Animated.View 
+        <Animated.View
           style={[
             cardStyles[3],
             {
-           
+
             }
-          ]} 
+          ]}
           className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
         >
-                       <Image source={require('../../assets/yellowShadow.png')} className="absolute w-[200px] h-[200px]" />
+          <Image source={require('../../assets/yellowShadow.png')} className="absolute w-[200px] h-[200px]" />
 
           {riveAssets && (
             <View className="w-[140px] h-[140px]">
               <Rive
-                url={riveAssets[1].localUri!}
+                // resourceName={IS_ANDROID ? 'lamb_wings_idle' : undefined}
+                url={IS_IOS ? riveAssets[1].uri! : undefined}
                 style={{ width: '100%', height: '100%' }}
               />
             </View>
@@ -225,7 +231,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
           </View>
         </Animated.View>
       </View>
-      
+
       {/* Skins section */}
       <Animated.View style={cardStyles[4]} className="w-[340px] h-[140px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative mb-4">
         <Image source={skins} className="w-full h-[120px]" resizeMode="contain" />
@@ -233,7 +239,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
           <Text className="font-feather text-accentGold">Shop for skins at level 10</Text>
         </View>
       </Animated.View>
-      
+
       {/* Continue Button - fixed at bottom */}
       <View className="absolute left-6 right-6" style={{ bottom: Math.max(insets.bottom + 16, 24) }}>
         <PrimaryButton title="Continue" onPress={handleContinue} />
