@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Platform, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Animated, {
   useAnimatedStyle,
@@ -10,7 +10,7 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-
+import { adapty } from 'react-native-adapty';
 import PrimaryButton from '../../components/PrimaryButton';
 import { OnboardingResponses } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
@@ -80,12 +80,14 @@ export default function OnboardingAgeRangeScreen() {
     return '65-plus';
   };
 
-
-  const handleSelection = async (ageRange: OnboardingResponses['ageRange'], isDatePicker = false) => {
+  const handleSelection = async (
+    ageRange: OnboardingResponses['ageRange'],
+    isDatePicker = false
+  ) => {
     // Trigger light haptic feedback
     if (ageRange === 'under-12' && Platform.OS === 'android' && !isDatePicker) {
-      setShowDatePicker(true)
-      return
+      setShowDatePicker(true);
+      return;
     }
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
@@ -95,7 +97,7 @@ export default function OnboardingAgeRangeScreen() {
       console.log('Haptics not available');
     }
 
-    analytics.logEvent("OnboardingAgeRangeScreen_Tapped_Option", {
+    analytics.logEvent('OnboardingAgeRangeScreen_Tapped_Option', {
       value: ageRange,
     });
 
@@ -104,6 +106,11 @@ export default function OnboardingAgeRangeScreen() {
 
     // Save to user store
     setUser({ ageRange });
+    await adapty.updateProfile({
+      codableCustomAttributes: {
+        age_range: ageRange,
+      },
+    });
 
     // Navigate to next screen
     router.push('/onboarding/8' as any);
@@ -140,9 +147,8 @@ export default function OnboardingAgeRangeScreen() {
     },
     {
       id: '55-64+',
-      title: '55-64',
+      title: '55-64+',
     },
-
   ] as const;
 
   return (
@@ -186,10 +192,12 @@ export default function OnboardingAgeRangeScreen() {
         </Animated.View>
       ) : ( */}
       <Animated.View style={optionsStyle} className="space-y-4 mt-0">
-        <ScrollView contentContainerStyle={{ paddingBottom: 130 }} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 130 }}
+          showsVerticalScrollIndicator={false}>
           <View className="space-y-4">
             {options.map((option) => {
-              console.log("option ==>", option?.id);
+              console.log('option ==>', option?.id);
 
               return (
                 <PrimaryButton
@@ -200,7 +208,7 @@ export default function OnboardingAgeRangeScreen() {
                   primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
                   textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
                 />
-              )
+              );
             })}
           </View>
         </ScrollView>
@@ -213,7 +221,7 @@ export default function OnboardingAgeRangeScreen() {
           display="default"
           onChange={(event, date) => {
             setShowDatePicker(false);
-            if (event.type === "set" && date) {
+            if (event.type === 'set' && date) {
               setSelectedDate(date);
               const ageRange = calculateAgeRange(date);
               handleSelection(ageRange, true);

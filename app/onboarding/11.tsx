@@ -170,20 +170,15 @@ export default function SaveProgressScreen() {
       // Identify user in Adapty
       try {
         await adapty.identify(uid);
+        
+        // Prepare custom attributes, filtering out undefined/null values
+        const customAttributes: Record<string, string | number | boolean> = {};
+             
+        if (userData.ageRange) customAttributes.age_range = userData.ageRange;
+  
+        
         await adapty.updateProfile({
-          firstName: displayName,
-          codableCustomAttributes: {
-            spiritual_goal: spiritualGoal,
-            experience_level: userData.experienceLevel,
-            denomination: userData.denomination,
-            age_range: userData.ageRange,
-            notification_enabled: userData.notificationEnabled,
-            notification_time: userData.notificationTime,
-            selected_path: userData.selectedPathId,
-            lamb_level: userData.lamb.level,
-            lamb_xp: userData.lamb.xp,
-            lamb_name: userData.lamb.name,
-          },
+          codableCustomAttributes: customAttributes,
         });
       } catch (adaptyError) {
         console.error('Error identifying user in Adapty:', adaptyError);

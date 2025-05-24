@@ -8,7 +8,6 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
 import PrimaryButton from '../components/PrimaryButton';
 import useSubscriptionStore from './stores/subscriptionStore';
-import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import analytics from '../utils/analytics';
 import { isSignedIn } from './hooks/authHook';
 
@@ -52,6 +51,7 @@ const PricingScreen = () => {
   const [trialEnabled, setTrialEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [animationReady, setAnimationReady] = useState(false); // Ensures animations run after mount
+  const [showCloseButton, setShowCloseButton] = useState(false); // New state for X mark visibility
 
   const animateScreenFromBottom = params.animateFromBottom === "true";
   const fromLoading = params.fromLoading === "true";
@@ -63,6 +63,15 @@ const PricingScreen = () => {
       animateFromBottom: animateScreenFromBottom || false
     });
   }, [fromLoading, animateScreenFromBottom]);
+
+  // Show close button after 5 seconds
+  useEffect(() => {
+    const closeButtonTimer = setTimeout(() => {
+      setShowCloseButton(true);
+    }, 5000); // 5 seconds delay
+
+    return () => clearTimeout(closeButtonTimer);
+  }, []);
 
   // Screen container just fades in quickly
   const screenOpacity = useSharedValue(0);
@@ -164,9 +173,13 @@ const PricingScreen = () => {
         {/* Header */}
         <AnimatedItem index={0} animateItemFromBottom={animateScreenFromBottom}>
           <View className="flex-row items-center justify-between px-5 py-3 mb-3">
-            <TouchableOpacity onPress={handleBack} className="p-2">
-              <Feather name="x" size={28} color="#B89B4C" />
-            </TouchableOpacity>
+            {showCloseButton && (
+              <Animated.View entering={FadeIn.duration(600)}>
+                <TouchableOpacity onPress={handleBack} className="p-2">
+                  <Feather name="x" size={28} color="#B89B4C" />
+                </TouchableOpacity>
+              </Animated.View>
+            )}
             <View className="w-10" />{/* Spacer */}
           </View>
         </AnimatedItem>

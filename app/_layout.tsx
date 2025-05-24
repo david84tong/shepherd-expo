@@ -2,7 +2,16 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LogBox, Platform, StyleSheet, View, AppState, AppStateStatus, Text, Alert } from 'react-native';
+import {
+  LogBox,
+  Platform,
+  StyleSheet,
+  View,
+  AppState,
+  AppStateStatus,
+  Text,
+  Alert,
+} from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases from 'react-native-purchases';
 import Rive from 'rive-react-native';
@@ -178,16 +187,20 @@ export default function RootLayout() {
   // Check onboarding status with timeout
   const checkOnboarding = async () => {
     try {
+      console.log(`[RootLayout] 🔄 Checking onboarding status...`);
+
       // Check if onboarding has been completed by looking for the key in AsyncStorage
       const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-      console.log('Onboarding completed status:', onboardingCompleted);
+      console.log('[RootLayout] Onboarding completed status:', onboardingCompleted);
 
       // If onboarding is completed, the value will be 'true'
       const isOnboardingCompleted = onboardingCompleted === 'true';
 
       // Initialize onboarding store to load saved screen
+      console.log(`[RootLayout] 🏪 Initializing onboarding store...`);
       const onboardingStore = useOnboardingStore.getState();
       const savedScreen = await onboardingStore.initializeFromStorage();
+      console.log(`[RootLayout] 📍 Onboarding store initialized, saved screen: ${savedScreen}`);
 
       setInitialRouteDetermined(true);
       setIsOnboardingChecked(true);
@@ -195,18 +208,18 @@ export default function RootLayout() {
 
       // Log the status for debugging
       if (isOnboardingCompleted) {
-        console.log('User has completed onboarding');
+        console.log('[RootLayout] ✅ User has completed onboarding');
       } else {
-        console.log('User has NOT completed onboarding');
-        console.log(`📍 Saved onboarding screen: ${savedScreen}`);
-        
-        // Note: Navigation will be handled by the onboarding layout after mounting
-        // to avoid "navigation before mounting" errors
+        console.log('[RootLayout] ❌ User has NOT completed onboarding');
+        console.log(`[RootLayout] 📍 Saved onboarding screen: ${savedScreen}`);
+
+        // Let the onboarding layout handle navigation to avoid timing issues
+        console.log('[RootLayout] 📝 Navigation will be handled by onboarding layout');
       }
 
       return isOnboardingCompleted;
     } catch (error) {
-      console.log('Error checking onboarding status:', error);
+      console.error('[RootLayout] ❌ Error checking onboarding status:', error);
       setHasError(true);
       setInitialRouteDetermined(true);
       setIsOnboardingChecked(true);
@@ -340,15 +353,11 @@ export default function RootLayout() {
       console.log('CALLED TO RESOLVED');
 
       try {
-
-
         // Initialize app components
         await checkOnboarding();
         await checkStreakStatus();
         await initializeNotifications();
-      } catch (error) {
-
-      }
+      } catch (error) {}
       // Set Rive ready
       setIsRiveReady(true);
 
@@ -394,8 +403,6 @@ export default function RootLayout() {
     }
   };
 
-
-
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
@@ -439,7 +446,6 @@ export default function RootLayout() {
 
   // Show Rive animation
   if (showRiveAnimation && riveAssets?.[0]?.uri) {
-
     return (
       <View style={[styles.riveContainer, { backgroundColor: '#FFF4D9' }]}>
         <Rive
@@ -460,7 +466,7 @@ export default function RootLayout() {
 
   console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
   return (
-    <GestureHandlerRootView style={{ flex: 1, }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <BottomSheetModalProvider>
         {visibleForceUpdate ? (
           <ForceUpdateModal visible={visibleForceUpdate} />

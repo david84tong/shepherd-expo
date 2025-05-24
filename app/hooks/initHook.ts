@@ -9,7 +9,7 @@ import useSubscriptionStore from '../stores/subscriptionStore';
 import { Mixpanel } from 'mixpanel-react-native';
 import { PATH_OPTIONS } from '../models/Path';
 import { Platform } from 'react-native';
-
+import { adapty } from 'react-native-adapty';
 import analytics, { AnalyticsEvent } from '../../utils/analytics';
 import { checkStreakAndApplyPenalties } from './streakHook';
 
@@ -146,7 +146,7 @@ export const useAppInitialization = () => {
 
           const anonymousUserId = generateUUID();
           appUserId = anonymousUserId; // This is the definitive ID for a new user
-
+          // adapty.identify(anonymousUserId);
           const currentTime = Timestamp.now();
           await AsyncStorage.setItem('shepherd-anonymous-user-id', anonymousUserId);
           setDisplayName('Anonymous User');

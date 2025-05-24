@@ -1035,7 +1035,7 @@ export default function HomeScreen() {
                   paddingVertical: 2,
                   borderRadius: 32,
                   zIndex: 20,
-                  opacity: isPro ? 1 : 0.5
+                  opacity: isPro ? 1 : 1
                 }}
               >
                 <Text
@@ -1046,7 +1046,7 @@ export default function HomeScreen() {
                     textShadowRadius: 3,
                   }}
                 >
-                  🎁
+                {useSubscriptionStore.getState().shouldShowFreeTrialPaywall() ? 'FREE' : '🎁'}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>

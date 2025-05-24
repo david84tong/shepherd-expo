@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, usePathname, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, View } from 'react-native';
+import { Alert, View, Text } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -75,9 +75,13 @@ export default function OnboardingLayout() {
     if (pathname && isInitialized) {
       const screen = pathname.split('/').pop() || '1';
 
+      console.log(`[OnboardingLayout] Pathname changed to: ${pathname}, extracted screen: ${screen}, current screen: ${currentScreen}`);
+
       // Only update if the screen is actually different from what's saved
       // This prevents unnecessary updates during navigation
       if (screen !== currentScreen) {
+        console.log(`[OnboardingLayout] Screen changed from ${currentScreen} to ${screen}, saving...`);
+        
         // Save previous screen for transition handling
         if (currentScreen && currentScreen !== screen) {
           setPreviousScreen(currentScreen);
@@ -92,7 +96,15 @@ export default function OnboardingLayout() {
           });
         }
 
-        setCurrentScreen(screen);
+        // Await the screen saving to ensure it completes
+        (async () => {
+          try {
+            await setCurrentScreen(screen);
+            console.log(`[OnboardingLayout] ✅ Successfully saved screen: ${screen}`);
+          } catch (error) {
+            console.error(`[OnboardingLayout] ❌ Failed to save screen: ${screen}`, error);
+          }
+        })();
       }
     }
   }, [pathname, setCurrentScreen, progressOpacity, isInitialized, currentScreen]);
@@ -104,20 +116,29 @@ export default function OnboardingLayout() {
     }
   }, [appIsInitialized]);
 
-  // Handle navigation to saved screen after mounting
+  // Handle navigation to saved screen after mounting (backup - tabs layout should handle this)
   useEffect(() => {
-    if (isInitialized && needsNavigationToSavedScreen && savedScreenToNavigateTo && router) {
-      console.log(`🚀 Navigating to saved onboarding screen: ${savedScreenToNavigateTo}`);
+    console.log(`[OnboardingLayout] Navigation effect triggered - isInitialized: ${isInitialized}, needsNavigation: ${needsNavigationToSavedScreen}, savedScreen: ${savedScreenToNavigateTo}`);
+    
+    // This is now mainly a backup since tabs layout should handle the redirect
+    if (isInitialized && needsNavigationToSavedScreen && savedScreenToNavigateTo) {
+      console.log(`🚀 Backup navigation to saved screen: ${savedScreenToNavigateTo}`);
       
-      // Small delay to ensure router is fully ready
-      setTimeout(() => {
+      // Shorter delay since this is backup navigation
+      const timeoutId = setTimeout(() => {
         try {
+          console.log(`[OnboardingLayout] 🔄 Backup navigation executing: /onboarding/${savedScreenToNavigateTo}`);
           router.replace(`/onboarding/${savedScreenToNavigateTo}` as any);
-          clearSavedScreenNavigation(); // Clear the flag after navigation
+          clearSavedScreenNavigation();
+          console.log(`[OnboardingLayout] ✅ Backup navigation completed`);
         } catch (error) {
-          console.error('❌ Error navigating to saved screen:', error);
+          console.error('[OnboardingLayout] ❌ Error in backup navigation:', error);
         }
-      }, 200);
+      }, 500);
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      console.log(`[OnboardingLayout] ⏸️ Backup navigation skipped - tabs layout should handle this`);
     }
   }, [isInitialized, needsNavigationToSavedScreen, savedScreenToNavigateTo, router, clearSavedScreenNavigation]);
 
@@ -237,12 +258,14 @@ export default function OnboardingLayout() {
         )}
 
       {/* Debug button (keep commented out) */}
-      {/* <Text
-        onPress={handleDebug}
-        className="absolute top-2.5 right-2.5 text-textPrimary/30 text-[10px] z-[1000]"
-      >
-        Debug
-      </Text> */}
+      {(__DEV__) && (
+        <Text
+          onPress={handleDebug}
+          className="absolute top-2.5 right-2.5 text-textPrimary/30 text-[10px] z-[1000]"
+        >
+          Debug
+        </Text>
+      )}
     </View>
   );
 }
