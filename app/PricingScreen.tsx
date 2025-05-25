@@ -12,6 +12,8 @@ import PrimaryButton from '../components/PrimaryButton';
 import useSubscriptionStore from './stores/subscriptionStore';
 import analytics from '../utils/analytics';
 import { isSignedIn } from './hooks/authHook';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
 
 interface AnimatedItemProps {
   index?: number;
@@ -126,7 +128,13 @@ const PricingScreen = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     analytics.logEvent("PricingScreen_BackButton_Tapped");
 
-    if (isSignedIn()) {
+    if (fromLoading) {
+      // If we came from loading screen, go back to loading screen
+      router.back();
+    } else if (isSignedIn()) {
+      // Mark onboarding as completed before navigation
+      await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+
       if (router.canGoBack()) {
         router.back();
       } else {
@@ -136,6 +144,7 @@ const PricingScreen = () => {
       router.replace('/onboarding/11');
     }
   };
+
 
   const showPaywall = async () => {
     try {
@@ -250,21 +259,21 @@ const PricingScreen = () => {
                 ))}
               </View>
             </View>
-         
-            <Animated.View className="bg-surfaceCream rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
-            <Text className="font-feather text-heading text-center mx-12">
-              Unlock the <Text className="text-accentGold">annoited skin</Text> (limited time) if you upgrade!
-            </Text>
 
-                {riveAssets && (
-                  <Rive
-                    url={riveAssets[0].localUri!}
-                    style={{ width: 256, height: 256, marginBottom: 16 }}
-                    artboardName="lamb-idle"
-                    autoplay={true}
-                  />
-                )}
-              </Animated.View>
+            <Animated.View className="bg-surfaceCream rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
+              <Text className="font-feather text-heading text-center mx-12">
+                Unlock the <Text className="text-accentGold">annoited skin</Text> (limited time) if you upgrade!
+              </Text>
+
+              {riveAssets && (
+                <Rive
+                  url={riveAssets[0].localUri!}
+                  style={{ width: 256, height: 256, marginBottom: 16 }}
+                  artboardName="lamb-idle"
+                  autoplay={true}
+                />
+              )}
+            </Animated.View>
           </AnimatedItem>
 
           <AnimatedItem index={12} animateItemFromBottom={animateScreenFromBottom}>

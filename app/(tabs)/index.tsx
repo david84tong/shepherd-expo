@@ -52,6 +52,8 @@ const gemIcon = imageAssets[8];
 const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
 
+const darkBg = require('../../assets/backgrounds/defaultBackgroundDark.png');
+
 // Custom toast config with tailwind styling
 const toastConfig: ToastConfig = {
   success: ({ text1, text2 }: ToastConfigParams<any>) => (
@@ -648,7 +650,7 @@ export default function HomeScreen() {
     // Use the appropriate Rive asset based on pro status and level
     let lambAssetIndex;
     let useArtboardName: string | undefined = artboardName;
-    
+
     if (lambLevel >= 33) {
       // Level 33: Use lamb-wings-idle.riv with no artboard name
       lambAssetIndex = 3; // lamb-wings-idle.riv
@@ -666,7 +668,7 @@ export default function HomeScreen() {
     const shouldShowRedShadow = lambLevel >= 10 && lambLevel < 24;
     const shouldShowYellowShadow = lambLevel >= 24;
     let shadowScale = 0;
-    
+
     if (shouldShowRedShadow) {
       // Red shadow from level 10-23: scale from 0.5 to 1.2
       const levelProgress = Math.min((lambLevel - 10) / (23 - 10), 1); // 0 to 1
@@ -688,8 +690,8 @@ export default function HomeScreen() {
       }}>
         {/* Red shadow behind lamb for level 10+ */}
         {shouldShowRedShadow && (
-          <Image 
-            source={require('../../assets/redShadow.png')} 
+          <Image
+            source={require('../../assets/redShadow.png')}
             style={{
               position: "absolute",
               width: 300 * shadowScale,
@@ -701,8 +703,8 @@ export default function HomeScreen() {
           />
         )}
         {shouldShowYellowShadow && (
-          <Image 
-            source={require('../../assets/yellowShadow.png')} 
+          <Image
+            source={require('../../assets/yellowShadow.png')}
             style={{
               position: "absolute",
               width: 300 * shadowScale,
@@ -716,7 +718,7 @@ export default function HomeScreen() {
         <View
           style={{
             width: `${scaleFactor * 100}%`,
-            height: `${scaleFactor * 100}%`,          
+            height: `${scaleFactor * 100}%`,
             alignItems: 'center',
             justifyContent: 'center',
             // Add overflow hidden to prevent any rendering issues with larger size
@@ -724,7 +726,7 @@ export default function HomeScreen() {
             zIndex: 10,
           }}
         >
-          
+
           <Rive
             key={`${riveKey}-${lambLevel}`} // Add level to key to force refresh
             ref={riveRef}
@@ -734,10 +736,11 @@ export default function HomeScreen() {
             style={{
               width: '100%',
               height: '100%',
-              marginTop: 10
+              marginTop: 10,
+              opacity: new Date().getHours() >= 19 ? 0.7 : 1
             }}
           />
-       
+
         </View>
       </View>
     );
@@ -769,6 +772,8 @@ export default function HomeScreen() {
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
 
+
+
   return (
     <>
       <View className="flex-1">
@@ -778,7 +783,7 @@ export default function HomeScreen() {
             { position: 'absolute', width: '100%', height: '100%' },
             { opacity: grassOpacityAnim },
           ]}>
-          <Image source={grassBg} style={{ width: '100%', height: '100%' }} />
+          <Image source={new Date().getHours() >= 19 ? darkBg : grassBg} style={{ width: '100%', height: '100%' }} />
         </Animated.View>
 
         <Animated.View
@@ -804,7 +809,7 @@ export default function HomeScreen() {
             { opacity: grassOpacityAnim },
           ]}>
           <Image
-            source={grassBg}
+            source={new Date().getHours() >= 19 ? darkBg : grassBg}
             style={{ width: '100%', height: '100%' }}
           />
         </Animated.View>
@@ -1051,15 +1056,15 @@ export default function HomeScreen() {
                 if (!isPro) {
                   analytics.logEvent("HomeScreen_TappedProBadge");
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  
+
                   // Check if user has seen half-off paywall before
                   const subscriptionStore = useSubscriptionStore.getState();
                   if (subscriptionStore.shouldShowFreeTrialPaywall()) {
                     // User has seen half-off paywall before, show free trial
                     console.log('[HomeScreen] Showing free trial paywall (user has seen half-off before)');
                     subscriptionStore.presentFreeTrialPaywall();
-                    
-               
+
+
                   } else {
                     // First time or user hasn't seen half-off paywall, show half-off
                     console.log('[HomeScreen] Showing half-off paywall (first time)');
@@ -1103,7 +1108,7 @@ export default function HomeScreen() {
                     textShadowRadius: 3,
                   }}
                 >
-                {isPro ? "SUPER" : isFree ? 'FREE Trial 🔓' : '🎁'}
+                  {isPro ? "SUPER" : isFree ? 'FREE Trial 🔓' : '🎁'}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>
