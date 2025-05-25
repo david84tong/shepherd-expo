@@ -715,6 +715,26 @@ export default function HomeScreen() {
     return getLevelData(lamb.xp);
   }, [lamb?.xp]);
 
+  // Add this with other animation values at the top
+  const androidBgOpacityAnim = useRef(new Animated.Value(0)).current;
+
+  // Add this effect to handle Android background animation
+  useEffect(() => {
+    if (IS_ANDROID && mode === 'PRAYER') {
+      Animated.timing(androidBgOpacityAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(androidBgOpacityAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [mode]);
+
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
 
@@ -775,14 +795,21 @@ export default function HomeScreen() {
         <Animated.View
           style={[
             { position: 'absolute', width: '100%', height: '100%', zIndex: 0 },
-            { opacity: waterOpacityAnim },
+            { opacity: IS_IOS ? waterOpacityAnim : androidBgOpacityAnim },
           ]}>
-          {showBgRive && riveAssets && (
-            <Rive
-              url={IS_IOS ? riveAssets[1].uri! : undefined}
-              resourceName={IS_ANDROID ? 'bg_green' : undefined}
-              autoplay={true}
-              style={{ width: '160%', height: '160%', top: -300, left: -128 }}
+          {IS_IOS ? (
+            showBgRive && riveAssets && (
+              <Rive
+                url={riveAssets[1].uri!}
+                autoplay={true}
+                style={{ width: '160%', height: '160%', top: -300, left: -128 }}
+              />
+            )
+          ) : (
+            <Image
+              source={require('../../assets/backgrounds/Forest Clearing Background Apr 18 2025.png')}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="cover"
             />
           )}
         </Animated.View>
