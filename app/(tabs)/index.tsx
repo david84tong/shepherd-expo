@@ -52,26 +52,68 @@ const gemIcon = imageAssets[8];
 const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
 
-const darkBg = require('../../assets/backgrounds/defaultBackgroundDark.png');
+import darkBg from '../../assets/backgrounds/defaultBackgroundDark.png';
 
-// Custom toast config with tailwind styling
+// Custom toast config with explicit styling
 const toastConfig: ToastConfig = {
   success: ({ text1, text2 }: ToastConfigParams<any>) => (
-    <View className="bg-surfaceCream rounded-xl px-4 py-3 mx-4 mb-4 border-l-4 border-darkGreen shadow-md">
-      <Text className="font-feather text-base text-textPrimary">{text1}</Text>
-      {text2 && <Text className="font-din text-sm text-description mt-1">{text2}</Text>}
+    <View style={{
+      backgroundColor: '#FFF4D9',
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginHorizontal: 16,
+      marginBottom: 16,
+      borderLeftWidth: 4,
+      borderLeftColor: '#24CA17',
+      shadowColor: 'rgba(0,0,0,0.08)',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 4,
+      elevation: 3,
+    }}>
+      <Text style={{ fontFamily: 'Nunito-Black', fontSize: 16, color: '#3C584A' }}>{text1}</Text>
+      {text2 && <Text style={{ fontFamily: 'DIN Next Rounded LT W01 Regular', fontSize: 14, color: '#B89B4C', marginTop: 4 }}>{text2}</Text>}
     </View>
   ),
   error: ({ text1, text2 }: ToastConfigParams<any>) => (
-    <View className="bg-surfaceCream rounded-xl px-4 py-3 mx-4 mb-4 border-l-4 border-red shadow-md">
-      <Text className="font-feather text-base text-textPrimary">{text1}</Text>
-      {text2 && <Text className="font-din text-sm text-description mt-1">{text2}</Text>}
+    <View style={{
+      backgroundColor: '#FFF4D9',
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginHorizontal: 16,
+      marginBottom: 16,
+      borderLeftWidth: 4,
+      borderLeftColor: '#DF4533',
+      shadowColor: 'rgba(0,0,0,0.08)',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 4,
+      elevation: 3,
+    }}>
+      <Text style={{ fontFamily: 'Nunito-Black', fontSize: 16, color: '#3C584A' }}>{text1}</Text>
+      {text2 && <Text style={{ fontFamily: 'DIN Next Rounded LT W01 Regular', fontSize: 14, color: '#B89B4C', marginTop: 4 }}>{text2}</Text>}
     </View>
   ),
   info: ({ text1, text2 }: ToastConfigParams<any>) => (
-    <View className="bg-surfaceCream rounded-xl px-4 py-3 mx-4 mb-4 border-l-4 border-accentGold shadow-md">
-      <Text className="font-feather text-base text-textPrimary">{text1}</Text>
-      {text2 && <Text className="font-din text-sm text-description mt-1">{text2}</Text>}
+    <View style={{
+      backgroundColor: '#FFF4D9',
+      borderRadius: 12,
+      paddingHorizontal: 16,
+      paddingVertical: 12,
+      marginHorizontal: 16,
+      marginBottom: 16,
+      borderLeftWidth: 4,
+      borderLeftColor: '#FCD34D',
+      shadowColor: 'rgba(0,0,0,0.08)',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 1,
+      shadowRadius: 4,
+      elevation: 3,
+    }}>
+      <Text style={{ fontFamily: 'Nunito-Black', fontSize: 16, color: '#3C584A' }}>{text1}</Text>
+      {text2 && <Text style={{ fontFamily: 'DIN Next Rounded LT W01 Regular', fontSize: 14, color: '#B89B4C', marginTop: 4 }}>{text2}</Text>}
     </View>
   ),
 };
@@ -623,10 +665,27 @@ export default function HomeScreen() {
   // Defer loading of the heavy Rive component until after initial interactions
   const [riveReady, setRiveReady] = useState(false);
   const [isFree, setIsFree] = useState(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+
+  // Animation for first load after onboarding
+  const firstLoadOpacity = useRef(new Animated.Value(0)).current;
 
   // Run once on mount to defer heavy work
   useEffect(() => {
     setRiveReady(true);
+    
+    // Check if this is the first load after onboarding completion
+    if (isFirstLoad) {
+      // Start with opacity 0 and animate to 1
+      Animated.timing(firstLoadOpacity, {
+        toValue: 1,
+        duration: 600,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start(() => {
+        setIsFirstLoad(false);
+      });
+    }
   }, []);
 
   // Add screen view analytics tracking
@@ -776,7 +835,10 @@ export default function HomeScreen() {
 
   return (
     <>
-      <View className="flex-1">
+      <Animated.View 
+        className="flex-1"
+        style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}
+      >
         {/* Background Layers - Use expo-image for better performance */}
         <Animated.View
           style={[
@@ -1152,7 +1214,7 @@ export default function HomeScreen() {
                 icon={breadIcon}
                 title="Daily Bread – Read"
                 subtitle="Feed your soul with scripture"
-                points={5}
+                points={25}
                 onPress={handleReadPress}
                 completed={readingCompleted}
               />
@@ -1160,7 +1222,7 @@ export default function HomeScreen() {
                 icon={dropIcon}
                 title="Living Water – Pray"
                 subtitle="Refresh your spirit with prayer"
-                points={5}
+                points={25}
                 onPress={handlePrayerPress}
                 completed={prayerCompleted}
                 disabled={!readingCompleted}
@@ -1169,7 +1231,7 @@ export default function HomeScreen() {
                 icon={quillIcon}
                 title="Quiet Time – Reflect"
                 subtitle="Pause and meet with God"
-                points={5}
+                points={25}
                 onPress={handleReflectionPress}
                 completed={reflectionCompleted}
                 disabled={!readingCompleted}
@@ -1197,7 +1259,7 @@ export default function HomeScreen() {
           <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
           <WidgetHowToSheet visible={showWidgetSheet} onClose={() => setShowWidgetSheet(false)} />
         </SafeAreaView>
-      </View>
+      </Animated.View>
       <Toast config={toastConfig} />
     </>
   );

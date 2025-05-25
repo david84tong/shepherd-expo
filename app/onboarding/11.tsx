@@ -95,15 +95,23 @@ export default function SaveProgressScreen() {
       await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
       await clearResponses(); // Clear onboarding responses after completion
       
-      // After a short delay, show the widget prompt
-      setTimeout(() => {
-        const uiStore = useUIStore.getState();
-        if (uiStore.showWidgetPrompt) {
-          uiStore.showWidgetPrompt();
-        }
-      }, 2000);
+      // Animate out all components before navigation using Reanimated
+      headerOpacity.value = withTiming(0, { duration: 400 });
+      benefitsOpacity.value = withTiming(0, { duration: 400 });
+      buttonsOpacity.value = withTiming(0, { duration: 400 });
       
-      router.replace('/(tabs)');
+      // Navigate after animation duration
+      setTimeout(() => {
+        router.replace('/(tabs)');
+        
+        // After a short delay, show the widget prompt
+        setTimeout(() => {
+          const uiStore = useUIStore.getState();
+          if (uiStore.showWidgetPrompt) {
+            uiStore.showWidgetPrompt();
+          }
+        }, 2000);
+      }, 400);
     } catch (error) {
       console.error('Error completing onboarding:', error);
     }
@@ -216,8 +224,16 @@ export default function SaveProgressScreen() {
           // User exists and data has been fetched in the auth hook
           // Just mark onboarding as completed and navigate to tabs
           await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
-          // Navigate directly to the main app tabs
-          router.replace('/(tabs)');
+          
+          // Animate out all components before navigation using Reanimated
+          headerOpacity.value = withTiming(0, { duration: 400 });
+          benefitsOpacity.value = withTiming(0, { duration: 400 });
+          buttonsOpacity.value = withTiming(0, { duration: 400 });
+          
+          // Navigate after animation duration
+          setTimeout(() => {
+            router.replace('/(tabs)');
+          }, 400);
         } else {
           // In onboarding mode, create new user from responses
           console.log('Creating user...');

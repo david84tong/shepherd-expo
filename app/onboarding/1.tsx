@@ -384,6 +384,34 @@ export default function OnboardingWelcomeScreen() {
         </Text>
       </Animated.View>
 
+      {/* Subtle Back Button */}
+      <Animated.View
+        className="absolute top-0 right-0 z-20"
+        style={{
+          paddingTop: insets.top + 16,
+          paddingRight: 24,
+          opacity: textOpacityAnim,
+        }}>
+        <Pressable
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
+              console.log('Haptics not available');
+            });
+            analytics.logEvent("Onboarding_Tapped_Back", {
+              step: 1,
+              screenName: 'Welcome',
+              action: 'Back to Auth'
+            });
+            router.back();
+          }}
+          className="w-10 h-10 rounded-full bg-black/20 items-center justify-center"
+          style={{
+            backgroundColor: 'rgba(0,0,0,0.2)',
+          }}>
+          <Text className="text-white text-lg font-bold">✕</Text>
+        </Pressable>
+      </Animated.View>
+
       {/* Main content area that zooms */}
       <Animated.View
         style={{
