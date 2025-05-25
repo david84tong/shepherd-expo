@@ -1059,13 +1059,14 @@ export default function HomeScreen() {
                     console.log('[HomeScreen] Showing free trial paywall (user has seen half-off before)');
                     subscriptionStore.presentFreeTrialPaywall();
                     
-                    setTimeout(() => {
-                      setIsFree(true);
-                    }, 2000);
+               
                   } else {
                     // First time or user hasn't seen half-off paywall, show half-off
                     console.log('[HomeScreen] Showing half-off paywall (first time)');
                     subscriptionStore.presentHalfOffPaywall();
+                    setTimeout(() => {
+                      setIsFree(true);
+                    }, 2000);
                   }
                 }
               }}
