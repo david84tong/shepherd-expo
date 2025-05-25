@@ -6,6 +6,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn, useSharedValue, useAnimatedStyle, withTiming, withDelay } from 'react-native-reanimated';
+import { useAssets } from 'expo-asset';
+import Rive from 'rive-react-native';
 import PrimaryButton from '../components/PrimaryButton';
 import useSubscriptionStore from './stores/subscriptionStore';
 import analytics from '../utils/analytics';
@@ -92,6 +94,11 @@ const PricingScreen = () => {
   });
 
   const { presentPaywall } = useSubscriptionStore();
+
+  // Load Rive assets
+  const [riveAssets] = useAssets([
+    require('../assets/riveAnimations/goldLamb.riv')
+  ]);
 
   const toggleSwitch = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -243,15 +250,21 @@ const PricingScreen = () => {
                 ))}
               </View>
             </View>
-            <Animated.View
-              className="items-center mb-4 flex justify-center"
-              entering={FadeIn.duration(500).delay(200)}
-            >
-              <Image
-                source={require('../assets/goldLamb.png')}
-                className="w-64 h-64 mb-4 flex"
-              />
-            </Animated.View>
+         
+            <Animated.View className="bg-surfaceCream rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
+            <Text className="font-feather text-heading text-center mx-12">
+              Unlock the <Text className="text-accentGold">annoited skin</Text> (limited time) if you upgrade!
+            </Text>
+
+                {riveAssets && (
+                  <Rive
+                    url={riveAssets[0].localUri!}
+                    style={{ width: 256, height: 256, marginBottom: 16 }}
+                    artboardName="lamb-idle"
+                    autoplay={true}
+                  />
+                )}
+              </Animated.View>
           </AnimatedItem>
 
           <AnimatedItem index={12} animateItemFromBottom={animateScreenFromBottom}>

@@ -266,12 +266,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
         return currentScreen;
       } else {
         console.log(`[OnboardingStore] 🟢 No saved data found`);
-        set({ 
-          isInitialized: true,
-          currentScreen: '1',
-          needsNavigationToSavedScreen: false,
-          savedScreenToNavigateTo: null,
-        });
+        set({ isInitialized: true });
         console.log('🟢 No onboarding state found in storage, starting fresh');
         return '1';
       }
@@ -304,31 +299,5 @@ export const debugOnboardingStorage = async () => {
   } catch (error) {
     console.error('❌ Error reading onboarding storage:', error);
     return null;
-  }
-};
-
-// Debug helper to completely reset app state for testing
-export const resetAppForTesting = async () => {
-  try {
-    console.log('🧹 Clearing all app data for testing...');
-    
-    // Import the keys we need to clear
-    const { ONBOARDING_COMPLETED_KEY } = require('../models/Onboarding');
-    
-    // Clear onboarding data
-    await AsyncStorage.removeItem(ONBOARDING_STORAGE_KEY);
-    await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
-    
-    // Reset onboarding store state
-    const onboardingStore = useOnboardingStore.getState();
-    onboardingStore.clearResponses();
-    
-    console.log('✅ App data cleared! App should behave like a fresh install.');
-    console.log('📝 Restart the app to test first-time user experience.');
-    
-    return true;
-  } catch (error) {
-    console.error('❌ Error clearing app data:', error);
-    return false;
   }
 };

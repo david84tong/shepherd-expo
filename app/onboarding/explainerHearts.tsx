@@ -1,31 +1,37 @@
 import React, { useLayoutEffect, useEffect } from 'react';
-import { View, Text, Image } from 'react-native';
+import { View, Text } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { useAssets } from 'expo-asset';
+import Rive from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
-
-// Lamb images (replace with your actual asset imports)
-import lamb1 from '../../assets/onboarding/babyLamb.png';
-import lamb10 from '../../assets/onboarding/babyLamb.png';
-import lamb20 from '../../assets/onboarding/lamb20.png';
-import lamb33 from '../../assets/onboarding/lambWithWings.png';
-import skins from '../../assets/onboarding/skins.png';
+import { useOnboardingStore } from '../stores/onboardingStore';
 
 export default function OnboardingExplainerHeartsScreen({ onContinue }: { onContinue?: () => void }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  
+  // Get lamb name from onboarding store
+  const { responses } = useOnboardingStore();
+  const lambName = responses.lambName || 'your lamb';
+  
+  // Load Rive assets
+  const [riveAssets] = useAssets([
+    require('../../assets/riveAnimations/homeLamb.riv'),
+  ]);
+  
   // Animation shared values
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
-  const cardOpacities = [useSharedValue(0), useSharedValue(0), useSharedValue(0), useSharedValue(0), useSharedValue(0)];
-  const cardTranslateYs = [useSharedValue(40), useSharedValue(40), useSharedValue(40), useSharedValue(40), useSharedValue(40)];
+  const cardOpacities = [useSharedValue(0), useSharedValue(0), useSharedValue(0), useSharedValue(0), useSharedValue(0), useSharedValue(0)];
+  const cardTranslateYs = [useSharedValue(40), useSharedValue(40), useSharedValue(40), useSharedValue(40), useSharedValue(40), useSharedValue(40)];
 
   // Log screen view when component mounts
   useEffect(() => {
-    analytics.logEvent("OnboardingExplainerScreen_Viewed");
+    analytics.logEvent("OnboardingExplainerHeartsScreen_Viewed");
   }, []);
 
   // Animate in on mount
@@ -56,7 +62,7 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
     }
 
     // Log continue button press
-    analytics.logEvent("OnboardingExplainerScreen_Tapped_Continue");
+    analytics.logEvent("OnboardingExplainerHeartsScreen_Tapped_Continue");
     
     // Call the provided onContinue function if it exists
     if (onContinue) {
@@ -64,7 +70,7 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
     }
     
     // Navigate to notification permission screen
-    router.push('/onboarding/9');
+    router.push('/onboarding/explainer');
   };
 
   // Animated styles
@@ -72,6 +78,7 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
     opacity: titleOpacity.value,
     transform: [{ translateY: titleTranslateY.value }],
   }));
+  
   const cardStyle0 = useAnimatedStyle(() => ({
     opacity: cardOpacities[0].value,
     transform: [{ translateY: cardTranslateYs[0].value }],
@@ -92,62 +99,65 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
     opacity: cardOpacities[4].value,
     transform: [{ translateY: cardTranslateYs[4].value }],
   }));
-  const cardStyles = [cardStyle0, cardStyle1, cardStyle2, cardStyle3, cardStyle4];
+  const cardStyle5 = useAnimatedStyle(() => ({
+    opacity: cardOpacities[5].value,
+    transform: [{ translateY: cardTranslateYs[5].value }],
+  }));
+  
+  const cardStyles = [cardStyle0, cardStyle1, cardStyle2, cardStyle3, cardStyle4, cardStyle5];
 
-  // Lamb card data
-  const lambs = [
-    { img: lamb1, label: 'LVL 1', glow: false, top: false },
-    { img: lamb10, label: 'LVL 10', glow: false, top: false },
-    { img: lamb20, label: 'LVL 20', glow: true, top: true },
-    { img: lamb33, label: 'LVL 33', glow: true, top: false },
+  // Lamb states based on heart levels
+  const lambStates = [
+    { hearts: 100, artboard: 'lamb-full', glow: true },
+    { hearts: 60, artboard: 'lamb-idle', glow: false },
+    { hearts: 45, artboard: 'lamb-angry', glow: false },
+    { hearts: 35, artboard: 'lamb-sleepy', glow: false },
+    { hearts: 10, artboard: 'lamb-skinny dying', glow: false },
+    { hearts: 0, artboard: 'lamb-dead', glow: false },
   ];
 
   return (
     <View className="flex-1 bg-surfaceCream pt-12 w-full items-center" style={{paddingBottom: insets.bottom }}>
       {/* Title */}
       <Animated.View style={titleStyle} className="mb-8 px-6">
-        <Text className="font-feather text-2xl text-textPrimary text-center mb-0">
-          As you read, pray and reflect, your lamb grows...
+        <Text className="font-feather text-2xl text-textPrimary text-center mb-0 mt-16">
+          Everyday you don&apos;t read, {lambName}&apos;s health will suffer...
         </Text>
       </Animated.View>
 
       {/* Lamb grid */}
       <View className="flex-row flex-wrap justify-center items-center gap-4 mb-4">
-        {/* Row 1 */}
-        <Animated.View style={cardStyles[0]} className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-          <Image source={lamb1} className="w-20 h-20" resizeMode="contain" />
-          <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-            <Text className="font-feather text-accentGold">LVL 1</Text>
-          </View>
-        </Animated.View>
-        <Animated.View style={cardStyles[1]} className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-          <Image source={lamb10} className="w-[100px] h-[100px]" resizeMode="contain" />
-          <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-            <Text className="font-feather text-accentGold">LVL 10</Text>
-          </View>
-        </Animated.View>
-        {/* Row 2 */}
-        <Animated.View style={cardStyles[2]} className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-          <Image source={lamb20} className="w-[120px] h-[120px]" resizeMode="contain" />
-          <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-            <Text className="font-feather text-accentGold">LVL 20</Text>
-          </View>
-        </Animated.View>
-        <Animated.View style={cardStyles[3]} className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-          <Image source={lamb33} className="w-[120px] h-[120px]" resizeMode="contain" />
-          <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-            <Text className="font-feather text-accentGold">LVL 33</Text>
-          </View>
-        </Animated.View>
+        {lambStates.map((state, index) => (
+          <Animated.View 
+            key={index}
+            style={[
+              cardStyles[index],
+              {
+                // Add conditional glow effect
+                shadowColor: state.glow ? '#FDE047' : 'transparent',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: state.glow ? 0.6 : 0,
+                shadowRadius: 15,
+              }
+            ]} 
+            className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-lightRed items-center justify-center relative"
+          >
+            {riveAssets && (
+              <View className="w-36 h-36">
+                <Rive
+                  url={riveAssets[0].localUri!}
+                  artboardName={state.artboard}
+                  style={{ width: '100%', height: '100%' }}
+                />
+              </View>
+            )}
+            <View className="absolute top-2.5 right-2.5 bg-lightRed px-4 py-1 rounded-full">
+              <Text className="font-feather text-darkRed">{state.hearts} ❤️</Text>
+            </View>
+          </Animated.View>
+        ))}
       </View>
-      
-      {/* Skins section */}
-      <Animated.View style={cardStyles[4]} className="w-[340px] h-[140px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative mb-4">
-        <Image source={skins} className="w-full h-[120px]" resizeMode="contain" />
-        <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-          <Text className="font-feather text-accentGold">Shop for skins at level 10</Text>
-        </View>
-      </Animated.View>
+  
       
       {/* Continue Button - fixed at bottom */}
       <View className="absolute left-6 right-6" style={{ bottom: Math.max(insets.bottom + 16, 24) }}>

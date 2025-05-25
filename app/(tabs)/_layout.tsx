@@ -70,26 +70,25 @@ function CustomTabBarButton(props: any) {
 }
 
 export default function TabsLayout() {
-  // Hooks must be invoked in the same order on every render.  
+  // Hooks must be invoked in the same order on every render.
   // Move them all before any conditional early-returns.
   const signedIn = isSignedIn();
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
-  const { savedScreenToNavigateTo, isInitialized } = useOnboardingStore();
+  // Get isInitialized from the store to ensure savedScreenToNavigateTo is ready
+  const { savedScreenToNavigateTo, isInitialized: isOnboardingStoreInitialized } = useOnboardingStore();
 
-  // Check onboarding status
+  // Check onboarding status from AsyncStorage
   useEffect(() => {
     const checkOnboarding = async () => {
       try {
         const completed = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-        const isCompleted = completed === 'true';
-        console.log('[TabsLayout] 📋 Onboarding completion check:', { completed, isCompleted });
-        setOnboardingCompleted(isCompleted);
+        setOnboardingCompleted(completed === 'true');
+        console.log(`[TabsLayout] Onboarding completed from AsyncStorage: ${completed}`);
       } catch (error) {
-        console.error('Error checking onboarding status:', error);
-        setOnboardingCompleted(false);
+        console.error('[TabsLayout] Error checking onboarding status:', error);
+        setOnboardingCompleted(false); // Assume not completed on error
       }
     };
-    
     checkOnboarding();
   }, []);
 
@@ -108,43 +107,36 @@ export default function TabsLayout() {
     }).start();
   }, [mode, pathInProgress]);
 
-  // Wait for both onboarding status and store to be determined
-  if (onboardingCompleted === null || !isInitialized) {
-    console.log('[TabsLayout] ⏳ Waiting for initialization...', { onboardingCompleted, isInitialized });
-    return null; // Show nothing while loading
+  // Wait for both onboarding status from AsyncStorage and onboardingStore to be initialized
+  if (onboardingCompleted === null || !isOnboardingStoreInitialized) {
+    console.log(`[TabsLayout] Waiting for initialization: onboardingCompleted (${onboardingCompleted}), isOnboardingStoreInitialized (${isOnboardingStoreInitialized})`);
+    return null; // Show nothing while loading critical states
   }
 
-  // Log current state for debugging
-  console.log('[TabsLayout] 📊 Current state:', {
-    signedIn,
-    onboardingCompleted,
-    savedScreenToNavigateTo,
-    isInitialized
-  });
+  console.log(`[TabsLayout] States evaluated: signedIn=${signedIn}, onboardingCompleted=${onboardingCompleted}, savedScreenToNavigateTo='${savedScreenToNavigateTo}' (Store initialized: ${isOnboardingStoreInitialized})`);
 
-  // Check authentication first - if not signed in, go to auth welcome screen
+  // CASE 1: User is NOT signed in
   if (!signedIn) {
-    // Only redirect to saved onboarding screen if they were ACTIVELY in the middle of onboarding
-    // This means they have a saved screen that's NOT screen 1 (welcome screen)
-    const hasOnboardingProgress = !onboardingCompleted && savedScreenToNavigateTo && savedScreenToNavigateTo !== '1';
-    
-    if (hasOnboardingProgress) {
-      console.log(`[TabsLayout] 🔄 User not signed in but has saved onboarding progress, redirecting to: /onboarding/${savedScreenToNavigateTo}`);
+    // If onboarding is NOT completed AND they have a specific saved screen (that is not '1')
+    // This means they started onboarding, didn't finish, and are not signed in. Resume onboarding.
+    if (!onboardingCompleted && savedScreenToNavigateTo && savedScreenToNavigateTo !== '1') {
+      console.log(`[TabsLayout] Case 1A: Not signed in, onboarding in progress (screen ${savedScreenToNavigateTo}). Redirecting to /onboarding/${savedScreenToNavigateTo}`);
       return <Redirect href={`/onboarding/${savedScreenToNavigateTo}` as any} />;
     }
-    
-    // For brand new users or users who haven't started onboarding beyond screen 1, show auth welcome screen
-    console.log('[TabsLayout] 👋 User not signed in, redirecting to auth welcome screen');
+    // Otherwise (brand new user, or user who only saw screen '1' and didn't sign in)
+    // Send them to the auth screen to decide to log in or start fresh onboarding.
+    console.log(`[TabsLayout] Case 1B: Not signed in, fresh start or onboarding not meaningfully started. Redirecting to /(auth)`);
     return <Redirect href="/(auth)" />;
   }
 
-  // If user is signed in but hasn't completed onboarding (edge case), redirect to onboarding
-  if (!onboardingCompleted) {
-    const targetScreen = savedScreenToNavigateTo || '1';
-    console.log(`[TabsLayout] User signed in but onboarding not completed, redirecting to: /onboarding/${targetScreen}`);
-    return <Redirect href={`/onboarding/${targetScreen}` as any} />;
-  }
-
+  // CASE 2: User IS signed in
+  // If user is signed in, they should always go to the main app regardless of onboarding completion status
+  // Being signed in means they've completed the necessary authentication/setup process
+  console.log("[TabsLayout] Case 2: User is signed in. Proceeding to main app (tabs).");
+  
+  // Proceed to the main app (tabs)
+  console.log("[TabsLayout] Rendering Tabs.");
+  
   // Using absolute positioning to prevent the "chin" gap
   const animatedTabBarStyle = {
     position: 'absolute' as const,

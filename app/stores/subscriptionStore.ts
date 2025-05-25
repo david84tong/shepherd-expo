@@ -372,7 +372,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         package_id: pack.identifier,
         product_id: productIdentifier,
         is_pro: isPro,
-        currentScreen: 'purchase_screen',
+        currentScreen: get().fromScreen,
       });
 
       // Show success message

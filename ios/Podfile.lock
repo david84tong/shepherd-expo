@@ -3028,6 +3028,27 @@ PODS:
     - AdaptyUI (= 3.1.0)
     - React-Core
     - react-native-adapty-sdk (>= 3.1.0)
+  - react-native-blur (4.4.1):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.10.14.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - react-native-safe-area-context (4.12.0):
     - React-Core
   - react-native-slider (4.5.5):
@@ -3536,6 +3557,8 @@ PODS:
     - ReactCommon/turbomodule/core
     - Sentry/HybridSDK (= 8.50.2)
     - Yoga
+  - RNSVG (15.12.0):
+    - React-Core
   - SDWebImage (5.21.0):
     - SDWebImage/Core (= 5.21.0)
   - SDWebImage/Core (5.21.0)
@@ -3622,6 +3645,7 @@ DEPENDENCIES:
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
   - react-native-adapty-sdk (from `../node_modules/react-native-adapty`)
   - "react-native-adapty-ui (from `../node_modules/@adapty/react-native-ui`)"
+  - "react-native-blur (from `../node_modules/@react-native-community/blur`)"
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - "react-native-slider (from `../node_modules/@react-native-community/slider`)"
   - React-nativeconfig (from `../node_modules/react-native/ReactCommon`)
@@ -3667,6 +3691,7 @@ DEPENDENCIES:
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - "RNSentry (from `../node_modules/@sentry/react-native`)"
+  - RNSVG (from `../node_modules/react-native-svg`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
@@ -3854,6 +3879,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-adapty"
   react-native-adapty-ui:
     :path: "../node_modules/@adapty/react-native-ui"
+  react-native-blur:
+    :path: "../node_modules/@react-native-community/blur"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-slider:
@@ -3944,6 +3971,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-screens"
   RNSentry:
     :path: "../node_modules/@sentry/react-native"
+  RNSVG:
+    :path: "../node_modules/react-native-svg"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
@@ -4050,6 +4079,7 @@ SPEC CHECKSUMS:
   React-microtasksnativemodule: 338bfa0a7d8cd1ed212b055f2143a6789252137a
   react-native-adapty-sdk: 16cf431c5d6e824d9576d378f9b54747cf8c7f41
   react-native-adapty-ui: 38e7351ae2b1d5a351a5e22af3a87d35e6def776
+  react-native-blur: 78f5aa935099b1698d5ae85c8b53b8ed4bae1e87
   react-native-safe-area-context: 8b8404e70b0cbf2a56428a17017c14c1dcc16448
   react-native-slider: 41c65b428b0528186691999424c4b2ffa64a241e
   React-nativeconfig: 415626a63057638759bcc75e0a96e2e07771a479
@@ -4099,6 +4129,7 @@ SPEC CHECKSUMS:
   RNReanimated: 9b650d028b9422148b548e80512043a372876c00
   RNScreens: ad2d0cfb3f15c9ed56ffb43651366ec0dcd70c36
   RNSentry: 280a9bb76f89a0568a6cb78bfb7a658bd1b36964
+  RNSVG: df335373ea2cb29876864e6a2ea8c86aad305838
   SDWebImage: f84b0feeb08d2d11e6a9b843cb06d75ebf5b8868
   SDWebImageAVIFCoder: 00310d246aab3232ce77f1d8f0076f8c4b021d90
   SDWebImageSVGCoder: 15a300a97ec1c8ac958f009c02220ac0402e936c

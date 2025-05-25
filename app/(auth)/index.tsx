@@ -51,12 +51,39 @@ export default function LoginScreen() {
     try {
       // Trigger haptic feedback
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+      
+      setLoading(true);
+      
+      // Create exit animation
+      const exitAnimation = () => {
+        return new Promise<void>((resolve) => {
+          // Animate screen elements out
+          screenOpacity.value = withTiming(0, { duration: 400 });
+          lambScale.value = withTiming(0.8, { duration: 400 });
+          buttonOpacity.value = withTiming(0, { duration: 300 });
+          titleOpacity.value = withTiming(0, { duration: 300 });
+          
+          // Wait for animation to complete
+          setTimeout(() => {
+            resolve();
+          }, 400);
+        });
+      };
+      
+      // Run exit animation then navigate
+      await exitAnimation();
+      
       // Remove the onboarding completed key
       await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
-      // Navigate to onboarding
-      router.replace('/onboarding/1');
+      
+      // Navigate to onboarding with a slight delay for smoother transition
+      setTimeout(() => {
+        router.replace('/onboarding/1');
+      }, 50);
+      
     } catch (error) {
       console.error('Error starting journey:', error);
+      setLoading(false);
       Alert.alert('Error', 'Could not start journey. Please try again.');
     }
   };

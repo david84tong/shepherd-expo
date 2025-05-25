@@ -127,7 +127,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
       });
       setUser({ selectedPathId: selectedPathId });
       console.log(selectedPathId, "selectedPathId")
-      router.push('/onboarding/explainer' as any);
+      router.push('/onboarding/explainerHearts' as any);
     }
   }, [selectedPathId, setUser, router]);
 

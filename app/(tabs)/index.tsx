@@ -123,7 +123,8 @@ export default function HomeScreen() {
   const [riveAssets] = useAssets([
     require('../../assets/riveAnimations/homeLamb.riv'),
     require('../../assets/riveAnimations/bg-green.riv'),
-    require('../../assets/riveAnimations/goldLamb.riv') // Add goldLamb to preloaded assets
+    require('../../assets/riveAnimations/goldLamb.riv'), // Add goldLamb to preloaded assets
+    require('../../assets/riveAnimations/lamb-wings-idle.riv') // Add goldLamb to preloaded assets
   ]);
 
   // Add state for asset loading
@@ -619,6 +620,7 @@ export default function HomeScreen() {
 
   // Defer loading of the heavy Rive component until after initial interactions
   const [riveReady, setRiveReady] = useState(false);
+  const [isFree, setIsFree] = useState(false);
 
   // Run once on mount to defer heavy work
   useEffect(() => {
@@ -643,12 +645,39 @@ export default function HomeScreen() {
 
     console.log(`Lamb level: ${lambLevel}, Scale factor: ${scaleFactor}`);
 
-    // Use the appropriate Rive asset based on pro status
-    const lambAssetIndex = isPro ? 2 : 0; // Index 2 for goldLamb, 0 for homeLamb
+    // Use the appropriate Rive asset based on pro status and level
+    let lambAssetIndex;
+    let useArtboardName = artboardName;
+    
+    if (lambLevel >= 33) {
+      // Level 33: Use lamb-wings-idle.riv with no artboard name
+      lambAssetIndex = 3; // lamb-wings-idle.riv
+      useArtboardName = undefined; // No artboard name for wings animation
+    } else {
+      // Levels 1-32: Use normal or pro lamb based on pro status
+      lambAssetIndex = isPro ? 2 : 0; // Index 2 for goldLamb, 0 for homeLamb
+    }
 
     // Calculate position adjustment to keep lamb centered
     // As the lamb gets smaller, we need to adjust its position to stay centered
     const positionAdjustment = (1 - scaleFactor) * 50; // % adjustment for centering
+
+    // Calculate shadow scale and color for levels 10+
+    const shouldShowRedShadow = lambLevel >= 10 && lambLevel < 24;
+    const shouldShowYellowShadow = lambLevel >= 24;
+    let shadowScale = 0;
+    
+    if (shouldShowRedShadow) {
+      // Red shadow from level 10-23: scale from 0.5 to 1.2
+      const levelProgress = Math.min((lambLevel - 10) / (23 - 10), 1); // 0 to 1
+      shadowScale = 0.55 + (levelProgress * 0.7); // 0.5 to 1.2
+      console.log(`Red shadow debug - Level: ${lambLevel}, Scale: ${shadowScale}`);
+    } else if (shouldShowYellowShadow) {
+      // Yellow shadow from level 24-33: scale from 0.6 to 1.5 (fresh growth)
+      const levelProgress = Math.min((lambLevel - 24) / (33 - 24), 1); // 0 to 1
+      shadowScale = 0.35 + (levelProgress * 0.9); // 0.6 to 1.5
+      console.log(`Yellow shadow debug - Level: ${lambLevel}, Scale: ${shadowScale}`);
+    }
 
     return (
       <View style={{
@@ -657,23 +686,50 @@ export default function HomeScreen() {
         alignItems: 'center',
         justifyContent: 'center',
       }}>
+        {/* Red shadow behind lamb for level 10+ */}
+        {shouldShowRedShadow && (
+          <Image 
+            source={require('../../assets/redShadow.png')} 
+            style={{
+              position: "absolute",
+              width: 300 * shadowScale,
+              height: 300 * shadowScale,
+              zIndex: -10,
+              borderRadius: 300,
+            }}
+            resizeMode="cover"
+          />
+        )}
+        {shouldShowYellowShadow && (
+          <Image 
+            source={require('../../assets/yellowShadow.png')} 
+            style={{
+              position: "absolute",
+              width: 300 * shadowScale,
+              height: 300 * shadowScale,
+              zIndex: -10,
+              borderRadius: 300,
+            }}
+            resizeMode="cover"
+          />
+        )}
         <View
           style={{
             width: `${scaleFactor * 100}%`,
-            height: `${scaleFactor * 100}%`,
-            borderWidth: __DEV__ ? 1 : 0,
-            borderColor: __DEV__ ? 'rgba(255,0,0,0.2)' : 'transparent',
+            height: `${scaleFactor * 100}%`,          
             alignItems: 'center',
             justifyContent: 'center',
             // Add overflow hidden to prevent any rendering issues with larger size
             overflow: 'hidden',
+            zIndex: 10,
           }}
         >
+          
           <Rive
             key={`${riveKey}-${lambLevel}`} // Add level to key to force refresh
             ref={riveRef}
             url={riveAssets[lambAssetIndex].localUri!}
-            artboardName={artboardName}
+            artboardName={useArtboardName || undefined}
             onError={handleRiveError}
             style={{
               width: '100%',
@@ -681,6 +737,7 @@ export default function HomeScreen() {
               marginTop: 10
             }}
           />
+       
         </View>
       </View>
     );
@@ -1001,6 +1058,10 @@ export default function HomeScreen() {
                     // User has seen half-off paywall before, show free trial
                     console.log('[HomeScreen] Showing free trial paywall (user has seen half-off before)');
                     subscriptionStore.presentFreeTrialPaywall();
+                    
+                    setTimeout(() => {
+                      setIsFree(true);
+                    }, 2000);
                   } else {
                     // First time or user hasn't seen half-off paywall, show half-off
                     console.log('[HomeScreen] Showing half-off paywall (first time)');
@@ -1041,7 +1102,7 @@ export default function HomeScreen() {
                     textShadowRadius: 3,
                   }}
                 >
-                {useSubscriptionStore.getState().shouldShowFreeTrialPaywall() ? 'FREE' : '🎁'}
+                {isPro ? "SUPER" : isFree ? 'FREE Trial 🔓' : '🎁'}
                 </Text>
               </LinearGradient>
             </TouchableOpacity>

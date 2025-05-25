@@ -4,19 +4,23 @@ import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming, with
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { useAssets } from 'expo-asset';
+import Rive from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
-
-// Lamb images (replace with your actual asset imports)
-import lamb1 from '../../assets/onboarding/babyLamb.png';
-import lamb10 from '../../assets/onboarding/babyLamb.png';
-import lamb20 from '../../assets/onboarding/lamb20.png';
-import lamb33 from '../../assets/onboarding/lambWithWings.png';
 import skins from '../../assets/onboarding/skins.png';
 
 export default function OnboardingExplainerScreen({ onContinue }: { onContinue?: () => void }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  // Load Rive assets
+  const [riveAssets] = useAssets([
+    require('../../assets/riveAnimations/homeLamb.riv'),
+    require('../../assets/riveAnimations/lamb-wings-idle.riv'),
+
+  ]);
+
+  
   // Animation shared values
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
@@ -94,12 +98,12 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
   }));
   const cardStyles = [cardStyle0, cardStyle1, cardStyle2, cardStyle3, cardStyle4];
 
-  // Lamb card data
+  // Lamb card data with glow information
   const lambs = [
-    { img: lamb1, label: 'LVL 1', glow: false, top: false },
-    { img: lamb10, label: 'LVL 10', glow: false, top: false },
-    { img: lamb20, label: 'LVL 20', glow: true, top: true },
-    { img: lamb33, label: 'LVL 33', glow: true, top: false },
+    { level: 1, glow: false },
+    { level: 10, glow: false },
+    { level: 20, glow: true },
+    { level: 33, glow: true },
   ];
 
   return (
@@ -107,34 +111,115 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
       {/* Title */}
       <Animated.View style={titleStyle} className="mb-8 px-6">
         <Text className="font-feather text-2xl text-textPrimary text-center mb-0">
-          As you read, pray and reflect, your lamb grows...
+          But if you read, pray and reflect, your lamb grows...
         </Text>
       </Animated.View>
 
       {/* Lamb grid */}
       <View className="flex-row flex-wrap justify-center items-center gap-4 mb-4">
         {/* Row 1 */}
-        <Animated.View style={cardStyles[0]} className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-          <Image source={lamb1} className="w-20 h-20" resizeMode="contain" />
+        <Animated.View 
+          style={[
+            cardStyles[0],
+            {
+              // No glow for level 1
+              shadowColor: 'transparent',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0,
+              shadowRadius: 0,
+            }
+          ]} 
+          className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
+        >
+          {riveAssets && (
+            <View className="w-20 h-20">
+              <Rive
+                url={riveAssets[0].localUri!}
+                artboardName="lamb-idle"
+                style={{ width: '100%', height: '100%' }}
+              />
+            </View>
+          )}
           <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
             <Text className="font-feather text-accentGold">LVL 1</Text>
           </View>
         </Animated.View>
-        <Animated.View style={cardStyles[1]} className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-          <Image source={lamb10} className="w-[100px] h-[100px]" resizeMode="contain" />
+        <Animated.View 
+          style={[
+            cardStyles[1],
+            {
+              // No glow for level 10
+              shadowColor: 'transparent',
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: 0,
+              shadowRadius: 0,
+            }
+          ]} 
+          className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
+        >
+          {riveAssets && (
+            <View className="w-[110px] h-[110px]">
+              <Rive
+                url={riveAssets[0].localUri!}
+                artboardName="lamb-idle"
+                style={{ width: '100%', height: '100%' }}
+              />
+            </View>
+          )}
           <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
             <Text className="font-feather text-accentGold">LVL 10</Text>
           </View>
         </Animated.View>
         {/* Row 2 */}
-        <Animated.View style={cardStyles[2]} className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-          <Image source={lamb20} className="w-[120px] h-[120px]" resizeMode="contain" />
+        <Animated.View 
+          style={[
+            cardStyles[2],
+            {
+              // Remove card-level shadow since we want glow behind the lamb
+            }
+          ]} 
+          className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
+        >
+          {riveAssets && (
+            <>
+              {/* Multiple background elements for blur effect */}
+           
+
+              {/* BlurView that blurs all the elements above */}
+             <Image source={require('../../assets/redShadow.png')} className="absolute w-[200px] h-[200px]" />
+
+              <View className="w-[120px] h-[120px]" style={{ zIndex: 10 }}>
+                <Rive
+                  url={riveAssets[0].localUri!}
+                  artboardName="lamb-idle"
+                  style={{ width: '100%', height: '100%' }}
+                />
+              </View>
+            </>
+          )}
           <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
             <Text className="font-feather text-accentGold">LVL 20</Text>
           </View>
         </Animated.View>
-        <Animated.View style={cardStyles[3]} className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-          <Image source={lamb33} className="w-[120px] h-[120px]" resizeMode="contain" />
+        <Animated.View 
+          style={[
+            cardStyles[3],
+            {
+           
+            }
+          ]} 
+          className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
+        >
+                       <Image source={require('../../assets/yellowShadow.png')} className="absolute w-[200px] h-[200px]" />
+
+          {riveAssets && (
+            <View className="w-[140px] h-[140px]">
+              <Rive
+                url={riveAssets[1].localUri!}
+                style={{ width: '100%', height: '100%' }}
+              />
+            </View>
+          )}
           <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
             <Text className="font-feather text-accentGold">LVL 33</Text>
           </View>

@@ -54,7 +54,38 @@ export default function OnboardingWelcomeScreen() {
       screenName: 'OnboardingWelcomeScreen',
       step: 1,
     });
-  }, [logScreenView]);
+    
+    // Start entrance animation
+    const startEntranceAnimation = () => {
+      // Animate screen entrance
+      Animated.parallel([
+        Animated.timing(screenFadeAnim, {
+          toValue: 1,
+          duration: 600,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(screenScaleAnim, {
+          toValue: 1,
+          duration: 600,
+          easing: Easing.out(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        // After entrance animation, start text animation
+        setTimeout(() => {
+          Animated.timing(textOpacityAnim, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: true,
+          }).start();
+        }, 200);
+      });
+    };
+    
+    // Slight delay to ensure smooth transition from previous screen
+    setTimeout(startEntranceAnimation, 100);
+  }, []);
   
   // State for UI and flow
   const [displayText, setDisplayText] = useState('');
@@ -68,9 +99,10 @@ export default function OnboardingWelcomeScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const translateYAnim = useRef(new Animated.Value(0)).current;
-  const textOpacityAnim = useRef(new Animated.Value(1)).current;
+  const textOpacityAnim = useRef(new Animated.Value(0)).current; // Start with 0 opacity
   const gradientOpacityAnim = useRef(new Animated.Value(0)).current;
-  const screenFadeAnim = useRef(new Animated.Value(1)).current; // New animation for screen transition
+  const screenFadeAnim = useRef(new Animated.Value(0)).current; // Start with 0 for entrance
+  const screenScaleAnim = useRef(new Animated.Value(0.95)).current; // Start slightly scaled down
 
   // Reference to the Rive state machine
   const riveRef = useRef<RiveRef>(null);
@@ -257,13 +289,21 @@ export default function OnboardingWelcomeScreen() {
   const handleTransitionToNextScreen = () => {
     setIsTransitioning(true);
 
-    // Create a smoother and faster fade out effect
-    Animated.timing(screenFadeAnim, {
-      toValue: 0,
-      duration: TRANSITION_DURATION,
-      easing: Easing.out(Easing.ease),
-      useNativeDriver: true,
-    }).start(() => {
+    // Create a smoother and faster fade out effect with scale
+    Animated.parallel([
+      Animated.timing(screenFadeAnim, {
+        toValue: 0,
+        duration: TRANSITION_DURATION,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+      Animated.timing(screenScaleAnim, {
+        toValue: 0.95,
+        duration: TRANSITION_DURATION,
+        easing: Easing.out(Easing.ease),
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
       // Navigate after animation completes
       router.push({
         pathname: '/onboarding/2',
@@ -323,7 +363,14 @@ export default function OnboardingWelcomeScreen() {
   }
 
   return (
-    <Animated.View style={{ flex: 1, opacity: screenFadeAnim, backgroundColor: '#FFF4D9' }}>
+    <Animated.View 
+      style={{ 
+        flex: 1, 
+        opacity: screenFadeAnim, 
+        backgroundColor: '#FFF4D9',
+        transform: [{ scale: screenScaleAnim }],
+      }}
+    >
       {/* Header Text (Single element) */}
       <Animated.View
         className="px-6 absolute top-0 left-0 right-0 z-10 mx-8"
