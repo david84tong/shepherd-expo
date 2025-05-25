@@ -35,6 +35,10 @@ import { disableFontScaling } from './helper/disableFontScaling';
 import Toast from 'react-native-toast-message';
 import { adapty } from 'react-native-adapty';
 
+// Import highlight store setup function
+import { setupHighlightListeners } from './stores/highlightStore';
+import useHighlightStore from './stores/highlightStore';
+
 // Define missing ref types
 type PrayerSheetRef = {
   show: () => void;
@@ -346,6 +350,8 @@ export default function RootLayout() {
       await checkStreakStatus();
       await initializeNotifications();
 
+      setupHighlightListeners();
+      
       // Set Rive ready
       setIsRiveReady(true);
 
