@@ -1206,7 +1206,7 @@ PODS:
   - EXJSONUtils (0.14.0)
   - EXManifests (0.15.8):
     - ExpoModulesCore
-  - EXNotifications (0.31.2):
+  - EXNotifications (0.31.1):
     - ExpoModulesCore
   - Expo (52.0.46):
     - ExpoModulesCore
@@ -1420,25 +1420,24 @@ PODS:
     - Yoga
   - ExpoAppleAuthentication (7.2.4):
     - ExpoModulesCore
-  - ExpoAsset (11.1.5):
+  - ExpoAsset (11.0.5):
     - ExpoModulesCore
-  - ExpoDevice (7.1.4):
+  - ExpoDevice (7.0.3):
     - ExpoModulesCore
   - ExpoFileSystem (18.0.12):
     - ExpoModulesCore
   - ExpoFont (13.0.4):
     - ExpoModulesCore
-  - ExpoHaptics (14.1.4):
+  - ExpoHaptics (14.0.1):
     - ExpoModulesCore
-  - ExpoHead (4.0.21):
+  - ExpoHead (4.0.20):
     - ExpoModulesCore
-  - ExpoImage (2.1.7):
+  - ExpoImage (2.0.7):
     - ExpoModulesCore
     - libavif/libdav1d
-    - SDWebImage (~> 5.21.0)
+    - SDWebImage (~> 5.19.1)
     - SDWebImageAVIFCoder (~> 0.11.0)
     - SDWebImageSVGCoder (~> 1.7.0)
-    - SDWebImageWebPCoder (~> 0.14.6)
   - ExpoKeepAwake (14.0.3):
     - ExpoModulesCore
   - ExpoLinearGradient (14.1.4):
@@ -1689,18 +1688,6 @@ PODS:
     - libavif/core
     - libdav1d (>= 0.6.0)
   - libdav1d (1.2.0)
-  - libwebp (1.5.0):
-    - libwebp/demux (= 1.5.0)
-    - libwebp/mux (= 1.5.0)
-    - libwebp/sharpyuv (= 1.5.0)
-    - libwebp/webp (= 1.5.0)
-  - libwebp/demux (1.5.0):
-    - libwebp/webp
-  - libwebp/mux (1.5.0):
-    - libwebp/demux
-  - libwebp/sharpyuv (1.5.0)
-  - libwebp/webp (1.5.0):
-    - libwebp/sharpyuv
   - lottie-ios (4.5.0)
   - lottie-react-native (7.1.0):
     - DoubleConversion
@@ -3348,10 +3335,10 @@ PODS:
   - RevenueCat (5.24.0)
   - RevenueCatUI (5.24.0):
     - RevenueCat (= 5.24.0)
-  - rive-react-native (9.3.1):
+  - rive-react-native (9.2.1):
     - React-Core
-    - RiveRuntime (= 6.8.2)
-  - RiveRuntime (6.8.2)
+    - RiveRuntime (= 6.7.4)
+  - RiveRuntime (6.7.4)
   - RNCAsyncStorage (1.23.1):
     - React-Core
   - RNCClipboard (1.16.2):
@@ -3559,17 +3546,14 @@ PODS:
     - Yoga
   - RNSVG (15.12.0):
     - React-Core
-  - SDWebImage (5.21.0):
-    - SDWebImage/Core (= 5.21.0)
-  - SDWebImage/Core (5.21.0)
+  - SDWebImage (5.19.7):
+    - SDWebImage/Core (= 5.19.7)
+  - SDWebImage/Core (5.19.7)
   - SDWebImageAVIFCoder (0.11.0):
     - libavif/core (>= 0.11.0)
     - SDWebImage (~> 5.10)
   - SDWebImageSVGCoder (1.7.0):
     - SDWebImage/Core (~> 5.6)
-  - SDWebImageWebPCoder (0.14.6):
-    - libwebp (~> 1.0)
-    - SDWebImage/Core (~> 5.17)
   - Sentry/HybridSDK (8.50.2)
   - SocketRocket (0.7.1)
   - Yoga (0.0.0)
@@ -3723,7 +3707,6 @@ SPEC REPOS:
     - leveldb-library
     - libavif
     - libdav1d
-    - libwebp
     - lottie-ios
     - Mixpanel-swift
     - nanopb
@@ -3737,7 +3720,6 @@ SPEC REPOS:
     - SDWebImage
     - SDWebImageAVIFCoder
     - SDWebImageSVGCoder
-    - SDWebImageWebPCoder
     - Sentry
     - SocketRocket
 
@@ -3987,20 +3969,20 @@ SPEC CHECKSUMS:
   EXConstants: fcfc75800824ac2d5c592b5bc74130bad17b146b
   EXJSONUtils: 01fc7492b66c234e395dcffdd5f53439c5c29c93
   EXManifests: a19d50504b8826546a4782770317bc83fffec87d
-  EXNotifications: f0c7597a22645faf9ce9e74f1b1078c16fb7575f
+  EXNotifications: 9123abeeecc540790f2ae0e2f08bcb5e97b4ebaa
   Expo: a6ff273c618506b12129a0d06f2a08201bfbcf43
   expo-dev-client: db44302cdbe0ec55b0ef1849c9a23a76dec6dbac
   expo-dev-launcher: c67c6a87f8a8ff54abda104abdc057ee4565a3f4
   expo-dev-menu: 1426660b67d2d594f70ec1d8a85bc26cafcf1bce
   expo-dev-menu-interface: 00dc42302a72722fdecec3fa048de84a9133bcc4
   ExpoAppleAuthentication: 4d2e0c88a4463229760f1fbb9a937a810efb6863
-  ExpoAsset: 3bc9adb7dbbf27ae82c18ca97eb988a3ae7e73b1
-  ExpoDevice: 7082f03af1c588333ef1417d5aa8287081d94b24
+  ExpoAsset: 48386d40d53a8c1738929b3ed509bcad595b5516
+  ExpoDevice: d36ab4186b6799a28fd449bb9a1c77455f23fd1a
   ExpoFileSystem: 42d363d3b96f9afab980dcef60d5657a4443c655
   ExpoFont: f354e926f8feae5e831ec8087f36652b44a0b188
-  ExpoHaptics: 0ff6e0d83cd891178a306e548da1450249d54500
-  ExpoHead: df924203fbf8e0913fc38b0f6aec71f9a9115482
-  ExpoImage: e7738bebc58cee17e93fa161f2444f9c343996f5
+  ExpoHaptics: 8d199b2f33245ea85289ff6c954c7ee7c00a5b5d
+  ExpoHead: cee2d16ef197aaadb0ac481cf221a663636eb074
+  ExpoImage: d840b256050f4428d2942bc2b6e9251f9e0d7021
   ExpoKeepAwake: b0171a73665bfcefcfcc311742a72a956e6aa680
   ExpoLinearGradient: a3126d055dd021c1eb38a2cf28052ccbd1a2b3e2
   ExpoLinking: 8d12bee174ba0cdf31239706578e29e74a417402
@@ -4039,7 +4021,6 @@ SPEC CHECKSUMS:
   leveldb-library: cc8b8f8e013647a295ad3f8cd2ddf49a6f19be19
   libavif: 84bbb62fb232c3018d6f1bab79beea87e35de7b7
   libdav1d: 23581a4d8ec811ff171ed5e2e05cd27bad64c39f
-  libwebp: 02b23773aedb6ff1fd38cec7a77b81414c6842a8
   lottie-ios: a881093fab623c467d3bce374367755c272bdd59
   lottie-react-native: 6787a60495053ca917ab95b2e1dd589457958279
   Mixpanel-swift: 478ff46d19de4a251244a9c9a582070d4bb94cf9
@@ -4112,8 +4093,8 @@ SPEC CHECKSUMS:
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   RevenueCat: 2d3639d30b8a71cbfe3d99cef8243c602793e0ec
   RevenueCatUI: 80bec9099c200c254c0ec0025b4fb83a85fbacce
-  rive-react-native: 22c19bead92d03d4e406e2a45624d0d49d78aee9
-  RiveRuntime: 3fca5c9a94b0a17cb05289b8a91fea6ebe921bb4
+  rive-react-native: 7d5145e9581744c0849f3153320b8a24f96f07f3
+  RiveRuntime: 1748a5e12764dbb732894ac719691f6abd4cad22
   RNCAsyncStorage: aa75595c1aefa18f868452091fa0c411a516ce11
   RNCClipboard: e1d17c9d093d8129ef50b39b63a17a0e8ccd0ade
   RNCMaskedView: 724ec5813f4e333e573f45091ffd8b274c09651f
@@ -4130,10 +4111,9 @@ SPEC CHECKSUMS:
   RNScreens: ad2d0cfb3f15c9ed56ffb43651366ec0dcd70c36
   RNSentry: 280a9bb76f89a0568a6cb78bfb7a658bd1b36964
   RNSVG: df335373ea2cb29876864e6a2ea8c86aad305838
-  SDWebImage: f84b0feeb08d2d11e6a9b843cb06d75ebf5b8868
+  SDWebImage: 8a6b7b160b4d710e2a22b6900e25301075c34cb3
   SDWebImageAVIFCoder: 00310d246aab3232ce77f1d8f0076f8c4b021d90
   SDWebImageSVGCoder: 15a300a97ec1c8ac958f009c02220ac0402e936c
-  SDWebImageWebPCoder: e38c0a70396191361d60c092933e22c20d5b1380
   Sentry: d95f5f3b32d01324b3e27d3c52747005302cc026
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 1259c7a8cbaccf7b4c3ddf8ee36ca11be9dee407

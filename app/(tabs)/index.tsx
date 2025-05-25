@@ -647,7 +647,7 @@ export default function HomeScreen() {
 
     // Use the appropriate Rive asset based on pro status and level
     let lambAssetIndex;
-    let useArtboardName = artboardName;
+    let useArtboardName: string | undefined = artboardName;
     
     if (lambLevel >= 33) {
       // Level 33: Use lamb-wings-idle.riv with no artboard name
@@ -688,30 +688,46 @@ export default function HomeScreen() {
       }}>
         {/* Red shadow behind lamb for level 10+ */}
         {shouldShowRedShadow && (
-          <Image 
-            source={require('../../assets/redShadow.png')} 
+          <View 
             style={{
               position: "absolute",
               width: 300 * shadowScale,
               height: 300 * shadowScale,
+              borderRadius: (300 * shadowScale) / 2, // Make it perfectly circular
+              overflow: 'hidden',
               zIndex: -10,
-              borderRadius: 300,
             }}
-            resizeMode="cover"
-          />
+          >
+            <Image 
+              source={require('../../assets/redShadow.png')} 
+              style={{
+                width: '100%',
+                height: '100%',
+              }}
+              resizeMode="cover"
+            />
+          </View>
         )}
         {shouldShowYellowShadow && (
-          <Image 
-            source={require('../../assets/yellowShadow.png')} 
+          <View 
             style={{
               position: "absolute",
               width: 300 * shadowScale,
               height: 300 * shadowScale,
+              borderRadius: (300 * shadowScale) / 2, // Make it perfectly circular
+              overflow: 'hidden',
               zIndex: -10,
-              borderRadius: 300,
             }}
-            resizeMode="cover"
-          />
+          >
+            <Image 
+              source={require('../../assets/yellowShadow.png')} 
+              style={{
+                width: '100%',
+                height: '100%',
+              }}
+              resizeMode="cover"
+            />
+          </View>
         )}
         <View
           style={{
