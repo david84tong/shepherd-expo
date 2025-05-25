@@ -470,7 +470,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       }
 
       // 3. Final pro status: Adapty OR Firestore (if not expired)
-      const finalProStatus = isProAdapty && isProFromFirebase;
+      const finalProStatus = isProAdapty || isProFromFirebase;
       // Track status change if different from current state
       const prevIsPro = get().isProMember;
       if (prevIsPro !== finalProStatus) {

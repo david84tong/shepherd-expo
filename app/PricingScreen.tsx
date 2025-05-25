@@ -10,6 +10,8 @@ import PrimaryButton from '../components/PrimaryButton';
 import useSubscriptionStore from './stores/subscriptionStore';
 import analytics from '../utils/analytics';
 import { isSignedIn } from './hooks/authHook';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
 
 interface AnimatedItemProps {
   index?: number;
@@ -119,7 +121,13 @@ const PricingScreen = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     analytics.logEvent("PricingScreen_BackButton_Tapped");
 
-    if (isSignedIn()) {
+    if (fromLoading) {
+      // If we came from loading screen, go back to loading screen
+      router.back();
+    } else if (isSignedIn()) {
+      // Mark onboarding as completed before navigation
+      await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+
       if (router.canGoBack()) {
         router.back();
       } else {
