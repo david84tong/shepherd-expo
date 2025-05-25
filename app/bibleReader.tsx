@@ -271,6 +271,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const params = useLocalSearchParams();
   const effectiveParams = !isEmbedded ? params : null;
 
+  // Check if we're in "just read" mode
+  const isJustReadMode = !isEmbedded && effectiveParams?.justReadMode === 'true';
+
   // Animation value for modal slide up
   const slideAnim = useRef(new RNAnimated.Value(0)).current;
 
@@ -636,6 +639,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     // Must be scrolled to bottom first
     if (!hasScrolledToBottom) return false;
 
+    // If in just read mode, enable finish on any chapter
+    if (isJustReadMode) return true;
+
     // If there is an active currentPath (came from path unit), only enable
     // when the reader is on the designated end chapter
     if (currentPath) {
@@ -645,7 +651,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
     // No active path – enable when scrolled to bottom
     return true;
-  }, [hasScrolledToBottom, currentPath, currentBookId, currentChapter]);
+  }, [hasScrolledToBottom, isJustReadMode, currentPath, currentBookId, currentChapter]);
 
   const handleScroll = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
@@ -904,7 +910,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     console.log('[BibleReader] CardViewToggle value', value);
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+    analytics.logEvent("BibleReader_Tapped_CardViewToggle", {
+      value: value ? 'default-to-card' : 'card-to-default'
+    })
     // Update the store (which will save to AsyncStorage)
     readerSettings.setCardView(value);
 
@@ -1125,8 +1133,8 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         {!isEmbedded && pathInProgress && (
           <View style={{flex: 1, marginRight: -100}}>
             <SideButton
-              title={isAtEndChapter ? "Complete Unit" : "Next Chapter"}
-              onPress={isAtEndChapter ? handleFinishReading : navigateToNextChapter}
+              title={isJustReadMode ? "Finish Reading" : (isAtEndChapter ? "Complete Unit" : "Next Chapter")}
+              onPress={isJustReadMode ? handleFinishReading : (isAtEndChapter ? handleFinishReading : navigateToNextChapter)}
               disabled={!hasScrolledToBottom || loading}
             />
           </View>

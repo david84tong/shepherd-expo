@@ -616,6 +616,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     analytics.logEvent("CardBibleReader_Tapped_ToggleDefaultReader", {
       value: value ? 'card' : 'default'
     });
+    console.log('[NewBibleReader] Tapped toggle default reader', value);
 
     // Update the store
     await readerSettings.setCardView(value);

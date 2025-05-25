@@ -234,8 +234,8 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   // Handler for "Just Read Bible" button
   const handleJustReadBible = () => {
     console.log('Just Read Bible');
-    // Exit any path progress state
-    setPathInProgress(false); // Keep path progress active for Bible Reader
+    // Set path progress to true for "just read" mode
+    setPathInProgress(true);
 
     // Navigate directly to the Bible reader with saved state
     router.push({
@@ -245,6 +245,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         chapters: savedChapter.toString(),
         title: savedBook,
         source: 'just-read',
+        justReadMode: 'true', // Special flag for just read mode
         timestamp: Date.now().toString(),
       },
     });
