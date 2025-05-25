@@ -405,6 +405,7 @@ export default function RootLayout() {
         // App has come to the foreground!
         console.log('App has come to the foreground!');
         onAppForegroundOrInit();
+        useHighlightStore.getState().syncHighlights();
       }
       appState.current = nextAppState;
     };
