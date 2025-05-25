@@ -71,8 +71,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
 
   // States for the referral code and modal
   const [referralModalVisible, setReferralModalVisible] = useState(false);
-  const [availableCodes, setAvailableCodes] = useState<string[]>(['WEEKLY', 'MONTHL', 'WXES4S']);
-  const [isLoadingCodes, setIsLoadingCodes] = useState(false);
+  const [referralInput, setReferralInput] = useState('');
+  const [isSubmittingReferral, setIsSubmittingReferral] = useState(false);
 
   // Animation shared values
   const timePickerHeight = useSharedValue(0);
@@ -791,46 +791,29 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
   const appVersion = Application.nativeApplicationVersion || 'Unknown';
   const buildNumber = Application.nativeBuildVersion || 'Unknown';
 
-  // Function to check available codes
-  const checkAvailableCodes = useCallback(async () => {
-    setIsLoadingCodes(true);
-    try {
-      const usedCodes = await getUsedReferralCodes();
-      const allCodes = ['WEEKLY', 'MONTHL', 'WXES4S'];
-      const available = allCodes.filter(code => !usedCodes.includes(code));
-      setAvailableCodes(available);
-    } catch (error) {
-      console.error('Error checking available codes:', error);
-    } finally {
-      setIsLoadingCodes(false);
-    }
-  }, [getUsedReferralCodes]);
-
-  // Check available codes when modal opens
-  const handleOpenReferralModal = useCallback(async () => {
+  // Open referral modal and clear input
+  const handleOpenReferralModal = useCallback(() => {
+    setReferralInput('');
     setReferralModalVisible(true);
-    checkAvailableCodes();
-  }, [checkAvailableCodes]);
+  }, []);
 
   // Handle referral code submission
   const handleReferralSubmit = async (selectedCode: string) => {
+    setIsSubmittingReferral(true);
     try {
       await handleReferralCode(selectedCode);
-
       Alert.alert(
         'Success!',
         'Referral code applied successfully',
         [{ text: 'OK', onPress: () => setReferralModalVisible(false) }]
       );
-
-      // Refresh available codes after successful submission
-      checkAvailableCodes();
-
     } catch (error: any) {
       Alert.alert(
         'Error',
         error.message || 'Failed to apply referral code'
       );
+    } finally {
+      setIsSubmittingReferral(false);
     }
   };
 
@@ -1303,39 +1286,33 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({
           <View className="bg-surfaceCream rounded-2xl p-5 w-[85%] max-w-[350px]">
             {/* Title */}
             <Text className="font-feather text-xl text-textPrimary text-center mb-4">
-              Select Referral Code
+              Enter Referral Code
             </Text>
 
-            {/* Code List */}
+            {/* Input Field */}
             <View className="mb-4">
-              {isLoadingCodes ? (
-                <ActivityIndicator size="large" color="#B89B4C" />
-              ) : availableCodes.length > 0 ? (
-                availableCodes.map((code) => (
-                  <TouchableOpacity
-                    key={code}
-                    onPress={() => handleReferralSubmit(code)}
-                    className="bg-white rounded-xl p-4 mb-2 flex-row justify-between items-center active:opacity-80"
-                  >
-                    <View>
-                      <Text className="font-din text-lg text-textPrimary">{code}</Text>
-                      <Text className="font-din text-sm text-description">
-                        {code === 'WEEKLY' ? '7 days access' :
-                          code === 'MONTHL' ? '30 days access' :
-                            'Permanent access'}
-                      </Text>
-                    </View>
-                    <Feather name="chevron-right" size={20} color="#B89B4C" />
-                  </TouchableOpacity>
-                ))
-              ) : (
-                <View className="p-4 bg-white/50 rounded-xl">
-                  <Text className="font-din text-center text-textPrimary">
-                    No available referral codes
-                  </Text>
-                </View>
-              )}
+              <TextInput
+                className="bg-white rounded-xl px-4 py-3 text-lg font-din text-textPrimary border border-[#FFE4A8]"
+                placeholder="Enter code here"
+                placeholderTextColor="#B89B4C"
+                value={referralInput || ''}
+                onChangeText={setReferralInput}
+                autoCapitalize="characters"
+                maxLength={6}
+                editable={!isSubmittingReferral}
+              />
             </View>
+
+            {/* Confirm Button */}
+            <TouchableOpacity
+              onPress={() => handleReferralSubmit(referralInput)}
+              className={`bg-[#FFE07D] rounded-xl p-4 mb-2 ${referralInput.length !== 6 ? 'opacity-50' : ''}`}
+              disabled={referralInput.length !== 6 || isSubmittingReferral}
+            >
+              <Text className="font-feather text-textPrimary text-center text-lg">
+                {isSubmittingReferral ? 'Submitting...' : 'Confirm'}
+              </Text>
+            </TouchableOpacity>
 
             {/* Cancel Button */}
             <TouchableOpacity

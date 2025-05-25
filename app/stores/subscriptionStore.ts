@@ -270,23 +270,23 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         if (userData) {
           const isProFromFirebase = userData.isPro;
         
-          // Check if proExpiryDate exists and has the correct format
-          let proExpiryDate: Date | null = null;
-          if (userData.proExpiryDate) {
+          // Check if userProExpiryDate exists and has the correct format
+          let userProExpiryDate: Date | null = null;
+          if (userData?.userProExpiryDate) {
             // Handle both Timestamp and raw seconds/nanoseconds format
-            if (userData.proExpiryDate.toDate) {
-              proExpiryDate = userData.proExpiryDate.toDate();
-            } else if (userData.proExpiryDate._seconds) {
+            if (userData?.userProExpiryDate?.toDate) {
+              userProExpiryDate = userData?.userProExpiryDate?.toDate();
+            } else if (userData?.userProExpiryDate?._seconds) {
               // Convert raw seconds and nanoseconds to Date
-              proExpiryDate = new Date(
-                userData.proExpiryDate._seconds * 1000 + 
-                userData.proExpiryDate._nanoseconds / 1000000
+              userProExpiryDate = new Date(
+                userData?.userProExpiryDate?._seconds * 1000 + 
+                userData?.userProExpiryDate?._nanoseconds / 1000000
               );
             }
           }
         
           // Check if pro status has expired
-          if (proExpiryDate && proExpiryDate < new Date()) {
+          if (userProExpiryDate && userProExpiryDate < new Date()) {
             // Pro status has expired
             await firestore().collection('users').doc(currentUser.uid).update({
               isPro: false,
@@ -352,7 +352,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         // Permanent pro access
         await userRef.update({
           isPro: true,
-          proExpiryDate: null, // null means permanent
+          userProExpiryDate: null, // null means permanent
           usedReferralCodes: firestore.FieldValue.arrayUnion(code)
         });
         break;
@@ -367,7 +367,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         
         await userRef.update({
           isPro: true,
-          proExpiryDate: monthExpiry,
+          userProExpiryDate: monthExpiry,
           usedReferralCodes: firestore.FieldValue.arrayUnion(code)
         });
         break;
@@ -382,7 +382,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         
         await userRef.update({
           isPro: true,
-          proExpiryDate: weekExpiry,
+          userProExpiryDate: weekExpiry,
           usedReferralCodes: firestore.FieldValue.arrayUnion(code)
         });
         break;
