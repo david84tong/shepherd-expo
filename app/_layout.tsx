@@ -479,7 +479,7 @@ export default function RootLayout() {
                 headerShown: false,
                 animation: 'fade',
                 animationDuration: 200,
-                contentStyle: { backgroundColor: '#FFF4D9' },
+                contentStyle: { backgroundColor: '#FFF4D9' }
               }}
             />
 

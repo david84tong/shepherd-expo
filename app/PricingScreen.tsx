@@ -165,6 +165,7 @@ const PricingScreen = () => {
     }
   };
 
+
   const showPaywall = async () => {
     try {
       setIsLoading(true);
@@ -344,8 +345,7 @@ const PricingScreen = () => {
 
             <Animated.View className="bg-surfaceCream rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
               <Text className="font-feather text-heading text-center mx-12">
-                Unlock the <Text className="text-accentGold">annoited skin</Text> (limited time) if
-                you upgrade!
+                Unlock the <Text className="text-accentGold">annoited skin</Text> (limited time) if you upgrade!
               </Text>
 
               {riveAssets && (

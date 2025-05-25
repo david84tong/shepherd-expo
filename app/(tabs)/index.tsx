@@ -895,6 +895,8 @@ export default function HomeScreen() {
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
 
+
+
   return (
     <>
       <Animated.View className="flex-1" style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}>
