@@ -77,6 +77,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Get user store data
   const notificationTime = useUserStore((state) => state.notificationTime);
   const setNotificationTime = useUserStore((state) => state.setNotificationTime);
+  const frequencyGoal = useUserStore((state) => state.frequencyGoal);
+  const setFrequencyGoal = useUserStore((state) => state.setFrequencyGoal);
 
   // Get notification store data
   const notificationsEnabled = useNotificationStore((state) => state.notificationsEnabled);
@@ -95,6 +97,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   const [referralModalVisible, setReferralModalVisible] = useState(false);
   const [referralInput, setReferralInput] = useState('');
   const [isSubmittingReferral, setIsSubmittingReferral] = useState(false);
+
+  // Add state for reading time modal
+  const [readingTimeModalVisible, setReadingTimeModalVisible] = useState(false);
+  const [selectedReadingTime, setSelectedReadingTime] = useState<string>(frequencyGoal || '6-10');
 
   // Animation shared values
   const timePickerHeight = useSharedValue(0);
@@ -767,9 +773,6 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
   }, [devPanelExpanded]);
 
-  // Get user store frequency goal
-  const frequencyGoal = useUserStore((state) => state.frequencyGoal);
-
   // Function to get display text for reading time
   const getReadingTimeDisplay = useCallback(() => {
     switch (frequencyGoal) {
@@ -788,13 +791,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Handle navigation to reading time selection
   const handleEditReadingTime = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    bottomSheetRef.current?.close();
-    router.push({
-      pathname: '/onboarding/5',
-      params: { fromSettings: 'true' },
-    });
+    setSelectedReadingTime(frequencyGoal || '6-10');
+    setReadingTimeModalVisible(true);
     analytics.logEvent('Settings_Tapped_EditReadingTime');
-  }, [router]);
+  }, [frequencyGoal]);
 
   // Get app version and build number for developer panel
   const appVersion = Application.nativeApplicationVersion || 'Unknown';
@@ -820,6 +820,45 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       setIsSubmittingReferral(false);
     }
   };
+
+  // Handle reading time selection
+  const handleReadingTimeSelection = useCallback(async (duration: string) => {
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      
+      // Update user store
+      setFrequencyGoal(duration);
+      
+      // Update in Firestore directly
+      const user = auth().currentUser;
+      if (user) {
+        await firestore()
+          .collection('users')
+          .doc(user.uid)
+          .update({ 
+            frequencyGoal: duration,
+            updatedAt: firestore.FieldValue.serverTimestamp()
+          });
+        console.log('Updated frequency goal in Firestore');
+      }
+      
+      // Close modal
+      setReadingTimeModalVisible(false);
+      
+      // Success feedback
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      
+      // Log analytics
+      analytics.logEvent('Settings_Changed_ReadingTime', {
+        newDuration: duration,
+        fromSettings: true
+      });
+      
+    } catch (error) {
+      console.error('Error updating reading time:', error);
+      Alert.alert('Error', 'Failed to update reading time. Please try again.');
+    }
+  }, [setFrequencyGoal]);
 
   return (
     <>
@@ -1293,6 +1332,56 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             {/* Cancel Button */}
             <TouchableOpacity
               onPress={() => setReferralModalVisible(false)}
+              className="bg-textPrimary/10 rounded-xl p-4">
+              <Text className="font-din text-textPrimary text-center">Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Reading Time Selection Modal */}
+      <Modal
+        visible={readingTimeModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setReadingTimeModalVisible(false)}>
+        <View className="flex-1 bg-black/50 justify-center items-center">
+          <View className="bg-surfaceCream rounded-2xl p-5 w-[85%] max-w-[350px]">
+            {/* Title */}
+            <Text className="font-feather text-xl text-textPrimary text-center mb-4">
+              Daily Reading Time
+            </Text>
+
+            {/* Options */}
+            <View className="mb-4 space-y-3">
+              {[
+                { id: '1-5', title: '3-6 mins (1 chapter)' },
+                { id: '6-10', title: '7-10 mins (3-4 chapters)' },
+                { id: '15-25', title: '11-15 mins (6-8 chapters)' },
+              ].map((option) => (
+                <TouchableOpacity
+                  key={option.id}
+                  onPress={() => {
+                    setSelectedReadingTime(option.id);
+                    handleReadingTimeSelection(option.id);
+                  }}
+                  className={`rounded-xl p-4 border-2 ${
+                    selectedReadingTime === option.id
+                      ? 'bg-[#FFE07D] border-[#F7B500]'
+                      : 'bg-white border-[#FFE4A8]'
+                  }`}>
+                  <Text className={`font-feather text-center ${
+                    selectedReadingTime === option.id ? 'text-textPrimary' : 'text-textPrimary'
+                  }`}>
+                    {option.title}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Cancel Button */}
+            <TouchableOpacity
+              onPress={() => setReadingTimeModalVisible(false)}
               className="bg-textPrimary/10 rounded-xl p-4">
               <Text className="font-din text-textPrimary text-center">Cancel</Text>
             </TouchableOpacity>
