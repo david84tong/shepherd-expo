@@ -178,7 +178,7 @@ export default function RootLayout() {
   const checkOnboarding = async () => {
     try {
       console.log(`[RootLayout] 🔄 Checking onboarding status...`);
-      
+
       // Check if onboarding has been completed by looking for the key in AsyncStorage
       const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
       console.log('[RootLayout] Onboarding completed status:', onboardingCompleted);
@@ -202,7 +202,6 @@ export default function RootLayout() {
       } else {
         console.log('[RootLayout] ❌ User has NOT completed onboarding');
         console.log(`[RootLayout] 📍 Saved onboarding screen: ${savedScreen}`);
-        
         // Let the onboarding layout handle navigation to avoid timing issues
         console.log('[RootLayout] 📝 Navigation will be handled by onboarding layout');
       }
@@ -346,17 +345,16 @@ export default function RootLayout() {
       await checkStreakStatus();
       await initializeNotifications();
 
-      // Set Rive ready
+      // Set Rive ready and show animation
       setIsRiveReady(true);
-
-      // Show Rive animation first
       setShowRiveAnimation(true);
-
-      // Then hide splash screen
-      await SplashScreen.hideAsync();
-
-      // Set app as ready
       setAppReady(true);
+
+      // Hide splash screen after a small delay to ensure Rive is ready
+      setTimeout(() => {
+        SplashScreen.hideAsync();
+      }, 100);
+
     } catch (error) {
       console.error('Error during app initialization:', error);
       setHasError(true);
@@ -423,17 +421,6 @@ export default function RootLayout() {
     });
   }, []);
 
-  // Loading states with error handling
-  if (!fontsLoaded && !fontError) {
-    return null; // Let the native splash screen show
-  }
-
-  if (!isRiveReady) {
-    return null; // Let the native splash screen show
-  }
-
-  if (hasError) return <AppLoading loadingMessage="Something went wrong. Please try again..." />;
-
   // Show Rive animation
   if (showRiveAnimation && riveAssets?.[0]?.localUri) {
     return (
@@ -453,9 +440,20 @@ export default function RootLayout() {
     );
   }
 
+  // Loading states with error handling
+  if (!fontsLoaded && !fontError) {
+    return null; // Let the native splash screen show
+  }
+
+  if (!isRiveReady) {
+    return null; // Let the native splash screen show
+  }
+
+  if (hasError) return <AppLoading loadingMessage="Something went wrong. Please try again..." />;
+
   console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
       <BottomSheetModalProvider>
         {visibleForceUpdate ? (
           <ForceUpdateModal visible={visibleForceUpdate} />
@@ -466,6 +464,7 @@ export default function RootLayout() {
                 headerShown: false,
                 animation: 'fade',
                 animationDuration: 200,
+                contentStyle: { backgroundColor: '#FFF4D9' }
               }}
             />
 
@@ -539,5 +538,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFF4D9',
     justifyContent: 'center',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#FFF4D9',
   },
 });

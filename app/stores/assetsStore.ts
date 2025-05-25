@@ -15,6 +15,7 @@ const imageAssets = [
   require('../../assets/icons/greenGemIcon.png'),
   require('../../assets/icons/heartIcon.png'),
   require('../../assets/icons/starIcon.png'),
+  require('../../assets/backgrounds/defaultBackgroundDark.png'),
 ];
 
 type AssetsState = {
