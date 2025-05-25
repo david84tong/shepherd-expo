@@ -647,7 +647,7 @@ export default function HomeScreen() {
 
     // Use the appropriate Rive asset based on pro status and level
     let lambAssetIndex;
-    let useArtboardName = artboardName;
+    let useArtboardName: string | undefined = artboardName;
     
     if (lambLevel >= 33) {
       // Level 33: Use lamb-wings-idle.riv with no artboard name

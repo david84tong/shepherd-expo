@@ -252,6 +252,26 @@ export function useAuth() {
     }
   };
 
+  const getFirebaseIdToken = async (): Promise<string | null> => {
+    console.log('[Auth] getFirebaseIdToken() called');
+    try {
+      // Get current user
+      const currentUser = auth().currentUser;
+      if (!currentUser) {
+        console.error('[Auth] No authenticated user found');
+        return null;
+      }
+
+      // Request a fresh token
+      const idToken = await currentUser.getIdToken(true);
+      console.log('[Auth] Firebase ID token fetched successfully');
+      return idToken;
+    } catch (error) {
+      console.error('[Auth] Error getting ID token:', error);
+      return null;
+    }
+  };
+
   // Google Sign-In
   // const signInWithGoogle = async () => {
   //   try {
@@ -332,6 +352,7 @@ export function useAuth() {
     signInWithApple,
     signInAnonymously,
     checkUserExists,
+    getFirebaseIdToken,
     signOut,
   };
 }
