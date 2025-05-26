@@ -59,6 +59,7 @@ const TAB_BAR_HEIGHT = 65;
 
 // Key to store chat usage in AsyncStorage
 const CHAT_USED_KEY = 'shepherd_bible_chat_used_global';
+const CHAT_MESSAGE_COUNT_KEY = 'shepherd_bible_chat_message_count_global';
 
 const VerseChatView: React.FC<VerseChatViewProps> = ({ 
   verse, 
@@ -71,6 +72,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
   const [messages, setMessages] = useState<Message[]>([])
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [hasUsedFreeMessage, setHasUsedFreeMessage] = useState(false);
+  const [globalMessageCount, setGlobalMessageCount] = useState(0);
   const [inputMessage, setInputMessage] = useState('');
   const flatListRef = useRef<FlatList>(null);
   
@@ -88,6 +90,12 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         const hasUsed = await AsyncStorage.getItem(CHAT_USED_KEY);
         setHasUsedFreeMessage(hasUsed === 'true');
         console.log("[VerseChatView] Free message already used:", hasUsed === 'true');
+        
+        // Load global message count
+        const messageCountStr = await AsyncStorage.getItem(CHAT_MESSAGE_COUNT_KEY);
+        const messageCount = messageCountStr ? parseInt(messageCountStr, 10) : 0;
+        setGlobalMessageCount(messageCount);
+        console.log("[VerseChatView] Global message count:", messageCount);
       } catch (error) {
         console.error('Error checking free message usage:', error);
       }
@@ -106,20 +114,9 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       verse: verse.verse,
       reason: "used_free_message"
     });
+    
     const result = await presentPaywall();
     console.log("[VerseChatView] presentPaywall result:", result);
-    
-    // If user didn't upgrade, show them the upgrade prompt message
-    if (!result && !isProMember) {
-      const upgradePrompt = {
-        id: Date.now().toString(),
-        text: "Upgrade to Shepherd Super to continue the conversation and unlock unlimited Bible chat.",
-        isUser: false,
-        timestamp: new Date()
-      };
-      
-      setMessages([upgradePrompt]);
-    }
     
     return result;
   }
@@ -129,31 +126,6 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     
     slideAnim.value = withTiming(0, { duration: 600 });
     inputSlideAnim.value = withDelay(200, withTiming(0, { duration: 500 }));
-    
-    setTimeout(() => {
-      // If user has already used their free message and isn't pro, show paywall immediately
-      if (hasUsedFreeMessage && !isProMember) {
-        console.log("[VerseChatView] User has used free message and isn't pro - showing paywall immediately");
-        // showPaywall();
-        return;
-      }
-      
-      // Otherwise show normal welcome message
-      const initialMessage = `Welcome! I'm here to help you study ${bookName} ${chapter}:${verse.verse}. What would you like to know about this verse?`;
-      
-      setMessages([{
-        id: Date.now().toString(),
-        text: initialMessage,
-        isUser: false,
-        timestamp: new Date()
-      }]);
-      
-      if (Platform.OS === 'ios') {
-        setTimeout(() => {
-          // You would need to add ref to TextInput and use it here if you want auto-focus
-        }, 1200);
-      }
-    }, 1000);
     
     // Listen for layout changes in the FlatList
     const layoutSubscription = Dimensions.addEventListener('change', () => {
@@ -167,8 +139,41 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     return () => {
       layoutSubscription.remove();
     };
-  }, [hasUsedFreeMessage, isProMember]);
+  }, []); // Empty dependency array - only run once
   
+  // Separate useEffect to handle initial message setup based on loaded state
+  useEffect(() => {
+    // If we already have messages, don't reset them
+    if (messages.length > 0) {
+      return;
+    }
+    
+    // Wait a bit for the data to load, then set up initial message
+    setTimeout(() => {
+      // If user has already sent 3 messages globally and isn't pro, show upgrade message
+      if (globalMessageCount >= 3 && !isProMember) {
+        console.log("[VerseChatView] Setting up upgrade message for user who has used all messages");
+        const upgradeMessage = {
+          id: Date.now().toString(),
+          text: "You've used your free messages for the entire app. Upgrade to Shepherd Super to unlock unlimited Bible conversations across all verses!",
+          isUser: false,
+          timestamp: new Date()
+        };
+        setMessages([upgradeMessage]);
+      } else {
+        // Show normal welcome message
+        console.log("[VerseChatView] Setting up welcome message");
+        const initialMessage = `Welcome! I'm here to help you study ${bookName} ${chapter}:${verse.verse}. What would you like to know about this verse?`;
+        
+        setMessages([{
+          id: Date.now().toString(),
+          text: initialMessage,
+          isUser: false,
+          timestamp: new Date()
+        }]);
+      }
+    }, 500); // Increased delay to ensure data is loaded
+  }, [globalMessageCount, hasUsedFreeMessage, isProMember, messages.length, bookName, chapter, verse.verse]);
   
   const handleSend = async () => {
     if (inputMessage.trim() === '') return;
@@ -176,96 +181,122 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     console.log("[VerseChatView] handleSend called", {
       isProMember,
       hasUsedFreeMessage,
+      globalMessageCount,
       inputMessage: inputMessage.trim()
     });
     
-    // Check if user is pro member first
     if (isProMember) {
       console.log("[VerseChatView] Pro member - sending message");
-      // Pro members can send unlimited messages
-      sendMessage();
+      sendMessage(true);
       return;
     }
     
-    // For non-pro members, check their message usage
-    if (hasUsedFreeMessage) {
-      console.log("[VerseChatView] User has used free message - showing paywall");
-      // User has already used their global free message, show paywall
+    // For non-pro members, check their message count
+    if (globalMessageCount >= 3) {
+      console.log("[VerseChatView] User has sent 3 messages - showing paywall on 4th attempt");
       showPaywall();
       return;
     }
     
-    // This is their first message ever - allow it and mark as used
-    console.log("[VerseChatView] First message ever - marking as used and sending");
-    
-    // Mark that the user has used their free message globally
-    try {
-      await AsyncStorage.setItem(CHAT_USED_KEY, 'true');
-      setHasUsedFreeMessage(true);
-      console.log("[VerseChatView] Marked free message as used permanently");
+    // User can send this message
+    if (globalMessageCount < 2) {
+      // First or second message - send with AI response
+      console.log(`[VerseChatView] Allowing message ${globalMessageCount + 1} with AI response`);
+      sendMessage(true); // true = get AI response
+    } else {
+      // Third message - send but no AI response, then add upgrade message
+      console.log(`[VerseChatView] Allowing message ${globalMessageCount + 1} but no AI response, then adding upgrade message`);
+      sendMessage(false); // false = no AI response
       
-      // Notify parent component that message was sent
-      onMessageSent?.();
-      
-      analytics.logEvent("Bible_Chat_UsedFreeMessage", {
-        book: bookName,
-        chapter,
-        verse: verse.verse,
-        isGlobalFirstUse: true
-      });
-    } catch (error) {
-      console.error('Error marking free message as used:', error);
-    }
-    
-    // Send the message
-    sendMessage();
-    
-    // After sending the first message, show upgrade prompt after AI responds
-    setTimeout(() => {
-      if (!isProMember) {
-        const upgradePrompt = {
-          id: (Date.now() + 2).toString(),
-          text: "You've used your free message! Upgrade to Shepherd Super to continue the conversation and unlock unlimited Bible chat.",
+      // Add upgrade message to chat after a short delay
+      setTimeout(() => {
+        const upgradeMessage = {
+          id: (Date.now() + 1).toString(),
+          text: "You've used your free messages for the entire app. Upgrade to Shepherd Super to unlock unlimited Bible conversations across all verses!",
           isUser: false,
           timestamp: new Date()
         };
         
-        setMessages(prev => {
-          const updatedMessages = [...prev, upgradePrompt];
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              flatListRef.current?.scrollToEnd({ animated: false });
-            }, 100);
-          });
-          return updatedMessages;
-        });
-      }
-    }, 3000); // Show upgrade prompt 3 seconds after AI response
+        setMessages(prev => [...prev, upgradeMessage]);
+        
+        // Scroll to bottom to show the upgrade message
+        setTimeout(() => {
+          flatListRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+        
+        // Also show the paywall automatically after the message appears
+        setTimeout(() => {
+          showPaywall();
+        }, 1500); // Show paywall 1.5 seconds after the upgrade message
+      }, 1000);
+    }
   };
   
-  const sendMessage = async () => {
-    // Add user message
+  const sendMessage = async (getAIResponse: boolean) => {
+    // Store user input before clearing it
+    const userQuestion = inputMessage;
+    
+    // Add user message immediately
     const newMessage = {
       id: Date.now().toString(),
-      text: inputMessage,
+      text: userQuestion,
       isUser: true,
       timestamp: new Date()
     };
     
-    const userQuestion = inputMessage; // Store user input before clearing it
+    // Clear input field
     setInputMessage('');
     
-    // Add message and force scroll to bottom
-    setMessages(prev => {
-      const updatedMessages = [...prev, newMessage];
-      // Force scroll after state update with a delay
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: false });
-        }, 100);
-      });
-      return updatedMessages;
-    });
+    // Add user message to chat
+    setMessages(prev => [...prev, newMessage]);
+    
+    // Force scroll to bottom after a short delay
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+    
+    // For non-pro members, increment global message count
+    if (!isProMember) {
+      // Use a setTimeout to ensure this happens after the message state update
+      setTimeout(async () => {
+        const newMessageCount = globalMessageCount + 1;
+        setGlobalMessageCount(newMessageCount);
+        
+        try {
+          await AsyncStorage.setItem(CHAT_MESSAGE_COUNT_KEY, newMessageCount.toString());
+          console.log(`[VerseChatView] Saved global message count: ${newMessageCount}`);
+        } catch (error) {
+          console.error('Error saving global message count:', error);
+        }
+        
+        // If this is their first message ever globally, mark it as used
+        if (!hasUsedFreeMessage) {
+          try {
+            await AsyncStorage.setItem(CHAT_USED_KEY, 'true');
+            setHasUsedFreeMessage(true);
+            console.log("[VerseChatView] Marked free message as used permanently");
+            
+            // Notify parent component that message was sent
+            onMessageSent?.();
+            
+            analytics.logEvent("Bible_Chat_UsedFreeMessage", {
+              book: bookName,
+              chapter,
+              verse: verse.verse,
+              isGlobalFirstUse: true
+            });
+          } catch (error) {
+            console.error('Error marking free message as used:', error);
+          }
+        }
+      }, 50);
+    }
+    
+    // Only make API call if we should get AI response
+    if (!getAIResponse) {
+      console.log("[VerseChatView] Skipping AI response for 3rd message");
+      return;
+    }
     
     // Show loading message
     setIsAiLoading(true);
@@ -358,16 +389,6 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       }
     }, 1000);
   };
-  
-  // Auto scroll to bottom when messages change
-  useEffect(() => {
-    if (flatListRef.current && messages.length > 0) {
-      // Add a small delay to ensure the new message has been rendered
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 300);
-    }
-  }, [messages]);
   
   // Additional scroll handler for when keyboard appears
   useEffect(() => {
@@ -532,14 +553,14 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
             >
               <TextInput
                 style={styles.input}
-                placeholder={!isProMember && hasUsedFreeMessage 
-                  ? "Tap upgrade button above to continue..." 
+                placeholder={!isProMember && globalMessageCount >= 3
+                  ? "Upgrade to continue chatting..." 
                   : "Ask about this verse..."}
                 placeholderTextColor="#B89B4C"
                 value={inputMessage}
                 onChangeText={setInputMessage}
                 multiline
-                autoFocus={!hasUsedFreeMessage || isProMember}
+                autoFocus={globalMessageCount < 3 || isProMember}
                 selectTextOnFocus={true}
                 autoCapitalize="none"
                 editable={true}
@@ -556,7 +577,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
                 activeOpacity={0.8}
               >
                 <Feather 
-                  name={!isProMember && hasUsedFreeMessage ? "unlock" : "send"} 
+                  name={!isProMember && globalMessageCount >= 3 ? "unlock" : "send"} 
                   size={20} 
                   color={(!inputMessage.trim()) ? "#CCCCCC" : "#FFFFFF"} 
                 />
