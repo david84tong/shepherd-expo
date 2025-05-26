@@ -1197,7 +1197,7 @@ export default function HomeScreen() {
               <View className="flex-row items-center gap-2.5 mb-0 px-1">
                <View className="flex-row items-center gap-1">
                <View className="bg-surfaceCream/80  rounded-full items-center justify-center flex-row h-full ">
-                <Text className="font-feather text-description text-body opacity-0.5">
+                <Text className="font-feather text-textPrimary text-body">
                   {`${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`}
                 </Text>
               </View>
@@ -1211,7 +1211,7 @@ export default function HomeScreen() {
                 </View>
                 <Image source={heartIcon} className="w-8 h-8" />
                
-               <Text className="font-feather text-body text-description">
+               <Text className="font-feather text-body text-red">
                      {lambHearts}
                    </Text>
               </View>

@@ -18,7 +18,7 @@ const CenteredIcon = ({ children }: { children: React.ReactNode }) => (
 
 // Custom Tab Bar Button component with animation
 function CustomTabBarButton(props: any) {
-  const { children, onPress, accessibilityState } = props;
+  const { children, onPress, accessibilityState, style, ...rest } = props;
   const focused = accessibilityState?.selected;
   // Animated value for focus state (0 or 1)
   const focusAnim = useRef(new Animated.Value(focused ? 1 : 0)).current;
@@ -46,6 +46,9 @@ function CustomTabBarButton(props: any) {
 
   return (
     <Pressable
+      // Pass through the extra props & original style so RN can keep the layout logic intact
+      {...rest}
+      style={style}
       onPress={handlePress}
       // Apply base flex styling and only horizontal margin
       className="flex-1 items-center justify-center mx-1">
