@@ -110,10 +110,18 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     const result = await presentPaywall();
     console.log("[VerseChatView] presentPaywall result:", result);
     
-    // If user didn't upgrade, close the chat view
-    if (!result) {
-      onClose();
+    // If user didn't upgrade, show them the upgrade prompt message
+    if (!result && !isProMember) {
+      const upgradePrompt = {
+        id: Date.now().toString(),
+        text: "Upgrade to Shepherd Super to continue the conversation and unlock unlimited Bible chat.",
+        isUser: false,
+        timestamp: new Date()
+      };
+      
+      setMessages([upgradePrompt]);
     }
+    
     return result;
   }
   
@@ -124,10 +132,15 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     inputSlideAnim.value = withDelay(200, withTiming(0, { duration: 500 }));
     
     setTimeout(() => {
-      // Add clearer initial message about the one-time free message limit
-      const initialMessage = hasUsedFreeMessage && !isProMember ?
-        `You've already used your free message. Upgrade to Shepherd Super to continue the conversation!` :
-        `Welcome! I'm here to help you study ${bookName} ${chapter}:${verse.verse}. What would you like to know about this verse?`;
+      // If user has already used their free message and isn't pro, show paywall immediately
+      if (hasUsedFreeMessage && !isProMember) {
+        console.log("[VerseChatView] User has used free message and isn't pro - showing paywall immediately");
+        showPaywall();
+        return;
+      }
+      
+      // Otherwise show normal welcome message
+      const initialMessage = `Welcome! I'm here to help you study ${bookName} ${chapter}:${verse.verse}. What would you like to know about this verse?`;
       
       setMessages([{
         id: Date.now().toString(),
@@ -155,40 +168,83 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     return () => {
       layoutSubscription.remove();
     };
-  }, []);
+  }, [hasUsedFreeMessage, isProMember]);
   
   
   const handleSend = async () => {
     if (inputMessage.trim() === '') return;
     
-    // Check if user is pro or has not used their free message yet
-    if (!isProMember) {
-      if (hasUsedFreeMessage) {
-        // User has already used their free message, show paywall
-        showPaywall();
-        return;
-      } else {
-        // Mark that the user has used their free message globally
-        try {
-          await AsyncStorage.setItem(CHAT_USED_KEY, 'true');
-          setHasUsedFreeMessage(true);
-          console.log("[VerseChatView] Marked free message as used permanently");
-          
-          // Notify parent component that message was sent
-          onMessageSent?.();
-          
-          analytics.logEvent("Bible_Chat_UsedFreeMessage", {
-            book: bookName,
-            chapter,
-            verse: verse.verse,
-            isGlobalFirstUse: true
-          });
-        } catch (error) {
-          console.error('Error marking free message as used:', error);
-        }
-      }
+    console.log("[VerseChatView] handleSend called", {
+      isProMember,
+      hasUsedFreeMessage,
+      inputMessage: inputMessage.trim()
+    });
+    
+    // Check if user is pro member first
+    if (isProMember) {
+      console.log("[VerseChatView] Pro member - sending message");
+      // Pro members can send unlimited messages
+      sendMessage();
+      return;
     }
     
+    // For non-pro members, check their message usage
+    if (hasUsedFreeMessage) {
+      console.log("[VerseChatView] User has used free message - showing paywall");
+      // User has already used their global free message, show paywall
+      showPaywall();
+      return;
+    }
+    
+    // This is their first message ever - allow it and mark as used
+    console.log("[VerseChatView] First message ever - marking as used and sending");
+    
+    // Mark that the user has used their free message globally
+    try {
+      await AsyncStorage.setItem(CHAT_USED_KEY, 'true');
+      setHasUsedFreeMessage(true);
+      console.log("[VerseChatView] Marked free message as used permanently");
+      
+      // Notify parent component that message was sent
+      onMessageSent?.();
+      
+      analytics.logEvent("Bible_Chat_UsedFreeMessage", {
+        book: bookName,
+        chapter,
+        verse: verse.verse,
+        isGlobalFirstUse: true
+      });
+    } catch (error) {
+      console.error('Error marking free message as used:', error);
+    }
+    
+    // Send the message
+    sendMessage();
+    
+    // After sending the first message, show upgrade prompt after AI responds
+    setTimeout(() => {
+      if (!isProMember) {
+        const upgradePrompt = {
+          id: (Date.now() + 2).toString(),
+          text: "You've used your free message! Upgrade to Shepherd Super to continue the conversation and unlock unlimited Bible chat.",
+          isUser: false,
+          timestamp: new Date()
+        };
+        
+        setMessages(prev => {
+          const updatedMessages = [...prev, upgradePrompt];
+          requestAnimationFrame(() => {
+            setTimeout(() => {
+              flatListRef.current?.scrollToEnd({ animated: false });
+            }, 100);
+          });
+          return updatedMessages;
+        });
+      }
+    }, 3000); // Show upgrade prompt 3 seconds after AI response
+  };
+  
+  const sendMessage = async () => {
     // Add user message
     const newMessage = {
       id: Date.now().toString(),
@@ -277,28 +333,6 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           });
           return updatedMessages;
         });
-        
-        // If not a pro user, show upgrade prompt after the first response
-        if (!isProMember) {
-          setTimeout(() => {
-            const upgradePrompt = {
-              id: (Date.now() + 2).toString(),
-              text: "You've used your one free message for the entire app. Upgrade to Shepherd Super to unlock unlimited Bible conversations across all verses!",
-              isUser: false,
-              timestamp: new Date()
-            };
-            
-            setMessages(prev => {
-              const updatedMessages = [...prev, upgradePrompt];
-              requestAnimationFrame(() => {
-                setTimeout(() => {
-                  flatListRef.current?.scrollToEnd({ animated: true });
-                }, 100);
-              });
-              return updatedMessages;
-            });
-          }, 1000);
-        }
       } catch (error) {
         console.error('Error calling AI API:', error);
         // Remove loading state
@@ -358,7 +392,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     const isUser = item.isUser;
     
     // If this is an upgrade prompt, render a special message with an upgrade button
-    if (!isUser && item.text.includes("Upgrade to Shepherd Super")) {
+    if (!isUser && (item.text.includes("Upgrade to Shepherd Super") || item.text.includes("You've used your free message"))) {
       return (
         <Reanimated.View
           entering={FadeInUp.duration(300).delay(200)}
@@ -500,32 +534,32 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
               <TextInput
                 style={styles.input}
                 placeholder={!isProMember && hasUsedFreeMessage 
-                  ? "Upgrade to Shepherd Super to continue..." 
+                  ? "Tap upgrade button above to continue..." 
                   : "Ask about this verse..."}
                 placeholderTextColor="#B89B4C"
                 value={inputMessage}
                 onChangeText={setInputMessage}
                 multiline
-                autoFocus={true}
+                autoFocus={!hasUsedFreeMessage || isProMember}
                 selectTextOnFocus={true}
                 autoCapitalize="none"
-                editable={isProMember || !hasUsedFreeMessage}
+                editable={true}
               />
               <TouchableOpacity 
                 style={[
                   styles.sendButton,
-                  (!inputMessage.trim() || (!isProMember && hasUsedFreeMessage)) 
+                  (!inputMessage.trim()) 
                     ? styles.sendButtonDisabled 
                     : {}
                 ]}
-                onPress={!isProMember && hasUsedFreeMessage ? showPaywall : handleSend}
-                disabled={!inputMessage.trim() && (!isProMember && !hasUsedFreeMessage)}
+                onPress={handleSend}
+                disabled={!inputMessage.trim()}
                 activeOpacity={0.8}
               >
                 <Feather 
                   name={!isProMember && hasUsedFreeMessage ? "unlock" : "send"} 
                   size={20} 
-                  color={(!inputMessage.trim() && (!isProMember && !hasUsedFreeMessage)) ? "#CCCCCC" : "#FFFFFF"} 
+                  color={(!inputMessage.trim()) ? "#CCCCCC" : "#FFFFFF"} 
                 />
               </TouchableOpacity>
             </KeyboardAvoidingView>
