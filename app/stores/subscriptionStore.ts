@@ -278,7 +278,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       fromScreen: get().fromScreen,
     });
     try {
-      const paywall = await adapty.getPaywall('shepherd_paywall');
+      const paywall = await adapty.getPaywall('shepherd_pay');
       console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
       const view = await createPaywallView(paywall);
 
@@ -291,12 +291,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         },
         onPurchaseCompleted() {
           result = PAYWALL_RESULT.PURCHASED;
-          moveUserToProMode(false, 'shepherd_paywall', 'shepherd-product', 'shepherd_paywall');
+          moveUserToProMode(false, 'shepherd_pay', 'shepherd-product', 'shepherd_pay');
           return true;
         },
         onRestoreCompleted() {
           result = PAYWALL_RESULT.RESTORED;
-          moveUserToProMode(true, 'shepherd_paywall', 'shepherd-product', 'shepherd_paywall');
+          moveUserToProMode(true, 'shepherd_pay', 'shepherd-product', 'shepherd_pay');
           return true;
         },
         onProductSelected() {
