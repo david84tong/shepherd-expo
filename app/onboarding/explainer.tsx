@@ -192,7 +192,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
               {/* BlurView that blurs all the elements above */}
               <Image source={require('../../assets/redShadow.png')} className="absolute w-[200px] h-[200px]" />
 
-              <View className="w-[120px] h-[120px]" style={{ zIndex: 10 }}>
+              <View className="w-[120px] h-[120px]">
                 <Rive
                   resourceName={IS_ANDROID ? 'home_lamb' : undefined}
                   url={IS_IOS ? riveAssets[0].uri! : undefined}

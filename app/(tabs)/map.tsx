@@ -479,6 +479,7 @@ export default function MapScreen() {
           status={status}
           alignment={alignment}
           onPress={onNodePress}
+          pathColor={section.color}
         />
 
         {/* Sheep decoration at second node position in every section - Only render when visible */}

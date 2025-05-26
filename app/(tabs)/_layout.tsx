@@ -108,10 +108,8 @@ export default function TabsLayout() {
         setIsDailyFirstLoad(isDailyFirst);
         console.log(`[TabsLayout] Is daily first load for ${today}: ${isDailyFirst}`);
         
-        // If this is the first load of the day, mark it as completed
-        if (isDailyFirst) {
-          await AsyncStorage.setItem(dailyKey, 'true');
-        }
+        // Note: We don't mark it as completed here anymore
+        // The PricingScreen will mark it as completed when it loads
       } catch (error) {
         console.error('[TabsLayout] Error checking daily first load:', error);
         setIsDailyFirstLoad(false); // Assume not daily first load on error

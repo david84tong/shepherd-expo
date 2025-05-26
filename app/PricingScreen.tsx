@@ -26,7 +26,9 @@ import useSubscriptionStore from './stores/subscriptionStore';
 import analytics from '../utils/analytics';
 import { isSignedIn } from './hooks/authHook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
+
+// Key for tracking daily first load
+const DAILY_FIRST_LOAD_KEY = 'daily_first_load_';
 
 interface AnimatedItemProps {
   index?: number;
@@ -80,6 +82,21 @@ const PricingScreen = () => {
       animateFromBottom: animateScreenFromBottom || false,
     });
   }, [fromLoading, animateScreenFromBottom]);
+
+  // Set daily first load to true when PricingScreen loads
+  useEffect(() => {
+    const setDailyFirstLoad = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
+        const dailyKey = DAILY_FIRST_LOAD_KEY + today;
+        await AsyncStorage.setItem(dailyKey, 'true');
+        console.log(`[PricingScreen] Set daily first load to true for ${today}`);
+      } catch (error) {
+        console.error('[PricingScreen] Error setting daily first load:', error);
+      }
+    };
+    setDailyFirstLoad();
+  }, []);
 
   // Show close button after 5 seconds
   useEffect(() => {
@@ -147,21 +164,15 @@ const PricingScreen = () => {
         router.replace('/(tabs)');
       }
     } else if (isSignedIn()) {
-      // Mark onboarding as completed before navigation
-      await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
-
+      // If user is signed in, go to tabs
       if (router.canGoBack()) {
         router.back();
       } else {
         router.replace('/(tabs)');
       }
     } else {
-      // For non-signed in users, also check if we can go back first
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/onboarding/11');
-      }
+      // If user is not signed in, send them to onboarding screen 11
+      router.replace('/onboarding/11');
     }
   };
 

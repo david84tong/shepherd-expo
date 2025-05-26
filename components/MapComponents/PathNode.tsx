@@ -13,9 +13,10 @@ interface PathNodeProps {
   status: NodeStatus;
   alignment: 'start' | 'center' | 'end';
   onPress: (unit: Unit) => void;
+  pathColor?: string;
 }
 
-const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress }) => {
+const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress, pathColor: propPathColor }) => {
   const [isPressed, setIsPressed] = useState(false);
   const isDisabled = status === 'locked';
 
@@ -25,9 +26,8 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
     end: 'items-end',
   }[alignment];
 
-  // Find the path that contains this unit
-  const path = BIBLE_PATHS.find((p) => p.units.some((u) => u.id === unit.id));
-  const pathColor = path?.color || 'green';
+  // Use the passed pathColor prop, or fallback to finding the path
+  const pathColor = propPathColor || BIBLE_PATHS.find((p) => p.units.some((u) => u.id === unit.id))?.color || 'green';
 
   // Get background color based on status - use light colors for active and completed
   const getBgColorClass = () => {

@@ -11,6 +11,7 @@ import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { useUserStore } from '../app/stores/userStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUIStore } from '../app/stores/uiStore';
+import { useAuth, isSignedIn } from '../app/hooks/authHook';
 import SuccessAnimation from './SuccessAnimation'; // Import the full SuccessAnimation component
 import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
 import { HalfModalType } from '../app/halfModal';
@@ -72,6 +73,7 @@ export function DebugButton() {
   const pathname = usePathname();
   const [modalVisible, setModalVisible] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const { signOut } = useAuth();
 
   // Reference to the success bottom sheet modal
   const successSheetRef = useRef<BottomSheetModal>(null);
@@ -365,6 +367,46 @@ export function DebugButton() {
       }
     }, 300);
   }, []);
+
+  // Handler for sign out
+  const handleSignOut = useCallback(async () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setModalVisible(false);
+              await signOut();
+              useUserStore.getState().resetUserStore();
+              router.replace('/(auth)');
+              
+              Toast.show({
+                type: 'success',
+                text1: 'Signed out successfully',
+                text2: 'You have been signed out of your account.',
+                position: 'top',
+                visibilityTime: 3000,
+              });
+            } catch (error) {
+              console.log('Error signing out:', error);
+              Toast.show({
+                type: 'error',
+                text1: 'Sign out failed',
+                text2: 'Please try again.',
+                position: 'top',
+                visibilityTime: 3000,
+              });
+            }
+          },
+        },
+      ]
+    );
+  }, [signOut, router]);
 
   const navigateTo = (item: DebugScreen) => {
     setModalVisible(false);
@@ -755,6 +797,22 @@ export function DebugButton() {
                   </View>
                 ))}
               </View>
+
+              {/* Sign Out Button - Only show if user is signed in */}
+              {isSignedIn() && (
+                <View className="mt-6 pt-4 border-t border-buttonBorder">
+                  <TouchableOpacity
+                    className="bg-red p-4 rounded-xl border-l-4 border-l-[#FF0000]"
+                    onPress={handleSignOut}>
+                    <Text className="font-feather text-base text-white text-center">
+                      Sign Out
+                    </Text>
+                    <Text className="font-din text-sm text-white/80 mt-1 text-center">
+                      Sign out of your account
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </ScrollView>
           </View>
         </SafeAreaView>

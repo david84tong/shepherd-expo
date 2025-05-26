@@ -161,7 +161,7 @@ export default function RootLayout() {
 
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
-  const settingsSnapPoints = useMemo(() => ['95%'], []);
+  const settingsSnapPoints = useMemo(() => [ '95%'], []);
   const prayerSnapPoints = useMemo(() => ['60%', '85%'], []);
 
   // HalfModal params

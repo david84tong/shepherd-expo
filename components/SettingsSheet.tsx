@@ -267,8 +267,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     setUserId(currentUserId);
     setIsUserSignedIn(isUserSignedIn);
 
-    // Show the sheet
-    bottomSheetRef.current?.expand();
+    // Show the sheet at the first snap point (60%)
+    bottomSheetRef.current?.snapToIndex(0);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   }, []);
 
@@ -1693,11 +1693,6 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 };
 
 const styles = StyleSheet.create({
-  sheetBackground: {
-    backgroundColor: '#FFF4D9', // surfaceCream
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
   handleIndicator: {
     backgroundColor: '#DCB280',
     height: 4,
@@ -1706,6 +1701,11 @@ const styles = StyleSheet.create({
   settingsContentContainer: {
     flexGrow: 1,
     paddingBottom: 40,
+  },
+  sheetBackground: {
+    backgroundColor: '#FFF4D9', // surfaceCream
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
   settingsContent: {
     flex: 1,
@@ -2041,24 +2041,24 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   roadmapButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: 'rgba(34, 197, 94, 0.1)',
-    padding: 16,
-    borderRadius: 12,
-    borderLeftWidth: 4,
     borderLeftColor: '#22C55E',
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 12,
+    padding: 16,
   },
   roadmapButtonContent: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
   },
   roadmapButtonText: {
+    color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
-    color: '#3C584A',
     marginLeft: 10,
   },
 });

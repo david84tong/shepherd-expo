@@ -12,6 +12,7 @@ import {
   View,
   ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
@@ -19,6 +20,8 @@ import JournalComponent from '../../components/JournalComponent';
 import PrayerComponent from '../../components/PrayerComponent';
 import ProgressPill from '../../components/ProgressPill';
 import SecondaryButton from '../../components/SecondaryButton';
+import HeartsExplainerModal from '../../components/HeartsExplainerModal';
+import ExplainerModal from '../../components/ExplainerModal';
 import { HomeMode, useHomeStore } from '../stores/homeStore'; // Import Zustand store
 import { usePathStore } from '../stores/pathStore'; // Import path store
 import { useUIStore } from '../stores/uiStore'; // Import UI store
@@ -27,7 +30,7 @@ import { useAssetsStore, imageAssets } from '../stores/assetsStore';
 import { useAssets } from 'expo-asset';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import analytics from '~/utils/analytics';
 import WidgetHowToSheet from '../../components/WidgetHowToSheet';
 import useSubscriptionStore from '../stores/subscriptionStore';
@@ -788,6 +791,7 @@ export default function HomeScreen() {
           height: '100%',
           alignItems: 'center',
           justifyContent: 'center',
+
         }}>
         {/* Red shadow behind lamb for level 10+ */}
         {shouldShowRedShadow && (
@@ -816,7 +820,24 @@ export default function HomeScreen() {
             resizeMode="cover"
           />
         )}
-
+   <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      analytics.logEvent('HomeScreen_Tapped_LambName', {
+                        lambName: lambName,
+                        currentlyExpanded: isLevelPillExpanded,
+                        action: isLevelPillExpanded ? 'collapse' : 'expand'
+                      });
+                      
+                  
+                    }}
+                    activeOpacity={0.7}
+                    className="bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 -mb-2 px-2"
+                  >
+                    <Text className="font-feather text-textPrimary text-xs">
+                      {`${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`}
+                    </Text>
+                  </TouchableOpacity>
         <View
           style={{
             width: `${scaleFactor * 100}%`,
@@ -839,7 +860,6 @@ export default function HomeScreen() {
             style={{
               width: '100%',
               height: '100%',
-              marginTop: 10,
               opacity: new Date().getHours() >= 19 ? 0.85 : 1,
             }}
           />
@@ -851,6 +871,10 @@ export default function HomeScreen() {
   const [showWidgetSheet, setShowWidgetSheet] = useState(false);
   // Add level pill animation states
   const [isLevelPillExpanded, setIsLevelPillExpanded] = useState(false);
+  // Add hearts explainer modal state
+  const [showHeartsModal, setShowHeartsModal] = useState(false);
+  // Add explainer modal state
+  const [showExplainerModal, setShowExplainerModal] = useState(false);
   const levelPillWidthAnim = useRef(new Animated.Value(0)).current;
   const levelPillOpacityAnim = useRef(new Animated.Value(0)).current;
   // Pre-calculate the expanded width for the pill (use a reasonable fixed width instead of screen-based)
@@ -896,7 +920,7 @@ export default function HomeScreen() {
   if (!assetsLoaded || !assets) return null;
 
 
-
+// HEADER
   return (
     <>
       <Animated.View className="flex-1" style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}>
@@ -1084,6 +1108,20 @@ export default function HomeScreen() {
                               />
                             </View>
                           </Animated.View>
+                          <Animated.View
+                            style={{ opacity: levelPillOpacityAnim }}
+                            className="ml-2">
+                                                         <TouchableOpacity
+                               onPress={() => {
+                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                 analytics.logEvent('HomeScreen_Tapped_LevelInfo');
+                                 setShowExplainerModal(true);
+                               }}
+                              activeOpacity={0.7}
+                              className="w-6 h-6 rounded-full bg-white/80 items-center justify-center">
+                              <Ionicons name="information" size={14} color="#B89B4C" />
+                            </TouchableOpacity>
+                          </Animated.View>
                         </Animated.View>
                       )}
                     </View>
@@ -1138,6 +1176,7 @@ export default function HomeScreen() {
               shadowOffset: { width: 0, height: 0 },
               shadowOpacity: showGlow ? 0.6 : 0,
               shadowRadius: 15, // Adjust radius for softness
+              marginTop: -48,
             }}>
             <Animated.View className="items-center justify-center overflow-hidden" style={{}}>
               {riveError ? (
@@ -1242,7 +1281,7 @@ export default function HomeScreen() {
 
           {/* Bottom Section - Action Buttons Card */}
           <Animated.View
-            className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-28"
+            className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-24"
             style={{
               ...Platform.select({
                 ios: {
@@ -1258,23 +1297,27 @@ export default function HomeScreen() {
             <ScrollView
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 120 }}>
-              <View className="flex-row items-center gap-2.5 mb-0 px-1">
-                <View className="flex-row items-center gap-1">
-                  <View className="bg-surfaceCream/80  rounded-full items-center justify-center flex-row h-full ">
-                    <Text className="font-feather text-description text-body">
-                      {`${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`}
-                    </Text>
-                  </View>
-                </View>
+              <View className="flex-row items-center gap-2.5 mb-0 ">
+              <TouchableOpacity
+                onPress={() => {
+                  analytics.logEvent('HomeScreen_Tapped_Hearts', {});
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  setShowHeartsModal(true);
+                }}
+                activeOpacity={0.7}
+                className="flex-row items-center"
+              >
+                <Image source={heartIcon} className="w-7 h-7" />
+                <Text className="font-feather text-body text-red ">{lambHearts}</Text>
+              </TouchableOpacity>
+              
                 <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
                   <View
                     className="h-full bg-red rounded-full"
                     style={{ width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%` }}
                   />
                 </View>
-                <Image source={heartIcon} className="w-8 h-8" />
-
-                <Text className="font-feather text-body text-red">{lambHearts}</Text>
+             
               </View>
 
               <SecondaryButton
@@ -1323,6 +1366,8 @@ export default function HomeScreen() {
           <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
           <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
           <WidgetHowToSheet visible={showWidgetSheet} onClose={() => setShowWidgetSheet(false)} />
+          <HeartsExplainerModal visible={showHeartsModal} onClose={() => setShowHeartsModal(false)} />
+          <ExplainerModal visible={showExplainerModal} onClose={() => setShowExplainerModal(false)} />
         </SafeAreaView>
       </Animated.View>
       <Toast config={toastConfig} />
