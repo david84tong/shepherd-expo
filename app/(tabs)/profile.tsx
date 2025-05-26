@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image, Linking, Alert, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image, Linking, Alert, Modal, ActivityIndicator, Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -77,7 +77,7 @@ export default function ProfileScreen() {
   const userId = user?.id || null;
 
   const [showDiscordCard, setShowDiscordCard] = useState(true);
-  const { signInWithApple } = useAuth();
+  const { signInWithApple, signInWithGoogle } = useAuth();
   const [signInLoading, setSignInLoading] = useState(false);
   const [signInError, setSignInError] = useState<string | null>(null);
 
@@ -283,15 +283,22 @@ export default function ProfileScreen() {
   const appVersion = Application.nativeApplicationVersion || 'Unknown';
   const buildNumber = Application.nativeBuildVersion || 'Unknown';
 
-  // Handle Apple sign in from profile
-  const handleAppleSignIn = async () => {
+  // Handle sign in based on platform
+  const handleSignIn = async () => {
     setSignInError(null);
     setSignInLoading(true);
     try {
-      await signInWithApple(false); // Not login mode, upgrade anonymous
+      if (Platform.OS === 'ios') {
+        await signInWithApple(false); // Not login mode, upgrade anonymous
+      } else {
+        await signInWithGoogle(false); // Not login mode, upgrade anonymous
+      }
       // On success, user store will update and card will disappear
     } catch (error: any) {
-      let errorMessage = 'There was a problem signing in with Apple.';
+      let errorMessage = Platform.OS === 'ios'
+        ? 'There was a problem signing in with Apple.'
+        : 'There was a problem signing in with Google.';
+
       if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
         errorMessage = 'Sign in was canceled. Please try again.';
       } else if (error.message?.includes('network')) {
@@ -303,7 +310,9 @@ export default function ProfileScreen() {
       } else if (error.message?.includes("operation couldn't be completed")) {
         errorMessage = 'Sign in process could not be completed. Please try again.';
       } else if (error.message?.includes('No account found')) {
-        errorMessage = "We couldn't find an account with this Apple ID. Please create a new account instead.";
+        errorMessage = Platform.OS === 'ios'
+          ? "We couldn't find an account with this Apple ID. Please create a new account instead."
+          : "We couldn't find an account with this Google account. Please create a new account instead.";
       } else if (error.message?.includes('Failed to fetch your account data')) {
         errorMessage = "We couldn't retrieve your account data. Please try again.";
       }
@@ -311,7 +320,8 @@ export default function ProfileScreen() {
     } finally {
       setSignInLoading(false);
     }
-  }
+  };
+
   // Modal state for path selection
   const [showPathModal, setShowPathModal] = useState(false);
   // Check if onboarding is completed - defaulting to true if not found
@@ -375,16 +385,21 @@ export default function ProfileScreen() {
 
               <View className="items-center mb-4">
                 <TouchableOpacity
-                  className="flex-row items-center justify-center bg-black w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow"
-                  onPress={handleAppleSignIn}
+                  className={`flex-row items-center justify-center ${Platform.OS === 'ios' ? 'bg-black' : 'bg-white border border-gray-300'} w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow`}
+                  onPress={handleSignIn}
                   disabled={signInLoading}>
                   {signInLoading ? (
-                    <ActivityIndicator color="white" size="small" style={{ marginRight: 10 }} />
+                    <ActivityIndicator color={Platform.OS === 'ios' ? "white" : "#4285F4"} size="small" style={{ marginRight: 10 }} />
                   ) : (
-                    <AntDesign name="apple1" size={24} color="white" style={{ marginRight: 10 }} />
+                    <AntDesign
+                      name={Platform.OS === 'ios' ? "apple1" : "google"}
+                      size={24}
+                      color={Platform.OS === 'ios' ? "white" : "#4285F4"}
+                      style={{ marginRight: 10 }}
+                    />
                   )}
-                  <Text className="font-din text-white text-[18px] font-bold">
-                    {signInLoading ? 'Signing in...' : 'Sign in with Apple'}
+                  <Text className={`font-din ${Platform.OS === 'ios' ? 'text-white' : 'text-[#4285F4]'} text-[18px] font-bold`}>
+                    {signInLoading ? 'Signing in...' : Platform.OS === 'ios' ? 'Sign in with Apple' : 'Sign in with Google'}
                   </Text>
                 </TouchableOpacity>
               </View>
