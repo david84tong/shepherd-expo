@@ -96,13 +96,14 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         const messageCount = messageCountStr ? parseInt(messageCountStr, 10) : 0;
         setGlobalMessageCount(messageCount);
         console.log("[VerseChatView] Global message count:", messageCount);
+        console.log("[VerseChatView] Pro member status:", isProMember);
       } catch (error) {
         console.error('Error checking free message usage:', error);
       }
     };
     
     checkFreeMessageUsage();
-  }, []);
+  }, [isProMember]);
   
   const showPaywall = async () => {
     // Set the fromScreen property for tracking
@@ -115,6 +116,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       reason: "used_free_message"
     });
     
+    // Try to present the main paywall first, if it fails, show free trial
     const result = await presentPaywall();
     console.log("[VerseChatView] presentPaywall result:", result);
     
@@ -150,8 +152,19 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     
     // Wait a bit for the data to load, then set up initial message
     setTimeout(() => {
-      // If user has already sent 3 messages globally and isn't pro, show upgrade message
-      if (globalMessageCount >= 3 && !isProMember) {
+      // Pro members always get the normal welcome message
+      if (isProMember) {
+        console.log("[VerseChatView] Setting up welcome message for pro member");
+        const initialMessage = `Welcome! I'm here to help you study ${bookName} ${chapter}:${verse.verse}. What would you like to know about this verse?`;
+        
+        setMessages([{
+          id: Date.now().toString(),
+          text: initialMessage,
+          isUser: false,
+          timestamp: new Date()
+        }]);
+      } else if (globalMessageCount >= 3) {
+        // Non-pro users who have used all messages get upgrade message
         console.log("[VerseChatView] Setting up upgrade message for user who has used all messages");
         const upgradeMessage = {
           id: Date.now().toString(),
@@ -161,8 +174,8 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         };
         setMessages([upgradeMessage]);
       } else {
-        // Show normal welcome message
-        console.log("[VerseChatView] Setting up welcome message");
+        // Non-pro users with remaining messages get normal welcome
+        console.log("[VerseChatView] Setting up welcome message for non-pro user with remaining messages");
         const initialMessage = `Welcome! I'm here to help you study ${bookName} ${chapter}:${verse.verse}. What would you like to know about this verse?`;
         
         setMessages([{
@@ -185,8 +198,9 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       inputMessage: inputMessage.trim()
     });
     
+    // Pro members can always send messages with AI response
     if (isProMember) {
-      console.log("[VerseChatView] Pro member - sending message");
+      console.log("[VerseChatView] Pro member - sending message with AI response");
       sendMessage(true);
       return;
     }
@@ -255,7 +269,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
     
-    // For non-pro members, increment global message count
+    // For non-pro members only, increment global message count
     if (!isProMember) {
       // Use a setTimeout to ensure this happens after the message state update
       setTimeout(async () => {
@@ -290,6 +304,16 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           }
         }
       }, 50);
+    } else {
+      // For pro members, still notify parent if this is their first message
+      if (!hasUsedFreeMessage) {
+        onMessageSent?.();
+        analytics.logEvent("Bible_Chat_ProMemberUsed", {
+          book: bookName,
+          chapter,
+          verse: verse.verse
+        });
+      }
     }
     
     // Only make API call if we should get AI response
@@ -478,18 +502,14 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     };
   });
   
-  // Calculate safe bottom padding to avoid tab bar but allow input to be lower
-  // Using a smaller offset to position the input field lower
-  const bottomSafeArea = Math.max(insets.bottom, Platform.OS === 'ios' ? 10 : 0);
-  const tabBarSafeArea = TAB_BAR_HEIGHT + bottomSafeArea;
-  
-  // Position input container lower by reducing the container padding
-  const containerPadding = Math.max(tabBarSafeArea - 25, 0); // Reduced by 25 to lower the input
-  
   return (
     <AnimatedSafeAreaView style={[styles.safeArea, containerStyle]}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF4DC" />
-      <View style={[styles.container, { paddingBottom: containerPadding }]}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={styles.container}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? TAB_BAR_HEIGHT / 3 : 0}
+      >
         <Reanimated.View 
           style={styles.header}
           entering={FadeInUp.duration(400)}
@@ -544,48 +564,45 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
               : null
             }
           />
-          
-          <Reanimated.View style={[styles.inputWrapper, inputContainerStyle]}>
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
-              style={styles.inputContainer}
-            >
-              <TextInput
-                style={styles.input}
-                placeholder={!isProMember && globalMessageCount >= 3
-                  ? "Upgrade to continue chatting..." 
-                  : "Ask about this verse..."}
-                placeholderTextColor="#B89B4C"
-                value={inputMessage}
-                onChangeText={setInputMessage}
-                multiline
-                autoFocus={globalMessageCount < 3 || isProMember}
-                selectTextOnFocus={true}
-                autoCapitalize="none"
-                editable={true}
-              />
-              <TouchableOpacity 
-                style={[
-                  styles.sendButton,
-                  (!inputMessage.trim()) 
-                    ? styles.sendButtonDisabled 
-                    : {}
-                ]}
-                onPress={handleSend}
-                disabled={!inputMessage.trim()}
-                activeOpacity={0.8}
-              >
-                <Feather 
-                  name={!isProMember && globalMessageCount >= 3 ? "unlock" : "send"} 
-                  size={20} 
-                  color={(!inputMessage.trim()) ? "#CCCCCC" : "#FFFFFF"} 
-                />
-              </TouchableOpacity>
-            </KeyboardAvoidingView>
-          </Reanimated.View>
         </View>
-      </View>
+        
+        <Reanimated.View style={[styles.inputWrapper, inputContainerStyle]}>
+          <View style={[styles.inputContainer, { 
+            paddingBottom: Math.max(insets.bottom + (TAB_BAR_HEIGHT / 2), 16) 
+          }]}>
+            <TextInput
+              style={styles.input}
+              placeholder={!isProMember && globalMessageCount >= 3
+                ? "Upgrade to continue chatting..." 
+                : "Ask about this verse..."}
+              placeholderTextColor="#B89B4C"
+              value={inputMessage}
+              onChangeText={setInputMessage}
+              multiline
+              selectTextOnFocus={true}
+              autoCapitalize="none"
+              editable={isProMember || globalMessageCount < 3}
+            />
+            <TouchableOpacity 
+              style={[
+                styles.sendButton,
+                (!inputMessage.trim()) 
+                  ? styles.sendButtonDisabled 
+                  : {}
+              ]}
+              onPress={handleSend}
+              disabled={!inputMessage.trim()}
+              activeOpacity={0.8}
+            >
+              <Feather 
+                name={!isProMember && globalMessageCount >= 3 ? "unlock" : "send"} 
+                size={20} 
+                color={(!inputMessage.trim()) ? "#CCCCCC" : "#FFFFFF"} 
+              />
+            </TouchableOpacity>
+          </View>
+        </Reanimated.View>
+      </KeyboardAvoidingView>
     </AnimatedSafeAreaView>
   );
 };
@@ -684,10 +701,6 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   inputWrapper: {
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-    right: 0,
     width: '100%',
   },
   loadingBubble: {
@@ -717,7 +730,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 80, // Increased padding to ensure enough space at bottom
+    paddingBottom: 16,
   },
   messageText: {
     fontFamily: 'DIN Next Rounded LT W01 Regular',
