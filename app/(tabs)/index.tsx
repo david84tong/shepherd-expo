@@ -1148,7 +1148,7 @@ export default function HomeScreen() {
                 zIndex: 20,
               }}
             >
-              <LinearGradient
+              {/* <LinearGradient
                 colors={['#F7B500', '#FFF45B']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
@@ -1171,7 +1171,7 @@ export default function HomeScreen() {
                 >
                   {isPro ? "SUPER" : isFree ? 'FREE Trial 🔓' : '🎁'}
                 </Text>
-              </LinearGradient>
+              </LinearGradient> */}
             </TouchableOpacity>
           )}
 
