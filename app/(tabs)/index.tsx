@@ -774,6 +774,7 @@ export default function HomeScreen() {
             resizeMode="cover"
           />
         )}
+     
         <View
           style={{
             width: `${scaleFactor * 100}%`,
@@ -785,7 +786,7 @@ export default function HomeScreen() {
             zIndex: 10,
           }}
         >
-
+       
           <Rive
             key={`${riveKey}-${lambLevel}`} // Add level to key to force refresh
             ref={riveRef}
@@ -796,7 +797,7 @@ export default function HomeScreen() {
               width: '100%',
               height: '100%',
               marginTop: 10,
-              opacity: new Date().getHours() >= 19 ? 0.7 : 1
+              opacity: new Date().getHours() >= 19 ? 0.85 : 1
             }}
           />
 
@@ -932,9 +933,7 @@ export default function HomeScreen() {
                       textShadowOffset: { width: 0, height: 1 },
                       textShadowRadius: 2,
                     }}>
-                    {lambName
-                      ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
-                      : 'Shepherd'}
+                    {'Shepherd'}
                   </Text>
                 )}
                 <View className="flex-row gap-2 justify-end ml-2">
@@ -1196,18 +1195,25 @@ export default function HomeScreen() {
               contentContainerStyle={{ paddingBottom: 120 }}
             >
               <View className="flex-row items-center gap-2.5 mb-0 px-1">
+               <View className="flex-row items-center gap-1">
+               <View className="bg-surfaceCream/80  rounded-full items-center justify-center flex-row h-full ">
+                <Text className="font-feather text-description text-body opacity-0.5">
+                  {`${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`}
+                </Text>
+              </View>
+           
+                </View>
                 <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
                   <View
                     className="h-full bg-red rounded-full"
                     style={{ width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%` }}
                   />
                 </View>
-                <View className="flex-row items-center gap-1">
-                  <Text className="font-feather text-body text-description">
-                    {lambHearts}/{MAX_HEARTS}
-                  </Text>
-                  <Image source={heartIcon} className="w-8 h-8" />
-                </View>
+                <Image source={heartIcon} className="w-8 h-8" />
+               
+               <Text className="font-feather text-body text-description">
+                     {lambHearts}
+                   </Text>
               </View>
 
               <SecondaryButton

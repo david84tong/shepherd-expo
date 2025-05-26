@@ -32,7 +32,6 @@ import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
 import useForceUpdateCheck from './hooks/useForceUpdateCheck';
 import ForceUpdateModal from '~/components/ForceUpdateModal';
 import { disableFontScaling } from './helper/disableFontScaling';
-import Toast from 'react-native-toast-message';
 import { adapty } from 'react-native-adapty';
 
 // Import highlight store setup function
@@ -504,9 +503,6 @@ export default function RootLayout() {
             {/* Old Reflection Sheet */}
             {Boolean(showOldReflectionSheet) && <OldReflectionSheet />}
 
-            {/* Toast container for notifications */}
-            <Toast />
-
             {/* Dimmed background for modal overlays */}
             {isModalDimActive && (
               <View
@@ -528,9 +524,6 @@ export default function RootLayout() {
       {visibleForceUpdate && isInitialized ? (
         <ForceUpdateModal visible={visibleForceUpdate} />
       ) : null}
-
-      {/* Toast Message component */}
-      <Toast />
     </GestureHandlerRootView>
   );
 }

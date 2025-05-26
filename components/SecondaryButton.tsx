@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, Image, ImageSourcePropType, Pressable } from 'react-native';
+import { View, Text, Image, ImageSourcePropType, Pressable, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import analytics from '../utils/analytics';
+
 interface SecondaryButtonProps {
   icon: ImageSourcePropType;
   title: string;
@@ -29,8 +30,22 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   // Determine styles based on completed status
   const bgColor = completed ? 'bg-lightGreen' : 'bg-surfaceCream';
   const borderColor = completed ? 'border-darkGreen' : 'border-border';
-  const shadowClass = !isPressed && !completed ? 'shadow-buttonShadow' : '';
   const opacityClass = disabled ? 'opacity-50' : completed ? 'opacity-70' : '';
+  
+  // Platform-specific shadow styles
+  const shadowStyles = !isPressed && !completed && !disabled ? {
+    ...Platform.select({
+      ios: {
+        shadowColor: '#FFE4A8',
+        shadowOffset: { width: 0, height: 5.716 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  } : {};
   
   const handlePress = () => {
     // Trigger medium haptic feedback
@@ -44,12 +59,10 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
       <Pressable
         className={`
           flex-row items-center h-full w-full rounded-card border-[3px] ${borderColor} px-4
-          ${bgColor} transform ${shadowClass} ${opacityClass}
+          ${bgColor} transform ${opacityClass}
           ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}
         `}
-        style={({ pressed }) => [
-          { elevation: (pressed || completed || disabled) ? 0 : 6 }
-        ]}
+        style={shadowStyles}
         onPress={handlePress}
         disabled={disabled}
         onPressIn={() => setIsPressed(true)}

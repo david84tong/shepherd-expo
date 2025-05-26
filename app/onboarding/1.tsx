@@ -386,10 +386,10 @@ export default function OnboardingWelcomeScreen() {
 
       {/* Subtle Back Button */}
       <Animated.View
-        className="absolute top-0 right-0 z-20"
+        className="absolute top-0 left-0 z-20"
         style={{
           paddingTop: insets.top + 16,
-          paddingRight: 24,
+          paddingLeft: 24,
           opacity: textOpacityAnim,
         }}>
         <Pressable
@@ -408,7 +408,7 @@ export default function OnboardingWelcomeScreen() {
           style={{
             backgroundColor: 'rgba(0,0,0,0.2)',
           }}>
-          <Text className="text-white text-lg font-bold">✕</Text>
+          <Text className="text-white text-lg font-bold">←</Text>
         </Pressable>
       </Animated.View>
 

@@ -50,7 +50,7 @@ function CustomTabBarButton(props: any) {
       // Apply base flex styling and only horizontal margin
       className="flex-1 items-center justify-center mx-1">
       {/* Container for content and animated background */}
-      <View className="items-center justify-center p-4 mt-4 w-full">
+      <View className="items-center justify-center p-4 mt-4">
         {/* Animated background View */}
         <Animated.View
           style={[

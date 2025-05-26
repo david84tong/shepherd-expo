@@ -610,6 +610,73 @@ export function DebugButton() {
                 </TouchableOpacity>
               </View>
 
+              {/* UI Testing */}
+              <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">UI Testing</Text>
+
+                {/* Night Mode Toggle Button */}
+                <TouchableOpacity
+                  className="bg-[#2D2D2D] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FFD629]"
+                  onPress={() => {
+                    // Override the current time to simulate night mode (7 PM)
+                    const isCurrentlyNight = new Date().getHours() >= 19;
+                    
+                    if (isCurrentlyNight) {
+                      // Currently night mode, switch to day mode (12 PM)
+                      Date.prototype.getHours = function() { return 12; };
+                    } else {
+                      // Currently day mode, switch to night mode (8 PM)
+                      Date.prototype.getHours = function() { return 20; };
+                    }
+                    
+                    // Show toast instead of alert to avoid presentation conflicts
+                    Toast.show({
+                      type: 'info',
+                      text1: isCurrentlyNight ? 'Day Mode Activated' : 'Night Mode Activated',
+                      text2: isCurrentlyNight ? 'Light background enabled' : 'Dark background enabled',
+                      position: 'top',
+                      visibilityTime: 2000,
+                    });
+                    
+                    // Close modal to see the changes
+                    setModalVisible(false);
+                  }}>
+                  <Text className="font-feather text-base text-white">
+                    Toggle Night Mode
+                  </Text>
+                  <Text className="font-din text-sm text-white/80 mt-1">
+                    {new Date().getHours() >= 19 ? 'Switch to Day Mode' : 'Switch to Night Mode'}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Reset Time Override Button */}
+                <TouchableOpacity
+                  className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
+                  onPress={() => {
+                    // Reset the Date.prototype.getHours to original
+                    delete (Date.prototype as any).getHours;
+                    
+                    // Show toast instead of alert
+                    Toast.show({
+                      type: 'success',
+                      text1: 'Time Reset',
+                      text2: 'Using actual system time now',
+                      position: 'top',
+                      visibilityTime: 2000,
+                    });
+                    
+                    // Close modal to see the changes
+                    setModalVisible(false);
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Reset to System Time
+                  </Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Current time: {new Date().getHours()}:00 ({new Date().getHours() >= 19 ? 'Night' : 'Day'})
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
               {/* Local Storage */}
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">Data Management</Text>
