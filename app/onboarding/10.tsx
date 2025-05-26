@@ -172,7 +172,7 @@ export default function OnboardingReminderTimeScreen() {
         await scheduleDailyReminder(time as NotificationTimeOption);
         console.log(`📱 Onboarding: Successfully scheduled daily reminder for ${time}`);
       } catch (error) {
-        console.error('📱 Onboarding: Error scheduling daily reminder:', error);
+        console.log('📱 Onboarding: Error scheduling daily reminder:', error);
       }
 
       // Also schedule streak warning notifications
@@ -180,7 +180,7 @@ export default function OnboardingReminderTimeScreen() {
         await scheduleStreakReminders();
         console.log('📱 Onboarding: Successfully scheduled streak notifications');
       } catch (error) {
-        console.error('📱 Onboarding: Error scheduling streak notifications:', error);
+        console.log('📱 Onboarding: Error scheduling streak notifications:', error);
       }
 
       // List all scheduled notifications for debugging

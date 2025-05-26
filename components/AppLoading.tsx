@@ -37,7 +37,7 @@ const AppLoading: React.FC<AppLoadingProps> = ({ progress = 0, loadingMessage = 
   }, [pulseAnim]);
 
   return (
-    <View className="flex-1 items-center justify-center bg-surfaceCream">
+    <View className="flex-1 items-center justify-center" style={{ backgroundColor: '#FFF4D9' }}>
       {/* Pulsing logo */}
       <Animated.View
         style={{

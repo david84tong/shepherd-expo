@@ -19,10 +19,11 @@ import PrimaryButton from '../../components/PrimaryButton';
 import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
 
 import analytics from '../../utils/analytics';
+import { IS_ANDROID, IS_IOS } from '../utils/utils';
 
-const FIRST_WELCOME_TEXT = "Every Shepherd starts with one lost lamb...";
+const FIRST_WELCOME_TEXT = 'Every Shepherd starts with one lost lamb...';
 const SECOND_WELCOME_TEXT = "This one's yours.";
-const SECOND_STAGE_PROMPT = "Tap to wake it up";
+const SECOND_STAGE_PROMPT = 'Tap to wake it up';
 const TYPING_SPEED = 75; // Speed for all typing effects
 const ZOOM_DURATION = 3000; // Slow zoom effect (3 seconds)
 const TRANSITION_DURATION = 350; // Faster transition animation duration
@@ -44,17 +45,17 @@ export default function OnboardingWelcomeScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
   const insets = useSafeAreaInsets();
-  
+
   // Initialize analytics
   const { logScreenView, logButtonPress, logEvent, AnalyticsEvent, EventCategory } = useAnalytics();
-  
+
   // Log screen view when component mounts
   useEffect(() => {
-    analytics.logEvent("LambLostScreenViewed", {
+    analytics.logEvent('LambLostScreenViewed', {
       screenName: 'OnboardingWelcomeScreen',
       step: 1,
     });
-    
+
     // Start entrance animation
     const startEntranceAnimation = () => {
       // Animate screen entrance
@@ -82,11 +83,11 @@ export default function OnboardingWelcomeScreen() {
         }, 200);
       });
     };
-    
+
     // Slight delay to ensure smooth transition from previous screen
     setTimeout(startEntranceAnimation, 100);
   }, []);
-  
+
   // State for UI and flow
   const [displayText, setDisplayText] = useState('');
   const [secondStageActive, setSecondStageActive] = useState(false);
@@ -164,7 +165,7 @@ export default function OnboardingWelcomeScreen() {
         useNativeDriver: true,
       }),
     ]).start();
-    
+
     // Enable interaction much earlier (750ms) for faster response
     setTimeout(() => {
       setSecondStageActive(true);
@@ -268,15 +269,15 @@ export default function OnboardingWelcomeScreen() {
     });
 
     if (!secondStageActive || isLambTapped) return;
-    
+
     // Log the lamb tap interaction
     logEvent('lamb_tap', EventCategory.USER_ACTION, {
       step: 1,
       screenName: 'Welcome',
       stage: 'second_stage',
-      action: 'Tapped Lamb'
+      action: 'Tapped Lamb',
     });
-    
+
     riveRef.current?.fireState('State Machine 1', 'tap');
     setIsAnimating(false);
     setIsLambTapped(true);
@@ -322,24 +323,24 @@ export default function OnboardingWelcomeScreen() {
 
     if (textPhase === 2) {
       // Log button press for starting journey
-      analytics.logEvent("Onboarding_Tapped_StartJourney", {
+      analytics.logEvent('Onboarding_Tapped_StartJourney', {
         step: 1,
         screenName: 'Welcome',
         textPhase: textPhase,
-        action: 'Continue'
+        action: 'Continue',
       });
-      
+
       // Start the zoom animation sequence
       startZoomAndTransition();
     } else if (isLambTapped) {
       // Log button press for claiming lamb
-      analytics.logEvent("Onboarding_Tapped_ClaimLostLamb", {
+      analytics.logEvent('Onboarding_Tapped_ClaimLostLamb', {
         step: 1,
         screenName: 'Welcome',
         textPhase: textPhase,
-        action: 'Claim Lost Lamb'
+        action: 'Claim Lost Lamb',
       });
-      
+
       handleTransitionToNextScreen();
     }
   };
@@ -363,14 +364,13 @@ export default function OnboardingWelcomeScreen() {
   }
 
   return (
-    <Animated.View 
-      style={{ 
-        flex: 1, 
-        opacity: screenFadeAnim, 
+    <Animated.View
+      style={{
+        flex: 1,
+        opacity: screenFadeAnim,
         backgroundColor: '#FFF4D9',
         transform: [{ scale: screenScaleAnim }],
-      }}
-    >
+      }}>
       {/* Header Text (Single element) */}
       <Animated.View
         className="px-6 absolute top-0 left-0 right-0 z-10 mx-8"
@@ -397,10 +397,10 @@ export default function OnboardingWelcomeScreen() {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
               console.log('Haptics not available');
             });
-            analytics.logEvent("Onboarding_Tapped_Back", {
+            analytics.logEvent('Onboarding_Tapped_Back', {
               step: 1,
               screenName: 'Welcome',
-              action: 'Back to Auth'
+              action: 'Back to Auth',
             });
             // Navigate to auth index instead of going back to prevent GO_BACK error
             router.replace('/(auth)');
@@ -456,20 +456,34 @@ export default function OnboardingWelcomeScreen() {
             {/* Lamb Animation */}
             <View className="flex-1 items-center justify-center mt-72">
               <View className="w-[225px] h-[225px] w-full justify-center items-center relative">
-                {assets[0].localUri && (
-                  <Rive
-                    ref={riveRef}
-                    url={assets[0].localUri}
-                    onError={(error) => {
-                      console.log('------>', error);
-                    }}
-                    stateMachineName="State Machine 1"
-                    artboardName={'lamb-wakingup-click'}
-                    fit={Fit.Contain}
-                    alignment={Alignment.Center}
-                    style={{ width: '100%', height: '100%' }}
-                  />
-                )}
+                <Rive
+                  ref={riveRef}
+                  // resourceName={assets[0].uri}
+                  onError={(error) => {
+                    console.log('------>', error);
+                  }}
+                  resourceName={IS_ANDROID ? 'make_lamb' : undefined}
+                  url={IS_IOS ? assets[0].uri! : undefined} // Use url prop with localUri
+                  // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
+                  stateMachineName="State Machine 1"
+                  artboardName={'lamb-wakingup-click'}
+                  fit={Fit.Contain}
+                  alignment={Alignment.Center}
+                  style={{ width: '100%', height: '100%' }}
+                />
+                {/* <Rive
+                  ref={riveRef}
+                  onError={(error) => {
+                    console.log('------>', error);
+                  }}
+                  // resourceName={assets[0].uri}
+                  url={assets[0].uri}
+                  artboardName={'lamb-wakingup'}
+                  stateMachineName="State Machine 1"
+                  fit={Fit.Contain}
+                  alignment={Alignment.Center}
+                  style={{ width: '100%', height: '100%' }}
+                /> */}
                 {/* Transparent overlay for tap detection */}
                 <Pressable
                   onPress={handleLambTap}

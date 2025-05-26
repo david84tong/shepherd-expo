@@ -10,11 +10,12 @@ import {
   Linking,
   ActivityIndicator,
   TextInput,
+  Platform,
 } from 'react-native';
 import BottomSheet, {
-  BottomSheetView,
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
+  BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
 import Clipboard from '@react-native-clipboard/clipboard';
 import * as Haptics from 'expo-haptics';
@@ -26,10 +27,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUserStore } from '../app/stores/userStore';
 import { useUIStore } from '../app/stores/uiStore';
 import { usePathStore } from '../app/stores/pathStore';
-import {
-  useNotificationStore,
-  NOTIFICATION_IDS,
-} from '../app/stores/notificationStore';
+import { useNotificationStore, NOTIFICATION_IDS } from '../app/stores/notificationStore';
 import { useRouter } from 'expo-router';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Notifications from 'expo-notifications';
@@ -54,6 +52,7 @@ import Animated, {
   interpolate,
   withSequence,
 } from 'react-native-reanimated';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 
 interface SettingsSheetProps {
   settingsSheetRef: React.RefObject<SettingsSheetRef>;
@@ -74,6 +73,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   const setIsModalDimActive = useUIStore((state) => state.setIsModalDimActive);
   const [translationModalVisible, setTranslationModalVisible] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [showAndroidPicker, setShowAndroidPicker] = useState(false);
 
   // Get user store data
   const notificationTime = useUserStore((state) => state.notificationTime);
@@ -169,7 +169,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         setNotificationsEnabled(false);
       }
     } catch (error) {
-      console.error('Error checking notification permissions:', error);
+      console.log('Error checking notification permissions:', error);
     }
   };
 
@@ -209,21 +209,27 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     });
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-      await auth()
-        .signOut()
-        .then(() => {
-          useUserStore.getState().resetUserStore();
-          bottomSheetRef.current?.close();
-          setIsModalDimActive(false);
-          router.replace({ pathname: '/(auth)' });
-        })
-        .catch((error) => {
-          console.error('Error signing out:', error);
-        });
+
+      // Check if we're on Android and if the user is not signed in with Google
+      const currentUser = auth().currentUser;
+      const isAnonymous = currentUser?.isAnonymous;
+
+      // Proceed with sign out
+      await auth().signOut();
+
+      // Only revoke Google access on Android
+      if (Platform.OS === 'android' && !isAnonymous) {
+        await GoogleSignin.revokeAccess?.();
+      }
+
+      useUserStore.getState().resetUserStore();
+      bottomSheetRef.current?.close();
+      setIsModalDimActive(false);
+      router.replace({ pathname: '/(auth)' });
     } catch (error) {
-      console.error('Error signing out:', error);
+      console.log('Error signing out:', error);
     }
-  }, [router, setIsModalDimActive]);
+  }, [router, setIsModalDimActive, userId]);
 
   // Handle copying the user ID
   const handleCopyUserId = useCallback(() => {
@@ -253,7 +259,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       isUserSignedIn = true;
     } else {
       // Fallback to userStore
-      const user = useUserStore.getState().getUser();
+      const user = useUserStore.getState().getUser?.();
       currentUserId = user?.id || 'Not authenticated';
       isUserSignedIn = !!user?.id;
     }
@@ -262,7 +268,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     setIsUserSignedIn(isUserSignedIn);
 
     // Show the sheet
-    bottomSheetRef.current?.snapToIndex(0);
+    bottomSheetRef.current?.expand();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   }, []);
 
@@ -392,7 +398,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     }
   };
 
-  // Toggle time picker visibility with animation
+  // Toggle time picker visibility
   const toggleTimePicker = () => {
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -403,17 +409,20 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       withTiming(1, { duration: 100, easing: Easing.inOut(Easing.quad) })
     );
 
-    // First update state, then animate
-    const newPickerState = !showTimePicker;
-    setShowTimePicker(newPickerState);
+    if (Platform.OS === 'android') {
+      setShowAndroidPicker(true);
+    } else {
+      // iOS behavior
+      const newPickerState = !showTimePicker;
+      setShowTimePicker(newPickerState);
 
-    // Animate picker height with slight delay to ensure state has updated
-    setTimeout(() => {
-      timePickerHeight.value = withTiming(newPickerState ? 230 : 0, {
-        duration: 300,
-        easing: Easing.bezierFn(0.25, 1, 0.5, 1),
-      });
-    }, 10);
+      setTimeout(() => {
+        timePickerHeight.value = withTiming(newPickerState ? 230 : 0, {
+          duration: 300,
+          easing: Easing.bezierFn(0.25, 1, 0.5, 1),
+        });
+      }, 10);
+    }
   };
 
   // Generate animated styles
@@ -436,22 +445,23 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   });
 
   // Handle time selection and close picker
-  const handleTimeConfirm = async () => {
+  const handleTimeConfirm = async (event?: any, selectedDate?: Date) => {
     // Add haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
-    if (selectedTime) {
-      const hours = selectedTime.getHours();
-      const minutes = selectedTime.getMinutes();
+    // For Android, we need to handle the selected date from the event
+    const finalSelectedTime = Platform.OS === 'android' ? selectedDate : selectedTime;
+
+    if (finalSelectedTime) {
+      const hours = finalSelectedTime.getHours();
+      const minutes = finalSelectedTime.getMinutes();
 
       // Format as "HH:MM"
-      const timeString = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}`;
+      const timeString = `${hours?.toString().padStart(2, '0')}:${minutes?.toString().padStart(2, '0')}`;
 
       try {
-        // 1. First update the userStore with the exact time string
+        // Update stores and schedule notifications
         await setNotificationTime(timeString);
-
-        // 2. Cancel any existing notifications
         await cancelDailyReminder();
 
         // 3. Schedule notification for the exact time
@@ -498,7 +508,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         );
 
         if (!dailyReminder) {
-          console.error('Daily reminder was not scheduled properly');
+          console.log('Daily reminder was not scheduled properly');
           throw new Error('Failed to schedule notification');
         }
 
@@ -508,23 +518,25 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
           await userStore.syncWithFirestore();
         }
 
+        if (Platform.OS === 'android') {
+          setShowAndroidPicker(false);
+        } else {
+          // Animate picker closing for iOS
+          timePickerHeight.value = withTiming(0, {
+            duration: 250,
+            easing: Easing.out(Easing.cubic),
+          });
+          setTimeout(() => {
+            setShowTimePicker(false);
+          }, 200);
+        }
+
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       } catch (error) {
-        console.error('Failed to update notification time:', error);
+        console.log('Failed to update notification time:', error);
         Alert.alert('Error', 'Failed to update notification time. Please try again.');
       }
     }
-
-    // Animate picker closing
-    timePickerHeight.value = withTiming(0, {
-      duration: 250,
-      easing: Easing.out(Easing.cubic),
-    });
-
-    // Close the picker after animation
-    setTimeout(() => {
-      setShowTimePicker(false);
-    }, 200);
   };
 
   // Animate toggle button on press
@@ -548,7 +560,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   const handleOpenDiscord = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     Linking.openURL('https://discord.gg/W9MZdVaKBs').catch((err) => {
-      console.error('Error opening Discord link:', err);
+      console.log('Error opening Discord link:', err);
       Alert.alert('Could not open link', 'Please check your internet connection and try again.');
     });
   }, []);
@@ -593,7 +605,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 await firestore().collection('users').doc(userId).delete();
                 console.log('✅ User document deleted from Firestore');
               } catch (firestoreError) {
-                console.error('❌ Error deleting Firestore document:', firestoreError);
+                console.log('❌ Error deleting Firestore document:', firestoreError);
                 Alert.alert(
                   'Firestore Error',
                   'Failed to delete Firestore data. Continuing with other deletion steps.'
@@ -605,7 +617,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 await AsyncStorage.clear();
                 console.log('✅ Local storage cleared successfully');
               } catch (storageError) {
-                console.error('❌ Error clearing AsyncStorage:', storageError);
+                console.log('❌ Error clearing AsyncStorage:', storageError);
                 Alert.alert(
                   'Storage Error',
                   'Failed to clear local storage. Continuing with other deletion steps.'
@@ -628,7 +640,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   console.log('✅ User signed out after account deletion');
                 }
               } catch (authError: any) {
-                console.error('❌ Error with auth operations:', authError);
+                console.log('❌ Error with auth operations:', authError);
 
                 // Handle the specific "requires-recent-login" error from Firebase
                 if (authError.code === 'auth/requires-recent-login') {
@@ -644,7 +656,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                             bottomSheetRef.current?.close();
                             router.replace({ pathname: '/(auth)' });
                           } catch (e) {
-                            console.error('Failed to sign out:', e);
+                            console.log('Failed to sign out:', e);
                           }
                         },
                       },
@@ -672,7 +684,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 ]
               );
             } catch (error) {
-              console.error('❌ Unhandled error in account deletion:', error);
+              console.log('❌ Unhandled error in account deletion:', error);
               Alert.alert(
                 'Error',
                 'Something went wrong during account deletion. The app will try to sign you out anyway.',
@@ -685,7 +697,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                         bottomSheetRef.current?.close();
                         router.replace({ pathname: '/(auth)' });
                       } catch (e) {
-                        console.error('Final error handler signout failed:', e);
+                        console.log('Final error handler signout failed:', e);
                       }
                     },
                   },
@@ -699,8 +711,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   }, [router]);
 
   // Get subscription state and actions from the store
-  const { handleReferralCode, isProMember, presentPaywall, getCustomerInfo, getUsedReferralCodes, presentHalfOffPaywall } =
-    useSubscriptionStore();
+  const {
+    handleReferralCode,
+    isProMember,
+    presentPaywall,
+    getCustomerInfo,
+    getUsedReferralCodes,
+    presentHalfOffPaywall,
+  } = useSubscriptionStore();
 
   // Handle subscription button press using the store action
   const handleSubscriptionPress = useCallback(async () => {
@@ -722,7 +740,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       // Refresh customer info after redemption
       await getCustomerInfo();
     } catch (error) {
-      console.error('Error presenting promo code sheet:', error);
+      console.log('Error presenting promo code sheet:', error);
       Alert.alert('Error', 'Unable to open the redemption screen. Please try again later.');
     }
   }, [getCustomerInfo]);
@@ -779,7 +797,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       const result = await checkStreakAndApplyPenalties();
       setStreakData(result);
     } catch (error) {
-      console.error('Error fetching streak data:', error);
+      console.log('Error fetching streak data:', error);
       Alert.alert('Error', 'Failed to fetch streak data');
     } finally {
       setDevPanelLoading(false);
@@ -841,43 +859,42 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   };
 
   // Handle reading time selection
-  const handleReadingTimeSelection = useCallback(async (duration: string) => {
-    try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-      
-      // Update user store
-      setFrequencyGoal(duration);
-      
-      // Update in Firestore directly
-      const user = auth().currentUser;
-      if (user) {
-        await firestore()
-          .collection('users')
-          .doc(user.uid)
-          .update({ 
+  const handleReadingTimeSelection = useCallback(
+    async (duration: string) => {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+
+        // Update user store
+        setFrequencyGoal(duration);
+
+        // Update in Firestore directly
+        const user = auth().currentUser;
+        if (user) {
+          await firestore().collection('users').doc(user.uid).update({
             frequencyGoal: duration,
-            updatedAt: firestore.FieldValue.serverTimestamp()
+            updatedAt: firestore.FieldValue.serverTimestamp(),
           });
-        console.log('Updated frequency goal in Firestore');
+          console.log('Updated frequency goal in Firestore');
+        }
+
+        // Close modal
+        setReadingTimeModalVisible(false);
+
+        // Success feedback
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+
+        // Log analytics
+        analytics.logEvent('Settings_Changed_ReadingTime', {
+          newDuration: duration,
+          fromSettings: true,
+        });
+      } catch (error) {
+        console.error('Error updating reading time:', error);
+        Alert.alert('Error', 'Failed to update reading time. Please try again.');
       }
-      
-      // Close modal
-      setReadingTimeModalVisible(false);
-      
-      // Success feedback
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      
-      // Log analytics
-      analytics.logEvent('Settings_Changed_ReadingTime', {
-        newDuration: duration,
-        fromSettings: true
-      });
-      
-    } catch (error) {
-      console.error('Error updating reading time:', error);
-      Alert.alert('Error', 'Failed to update reading time. Please try again.');
-    }
-  }, [setFrequencyGoal]);
+    },
+    [setFrequencyGoal]
+  );
 
   // Check if user has already cancelled today on mount
   useEffect(() => {
@@ -887,7 +904,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         const dailyCancelKey = `cancellation_used_${today}`;
         const cancelledToday = await AsyncStorage.getItem(dailyCancelKey);
         setHasCancelledToday(cancelledToday === 'true');
-        console.log(`[SettingsSheet] User cancelled today (${today}): ${cancelledToday === 'true'}`);
+        console.log(
+          `[SettingsSheet] User cancelled today (${today}): ${cancelledToday === 'true'}`
+        );
       } catch (error) {
         console.error('[SettingsSheet] Error checking daily cancellation:', error);
         setHasCancelledToday(false);
@@ -899,14 +918,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Handle cancellation modal open
   const handleOpenCancellationModal = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-    
+
     // Check if user has already cancelled today
     if (hasCancelledToday) {
       console.log('🚫 User already cancelled today, redirecting to Apple subscriptions');
       analytics.logEvent('Settings_CancellationBlocked_DailyLimit', {
         userId: userId,
       });
-      
+
       Alert.alert(
         'Already Submitted Today',
         'Apple handles all subscription management, so please contact them',
@@ -915,7 +934,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             text: 'Go to Apple Account',
             onPress: () => {
               Linking.openURL('https://apps.apple.com/account/subscriptions').catch(() => {
-                Alert.alert('Error', 'Could not open Apple subscriptions. Please go to Settings > Apple ID > Subscriptions manually.');
+                Alert.alert(
+                  'Error',
+                  'Could not open Apple subscriptions. Please go to Settings > Apple ID > Subscriptions manually.'
+                );
               });
             },
           },
@@ -927,7 +949,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       );
       return;
     }
-    
+
     setCancellationReasons([]);
     setCancellationFeedback('');
     setCancellationModalVisible(true);
@@ -936,9 +958,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Handle cancellation reason toggle
   const toggleCancellationReason = useCallback((reason: string) => {
-    setCancellationReasons(prev => {
+    setCancellationReasons((prev) => {
       if (prev.includes(reason)) {
-        return prev.filter(r => r !== reason);
+        return prev.filter((r) => r !== reason);
       } else {
         return [...prev, reason];
       }
@@ -951,14 +973,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     console.log('📝 Cancellation reasons:', cancellationReasons);
     console.log('💬 Cancellation feedback:', cancellationFeedback);
     console.log('👤 User ID:', userId);
-    
+
     if (cancellationReasons.length === 0) {
       Alert.alert('Please select a reason', 'Please select at least one reason for cancelling.');
       return;
     }
 
     setIsSubmittingCancellation(true);
-    
+
     try {
       console.log('💾 Attempting to save feedback to Firestore...');
       // Save feedback to Firestore
@@ -971,14 +993,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       });
 
       console.log('✅ Feedback save result:', result);
-      
+
       // Mark that user has cancelled today
       const today = new Date().toISOString().split('T')[0];
       const dailyCancelKey = `cancellation_used_${today}`;
       await AsyncStorage.setItem(dailyCancelKey, 'true');
       setHasCancelledToday(true);
       console.log(`✅ Marked cancellation as used for today: ${today}`);
-      
+
       // Log analytics
       console.log('📊 Logging analytics event...');
       analytics.logEvent('Settings_Submitted_CancellationFeedback', {
@@ -991,7 +1013,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       });
 
       // Log individual events for each reason selected
-      cancellationReasons.forEach(reason => {
+      cancellationReasons.forEach((reason) => {
         analytics.logEvent('Settings_CancellationReason_Selected', {
           reason: reason,
           userId: userId,
@@ -1001,21 +1023,22 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
       // Close modal
       setCancellationModalVisible(false);
-      
+
       // Show half-off paywall before they leave
       console.log('🎯 Showing half-off paywall...');
       const paywallResult = await presentHalfOffPaywall();
-      
+
       if (paywallResult === PAYWALL_RESULT.CANCELLED || paywallResult === PAYWALL_RESULT.ERROR) {
         console.log('💔 User cancelled paywall, redirecting to Apple subscriptions...');
-
-      } else if (paywallResult === PAYWALL_RESULT.PURCHASED || paywallResult === PAYWALL_RESULT.RESTORED) {
+      } else if (
+        paywallResult === PAYWALL_RESULT.PURCHASED ||
+        paywallResult === PAYWALL_RESULT.RESTORED
+      ) {
         console.log('🎉 User purchased or restored subscription!');
         // They successfully subscribed, no need to redirect to Apple
       }
-      
+
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      
     } catch (error) {
       console.error('❌ Error submitting cancellation feedback:', error);
       Alert.alert('Error', 'Failed to submit feedback. Please try again.');
@@ -1035,9 +1058,12 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         onChange={handleSettingsChange}
         backgroundStyle={styles.sheetBackground}
         handleIndicatorStyle={styles.handleIndicator}
-        backdropComponent={renderBackdrop}
-        animateOnMount={true}>
-        <BottomSheetView style={styles.settingsContentContainer}>
+        backdropComponent={renderBackdrop}>
+        <BottomSheetScrollView
+          style={styles.settingsContent}
+          showsVerticalScrollIndicator={false}
+          bounces={true}
+          contentContainerStyle={styles.settingsContentContainer}>
           {/* Header */}
           <View style={styles.settingsHeader}>
             <Text style={styles.settingsTitle}>Settings</Text>
@@ -1046,11 +1072,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             </TouchableOpacity>
           </View>
 
-          {/* Sheet Content - Wrapped in ScrollView */}
-          <ScrollView
-            style={styles.settingsContent}
-            showsVerticalScrollIndicator={false}
-            bounces={true}>
+          {/* Sheet Content */}
+          <View style={styles.settingsContent}>
             {/* Bible Translation Section */}
             <View style={styles.settingsSection}>
               <Text style={styles.settingsSectionTitle}>Bible Translation</Text>
@@ -1122,8 +1145,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 </Animated.View>
               )}
 
-              {/* Embedded Time Picker with animation */}
-              {notificationsEnabled && (
+              {/* Time Picker Section */}
+              {notificationsEnabled && Platform.OS === 'ios' && (
                 <Animated.View
                   style={[
                     styles.timePickerContainer,
@@ -1148,6 +1171,22 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   </TouchableOpacity>
                 </Animated.View>
               )}
+
+              {/* Android Time Picker */}
+              {Platform.OS === 'android' && showAndroidPicker && (
+                <DateTimePicker
+                  value={selectedTime}
+                  mode="time"
+                  is24Hour={false}
+                  display="default"
+                  onChange={(event, date) => {
+                    setShowAndroidPicker(false);
+                    if (event.type !== 'dismissed' && date) {
+                      handleTimeConfirm(event, date);
+                    }
+                  }}
+                />
+              )}
             </View>
 
             <View style={styles.divider} />
@@ -1162,7 +1201,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 </View>
                 <Feather name="external-link" size={18} color="#3C584A" />
               </TouchableOpacity>
-              
+
               <TouchableOpacity style={styles.roadmapButton} onPress={handleOpenRoadmap}>
                 <View style={styles.roadmapButtonContent}>
                   <Feather name="map" size={20} color="#22C55E" />
@@ -1208,7 +1247,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               {/* Promo Code Button */}
 
               {/* Referral Code Button */}
-               <TouchableOpacity
+              <TouchableOpacity
                 onPress={handleOpenReferralModal}
                 className="bg-white rounded-xl p-4 mt-2 shadow-sm flex-row justify-between items-center">
                 <View>
@@ -1218,7 +1257,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   </Text>
                 </View>
                 <Feather name="gift" size={20} color="#B89B4C" />
-              </TouchableOpacity> 
+              </TouchableOpacity>
             </View>
 
             {/* User ID Section - Moved to bottom */}
@@ -1428,8 +1467,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
             {/* Extra padding at bottom */}
             <View style={{ height: 40 }} />
-          </ScrollView>
-        </BottomSheetView>
+          </View>
+        </BottomSheetScrollView>
       </BottomSheet>
 
       {/* Translation Selection Modal */}
@@ -1550,9 +1589,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                       ? 'bg-[#FFE07D] border-[#F7B500]'
                       : 'bg-white border-[#FFE4A8]'
                   }`}>
-                  <Text className={`font-feather text-center ${
-                    selectedReadingTime === option.id ? 'text-textPrimary' : 'text-textPrimary'
-                  }`}>
+                  <Text
+                    className={`font-feather text-center ${
+                      selectedReadingTime === option.id ? 'text-textPrimary' : 'text-textPrimary'
+                    }`}>
                     {option.title}
                   </Text>
                 </TouchableOpacity>
@@ -1586,22 +1626,25 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             <View className="mb-4 space-y-3">
               {[
                 'Too expensive',
-                'Technical Issues', 
+                'Technical Issues',
                 'Missing features',
                 'Missing language',
                 'Missing Translation',
                 'Not rewarding enough',
-                'Bible is too boring'
+                'Bible is too boring',
               ].map((reason) => (
                 <TouchableOpacity
                   key={reason}
                   onPress={() => toggleCancellationReason(reason)}
                   className={`rounded-xl p-4 border-2 ${
-                    cancellationReasons.includes(reason) ? 'bg-[#FFE07D] border-[#F7B500]' : 'bg-white border-[#FFE4A8]'
+                    cancellationReasons.includes(reason)
+                      ? 'bg-[#FFE07D] border-[#F7B500]'
+                      : 'bg-white border-[#FFE4A8]'
                   }`}>
-                  <Text className={`font-feather text-center ${
-                    cancellationReasons.includes(reason) ? 'text-textPrimary' : 'text-textPrimary'
-                  }`}>
+                  <Text
+                    className={`font-feather text-center ${
+                      cancellationReasons.includes(reason) ? 'text-textPrimary' : 'text-textPrimary'
+                    }`}>
                     {reason}
                   </Text>
                 </TouchableOpacity>
@@ -1610,7 +1653,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
             {/* Feedback Input */}
             <View className="mb-4">
-              <Text className="font-din text-textPrimary mb-2">Please elaborate, we really want to improve 😢</Text>
+              <Text className="font-din text-textPrimary mb-2">
+                Please elaborate, we really want to improve 😢
+              </Text>
               <TextInput
                 className="bg-white rounded-xl px-4 py-3 text-lg font-din text-textPrimary border border-[#FFE4A8] min-h-[120px]"
                 placeholder="Your feedback helps us improve..."
@@ -1655,126 +1700,96 @@ const styles = StyleSheet.create({
   },
   handleIndicator: {
     backgroundColor: '#DCB280',
-    width: 40,
     height: 4,
+    width: 40,
   },
   settingsContentContainer: {
-    flex: 1,
-  },
-  settingsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFE4A8',
-  },
-  settingsTitle: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Black',
-    color: '#3C584A',
-  },
-  doneButton: {
-    fontSize: 16,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    color: '#F7B500',
-    fontWeight: '600',
+    flexGrow: 1,
+    paddingBottom: 40,
   },
   settingsContent: {
     flex: 1,
     padding: 20,
   },
-  settingsText: {
+  settingsHeader: {
+    alignItems: 'center',
+    borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  settingsTitle: {
+    color: '#3C584A',
+    fontFamily: 'Nunito-Black',
+    fontSize: 18,
+  },
+  doneButton: {
+    color: '#F7B500',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
-    color: 'rgba(60, 88, 74, 0.7)',
     fontSize: 16,
-  },
-  signOutButton: {
-    backgroundColor: 'rgba(223, 69, 51, 0.1)',
-    padding: 16,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#DF4533',
-    marginBottom: 20,
-  },
-  signOutText: {
-    fontFamily: 'Nunito-Black',
-    fontSize: 16,
-    color: '#DF4533',
-  },
-  deleteAccountButton: {
-    backgroundColor: 'rgba(223, 69, 51, 0.2)',
-    padding: 16,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#DF4533',
-    marginBottom: 20,
-  },
-  deleteAccountText: {
-    fontFamily: 'Nunito-Black',
-    fontSize: 16,
-    color: '#DF4533',
+    fontWeight: '600',
   },
   settingsSection: {
     marginBottom: 20,
   },
   settingsSectionTitle: {
+    color: '#3C584A',
     fontFamily: 'Nunito-Black',
     fontSize: 18,
-    color: '#3C584A',
     marginBottom: 10,
   },
   userIdContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
   },
   userIdText: {
+    color: '#3C584A',
+    flexShrink: 1,
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
-    color: '#3C584A',
     marginRight: 10,
-    flexShrink: 1, // Allow text to shrink
   },
   copyButton: {
     padding: 5,
   },
   divider: {
-    height: 1,
     backgroundColor: '#FFE4A8',
+    height: 1,
     marginVertical: 12,
   },
   translationSelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: 'rgba(60, 88, 74, 0.05)',
-    padding: 12,
     borderRadius: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 12,
   },
   translationText: {
+    color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
-    color: '#3C584A',
   },
   modalContainer: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    flex: 1,
+    justifyContent: 'center',
   },
   modalContent: {
     backgroundColor: '#FFF4D9',
     borderRadius: 16,
+    maxHeight: '90%',
+    maxWidth: 350,
     padding: 20,
     width: '85%',
-    maxWidth: 350,
-    maxHeight: '90%',
   },
   modalTitle: {
+    color: '#3C584A',
     fontFamily: 'Feather Bold',
     fontSize: 18,
-    color: '#3C584A',
     marginBottom: 16,
     textAlign: 'center',
   },
@@ -1782,108 +1797,97 @@ const styles = StyleSheet.create({
     maxHeight: 450,
   },
   translationOption: {
+    alignItems: 'center',
+    borderRadius: 8,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingHorizontal: 12,
-    borderRadius: 8,
     marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
   },
   selectedTranslation: {
     backgroundColor: 'rgba(247, 181, 0, 0.1)',
   },
   translationOptionText: {
+    color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
-    color: '#3C584A',
   },
   selectedTranslationText: {
-    fontWeight: '600',
     color: '#3C584A',
+    fontWeight: '600',
   },
   cancelButton: {
-    marginTop: 12,
-    padding: 14,
+    alignItems: 'center',
     backgroundColor: 'rgba(60, 88, 74, 0.1)',
     borderRadius: 8,
-    alignItems: 'center',
+    marginTop: 12,
+    padding: 14,
   },
   cancelButtonText: {
+    color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
-    color: '#3C584A',
     fontWeight: '600',
   },
-  notificationToggleContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
-  },
-  notificationToggleText: {
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 16,
-    color: '#3C584A',
-  },
   toggleButton: {
-    width: 50,
-    height: 30,
-    borderRadius: 15,
     backgroundColor: '#E0E0E0',
-    padding: 5,
+    borderRadius: 15,
+    height: 30,
     justifyContent: 'center',
+    padding: 5,
+    width: 50,
   },
   toggleButtonActive: {
     backgroundColor: '#F7B500',
   },
   toggleKnob: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
     backgroundColor: '#FFFFFF',
+    borderRadius: 10,
+    height: 20,
     transform: [{ translateX: 0 }],
+    width: 20,
   },
   toggleKnobActive: {
     // Remove transform from here, we'll handle it with Animated
   },
   timeSelector: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: 'rgba(60, 88, 74, 0.05)',
-    padding: 12,
     borderRadius: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginTop: 10,
+    padding: 12,
   },
   timeSelectorText: {
+    color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
-    color: '#3C584A',
   },
   timePickerContainer: {
     backgroundColor: 'rgba(255, 244, 217, 0.95)',
+    borderColor: '#FFE4A8',
     borderRadius: 16,
+    borderWidth: 1,
     marginTop: 24,
     overflow: 'hidden',
-    borderWidth: 1,
-    borderColor: '#FFE4A8',
   },
   timePicker: {
-    width: '100%',
     height: 180,
+    width: '100%',
   },
   donePickingButton: {
-    backgroundColor: '#F7B500',
-    padding: 8,
     alignItems: 'center',
+    backgroundColor: '#F7B500',
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
+    padding: 8,
   },
   donePickingText: {
+    color: '#FFFFFF',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
-    color: '#FFFFFF',
     fontWeight: '600',
   },
   timeSelectorActive: {
@@ -1892,98 +1896,77 @@ const styles = StyleSheet.create({
   },
   timePickerWrapper: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    borderBottomWidth: 1,
     borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    borderRadius: 16,
     paddingVertical: 8,
   },
   discordButton: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     backgroundColor: 'rgba(88, 101, 242, 0.1)',
-    padding: 16,
-    borderRadius: 12,
-    borderLeftWidth: 4,
     borderLeftColor: '#5865F2',
-  },
-  discordButtonContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  discordButtonText: {
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 16,
-    color: '#3C584A',
-    marginLeft: 10,
-  },
-  promoCodeButton: {
+    borderLeftWidth: 4,
+    borderRadius: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: 'rgba(247, 181, 0, 0.1)',
     padding: 16,
-    borderRadius: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: '#F7B500',
   },
-  promoCodeButtonContent: {
-    flexDirection: 'row',
+  discordButtonContent: {
     alignItems: 'center',
+    flexDirection: 'row',
   },
-  promoCodeButtonText: {
+  discordButtonText: {
+    color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
-    color: '#3C584A',
     marginLeft: 10,
   },
-  // Developer Panel styles
   developerToggleButton: {
-    backgroundColor: 'rgba(60, 88, 74, 0.05)',
-    padding: 12,
-    borderRadius: 10,
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 10,
-    borderLeftWidth: 4,
+    backgroundColor: 'rgba(60, 88, 74, 0.05)',
     borderLeftColor: '#3C584A',
+    borderLeftWidth: 4,
+    borderRadius: 10,
+    marginBottom: 10,
+    marginTop: 20,
+    padding: 12,
   },
   developerToggleText: {
+    color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 14,
-    color: '#3C584A',
     fontWeight: '600',
   },
   developerPanel: {
     backgroundColor: 'rgba(60, 88, 74, 0.05)',
     borderRadius: 10,
-    padding: 15,
     marginBottom: 20,
+    padding: 15,
   },
   developerPanelHeader: {
+    alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 10,
   },
   developerPanelTitle: {
+    color: '#3C584A',
     fontFamily: 'Nunito-Black',
     fontSize: 16,
-    color: '#3C584A',
   },
   refreshButton: {
     padding: 5,
   },
   developerPanelSection: {
-    marginBottom: 15,
-    borderBottomWidth: 1,
     borderBottomColor: 'rgba(60, 88, 74, 0.1)',
+    borderBottomWidth: 1,
+    marginBottom: 15,
     paddingBottom: 10,
   },
   developerPanelSectionTitle: {
+    color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 14,
-    color: '#3C584A',
     fontWeight: '600',
     marginBottom: 5,
   },
@@ -1993,49 +1976,69 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   developerDataLabel: {
+    color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 12,
-    color: '#3C584A',
     opacity: 0.8,
   },
   developerDataValue: {
+    color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 12,
-    color: '#3C584A',
     fontWeight: '600',
   },
   developerPanelExpandButton: {
+    alignItems: 'center',
+    borderTopColor: 'rgba(60, 88, 74, 0.1)',
+    borderTopWidth: 1,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
     marginBottom: 10,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(60, 88, 74, 0.1)',
+    paddingVertical: 8,
   },
   developerExpandText: {
+    color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 14,
-    color: '#3C584A',
   },
   forceCheckButton: {
-    backgroundColor: 'rgba(247, 181, 0, 0.15)',
-    padding: 10,
-    borderRadius: 8,
     alignItems: 'center',
+    backgroundColor: 'rgba(247, 181, 0, 0.15)',
+    borderRadius: 8,
     marginTop: 10,
+    padding: 10,
   },
   forceCheckButtonText: {
+    color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 14,
-    color: '#3C584A',
     fontWeight: '600',
   },
-  developerSectionTitle: {
+  signOutButton: {
+    backgroundColor: 'rgba(223, 69, 51, 0.1)',
+    borderLeftColor: '#DF4533',
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    marginBottom: 20,
+    padding: 16,
+  },
+  signOutText: {
+    color: '#DF4533',
     fontFamily: 'Nunito-Black',
     fontSize: 16,
-    color: '#3C584A',
-    marginBottom: 5,
+  },
+  deleteAccountButton: {
+    backgroundColor: 'rgba(223, 69, 51, 0.2)',
+    borderLeftColor: '#DF4533',
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    marginBottom: 20,
+    padding: 16,
+  },
+  deleteAccountText: {
+    color: '#DF4533',
+    fontFamily: 'Nunito-Black',
+    fontSize: 16,
   },
   roadmapButton: {
     flexDirection: 'row',
