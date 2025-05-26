@@ -176,7 +176,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     return () => {
       layoutSubscription.remove();
     };
-  }, [hasUsedFreeMessage, isProMember, globalMessageCount]);
+  }, [hasUsedFreeMessage, isProMember]);
   
   
   const handleSend = async () => {
@@ -199,8 +199,8 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     
     // For non-pro members, check their message count
     if (globalMessageCount >= 2) {
-      console.log("[VerseChatView] User has sent 2 messages - showing paywall");
-      // User has already sent 2 messages, show paywall
+      console.log("[VerseChatView] User has sent 2 messages - showing paywall on 3rd attempt");
+      // User has already sent 2 messages, show paywall on 3rd attempt
       showPaywall();
       return;
     }
@@ -208,65 +208,69 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     // User can send this message (first or second message)
     console.log(`[VerseChatView] Allowing message ${globalMessageCount + 1} of 2`);
     
-    // Increment global message count and save to AsyncStorage
-    const newMessageCount = globalMessageCount + 1;
-    setGlobalMessageCount(newMessageCount);
-    
-    try {
-      await AsyncStorage.setItem(CHAT_MESSAGE_COUNT_KEY, newMessageCount.toString());
-      console.log(`[VerseChatView] Saved global message count: ${newMessageCount}`);
-    } catch (error) {
-      console.error('Error saving global message count:', error);
-    }
-    
-    // If this is their first message ever globally, mark it as used
-    if (!hasUsedFreeMessage) {
-      try {
-        await AsyncStorage.setItem(CHAT_USED_KEY, 'true');
-        setHasUsedFreeMessage(true);
-        console.log("[VerseChatView] Marked free message as used permanently");
-        
-        // Notify parent component that message was sent
-        onMessageSent?.();
-        
-        analytics.logEvent("Bible_Chat_UsedFreeMessage", {
-          book: bookName,
-          chapter,
-          verse: verse.verse,
-          isGlobalFirstUse: true
-        });
-      } catch (error) {
-        console.error('Error marking free message as used:', error);
-      }
-    }
-    
-    // Send the message
+    // Send the message first, then increment count
     sendMessage();
   };
   
   const sendMessage = async () => {
-    // Add user message
+    // Store user input before clearing it
+    const userQuestion = inputMessage;
+    
+    // Add user message immediately
     const newMessage = {
       id: Date.now().toString(),
-      text: inputMessage,
+      text: userQuestion,
       isUser: true,
       timestamp: new Date()
     };
     
-    const userQuestion = inputMessage; // Store user input before clearing it
+    // Clear input field
     setInputMessage('');
     
-    // Add message and force scroll to bottom
-    setMessages(prev => {
-      const updatedMessages = [...prev, newMessage];
-      // Force scroll after state update with a delay
-      requestAnimationFrame(() => {
-        setTimeout(() => {
-          flatListRef.current?.scrollToEnd({ animated: false });
-        }, 100);
-      });
-      return updatedMessages;
-    });
+    // Add user message to chat
+    setMessages(prev => [...prev, newMessage]);
+    
+    // Force scroll to bottom after a short delay
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+    
+    // For non-pro members, increment global message count
+    if (!isProMember) {
+      // Use a setTimeout to ensure this happens after the message state update
+      setTimeout(async () => {
+        const newMessageCount = globalMessageCount + 1;
+        setGlobalMessageCount(newMessageCount);
+        
+        try {
+          await AsyncStorage.setItem(CHAT_MESSAGE_COUNT_KEY, newMessageCount.toString());
+          console.log(`[VerseChatView] Saved global message count: ${newMessageCount}`);
+        } catch (error) {
+          console.error('Error saving global message count:', error);
+        }
+        
+        // If this is their first message ever globally, mark it as used
+        if (!hasUsedFreeMessage) {
+          try {
+            await AsyncStorage.setItem(CHAT_USED_KEY, 'true');
+            setHasUsedFreeMessage(true);
+            console.log("[VerseChatView] Marked free message as used permanently");
+            
+            // Notify parent component that message was sent
+            onMessageSent?.();
+            
+            analytics.logEvent("Bible_Chat_UsedFreeMessage", {
+              book: bookName,
+              chapter,
+              verse: verse.verse,
+              isGlobalFirstUse: true
+            });
+          } catch (error) {
+            console.error('Error marking free message as used:', error);
+          }
+        }
+      }, 50);
+    }
     
     // Show loading message
     setIsAiLoading(true);
@@ -359,16 +363,6 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       }
     }, 1000);
   };
-  
-  // Auto scroll to bottom when messages change
-  useEffect(() => {
-    if (flatListRef.current && messages.length > 0) {
-      // Add a small delay to ensure the new message has been rendered
-      setTimeout(() => {
-        flatListRef.current?.scrollToEnd({ animated: true });
-      }, 300);
-    }
-  }, [messages]);
   
   // Additional scroll handler for when keyboard appears
   useEffect(() => {
@@ -534,7 +528,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
               <TextInput
                 style={styles.input}
                 placeholder={!isProMember && globalMessageCount >= 2
-                  ? "Tap upgrade button above to continue..." 
+                  ? "Upgrade to continue chatting..." 
                   : "Ask about this verse..."}
                 placeholderTextColor="#B89B4C"
                 value={inputMessage}
