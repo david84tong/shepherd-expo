@@ -988,11 +988,6 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         reasonCount: cancellationReasons.length,
         feedbackLength: cancellationFeedback.length,
         // Individual reason flags for easier filtering
-        reasonTooExpensive: cancellationReasons.includes('Too expensive'),
-        reasonTechnicalIssues: cancellationReasons.includes('Technical Issues'),
-        reasonMissingFeatures: cancellationReasons.includes('Missing features'),
-        reasonMissingLanguage: cancellationReasons.includes('Missing language'),
-        reasonMissingTranslation: cancellationReasons.includes('Missing Translation'),
       });
 
       // Log individual events for each reason selected
@@ -1594,7 +1589,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 'Technical Issues', 
                 'Missing features',
                 'Missing language',
-                'Missing Translation'
+                'Missing Translation',
+                'Not rewarding enough',
+                'Bible is too boring'
               ].map((reason) => (
                 <TouchableOpacity
                   key={reason}

@@ -106,7 +106,6 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       verse: verse.verse,
       reason: "used_free_message"
     });
-    
     const result = await presentPaywall();
     console.log("[VerseChatView] presentPaywall result:", result);
     
@@ -135,7 +134,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       // If user has already used their free message and isn't pro, show paywall immediately
       if (hasUsedFreeMessage && !isProMember) {
         console.log("[VerseChatView] User has used free message and isn't pro - showing paywall immediately");
-        showPaywall();
+        // showPaywall();
         return;
       }
       
