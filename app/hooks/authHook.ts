@@ -5,6 +5,10 @@ import firestore from '@react-native-firebase/firestore';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
 import { useState, useEffect } from 'react';
+import { Platform } from 'react-native';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+
+import Constants from 'expo-constants';
 
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
@@ -22,7 +26,7 @@ export const checkUserExists = async (uid: string): Promise<boolean> => {
     const userDoc = await firestore().collection('users').doc(uid).get();
     return userDoc.exists;
   } catch (error) {
-    console.error("Error checking if user exists:", error);
+    console.log('Error checking if user exists:', error);
     return false;
   }
 };
@@ -34,8 +38,14 @@ export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Get user from the store
-  const { getUser, setUser: updateUser, setCreatedAt, setUpdatedAt, fetchFromFirestore } = useUserStore();
-  const user = getUser();
+  const {
+    getUser,
+    setUser: updateUser,
+    setCreatedAt,
+    setUpdatedAt,
+    fetchFromFirestore,
+  } = useUserStore();
+  const user = getUser?.();
 
   // Listen to auth state changes
   useEffect(() => {
@@ -55,7 +65,7 @@ export function useAuth() {
       // Check if Apple Sign In is available on the device
       const isAvailable = await AppleAuthentication.isAvailableAsync();
       if (!isAvailable) {
-        console.error('[Auth] Apple Authentication is not available on this device');
+        console.log('[Auth] Apple Authentication is not available on this device');
         throw new Error('Apple Authentication is not available on this device');
       }
 
@@ -67,7 +77,7 @@ export function useAuth() {
           AppleAuthentication.AppleAuthenticationScope.EMAIL,
         ],
       });
-      
+
       // Log full credential object (excluding sensitive data) for debugging
       console.log('[Auth] Apple credential received:', {
         user: credential?.user,
@@ -85,15 +95,18 @@ export function useAuth() {
         console.log('[Auth] No identityToken returned from Apple');
         throw new Error('Authentication incomplete: No identity token provided from Apple');
       }
-      
+
       // Create a Firebase credential
-      const firebaseCredential = auth.AppleAuthProvider.credential(identityToken, authorizationCode || undefined);
+      const firebaseCredential = auth.AppleAuthProvider.credential(
+        identityToken,
+        authorizationCode || undefined
+      );
       console.log('[Auth] Firebase credential created successfully');
 
       // Sign in to Firebase with the Apple credential
       const userCredential = await auth().signInWithCredential(firebaseCredential);
       console.log('[Auth] Firebase sign-in successful, uid:', userCredential.user.uid);
-      
+
       // In login mode, verify the user account exists
       if (isLoginMode) {
         const userExists = await checkUserExists(userCredential.user.uid);
@@ -101,33 +114,39 @@ export function useAuth() {
           console.log('[Auth] Account not found during login attempt');
           // Force sign out since this is a login attempt but no account exists
           await auth().signOut();
-          throw new Error('No account found with this Apple ID. Please create a new account instead.');
+          throw new Error(
+            'No account found with this Apple ID. Please create a new account instead.'
+          );
         }
-        
+
         // In login mode, fetch the user's data from Firestore instead of creating new data
         console.log('[Auth] Login mode: fetching existing user data from Firestore');
-        const success = await fetchFromFirestore();
+        const success = await fetchFromFirestore?.();
         if (!success) {
-          console.error('[Auth] Failed to fetch user data from Firestore');
+          console.log('[Auth] Failed to fetch user data from Firestore');
           throw new Error('Failed to fetch your account data. Please try again.');
         }
-        
+
         // Return the user credential after successful fetch
         return userCredential.user;
       }
-      
+
       // If not in login mode (new user registration), proceed with user creation
       // Get user info from Firebase user and Apple credential
       const { uid, email: firebaseEmail } = userCredential.user;
-      
+
       // Combine info from Apple credential and Firebase
       const email = firebaseEmail || credential.email || '';
-      const displayName = credential.fullName?.givenName 
+      const displayName = credential.fullName?.givenName
         ? `${credential.fullName.givenName} ${credential.fullName.familyName || ''}`
         : userCredential.user.displayName || 'Anonymous User';
-      
-      console.log('[Auth] User info combined:', { uid, displayName, email: email ? 'exists' : 'none' });
-      
+
+      console.log('[Auth] User info combined:', {
+        uid,
+        displayName,
+        email: email ? 'exists' : 'none',
+      });
+
       // Create or update user document in Firestore
       const userDoc = {
         id: uid,
@@ -139,7 +158,7 @@ export function useAuth() {
 
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
       console.log('[Auth] User document updated in Firestore');
-      
+
       // Update local store
       updateUser({
         id: uid,
@@ -151,7 +170,7 @@ export function useAuth() {
 
       // Log successful sign in
       if (analytics.isInitialized) {
-        analytics.logEvent('auth_success')
+        analytics.logEvent('auth_success');
       }
 
       // Adapty: login user after successful sign in
@@ -162,12 +181,12 @@ export function useAuth() {
       return userCredential.user;
     } catch (err) {
       const error = err as Error;
-      console.error('[Auth] Apple sign in error details:', {
+      console.log('[Auth] Apple sign in error details:', {
         message: error.message,
         name: error.name,
-        stack: error.stack
+        stack: error.stack,
       });
-      
+
       // Check for specific Apple Authentication errors
       if (error.message?.includes("The operation couldn't be completed")) {
         console.log('[Auth] Apple Sign In process was interrupted or incomplete');
@@ -176,15 +195,15 @@ export function useAuth() {
         console.log('[Auth] User canceled the Apple Sign In');
         error.message = 'Apple Sign In was canceled. Please try again.';
       }
-      
+
       // Log authentication error
       if (analytics.isInitialized) {
-        analytics.logError('Authentication error', 'apple_auth_failed', { 
+        analytics.logError('Authentication error', 'apple_auth_failed', {
           error_message: error.message,
-          error_name: error.name
+          error_name: error.name,
         });
       }
-      
+
       setError(error);
       // Explicitly pass the error upward for the UI to handle
       throw error;
@@ -225,7 +244,7 @@ export function useAuth() {
 
       // Log successful anonymous sign in
       if (analytics.isInitialized) {
-        analytics.logEvent('auth_success_anonymously_by_clicking_skip_button')
+        analytics.logEvent('auth_success_anonymously_by_clicking_skip_button');
       }
 
       // Adapty: login user after successful anonymous sign in
@@ -236,15 +255,15 @@ export function useAuth() {
       return userCredential.user;
     } catch (err) {
       const error = err as Error;
-      console.error('[Auth] Anonymous sign in error:', error.message, error.stack);
-      
+      console.log('[Auth] Anonymous sign in error:', error.message, error.stack);
+
       // Log authentication error
       if (analytics.isInitialized) {
-        analytics.logError('Authentication error', 'anonymous_auth_failed', { 
-          error_message: error.message 
+        analytics.logError('Authentication error', 'anonymous_auth_failed', {
+          error_message: error.message,
         });
       }
-      
+
       setError(error);
       throw error;
     } finally {
@@ -252,94 +271,107 @@ export function useAuth() {
     }
   };
 
-  const getFirebaseIdToken = async (): Promise<string | null> => {
-    console.log('[Auth] getFirebaseIdToken() called');
+  // Google Sign-In (Android only)
+  const signInWithGoogle = async (isLoginMode = false) => {
+    if (Platform.OS !== 'android') {
+      throw new Error('Google sign-in is only supported on Android.');
+    }
     try {
-      // Get current user
-      const currentUser = auth().currentUser;
-      if (!currentUser) {
-        console.error('[Auth] No authenticated user found');
-        return null;
+      setLoading(true);
+      setError(null);
+
+      // Use dynamic web client ID from expo-constants (support both SDK 49+ and older)
+      const webClientId =
+        ((Constants.expoConfig as any)?.extra?.googleWebClientId as string | undefined) ||
+        ((Constants.manifest as any)?.extra?.googleWebClientId as string | undefined);
+      if (!webClientId) {
+        throw new Error('Google Web Client ID is not configured.');
+      }
+      GoogleSignin.configure({ webClientId });
+
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+      // idToken may be on userInfo.idToken or userInfo.user.idToken depending on version
+      const idToken = (userInfo as any).idToken || (userInfo as any).data?.idToken;
+      if (!idToken) {
+        throw new Error('No idToken returned from Google sign-in.');
+      }
+      // Authenticate with Firebase
+      const googleCredential = auth.GoogleAuthProvider.credential(idToken);
+      const userCredential = await auth().signInWithCredential(googleCredential);
+
+      // In login mode, verify the user account exists
+      if (isLoginMode) {
+        const userExists = await checkUserExists(userCredential.user.uid);
+        if (!userExists) {
+          await auth().signOut();
+          throw new Error(
+            'No account found with this Google account. Please create a new account instead.'
+          );
+        }
+        const success = await fetchFromFirestore?.();
+        if (!success) {
+          throw new Error('Failed to fetch your account data. Please try again.');
+        }
+        return userCredential.user;
       }
 
-      // Request a fresh token
-      const idToken = await currentUser.getIdToken(true);
-      console.log('[Auth] Firebase ID token fetched successfully');
-      return idToken;
-    } catch (error) {
-      console.error('[Auth] Error getting ID token:', error);
-      return null;
+      // Save user info
+      const { uid, email, displayName } = userCredential.user;
+      const userDoc = {
+        id: uid,
+        email: email || '',
+        displayName: displayName || 'Google User',
+        createdAt: firestore.Timestamp.now(),
+        updatedAt: firestore.Timestamp.now(),
+      };
+      console.log('userDoc ====>', userDoc);
+
+      await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
+      console.log('userDoc set in firestore');
+
+      updateUser({ id: uid, displayName: userDoc.displayName, email: userDoc.email });
+      console.log('userDoc updated in store');
+      setCreatedAt(firestore.Timestamp.now());
+      setUpdatedAt(firestore.Timestamp.now());
+      console.log('createdAt and updatedAt set in store');
+
+      if (analytics.isInitialized) {
+        analytics.logEvent('auth_success', {
+          method: 'google',
+          uid: uid.substring(0, 8),
+        });
+      }
+      return userCredential.user;
+    } catch (err) {
+      const error = err as Error;
+      if (analytics.isInitialized) {
+        analytics.logError('Authentication error', 'google_auth_failed', {
+          error_message: error.message,
+        });
+      }
+      setError(error);
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
-
-  // Google Sign-In
-  // const signInWithGoogle = async () => {
-  //   try {
-  //     setLoading(true);
-  //     setError(null);
-
-  //     // Configure Google Auth
-  //     const clientId = Platform.select({
-  //       ios: '226457915179-94pi2j8k1m56vee052gh3qjp3vm9t37i.apps.googleusercontent.com',
-  //       android: 'YOUR_ANDROID_CLIENT_ID', // Replace with your Android client ID
-  //       default: '',
-  //     });
-
-  //     const redirectUri = Google.makeRedirectUri({ useProxy: true });
-  //     const result = await Google.startAsync({
-  //       clientId,
-  //       redirectUri,
-  //       scopes: ['profile', 'email'],
-  //     });
-
-  //     if (result.type !== 'success' || !result.authentication?.idToken) {
-  //       throw new Error('Google Sign-In was cancelled or failed.');
-  //     }
-
-  //     // Create Firebase credential with the Google ID token
-  //     const { idToken, accessToken } = result.authentication;
-  //     const googleCredential = auth.GoogleAuthProvider.credential(idToken, accessToken);
-  //     const userCredential = await auth().signInWithCredential(googleCredential);
-
-  //     // Save user info
-  //     const { uid, email, displayName } = userCredential.user;
-  //     const userDoc = {
-  //       id: uid,
-  //       email: email || '',
-  //       displayName: displayName || 'Google User',
-  //       createdAt: firestore.Timestamp.now(),
-  //       updatedAt: firestore.Timestamp.now(),
-  //     };
-  //     await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
-  //     updateUser({ id: uid, displayName: userDoc.displayName, email: userDoc.email });
-  //     setCreatedAt(firestore.Timestamp.now());
-  //     setUpdatedAt(firestore.Timestamp.now());
-
-  //     // Analytics
-  //     if (analytics.isInitialized) {
-  //       analytics.logEvent('auth_success', 'user_action', {
-  //         method: 'google',
-  //         uid: uid.substring(0, 8),
-  //       });
-  //     }
-
-  //     return userCredential.user;
-  //   } catch (err) {
-  //     const error = err as Error;
-  //     setError(error);
-  //     throw error;
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
 
   // Add a signOut function that logs out Adapty as well
   const signOut = async () => {
     try {
+      const currentUser = auth().currentUser;
+      const isAnonymous = currentUser?.isAnonymous;
+
       await auth().signOut();
+
+      if (Platform.OS === 'android' && !isAnonymous) {
+        await GoogleSignin.revokeAccess?.();
+      }
+
       // await subscriptionStore.logoutAdaptyUser();
     } catch (error) {
-      console.error('[Auth] Error during sign out:', error);
+      console.log('[Auth] Error during sign out:', error);
       throw error;
     }
   };
@@ -350,9 +382,9 @@ export function useAuth() {
     error,
     isAuthenticated,
     signInWithApple,
+    signInWithGoogle,
     signInAnonymously,
     checkUserExists,
-    getFirebaseIdToken,
     signOut,
   };
 }

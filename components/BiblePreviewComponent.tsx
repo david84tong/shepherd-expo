@@ -26,8 +26,8 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   const cardOpacity = useRef(new Animated.Value(0)).current;
 
   // Get user's reading time preference from userStore
-  const frequencyGoal = useUserStore(state => state.frequencyGoal);
-  
+  const frequencyGoal = useUserStore((state) => state.frequencyGoal);
+
   // Get saved reading & path in progress state from path store
   const {
     savedBook,
@@ -43,7 +43,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   const orderedPaths = useMemo(() => {
     // Determine which paths to use based on user's reading time preference
     const pathsToUse = frequencyGoal === '1-5' ? SHORTER_BIBLE_PATHS_2 : BIBLE_PATHS;
-    
+
     if (selectedPath && Array.isArray(selectedPath.order) && selectedPath.order.length > 0) {
       const pathMap = Object.fromEntries(pathsToUse.map((p) => [p.id, p]));
       const ordered = selectedPath.order.map((id) => pathMap[id]).filter(Boolean);
@@ -104,7 +104,9 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   );
   const chaptersToLoad = useMemo(
     () =>
-      nextUnit ? getFirstReference(nextUnit.reference).chapters.join(',') : savedChapter.toString(),
+      nextUnit
+        ? getFirstReference(nextUnit.reference).chapters.join(',')
+        : savedChapter?.toString(),
     [nextUnit, savedChapter]
   );
 
@@ -210,22 +212,22 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
       router.push({
         pathname: '/bibleReader',
         params: {
-          bookId: ref.bookId.toString(),
+          bookId: ref.bookId?.toString(),
           chapters: ref.chapters.join(','),
           title: nextUnit.title,
           source: 'preview',
-          timestamp: Date.now().toString(),
+          timestamp: Date.now()?.toString(),
         },
       });
     } else {
       router.push({
         pathname: '/bibleReader',
         params: {
-          bookId: savedBookId.toString(),
-          chapters: savedChapter.toString(),
+          bookId: savedBookId?.toString(),
+          chapters: savedChapter?.toString(),
           title,
           source: 'preview',
-          timestamp: Date.now().toString(),
+          timestamp: Date.now()?.toString(),
         },
       });
     }
@@ -241,8 +243,8 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
     router.push({
       pathname: '/bibleReader',
       params: {
-        bookId: savedBookId.toString(),
-        chapters: savedChapter.toString(),
+        bookId: savedBookId?.toString(),
+        chapters: savedChapter?.toString(),
         title: savedBook,
         source: 'just-read',
         justReadMode: 'true', // Special flag for just read mode
@@ -273,59 +275,54 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   return (
     <Animated.View
       className="absolute inset-0 flex flex-col justify-between w-full h-full"
-      style={{ opacity: containerOpacity }}
-    >
+      style={{ opacity: containerOpacity }}>
       {/* Back Button - Stays at the top */}
       <BackButton onPress={handleBack} />
 
       {/* Content Area - Scrolls if needed, takes up available space */}
-      <ScrollView 
+      <ScrollView
         ref={scrollViewRef}
-        onScroll={handleScroll} 
+        onScroll={handleScroll}
         scrollEventThrottle={16}
-        contentContainerStyle={{ 
+        contentContainerStyle={{
           paddingTop: 100, // Adjust this to provide space for the BackButton
           paddingBottom: 150, // Provide space for the absolutely positioned buttons at the bottom
           alignItems: 'center', // Center content horizontally
         }}
         className="w-full"
-        showsVerticalScrollIndicator={false}
-      >
+        showsVerticalScrollIndicator={false}>
         {/* Animated Card Preview */}
         <Animated.View
           className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center border-4 border-border mb-6 mt-8"
-          style={{ opacity: cardOpacity, transform: [{ translateY: cardAnim }] }}
-        >
-          <Text className="text-h1 font-feather text-accentGold mb-2 text-center leading-tight ">{title}</Text>
+          style={{ opacity: cardOpacity, transform: [{ translateY: cardAnim }] }}>
+          <Text className="text-h1 font-feather text-accentGold mb-2 text-center leading-tight ">
+            {title}
+          </Text>
           <Text className="text-body font-din text-[#B89B4C] mb-4">{subtitle}</Text>
           <View className="w-full bg-surfaceCream/50 rounded-[18px] p-4 mt-2 border border-border mb-2">
-            <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-1 tracking-wider">SUMMARY</Text>
-            <Text className="text-body font-din text-textPrimary text-center">
-              {summary}
+            <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-1 tracking-wider">
+              SUMMARY
             </Text>
+            <Text className="text-body font-din text-textPrimary text-center">{summary}</Text>
           </View>
         </Animated.View>
       </ScrollView>
 
       {/* Absolutely Positioned Buttons Container at the bottom */}
-      <Animated.View 
-        className="absolute -bottom-24 left-0 right-0 w-full px-5 pb-8 pt-4 items-center bg-transparent z-20"
-        style={{ opacity: buttonOpacity, transform: [{ translateY: buttonAnim }] }}
-      >
-        <PrimaryButton title="Start Reading" onPress={
-          () => {
-            analytics.logEvent("BiblePreview_Tapped_StartReading", {
+      <Animated.View
+        className="absolute bottom-0 left-0 right-0 w-full px-5 pb-8 pt-4 items-center bg-transparent z-20"
+        style={{ opacity: buttonOpacity, transform: [{ translateY: buttonAnim }] }}>
+        <PrimaryButton
+          title="Start Reading"
+          onPress={() => {
+            analytics.logEvent('BiblePreview_Tapped_StartReading', {
               unit: nextUnit?.id,
-              unitName: nextUnit?.title 
+              unitName: nextUnit?.title,
             });
             handleStart();
-          }
-          } />
-        <TouchableOpacity 
-          onPress={handleJustReadBible}
-          className="mt-4 py-2"
-          activeOpacity={0.7}
-        >
+          }}
+        />
+        <TouchableOpacity onPress={handleJustReadBible} className="mt-4 py-2" activeOpacity={0.7}>
           <Text className="text-body font-nunito-bold text-textPrimary/70 text-center underline text-white">
             Just Read Bible
           </Text>

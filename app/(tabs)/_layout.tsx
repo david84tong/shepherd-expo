@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { Redirect, Tabs } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Image, Platform, Pressable, StyleSheet, View, ViewStyle } from 'react-native';
+import { Animated, Image, Platform, Pressable, View, ViewStyle } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { isSignedIn } from '../hooks/authHook';
@@ -9,6 +9,12 @@ import { useHomeStore } from '../stores/homeStore';
 import { usePathStore } from '../stores/pathStore';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
+import useSubscriptionStore from '../stores/subscriptionStore';
+
+// Key for tracking first app launch
+const FIRST_APP_LAUNCH_KEY = 'first_app_launch_completed';
+// Key for tracking daily first load
+const DAILY_FIRST_LOAD_KEY = 'daily_first_load_';
 
 // Helper component to center the icon
 const CenteredIcon = ({ children }: { children: React.ReactNode }) => (
@@ -18,19 +24,7 @@ const CenteredIcon = ({ children }: { children: React.ReactNode }) => (
 
 // Custom Tab Bar Button component with animation
 function CustomTabBarButton(props: any) {
-  const { children, onPress, accessibilityState, style, ...rest } = props;
-  const focused = accessibilityState?.selected;
-  // Animated value for focus state (0 or 1)
-  const focusAnim = useRef(new Animated.Value(focused ? 1 : 0)).current;
-
-  // Animate the value when focus changes
-  useEffect(() => {
-    Animated.timing(focusAnim, {
-      toValue: focused ? 1 : 0,
-      duration: 200, // Animation duration (milliseconds)
-      useNativeDriver: true, // Use native driver for performance (opacity)
-    }).start();
-  }, [focused, focusAnim]);
+  const { children, onPress } = props;
 
   // Handle press with haptic feedback
   const handlePress = () => {
@@ -46,28 +40,10 @@ function CustomTabBarButton(props: any) {
 
   return (
     <Pressable
-      // Pass through the extra props & original style so RN can keep the layout logic intact
-      {...rest}
-      style={style}
       onPress={handlePress}
       // Apply base flex styling and only horizontal margin
       className="flex-1 items-center justify-center mx-1">
-      {/* Container for content and animated background */}
-      <View className="items-center justify-center p-4 mt-4">
-        {/* Animated background View */}
-        <Animated.View
-          style={[
-            StyleSheet.absoluteFillObject, // Position behind content
-            {
-              backgroundColor: '#FFE4A8', // bg-black/5 equivalent
-              borderRadius: 8, // rounded-lg equivalent
-              opacity: focusAnim, // Apply animated opacity
-            },
-          ]}
-        />
-        {/* Actual tab content (icon/label) */}
-        {children}
-      </View>
+      {children}
     </Pressable>
   );
 }
@@ -77,8 +53,13 @@ export default function TabsLayout() {
   // Move them all before any conditional early-returns.
   const signedIn = isSignedIn();
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+  const [isFirstAppLaunch, setIsFirstAppLaunch] = useState<boolean | null>(null);
+  const [isDailyFirstLoad, setIsDailyFirstLoad] = useState<boolean | null>(null);
   // Get isInitialized from the store to ensure savedScreenToNavigateTo is ready
   const { savedScreenToNavigateTo, isInitialized: isOnboardingStoreInitialized } = useOnboardingStore();
+  
+  // Get subscription status
+  const { isProMember, getCustomerInfo } = useSubscriptionStore();
 
   // Check onboarding status from AsyncStorage
   useEffect(() => {
@@ -94,6 +75,57 @@ export default function TabsLayout() {
     };
     checkOnboarding();
   }, []);
+
+  // Check if this is the first app launch
+  useEffect(() => {
+    const checkFirstAppLaunch = async () => {
+      try {
+        const firstLaunchCompleted = await AsyncStorage.getItem(FIRST_APP_LAUNCH_KEY);
+        const isFirst = firstLaunchCompleted !== 'true';
+        setIsFirstAppLaunch(isFirst);
+        console.log(`[TabsLayout] Is first app launch: ${isFirst}`);
+        
+        // If this is the first launch, mark it as completed
+        if (isFirst) {
+          await AsyncStorage.setItem(FIRST_APP_LAUNCH_KEY, 'true');
+        }
+      } catch (error) {
+        console.error('[TabsLayout] Error checking first app launch:', error);
+        setIsFirstAppLaunch(false); // Assume not first launch on error
+      }
+    };
+    checkFirstAppLaunch();
+  }, []);
+
+  // Check if this is the first load of the day
+  useEffect(() => {
+    const checkDailyFirstLoad = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
+        const dailyKey = DAILY_FIRST_LOAD_KEY + today;
+        const dailyFirstLoadCompleted = await AsyncStorage.getItem(dailyKey);
+        const isDailyFirst = dailyFirstLoadCompleted !== 'true';
+        setIsDailyFirstLoad(isDailyFirst);
+        console.log(`[TabsLayout] Is daily first load for ${today}: ${isDailyFirst}`);
+        
+        // If this is the first load of the day, mark it as completed
+        if (isDailyFirst) {
+          await AsyncStorage.setItem(dailyKey, 'true');
+        }
+      } catch (error) {
+        console.error('[TabsLayout] Error checking daily first load:', error);
+        setIsDailyFirstLoad(false); // Assume not daily first load on error
+      }
+    };
+    checkDailyFirstLoad();
+  }, []);
+
+  // Get customer info when component mounts to ensure we have latest subscription status
+  useEffect(() => {
+    if (signedIn) {
+      getCustomerInfo();
+    }
+  }, [signedIn, getCustomerInfo]);
 
   // Zustand selectors – always call, even if the user ends up being redirected.
   const mode = useHomeStore((state) => state.mode);
@@ -111,12 +143,12 @@ export default function TabsLayout() {
   }, [mode, pathInProgress]);
 
   // Wait for both onboarding status from AsyncStorage and onboardingStore to be initialized
-  if (onboardingCompleted === null || !isOnboardingStoreInitialized) {
-    console.log(`[TabsLayout] Waiting for initialization: onboardingCompleted (${onboardingCompleted}), isOnboardingStoreInitialized (${isOnboardingStoreInitialized})`);
+  if (onboardingCompleted === null || !isOnboardingStoreInitialized || isFirstAppLaunch === null || isDailyFirstLoad === null) {
+    console.log(`[TabsLayout] Waiting for initialization: onboardingCompleted (${onboardingCompleted}), isOnboardingStoreInitialized (${isOnboardingStoreInitialized}), isFirstAppLaunch (${isFirstAppLaunch}), isDailyFirstLoad (${isDailyFirstLoad})`);
     return null; // Show nothing while loading critical states
   }
 
-  console.log(`[TabsLayout] States evaluated: signedIn=${signedIn}, onboardingCompleted=${onboardingCompleted}, savedScreenToNavigateTo='${savedScreenToNavigateTo}' (Store initialized: ${isOnboardingStoreInitialized})`);
+  console.log(`[TabsLayout] States evaluated: signedIn=${signedIn}, onboardingCompleted=${onboardingCompleted}, savedScreenToNavigateTo='${savedScreenToNavigateTo}' (Store initialized: ${isOnboardingStoreInitialized}), isFirstAppLaunch=${isFirstAppLaunch}, isDailyFirstLoad=${isDailyFirstLoad}, isProMember=${isProMember}`);
 
   // CASE 1: User is NOT signed in
   if (!signedIn) {
@@ -133,9 +165,16 @@ export default function TabsLayout() {
   }
 
   // CASE 2: User IS signed in
+  // Check if this is their first app launch OR daily first load and they're not pro - redirect to pricing
+  if ((isFirstAppLaunch || isDailyFirstLoad) && !isProMember && onboardingCompleted) {
+    const reason = isFirstAppLaunch ? "First app launch" : "Daily first load";
+    console.log(`[TabsLayout] Case 2A: ${reason}, user is signed in but not pro. Redirecting to PricingScreen.`);
+    return <Redirect href="/PricingScreen?fromLoading=true&animateFromBottom=true" />;
+  }
+  
   // If user is signed in, they should always go to the main app regardless of onboarding completion status
   // Being signed in means they've completed the necessary authentication/setup process
-  console.log("[TabsLayout] Case 2: User is signed in. Proceeding to main app (tabs).");
+  console.log("[TabsLayout] Case 2B: User is signed in. Proceeding to main app (tabs).");
   
   // Proceed to the main app (tabs)
   console.log("[TabsLayout] Rendering Tabs.");
@@ -146,7 +185,7 @@ export default function TabsLayout() {
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FFF4D9',
+    backgroundColor: '#FEE4A9',
     opacity: tabBarAnim,
     // Pull tab bar completely out of view when hidden
     transform: [
@@ -193,10 +232,20 @@ export default function TabsLayout() {
         name="map"
         options={{
           title: 'map',
+          tabBarButton: (props) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
-            <CenteredIcon>
+            <View className="items-center justify-center relative mt-4">
+              {focused && (
+                <View 
+                  className="absolute w-16 h-16 rounded-2xl"
+                  style={{
+                    backgroundColor: '#FFF5D9',
+                    zIndex: -1,
+                  }}
+                />
+              )}
               <Image source={require('../../assets/icons/trophyIcon.png')} className="w-12 h-12" />
-            </CenteredIcon>
+            </View>
           ),
         }}
       />
@@ -205,10 +254,20 @@ export default function TabsLayout() {
         name="stats"
         options={{
           title: 'heart',
+          tabBarButton: (props) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
-            <CenteredIcon>
+            <View className="items-center justify-center relative mt-4">
+              {focused && (
+                <View 
+                  className="absolute w-16 h-16 rounded-2xl"
+                  style={{
+                    backgroundColor: '#FFF5D9',
+                    zIndex: -1,
+                  }}
+                />
+              )}
               <Image source={require('../../assets/icons/heartIcon.png')} className="w-12 h-12" />
-            </CenteredIcon>
+            </View>
           ),
         }}
       />
@@ -216,10 +275,20 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'sheep',
+          tabBarButton: (props) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
-            <CenteredIcon>
+            <View className="items-center justify-center relative mt-4">
+              {focused && (
+                <View 
+                  className="absolute w-16 h-16 rounded-2xl"
+                  style={{
+                    backgroundColor: '#FFF5D9',
+                    zIndex: -1,
+                  }}
+                />
+              )}
               <Image source={require('../../assets/icons/sheepIcon.png')} className="w-16 h-16" />
-            </CenteredIcon>
+            </View>
           ),
         }}
       />
@@ -227,10 +296,20 @@ export default function TabsLayout() {
         name="bible"
         options={{
           title: 'Bible',
+          tabBarButton: (props) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
-            <CenteredIcon>
+            <View className="items-center justify-center relative mt-4">
+              {focused && (
+                <View 
+                  className="absolute w-16 h-16 rounded-2xl"
+                  style={{
+                    backgroundColor: '#FFF5D9',
+                    zIndex: -1,
+                  }}
+                />
+              )}
               <Image source={require('../../assets/icons/bibleIcon.png')} className="w-14 h-14" />
-            </CenteredIcon>
+            </View>
           ),
         }}
       />
@@ -238,10 +317,20 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: 'Profile',
+          tabBarButton: (props) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
-            <CenteredIcon>
+            <View className="items-center justify-center relative mt-4">
+              {focused && (
+                <View 
+                  className="absolute w-16 h-16 rounded-2xl"
+                  style={{
+                    backgroundColor: '#FFF5D9',
+                    zIndex: -1,
+                  }}
+                />
+              )}
               <Image source={require('../../assets/icons/profileIcon.png')} className="w-14 h-14" />
-            </CenteredIcon>
+            </View>
           ),
         }}
       />

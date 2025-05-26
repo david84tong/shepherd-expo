@@ -149,7 +149,7 @@ export default function OnboardingLayout() {
       console.log('🔍 DEBUG: All keys in AsyncStorage:', allKeys);
       return data;
     } catch (error) {
-      console.error('❌ Error checking storage:', error);
+      console.log('❌ Error checking storage:', error);
       return null;
     }
   };
@@ -182,7 +182,7 @@ export default function OnboardingLayout() {
             );
             router.push('/onboarding/1' as any);
           } catch (error) {
-            console.error('❌ Error resetting onboarding data:', error);
+            console.log('❌ Error resetting onboarding data:', error);
           }
         },
       },

@@ -59,7 +59,7 @@ type BibleSection = {
 //       className={`absolute ${alignment === 'start' ? 'right-1' : 'left-1'} top-4 w-28 h-28 bg-yellow-300 rounded-full items-center justify-center border-4 border-white`}
 //       style={{ zIndex: 50 }}>
 //       <Rive
-//         url={riveAssets[0].localUri!}
+//         url={riveAssets[0].uri!}
 //         artboardName="lamb-idle"
 //         autoplay
 //         style={{ width: '100%', height: '100%' }}
@@ -144,7 +144,7 @@ export default function MapScreen() {
 
   // Get user reading time preference
   const frequencyGoal = useUserStore(state => state.frequencyGoal);
-  
+
   // Get selectedPath from the store inside the component
   const selectedPath = usePathStore((state) => state.selectedPath);
 
@@ -155,7 +155,7 @@ export default function MapScreen() {
   const sections = useMemo(() => {
     // Choose paths based on user's frequencyGoal
     const pathsToUse = frequencyGoal === '1-5' ? SHORTER_BIBLE_PATHS_2 : BIBLE_PATHS;
-    
+
     let orderedPaths = pathsToUse;
     if (selectedPath && Array.isArray(selectedPath.order) && selectedPath.order.length > 0) {
       console.log('[MapScreen Component] Reordering paths based on selectedPath:', selectedPath.id);
@@ -209,7 +209,7 @@ export default function MapScreen() {
   // Get pro status from subscription store
   const isProMember = useSubscriptionStore(state => state.isProMember);
   const subscriptionStore = useSubscriptionStore();
-  
+
   // Handle subscription button press using the store action
   const handleSubscriptionPress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -293,7 +293,7 @@ export default function MapScreen() {
         if (verseMatch && verseMatch.length === 3) {
           const startVerse = parseInt(verseMatch[1], 10);
           const endVerse = parseInt(verseMatch[2], 10);
-          
+
           if (!isNaN(startVerse) && !isNaN(endVerse)) {
             console.log(`Found verse range in unit ID: ${startVerse}-${endVerse}`);
             pathInfo.startVerse = startVerse;
@@ -322,19 +322,19 @@ export default function MapScreen() {
 
     // Ensure chapters is always an array and join correctly
     const chaptersQuery = Array.isArray(chapters) ? chapters.join(',') : '';
-    
+
     if (bookId && chaptersQuery) {
       // Use an absolute path format to target the Bible reader screen
       router.push({
-        pathname: '/bibleReader', 
+        pathname: '/bibleReader',
         params: {
-          bookId: bookId.toString(),
+          bookId: bookId?.toString(),
           chapters: chaptersQuery,
           title: encodeURIComponent(unit.title),
           // Add a flag to help identify where this navigation came from
           source: 'map',
-          timestamp: Date.now().toString(), // Force new params by adding timestamp
-          isLastUnitInSection: isLastUnitInSection.toString()
+          timestamp: Date.now()?.toString(), // Force new params by adding timestamp
+          isLastUnitInSection: isLastUnitInSection?.toString()
         },
       });
     } else {
@@ -384,7 +384,7 @@ export default function MapScreen() {
   const nextAvailableUnit = useCallback(() => {
     // Choose paths based on user's frequencyGoal
     const pathsToUse = frequencyGoal === '1-5' ? SHORTER_BIBLE_PATHS_2 : BIBLE_PATHS;
-    
+
     // Find first unit or next unlocked unit that isn't completed
     for (const path of pathsToUse) {
       for (let i = 0; i < path.units.length; i++) {
@@ -422,9 +422,9 @@ export default function MapScreen() {
     if (!riveAssets || !riveName) return null;
 
     if (riveName === 'homeLamb') {
-      return riveAssets[0].localUri!;
+      return riveAssets[0].uri!;
     } else if (riveName === 'successLamb') {
-      return riveAssets[1].localUri!;
+      return riveAssets[1].uri!;
     }
 
     return null;
@@ -458,7 +458,7 @@ export default function MapScreen() {
     function onNodePress(unit: Unit) {
       console.log('onNodePress', unit);
       console.log('Debug - Pro status:', isProMember, 'Reading completed:', readingCompleted, 'Section index:', section.index);
-      
+
       // Only show pricing screen if ALL of these conditions are true:
       // 1. User is not a pro member (proStatus !== "pro")
       // 2. User has completed their daily reading (readingCompleted is true)

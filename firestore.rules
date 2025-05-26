@@ -17,5 +17,14 @@ service cloud.firestore {
         && request.auth.uid == userId 
         && request.resource.data.uid == userId;
     }
+    
+    // Feedback collection rules
+    match /feedback/{feedbackId} {
+      // Allow authenticated users to create feedback documents
+      allow create: if request.auth != null;
+      
+      // Allow users to read their own feedback (optional)
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+    }
   }
 } 

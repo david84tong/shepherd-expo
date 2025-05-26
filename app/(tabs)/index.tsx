@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useMemo, useRef, useState, } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -10,7 +10,7 @@ import {
   Text,
   TouchableOpacity,
   View,
-  ScrollView
+  ScrollView,
 } from 'react-native';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
@@ -35,6 +35,8 @@ import { getLevelData } from '../../utils/levelUtils';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
 const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
+import auth from '@react-native-firebase/auth';
+import { IS_ANDROID, IS_IOS } from '../utils/utils';
 
 // Max hearts constant
 const MAX_HEARTS = 100;
@@ -57,63 +59,96 @@ import darkBg from '../../assets/backgrounds/defaultBackgroundDark.png';
 // Custom toast config with explicit styling
 const toastConfig: ToastConfig = {
   success: ({ text1, text2 }: ToastConfigParams<any>) => (
-    <View style={{
-      backgroundColor: '#FFF4D9',
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      marginHorizontal: 16,
-      marginBottom: 16,
-      borderLeftWidth: 4,
-      borderLeftColor: '#24CA17',
-      shadowColor: 'rgba(0,0,0,0.08)',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 1,
-      shadowRadius: 4,
-      elevation: 3,
-    }}>
+    <View
+      style={{
+        backgroundColor: '#FFF4D9',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginHorizontal: 16,
+        marginBottom: 16,
+        borderLeftWidth: 4,
+        borderLeftColor: '#24CA17',
+        shadowColor: 'rgba(0,0,0,0.08)',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 1,
+        shadowRadius: 4,
+        elevation: 3,
+      }}>
       <Text style={{ fontFamily: 'Nunito-Black', fontSize: 16, color: '#3C584A' }}>{text1}</Text>
-      {text2 && <Text style={{ fontFamily: 'DIN Next Rounded LT W01 Regular', fontSize: 14, color: '#B89B4C', marginTop: 4 }}>{text2}</Text>}
+      {text2 && (
+        <Text
+          style={{
+            fontFamily: 'DIN Next Rounded LT W01 Regular',
+            fontSize: 14,
+            color: '#B89B4C',
+            marginTop: 4,
+          }}>
+          {text2}
+        </Text>
+      )}
     </View>
   ),
   error: ({ text1, text2 }: ToastConfigParams<any>) => (
-    <View style={{
-      backgroundColor: '#FFF4D9',
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      marginHorizontal: 16,
-      marginBottom: 16,
-      borderLeftWidth: 4,
-      borderLeftColor: '#DF4533',
-      shadowColor: 'rgba(0,0,0,0.08)',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 1,
-      shadowRadius: 4,
-      elevation: 3,
-    }}>
+    <View
+      style={{
+        backgroundColor: '#FFF4D9',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginHorizontal: 16,
+        marginBottom: 16,
+        borderLeftWidth: 4,
+        borderLeftColor: '#DF4533',
+        shadowColor: 'rgba(0,0,0,0.08)',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 1,
+        shadowRadius: 4,
+        elevation: 3,
+      }}>
       <Text style={{ fontFamily: 'Nunito-Black', fontSize: 16, color: '#3C584A' }}>{text1}</Text>
-      {text2 && <Text style={{ fontFamily: 'DIN Next Rounded LT W01 Regular', fontSize: 14, color: '#B89B4C', marginTop: 4 }}>{text2}</Text>}
+      {text2 && (
+        <Text
+          style={{
+            fontFamily: 'DIN Next Rounded LT W01 Regular',
+            fontSize: 14,
+            color: '#B89B4C',
+            marginTop: 4,
+          }}>
+          {text2}
+        </Text>
+      )}
     </View>
   ),
   info: ({ text1, text2 }: ToastConfigParams<any>) => (
-    <View style={{
-      backgroundColor: '#FFF4D9',
-      borderRadius: 12,
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      marginHorizontal: 16,
-      marginBottom: 16,
-      borderLeftWidth: 4,
-      borderLeftColor: '#FCD34D',
-      shadowColor: 'rgba(0,0,0,0.08)',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 1,
-      shadowRadius: 4,
-      elevation: 3,
-    }}>
+    <View
+      style={{
+        backgroundColor: '#FFF4D9',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginHorizontal: 16,
+        marginBottom: 16,
+        borderLeftWidth: 4,
+        borderLeftColor: '#FCD34D',
+        shadowColor: 'rgba(0,0,0,0.08)',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 1,
+        shadowRadius: 4,
+        elevation: 3,
+      }}>
       <Text style={{ fontFamily: 'Nunito-Black', fontSize: 16, color: '#3C584A' }}>{text1}</Text>
-      {text2 && <Text style={{ fontFamily: 'DIN Next Rounded LT W01 Regular', fontSize: 14, color: '#B89B4C', marginTop: 4 }}>{text2}</Text>}
+      {text2 && (
+        <Text
+          style={{
+            fontFamily: 'DIN Next Rounded LT W01 Regular',
+            fontSize: 14,
+            color: '#B89B4C',
+            marginTop: 4,
+          }}>
+          {text2}
+        </Text>
+      )}
     </View>
   ),
 };
@@ -123,6 +158,9 @@ export default function HomeScreen() {
   const [riveError, setRiveError] = useState<RNRiveError | null>(null);
   const navigation = useNavigation();
   const router = useRouter();
+
+  const currentUser = auth().currentUser;
+  console.log('currentUser======>', currentUser);
 
   // Use Zustand store for mode management
   const mode = useHomeStore((state) => state.mode);
@@ -137,13 +175,14 @@ export default function HomeScreen() {
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
 
   // Get user stats from userStore
-  const lambHearts = useUserStore((state) => state.getLambHearts());
-  const streakCount = useUserStore((state) => state.getStreakCount());
-  const gens = useUserStore((state) => state.getGens());
-  const lambMood = useUserStore((state) => state.getLambMood());
-  const lambName = useUserStore((state) => state.getLambName()); // Get the lamb's name from userStore
+  const lambHearts = useUserStore((state) => state?.getLambHearts?.());
+  const streakCount = useUserStore((state) => state?.getStreakCount?.());
+  const gens = useUserStore((state) => state?.getGens?.());
+  const lambMood = useUserStore((state) => state?.getLambMood?.());
+  const lambName = useUserStore((state) => state?.getLambName?.()); // Get the lamb's name from userStore
   const lamb = useUserStore((state) => state.getLamb()); // Get the complete lamb object
 
+  console.log('lambHearts streakCount======>', lambHearts, streakCount, gens, lambMood, lambName);
   // State to manage the Rive resource name
   const [artboardName, setArtboardName] = useState('lamb-idle'); // Default artboard
   // State to control background Rive animation
@@ -154,21 +193,21 @@ export default function HomeScreen() {
   // Get subscription state and actions from the store
   const { setFromScreen, presentHalfOffPaywall } = useSubscriptionStore();
   // Get pro status from user store
-  const proStatus = useUserStore((state) => state.getProStatus());
+  const proStatus = useUserStore((state) => state?.getProStatus?.());
   const isPro = proStatus === 'pro';
 
   // Handle subscription button press using the store action
   const handleSubscriptionPress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push('/PricingScreen' as any);
-  }
+  };
 
   // Load Rive assets
   const [riveAssets] = useAssets([
     require('../../assets/riveAnimations/homeLamb.riv'),
     require('../../assets/riveAnimations/bg-green.riv'),
     require('../../assets/riveAnimations/goldLamb.riv'), // Add goldLamb to preloaded assets
-    require('../../assets/riveAnimations/lamb-wings-idle.riv') // Add goldLamb to preloaded assets
+    require('../../assets/riveAnimations/lamb-wings-idle.riv'), // Add goldLamb to preloaded assets
   ]);
 
   // Add state for asset loading
@@ -290,16 +329,19 @@ export default function HomeScreen() {
     'lamb-angry': 'lamb-angry',
     'lamb-chubby dying': 'lamb-chubby dying',
     'lamb-skinny dying': 'lamb-skinny dying',
-    'smoking': 'lamb-dead',
-    'lamb-full': 'lamb-full'
+    smoking: 'lamb-dead',
+    'lamb-full': 'lamb-full',
   };
 
   // Get UI store functions
-  const showPrayerSheet = useUIStore(state => state.showPrayerSheet);
-  const showWidgetPrompt = useUIStore(state => state.showWidgetPrompt);
+  const showPrayerSheet = useUIStore((state) => state.showPrayerSheet);
+  const showWidgetPrompt = useUIStore((state) => state.showWidgetPrompt);
 
   const handleRiveError = (error: RNRiveError) => {
-    console.error('Rive Error:', error.message, error.type);
+    console.log('Rive Error:', error.message, error.type);
+    if (Platform.OS === 'android') {
+      return;
+    }
     setRiveError(error);
   };
 
@@ -328,7 +370,7 @@ export default function HomeScreen() {
     if (mode === 'PREVIEW') {
       setArtboardName('lamb-idle');
       // Update artboard based on lamb mood from userStore
-      const currentMood = useUserStore.getState().getLambMood();
+      const currentMood = useUserStore.getState()?.getLambMood?.();
       console.log('Current mood:', currentMood);
       if (currentMood && moodToArtboard[currentMood]) {
         setArtboardName(moodToArtboard[currentMood]);
@@ -442,7 +484,7 @@ export default function HomeScreen() {
 
   // --- useEffect to react to external mode changes ---
   useEffect(() => {
-    console.log(isPro, "what is pro")
+    console.log(isPro, 'what is pro');
     console.log('HomeScreen: Mode changed to', mode);
     console.log('DEBUG - Current completion status:', {
       readingCompleted,
@@ -456,7 +498,7 @@ export default function HomeScreen() {
       animateToDefault();
       setArtboardName('lamb-idle');
       // Update artboard based on lamb mood from userStore
-      const currentMood = useUserStore.getState().getLambMood();
+      const currentMood = useUserStore.getState()?.getLambMood?.();
       console.log('Current mood:', currentMood);
       if (currentMood && moodToArtboard[currentMood]) {
         setArtboardName(moodToArtboard[currentMood]);
@@ -502,9 +544,8 @@ export default function HomeScreen() {
   const handleReadPress = () => {
     if (!isPro && readingCompleted) {
       setFromScreen('home-read');
-      handleSubscriptionPress()
-    }
-    else {
+      handleSubscriptionPress();
+    } else {
       console.log('Read the word button pressed');
 
       // Remove heavy haptic feedback
@@ -536,7 +577,7 @@ export default function HomeScreen() {
     console.log('Prayer button pressed');
     if (!isPro && prayerCompleted) {
       setFromScreen('home-prayer');
-      handleSubscriptionPress()
+      handleSubscriptionPress();
     } else {
       // Don't proceed if reading is not completed
       if (!readingCompleted) {
@@ -556,7 +597,7 @@ export default function HomeScreen() {
   const handleReflectionPress = () => {
     if (!isPro && reflectionCompleted) {
       setFromScreen('home-reflection');
-      handleSubscriptionPress()
+      handleSubscriptionPress();
     } else {
       console.log('Reflection button pressed');
 
@@ -594,7 +635,7 @@ export default function HomeScreen() {
 
   const handleWidgetPromptPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    analytics.logEvent("HomeScreen_Tapped_AddWidget");
+    analytics.logEvent('HomeScreen_Tapped_AddWidget');
     showWidgetPrompt();
   };
 
@@ -673,7 +714,7 @@ export default function HomeScreen() {
   // Run once on mount to defer heavy work
   useEffect(() => {
     setRiveReady(true);
-    
+
     // Check if this is the first load after onboarding completion
     if (isFirstLoad) {
       // Start with opacity 0 and animate to 1
@@ -691,7 +732,7 @@ export default function HomeScreen() {
   // Add screen view analytics tracking
   useEffect(() => {
     // Log screen view when component mounts
-    analytics.logEvent("HomeScreen_Viewed");
+    analytics.logEvent('HomeScreen_Viewed');
   }, []);
 
   // Add the hooks with the other state hooks (right before line 619)
@@ -731,28 +772,29 @@ export default function HomeScreen() {
     if (shouldShowRedShadow) {
       // Red shadow from level 10-23: scale from 0.5 to 1.2
       const levelProgress = Math.min((lambLevel - 10) / (23 - 10), 1); // 0 to 1
-      shadowScale = 0.55 + (levelProgress * 0.7); // 0.5 to 1.2
+      shadowScale = 0.55 + levelProgress * 0.7; // 0.5 to 1.2
       console.log(`Red shadow debug - Level: ${lambLevel}, Scale: ${shadowScale}`);
     } else if (shouldShowYellowShadow) {
       // Yellow shadow from level 24-33: scale from 0.6 to 1.5 (fresh growth)
       const levelProgress = Math.min((lambLevel - 24) / (33 - 24), 1); // 0 to 1
-      shadowScale = 0.35 + (levelProgress * 0.9); // 0.6 to 1.5
+      shadowScale = 0.35 + levelProgress * 0.9; // 0.6 to 1.5
       console.log(`Yellow shadow debug - Level: ${lambLevel}, Scale: ${shadowScale}`);
     }
 
     return (
-      <View style={{
-        width: '100%',
-        height: '100%',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}>
+      <View
+        style={{
+          width: '100%',
+          height: '100%',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
         {/* Red shadow behind lamb for level 10+ */}
         {shouldShowRedShadow && (
           <Image
             source={require('../../assets/redShadow.png')}
             style={{
-              position: "absolute",
+              position: 'absolute',
               width: 300 * shadowScale,
               height: 300 * shadowScale,
               zIndex: -10,
@@ -765,7 +807,7 @@ export default function HomeScreen() {
           <Image
             source={require('../../assets/yellowShadow.png')}
             style={{
-              position: "absolute",
+              position: 'absolute',
               width: 300 * shadowScale,
               height: 300 * shadowScale,
               zIndex: -10,
@@ -774,7 +816,7 @@ export default function HomeScreen() {
             resizeMode="cover"
           />
         )}
-     
+
         <View
           style={{
             width: `${scaleFactor * 100}%`,
@@ -784,23 +826,23 @@ export default function HomeScreen() {
             // Add overflow hidden to prevent any rendering issues with larger size
             overflow: 'hidden',
             zIndex: 10,
-          }}
-        >
-       
+          }}>
           <Rive
-            key={`${riveKey}-${lambLevel}`} // Add level to key to force refresh
+            key={riveKey}
             ref={riveRef}
-            url={riveAssets[lambAssetIndex].localUri!}
-            artboardName={useArtboardName || undefined}
+            resourceName={
+              IS_ANDROID ? (lambAssetIndex === 2 ? 'gold_lamb' : 'home_lamb') : undefined
+            }
+            url={IS_IOS ? riveAssets[lambAssetIndex].uri! : undefined}
+            artboardName={artboardName}
             onError={handleRiveError}
             style={{
               width: '100%',
               height: '100%',
               marginTop: 10,
-              opacity: new Date().getHours() >= 19 ? 0.85 : 1
+              opacity: new Date().getHours() >= 19 ? 0.85 : 1,
             }}
           />
-
         </View>
       </View>
     );
@@ -816,37 +858,56 @@ export default function HomeScreen() {
 
   // Calculate level and XP progress for the level pill display
   const levelInfo = useMemo(() => {
-    if (!lamb || lamb.xp === undefined) return {
-      level: 1,
-      xp: 0,
-      xpForCurrentLevel: 0,
-      xpForNextLevel: 90,
-      xpProgress: 0,
-      xpNeeded: 90,
-      progress: 0
-    };
+    if (!lamb || lamb.xp === undefined)
+      return {
+        level: 1,
+        xp: 0,
+        xpForCurrentLevel: 0,
+        xpForNextLevel: 90,
+        xpProgress: 0,
+        xpNeeded: 90,
+        progress: 0,
+      };
 
     return getLevelData(lamb.xp);
   }, [lamb?.xp]);
 
+  // Add this with other animation values at the top
+  const androidBgOpacityAnim = useRef(new Animated.Value(0)).current;
+
+  // Add this effect to handle Android background animation
+  useEffect(() => {
+    if (IS_ANDROID && mode === 'PRAYER') {
+      Animated.timing(androidBgOpacityAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(androidBgOpacityAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [mode]);
+
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
 
-
-
   return (
     <>
-      <Animated.View 
-        className="flex-1"
-        style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}
-      >
+      <Animated.View className="flex-1" style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}>
         {/* Background Layers - Use expo-image for better performance */}
         <Animated.View
           style={[
             { position: 'absolute', width: '100%', height: '100%' },
             { opacity: grassOpacityAnim },
           ]}>
-          <Image source={new Date().getHours() >= 19 ? darkBg : grassBg} style={{ width: '100%', height: '100%' }} />
+          <Image
+            source={new Date().getHours() >= 19 ? darkBg : grassBg}
+            style={{ width: '100%', height: '100%' }}
+          />
         </Animated.View>
 
         <Animated.View
@@ -882,10 +943,7 @@ export default function HomeScreen() {
             { position: 'absolute', width: '100%', height: '100%' },
             { opacity: pathOpacityAnim },
           ]}>
-          <Image
-            source={pathBg}
-            style={{ width: '100%', height: '100%' }}
-          />
+          <Image source={pathBg} style={{ width: '100%', height: '100%' }} />
         </Animated.View>
 
         <Animated.View
@@ -893,23 +951,28 @@ export default function HomeScreen() {
             { position: 'absolute', width: '100%', height: '100%' },
             { opacity: journalOpacityAnim },
           ]}>
-          <Image
-            source={journalBg}
-            style={{ width: '100%', height: '100%' }}
-          />
+          <Image source={journalBg} style={{ width: '100%', height: '100%' }} />
         </Animated.View>
 
         {/* Prayer background Rive animation */}
         <Animated.View
           style={[
             { position: 'absolute', width: '100%', height: '100%', zIndex: 0 },
-            { opacity: waterOpacityAnim },
+            { opacity: IS_IOS ? waterOpacityAnim : androidBgOpacityAnim },
           ]}>
-          {showBgRive && riveAssets && (
-            <Rive
-              url={riveAssets[1].localUri!}
-              autoplay={true}
-              style={{ width: '160%', height: '160%', top: -300, left: -128 }}
+          {IS_IOS ? (
+            showBgRive && riveAssets && (
+              <Rive
+                url={riveAssets[1].uri!}
+                autoplay={true}
+                style={{ width: '160%', height: '160%', top: -300, left: -128 }}
+              />
+            )
+          ) : (
+            <Image
+              source={require('../../assets/backgrounds/Forest Clearing Background Apr 18 2025.png')}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="cover"
             />
           )}
         </Animated.View>
@@ -940,13 +1003,13 @@ export default function HomeScreen() {
                   <TouchableOpacity
                     onPress={() => {
                       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      analytics.logEvent("HomeScreen_Tapped_Level");
+                      analytics.logEvent('HomeScreen_Tapped_Level');
                       // Add detailed analytics for XP progress tap
-                      analytics.logEvent("HomeScreen_Tapped_XpProgress", {
+                      analytics.logEvent('HomeScreen_Tapped_XpProgress', {
                         level: levelInfo.level,
                         currentXp: levelInfo.xp,
                         nextLevelXp: levelInfo.xpForNextLevel,
-                        progress: Math.round(levelInfo.progress)
+                        progress: Math.round(levelInfo.progress),
                       });
                       // Toggle expanded state
                       setIsLevelPillExpanded(!isLevelPillExpanded);
@@ -964,13 +1027,16 @@ export default function HomeScreen() {
                           duration: 500,
                           easing: Easing.out(Easing.exp),
                           useNativeDriver: false,
-                        })
+                        }),
                       ]).start();
-                    }}
-                  >
+                    }}>
                     <View style={{ position: 'relative', zIndex: 2 }}>
                       {!isLevelPillExpanded ? (
-                        <ProgressPill value={0} label={(lambHearts > 0 ? levelInfo.level : '0').toString()} icon={starIcon} />
+                        <ProgressPill
+                          value={0}
+                          label={(lambHearts > 0 ? levelInfo.level : '0').toString()}
+                          icon={starIcon}
+                        />
                       ) : (
                         <Animated.View
                           className="bg-pillBorder rounded-full overflow-hidden flex-row items-center justify-between -mt-8 p-2"
@@ -979,24 +1045,28 @@ export default function HomeScreen() {
                             right: -36,
                             width: levelPillWidthAnim.interpolate({
                               inputRange: [0, 1],
-                              outputRange: [40, pillExpandedWidth]
-                            })
+                              outputRange: [40, pillExpandedWidth],
+                            }),
                           }}
                           onLayout={() => {
                             // Debug log to verify the XP calculation
-                            console.log(`Level Pill Debug - Level: ${levelInfo.level}, Total XP: ${levelInfo.xp}`);
-                            console.log(`XP to next level: ${levelInfo.xpProgress}/${levelInfo.xpNeeded} (${Math.round(levelInfo.progress)}%)`);
-                          }}
-                        >
+                            console.log(
+                              `Level Pill Debug - Level: ${levelInfo.level}, Total XP: ${levelInfo.xp}`
+                            );
+                            console.log(
+                              `XP to next level: ${levelInfo.xpProgress}/${levelInfo.xpNeeded} (${Math.round(levelInfo.progress)}%)`
+                            );
+                          }}>
                           <View className="bg-white w-8 h-8 rounded-full items-center justify-center">
                             <Image source={starIcon} className="w-7 h-5" />
                           </View>
                           <Animated.View
                             className="flex-1 pl-2"
-                            style={{ opacity: levelPillOpacityAnim }}
-                          >
+                            style={{ opacity: levelPillOpacityAnim }}>
                             <View className="flex-row items-center justify-between">
-                              <Text className="font-feather text-body text-description">Level {levelInfo.level}</Text>
+                              <Text className="font-feather text-body text-description">
+                                Level {levelInfo.level}
+                              </Text>
                               <Text className="font-din text-xs text-description mt-0.5 mr-2">
                                 {/* Show actual XP values: current XP / XP needed for next level */}
                                 {levelInfo.xp}/{levelInfo.xpForNextLevel} XP
@@ -1007,11 +1077,10 @@ export default function HomeScreen() {
                               <View
                                 className="h-full bg-accentGold rounded-full"
                                 style={{
-                                  width: `${Math.max(Math.min(levelInfo.progress, 100), 1)}%`
+                                  width: `${Math.max(Math.min(levelInfo.progress, 100), 1)}%`,
                                 }}
                               />
                             </View>
-
                           </Animated.View>
                         </Animated.View>
                       )}
@@ -1022,7 +1091,7 @@ export default function HomeScreen() {
                       <TouchableOpacity
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          analytics.logEvent("HomeScreen_Tapped_Star");
+                          analytics.logEvent('HomeScreen_Tapped_Star');
                           Toast.show({
                             type: 'info',
                             text1: 'Increase your streak!',
@@ -1030,14 +1099,13 @@ export default function HomeScreen() {
                             position: 'top',
                             visibilityTime: 4000,
                           });
-                        }}
-                      >
+                        }}>
                         <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() => {
                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          analytics.logEvent("HomeScreen_Tapped_Gems");
+                          analytics.logEvent('HomeScreen_Tapped_Gems');
                           // Show toast message using Toast component
                           Toast.show({
                             type: 'info',
@@ -1046,8 +1114,7 @@ export default function HomeScreen() {
                             position: 'top',
                             visibilityTime: 4000,
                           });
-                        }}
-                      >
+                        }}>
                         <ProgressPill value={0} label={gens.toString()} icon={gemIcon} />
                       </TouchableOpacity>
                     </>
@@ -1102,9 +1169,7 @@ export default function HomeScreen() {
                       {riveComponent}
                     </Animated.View>
                   </Animated.View>
-                  {artboardName === 'lamb-dead' && (
-                    <View style={{ height: 36 }} />
-                  )}
+                  {artboardName === 'lamb-dead' && <View style={{ height: 36 }} />}
                 </>
               )}
             </Animated.View>
@@ -1115,17 +1180,17 @@ export default function HomeScreen() {
             <TouchableOpacity
               onPress={() => {
                 if (!isPro) {
-                  analytics.logEvent("HomeScreen_TappedProBadge");
+                  analytics.logEvent('HomeScreen_TappedProBadge');
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
                   // Check if user has seen half-off paywall before
                   const subscriptionStore = useSubscriptionStore.getState();
                   if (subscriptionStore.shouldShowFreeTrialPaywall()) {
                     // User has seen half-off paywall before, show free trial
-                    console.log('[HomeScreen] Showing free trial paywall (user has seen half-off before)');
+                    console.log(
+                      '[HomeScreen] Showing free trial paywall (user has seen half-off before)'
+                    );
                     subscriptionStore.presentFreeTrialPaywall();
-
-
                   } else {
                     // First time or user hasn't seen half-off paywall, show half-off
                     console.log('[HomeScreen] Showing half-off paywall (first time)');
@@ -1141,14 +1206,13 @@ export default function HomeScreen() {
                 position: 'absolute',
                 left: 24,
                 // Place it roughly at the bottom of the lamb viewport
-                top: SCREEN_HEIGHT * 0.35,
+                top: SCREEN_HEIGHT * Platform.select({ android: 0.28, ios: 0.35 }),
                 paddingHorizontal: 8,
                 paddingVertical: 2,
                 borderRadius: 32,
                 zIndex: 20,
-              }}
-            >
-              <LinearGradient
+              }}>
+              {/* <LinearGradient
                 colors={['#F7B500', '#FFF45B']}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 0, y: 1 }}
@@ -1158,9 +1222,8 @@ export default function HomeScreen() {
                   paddingVertical: 2,
                   borderRadius: 32,
                   zIndex: 20,
-                  opacity: isPro ? 1 : 1
-                }}
-              >
+                  opacity: isPro ? 1 : 1,
+                }}>
                 <Text
                   className="font-nunito-italic text-lg text-white text-center p-0 m-0"
                   style={{
@@ -1171,7 +1234,7 @@ export default function HomeScreen() {
                 >
                   {isPro ? "SUPER" : isFree ? 'FREE Trial 🔓' : '🎁'}
                 </Text>
-              </LinearGradient>
+              </LinearGradient> */}
             </TouchableOpacity>
           )}
 
@@ -1192,16 +1255,14 @@ export default function HomeScreen() {
             }}>
             <ScrollView
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 120 }}
-            >
+              contentContainerStyle={{ paddingBottom: 120 }}>
               <View className="flex-row items-center gap-2.5 mb-0 px-1">
-               <View className="flex-row items-center gap-1">
-               <View className="bg-surfaceCream/80  rounded-full items-center justify-center flex-row h-full ">
-                <Text className="font-feather text-textPrimary text-body">
-                  {`${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`}
-                </Text>
-              </View>
-           
+                <View className="flex-row items-center gap-1">
+                  <View className="bg-surfaceCream/80  rounded-full items-center justify-center flex-row h-full ">
+                    <Text className="font-feather text-description text-body">
+                      {`${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`}
+                    </Text>
+                  </View>
                 </View>
                 <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
                   <View
@@ -1210,10 +1271,8 @@ export default function HomeScreen() {
                   />
                 </View>
                 <Image source={heartIcon} className="w-8 h-8" />
-               
-               <Text className="font-feather text-body text-red">
-                     {lambHearts}
-                   </Text>
+
+                <Text className="font-feather text-body text-red">{lambHearts}</Text>
               </View>
 
               <SecondaryButton
@@ -1254,8 +1313,6 @@ export default function HomeScreen() {
                 How to Add Widget
               </Text>
             </TouchableOpacity> */}
-
-
             </ScrollView>
           </Animated.View>
 

@@ -71,7 +71,7 @@ export const fetchChapter = async (
         /* Ignore parsing error, stick to default message */
       }
 
-      console.error(`API Error: ${response.status} ${response.statusText} for ${url}`);
+      console.log(`API Error: ${response.status} ${response.statusText} for ${url}`);
       return {
         error: true,
         message: apiErrorMessage,
@@ -99,7 +99,7 @@ export const fetchChapter = async (
       transformedVerses = dataObj.verses.map((v) => ({ verse: v.verse, text: v.content }));
       bookName = dataObj.book.name;
     } else {
-      console.error(`Invalid data format received for ${url}:`, rawJson);
+      console.log(`Invalid data format received for ${url}:`, rawJson);
       return { error: true, message: 'Invalid data format received from API.' };
     }
 
@@ -112,7 +112,7 @@ export const fetchChapter = async (
 
     return chapterResponse;
   } catch (err) {
-    console.error(`Network or parsing error fetching ${url}:`, err);
+    console.log(`Network or parsing error fetching ${url}:`, err);
     const message = err instanceof Error ? err.message : 'An unknown error occurred.';
     return { error: true, message: `Network or JSON parsing error: ${message}` };
   }
@@ -145,7 +145,7 @@ export const fetchFirst10GenesisChapters = async (
     });
     return results;
   } catch (error) {
-    console.error('Error fetching multiple chapters:', error);
+    console.log('Error fetching multiple chapters:', error);
     const message =
       error instanceof Error ? error.message : 'An unknown error occurred during batch fetch.';
     return chapterNumbers.map(() => ({ error: true, message }));

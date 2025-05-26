@@ -92,7 +92,7 @@ function formatRelativeTime(timestamp: any): string {
     const diffYears = Math.floor(diffMonths / 12);
     return `${diffYears}y ago`;
   } catch (error) {
-    console.error('Error formatting relative time:', error, timestamp);
+    console.log('Error formatting relative time:', error, timestamp);
     return '';
   }
 }
@@ -335,7 +335,7 @@ export default function StatsScreen() {
     }
     // Final fallback to alert
     else {
-      console.error('showOldReflectionSheet is not available');
+      console.log('showOldReflectionSheet is not available');
       Alert.alert('Reflection Detail', reflection.content || 'No content.');
     }
   }, [showOldReflectionSheet]);

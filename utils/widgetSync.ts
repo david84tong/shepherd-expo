@@ -37,7 +37,7 @@ export const syncStreakDataToWidget = async (
     console.log('Widget data synced successfully', { currentStreak, lastActivityDate: formattedDate });
     return true;
   } catch (error) {
-    console.error('Failed to sync widget data:', error);
+    console.log('Failed to sync widget data:', error);
     return false;
   }
 }; 
