@@ -18,7 +18,12 @@ import { createPaywallView } from '@adapty/react-native-ui';
 // Add constant for tracking half-off paywall view
 const HALF_OFF_PAYWALL_SEEN_KEY = 'half_off_paywall_seen';
 
-async function moveUserToProMode(isRestored?: boolean, packageId?: string, productId?: string, fromPaywall?: string) {
+async function moveUserToProMode(
+  isRestored?: boolean,
+  packageId?: string,
+  productId?: string,
+  fromPaywall?: string
+) {
   analytics.logEvent('subscription_purchase_success', {
     package_id: packageId || 'unknown',
     product_id: productId || 'unknown',
@@ -26,7 +31,7 @@ async function moveUserToProMode(isRestored?: boolean, packageId?: string, produ
     currentStreak: useUserStore.getState().getStreakCount(),
     isRestored: isRestored || false,
     fromScreen: useSubscriptionStore.getState().fromScreen,
-    age: useUserStore.getState().ageRange
+    age: useUserStore.getState().ageRange,
   });
 
   console.log('===>purrchase completed');
@@ -124,7 +129,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
       console.log('[SubscriptionStore] Fetching initial customer info after configuration.');
       await get().getCustomerInfo(); // Fetch customer info on init
-      
+
       // Check if user has seen half-off paywall before
       await get().checkHasSeenHalfOffPaywall();
     } catch (e) {
@@ -200,10 +205,10 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     analytics.logEvent('presentHalfOffPaywall', {
       fromScreen: get().fromScreen,
     });
-    
+
     // Mark that user has now seen the half-off paywall
     await get().markHalfOffPaywallAsSeen();
-    
+
     try {
       const paywall = await adapty.getPaywall('halfoff');
       console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
@@ -238,9 +243,9 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         onPurchaseCancelled() {
           setTimeout(() => {
             get().presentFreeTrialPaywall();
-           }, 500);
-            result = PAYWALL_RESULT.CANCELLED;
-            return true;
+          }, 500);
+          result = PAYWALL_RESULT.CANCELLED;
+          return true;
         },
         onPurchaseFailed() {
           result = PAYWALL_RESULT.ERROR;
@@ -280,7 +285,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       let result: PAYWALL_RESULT | null = null;
 
       view.registerEventHandlers({
-        onCloseButtonPress() {        
+        onCloseButtonPress() {
           result = PAYWALL_RESULT.CANCELLED;
           return true;
         },
@@ -303,16 +308,16 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         onPurchaseCancelled() {
           setTimeout(() => {
             get().presentHalfOffPaywall();
-           }, 500);
-            result = PAYWALL_RESULT.CANCELLED;
-            return true;
+          }, 500);
+          result = PAYWALL_RESULT.CANCELLED;
+          return true;
         },
         onPurchaseFailed() {
           setTimeout(() => {
             get().presentHalfOffPaywall();
-           }, 500);
-            result = PAYWALL_RESULT.CANCELLED;
-            return true;
+          }, 500);
+          result = PAYWALL_RESULT.CANCELLED;
+          return true;
         },
         onRestoreFailed() {
           result = PAYWALL_RESULT.ERROR;
@@ -483,7 +488,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       }
 
       // 3. Final pro status: Adapty OR Firestore (if not expired)
-      const finalProStatus = isProAdapty && isProFromFirebase;
+      const finalProStatus = isProAdapty || isProFromFirebase;
       // Track status change if different from current state
       const prevIsPro = get().isProMember;
       if (prevIsPro !== finalProStatus) {
