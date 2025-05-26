@@ -14,11 +14,6 @@
     "assetBundlePatterns": [
       "**/*"
     ],
-    "splash": {
-      "image": "./assets/splash.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FFF4D9"
-    },
     "ios": {
       "bundleIdentifier": "second.round.shepherd",
       "buildNumber": "41",
@@ -83,7 +78,7 @@
         {
           "image": "./assets/splash.png",
           "resizeMode": "contain",
-          "backgroundColor": "#FFF3D9",
+          "backgroundColor": "#FFF4D9",
           "imageWidth": 196
         }
       ],
