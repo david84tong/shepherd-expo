@@ -51,6 +51,7 @@ const LINE_HEIGHT_PRESETS = {
 type LineHeightPreset = keyof typeof LINE_HEIGHT_PRESETS;
 
 const TAP_GUIDANCE_KEY = 'userHideTapGuidance';
+const SWIPE_GUIDANCE_KEY = 'userHideSwipeGuidance';
 const READER_PREFERENCE_KEY = 'userDefaultReaderPreference';
 
 const THEME_COLORS = {
@@ -315,6 +316,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const [skipTyping, setSkipTyping] = useState(false);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [showTapGuidance, setShowTapGuidance] = useState(true);
+  const [showSwipeGuidance, setShowSwipeGuidance] = useState(true);
   const [tapCount, setTapCount] = useState(0);
   const [useDefaultReader, setUseDefaultReader] = useState(false);
   const [showBackButton, setShowBackButton] = useState(false);
@@ -391,6 +393,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         const hideTapGuidance = await AsyncStorage.getItem(TAP_GUIDANCE_KEY);
         if (hideTapGuidance === 'true') {
           setShowTapGuidance(false);
+        }
+
+        // Load swipe guidance preference
+        const hideSwipeGuidance = await AsyncStorage.getItem(SWIPE_GUIDANCE_KEY);
+        if (hideSwipeGuidance === 'true') {
+          setShowSwipeGuidance(false);
         }
 
         // Load reader preference
@@ -794,6 +802,15 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const handleSwipeVerseToChat = (verse: Verse) => {
     if (isFadingToChat) return; // Prevent multiple triggers
     
+    // Hide swipe guidance after first use
+    if (showSwipeGuidance) {
+      setShowSwipeGuidance(false);
+      // Save preference to AsyncStorage
+      AsyncStorage.setItem(SWIPE_GUIDANCE_KEY, 'true').catch(e => 
+        console.error("Failed to save swipe guidance setting", e)
+      );
+    }
+    
     setIsFadingToChat(true);
     setSelectedVerse(verse);
     
@@ -872,6 +889,15 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Handle left swipe to show menu
   const handleSwipeVerseToMenu = (verse: Verse) => {
     if (isFadingToChat || floatingMenu.isVisible) return;
+    
+    // Hide swipe guidance after first use
+    if (showSwipeGuidance) {
+      setShowSwipeGuidance(false);
+      // Save preference to AsyncStorage
+      AsyncStorage.setItem(SWIPE_GUIDANCE_KEY, 'true').catch(e => 
+        console.error("Failed to save swipe guidance setting", e)
+      );
+    }
     
     // Get the verse widget's position from the view ref (not swipeable ref)
     const viewRef = viewRefs.current.get(verse.verse);
@@ -1650,6 +1676,11 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                     {showTapGuidance && (
                       <Text style={{color: theme.headerText, fontFamily:'DIN Next Rounded LT W01 Regular', fontSize:16, opacity:0.7}}>
                         {isTypingComplete ? "Tap for next verse →" : "Tap to show full verse"}
+                      </Text>
+                    )}
+                    {showSwipeGuidance && (
+                      <Text style={{color: theme.headerText, fontFamily:'DIN Next Rounded LT W01 Regular', fontSize:14, opacity:0.6, marginTop: 4}}>
+                        ← Swipe left for annotations • Swipe right for chat →
                       </Text>
                     )}
                   </View>
