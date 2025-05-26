@@ -3,7 +3,6 @@ import { View, Text, Pressable, Alert, Linking, ScrollView } from 'react-native'
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboardingStore } from '../stores/onboardingStore';
-import { useUserStore } from '../stores/userStore';
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -19,7 +18,6 @@ import { useNotificationStore, NotificationTimeOption } from '../stores/notifica
 export default function OnboardingReminderTimeScreen() {
   const router = useRouter();
   const { setNotificationPreference } = useOnboardingStore();
-  const { setNotificationTime } = useUserStore();
   const {
     scheduleDailyReminder,
     setPreferredNotificationTime,
@@ -118,9 +116,6 @@ export default function OnboardingReminderTimeScreen() {
       enabled: time !== 'none',
       time: time
     });
-
-    // Save to user store
-    setNotificationTime(time);
 
     const isNotificationsEnabled = time !== 'none';
 

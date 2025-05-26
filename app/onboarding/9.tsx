@@ -12,7 +12,6 @@ import Animated, {
   SharedValue,
 } from 'react-native-reanimated';
 
-import PrimaryButton from '../../components/PrimaryButton';
 import { useNotificationStore } from '../stores/notificationStore';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';

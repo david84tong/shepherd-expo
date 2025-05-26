@@ -1,5 +1,5 @@
 import React, { useState, useEffect, ReactNode } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, ImageBackground, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, ImageBackground, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -129,8 +129,12 @@ const PricingScreen = () => {
     analytics.logEvent("PricingScreen_BackButton_Tapped");
 
     if (fromLoading) {
-      // If we came from loading screen, go back to loading screen
-      router.back();
+      // If we came from loading screen, try to go back, but fallback to home if no screen to go back to
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)');
+      }
     } else if (isSignedIn()) {
       // Mark onboarding as completed before navigation
       await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
@@ -141,7 +145,12 @@ const PricingScreen = () => {
         router.replace('/(tabs)');
       }
     } else {
-      router.replace('/onboarding/11');
+      // For non-signed in users, also check if we can go back first
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/onboarding/11');
+      }
     }
   };
 

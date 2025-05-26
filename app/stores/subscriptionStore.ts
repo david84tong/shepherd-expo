@@ -18,7 +18,17 @@ import { createPaywallView } from '@adapty/react-native-ui';
 // Add constant for tracking half-off paywall view
 const HALF_OFF_PAYWALL_SEEN_KEY = 'half_off_paywall_seen';
 
-async function moveUserToProMode(isRestored?: boolean) {
+async function moveUserToProMode(isRestored?: boolean, packageId?: string, productId?: string, fromPaywall?: string) {
+  analytics.logEvent('subscription_purchase_success', {
+    package_id: packageId || 'unknown',
+    product_id: productId || 'unknown',
+    fromPaywall: fromPaywall || 'unknown', // free trial, halfoff, or shepherd_paywall
+    currentStreak: useUserStore.getState().getStreakCount(),
+    isRestored: isRestored || false,
+    fromScreen: useSubscriptionStore.getState().fromScreen,
+    age: useUserStore.getState().ageRange
+  });
+
   console.log('===>purrchase completed');
   let onboardingCompleted: string | null = null;
   useUserStore.getState().setProStatus('pro');
@@ -51,6 +61,7 @@ async function moveUserToProMode(isRestored?: boolean) {
   // Navigate based on onboarding status
   setTimeout(handlePostPurchaseNavigation, 100);
 }
+
 interface SubscriptionState {
   customerInfo: any | null; // Allow AdaptyProfile or CustomerInfo
   isProMember: boolean;
@@ -142,12 +153,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         },
         onPurchaseCompleted() {
           result = PAYWALL_RESULT.PURCHASED;
-          moveUserToProMode();
+          moveUserToProMode(false, 'free-trial', 'free-trial-product', 'free-trial');
           return true;
         },
         onRestoreCompleted() {
           result = PAYWALL_RESULT.RESTORED;
-          moveUserToProMode(true);
+          moveUserToProMode(true, 'free-trial', 'free-trial-product', 'free-trial');
           return true;
         },
         onProductSelected() {
@@ -210,12 +221,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         },
         onPurchaseCompleted() {
           result = PAYWALL_RESULT.PURCHASED;
-          moveUserToProMode();
+          moveUserToProMode(false, 'halfoff', 'halfoff-product', 'halfoff');
           return true;
         },
         onRestoreCompleted() {
           result = PAYWALL_RESULT.RESTORED;
-          moveUserToProMode(true);
+          moveUserToProMode(true, 'halfoff', 'halfoff-product', 'halfoff');
           return true;
         },
         onProductSelected() {
@@ -275,12 +286,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         },
         onPurchaseCompleted() {
           result = PAYWALL_RESULT.PURCHASED;
-          moveUserToProMode();
+          moveUserToProMode(false, 'shepherd_paywall', 'shepherd-product', 'shepherd_paywall');
           return true;
         },
         onRestoreCompleted() {
           result = PAYWALL_RESULT.RESTORED;
-          moveUserToProMode(true);
+          moveUserToProMode(true, 'shepherd_paywall', 'shepherd-product', 'shepherd_paywall');
           return true;
         },
         onProductSelected() {

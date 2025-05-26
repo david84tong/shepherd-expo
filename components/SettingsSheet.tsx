@@ -105,6 +105,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   const [cancellationFeedback, setCancellationFeedback] = useState('');
   const [isSubmittingCancellation, setIsSubmittingCancellation] = useState(false);
 
+  // Add state for daily cancellation tracking
+  const [hasCancelledToday, setHasCancelledToday] = useState(false);
+
   // Add state for reading time modal
   const [readingTimeModalVisible, setReadingTimeModalVisible] = useState(false);
   const [selectedReadingTime, setSelectedReadingTime] = useState<string>(frequencyGoal || '6-10');
@@ -876,14 +879,60 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     }
   }, [setFrequencyGoal]);
 
+  // Check if user has already cancelled today on mount
+  useEffect(() => {
+    const checkDailyCancellation = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
+        const dailyCancelKey = `cancellation_used_${today}`;
+        const cancelledToday = await AsyncStorage.getItem(dailyCancelKey);
+        setHasCancelledToday(cancelledToday === 'true');
+        console.log(`[SettingsSheet] User cancelled today (${today}): ${cancelledToday === 'true'}`);
+      } catch (error) {
+        console.error('[SettingsSheet] Error checking daily cancellation:', error);
+        setHasCancelledToday(false);
+      }
+    };
+    checkDailyCancellation();
+  }, []);
+
   // Handle cancellation modal open
-  const handleOpenCancellationModal = useCallback(() => {
+  const handleOpenCancellationModal = useCallback(async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    
+    // Check if user has already cancelled today
+    if (hasCancelledToday) {
+      console.log('🚫 User already cancelled today, redirecting to Apple subscriptions');
+      analytics.logEvent('Settings_CancellationBlocked_DailyLimit', {
+        userId: userId,
+      });
+      
+      Alert.alert(
+        'Already Submitted Today',
+        'Apple handles all subscription management, so please contact them',
+        [
+          {
+            text: 'Go to Apple Account',
+            onPress: () => {
+              Linking.openURL('https://apps.apple.com/account/subscriptions').catch(() => {
+                Alert.alert('Error', 'Could not open Apple subscriptions. Please go to Settings > Apple ID > Subscriptions manually.');
+              });
+            },
+          },
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+        ]
+      );
+      return;
+    }
+    
     setCancellationReasons([]);
     setCancellationFeedback('');
     setCancellationModalVisible(true);
     analytics.logEvent('Settings_Opened_CancellationFlow');
-  }, []);
+  }, [hasCancelledToday, userId]);
 
   // Handle cancellation reason toggle
   const toggleCancellationReason = useCallback((reason: string) => {
@@ -922,6 +971,13 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       });
 
       console.log('✅ Feedback save result:', result);
+      
+      // Mark that user has cancelled today
+      const today = new Date().toISOString().split('T')[0];
+      const dailyCancelKey = `cancellation_used_${today}`;
+      await AsyncStorage.setItem(dailyCancelKey, 'true');
+      setHasCancelledToday(true);
+      console.log(`✅ Marked cancellation as used for today: ${today}`);
       
       // Log analytics
       console.log('📊 Logging analytics event...');
@@ -972,7 +1028,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       setIsSubmittingCancellation(false);
       console.log('🏁 Cancellation submission completed');
     }
-  }, [cancellationReasons, cancellationFeedback, userId]);
+  }, [cancellationReasons, cancellationFeedback, userId, presentHalfOffPaywall]);
 
   return (
     <>

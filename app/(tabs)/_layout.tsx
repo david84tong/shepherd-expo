@@ -13,6 +13,8 @@ import useSubscriptionStore from '../stores/subscriptionStore';
 
 // Key for tracking first app launch
 const FIRST_APP_LAUNCH_KEY = 'first_app_launch_completed';
+// Key for tracking daily first load
+const DAILY_FIRST_LOAD_KEY = 'daily_first_load_';
 
 // Helper component to center the icon
 const CenteredIcon = ({ children }: { children: React.ReactNode }) => (
@@ -52,6 +54,7 @@ export default function TabsLayout() {
   const signedIn = isSignedIn();
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const [isFirstAppLaunch, setIsFirstAppLaunch] = useState<boolean | null>(null);
+  const [isDailyFirstLoad, setIsDailyFirstLoad] = useState<boolean | null>(null);
   // Get isInitialized from the store to ensure savedScreenToNavigateTo is ready
   const { savedScreenToNavigateTo, isInitialized: isOnboardingStoreInitialized } = useOnboardingStore();
   
@@ -94,6 +97,29 @@ export default function TabsLayout() {
     checkFirstAppLaunch();
   }, []);
 
+  // Check if this is the first load of the day
+  useEffect(() => {
+    const checkDailyFirstLoad = async () => {
+      try {
+        const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
+        const dailyKey = DAILY_FIRST_LOAD_KEY + today;
+        const dailyFirstLoadCompleted = await AsyncStorage.getItem(dailyKey);
+        const isDailyFirst = dailyFirstLoadCompleted !== 'true';
+        setIsDailyFirstLoad(isDailyFirst);
+        console.log(`[TabsLayout] Is daily first load for ${today}: ${isDailyFirst}`);
+        
+        // If this is the first load of the day, mark it as completed
+        if (isDailyFirst) {
+          await AsyncStorage.setItem(dailyKey, 'true');
+        }
+      } catch (error) {
+        console.error('[TabsLayout] Error checking daily first load:', error);
+        setIsDailyFirstLoad(false); // Assume not daily first load on error
+      }
+    };
+    checkDailyFirstLoad();
+  }, []);
+
   // Get customer info when component mounts to ensure we have latest subscription status
   useEffect(() => {
     if (signedIn) {
@@ -117,12 +143,12 @@ export default function TabsLayout() {
   }, [mode, pathInProgress]);
 
   // Wait for both onboarding status from AsyncStorage and onboardingStore to be initialized
-  if (onboardingCompleted === null || !isOnboardingStoreInitialized || isFirstAppLaunch === null) {
-    console.log(`[TabsLayout] Waiting for initialization: onboardingCompleted (${onboardingCompleted}), isOnboardingStoreInitialized (${isOnboardingStoreInitialized}), isFirstAppLaunch (${isFirstAppLaunch})`);
+  if (onboardingCompleted === null || !isOnboardingStoreInitialized || isFirstAppLaunch === null || isDailyFirstLoad === null) {
+    console.log(`[TabsLayout] Waiting for initialization: onboardingCompleted (${onboardingCompleted}), isOnboardingStoreInitialized (${isOnboardingStoreInitialized}), isFirstAppLaunch (${isFirstAppLaunch}), isDailyFirstLoad (${isDailyFirstLoad})`);
     return null; // Show nothing while loading critical states
   }
 
-  console.log(`[TabsLayout] States evaluated: signedIn=${signedIn}, onboardingCompleted=${onboardingCompleted}, savedScreenToNavigateTo='${savedScreenToNavigateTo}' (Store initialized: ${isOnboardingStoreInitialized}), isFirstAppLaunch=${isFirstAppLaunch}, isProMember=${isProMember}`);
+  console.log(`[TabsLayout] States evaluated: signedIn=${signedIn}, onboardingCompleted=${onboardingCompleted}, savedScreenToNavigateTo='${savedScreenToNavigateTo}' (Store initialized: ${isOnboardingStoreInitialized}), isFirstAppLaunch=${isFirstAppLaunch}, isDailyFirstLoad=${isDailyFirstLoad}, isProMember=${isProMember}`);
 
   // CASE 1: User is NOT signed in
   if (!signedIn) {
@@ -139,9 +165,10 @@ export default function TabsLayout() {
   }
 
   // CASE 2: User IS signed in
-  // Check if this is their first app launch and they're not pro - redirect to pricing
-  if (isFirstAppLaunch && !isProMember && onboardingCompleted) {
-    console.log("[TabsLayout] Case 2A: First app launch, user is signed in but not pro. Redirecting to PricingScreen.");
+  // Check if this is their first app launch OR daily first load and they're not pro - redirect to pricing
+  if ((isFirstAppLaunch || isDailyFirstLoad) && !isProMember && onboardingCompleted) {
+    const reason = isFirstAppLaunch ? "First app launch" : "Daily first load";
+    console.log(`[TabsLayout] Case 2A: ${reason}, user is signed in but not pro. Redirecting to PricingScreen.`);
     return <Redirect href="/PricingScreen?fromLoading=true&animateFromBottom=true" />;
   }
   

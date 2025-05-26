@@ -402,7 +402,8 @@ export default function OnboardingWelcomeScreen() {
               screenName: 'Welcome',
               action: 'Back to Auth'
             });
-            router.back();
+            // Navigate to auth index instead of going back to prevent GO_BACK error
+            router.replace('/(auth)');
           }}
           className="w-10 h-10 rounded-full bg-black/20 items-center justify-center"
           style={{
