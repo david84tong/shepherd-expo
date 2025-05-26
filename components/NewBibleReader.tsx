@@ -788,6 +788,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Add refs to track swipeables for auto-closing
   const swipeableRefs = useRef<Map<number, any>>(new Map());
+  const viewRefs = useRef<Map<number, any>>(new Map());
   
   // Handle verse swipe to chat transition with immediate fade
   const handleSwipeVerseToChat = (verse: Verse) => {
@@ -872,12 +873,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const handleSwipeVerseToMenu = (verse: Verse) => {
     if (isFadingToChat || floatingMenu.isVisible) return;
     
-    // Get the verse widget's position from the swipeable ref
-    const swipeableRef = swipeableRefs.current.get(verse.verse);
-    if (!swipeableRef) return;
+    // Get the verse widget's position from the view ref (not swipeable ref)
+    const viewRef = viewRefs.current.get(verse.verse);
+    if (!viewRef) return;
 
     // Get the verse widget's position
-    swipeableRef.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
+    viewRef.measure((x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
       // Position menu at the center of the verse widget
       const menuX = pageX + (width / 2) - 90; // Center horizontally (menu width ~180)
       const menuY = pageY + (height / 2) - 40; // Center vertically (menu height ~80)
@@ -910,6 +911,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
       // Close the swipeable smoothly after a short delay
       setTimeout(() => {
+        const swipeableRef = swipeableRefs.current.get(verse.verse);
         if (swipeableRef) {
           swipeableRef.close();
         }
@@ -1331,6 +1333,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   useEffect(() => {
     return () => {
       swipeableRefs.current.clear();
+      viewRefs.current.clear();
     };
   }, []);
 
@@ -1538,6 +1541,13 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                         <Reanimated.View 
                           entering={FadeInUp.duration(300).delay(index * 60)}
                           layout={Layout.springify()}
+                          ref={(ref) => {
+                            if (ref) {
+                              viewRefs.current.set(v.verse, ref);
+                            } else {
+                              viewRefs.current.delete(v.verse);
+                            }
+                          }}
                         >
                           <View 
                             style={[

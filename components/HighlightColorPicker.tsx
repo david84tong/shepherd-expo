@@ -32,14 +32,22 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
   onSelectColor,
   versePreview
 }) => {
-  const [selectedColor, setSelectedColor] = useState<HighlightColorKey | null>(initialColor || null);
+  // Create color options from the HIGHLIGHT_COLORS object
+  const colorOptions = Object.entries(HIGHLIGHT_COLORS).map(([key, value]) => ({
+    key: key as HighlightColorKey,
+    color: value
+  }));
+
+  // Set default color to the first option if no initial color is provided
+  const defaultColor = colorOptions[0]?.key || null;
+  const [selectedColor, setSelectedColor] = useState<HighlightColorKey | null>(initialColor || defaultColor);
   const modalScale = useSharedValue(0.95);
   const modalOpacity = useSharedValue(0);
 
   // Reset selected color when modal opens
   useEffect(() => {
     if (isVisible) {
-      setSelectedColor(initialColor || null);
+      setSelectedColor(initialColor || defaultColor);
       
       // Animate modal appearance
       modalScale.value = 0.95;
@@ -54,7 +62,7 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
         duration: 250
       });
     }
-  }, [isVisible, initialColor, modalScale, modalOpacity]);
+  }, [isVisible, initialColor, defaultColor, modalScale, modalOpacity]);
 
   const handleColorSelect = (colorKey: HighlightColorKey) => {
     // Provide haptic feedback
@@ -102,12 +110,6 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
     transform: [
       { scale: modalScale.value }
     ]
-  }));
-
-  // Create color options from the HIGHLIGHT_COLORS object
-  const colorOptions = Object.entries(HIGHLIGHT_COLORS).map(([key, value]) => ({
-    key: key as HighlightColorKey,
-    color: value
   }));
 
   // Don't render anything if not visible
@@ -173,11 +175,11 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
                 <TouchableOpacity 
                   style={[
                     styles.confirmButton, 
-                    // Only disable if no color is selected AND there's no initial color to remove
-                    (!selectedColor && !initialColor) && styles.disabledButton
+                    // Only disable if no color is selected (which shouldn't happen now with default)
+                    !selectedColor && styles.disabledButton
                   ]} 
                   onPress={handleConfirm}
-                  disabled={!selectedColor && !initialColor}
+                  disabled={!selectedColor}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.confirmText}>
