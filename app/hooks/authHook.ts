@@ -158,7 +158,7 @@ export function useAuth() {
 
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
       console.log('[Auth] User document updated in Firestore');
-      
+
       // Update local store
       updateUser({
         id: uid,
@@ -244,7 +244,7 @@ export function useAuth() {
 
       // Log successful anonymous sign in
       if (analytics.isInitialized) {
-        analytics.logEvent('auth_success_anonymously_by_clicking_skip_button')
+        analytics.logEvent('auth_success_anonymously_by_clicking_skip_button');
       }
 
       // Adapty: login user after successful anonymous sign in
@@ -271,31 +271,14 @@ export function useAuth() {
     }
   };
 
-  const getFirebaseIdToken = async (): Promise<string | null> => {
-    console.log('[Auth] getFirebaseIdToken() called');
-    try {
-      // Get current user
-      const currentUser = auth().currentUser;
-      if (!currentUser) {
-        console.error('[Auth] No authenticated user found');
-        return null;
-      }
-
-      // Request a fresh token
-      const idToken = await currentUser.getIdToken(true);
-      console.log('[Auth] Firebase ID token fetched successfully');
-      return idToken;
-    } catch (error) {
-      console.error('[Auth] Error getting ID token:', error);
-      return null;
+  // Google Sign-In (Android only)
+  const signInWithGoogle = async (isLoginMode = false) => {
+    if (Platform.OS !== 'android') {
+      throw new Error('Google sign-in is only supported on Android.');
     }
-  };
-
-  // Google Sign-In
-  // const signInWithGoogle = async () => {
-  //   try {
-  //     setLoading(true);
-  //     setError(null);
+    try {
+      setLoading(true);
+      setError(null);
 
       // Use dynamic web client ID from expo-constants (support both SDK 49+ and older)
       const webClientId =
@@ -342,11 +325,11 @@ export function useAuth() {
         createdAt: firestore.Timestamp.now(),
         updatedAt: firestore.Timestamp.now(),
       };
-      console.log("userDoc ====>",userDoc);
-      
+      console.log('userDoc ====>', userDoc);
+
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
       console.log('userDoc set in firestore');
-      
+
       updateUser({ id: uid, displayName: userDoc.displayName, email: userDoc.email });
       console.log('userDoc updated in store');
       setCreatedAt(firestore.Timestamp.now());
@@ -402,7 +385,6 @@ export function useAuth() {
     signInWithGoogle,
     signInAnonymously,
     checkUserExists,
-    getFirebaseIdToken,
     signOut,
   };
 }
