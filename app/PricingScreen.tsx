@@ -72,7 +72,7 @@ const PricingScreen = () => {
   useEffect(() => {
     const closeButtonTimer = setTimeout(() => {
       setShowCloseButton(true);
-    }, 5000); // 5 seconds delay
+    }, 2000); // 5 seconds delay
 
     return () => clearTimeout(closeButtonTimer);
   }, []);

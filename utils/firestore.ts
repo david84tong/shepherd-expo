@@ -154,3 +154,44 @@ export const getUserDocument = async () => {
     return null;
   }
 };
+
+// Save feedback to Firestore
+export const saveFeedback = async (feedbackData: {
+  type: string;
+  reasons: string[];
+  feedback: string;
+  userId: string;
+  timestamp: string;
+}) => {
+  try {
+    console.log('🔍 saveFeedback called with data:', feedbackData);
+    
+    const currentUser = auth().currentUser;
+    if (!currentUser) {
+      console.log('❌ No authenticated user found, skipping feedback save');
+      console.log('No authenticated user found, skipping feedback save');
+      return false;
+    }
+
+    console.log('👤 Current user found:', currentUser.uid, currentUser.email);
+    
+    const feedbackDoc = {
+      ...feedbackData,
+      createdAt: Timestamp.now(),
+      userEmail: currentUser.email,
+    };
+
+    console.log('📄 Feedback document to save:', feedbackDoc);
+    
+    // Save to feedback collection
+    const docRef = await firestore().collection('feedback').add(feedbackDoc);
+    console.log('✅ Feedback saved with document ID:', docRef.id);
+
+    console.log('Successfully saved feedback to Firestore');
+    return true;
+  } catch (error) {
+    console.error('Error saving feedback:', error);
+    console.error('❌ Full error details:', JSON.stringify(error, null, 2));
+    return false;
+  }
+};

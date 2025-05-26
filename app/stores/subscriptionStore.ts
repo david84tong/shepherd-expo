@@ -1,11 +1,10 @@
 import Purchases, { PurchasesPackage, LOG_LEVEL } from 'react-native-purchases';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { create } from 'zustand';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 import { useUserStore } from './userStore';
 import analytics from '~/utils/analytics';
 import { router } from 'expo-router';
-
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 
@@ -204,6 +203,9 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       view.registerEventHandlers({
         onCloseButtonPress() {
           result = PAYWALL_RESULT.CANCELLED;
+          Linking.openURL('https://apps.apple.com/account/subscriptions').catch(() => {
+            console.log('Could not open subscription management');
+          });
           return true;
         },
         onPurchaseCompleted() {

@@ -28,7 +28,6 @@ import { useUIStore } from '../app/stores/uiStore';
 import { usePathStore } from '../app/stores/pathStore';
 import {
   useNotificationStore,
-  NotificationTimeOption,
   NOTIFICATION_IDS,
 } from '../app/stores/notificationStore';
 import { useRouter } from 'expo-router';
@@ -36,6 +35,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Notifications from 'expo-notifications';
 import analytics from '../utils/analytics';
 import Purchases from 'react-native-purchases';
+import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import useSubscriptionStore from '../app/stores/subscriptionStore';
 import {
   useStreakManager,
@@ -44,6 +44,7 @@ import {
 } from '../app/hooks/streakHook';
 import * as Application from 'expo-application';
 import { useOnboardingStore } from '../app/stores/onboardingStore';
+import { saveFeedback } from '../utils/firestore';
 
 import Animated, {
   useAnimatedStyle,
@@ -97,6 +98,12 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   const [referralModalVisible, setReferralModalVisible] = useState(false);
   const [referralInput, setReferralInput] = useState('');
   const [isSubmittingReferral, setIsSubmittingReferral] = useState(false);
+
+  // States for cancellation flow
+  const [cancellationModalVisible, setCancellationModalVisible] = useState(false);
+  const [cancellationReasons, setCancellationReasons] = useState<string[]>([]);
+  const [cancellationFeedback, setCancellationFeedback] = useState('');
+  const [isSubmittingCancellation, setIsSubmittingCancellation] = useState(false);
 
   // Add state for reading time modal
   const [readingTimeModalVisible, setReadingTimeModalVisible] = useState(false);
@@ -252,7 +259,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     setIsUserSignedIn(isUserSignedIn);
 
     // Show the sheet
-    bottomSheetRef.current?.expand();
+    bottomSheetRef.current?.snapToIndex(0);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   }, []);
 
@@ -543,6 +550,15 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     });
   }, []);
 
+  // Open roadmap link
+  const handleOpenRoadmap = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Linking.openURL('https://shepherd.nolt.io/roadmap').catch((err) => {
+      console.error('Error opening roadmap link:', err);
+      Alert.alert('Could not open link', 'Please check your internet connection and try again.');
+    });
+  }, []);
+
   // Delete account and related data
   const handleDeleteAccount = useCallback(() => {
     analytics.logEvent('Settings_Tapped_DeleteAccount', {
@@ -680,7 +696,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   }, [router]);
 
   // Get subscription state and actions from the store
-  const { handleReferralCode, isProMember, presentPaywall, getCustomerInfo, getUsedReferralCodes } =
+  const { handleReferralCode, isProMember, presentPaywall, getCustomerInfo, getUsedReferralCodes, presentHalfOffPaywall } =
     useSubscriptionStore();
 
   // Handle subscription button press using the store action
@@ -860,6 +876,104 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     }
   }, [setFrequencyGoal]);
 
+  // Handle cancellation modal open
+  const handleOpenCancellationModal = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    setCancellationReasons([]);
+    setCancellationFeedback('');
+    setCancellationModalVisible(true);
+    analytics.logEvent('Settings_Opened_CancellationFlow');
+  }, []);
+
+  // Handle cancellation reason toggle
+  const toggleCancellationReason = useCallback((reason: string) => {
+    setCancellationReasons(prev => {
+      if (prev.includes(reason)) {
+        return prev.filter(r => r !== reason);
+      } else {
+        return [...prev, reason];
+      }
+    });
+  }, []);
+
+  // Handle cancellation submission
+  const handleSubmitCancellation = useCallback(async () => {
+    console.log('🔄 Starting cancellation submission...');
+    console.log('📝 Cancellation reasons:', cancellationReasons);
+    console.log('💬 Cancellation feedback:', cancellationFeedback);
+    console.log('👤 User ID:', userId);
+    
+    if (cancellationReasons.length === 0) {
+      Alert.alert('Please select a reason', 'Please select at least one reason for cancelling.');
+      return;
+    }
+
+    setIsSubmittingCancellation(true);
+    
+    try {
+      console.log('💾 Attempting to save feedback to Firestore...');
+      // Save feedback to Firestore
+      const result = await saveFeedback({
+        type: 'cancellation',
+        reasons: cancellationReasons,
+        feedback: cancellationFeedback,
+        userId: userId,
+        timestamp: new Date().toISOString(),
+      });
+
+      console.log('✅ Feedback save result:', result);
+      
+      // Log analytics
+      console.log('📊 Logging analytics event...');
+      analytics.logEvent('Settings_Submitted_CancellationFeedback', {
+        reasons: cancellationReasons,
+        hasFeedback: cancellationFeedback.length > 0,
+        userId: userId,
+        reasonCount: cancellationReasons.length,
+        feedbackLength: cancellationFeedback.length,
+        // Individual reason flags for easier filtering
+        reasonTooExpensive: cancellationReasons.includes('Too expensive'),
+        reasonTechnicalIssues: cancellationReasons.includes('Technical Issues'),
+        reasonMissingFeatures: cancellationReasons.includes('Missing features'),
+        reasonMissingLanguage: cancellationReasons.includes('Missing language'),
+        reasonMissingTranslation: cancellationReasons.includes('Missing Translation'),
+      });
+
+      // Log individual events for each reason selected
+      cancellationReasons.forEach(reason => {
+        analytics.logEvent('Settings_CancellationReason_Selected', {
+          reason: reason,
+          userId: userId,
+          totalReasonsSelected: cancellationReasons.length,
+        });
+      });
+
+      // Close modal
+      setCancellationModalVisible(false);
+      
+      // Show half-off paywall before they leave
+      console.log('🎯 Showing half-off paywall...');
+      const paywallResult = await presentHalfOffPaywall();
+      
+      if (paywallResult === PAYWALL_RESULT.CANCELLED || paywallResult === PAYWALL_RESULT.ERROR) {
+        console.log('💔 User cancelled paywall, redirecting to Apple subscriptions...');
+
+      } else if (paywallResult === PAYWALL_RESULT.PURCHASED || paywallResult === PAYWALL_RESULT.RESTORED) {
+        console.log('🎉 User purchased or restored subscription!');
+        // They successfully subscribed, no need to redirect to Apple
+      }
+      
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      
+    } catch (error) {
+      console.error('❌ Error submitting cancellation feedback:', error);
+      Alert.alert('Error', 'Failed to submit feedback. Please try again.');
+    } finally {
+      setIsSubmittingCancellation(false);
+      console.log('🏁 Cancellation submission completed');
+    }
+  }, [cancellationReasons, cancellationFeedback, userId]);
+
   return (
     <>
       <BottomSheet
@@ -870,7 +984,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         onChange={handleSettingsChange}
         backgroundStyle={styles.sheetBackground}
         handleIndicatorStyle={styles.handleIndicator}
-        backdropComponent={renderBackdrop}>
+        backdropComponent={renderBackdrop}
+        animateOnMount={true}>
         <BottomSheetView style={styles.settingsContentContainer}>
           {/* Header */}
           <View style={styles.settingsHeader}>
@@ -996,6 +1111,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 </View>
                 <Feather name="external-link" size={18} color="#3C584A" />
               </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.roadmapButton} onPress={handleOpenRoadmap}>
+                <View style={styles.roadmapButtonContent}>
+                  <Feather name="map" size={20} color="#22C55E" />
+                  <Text style={styles.roadmapButtonText}>Roadmap & Feature Requests</Text>
+                </View>
+                <Feather name="external-link" size={18} color="#3C584A" />
+              </TouchableOpacity>
             </View>
 
             <View style={styles.divider} />
@@ -1015,7 +1138,13 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                         : 'Unlock premium features and support our mission'}
                     </Text>
                   </View>
-                  {!isProMember && (
+                  {isProMember ? (
+                    <TouchableOpacity
+                      onPress={handleOpenCancellationModal}
+                      className="bg-red/10 px-4 py-2 rounded-lg border border-red">
+                      <Text className="font-feather text-red">Cancel</Text>
+                    </TouchableOpacity>
+                  ) : (
                     <TouchableOpacity
                       onPress={handleSubscriptionPress}
                       className="bg-[#FFE07D] px-4 py-2 rounded-lg">
@@ -1382,6 +1511,79 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             {/* Cancel Button */}
             <TouchableOpacity
               onPress={() => setReadingTimeModalVisible(false)}
+              className="bg-textPrimary/10 rounded-xl p-4">
+              <Text className="font-din text-textPrimary text-center">Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Cancellation Modal */}
+      <Modal
+        visible={cancellationModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setCancellationModalVisible(false)}>
+        <View className="flex-1 bg-black/50 justify-center items-center">
+          <View className="bg-surfaceCream rounded-2xl p-5 w-[85%] max-w-[350px]">
+            {/* Title */}
+            <Text className="font-feather text-xl text-textPrimary text-center mb-4">
+              Why are you cancelling?
+            </Text>
+
+            {/* Options */}
+            <View className="mb-4 space-y-3">
+              {[
+                'Too expensive',
+                'Technical Issues', 
+                'Missing features',
+                'Missing language',
+                'Missing Translation'
+              ].map((reason) => (
+                <TouchableOpacity
+                  key={reason}
+                  onPress={() => toggleCancellationReason(reason)}
+                  className={`rounded-xl p-4 border-2 ${
+                    cancellationReasons.includes(reason) ? 'bg-[#FFE07D] border-[#F7B500]' : 'bg-white border-[#FFE4A8]'
+                  }`}>
+                  <Text className={`font-feather text-center ${
+                    cancellationReasons.includes(reason) ? 'text-textPrimary' : 'text-textPrimary'
+                  }`}>
+                    {reason}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Feedback Input */}
+            <View className="mb-4">
+              <Text className="font-din text-textPrimary mb-2">Please elaborate, we really want to improve 😢</Text>
+              <TextInput
+                className="bg-white rounded-xl px-4 py-3 text-lg font-din text-textPrimary border border-[#FFE4A8] min-h-[120px]"
+                placeholder="Your feedback helps us improve..."
+                placeholderTextColor="#B89B4C"
+                value={cancellationFeedback}
+                onChangeText={setCancellationFeedback}
+                multiline
+                numberOfLines={5}
+                editable={!isSubmittingCancellation}
+                textAlignVertical="top"
+              />
+            </View>
+
+            {/* Submit Button */}
+            <TouchableOpacity
+              onPress={handleSubmitCancellation}
+              className={`bg-[#FFE07D] rounded-xl p-4 mb-2 ${cancellationReasons.length === 0 ? 'opacity-50' : ''}`}
+              disabled={cancellationReasons.length === 0 || isSubmittingCancellation}>
+              <Text className="font-feather text-textPrimary text-center text-lg">
+                {isSubmittingCancellation ? 'Submitting...' : 'Continue'}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Cancel Button */}
+            <TouchableOpacity
+              onPress={() => setCancellationModalVisible(false)}
               className="bg-textPrimary/10 rounded-xl p-4">
               <Text className="font-din text-textPrimary text-center">Cancel</Text>
             </TouchableOpacity>
@@ -1781,6 +1983,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#3C584A',
     marginBottom: 5,
+  },
+  roadmapButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    padding: 16,
+    borderRadius: 12,
+    borderLeftWidth: 4,
+    borderLeftColor: '#22C55E',
+    marginTop: 12,
+  },
+  roadmapButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  roadmapButtonText: {
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    color: '#3C584A',
+    marginLeft: 10,
   },
 });
 

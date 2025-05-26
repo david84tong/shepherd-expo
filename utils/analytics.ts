@@ -61,6 +61,10 @@ export enum AnalyticsEvent {
   PURCHASE_COMPLETED = 'purchase_completed',
   PURCHASE_CANCELLED = 'purchase_cancelled',
   PURCHASE_FAILED = 'purchase_failed',
+  
+  // Cancellation flow events
+  CANCELLATION_FLOW_OPENED = 'cancellation_flow_opened',
+  CANCELLATION_FEEDBACK_SUBMITTED = 'cancellation_feedback_submitted',
 }
 
 // Mixpanel token - replace with your project token
