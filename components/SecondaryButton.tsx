@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, Image, ImageSourcePropType, Pressable, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import analytics from '../utils/analytics';
+import { useSoundStore } from '../app/stores/soundStore';
 
 interface SecondaryButtonProps {
   icon: ImageSourcePropType;
@@ -31,7 +32,7 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   const bgColor = completed ? 'bg-lightGreen' : 'bg-surfaceCream';
   const borderColor = completed ? 'border-darkGreen' : 'border-border';
   const opacityClass = disabled ? 'opacity-50' : completed ? 'opacity-70' : '';
-  
+
   // Platform-specific shadow styles
   const shadowStyles = !isPressed && !completed && !disabled ? {
     ...Platform.select({
@@ -46,14 +47,19 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
       },
     }),
   } : {};
-  
   const handlePress = () => {
-    // Trigger medium haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+
+    if (disabled) {
+      useSoundStore.getState()?.playDisabledSound()
+      return
+    }
+    useSoundStore.getState()?.playButtonSound()
+
     analytics.logEvent(`${title}_Tapped`);
     if (onPress) onPress();
   };
-  
+
   return (
     <View className={`mt-6 h-[80px] w-full ${style || ''}`}>
       <Pressable
@@ -64,7 +70,6 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
         `}
         style={shadowStyles}
         onPress={handlePress}
-        disabled={disabled}
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}
       >

@@ -48,6 +48,7 @@ import { IS_ANDROID, IS_IOS } from './utils/utils';
 // Import highlight store setup function
 import { setupHighlightListeners } from './stores/highlightStore';
 import useHighlightStore from './stores/highlightStore';
+import { useSoundStore } from './stores/soundStore';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -161,7 +162,7 @@ export default function RootLayout() {
 
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
-  const settingsSnapPoints = useMemo(() => [ '95%'], []);
+  const settingsSnapPoints = useMemo(() => ['95%'], []);
   const prayerSnapPoints = useMemo(() => ['60%', '85%'], []);
 
   // HalfModal params
@@ -435,6 +436,17 @@ export default function RootLayout() {
     });
   }, []);
 
+  // Move the sound store hooks inside the component
+  const backgroundMusicEnabled = useSoundStore.getState().backgroundMusicEnabled
+  // Initialize background music
+  useEffect(() => {
+    if (backgroundMusicEnabled) {
+      useSoundStore.getState().playBackgroundMusic();
+    } else {
+      useSoundStore.getState().stopBackgroundMusic();
+    }
+  }, [backgroundMusicEnabled]);
+
   // Show Rive animation
   if (showRiveAnimation && riveAssets?.[0]?.uri) {
     return (
@@ -467,6 +479,7 @@ export default function RootLayout() {
   if (hasError) return <AppLoading loadingMessage="Something went wrong. Please try again..." />;
 
   console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
+
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
       <BottomSheetModalProvider>
