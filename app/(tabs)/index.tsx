@@ -820,24 +820,24 @@ export default function HomeScreen() {
             resizeMode="cover"
           />
         )}
-   <TouchableOpacity
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      analytics.logEvent('HomeScreen_Tapped_LambName', {
-                        lambName: lambName,
-                        currentlyExpanded: isLevelPillExpanded,
-                        action: isLevelPillExpanded ? 'collapse' : 'expand'
-                      });
-                      
-                  
-                    }}
-                    activeOpacity={0.7}
-                    className="bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 -mb-2 px-2"
-                  >
-                    <Text className="font-feather text-textPrimary text-xs">
-                      {`${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`}
-                    </Text>
-                  </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            analytics.logEvent('HomeScreen_Tapped_LambName', {
+              lambName: lambName,
+              currentlyExpanded: isLevelPillExpanded,
+              action: isLevelPillExpanded ? 'collapse' : 'expand'
+            });
+
+
+          }}
+          activeOpacity={0.7}
+          className="bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 -mb-2 px-2"
+        >
+          <Text className="font-feather text-textPrimary text-xs">
+            {`${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`}
+          </Text>
+        </TouchableOpacity>
         <View
           style={{
             width: `${scaleFactor * 100}%`,
@@ -920,7 +920,7 @@ export default function HomeScreen() {
   if (!assetsLoaded || !assets) return null;
 
 
-// HEADER
+  // HEADER
   return (
     <>
       <Animated.View className="flex-1" style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}>
@@ -1005,7 +1005,7 @@ export default function HomeScreen() {
 
         <SafeAreaView className="flex-1">
           {/* Header: Contains logic for showing Back OR Title/Stats */}
-          <View className="flex-row justify-between items-center px-4 pt-1.5 pb-2 h-[42px] relative">
+          <View className="flex-row justify-between items-center px-4 pt-1.5 pb-2 h-[42px] relative" style={{ zIndex: 9999 }} >
             {/* Animated Back Button */}
 
             {/* Animated Default Header Elements (Title + Stats) */}
@@ -1111,12 +1111,12 @@ export default function HomeScreen() {
                           <Animated.View
                             style={{ opacity: levelPillOpacityAnim }}
                             className="ml-2">
-                                                         <TouchableOpacity
-                               onPress={() => {
-                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                 analytics.logEvent('HomeScreen_Tapped_LevelInfo');
-                                 setShowExplainerModal(true);
-                               }}
+                            <TouchableOpacity
+                              onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                analytics.logEvent('HomeScreen_Tapped_LevelInfo');
+                                setShowExplainerModal(true);
+                              }}
                               activeOpacity={0.7}
                               className="w-6 h-6 rounded-full bg-white/80 items-center justify-center">
                               <Ionicons name="information" size={14} color="#B89B4C" />
@@ -1178,7 +1178,7 @@ export default function HomeScreen() {
               shadowRadius: 15, // Adjust radius for softness
               marginTop: -48,
             }}>
-            <Animated.View className="items-center justify-center overflow-hidden" style={{}}>
+            <Animated.View className="items-center justify-center" style={{}}>
               {riveError ? (
                 <Text className="text-red-500 p-4 text-center">
                   Error loading animation: {riveError.message} ({riveError.type})
@@ -1298,26 +1298,26 @@ export default function HomeScreen() {
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 120 }}>
               <View className="flex-row items-center gap-2.5 mb-0 ">
-              <TouchableOpacity
-                onPress={() => {
-                  analytics.logEvent('HomeScreen_Tapped_Hearts', {});
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  setShowHeartsModal(true);
-                }}
-                activeOpacity={0.7}
-                className="flex-row items-center"
-              >
-                <Image source={heartIcon} className="w-7 h-7" />
-                <Text className="font-feather text-body text-red ">{lambHearts}</Text>
-              </TouchableOpacity>
-              
+                <TouchableOpacity
+                  onPress={() => {
+                    analytics.logEvent('HomeScreen_Tapped_Hearts', {});
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowHeartsModal(true);
+                  }}
+                  activeOpacity={0.7}
+                  className="flex-row items-center"
+                >
+                  <Image source={heartIcon} className="w-7 h-7" />
+                  <Text className="font-feather text-body text-red ">{lambHearts}</Text>
+                </TouchableOpacity>
+
                 <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
                   <View
                     className="h-full bg-red rounded-full"
                     style={{ width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%` }}
                   />
                 </View>
-             
+
               </View>
 
               <SecondaryButton
