@@ -402,7 +402,27 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     chapter: number;
   } | null>(null);
 
+  // Animation values
+  const fadeOpacity = useSharedValue(1);
+  const menuScaleAnim = useSharedValue(0);
+  const menuOpacityAnim = useSharedValue(0);
   const progressValue = useSharedValue(0);
+
+  // State for floating menu
+  const [floatingMenu, setFloatingMenu] = useState<FloatingMenuState>({
+    isVisible: false,
+    verse: null,
+    position: {
+      x: 0,
+      y: 0,
+    },
+  });
+
+  // State for chat view
+  const [showChatView, setShowChatView] = useState(false);
+  const [selectedVerse, setSelectedVerse] = useState<Verse | null>(null);
+  const [isFadingToChat, setIsFadingToChat] = useState(false);
+
   const pathInProgress = usePathStore((s) => s.pathInProgress);
   const currentPath = usePathStore((s) => s.currentPath);
   const setSavedReading = usePathStore((s) => s.setSavedReading);
@@ -907,14 +927,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     }
   }, [bookId, chapter, chapterData, loading, setSavedReading]);
 
-  // Add new state for chat view
-  const [showChatView, setShowChatView] = useState(false);
-  const [selectedVerse, setSelectedVerse] = useState<Verse | null>(null);
-  const [isFadingToChat, setIsFadingToChat] = useState(false);
-
-  // Animation values
-  const fadeOpacity = useSharedValue(1);
-
   // Track swipe progress
   const swipeProgress = useRef({
     isActive: false,
@@ -925,14 +937,23 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const swipeableRefs = useRef<Map<number, any>>(new Map());
   const viewRefs = useRef<Map<number, any>>(new Map());
 
-  // Handle verse swipe to chat transition with immediate fade
-  const handleSwipeVerseToChat = (verse: Verse) => {
-    if (isFadingToChat) return; // Prevent multiple triggers
+  // Add cleanup effect for animations
+  useEffect(() => {
+    return () => {
+      // Reset all animation values on unmount
+      if (fadeOpacity) fadeOpacity.value = 1;
+      if (menuScaleAnim) menuScaleAnim.value = 0;
+      if (menuOpacityAnim) menuOpacityAnim.value = 0;
+      if (progressValue) progressValue.value = 0;
+    };
+  }, [fadeOpacity, menuScaleAnim, menuOpacityAnim, progressValue]);
 
-    // Hide swipe guidance after first use
+  // Update handleSwipeVerseToChat
+  const handleSwipeVerseToChat = useCallback((verse: Verse) => {
+    if (isFadingToChat) return;
+
     if (showSwipeGuidance) {
       setShowSwipeGuidance(false);
-      // Save preference to AsyncStorage
       AsyncStorage.setItem(SWIPE_GUIDANCE_KEY, 'true').catch((e) =>
         console.error('Failed to save swipe guidance setting', e)
       );
@@ -941,48 +962,95 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     setIsFadingToChat(true);
     setSelectedVerse(verse);
 
-    // Trigger gentle haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
-    // Start fading out immediately without delay
+    // Reset animation value before starting new animation
+    fadeOpacity.value = 1;
     fadeOpacity.value = withTiming(0, {
       duration: FADE_DURATION,
       easing: Easing.out(Easing.cubic),
     });
 
-    // Show chat view after fade completes
     setTimeout(() => {
       setShowChatView(true);
     }, FADE_DURATION);
 
-    // Close the swipeable smoothly after a short delay
     setTimeout(() => {
       const swipeableRef = swipeableRefs.current.get(verse.verse);
       if (swipeableRef) {
         swipeableRef.close();
       }
-    }, 50); // Shorter delay for chat since it's transitioning away
+    }, 50);
 
-    // Log the event
     analytics.logEvent('CardBibleReader_Swiped_VerseToChat', {
       book: chapterData?.book,
       chapter: chapterData?.chapter,
       verse: verse.verse,
     });
-  };
+  }, [isFadingToChat, showSwipeGuidance, fadeOpacity, chapterData]);
 
-  // Handle closing chat view with a faster transition back
-  const handleCloseChatView = () => {
+  // Update handleCloseChatView
+  const handleCloseChatView = useCallback(() => {
     setShowChatView(false);
     setSelectedVerse(null);
     setIsFadingToChat(false);
 
-    // Faster restoration of the fade opacity
+    // Reset animation value before starting new animation
+    fadeOpacity.value = 0;
     fadeOpacity.value = withTiming(1, {
       duration: FADE_DURATION,
       easing: Easing.out(Easing.cubic),
     });
-  };
+  }, [fadeOpacity]);
+
+  // Update handleLongPress
+  const handleLongPress = useCallback((event: any, verse: Verse) => {
+    if (isFadingToChat) return;
+
+    const { absoluteX, absoluteY } = event.nativeEvent;
+
+    const menuX = Math.min(absoluteX, SCREEN_WIDTH - 240);
+    const menuY = Math.min(absoluteY - 50, SCREEN_HEIGHT - 130);
+
+    setFloatingMenu({
+      isVisible: true,
+      verse: verse,
+      position: { x: menuX, y: menuY },
+    });
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+    // Reset animation values before starting new animations
+    menuScaleAnim.value = 0;
+    menuOpacityAnim.value = 0;
+
+    menuScaleAnim.value = withTiming(1, {
+      duration: 200,
+      easing: Easing.out(Easing.back(1.5)),
+    });
+
+    menuOpacityAnim.value = withTiming(1, {
+      duration: 150,
+    });
+  }, [isFadingToChat, menuScaleAnim, menuOpacityAnim]);
+
+  // Update handleCloseFloatingMenu
+  const handleCloseFloatingMenu = useCallback(() => {
+    // Reset animation values before starting new animations
+    menuScaleAnim.value = 1;
+    menuOpacityAnim.value = 1;
+
+    menuScaleAnim.value = withTiming(0, { duration: 100 });
+    menuOpacityAnim.value = withTiming(0, { duration: 100 });
+
+    setTimeout(() => {
+      setFloatingMenu((prev) => ({
+        ...prev,
+        isVisible: false,
+        verse: null,
+      }));
+    }, 100);
+  }, [menuScaleAnim, menuOpacityAnim]);
 
   // Handle swipe state tracking
   const handleSwipeStart = (verse: Verse) => {
@@ -1204,82 +1272,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       opacity: fadeOpacity.value,
     };
   });
-
-  // State for floating menu
-  const [floatingMenu, setFloatingMenu] = useState<FloatingMenuState>({
-    isVisible: false,
-    verse: null,
-    position: {
-      x: 0,
-      y: 0,
-    },
-  });
-
-  // Additional animations for floating menu
-  const menuScaleAnim = useSharedValue(0);
-  const menuOpacityAnim = useSharedValue(0);
-
-  // Handle long press to show floating menu
-  const handleLongPress = (event: any, verse: Verse) => {
-    // Prevent showing menu if already transitioning to chat
-    if (isFadingToChat) return;
-
-    // Get the press position to show menu near it
-    const { absoluteX, absoluteY } = event.nativeEvent;
-
-    // Calculate position, ensuring menu stays within screen bounds
-    const menuX = Math.min(
-      absoluteX,
-      SCREEN_WIDTH - 240 // Approx menu width
-    );
-
-    const menuY = Math.min(
-      absoluteY - 50, // Position menu above the press
-      SCREEN_HEIGHT - 130 // Keep menu within screen height
-    );
-
-    // Set menu visibility and position
-    setFloatingMenu({
-      isVisible: true,
-      verse: verse,
-      position: {
-        x: menuX,
-        y: menuY,
-      },
-    });
-
-    // Trigger haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    // Animate the menu appearance
-    menuScaleAnim.value = 0.8;
-    menuOpacityAnim.value = 0;
-
-    menuScaleAnim.value = withTiming(1, {
-      duration: 200,
-      easing: Easing.out(Easing.back(1.5)),
-    });
-
-    menuOpacityAnim.value = withTiming(1, {
-      duration: 150,
-    });
-  };
-
-  // Close the floating menu
-  const handleCloseFloatingMenu = () => {
-    // Animate menu disappearance
-    menuScaleAnim.value = withTiming(0.8, { duration: 100 });
-    menuOpacityAnim.value = withTiming(0, { duration: 100 });
-
-    // After animation completes, hide the menu
-    setTimeout(() => {
-      setFloatingMenu((prev) => ({
-        ...prev,
-        isVisible: false,
-        verse: null,
-      }));
-    }, 100);
-  };
 
   // Define menu actions
   const handleCopyVerse = (verse: Verse) => {

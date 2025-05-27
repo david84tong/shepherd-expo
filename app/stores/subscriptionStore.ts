@@ -34,7 +34,6 @@ async function moveUserToProMode(
     age: useUserStore.getState().ageRange,
   });
 
-  console.log('===>purrchase completed');
   let onboardingCompleted: string | null = null;
   useUserStore.getState().setProStatus('pro');
   // Set isPro: true and proExpiryDate: null in Firestore for the current user
@@ -66,6 +65,36 @@ async function moveUserToProMode(
   // Navigate based on onboarding status
   setTimeout(handlePostPurchaseNavigation, 100);
 }
+
+const handleRestoreCompleted = async ({
+  packageId,
+  productId,
+  fromPaywall,
+}: {
+  packageId?: string;
+  productId?: string;
+  fromPaywall?: string;
+}) => {
+  let result = '';
+  try {
+    const profile = await adapty.getProfile();
+    const accessLevel = profile.accessLevels?.['premium'];
+    if (accessLevel?.isActive) {
+      result = PAYWALL_RESULT.RESTORED;
+      moveUserToProMode(true, packageId, productId, fromPaywall);
+    } else {
+      result = PAYWALL_RESULT.CANCELLED;
+      Alert.alert(
+        'No Active Subscription Found',
+        'We could not find any active subscription to restore. If you believe this is an error, please contact support.'
+      );
+    }
+  } catch (error) {
+    console.error('Error retrieving profile:', error);
+    result = PAYWALL_RESULT.ERROR;
+  }
+  return result;
+};
 
 interface SubscriptionState {
   customerInfo: any | null; // Allow AdaptyProfile or CustomerInfo
@@ -163,7 +192,11 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         },
         onRestoreCompleted() {
           result = PAYWALL_RESULT.RESTORED;
-          moveUserToProMode(true, 'free-trial', 'free-trial-product', 'free-trial');
+          handleRestoreCompleted({
+            packageId: 'free-trial',
+            productId: 'free-trial-product',
+            fromPaywall: 'free-trial',
+          });
           return true;
         },
         onProductSelected() {
@@ -219,8 +252,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       view.registerEventHandlers({
         onCloseButtonPress() {
           result = PAYWALL_RESULT.CANCELLED;
-          Linking.openURL('https://apps.apple.com/account/subscriptions').catch(() => {
-            console.log('Could not open subscription management');
+          // Only redirect to subscription management if onboarding is complete
+          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY).then((completed) => {
+            if (completed === 'true') {
+              Linking.openURL('https://apps.apple.com/account/subscriptions').catch(() => {
+                console.log('Could not open subscription management');
+              });
+            }
+          }).catch(() => {
+            console.log('Could not check onboarding status');
           });
           return true;
         },
@@ -231,7 +271,11 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         },
         onRestoreCompleted() {
           result = PAYWALL_RESULT.RESTORED;
-          moveUserToProMode(true, 'halfoff', 'halfoff-product', 'halfoff');
+          handleRestoreCompleted({
+            packageId: 'halfoff',
+            productId: 'halfoff-product',
+            fromPaywall: 'halfoff',
+          });
           return true;
         },
         onProductSelected() {
@@ -278,7 +322,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       fromScreen: get().fromScreen,
     });
     try {
-      const paywall = await adapty.getPaywall('shepherd_pay');
+      const paywall = await adapty.getPaywall('shepherd_paywall');
       console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
       const view = await createPaywallView(paywall);
 
@@ -296,7 +340,11 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         },
         onRestoreCompleted() {
           result = PAYWALL_RESULT.RESTORED;
-          moveUserToProMode(true, 'shepherd_pay', 'shepherd-product', 'shepherd_pay');
+          handleRestoreCompleted({
+            packageId: 'shepherd_pay',
+            productId: 'shepherd-product',
+            fromPaywall: 'shepherd_pay',
+          });
           return true;
         },
         onProductSelected() {
@@ -444,6 +492,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
       // 2. Check Firestore for custom pro/referral
       let isProFromFirebase = false;
+      let isProWithReferralFromFirebase = false;
       let proExpiryDate: Date | null = null;
       const currentUser = auth().currentUser;
       if (currentUser) {
@@ -452,21 +501,24 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           const userData = userDoc.data();
 
           if (userData) {
+            console.log('userData.isPro ===== >', userData.isPro);
+
             isProFromFirebase = userData.isPro;
+            isProWithReferralFromFirebase = userData.isProWithReferral;
             // Check if proExpiryDate exists and has the correct format
-            if (userData.proExpiryDate) {
-              if (userData.proExpiryDate.toDate) {
-                proExpiryDate = userData.proExpiryDate.toDate();
-              } else if (userData.proExpiryDate._seconds) {
+            if (userData.userProExpiryDate) {
+              if (userData.userProExpiryDate.toDate) {
+                proExpiryDate = userData.userProExpiryDate.toDate();
+              } else if (userData.userProExpiryDate._seconds) {
                 proExpiryDate = new Date(
-                  userData.proExpiryDate._seconds * 1000 +
-                    userData.proExpiryDate._nanoseconds / 1000000
+                  userData.userProExpiryDate._seconds * 1000 +
+                    userData.userProExpiryDate._nanoseconds / 1000000
                 );
               } else if (
-                typeof userData.proExpiryDate === 'string' ||
-                typeof userData.proExpiryDate === 'number'
+                typeof userData.userProExpiryDate === 'string' ||
+                typeof userData.userProExpiryDate === 'number'
               ) {
-                proExpiryDate = new Date(userData.proExpiryDate);
+                proExpiryDate = new Date(userData.userProExpiryDate);
               }
             }
             // Check if pro status has expired
@@ -475,9 +527,11 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
               await firestore().collection('users').doc(currentUser.uid).update({
                 isPro: false,
               });
-              isProFromFirebase = false;
+              isProWithReferralFromFirebase = false;
               proExpiryDate = null;
-              set({ isProMember: false });
+              if (!isProAdapty) {
+                set({ isProMember: false });
+              }
               useUserStore.getState().setProStatus('free');
               console.log('[SubscriptionStore] Pro status expired in Firestore, set to free.');
             }
@@ -486,9 +540,11 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           console.log('[SubscriptionStore] Error fetching user data from Firestore:', error);
         }
       }
+      console.log('isProFromFirebase ==>', isProFromFirebase);
 
       // 3. Final pro status: Adapty OR Firestore (if not expired)
-      const finalProStatus = isProAdapty || isProFromFirebase;
+      // const finalProStatus = isProAdapty || isProFromFirebase;
+      const finalProStatus = (isProAdapty && isProFromFirebase) || isProWithReferralFromFirebase;
       // Track status change if different from current state
       const prevIsPro = get().isProMember;
       if (prevIsPro !== finalProStatus) {
@@ -552,9 +608,9 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         }
         // Permanent pro access
         await userRef.update({
-          isPro: true,
           userProExpiryDate: null, // null means permanent
           usedReferralCodes: firestore.FieldValue.arrayUnion(code),
+          isProWithReferral: true,
         });
         break;
 
@@ -567,9 +623,9 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         monthExpiry.setMonth(monthExpiry.getMonth() + 1);
 
         await userRef.update({
-          isPro: true,
           userProExpiryDate: monthExpiry,
           usedReferralCodes: firestore.FieldValue.arrayUnion(code),
+          isProWithReferral: true,
         });
         break;
 
@@ -582,9 +638,9 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         weekExpiry.setDate(weekExpiry.getDate() + 7);
 
         await userRef.update({
-          isPro: true,
           userProExpiryDate: weekExpiry,
           usedReferralCodes: firestore.FieldValue.arrayUnion(code),
+          isProWithReferral: true,
         });
         break;
       case 'CREATE':
@@ -593,8 +649,8 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         }
         // One month pro access
         await userRef.update({
-          isPro: true,
           usedReferralCodes: firestore.FieldValue.arrayUnion(code),
+          isProWithReferral: true,
         });
         // Save creator status to AsyncStorage
         await AsyncStorage.setItem('isCreator', 'true');
