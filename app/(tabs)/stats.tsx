@@ -1,11 +1,37 @@
 import dayjs from 'dayjs';
-import { useCallback } from 'react';
-import { Alert, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { useCallback, useState, useEffect, useRef } from 'react';
+import { Alert, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, TouchableWithoutFeedback, View, Modal } from 'react-native';
 import { useUIStore } from '../stores/uiStore';
 import { useUserStore } from '../stores/userStore';
+import useHighlightStore, { VerseHighlight, HIGHLIGHT_COLORS } from '../stores/highlightStore';
+import useNoteStore, { VerseNote } from '../stores/noteStore';
+import { Feather } from '@expo/vector-icons';
+import { fetchChapter } from '../api/bible';
 
 import * as Haptics from 'expo-haptics';
 import { Prayer, Reading, Reflection } from '../models/User';
+
+// Bible book names mapping
+const BIBLE_BOOK_NAMES: {[bookId: number]: string} = {
+  1: "Genesis", 2: "Exodus", 3: "Leviticus", 4: "Numbers", 5: "Deuteronomy",
+  6: "Joshua", 7: "Judges", 8: "Ruth", 9: "1 Samuel", 10: "2 Samuel",
+  11: "1 Kings", 12: "2 Kings", 13: "1 Chronicles", 14: "2 Chronicles",
+  15: "Ezra", 16: "Nehemiah", 17: "Esther", 18: "Job", 19: "Psalms",
+  20: "Proverbs", 21: "Ecclesiastes", 22: "Song of Solomon", 23: "Isaiah",
+  24: "Jeremiah", 25: "Lamentations", 26: "Ezekiel", 27: "Daniel",
+  28: "Hosea", 29: "Joel", 30: "Amos", 31: "Obadiah", 32: "Jonah",
+  33: "Micah", 34: "Nahum", 35: "Habakkuk", 36: "Zephaniah", 37: "Haggai",
+  38: "Zechariah", 39: "Malachi", 40: "Matthew", 41: "Mark", 42: "Luke",
+  43: "John", 44: "Acts", 45: "Romans", 46: "1 Corinthians", 47: "2 Corinthians",
+  48: "Galatians", 49: "Ephesians", 50: "Philippians", 51: "Colossians",
+  52: "1 Thessalonians", 53: "2 Thessalonians", 54: "1 Timothy", 55: "2 Timothy",
+  56: "Titus", 57: "Philemon", 58: "Hebrews", 59: "James", 60: "1 Peter",
+  61: "2 Peter", 62: "1 John", 63: "2 John", 64: "3 John", 65: "Jude",
+  66: "Revelation"
+};
+
+// Content type for the dropdown
+type ContentType = 'reflections' | 'highlights' | 'notes';
 
 const DAYS = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 const COLORS: Record<number, string> = {
@@ -66,7 +92,7 @@ function formatRelativeTime(timestamp: any): string {
     const diffYears = Math.floor(diffMonths / 12);
     return `${diffYears}y ago`;
   } catch (error) {
-    console.error('Error formatting relative time:', error, timestamp);
+    console.log('Error formatting relative time:', error, timestamp);
     return '';
   }
 }
@@ -198,6 +224,72 @@ export default function StatsScreen() {
   // Get the showOldReflectionSheet function directly from uiStore
   const showOldReflectionSheet = useUIStore(state => state.showOldReflectionSheet);
 
+  // Highlight and note store hooks
+  const highlights = useHighlightStore(state => state.highlights);
+  const notes = useNoteStore(state => state.notes);
+  const loadHighlights = useHighlightStore(state => state.loadHighlights);
+  const loadNotes = useNoteStore(state => state.loadNotes);
+
+  // State for dropdown
+  const [selectedContentType, setSelectedContentType] = useState<ContentType>('reflections');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [dropdownPosition, setDropdownPosition] = useState({ top: 0, right: 0 });
+
+  // State for verse detail modal
+  const [isVerseModalVisible, setIsVerseModalVisible] = useState(false);
+  const [selectedVerse, setSelectedVerse] = useState<{
+    bookName: string;
+    chapter: number;
+    verse: number;
+    type: 'highlight' | 'note';
+    highlight?: VerseHighlight;
+    note?: VerseNote;
+  } | null>(null);
+  const [verseText, setVerseText] = useState<string>('');
+  const [loadingVerse, setLoadingVerse] = useState(false);
+
+  // Ref for the dropdown button
+  const dropdownButtonRef = useRef<View>(null);
+
+  // Load highlights and notes on component mount
+  useEffect(() => {
+    loadHighlights();
+    loadNotes();
+  }, [loadHighlights, loadNotes]);
+
+  // Fetch verse text when selectedVerse changes
+  useEffect(() => {
+    if (selectedVerse && isVerseModalVisible) {
+      fetchVerseText(selectedVerse.bookName, selectedVerse.chapter, selectedVerse.verse);
+    }
+  }, [selectedVerse, isVerseModalVisible]);
+
+  // Function to fetch verse text
+  const fetchVerseText = async (bookName: string, chapter: number, verseNumber: number) => {
+    setLoadingVerse(true);
+    try {
+      // Find the book ID from the book name
+      const bookId = Object.entries(BIBLE_BOOK_NAMES).find(([_, name]) => name === bookName)?.[0];
+      if (!bookId) {
+        setVerseText('Verse not found');
+        return;
+      }
+
+      const response = await fetchChapter('ESV', parseInt(bookId), chapter);
+      if ('error' in response) {
+        setVerseText('Error loading verse');
+      } else {
+        const verse = response.verses.find(v => v.verse === verseNumber);
+        setVerseText(verse?.text || 'Verse not found');
+      }
+    } catch (error) {
+      console.error('Error fetching verse:', error);
+      setVerseText('Error loading verse');
+    } finally {
+      setLoadingVerse(false);
+    }
+  };
+
   // Total activity counts
   const totalBibleReadings = readings.length;
   const totalPrayerSessions = prayers.length;
@@ -243,7 +335,7 @@ export default function StatsScreen() {
     }
     // Final fallback to alert
     else {
-      console.error('showOldReflectionSheet is not available');
+      console.log('showOldReflectionSheet is not available');
       Alert.alert('Reflection Detail', reflection.content || 'No content.');
     }
   }, [showOldReflectionSheet]);
@@ -260,92 +352,227 @@ export default function StatsScreen() {
     // Could navigate to detailed view or expand card in future
   };
 
-  // Handle stat button press
-  // const handleStatButtonPress = () => {
-  //   triggerHaptic();
-  //   // Could navigate to detailed statistics in future
-  // };
+  // Get recent highlights (sorted by timestamp)
+  const getRecentHighlights = () => {
+    return Object.values(highlights)
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 5);
+  };
 
-  // Recent activity section
-  const renderRecentActivity = () => {
-    // Show most recent 5 items of any type
-    const allActivities = [
-      ...readings.map(r => ({ type: 'reading' as const, data: r })),
-      ...prayers.map(p => ({ type: 'prayer' as const, data: p })),
-      ...reflections.map(r => ({ type: 'reflection' as const, data: r }))
-    ];
+  // Get recent notes (sorted by timestamp)
+  const getRecentNotes = () => {
+    return Object.values(notes)
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 5);
+  };
 
-    // Sort by date (most recent first)
-    allActivities.sort((a, b) => {
-      const dateA = toDateSafe(a.data.date);
-      const dateB = toDateSafe(b.data.date);
-      return dateB.getTime() - dateA.getTime();
+  // Format timestamp for display
+  const formatTimestamp = (timestamp: number): string => {
+    return formatRelativeTime({ seconds: timestamp / 1000 });
+  };
+
+  // Handle dropdown toggle
+  const handleDropdownToggle = () => {
+    triggerHaptic();
+    
+    if (!isDropdownOpen && dropdownButtonRef.current) {
+      // Measure the button position
+      dropdownButtonRef.current.measure((x, y, width, height, pageX, pageY) => {
+        setDropdownPosition({
+          top: pageY + height + 8, // 8px below the button
+          right: 24 // 24px from right edge (matching the container padding)
+        });
+        setIsDropdownOpen(true);
+      });
+    } else {
+      setIsDropdownOpen(false);
+    }
+  };
+
+  // Handle content type selection
+  const handleContentTypeSelect = (type: ContentType) => {
+    triggerHaptic();
+    setSelectedContentType(type);
+    setIsDropdownOpen(false);
+  };
+
+  // Handle opening verse highlight modal
+  const handleHighlightPress = (highlight: VerseHighlight) => {
+    triggerHaptic();
+    setSelectedVerse({
+      bookName: BIBLE_BOOK_NAMES[highlight.bookId],
+      chapter: highlight.chapter,
+      verse: highlight.verse,
+      type: 'highlight',
+      highlight
     });
+    setIsVerseModalVisible(true);
+  };
 
-    // Take the 5 most recent
-    const recentActivities = allActivities.slice(0, 5);
+  // Handle opening verse note modal
+  const handleNotePress = (note: VerseNote) => {
+    triggerHaptic();
+    setSelectedVerse({
+      bookName: BIBLE_BOOK_NAMES[note.bookId],
+      chapter: note.chapter,
+      verse: note.verse,
+      type: 'note',
+      note
+    });
+    setIsVerseModalVisible(true);
+  };
 
-    return (
-      <>
-        {recentActivities.length > 0 ? (
-          <>
-            {recentActivities.map((activity, index) => {
-              const date = toDateSafe(activity.data.date);
-              let icon, title, subtitle;
+  // Handle closing verse modal
+  const handleCloseVerseModal = () => {
+    setIsVerseModalVisible(false);
+    setSelectedVerse(null);
+  };
 
-              if (activity.type === 'reading') {
-                icon = breadIcon;
-                title = 'Daily Bread';
-                subtitle = activity.data.book ? `${activity.data.book}` : 'Scripture reading';
-              } else if (activity.type === 'prayer') {
-                icon = dropIcon;
-                title = 'Prayer';
-                subtitle = activity.data.topic || 'Prayer time';
-              } else {
-                icon = journalIcon;
-                title = 'Reflection';
-                // Show a preview of the content
-                subtitle = activity.data.content?.substring(0, 28) + '...';
-              }
-
-              return (
+  // Render content based on selected type
+  const renderSelectedContent = () => {
+    switch (selectedContentType) {
+      case 'highlights':
+        const recentHighlights = getRecentHighlights();
+        return recentHighlights.length > 0 ? (
+          <View className="space-y-4">
+            {recentHighlights.map((highlight, i) => (
                 <TouchableOpacity
-                  key={`${activity.type}-${index}`}
-                  onPress={() => {
-                    if (activity.type === 'reflection') {
-                      // Open reflection sheet
-                      handleOpenReflection(activity.data);
-                    } else {
-                      // For other types, just show feedback
-                      handleActivityCardPress();
-                    }
-                  }}
-                  className="flex-row items-center mb-3 px-4 py-3 bg-surfaceCream rounded-xl border border-border"
+                key={highlight.id}
+                className="bg-surfaceCream rounded-xl p-4 my-2"
+                onPress={() => handleHighlightPress(highlight)}
                   activeOpacity={0.7}
                 >
-                  <Image source={icon} className="w-8 h-8 mr-3" />
-                  <View className="flex-1">
-                    <Text className="font-din text-textPrimary text-body font-medium">{title}</Text>
-                    <Text className="font-din text-textPrimary/70 text-caption">{subtitle}</Text>
+                <View className="flex-row items-center">
+                  <View 
+                    className="w-10 h-10 rounded-full items-center justify-center mr-4"
+                    style={{ backgroundColor: HIGHLIGHT_COLORS[highlight.colorKey] }}
+                  >
+                    <Feather name="edit-2" size={16} color="#3C584A" />
                   </View>
-                  <Text className="font-din text-textPrimary/60 text-caption ml-2">
-                    {formatRelativeTime(date)}
+                  <View className="flex-1 flex-row justify-between items-center">
+                    <View className="flex-1 mr-2">
+                      <Text className="font-feather text-body text-textPrimary" numberOfLines={1}>
+                        {BIBLE_BOOK_NAMES[highlight.bookId]} {highlight.chapter}:{highlight.verse}
+                      </Text>
+                      <Text className="font-din text-sm text-description mt-1">
+                        Highlighted verse
+                      </Text>
+                    </View>
+                    <Text className="font-din text-description text-sm ml-2">
+                      {formatTimestamp(highlight.timestamp)}
                   </Text>
+                  </View>
+                </View>
                 </TouchableOpacity>
-              );
-            })}
-          </>
-        ) : (
-          <View className="items-center justify-center py-6">
-            <Text className="font-din text-textPrimary/70 text-body">No recent activity yet</Text>
+            ))}
           </View>
-        )}
-      </>
-    );
+        ) : (
+          <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center">
+            <Feather name="edit-2" size={48} color="#3C584A" style={{ opacity: 0.5, marginBottom: 12 }} />
+            <Text className="font-feather text-heading text-textPrimary/70 text-center">
+              No highlights yet
+            </Text>
+            <Text className="font-din text-body text-description text-center mt-1">
+              Highlight verses as you read to save them here
+            </Text>
+          </View>
+        );
+
+      case 'notes':
+        const recentNotes = getRecentNotes();
+        return recentNotes.length > 0 ? (
+          <View className="space-y-4">
+            {recentNotes.map((note, i) => (
+              <TouchableOpacity
+                key={note.id}
+                className="bg-surfaceCream rounded-xl p-4 my-2"
+                onPress={() => handleNotePress(note)}
+                activeOpacity={0.7}
+              >
+                <View className="flex-row items-center">
+                  <View className="w-10 h-10 rounded-full bg-surfaceCream items-center justify-center mr-4">
+                    <Feather name="edit-3" size={16} color="#3C584A" />
+                  </View>
+                  <View className="flex-1 flex-row justify-between items-center">
+                    <View className="flex-1 mr-2">
+                      <Text className="font-feather text-body text-textPrimary" numberOfLines={1}>
+                        {BIBLE_BOOK_NAMES[note.bookId]} {note.chapter}:{note.verse}
+                      </Text>
+                      <Text className="font-din text-sm text-description mt-1" numberOfLines={1} ellipsizeMode="tail">
+                        {note.content}
+                      </Text>
+                    </View>
+                    <Text className="font-din text-description text-sm ml-2">
+                      {formatTimestamp(note.timestamp)}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center">
+            <Feather name="edit-3" size={48} color="#3C584A" style={{ opacity: 0.5, marginBottom: 12 }} />
+            <Text className="font-feather text-heading text-textPrimary/70 text-center">
+              No notes yet
+            </Text>
+            <Text className="font-din text-body text-description text-center mt-1">
+              Add notes to verses as you study to save them here
+            </Text>
+          </View>
+        );
+
+      case 'reflections':
+      default:
+        return recentReflections.length > 0 ? (
+          <View className="space-y-4">
+            {recentReflections.map((rf, i) => (
+              <TouchableOpacity
+                key={i}
+                className="bg-surfaceCream rounded-xl p-4 my-2"
+                onPress={() => handleReflectionPress(rf)}
+                activeOpacity={0.7}
+              >
+                <View className="flex-row items-center">
+                  <View className="w-10 h-10 rounded-full bg-surfaceCream items-center justify-center mr-4">
+                    <Image source={journalIcon} className="w-12 h-12" />
+                  </View>
+                  <View className="flex-1 flex-row justify-between items-center">
+                    <View className="flex-1 mr-2">
+                      <Text className="font-feather text-body text-textPrimary" numberOfLines={1}>
+                        Quiet Time
+                      </Text>
+                      {rf.content && (
+                        <Text className="font-din text-sm text-description mt-1" numberOfLines={1} ellipsizeMode="tail">
+                          {rf.content}
+                        </Text>
+                      )}
+                    </View>
+                    <Text className="font-din text-description text-sm ml-2">
+                      {formatRelativeTime(rf.date)}
+                    </Text>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        ) : (
+          <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center">
+            <Image source={journalIcon} className="w-24 h-24 opacity-50 mb-3" />
+            <Text className="font-feather text-heading text-textPrimary/70 text-center">
+              No recent reflections
+            </Text>
+            <Text className="font-din text-body text-description text-center mt-1">
+              Take a moment to reflect on your journey with God
+            </Text>
+          </View>
+        );
+    }
   };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
+      <TouchableWithoutFeedback onPress={() => setIsDropdownOpen(false)}>
       <ScrollView className="flex-1 bg-surfaceCream" contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
         <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
@@ -462,54 +689,169 @@ export default function StatsScreen() {
 
         {/* Recent reflections */}
         <View className="mx-6 mt-8 bg-white rounded-[20px] p-6 shadow-card mb-24">
-          <Text className="font-feather text-heading text-textPrimary mb-4">Recent Reflections</Text>
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="font-feather text-heading text-textPrimary">Recent Activity</Text>
 
-          {recentReflections.length > 0 ? (
-            <View className="space-y-4">
-              {recentReflections.map((rf, i) => (
+              {/* Dropdown for content type selection */}
+              <View className="relative">
                 <TouchableOpacity
-                  key={i}
-                  className="bg-surfaceCream rounded-xl p-4 my-2"
-                  onPress={() => handleReflectionPress(rf)}
+                  ref={dropdownButtonRef}
+                  className="bg-lightYellow px-4 py-2 rounded-full flex-row items-center"
+                  onPress={handleDropdownToggle}
                   activeOpacity={0.7}
                 >
-                  <View className="flex-row items-center">
-                    <View className="w-10 h-10 rounded-full bg-surfaceCream items-center justify-center mr-4">
-                      <Image source={journalIcon} className="w-12 h-12" />
-                    </View>
-                    <View className="flex-1 flex-row justify-between items-center">
-                      <View className="flex-1 mr-2">
-                        <Text className="font-feather text-body text-textPrimary" numberOfLines={1}>
-                          Quiet Time
+                  <Text className="font-feather text-accentGold mr-2 capitalize">
+                    {selectedContentType}
                         </Text>
-                        {rf.content && (
-                          <Text className="font-din text-sm text-description mt-1" numberOfLines={1} ellipsizeMode="tail">
-                            {rf.content}
-                          </Text>
-                        )}
-                      </View>
-                      <Text className="font-din text-description text-sm ml-2">
-                        {formatRelativeTime(rf.date)}
-                      </Text>
-                    </View>
-                  </View>
+                  <Feather 
+                    name={isDropdownOpen ? "chevron-up" : "chevron-down"} 
+                    size={16} 
+                    color="#F7B500" 
+                  />
                 </TouchableOpacity>
-              ))}
+              </View>
             </View>
-          ) : (
-            <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center">
-              <Image source={journalIcon} className="w-24 h-24 opacity-50 mb-3" />
-              <Text className="font-feather text-heading text-textPrimary/70 text-center">
-                No recent reflections
+
+            {renderSelectedContent()}
+          </View>
+
+        </ScrollView>
+      </TouchableWithoutFeedback>
+
+      {/* Modal-based dropdown */}
+      <Modal
+        visible={isDropdownOpen}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setIsDropdownOpen(false)}
+      >
+        <TouchableWithoutFeedback onPress={() => setIsDropdownOpen(false)}>
+          <View className="flex-1">
+            <View 
+              className="absolute bg-white rounded-xl shadow-card border border-border min-w-[140px]"
+              style={{
+                top: dropdownPosition.top,
+                right: dropdownPosition.right,
+              }}
+            >
+              <TouchableOpacity
+                className="px-4 py-3 border-b border-border"
+                onPress={() => handleContentTypeSelect('reflections')}
+                activeOpacity={0.7}
+              >
+                <Text className="font-din text-textPrimary">Reflections</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="px-4 py-3 border-b border-border"
+                onPress={() => handleContentTypeSelect('highlights')}
+                activeOpacity={0.7}
+              >
+                <Text className="font-din text-textPrimary">Highlights</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="px-4 py-3"
+                onPress={() => handleContentTypeSelect('notes')}
+                activeOpacity={0.7}
+              >
+                <Text className="font-din text-textPrimary">Notes</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* Verse Detail Modal */}
+      <Modal
+        visible={isVerseModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={handleCloseVerseModal}
+      >
+        <View className="flex-1 justify-center items-center p-6">
+          <View className="bg-white rounded-[20px] p-6 w-full max-w-sm shadow-card">
+            {/* Header */}
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="font-feather text-heading text-textPrimary">
+                {selectedVerse?.bookName} {selectedVerse?.chapter}:{selectedVerse?.verse}
               </Text>
-              <Text className="font-din text-body text-description text-center mt-1">
-                Take a moment to reflect on your journey with God
+              <TouchableOpacity
+                onPress={handleCloseVerseModal}
+                className="w-8 h-8 rounded-full bg-surfaceCream items-center justify-center"
+                activeOpacity={0.7}
+              >
+                <Feather name="x" size={16} color="#3C584A" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Verse Text */}
+            <View className="mb-6">
+              {loadingVerse ? (
+                <View className="py-4 items-center">
+                  <Text className="font-din text-description">Loading verse...</Text>
+                </View>
+              ) : (
+                <View 
+                  className="p-4 rounded-xl border-2"
+                  style={{
+                    backgroundColor: selectedVerse?.type === 'highlight' && selectedVerse.highlight 
+                      ? HIGHLIGHT_COLORS[selectedVerse.highlight.colorKey] 
+                      : '#FFF9E6',
+                    borderColor: selectedVerse?.type === 'highlight' && selectedVerse.highlight 
+                      ? HIGHLIGHT_COLORS[selectedVerse.highlight.colorKey] 
+                      : '#FFE4A8'
+                  }}
+                >
+                  <Text className="font-din text-textPrimary text-body leading-6">
+                    {verseText}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            {/* Highlight/Note Content */}
+            {selectedVerse?.type === 'highlight' && selectedVerse.highlight && (
+              <View className="mb-4">
+                <View className="flex-row items-center mb-2">
+                  <View 
+                    className="w-4 h-4 rounded-full mr-2"
+                    style={{ backgroundColor: HIGHLIGHT_COLORS[selectedVerse.highlight.colorKey] }}
+                  />
+                  <Text className="font-feather text-body text-textPrimary">Highlighted</Text>
+                </View>
+                <Text className="font-din text-description text-sm">
+                  {formatTimestamp(selectedVerse.highlight.timestamp)}
+                </Text>
+              </View>
+            )}
+
+            {selectedVerse?.type === 'note' && selectedVerse.note && (
+              <View className="mb-4">
+                <View className="flex-row items-center mb-2">
+                  <Feather name="edit-3" size={16} color="#3C584A" style={{ marginRight: 8 }} />
+                  <Text className="font-feather text-body text-textPrimary">Note</Text>
+                </View>
+                <View className="bg-surfaceCream rounded-xl p-3 mb-2">
+                  <Text className="font-din text-textPrimary text-body leading-5">
+                    {selectedVerse.note.content}
+                  </Text>
+                </View>
+                <Text className="font-din text-description text-sm">
+                  {formatTimestamp(selectedVerse.note.timestamp)}
               </Text>
             </View>
           )}
-        </View>
 
-      </ScrollView>
+            {/* Close Button */}
+            <TouchableOpacity
+              onPress={handleCloseVerseModal}
+              className="bg-accentGold rounded-xl py-3 items-center"
+              activeOpacity={0.8}
+            >
+              <Text className="font-feather text-white text-body">Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

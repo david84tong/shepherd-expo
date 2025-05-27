@@ -1188,6 +1188,15 @@ PODS:
     - abseil/meta/type_traits
     - abseil/xcprivacy
   - abseil/xcprivacy (1.20240722.0)
+  - Adapty (3.1.0)
+  - AdaptyUI (3.1.0):
+    - Adapty (= 3.1.0)
+  - AppAuth (1.7.6):
+    - AppAuth/Core (= 1.7.6)
+    - AppAuth/ExternalUserAgent (= 1.7.6)
+  - AppAuth/Core (1.7.6)
+  - AppAuth/ExternalUserAgent (1.7.6):
+    - AppAuth/Core
   - boost (1.84.0)
   - BoringSSL-GRPC (0.0.37):
     - BoringSSL-GRPC/Implementation (= 0.0.37)
@@ -1196,14 +1205,14 @@ PODS:
     - BoringSSL-GRPC/Interface (= 0.0.37)
   - BoringSSL-GRPC/Interface (0.0.37)
   - DoubleConversion (1.1.6)
-  - EXApplication (6.1.4):
+  - EXApplication (6.0.2):
     - ExpoModulesCore
   - EXConstants (17.0.8):
     - ExpoModulesCore
   - EXJSONUtils (0.14.0)
   - EXManifests (0.15.8):
     - ExpoModulesCore
-  - EXNotifications (0.31.1):
+  - EXNotifications (0.29.14):
     - ExpoModulesCore
   - Expo (52.0.46):
     - ExpoModulesCore
@@ -1415,9 +1424,15 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - ExpoAppleAuthentication (7.2.4):
+  - ExpoAdapterGoogleSignIn (14.0.1):
+    - ExpoModulesCore
+    - GoogleSignIn (~> 7.1)
+    - React-Core
+  - ExpoAppleAuthentication (7.1.3):
     - ExpoModulesCore
   - ExpoAsset (11.0.5):
+    - ExpoModulesCore
+  - ExpoCrypto (14.0.2):
     - ExpoModulesCore
   - ExpoDevice (7.0.3):
     - ExpoModulesCore
@@ -1427,7 +1442,7 @@ PODS:
     - ExpoModulesCore
   - ExpoHaptics (14.0.1):
     - ExpoModulesCore
-  - ExpoHead (4.0.20):
+  - ExpoHead (4.0.21):
     - ExpoModulesCore
   - ExpoImage (2.0.7):
     - ExpoModulesCore
@@ -1437,7 +1452,7 @@ PODS:
     - SDWebImageSVGCoder (~> 1.7.0)
   - ExpoKeepAwake (14.0.3):
     - ExpoModulesCore
-  - ExpoLinearGradient (14.1.4):
+  - ExpoLinearGradient (14.0.2):
     - ExpoModulesCore
   - ExpoLinking (7.0.5):
     - ExpoModulesCore
@@ -1464,7 +1479,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - ExpoSecureStore (14.2.3):
+  - ExpoSecureStore (14.0.1):
     - ExpoModulesCore
   - ExpoSplashScreen (0.29.24):
     - ExpoModulesCore
@@ -1478,9 +1493,14 @@ PODS:
     - ExpoModulesCore
   - fast_float (6.1.4)
   - FBLazyVector (0.76.9)
+  - Firebase/Analytics (11.11.0):
+    - Firebase/Core
   - Firebase/Auth (11.11.0):
     - Firebase/CoreOnly
     - FirebaseAuth (~> 11.11.0)
+  - Firebase/Core (11.11.0):
+    - Firebase/CoreOnly
+    - FirebaseAnalytics (~> 11.11.0)
   - Firebase/CoreOnly (11.11.0):
     - FirebaseCore (~> 11.11.0)
   - Firebase/Firestore (11.11.0):
@@ -1494,6 +1514,24 @@ PODS:
     - FirebaseRemoteConfig (~> 11.11.0)
   - FirebaseABTesting (11.11.0):
     - FirebaseCore (~> 11.11.0)
+  - FirebaseAnalytics (11.11.0):
+    - FirebaseAnalytics/AdIdSupport (= 11.11.0)
+    - FirebaseCore (~> 11.11.0)
+    - FirebaseInstallations (~> 11.0)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.0)
+    - GoogleUtilities/MethodSwizzler (~> 8.0)
+    - GoogleUtilities/Network (~> 8.0)
+    - "GoogleUtilities/NSData+zlib (~> 8.0)"
+    - nanopb (~> 3.30910.0)
+  - FirebaseAnalytics/AdIdSupport (11.11.0):
+    - FirebaseCore (~> 11.11.0)
+    - FirebaseInstallations (~> 11.0)
+    - GoogleAppMeasurement (= 11.11.0)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.0)
+    - GoogleUtilities/MethodSwizzler (~> 8.0)
+    - GoogleUtilities/Network (~> 8.0)
+    - "GoogleUtilities/NSData+zlib (~> 8.0)"
+    - nanopb (~> 3.30910.0)
   - FirebaseAppCheckInterop (11.12.0)
   - FirebaseAuth (11.11.0):
     - FirebaseAppCheckInterop (~> 11.0)
@@ -1559,6 +1597,30 @@ PODS:
   - FirebaseSharedSwift (11.12.0)
   - fmt (11.0.2)
   - glog (0.3.5)
+  - GoogleAppMeasurement (11.11.0):
+    - GoogleAppMeasurement/AdIdSupport (= 11.11.0)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.0)
+    - GoogleUtilities/MethodSwizzler (~> 8.0)
+    - GoogleUtilities/Network (~> 8.0)
+    - "GoogleUtilities/NSData+zlib (~> 8.0)"
+    - nanopb (~> 3.30910.0)
+  - GoogleAppMeasurement/AdIdSupport (11.11.0):
+    - GoogleAppMeasurement/WithoutAdIdSupport (= 11.11.0)
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.0)
+    - GoogleUtilities/MethodSwizzler (~> 8.0)
+    - GoogleUtilities/Network (~> 8.0)
+    - "GoogleUtilities/NSData+zlib (~> 8.0)"
+    - nanopb (~> 3.30910.0)
+  - GoogleAppMeasurement/WithoutAdIdSupport (11.11.0):
+    - GoogleUtilities/AppDelegateSwizzler (~> 8.0)
+    - GoogleUtilities/MethodSwizzler (~> 8.0)
+    - GoogleUtilities/Network (~> 8.0)
+    - "GoogleUtilities/NSData+zlib (~> 8.0)"
+    - nanopb (~> 3.30910.0)
+  - GoogleSignIn (7.1.0):
+    - AppAuth (< 2.0, >= 1.7.3)
+    - GTMAppAuth (< 5.0, >= 4.1.1)
+    - GTMSessionFetcher/Core (~> 3.3)
   - GoogleUtilities/AppDelegateSwizzler (8.1.0):
     - GoogleUtilities/Environment
     - GoogleUtilities/Logger
@@ -1568,6 +1630,9 @@ PODS:
     - GoogleUtilities/Privacy
   - GoogleUtilities/Logger (8.1.0):
     - GoogleUtilities/Environment
+    - GoogleUtilities/Privacy
+  - GoogleUtilities/MethodSwizzler (8.1.0):
+    - GoogleUtilities/Logger
     - GoogleUtilities/Privacy
   - GoogleUtilities/Network (8.1.0):
     - GoogleUtilities/Logger
@@ -1675,7 +1740,10 @@ PODS:
     - gRPC-Core/Privacy (= 1.69.0)
   - gRPC-Core/Interface (1.69.0)
   - gRPC-Core/Privacy (1.69.0)
-  - GTMSessionFetcher/Core (4.5.0)
+  - GTMAppAuth (4.1.1):
+    - AppAuth/Core (~> 1.7)
+    - GTMSessionFetcher/Core (< 4.0, >= 3.3)
+  - GTMSessionFetcher/Core (3.5.0)
   - hermes-engine (0.76.9):
     - hermes-engine/Pre-built (= 0.76.9)
   - hermes-engine/Pre-built (0.76.9)
@@ -3003,6 +3071,36 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - react-native-adapty-sdk (3.1.0):
+    - Adapty (= 3.1.0)
+    - AdaptyUI (= 3.1.0)
+    - React
+  - react-native-adapty-ui (3.1.0):
+    - Adapty (>= 3.1.0)
+    - AdaptyUI (= 3.1.0)
+    - React-Core
+    - react-native-adapty-sdk (>= 3.1.0)
+  - react-native-blur (4.4.1):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.10.14.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - react-native-safe-area-context (4.12.0):
     - React-Core
   - react-native-slider (4.5.5):
@@ -3302,10 +3400,10 @@ PODS:
   - RevenueCat (5.24.0)
   - RevenueCatUI (5.24.0):
     - RevenueCat (= 5.24.0)
-  - rive-react-native (9.2.1):
+  - rive-react-native (9.3.1):
     - React-Core
-    - RiveRuntime (= 6.7.4)
-  - RiveRuntime (6.7.4)
+    - RiveRuntime (= 6.8.2)
+  - RiveRuntime (6.8.2)
   - RNCAsyncStorage (1.23.1):
     - React-Core
   - RNCClipboard (1.16.2):
@@ -3331,8 +3429,12 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNDateTimePicker (8.3.0):
+  - RNDateTimePicker (8.2.0):
     - React-Core
+  - RNFBAnalytics (21.14.0):
+    - Firebase/Analytics (= 11.11.0)
+    - React-Core
+    - RNFBApp
   - RNFBApp (21.14.0):
     - Firebase/CoreOnly (= 11.11.0)
     - React-Core
@@ -3373,6 +3475,9 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - RNGoogleSignin (14.0.1):
+    - GoogleSignIn (~> 7.1)
+    - React-Core
   - RNPaywalls (8.10.1):
     - PurchasesHybridCommonUI (= 13.32.0)
     - React-Core
@@ -3488,7 +3593,7 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
-  - RNSentry (6.14.0):
+  - RNSentry (6.10.0):
     - DoubleConversion
     - glog
     - hermes-engine
@@ -3509,8 +3614,10 @@ PODS:
     - ReactCodegen
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
-    - Sentry/HybridSDK (= 8.50.2)
+    - Sentry/HybridSDK (= 8.48.0)
     - Yoga
+  - RNSVG (15.8.0):
+    - React-Core
   - SDWebImage (5.19.7):
     - SDWebImage/Core (= 5.19.7)
   - SDWebImage/Core (5.19.7)
@@ -3519,7 +3626,7 @@ PODS:
     - SDWebImage (~> 5.10)
   - SDWebImageSVGCoder (1.7.0):
     - SDWebImage/Core (~> 5.6)
-  - Sentry/HybridSDK (8.50.2)
+  - Sentry/HybridSDK (8.48.0)
   - SocketRocket (0.7.1)
   - Yoga (0.0.0)
 
@@ -3536,8 +3643,10 @@ DEPENDENCIES:
   - expo-dev-launcher (from `../node_modules/expo-dev-launcher`)
   - expo-dev-menu (from `../node_modules/expo-dev-menu`)
   - expo-dev-menu-interface (from `../node_modules/expo-dev-menu-interface/ios`)
+  - "ExpoAdapterGoogleSignIn (from `../node_modules/@react-native-google-signin/google-signin/expo/ios`)"
   - ExpoAppleAuthentication (from `../node_modules/expo-apple-authentication/ios`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
+  - ExpoCrypto (from `../node_modules/expo-crypto/ios`)
   - ExpoDevice (from `../node_modules/expo-device/ios`)
   - ExpoFileSystem (from `../node_modules/expo-file-system/ios`)
   - ExpoFont (from `../node_modules/expo-font/ios`)
@@ -3592,6 +3701,9 @@ DEPENDENCIES:
   - React-logger (from `../node_modules/react-native/ReactCommon/logger`)
   - React-Mapbuffer (from `../node_modules/react-native/ReactCommon`)
   - React-microtasksnativemodule (from `../node_modules/react-native/ReactCommon/react/nativemodule/microtasks`)
+  - react-native-adapty-sdk (from `../node_modules/react-native-adapty`)
+  - "react-native-adapty-ui (from `../node_modules/@adapty/react-native-ui`)"
+  - "react-native-blur (from `../node_modules/@react-native-community/blur`)"
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - "react-native-slider (from `../node_modules/@react-native-community/slider`)"
   - React-nativeconfig (from `../node_modules/react-native/ReactCommon`)
@@ -3626,25 +3738,32 @@ DEPENDENCIES:
   - "RNCClipboard (from `../node_modules/@react-native-clipboard/clipboard`)"
   - "RNCMaskedView (from `../node_modules/@react-native-masked-view/masked-view`)"
   - "RNDateTimePicker (from `../node_modules/@react-native-community/datetimepicker`)"
+  - "RNFBAnalytics (from `../node_modules/@react-native-firebase/analytics`)"
   - "RNFBApp (from `../node_modules/@react-native-firebase/app`)"
   - "RNFBAuth (from `../node_modules/@react-native-firebase/auth`)"
   - "RNFBFirestore (from `../node_modules/@react-native-firebase/firestore`)"
   - "RNFBFunctions (from `../node_modules/@react-native-firebase/functions`)"
   - "RNFBRemoteConfig (from `../node_modules/@react-native-firebase/remote-config`)"
   - RNGestureHandler (from `../node_modules/react-native-gesture-handler`)
+  - "RNGoogleSignin (from `../node_modules/@react-native-google-signin/google-signin`)"
   - RNPaywalls (from `../node_modules/react-native-purchases-ui`)
   - RNPurchases (from `../node_modules/react-native-purchases`)
   - RNReanimated (from `../node_modules/react-native-reanimated`)
   - RNScreens (from `../node_modules/react-native-screens`)
   - "RNSentry (from `../node_modules/@sentry/react-native`)"
+  - RNSVG (from `../node_modules/react-native-svg`)
   - Yoga (from `../node_modules/react-native/ReactCommon/yoga`)
 
 SPEC REPOS:
   trunk:
     - abseil
+    - Adapty
+    - AdaptyUI
+    - AppAuth
     - BoringSSL-GRPC
     - Firebase
     - FirebaseABTesting
+    - FirebaseAnalytics
     - FirebaseAppCheckInterop
     - FirebaseAuth
     - FirebaseAuthInterop
@@ -3659,9 +3778,12 @@ SPEC REPOS:
     - FirebaseRemoteConfig
     - FirebaseRemoteConfigInterop
     - FirebaseSharedSwift
+    - GoogleAppMeasurement
+    - GoogleSignIn
     - GoogleUtilities
     - "gRPC-C++"
     - gRPC-Core
+    - GTMAppAuth
     - GTMSessionFetcher
     - leveldb-library
     - libavif
@@ -3707,10 +3829,14 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo-dev-menu"
   expo-dev-menu-interface:
     :path: "../node_modules/expo-dev-menu-interface/ios"
+  ExpoAdapterGoogleSignIn:
+    :path: "../node_modules/@react-native-google-signin/google-signin/expo/ios"
   ExpoAppleAuthentication:
     :path: "../node_modules/expo-apple-authentication/ios"
   ExpoAsset:
     :path: "../node_modules/expo-asset/ios"
+  ExpoCrypto:
+    :path: "../node_modules/expo-crypto/ios"
   ExpoDevice:
     :path: "../node_modules/expo-device/ios"
   ExpoFileSystem:
@@ -3816,6 +3942,12 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native/ReactCommon"
   React-microtasksnativemodule:
     :path: "../node_modules/react-native/ReactCommon/react/nativemodule/microtasks"
+  react-native-adapty-sdk:
+    :path: "../node_modules/react-native-adapty"
+  react-native-adapty-ui:
+    :path: "../node_modules/@adapty/react-native-ui"
+  react-native-blur:
+    :path: "../node_modules/@react-native-community/blur"
   react-native-safe-area-context:
     :path: "../node_modules/react-native-safe-area-context"
   react-native-slider:
@@ -3884,6 +4016,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-masked-view/masked-view"
   RNDateTimePicker:
     :path: "../node_modules/@react-native-community/datetimepicker"
+  RNFBAnalytics:
+    :path: "../node_modules/@react-native-firebase/analytics"
   RNFBApp:
     :path: "../node_modules/@react-native-firebase/app"
   RNFBAuth:
@@ -3896,6 +4030,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@react-native-firebase/remote-config"
   RNGestureHandler:
     :path: "../node_modules/react-native-gesture-handler"
+  RNGoogleSignin:
+    :path: "../node_modules/@react-native-google-signin/google-signin"
   RNPaywalls:
     :path: "../node_modules/react-native-purchases-ui"
   RNPurchases:
@@ -3906,37 +4042,44 @@ EXTERNAL SOURCES:
     :path: "../node_modules/react-native-screens"
   RNSentry:
     :path: "../node_modules/@sentry/react-native"
+  RNSVG:
+    :path: "../node_modules/react-native-svg"
   Yoga:
     :path: "../node_modules/react-native/ReactCommon/yoga"
 
 SPEC CHECKSUMS:
   abseil: a05cc83bf02079535e17169a73c5be5ba47f714b
+  Adapty: c2245830c811b0156b12b617956904ed06966638
+  AdaptyUI: 7ac79ee12f71ca92370f1a8ad3d9dd1748ac6129
+  AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
   boost: 1dca942403ed9342f98334bf4c3621f011aa7946
   BoringSSL-GRPC: dded2a44897e45f28f08ae87a55ee4bcd19bc508
   DoubleConversion: f16ae600a246532c4020132d54af21d0ddb2a385
-  EXApplication: 63b87ca5204304007fac6b1be432f8afa3731c17
+  EXApplication: 4c72f6017a14a65e338c5e74fca418f35141e819
   EXConstants: fcfc75800824ac2d5c592b5bc74130bad17b146b
   EXJSONUtils: 01fc7492b66c234e395dcffdd5f53439c5c29c93
   EXManifests: a19d50504b8826546a4782770317bc83fffec87d
-  EXNotifications: 9123abeeecc540790f2ae0e2f08bcb5e97b4ebaa
+  EXNotifications: 9d3d17e52c95f377750d4a2ae553a716313dd4aa
   Expo: a6ff273c618506b12129a0d06f2a08201bfbcf43
   expo-dev-client: db44302cdbe0ec55b0ef1849c9a23a76dec6dbac
   expo-dev-launcher: c67c6a87f8a8ff54abda104abdc057ee4565a3f4
   expo-dev-menu: 1426660b67d2d594f70ec1d8a85bc26cafcf1bce
   expo-dev-menu-interface: 00dc42302a72722fdecec3fa048de84a9133bcc4
-  ExpoAppleAuthentication: 4d2e0c88a4463229760f1fbb9a937a810efb6863
+  ExpoAdapterGoogleSignIn: b48e2797d1b090bd284b32ecb0de8f4a7bc45b13
+  ExpoAppleAuthentication: 52631ed9dcb71c65712a447bbb9a5667bb8fcf0c
   ExpoAsset: 48386d40d53a8c1738929b3ed509bcad595b5516
+  ExpoCrypto: e97e864c8d7b9ce4a000bca45dddb93544a1b2b4
   ExpoDevice: d36ab4186b6799a28fd449bb9a1c77455f23fd1a
   ExpoFileSystem: 42d363d3b96f9afab980dcef60d5657a4443c655
   ExpoFont: f354e926f8feae5e831ec8087f36652b44a0b188
   ExpoHaptics: 8d199b2f33245ea85289ff6c954c7ee7c00a5b5d
-  ExpoHead: cee2d16ef197aaadb0ac481cf221a663636eb074
+  ExpoHead: df924203fbf8e0913fc38b0f6aec71f9a9115482
   ExpoImage: d840b256050f4428d2942bc2b6e9251f9e0d7021
   ExpoKeepAwake: b0171a73665bfcefcfcc311742a72a956e6aa680
-  ExpoLinearGradient: a3126d055dd021c1eb38a2cf28052ccbd1a2b3e2
+  ExpoLinearGradient: 35ebd83b16f80b3add053a2fd68cc328ed927f60
   ExpoLinking: 8d12bee174ba0cdf31239706578e29e74a417402
   ExpoModulesCore: 2d8d1c8e238bd5e1448b06c284ac896b162fb856
-  ExpoSecureStore: b367d9f62c9102d808afbeb1561636d4276e439d
+  ExpoSecureStore: 9a3665d7161dd1031be386e278bffd623658f316
   ExpoSplashScreen: 399ee9f85b6c8a61b965e13a1ecff8384db591c2
   ExpoStoreReview: 92ad323dd14485e7aa67d5b47248fb22876ffaee
   ExpoSystemUI: b82a45cf0f6a4fa18d07c46deba8725dd27688b4
@@ -3946,6 +4089,7 @@ SPEC CHECKSUMS:
   FBLazyVector: 7605ea4810e0e10ae4815292433c09bf4324ba45
   Firebase: 6a8f201c61eda24e98f1ce2b44b1b9c2caf525cc
   FirebaseABTesting: 8551c24eb28e300ce697f8eb72c1a519bb96eb40
+  FirebaseAnalytics: acfa848bf81e1a4dbf60ef1f0eddd7328fe6673e
   FirebaseAppCheckInterop: 73b173e5ec45192e2d522ad43f526a82ad10b852
   FirebaseAuth: 783fa4cc0420b0f6eed580721b12d4f0a5306746
   FirebaseAuthInterop: b583210c039a60ed3f1e48865e1f3da44a796595
@@ -3962,10 +4106,13 @@ SPEC CHECKSUMS:
   FirebaseSharedSwift: d2475748a2d2a36242ed13baa34b2acda846c925
   fmt: 01b82d4ca6470831d1cc0852a1af644be019e8f6
   glog: 08b301085f15bcbb6ff8632a8ebaf239aae04e6a
+  GoogleAppMeasurement: 8a82b93a6400c8e6551c0bcd66a9177f2e067aed
+  GoogleSignIn: d4281ab6cf21542b1cfaff85c191f230b399d2db
   GoogleUtilities: 00c88b9a86066ef77f0da2fab05f65d7768ed8e1
   "gRPC-C++": cc207623316fb041a7a3e774c252cf68a058b9e8
   gRPC-Core: 860978b7db482de8b4f5e10677216309b5ff6330
-  GTMSessionFetcher: fc75fc972958dceedee61cb662ae1da7a83a91cf
+  GTMAppAuth: f69bd07d68cd3b766125f7e072c45d7340dea0de
+  GTMSessionFetcher: 5aea5ba6bd522a239e236100971f10cb71b96ab6
   hermes-engine: 9e868dc7be781364296d6ee2f56d0c1a9ef0bb11
   leveldb-library: cc8b8f8e013647a295ad3f8cd2ddf49a6f19be19
   libavif: 84bbb62fb232c3018d6f1bab79beea87e35de7b7
@@ -4007,6 +4154,9 @@ SPEC CHECKSUMS:
   React-logger: c4052eb941cca9a097ef01b59543a656dc088559
   React-Mapbuffer: 9343a5c14536d4463c80f09a960653d754daae21
   React-microtasksnativemodule: 338bfa0a7d8cd1ed212b055f2143a6789252137a
+  react-native-adapty-sdk: 16cf431c5d6e824d9576d378f9b54747cf8c7f41
+  react-native-adapty-ui: 38e7351ae2b1d5a351a5e22af3a87d35e6def776
+  react-native-blur: 78f5aa935099b1698d5ae85c8b53b8ed4bae1e87
   react-native-safe-area-context: 8b8404e70b0cbf2a56428a17017c14c1dcc16448
   react-native-slider: 41c65b428b0528186691999424c4b2ffa64a241e
   React-nativeconfig: 415626a63057638759bcc75e0a96e2e07771a479
@@ -4039,27 +4189,30 @@ SPEC CHECKSUMS:
   RecaptchaInterop: 11e0b637842dfb48308d242afc3f448062325aba
   RevenueCat: 2d3639d30b8a71cbfe3d99cef8243c602793e0ec
   RevenueCatUI: 80bec9099c200c254c0ec0025b4fb83a85fbacce
-  rive-react-native: 7d5145e9581744c0849f3153320b8a24f96f07f3
-  RiveRuntime: 1748a5e12764dbb732894ac719691f6abd4cad22
+  rive-react-native: 22c19bead92d03d4e406e2a45624d0d49d78aee9
+  RiveRuntime: 3fca5c9a94b0a17cb05289b8a91fea6ebe921bb4
   RNCAsyncStorage: aa75595c1aefa18f868452091fa0c411a516ce11
   RNCClipboard: e1d17c9d093d8129ef50b39b63a17a0e8ccd0ade
   RNCMaskedView: 724ec5813f4e333e573f45091ffd8b274c09651f
-  RNDateTimePicker: 29264364ea7b8cc0fb355b3843cf276a4ff78966
+  RNDateTimePicker: 818460dc31b0dc5ec58289003e27dd8d022fb79c
+  RNFBAnalytics: b33dc47a5cdf688a58ad284f2c0b184299b59fd3
   RNFBApp: 4105e54d9ca4a1c10893a032268470f670181110
   RNFBAuth: 68dcd5fc893659b68b63646b1ff54d59001cb21a
   RNFBFirestore: 80b3fb2371c3289343766b8bb5a72a4abf4cc052
   RNFBFunctions: 10cb49ccb3dd3ae511e857ab0f1726f739214c23
   RNFBRemoteConfig: 8d3675f18c052483ce294bb97b857428467fb41e
   RNGestureHandler: 2dd124adb171aab16629e9387cf1830957d242c2
+  RNGoogleSignin: 607fe748d8ca0cf59614dc00771578b1b0e215e8
   RNPaywalls: 0a2c82f5becea1e91e2aba0b84be9c2dda03c358
   RNPurchases: 555d778354db6027f6a30e0b2dd5be3dd6c4f3ee
   RNReanimated: 9b650d028b9422148b548e80512043a372876c00
   RNScreens: ad2d0cfb3f15c9ed56ffb43651366ec0dcd70c36
-  RNSentry: 280a9bb76f89a0568a6cb78bfb7a658bd1b36964
+  RNSentry: a8f0d86b88675719ce96cb31bd9258dbd793e535
+  RNSVG: 8542aa11770b27563714bbd8494a8436385fc85f
   SDWebImage: 8a6b7b160b4d710e2a22b6900e25301075c34cb3
   SDWebImageAVIFCoder: 00310d246aab3232ce77f1d8f0076f8c4b021d90
   SDWebImageSVGCoder: 15a300a97ec1c8ac958f009c02220ac0402e936c
-  Sentry: d95f5f3b32d01324b3e27d3c52747005302cc026
+  Sentry: 1ca8405451040482877dcd344dfa3ef80b646631
   SocketRocket: d4aabe649be1e368d1318fdf28a022d714d65748
   Yoga: 1259c7a8cbaccf7b4c3ddf8ee36ca11be9dee407
 

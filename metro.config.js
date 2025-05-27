@@ -5,10 +5,10 @@ const { withNativeWind } = require('nativewind/metro');
 // eslint-disable-next-line no-undef
 const config = getDefaultConfig(__dirname);
 config.resolver.assetExts.push('riv');
-config.resolver["assetExts"] = [
-    ...(config.resolver.assetExts || []),
-    // for rive animations
-    "riv",
-  ];
+config.resolver['assetExts'] = [
+  ...(config.resolver.assetExts || []),
+  // for rive animations
+  'riv',
+];
 
 module.exports = withNativeWind(config, { input: './global.css' });

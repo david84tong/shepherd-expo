@@ -3,7 +3,6 @@ import { View, Text, Pressable, Alert, Linking, ScrollView } from 'react-native'
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboardingStore } from '../stores/onboardingStore';
-import { useUserStore } from '../stores/userStore';
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -19,7 +18,6 @@ import { useNotificationStore, NotificationTimeOption } from '../stores/notifica
 export default function OnboardingReminderTimeScreen() {
   const router = useRouter();
   const { setNotificationPreference } = useOnboardingStore();
-  const { setNotificationTime } = useUserStore();
   const {
     scheduleDailyReminder,
     setPreferredNotificationTime,
@@ -119,9 +117,6 @@ export default function OnboardingReminderTimeScreen() {
       time: time
     });
 
-    // Save to user store
-    setNotificationTime(time);
-
     const isNotificationsEnabled = time !== 'none';
 
     if (isNotificationsEnabled) {
@@ -177,7 +172,7 @@ export default function OnboardingReminderTimeScreen() {
         await scheduleDailyReminder(time as NotificationTimeOption);
         console.log(`📱 Onboarding: Successfully scheduled daily reminder for ${time}`);
       } catch (error) {
-        console.error('📱 Onboarding: Error scheduling daily reminder:', error);
+        console.log('📱 Onboarding: Error scheduling daily reminder:', error);
       }
 
       // Also schedule streak warning notifications
@@ -185,7 +180,7 @@ export default function OnboardingReminderTimeScreen() {
         await scheduleStreakReminders();
         console.log('📱 Onboarding: Successfully scheduled streak notifications');
       } catch (error) {
-        console.error('📱 Onboarding: Error scheduling streak notifications:', error);
+        console.log('📱 Onboarding: Error scheduling streak notifications:', error);
       }
 
       // List all scheduled notifications for debugging

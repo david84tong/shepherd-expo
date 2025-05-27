@@ -36,11 +36,17 @@ interface ExtendedOnboardingResponses extends Omit<OnboardingResponses, 'selecte
 interface OnboardingState {
   responses: ExtendedOnboardingResponses;
   currentScreen: string;
+  isInitialized: boolean;
+  needsNavigationToSavedScreen: boolean;
+  savedScreenToNavigateTo: string | null;
   
   // General methods
   setResponse: <T>(key: keyof ExtendedOnboardingResponses, value: T) => Promise<void>;
   setCurrentScreen: (screen: string) => Promise<void>;
   clearResponses: () => Promise<void>;
+  initializeFromStorage: () => Promise<string>;
+  setSavedScreenNavigation: (screen: string) => void;
+  clearSavedScreenNavigation: () => void;
   
   // Specific methods for screens 8, 9, 10
   setPathSelection: (pathData: PathResponse) => Promise<void>;
@@ -54,6 +60,9 @@ interface OnboardingState {
 export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   responses: {},
   currentScreen: '1',
+  isInitialized: false,
+  needsNavigationToSavedScreen: false,
+  savedScreenToNavigateTo: null,
   
   // General methods
   setResponse: async (key, value) => {
@@ -76,7 +85,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       
       console.log(`✅ Saved response for ${String(key)}:`, value);
     } catch (error) {
-      console.error('❌ Error saving onboarding response:', error);
+      console.log('❌ Error saving onboarding response:', error);
     }
   },
   
@@ -115,7 +124,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       
       console.log('✅ Saved path selection:', pathData.id);
     } catch (error) {
-      console.error('❌ Error saving path selection:', error);
+      console.log('❌ Error saving path selection:', error);
     }
   },
   
@@ -152,7 +161,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       
       console.log('✅ Saved notification preferences:', notificationData);
     } catch (error) {
-      console.error('❌ Error saving notification preferences:', error);
+      console.log('❌ Error saving notification preferences:', error);
     }
   },
   
@@ -189,7 +198,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       
       console.log('✅ Saved auth method:', authData);
     } catch (error) {
-      console.error('❌ Error saving auth method:', error);
+      console.log('❌ Error saving auth method:', error);
     }
   },
   
@@ -205,7 +214,7 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       );
       console.log(`✅ Set current screen to ${screen}`);
     } catch (error) {
-      console.error('❌ Error saving current screen:', error);
+      console.log('❌ Error saving current screen:', error);
     }
   },
   
@@ -215,13 +224,68 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       await AsyncStorage.removeItem(ONBOARDING_STORAGE_KEY);
       console.log('✅ Cleared all onboarding responses');
     } catch (error) {
-      console.error('❌ Error clearing onboarding responses:', error);
+      console.log('❌ Error clearing onboarding responses:', error);
     }
   },
   
   // Helper to get all responses
   getAllResponses: () => {
     return get().responses;
+  },
+  
+  initializeFromStorage: async () => {
+    try {
+      console.log(`[OnboardingStore] 🔄 Initializing from storage...`);
+      const data = await AsyncStorage.getItem(ONBOARDING_STORAGE_KEY);
+      console.log(`[OnboardingStore] 📱 Raw data from AsyncStorage:`, data);
+      
+      const parsedData = data ? JSON.parse(data) : null;
+      console.log(`[OnboardingStore] 📋 Parsed data:`, parsedData);
+      
+      if (parsedData) {
+        // Handle both old and new data structures
+        const currentScreen = parsedData.currentScreen || '1';
+        const responses = parsedData.responses || parsedData; // Fallback for old structure
+        
+        console.log(`[OnboardingStore] 📍 Extracted current screen: ${currentScreen}`);
+        console.log(`[OnboardingStore] 💾 Extracted responses:`, responses);
+        
+        set({
+          responses: responses,
+          currentScreen: currentScreen,
+          isInitialized: true,
+          // Set navigation flag if we need to navigate to a saved screen (not screen 1)
+          needsNavigationToSavedScreen: currentScreen !== '1',
+          savedScreenToNavigateTo: currentScreen !== '1' ? currentScreen : null,
+        });
+        
+        console.log(`✅ Loaded onboarding state from storage - Screen: ${currentScreen}`);
+        if (currentScreen !== '1') {
+          console.log(`📍 Will navigate to saved screen: ${currentScreen}`);
+        }
+        return currentScreen;
+      } else {
+        console.log(`[OnboardingStore] 🟢 No saved data found`);
+        set({ isInitialized: true });
+        console.log('🟢 No onboarding state found in storage, starting fresh');
+        return '1';
+      }
+    } catch (error) {
+      console.error('❌ Error loading onboarding state:', error);
+      set({ isInitialized: true });
+      return '1';
+    }
+  },
+  
+  setSavedScreenNavigation: (screen) => {
+    set({ savedScreenToNavigateTo: screen });
+  },
+  
+  clearSavedScreenNavigation: () => {
+    set({ 
+      savedScreenToNavigateTo: null,
+      needsNavigationToSavedScreen: false 
+    });
   },
 }));
 
@@ -233,7 +297,7 @@ export const debugOnboardingStorage = async () => {
     console.log('📊 Onboarding storage:', parsedData);
     return parsedData;
   } catch (error) {
-    console.error('❌ Error reading onboarding storage:', error);
+    console.log('❌ Error reading onboarding storage:', error);
     return null;
   }
 };

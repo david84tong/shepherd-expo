@@ -112,7 +112,7 @@ struct Provider: TimelineProvider {
     }
     
     private func loadStreakData() -> StreakData {
-        let defaults = UserDefaults(suiteName: "group.second.round.shepherduse.widget")
+        let defaults = UserDefaults(suiteName: "group.shepherd.widget.streak")
         let streak = defaults?.integer(forKey: "currentStreak") ?? 0
         
         var lastActivityDate: Date? = nil
@@ -135,7 +135,7 @@ struct StreakEntry: TimelineEntry {
 
 // MARK: - Widget View
 struct ShepherdStreakWidgetEntryView : View {
-    var entry: Provider.Entry
+    var entry: StreakEntry
     @Environment(\.widgetFamily) var family
     
     var body: some View {

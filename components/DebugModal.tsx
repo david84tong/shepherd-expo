@@ -11,6 +11,7 @@ import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { useUserStore } from '../app/stores/userStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUIStore } from '../app/stores/uiStore';
+import { useAuth, isSignedIn } from '../app/hooks/authHook';
 import SuccessAnimation from './SuccessAnimation'; // Import the full SuccessAnimation component
 import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
 import { HalfModalType } from '../app/halfModal';
@@ -72,6 +73,7 @@ export function DebugButton() {
   const pathname = usePathname();
   const [modalVisible, setModalVisible] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const { signOut } = useAuth();
 
   // Reference to the success bottom sheet modal
   const successSheetRef = useRef<BottomSheetModal>(null);
@@ -109,7 +111,7 @@ export function DebugButton() {
     if (typeof global !== 'undefined' && (global as any).showHalfModal) {
       (global as any).showHalfModal(params);
     } else {
-      console.error('showHalfModal not available on global object');
+      console.log('showHalfModal not available on global object');
     }
   }, []);
 
@@ -273,7 +275,7 @@ export function DebugButton() {
               // Clear AsyncStorage first to ensure clean slate
               console.log('Clearing all AsyncStorage data...');
               await AsyncStorage.clear();
-              
+
               // Reset home store
               const homeStore = useHomeStore.getState();
               homeStore.resetCompletionStates();
@@ -306,7 +308,7 @@ export function DebugButton() {
                 visibilityTime: 4000,
               });
             } catch (error) {
-              console.error('Failed to delete all data:', error);
+              console.log('Failed to delete all data:', error);
               Toast.show({
                 type: 'error',
                 text1: 'Failed to delete all data',
@@ -361,10 +363,50 @@ export function DebugButton() {
       if (typeof global !== 'undefined' && (global as any).showPrayerModal) {
         (global as any).showPrayerModal();
       } else {
-        console.error('showPrayerModal not available on global object');
+        console.log('showPrayerModal not available on global object');
       }
     }, 300);
   }, []);
+
+  // Handler for sign out
+  const handleSignOut = useCallback(async () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setModalVisible(false);
+              await signOut();
+              useUserStore.getState().resetUserStore();
+              router.replace('/(auth)');
+              
+              Toast.show({
+                type: 'success',
+                text1: 'Signed out successfully',
+                text2: 'You have been signed out of your account.',
+                position: 'top',
+                visibilityTime: 3000,
+              });
+            } catch (error) {
+              console.log('Error signing out:', error);
+              Toast.show({
+                type: 'error',
+                text1: 'Sign out failed',
+                text2: 'Please try again.',
+                position: 'top',
+                visibilityTime: 3000,
+              });
+            }
+          },
+        },
+      ]
+    );
+  }, [signOut, router]);
 
   const navigateTo = (item: DebugScreen) => {
     setModalVisible(false);
@@ -409,13 +451,13 @@ export function DebugButton() {
                     onPress={showSuccessToast}>
                     <Text className="font-din text-sm text-textPrimary">Success Toast</Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     className="bg-[#FFEDED] px-3 py-2 rounded-lg border border-red mb-1"
                     onPress={showErrorToast}>
                     <Text className="font-din text-sm text-textPrimary">Error Toast</Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-accentGold mb-1"
                     onPress={showInfoToast}>
@@ -488,7 +530,7 @@ export function DebugButton() {
                       <Text className="font-din text-sm text-textPrimary">{screen.name}</Text>
                     </TouchableOpacity>
                   ))}
-                  
+
                   {/* Kids Bible Reader Button */}
                   <TouchableOpacity
                     className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-[#F7B500] mb-1"
@@ -610,6 +652,73 @@ export function DebugButton() {
                 </TouchableOpacity>
               </View>
 
+              {/* UI Testing */}
+              <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">UI Testing</Text>
+
+                {/* Night Mode Toggle Button */}
+                <TouchableOpacity
+                  className="bg-[#2D2D2D] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FFD629]"
+                  onPress={() => {
+                    // Override the current time to simulate night mode (7 PM)
+                    const isCurrentlyNight = new Date().getHours() >= 19;
+                    
+                    if (isCurrentlyNight) {
+                      // Currently night mode, switch to day mode (12 PM)
+                      Date.prototype.getHours = function() { return 12; };
+                    } else {
+                      // Currently day mode, switch to night mode (8 PM)
+                      Date.prototype.getHours = function() { return 20; };
+                    }
+                    
+                    // Show toast instead of alert to avoid presentation conflicts
+                    Toast.show({
+                      type: 'info',
+                      text1: isCurrentlyNight ? 'Day Mode Activated' : 'Night Mode Activated',
+                      text2: isCurrentlyNight ? 'Light background enabled' : 'Dark background enabled',
+                      position: 'top',
+                      visibilityTime: 2000,
+                    });
+                    
+                    // Close modal to see the changes
+                    setModalVisible(false);
+                  }}>
+                  <Text className="font-feather text-base text-white">
+                    Toggle Night Mode
+                  </Text>
+                  <Text className="font-din text-sm text-white/80 mt-1">
+                    {new Date().getHours() >= 19 ? 'Switch to Day Mode' : 'Switch to Night Mode'}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Reset Time Override Button */}
+                <TouchableOpacity
+                  className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
+                  onPress={() => {
+                    // Reset the Date.prototype.getHours to original
+                    delete (Date.prototype as any).getHours;
+                    
+                    // Show toast instead of alert
+                    Toast.show({
+                      type: 'success',
+                      text1: 'Time Reset',
+                      text2: 'Using actual system time now',
+                      position: 'top',
+                      visibilityTime: 2000,
+                    });
+                    
+                    // Close modal to see the changes
+                    setModalVisible(false);
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Reset to System Time
+                  </Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Current time: {new Date().getHours()}:00 ({new Date().getHours() >= 19 ? 'Night' : 'Day'})
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
               {/* Local Storage */}
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">Data Management</Text>
@@ -688,6 +797,22 @@ export function DebugButton() {
                   </View>
                 ))}
               </View>
+
+              {/* Sign Out Button - Only show if user is signed in */}
+              {isSignedIn() && (
+                <View className="mt-6 pt-4 border-t border-buttonBorder">
+                  <TouchableOpacity
+                    className="bg-red p-4 rounded-xl border-l-4 border-l-[#FF0000]"
+                    onPress={handleSignOut}>
+                    <Text className="font-feather text-base text-white text-center">
+                      Sign Out
+                    </Text>
+                    <Text className="font-din text-sm text-white/80 mt-1 text-center">
+                      Sign out of your account
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
             </ScrollView>
           </View>
         </SafeAreaView>

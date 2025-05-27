@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useMemo, useRef, useState, } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Animated,
   Dimensions,
@@ -10,8 +10,9 @@ import {
   Text,
   TouchableOpacity,
   View,
-  ScrollView
+  ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
@@ -19,6 +20,8 @@ import JournalComponent from '../../components/JournalComponent';
 import PrayerComponent from '../../components/PrayerComponent';
 import ProgressPill from '../../components/ProgressPill';
 import SecondaryButton from '../../components/SecondaryButton';
+import HeartsExplainerModal from '../../components/HeartsExplainerModal';
+import ExplainerModal from '../../components/ExplainerModal';
 import { HomeMode, useHomeStore } from '../stores/homeStore'; // Import Zustand store
 import { usePathStore } from '../stores/pathStore'; // Import path store
 import { useUIStore } from '../stores/uiStore'; // Import UI store
@@ -27,15 +30,16 @@ import { useAssetsStore, imageAssets } from '../stores/assetsStore';
 import { useAssets } from 'expo-asset';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import analytics from '~/utils/analytics';
 import WidgetHowToSheet from '../../components/WidgetHowToSheet';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import { getLevelData } from '../../utils/levelUtils';
-
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
 const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
+import auth from '@react-native-firebase/auth';
+import { IS_ANDROID, IS_IOS } from '../utils/utils';
 
 // Max hearts constant
 const MAX_HEARTS = 100;
@@ -53,24 +57,101 @@ const gemIcon = imageAssets[8];
 const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
 
-// Custom toast config with tailwind styling
+import darkBg from '../../assets/backgrounds/defaultBackgroundDark.png';
+
+// Custom toast config with explicit styling
 const toastConfig: ToastConfig = {
   success: ({ text1, text2 }: ToastConfigParams<any>) => (
-    <View className="bg-surfaceCream rounded-xl px-4 py-3 mx-4 mb-4 border-l-4 border-darkGreen shadow-md">
-      <Text className="font-feather text-base text-textPrimary">{text1}</Text>
-      {text2 && <Text className="font-din text-sm text-description mt-1">{text2}</Text>}
+    <View
+      style={{
+        backgroundColor: '#FFF4D9',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginHorizontal: 16,
+        marginBottom: 16,
+        borderLeftWidth: 4,
+        borderLeftColor: '#24CA17',
+        shadowColor: 'rgba(0,0,0,0.08)',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 1,
+        shadowRadius: 4,
+        elevation: 3,
+      }}>
+      <Text style={{ fontFamily: 'Nunito-Black', fontSize: 16, color: '#3C584A' }}>{text1}</Text>
+      {text2 && (
+        <Text
+          style={{
+            fontFamily: 'DIN Next Rounded LT W01 Regular',
+            fontSize: 14,
+            color: '#B89B4C',
+            marginTop: 4,
+          }}>
+          {text2}
+        </Text>
+      )}
     </View>
   ),
   error: ({ text1, text2 }: ToastConfigParams<any>) => (
-    <View className="bg-surfaceCream rounded-xl px-4 py-3 mx-4 mb-4 border-l-4 border-red shadow-md">
-      <Text className="font-feather text-base text-textPrimary">{text1}</Text>
-      {text2 && <Text className="font-din text-sm text-description mt-1">{text2}</Text>}
+    <View
+      style={{
+        backgroundColor: '#FFF4D9',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginHorizontal: 16,
+        marginBottom: 16,
+        borderLeftWidth: 4,
+        borderLeftColor: '#DF4533',
+        shadowColor: 'rgba(0,0,0,0.08)',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 1,
+        shadowRadius: 4,
+        elevation: 3,
+      }}>
+      <Text style={{ fontFamily: 'Nunito-Black', fontSize: 16, color: '#3C584A' }}>{text1}</Text>
+      {text2 && (
+        <Text
+          style={{
+            fontFamily: 'DIN Next Rounded LT W01 Regular',
+            fontSize: 14,
+            color: '#B89B4C',
+            marginTop: 4,
+          }}>
+          {text2}
+        </Text>
+      )}
     </View>
   ),
   info: ({ text1, text2 }: ToastConfigParams<any>) => (
-    <View className="bg-surfaceCream rounded-xl px-4 py-3 mx-4 mb-4 border-l-4 border-accentGold shadow-md">
-      <Text className="font-feather text-base text-textPrimary">{text1}</Text>
-      {text2 && <Text className="font-din text-sm text-description mt-1">{text2}</Text>}
+    <View
+      style={{
+        backgroundColor: '#FFF4D9',
+        borderRadius: 12,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        marginHorizontal: 16,
+        marginBottom: 16,
+        borderLeftWidth: 4,
+        borderLeftColor: '#FCD34D',
+        shadowColor: 'rgba(0,0,0,0.08)',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 1,
+        shadowRadius: 4,
+        elevation: 3,
+      }}>
+      <Text style={{ fontFamily: 'Nunito-Black', fontSize: 16, color: '#3C584A' }}>{text1}</Text>
+      {text2 && (
+        <Text
+          style={{
+            fontFamily: 'DIN Next Rounded LT W01 Regular',
+            fontSize: 14,
+            color: '#B89B4C',
+            marginTop: 4,
+          }}>
+          {text2}
+        </Text>
+      )}
     </View>
   ),
 };
@@ -80,6 +161,9 @@ export default function HomeScreen() {
   const [riveError, setRiveError] = useState<RNRiveError | null>(null);
   const navigation = useNavigation();
   const router = useRouter();
+
+  const currentUser = auth().currentUser;
+  console.log('currentUser======>', currentUser);
 
   // Use Zustand store for mode management
   const mode = useHomeStore((state) => state.mode);
@@ -94,13 +178,14 @@ export default function HomeScreen() {
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
 
   // Get user stats from userStore
-  const lambHearts = useUserStore((state) => state.getLambHearts());
-  const streakCount = useUserStore((state) => state.getStreakCount());
-  const gens = useUserStore((state) => state.getGens());
-  const lambMood = useUserStore((state) => state.getLambMood());
-  const lambName = useUserStore((state) => state.getLambName()); // Get the lamb's name from userStore
+  const lambHearts = useUserStore((state) => state?.getLambHearts?.());
+  const streakCount = useUserStore((state) => state?.getStreakCount?.());
+  const gens = useUserStore((state) => state?.getGens?.());
+  const lambMood = useUserStore((state) => state?.getLambMood?.());
+  const lambName = useUserStore((state) => state?.getLambName?.()); // Get the lamb's name from userStore
   const lamb = useUserStore((state) => state.getLamb()); // Get the complete lamb object
 
+  console.log('lambHearts streakCount======>', lambHearts, streakCount, gens, lambMood, lambName);
   // State to manage the Rive resource name
   const [artboardName, setArtboardName] = useState('lamb-idle'); // Default artboard
   // State to control background Rive animation
@@ -109,23 +194,23 @@ export default function HomeScreen() {
   const lambSizeAnim = useRef(new Animated.Value(256)).current; // Start with full size (256px)
 
   // Get subscription state and actions from the store
-  const { setFromScreen } = useSubscriptionStore();
-  
+  const { setFromScreen, presentHalfOffPaywall } = useSubscriptionStore();
   // Get pro status from user store
-  const proStatus = useUserStore((state) => state.getProStatus());
+  const proStatus = useUserStore((state) => state?.getProStatus?.());
   const isPro = proStatus === 'pro';
 
   // Handle subscription button press using the store action
   const handleSubscriptionPress = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     router.push('/PricingScreen' as any);
-  }
+  };
 
   // Load Rive assets
   const [riveAssets] = useAssets([
     require('../../assets/riveAnimations/homeLamb.riv'),
     require('../../assets/riveAnimations/bg-green.riv'),
-    require('../../assets/riveAnimations/goldLamb.riv') // Add goldLamb to preloaded assets
+    require('../../assets/riveAnimations/goldLamb.riv'), // Add goldLamb to preloaded assets
+    require('../../assets/riveAnimations/lamb-wings-idle.riv'), // Add goldLamb to preloaded assets
   ]);
 
   // Add state for asset loading
@@ -247,16 +332,19 @@ export default function HomeScreen() {
     'lamb-angry': 'lamb-angry',
     'lamb-chubby dying': 'lamb-chubby dying',
     'lamb-skinny dying': 'lamb-skinny dying',
-    'smoking': 'lamb-dead',
-    'lamb-full': 'lamb-full'
+    smoking: 'lamb-dead',
+    'lamb-full': 'lamb-full',
   };
 
   // Get UI store functions
-  const showPrayerSheet = useUIStore(state => state.showPrayerSheet);
-  const showWidgetPrompt = useUIStore(state => state.showWidgetPrompt);
+  const showPrayerSheet = useUIStore((state) => state.showPrayerSheet);
+  const showWidgetPrompt = useUIStore((state) => state.showWidgetPrompt);
 
   const handleRiveError = (error: RNRiveError) => {
-    console.error('Rive Error:', error.message, error.type);
+    console.log('Rive Error:', error.message, error.type);
+    if (Platform.OS === 'android') {
+      return;
+    }
     setRiveError(error);
   };
 
@@ -285,7 +373,7 @@ export default function HomeScreen() {
     if (mode === 'PREVIEW') {
       setArtboardName('lamb-idle');
       // Update artboard based on lamb mood from userStore
-      const currentMood = useUserStore.getState().getLambMood();
+      const currentMood = useUserStore.getState()?.getLambMood?.();
       console.log('Current mood:', currentMood);
       if (currentMood && moodToArtboard[currentMood]) {
         setArtboardName(moodToArtboard[currentMood]);
@@ -399,7 +487,7 @@ export default function HomeScreen() {
 
   // --- useEffect to react to external mode changes ---
   useEffect(() => {
-    console.log(isPro, "what is pro")
+    console.log(isPro, 'what is pro');
     console.log('HomeScreen: Mode changed to', mode);
     console.log('DEBUG - Current completion status:', {
       readingCompleted,
@@ -413,7 +501,7 @@ export default function HomeScreen() {
       animateToDefault();
       setArtboardName('lamb-idle');
       // Update artboard based on lamb mood from userStore
-      const currentMood = useUserStore.getState().getLambMood();
+      const currentMood = useUserStore.getState()?.getLambMood?.();
       console.log('Current mood:', currentMood);
       if (currentMood && moodToArtboard[currentMood]) {
         setArtboardName(moodToArtboard[currentMood]);
@@ -459,9 +547,8 @@ export default function HomeScreen() {
   const handleReadPress = () => {
     if (!isPro && readingCompleted) {
       setFromScreen('home-read');
-      handleSubscriptionPress()
-    }
-    else {
+      handleSubscriptionPress();
+    } else {
       console.log('Read the word button pressed');
 
       // Remove heavy haptic feedback
@@ -493,7 +580,7 @@ export default function HomeScreen() {
     console.log('Prayer button pressed');
     if (!isPro && prayerCompleted) {
       setFromScreen('home-prayer');
-      handleSubscriptionPress()
+      handleSubscriptionPress();
     } else {
       // Don't proceed if reading is not completed
       if (!readingCompleted) {
@@ -513,7 +600,7 @@ export default function HomeScreen() {
   const handleReflectionPress = () => {
     if (!isPro && reflectionCompleted) {
       setFromScreen('home-reflection');
-      handleSubscriptionPress()
+      handleSubscriptionPress();
     } else {
       console.log('Reflection button pressed');
 
@@ -551,7 +638,7 @@ export default function HomeScreen() {
 
   const handleWidgetPromptPress = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    analytics.logEvent("HomeScreen_Tapped_AddWidget");
+    analytics.logEvent('HomeScreen_Tapped_AddWidget');
     showWidgetPrompt();
   };
 
@@ -621,16 +708,34 @@ export default function HomeScreen() {
 
   // Defer loading of the heavy Rive component until after initial interactions
   const [riveReady, setRiveReady] = useState(false);
+  const [isFree, setIsFree] = useState(false);
+  const [isFirstLoad, setIsFirstLoad] = useState(true);
+
+  // Animation for first load after onboarding
+  const firstLoadOpacity = useRef(new Animated.Value(0)).current;
 
   // Run once on mount to defer heavy work
   useEffect(() => {
     setRiveReady(true);
+
+    // Check if this is the first load after onboarding completion
+    if (isFirstLoad) {
+      // Start with opacity 0 and animate to 1
+      Animated.timing(firstLoadOpacity, {
+        toValue: 1,
+        duration: 600,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }).start(() => {
+        setIsFirstLoad(false);
+      });
+    }
   }, []);
 
   // Add screen view analytics tracking
   useEffect(() => {
     // Log screen view when component mounts
-    analytics.logEvent("HomeScreen_Viewed");
+    analytics.logEvent('HomeScreen_Viewed');
   }, []);
 
   // Add the hooks with the other state hooks (right before line 619)
@@ -642,466 +747,608 @@ export default function HomeScreen() {
     const lambLevel = lamb?.level || 1;
     const minScale = 0.55; // 55% size at level 1 (was 50%)
     const scaleFactor = Math.min(minScale + (lambLevel - 1) * 0.055, 1.1); // Max is now 110%
-    
+
     console.log(`Lamb level: ${lambLevel}, Scale factor: ${scaleFactor}`);
 
-    // Use the appropriate Rive asset based on pro status
-    const lambAssetIndex = isPro ? 2 : 0; // Index 2 for goldLamb, 0 for homeLamb
+    // Use the appropriate Rive asset based on pro status and level
+    let lambAssetIndex;
+    let useArtboardName: string | undefined = artboardName;
+
+    if (lambLevel >= 33) {
+      // Level 33: Use lamb-wings-idle.riv with no artboard name
+      lambAssetIndex = 3; // lamb-wings-idle.riv
+      useArtboardName = undefined; // No artboard name for wings animation
+    } else {
+      // Levels 1-32: Use normal or pro lamb based on pro status
+      lambAssetIndex = isPro ? 2 : 0; // Index 2 for goldLamb, 0 for homeLamb
+    }
 
     // Calculate position adjustment to keep lamb centered
     // As the lamb gets smaller, we need to adjust its position to stay centered
     const positionAdjustment = (1 - scaleFactor) * 50; // % adjustment for centering
 
-      return (
-    <View style={{
-      width: '100%',
-      height: '100%',
-      alignItems: 'center',
-      justifyContent: 'center',
-    }}>
-      <View 
+    // Calculate shadow scale and color for levels 10+
+    const shouldShowRedShadow = lambLevel >= 10 && lambLevel < 24;
+    const shouldShowYellowShadow = lambLevel >= 24;
+    let shadowScale = 0;
+
+    if (shouldShowRedShadow) {
+      // Red shadow from level 10-23: scale from 0.5 to 1.2
+      const levelProgress = Math.min((lambLevel - 10) / (23 - 10), 1); // 0 to 1
+      shadowScale = 0.55 + levelProgress * 0.7; // 0.5 to 1.2
+      console.log(`Red shadow debug - Level: ${lambLevel}, Scale: ${shadowScale}`);
+    } else if (shouldShowYellowShadow) {
+      // Yellow shadow from level 24-33: scale from 0.6 to 1.5 (fresh growth)
+      const levelProgress = Math.min((lambLevel - 24) / (33 - 24), 1); // 0 to 1
+      shadowScale = 0.35 + levelProgress * 0.9; // 0.6 to 1.5
+      console.log(`Yellow shadow debug - Level: ${lambLevel}, Scale: ${shadowScale}`);
+    }
+
+    return (
+      <View
         style={{
-          width: `${scaleFactor * 100}%`, 
-          height: `${scaleFactor * 100}%`,
-          borderWidth: __DEV__ ? 1 : 0,
-          borderColor: __DEV__ ? 'rgba(255,0,0,0.2)' : 'transparent',
+          width: '100%',
+          height: '100%',
           alignItems: 'center',
           justifyContent: 'center',
-          // Add overflow hidden to prevent any rendering issues with larger size
-          overflow: 'hidden',
-        }}
-      >
-        <Rive
-          key={`${riveKey}-${lambLevel}`} // Add level to key to force refresh
-          ref={riveRef}
-          url={riveAssets[lambAssetIndex].localUri!}
-          artboardName={artboardName}
-          onError={handleRiveError}
-          style={{ 
-            width: '100%', 
-            height: '100%',
-            marginTop: 10
+
+        }}>
+        {/* Red shadow behind lamb for level 10+ */}
+        {shouldShowRedShadow && (
+          <Image
+            source={require('../../assets/redShadow.png')}
+            style={{
+              position: 'absolute',
+              width: 300 * shadowScale,
+              height: 300 * shadowScale,
+              zIndex: -10,
+              borderRadius: 300,
+            }}
+            resizeMode="cover"
+          />
+        )}
+        {shouldShowYellowShadow && (
+          <Image
+            source={require('../../assets/yellowShadow.png')}
+            style={{
+              position: 'absolute',
+              width: 300 * shadowScale,
+              height: 300 * shadowScale,
+              zIndex: -10,
+              borderRadius: 300,
+            }}
+            resizeMode="cover"
+          />
+        )}
+        <TouchableOpacity
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            analytics.logEvent('HomeScreen_Tapped_LambName', {
+              lambName: lambName,
+              currentlyExpanded: isLevelPillExpanded,
+              action: isLevelPillExpanded ? 'collapse' : 'expand'
+            });
+
+
           }}
-        />
+          activeOpacity={0.7}
+          className="bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 -mb-2 px-2"
+        >
+          <Text className="font-feather text-textPrimary text-xs">
+            {`${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`}
+          </Text>
+        </TouchableOpacity>
+        <View
+          style={{
+            width: `${scaleFactor * 100}%`,
+            height: `${scaleFactor * 100}%`,
+            alignItems: 'center',
+            justifyContent: 'center',
+            // Add overflow hidden to prevent any rendering issues with larger size
+            overflow: 'hidden',
+            zIndex: 10,
+          }}>
+          <Rive
+            key={riveKey}
+            ref={riveRef}
+            resourceName={
+              IS_ANDROID ? (lambAssetIndex === 2 ? 'gold_lamb' : 'home_lamb') : undefined
+            }
+            url={IS_IOS ? riveAssets[lambAssetIndex].uri! : undefined}
+            artboardName={artboardName}
+            onError={handleRiveError}
+            style={{
+              width: '100%',
+              height: '100%',
+              opacity: new Date().getHours() >= 19 ? 0.85 : 1,
+            }}
+          />
+        </View>
       </View>
-    </View>
-  );
+    );
   }, [riveAssets, artboardName, riveKey, riveReady, isPro, lamb?.level]);
 
   const [showWidgetSheet, setShowWidgetSheet] = useState(false);
   // Add level pill animation states
   const [isLevelPillExpanded, setIsLevelPillExpanded] = useState(false);
+  // Add hearts explainer modal state
+  const [showHeartsModal, setShowHeartsModal] = useState(false);
+  // Add explainer modal state
+  const [showExplainerModal, setShowExplainerModal] = useState(false);
   const levelPillWidthAnim = useRef(new Animated.Value(0)).current;
   const levelPillOpacityAnim = useRef(new Animated.Value(0)).current;
   // Pre-calculate the expanded width for the pill (use a reasonable fixed width instead of screen-based)
   const pillExpandedWidth = 350; // Fixed reasonable width that won't overflow
-  
+
   // Calculate level and XP progress for the level pill display
   const levelInfo = useMemo(() => {
-    if (!lamb || lamb.xp === undefined) return { 
-      level: 1, 
-      xp: 0, 
-      xpForCurrentLevel: 0,
-      xpForNextLevel: 90, 
-      xpProgress: 0,
-      xpNeeded: 90,
-      progress: 0 
-    };
-    
+    if (!lamb || lamb.xp === undefined)
+      return {
+        level: 1,
+        xp: 0,
+        xpForCurrentLevel: 0,
+        xpForNextLevel: 90,
+        xpProgress: 0,
+        xpNeeded: 90,
+        progress: 0,
+      };
+
     return getLevelData(lamb.xp);
   }, [lamb?.xp]);
+
+  // Add this with other animation values at the top
+  const androidBgOpacityAnim = useRef(new Animated.Value(0)).current;
+
+  // Add this effect to handle Android background animation
+  useEffect(() => {
+    if (IS_ANDROID && mode === 'PRAYER') {
+      Animated.timing(androidBgOpacityAnim, {
+        toValue: 1,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(androidBgOpacityAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [mode]);
 
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
 
+
+  // HEADER
   return (
     <>
-      <View className="flex-1">
+      <Animated.View className="flex-1" style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}>
         {/* Background Layers - Use expo-image for better performance */}
-      <Animated.View
-        style={[
-          { position: 'absolute', width: '100%', height: '100%' },
-          { opacity: grassOpacityAnim },
-        ]}>
-        <Image source={grassBg} style={{ width: '100%', height: '100%' }} />
-      </Animated.View>
-
-      <Animated.View
-        style={[
-          { position: 'absolute', width: '100%', height: '100%' },
-          { opacity: pathOpacityAnim },
-        ]}>
-        <Image source={pathBg} style={{ width: '100%', height: '100%' }} />
-      </Animated.View>
-
-      <Animated.View
-        style={[
-          { position: 'absolute', width: '100%', height: '100%' },
-          { opacity: journalOpacityAnim },
-        ]}>
-        <Image source={journalBg} style={{ width: '100%', height: '100%' }} />
-      </Animated.View>
-
-      {/* Prayer background Rive animation */}
-      <Animated.View
-        style={[
-          { position: 'absolute', width: '100%', height: '100%' },
-          { opacity: grassOpacityAnim },
-        ]}>
-        <Image
-          source={grassBg}
-          style={{ width: '100%', height: '100%' }}
-        />
-      </Animated.View>
-
-      <Animated.View
-        style={[
-          { position: 'absolute', width: '100%', height: '100%' },
-          { opacity: pathOpacityAnim },
-        ]}>
-        <Image
-          source={pathBg}
-          style={{ width: '100%', height: '100%' }}
-        />
-      </Animated.View>
-
-      <Animated.View
-        style={[
-          { position: 'absolute', width: '100%', height: '100%' },
-          { opacity: journalOpacityAnim },
-        ]}>
-        <Image
-          source={journalBg}
-          style={{ width: '100%', height: '100%' }}
-        />
-      </Animated.View>
-
-      {/* Prayer background Rive animation */}
-      <Animated.View
-        style={[
-          { position: 'absolute', width: '100%', height: '100%', zIndex: 0 },
-          { opacity: waterOpacityAnim },
-        ]}>
-        {showBgRive && riveAssets && (
-          <Rive
-            url={riveAssets[1].localUri!}
-            autoplay={true}
-            style={{ width: '160%', height: '160%', top: -300, left: -128 }}
-          />
-        )}
-      </Animated.View>
-
-      <SafeAreaView className="flex-1">
-        {/* Header: Contains logic for showing Back OR Title/Stats */}
-        <View className="flex-row justify-between items-center px-4 pt-1.5 pb-2 h-[42px] relative">
-          {/* Animated Back Button */}
-
-          {/* Animated Default Header Elements (Title + Stats) */}
-          <Animated.View
-            className="absolute inset-0 flex-row items-center justify-between px-8 w-full"
-            style={{ opacity: headerDefaultOpacityAnim }}
-            pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}>
-            <View className="flex-row items-center flex-1 justify-between">
-              {!isLevelPillExpanded && (
-                <Text
-                  className="text-h1 font-feather text-white tracking-wide right-2"
-                  style={{
-                    textShadowColor: 'rgba(0, 0, 0, 0.2)',
-                    textShadowOffset: { width: 0, height: 1 },
-                    textShadowRadius: 2,
-                  }}>
-                  {lambName 
-                    ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
-                    : 'Shepherd'}
-                </Text>
-              )}
-              <View className="flex-row gap-2 justify-end ml-2">
-                <TouchableOpacity
-                  onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    analytics.logEvent("HomeScreen_Tapped_Level");
-                    // Add detailed analytics for XP progress tap
-                    analytics.logEvent("HomeScreen_Tapped_XpProgress", {
-                      level: levelInfo.level,
-                      currentXp: levelInfo.xp,
-                      nextLevelXp: levelInfo.xpForNextLevel,
-                      progress: Math.round(levelInfo.progress)
-                    });
-                    // Toggle expanded state
-                    setIsLevelPillExpanded(!isLevelPillExpanded);
-                    
-                    // Animate width and opacity
-                    Animated.parallel([
-                      Animated.timing(levelPillWidthAnim, {
-                        toValue: isLevelPillExpanded ? 0 : 1,
-                        duration: 500,
-                        easing: Easing.out(Easing.exp),
-                        useNativeDriver: false,
-                      }),
-                      Animated.timing(levelPillOpacityAnim, {
-                        toValue: isLevelPillExpanded ? 0 : 1,
-                        duration: 500,
-                        easing: Easing.out(Easing.exp),
-                        useNativeDriver: false,
-                      })
-                    ]).start();
-                  }}
-                >
-                  <View style={{ position: 'relative', zIndex: 2 }}>
-                    {!isLevelPillExpanded ? (
-                      <ProgressPill value={0} label={(lambHearts > 0 ? levelInfo.level : '0').toString()} icon={starIcon} />
-                    ) : (
-                      <Animated.View
-                        className="bg-pillBorder rounded-full overflow-hidden flex-row items-center justify-between -mt-8 p-2"
-                        style={{
-                          position: 'absolute',
-                          right: -36,
-                          width: levelPillWidthAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [40, pillExpandedWidth]
-                          })
-                        }}
-                        onLayout={() => {
-                          // Debug log to verify the XP calculation
-                          console.log(`Level Pill Debug - Level: ${levelInfo.level}, Total XP: ${levelInfo.xp}`);
-                          console.log(`XP to next level: ${levelInfo.xpProgress}/${levelInfo.xpNeeded} (${Math.round(levelInfo.progress)}%)`);
-                        }}
-                      >
-                        <View className="bg-white w-8 h-8 rounded-full items-center justify-center">
-                          <Image source={starIcon} className="w-7 h-5" />
-                        </View>
-                        <Animated.View 
-                          className="flex-1 pl-2"
-                          style={{ opacity: levelPillOpacityAnim }}
-                        >
-                          <View className="flex-row items-center justify-between">
-                            <Text className="font-feather text-body text-description">Level {levelInfo.level}</Text>
-                            <Text className="font-din text-xs text-description mt-0.5 mr-2">
-                              {/* Show actual XP values: current XP / XP needed for next level */}
-                              {levelInfo.xp}/{levelInfo.xpForNextLevel} XP
-                            </Text>
-                          </View>
-
-                          <View className="h-3 bg-lightYellow rounded-full overflow-hidden mb-1 mr-2">
-                            <View
-                              className="h-full bg-accentGold rounded-full"
-                              style={{ 
-                                width: `${Math.max(Math.min(levelInfo.progress, 100), 1)}%` 
-                              }}
-                            />
-                          </View>
-                  
-                        </Animated.View>
-                      </Animated.View>
-                    )}
-                  </View>
-                </TouchableOpacity>
-                {!isLevelPillExpanded && (
-                  <>
-                    <TouchableOpacity
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        analytics.logEvent("HomeScreen_Tapped_Star");
-                        Toast.show({
-                          type: 'info',
-                          text1: 'Increase your streak!',
-                          text2: 'Complete your daily bread reading to build your streak.',
-                          position: 'top',
-                          visibilityTime: 4000,
-                        });
-                      }}
-                    >
-                      <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
-                    </TouchableOpacity>
-                    <TouchableOpacity 
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        analytics.logEvent("HomeScreen_Tapped_Gems");
-                        // Show toast message using Toast component
-                        Toast.show({
-                          type: 'info',
-                          text1: 'Skin shop coming soon!',
-                          text2: 'Customize your lamb with special skins from the shop.',
-                          position: 'top',
-                          visibilityTime: 4000,
-                        });
-                      }}
-                    >
-                      <ProgressPill value={0} label={gens.toString()} icon={gemIcon} />
-                    </TouchableOpacity>
-                  </>
-                )}
-              </View>
-            </View>
-          </Animated.View>
-        </View>
-
-        {/* Top Section - Lamb Avatar */}
         <Animated.View
-          className="items-center justify-center"
-          style={{
-            opacity: lambOpacityAnim,
-            transform: [{ translateX: lambTranslateX }, { translateY: lambTranslateY }],
-            height: BASE_LAMB_SIZE,
-            // Add conditional shadow for the glow effect
-            shadowColor: showGlow ? '#FDE047' : 'transparent', // yellow-300
-            shadowOffset: { width: 0, height: 0 },
-            shadowOpacity: showGlow ? 0.6 : 0,
-            shadowRadius: 15, // Adjust radius for softness
-          }}>
-          <Animated.View className="items-center justify-center overflow-hidden" style={{}}>
-            {riveError ? (
-              <Text className="text-red-500 p-4 text-center">
-                Error loading animation: {riveError.message} ({riveError.type})
-              </Text>
-            ) : (
-              <>
-                <Animated.View
-                  onTouchStart={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  }}
-                  style={{
-                    width: lambSizeAnim,
-                    height: lambSizeAnim,
-                  }}>
-                  <Animated.View
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      transform: [
-                        { scale: riveScaleAnim },
-                        {
-                          rotate: riveRotateAnim.interpolate({
-                            inputRange: [-1, 0, 1],
-                            outputRange: ['-60deg', '0deg', '60deg'],
-                          }),
-                        },
-                      ],
-                    }}>
-                    {riveComponent}
-                  </Animated.View>
-                </Animated.View>
-                {artboardName === 'lamb-dead' && (
-                  <View style={{ height: 36 }} />
-                )}
-              </>
-            )}
-          </Animated.View>
+          style={[
+            { position: 'absolute', width: '100%', height: '100%' },
+            { opacity: grassOpacityAnim },
+          ]}>
+          <Image
+            source={new Date().getHours() >= 19 ? darkBg : grassBg}
+            style={{ width: '100%', height: '100%' }}
+          />
         </Animated.View>
 
-        {/* SUPER badge for pro users */}
-        {mode === 'DEFAULT' && (
-          <TouchableOpacity 
-            onPress={() => {
-              if (!isPro) {
-                analytics.logEvent("HomeScreen_TappedProBadge");
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                router.push('/PricingScreen' as any);
-                setFromScreen('home-super');
-              }
-            }}
-            activeOpacity={0.8}
+        <Animated.View
+          style={[
+            { position: 'absolute', width: '100%', height: '100%' },
+            { opacity: pathOpacityAnim },
+          ]}>
+          <Image source={pathBg} style={{ width: '100%', height: '100%' }} />
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            { position: 'absolute', width: '100%', height: '100%' },
+            { opacity: journalOpacityAnim },
+          ]}>
+          <Image source={journalBg} style={{ width: '100%', height: '100%' }} />
+        </Animated.View>
+
+        {/* Prayer background Rive animation */}
+        <Animated.View
+          style={[
+            { position: 'absolute', width: '100%', height: '100%' },
+            { opacity: grassOpacityAnim },
+          ]}>
+          <Image
+            source={new Date().getHours() >= 19 ? darkBg : grassBg}
+            style={{ width: '100%', height: '100%' }}
+          />
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            { position: 'absolute', width: '100%', height: '100%' },
+            { opacity: pathOpacityAnim },
+          ]}>
+          <Image source={pathBg} style={{ width: '100%', height: '100%' }} />
+        </Animated.View>
+
+        <Animated.View
+          style={[
+            { position: 'absolute', width: '100%', height: '100%' },
+            { opacity: journalOpacityAnim },
+          ]}>
+          <Image source={journalBg} style={{ width: '100%', height: '100%' }} />
+        </Animated.View>
+
+        {/* Prayer background Rive animation */}
+        <Animated.View
+          style={[
+            { position: 'absolute', width: '100%', height: '100%', zIndex: 0 },
+            { opacity: IS_IOS ? waterOpacityAnim : androidBgOpacityAnim },
+          ]}>
+          {IS_IOS ? (
+            showBgRive && riveAssets && (
+              <Rive
+                url={riveAssets[1].uri!}
+                autoplay={true}
+                style={{ width: '160%', height: '160%', top: -300, left: -128 }}
+              />
+            )
+          ) : (
+            <Image
+              source={require('../../assets/backgrounds/Forest Clearing Background Apr 18 2025.png')}
+              style={{ width: '100%', height: '100%' }}
+              resizeMode="cover"
+            />
+          )}
+        </Animated.View>
+
+        <SafeAreaView className="flex-1">
+          {/* Header: Contains logic for showing Back OR Title/Stats */}
+          <View className="flex-row justify-between items-center px-4 pt-1.5 pb-2 h-[42px] relative" style={{ zIndex: 9999 }} >
+            {/* Animated Back Button */}
+
+            {/* Animated Default Header Elements (Title + Stats) */}
+            <Animated.View
+              className="absolute inset-0 flex-row items-center justify-between px-8 w-full"
+              style={{ opacity: headerDefaultOpacityAnim }}
+              pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}>
+              <View className="flex-row items-center flex-1 justify-between">
+                {!isLevelPillExpanded && (
+                  <Text
+                    className="text-h1 font-feather text-white tracking-wide right-2"
+                    style={{
+                      textShadowColor: 'rgba(0, 0, 0, 0.2)',
+                      textShadowOffset: { width: 0, height: 1 },
+                      textShadowRadius: 2,
+                    }}>
+                    {'Shepherd'}
+                  </Text>
+                )}
+                <View className="flex-row gap-2 justify-end ml-2">
+                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      analytics.logEvent('HomeScreen_Tapped_Level');
+                      // Add detailed analytics for XP progress tap
+                      analytics.logEvent('HomeScreen_Tapped_XpProgress', {
+                        level: levelInfo.level,
+                        currentXp: levelInfo.xp,
+                        nextLevelXp: levelInfo.xpForNextLevel,
+                        progress: Math.round(levelInfo.progress),
+                      });
+                      // Toggle expanded state
+                      setIsLevelPillExpanded(!isLevelPillExpanded);
+
+                      // Animate width and opacity
+                      Animated.parallel([
+                        Animated.timing(levelPillWidthAnim, {
+                          toValue: isLevelPillExpanded ? 0 : 1,
+                          duration: 500,
+                          easing: Easing.out(Easing.exp),
+                          useNativeDriver: false,
+                        }),
+                        Animated.timing(levelPillOpacityAnim, {
+                          toValue: isLevelPillExpanded ? 0 : 1,
+                          duration: 500,
+                          easing: Easing.out(Easing.exp),
+                          useNativeDriver: false,
+                        }),
+                      ]).start();
+                    }}>
+                    <View style={{ position: 'relative', zIndex: 2 }}>
+                      {!isLevelPillExpanded ? (
+                        <ProgressPill
+                          value={0}
+                          label={(lambHearts > 0 ? levelInfo.level : '0').toString()}
+                          icon={starIcon}
+                        />
+                      ) : (
+                        <Animated.View
+                          className="bg-pillBorder rounded-full overflow-hidden flex-row items-center justify-between -mt-8 p-2"
+                          style={{
+                            position: 'absolute',
+                            right: -36,
+                            width: levelPillWidthAnim.interpolate({
+                              inputRange: [0, 1],
+                              outputRange: [40, pillExpandedWidth],
+                            }),
+                          }}
+                          onLayout={() => {
+                            // Debug log to verify the XP calculation
+                            console.log(
+                              `Level Pill Debug - Level: ${levelInfo.level}, Total XP: ${levelInfo.xp}`
+                            );
+                            console.log(
+                              `XP to next level: ${levelInfo.xpProgress}/${levelInfo.xpNeeded} (${Math.round(levelInfo.progress)}%)`
+                            );
+                          }}>
+                          <View className="bg-white w-8 h-8 rounded-full items-center justify-center">
+                            <Image source={starIcon} className="w-7 h-5" />
+                          </View>
+                          <Animated.View
+                            className="flex-1 pl-2"
+                            style={{ opacity: levelPillOpacityAnim }}>
+                            <View className="flex-row items-center justify-between">
+                              <Text className="font-feather text-body text-description">
+                                Level {levelInfo.level}
+                              </Text>
+                              <Text className="font-din text-xs text-description mt-0.5 mr-2">
+                                {/* Show actual XP values: current XP / XP needed for next level */}
+                                {levelInfo.xp}/{levelInfo.xpForNextLevel} XP
+                              </Text>
+                            </View>
+
+                            <View className="h-3 bg-lightYellow rounded-full overflow-hidden mb-1 mr-2">
+                              <View
+                                className="h-full bg-accentGold rounded-full"
+                                style={{
+                                  width: `${Math.max(Math.min(levelInfo.progress, 100), 1)}%`,
+                                }}
+                              />
+                            </View>
+                          </Animated.View>
+                          <Animated.View
+                            style={{ opacity: levelPillOpacityAnim }}
+                            className="ml-2">
+                            <TouchableOpacity
+                              onPress={() => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                analytics.logEvent('HomeScreen_Tapped_LevelInfo');
+                                setShowExplainerModal(true);
+                              }}
+                              activeOpacity={0.7}
+                              className="w-6 h-6 rounded-full bg-white/80 items-center justify-center">
+                              <Ionicons name="information" size={14} color="#B89B4C" />
+                            </TouchableOpacity>
+                          </Animated.View>
+                        </Animated.View>
+                      )}
+                    </View>
+                  </TouchableOpacity>
+                  {!isLevelPillExpanded && (
+                    <>
+                      <TouchableOpacity
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          analytics.logEvent('HomeScreen_Tapped_Star');
+                          Toast.show({
+                            type: 'info',
+                            text1: 'Increase your streak!',
+                            text2: 'Complete your daily bread reading to build your streak.',
+                            position: 'top',
+                            visibilityTime: 4000,
+                          });
+                        }}>
+                        <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          analytics.logEvent('HomeScreen_Tapped_Gems');
+                          // Show toast message using Toast component
+                          Toast.show({
+                            type: 'info',
+                            text1: 'Unlock skins at lvl 10!',
+                            text2: 'Customize your lamb with special skins from the shop.',
+                            position: 'top',
+                            visibilityTime: 4000,
+                          });
+                        }}>
+                        <ProgressPill value={0} label={gens.toString()} icon={gemIcon} />
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
+              </View>
+            </Animated.View>
+          </View>
+
+          {/* Top Section - Lamb Avatar */}
+          <Animated.View
+            className="items-center justify-center"
             style={{
-              position: 'absolute',
-              left: 24,
-              // Place it roughly at the bottom of the lamb viewport
-              top: SCREEN_HEIGHT * 0.35,
-              paddingHorizontal: 8,
-              paddingVertical: 2,
-              borderRadius: 32,
-              zIndex: 20,
-            }}
-          >
-            <LinearGradient
-              colors={['#F7B500', '#FFF45B']}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 0, y: 1 }}
+              opacity: lambOpacityAnim,
+              transform: [{ translateX: lambTranslateX }, { translateY: lambTranslateY }],
+              height: BASE_LAMB_SIZE,
+              // Add conditional shadow for the glow effect
+              shadowColor: showGlow ? '#FDE047' : 'transparent', // yellow-300
+              shadowOffset: { width: 0, height: 0 },
+              shadowOpacity: showGlow ? 0.6 : 0,
+              shadowRadius: 15, // Adjust radius for softness
+              marginTop: -48,
+            }}>
+            <Animated.View className="items-center justify-center" style={{}}>
+              {riveError ? (
+                <Text className="text-red-500 p-4 text-center">
+                  Error loading animation: {riveError.message} ({riveError.type})
+                </Text>
+              ) : (
+                <>
+                  <Animated.View
+                    onTouchStart={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    }}
+                    style={{
+                      width: lambSizeAnim,
+                      height: lambSizeAnim,
+                    }}>
+                    <Animated.View
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        transform: [
+                          { scale: riveScaleAnim },
+                          {
+                            rotate: riveRotateAnim.interpolate({
+                              inputRange: [-1, 0, 1],
+                              outputRange: ['-60deg', '0deg', '60deg'],
+                            }),
+                          },
+                        ],
+                      }}>
+                      {riveComponent}
+                    </Animated.View>
+                  </Animated.View>
+                  {artboardName === 'lamb-dead' && <View style={{ height: 36 }} />}
+                </>
+              )}
+            </Animated.View>
+          </Animated.View>
+
+          {/* SUPER badge for pro users */}
+          {mode === 'DEFAULT' && (
+            <TouchableOpacity
+              onPress={() => {
+                if (!isPro) {
+                  analytics.logEvent('HomeScreen_TappedProBadge');
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+                  // Check if user has seen half-off paywall before
+                  const subscriptionStore = useSubscriptionStore.getState();
+                  if (subscriptionStore.shouldShowFreeTrialPaywall()) {
+                    // User has seen half-off paywall before, show free trial
+                    console.log(
+                      '[HomeScreen] Showing free trial paywall (user has seen half-off before)'
+                    );
+                    subscriptionStore.presentFreeTrialPaywall();
+                  } else {
+                    // First time or user hasn't seen half-off paywall, show half-off
+                    console.log('[HomeScreen] Showing half-off paywall (first time)');
+                    subscriptionStore.presentHalfOffPaywall();
+                    setTimeout(() => {
+                      setIsFree(true);
+                    }, 2000);
+                  }
+                }
+              }}
+              activeOpacity={0.8}
               style={{
                 position: 'absolute',
+                left: 24,
+                // Place it roughly at the bottom of the lamb viewport
+                top: SCREEN_HEIGHT * Platform.select({ android: 0.28, ios: 0.35 }),
                 paddingHorizontal: 8,
                 paddingVertical: 2,
                 borderRadius: 32,
                 zIndex: 20,
-                opacity: isPro ? 1 : 0.5
-              }}
-            >
-              <Text
-                className="font-nunito-italic text-lg text-white text-center p-0 m-0"
+              }}>
+              {/* <LinearGradient
+                colors={['#F7B500', '#FFF45B']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
                 style={{
-                  textShadowColor: 'rgba(0,0,0,0.15)',
-                  textShadowOffset: { width: 1, height: 1 },
-                  textShadowRadius: 3,
-                }}
-              >
-                SUPER
-              </Text>
-            </LinearGradient>
-          </TouchableOpacity>
-        )}
-
-        {/* Bottom Section - Action Buttons Card */}
-        <Animated.View
-          className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-28"
-          style={{
-            ...Platform.select({
-              ios: {
-                shadowColor: 'rgba(0,0,0,0.08)',
-                shadowOffset: { width: 0, height: 2 },
-                shadowRadius: 4,
-                shadowOpacity: 1,
-              },
-              android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
-            }),
-            opacity: bottomCardOpacity,
-          }}>
-          <ScrollView
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 120 }}
-          >
-            <View className="flex-row items-center gap-2.5 mb-0 px-1">
-              <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
-                <View
-                  className="h-full bg-red rounded-full"
-                  style={{ width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%` }}
-                />
-              </View>
-              <View className="flex-row items-center gap-1">
-                <Text className="font-feather text-body text-description">
-                  {lambHearts}/{MAX_HEARTS}
+                  position: 'absolute',
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  borderRadius: 32,
+                  zIndex: 20,
+                  opacity: isPro ? 1 : 1,
+                }}>
+                <Text
+                  className="font-nunito-italic text-lg text-white text-center p-0 m-0"
+                  style={{
+                    textShadowColor: 'rgba(0,0,0,0.15)',
+                    textShadowOffset: { width: 1, height: 1 },
+                    textShadowRadius: 3,
+                  }}
+                >
+                  {isPro ? "SUPER" : isFree ? 'FREE Trial 🔓' : '🎁'}
                 </Text>
-                <Image source={heartIcon} className="w-8 h-8" />
-              </View>
-            </View>
+              </LinearGradient> */}
+            </TouchableOpacity>
+          )}
 
-            <SecondaryButton
-              icon={breadIcon}
-              title="Daily Bread – Read"
-              subtitle="Feed your soul with scripture"
-              points={5}
-              onPress={handleReadPress}
-              completed={readingCompleted}
-            />
-            <SecondaryButton
-              icon={dropIcon}
-              title="Living Water – Pray"
-              subtitle="Refresh your spirit with prayer"
-              points={5}
-              onPress={handlePrayerPress}
-              completed={prayerCompleted}
-              disabled={!readingCompleted}
-            />
-            <SecondaryButton
-              icon={quillIcon}
-              title="Quiet Time – Reflect"
-              subtitle="Pause and meet with God"
-              points={5}
-              onPress={handleReflectionPress}
-              completed={reflectionCompleted}
-              disabled={!readingCompleted}
-            />
-  
-            {/* Widget How-To Sheet test button */}
-            {/* <TouchableOpacity
+          {/* Bottom Section - Action Buttons Card */}
+          <Animated.View
+            className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-24"
+            style={{
+              ...Platform.select({
+                ios: {
+                  shadowColor: 'rgba(0,0,0,0.08)',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowRadius: 4,
+                  shadowOpacity: 1,
+                },
+                android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
+              }),
+              opacity: bottomCardOpacity,
+            }}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 120 }}>
+              <View className="flex-row items-center gap-2.5 mb-0 ">
+                <TouchableOpacity
+                  onPress={() => {
+                    analytics.logEvent('HomeScreen_Tapped_Hearts', {});
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    setShowHeartsModal(true);
+                  }}
+                  activeOpacity={0.7}
+                  className="flex-row items-center"
+                >
+                  <Image source={heartIcon} className="w-7 h-7" />
+                  <Text className="font-feather text-body text-red ">{lambHearts}</Text>
+                </TouchableOpacity>
+
+                <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
+                  <View
+                    className="h-full bg-red rounded-full"
+                    style={{ width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%` }}
+                  />
+                </View>
+
+              </View>
+
+              <SecondaryButton
+                icon={breadIcon}
+                title="Daily Bread – Read"
+                subtitle="Feed your soul with scripture"
+                points={25}
+                onPress={handleReadPress}
+                completed={readingCompleted}
+              />
+              <SecondaryButton
+                icon={dropIcon}
+                title="Living Water – Pray"
+                subtitle="Refresh your spirit with prayer"
+                points={25}
+                onPress={handlePrayerPress}
+                completed={prayerCompleted}
+                disabled={!readingCompleted}
+              />
+              <SecondaryButton
+                icon={quillIcon}
+                title="Quiet Time – Reflect"
+                subtitle="Pause and meet with God"
+                points={25}
+                onPress={handleReflectionPress}
+                completed={reflectionCompleted}
+                disabled={!readingCompleted}
+              />
+
+              {/* Widget How-To Sheet test button */}
+              {/* <TouchableOpacity
               onPress={() => setShowWidgetSheet(true)}
               className="mt-6 flex-row items-center justify-center py-3 px-4 bg-amber-100 border border-amber-300 rounded-xl"
               activeOpacity={0.7}
@@ -1111,19 +1358,19 @@ export default function HomeScreen() {
                 How to Add Widget
               </Text>
             </TouchableOpacity> */}
+            </ScrollView>
+          </Animated.View>
 
-      
-          </ScrollView>
-        </Animated.View>
-
-        {/* Overlays */}
-        <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
-        <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
-        <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
-        <WidgetHowToSheet visible={showWidgetSheet} onClose={() => setShowWidgetSheet(false)} />
-      </SafeAreaView>
-    </View>
-    <Toast config={toastConfig} />
-  </>
+          {/* Overlays */}
+          <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
+          <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
+          <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
+          <WidgetHowToSheet visible={showWidgetSheet} onClose={() => setShowWidgetSheet(false)} />
+          <HeartsExplainerModal visible={showHeartsModal} onClose={() => setShowHeartsModal(false)} />
+          <ExplainerModal visible={showExplainerModal} onClose={() => setShowExplainerModal(false)} />
+        </SafeAreaView>
+      </Animated.View>
+      <Toast config={toastConfig} />
+    </>
   );
 }

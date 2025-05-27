@@ -2,7 +2,16 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { useFonts } from 'expo-font';
 import { SplashScreen, Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { LogBox, Platform, StyleSheet, View, AppState, AppStateStatus } from 'react-native';
+import {
+  LogBox,
+  Platform,
+  StyleSheet,
+  View,
+  AppState,
+  AppStateStatus,
+  Text,
+  Alert,
+} from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases from 'react-native-purchases';
 import Rive from 'rive-react-native';
@@ -19,6 +28,7 @@ import { useNotificationStore } from './stores/notificationStore';
 import { useUIStore } from './stores/uiStore';
 import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
 import analytics from '~/utils/analytics';
+import { useOnboardingStore } from './stores/onboardingStore';
 // Import the sheet components
 import { useAssets } from 'expo-asset';
 import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
@@ -31,7 +41,13 @@ import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
 import useForceUpdateCheck from './hooks/useForceUpdateCheck';
 import ForceUpdateModal from '~/components/ForceUpdateModal';
 import { disableFontScaling } from './helper/disableFontScaling';
-import Toast from 'react-native-toast-message';
+import { adapty } from 'react-native-adapty';
+import './stores/userStore';
+import { IS_ANDROID, IS_IOS } from './utils/utils';
+
+// Import highlight store setup function
+import { setupHighlightListeners } from './stores/highlightStore';
+import useHighlightStore from './stores/highlightStore';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -55,18 +71,18 @@ if (__DEV__) {
   LogBox.ignoreLogs(['Warning: ...']); // Ignore specific warnings if needed
 } else {
   // Production error logging
-  const originalConsoleError = console.error;
+  const originalConsoleError = console.log;
   console.error = (...args) => {
     originalConsoleError(...args);
     if (args[0] && typeof args[0] === 'string') {
-      console.error(`An error occurred: ${args[0].substring(0, 100)}...`);
+      console.log(`An error occurred: ${args[0].substring(0, 100)}...`);
     }
   };
 
   // Set up global error handler
   ErrorUtils.setGlobalHandler((error, isFatal) => {
     if (isFatal) {
-      console.error(
+      console.log(
         `A critical error occurred in the app: ${error.message}\n\nPlease restart the app.`
       );
     }
@@ -145,7 +161,7 @@ export default function RootLayout() {
 
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
-  const settingsSnapPoints = useMemo(() => ['40%', '90%'], []);
+  const settingsSnapPoints = useMemo(() => [ '95%'], []);
   const prayerSnapPoints = useMemo(() => ['60%', '85%'], []);
 
   // HalfModal params
@@ -167,7 +183,7 @@ export default function RootLayout() {
   // Call onAppForegroundOrInit after initialization
   useEffect(() => {
     if (isInitialized) {
-      console.log("bada")
+      console.log('bada');
       onAppForegroundOrInit();
     }
   }, [isInitialized]);
@@ -175,12 +191,20 @@ export default function RootLayout() {
   // Check onboarding status with timeout
   const checkOnboarding = async () => {
     try {
+      console.log(`[RootLayout] 🔄 Checking onboarding status...`);
+
       // Check if onboarding has been completed by looking for the key in AsyncStorage
       const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-      console.log('Onboarding completed status:', onboardingCompleted);
+      console.log('[RootLayout] Onboarding completed status:', onboardingCompleted);
 
       // If onboarding is completed, the value will be 'true'
       const isOnboardingCompleted = onboardingCompleted === 'true';
+
+      // Initialize onboarding store to load saved screen
+      console.log(`[RootLayout] 🏪 Initializing onboarding store...`);
+      const onboardingStore = useOnboardingStore.getState();
+      const savedScreen = await onboardingStore.initializeFromStorage();
+      console.log(`[RootLayout] 📍 Onboarding store initialized, saved screen: ${savedScreen}`);
 
       setInitialRouteDetermined(true);
       setIsOnboardingChecked(true);
@@ -188,14 +212,17 @@ export default function RootLayout() {
 
       // Log the status for debugging
       if (isOnboardingCompleted) {
-        console.log('User has completed onboarding');
+        console.log('[RootLayout] ✅ User has completed onboarding');
       } else {
-        console.log('User has NOT completed onboarding');
+        console.log('[RootLayout] ❌ User has NOT completed onboarding');
+        console.log(`[RootLayout] 📍 Saved onboarding screen: ${savedScreen}`);
+        // Let the onboarding layout handle navigation to avoid timing issues
+        console.log('[RootLayout] 📝 Navigation will be handled by onboarding layout');
       }
 
       return isOnboardingCompleted;
     } catch (error) {
-      console.error('Error checking onboarding status:', error);
+      console.error('[RootLayout] ❌ Error checking onboarding status:', error);
       setHasError(true);
       setInitialRouteDetermined(true);
       setIsOnboardingChecked(true);
@@ -228,10 +255,8 @@ export default function RootLayout() {
           showHalfModal(params);
         }, 3000);
       }
-
-
     } catch (error) {
-      console.error('Error checking streak status:', error);
+      console.log('Error checking streak status:', error);
     }
   };
 
@@ -243,7 +268,7 @@ export default function RootLayout() {
       await notificationStore.initializeNotifications();
       console.log('Notification system initialized successfully');
     } catch (error) {
-      console.error('Error initializing notifications:', error);
+      console.log('Error initializing notifications:', error);
     }
   };
 
@@ -292,7 +317,7 @@ export default function RootLayout() {
   // Add error boundary for initialization
   useEffect(() => {
     const handleError = (error: Error) => {
-      console.error('App initialization error:', error);
+      console.log('App initialization error:', error);
       setHasError(true);
       setAppReady(true);
       SplashScreen.hideAsync();
@@ -318,35 +343,36 @@ export default function RootLayout() {
       console.log('🚀 Starting app initialization...');
 
       // Wait for fonts to load
-      if (!fontsLoaded && !fontError) {
-        console.log('Waiting for fonts to load...');
-        return;
-      }
+      // if (!fontsLoaded && !fontError) {
+      //   console.log('Waiting for fonts to load...');
+      //   return;
+      // }
 
       // Wait for Rive assets to be ready
-      if (!riveAssets?.[0]?.localUri) {
+      if (!riveAssets?.[0]?.uri) {
         console.log('Waiting for Rive assets to load...');
         return;
       }
+      console.log('CALLED TO RESOLVED');
 
-      // Initialize app components
-      await checkOnboarding();
-      await checkStreakStatus();
-      await initializeNotifications();
-
+      try {
+        // Initialize app components
+        await checkOnboarding();
+        await checkStreakStatus();
+        await initializeNotifications();
+      } catch (error) { }
       // Set Rive ready
       setIsRiveReady(true);
-
-      // Show Rive animation first
       setShowRiveAnimation(true);
-
-      // Then hide splash screen
-      await SplashScreen.hideAsync();
-
-      // Set app as ready
       setAppReady(true);
+
+      // Hide splash screen after a small delay to ensure Rive is ready
+      setTimeout(() => {
+        SplashScreen.hideAsync();
+      }, 100);
     } catch (error) {
-      console.error('Error during app initialization:', error);
+      console.log('Error during app initialization:', error);
+      Alert.alert('Error during app initialization:', error);
       setHasError(true);
       setAppReady(true);
       SplashScreen.hideAsync();
@@ -355,25 +381,42 @@ export default function RootLayout() {
 
   // Call initializeApp when fonts and Rive assets are ready
   useEffect(() => {
-    if (fontsLoaded && riveAssets?.[0]?.localUri && !appReady) {
+    if (riveAssets?.[0]?.uri && !appReady) {
       console.log('Assets ready, initializing app...');
       initializeApp();
     }
   }, [fontsLoaded, riveAssets, appReady]);
 
-  // Add effect to handle app state changes
+  const activateAdapty = async () => {
+    try {
+      const isActivated = await adapty.isActivated();
+      console.log('isActivated ==>', isActivated);
+      if (isActivated) return;
+      // if(adapty){
+      //   console.log("adapty ==>",adapty?.isActivated());
+      // }
+      await adapty.activate('public_live_6JQmP6iR.y5BUrJSqvfMEVYQBPBLz', {
+        lockMethodsUntilReady: true,
+      });
+      console.log('Adapty activated');
+    } catch (error) {
+      console.log('Error activating Adapty:', error);
+    }
+  };
+
   useEffect(() => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (
-        appState.current.match(/inactive|background/) &&
-        nextAppState === 'active'
-      ) {
+      if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         // App has come to the foreground!
         console.log('App has come to the foreground!');
         onAppForegroundOrInit();
+        useHighlightStore.getState().syncHighlights();
       }
       appState.current = nextAppState;
     };
+    console.log('Activating Adapty');
+
+    activateAdapty();
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
 
@@ -382,23 +425,23 @@ export default function RootLayout() {
     };
   }, []);
 
-  // Loading states with error handling
-  if (!fontsLoaded && !fontError) {
-    return null; // Let the native splash screen show
-  }
+  // Add state for isCreator
+  const [isCreator, setIsCreator] = useState(false);
 
-  if (!isRiveReady) {
-    return null; // Let the native splash screen show
-  }
-
-  if (hasError) return <AppLoading loadingMessage="Something went wrong. Please try again..." />;
+  // Check isCreator from AsyncStorage
+  useEffect(() => {
+    AsyncStorage.getItem('isCreator').then((val) => {
+      setIsCreator(val === 'true');
+    });
+  }, []);
 
   // Show Rive animation
-  if (showRiveAnimation && riveAssets?.[0]?.localUri) {
+  if (showRiveAnimation && riveAssets?.[0]?.uri) {
     return (
       <View style={[styles.riveContainer, { backgroundColor: '#FFF4D9' }]}>
         <Rive
-          url={riveAssets[0].localUri}
+          url={IS_IOS ? riveAssets[0].uri! : undefined}
+          resourceName={IS_ANDROID ? "shepherd_splash_screen" : undefined}
           style={styles.riveAnimation}
           autoplay={true}
           onPause={() => {
@@ -412,9 +455,20 @@ export default function RootLayout() {
     );
   }
 
+  // Loading states with error handling
+  if (!fontsLoaded && !fontError) {
+    return null; // Let the native splash screen show
+  }
+
+  if (!isRiveReady) {
+    return null; // Let the native splash screen show
+  }
+
+  if (hasError) return <AppLoading loadingMessage="Something went wrong. Please try again..." />;
+
   console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
       <BottomSheetModalProvider>
         {visibleForceUpdate ? (
           <ForceUpdateModal visible={visibleForceUpdate} />
@@ -425,6 +479,7 @@ export default function RootLayout() {
                 headerShown: false,
                 animation: 'fade',
                 animationDuration: 200,
+                contentStyle: { backgroundColor: '#FFF4D9' }
               }}
             />
 
@@ -437,15 +492,12 @@ export default function RootLayout() {
                 message: halfModalParams.message,
                 subMessage: halfModalParams.subMessage,
                 penalty: halfModalParams.penalty,
-                daysMissed: halfModalParams.daysMissed
+                daysMissed: halfModalParams.daysMissed,
               }}
             />
 
             {/* Settings Sheet */}
-            <SettingsSheet
-              settingsSheetRef={settingsSheetRef}
-              snapPoints={settingsSnapPoints}
-            />
+            <SettingsSheet settingsSheetRef={settingsSheetRef} snapPoints={settingsSnapPoints} />
 
             {/* Global Prayer Sheet (available from anywhere in the app) */}
             <GlobalPrayerSheet
@@ -460,9 +512,6 @@ export default function RootLayout() {
             {/* Old Reflection Sheet */}
             {Boolean(showOldReflectionSheet) && <OldReflectionSheet />}
 
-            {/* Toast container for notifications */}
-            <Toast />
-
             {/* Dimmed background for modal overlays */}
             {isModalDimActive && (
               <View
@@ -476,15 +525,14 @@ export default function RootLayout() {
               />
             )}
 
-            {/* Debug button (visible only in development) */}
-            {__DEV__ && <DebugButton />}
+            {/* Debug button (visible only in development or for creators) */}
+            {(__DEV__ || isCreator) && <DebugButton />}
           </>
         )}
       </BottomSheetModalProvider>
-      {visibleForceUpdate && isInitialized ? <ForceUpdateModal visible={visibleForceUpdate} /> : null}
-
-      {/* Toast Message component */}
-      <Toast />
+      {visibleForceUpdate && isInitialized ? (
+        <ForceUpdateModal visible={visibleForceUpdate} />
+      ) : null}
     </GestureHandlerRootView>
   );
 }
@@ -499,5 +547,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFF4D9',
     justifyContent: 'center',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#FFF4D9',
   },
 });

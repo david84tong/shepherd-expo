@@ -49,9 +49,10 @@ const initialLamb: Lamb = {
   name: '', // Start with empty name
   skin: 'default',
 };
+export type ProStatus = 'free' | 'trial' | 'pro';
 
 // Initial user state (only used if no persisted state exists)
-const initialState: Partial<UserDoc> = {
+const initialState: Partial<UserDoc & UserStore> = {
   spiritualGoal: 'Walk',
   experienceLevel: 'new',
   frequencyGoal: 'daily',
@@ -75,6 +76,88 @@ const initialState: Partial<UserDoc> = {
   completedReflections: [] as unknown as [Reflection],
   completedPrayers: [] as unknown as [Prayer],
   completedReadings: [] as unknown as [Reading],
+};
+
+const allInitialStateFunctions = {
+  // Getters
+  getUser: () => {},
+  getSpiritualGoal: () => '',
+  getExperienceLevel: () => '',
+  getFrequencyGoal: () => '',
+  getDenomination: () => '',
+  getDisplayName: () => '',
+  getSelectedPathId: () => '',
+  getLamb: () => initialState.lamb,
+  getStreakCount: () => 0,
+  getLastActivityDate: () => null,
+  getVersesReadTotal: () => 0,
+  getChaptersReadTotal: () => 0,
+  getBibleVersion: () => '',
+  getProStatus: () => 'free' as ProStatus,
+  getCreatedAt: () => new Date(),
+  getUpdatedAt: () => new Date(),
+  getGens: () => 0,
+  getLastReadingDate: () => null,
+  getLastPrayerDate: () => null,
+  getLastReflectionDate: () => null,
+  getLastReadingPenaltyDate: () => null,
+  getLastPrayerPenaltyDate: () => null,
+  getLastReflectionPenaltyDate: () => null,
+  getCompletedReflections: () => [],
+  getCompletedPrayers: () => [],
+  getCompletedReadings: () => [],
+  getLambLevel: () => 0,
+  getLambXp: () => 0,
+  getLambMood: () => '',
+  getLambHearts: () => 0,
+  getLambName: () => '',
+  getLambSkin: () => '',
+
+  // Setters
+  createUser: async (id: string, userData: Partial<UserDoc>): Promise<boolean> => false,
+  setUser: (user: Partial<UserDoc>) => {},
+  resetUserStore: () => {},
+  setSpiritualGoal: (spiritualGoal: string) => {},
+  setExperienceLevel: (experienceLevel: string) => {},
+  setFrequencyGoal: (frequencyGoal: string) => {},
+  setDenomination: (denomination: string) => {},
+  setDisplayName: (displayName: string) => {},
+  setSelectedPathId: (selectedPathId: string) => {},
+  setLamb: (lamb: typeof initialState.lamb) => {},
+  setStreakCount: (count: number) => {},
+  setLastActivityDate: (date: any) => {},
+  setLastReadingDate: (lastReadingDate: any) => {},
+  setLastPrayerDate: (lastPrayerDate: any) => {},
+  setLastReflectionDate: (lastReflectionDate: any) => {},
+  setLastReadingPenaltyDate: (lastReadingPenaltyDate: any) => {},
+  setLastPrayerPenaltyDate: (lastPrayerPenaltyDate: any) => {},
+  setLastReflectionPenaltyDate: (lastReflectionPenaltyDate: any) => {},
+  setVersesReadTotal: (versesReadTotal: number) => {},
+  setChaptersReadTotal: (chaptersReadTotal: number) => {},
+  setBibleVersion: (bibleVersion: string) => {},
+  setProStatus: (proStatus: 'free' | 'trial' | 'pro') => {},
+  setCreatedAt: (createdAt: any) => {},
+  setUpdatedAt: (updatedAt: any) => {},
+  setGens: (gens: number) => {},
+  setNotificationTime: (time: string) => Promise.resolve(),
+  setCompletedReflections: (completedReflections: any[]) => {},
+  setCompletedPrayers: (completedPrayers: any[]) => {},
+  setCompletedReadings: (completedReadings: any[]) => {},
+  addCompletedReflection: (reflection: any) => {},
+  addCompletedPrayer: (prayer: any) => {},
+  addCompletedReading: (reading: any) => {},
+  setLambLevel: (level: number) => {},
+  setLambXp: (xp: number) => {},
+  setLambMood: (mood: string) => {},
+  setLambHearts: (hearts: number) => {},
+  setLambName: (name: string) => {},
+  setLambSkin: (skin: string) => {},
+
+  // Utility functions
+  incrementStreak: () => {},
+  addXp: (amount: number) => {},
+  syncWithFirestore: () => Promise.resolve(false),
+  fetchFromFirestore: () => Promise.resolve(false),
 };
 
 // Add this utility at the top (after imports)
@@ -122,10 +205,11 @@ const syncStreakWithWidget = (streakCount: number, lastActivityDate: any) => {
       activityDate = lastActivityDate.toDate();
     }
   }
-  
+
   // Sync with widget
-  syncStreakDataToWidget(streakCount, activityDate)
-    .catch(error => console.error('Failed to sync streak with widget:', error));
+  syncStreakDataToWidget(streakCount, activityDate).catch((error) =>
+    console.log('Failed to sync streak with widget:', error)
+  );
 };
 
 // --- Add cache for fetchFromFirestore ---
@@ -153,6 +237,7 @@ export const useUserStore = create<UserStore>()(
   persist(
     (set, get) => ({
       ...(initialState as UserDoc),
+      ...allInitialStateFunctions,
 
       // Get complete user object
       getUser: () => {
@@ -214,7 +299,7 @@ export const useUserStore = create<UserStore>()(
         // Single Firestore call to create/update the document
         const success = await createUserDocument(id, cleanedUserData);
         if (!success) {
-          console.error('Failed to create user document in Firestore');
+          console.log('Failed to create user document in Firestore');
         }
 
         return success;
@@ -224,7 +309,6 @@ export const useUserStore = create<UserStore>()(
       setUser: (user) => {
         set((state) => {
           const newState = {
-            ...state,
             ...user,
           };
 
@@ -292,125 +376,117 @@ export const useUserStore = create<UserStore>()(
       setLamb: (lamb) => set({ lamb }),
       setStreakCount: (count: number) => {
         const lastActivityDate = get().lastActivityDate;
-        
+
         set((state) => {
           const newState = {
-            ...state,
             streakCount: count,
           };
-          
+
           // Sync to Firestore if authenticated
           if (isAuthenticated()) {
             updateField('streakCount', count);
           }
-          
+
           return newState;
         });
-        
+
         // Sync with widget
         syncStreakWithWidget(count, lastActivityDate);
       },
       setLastActivityDate: (date: any) => {
         const streakCount = get().streakCount;
-        
+
         set((state) => {
           const newState = {
-            ...state,
             lastActivityDate: date,
           };
-          
+
           // Batch update with Firestore
           if (isAuthenticated()) {
             batchUpdate({ lastActivityDate: date });
           }
-          
+
           return newState;
         });
-        
+
         // Sync with widget
         syncStreakWithWidget(streakCount, date);
       },
       setLastReadingDate: (lastReadingDate) => {
         set((state) => {
           const newState = {
-            ...state,
             lastReadingDate,
           };
-          
+
           if (isAuthenticated()) {
             batchUpdate({ lastReadingDate });
           }
-          
+
           return newState;
         });
       },
       setLastPrayerDate: (lastPrayerDate) => {
         set((state) => {
           const newState = {
-            ...state,
             lastPrayerDate,
           };
-          
+
           if (isAuthenticated()) {
             batchUpdate({ lastPrayerDate });
           }
-          
+
           return newState;
         });
       },
       setLastReflectionDate: (lastReflectionDate) => {
         set((state) => {
           const newState = {
-            ...state,
             lastReflectionDate,
           };
-          
+
           if (isAuthenticated()) {
             batchUpdate({ lastReflectionDate });
           }
-          
+
           return newState;
         });
       },
       setLastReadingPenaltyDate: (lastReadingPenaltyDate) => {
         set((state) => {
           const newState = {
-            ...state,
             lastReadingPenaltyDate,
           };
-          
+
           if (isAuthenticated()) {
             batchUpdate({ lastReadingPenaltyDate });
           }
-          
+
           return newState;
         });
       },
       setLastPrayerPenaltyDate: (lastPrayerPenaltyDate) => {
         set((state) => {
           const newState = {
-            ...state,
             lastPrayerPenaltyDate,
           };
-          
+
           if (isAuthenticated()) {
             batchUpdate({ lastPrayerPenaltyDate });
           }
-          
+
           return newState;
         });
       },
       setLastReflectionPenaltyDate: (lastReflectionPenaltyDate) => {
         set((state) => {
           const newState = {
-            ...state,
             lastReflectionPenaltyDate,
           };
-          
+
           if (isAuthenticated()) {
             batchUpdate({ lastReflectionPenaltyDate });
           }
-          
+
           return newState;
         });
       },
@@ -434,19 +510,16 @@ export const useUserStore = create<UserStore>()(
       setNotificationTime: async (time: string) => {
         // Update local state
         set({ notificationTime: time });
-    
+
         // Get current user
         const user = get().getUser?.();
         if (user?.id) {
           try {
             // Update Firestore
-            await firestore()
-              .collection('users')
-              .doc(user.id)
-              .update({ 
-                notificationTime: time,
-                updatedAt: firestore.Timestamp.now()
-              });
+            await firestore().collection('users').doc(user.id).update({
+              notificationTime: time,
+              updatedAt: firestore.Timestamp.now(),
+            });
 
             // Also update AsyncStorage to ensure persistence
             const currentState = get();
@@ -454,13 +527,13 @@ export const useUserStore = create<UserStore>()(
               'shepherd-user-storage',
               JSON.stringify({
                 ...currentState,
-                notificationTime: time
+                notificationTime: time,
               })
             );
 
             console.log('✅ Successfully persisted notification time:', time);
           } catch (error) {
-            console.error('Error updating notificationTime:', error);
+            console.log('Error updating notificationTime:', error);
             // If Firestore update fails, revert local state
             set({ notificationTime: user.notificationTime });
             throw error;
@@ -472,7 +545,7 @@ export const useUserStore = create<UserStore>()(
             'shepherd-user-storage',
             JSON.stringify({
               ...currentState,
-              notificationTime: time
+              notificationTime: time,
             })
           );
         }
@@ -494,7 +567,6 @@ export const useUserStore = create<UserStore>()(
       addCompletedReading: (reading) => {
         set((state) => {
           const newState = {
-            ...state,
             completedReadings: [...state.completedReadings, reading] as unknown as [Reading],
           };
           // Only sync with Firestore if authenticated
@@ -538,7 +610,6 @@ export const useUserStore = create<UserStore>()(
         console.log('Setting lamb name:', name);
         set((state) => {
           const newState = {
-            ...state,
             lamb: { ...state.lamb, name },
           };
 
@@ -562,7 +633,6 @@ export const useUserStore = create<UserStore>()(
         set((state) => {
           const newStreakCount = state.streakCount + 1;
           const newState = {
-            ...state,
             streakCount: newStreakCount,
           };
 
@@ -653,48 +723,7 @@ export const useUserStore = create<UserStore>()(
     }),
     {
       name: 'shepherd-user-storage',
-      storage: createJSONStorage(() => customStorage),
-      partialize: (state) => {
-        const persistedState = {
-          id: state.id,
-          email: state.email,
-          spiritualGoal: state.spiritualGoal,
-          experienceLevel: state.experienceLevel,
-          frequencyGoal: state.frequencyGoal,
-          denomination: state.denomination,
-          displayName: state.displayName,
-          selectedPathId: state.selectedPathId,
-          lamb: state.lamb,
-          streakCount: state.streakCount,
-          lastActivityDate: state.lastActivityDate,
-          lastReadingDate: state.lastReadingDate,
-          lastPrayerDate: state.lastPrayerDate,
-          lastReflectionDate: state.lastReflectionDate,
-          lastReadingPenaltyDate: state.lastReadingPenaltyDate,
-          lastPrayerPenaltyDate: state.lastPrayerPenaltyDate,
-          lastReflectionPenaltyDate: state.lastReflectionPenaltyDate,
-          notificationTime: state.notificationTime,
-          versesReadTotal: state.versesReadTotal,
-          chaptersReadTotal: state.chaptersReadTotal,
-          bibleVersion: state.bibleVersion,
-          proStatus: state.proStatus,
-          createdAt: state.createdAt,
-          updatedAt: state.updatedAt,
-          gens: state.gens,
-          completedReflections: state.completedReflections,
-          completedPrayers: state.completedPrayers,
-          completedReadings: state.completedReadings,
-        };
-        console.log('Persisting state:', persistedState);
-        return persistedState;
-      },
-      version: 1,
-      onRehydrateStorage: () => (state) => {
-        console.log('User store rehydrated with state:', state);
-        if (!state) {
-          console.log('No state was rehydrated, using initial state');
-        }
-      },
+      storage: createJSONStorage(() => AsyncStorage),
     }
   )
 );

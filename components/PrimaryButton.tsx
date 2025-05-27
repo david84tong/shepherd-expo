@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
-import { Text, View, Pressable } from 'react-native';
+import { Text, View, Pressable, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import analytics from '../utils/analytics';
 
@@ -37,12 +37,12 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   // Set colors based on button type
   let bgColor = 'bg-accentGold';
   let borderColor = 'border-buttonBorder';
-  let buttonShadow = shadowStyle || 'shadow-buttonShadow';
+  let shadowColor = '#FFE4A8';
 
   if (buttonType === 'blue') {
     bgColor = 'bg-[#4FB8FE]';
     borderColor = 'border-[#06B6FE]';
-    buttonShadow = 'shadow-blueButtonShadow';
+    shadowColor = '#98E1FE';
   }
 
   // Override with primaryColor if provided
@@ -79,18 +79,33 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     onPress();
   };
 
+  // Platform-specific shadow styles
+  const shadowStyles = !isPressed && isActive && !disabled ? {
+    ...Platform.select({
+      ios: {
+        shadowColor: shadowColor,
+        shadowOffset: { width: 0, height: 5.716 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  } : {};
+
   return (
     <View
       className={`mt-4 w-full ${style || ''}`}
-      style={[{ height: buttonContainerHeight }, shadowStyle ? {} : { elevation: 0 }]}
+      style={{ height: buttonContainerHeight }}
     >
       <Pressable
         className={
           `flex-row items-center justify-center px-5 h-full w-full rounded-[20px] border-[3px] ` +
           `${disabled || !isActive ? 'bg-[#E5E5E5] border-[#D0D0D0]' : `${bgColor} ${borderColor}`} ` +
-          `transform ${!isPressed && isActive && !disabled ? buttonShadow : ''} ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
+          `transform ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
         }
-        style={({ pressed }) => [{ elevation: pressed ? 3 : isActive && !disabled ? 6 : 0 }, shadowStyle ? {} : {}]}
+        style={shadowStyles}
         onPress={handlePress}
         disabled={disabled}
         onPressIn={() => setIsPressed(true)}

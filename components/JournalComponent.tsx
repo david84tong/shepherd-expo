@@ -22,6 +22,7 @@ import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '../app/stores/userStore';
 import { BIBLE_BOOK_IDS } from '../app/models/Path';
 import analytics from '~/utils/analytics';
+import { IS_ANDROID, IS_IOS } from '~/app/utils/utils';
 
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
@@ -55,19 +56,19 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
   const [reflectionContent, setReflectionContent] = useState('');
-  
+
   // Get the current path from pathStore
   const currentPath = usePathStore((state) => state.currentPath);
-  
+
   // Check if this reflection was initiated from the verse reading
   const tappedReflectAboutVerse = useHomeStore((state) => state.tappedReflectAboutVerse);
-  
+
   // Calculate character count
   const charCount = useMemo(() => reflectionContent.length, [reflectionContent]);
-  
+
   // Check if button should be enabled
   const isButtonEnabled = useMemo(() => charCount >= MIN_CHARS_REQUIRED, [charCount]);
-  
+
   // Get store functions
   const setSuccessType = useHomeStore((state) => state.setSuccessType);
   const setReflectionCompleted = useHomeStore((state) => state.setReflectionCompleted);
@@ -100,13 +101,13 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       console.log('currentPath =', currentPath.bookId);
       // Get book name from book ID
       const bookName = currentPath.bookId ? getBookNameFromId(currentPath.bookId) : 'this passage';
-      const chapterText = currentPath.startChapter 
-        ? `${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}` 
+      const chapterText = currentPath.startChapter
+        ? `${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}`
         : '';
-      
+
       // Create readable reference
       const reference = chapterText ? `${bookName} ${chapterText}` : bookName;
-      
+
       return `What stands out to you in ${reference}? How does this passage speak to your life today?`;
     }
     return "What's on your mind today?";
@@ -143,11 +144,17 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
 
   // Set initial reflection content if coming from verse reflection
   useEffect(() => {
-    if (visible && tappedReflectAboutVerse && currentPath && currentPath.reflection && reflectionContent === '') {
+    if (
+      visible &&
+      tappedReflectAboutVerse &&
+      currentPath &&
+      currentPath.reflection &&
+      reflectionContent === ''
+    ) {
       console.log('Setting initial reflection content from currentPath');
       // We set this as a suggestion/starter but don't count it toward the minimum character count
       const initialContent = currentPath.reflection;
-      setReflectionContent("");
+      setReflectionContent('');
     }
   }, [visible, tappedReflectAboutVerse, currentPath, reflectionContent]);
 
@@ -158,7 +165,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     if (visible) {
       console.log('JournalComponent: Showing journal component');
       console.log('tappedReflectAboutVerse =', tappedReflectAboutVerse);
-      
+
       // Set path in progress when component becomes visible
       setPathInProgress(true);
 
@@ -282,12 +289,12 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     analytics.logEvent('JournalScreen_SaveReflection', {
       reflection_length: reflectionContent.length,
       reflection_content: reflectionContent,
-      prompt: currentPath?.reflection
+      prompt: currentPath?.reflection,
     });
     Keyboard.dismiss();
     setPathInProgress(false);
     setReflectionCompleted(true); // Set reflection as completed
-    
+
     // Reset tappedReflectAboutVerse flag
     useHomeStore.getState().setTappedReflectAboutVerse(false);
     console.log('Reset tappedReflectAboutVerse flag to false');
@@ -301,9 +308,10 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       // Save the reflection content
       addCompletedReflection({
         date: now,
-        content: tappedReflectAboutVerse && currentPath && currentPath.bookId
-          ? `[${getBookNameFromId(currentPath.bookId)} ${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}] ${reflectionContent.trim()}`
-          : reflectionContent.trim() || 'Reflected on my spiritual journey today.',
+        content:
+          tappedReflectAboutVerse && currentPath && currentPath.bookId
+            ? `[${getBookNameFromId(currentPath.bookId)} ${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}] ${reflectionContent.trim()}`
+            : reflectionContent.trim() || 'Reflected on my spiritual journey today.',
       });
 
       // Update last reflection date
@@ -311,7 +319,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
 
       console.log('Reflection saved successfully');
     } catch (error) {
-      console.error('Error saving reflection data:', error);
+      console.log('Error saving reflection data:', error);
     }
 
     if (readingCompleted && prayerCompleted && !sawDailyBonus) {
@@ -334,8 +342,8 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         <BackButton
           onPress={() => {
             setPathInProgress(false);
-            analytics.logEvent("Journal_Tapped_Cancel", {
-              prompt: currentPath?.reflection 
+            analytics.logEvent('Journal_Tapped_Cancel', {
+              prompt: currentPath?.reflection,
             });
             useHomeStore.getState().setTappedReflectAboutVerse(false);
             console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
@@ -358,23 +366,21 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       </View>
 
       {/* Animated Card with TextInput */}
-      <Animated.View 
+      <Animated.View
         className={`w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto ${isSmallDevice ? 'mt-[20px]' : 'mt-[120px]'} border-4 border-border pb-4`}
-        style={cardStyle}
-      >
+        style={cardStyle}>
         <Text className="text-body font-feather text-textPrimary mb-2 text-center leading-tight">
-          {tappedReflectAboutVerse ? currentPath?.reflection ?? 'Reflection' : 'Reflection'}
+          {tappedReflectAboutVerse ? (currentPath?.reflection ?? 'Reflection') : 'Reflection'}
         </Text>
-        
+
         {tappedReflectAboutVerse && currentPath && currentPath.bookId && (
           <Text className="text-body font-din text-description mb-2 text-center">
             {currentPath?.bookId && typeof currentPath?.startChapter === 'number'
               ? `${getBookNameFromId(currentPath?.bookId)} ${currentPath?.startChapter}${currentPath?.endChapter > currentPath?.startChapter ? `-${currentPath?.endChapter}` : ''}`
-              : 'Scripture Reading'
-            }
+              : 'Scripture Reading'}
           </Text>
         )}
-        
+
         {/* Text input area with character counter */}
         <View className="w-full relative flex-1">
           <TextInput
@@ -389,15 +395,13 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
             value={reflectionContent}
             onChangeText={setReflectionContent}
           />
-          
+
           {/* Character count bubble */}
           <View className="absolute -top-3 -right-2 bg-white rounded-full py-1 px-3  border border-[#FFE4A8]">
-            <Text className="font-feather text-sm text-textPrimary">
-              {charCount}
-            </Text>
+            <Text className="font-feather text-sm text-textPrimary">{charCount}</Text>
           </View>
         </View>
-        
+
         {/* Character count instruction (only show when under minimum) */}
         {charCount < MIN_CHARS_REQUIRED && (
           <Text className="font-din text-sm text-description mt-2 text-right self-end">
@@ -413,7 +417,8 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         {/* Rive Animation */}
         <View className="w-[100px] h-[100px] -ml-5 -mb-2">
           <Rive
-            url={riveAssets[0].localUri!}
+            url={IS_IOS ? riveAssets[0].uri! : undefined}
+            resourceName={IS_ANDROID ? 'home_lamb' : undefined}
             artboardName="lamb-writing"
             autoplay
             style={{ width: '130%', height: '130%' }}
@@ -423,11 +428,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         {/* Save Button (hidden on small devices since it's in header) */}
         {!isSmallDevice && (
           <View className="flex-1 items-end w-[280px] ml-8 mt-4">
-            <PrimaryButton 
-              title="Save Thought" 
-              onPress={handleSave} 
-              disabled={!isButtonEnabled}
-            />
+            <PrimaryButton title="Save Thought" onPress={handleSave} disabled={!isButtonEnabled} />
           </View>
         )}
       </Animated.View>

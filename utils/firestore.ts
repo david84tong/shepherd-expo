@@ -123,20 +123,20 @@ export const batchUpdate = async (updates: Record<string, any>) => {
       try {
         const batch = firestore().batch();
         const userRef = firestore().collection('users').doc(currentUser.uid);
-        
+
         // Add all pending updates to the batch
         batch.update(userRef, pendingBatchUpdates);
-        
+
         // Log the batch update
         firebaseDebugger.logRequest(
           'BATCH_UPDATE',
           `users/${currentUser.uid}`,
           pendingBatchUpdates
         );
-        
+
         // Commit the batch
         await batch.commit();
-        
+
         // Clear pending updates
         pendingBatchUpdates = {};
         console.log('Successfully committed batched updates');
@@ -195,11 +195,7 @@ export const createUserDocument = async (id: string, userData: Partial<UserDoc>)
     const docToCreateCleaned = undefinedToNull(docToCreate);
 
     // Log the create operation
-    firebaseDebugger.logRequest(
-      'CREATE',
-      `users/${id}`,
-      docToCreateCleaned
-    );
+    firebaseDebugger.logRequest('CREATE', `users/${id}`, docToCreateCleaned);
 
     // Create the document with the specified ID
     await firestore().collection('users').doc(id).set(docToCreateCleaned);
@@ -207,7 +203,7 @@ export const createUserDocument = async (id: string, userData: Partial<UserDoc>)
     console.log('Successfully created user document with ID:', id);
     return true;
   } catch (error) {
-    console.error('Error creating user document:', error);
+    console.log('Error creating user document:', error);
     return false;
   }
 };
@@ -238,40 +234,33 @@ export const syncUserDocument = async (userDoc: Partial<UserDoc>) => {
     const docToSyncCleaned = undefinedToNull(docToSync);
 
     // Log the sync operation
-    firebaseDebugger.logRequest(
-      'SYNC',
-      `users/${userId}`,
-      docToSyncCleaned
-    );
+    firebaseDebugger.logRequest('SYNC', `users/${userId}`, docToSyncCleaned);
 
     // Use set with merge instead of update for better performance
-    await firestore()
-      .collection('users')
-      .doc(userId)
-      .set(docToSyncCleaned, { merge: true });
+    await firestore().collection('users').doc(userId).set(docToSyncCleaned, { merge: true });
 
     console.log('Successfully synced with Firestore');
     return true;
   } catch (error) {
-    console.error('Error syncing with Firestore:', error);
+    console.log('Error syncing with Firestore:', error);
     return false;
   }
 };
 
 // Add request cache
-const requestCache = new Map<string, {
-  data: any;
-  timestamp: number;
-  promise: Promise<any> | null;
-}>();
+const requestCache = new Map<
+  string,
+  {
+    data: any;
+    timestamp: number;
+    promise: Promise<any> | null;
+  }
+>();
 
 const CACHE_DURATION = 5000; // 5 seconds cache
 
 // Helper to get cached request or make new one
-const getCachedRequest = async <T>(
-  key: string,
-  requestFn: () => Promise<T>
-): Promise<T> => {
+const getCachedRequest = async <T>(key: string, requestFn: () => Promise<T>): Promise<T> => {
   const now = Date.now();
   const cached = requestCache.get(key);
 
@@ -320,17 +309,13 @@ export const getUserDocument = async () => {
 
     return await getCachedRequest(cacheKey, async () => {
       // Log the get operation
-      firebaseDebugger.logRequest(
-        'GET',
-        `users/${userId}`,
-        null
-      );
+      firebaseDebugger.logRequest('GET', `users/${userId}`, null);
 
       const doc = await firestore().collection('users').doc(userId).get();
       return doc.exists ? (doc.data() as UserDoc) : null;
     });
   } catch (error) {
-    console.error('Error getting user document:', error);
+    console.log('Error getting user document:', error);
     return null;
   }
 };
@@ -345,3 +330,43 @@ export const getFirebaseRequestCount = () => firebaseDebugger.getRequestCount();
 export const getFirebaseRequestLog = () => firebaseDebugger.getRequestLog();
 export const resetFirebaseRequestCount = () => firebaseDebugger.reset();
 export const printFirebaseRequestSummary = () => firebaseDebugger.printSummary();
+// Save feedback to Firestore
+export const saveFeedback = async (feedbackData: {
+  type: string;
+  reasons: string[];
+  feedback: string;
+  userId: string;
+  timestamp: string;
+}) => {
+  try {
+    console.log('🔍 saveFeedback called with data:', feedbackData);
+
+    const currentUser = auth().currentUser;
+    if (!currentUser) {
+      console.log('❌ No authenticated user found, skipping feedback save');
+      console.log('No authenticated user found, skipping feedback save');
+      return false;
+    }
+
+    console.log('👤 Current user found:', currentUser.uid, currentUser.email);
+
+    const feedbackDoc = {
+      ...feedbackData,
+      createdAt: Timestamp.now(),
+      userEmail: currentUser.email,
+    };
+
+    console.log('📄 Feedback document to save:', feedbackDoc);
+
+    // Save to feedback collection
+    const docRef = await firestore().collection('feedback').add(feedbackDoc);
+    console.log('✅ Feedback saved with document ID:', docRef.id);
+
+    console.log('Successfully saved feedback to Firestore');
+    return true;
+  } catch (error) {
+    console.error('Error saving feedback:', error);
+    console.error('❌ Full error details:', JSON.stringify(error, null, 2));
+    return false;
+  }
+};

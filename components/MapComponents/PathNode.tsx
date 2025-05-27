@@ -1,7 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
-import { View, Pressable, Text } from 'react-native';
+import { View, Pressable, Platform } from 'react-native';
 
 import { BIBLE_PATHS, Unit } from '../../app/models/Path';
 import analytics from '../../utils/analytics';
@@ -13,9 +13,10 @@ interface PathNodeProps {
   status: NodeStatus;
   alignment: 'start' | 'center' | 'end';
   onPress: (unit: Unit) => void;
+  pathColor?: string;
 }
 
-const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress }) => {
+const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress, pathColor: propPathColor }) => {
   const [isPressed, setIsPressed] = useState(false);
   const isDisabled = status === 'locked';
 
@@ -25,9 +26,8 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
     end: 'items-end',
   }[alignment];
 
-  // Find the path that contains this unit
-  const path = BIBLE_PATHS.find((p) => p.units.some((u) => u.id === unit.id));
-  const pathColor = path?.color || 'green';
+  // Use the passed pathColor prop, or fallback to finding the path
+  const pathColor = propPathColor || BIBLE_PATHS.find((p) => p.units.some((u) => u.id === unit.id))?.color || 'green';
 
   // Get background color based on status - use light colors for active and completed
   const getBgColorClass = () => {
@@ -144,44 +144,69 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
   };
 
   // Get shadow class based on status
-  const getShadowClass = () => {
+  const getShadowStyles = () => {
     if (isPressed) {
-      return '';
+      return {};
     }
     
     // For locked nodes, use grey shadow
     if (status === 'locked') {
-      return 'shadow-greyShadow';
-  }
-    
-    switch (pathColor) {
-      case 'yellow':
-        return 'shadow-darkYellow';
-      case 'red':
-        return 'shadow-darkRed';
-      case 'green':
-        return 'shadow-darkGreen';
-      case 'orange':
-        return 'shadow-darkOrange';
-      case 'teal':
-        return 'shadow-darkTeal';
-      case 'purple':
-        return 'shadow-darkPurple';
-      case 'pink':
-        return 'shadow-darkPink';
-      case 'crimson':
-        return 'shadow-darkCrimson';
-      case 'indigo':
-        return 'shadow-darkIndigo';
-      case 'blue':
-        return 'shadow-darkBlue';
-      case 'cyan':
-        return 'shadow-darkCyan';
-      case 'scarlet':
-        return 'shadow-darkScarlet';
-      default:
-        return 'shadow-darkGreen';
+      return Platform.select({
+        ios: {
+          shadowColor: '#9CA3AF',
+          shadowOffset: { width: 0, height: 5.716 },
+          shadowOpacity: 1,
+          shadowRadius: 0,
+        },
+        android: {
+          elevation: 6,
+        },
+      });
     }
+    
+    // Get shadow color based on path color
+    const getShadowColor = () => {
+      switch (pathColor) {
+        case 'yellow':
+          return '#F7B500';
+        case 'red':
+          return '#E64132';
+        case 'green':
+          return '#24CA17';
+        case 'orange':
+          return '#FF8C1A';
+        case 'teal':
+          return '#17CABC';
+        case 'purple':
+          return '#7B2BFF';
+        case 'pink':
+          return '#E6319E';
+        case 'crimson':
+          return '#C81E28';
+        case 'indigo':
+          return '#3040FF';
+        case 'blue':
+          return '#2196F3';
+        case 'cyan':
+          return '#18B2B6';
+        case 'scarlet':
+          return '#D72618';
+        default:
+          return '#24CA17';
+      }
+    };
+    
+    return Platform.select({
+      ios: {
+        shadowColor: getShadowColor(),
+        shadowOffset: { width: 0, height: 5.716 },
+        shadowOpacity: 1,
+        shadowRadius: 0,
+      },
+      android: {
+        elevation: 6,
+      },
+    });
   };
 
   return (
@@ -212,10 +237,10 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress })
           p-2
           ${getBgColorClass()} ${getBorderColorClass()}
           transform ${isPressed ? 'translate-y-1' : 'translate-y-0'}
-          ${getShadowClass()}
         `}
         style={{ 
           opacity: isDisabled ? 0.3 : 1,
+          ...getShadowStyles(),
         }}
       >
         <Ionicons 

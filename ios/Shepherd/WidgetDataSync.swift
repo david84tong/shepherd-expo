@@ -11,7 +11,7 @@ class WidgetDataSync: NSObject {
   
   @objc func updateWidgetData(_ data: [String: Any]) {
     // Get the app group identifier for shared container
-    let appGroupId = "group.second.round.shepherd.widget"
+    let appGroupId = "group.shepherd.widget.streak"
     
     // Access the shared container
     if let sharedDefaults = UserDefaults(suiteName: appGroupId) {

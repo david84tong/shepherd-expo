@@ -193,7 +193,7 @@ export default function OnboardingUsernameScreen() {
         style={lambStyle}
         className="h-[160px] w-full justify-center items-center my-4">
         <Rive
-          url={riveAssets[0].localUri!}
+          url={riveAssets[0].uri!}
 
           autoplay
           style={{ width: '80%', height: '80%' }}
@@ -222,9 +222,9 @@ export default function OnboardingUsernameScreen() {
 
       {/* Continue Button */}
       <Animated.View style={buttonStyle} className={`mt-8 ${isKeyboardVisible ? 'mb-4' : 'mb-8'}`}>
-        <PrimaryButton 
-          title="Continue" 
-          onPress={handleContinue} 
+        <PrimaryButton
+          title="Continue"
+          onPress={handleContinue}
           disabled={!inputUsername.trim() || !!error}
           isActive={!!inputUsername.trim() && !error}
         />
