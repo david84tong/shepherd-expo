@@ -252,8 +252,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       view.registerEventHandlers({
         onCloseButtonPress() {
           result = PAYWALL_RESULT.CANCELLED;
-          Linking.openURL('https://apps.apple.com/account/subscriptions').catch(() => {
-            console.log('Could not open subscription management');
+          // Only redirect to subscription management if onboarding is complete
+          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY).then((completed) => {
+            if (completed === 'true') {
+              Linking.openURL('https://apps.apple.com/account/subscriptions').catch(() => {
+                console.log('Could not open subscription management');
+              });
+            }
+          }).catch(() => {
+            console.log('Could not check onboarding status');
           });
           return true;
         },
@@ -315,7 +322,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       fromScreen: get().fromScreen,
     });
     try {
-      const paywall = await adapty.getPaywall('shepherd_pay');
+      const paywall = await adapty.getPaywall('shepherd_paywall');
       console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
       const view = await createPaywallView(paywall);
 

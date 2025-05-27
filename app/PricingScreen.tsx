@@ -6,6 +6,9 @@ import {
   ScrollView,
   ImageBackground,
   ActivityIndicator,
+  Switch,
+  Image,
+  Platform
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -98,13 +101,20 @@ const PricingScreen = () => {
     setDailyFirstLoad();
   }, []);
 
-  // Show close button after 5 seconds
+  // Show close button after delay on iOS, immediately on Android
   useEffect(() => {
-    const closeButtonTimer = setTimeout(() => {
-      setShowCloseButton(true);
-    }, 2000); // 5 seconds delay
+    if (Platform.OS === 'android') {
+      // Show immediately on Android
+     const closeButtonTimer = setTimeout(() => {
+        setShowCloseButton(true);
+      }, 2000);
 
-    return () => clearTimeout(closeButtonTimer);
+      return () => clearTimeout(closeButtonTimer);
+    } else {
+      setShowCloseButton(true);
+      // Show after delay on iOS
+  
+    }
   }, []);
 
   // Screen container just fades in quickly
@@ -163,17 +173,17 @@ const PricingScreen = () => {
       } else {
         router.replace('/(tabs)');
       }
-    } else if (isSignedIn()) {
-      // If user is signed in, go to tabs
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/(tabs)');
-      }
+  } else if (isSignedIn()) {
+    // If user is signed in, go to tabs
+    if (router.canGoBack()) {
+      router.back();
     } else {
-      // If user is not signed in, send them to onboarding screen 11
-      router.replace('/onboarding/11');
+      router.replace('/(tabs)');
     }
+  } else {
+    // If user is not signed in, send them to onboarding screen 11
+    router.replace('/onboarding/11');
+  }
   };
 
 
@@ -226,9 +236,9 @@ const PricingScreen = () => {
               </Animated.View>
             )}
             <View className="w-10" />
-            {/* Spacer */}
           </View>
         </AnimatedItem>
+
         {/* Main content */}
         <ScrollView
           className="flex-1"
@@ -273,14 +283,73 @@ const PricingScreen = () => {
 
           <AnimatedItem index={2} animateItemFromBottom={animateScreenFromBottom}>
             <View className="bg-white rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
-              <Text className="font-feather text-h2 text-textPrimary mt-2 mb-2 text-center">
+              <Text className="font-feather text-h2 text-textPrimary mb-2 text-center">
                 Draw closer to God
               </Text>
+              <Image source={require('../assets/onboarding/reviews.png')} className="w-96 h-20" resizeMode='contain' />
               <Text className="font-din text-heading text-description text-center">
-                Super users are 4.2x more likely to finish the bible!
+                Join 10,000+ other super users
               </Text>
             </View>
           </AnimatedItem>
+          
+          {/* How Trial Works Section */}
+          <AnimatedItem index={2.5} animateItemFromBottom={animateScreenFromBottom}>
+          <View className="mb-10">
+            <Text className="font-feather text-h2 text-textPrimary mb-6">How the trial works</Text>
+            
+            <View className="bg-white rounded-2xl shadow-card p-5">
+              {/* Today */}
+              <View className="flex-row items-start mb-6">
+                <View className="w-10 h-10 bg-lightGreen rounded-full items-center justify-center mr-4 shadow-sm">
+                  <Feather name="unlock" size={20} color="#24CA17" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-feather text-lg text-textPrimary mb-0.5">Today</Text>
+                  <Text className="font-din text-body text-description leading-snug">Unlock premium access to all content for free. No payment needed to start.</Text>
+                </View>
+              </View>
+              
+              {/* Day 5 */}
+              <View className="flex-row items-start mb-6">
+                <View className="w-10 h-10 bg-lightGreen rounded-full items-center justify-center mr-4 shadow-sm">
+                  <Feather name="bell" size={20} color="#24CA17" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-feather text-lg text-textPrimary mb-0.5">Day 5</Text>
+                  <Text className="font-din text-body text-description leading-snug">We&apos;ll send a reminder before your free trial ends.</Text>
+                </View>
+              </View>
+              
+              {/* Day 7 */}
+              <View className="flex-row items-start">
+                <View className="w-10 h-10 bg-lightGreen rounded-full items-center justify-center mr-4 shadow-sm">
+                  <Feather name="calendar" size={20} color="#24CA17" />
+                </View>
+                <View className="flex-1">
+                  <Text className="font-feather text-lg text-textPrimary mb-0.5">Day 7</Text>
+                  <Text className="font-din text-body text-description leading-snug">Your subscription begins. Cancel anytime before if you change your mind.</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+          </AnimatedItem>
+
+           
+           {/* Unlock Trial Toggle */}
+           <AnimatedItem index={2.8} animateItemFromBottom={animateScreenFromBottom}>
+             <View className="bg-white rounded-2xl shadow-card p-5 mb-8 flex-row justify-between items-center">
+               <Text className="font-feather text-lg text-textPrimary">Unlock 7-day trial & reminder</Text>
+               <Switch
+                 trackColor={{ false: '#E9E2C7', true: '#A8F093' }}
+                 thumbColor={trialEnabled ? '#24CA17' : '#FFF4D9'}
+                 ios_backgroundColor="#E9E2C7"
+                 onValueChange={toggleSwitch}
+                 value={trialEnabled}
+                 style={{ transform: [{ scaleX: 1.1 }, { scaleY: 1.1 }] }}
+               />
+             </View>
+           </AnimatedItem>
           <AnimatedItem index={3} animateItemFromBottom={animateScreenFromBottom}>
             <View className="bg-white rounded-2xl shadow-card mb-8 overflow-hidden">
               <View className="flex-row">
@@ -435,7 +504,7 @@ const PricingScreen = () => {
                 </Text>
               </View>
             ) : (
-              <PrimaryButton title="Unlock Super Shepherd" onPress={handleSubscribe} />
+              <PrimaryButton title="Claim my free week" onPress={handleSubscribe} />
             )}
             <Text className="font-din text-caption text-description/70 text-center mt-2 px-4 text-xs">
               By continuing, you agree to our Terms of Service

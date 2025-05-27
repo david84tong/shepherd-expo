@@ -125,7 +125,7 @@ export default function TabsLayout() {
     }
   }, [signedIn, getCustomerInfo]);
 
-  // Zustand selectors – always call, even if the user ends up being redirected.
+  // Zustand selectors – always call, even if the user ends up being redirected.}
   const mode = useHomeStore((state) => state.mode);
   const pathInProgress = usePathStore((state) => state.pathInProgress);
 
