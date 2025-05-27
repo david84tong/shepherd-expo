@@ -43,6 +43,7 @@ import {
 import * as Application from 'expo-application';
 import { useOnboardingStore } from '../app/stores/onboardingStore';
 import { saveFeedback } from '../utils/firestore';
+import { useSoundStore } from '../app/stores/soundStore';
 
 import Animated, {
   useAnimatedStyle,
@@ -198,7 +199,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Close the settings sheet
   const handleClose = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     bottomSheetRef.current?.close();
   }, []);
 
@@ -208,7 +209,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       userId: userId,
     });
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
 
       // Check if we're on Android and if the user is not signed in with Google
       const currentUser = auth().currentUser;
@@ -234,7 +235,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Handle copying the user ID
   const handleCopyUserId = useCallback(() => {
     Clipboard.setString(userId);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
     Alert.alert('Copied!', 'User ID copied to clipboard');
   }, [userId]);
 
@@ -269,7 +270,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
     // Show the sheet at the first snap point (60%)
     bottomSheetRef.current?.snapToIndex(0);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
   }, []);
 
   // Expose methods via ref
@@ -286,10 +287,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Handle translation selection
   const handleTranslationChange = useCallback(
     (translation: string) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
       setSavedTranslation(translation);
       setTranslationModalVisible(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
       analytics.logEvent('Settings_Tapped_TranslationChange', {
         translation: translation,
       });
@@ -329,7 +330,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Toggle notifications on/off
   const toggleNotifications = async (enableNotifications: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
 
     if (enableNotifications) {
       // Request permissions if enabling notifications
@@ -401,7 +402,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Toggle time picker visibility
   const toggleTimePicker = () => {
     // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
 
     // Animate the scale of the selector button
     toggleScale.value = withSequence(
@@ -447,7 +448,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Handle time selection and close picker
   const handleTimeConfirm = async (event?: any, selectedDate?: Date) => {
     // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
 
     // For Android, we need to handle the selected date from the event
     const finalSelectedTime = Platform.OS === 'android' ? selectedDate : selectedTime;
@@ -531,7 +532,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
           }, 200);
         }
 
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
       } catch (error) {
         console.log('Failed to update notification time:', error);
         Alert.alert('Error', 'Failed to update notification time. Please try again.');
@@ -552,13 +553,13 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Update the cancel button in translation modal
   const handleCancelTranslation = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     setTranslationModalVisible(false);
   }, []);
 
   // Open Discord link
   const handleOpenDiscord = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     Linking.openURL('https://discord.gg/W9MZdVaKBs').catch((err) => {
       console.log('Error opening Discord link:', err);
       Alert.alert('Could not open link', 'Please check your internet connection and try again.');
@@ -567,7 +568,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Open roadmap link
   const handleOpenRoadmap = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     Linking.openURL('https://shepherd.nolt.io/roadmap').catch((err) => {
       console.error('Error opening roadmap link:', err);
       Alert.alert('Could not open link', 'Please check your internet connection and try again.');
@@ -722,14 +723,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Handle subscription button press using the store action
   const handleSubscriptionPress = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
     await presentPaywall();
   }, [presentPaywall]);
 
   // Handle promo code redemption
   const handlePromoCodePress = useCallback(async () => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
 
       // Track analytics event
       analytics.logEvent('Settings_Tapped_PromoCode');
@@ -786,7 +787,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       refreshStreakData();
     }
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
   }, [showDevPanel]);
 
   // Refresh streak data
@@ -807,7 +808,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Toggle expand/collapse of developer panel
   const toggleDevPanelExpanded = useCallback(() => {
     setDevPanelExpanded(!devPanelExpanded);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
   }, [devPanelExpanded]);
 
   // Function to get display text for reading time
@@ -827,7 +828,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Handle navigation to reading time selection
   const handleEditReadingTime = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
     setSelectedReadingTime(frequencyGoal || '6-10');
     setReadingTimeModalVisible(true);
     analytics.logEvent('Settings_Tapped_EditReadingTime');
@@ -862,7 +863,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   const handleReadingTimeSelection = useCallback(
     async (duration: string) => {
       try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
 
         // Update user store
         setFrequencyGoal(duration);
@@ -881,7 +882,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         setReadingTimeModalVisible(false);
 
         // Success feedback
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
 
         // Log analytics
         analytics.logEvent('Settings_Changed_ReadingTime', {
@@ -917,7 +918,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Handle cancellation modal open
   const handleOpenCancellationModal = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
 
     // Check if user has already cancelled today
     if (hasCancelledToday) {
@@ -1038,7 +1039,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         // They successfully subscribed, no need to redirect to Apple
       }
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
     } catch (error) {
       console.error('❌ Error submitting cancellation feedback:', error);
       Alert.alert('Error', 'Failed to submit feedback. Please try again.');
@@ -1047,6 +1048,11 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       console.log('🏁 Cancellation submission completed');
     }
   }, [cancellationReasons, cancellationFeedback, userId, presentHalfOffPaywall]);
+
+  const backgroundMusicEnabled = useSoundStore((state) => state.backgroundMusicEnabled);
+  const soundEffectsEnabled = useSoundStore((state) => state.soundEffectsEnabled);
+  const setBackgroundMusicEnabled = useSoundStore((state) => state.setBackgroundMusicEnabled);
+  const setSoundEffectsEnabled = useSoundStore((state) => state.setSoundEffectsEnabled);
 
   return (
     <>
@@ -1187,6 +1193,69 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   }}
                 />
               )}
+            </View>
+
+            <View style={styles.divider} />
+
+            {/* Sound Settings Section */}
+            <View style={styles.settingsSection}>
+              <Text style={styles.settingsSectionTitle}>Sound</Text>
+
+              {/* Background Music Toggle */}
+              <TouchableOpacity
+                style={styles.translationSelector}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+                  setBackgroundMusicEnabled(!backgroundMusicEnabled);
+                }}
+                activeOpacity={0.7}>
+                <Text style={styles.translationText}>
+                  {backgroundMusicEnabled ? 'Background music enabled' : 'Background music disabled'}
+                </Text>
+                <View
+                  style={[
+                    styles.toggleButton,
+                    backgroundMusicEnabled ? styles.toggleButtonActive : {},
+                  ]}>
+                  <Animated.View
+                    style={[
+                      styles.toggleKnob,
+                      backgroundMusicEnabled ? styles.toggleKnobActive : {},
+                      {
+                        transform: [{ translateX: backgroundMusicEnabled ? 20 : 0 }],
+                      },
+                    ]}
+                  />
+                </View>
+              </TouchableOpacity>
+
+              {/* Sound Effects Toggle */}
+              <TouchableOpacity
+                style={[styles.translationSelector, { marginTop: 10 }]}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+                  setSoundEffectsEnabled(!soundEffectsEnabled);
+                }}
+                activeOpacity={0.7}>
+                <Text style={styles.translationText}>
+                  {soundEffectsEnabled ? 'Sound effects enabled' : 'Sound effects disabled'}
+                </Text>
+                <View
+                  style={[
+                    styles.toggleButton,
+                    soundEffectsEnabled ? styles.toggleButtonActive : {},
+                  ]}>
+                  <Animated.View
+                    style={[
+                      styles.toggleKnob,
+                      soundEffectsEnabled ? styles.toggleKnobActive : {},
+                      {
+                        transform: [{ translateX: soundEffectsEnabled ? 20 : 0 }],
+                      },
+                    ]}
+                  />
+                </View>
+              </TouchableOpacity>
             </View>
 
             <View style={styles.divider} />
@@ -1584,15 +1653,13 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                     setSelectedReadingTime(option.id);
                     handleReadingTimeSelection(option.id);
                   }}
-                  className={`rounded-xl p-4 border-2 ${
-                    selectedReadingTime === option.id
-                      ? 'bg-[#FFE07D] border-[#F7B500]'
-                      : 'bg-white border-[#FFE4A8]'
-                  }`}>
-                  <Text
-                    className={`font-feather text-center ${
-                      selectedReadingTime === option.id ? 'text-textPrimary' : 'text-textPrimary'
+                  className={`rounded-xl p-4 border-2 ${selectedReadingTime === option.id
+                    ? 'bg-[#FFE07D] border-[#F7B500]'
+                    : 'bg-white border-[#FFE4A8]'
                     }`}>
+                  <Text
+                    className={`font-feather text-center ${selectedReadingTime === option.id ? 'text-textPrimary' : 'text-textPrimary'
+                      }`}>
                     {option.title}
                   </Text>
                 </TouchableOpacity>
@@ -1636,15 +1703,13 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 <TouchableOpacity
                   key={reason}
                   onPress={() => toggleCancellationReason(reason)}
-                  className={`rounded-xl p-4 border-2 ${
-                    cancellationReasons.includes(reason)
-                      ? 'bg-[#FFE07D] border-[#F7B500]'
-                      : 'bg-white border-[#FFE4A8]'
-                  }`}>
-                  <Text
-                    className={`font-feather text-center ${
-                      cancellationReasons.includes(reason) ? 'text-textPrimary' : 'text-textPrimary'
+                  className={`rounded-xl p-4 border-2 ${cancellationReasons.includes(reason)
+                    ? 'bg-[#FFE07D] border-[#F7B500]'
+                    : 'bg-white border-[#FFE4A8]'
                     }`}>
+                  <Text
+                    className={`font-feather text-center ${cancellationReasons.includes(reason) ? 'text-textPrimary' : 'text-textPrimary'
+                      }`}>
                     {reason}
                   </Text>
                 </TouchableOpacity>

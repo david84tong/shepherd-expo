@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Text, View, Pressable, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import analytics from '../utils/analytics';
+import { useSoundStore } from '../app/stores/soundStore';
 
 interface PrimaryButtonProps {
   title: string;
@@ -72,9 +73,15 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     }
   };
 
-  // Handle press with haptic feedback
+  // Handle press with haptic feedback and sound
   const handlePress = () => {
     triggerHaptic();
+    if (disabled) {
+      useSoundStore.getState()?.playDisabledSound()
+    } else {
+      useSoundStore.getState()?.playButtonSound()
+    }
+    if (disabled) return
     analytics.logEvent(`${title}_Tapped`);
     onPress();
   };
@@ -107,7 +114,6 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
         }
         style={shadowStyles}
         onPress={handlePress}
-        disabled={disabled}
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}>
         <Text
