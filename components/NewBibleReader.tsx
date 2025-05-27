@@ -23,12 +23,6 @@ import Reanimated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  interpolate,
-  runOnJS,
-  FadeIn,
-  FadeOut,
-  withSequence,
-  withDelay,
   Easing,
   Layout,
 } from 'react-native-reanimated';
@@ -46,7 +40,6 @@ import analytics from '../utils/analytics';
 import {
   Swipeable,
   GestureHandlerRootView,
-  PanGestureHandler,
   State,
   LongPressGestureHandler,
 } from 'react-native-gesture-handler';
@@ -58,6 +51,10 @@ import useHighlightStore, {
 import HighlightColorPicker from './HighlightColorPicker';
 import useNoteStore from '~/app/stores/noteStore';
 import NoteEditor from './NoteEditor';
+import { Audio } from 'expo-av';
+import { useAuth } from '~/app/hooks/authHook';
+import useSubscriptionStore from '../app/stores/subscriptionStore';
+import Tts from 'react-native-tts';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -75,6 +72,13 @@ type LineHeightPreset = keyof typeof LINE_HEIGHT_PRESETS;
 const TAP_GUIDANCE_KEY = 'userHideTapGuidance';
 const SWIPE_GUIDANCE_KEY = 'userHideSwipeGuidance';
 const READER_PREFERENCE_KEY = 'userDefaultReaderPreference';
+const TTS_AUTO_PLAY_KEY = 'userTtsAutoPlay';
+const TTS_COUNT_KEY = 'userTtsCount';
+const TTS_FREE_LIMIT = 5;
+
+// TTS prefetching constants
+const TTS_PREFETCH_BATCH_SIZE = 5;
+const TTS_PREFETCH_TRIGGER_POINT = 3; // When to fetch the next batch
 
 const THEME_COLORS = {
   white: {
@@ -402,6 +406,26 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     chapter: number;
   } | null>(null);
 
+  // TTS state variables
+  const [autoPlayTts, setAutoPlayTts] = useState(true);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isLoadingTTS, setIsLoadingTTS] = useState(false);
+  const [selectedSpeakingVerse, setSelectedSpeakingVerse] = useState<Verse | null>(null);
+  const [verseSpokenMap, setVerseSpokenMap] = useState<Record<string, boolean>>({});
+  const [audioCache, setAudioCache] = useState<Record<string, string>>({});
+  const [ttsCount, setTtsCount] = useState(0);
+  const [reachedTtsLimit, setReachedTtsLimit] = useState(false);
+
+  // Chat and UI state variables
+  const [showChatView, setShowChatView] = useState(false);
+  const [selectedVerse, setSelectedVerse] = useState<Verse | null>(null);
+  const [isFadingToChat, setIsFadingToChat] = useState(false);
+
+  // TTS refs
+  const sound = useRef<Audio.Sound | null>(null);
+  const prefetchInProgress = useRef<Set<string>>(new Set());
+  const nextBatchTimer = useRef<NodeJS.Timeout | null>(null);
+
   const progressValue = useSharedValue(0);
   const pathInProgress = usePathStore((s) => s.pathInProgress);
   const currentPath = usePathStore((s) => s.currentPath);
@@ -459,6 +483,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     analytics.setUserProperties({ translation });
   }, [translation]);
 
+  // Add subscription store and auth hook
+  const { isProMember, presentPaywall } = useSubscriptionStore();
+  const { getFirebaseIdToken } = useAuth();
+
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -490,11 +518,82 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         if (readerPref === 'default') {
           setUseDefaultReader(true);
         }
+
+        // Load TTS auto play preference
+        const ttsAutoPlay = await AsyncStorage.getItem(TTS_AUTO_PLAY_KEY);
+        if (ttsAutoPlay === 'false') {
+          setAutoPlayTts(false);
+        }
       } catch (e) {
         console.error('Failed to load settings from AsyncStorage', e);
       }
     };
     loadSettings();
+  }, []);
+
+  // Initialize Audio and TTS
+  useEffect(() => {
+    const initAudio = async () => {
+      try {
+        // Initialize Audio
+        await Audio.setAudioModeAsync({
+          playsInSilentModeIOS: true,
+          staysActiveInBackground: false,
+          shouldDuckAndroid: true,
+          allowsRecordingIOS: false,
+        });
+
+        // Initialize React Native TTS
+        Tts.setDefaultLanguage('en-US');
+        Tts.setDefaultRate(0.5);
+        Tts.setDefaultPitch(1.0);
+      } catch (error) {
+        console.error('Failed to initialize Audio/TTS modules:', error);
+      }
+    };
+    
+    initAudio();
+  }, []);
+
+  // Load TTS count from AsyncStorage
+  useEffect(() => {
+    const loadTtsCount = async () => {
+      try {
+        const savedCount = await AsyncStorage.getItem(TTS_COUNT_KEY);
+        if (savedCount !== null) {
+          const count = parseInt(savedCount, 10);
+          setTtsCount(count);
+          setReachedTtsLimit(count >= TTS_FREE_LIMIT);
+          
+          // Don't automatically disable TTS - let the user decide
+          // The TTS functions will handle the limit checking
+        }
+      } catch (error) {
+        console.error('Error loading TTS count:', error);
+      }
+    };
+    
+    loadTtsCount();
+  }, [isProMember]);
+
+  // Cleanup function for audio and timers
+  useEffect(() => {
+    return () => {
+      if (sound.current) {
+        sound.current.unloadAsync().catch(err => 
+          console.error("Error unloading sound:", err)
+        );
+      }
+      
+      // Clear batch timer on cleanup
+      if (nextBatchTimer.current) {
+        clearTimeout(nextBatchTimer.current);
+        nextBatchTimer.current = null;
+      }
+
+      // Stop any TTS playback
+      Tts.stop();
+    };
   }, []);
 
   // Helper function to load a chapter
@@ -505,6 +604,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       setIsTypingComplete(false);
       setSkipTyping(false);
       progressValue.value = withTiming(0, { duration: 0 });
+      // Reset the verse spoken map when loading a new chapter
+      setVerseSpokenMap({});
 
       try {
         const res = await fetchChapter(translation, bookId, chapter);
@@ -525,6 +626,373 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     },
     [translation, progressValue]
   );
+
+  // Function to check and increment TTS count
+  const checkAndIncrementTtsCount = useCallback(async () => {
+    // Pro users don't need to track count
+    if (isProMember) return true;
+    
+    // Already reached limit
+    if (ttsCount >= TTS_FREE_LIMIT) {
+      setReachedTtsLimit(true);
+      return false;
+    }
+    
+    // Increment count
+    const newCount = ttsCount + 1;
+    setTtsCount(newCount);
+    
+    try {
+      await AsyncStorage.setItem(TTS_COUNT_KEY, newCount.toString());
+      
+      // Check if reached limit with this increment
+      if (newCount >= TTS_FREE_LIMIT) {
+        setReachedTtsLimit(true);
+        
+        // Show toast notification about the limit
+        Toast.show({
+          type: 'info',
+          text1: 'TTS Limit Reached',
+          text2: 'Free TTS plays used up. Upgrade for unlimited access.',
+          position: 'top',
+          visibilityTime: 3000
+        });
+        
+        return false;
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('Error saving TTS count:', error);
+      return true; // Allow usage on error to avoid blocking
+    }
+  }, [ttsCount, isProMember]);
+
+  // Show paywall method for TTS
+  const showTtsPaywall = useCallback(async () => {
+    analytics.logEvent("Bible_TTS_PaywallShown", {
+      book: chapterData?.book,
+      chapter: chapterData?.chapter,
+      ttsCount
+    });
+    
+    const result = await presentPaywall();
+    
+    // If purchase was successful, allow TTS and reset limits
+    if (result) {
+      setAutoPlayTts(true);
+      await AsyncStorage.setItem(TTS_AUTO_PLAY_KEY, 'true');
+    }
+    
+    return result;
+  }, [chapterData, ttsCount, presentPaywall]);
+
+  // Stop speaking function
+  const stopSpeaking = useCallback(async () => {
+    if (sound.current) {
+      await sound.current.stopAsync();
+      await sound.current.unloadAsync();
+      sound.current = null;
+    }
+    
+    // Also stop React Native TTS
+    Tts.stop();
+    
+    setIsSpeaking(false);
+    setSelectedSpeakingVerse(null);
+  }, []);
+
+  // Prefetch verse audio using OpenAI TTS for pro users or first 5 for free users
+  const prefetchVerseAudio = useCallback(async (verses: Verse[], startIndex: number) => {
+    // Skip if no chapter data or verses
+    if (!chapterData || !verses.length) return;
+    
+    // Skip prefetching entirely if TTS is turned off
+    if (!autoPlayTts) return;
+    
+    // Check if user is allowed to prefetch
+    const canPrefetch = isProMember || !reachedTtsLimit;
+    if (!canPrefetch) return;
+    
+    try {
+      // Get Firebase ID token for authentication (only for OpenAI TTS)
+      const idToken = await getFirebaseIdToken();
+      if (!idToken && isProMember) {
+        console.error('Failed to get Firebase ID token for pro user');
+        return;
+      }
+      
+      // Determine how many verses to fetch (capped at TTS_PREFETCH_BATCH_SIZE)
+      const endIndex = Math.min(startIndex + TTS_PREFETCH_BATCH_SIZE, verses.length);
+      
+      // Create an array of promises for fetching TTS for multiple verses
+      const fetchPromises = [];
+      
+      for (let i = startIndex; i < endIndex; i++) {
+        const verse = verses[i];
+        const verseKey = `${chapterData.book}-${chapterData.chapter}-${verse.verse}`;
+        
+        // Skip verses already cached or being fetched
+        if (audioCache[verseKey] || prefetchInProgress.current.has(verseKey)) {
+          continue;
+        }
+        
+        // Mark this verse as being fetched
+        prefetchInProgress.current.add(verseKey);
+        
+        // For pro users, use OpenAI TTS
+        if (isProMember) {
+          fetchPromises.push(
+            fetch('https://shepherd-dev-api.skylar.gg/oai/tts', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${idToken}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                input: verse.text,
+                voice: "shimmer",
+              }),
+            }).then(async response => {
+              if (!response.ok) {
+                throw new Error(`API request failed with status ${response.status}`);
+              }
+              
+              // Convert response to base64 audio
+              const buffer = await response.arrayBuffer();
+              const base64Audio = btoa(
+                new Uint8Array(buffer)
+                  .reduce((data, byte) => data + String.fromCharCode(byte), '')
+              );
+              
+              // Create a data URI for the audio
+              const audioUri = `data:audio/mp3;base64,${base64Audio}`;
+              
+              // Save in cache
+              return { verseKey, audioUri, isOpenAI: true };
+            }).catch(error => {
+              console.error(`Error prefetching OpenAI TTS for verse ${verse.verse}:`, error);
+              // Remove from in-progress set on error
+              prefetchInProgress.current.delete(verseKey);
+              return null;
+            })
+          );
+        } else {
+          // For free users, just mark as ready for React Native TTS (no prefetching needed)
+          prefetchInProgress.current.delete(verseKey);
+          setAudioCache(prev => ({...prev, [verseKey]: 'native-tts'}));
+        }
+      }
+      
+      // Execute all fetch requests in parallel (only for pro users)
+      if (fetchPromises.length > 0) {
+        console.log(`📲 Prefetching OpenAI TTS for ${fetchPromises.length} verses starting at index ${startIndex}`);
+        
+        const results = await Promise.all(fetchPromises);
+        
+        // Update the audio cache with fetched results
+        const newCacheEntries = results
+          .filter(result => result !== null)
+          .reduce((acc, result) => {
+            if (result) {
+              // Remove from in-progress set
+              prefetchInProgress.current.delete(result.verseKey);
+              // Add to accumulator
+              acc[result.verseKey] = result.audioUri;
+            }
+            return acc;
+          }, {} as Record<string, string>);
+        
+        if (Object.keys(newCacheEntries).length > 0) {
+          setAudioCache(prev => ({...prev, ...newCacheEntries}));
+        }
+        
+        // Schedule next batch prefetch if needed
+        if (startIndex + TTS_PREFETCH_TRIGGER_POINT < verses.length && endIndex < verses.length) {
+          // Clear any existing timer
+          if (nextBatchTimer.current) {
+            clearTimeout(nextBatchTimer.current);
+          }
+          
+          // Schedule next batch prefetch
+          nextBatchTimer.current = setTimeout(() => {
+            prefetchVerseAudio(verses, endIndex);
+            nextBatchTimer.current = null;
+          }, 1000); // 1 second delay before fetching next batch
+        }
+      }
+    } catch (error) {
+      console.error('Error in batch prefetch:', error);
+    }
+  }, [chapterData, audioCache, getFirebaseIdToken, isProMember, reachedTtsLimit, autoPlayTts]);
+
+  // Play text-to-speech for a verse
+  const playTextToSpeech = useCallback(async (text: string, verse?: Verse) => {
+    // Early return if TTS is completely disabled via toggle (unless it's a manual tap)
+    if (!autoPlayTts && !verse) {
+      return;
+    }
+
+    if (isSpeaking || isLoadingTTS) {
+      if (isSpeaking && (sound.current || selectedSpeakingVerse)) {
+        // Stop current playback if the same verse is clicked again
+        if (verse && selectedSpeakingVerse && verse.verse === selectedSpeakingVerse.verse) {
+          stopSpeaking();
+          return;
+        }
+      }
+      return;
+    }
+
+    try {
+      // For pro users, always use OpenAI TTS
+      // For free users, use OpenAI TTS for first 5 requests, then React Native TTS
+      let useOpenAI = isProMember;
+      
+      // For free users, check if they can still use OpenAI TTS
+      if (!isProMember && !reachedTtsLimit) {
+        const canContinue = await checkAndIncrementTtsCount();
+        if (canContinue) {
+          useOpenAI = true;
+        }
+      }
+      
+      setIsLoadingTTS(true);
+      if (verse) setSelectedSpeakingVerse(verse);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      // Unload any previous sound
+      if (sound.current) {
+        await sound.current.unloadAsync();
+        sound.current = null;
+      }
+      
+      // Stop any React Native TTS
+      Tts.stop();
+      
+      // Check if we have this verse audio in cache
+      let audioUri = '';
+      let useNativeTts = !useOpenAI; // Use native TTS if not using OpenAI
+      
+      if (verse && chapterData && useOpenAI) {
+        const verseKey = `${chapterData.book}-${chapterData.chapter}-${verse.verse}`;
+        if (audioCache[verseKey] && audioCache[verseKey] !== 'native-tts') {
+          console.log(`🔈 Using cached OpenAI TTS for ${verseKey}`);
+          audioUri = audioCache[verseKey];
+        }
+      }
+
+      // If not in cache and using OpenAI, fetch from API
+      if (!audioUri && useOpenAI) {
+        const idToken = await getFirebaseIdToken();
+        if (!idToken) {
+          console.error('Failed to get Firebase ID token');
+          throw new Error('Authentication failed');
+        }
+
+        // Log analytics
+        analytics.logEvent("CardBibleReader_TTS_Started", {
+          bookId,
+          chapter,
+          translation,
+          type: 'openai'
+        });
+
+        const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/tts', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${idToken}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            input: text,
+            voice: "shimmer",
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        const buffer = await response.arrayBuffer();
+        const base64Audio = btoa(
+          new Uint8Array(buffer)
+            .reduce((data, byte) => data + String.fromCharCode(byte), '')
+        );
+        
+        audioUri = `data:audio/mp3;base64,${base64Audio}`;
+        
+        // Save to cache if it's a verse
+        if (verse && chapterData) {
+          const verseKey = `${chapterData.book}-${chapterData.chapter}-${verse.verse}`;
+          setAudioCache(prev => ({...prev, [verseKey]: audioUri}));
+        }
+      }
+      
+      // Play the audio
+      if (audioUri) {
+        // Use Expo AV for OpenAI TTS
+        const { sound: newSound } = await Audio.Sound.createAsync(
+          { uri: audioUri },
+          { shouldPlay: true },
+          (status) => {
+            if (status.isLoaded && status.didJustFinish) {
+              setIsSpeaking(false);
+              setSelectedSpeakingVerse(null);
+            }
+          }
+        );
+        
+        sound.current = newSound;
+        setIsSpeaking(true);
+        setIsLoadingTTS(false);
+      } else {
+        // Use React Native TTS for free users or fallback
+        analytics.logEvent("CardBibleReader_TTS_Started", {
+          bookId,
+          chapter,
+          translation,
+          type: 'native'
+        });
+
+        // Set up TTS event listeners
+        const onTtsFinish = () => {
+          setIsSpeaking(false);
+          setSelectedSpeakingVerse(null);
+        };
+
+        const onTtsStart = () => {
+          setIsSpeaking(true);
+          setIsLoadingTTS(false);
+        };
+
+        Tts.addEventListener('tts-finish', onTtsFinish);
+        Tts.addEventListener('tts-start', onTtsStart);
+
+        // Speak the text
+        Tts.speak(text);
+
+        // Clean up listeners after a delay
+        setTimeout(() => {
+          Tts.removeEventListener('tts-finish', onTtsFinish);
+          Tts.removeEventListener('tts-start', onTtsStart);
+        }, 30000); // 30 second cleanup
+      }
+    } catch (error) {
+      console.error('Error playing TTS:', error);
+      setIsLoadingTTS(false);
+      setIsSpeaking(false);
+      setSelectedSpeakingVerse(null);
+      Toast.show({ 
+        type: 'error', 
+        text1: 'Failed to play audio',
+        position: 'top',
+        visibilityTime: 2000
+      });
+    }
+  }, [isSpeaking, isLoadingTTS, getFirebaseIdToken, bookId, chapter, translation, 
+      stopSpeaking, selectedSpeakingVerse, isProMember, reachedTtsLimit, autoPlayTts,
+      checkAndIncrementTtsCount, audioCache, chapterData]);
 
   // Function to navigate to the next chapter
   const navigateToNextChapter = useCallback(() => {
@@ -593,12 +1061,63 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     loadChapter(bookId, chapter);
   }, [bookId, chapter, loadChapter]);
 
+  // Initial TTS prefetch when chapter loads
+  useEffect(() => {
+    if (chapterData?.verses && autoPlayTts && !loading && (isProMember || !reachedTtsLimit)) {
+      console.log('🔊 Initial prefetch for new chapter');
+      prefetchVerseAudio(chapterData.verses, 0);
+    }
+  }, [chapterData?.book, chapterData?.chapter]); // Only trigger when chapter changes
+
   useEffect(() => {
     if (chapterData?.verses?.length) {
       const newProgress = (currentIndex + 1) / chapterData.verses.length;
       progressValue.value = withTiming(newProgress, { duration: 600 });
     }
   }, [currentIndex, chapterData, progressValue]);
+
+  // Single TTS effect - handles both prefetch and auto-play
+  useEffect(() => {
+    // When TTS is turned off, stop everything
+    if (!autoPlayTts) {
+      if (isSpeaking) {
+        stopSpeaking();
+      }
+      if (nextBatchTimer.current) {
+        clearTimeout(nextBatchTimer.current);
+        nextBatchTimer.current = null;
+      }
+      console.log('🔇 TTS disabled - stopping all audio and API requests');
+      return;
+    }
+
+    // Only proceed if we have chapter data and TTS is enabled
+    if (!chapterData?.verses || loading || isFadingToChat) return;
+
+    // For the current verse, check if we should play it
+    const currentVerse = chapterData.verses[currentIndex];
+    if (currentVerse) {
+      const verseKey = `${chapterData.book}-${chapterData.chapter}-${currentVerse.verse}`;
+      
+      // Only play if this verse hasn't been spoken yet
+      if (!verseSpokenMap[verseKey]) {
+        setVerseSpokenMap(prev => ({...prev, [verseKey]: true}));
+        playTextToSpeech(currentVerse.text, currentVerse);
+      }
+    }
+
+    // Trigger prefetch when we're near the end of a batch
+    const shouldTriggerPrefetch = currentIndex % TTS_PREFETCH_BATCH_SIZE === TTS_PREFETCH_TRIGGER_POINT;
+    if (shouldTriggerPrefetch && (isProMember || !reachedTtsLimit)) {
+      const nextBatchStart = Math.floor((currentIndex + TTS_PREFETCH_BATCH_SIZE) / TTS_PREFETCH_BATCH_SIZE) * TTS_PREFETCH_BATCH_SIZE;
+      if (nextBatchStart < chapterData.verses.length) {
+        console.log(`🔊 Prefetching next batch starting at verse ${nextBatchStart + 1}`);
+        prefetchVerseAudio(chapterData.verses, nextBatchStart);
+      }
+    }
+  }, [currentIndex, autoPlayTts, chapterData, loading, isFadingToChat, 
+      verseSpokenMap, playTextToSpeech, prefetchVerseAudio, isProMember, reachedTtsLimit, 
+      isSpeaking, stopSpeaking]);
 
   const handleScroll = useCallback(() => {
     setIsScrolling(true);
@@ -728,6 +1247,11 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       return;
     }
 
+    // Stop any current TTS playback when advancing to next verse
+    if (isSpeaking) {
+      stopSpeaking();
+    }
+
     if (currentIndex < chapterData.verses.length - 1) {
       // Still have verses to show in current chapter
       setCurrentIndex((i) => i + 1);
@@ -754,6 +1278,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     navigateToNextChapter,
     handleFinishReading,
     isInPathMode,
+    isSpeaking,
+    stopSpeaking,
   ]);
 
   const handleTypingComplete = useCallback(() => {
@@ -860,6 +1386,27 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     [onSwitchToDefaultReader, onHandoffChapterData, chapterData]
   );
 
+  // Update the autoTTS toggle handler
+  const handleAutoTtsToggle = useCallback(async (value: boolean) => {
+    // Simple toggle behavior - TTS always works, just with different voice quality
+    setAutoPlayTts(value);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    analytics.logEvent("CardBibleReader_Toggled_AutoTTS", {
+      value: value ? 'on' : 'off'
+    });
+    
+    try {
+      await AsyncStorage.setItem(TTS_AUTO_PLAY_KEY, value ? 'true' : 'false');
+      
+      // If turning off, stop any current playback
+      if (!value && isSpeaking) {
+        stopSpeaking();
+      }
+    } catch (e) {
+      console.error("Failed to save auto TTS preference", e);
+    }
+  }, [isSpeaking, stopSpeaking]);
+
   // Handler for opening the selector
   const handleOpenSelector = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -907,10 +1454,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     }
   }, [bookId, chapter, chapterData, loading, setSavedReading]);
 
-  // Add new state for chat view
-  const [showChatView, setShowChatView] = useState(false);
-  const [selectedVerse, setSelectedVerse] = useState<Verse | null>(null);
-  const [isFadingToChat, setIsFadingToChat] = useState(false);
+
 
   // Animation values
   const fadeOpacity = useSharedValue(1);
@@ -1807,6 +2351,31 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                                     </TouchableOpacity>
                                   )}
 
+                                  {/* TTS button */}
+                                  <TouchableOpacity
+                                    onPress={(e) => {
+                                      e.stopPropagation();
+                                      if (isFadingToChat) return;
+                                      playTextToSpeech(v.text, v);
+                                    }}
+                                    disabled={isFadingToChat || isLoadingTTS}
+                                    style={[
+                                      styles.actionIcon,
+                                      {
+                                        opacity: selectedSpeakingVerse?.verse === v.verse && isSpeaking ? 1 : 0.7,
+                                      },
+                                    ]}>
+                                    {isLoadingTTS && selectedSpeakingVerse?.verse === v.verse ? (
+                                      <ActivityIndicator size={16} color={theme.iconColor} />
+                                    ) : (
+                                      <Feather 
+                                        name={selectedSpeakingVerse?.verse === v.verse && isSpeaking ? "pause" : "volume-2"} 
+                                        size={16} 
+                                        color={selectedSpeakingVerse?.verse === v.verse && isSpeaking ? theme.progressBarFill : theme.iconColor} 
+                                      />
+                                    )}
+                                  </TouchableOpacity>
+
                                   {/* Copy button */}
                                   <TouchableOpacity
                                     onPress={(e) => {
@@ -1952,6 +2521,30 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                       ios_backgroundColor="#E0E0E0"
                       onValueChange={(value) => handleDefaultReaderToggle(!value)}
                       value={!useDefaultReader}
+                    />
+                  </View>
+
+                  {/* TTS Auto-Play Toggle */}
+                  <View style={styles.toggleContainer}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[styles.toggleLabel, { color: theme.text }]}>Text-to-Speech</Text>
+                      {!isProMember && (
+                        <Text style={[styles.toggleSubLabel, { color: theme.text, opacity: 0.6 }]}>
+                          {reachedTtsLimit ? 'Using device voice • Upgrade for AI voice' : `${TTS_FREE_LIMIT - ttsCount} AI voice plays left`}
+                        </Text>
+                      )}
+                      {isProMember && (
+                        <Text style={[styles.toggleSubLabel, { color: theme.text, opacity: 0.6 }]}>
+                          Unlimited AI voice
+                        </Text>
+                      )}
+                    </View>
+                    <Switch
+                      trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
+                      thumbColor={autoPlayTts ? '#FFFFFF' : '#FFFFFF'}
+                      ios_backgroundColor="#E0E0E0"
+                      onValueChange={handleAutoTtsToggle}
+                      value={autoPlayTts}
                     />
                   </View>
 
@@ -2237,6 +2830,11 @@ const styles = StyleSheet.create({
   toggleLabel: {
     fontFamily: 'Feather Bold',
     fontSize: 16,
+  },
+  toggleSubLabel: {
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 12,
+    marginTop: 2,
   },
   // Floating menu styles with theme-compatible design
   menuOverlay: {
