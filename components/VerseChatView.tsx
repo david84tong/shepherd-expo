@@ -97,13 +97,23 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         setGlobalMessageCount(messageCount);
         console.log("[VerseChatView] Global message count:", messageCount);
         console.log("[VerseChatView] Pro member status:", isProMember);
+
+        // Track chat view opened
+        analytics.logEvent("Bible_Chat_Opened", {
+          book: bookName,
+          chapter,
+          verse: verse.verse,
+          isProMember,
+          globalMessageCount: messageCount,
+          hasUsedFreeMessage: hasUsed === 'true'
+        });
       } catch (error) {
         console.error('Error checking free message usage:', error);
       }
     };
     
     checkFreeMessageUsage();
-  }, [isProMember]);
+  }, [isProMember, bookName, chapter, verse.verse]);
   
   const showPaywall = async () => {
     // Set the fromScreen property for tracking
@@ -197,6 +207,17 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       globalMessageCount,
       inputMessage: inputMessage.trim()
     });
+
+    // Track message send attempt
+    analytics.logEvent("Bible_Chat_MessageSent", {
+      book: bookName,
+      chapter,
+      verse: verse.verse,
+      isProMember,
+      globalMessageCount,
+      messageLength: inputMessage.trim().length,
+      willGetAIResponse: isProMember || globalMessageCount < 2
+    });
     
     // Pro members can always send messages with AI response
     if (isProMember) {
@@ -208,6 +229,16 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     // For non-pro members, check their message count
     if (globalMessageCount >= 3) {
       console.log("[VerseChatView] User has sent 3 messages - showing paywall on 4th attempt");
+      
+      // Track paywall trigger
+      analytics.logEvent("Bible_Chat_PaywallTriggered", {
+        book: bookName,
+        chapter,
+        verse: verse.verse,
+        trigger: "message_limit_reached",
+        globalMessageCount
+      });
+      
       showPaywall();
       return;
     }
@@ -220,6 +251,15 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     } else {
       // Third message - send but no AI response, then add upgrade message
       console.log(`[VerseChatView] Allowing message ${globalMessageCount + 1} but no AI response, then adding upgrade message`);
+      
+      // Track final free message
+      analytics.logEvent("Bible_Chat_FinalFreeMessage", {
+        book: bookName,
+        chapter,
+        verse: verse.verse,
+        globalMessageCount
+      });
+      
       sendMessage(false); // false = no AI response
       
       // Add upgrade message to chat after a short delay
@@ -238,8 +278,22 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           flatListRef.current?.scrollToEnd({ animated: true });
         }, 100);
         
+        // Track upgrade message shown
+        analytics.logEvent("Bible_Chat_UpgradeMessageShown", {
+          book: bookName,
+          chapter,
+          verse: verse.verse,
+          globalMessageCount: globalMessageCount + 1
+        });
+        
         // Also show the paywall automatically after the message appears
         setTimeout(() => {
+          analytics.logEvent("Bible_Chat_AutoPaywallShown", {
+            book: bookName,
+            chapter,
+            verse: verse.verse,
+            delay: "after_upgrade_message"
+          });
           showPaywall();
         }, 1500); // Show paywall 1.5 seconds after the upgrade message
       }, 1000);
@@ -361,10 +415,30 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         // Update to handle the new response format
         if (!data || !data.role || typeof data.content !== 'string') {
           console.error('Invalid API response structure:', data);
+          
+          // Track API response error
+          analytics.logEvent("Bible_Chat_AIResponseError", {
+            book: bookName,
+            chapter,
+            verse: verse.verse,
+            error: "invalid_response_format",
+            responseData: JSON.stringify(data)
+          });
+          
           throw new Error('Invalid API response format');
         }
 
         const aiMessage = data.content;
+        
+        // Track successful AI response
+        analytics.logEvent("Bible_Chat_AIResponseReceived", {
+          book: bookName,
+          chapter,
+          verse: verse.verse,
+          responseLength: aiMessage.length,
+          isProMember,
+          globalMessageCount: globalMessageCount + 1
+        });
         
         // Remove loading state
         setIsAiLoading(false);
@@ -389,6 +463,17 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         });
       } catch (error) {
         console.error('Error calling AI API:', error);
+        
+        // Track API error
+        analytics.logEvent("Bible_Chat_APIError", {
+          book: bookName,
+          chapter,
+          verse: verse.verse,
+          error: error instanceof Error ? error.message : 'Unknown error',
+          isProMember,
+          globalMessageCount: globalMessageCount + 1
+        });
+        
         // Remove loading state
         setIsAiLoading(false);
         
@@ -454,7 +539,18 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           </Text>
           <TouchableOpacity
             style={styles.upgradeButton}
-            onPress={showPaywall}
+            onPress={() => {
+              // Track upgrade button tap
+              analytics.logEvent("Bible_Chat_UpgradeButtonTapped", {
+                book: bookName,
+                chapter,
+                verse: verse.verse,
+                source: "upgrade_message",
+                globalMessageCount,
+                isProMember
+              });
+              showPaywall();
+            }}
           >
             <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
           </TouchableOpacity>
@@ -515,7 +611,19 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           entering={FadeInUp.duration(400)}
         >
           <TouchableOpacity 
-            onPress={onClose}
+            onPress={() => {
+              // Track chat close
+              analytics.logEvent("Bible_Chat_Closed", {
+                book: bookName,
+                chapter,
+                verse: verse.verse,
+                messagesExchanged: messages.length,
+                isProMember,
+                globalMessageCount,
+                timeSpent: Date.now() - (messages[0]?.timestamp?.getTime() || Date.now())
+              });
+              onClose();
+            }}
             style={styles.backButton}
             activeOpacity={0.7}
           >

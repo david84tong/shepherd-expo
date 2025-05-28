@@ -19,6 +19,7 @@ const BackButton: React.FC<BackButtonProps> = ({
   const [isPressed, setIsPressed] = useState(false);
 
   const handlePress = () => {
+    console.log('🔘 BackButton handlePress called');
     // Trigger light haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     onPress();
@@ -36,8 +37,14 @@ const BackButton: React.FC<BackButtonProps> = ({
           transform ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}
         `}
         style={({ pressed }) => [{ elevation: pressed ? 2 : 5 }]}
-        onPressIn={() => setIsPressed(true)}
-        onPressOut={() => setIsPressed(false)}>
+        onPressIn={() => {
+          console.log('🔘 BackButton onPressIn');
+          setIsPressed(true);
+        }}
+        onPressOut={() => {
+          console.log('🔘 BackButton onPressOut');
+          setIsPressed(false);
+        }}>
         <Ionicons
           name="chevron-back"
           size={22}

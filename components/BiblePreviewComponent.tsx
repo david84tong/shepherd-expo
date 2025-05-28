@@ -1,7 +1,7 @@
 import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, Animated, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, Animated, ScrollView, AppState } from 'react-native';
 import BackButton from './BackButton';
 import PrimaryButton from './PrimaryButton';
 import { Unit, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS } from '../app/models/Path'; // Import both path constants
@@ -120,8 +120,16 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   // Prepare for future Rive usage
   const [riveAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
 
+  // Add state to track if component has been focused after navigation
+  const [hasReturnedFromNavigation, setHasReturnedFromNavigation] = useState(false);
+
   useEffect(() => {
     if (visible) {
+      console.log('📱 BiblePreviewComponent is now visible');
+      
+      // Reset the navigation return flag
+      setHasReturnedFromNavigation(true);
+      
       // First animate the container opacity and card entry
       Animated.parallel([
         Animated.timing(containerOpacity, {
@@ -158,19 +166,37 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         ]).start();
       }, 200);
     } else {
+      console.log('📱 BiblePreviewComponent is now hidden');
       // Reset animations when component is hidden
       containerOpacity.setValue(0); // Reset container opacity
       cardAnim.setValue(-100);
       cardOpacity.setValue(0);
       buttonAnim.setValue(60);
       buttonOpacity.setValue(0);
+      setHasReturnedFromNavigation(false);
     }
   }, [visible, containerOpacity, cardAnim, cardOpacity, buttonAnim, buttonOpacity]);
+
+  // Monitor app state changes to detect when returning from navigation
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active' && visible) {
+        console.log('📱 App became active while BiblePreview is visible');
+        setHasReturnedFromNavigation(true);
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [visible]);
 
   // We still return null immediately when not visible
   if (!visible) return null;
 
   const handleBack = () => {
+    console.log('🔙 BiblePreview handleBack called');
+    console.log('🔙 hasReturnedFromNavigation:', hasReturnedFromNavigation);
+    console.log('🔙 visible:', visible);
     setPathInProgress(false);
     onClose();
   };
@@ -274,10 +300,16 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
 
   return (
     <Animated.View
-      className="absolute inset-0 flex flex-col justify-between w-full h-full"
-      style={{ opacity: containerOpacity }}>
-      {/* Back Button - Stays at the top */}
-      <BackButton onPress={handleBack} />
+      className="absolute inset-0 flex flex-col w-full h-full"
+      style={{ opacity: containerOpacity, zIndex: 1000 }}>
+      
+      {/* Back Button - High z-index wrapper to ensure it's above everything */}
+      <View className="absolute top-0 left-0 right-0 z-50" style={{ zIndex: 10000 }} pointerEvents="box-none">
+        <BackButton 
+          onPress={handleBack}
+          containerClassName=""
+        />
+      </View>
 
       {/* Content Area - Scrolls if needed, takes up available space */}
       <ScrollView
@@ -285,11 +317,11 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         onScroll={handleScroll}
         scrollEventThrottle={16}
         contentContainerStyle={{
-          paddingTop: 100, // Adjust this to provide space for the BackButton
+          paddingTop: 120, // Increased padding to avoid back button
           paddingBottom: 150, // Provide space for the absolutely positioned buttons at the bottom
           alignItems: 'center', // Center content horizontally
         }}
-        className="w-full"
+        className="w-full flex-1"
         showsVerticalScrollIndicator={false}>
         {/* Animated Card Preview */}
         <Animated.View
