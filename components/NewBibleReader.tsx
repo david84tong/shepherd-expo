@@ -881,12 +881,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   );
 
   // Handler for opening the selector
-  const handleOpenSelector = () => {
+  const handleOpenSelector = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     showBookChapterSelector(bookId, chapter, (newBookId: number, newChapter: number) => {
       loadChapter(newBookId, newChapter);
     });
-  };
+  }, [bookId, chapter, showBookChapterSelector, loadChapter]);
 
   useEffect(() => {
     if (
@@ -1449,15 +1449,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const loadNotes = useNoteStore((state) => state.loadNotes);
   const syncNotes = useNoteStore((state) => state.syncNotes);
 
-  // Memoized highlight and note getters to avoid re-rendering issues
-  const getVerseHighlightColor = useCallback(
-    (verse: Verse): string | null => {
-      if (!verse) return null;
-      const highlight = getHighlight(bookId, chapter, verse.verse);
-      return highlight ? HIGHLIGHT_COLORS[highlight.colorKey] : null;
-    },
-    [getHighlight, bookId, chapter]
-  );
+  // Remove the memoized getVerseHighlightColor function and replace with direct function
+  const getVerseHighlightColor = (verse: Verse): string | null => {
+    if (!verse) return null;
+    const highlight = getHighlight(bookId, chapter, verse.verse);
+    return highlight ? HIGHLIGHT_COLORS[highlight.colorKey] : null;
+  };
 
   const hasNote = useCallback(
     (verse: Verse): boolean => {
