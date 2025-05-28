@@ -11,6 +11,7 @@ import {
   AppStateStatus,
   Text,
   Alert,
+  Linking,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases from 'react-native-purchases';
@@ -436,6 +437,30 @@ export default function RootLayout() {
     });
   }, []);
 
+  // Add deep linking handler
+  useEffect(() => {
+    const handleDeepLink = (event: { url: string }) => {
+      console.log('Deep link received:', event.url);
+      if (event.url === 'io.bytehouse://stay') {
+        // Navigate to the stay screen or handle the deep link as needed
+        router.replace('/(tabs)');
+      }
+    };
+
+    // Handle deep links when app is already running
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+
+    // Handle deep links when app is opened from a deep link
+    Linking.getInitialURL().then((url) => {
+      if (url && url === 'io.bytehouse://stay') {
+        router.replace('/(tabs)');
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [router]);
   // Move the sound store hooks inside the component
   const backgroundMusicEnabled = useSoundStore.getState().backgroundMusicEnabled
   // Initialize background music
