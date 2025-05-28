@@ -668,24 +668,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     }
   }, [ttsCount, isProMember]);
 
-  // Show paywall method for TTS
-  const showTtsPaywall = useCallback(async () => {
-    analytics.logEvent("Bible_TTS_PaywallShown", {
-      book: chapterData?.book,
-      chapter: chapterData?.chapter,
-      ttsCount
-    });
-    
-    const result = await presentPaywall();
-    
-    // If purchase was successful, allow TTS and reset limits
-    if (result) {
-      setAutoPlayTts(true);
-      await AsyncStorage.setItem(TTS_AUTO_PLAY_KEY, 'true');
-    }
-    
-    return result;
-  }, [chapterData, ttsCount, presentPaywall]);
+
 
   // Stop speaking function
   const stopSpeaking = useCallback(async () => {
@@ -994,6 +977,30 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       stopSpeaking, selectedSpeakingVerse, isProMember, reachedTtsLimit, autoPlayTts,
       checkAndIncrementTtsCount, audioCache, chapterData]);
 
+  // Show paywall method for TTS
+  const showTtsPaywall = useCallback(async () => {
+    analytics.logEvent("Bible_TTS_PaywallShown", {
+      book: chapterData?.book,
+      chapter: chapterData?.chapter,
+      ttsCount
+    });
+    
+    const result = await presentPaywall();
+    
+    // If purchase was successful, batch next 5 verses and continue
+    if (result && chapterData?.verses) {
+      console.log('🎉 User upgraded! Batching next 5 verses with OpenAI TTS');
+      
+      // Calculate which batch we should prefetch (current verse batch)
+      const batchStartIndex = Math.floor(currentIndex / TTS_PREFETCH_BATCH_SIZE) * TTS_PREFETCH_BATCH_SIZE;
+      
+      // Prefetch the current batch with OpenAI TTS
+      prefetchVerseAudio(chapterData.verses, batchStartIndex);
+    }
+    
+    return result;
+  }, [chapterData, ttsCount, presentPaywall, currentIndex, prefetchVerseAudio]);
+
   // Function to navigate to the next chapter
   const navigateToNextChapter = useCallback(() => {
     // Add haptic feedback for navigation
@@ -1061,13 +1068,21 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     loadChapter(bookId, chapter);
   }, [bookId, chapter, loadChapter]);
 
-  // Initial TTS prefetch when chapter loads
+  // Initial TTS batch prefetch when chapter loads
   useEffect(() => {
-    if (chapterData?.verses && autoPlayTts && !loading && (isProMember || !reachedTtsLimit)) {
-      console.log('🔊 Initial prefetch for new chapter');
-      prefetchVerseAudio(chapterData.verses, 0);
+    if (chapterData?.verses && autoPlayTts && !loading) {
+      console.log('🔊 TTS enabled - batching first 5 verses for chapter');
+      
+      // Batch the first 5 verses (or all verses if less than 5)
+      const versesToBatch = chapterData.verses.slice(0, TTS_PREFETCH_BATCH_SIZE);
+      
+      // For pro users or free users who haven't hit limit, use OpenAI
+      if (isProMember || !reachedTtsLimit) {
+        prefetchVerseAudio(chapterData.verses, 0);
+      }
+      // For free users who hit limit, we'll use React Native TTS (no prefetch needed)
     }
-  }, [chapterData?.book, chapterData?.chapter]); // Only trigger when chapter changes
+  }, [chapterData?.book, chapterData?.chapter, autoPlayTts]); // Trigger when chapter changes OR TTS is toggled
 
   useEffect(() => {
     if (chapterData?.verses?.length) {
@@ -1076,23 +1091,28 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     }
   }, [currentIndex, chapterData, progressValue]);
 
-  // Single TTS effect - handles both prefetch and auto-play
+  // TTS auto-play effect - plays current verse and handles batching
   useEffect(() => {
     // When TTS is turned off, stop everything
     if (!autoPlayTts) {
       if (isSpeaking) {
         stopSpeaking();
       }
-      if (nextBatchTimer.current) {
-        clearTimeout(nextBatchTimer.current);
-        nextBatchTimer.current = null;
-      }
-      console.log('🔇 TTS disabled - stopping all audio and API requests');
+      console.log('🔇 TTS disabled - stopping all audio');
       return;
     }
 
     // Only proceed if we have chapter data and TTS is enabled
     if (!chapterData?.verses || loading || isFadingToChat) return;
+
+    // Check if we need to batch next 5 verses (when free user hits verse 6, 11, 16, etc.)
+    const isStartOfNewBatch = currentIndex > 0 && currentIndex % TTS_PREFETCH_BATCH_SIZE === 0;
+    if (isStartOfNewBatch && !isProMember && !reachedTtsLimit) {
+      // Free user is about to exceed their limit - show paywall
+      console.log(`🚫 Free user reached verse ${currentIndex + 1} - showing paywall`);
+      showTtsPaywall();
+      return;
+    }
 
     // For the current verse, check if we should play it
     const currentVerse = chapterData.verses[currentIndex];
@@ -1106,18 +1126,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       }
     }
 
-    // Trigger prefetch when we're near the end of a batch
-    const shouldTriggerPrefetch = currentIndex % TTS_PREFETCH_BATCH_SIZE === TTS_PREFETCH_TRIGGER_POINT;
-    if (shouldTriggerPrefetch && (isProMember || !reachedTtsLimit)) {
-      const nextBatchStart = Math.floor((currentIndex + TTS_PREFETCH_BATCH_SIZE) / TTS_PREFETCH_BATCH_SIZE) * TTS_PREFETCH_BATCH_SIZE;
-      if (nextBatchStart < chapterData.verses.length) {
-        console.log(`🔊 Prefetching next batch starting at verse ${nextBatchStart + 1}`);
-        prefetchVerseAudio(chapterData.verses, nextBatchStart);
-      }
+    // If we're at the start of a new batch and user is pro, prefetch next batch
+    if (isStartOfNewBatch && isProMember) {
+      console.log(`🔊 Pro user - batching next 5 verses starting at ${currentIndex + 1}`);
+      prefetchVerseAudio(chapterData.verses, currentIndex);
     }
   }, [currentIndex, autoPlayTts, chapterData, loading, isFadingToChat, 
-      verseSpokenMap, playTextToSpeech, prefetchVerseAudio, isProMember, reachedTtsLimit, 
-      isSpeaking, stopSpeaking]);
+      verseSpokenMap, playTextToSpeech, isSpeaking, stopSpeaking, 
+      isProMember, reachedTtsLimit, showTtsPaywall, prefetchVerseAudio]);
 
   const handleScroll = useCallback(() => {
     setIsScrolling(true);
@@ -2524,7 +2540,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                     />
                   </View>
 
-                  {/* TTS Auto-Play Toggle */}
+                  {/* TTS Toggle */}
                   <View style={styles.toggleContainer}>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.toggleLabel, { color: theme.text }]}>Text-to-Speech</Text>
