@@ -43,6 +43,7 @@ import {
 import * as Application from 'expo-application';
 import { useOnboardingStore } from '../app/stores/onboardingStore';
 import { saveFeedback } from '../utils/firestore';
+import useTranslation from '../app/hooks/useTranslation';
 
 import Animated, {
   useAnimatedStyle,
@@ -68,12 +69,18 @@ export type SettingsSheetRef = {
 
 const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoints }) => {
   const router = useRouter();
+  const { t, changeLanguage, getCurrentLanguage, getSupportedLanguages } = useTranslation();
   const [userId, setUserId] = useState<string>('Anonymous user');
   const [isUserSignedIn, setIsUserSignedIn] = useState<boolean>(false);
   const setIsModalDimActive = useUIStore((state) => state.setIsModalDimActive);
   const [translationModalVisible, setTranslationModalVisible] = useState(false);
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showAndroidPicker, setShowAndroidPicker] = useState(false);
+
+  // Language selection state
+  const [currentLanguage, setCurrentLanguage] = useState(getCurrentLanguage());
+  const supportedLanguages = getSupportedLanguages();
 
   // Get user store data
   const notificationTime = useUserStore((state) => state.notificationTime);
@@ -295,6 +302,26 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       });
     },
     [setSavedTranslation]
+  );
+
+  // Handle language selection
+  const handleLanguageChange = useCallback(
+    async (languageCode: string) => {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        await changeLanguage(languageCode);
+        setCurrentLanguage(languageCode);
+        setLanguageModalVisible(false);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        
+        analytics.logEvent('Settings_Tapped_LanguageChange', {
+          language: languageCode,
+        });
+      } catch (error) {
+        console.log('Error changing language:', error);
+      }
+    },
+    [changeLanguage]
   );
 
   // Function to get display text for notification time
@@ -1090,6 +1117,21 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
             <View style={styles.divider} />
 
+            {/* Language Selection Section */}
+            <View style={styles.settingsSection}>
+              <Text style={styles.settingsSectionTitle}>{t('settings.language')}</Text>
+              <TouchableOpacity
+                style={styles.translationSelector}
+                onPress={() => setLanguageModalVisible(true)}>
+                <Text style={styles.translationText}>
+                  {supportedLanguages.find((lang) => lang.code === currentLanguage)?.nativeName || 'English'}
+                </Text>
+                <Feather name="chevron-right" size={18} color="#3C584A" />
+              </TouchableOpacity>
+            </View>
+
+            <View style={styles.divider} />
+
             {/* Daily Reading Time Section */}
             <View style={styles.settingsSection}>
               <Text style={styles.settingsSectionTitle}>Daily Reading Time</Text>
@@ -1506,6 +1548,48 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
             <TouchableOpacity style={styles.cancelButton} onPress={handleCancelTranslation}>
               <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Language Selection Modal */}
+      <Modal
+        visible={languageModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLanguageModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t('settings.selectLanguage')}</Text>
+            
+            <ScrollView style={styles.translationScrollView} showsVerticalScrollIndicator={false}>
+              {supportedLanguages.map((language) => (
+                <TouchableOpacity
+                  key={language.code}
+                  style={[
+                    styles.translationOption,
+                    currentLanguage === language.code && styles.selectedTranslation,
+                  ]}
+                  onPress={() => handleLanguageChange(language.code)}>
+                  <Text
+                    style={[
+                      styles.translationOptionText,
+                      currentLanguage === language.code && styles.selectedTranslationText,
+                    ]}>
+                    {language.nativeName}
+                  </Text>
+                  {currentLanguage === language.code && (
+                    <Feather name="check" size={18} color="#F7B500" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            
+            <TouchableOpacity 
+              style={styles.cancelButton} 
+              onPress={() => setLanguageModalVisible(false)}>
+              <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

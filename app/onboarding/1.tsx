@@ -20,6 +20,7 @@ import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
 
 import analytics from '../../utils/analytics';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
+import useTranslation from '../hooks/useTranslation';
 
 const FIRST_WELCOME_TEXT = 'Every Shepherd starts with one lost lamb...';
 const SECOND_WELCOME_TEXT = "This one's yours.";
@@ -45,6 +46,7 @@ export default function OnboardingWelcomeScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   // Initialize analytics
   const { logScreenView, logButtonPress, logEvent, AnalyticsEvent, EventCategory } = useAnalytics();
@@ -515,7 +517,7 @@ export default function OnboardingWelcomeScreen() {
           ],
         }}>
         <PrimaryButton
-          title={textPhase === 2 ? 'Begin Journey' : 'Claim Lost Lamb'}
+          title={textPhase === 2 ? t('onboarding.welcome.beginJourney') : t('onboarding.welcome.claimLamb')}
           onPress={handleButtonPress}
           // Only disable in specific conditions
           disabled={(secondStageActive && !isLambTapped) || isAnimating || isTransitioning}

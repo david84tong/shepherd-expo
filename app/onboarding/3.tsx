@@ -17,6 +17,8 @@ import analytics from '../../utils/analytics';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import { toBool } from '../utils/toBool';
+import useTranslation from '../hooks/useTranslation';
+
 export default function OnboardingIntentScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -24,6 +26,7 @@ export default function OnboardingIntentScreen() {
   const [pressedButton, setPressedButton] = useState<string | null>(null);
   const [selectedIntents, setSelectedIntents] = useState<string[]>([]);
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
 
   // Track if animations have been initialized
   const animationsInitialized = useRef(false);
@@ -176,32 +179,32 @@ export default function OnboardingIntentScreen() {
       icon: 'book-outline',
       color: '#F7B500',
       bgColor: 'bg-lightYellow',
-      title: 'Read the Bible',
-      description: 'Start your journey through scripture',
+      title: t('onboarding.intentions.options.readBible.title'),
+      description: t('onboarding.intentions.options.readBible.description'),
     },
     {
       id: 'talk-to-god',
       icon: 'chatbubble-outline',
       color: '#2196F3',
       bgColor: 'bg-lightBlue',
-      title: 'Talk to God',
-      description: 'Learn to pray with confidence',
+      title: t('onboarding.intentions.options.talkToGod.title'),
+      description: t('onboarding.intentions.options.talkToGod.description'),
     },
     {
       id: 'reflection-quiet-time',
       icon: 'leaf-outline',
       color: '#24CA17',
       bgColor: 'bg-lightGreen',
-      title: 'Reflection & Quiet Time',
-      description: 'Daily moments of peace with God',
+      title: t('onboarding.intentions.options.reflection.title'),
+      description: t('onboarding.intentions.options.reflection.description'),
     },
     {
       id: 'just-exploring',
       icon: 'compass-outline',
       color: '#FF8C1A',
       bgColor: 'bg-lightOrange',
-      title: 'Just Exploring',
-      description: 'Discover at your own pace',
+      title: t('onboarding.intentions.options.exploring.title'),
+      description: t('onboarding.intentions.options.exploring.description'),
     },
   ];
 
@@ -210,13 +213,13 @@ export default function OnboardingIntentScreen() {
       {/* Question Text */}
       <Animated.View style={titleStyle}>
         <Text className="font-feather text-h1 text-center text-textPrimary mb-4 px-12">
-          What brings you here today?
+          {t('onboarding.intentions.title')}
         </Text>
       </Animated.View>
 
       <Animated.View style={subtitleStyle}>
         <Text className="font-din text-lg text-description text-center mt-0">
-          Select all that apply
+          {t('onboarding.intentions.subtitle')}
         </Text>
       </Animated.View>
 
@@ -262,7 +265,7 @@ export default function OnboardingIntentScreen() {
       {/* Continue Button - Fixed at bottom */}
       <Animated.View style={continueStyle}>
         <PrimaryButton
-          title="Continue"
+          title={t('common.continue')}
           onPress={handleContinue}
           disabled={selectedIntents.length === 0}
           isActive={selectedIntents.length > 0}

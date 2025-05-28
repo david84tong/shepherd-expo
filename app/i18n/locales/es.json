@@ -1,0 +1,174 @@
+{
+  "common": {
+    "continue": "Continuar",
+    "cancel": "Cancelar",
+    "confirm": "Confirmar",
+    "back": "Atrás",
+    "done": "Listo",
+    "skip": "Omitir",
+    "loading": "Cargando...",
+    "error": "Error",
+    "success": "Éxito",
+    "yes": "Sí",
+    "no": "No",
+    "save": "Guardar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "close": "Cerrar",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "home": "Inicio",
+    "settings": "Configuración"
+  },
+  "navigation": {
+    "map": "Mapa",
+    "bible": "Biblia", 
+    "home": "Inicio",
+    "stats": "Estadísticas",
+    "profile": "Perfil"
+  },
+  "onboarding": {
+    "welcome": {
+      "claimLamb": "Reclamar Cordero Perdido",
+      "beginJourney": "Comenzar Viaje"
+    },
+    "lambName": {
+      "title": "¿Cómo deberíamos llamar a tu cordero?",
+      "placeholder": "Ingresa un nombre",
+      "continue": "Continuar"
+    },
+    "intentions": {
+      "title": "¿Qué te trae aquí hoy?",
+      "subtitle": "Selecciona todas las que apliquen",
+      "options": {
+        "readBible": {
+          "title": "Leer la Biblia",
+          "description": "Comienza tu viaje a través de las escrituras"
+        },
+        "talkToGod": {
+          "title": "Hablar con Dios",
+          "description": "Aprende a orar con confianza"
+        },
+        "reflection": {
+          "title": "Reflexión y Tiempo Silencioso",
+          "description": "Momentos diarios de paz con Dios"
+        },
+        "exploring": {
+          "title": "Solo Explorando",
+          "description": "Descubre a tu propio ritmo"
+        },
+        "deeperFaith": {
+          "title": "Profundizar mi fe",
+          "description": "Acercarme más a Dios a través de la práctica diaria"
+        },
+        "readBibleMore": {
+          "title": "Leer más la Biblia",
+          "description": "Construir un hábito de lectura consistente"
+        },
+        "prayer": {
+          "title": "Mejorar mi vida de oración",
+          "description": "Aprender a orar con intención y enfoque"
+        },
+        "community": {
+          "title": "Conectar con la comunidad",
+          "description": "Encontrar compañerismo y apoyo espiritual"
+        },
+        "questions": {
+          "title": "Explorar preguntas sobre la fe",
+          "description": "Buscar respuestas y comprensión"
+        },
+        "peace": {
+          "title": "Encontrar paz y consuelo",
+          "description": "Descubrir la presencia de Dios en tiempos difíciles"
+        }
+      }
+    },
+    "beliefs": {
+      "title": "¿Cuál describe mejor tus creencias?",
+      "options": {
+        "christian": "Soy cristiano/a",
+        "exploring": "Estoy explorando el cristianismo",
+        "curious": "Tengo curiosidad sobre la fe",
+        "other": "Otro/Prefiero no decir"
+      }
+    },
+    "saveProgress": {
+      "title": "Guarda Tu Progreso",
+      "subtitle": "Crea una cuenta para mantener tu racha de lectura y desbloquear todas las funciones",
+      "skipForNow": "Omitir por ahora",
+      "backToHome": "Volver al Inicio",
+      "pleaseWait": "Por favor espera...",
+      "noAccountToast": "Por favor completa la introducción."
+    }
+  },
+  "home": {
+    "dailyBread": "Leer Pan Diario",
+    "prayer": "Oración",
+    "reflect": "Reflexionar",
+    "finishReading": "Terminar Lectura"
+  },
+  "bible": {
+    "finishReading": "Terminar Lectura",
+    "fontSettings": "Aa",
+    "lineSpacing": "Espaciado de Línea",
+    "compact": "Compacto",
+    "regular": "Regular", 
+    "relaxed": "Relajado",
+    "errorLoading": "Error al cargar el capítulo: {{error}}"
+  },
+  "prayer": {
+    "title": "Oración",
+    "prayAboutVerse": "Orar sobre el versículo de hoy",
+    "defaultTemplate": "Querido Dios, vengo ante ti hoy con un corazón lleno de gratitud. Por favor ayúdame a encontrar paz interior y sabiduría en todo lo que hago. Amén."
+  },
+  "settings": {
+    "title": "Configuración",
+    "bibleTranslation": "Traducción de la Biblia",
+    "selectTranslation": "Seleccionar Traducción de la Biblia",
+    "dailyReadingTime": "Tiempo de Lectura Diaria",
+    "readingTimeOptions": {
+      "short": "3-6 mins (1 capítulo)",
+      "medium": "7-10 mins (3-4 capítulos)", 
+      "long": "11-15 mins (6-8 capítulos)"
+    },
+    "referralCode": {
+      "title": "Ingresar Código de Referencia",
+      "placeholder": "Ingresa el código aquí",
+      "submitting": "Enviando..."
+    },
+    "language": "Idioma",
+    "selectLanguage": "Seleccionar Idioma"
+  },
+  "auth": {
+    "signIn": "Iniciar Sesión",
+    "signOut": "Cerrar Sesión",
+    "signUp": "Registrarse",
+    "email": "Correo Electrónico",
+    "password": "Contraseña",
+    "forgotPassword": "¿Olvidaste tu contraseña?",
+    "createAccount": "Crear Cuenta",
+    "alreadyHaveAccount": "¿Ya tienes una cuenta?",
+    "dontHaveAccount": "¿No tienes una cuenta?"
+  },
+  "success": {
+    "goHome": "Ir al Inicio",
+    "returnHome": "Volver al Inicio",
+    "amen": "Amén"
+  },
+  "debug": {
+    "title": "Opciones de Depuración",
+    "syncActivityDates": "Sincronizar Fechas de Actividad y Penalización",
+    "syncDescription": "Establecer fechas de actividad = fechas de penalización",
+    "uiTesting": "Pruebas de Interfaz",
+    "dataManagement": "Gestión de Datos",
+    "resetCompletionData": "Restablecer Datos de Finalización",
+    "resetDescription": "Restablecer HomeStore y limpiar lecturas completadas",
+    "deleteAllData": "Eliminar Todos los Datos",
+    "deleteWarning": "ADVERTENCIA: Eliminar permanentemente todos los datos del usuario y restablecer la aplicación"
+  },
+  "errors": {
+    "missingTranslation": "Traducción Faltante",
+    "networkError": "Ocurrió un error de red",
+    "unknownError": "Ocurrió un error desconocido"
+  }
+} 

@@ -1,0 +1,174 @@
+{
+  "common": {
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "done": "Done",
+    "skip": "Skip",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "yes": "Yes",
+    "no": "No",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "next": "Next",
+    "previous": "Previous",
+    "home": "Home",
+    "settings": "Settings"
+  },
+  "navigation": {
+    "map": "Map",
+    "bible": "Bible", 
+    "home": "Home",
+    "stats": "Stats",
+    "profile": "Profile"
+  },
+  "onboarding": {
+    "welcome": {
+      "claimLamb": "Claim Lost Lamb",
+      "beginJourney": "Begin Journey"
+    },
+    "lambName": {
+      "title": "What should we call your lamb?",
+      "placeholder": "Enter name",
+      "continue": "Continue"
+    },
+    "intentions": {
+      "title": "What brings you here today?",
+      "subtitle": "Select all that apply",
+      "options": {
+        "readBible": {
+          "title": "Read the Bible",
+          "description": "Start your journey through scripture"
+        },
+        "talkToGod": {
+          "title": "Talk to God",
+          "description": "Learn to pray with confidence"
+        },
+        "reflection": {
+          "title": "Reflection & Quiet Time",
+          "description": "Daily moments of peace with God"
+        },
+        "exploring": {
+          "title": "Just Exploring",
+          "description": "Discover at your own pace"
+        },
+        "deeperFaith": {
+          "title": "Deepen my faith",
+          "description": "Grow closer to God through daily practice"
+        },
+        "readBibleMore": {
+          "title": "Read the Bible more",
+          "description": "Build a consistent reading habit"
+        },
+        "prayer": {
+          "title": "Improve my prayer life",
+          "description": "Learn to pray with intention and focus"
+        },
+        "community": {
+          "title": "Connect with community",
+          "description": "Find fellowship and spiritual support"
+        },
+        "questions": {
+          "title": "Explore questions about faith",
+          "description": "Seek answers and understanding"
+        },
+        "peace": {
+          "title": "Find peace and comfort",
+          "description": "Discover God's presence in difficult times"
+        }
+      }
+    },
+    "beliefs": {
+      "title": "Which best describes your beliefs?",
+      "options": {
+        "christian": "I'm a Christian",
+        "exploring": "I'm exploring Christianity",
+        "curious": "I'm curious about faith",
+        "other": "Other/Prefer not to say"
+      }
+    },
+    "saveProgress": {
+      "title": "Save Your Progress",
+      "subtitle": "Create an account to keep your reading streak and unlock all features",
+      "skipForNow": "Skip for now",
+      "backToHome": "Back to Home",
+      "pleaseWait": "Please wait...",
+      "noAccountToast": "Please go through onboarding."
+    }
+  },
+  "home": {
+    "dailyBread": "Read Daily Bread",
+    "prayer": "Prayer",
+    "reflect": "Reflect",
+    "finishReading": "Finish Reading"
+  },
+  "bible": {
+    "finishReading": "Finish Reading",
+    "fontSettings": "Aa",
+    "lineSpacing": "Line Spacing",
+    "compact": "Compact",
+    "regular": "Regular", 
+    "relaxed": "Relaxed",
+    "errorLoading": "Error loading chapter: {{error}}"
+  },
+  "prayer": {
+    "title": "Prayer",
+    "prayAboutVerse": "Pray about today's verse",
+    "defaultTemplate": "Dear God, I come before you today with a heart full of gratitude. Please help me find inner peace and wisdom in all that I do. Amen."
+  },
+  "settings": {
+    "title": "Settings",
+    "bibleTranslation": "Bible Translation",
+    "selectTranslation": "Select Bible Translation",
+    "dailyReadingTime": "Daily Reading Time",
+    "readingTimeOptions": {
+      "short": "3-6 mins (1 chapter)",
+      "medium": "7-10 mins (3-4 chapters)", 
+      "long": "11-15 mins (6-8 chapters)"
+    },
+    "referralCode": {
+      "title": "Enter Referral Code",
+      "placeholder": "Enter code here",
+      "submitting": "Submitting..."
+    },
+    "language": "Language",
+    "selectLanguage": "Select Language"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?"
+  },
+  "success": {
+    "goHome": "Go Home",
+    "returnHome": "Return Home",
+    "amen": "Amen"
+  },
+  "debug": {
+    "title": "Debug Options",
+    "syncActivityDates": "Sync Activity & Penalty Dates",
+    "syncDescription": "Set activity dates = penalty dates",
+    "uiTesting": "UI Testing",
+    "dataManagement": "Data Management",
+    "resetCompletionData": "Reset Completion Data",
+    "resetDescription": "Reset HomeStore and clear completed readings",
+    "deleteAllData": "Delete All Data",
+    "deleteWarning": "WARNING: Permanently delete all user data and reset app"
+  },
+  "errors": {
+    "missingTranslation": "Missing Translation",
+    "networkError": "Network error occurred",
+    "unknownError": "An unknown error occurred"
+  }
+} 

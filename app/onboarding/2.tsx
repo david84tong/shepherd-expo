@@ -18,6 +18,7 @@ import { toBool } from '../utils/toBool';
 import { validateName } from '../../utils/validation';
 import CustomAnimatedView from '../components/CustomAnimatedView';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
+import useTranslation from '../hooks/useTranslation';
 
 export default function OnboardingLambNameScreen() {
   const router = useRouter();
@@ -28,6 +29,7 @@ export default function OnboardingLambNameScreen() {
   const [error, setError] = useState<string | undefined>();
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const { t } = useTranslation();
 
   // Use the helper hook for screen tracking
 
@@ -189,7 +191,7 @@ export default function OnboardingLambNameScreen() {
       {/* Question Text */}
       <CustomAnimatedView style={titleStyle}>
         <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-0">
-          What should we call your lamb?
+          {t('onboarding.lambName.title')}
         </Text>
       </CustomAnimatedView>
 
@@ -211,7 +213,7 @@ export default function OnboardingLambNameScreen() {
         <TextInput
           ref={inputRef}
           className="font-feather text-3xl text-center text-textPrimary bg-white p-6 rounded-2xl border-4 border-border"
-          placeholder="Enter name"
+          placeholder={t('onboarding.lambName.placeholder')}
           placeholderTextColor="#B89B4C"
           maxLength={16}
           value={inputLambName}
@@ -230,7 +232,7 @@ export default function OnboardingLambNameScreen() {
       {/* Continue Button */}
       <CustomAnimatedView style={buttonStyle} className="mt-0">
         <PrimaryButton
-          title="Continue"
+          title={t('common.continue')}
           onPress={handleContinue}
           disabled={!inputLambName.trim() || !!error}
           isActive={!!inputLambName.trim() && !error}
