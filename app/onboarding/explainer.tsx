@@ -220,7 +220,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
           {riveAssets && (
             <View className="w-[140px] h-[140px]">
               <Rive
-                // resourceName={IS_ANDROID ? 'lamb_wings_idle' : undefined}
+                resourceName={IS_ANDROID ? 'lamb_wings_idle' : undefined}
                 url={IS_IOS ? riveAssets[1].uri! : undefined}
                 style={{ width: '100%', height: '100%' }}
               />
