@@ -2,7 +2,7 @@
   "expo": {
     "name": "Shepherd",
     "slug": "shepherd",
-    "version": "1.3.0",
+    "version": "1.3.3",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "io.bytehouse",
@@ -54,7 +54,8 @@
       },
       "infoPlist": {
         "NSCameraUsageDescription": "Shepherd needs camera access to create your player card and generate personalized workout plans based on your physique.",
-        "NSPhotoLibraryUsageDescription": "Shepherd needs photo library access to create your player card and assess your fitness level for personalized workout recommendations."
+        "NSPhotoLibraryUsageDescription": "Shepherd needs photo library access to create your player card and assess your fitness level for personalized workout recommendations.",
+        "NSMicrophoneUsageDescription": "This app plays background music and requires audio capabilities. Microphone access is not used."
       },
       "entitlements": {
         "com.apple.security.application-groups": [
