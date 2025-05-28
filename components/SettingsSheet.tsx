@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   TextInput,
   Platform,
+  AppState,
 } from 'react-native';
 import BottomSheet, {
   BottomSheetBackdrop,
@@ -1053,6 +1054,31 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   const soundEffectsEnabled = useSoundStore((state) => state.soundEffectsEnabled);
   const setBackgroundMusicEnabled = useSoundStore((state) => state.setBackgroundMusicEnabled);
   const setSoundEffectsEnabled = useSoundStore((state) => state.setSoundEffectsEnabled);
+
+  // Add app state ref
+  const appState = useRef(AppState.currentState);
+
+  // Add effect to handle app state changes
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      if (appState.current.match(/active/) && nextAppState.match(/inactive|background/)) {
+        // App has gone to background, stop the music
+        if (backgroundMusicEnabled) {
+          useSoundStore.getState().stopBackgroundMusic();
+        }
+      } else if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        // App has come to foreground, restart music if it was enabled
+        if (backgroundMusicEnabled) {
+          useSoundStore.getState().playBackgroundMusic();
+        }
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [backgroundMusicEnabled]);
 
   return (
     <>
