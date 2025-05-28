@@ -460,13 +460,13 @@ export default function OnboardingWelcomeScreen() {
               <View className="w-[225px] h-[225px] w-full justify-center items-center relative">
                 <Rive
                   ref={riveRef}
-                  // resourceName={assets[0].uri}
                   onError={(error) => {
                     console.log('------>', error);
                   }}
-                  resourceName={IS_ANDROID ? 'make_lamb' : undefined}
-                  url={IS_IOS ? assets[0].uri! : undefined} // Use url prop with localUri
-                  // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
+                  {...(IS_IOS 
+                    ? { url: assets[0].uri } 
+                    : { resourceName: 'make_lamb' }
+                  )}
                   stateMachineName="State Machine 1"
                   artboardName={'lamb-wakingup-click'}
                   fit={Fit.Contain}

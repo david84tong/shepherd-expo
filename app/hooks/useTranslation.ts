@@ -19,6 +19,10 @@ export const useTranslation = () => {
     return [
       { code: 'en', name: 'English', nativeName: 'English' },
       { code: 'es', name: 'Spanish', nativeName: 'Español' },
+      { code: 'fr', name: 'French', nativeName: 'Français' },
+      { code: 'nl', name: 'Dutch', nativeName: 'Nederlands' },
+      { code: 'de', name: 'German', nativeName: 'Deutsch' },
+      { code: 'pt', name: 'Portuguese', nativeName: 'Português' },
     ];
   };
 

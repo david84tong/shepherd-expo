@@ -191,6 +191,13 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     { id: 'NIV', name: 'New International Version (NIV)' },
     { id: 'ESV', name: 'English Standard Version (ESV)' },
     { id: 'ICB', name: "International Children's Bible (ICB)" },
+    
+    // New multilingual translations
+    { id: 'NVI_ES', name: 'Nueva Versión Internacional® (Español)' },
+    { id: 'BDS_FR', name: 'Bible du Semeur® (Français)' },
+    { id: 'HTB_NL', name: 'Het Boek™ (Nederlands)' },
+    { id: 'LUT_DE', name: 'Lutherbibel 1912 (Deutsch)' },
+    { id: 'NVI_PT', name: 'Nova Versão Internacional® (Português)' },
   ];
 
   // Add internal ref for the actual BottomSheet

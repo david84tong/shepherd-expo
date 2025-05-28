@@ -200,8 +200,10 @@ export default function OnboardingLambNameScreen() {
         style={lambStyle}
         className="h-[160px] w-full justify-center items-center my-4">
         <Rive
-          url={IS_IOS ? riveAssets[0].uri : undefined}
-          resourceName={IS_ANDROID ? 'home_lamb' : undefined}
+          {...(IS_IOS 
+            ? { url: riveAssets[0].uri } 
+            : { resourceName: 'home_lamb' }
+          )}
           artboardName="lamb-idle"
           autoplay
           style={{ width: '80%', height: '80%' }}

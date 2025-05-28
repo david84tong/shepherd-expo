@@ -6,6 +6,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Import translation files
 import en from './locales/en.json';
 import es from './locales/es.json';
+import fr from './locales/fr.json';
+import nl from './locales/nl.json';
+import de from './locales/de.json';
+import pt from './locales/pt.json';
 
 const LANGUAGE_DETECTOR = {
   type: 'languageDetector' as const,
@@ -24,7 +28,7 @@ const LANGUAGE_DETECTOR = {
       const deviceLanguage = deviceLanguages[0]?.languageCode || 'en';
       
       // Map device language to supported languages
-      const supportedLanguages = ['en', 'es'];
+      const supportedLanguages = ['en', 'es', 'fr', 'nl', 'de', 'pt'];
       const language = supportedLanguages.includes(deviceLanguage) ? deviceLanguage : 'en';
       
       callback(language);
@@ -57,6 +61,18 @@ i18n
       },
       es: {
         translation: es,
+      },
+      fr: {
+        translation: fr,
+      },
+      nl: {
+        translation: nl,
+      },
+      de: {
+        translation: de,
+      },
+      pt: {
+        translation: pt,
       },
     },
 
