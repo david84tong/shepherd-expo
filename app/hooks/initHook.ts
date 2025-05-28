@@ -12,6 +12,7 @@ import { Platform } from 'react-native';
 import { adapty } from 'react-native-adapty';
 import analytics, { AnalyticsEvent } from '../../utils/analytics';
 import { checkStreakAndApplyPenalties } from './streakHook';
+import { syncUserDocument } from '../../utils/firestore';
 
 // Key to check if app has been initialized
 const APP_INITIALIZED_KEY = 'shepherd-app-initialized';
@@ -149,16 +150,25 @@ export const useAppInitialization = () => {
           // adapty.identify(anonymousUserId);
           const currentTime = Timestamp.now();
           await AsyncStorage.setItem('shepherd-anonymous-user-id', anonymousUserId);
-          setDisplayName('Anonymous User');
-          setCreatedAt(currentTime);
-          setUpdatedAt(currentTime);
-          setLastActivityDate(currentTime);
-          // setLastReadingDate(currentTime);
-          // setLastPrayerDate(currentTime);
-          // setLastReflectionDate(currentTime);
-          // setLastReadingPenaltyDate(currentTime);
-          // setLastPrayerPenaltyDate(currentTime);
-          // setLastReflectionPenaltyDate(currentTime);
+
+          // Batch all initial user fields
+          const initialUserData = {
+            id: anonymousUserId,
+            displayName: 'Anonymous User',
+            createdAt: currentTime,
+            updatedAt: currentTime,
+            lastActivityDate: currentTime,
+            // Uncomment and add more fields as needed:
+            // lastReadingDate: currentTime,
+            // lastPrayerDate: currentTime,
+            // lastReflectionDate: currentTime,
+            // lastReadingPenaltyDate: currentTime,
+            // lastPrayerPenaltyDate: currentTime,
+            // lastReflectionPenaltyDate: currentTime,
+          };
+
+          useUserStore.getState().setUser(initialUserData); // Update Zustand store locally
+          await syncUserDocument(initialUserData);
 
           await AsyncStorage.setItem(APP_INITIALIZED_KEY, 'true');
           console.log('✅ User initialized with ID:', anonymousUserId);
