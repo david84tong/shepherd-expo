@@ -5,13 +5,15 @@
     "version": "1.2.6",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "scheme": "shepherd",
+    "scheme": "io.bytehouse",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
     "developmentClient": {
       "silentLaunch": true
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "splash": {
       "image": "./assets/custom_splash_icon.png",
       "resizeMode": "cover"
@@ -55,7 +57,9 @@
         "NSPhotoLibraryUsageDescription": "Shepherd needs photo library access to create your player card and assess your fitness level for personalized workout recommendations."
       },
       "entitlements": {
-        "com.apple.security.application-groups": ["group.shepherd.widget.streak"]
+        "com.apple.security.application-groups": [
+          "group.shepherd.widget.streak"
+        ]
       },
       "associatedDomains": [],
       "appExtensions": [
@@ -63,7 +67,9 @@
           "targetName": "ShepherdStreakWidget",
           "bundleIdentifier": "second.round.shepherd.widget",
           "entitlements": {
-            "com.apple.security.application-groups": ["group.shepherd.widget.streak"]
+            "com.apple.security.application-groups": [
+              "group.shepherd.widget.streak"
+            ]
           }
         }
       ]
@@ -110,7 +116,9 @@
       [
         "expo-custom-assets",
         {
-          "assetsPaths": ["./assets/riveAnimations/"]
+          "assetsPaths": [
+            "./assets/riveAnimations/"
+          ]
         }
       ]
     ],
