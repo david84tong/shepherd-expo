@@ -21,6 +21,7 @@ import {
   Switch,
   Platform,
   ToastAndroid,
+  Dimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchChapter, Verse } from './api/bible';
@@ -58,6 +59,15 @@ import {
   LineHeightPreset,
   ThemeType as StoreThemeType,
 } from './stores/readerSettingsStore';
+// Add highlight store imports
+import useHighlightStore, {
+  HighlightColorKey,
+  HIGHLIGHT_COLORS,
+} from './stores/highlightStore';
+import HighlightColorPicker from '~/components/HighlightColorPicker';
+import VerseChatView from '~/components/VerseChatView';
+import { Feather } from '@expo/vector-icons';
+import Toast from 'react-native-toast-message';
 
 // Constants
 const DEFAULT_LINE_HEIGHT = 24;
@@ -208,6 +218,26 @@ type SelectionsMap = {
   [key: string]: Set<number>;
 };
 
+// Add floating menu interfaces from NewBibleReader
+interface FloatingMenuState {
+  isVisible: boolean;
+  verse: Verse | null;
+  position: {
+    x: number;
+    y: number;
+  };
+}
+
+type FeatherIconName = React.ComponentProps<typeof Feather>['name'];
+
+interface MenuAction {
+  id: string;
+  icon: FeatherIconName;
+  label: string;
+  color: string;
+  action: (verse: Verse) => void;
+}
+
 // Handoff type for chapter data
 import type { ChapterResponse } from './api/bible';
 
@@ -293,6 +323,32 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   // In the component, add state for selections history
   const [selectionsHistory, setSelectionsHistory] = useState<SelectionsMap>({});
+
+  // Add highlight and chat state from NewBibleReader
+  const [isHighlightPickerVisible, setIsHighlightPickerVisible] = useState(false);
+  const [verseToHighlight, setVerseToHighlight] = useState<Verse | null>(null);
+  const [showChatView, setShowChatView] = useState(false);
+  const [selectedVerse, setSelectedVerse] = useState<Verse | null>(null);
+  const [floatingMenu, setFloatingMenu] = useState<FloatingMenuState>({
+    isVisible: false,
+    verse: null,
+    position: { x: 0, y: 0 },
+  });
+
+  // Get highlight store methods
+  const highlights = useHighlightStore((s) => s.highlights);
+  const addHighlight = useHighlightStore((s) => s.addHighlight);
+  const removeHighlight = useHighlightStore((s) => s.removeHighlight);
+  const getHighlight = useHighlightStore((s) => s.getHighlight);
+  const loadHighlights = useHighlightStore((s) => s.loadHighlights);
+  const syncHighlights = useHighlightStore((s) => s.syncHighlights);
+
+  // Animation values for floating menu
+  const menuOpacityAnim = useSharedValue(0);
+  const menuScaleAnim = useSharedValue(0.8);
+
+  // Get screen dimensions
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
   useEffect(() => {
     const loadInitialData = async () => {
@@ -384,6 +440,24 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       loadChapter(savedTranslation, currentBook, currentBookId, currentChapter);
     }
   }, [savedTranslation]);
+
+  // Add highlight loading effects from NewBibleReader
+  const resetAndLoadHighlights = useCallback(() => {
+    console.log(`Resetting and loading highlights for ${currentBookId}:${currentChapter}`);
+    loadHighlights();
+  }, [currentBookId, currentChapter, loadHighlights]);
+
+  // Load highlights when component mounts or when bookId/chapter changes
+  useEffect(() => {
+    resetAndLoadHighlights();
+  }, [currentBookId, currentChapter, resetAndLoadHighlights]);
+
+  // Sync highlights when component unmounts
+  useEffect(() => {
+    return () => {
+      syncHighlights();
+    };
+  }, [syncHighlights]);
 
   const loadChapter = async (version: string, book: string, bookId: number, chapter: number) => {
     setLoading(true);
@@ -797,6 +871,149 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     }
   };
 
+  // Add highlight and chat handlers from NewBibleReader
+  const getVerseHighlightColor = useCallback(
+    (verse: Verse): string | null => {
+      if (!verse) return null;
+      const highlight = getHighlight(currentBookId, currentChapter, verse.verse);
+      return highlight ? HIGHLIGHT_COLORS[highlight.colorKey] : null;
+    },
+    [getHighlight, currentBookId, currentChapter]
+  );
+
+  const handleHighlightVerse = (verse: Verse) => {
+    setVerseToHighlight(verse);
+    const existingHighlight = getHighlight(currentBookId, currentChapter, verse.verse);
+    setIsHighlightPickerVisible(true);
+
+    analytics.logEvent('BibleReader_Opened_HighlightPicker', {
+      book: chapterData?.book,
+      chapter: chapterData?.chapter,
+      verse: verse.verse,
+      isExistingHighlight: !!existingHighlight,
+    });
+
+    handleCloseFloatingMenu();
+  };
+
+  const handleApplyHighlight = (colorKey: HighlightColorKey | null) => {
+    if (!verseToHighlight || !chapterData) return;
+
+    if (colorKey === null) {
+      removeHighlight(currentBookId, currentChapter, verseToHighlight.verse);
+      Toast.show({
+        type: 'success',
+        text1: 'Highlight removed',
+        position: 'top',
+        visibilityTime: 2000,
+      });
+      analytics.logEvent('BibleReader_Removed_Highlight', {
+        book: chapterData.book,
+        chapter: chapterData.chapter,
+        verse: verseToHighlight.verse,
+      });
+    } else {
+      addHighlight(currentBookId, currentChapter, verseToHighlight.verse, colorKey);
+      Toast.show({
+        type: 'success',
+        text1: 'Verse highlighted',
+        position: 'top',
+        visibilityTime: 2000,
+      });
+      analytics.logEvent('BibleReader_Applied_Highlight', {
+        book: chapterData.book,
+        chapter: chapterData.chapter,
+        verse: verseToHighlight.verse,
+        color: colorKey,
+      });
+    }
+
+    setIsHighlightPickerVisible(false);
+    setVerseToHighlight(null);
+  };
+
+  const handleCloseHighlightPicker = () => {
+    setIsHighlightPickerVisible(false);
+    setVerseToHighlight(null);
+  };
+
+  const handleOpenChat = (verse: Verse) => {
+    setSelectedVerse(verse);
+    setShowChatView(true);
+    handleCloseFloatingMenu();
+  };
+
+  const handleCloseChatView = () => {
+    setShowChatView(false);
+    setSelectedVerse(null);
+  };
+
+  const handleLongPress = (event: any, verse: Verse) => {
+    const { absoluteX, absoluteY } = event.nativeEvent;
+    
+    setFloatingMenu({
+      isVisible: true,
+      verse,
+      position: {
+        x: Math.min(absoluteX, SCREEN_WIDTH - 200),
+        y: Math.max(absoluteY - 100, 100),
+      },
+    });
+
+    menuOpacityAnim.value = withTiming(1, { duration: 200 });
+    menuScaleAnim.value = withTiming(1, { duration: 200 });
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  const handleCloseFloatingMenu = () => {
+    menuOpacityAnim.value = withTiming(0, { duration: 150 });
+    menuScaleAnim.value = withTiming(0.8, { duration: 150 });
+    
+    setTimeout(() => {
+      setFloatingMenu({ isVisible: false, verse: null, position: { x: 0, y: 0 } });
+    }, 150);
+  };
+
+  const menuAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: menuOpacityAnim.value,
+    transform: [{ scale: menuScaleAnim.value }],
+  }));
+
+  const menuActions: MenuAction[] = [
+    {
+      id: 'copy',
+      icon: 'copy',
+      label: 'Copy',
+      color: THEME_COLORS[currentTheme].text,
+      action: (verse: Verse) => {
+        const verseText = `${chapterData?.book} ${chapterData?.chapter}:${verse.verse} - ${verse.text}`;
+        Clipboard.setString(verseText);
+        Toast.show({
+          type: 'success',
+          text1: 'Verse copied',
+          position: 'top',
+          visibilityTime: 2000,
+        });
+        handleCloseFloatingMenu();
+      },
+    },
+    {
+      id: 'highlight',
+      icon: 'edit-2',
+      label: 'Highlight',
+      color: '#DCB280',
+      action: handleHighlightVerse,
+    },
+    {
+      id: 'chat',
+      icon: 'message-circle',
+      label: 'Chat',
+      color: THEME_COLORS[currentTheme].text,
+      action: handleOpenChat,
+    },
+  ];
+
   const renderBibleContent = (chapterData: ChapterResponse) => {
     // Add copy function
     const handleCopyVerse = (verse: Verse) => {
@@ -829,26 +1046,33 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           scrollEventThrottle={16}
           onContentSizeChange={(_, height) => setContentHeight(height)}
           onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}>
-          {chapterData.verses.map((verse: Verse) => (
-            <Pressable
-              key={verse.verse}
-              onPress={() => handleVersePress(verse.verse)}
-              onLongPress={() => handleVerseLongPress(verse.verse)}
-              style={[
-                styles.verseContainer,
-                selectedVerses.has(verse.verse) && [
-                  styles.selectedVerse,
-                  { backgroundColor: THEME_COLORS[currentTheme].verseHighlight },
-                ],
-              ]}>
-              <Text
-                style={[verseTextStyle, { color: THEME_COLORS[currentTheme].text }]}
-                selectable={true}>
-                <Text style={[verseNumberStyle, { color: '#DCB280' }]}>{verse.verse} </Text>
-                {verse.text}
-              </Text>
-            </Pressable>
-          ))}
+          {chapterData.verses.map((verse: Verse) => {
+            // Get highlight color for this verse if it exists
+            const highlightColor = getVerseHighlightColor(verse);
+            
+            return (
+              <Pressable
+                key={verse.verse}
+                onPress={() => handleVersePress(verse.verse)}
+                onLongPress={(event) => handleLongPress(event, verse)}
+                style={[
+                  styles.verseContainer,
+                  selectedVerses.has(verse.verse) && [
+                    styles.selectedVerse,
+                    { backgroundColor: THEME_COLORS[currentTheme].verseHighlight },
+                  ],
+                  // Add highlight background if verse is highlighted
+                  highlightColor && { backgroundColor: highlightColor },
+                ]}>
+                <Text
+                  style={[verseTextStyle, { color: THEME_COLORS[currentTheme].text }]}
+                  selectable={true}>
+                  <Text style={[verseNumberStyle, { color: '#DCB280' }]}>{verse.verse} </Text>
+                  {verse.text}
+                </Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
       </>
     );
@@ -1196,6 +1420,80 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
             </View>
           </TouchableWithoutFeedback>
         </Modal>
+
+        {/* Add Chat View */}
+        {showChatView && selectedVerse && chapterData && (
+          <VerseChatView
+            verse={selectedVerse}
+            bookName={chapterData.book}
+            chapter={chapterData.chapter}
+            onClose={handleCloseChatView}
+          />
+        )}
+
+        {/* Add Floating Menu */}
+        {floatingMenu.isVisible && floatingMenu.verse && (
+          <TouchableWithoutFeedback onPress={handleCloseFloatingMenu}>
+            <View style={StyleSheet.absoluteFillObject}>
+              <Reanimated.View
+                style={[
+                  {
+                    position: 'absolute',
+                    left: floatingMenu.position.x,
+                    top: floatingMenu.position.y,
+                    backgroundColor: THEME_COLORS[currentTheme].modalBackground,
+                    borderRadius: 12,
+                    padding: 8,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.15,
+                    shadowRadius: 8,
+                    elevation: 8,
+                    borderWidth: 1,
+                    borderColor: THEME_COLORS[currentTheme].border,
+                  },
+                  menuAnimatedStyle,
+                ]}>
+                {menuActions.map((action, index) => (
+                  <TouchableOpacity
+                    key={action.id}
+                    onPress={() => action.action(floatingMenu.verse!)}
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      paddingVertical: 12,
+                      paddingHorizontal: 16,
+                      minWidth: 140,
+                      borderBottomWidth: index < menuActions.length - 1 ? 1 : 0,
+                      borderBottomColor: THEME_COLORS[currentTheme].border,
+                    }}>
+                    <Feather name={action.icon} size={18} color={action.color} />
+                    <Text
+                      style={{
+                        marginLeft: 12,
+                        fontSize: 16,
+                        color: THEME_COLORS[currentTheme].text,
+                        fontFamily: 'Inter-Medium',
+                      }}>
+                      {action.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </Reanimated.View>
+            </View>
+          </TouchableWithoutFeedback>
+        )}
+
+        {/* Add Highlight Color Picker */}
+        {isHighlightPickerVisible && verseToHighlight && (
+          <HighlightColorPicker
+            isVisible={isHighlightPickerVisible}
+            versePreview={`${verseToHighlight.verse}. ${verseToHighlight.text}`}
+            initialColor={getHighlight(currentBookId, currentChapter, verseToHighlight.verse)?.colorKey || null}
+            onSelectColor={handleApplyHighlight}
+            onClose={handleCloseHighlightPicker}
+          />
+        )}
       </>
     );
   } else {
