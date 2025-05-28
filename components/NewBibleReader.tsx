@@ -55,6 +55,7 @@ import { Audio } from 'expo-av';
 import { useAuth } from '~/app/hooks/authHook';
 import useSubscriptionStore from '../app/stores/subscriptionStore';
 import Tts from 'react-native-tts';
+import TtsDebugInfo from './TtsDebugInfo';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -560,13 +561,18 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     const loadTtsCount = async () => {
       try {
         const savedCount = await AsyncStorage.getItem(TTS_COUNT_KEY);
+        console.log(`🔍 Loading TTS count from storage: ${savedCount}`);
         if (savedCount !== null) {
           const count = parseInt(savedCount, 10);
+          console.log(`🔍 Parsed TTS count: ${count}, limit: ${TTS_FREE_LIMIT}`);
           setTtsCount(count);
           setReachedTtsLimit(count >= TTS_FREE_LIMIT);
+          console.log(`🔍 Set reachedTtsLimit to: ${count >= TTS_FREE_LIMIT}`);
           
           // Don't automatically disable TTS - let the user decide
           // The TTS functions will handle the limit checking
+        } else {
+          console.log('🔍 No saved TTS count found, using defaults');
         }
       } catch (error) {
         console.error('Error loading TTS count:', error);
@@ -693,20 +699,25 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     // Skip prefetching entirely if TTS is turned off
     if (!autoPlayTts) return;
     
-    // Check if user is allowed to prefetch
+    // Check if user is allowed to prefetch OpenAI TTS
     const canPrefetch = isProMember || !reachedTtsLimit;
-    if (!canPrefetch) return;
+    if (!canPrefetch) {
+      console.log('🚫 Cannot prefetch - user has reached TTS limit or is not pro');
+      return;
+    }
     
     try {
-      // Get Firebase ID token for authentication (only for OpenAI TTS)
+      // Get Firebase ID token for authentication (required for OpenAI TTS)
       const idToken = await getFirebaseIdToken();
-      if (!idToken && isProMember) {
-        console.error('Failed to get Firebase ID token for pro user');
+      if (!idToken) {
+        console.error('Failed to get Firebase ID token - cannot prefetch OpenAI TTS');
         return;
       }
       
       // Determine how many verses to fetch (capped at TTS_PREFETCH_BATCH_SIZE)
       const endIndex = Math.min(startIndex + TTS_PREFETCH_BATCH_SIZE, verses.length);
+      
+      console.log(`🔍 Prefetch batch: startIndex=${startIndex}, endIndex=${endIndex}, totalVerses=${verses.length}`);
       
       // Create an array of promises for fetching TTS for multiple verses
       const fetchPromises = [];
@@ -715,59 +726,56 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         const verse = verses[i];
         const verseKey = `${chapterData.book}-${chapterData.chapter}-${verse.verse}`;
         
+        console.log(`🔍 Processing verse ${verse.verse} (${verseKey})`);
+        
         // Skip verses already cached or being fetched
         if (audioCache[verseKey] || prefetchInProgress.current.has(verseKey)) {
+          console.log(`⏭️ Skipping verse ${verse.verse} - already cached or in progress`);
           continue;
         }
         
         // Mark this verse as being fetched
         prefetchInProgress.current.add(verseKey);
         
-        // For pro users, use OpenAI TTS
-        if (isProMember) {
-          fetchPromises.push(
-            fetch('https://shepherd-dev-api.skylar.gg/oai/tts', {
-              method: 'POST',
-              headers: {
-                'Authorization': `Bearer ${idToken}`,
-                'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                input: verse.text,
-                voice: "shimmer",
-              }),
-            }).then(async response => {
-              if (!response.ok) {
-                throw new Error(`API request failed with status ${response.status}`);
-              }
-              
-              // Convert response to base64 audio
-              const buffer = await response.arrayBuffer();
-              const base64Audio = btoa(
-                new Uint8Array(buffer)
-                  .reduce((data, byte) => data + String.fromCharCode(byte), '')
-              );
-              
-              // Create a data URI for the audio
-              const audioUri = `data:audio/mp3;base64,${base64Audio}`;
-              
-              // Save in cache
-              return { verseKey, audioUri, isOpenAI: true };
-            }).catch(error => {
-              console.error(`Error prefetching OpenAI TTS for verse ${verse.verse}:`, error);
-              // Remove from in-progress set on error
-              prefetchInProgress.current.delete(verseKey);
-              return null;
-            })
-          );
-        } else {
-          // For free users, just mark as ready for React Native TTS (no prefetching needed)
-          prefetchInProgress.current.delete(verseKey);
-          setAudioCache(prev => ({...prev, [verseKey]: 'native-tts'}));
-        }
+        // Both pro users and free users (who haven't hit limit) use OpenAI TTS
+        fetchPromises.push(
+          fetch('https://shepherd-dev-api.skylar.gg/oai/tts', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${idToken}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              input: verse.text,
+              voice: "shimmer",
+            }),
+          }).then(async response => {
+            if (!response.ok) {
+              throw new Error(`API request failed with status ${response.status}`);
+            }
+            
+            // Convert response to base64 audio
+            const buffer = await response.arrayBuffer();
+            const base64Audio = btoa(
+              new Uint8Array(buffer)
+                .reduce((data, byte) => data + String.fromCharCode(byte), '')
+            );
+            
+            // Create a data URI for the audio
+            const audioUri = `data:audio/mp3;base64,${base64Audio}`;
+            
+            // Save in cache
+            return { verseKey, audioUri, isOpenAI: true };
+          }).catch(error => {
+            console.error(`Error prefetching OpenAI TTS for verse ${verse.verse}:`, error);
+            // Remove from in-progress set on error
+            prefetchInProgress.current.delete(verseKey);
+            return null;
+          })
+        );
       }
       
-      // Execute all fetch requests in parallel (only for pro users)
+      // Execute all fetch requests in parallel
       if (fetchPromises.length > 0) {
         console.log(`📲 Prefetching OpenAI TTS for ${fetchPromises.length} verses starting at index ${startIndex}`);
         
@@ -1070,19 +1078,22 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Initial TTS batch prefetch when chapter loads
   useEffect(() => {
+    console.log(`🔍 Initial batch useEffect triggered: chapterData=${!!chapterData?.verses}, autoPlayTts=${autoPlayTts}, loading=${loading}, isProMember=${isProMember}, reachedTtsLimit=${reachedTtsLimit}`);
+    
     if (chapterData?.verses && autoPlayTts && !loading) {
       console.log('🔊 TTS enabled - batching first 5 verses for chapter');
       
-      // Batch the first 5 verses (or all verses if less than 5)
-      const versesToBatch = chapterData.verses.slice(0, TTS_PREFETCH_BATCH_SIZE);
-      
       // For pro users or free users who haven't hit limit, use OpenAI
       if (isProMember || !reachedTtsLimit) {
+        console.log(`📲 Starting initial batch prefetch for ${Math.min(TTS_PREFETCH_BATCH_SIZE, chapterData.verses.length)} verses`);
         prefetchVerseAudio(chapterData.verses, 0);
+      } else {
+        console.log('🔇 Free user hit limit - will use React Native TTS (no prefetch needed)');
       }
-      // For free users who hit limit, we'll use React Native TTS (no prefetch needed)
+    } else {
+      console.log('🚫 Conditions not met for initial batch prefetch');
     }
-  }, [chapterData?.book, chapterData?.chapter, autoPlayTts]); // Trigger when chapter changes OR TTS is toggled
+  }, [chapterData?.book, chapterData?.chapter, autoPlayTts, loading, isProMember, reachedTtsLimit, prefetchVerseAudio]); // Trigger when chapter changes OR TTS is toggled
 
   useEffect(() => {
     if (chapterData?.verses?.length) {
@@ -1105,13 +1116,19 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     // Only proceed if we have chapter data and TTS is enabled
     if (!chapterData?.verses || loading || isFadingToChat) return;
 
-    // Check if we need to batch next 5 verses (when free user hits verse 6, 11, 16, etc.)
+    // Check if we need to batch next 5 verses (when user hits verse 6, 11, 16, etc.)
     const isStartOfNewBatch = currentIndex > 0 && currentIndex % TTS_PREFETCH_BATCH_SIZE === 0;
-    if (isStartOfNewBatch && !isProMember && !reachedTtsLimit) {
-      // Free user is about to exceed their limit - show paywall
-      console.log(`🚫 Free user reached verse ${currentIndex + 1} - showing paywall`);
-      showTtsPaywall();
-      return;
+    if (isStartOfNewBatch) {
+      if (!isProMember && !reachedTtsLimit) {
+        // Free user is about to exceed their limit - show paywall
+        console.log(`🚫 Free user reached verse ${currentIndex + 1} - showing paywall`);
+        showTtsPaywall();
+        return;
+      } else if (isProMember) {
+        // Pro user - prefetch next batch
+        console.log(`🔊 Pro user - batching next 5 verses starting at ${currentIndex}`);
+        prefetchVerseAudio(chapterData.verses, currentIndex);
+      }
     }
 
     // For the current verse, check if we should play it
@@ -1126,11 +1143,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       }
     }
 
-    // If we're at the start of a new batch and user is pro, prefetch next batch
-    if (isStartOfNewBatch && isProMember) {
-      console.log(`🔊 Pro user - batching next 5 verses starting at ${currentIndex + 1}`);
-      prefetchVerseAudio(chapterData.verses, currentIndex);
-    }
+
   }, [currentIndex, autoPlayTts, chapterData, loading, isFadingToChat, 
       verseSpokenMap, playTextToSpeech, isSpeaking, stopSpeaking, 
       isProMember, reachedTtsLimit, showTtsPaywall, prefetchVerseAudio]);
@@ -2150,6 +2163,17 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     <SafeAreaView style={{ backgroundColor: theme.background, flex: 1 }}>
       {/* Absolute background to cover outer safe areas */}
       <View style={{ ...StyleSheet.absoluteFillObject }} pointerEvents="none" />
+      
+      {/* Debug info overlay */}
+      <TtsDebugInfo
+        audioCache={audioCache}
+        prefetchInProgress={prefetchInProgress.current}
+        isProMember={isProMember}
+        reachedTtsLimit={reachedTtsLimit}
+        autoPlayTts={autoPlayTts}
+        currentIndex={currentIndex}
+        chapterData={chapterData}
+      />
 
       <Reanimated.View
         style={[
