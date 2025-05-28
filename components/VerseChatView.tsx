@@ -508,7 +508,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? TAB_BAR_HEIGHT / 3 : 0}
+        keyboardVerticalOffset={0}
       >
         <Reanimated.View 
           style={styles.header}
@@ -568,7 +568,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         
         <Reanimated.View style={[styles.inputWrapper, inputContainerStyle]}>
           <View style={[styles.inputContainer, { 
-            paddingBottom: Math.max(insets.bottom + (TAB_BAR_HEIGHT / 2), 16) 
+            paddingBottom: Math.max(insets.bottom, 8) 
           }]}>
             <TextInput
               style={styles.input}
@@ -695,9 +695,9 @@ const styles = StyleSheet.create({
     borderTopColor: '#FFE4A8',
     borderTopWidth: 1,
     flexDirection: 'row',
-    paddingBottom: 16,
+    paddingBottom: 8,
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 8,
     width: '100%',
   },
   inputWrapper: {
