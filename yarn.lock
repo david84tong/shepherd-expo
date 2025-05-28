@@ -5378,6 +5378,11 @@ expo-asset@~11.0.5:
     invariant "^2.2.4"
     md5-file "^3.2.3"
 
+expo-audio@~0.3.5:
+  version "0.3.5"
+  resolved "https://registry.yarnpkg.com/expo-audio/-/expo-audio-0.3.5.tgz#1f151ec9919e163019f1aa76a117657e0ea6b613"
+  integrity sha512-gzpDH3vZI1FDL1Q8pXryACtNIW+idZ/zIZ8WqdTRzJuzxucazrG2gLXUS2ngcXQBn09Jyz4RUnU10Tu2N7/Hgg==
+
 expo-auth-session@~6.0.3:
   version "6.0.3"
   resolved "https://registry.yarnpkg.com/expo-auth-session/-/expo-auth-session-6.0.3.tgz#2a31afca4b0c3654b02ca69c88e897266ff63863"
@@ -5389,6 +5394,11 @@ expo-auth-session@~6.0.3:
     expo-linking "~7.0.5"
     expo-web-browser "~14.0.2"
     invariant "^2.2.4"
+
+expo-av@~15.0.2:
+  version "15.0.2"
+  resolved "https://registry.yarnpkg.com/expo-av/-/expo-av-15.0.2.tgz#65bb08658a7fe3a67aa47da614abbfae9adb684e"
+  integrity sha512-AHIHXdqLgK1dfHZF0JzX3YSVySGMrWn9QtPzaVjw54FAzvXfMt4sIoq4qRL/9XWCP9+ICcCs/u3EcvmxQjrfcA==
 
 expo-build-properties@~0.13.3:
   version "0.13.3"

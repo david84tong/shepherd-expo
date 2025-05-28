@@ -111,7 +111,7 @@ const PricingScreen = () => {
 
       return () => clearTimeout(closeButtonTimer);
     } else {
-      setShowCloseButton(true);
+      // setShowCloseButton(true);
       // Show after delay on iOS
   
     }
