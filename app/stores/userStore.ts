@@ -8,6 +8,7 @@ import {
   updateField,
   syncUserDocument,
   createUserDocument,
+  batchUpdate,
 } from '../../utils/firestore';
 import { syncStreakDataToWidget } from '../../utils/widgetSync';
 import { UserDoc, Lamb, Prayer, Reflection, Reading, UserStore } from '../models/User';
@@ -50,9 +51,6 @@ const initialLamb: Lamb = {
 };
 export type ProStatus = 'free' | 'trial' | 'pro';
 
-
-
-
 // Initial user state (only used if no persisted state exists)
 const initialState: Partial<UserDoc & UserStore> = {
   spiritualGoal: 'Walk',
@@ -78,94 +76,89 @@ const initialState: Partial<UserDoc & UserStore> = {
   completedReflections: [] as unknown as [Reflection],
   completedPrayers: [] as unknown as [Prayer],
   completedReadings: [] as unknown as [Reading],
-
-
-   
-  
 };
 
 const allInitialStateFunctions = {
+  // Getters
+  getUser: () => {},
+  getSpiritualGoal: () => '',
+  getExperienceLevel: () => '',
+  getFrequencyGoal: () => '',
+  getDenomination: () => '',
+  getDisplayName: () => '',
+  getSelectedPathId: () => '',
+  getLamb: () => initialState.lamb,
+  getStreakCount: () => 0,
+  getLastActivityDate: () => null,
+  getVersesReadTotal: () => 0,
+  getChaptersReadTotal: () => 0,
+  getBibleVersion: () => '',
+  getProStatus: () => 'free' as ProStatus,
+  getCreatedAt: () => new Date(),
+  getUpdatedAt: () => new Date(),
+  getGens: () => 0,
+  getLastReadingDate: () => null,
+  getLastPrayerDate: () => null,
+  getLastReflectionDate: () => null,
+  getLastReadingPenaltyDate: () => null,
+  getLastPrayerPenaltyDate: () => null,
+  getLastReflectionPenaltyDate: () => null,
+  getCompletedReflections: () => [],
+  getCompletedPrayers: () => [],
+  getCompletedReadings: () => [],
+  getLambLevel: () => 0,
+  getLambXp: () => 0,
+  getLambMood: () => '',
+  getLambHearts: () => 0,
+  getLambName: () => '',
+  getLambSkin: () => '',
 
-   // Getters
-   getUser: () => {},
-   getSpiritualGoal: () => '',
-   getExperienceLevel: () => '',
-   getFrequencyGoal: () => '',
-   getDenomination: () => '',
-   getDisplayName: () => '',
-   getSelectedPathId: () => '',
-   getLamb: () => initialState.lamb,
-   getStreakCount: () => 0,
-   getLastActivityDate: () => null,
-   getVersesReadTotal: () => 0,
-   getChaptersReadTotal: () => 0,
-   getBibleVersion: () => '',
-   getProStatus: () => 'free' as ProStatus,
-   getCreatedAt: () => new Date(),
-   getUpdatedAt: () => new Date(),
-   getGens: () => 0,
-   getLastReadingDate: () => null,
-   getLastPrayerDate: () => null,
-   getLastReflectionDate: () => null,
-   getLastReadingPenaltyDate: () => null,
-   getLastPrayerPenaltyDate: () => null,
-   getLastReflectionPenaltyDate: () => null,
-   getCompletedReflections: () => [],
-   getCompletedPrayers: () => [],
-   getCompletedReadings: () => [],
-   getLambLevel: () => 0,
-   getLambXp: () => 0,
-   getLambMood: () => '',
-   getLambHearts: () => 0,
-   getLambName: () => '',
-   getLambSkin: () => '',
- 
-   // Setters
-   createUser: async (id: string, userData: Partial<UserDoc>): Promise<boolean> => false,
-   setUser: (user: Partial<UserDoc>) => {},
-   resetUserStore: () => {},
-   setSpiritualGoal: (spiritualGoal: string) => {},
-   setExperienceLevel: (experienceLevel: string) => {},
-   setFrequencyGoal: (frequencyGoal: string) => {},
-   setDenomination: (denomination: string) => {},
-   setDisplayName: (displayName: string) => {},
-   setSelectedPathId: (selectedPathId: string) => {}, 
-   setLamb: (lamb: typeof initialState.lamb) => {},
-   setStreakCount: (count: number) => {},
-   setLastActivityDate: (date: any) => {},
-   setLastReadingDate: (lastReadingDate: any) => {},
-   setLastPrayerDate: (lastPrayerDate: any) => {},
-   setLastReflectionDate: (lastReflectionDate: any) => {},
-   setLastReadingPenaltyDate: (lastReadingPenaltyDate: any) => {},
-   setLastPrayerPenaltyDate: (lastPrayerPenaltyDate: any) => {},
-   setLastReflectionPenaltyDate: (lastReflectionPenaltyDate: any) => {},
-   setVersesReadTotal: (versesReadTotal: number) => {},
-   setChaptersReadTotal: (chaptersReadTotal: number) => {},
-   setBibleVersion: (bibleVersion: string) => {},
-   setProStatus: (proStatus: 'free' | 'trial' | 'pro') => {},
-   setCreatedAt: (createdAt: any) => {},
-   setUpdatedAt: (updatedAt: any) => {},
-   setGens: (gens: number) => {},
-   setNotificationTime: (time: string) => Promise.resolve(),
-   setCompletedReflections: (completedReflections: any[]) => {},
-   setCompletedPrayers: (completedPrayers: any[]) => {},
-   setCompletedReadings: (completedReadings: any[]) => {},
-   addCompletedReflection: (reflection: any) => {},
-   addCompletedPrayer: (prayer: any) => {},
-   addCompletedReading: (reading: any) => {},
-   setLambLevel: (level: number) => {},
-   setLambXp: (xp: number) => {},
-   setLambMood: (mood: string) => {},
-   setLambHearts: (hearts: number) => {},
-   setLambName: (name: string) => {},
-   setLambSkin: (skin: string) => {},
- 
-   // Utility functions
-   incrementStreak: () => {},
-   addXp: (amount: number) => {},
-   syncWithFirestore: () => Promise.resolve(false),
-   fetchFromFirestore: () => Promise.resolve(false),
-}
+  // Setters
+  createUser: async (id: string, userData: Partial<UserDoc>): Promise<boolean> => false,
+  setUser: (user: Partial<UserDoc>) => {},
+  resetUserStore: () => {},
+  setSpiritualGoal: (spiritualGoal: string) => {},
+  setExperienceLevel: (experienceLevel: string) => {},
+  setFrequencyGoal: (frequencyGoal: string) => {},
+  setDenomination: (denomination: string) => {},
+  setDisplayName: (displayName: string) => {},
+  setSelectedPathId: (selectedPathId: string) => {},
+  setLamb: (lamb: typeof initialState.lamb) => {},
+  setStreakCount: (count: number) => {},
+  setLastActivityDate: (date: any) => {},
+  setLastReadingDate: (lastReadingDate: any) => {},
+  setLastPrayerDate: (lastPrayerDate: any) => {},
+  setLastReflectionDate: (lastReflectionDate: any) => {},
+  setLastReadingPenaltyDate: (lastReadingPenaltyDate: any) => {},
+  setLastPrayerPenaltyDate: (lastPrayerPenaltyDate: any) => {},
+  setLastReflectionPenaltyDate: (lastReflectionPenaltyDate: any) => {},
+  setVersesReadTotal: (versesReadTotal: number) => {},
+  setChaptersReadTotal: (chaptersReadTotal: number) => {},
+  setBibleVersion: (bibleVersion: string) => {},
+  setProStatus: (proStatus: 'free' | 'trial' | 'pro') => {},
+  setCreatedAt: (createdAt: any) => {},
+  setUpdatedAt: (updatedAt: any) => {},
+  setGens: (gens: number) => {},
+  setNotificationTime: (time: string) => Promise.resolve(),
+  setCompletedReflections: (completedReflections: any[]) => {},
+  setCompletedPrayers: (completedPrayers: any[]) => {},
+  setCompletedReadings: (completedReadings: any[]) => {},
+  addCompletedReflection: (reflection: any) => {},
+  addCompletedPrayer: (prayer: any) => {},
+  addCompletedReading: (reading: any) => {},
+  setLambLevel: (level: number) => {},
+  setLambXp: (xp: number) => {},
+  setLambMood: (mood: string) => {},
+  setLambHearts: (hearts: number) => {},
+  setLambName: (name: string) => {},
+  setLambSkin: (skin: string) => {},
+
+  // Utility functions
+  incrementStreak: () => {},
+  addXp: (amount: number) => {},
+  syncWithFirestore: () => Promise.resolve(false),
+  fetchFromFirestore: () => Promise.resolve(false),
+};
 
 // Add this utility at the top (after imports)
 function undefinedToNull(obj: any): any {
@@ -212,17 +205,39 @@ const syncStreakWithWidget = (streakCount: number, lastActivityDate: any) => {
       activityDate = lastActivityDate.toDate();
     }
   }
-  
+
   // Sync with widget
-  syncStreakDataToWidget(streakCount, activityDate)
-    .catch(error => console.log('Failed to sync streak with widget:', error));
+  syncStreakDataToWidget(streakCount, activityDate).catch((error) =>
+    console.log('Failed to sync streak with widget:', error)
+  );
 };
+
+// --- Add cache for fetchFromFirestore ---
+let lastUserFetch: Promise<boolean> | null = null;
+let lastUserFetchTime: number = 0;
+const USER_FETCH_CACHE_DURATION = 5000; // 5 seconds
+
+// --- Debounce syncUserDocument ---
+let syncTimeout: NodeJS.Timeout | null = null;
+let pendingSyncData: Partial<UserDoc> | null = null;
+const SYNC_DEBOUNCE_MS = 2000;
+
+async function debouncedSyncUserDocument(data: Partial<UserDoc>) {
+  pendingSyncData = { ...pendingSyncData, ...data };
+  if (syncTimeout) clearTimeout(syncTimeout);
+  syncTimeout = setTimeout(async () => {
+    if (pendingSyncData) {
+      await syncUserDocument(pendingSyncData);
+      pendingSyncData = null;
+    }
+  }, SYNC_DEBOUNCE_MS);
+}
 
 export const useUserStore = create<UserStore>()(
   persist(
     (set, get) => ({
       ...(initialState as UserDoc),
-...allInitialStateFunctions,
+      ...allInitialStateFunctions,
 
       // Get complete user object
       getUser: () => {
@@ -261,26 +276,27 @@ export const useUserStore = create<UserStore>()(
 
       // Create new user
       createUser: async (id: string, userData: Partial<UserDoc>) => {
-        console.log('BEGIN CREATE USER');
-        
+        // Prepare all user data at once
         const newState = {
           ...initialState,
           ...userData,
-          id, // Just set id, no need for uid
+          id,
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
         } as UserDoc;
 
+        // Update local state immediately
         set(newState);
 
-        // Convert undefined to null before sending to Firestore
-        console.log('userData===> in createUser',userData)
+        // Convert undefined to null and prepare data for Firestore
         const cleanedUserData = undefinedToNull({
           ...userData,
-          id, // Ensure id is explicitly set in Firestore doc
+          id,
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now(),
         });
 
-        console.log('cleanedUserData===>',cleanedUserData)
+        // Single Firestore call to create/update the document
         const success = await createUserDocument(id, cleanedUserData);
         if (!success) {
           console.log('Failed to create user document in Firestore');
@@ -293,13 +309,17 @@ export const useUserStore = create<UserStore>()(
       setUser: (user) => {
         set((state) => {
           const newState = {
-            
             ...user,
           };
 
           // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
-            syncUserDocument(newState);
+            // Batch all updates into a single call
+            const updates = {
+              ...user,
+              updatedAt: Timestamp.now(),
+            };
+            batchUpdate(updates);
           }
 
           return newState;
@@ -356,131 +376,117 @@ export const useUserStore = create<UserStore>()(
       setLamb: (lamb) => set({ lamb }),
       setStreakCount: (count: number) => {
         const lastActivityDate = get().lastActivityDate;
-        
+
         set((state) => {
           const newState = {
-            
             streakCount: count,
           };
-          
+
           // Sync to Firestore if authenticated
           if (isAuthenticated()) {
             updateField('streakCount', count);
           }
-          
+
           return newState;
         });
-        
+
         // Sync with widget
         syncStreakWithWidget(count, lastActivityDate);
       },
       setLastActivityDate: (date: any) => {
         const streakCount = get().streakCount;
-        
+
         set((state) => {
           const newState = {
-            
             lastActivityDate: date,
           };
-          
-          // Sync to Firestore if authenticated
+
+          // Batch update with Firestore
           if (isAuthenticated()) {
-            updateField('lastActivityDate', date);
+            batchUpdate({ lastActivityDate: date });
           }
-          
+
           return newState;
         });
-        
+
         // Sync with widget
         syncStreakWithWidget(streakCount, date);
       },
       setLastReadingDate: (lastReadingDate) => {
         set((state) => {
           const newState = {
-            
             lastReadingDate,
           };
-          
-          // Only sync with Firestore if authenticated
+
           if (isAuthenticated()) {
-            updateField('lastReadingDate', lastReadingDate);
+            batchUpdate({ lastReadingDate });
           }
-          
+
           return newState;
         });
       },
       setLastPrayerDate: (lastPrayerDate) => {
         set((state) => {
           const newState = {
-            
             lastPrayerDate,
           };
-          
-          // Only sync with Firestore if authenticated
+
           if (isAuthenticated()) {
-            updateField('lastPrayerDate', lastPrayerDate);
+            batchUpdate({ lastPrayerDate });
           }
-          
+
           return newState;
         });
       },
       setLastReflectionDate: (lastReflectionDate) => {
         set((state) => {
           const newState = {
-            
             lastReflectionDate,
           };
-          
-          // Only sync with Firestore if authenticated
+
           if (isAuthenticated()) {
-            updateField('lastReflectionDate', lastReflectionDate);
+            batchUpdate({ lastReflectionDate });
           }
-          
+
           return newState;
         });
       },
       setLastReadingPenaltyDate: (lastReadingPenaltyDate) => {
         set((state) => {
           const newState = {
-            
             lastReadingPenaltyDate,
           };
-          
-          // Only sync with Firestore if authenticated
+
           if (isAuthenticated()) {
-            updateField('lastReadingPenaltyDate', lastReadingPenaltyDate);
+            batchUpdate({ lastReadingPenaltyDate });
           }
-          
+
           return newState;
         });
       },
       setLastPrayerPenaltyDate: (lastPrayerPenaltyDate) => {
         set((state) => {
           const newState = {
-            
             lastPrayerPenaltyDate,
           };
-          
-          // Only sync with Firestore if authenticated
+
           if (isAuthenticated()) {
-            updateField('lastPrayerPenaltyDate', lastPrayerPenaltyDate);
+            batchUpdate({ lastPrayerPenaltyDate });
           }
-          
+
           return newState;
         });
       },
       setLastReflectionPenaltyDate: (lastReflectionPenaltyDate) => {
         set((state) => {
           const newState = {
-            
             lastReflectionPenaltyDate,
           };
-          
-          // Only sync with Firestore if authenticated
+
           if (isAuthenticated()) {
-            updateField('lastReflectionPenaltyDate', lastReflectionPenaltyDate);
+            batchUpdate({ lastReflectionPenaltyDate });
           }
-          
+
           return newState;
         });
       },
@@ -504,19 +510,16 @@ export const useUserStore = create<UserStore>()(
       setNotificationTime: async (time: string) => {
         // Update local state
         set({ notificationTime: time });
-    
+
         // Get current user
         const user = get().getUser?.();
         if (user?.id) {
           try {
             // Update Firestore
-            await firestore()
-              .collection('users')
-              .doc(user.id)
-              .update({ 
-                notificationTime: time,
-                updatedAt: firestore.Timestamp.now()
-              });
+            await firestore().collection('users').doc(user.id).update({
+              notificationTime: time,
+              updatedAt: firestore.Timestamp.now(),
+            });
 
             // Also update AsyncStorage to ensure persistence
             const currentState = get();
@@ -524,7 +527,7 @@ export const useUserStore = create<UserStore>()(
               'shepherd-user-storage',
               JSON.stringify({
                 ...currentState,
-                notificationTime: time
+                notificationTime: time,
               })
             );
 
@@ -542,7 +545,7 @@ export const useUserStore = create<UserStore>()(
             'shepherd-user-storage',
             JSON.stringify({
               ...currentState,
-              notificationTime: time
+              notificationTime: time,
             })
           );
         }
@@ -564,12 +567,11 @@ export const useUserStore = create<UserStore>()(
       addCompletedReading: (reading) => {
         set((state) => {
           const newState = {
-            
             completedReadings: [...state.completedReadings, reading] as unknown as [Reading],
           };
           // Only sync with Firestore if authenticated
           if (isAuthenticated()) {
-            syncUserDocument(newState);
+            debouncedSyncUserDocument(newState);
           }
           return newState;
         });
@@ -608,7 +610,6 @@ export const useUserStore = create<UserStore>()(
         console.log('Setting lamb name:', name);
         set((state) => {
           const newState = {
-            
             lamb: { ...state.lamb, name },
           };
 
@@ -632,7 +633,6 @@ export const useUserStore = create<UserStore>()(
         set((state) => {
           const newStreakCount = state.streakCount + 1;
           const newState = {
-            
             streakCount: newStreakCount,
           };
 
@@ -659,100 +659,66 @@ export const useUserStore = create<UserStore>()(
           return false;
         }
         const state = get();
-        // Create an object with only the data fields, excluding functions
-        const dataToSync: Partial<UserDoc> = {
-          spiritualGoal: state.spiritualGoal,
-          experienceLevel: state.experienceLevel,
-          frequencyGoal: state.frequencyGoal,
-          denomination: state.denomination,
-          displayName: state.displayName,
-          selectedPathId: state.selectedPathId,
-          lamb: state.lamb,
-          streakCount: state.streakCount,
-          lastActivityDate: state.lastActivityDate,
-          lastReadingDate: state.lastReadingDate,
-          lastPrayerDate: state.lastPrayerDate,
-          lastReflectionDate: state.lastReflectionDate,
-          lastReadingPenaltyDate: state.lastReadingPenaltyDate,
-          lastPrayerPenaltyDate: state.lastPrayerPenaltyDate,
-          lastReflectionPenaltyDate: state.lastReflectionPenaltyDate,
-          notificationTime: state.notificationTime,
-          versesReadTotal: state.versesReadTotal,
-          chaptersReadTotal: state.chaptersReadTotal,
-          bibleVersion: state.bibleVersion,
-          proStatus: state.proStatus,
-          updatedAt: state.updatedAt, // Use current state's updatedAt
-          gens: state.gens,
-          completedReflections: state.completedReflections,
-          completedPrayers: state.completedPrayers,
-          completedReadings: state.completedReadings,
-          // Ensure id and email are included if they exist on state
-          id: state.id,
-          ...(state.email && { email: state.email }),
-          ...(state.denomination && { denomination: state.denomination }),
-        };
-
-        // Pass only the data object to syncUserDocument
-        return await syncUserDocument(dataToSync);
+        // Debounced sync
+        debouncedSyncUserDocument(state);
+        return true;
       },
 
       // Fetch user data from Firestore and update the store
       fetchFromFirestore: async () => {
-        if (!isAuthenticated()) {
-          console.log('User not authenticated, skipping Firestore fetch');
-          return false;
+        const now = Date.now();
+        if (lastUserFetch && now - lastUserFetchTime < USER_FETCH_CACHE_DURATION) {
+          return lastUserFetch;
         }
-
-        try {
-          console.log('Fetching latest user data from Firestore');
-          const currentUser = auth().currentUser;
-          if (!currentUser || !currentUser.uid) {
-            console.log('No valid user ID available, skipping Firestore fetch');
+        lastUserFetchTime = now;
+        lastUserFetch = (async () => {
+          if (!isAuthenticated()) {
+            console.log('User not authenticated, skipping Firestore fetch');
             return false;
           }
-
-          // First try to get the document directly
-          const userDoc = await firestore().collection('users').doc(currentUser.uid).get();
-
-          if (!userDoc.exists) {
-            console.log('User document does not exist in Firestore for ID:', currentUser.uid);
-
-            // If document doesn't exist, try to create it with local data
-            const currentState = get();
-            if (currentState && currentState.id) {
-              console.log('Creating user document from local state');
-              await syncUserDocument(currentState);
+          try {
+            console.log('Fetching latest user data from Firestore');
+            const currentUser = auth().currentUser;
+            if (!currentUser || !currentUser.uid) {
+              console.log('No valid user ID available, skipping Firestore fetch');
+              return false;
+            }
+            // First try to get the document directly
+            const userDoc = await firestore().collection('users').doc(currentUser.uid).get();
+            if (!userDoc.exists) {
+              console.log('User document does not exist in Firestore for ID:', currentUser.uid);
+              // If document doesn't exist, try to create it with local data
+              const currentState = get();
+              if (currentState && currentState.id) {
+                console.log('Creating user document from local state');
+                await syncUserDocument(currentState);
+                return true;
+              }
+              return false;
+            }
+            const userData = userDoc.data() as UserDoc;
+            if (userData) {
+              console.log('Got user data from Firestore, updating local store');
+              // Ensure the data has an id field (matching Firebase uid)
+              const updatedUserData = {
+                ...userData,
+                id: currentUser.uid,
+              };
+              // Convert all Firestore timestamp objects to Timestamp instances
+              const convertedUserData = convertTimestamps(updatedUserData);
+              set((state) => ({
+                ...state,
+                ...convertedUserData,
+              }));
               return true;
             }
             return false;
+          } catch (error) {
+            console.error('Error fetching user data from Firestore:', error);
+            return false;
           }
-
-          const userData = userDoc.data() as UserDoc;
-
-          if (userData) {
-            console.log('Got user data from Firestore, updating local store');
-
-            // Ensure the data has an id field (matching Firebase uid)
-            const updatedUserData = {
-              ...userData,
-              id: currentUser.uid,
-            };
-
-            // Convert all Firestore timestamp objects to Timestamp instances
-            const convertedUserData = convertTimestamps(updatedUserData);
-
-            set((state) => ({
-              
-              ...convertedUserData,
-            }));
-            return true;
-          }
-
-          return false;
-        } catch (error) {
-          console.log('Error fetching user data from Firestore:', error);
-          return false;
-        }
+        })();
+        return lastUserFetch;
       },
     }),
     {
