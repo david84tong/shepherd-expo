@@ -1080,7 +1080,6 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           onNavigateBack={handleBackNavigation}
           onSwitchToDefaultReader={handleSwitchToDefaultReader}
           onHandoffChapterData={handleHandoffChapterData}
-          onOpenSettings={handlePresentModal}
         />
 
         {/* Shared Settings Modal */}

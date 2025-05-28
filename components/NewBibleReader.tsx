@@ -55,7 +55,6 @@ import { Audio } from 'expo-av';
 import { useAuth } from '~/app/hooks/authHook';
 import useSubscriptionStore from '../app/stores/subscriptionStore';
 import Tts from 'react-native-tts';
-import TtsDebugInfo from './TtsDebugInfo';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -74,12 +73,14 @@ const TAP_GUIDANCE_KEY = 'userHideTapGuidance';
 const SWIPE_GUIDANCE_KEY = 'userHideSwipeGuidance';
 const READER_PREFERENCE_KEY = 'userDefaultReaderPreference';
 const TTS_AUTO_PLAY_KEY = 'userTtsAutoPlay';
-const TTS_COUNT_KEY = 'userTtsCount';
+const TTS_COUNT_KEY = '@tts_count';
 const TTS_FREE_LIMIT = 5;
 
 // TTS prefetching constants
 const TTS_PREFETCH_BATCH_SIZE = 5;
 const TTS_PREFETCH_TRIGGER_POINT = 3; // When to fetch the next batch
+const TTS_MAX_FAILURES = 3;
+const TTS_CIRCUIT_BREAKER_TIMEOUT = 30000; // 30 seconds
 
 const THEME_COLORS = {
   white: {
@@ -416,6 +417,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const [audioCache, setAudioCache] = useState<Record<string, string>>({});
   const [ttsCount, setTtsCount] = useState(0);
   const [reachedTtsLimit, setReachedTtsLimit] = useState(false);
+  const [ttsFailureCount, setTtsFailureCount] = useState(0);
+  const [ttsCircuitBreakerOpen, setTtsCircuitBreakerOpen] = useState(false);
+  const [lastTtsError, setLastTtsError] = useState<string | null>(null);
 
   // Chat and UI state variables
   const [showChatView, setShowChatView] = useState(false);
@@ -602,6 +606,29 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     };
   }, []);
 
+  // Circuit breaker reset mechanism
+  useEffect(() => {
+    if (ttsCircuitBreakerOpen) {
+      console.log(`🚨 TTS Circuit breaker opened due to ${ttsFailureCount} failures. Resetting in 30 seconds...`);
+      const timer = setTimeout(() => {
+        console.log('🔄 Resetting TTS circuit breaker');
+        setTtsCircuitBreakerOpen(false);
+        setTtsFailureCount(0);
+        setLastTtsError(null);
+      }, TTS_CIRCUIT_BREAKER_TIMEOUT);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [ttsCircuitBreakerOpen, ttsFailureCount]);
+
+  // Reset TTS state when chapter changes
+  useEffect(() => {
+    setVerseSpokenMap({});
+    setTtsFailureCount(0);
+    setTtsCircuitBreakerOpen(false);
+    setLastTtsError(null);
+  }, [chapterData?.book, chapterData?.chapter]);
+
   // Helper function to load a chapter
   const loadChapter = useCallback(
     async (bookId: number, chapter: number) => {
@@ -678,17 +705,30 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Stop speaking function
   const stopSpeaking = useCallback(async () => {
-    if (sound.current) {
-      await sound.current.stopAsync();
-      await sound.current.unloadAsync();
-      sound.current = null;
+    console.log('🛑 Stopping TTS playback');
+    
+    try {
+      // Stop Expo AV sound
+      if (sound.current) {
+        await sound.current.stopAsync();
+        await sound.current.unloadAsync();
+        sound.current = null;
+      }
+    } catch (error) {
+      console.error('Error stopping Expo AV sound:', error);
     }
     
-    // Also stop React Native TTS
-    Tts.stop();
+    try {
+      // Stop React Native TTS
+      Tts.stop();
+    } catch (error) {
+      console.error('Error stopping React Native TTS:', error);
+    }
     
+    // Reset state
     setIsSpeaking(false);
     setSelectedSpeakingVerse(null);
+    setIsLoadingTTS(false);
   }, []);
 
   // Prefetch verse audio using OpenAI TTS for pro users or first 5 for free users
@@ -819,29 +859,34 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Play text-to-speech for a verse
   const playTextToSpeech = useCallback(async (text: string, verse?: Verse) => {
-    // Early return if TTS is completely disabled via toggle (unless it's a manual tap)
-    if (!autoPlayTts && !verse) {
+    // Circuit breaker check
+    if (ttsCircuitBreakerOpen) {
+      console.log('🚨 TTS Circuit breaker is open - skipping TTS');
       return;
     }
 
+    // Prevent multiple simultaneous TTS calls
     if (isSpeaking || isLoadingTTS) {
-      if (isSpeaking && (sound.current || selectedSpeakingVerse)) {
-        // Stop current playback if the same verse is clicked again
-        if (verse && selectedSpeakingVerse && verse.verse === selectedSpeakingVerse.verse) {
-          stopSpeaking();
-          return;
-        }
-      }
+      console.log('🔇 TTS already in progress - skipping');
+      return;
+    }
+
+    // Don't play TTS if disabled
+    if (!autoPlayTts) {
+      console.log('🔇 TTS disabled - skipping');
       return;
     }
 
     try {
-      // For pro users, always use OpenAI TTS
-      // For free users, use OpenAI TTS for first 5 requests, then React Native TTS
-      let useOpenAI = isProMember;
+      console.log(`🔊 Playing TTS for: "${text.substring(0, 50)}..."`);
       
-      // For free users, check if they can still use OpenAI TTS
-      if (!isProMember && !reachedTtsLimit) {
+      // Determine if we should use OpenAI TTS
+      let useOpenAI = false;
+      
+      if (isProMember) {
+        useOpenAI = true;
+      } else if (!reachedTtsLimit) {
+        // Free user hasn't hit limit yet
         const canContinue = await checkAndIncrementTtsCount();
         if (canContinue) {
           useOpenAI = true;
@@ -937,8 +982,20 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         sound.current = newSound;
         setIsSpeaking(true);
         setIsLoadingTTS(false);
+        
+        // Reset failure count on success
+        setTtsFailureCount(0);
+        setLastTtsError(null);
       } else {
         // Use React Native TTS for free users or fallback
+        console.log('🔊 Using React Native TTS');
+        
+        // Check if React Native TTS is available
+        const voices = await Tts.voices();
+        if (!voices || voices.length === 0) {
+          throw new Error('No TTS voices available');
+        }
+
         analytics.logEvent("CardBibleReader_TTS_Started", {
           bookId,
           chapter,
@@ -946,19 +1003,59 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           type: 'native'
         });
 
-        // Set up TTS event listeners
+        // Set up TTS event listeners with timeout
+        let ttsFinished = false;
+        const timeoutId = setTimeout(() => {
+          if (!ttsFinished) {
+            console.log('⏰ TTS timeout - stopping');
+            Tts.stop();
+            setIsSpeaking(false);
+            setSelectedSpeakingVerse(null);
+            setIsLoadingTTS(false);
+          }
+        }, 30000); // 30 second timeout
+
         const onTtsFinish = () => {
+          ttsFinished = true;
+          clearTimeout(timeoutId);
           setIsSpeaking(false);
           setSelectedSpeakingVerse(null);
+          console.log('✅ TTS finished successfully');
+          
+          // Reset failure count on success
+          setTtsFailureCount(0);
+          setLastTtsError(null);
         };
 
         const onTtsStart = () => {
           setIsSpeaking(true);
           setIsLoadingTTS(false);
+          console.log('🎵 TTS started');
+        };
+
+        const onTtsError = (error: any) => {
+          ttsFinished = true;
+          clearTimeout(timeoutId);
+          console.error('❌ TTS error:', error);
+          setIsSpeaking(false);
+          setSelectedSpeakingVerse(null);
+          setIsLoadingTTS(false);
+          
+          // Increment failure count
+          const newFailureCount = ttsFailureCount + 1;
+          setTtsFailureCount(newFailureCount);
+          setLastTtsError(error?.message || 'TTS error');
+          
+          // Open circuit breaker if too many failures
+          if (newFailureCount >= TTS_MAX_FAILURES) {
+            console.log(`🚨 Opening TTS circuit breaker after ${newFailureCount} failures`);
+            setTtsCircuitBreakerOpen(true);
+          }
         };
 
         Tts.addEventListener('tts-finish', onTtsFinish);
         Tts.addEventListener('tts-start', onTtsStart);
+        Tts.addEventListener('tts-error', onTtsError);
 
         // Speak the text
         Tts.speak(text);
@@ -967,23 +1064,44 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         setTimeout(() => {
           Tts.removeEventListener('tts-finish', onTtsFinish);
           Tts.removeEventListener('tts-start', onTtsStart);
-        }, 30000); // 30 second cleanup
+          Tts.removeEventListener('tts-error', onTtsError);
+        }, 35000); // 35 second cleanup (longer than timeout)
       }
     } catch (error) {
-      console.error('Error playing TTS:', error);
+      console.error('❌ Error playing TTS:', error);
       setIsLoadingTTS(false);
       setIsSpeaking(false);
       setSelectedSpeakingVerse(null);
-      Toast.show({ 
-        type: 'error', 
-        text1: 'Failed to play audio',
-        position: 'top',
-        visibilityTime: 2000
-      });
+      
+      // Increment failure count
+      const newFailureCount = ttsFailureCount + 1;
+      setTtsFailureCount(newFailureCount);
+      setLastTtsError(error instanceof Error ? error.message : 'Unknown TTS error');
+      
+      // Open circuit breaker if too many failures
+      if (newFailureCount >= TTS_MAX_FAILURES) {
+        console.log(`🚨 Opening TTS circuit breaker after ${newFailureCount} failures`);
+        setTtsCircuitBreakerOpen(true);
+        Toast.show({ 
+          type: 'error', 
+          text1: 'Audio temporarily disabled',
+          text2: 'Too many errors - will retry in 30 seconds',
+          position: 'top',
+          visibilityTime: 3000
+        });
+      } else {
+        Toast.show({ 
+          type: 'error', 
+          text1: 'Failed to play audio',
+          position: 'top',
+          visibilityTime: 2000
+        });
+      }
     }
   }, [isSpeaking, isLoadingTTS, getFirebaseIdToken, bookId, chapter, translation, 
       stopSpeaking, selectedSpeakingVerse, isProMember, reachedTtsLimit, autoPlayTts,
-      checkAndIncrementTtsCount, audioCache, chapterData]);
+      checkAndIncrementTtsCount, audioCache, chapterData, ttsCircuitBreakerOpen, 
+      ttsFailureCount]);
 
   // Show paywall method for TTS
   const showTtsPaywall = useCallback(async () => {
@@ -1104,6 +1222,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // TTS auto-play effect - plays current verse and handles batching
   useEffect(() => {
+    // Circuit breaker check - don't attempt TTS if circuit is open
+    if (ttsCircuitBreakerOpen) {
+      console.log('🚨 TTS Circuit breaker is open - skipping auto-play');
+      return;
+    }
+
     // When TTS is turned off, stop everything
     if (!autoPlayTts) {
       if (isSpeaking) {
@@ -1115,6 +1239,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
     // Only proceed if we have chapter data and TTS is enabled
     if (!chapterData?.verses || loading || isFadingToChat) return;
+
+    // Don't auto-play if already speaking or loading
+    if (isSpeaking || isLoadingTTS) {
+      console.log('🔇 TTS already in progress - skipping auto-play');
+      return;
+    }
 
     // Check if we need to batch next 5 verses (when user hits verse 6, 11, 16, etc.)
     const isStartOfNewBatch = currentIndex > 0 && currentIndex % TTS_PREFETCH_BATCH_SIZE === 0;
@@ -1136,17 +1266,21 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     if (currentVerse) {
       const verseKey = `${chapterData.book}-${chapterData.chapter}-${currentVerse.verse}`;
       
-      // Only play if this verse hasn't been spoken yet
-      if (!verseSpokenMap[verseKey]) {
+      // Only play if this verse hasn't been spoken yet and we're not in a failure state
+      if (!verseSpokenMap[verseKey] && ttsFailureCount < TTS_MAX_FAILURES) {
+        console.log(`🎵 Auto-playing verse ${currentVerse.verse}: "${currentVerse.text.substring(0, 30)}..."`);
         setVerseSpokenMap(prev => ({...prev, [verseKey]: true}));
         playTextToSpeech(currentVerse.text, currentVerse);
+      } else if (verseSpokenMap[verseKey]) {
+        console.log(`⏭️ Verse ${currentVerse.verse} already spoken - skipping`);
+      } else if (ttsFailureCount >= TTS_MAX_FAILURES) {
+        console.log(`🚨 Too many TTS failures (${ttsFailureCount}) - skipping auto-play`);
       }
     }
-
-
   }, [currentIndex, autoPlayTts, chapterData, loading, isFadingToChat, 
-      verseSpokenMap, playTextToSpeech, isSpeaking, stopSpeaking, 
-      isProMember, reachedTtsLimit, showTtsPaywall, prefetchVerseAudio]);
+      verseSpokenMap, playTextToSpeech, isSpeaking, isLoadingTTS, stopSpeaking, 
+      isProMember, reachedTtsLimit, showTtsPaywall, prefetchVerseAudio, 
+      ttsCircuitBreakerOpen, ttsFailureCount]);
 
   const handleScroll = useCallback(() => {
     setIsScrolling(true);
@@ -2163,17 +2297,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     <SafeAreaView style={{ backgroundColor: theme.background, flex: 1 }}>
       {/* Absolute background to cover outer safe areas */}
       <View style={{ ...StyleSheet.absoluteFillObject }} pointerEvents="none" />
-      
-      {/* Debug info overlay */}
-      <TtsDebugInfo
-        audioCache={audioCache}
-        prefetchInProgress={prefetchInProgress.current}
-        isProMember={isProMember}
-        reachedTtsLimit={reachedTtsLimit}
-        autoPlayTts={autoPlayTts}
-        currentIndex={currentIndex}
-        chapterData={chapterData}
-      />
 
       <Reanimated.View
         style={[
@@ -2568,12 +2691,17 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                   <View style={styles.toggleContainer}>
                     <View style={{ flex: 1 }}>
                       <Text style={[styles.toggleLabel, { color: theme.text }]}>Text-to-Speech</Text>
-                      {!isProMember && (
+                      {ttsCircuitBreakerOpen && (
+                        <Text style={[styles.toggleSubLabel, { color: '#FF6B6B', opacity: 1 }]}>
+                          ⚠️ Audio temporarily disabled - too many errors
+                        </Text>
+                      )}
+                      {!ttsCircuitBreakerOpen && !isProMember && (
                         <Text style={[styles.toggleSubLabel, { color: theme.text, opacity: 0.6 }]}>
                           {reachedTtsLimit ? 'Using device voice • Upgrade for AI voice' : `${TTS_FREE_LIMIT - ttsCount} AI voice plays left`}
                         </Text>
                       )}
-                      {isProMember && (
+                      {!ttsCircuitBreakerOpen && isProMember && (
                         <Text style={[styles.toggleSubLabel, { color: theme.text, opacity: 0.6 }]}>
                           Unlimited AI voice
                         </Text>
