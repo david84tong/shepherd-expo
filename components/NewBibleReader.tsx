@@ -994,7 +994,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     setShowChatView(false);
     setSelectedVerse(null);
     setIsFadingToChat(false);
-
+    //commented out to fix bug where the chat view would not fade out
     // Reset animation value before starting new animation
     fadeOpacity.value = 0;
     fadeOpacity.value = withTiming(1, {
