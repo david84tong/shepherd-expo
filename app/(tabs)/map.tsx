@@ -9,7 +9,8 @@ import {
   SectionList,
   Text,
   View,
-  ViewToken
+  ViewToken,
+  StatusBar,
 } from 'react-native';
 
 import PathNode, { NodeStatus } from '../../components/MapComponents/PathNode';
@@ -542,6 +543,7 @@ export default function MapScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surfaceCream">
+      <StatusBar translucent backgroundColor="transparent" />
       <SectionList<Unit, BibleSection>
         ref={sectionListRef}
         sections={sections}

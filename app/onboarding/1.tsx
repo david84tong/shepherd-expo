@@ -11,6 +11,7 @@ import {
   Easing,
   Pressable,
   ActivityIndicator,
+  StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOnboardingStore } from '../stores/onboardingStore';
@@ -364,163 +365,166 @@ export default function OnboardingWelcomeScreen() {
   }
 
   return (
-    <Animated.View
-      style={{
-        flex: 1,
-        opacity: screenFadeAnim,
-        backgroundColor: '#FFF4D9',
-        transform: [{ scale: screenScaleAnim }],
-      }}>
-      {/* Header Text (Single element) */}
-      <Animated.View
-        className="px-6 absolute top-0 left-0 right-0 z-10 mx-8"
-        style={{
-          paddingTop: insets.top,
-          opacity: textOpacityAnim,
-        }}>
-        <Text
-          className={`${textPhase === 3 ? 'font-nunito-bold text-h1' : 'font-feather text-title'} text-center text-white mt-12`}>
-          {displayText}
-        </Text>
-      </Animated.View>
-
-      {/* Subtle Back Button */}
-      <Animated.View
-        className="absolute top-0 left-0 z-20"
-        style={{
-          paddingTop: insets.top + 16,
-          paddingLeft: 24,
-          opacity: textOpacityAnim,
-        }}>
-        <Pressable
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
-              console.log('Haptics not available');
-            });
-            analytics.logEvent('Onboarding_Tapped_Back', {
-              step: 1,
-              screenName: 'Welcome',
-              action: 'Back to Auth',
-            });
-            // Navigate to auth index instead of going back to prevent GO_BACK error
-            router.replace('/(auth)');
-          }}
-          className="w-10 h-10 rounded-full bg-black/20 items-center justify-center"
-          style={{
-            backgroundColor: 'rgba(0,0,0,0.2)',
-          }}>
-          <Text className="text-white text-lg font-bold">←</Text>
-        </Pressable>
-      </Animated.View>
-
-      {/* Main content area that zooms */}
+    <>
+      <StatusBar translucent backgroundColor="transparent" />
       <Animated.View
         style={{
           flex: 1,
-          transform: [{ scale: scaleAnim }, { translateY: translateYAnim }],
+          opacity: screenFadeAnim,
+          backgroundColor: '#FFF4D9',
+          transform: [{ scale: screenScaleAnim }],
         }}>
-        <Pressable
-          onPress={handleLambTap}
-          disabled={!secondStageActive || isLambTapped || isTransitioning}
-          className="flex-1">
-          <ImageBackground
-            source={require('../../assets/backgrounds/oldBarn.png')}
-            className="absolute top-0 left-0 right-0 bottom-0"
-            resizeMode="cover">
-            {/* Base gradient (stage 1) */}
-            <LinearGradient
-              colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.4)', 'transparent']}
-              locations={[0, 0.3, 1]}
-              style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
-            />
-            {/* Animated overlay gradient (stage 2) */}
-            <Animated.View
-              style={{
-                opacity: gradientOpacityAnim,
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                top: 0,
-                bottom: 0, // Added positioning
-              }}>
+        {/* Header Text (Single element) */}
+        <Animated.View
+          className="px-6 absolute top-0 left-0 right-0 z-10 mx-8"
+          style={{
+            paddingTop: insets.top,
+            opacity: textOpacityAnim,
+          }}>
+          <Text
+            className={`${textPhase === 3 ? 'font-nunito-bold text-h1' : 'font-feather text-title'} text-center text-white mt-12`}>
+            {displayText}
+          </Text>
+        </Animated.View>
+
+        {/* Subtle Back Button */}
+        <Animated.View
+          className="absolute top-0 left-0 z-20"
+          style={{
+            paddingTop: insets.top + 16,
+            paddingLeft: 24,
+            opacity: textOpacityAnim,
+          }}>
+          <Pressable
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
+                console.log('Haptics not available');
+              });
+              analytics.logEvent('Onboarding_Tapped_Back', {
+                step: 1,
+                screenName: 'Welcome',
+                action: 'Back to Auth',
+              });
+              // Navigate to auth index instead of going back to prevent GO_BACK error
+              router.replace('/(auth)');
+            }}
+            className="w-10 h-10 rounded-full bg-black/20 items-center justify-center"
+            style={{
+              backgroundColor: 'rgba(0,0,0,0.2)',
+            }}>
+            <Text className="text-white text-lg font-bold">←</Text>
+          </Pressable>
+        </Animated.View>
+
+        {/* Main content area that zooms */}
+        <Animated.View
+          style={{
+            flex: 1,
+            transform: [{ scale: scaleAnim }, { translateY: translateYAnim }],
+          }}>
+          <Pressable
+            onPress={handleLambTap}
+            disabled={!secondStageActive || isLambTapped || isTransitioning}
+            className="flex-1">
+            <ImageBackground
+              source={require('../../assets/backgrounds/oldBarn.png')}
+              className="absolute top-0 left-0 right-0 bottom-0"
+              resizeMode="cover">
+              {/* Base gradient (stage 1) */}
               <LinearGradient
                 colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.4)', 'transparent']}
                 locations={[0, 0.3, 1]}
                 style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
               />
-            </Animated.View>
-          </ImageBackground>
+              {/* Animated overlay gradient (stage 2) */}
+              <Animated.View
+                style={{
+                  opacity: gradientOpacityAnim,
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: 0,
+                  bottom: 0, // Added positioning
+                }}>
+                <LinearGradient
+                  colors={['rgba(0,0,0,0.7)', 'rgba(0,0,0,0.4)', 'transparent']}
+                  locations={[0, 0.3, 1]}
+                  style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
+                />
+              </Animated.View>
+            </ImageBackground>
 
-          {/* Inner container */}
-          <View className="flex-1">
-            {/* Lamb Animation */}
-            <View className="flex-1 items-center justify-center mt-72">
-              <View className="w-[225px] h-[225px] w-full justify-center items-center relative">
-                <Rive
-                  ref={riveRef}
-                  // resourceName={assets[0].uri}
-                  onError={(error) => {
-                    console.log('------>', error);
-                  }}
-                  resourceName={IS_ANDROID ? 'make_lamb' : undefined}
-                  url={IS_IOS ? assets[0].uri! : undefined} // Use url prop with localUri
-                  // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
-                  stateMachineName="State Machine 1"
-                  artboardName={'lamb-wakingup-click'}
-                  fit={Fit.Contain}
-                  alignment={Alignment.Center}
-                  style={{ width: '100%', height: '100%' }}
-                />
-                {/* <Rive
-                  ref={riveRef}
-                  onError={(error) => {
-                    console.log('------>', error);
-                  }}
-                  // resourceName={assets[0].uri}
-                  url={assets[0].uri}
-                  artboardName={'lamb-wakingup'}
-                  stateMachineName="State Machine 1"
-                  fit={Fit.Contain}
-                  alignment={Alignment.Center}
-                  style={{ width: '100%', height: '100%' }}
-                /> */}
-                {/* Transparent overlay for tap detection */}
-                <Pressable
-                  onPress={handleLambTap}
-                  disabled={!secondStageActive || isLambTapped || isTransitioning}
-                  className="absolute top-0 left-0 right-0 bottom-0 bg-black/[0.01] h-full w-full"
-                />
+            {/* Inner container */}
+            <View className="flex-1">
+              {/* Lamb Animation */}
+              <View className="flex-1 items-center justify-center mt-72">
+                <View className="w-[225px] h-[225px] w-full justify-center items-center relative">
+                  <Rive
+                    ref={riveRef}
+                    // resourceName={assets[0].uri}
+                    onError={(error) => {
+                      console.log('------>', error);
+                    }}
+                    resourceName={IS_ANDROID ? 'make_lamb' : undefined}
+                    url={IS_IOS ? assets[0].uri! : undefined} // Use url prop with localUri
+                    // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
+                    stateMachineName="State Machine 1"
+                    artboardName={'lamb-wakingup-click'}
+                    fit={Fit.Contain}
+                    alignment={Alignment.Center}
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                  {/* <Rive
+                    ref={riveRef}
+                    onError={(error) => {
+                      console.log('------>', error);
+                    }}
+                    // resourceName={assets[0].uri}
+                    url={assets[0].uri}
+                    artboardName={'lamb-wakingup'}
+                    stateMachineName="State Machine 1"
+                    fit={Fit.Contain}
+                    alignment={Alignment.Center}
+                    style={{ width: '100%', height: '100%' }}
+                  /> */}
+                  {/* Transparent overlay for tap detection */}
+                  <Pressable
+                    onPress={handleLambTap}
+                    disabled={!secondStageActive || isLambTapped || isTransitioning}
+                    className="absolute top-0 left-0 right-0 bottom-0 bg-black/[0.01] h-full w-full"
+                  />
+                </View>
               </View>
             </View>
-          </View>
-        </Pressable>
-      </Animated.View>
+          </Pressable>
+        </Animated.View>
 
-      {/* Fixed Button at Bottom */}
-      <Animated.View
-        style={{
-          position: 'absolute',
-          left: 24,
-          right: 24,
-          bottom: Math.max(insets.bottom + 20, 32),
-          opacity: fadeAnim,
-          // Keep button translateY animation simple
-          transform: [
-            {
-              translateY: fadeAnim.interpolate({
-                inputRange: [0, 0.5, 1],
-                outputRange: [20, 0, 0], // Slide up initially, stay put after
-              }),
-            },
-          ],
-        }}>
-        <PrimaryButton
-          title={textPhase === 2 ? 'Begin Journey' : 'Claim Lost Lamb'}
-          onPress={handleButtonPress}
-          // Only disable in specific conditions
-          disabled={(secondStageActive && !isLambTapped) || isAnimating || isTransitioning}
-        />
+        {/* Fixed Button at Bottom */}
+        <Animated.View
+          style={{
+            position: 'absolute',
+            left: 24,
+            right: 24,
+            bottom: Math.max(insets.bottom + 20, 32),
+            opacity: fadeAnim,
+            // Keep button translateY animation simple
+            transform: [
+              {
+                translateY: fadeAnim.interpolate({
+                  inputRange: [0, 0.5, 1],
+                  outputRange: [20, 0, 0], // Slide up initially, stay put after
+                }),
+              },
+            ],
+          }}>
+          <PrimaryButton
+            title={textPhase === 2 ? 'Begin Journey' : 'Claim Lost Lamb'}
+            onPress={handleButtonPress}
+            // Only disable in specific conditions
+            disabled={(secondStageActive && !isLambTapped) || isAnimating || isTransitioning}
+          />
+        </Animated.View>
       </Animated.View>
-    </Animated.View>
+    </>
   );
 }

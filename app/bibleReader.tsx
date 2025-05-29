@@ -21,6 +21,7 @@ import {
   Switch,
   Platform,
   ToastAndroid,
+  StatusBar,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchChapter, Verse } from './api/bible';
@@ -1070,6 +1071,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   if (useCardView) {
     return (
       <>
+        <StatusBar translucent backgroundColor="transparent" />
         <NewBibleReader
           bookId={currentBookId}
           chapter={currentChapter}
@@ -1213,6 +1215,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     return (
       <SafeAreaView
         style={[styles.container, { backgroundColor: THEME_COLORS[currentTheme].background }]}>
+        <StatusBar translucent backgroundColor="transparent" />
         <View
           style={[
             styles.newHeaderContainer,
