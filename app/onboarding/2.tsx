@@ -17,7 +17,7 @@ import {
 import { toBool } from '../utils/toBool';
 import { validateName } from '../../utils/validation';
 import CustomAnimatedView from '../components/CustomAnimatedView';
-import { IS_IOS } from '../utils/utils';
+import { IS_ANDROID, IS_IOS } from '../utils/utils';
 
 export default function OnboardingLambNameScreen() {
   const router = useRouter();
@@ -31,7 +31,7 @@ export default function OnboardingLambNameScreen() {
   const inputRef = useRef<TextInput>(null);
 
   // Load Rive assets
-  const [riveAssets, assetsError] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
 
   // Track if animations have been initialized
   const animationsInitialized = useRef(false);
@@ -174,7 +174,7 @@ export default function OnboardingLambNameScreen() {
   };
 
   // Show loading indicator while assets load
-  if (!riveAssets && assetsError && IS_IOS) {
+  if (!riveAssets && IS_IOS) {
     return (
       <View className="flex-1 items-center justify-center bg-[#FFF4D9] px-6">
         <ActivityIndicator size="large" color="#3C584A" />
@@ -196,11 +196,9 @@ export default function OnboardingLambNameScreen() {
       <CustomAnimatedView
         style={lambStyle}
         className="h-[160px] w-full justify-center items-center my-4">
-
         <Rive
-          {...(IS_IOS
-            ? { url: riveAssets[0].uri }
-            : { resourceName: 'home_lamb' })}
+          url={IS_IOS ? riveAssets?.[0]?.uri : undefined}
+          resourceName={IS_ANDROID ? 'home_lamb' : undefined}
           artboardName="lamb-idle"
           autoplay
           style={{ width: '80%', height: '80%' }}
@@ -209,7 +207,6 @@ export default function OnboardingLambNameScreen() {
             // setRiveError(true);
           }}
         />
-
       </CustomAnimatedView>
 
       {/* Name Input */}
@@ -226,11 +223,7 @@ export default function OnboardingLambNameScreen() {
           autoCapitalize="none"
           spellCheck={false}
         />
-        {error && (
-          <Text className="font-din text-sm text-red-500 mt-2 text-center">
-            {error}
-          </Text>
-        )}
+        {error && <Text className="font-din text-sm text-red-500 mt-2 text-center">{error}</Text>}
       </CustomAnimatedView>
 
       {/* Continue Button */}
