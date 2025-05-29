@@ -334,7 +334,8 @@ export default function MapScreen() {
           // Add a flag to help identify where this navigation came from
           source: 'map',
           timestamp: Date.now()?.toString(), // Force new params by adding timestamp
-          isLastUnitInSection: isLastUnitInSection?.toString()
+          isLastUnitInSection: isLastUnitInSection?.toString(),
+          isFromDailyBread: 'true',
         },
       });
     } else {

@@ -126,10 +126,10 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   useEffect(() => {
     if (visible) {
       console.log('📱 BiblePreviewComponent is now visible');
-      
+
       // Reset the navigation return flag
       setHasReturnedFromNavigation(true);
-      
+
       // First animate the container opacity and card entry
       Animated.parallel([
         Animated.timing(containerOpacity, {
@@ -242,6 +242,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
           chapters: ref.chapters.join(','),
           title: nextUnit.title,
           source: 'preview',
+          isFromDailyBread: 'true',
           timestamp: Date.now()?.toString(),
         },
       });
@@ -253,6 +254,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
           chapters: savedChapter?.toString(),
           title,
           source: 'preview',
+          isFromStartReading: 'true',
           timestamp: Date.now()?.toString(),
         },
       });
@@ -275,6 +277,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         source: 'just-read',
         justReadMode: 'true', // Special flag for just read mode
         timestamp: Date.now().toString(),
+        isFromDailyBread: 'true',
       },
     });
 
@@ -302,10 +305,10 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
     <Animated.View
       className="absolute inset-0 flex flex-col w-full h-full"
       style={{ opacity: containerOpacity, zIndex: 1000 }}>
-      
+
       {/* Back Button - High z-index wrapper to ensure it's above everything */}
       <View className="absolute top-0 left-0 right-0 z-50" style={{ zIndex: 10000 }} pointerEvents="box-none">
-        <BackButton 
+        <BackButton
           onPress={handleBack}
           containerClassName=""
         />

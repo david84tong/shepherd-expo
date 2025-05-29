@@ -1258,7 +1258,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           style={[
             {
               position: 'absolute',
-              bottom: isEmbedded ? 100 : 50,
+              bottom: isEmbedded ? 100 : effectiveParams?.isFromDailyBread ? 50 : 100,
               left: 0,
               right: 0,
               flexDirection: 'row',
@@ -1530,8 +1530,8 @@ const styles = StyleSheet.create<BibleReaderStyles>({
   },
   navButtonText: {
     color: '#3C584A',
+    fontFamily: 'Inter-Bold',
     fontSize: 24,
-    fontWeight: '700',
   },
   disabledNavButton: {
     backgroundColor: 'rgba(220, 178, 128, 0.1)',
@@ -1553,7 +1553,7 @@ const styles = StyleSheet.create<BibleReaderStyles>({
     flex: 1,
   },
   scrollContainer: {
-    paddingBottom: 100,
+    paddingBottom: 130,
     paddingHorizontal: 20,
     paddingTop: 10,
   },
