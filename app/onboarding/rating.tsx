@@ -1,5 +1,5 @@
-import React, { useRef, useLayoutEffect } from 'react';
-import { View, Text, SafeAreaView, Image, TouchableOpacity, Platform } from 'react-native';
+import React, { useRef, useLayoutEffect, useState, useEffect } from 'react';
+import { View, Text, SafeAreaView, Image, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import Lottie from 'lottie-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -20,18 +20,16 @@ const Rating = () => {
 
   // Animation refs
   const animationsInitialized = useRef(false);
+  const [isAssetsLoaded, setIsAssetsLoaded] = useState(false);
 
   // Create Reanimated shared values for each component
   const screenOpacity = useSharedValue(0);
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
-
   const starsOpacity = useSharedValue(0);
   const starsTranslateY = useSharedValue(20);
-
   const imageOpacity = useSharedValue(0);
   const imageTranslateY = useSharedValue(20);
-
   const buttonOpacity = useSharedValue(0);
   const buttonTranslateY = useSharedValue(20);
 
@@ -42,50 +40,60 @@ const Rating = () => {
 
   // Run animations only once during initial layout
   useLayoutEffect(() => {
-    if (animationsInitialized.current) return;
+    if (animationsInitialized.current || !isAssetsLoaded) return;
 
     // Fade in the entire screen first
     screenOpacity.value = withTiming(1, { duration: 250 });
 
     // Reset animation values
-    const timer = setTimeout(() => {
-      titleOpacity.value = 0;
-      titleTranslateY.value = 20;
-      starsOpacity.value = 0;
-      starsTranslateY.value = 20;
-      imageOpacity.value = 0;
-      imageTranslateY.value = 20;
-      buttonOpacity.value = 0;
-      buttonTranslateY.value = 20;
+    titleOpacity.value = 0;
+    titleTranslateY.value = 20;
+    starsOpacity.value = 0;
+    starsTranslateY.value = 20;
+    imageOpacity.value = 0;
+    imageTranslateY.value = 20;
+    buttonOpacity.value = 0;
+    buttonTranslateY.value = 20;
 
-      // Staggered animations for each component
-      const animateComponent = (opacity: any, translateY: any, delay: number) => {
-        opacity.value = withDelay(delay, withTiming(1, { duration: 300 }));
-        translateY.value = withDelay(
-          delay,
-          withSpring(0, {
-            damping: 16,
-            stiffness: 100,
-            mass: 0.8,
-          })
-        );
-      };
+    // Staggered animations for each component with platform-specific delays
+    const baseDelay = Platform.OS === 'android' ? 100 : 50;
 
-      // Apply staggered animations
-      animateComponent(titleOpacity, titleTranslateY, 50);
-      animateComponent(starsOpacity, starsTranslateY, 150);
-      animateComponent(imageOpacity, imageTranslateY, 250);
-      animateComponent(buttonOpacity, buttonTranslateY, 350);
+    const animateComponent = (opacity: any, translateY: any, delay: number) => {
+      opacity.value = withDelay(delay, withTiming(1, { duration: 300 }));
+      translateY.value = withDelay(
+        delay,
+        withSpring(0, {
+          damping: 16,
+          stiffness: 100,
+          mass: 0.8,
+        })
+      );
+    };
 
-      // Log when animations are complete
+    // Apply staggered animations with platform-specific timing
+    animateComponent(titleOpacity, titleTranslateY, baseDelay);
+    animateComponent(starsOpacity, starsTranslateY, baseDelay * 2);
+    animateComponent(imageOpacity, imageTranslateY, baseDelay * 3);
+    animateComponent(buttonOpacity, buttonTranslateY, baseDelay * 4);
+
+    // Log when animations are complete
+    setTimeout(() => {
+      analytics.logEvent('RatingScreen_Screenload');
+    }, baseDelay * 5);
+
+    animationsInitialized.current = true;
+  }, [isAssetsLoaded]);
+
+  // Handle asset loading
+  useEffect(() => {
+    // Add a small delay on Android to ensure proper initialization
+    if (Platform.OS === 'android') {
       setTimeout(() => {
-        analytics.logEvent('RatingScreen_Screenload');
-      }, 700); // After all animations should be done
-
-      animationsInitialized.current = true;
-    }, 50);
-
-    return () => clearTimeout(timer);
+        setIsAssetsLoaded(true);
+      }, 100);
+    } else {
+      setIsAssetsLoaded(true);
+    }
   }, []);
 
   // Create animated styles
@@ -144,6 +152,16 @@ const Rating = () => {
     analytics.logEvent('RatingScreen_Tapped_IRated');
     router.push('/onboarding/LoadingScreen');
   };
+
+  // Show loading indicator while assets load
+  if (!isAssetsLoaded) {
+    return (
+      <View className="flex-1 items-center justify-center bg-surfaceCream pt-4">
+        <ActivityIndicator size="large" color="#3C584A" />
+        <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
+      </View>
+    );
+  }
 
   return (
     <Animated.View style={screenStyle}>

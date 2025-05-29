@@ -205,6 +205,7 @@ export default function SaveProgressScreen() {
       // Create user in Firestore
       const success = await createUser(uid, userData);
       console.log('uid, userData =>', { uid, userData });
+      console.log('createUser =>', createUser);
       console.log('success ====>', success);
 
       if (!success) {

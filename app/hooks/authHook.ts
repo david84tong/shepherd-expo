@@ -160,7 +160,7 @@ export function useAuth() {
       console.log('[Auth] User document updated in Firestore');
 
       // Update local store
-      updateUser({
+      useUserStore.getState().setUser({
         id: uid,
         displayName,
         email: email || undefined,
@@ -235,7 +235,7 @@ export function useAuth() {
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
 
       // Update local store
-      updateUser({
+      useUserStore.getState().setUser({
         id: uid,
         displayName: 'Anonymous User',
       });
@@ -350,7 +350,9 @@ export function useAuth() {
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
       console.log('userDoc set in firestore');
 
-      updateUser({ id: uid, displayName: userDoc.displayName, email: userDoc.email });
+      useUserStore
+        .getState()
+        .setUser({ id: uid, displayName: userDoc.displayName, email: userDoc.email });
       console.log('userDoc updated in store');
       setCreatedAt(firestore.Timestamp.now());
       setUpdatedAt(firestore.Timestamp.now());

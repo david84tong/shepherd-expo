@@ -35,7 +35,7 @@ const getDaysDifference = (date1: Date, date2: Date): number => {
 
 // Check if two dates fall on different local calendar days
 const isNewCalendarDay = (date1: Date, date2: Date): boolean => {
-  console.log('isNewCalendarDay (local)', date1?.toString(), date2?.toString());
+  console.log('isNewCalendarDay (local)', date1?.toString?.(), date2?.toString?.());
   if (!date1 || !date2) return false;
   return !isSameLocalCalendarDay(date1, date2);
 };

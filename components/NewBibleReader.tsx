@@ -828,7 +828,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     if (newSize >= MIN_FONT_SIZE && newSize <= MAX_FONT_SIZE) {
       setFontSize(newSize);
       try {
-        await AsyncStorage.setItem(FONT_SIZE_KEY, newSize.toString());
+        await AsyncStorage.setItem(FONT_SIZE_KEY, newSize?.toString());
       } catch (e) {
         console.error('Failed to save font size', e);
       }
@@ -848,7 +848,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     setLineHeightPreset(preset);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
-      await AsyncStorage.setItem(LINE_HEIGHT_KEY, LINE_HEIGHT_PRESETS[preset].toString());
+      await AsyncStorage.setItem(LINE_HEIGHT_KEY, LINE_HEIGHT_PRESETS[preset]?.toString());
     } catch (e) {
       console.error('Failed to save line height', e);
     }

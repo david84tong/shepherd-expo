@@ -69,6 +69,9 @@ export type SettingsSheetRef = {
 };
 
 const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoints }) => {
+
+
+
   const router = useRouter();
   const [userId, setUserId] = useState<string>('Anonymous user');
   const [isUserSignedIn, setIsUserSignedIn] = useState<boolean>(false);
@@ -152,7 +155,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     date.setHours(hour);
     date.setMinutes(0);
     setSelectedTime(date);
-  }, [notificationTime]);
+  }, []);
 
   // Check notification permissions on mount
   useEffect(() => {
@@ -379,6 +382,23 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       if (notificationTime === 'none') {
         setNotificationTime('19:00'); // Default to 7 PM
       }
+
+      // Update onboarding store
+      const onboardingStore = useOnboardingStore.getState();
+      await onboardingStore.setNotificationPreference({
+        enabled: true,
+        time: notificationTime || '19:00',
+      });
+
+      // Update Firestore if user is authenticated
+      const user = auth().currentUser;
+      if (user) {
+        await firestore().collection('users').doc(user.uid).update({
+          notificationsEnabled: true,
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
     } else {
       // If turning off, cancel all notifications
       await cancelStreakNotifications();
@@ -386,6 +406,22 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
       // Update notification store
       setNotificationsEnabled(false);
+
+      // Update onboarding store
+      const onboardingStore = useOnboardingStore.getState();
+      await onboardingStore.setNotificationPreference({
+        enabled: false,
+        time: 'none',
+      });
+
+      // Update Firestore if user is authenticated
+      const user = auth().currentUser;
+      if (user) {
+        await firestore().collection('users').doc(user.uid).update({
+          notificationsEnabled: false,
+          updatedAt: firestore.FieldValue.serverTimestamp(),
+        });
+      }
 
       // Hide the time picker if it's open
       if (showTimePicker) {
@@ -398,6 +434,12 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         }, 200);
       }
     }
+
+    // Log analytics
+    analytics.logEvent('Settings_Changed_Notifications', {
+      enabled: enableNotifications,
+      userId: userId,
+    });
   };
 
   // Toggle time picker visibility
@@ -1078,7 +1120,46 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     return () => {
       subscription.remove();
     };
-  }, [backgroundMusicEnabled]);
+  }, []);
+
+  // Add effect to initialize notification state
+  useEffect(() => {
+    const initializeNotificationState = async () => {
+      try {
+        // Get current user
+        const user = auth().currentUser;
+
+        if (user) {
+          // Get user data from Firestore
+          const userDoc = await firestore().collection('users').doc(user.uid).get();
+          const userData = userDoc.data();
+
+          if (userData) {
+            // Update notification store based on Firestore data
+            setNotificationsEnabled(userData.notificationsEnabled ?? false);
+
+            // If notifications are enabled, ensure they are scheduled
+            if (userData.notificationsEnabled) {
+              await scheduleStreakReminders();
+            } else {
+              // If notifications are disabled, ensure they are cancelled
+              await cancelStreakNotifications();
+              await cancelDailyReminder();
+            }
+          }
+        } else {
+          // For non-authenticated users, check AsyncStorage
+          const onboardingStore = useOnboardingStore.getState();
+          const notificationEnabled = onboardingStore.responses.notificationEnabled ?? false;
+          setNotificationsEnabled(notificationEnabled);
+        }
+      } catch (error) {
+        console.error('Error initializing notification state:', error);
+      }
+    };
+
+    initializeNotificationState();
+  }, []);
 
   return (
     <>
