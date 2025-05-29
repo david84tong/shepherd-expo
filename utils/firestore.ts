@@ -370,3 +370,124 @@ export const saveFeedback = async (feedbackData: {
     return false;
   }
 };
+
+// Devotional-specific Firestore functions
+export const saveDevotional = async (devotional: any) => {
+  try {
+    const currentUser = auth().currentUser;
+    if (!currentUser) {
+      console.log('No authenticated user found, skipping devotional save');
+      return false;
+    }
+
+    // Log the save operation
+    firebaseDebugger.logRequest('CREATE', `devotionals/${devotional.id}`, devotional);
+
+    await firestore()
+      .collection('devotionals')
+      .doc(devotional.id)
+      .set(devotional);
+
+    console.log('Successfully saved devotional to Firestore');
+    return true;
+  } catch (error) {
+    console.error('Error saving devotional:', error);
+    return false;
+  }
+};
+
+export const fetchUserDevotionals = async (limit: number = 30) => {
+  try {
+    const currentUser = auth().currentUser;
+    if (!currentUser) {
+      console.log('No authenticated user found');
+      return [];
+    }
+
+    const userId = currentUser.uid;
+    const cacheKey = `devotionals_${userId}_${limit}`;
+
+    return await getCachedRequest(cacheKey, async () => {
+      // Log the fetch operation
+      firebaseDebugger.logRequest('QUERY', `devotionals?userId=${userId}&limit=${limit}`, null);
+
+      const snapshot = await firestore()
+        .collection('devotionals')
+        .where('userId', '==', userId)
+        .orderBy('createdAt', 'desc')
+        .limit(limit)
+        .get();
+
+      return snapshot.docs.map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      }));
+    });
+  } catch (error) {
+    console.error('Error fetching devotionals:', error);
+    return [];
+  }
+};
+
+export const fetchDevotionalByDate = async (date: string) => {
+  try {
+    const currentUser = auth().currentUser;
+    if (!currentUser) {
+      console.log('No authenticated user found');
+      return null;
+    }
+
+    const userId = currentUser.uid;
+    const cacheKey = `devotional_${userId}_${date}`;
+
+    return await getCachedRequest(cacheKey, async () => {
+      // Log the fetch operation
+      firebaseDebugger.logRequest('QUERY', `devotionals?userId=${userId}&date=${date}`, null);
+
+      const snapshot = await firestore()
+        .collection('devotionals')
+        .where('userId', '==', currentUser.uid)
+        .where('date', '==', date)
+        .limit(1)
+        .get();
+
+      if (!snapshot.empty) {
+        return {
+          ...snapshot.docs[0].data(),
+          id: snapshot.docs[0].id
+        };
+      }
+      return null;
+    });
+  } catch (error) {
+    console.error('Error fetching devotional by date:', error);
+    return null;
+  }
+};
+
+export const deleteDevotional = async (devotionalId: string) => {
+  try {
+    const currentUser = auth().currentUser;
+    if (!currentUser) {
+      console.log('No authenticated user found, skipping devotional deletion');
+      return false;
+    }
+
+    // Log the delete operation
+    firebaseDebugger.logRequest('DELETE', `devotionals/${devotionalId}`, null);
+
+    await firestore()
+      .collection('devotionals')
+      .doc(devotionalId)
+      .delete();
+
+    // Clear cache
+    clearFirestoreCache();
+
+    console.log('Successfully deleted devotional from Firestore');
+    return true;
+  } catch (error) {
+    console.error('Error deleting devotional:', error);
+    return false;
+  }
+};

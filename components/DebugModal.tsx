@@ -12,6 +12,7 @@ import { useUserStore } from '../app/stores/userStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUIStore } from '../app/stores/uiStore';
 import { useAuth, isSignedIn } from '../app/hooks/authHook';
+import { useDevotionalStore } from '../app/stores/devotionalStore';
 import SuccessAnimation from './SuccessAnimation'; // Import the full SuccessAnimation component
 import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
 import { HalfModalType } from '../app/halfModal';
@@ -368,6 +369,77 @@ export function DebugButton() {
     }, 300);
   }, []);
 
+  // Handler for generating a devotional
+  const handleGenerateDevotional = useCallback(async () => {
+    const devotionalStore = useDevotionalStore.getState();
+    
+    // Show loading toast
+    Toast.show({
+      type: 'info',
+      text1: 'Generating Devotional',
+      text2: 'Please wait while we create your personalized devotional...',
+      position: 'top',
+      visibilityTime: 2000,
+    });
+
+    try {
+      // Generate devotional with some test context
+      const userContext = {
+        spiritualGoal: 'grow closer to God',
+        currentChallenges: 'dealing with daily stress',
+        preferredTopics: ['faith', 'peace', 'trust in God']
+      };
+      
+      const devotional = await devotionalStore.generateDailyDevotional(userContext);
+      
+      if (devotional) {
+        // Log the full devotional to console
+        console.log('🙏 Generated Devotional:', JSON.stringify(devotional, null, 2));
+        
+        // Show success alert with devotional preview
+        Alert.alert(
+          '✨ Devotional Generated',
+          `Title: ${devotional.title}\n\nReference: ${devotional.bibleReference}\n\nVerse: ${devotional.bibleVerse}\n\n[Full content logged to console]`,
+          [
+            {
+              text: 'Copy to Clipboard',
+              onPress: () => {
+                const fullText = `${devotional.title}\n\n${devotional.bibleReference}\n${devotional.bibleVerse}\n\n${devotional.context}\n\nPrayer:\n${devotional.prayer}\n\nReflection:\n${devotional.reflectionPrompt}`;
+                // Note: Clipboard functionality would need to be imported/implemented
+                console.log('Full devotional text:', fullText);
+                Toast.show({
+                  type: 'success',
+                  text1: 'Devotional Details',
+                  text2: 'Check console for full text',
+                  position: 'top',
+                  visibilityTime: 3000,
+                });
+              }
+            },
+            { text: 'OK', style: 'default' }
+          ]
+        );
+      } else {
+        Toast.show({
+          type: 'error',
+          text1: 'Generation Failed',
+          text2: devotionalStore.error || 'Unable to generate devotional',
+          position: 'top',
+          visibilityTime: 4000,
+        });
+      }
+    } catch (error) {
+      console.error('Error generating devotional:', error);
+      Toast.show({
+        type: 'error',
+        text1: 'Generation Error',
+        text2: error instanceof Error ? error.message : 'An error occurred',
+        position: 'top',
+        visibilityTime: 4000,
+      });
+    }
+  }, []);
+
   // Handler for sign out
   const handleSignOut = useCallback(async () => {
     Alert.alert(
@@ -505,6 +577,16 @@ export function DebugButton() {
                   </Text>
                 </TouchableOpacity>
 
+                {/* Generate Devotional Button */}
+                <TouchableOpacity
+                  className="bg-[#F0E6FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
+                  onPress={handleGenerateDevotional}>
+                  <Text className="font-feather text-base text-textPrimary">Generate Devotional</Text>
+                  <Text className="font-din text-sm text-[#7A6B94] mt-1">
+                    Create AI-powered daily devotional
+                  </Text>
+                </TouchableOpacity>
+
                 {/* Sitemap Button */}
                 <TouchableOpacity
                   className="bg-[#E0F7E6] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FD675]"
@@ -548,6 +630,7 @@ export function DebugButton() {
                 </View>
               </View>
 
+              {/* Heart & Penalty System */}
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">
                   Heart & Penalty System
