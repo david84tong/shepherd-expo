@@ -18,7 +18,7 @@ interface HighlightColorPickerProps {
   isVisible: boolean;
   initialColor?: HighlightColorKey | null;
   onClose: () => void;
-  onSelectColor: (colorKey: HighlightColorKey) => void;
+  onSelectColor: (colorKey: HighlightColorKey | null) => void;
   versePreview?: string;
   bookName?: string;
   chapter?: number;
@@ -110,13 +110,8 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
       action: isRemoving ? 'remove' : 'apply'
     });
     
-    // For null selection, pass it to parent to remove the highlight
-    if (selectedColor === null && initialColor) {
-      onSelectColor(selectedColor as any);
-    } else if (selectedColor) {
-      // For regular color selection
-      onSelectColor(selectedColor);
-    }
+    // Pass the selected color (including null for removal) to parent
+    onSelectColor(selectedColor);
     
     // Animate out before closing
     modalScale.value = withTiming(0.95, { duration: 200 });
@@ -221,11 +216,11 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
                 <TouchableOpacity 
                   style={[
                     styles.confirmButton, 
-                    // Only disable if no color is selected (which shouldn't happen now with default)
-                    !selectedColor && styles.disabledButton
+                    // Button should only be disabled if we have no selection and no initial color to remove
+                    (selectedColor === null && !initialColor) && styles.disabledButton
                   ]} 
                   onPress={handleConfirm}
-                  disabled={!selectedColor}
+                  disabled={selectedColor === null && !initialColor}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.confirmText}>
