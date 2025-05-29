@@ -367,7 +367,7 @@ export default function RootLayout() {
       setIsRiveReady(true);
       setShowRiveAnimation(true);
       setAppReady(true);
-
+      
       // Hide splash screen after a small delay to ensure Rive is ready
       setTimeout(() => {
         SplashScreen.hideAsync();

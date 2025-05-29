@@ -465,6 +465,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const setHomeMode = useHomeStore((s) => s.setMode);
   const setSuccessType = useHomeStore((s) => s.setSuccessType);
   const setReadingCompleted = useHomeStore((s) => s.setReadingCompleted);
+  const readingCompleted = useHomeStore((s) => s.readingCompleted);
   const prayerCompleted = useHomeStore((s) => s.prayerCompleted);
   const reflectionCompleted = useHomeStore((s) => s.reflectionCompleted);
   const sawDailyBonus = useHomeStore((s) => s.sawDailyBonus);
@@ -1867,8 +1868,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                   <TouchableOpacity
                     onPress={() => {
                       if (isFadingToChat) return;
-                      console.log('📖 [NewBibleReader] Finish tapped');
-                      handleFinishReading();
+                      // If daily reading is completed and not in path mode, go to next chapter
+                      if (readingCompleted && !isInPathMode) {
+                        console.log('📖 [NewBibleReader] Next Chapter tapped - daily reading completed');
+                        navigateToNextChapter();
+                      } else {
+                        console.log('📖 [NewBibleReader] Finish tapped');
+                        handleFinishReading();
+                      }
                     }}
                     activeOpacity={0.8}
                     disabled={isFadingToChat}>
@@ -1886,7 +1893,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                           fontFamily: 'Feather Bold',
                           fontSize: 16,
                         }}>
-                        Finish Reading 🎉
+                        {readingCompleted && !isInPathMode ? 'Next Chapter →' : 'Finish Reading 🎉'}
                       </Text>
                     </View>
                   </TouchableOpacity>

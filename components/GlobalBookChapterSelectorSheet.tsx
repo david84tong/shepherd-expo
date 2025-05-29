@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Pressable, Dimensions, useWindowDimensions } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions, useWindowDimensions } from 'react-native';
 import BottomSheet, { BottomSheetView, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import { BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from '../app/models/Path';
 import { useUIStore } from '../app/stores/uiStore';
+import { usePathStore } from '../app/stores/pathStore';
 import * as Haptics from 'expo-haptics';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -16,6 +17,9 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
   const isBookChapterSelectorVisible = useUIStore(state => state.isBookChapterSelectorVisible);
   const bookChapterSelectorParams = useUIStore(state => state.bookChapterSelectorParams);
   const hideBookChapterSelector = useUIStore(state => state.hideBookChapterSelector);
+
+  // Access pathStore to save selected chapter
+  const setSavedReading = usePathStore(state => state.setSavedReading);
 
   // Local state - initialize with defaults but will be updated when sheet opens
   const [selectedBookId, setSelectedBookId] = useState<number>(1);
@@ -72,12 +76,18 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
   const handleSelectChapter = useCallback((chapter: number) => {
     console.log(`📖 [GlobalBookChapterSelector] Selected chapter: ${chapter} for book: ${selectedBookId}`);
     setSelectedChapter(chapter);
+    
+    // Save to pathStore as the last read chapter/verse
+    const bookName = bookNames[selectedBookId] || 'Unknown';
+    setSavedReading(bookName, selectedBookId, chapter);
+    console.log(`💾 [GlobalBookChapterSelector] Saved to pathStore: ${bookName} (${selectedBookId}) Chapter ${chapter}`);
+    
     if (bookChapterSelectorParams.onSelect) {
       bookChapterSelectorParams.onSelect(selectedBookId, chapter);
     }
     bottomSheetRef.current?.close();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
-  }, [selectedBookId, bookChapterSelectorParams.onSelect]);
+  }, [selectedBookId, bookChapterSelectorParams.onSelect, bookNames, setSavedReading]);
 
   // Handle select book
   const handleSelectBook = useCallback((bookId: number) => {

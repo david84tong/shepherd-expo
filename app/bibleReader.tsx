@@ -887,24 +887,22 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       version: currentVersion,
       chapter: currentChapter,
     });
+
+    // Always set pathInProgress to false when navigating back, regardless of context
+    setPathInProgress(false);
+
     if (onNavigateBack) {
       // Custom back navigation when embedded
       onNavigateBack();
     } else if (!isEmbedded && effectiveParams?.source === 'map') {
       // Navigation back to map when coming from map
-      console.log('📱 Navigating back to map, setting pathInProgress to false');
-
-      // Always set pathInProgress to false BEFORE navigating back
-      setPathInProgress(false);
+      console.log('📱 Navigating back to map, pathInProgress set to false');
 
       // Allow state update to complete before navigation
       setTimeout(() => {
         router.back();
       }, 50);
     } else {
-      // Always reset pathInProgress for any other back navigation too
-      setPathInProgress(false);
-
       // Default back navigation with small delay to allow state update
       setTimeout(() => {
         router.back();
