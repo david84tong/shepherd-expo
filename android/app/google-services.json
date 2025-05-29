@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "226457915179-gv35mee8dp6h8n7pbvgsket9v4s97pbt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "second.round.shepherd",
+            "certificate_hash": "2b4a8b3fb834006f96be16d057581d4e6c77a131"
+          }
+        },
+        {
           "client_id": "226457915179-tbsa7rptki8iedbirm5mp0ug9dob8kf0.apps.googleusercontent.com",
           "client_type": 3
         }
