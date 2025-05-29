@@ -54,8 +54,9 @@ interface VerseChatViewProps {
 
 const AnimatedSafeAreaView = Reanimated.createAnimatedComponent(SafeAreaView);
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
-const TAB_BAR_HEIGHT = 65; 
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
+// Use visual tab bar height (not layout height which includes safe areas)
+const TAB_BAR_HEIGHT = 35; 
 
 // Key to store chat usage in AsyncStorage
 const CHAT_USED_KEY = 'shepherd_bible_chat_used_global';
@@ -74,6 +75,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
   const [hasUsedFreeMessage, setHasUsedFreeMessage] = useState(false);
   const [globalMessageCount, setGlobalMessageCount] = useState(0);
   const [inputMessage, setInputMessage] = useState('');
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const flatListRef = useRef<FlatList>(null);
   
   const fadeAnim = useSharedValue(0);
@@ -499,11 +501,12 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     }, 1000);
   };
   
-  // Additional scroll handler for when keyboard appears
+  // Keyboard event listeners
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
       'keyboardDidShow',
-      () => {
+      (event) => {
+        setKeyboardHeight(event.endCoordinates.height);
         if (flatListRef.current && messages.length > 0) {
           setTimeout(() => {
             flatListRef.current?.scrollToEnd({ animated: true });
@@ -512,8 +515,16 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       }
     );
 
+    const keyboardDidHideListener = Keyboard.addListener(
+      'keyboardDidHide',
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
     return () => {
       keyboardDidShowListener.remove();
+      keyboardDidHideListener.remove();
     };
   }, [messages.length]);
   
@@ -604,7 +615,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? TAB_BAR_HEIGHT / 3 : 0}
+        keyboardVerticalOffset={0}
       >
         <Reanimated.View 
           style={styles.header}
@@ -676,7 +687,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         
         <Reanimated.View style={[styles.inputWrapper, inputContainerStyle]}>
           <View style={[styles.inputContainer, { 
-            paddingBottom: Math.max(insets.bottom + (TAB_BAR_HEIGHT / 2), 16) 
+            paddingBottom: Math.max(insets.bottom + TAB_BAR_HEIGHT, 16) 
           }]}>
             <TextInput
               style={styles.input}
@@ -805,7 +816,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingBottom: 16,
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 16,
     width: '100%',
   },
   inputWrapper: {
