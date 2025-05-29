@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ImageBackground,
   Image,
+  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -59,7 +60,7 @@ export default function LoginScreen() {
 
     try {
       // Trigger haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
 
       setLoading(true);
 
@@ -188,6 +189,7 @@ export default function LoginScreen() {
 
   return (
     <CustomAnimatedView style={screenStyle} className="flex-1">
+      <StatusBar translucent backgroundColor="transparent" />
       {/* Using direct require for background to avoid linter errors */}
       <ImageBackground
         source={require('../../assets/backgrounds/mainBackground.png')}

@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   View,
   ScrollView,
+  StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
@@ -915,9 +916,19 @@ export default function HomeScreen() {
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
 
+  const isDarkContant = new Date().getHours() >= 19;
+
+
   // HEADER
   return (
     <>
+      {/* <StatusBar translucent backgroundColor="transparent" /> */}
+
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle={isDarkContant ? "light-content" : "dark-content"}
+      />
       <Animated.View className="flex-1" style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}>
         {/* Background Layers - Use expo-image for better performance */}
         <Animated.View
@@ -1001,9 +1012,7 @@ export default function HomeScreen() {
 
         <SafeAreaView className="flex-1">
           {/* Header: Contains logic for showing Back OR Title/Stats */}
-          <View
-            className="flex-row justify-between items-center px-4 pt-1.5 pb-2 h-[42px] relative"
-            style={{ zIndex: 9999 }}>
+          <View className="flex-row justify-between items-center px-4 pt-1.5 pb-2 h-[42px] relative" style={{ zIndex: 9999, marginTop: Platform.OS === 'android' ? 25 : 0 }} >
             {/* Animated Back Button */}
 
             {/* Animated Default Header Elements (Title + Stats) */}

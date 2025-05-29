@@ -4,7 +4,7 @@ import dayjs from 'dayjs';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image, Linking, Alert, Modal, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image, Linking, Alert, Modal, ActivityIndicator, Platform, StatusBar } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -363,6 +363,7 @@ export default function ProfileScreen() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      <StatusBar translucent backgroundColor="transparent" />
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
         <ScrollView className="flex-1 bg-surfaceCream" contentContainerStyle={{ paddingBottom: 50 }}>
           {/* Header */}

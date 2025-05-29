@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   Platform,
   Dimensions,
+  StatusBar,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
@@ -415,6 +416,7 @@ export default function SaveProgressScreen() {
 
   return (
     <View className="flex-1 bg-surfaceCream px-6">
+      <StatusBar translucent backgroundColor="transparent" />
       {/* Header */}
       <Animated.View style={headerStyle} className="items-center mt-16 mb-8">
         <Text className="font-feather text-h1 text-center text-textPrimary mb-3">
