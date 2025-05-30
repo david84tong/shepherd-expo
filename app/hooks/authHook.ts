@@ -321,13 +321,10 @@ export function useAuth() {
             'No account found with this Google account. Please create a new account instead.'
           );
         }
-
-        // Fetch and sync user data immediately after login
-        const { success } = (await fetchFromFirestore()) || { success: false };
+        const success = await fetchFromFirestore?.();
         if (!success) {
           throw new Error('Failed to fetch your account data. Please try again.');
         }
-
         return userCredential.user;
       }
 
