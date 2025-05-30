@@ -13,6 +13,7 @@ import { adapty } from 'react-native-adapty';
 import analytics, { AnalyticsEvent } from '../../utils/analytics';
 import { checkStreakAndApplyPenalties } from './streakHook';
 import { syncUserDocument } from '../../utils/firestore';
+import { fetchFromFirestore } from '../helper/firebaseHelper';
 
 // Key to check if app has been initialized
 const APP_INITIALIZED_KEY = 'shepherd-app-initialized';
@@ -40,7 +41,6 @@ export const onAppForegroundOrInit = async () => {
   console.log('onAppForegroundOrInit=====>', onAppForegroundOrInit);
 
   const getUser = useUserStore.getState().getUser;
-  const fetchFromFirestore = useUserStore.getState().fetchFromFirestore;
   const setSelectedPath = usePathStore.getState().setSelectedPath;
   const syncWithFirestore = useUserStore.getState().syncWithFirestore;
   const userData = getUser();

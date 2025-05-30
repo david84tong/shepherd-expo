@@ -113,7 +113,6 @@ export const StreakScreen = () => {
   const completedReadings = useUserStore((s) => s.getCompletedReadings?.());
   const lastReadingDate = useUserStore((s) => s.lastReadingDate);
   const setStreakCount = useUserStore((state) => state.setStreakCount);
-  const syncWithFirestore = useUserStore((state) => state.syncWithFirestore);
   const [debugDisplayInfo, setDebugDisplayInfo] = useState<any>(null); // Renamed for clarity
 
   // Get notification store methods

@@ -7,12 +7,10 @@ import * as WebBrowser from 'expo-web-browser';
 import { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-
 import Constants from 'expo-constants';
-
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
-import useSubscriptionStore from '../stores/subscriptionStore';
+import { fetchFromFirestore } from '../helper/firebaseHelper';
 
 // Helper function to check if user is signed in
 export const isSignedIn = () => {
@@ -38,13 +36,7 @@ export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Get user from the store
-  const {
-    getUser,
-    setUser: updateUser,
-    setCreatedAt,
-    setUpdatedAt,
-    fetchFromFirestore,
-  } = useUserStore();
+  const { getUser, setUser: updateUser, setCreatedAt, setUpdatedAt } = useUserStore();
   const user = getUser?.();
 
   // Listen to auth state changes
@@ -329,10 +321,13 @@ export function useAuth() {
             'No account found with this Google account. Please create a new account instead.'
           );
         }
-        const success = await fetchFromFirestore?.();
+
+        // Fetch and sync user data immediately after login
+        const { success } = (await fetchFromFirestore()) || { success: false };
         if (!success) {
           throw new Error('Failed to fetch your account data. Please try again.');
         }
+
         return userCredential.user;
       }
 
@@ -345,18 +340,20 @@ export function useAuth() {
         createdAt: firestore.Timestamp.now(),
         updatedAt: firestore.Timestamp.now(),
       };
-      console.log('userDoc ====>', userDoc);
 
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
-      console.log('userDoc set in firestore');
 
-      useUserStore
-        .getState()
-        .setUser({ id: uid, displayName: userDoc.displayName, email: userDoc.email });
-      console.log('userDoc updated in store');
+      // Update local store with basic info first
+      useUserStore.getState().setUser({
+        id: uid,
+        displayName: userDoc.displayName,
+        email: userDoc.email,
+      });
       setCreatedAt(firestore.Timestamp.now());
       setUpdatedAt(firestore.Timestamp.now());
-      console.log('createdAt and updatedAt set in store');
+
+      // Fetch the complete user data to ensure all fields are synced
+      await fetchFromFirestore();
 
       if (analytics.isInitialized) {
         analytics.logEvent('auth_success', {
