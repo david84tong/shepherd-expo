@@ -1,9 +1,8 @@
-import auth from '@react-native-firebase/auth';
+import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
 import { UserDoc } from '../models/User';
 import { syncUserDocument, batchUpdate } from '../../utils/firestore';
 import { useUserStore } from '../stores/userStore';
-import { User } from '@react-native-google-signin/google-signin';
 
 // Constants
 const USER_FETCH_CACHE_DURATION = 5000; // 5 seconds
@@ -84,7 +83,7 @@ export const updateUserData = async (updates: Partial<UserDoc>): Promise<void> =
 export const fetchFromFirestore = async ({
   currentLoggedUser,
 }: {
-  currentLoggedUser: User;
+  currentLoggedUser: FirebaseAuthTypes.User;
 }): Promise<{
   success: boolean;
   data?: UserDoc;
@@ -118,6 +117,7 @@ export const fetchFromFirestore = async ({
       }
 
       const userData = userDoc.data() as UserDoc;
+      console.log('userData ======>', userData);
 
       if (userData) {
         // Ensure we have all required fields
