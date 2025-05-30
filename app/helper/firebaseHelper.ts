@@ -3,6 +3,7 @@ import firestore, { Timestamp } from '@react-native-firebase/firestore';
 import { UserDoc } from '../models/User';
 import { syncUserDocument, batchUpdate } from '../../utils/firestore';
 import { useUserStore } from '../stores/userStore';
+import { User } from '@react-native-google-signin/google-signin';
 
 // Constants
 const USER_FETCH_CACHE_DURATION = 5000; // 5 seconds
@@ -39,7 +40,7 @@ export const convertTimestamps = (obj: any): any => {
       out[key] = new Timestamp(value._seconds, value._nanoseconds);
     } else if (typeof value === 'object') {
       const nested = convertTimestamps(value);
-      // Only include nested object if it’s not empty
+      // Only include nested object if it's not empty
       if (nested && (typeof nested !== 'object' || Object.keys(nested).length > 0)) {
         out[key] = nested;
       }
@@ -80,7 +81,11 @@ export const updateUserData = async (updates: Partial<UserDoc>): Promise<void> =
   }
 };
 
-export const fetchFromFirestore = async (): Promise<{
+export const fetchFromFirestore = async ({
+  currentLoggedUser,
+}: {
+  currentLoggedUser: User;
+}): Promise<{
   success: boolean;
   data?: UserDoc;
   error?: any;
@@ -92,19 +97,20 @@ export const fetchFromFirestore = async (): Promise<{
 
   lastUserFetchTime = now;
   lastUserFetch = (async () => {
-    if (!isAuthenticated()) {
+    const currentUser = currentLoggedUser || auth?.()?.currentUser;
+    console.log('currentUser ===>', currentUser);
+    if (!currentUser) {
       console.log('User not authenticated, skipping Firestore fetch');
       return { success: false };
     }
 
     try {
-      const currentUser = auth().currentUser;
       if (!currentUser?.uid) {
         console.log('No valid user ID available');
         return { success: false };
       }
 
-      const userDoc = await firestore().collection('users').doc(currentUser.uid).get();
+      const userDoc = await firestore().collection('users').doc(currentUser?.uid).get();
 
       if (!userDoc.exists) {
         console.log('User document does not exist');
@@ -123,7 +129,7 @@ export const fetchFromFirestore = async (): Promise<{
         };
 
         const convertedUserData = convertTimestamps(updatedUserData);
-        console.log(userData, 'Syncing user data to store:', convertedUserData);
+        console.log('Syncing user data to store:', convertedUserData);
 
         // Sync the data to store
         useUserStore.getState().syncFirestoreData(convertedUserData);

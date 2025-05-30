@@ -339,7 +339,7 @@ export const checkStreakAndApplyPenalties = async () => {
         console.log(
           'User is authenticated, fetching latest data from Firestore before checking streak'
         );
-        await fetchFromFirestore?.();
+        await fetchFromFirestore?.({});
       } catch (fetchError) {
         console.log('Error fetching from Firestore, continuing with local data:', fetchError);
         // Continue with local data if fetch fails
@@ -442,7 +442,7 @@ export const useStreakManager = () => {
     try {
       // First, try to fetch latest data from Firestore if user is authenticated
       if (isAuthenticated()) {
-        await fetchFromFirestore?.();
+        await fetchFromFirestore?.({});
       }
 
       const lambHearts = userStore.getLambHearts?.();

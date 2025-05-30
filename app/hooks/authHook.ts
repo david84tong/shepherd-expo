@@ -113,7 +113,7 @@ export function useAuth() {
 
         // In login mode, fetch the user's data from Firestore instead of creating new data
         console.log('[Auth] Login mode: fetching existing user data from Firestore');
-        const success = await fetchFromFirestore?.();
+        const success = await fetchFromFirestore?.({});
         if (!success) {
           console.log('[Auth] Failed to fetch user data from Firestore');
           throw new Error('Failed to fetch your account data. Please try again.');
@@ -308,6 +308,7 @@ export function useAuth() {
       if (!idToken) {
         throw new Error('No idToken returned from Google sign-in.');
       }
+
       // Authenticate with Firebase
       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
       const userCredential = await auth().signInWithCredential(googleCredential);
@@ -321,7 +322,12 @@ export function useAuth() {
             'No account found with this Google account. Please create a new account instead.'
           );
         }
-        const success = await fetchFromFirestore?.();
+
+        // Wait for auth state to be ready before fetching data
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        console.log('userCredential?.user ===>', userCredential?.user);
+
+        const success = await fetchFromFirestore({ currentLoggedUser: userCredential?.user });
         if (!success) {
           throw new Error('Failed to fetch your account data. Please try again.');
         }
@@ -340,6 +346,9 @@ export function useAuth() {
 
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
 
+      // Wait for auth state to be ready before fetching data
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
       // Update local store with basic info first
       useUserStore.getState().setUser({
         id: uid,
@@ -350,7 +359,7 @@ export function useAuth() {
       setUpdatedAt(firestore.Timestamp.now());
 
       // Fetch the complete user data to ensure all fields are synced
-      await fetchFromFirestore();
+      await fetchFromFirestore({ currentLoggedUser: userCredential?.user });
 
       if (analytics.isInitialized) {
         analytics.logEvent('auth_success', {

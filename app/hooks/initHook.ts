@@ -45,7 +45,7 @@ export const onAppForegroundOrInit = async () => {
   const syncWithFirestore = useUserStore.getState().syncWithFirestore;
   const userData = getUser();
   try {
-    const fetchSuccess = await fetchFromFirestore?.();
+    const fetchSuccess = await fetchFromFirestore?.({});
 
     if (fetchSuccess) {
       const updatedUserData = getUser?.();
@@ -84,7 +84,6 @@ export const useAppInitialization = () => {
   const setLastReadingPenaltyDate = useUserStore((state) => state.setLastReadingPenaltyDate);
   const setLastPrayerPenaltyDate = useUserStore((state) => state.setLastPrayerPenaltyDate);
   const setLastReflectionPenaltyDate = useUserStore((state) => state.setLastReflectionPenaltyDate);
-  const fetchFromFirestore = useUserStore((state) => state.fetchFromFirestore);
   const syncWithFirestore = useUserStore((state) => state.syncWithFirestore);
 
   // Get path store actions
@@ -104,7 +103,7 @@ export const useAppInitialization = () => {
       console.log('Restoring user state for:', firebaseUser.uid);
 
       // First try to fetch from Firestore
-      const fetchSuccess = await fetchFromFirestore?.();
+      const fetchSuccess = await fetchFromFirestore?.({});
 
       if (!fetchSuccess) {
         console.log('Failed to fetch user data from Firestore');
