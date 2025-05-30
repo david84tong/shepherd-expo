@@ -11,6 +11,7 @@ import Reanimated, {
   Easing
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 import { HIGHLIGHT_COLORS, HighlightColorKey } from '~/app/stores/highlightStore';
 
 interface HighlightColorPickerProps {
@@ -32,6 +33,7 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
   onSelectColor,
   versePreview
 }) => {
+  const { t } = useTranslation();
   // Create color options from the HIGHLIGHT_COLORS object
   const colorOptions = Object.entries(HIGHLIGHT_COLORS).map(([key, value]) => ({
     key: key as HighlightColorKey,
@@ -127,7 +129,7 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
           <TouchableWithoutFeedback>
             <Reanimated.View style={[styles.modalContent, modalAnimatedStyle]}>
               <View style={styles.header}>
-                <Text style={styles.title}>Choose Highlight Color</Text>
+                <Text style={styles.title}>{t('highlightColorPicker.title')}</Text>
               </View>
               
               {/* Verse preview if provided */}
@@ -169,7 +171,7 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
                   onPress={handleCancel}
                   activeOpacity={0.7}
                 >
-                  <Text style={styles.cancelText}>Cancel</Text>
+                  <Text style={styles.cancelText}>{t('highlightColorPicker.cancel')}</Text>
                 </TouchableOpacity>
                 
                 <TouchableOpacity 
@@ -183,7 +185,7 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
                   activeOpacity={0.7}
                 >
                   <Text style={styles.confirmText}>
-                    {selectedColor === null && initialColor ? 'Remove' : 'Apply'}
+                    {selectedColor === null && initialColor ? t('highlightColorPicker.remove') : t('highlightColorPicker.apply')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -198,7 +200,7 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
                   }}
                 >
                   <Feather name="trash-2" size={16} color="#888888" style={styles.removeIcon} />
-                  <Text style={styles.removeText}>Remove Highlight</Text>
+                  <Text style={styles.removeText}>{t('highlightColorPicker.removeHighlight')}</Text>
                 </TouchableOpacity>
               )}
             </Reanimated.View>

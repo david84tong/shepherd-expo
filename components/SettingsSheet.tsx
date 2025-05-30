@@ -1099,10 +1099,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
           bounces={true}
           contentContainerStyle={styles.settingsContentContainer}>
           {/* Header */}
-          <View style={styles.settingsHeader}>
-            <Text style={styles.settingsTitle}>Settings</Text>
+          <View style={styles.header}>
+            <Text style={styles.headerTitle}>{t('settings.title')}</Text>
             <TouchableOpacity onPress={handleClose} style={{ padding: 5 }}>
-              <Text style={styles.doneButton}>Done</Text>
+              <Text style={styles.doneButtonText}>{t('settings.done')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -1110,7 +1110,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
           <View style={styles.settingsContent}>
             {/* Bible Translation Section */}
             <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>Bible Translation</Text>
+              <Text style={styles.settingsSectionTitle}>{t('settings.bibleTranslation')}</Text>
               <TouchableOpacity
                 style={styles.translationSelector}
                 onPress={() => setTranslationModalVisible(true)}>
@@ -1141,7 +1141,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
             {/* Daily Reading Time Section */}
             <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>Daily Reading Time</Text>
+              <Text style={styles.settingsSectionTitle}>{t('settings.dailyReadingTime')}</Text>
               <TouchableOpacity style={styles.translationSelector} onPress={handleEditReadingTime}>
                 <Text style={styles.translationText}>{getReadingTimeDisplay()}</Text>
                 <Feather name="chevron-right" size={18} color="#3C584A" />
@@ -1152,7 +1152,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
             {/* Notification Time Section */}
             <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>Notifications</Text>
+              <Text style={styles.settingsSectionTitle}>{t('settings.notificationTime')}</Text>
 
               {/* Toggle for enabling/disabling notifications */}
               <TouchableOpacity
@@ -1242,7 +1242,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
             {/* Join Discord */}
             <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>Community</Text>
+              <Text style={styles.settingsSectionTitle}>{t('settings.community')}</Text>
               <TouchableOpacity style={styles.discordButton} onPress={handleOpenDiscord}>
                 <View style={styles.discordButtonContent}>
                   <FontAwesome6 name="discord" size={20} color="#5865F2" />
@@ -1300,9 +1300,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 onPress={handleOpenReferralModal}
                 className="bg-white rounded-xl p-4 mt-2 shadow-sm flex-row justify-between items-center">
                 <View>
-                  <Text className="font-feather text-base text-textPrimary">Referral Code</Text>
+                  <Text className="font-feather text-base text-textPrimary">{t('settings.referralCode')}</Text>
                   <Text className="font-din text-description mt-1">
-                    Enter a referral code to unlock special features
+                    {t('settings.referralCodeDescription')}
                   </Text>
                 </View>
                 <Feather name="gift" size={20} color="#B89B4C" />
@@ -1311,7 +1311,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
             {/* User ID Section - Moved to bottom */}
             <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>User ID</Text>
+              <Text style={styles.settingsSectionTitle}>{t('settings.userId')}</Text>
               <TouchableOpacity onPress={handleCopyUserId} style={styles.userIdContainer}>
                 <Text style={styles.userIdText} numberOfLines={1} ellipsizeMode="tail">
                   {userId}
@@ -1326,12 +1326,12 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             {isUserSignedIn && (
               <>
                 <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
-                  <Text style={styles.signOutText}>Sign Out</Text>
+                  <Text style={styles.signOutText}>{t('settings.signOut')}</Text>
                 </TouchableOpacity>
 
                 {/* Delete Account Button */}
                 <TouchableOpacity onPress={handleDeleteAccount} style={styles.deleteAccountButton}>
-                  <Text style={styles.deleteAccountText}>Delete Account</Text>
+                  <Text style={styles.deleteAccountText}>{t('settings.deleteAccount')}</Text>
                 </TouchableOpacity>
               </>
             )}
@@ -1339,7 +1339,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             {/* Developer Panel Toggle */}
             <TouchableOpacity onPress={toggleDevPanel} style={styles.developerToggleButton}>
               <Text style={styles.developerToggleText}>
-                {showDevPanel ? 'Hide Developer Panel' : 'Show Developer Panel'}
+                {showDevPanel ? t('settings.hideDeveloperPanel') : t('settings.showDeveloperPanel')}
               </Text>
             </TouchableOpacity>
 
@@ -1347,7 +1347,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             {showDevPanel && (
               <View style={styles.developerPanel}>
                 <View style={styles.developerPanelHeader}>
-                  <Text style={styles.developerPanelTitle}>Developer Panel</Text>
+                  <Text style={styles.developerPanelTitle}>{t('settings.developerPanel')}</Text>
                   {devPanelLoading ? (
                     <ActivityIndicator size="small" color="#3C584A" />
                   ) : (
@@ -1362,30 +1362,30 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
                 {/* App Version Info Section */}
                 <View style={styles.developerPanelSection}>
-                  <Text style={styles.developerPanelSectionTitle}>App Information</Text>
+                  <Text style={styles.developerPanelSectionTitle}>{t('settings.appInformation')}</Text>
                   <View style={styles.developerDataRow}>
-                    <Text style={styles.developerDataLabel}>Version:</Text>
+                    <Text style={styles.developerDataLabel}>{t('settings.version')}:</Text>
                     <Text style={styles.developerDataValue}>{appVersion}</Text>
                   </View>
                   <View style={styles.developerDataRow}>
-                    <Text style={styles.developerDataLabel}>Build:</Text>
+                    <Text style={styles.developerDataLabel}>{t('settings.build')}:</Text>
                     <Text style={styles.developerDataValue}>{buildNumber}</Text>
                   </View>
                 </View>
 
                 {/* Basic Data */}
                 <View style={styles.developerPanelSection}>
-                  <Text style={styles.developerPanelSectionTitle}>Streak Data</Text>
+                  <Text style={styles.developerPanelSectionTitle}>{t('settings.streakData')}</Text>
                   <View style={styles.developerDataRow}>
-                    <Text style={styles.developerDataLabel}>Streak Count:</Text>
+                    <Text style={styles.developerDataLabel}>{t('settings.streakCount')}:</Text>
                     <Text style={styles.developerDataValue}>{userData.streakCount}</Text>
                   </View>
                   <View style={styles.developerDataRow}>
-                    <Text style={styles.developerDataLabel}>Lamb Hearts:</Text>
+                    <Text style={styles.developerDataLabel}>{t('settings.lambHearts')}:</Text>
                     <Text style={styles.developerDataValue}>{userData.lambHearts}</Text>
                   </View>
                   <View style={styles.developerDataRow}>
-                    <Text style={styles.developerDataLabel}>Lamb Mood:</Text>
+                    <Text style={styles.developerDataLabel}>{t('settings.lambMood')}:</Text>
                     <Text style={styles.developerDataValue}>{userData.lambMood}</Text>
                   </View>
                 </View>
@@ -1395,7 +1395,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   onPress={toggleDevPanelExpanded}
                   style={styles.developerPanelExpandButton}>
                   <Text style={styles.developerExpandText}>
-                    {devPanelExpanded ? 'Hide Details' : 'Show Details'}
+                    {devPanelExpanded ? t('settings.hideDetails') : t('settings.showDetails')}
                   </Text>
                   <Feather
                     name={devPanelExpanded ? 'chevron-up' : 'chevron-down'}
@@ -1409,27 +1409,27 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   <>
                     {/* Last Activity Dates */}
                     <View style={styles.developerPanelSection}>
-                      <Text style={styles.developerPanelSectionTitle}>Last Activity Dates</Text>
+                      <Text style={styles.developerPanelSectionTitle}>{t('settings.lastActivityDates')}</Text>
                       <View style={styles.developerDataRow}>
-                        <Text style={styles.developerDataLabel}>Last Activity:</Text>
+                        <Text style={styles.developerDataLabel}>{t('settings.lastActivity')}:</Text>
                         <Text style={styles.developerDataValue}>
                           {formatDate(userData.lastActivityDate)}
                         </Text>
                       </View>
                       <View style={styles.developerDataRow}>
-                        <Text style={styles.developerDataLabel}>Last Reading:</Text>
+                        <Text style={styles.developerDataLabel}>{t('settings.lastReading')}:</Text>
                         <Text style={styles.developerDataValue}>
                           {formatDate(userData.lastReadingDate)}
                         </Text>
                       </View>
                       <View style={styles.developerDataRow}>
-                        <Text style={styles.developerDataLabel}>Last Prayer:</Text>
+                        <Text style={styles.developerDataLabel}>{t('settings.lastPrayer')}:</Text>
                         <Text style={styles.developerDataValue}>
                           {formatDate(userData.lastPrayerDate)}
                         </Text>
                       </View>
                       <View style={styles.developerDataRow}>
-                        <Text style={styles.developerDataLabel}>Last Reflection:</Text>
+                        <Text style={styles.developerDataLabel}>{t('settings.lastReflection')}:</Text>
                         <Text style={styles.developerDataValue}>
                           {formatDate(userData.lastReflectionDate)}
                         </Text>
@@ -1438,21 +1438,21 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
                     {/* Last Penalty Dates */}
                     <View style={styles.developerPanelSection}>
-                      <Text style={styles.developerPanelSectionTitle}>Last Penalty Dates</Text>
+                      <Text style={styles.developerPanelSectionTitle}>{t('settings.lastPenaltyDates')}</Text>
                       <View style={styles.developerDataRow}>
-                        <Text style={styles.developerDataLabel}>Reading Penalty:</Text>
+                        <Text style={styles.developerDataLabel}>{t('settings.readingPenalty')}:</Text>
                         <Text style={styles.developerDataValue}>
                           {formatDate(userData.lastReadingPenaltyDate)}
                         </Text>
                       </View>
                       <View style={styles.developerDataRow}>
-                        <Text style={styles.developerDataLabel}>Prayer Penalty:</Text>
+                        <Text style={styles.developerDataLabel}>{t('settings.prayerPenalty')}:</Text>
                         <Text style={styles.developerDataValue}>
                           {formatDate(userData.lastPrayerPenaltyDate)}
                         </Text>
                       </View>
                       <View style={styles.developerDataRow}>
-                        <Text style={styles.developerDataLabel}>Reflection Penalty:</Text>
+                        <Text style={styles.developerDataLabel}>{t('settings.reflectionPenalty')}:</Text>
                         <Text style={styles.developerDataValue}>
                           {formatDate(userData.lastReflectionPenaltyDate)}
                         </Text>
@@ -1463,35 +1463,35 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                     {streakData && (
                       <View style={styles.developerPanelSection}>
                         <Text style={styles.developerPanelSectionTitle}>
-                          Last Streak Check Results
+                          {t('settings.lastStreakCheckResults')}
                         </Text>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Streak Broken:</Text>
+                          <Text style={styles.developerDataLabel}>{t('settings.streakBroken')}:</Text>
                           <Text style={styles.developerDataValue}>
-                            {streakData.streakBroken ? 'Yes' : 'No'}
+                            {streakData.streakBroken ? t('settings.yes') : t('settings.no')}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Heart Penalty:</Text>
+                          <Text style={styles.developerDataLabel}>{t('settings.heartPenalty')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {streakData.heartPenalty || 0}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Days Missed:</Text>
+                          <Text style={styles.developerDataLabel}>{t('settings.daysMissed')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {streakData.daysMissed || 0}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>New Day:</Text>
+                          <Text style={styles.developerDataLabel}>{t('settings.newDay')}:</Text>
                           <Text style={styles.developerDataValue}>
-                            {streakData.newDay ? 'Yes' : 'No'}
+                            {streakData.newDay ? t('settings.yes') : t('settings.no')}
                           </Text>
                         </View>
                         {streakData.error && (
                           <View style={styles.developerDataRow}>
-                            <Text style={styles.developerDataLabel}>Error:</Text>
+                            <Text style={styles.developerDataLabel}>{t('settings.error')}:</Text>
                             <Text style={[styles.developerDataValue, { color: 'red' }]}>
                               {String(streakData.error)}
                             </Text>
@@ -1528,7 +1528,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         onRequestClose={handleCancelTranslation}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Bible Translation</Text>
+            <Text style={styles.modalTitle}>{t('settings.selectTranslation')}</Text>
 
             <ScrollView style={styles.translationScrollView} showsVerticalScrollIndicator={false}>
               {translations.map((translation) => (
@@ -1554,7 +1554,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             </ScrollView>
 
             <TouchableOpacity style={styles.cancelButton} onPress={handleCancelTranslation}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1612,14 +1612,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
           <View className="bg-surfaceCream rounded-2xl p-5 w-[85%] max-w-[350px]">
             {/* Title */}
             <Text className="font-feather text-xl text-textPrimary text-center mb-4">
-              Enter Referral Code
+              {t('settings.referralCode.title')}
             </Text>
 
             {/* Input Field */}
             <View className="mb-4">
               <TextInput
                 className="bg-white rounded-xl px-4 py-3 text-lg font-din text-textPrimary border border-[#FFE4A8]"
-                placeholder="Enter code here"
+                placeholder={t('settings.referralCode.placeholder')}
                 placeholderTextColor="#B89B4C"
                 value={referralInput || ''}
                 onChangeText={setReferralInput}
@@ -1635,7 +1635,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               className={`bg-[#FFE07D] rounded-xl p-4 mb-2 ${referralInput.length !== 6 ? 'opacity-50' : ''}`}
               disabled={referralInput.length !== 6 || isSubmittingReferral}>
               <Text className="font-feather text-textPrimary text-center text-lg">
-                {isSubmittingReferral ? 'Submitting...' : 'Confirm'}
+                {isSubmittingReferral ? t('settings.referralCode.submitting') : t('common.confirm')}
               </Text>
             </TouchableOpacity>
 
@@ -1643,7 +1643,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             <TouchableOpacity
               onPress={() => setReferralModalVisible(false)}
               className="bg-textPrimary/10 rounded-xl p-4">
-              <Text className="font-din text-textPrimary text-center">Cancel</Text>
+              <Text className="font-din text-textPrimary text-center">{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1659,15 +1659,15 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
           <View className="bg-surfaceCream rounded-2xl p-5 w-[85%] max-w-[350px]">
             {/* Title */}
             <Text className="font-feather text-xl text-textPrimary text-center mb-4">
-              Daily Reading Time
+              {t('settings.dailyReadingTime')}
             </Text>
 
             {/* Options */}
             <View className="mb-4 space-y-3">
               {[
-                { id: '1-5', title: '3-6 mins (1 chapter)' },
-                { id: '6-10', title: '7-10 mins (3-4 chapters)' },
-                { id: '15-25', title: '11-15 mins (6-8 chapters)' },
+                { id: '1-5', title: t('settings.readingTimeOptions.short') },
+                { id: '6-10', title: t('settings.readingTimeOptions.medium') },
+                { id: '15-25', title: t('settings.readingTimeOptions.long') },
               ].map((option) => (
                 <TouchableOpacity
                   key={option.id}
@@ -1694,7 +1694,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             <TouchableOpacity
               onPress={() => setReadingTimeModalVisible(false)}
               className="bg-textPrimary/10 rounded-xl p-4">
-              <Text className="font-din text-textPrimary text-center">Cancel</Text>
+              <Text className="font-din text-textPrimary text-center">{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1802,7 +1802,7 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 20,
   },
-  settingsHeader: {
+  header: {
     alignItems: 'center',
     borderBottomColor: '#FFE4A8',
     borderBottomWidth: 1,
@@ -1811,12 +1811,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
   },
-  settingsTitle: {
+  headerTitle: {
     color: '#3C584A',
     fontFamily: 'Nunito-Black',
     fontSize: 18,
   },
-  doneButton: {
+  doneButtonText: {
     color: '#F7B500',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,

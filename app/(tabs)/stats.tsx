@@ -7,6 +7,7 @@ import useHighlightStore, { VerseHighlight, HIGHLIGHT_COLORS } from '../stores/h
 import useNoteStore, { VerseNote } from '../stores/noteStore';
 import { Feather } from '@expo/vector-icons';
 import { fetchChapter } from '../api/bible';
+import useTranslation from '../hooks/useTranslation';
 
 import * as Haptics from 'expo-haptics';
 import { Prayer, Reading, Reflection } from '../models/User';
@@ -53,7 +54,7 @@ function toDateSafe(ts: any): Date {
 }
 
 // Function to format relative time (30m ago, 2d ago, etc.)
-function formatRelativeTime(timestamp: any): string {
+function formatRelativeTime(timestamp: any, t: (key: string, options?: any) => string): string {
   try {
     const date = toDateSafe(timestamp);
     const now = new Date();
@@ -61,36 +62,36 @@ function formatRelativeTime(timestamp: any): string {
 
     // Less than a minute
     if (diffMs < 60000) {
-      return 'just now';
+      return t('stats.justNow');
     }
 
     // Minutes
     const diffMins = Math.floor(diffMs / 60000);
     if (diffMins < 60) {
-      return `${diffMins}m ago`;
+      return t('stats.minutesAgo', { count: diffMins });
     }
 
     // Hours
     const diffHours = Math.floor(diffMins / 60);
     if (diffHours < 24) {
-      return `${diffHours}h ago`;
+      return t('stats.hoursAgo', { count: diffHours });
     }
 
     // Days
     const diffDays = Math.floor(diffHours / 24);
     if (diffDays < 30) {
-      return `${diffDays}d ago`;
+      return t('stats.daysAgo', { count: diffDays });
     }
 
     // Months
     const diffMonths = Math.floor(diffDays / 30);
     if (diffMonths < 12) {
-      return `${diffMonths}mo ago`;
+      return t('stats.monthsAgo', { count: diffMonths });
     }
 
     // Years
     const diffYears = Math.floor(diffMonths / 12);
-    return `${diffYears}y ago`;
+    return t('stats.yearsAgo', { count: diffYears });
   } catch (error) {
     console.log('Error formatting relative time:', error, timestamp);
     return '';
@@ -217,6 +218,7 @@ const triggerHaptic = () => {
 };
 
 export default function StatsScreen() {
+  const { t } = useTranslation();
   const readings = useUserStore(s => s.getCompletedReadings());
   const prayers = useUserStore(s => s.getCompletedPrayers());
   const reflections = useUserStore(s => s.getCompletedReflections());
@@ -368,7 +370,7 @@ export default function StatsScreen() {
 
   // Format timestamp for display
   const formatTimestamp = (timestamp: number): string => {
-    return formatRelativeTime({ seconds: timestamp / 1000 });
+    return formatRelativeTime({ seconds: timestamp / 1000 }, t);
   };
 
   // Handle dropdown toggle
@@ -455,7 +457,7 @@ export default function StatsScreen() {
                         {BIBLE_BOOK_NAMES[highlight.bookId]} {highlight.chapter}:{highlight.verse}
                       </Text>
                       <Text className="font-din text-sm text-description mt-1">
-                        Highlighted verse
+                        {t('stats.highlightedVerse')}
                       </Text>
                     </View>
                     <Text className="font-din text-description text-sm ml-2">
@@ -470,10 +472,10 @@ export default function StatsScreen() {
           <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center">
             <Feather name="edit-2" size={48} color="#3C584A" style={{ opacity: 0.5, marginBottom: 12 }} />
             <Text className="font-feather text-heading text-textPrimary/70 text-center">
-              No highlights yet
+              {t('stats.noHighlightsYet')}
             </Text>
             <Text className="font-din text-body text-description text-center mt-1">
-              Highlight verses as you read to save them here
+              {t('stats.highlightInstruction')}
             </Text>
           </View>
         );
@@ -514,10 +516,10 @@ export default function StatsScreen() {
           <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center">
             <Feather name="edit-3" size={48} color="#3C584A" style={{ opacity: 0.5, marginBottom: 12 }} />
             <Text className="font-feather text-heading text-textPrimary/70 text-center">
-              No notes yet
+              {t('stats.noNotesYet')}
             </Text>
             <Text className="font-din text-body text-description text-center mt-1">
-              Add notes to verses as you study to save them here
+              {t('stats.notesInstruction')}
             </Text>
           </View>
         );
@@ -540,7 +542,7 @@ export default function StatsScreen() {
                   <View className="flex-1 flex-row justify-between items-center">
                     <View className="flex-1 mr-2">
                       <Text className="font-feather text-body text-textPrimary" numberOfLines={1}>
-                        Quiet Time
+                        {t('stats.quietTime')}
                       </Text>
                       {rf.content && (
                         <Text className="font-din text-sm text-description mt-1" numberOfLines={1} ellipsizeMode="tail">
@@ -549,7 +551,7 @@ export default function StatsScreen() {
                       )}
                     </View>
                     <Text className="font-din text-description text-sm ml-2">
-                      {formatRelativeTime(rf.date)}
+                      {formatRelativeTime(rf.date, t)}
                     </Text>
                   </View>
                 </View>
@@ -560,10 +562,10 @@ export default function StatsScreen() {
           <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center">
             <Image source={journalIcon} className="w-24 h-24 opacity-50 mb-3" />
             <Text className="font-feather text-heading text-textPrimary/70 text-center">
-              No recent reflections
+              {t('stats.noRecentReflections')}
             </Text>
             <Text className="font-din text-body text-description text-center mt-1">
-              Take a moment to reflect on your journey with God
+              {t('stats.reflectionsInstruction')}
             </Text>
           </View>
         );
@@ -576,13 +578,13 @@ export default function StatsScreen() {
       <ScrollView className="flex-1 bg-surfaceCream" contentContainerStyle={{ paddingBottom: 40 }}>
         {/* Header */}
         <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
-          <Text className="font-feather text-h2 text-textPrimary">Heart Posture</Text>
+          <Text className="font-feather text-h2 text-textPrimary">{t('stats.title')}</Text>
         </View>
 
         {/* Heatmap Card */}
         <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
           <View className="flex-row justify-between items-center mb-4">
-            <Text className="font-feather text-heading text-textPrimary">Monthly Activity</Text>
+            <Text className="font-feather text-heading text-textPrimary">{t('stats.activitySummary')}</Text>
             <TouchableOpacity
               className="bg-lightYellow px-4 py-1 rounded-full"
               onPress={handleMonthPress}
@@ -596,7 +598,7 @@ export default function StatsScreen() {
           <View className="flex-row justify-between mb-2">
             {DAYS.map((d) => (
               <Text key={d} className="text-caption font-din text-description w-8 text-center">
-                {d}
+                {t(`stats.days.${d.toLowerCase()}`)}
               </Text>
             ))}
           </View>
@@ -648,7 +650,7 @@ export default function StatsScreen() {
 
         {/* Activity Summary Card - Moved to bottom */}
         <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-cardx mt-8">
-          <Text className="font-feather text-heading text-textPrimary mb-4">Activity Summary</Text>
+          <Text className="font-feather text-heading text-textPrimary mb-4">{t('stats.activitySummary')}</Text>
 
           <View className="flex-row justify-between">
             <TouchableOpacity
@@ -660,7 +662,7 @@ export default function StatsScreen() {
               }}
             >
               <Text className="font-feather text-h2 text-textPrimary">{totalBibleReadings}</Text>
-              <Text className="font-din text-description text-center">Readings</Text>
+              <Text className="font-din text-description text-center">{t('stats.readings')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1"
@@ -671,7 +673,7 @@ export default function StatsScreen() {
               }}
             >
               <Text className="font-feather text-h2 text-textPrimary">{totalPrayerSessions}</Text>
-              <Text className="font-din text-description text-center">Prayers</Text>
+              <Text className="font-din text-description text-center">{t('stats.prayers')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1"
@@ -682,7 +684,7 @@ export default function StatsScreen() {
               }}
             >
               <Text className="font-feather text-h2 text-textPrimary">{totalReflections}</Text>
-              <Text className="font-din text-description text-center">Reflections</Text>
+              <Text className="font-din text-description text-center">{t('stats.reflections')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -690,7 +692,7 @@ export default function StatsScreen() {
         {/* Recent reflections */}
         <View className="mx-6 mt-8 bg-white rounded-[20px] p-6 shadow-card mb-24">
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="font-feather text-heading text-textPrimary">Recent Activity</Text>
+              <Text className="font-feather text-heading text-textPrimary">{t('stats.recentActivity')}</Text>
 
               {/* Dropdown for content type selection */}
               <View className="relative">
@@ -701,7 +703,7 @@ export default function StatsScreen() {
                   activeOpacity={0.7}
                 >
                   <Text className="font-feather text-accentGold mr-2 capitalize">
-                    {selectedContentType}
+                    {t(`stats.${selectedContentType}`)}
                         </Text>
                   <Feather 
                     name={isDropdownOpen ? "chevron-up" : "chevron-down"} 
@@ -739,21 +741,21 @@ export default function StatsScreen() {
                 onPress={() => handleContentTypeSelect('reflections')}
                 activeOpacity={0.7}
               >
-                <Text className="font-din text-textPrimary">Reflections</Text>
+                <Text className="font-din text-textPrimary">{t('stats.reflections')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="px-4 py-3 border-b border-border"
                 onPress={() => handleContentTypeSelect('highlights')}
                 activeOpacity={0.7}
               >
-                <Text className="font-din text-textPrimary">Highlights</Text>
+                <Text className="font-din text-textPrimary">{t('stats.highlights')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="px-4 py-3"
                 onPress={() => handleContentTypeSelect('notes')}
                 activeOpacity={0.7}
               >
-                <Text className="font-din text-textPrimary">Notes</Text>
+                <Text className="font-din text-textPrimary">{t('stats.notes')}</Text>
               </TouchableOpacity>
             </View>
           </View>

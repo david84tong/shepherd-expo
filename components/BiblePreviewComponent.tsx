@@ -2,6 +2,7 @@ import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { View, Text, TouchableOpacity, Animated, ScrollView } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import BackButton from './BackButton';
 import PrimaryButton from './PrimaryButton';
 import { Unit, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS } from '../app/models/Path'; // Import both path constants
@@ -21,6 +22,7 @@ interface BiblePreviewProps {
  * Rendered only when `visible` is true.
  */
 const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }) => {
+  const { t } = useTranslation();
   const containerOpacity = useRef(new Animated.Value(0)).current; // Overall container opacity
   const cardAnim = useRef(new Animated.Value(-100)).current; // Y offset for entry
   const cardOpacity = useRef(new Animated.Value(0)).current;
@@ -80,21 +82,21 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   const getFirstReference = (ref: Unit['reference']) => (Array.isArray(ref) ? ref[0] : ref);
 
   // Content for the preview card - either from nextUnit or fallbacks
-  const title = useMemo(() => nextUnit?.title || 'The Good Shepherd', [nextUnit]);
+  const title = useMemo(() => nextUnit?.title || t('biblePreview.defaultTitle'), [nextUnit, t]);
   const subtitle = useMemo(() => {
     if (nextUnit) {
       const ref = getFirstReference(nextUnit.reference);
-      return `Next: ${ref.bookName} ${ref.chapters[0]}`;
+      return `${t('biblePreview.next')}: ${ref.bookName} ${ref.chapters[0]}`;
     }
-    return `Today's Reading · ${savedBook} ${savedChapter}`;
-  }, [nextUnit, savedBook, savedChapter]);
+    return `${t('biblePreview.todaysReading')} · ${savedBook} ${savedChapter}`;
+  }, [nextUnit, savedBook, savedChapter, t]);
   const summary = useMemo(
     () =>
       nextUnit?.description ||
       (savedBook === 'John' && savedChapter === 3
-        ? "Jesus teaches Nicodemus about being born again and God's love for the world."
-        : 'Jesus describes Himself as the Good Shepherd who lays down His life for the sheep.'),
-    [nextUnit, savedBook, savedChapter]
+        ? t('biblePreview.nicodemusDescription')
+        : t('biblePreview.defaultDescription')),
+    [nextUnit, savedBook, savedChapter, t]
   );
 
   // Determine bookId and chapter for the "Start Reading" button
@@ -301,7 +303,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
           <Text className="text-body font-din text-[#B89B4C] mb-4">{subtitle}</Text>
           <View className="w-full bg-surfaceCream/50 rounded-[18px] p-4 mt-2 border border-border mb-2">
             <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-1 tracking-wider">
-              SUMMARY
+              {t('biblePreview.summary')}
             </Text>
             <Text className="text-body font-din text-textPrimary text-center">{summary}</Text>
           </View>
@@ -313,7 +315,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         className="absolute bottom-0 left-0 right-0 w-full px-5 pb-8 pt-4 items-center bg-transparent z-20"
         style={{ opacity: buttonOpacity, transform: [{ translateY: buttonAnim }] }}>
         <PrimaryButton
-          title="Start Reading"
+          title={t('biblePreview.startReading')}
           onPress={() => {
             analytics.logEvent('BiblePreview_Tapped_StartReading', {
               unit: nextUnit?.id,
@@ -324,7 +326,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
         />
         <TouchableOpacity onPress={handleJustReadBible} className="mt-4 py-2" activeOpacity={0.7}>
           <Text className="text-body font-nunito-bold text-textPrimary/70 text-center underline text-white">
-            Just Read Bible
+            {t('biblePreview.justReadBible')}
           </Text>
         </TouchableOpacity>
       </Animated.View>

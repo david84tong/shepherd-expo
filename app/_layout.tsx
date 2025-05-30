@@ -375,7 +375,7 @@ export default function RootLayout() {
       }, 100);
     } catch (error) {
       console.log('Error during app initialization:', error);
-      Alert.alert('Error during app initialization:', error);
+      Alert.alert('Error during app initialization:', error instanceof Error ? error.message : 'Unknown error occurred');
       setHasError(true);
       setAppReady(true);
       SplashScreen.hideAsync();

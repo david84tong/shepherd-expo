@@ -58,6 +58,7 @@ import useHighlightStore, {
 import HighlightColorPicker from './HighlightColorPicker';
 import useNoteStore from '~/app/stores/noteStore';
 import NoteEditor from './NoteEditor';
+import { useTranslation } from 'react-i18next';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -387,6 +388,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   onHandoffChapterData,
   onOpenSettings,
 }) => {
+  const { t } = useTranslation();
+  
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -552,14 +555,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         Alert.alert(
           'End of the Bible',
-          "You've reached Revelation 22, the last chapter of the Bible."
+          t('bibleReader.lastChapterMessage')
         );
       }
     } else {
       // Go to next chapter in current book
       loadChapter(bookId, chapter + 1);
     }
-  }, [bookId, chapter, chapterData, loadChapter]);
+  }, [bookId, chapter, chapterData, loadChapter, t]);
 
   // Function to navigate back to the previous chapter
   const navigateToPreviousChapter = useCallback(() => {
@@ -1535,28 +1538,28 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     {
       id: 'copy',
       icon: 'copy',
-      label: 'Copy',
+      label: t('bibleReader.menuActions.copy'),
       color: theme.iconColor,
       action: handleCopyVerse,
     },
     {
       id: 'explain',
       icon: 'book-open',
-      label: 'Explain',
+      label: t('bibleReader.menuActions.explain'),
       color: theme.headerText,
       action: handleExplainVerse,
     },
     {
       id: 'highlight',
       icon: 'edit-2',
-      label: 'Highlight',
+      label: t('bibleReader.menuActions.highlight'),
       color: theme.progressBarFill,
       action: handleHighlightVerse,
     },
     {
       id: 'note',
       icon: 'edit-3',
-      label: 'Add Note',
+      label: t('bibleReader.menuActions.addNote'),
       color: theme.text,
       action: handleAddNote,
     },
@@ -1613,7 +1616,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
               className="bg-[#DCB28033] rounded-[15px] py-[5px] px-[12px] mr-2"
               disabled={isFadingToChat}>
               <Text className="font-feather text-[14px] text-[#3C584A]">
-                {chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'Loading...'}
+                {chapterData ? `${chapterData.book} ${chapterData.chapter}` : t('bibleReader.loading')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1858,7 +1861,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                           opacity: 0.6,
                           marginTop: 4,
                         }}>
-                        ← Swipe left for annotations • Swipe right for chat →
+                        {t('bibleReader.swipeGuidance')}
                       </Text>
                     )}
                   </View>
@@ -1885,7 +1888,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                           fontFamily: 'Feather Bold',
                           fontSize: 16,
                         }}>
-                        Finish Reading 🎉
+                        {t('bibleReader.finishReading')}
                       </Text>
                     </View>
                   </TouchableOpacity>
@@ -1906,7 +1909,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           style={[styles.backButton, { backgroundColor: theme.progressBarBackground }]}>
           <TouchableOpacity
             onPress={navigateToPreviousChapter}
-            accessibilityLabel="Go back to previous chapter"
+            accessibilityLabel={t('bibleReader.goBackAccessibility')}
             disabled={isFadingToChat}>
             <View style={{ flexDirection: 'row', alignItems: 'center' }}>
               <Feather name="chevron-left" size={24} color={theme.iconColor} />
@@ -1945,7 +1948,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
                   {/* Default Reader Toggle */}
                   <View style={styles.toggleContainer}>
-                    <Text style={[styles.toggleLabel, { color: theme.text }]}>Card View</Text>
+                    <Text style={[styles.toggleLabel, { color: theme.text }]}>{t('bibleReader.cardView')}</Text>
                     <Switch
                       trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
                       thumbColor={!useDefaultReader ? '#FFFFFF' : '#FFFFFF'}
@@ -1955,7 +1958,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                     />
                   </View>
 
-                  <Text style={[styles.modalSectionTitle, { color: theme.text }]}>Font Size</Text>
+                  <Text style={[styles.modalSectionTitle, { color: theme.text }]}>{t('bibleReader.fontSize')}</Text>
                   <View style={styles.sliderContainer}>
                     <Text style={[styles.sliderLabel, { color: theme.text }]}>A</Text>
                     <Slider
@@ -1972,7 +1975,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                   </View>
 
                   <Text style={[styles.modalSectionTitle, { color: theme.text, marginTop: 16 }]}>
-                    Line Spacing
+                    {t('bibleReader.lineSpacing')}
                   </Text>
                   <View style={styles.lineHeightButtons}>
                     {(Object.keys(LINE_HEIGHT_PRESETS) as LineHeightPreset[]).map((preset) => (
@@ -1999,14 +2002,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                                   : theme.text,
                             },
                           ]}>
-                          {preset.charAt(0).toUpperCase() + preset.slice(1).toLowerCase()}
+                          {t(`bibleReader.${preset.toLowerCase()}`)}
                         </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
 
                   <Text style={[styles.modalSectionTitle, { color: theme.text, marginTop: 24 }]}>
-                    Theme
+                    {t('bibleReader.theme')}
                   </Text>
                   <View style={styles.themeButtonsContainer}>
                     {(Object.keys(THEME_COLORS) as ThemeType[]).map((themeKey) => (

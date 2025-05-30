@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { View, Text } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { widthScreen } from '~/utils/dimensions';
 
 interface StickyPathHeaderProps {
@@ -22,6 +23,8 @@ const StickyPathHeader: React.FC<StickyPathHeaderProps> = ({
   isLocked = false,
   opacity = 1,
 }) => {
+  const { t } = useTranslation();
+
   // Get the light background color based on path color
   const getBgColor = () => {
     // For locked sections, use gray background
@@ -142,7 +145,7 @@ const StickyPathHeader: React.FC<StickyPathHeaderProps> = ({
           <View className="flex-1 justify-center">
             <Text
               className="font-din uppercase text-2xl mb-1 text-textPrimary"
-              style={{ color: getDarkColor(), opacity: 0.7 }}>{`SECTION ${sectionNumber}`}</Text>
+              style={{ color: getDarkColor(), opacity: 0.7 }}>{t('map.section', { number: sectionNumber })}</Text>
             <Text
               className="font-feather text-2xl font-bold"
               style={{ color: getDarkColor(), maxWidth: widthScreen * 0.6 }}

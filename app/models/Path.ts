@@ -210,125 +210,113 @@ export const BIBLE_PATHS: Path[] = [
   /** 1 ▸ Genesis */
   {
     id: 'genesis-beginnings',
-    title: 'Genesis: Beginnings',
+    title: 'paths.genesis.title',
     color: 'yellow',
     icon: 'leaf',
-    description:
-      'Travel from the dawn of creation to the death of Joseph. These origin stories lay the foundation for every major theme that follows in Scripture.',
+    description: 'paths.genesis.description',
     image: require('../../assets/icons/noahsArc.png'),
     riveName: 'homeLamb',
     artboardName: 'lamb-reading',
     units: [
       {
         id: 'gen-1',
-        title: 'Creation & Choice',
+        title: 'paths.genesis.units.creation.title',
         reference: createRef('Genesis', generateChapters(1, 3)),
-        description:
-          "God speaks the cosmos into being and crowns it with image‑bearing humans. In Eden they are invited to trust the Creator's wisdom or define good and evil for themselves.",
+        description: 'paths.genesis.units.creation.description',
         icon: 'globe',
-        prayer: `Creator God, You made light and everything good. Thank You for making me in Your image. Forgive me when I follow my own way. Help me show Your love and care today.`,
-        reflectionPrompt: `Where do I try to decide right and wrong for myself? How can I trust God's wisdom today?`,
+        prayer: 'paths.genesis.units.creation.prayer',
+        reflectionPrompt: 'paths.genesis.units.creation.reflectionPrompt',
       },
       {
         id: 'gen-2',
-        title: 'Cain, Abel',
+        title: 'paths.genesis.units.cainAbel.title',
         reference: createRef('Genesis', generateChapters(4, 6)),
-        description:
-          'Jealousy drives the first murder and violence multiplies across the earth. Even in judgment, God marks Cain with mercy and preserves a faithful remnant.',
+        description: 'paths.genesis.units.cainAbel.description',
         icon: 'people',
-        prayer: `God, You see my heart. Take away jealousy or anger in me. Help me bring You my best with a thankful spirit.`,
-        reflectionPrompt: `Is there someone I envy? How can I celebrate them and worship God instead?`,
+        prayer: 'paths.genesis.units.cainAbel.prayer',
+        reflectionPrompt: 'paths.genesis.units.cainAbel.reflectionPrompt',
       },
       {
         id: 'gen-3',
-        title: 'Noah & the Flood',
+        title: 'paths.genesis.units.noahFlood.title',
         reference: createRef('Genesis', generateChapters(7, 9)),
-        description:
-          "Waters of judgment cleanse a corrupt world, yet grace carries Noah's family to a new start. A rainbow covenant promises that God's long‑range plan is redemption, not destruction.",
+        description: 'paths.genesis.units.noahFlood.description',
         icon: 'water',
-        prayer: `Lord, You saved Noah and his family. Thank You for rescuing me too. Help me walk with You even when others don't.`,
-        reflectionPrompt: `What small "ark" of obedience can I build today to stay close to God?`,
+        prayer: 'paths.genesis.units.noahFlood.prayer',
+        reflectionPrompt: 'paths.genesis.units.noahFlood.reflectionPrompt',
       },
       {
         id: 'gen-4',
-        title: 'Nations & Babel',
+        title: 'paths.genesis.units.nationsBabel.title',
         reference: createRef('Genesis', generateChapters(10, 12)),
-        description:
-          'Humanity scatters into distinct peoples after a prideful tower‑project. Out of the confusion God calls one man, Abram, to become a blessing to all nations.',
+        description: 'paths.genesis.units.nationsBabel.description',
         icon: 'language',
-        prayer: `God of all nations, pride divides us but You want to bless everyone. Keep me humble and ready to bless others.`,
-        reflectionPrompt: `Where am I building my own tower? How can I trust and obey God instead?`,
+        prayer: 'paths.genesis.units.nationsBabel.prayer',
+        reflectionPrompt: 'paths.genesis.units.nationsBabel.reflectionPrompt',
       },
       {
         id: 'gen-5',
-        title: "Abraham's Call",
+        title: 'paths.genesis.units.abrahamCall.title',
         reference: createRef('Genesis', generateChapters(12, 17)),
-        description:
-          "God establishes a binding promise of land, descendants, and global blessing. Abraham's faith is tested repeatedly yet ultimately credited as righteousness.",
+        description: 'paths.genesis.units.abrahamCall.description',
         icon: 'star',
-        prayer: `Faithful God of Abraham, You call ordinary pilgrims into extraordinary promises. Strengthen my faith to obey without knowing all the details. May my life point others to Your unfailing covenant love.`,
-        reflectionPrompt: `What first step of obedience is God highlighting for you—however small—that would demonstrate trust in His promise?`,
+        prayer: 'paths.genesis.units.abrahamCall.prayer',
+        reflectionPrompt: 'paths.genesis.units.abrahamCall.reflectionPrompt',
       },
       /* ----------  🔄  UPDATED SPLIT HERE  ---------- */
       {
         id: 'gen-6',
-        title: "Isaac's Family",
+        title: 'paths.genesis.units.isaacFamily.title',
         reference: createRef('Genesis', [24]),          // ⬅️  now a standalone long chapter
-        description:
-          'A miraculous son carries the covenant line forward. His marriage to Rebekah ensures the promise continues despite human weakness.',
+        description: 'paths.genesis.units.isaacFamily.description',
         icon: 'people',
-        prayer: `God of Generations, You laughed with Sarah and Abraham over impossible births. Thank You for bringing life out of barrenness. Teach me to steward the gifts You've entrusted, passing faith to the next generation.`,
-        reflectionPrompt: `How can you intentionally nurture faith in someone younger this week?`,
+        prayer: 'paths.genesis.units.isaacFamily.prayer',
+        reflectionPrompt: 'paths.genesis.units.isaacFamily.reflectionPrompt',
       },
       {
         id: 'gen-7',
-        title: 'Jacob & Esau',
+        title: 'paths.genesis.units.jacobEsau.title',
         reference: createRef('Genesis', generateChapters(25, 28)),
-        description:
-          "Twin brothers struggle for birthright and blessing, revealing God's sovereign choice. Jacob experiences both deception and divine encounter on his way out of Canaan.",
+        description: 'paths.genesis.units.jacobEsau.description',
         icon: 'swap-horizontal',
-        prayer: `God of Jacob and Esau, You work through messy families and surprising choices. Heal my broken relationships and rename my identity in Your grace. Make reconciliation greater than rivalry.`,
-        reflectionPrompt: `Where do you sense God inviting you to seek forgiveness or extend mercy within your family story?`,
+        prayer: 'paths.genesis.units.jacobEsau.prayer',
+        reflectionPrompt: 'paths.genesis.units.jacobEsau.reflectionPrompt',
       },
       {
         id: 'gen-8',
-        title: "Jacob's Sojourn & Return",
+        title: 'paths.genesis.units.jacobSojourn.title',
         reference: createRef('Genesis', generateChapters(29, 33)),
-        description:
-          "Years of exile, marriage, and family drama refine Jacob's character. A mysterious night‑wrestling match prepares him to face Esau and reclaim his new name—Israel.",
+        description: 'paths.genesis.units.jacobSojourn.description',
         icon: 'walk',
-        prayer: `God Who Wrestles, thank You that You meet me in the dark nights of fear. As Jacob limped toward daylight with a new name, mark me with humble dependence that clings to Your blessing.`,
-        reflectionPrompt: `What personal struggle could become a place of deeper encounter with God if you hold on to Him?`,
+        prayer: 'paths.genesis.units.jacobSojourn.prayer',
+        reflectionPrompt: 'paths.genesis.units.jacobSojourn.reflectionPrompt',
       },
       {
         id: 'gen-9',
-        title: 'Joseph: Dreams to Dungeon',
+        title: 'paths.genesis.units.josephDreams.title',
         reference: createRef('Genesis', generateChapters(37, 41)),
-        description:
-          "Joseph's coat, dreams, and betrayal plunge him into slavery and prison. Yet every setback becomes a setup for God's providential rise to Egyptian power.",
+        description: 'paths.genesis.units.josephDreams.description',
         icon: 'bed',
-        prayer: `Sovereign Redeemer, You guided Joseph from pit to palace. Turn my setbacks into setups for Your purposes. Help me forgive those who wrong me and trust Your unseen hand.`,
-        reflectionPrompt: `How might God be using an unfair circumstance in your life to shape future fruit?`,
+        prayer: 'paths.genesis.units.josephDreams.prayer',
+        reflectionPrompt: 'paths.genesis.units.josephDreams.reflectionPrompt',
       },
       {
         id: 'gen-10',
-        title: 'Joseph: Famine & Forgiveness',
+        title: 'paths.genesis.units.josephFamine.title',
         reference: createRef('Genesis', generateChapters(42, 47)),
-        description:
-          'Global famine reunites Joseph with the brothers who wronged him. Tears of reconciliation show how God turns evil intentions into saving purposes.',
+        description: 'paths.genesis.units.josephFamine.description',
         icon: 'leaf',
-        prayer: `God of Providence, You wove famine into forgiveness and saved many lives through Joseph. Teach me to see trials through the lens of Your larger story and respond with compassionate generosity.`,
-        reflectionPrompt: `Who needs to hear words of grace from you that could turn past hurt into present healing?`,
+        prayer: 'paths.genesis.units.josephFamine.prayer',
+        reflectionPrompt: 'paths.genesis.units.josephFamine.reflectionPrompt',
       },
       {
         id: 'gen-11',
-        title: 'Jacob Blesses & Joseph Dies',
+        title: 'paths.genesis.units.jacobBlesses.title',
         reference: createRef('Genesis', generateChapters(48, 50)),
-        description:
-          "A dying patriarch blesses twelve sons and foretells their futures. Joseph's final act of faith is requesting his bones be carried to the promised land.",
+        description: 'paths.genesis.units.jacobBlesses.description',
         icon: 'hand-right',
-        prayer: `Eternal God, as Jacob blessed his sons and Joseph trusted in future deliverance, orient my hope beyond the grave. May my final words and daily choices alike testify that You will surely come.`,
-        reflectionPrompt: `If today were your last, what legacy of faith would you want to leave—and what step can you take toward that today?`,
+        prayer: 'paths.genesis.units.jacobBlesses.prayer',
+        reflectionPrompt: 'paths.genesis.units.jacobBlesses.reflectionPrompt',
       },
     ]
   },
@@ -336,121 +324,111 @@ export const BIBLE_PATHS: Path[] = [
   /** 2 ▸ Exodus */
   {
     id: 'exodus-deliverance-law',
-    title: 'Exodus: Deliverance & Law',
+    title: 'paths.exodus.title',
     color: 'red',
     icon: 'repeat',
-    description:
-      "Witness God break Israel's chains and forge a nation by covenant at Sinai. Liberation is not merely freedom from Pharaoh but freedom for worship and holy living.",
+    description: 'paths.exodus.description',
     image: require('../../assets/icons/pyramids.png'),
     riveName: 'homeLamb',
     artboardName: 'lamb-idle',
     units: [
-      /* 1 ─ Bondage & Moses’ Birth ─ Ex 1‑4  (unchanged) */
+      /* 1 ─ Bondage & Moses' Birth ─ Ex 1-4  (unchanged) */
       {
         id: 'exo-1',
-        title: "Bondage & Moses' Birth",
+        title: 'paths.exodus.units.bondage.title',
         reference: createRef('Exodus', generateChapters(1, 4)),
-        description:
-          'A new pharaoh enslaves Israel and orders infant sons killed. God preserves baby Moses and appears in a burning bush to recruit him as deliverer.',
+        description: 'paths.exodus.units.bondage.description',
         icon: 'person',
-        prayer: `Deliverer God, You heard Israel's groans in bondage. Hear oppressed hearts today and raise deliverers. Form courage in me like Moses to confront injustice with humility.`,
-        reflectionPrompt: `Where is God nudging you to step out of comfort and speak up for someone in chains?`,
+        prayer: 'paths.exodus.units.bondage.prayer',
+        reflectionPrompt: 'paths.exodus.units.bondage.reflectionPrompt',
       },
     
-      /* 2 ─ Nine Plagues & Final Warning ─ Ex 5‑11  (range widened to include ch 11) */
+      /* 2 ─ Nine Plagues & Final Warning ─ Ex 5-11  (range widened to include ch 11) */
       {
         id: 'exo-2',
-        title: 'Nine Plagues & Final Warning',
+        title: 'paths.exodus.units.plagues.title',
         reference: createRef('Exodus', generateChapters(5, 11)),
-        description:
-          "Nine escalating plagues expose Egypt's gods as powerless. Pharaoh's last refusal after the plague‑warning of chapter 11 hardens his heart for the climactic judgment to come.",
+        description: 'paths.exodus.units.plagues.description',
         icon: 'warning',
-        prayer: `Lord of Signs and Wonders, Your power shamed Egypt's idols. Expose the false gods in my own culture and heart. Let my trust rest in Your unmatched authority.`,
-        reflectionPrompt: `What modern "plague" might God be using to reveal misplaced trust in your life?`,
+        prayer: 'paths.exodus.units.plagues.prayer',
+        reflectionPrompt: 'paths.exodus.units.plagues.reflectionPrompt',
       },
     
-      /* 3 ─ Passover Night ─ Ex 12  (stand‑alone long chapter) */
+      /* 3 ─ Passover Night ─ Ex 12  (stand‑alone long chapter) */
       {
         id: 'exo-3',
-        title: 'Passover Night',
+        title: 'paths.exodus.units.passover.title',
         reference: createRef('Exodus', [12]),
-        description:
-          "Blood on door‑frames turns judgment into deliverance. The Passover lamb establishes a perpetual memorial of redemption and foreshadows a greater rescue still to come.",
+        description: 'paths.exodus.units.passover.description',
         icon: 'flame',
-        prayer: `Passover Lamb, thank You that Your blood marks my rescue. Keep me mindful that freedom always starts at a door stained with grace.`,
-        reflectionPrompt: `Which daily practice can help you remember and rehearse redemption?`,
+        prayer: 'paths.exodus.units.passover.prayer',
+        reflectionPrompt: 'paths.exodus.units.passover.reflectionPrompt',
       },
     
-      /* 3b ─ Red Sea & Victory Song ─ Ex 13‑15 */
+      /* 3b ─ Red Sea & Victory Song ─ Ex 13‑15 */
       {
         id: 'exo-3b',
-        title: 'Red Sea & Victory Song',
+        title: 'paths.exodus.units.redSea.title',
         reference: createRef('Exodus', generateChapters(13, 15)),
-        description:
-          'A pillar of cloud leads the march; walls of water open and then close over pursuing armies. Miriam’s tambourine rings as the people sing, “The LORD is my strength and my song.”',
+        description: 'paths.exodus.units.redSea.description',
         icon: 'water',
-        prayer: `Sea‑Path Maker, part the impossible before me and drown every lingering fear in Your sovereign grace.`,
-        reflectionPrompt: `What area of life still feels pursued by “pharaoh,” and how can you plant your feet in God’s finished salvation?`,
+        prayer: 'paths.exodus.units.redSea.prayer',
+        reflectionPrompt: 'paths.exodus.units.redSea.reflectionPrompt',
       },
     
-      /* 4 ─ Wilderness Provision ─ Ex 16‑18  (unchanged) */
+      /* 4 ─ Wilderness Provision ─ Ex 16‑18  (unchanged) */
       {
         id: 'exo-4',
-        title: 'Wilderness Provision',
+        title: 'paths.exodus.units.wilderness.title',
         reference: createRef('Exodus', generateChapters(16, 18)),
-        description:
-          "Bread from heaven and water from rock sustain a complaining people. Early battles and Jethro's counsel shape community leadership.",
+        description: 'paths.exodus.units.wilderness.description',
         icon: 'nutrition',
-        prayer: `Jehovah Jireh, bread from heaven and water from rock remind me that You supply daily grace. Quiet my complaining spirit and teach gratitude in scarcity and plenty.`,
-        reflectionPrompt: `How can you practice thankfulness today for God's everyday provisions?`,
+        prayer: 'paths.exodus.units.wilderness.prayer',
+        reflectionPrompt: 'paths.exodus.units.wilderness.reflectionPrompt',
       },
     
-      /* 5 ─ Sinai & Ten Words ─ Ex 19‑24  (unchanged) */
+      /* 5 ─ Sinai & Ten Words ─ Ex 19‑24  (unchanged) */
       {
         id: 'exo-5',
-        title: 'Sinai & Ten Words',
+        title: 'paths.exodus.units.sinai.title',
         reference: createRef('Exodus', generateChapters(19, 24)),
-        description:
-          "Thunder, fire, and trumpet blasts announce God's arrival on the mountain. Israel vows obedience as the Ten Commandments anchor a comprehensive covenant.",
+        description: 'paths.exodus.units.sinai.description',
         icon: 'document-text',
-        prayer: `Holy Lawgiver, Your thunderous words set people free to love well. Write Your commandments on my heart by the Spirit so obedience becomes delight.`,
-        reflectionPrompt: `Which of the Ten Words is the Spirit highlighting for renewal in your life right now?`,
+        prayer: 'paths.exodus.units.sinai.prayer',
+        reflectionPrompt: 'paths.exodus.units.sinai.reflectionPrompt',
       },
     
-      /* 6 ─ Tabernacle Blueprint ─ Ex 25‑31  (unchanged) */
+      /* 6 ─ Tabernacle Blueprint ─ Ex 25‑31  (unchanged) */
       {
         id: 'exo-6',
-        title: 'Tabernacle Blueprint',
+        title: 'paths.exodus.units.tabernacleBlueprint.title',
         reference: createRef('Exodus', generateChapters(25, 31)),
-        description:
-          'Detailed designs reveal that God intends to dwell among His people. Every measurement, fabric, and furnishing is a portable echo of Eden.',
+        description: 'paths.exodus.units.tabernacleBlueprint.description',
         icon: 'home',
-        prayer: `Immanuel, You desire to dwell among us. Prepare the tabernacle of my heart—every detail offered for Your glory.`,
-        reflectionPrompt: `What “fabric or furnishing” of your daily rhythm needs rearranging to host God's presence?`,
+        prayer: 'paths.exodus.units.tabernacleBlueprint.prayer',
+        reflectionPrompt: 'paths.exodus.units.tabernacleBlueprint.reflectionPrompt',
       },
     
-      /* 7 ─ Golden Calf & Renewal ─ Ex 32‑34  (unchanged) */
+      /* 7 ─ Golden Calf & Renewal ─ Ex 32‑34  (unchanged) */
       {
         id: 'exo-7',
-        title: 'Golden Calf & Renewal',
+        title: 'paths.exodus.units.goldenCalf.title',
         reference: createRef('Exodus', generateChapters(32, 34)),
-        description:
-          'Impatience births idolatry when Israel molds a calf from gold. Moses pleads for mercy, and God renews the covenant while revealing His compassionate name.',
+        description: 'paths.exodus.units.goldenCalf.description',
         icon: 'alert',
-        prayer: `Compassionate and Gracious God, when I craft golden calves of impatience, please forgive and renew covenant with me. Show me Your glory that I might reflect it.`,
-        reflectionPrompt: `Identify a golden calf of hurry or control in your life. What would repentance look like?`,
+        prayer: 'paths.exodus.units.goldenCalf.prayer',
+        reflectionPrompt: 'paths.exodus.units.goldenCalf.reflectionPrompt',
       },
     
-      /* 8 ─ Tabernacle Completed ─ Ex 35‑40  (unchanged) */
+      /* 8 ─ Tabernacle Completed ─ Ex 35‑40  (unchanged) */
       {
         id: 'exo-8',
-        title: 'Tabernacle Completed',
+        title: 'paths.exodus.units.tabernacleCompleted.title',
         reference: createRef('Exodus', generateChapters(35, 40)),
-        description:
-          "Skilled artisans follow God's pattern precisely. The cloud and fiery glory move in, signaling that Israel's King has taken up residence.",
+        description: 'paths.exodus.units.tabernacleCompleted.description',
         icon: 'home',
-        prayer: `Faithful Finisher, You filled the completed tabernacle with glory. Complete the good work begun in me so Your presence shines through everything I build.`,
-        reflectionPrompt: `Where do you sense God inviting excellence and faithfulness to “finish the work” He assigned?`,
+        prayer: 'paths.exodus.units.tabernacleCompleted.prayer',
+        reflectionPrompt: 'paths.exodus.units.tabernacleCompleted.reflectionPrompt',
       },
     ]
   },
@@ -467,7 +445,7 @@ export const BIBLE_PATHS: Path[] = [
     riveName: 'homeLamb',
     artboardName: 'lamb-eating',
     units: [
-      /* 1 ─ Offerings & Consecration ─ Lev 1‑5 */
+      /* 1 ─ Offerings & Consecration ─ Lev 1-5 */
       {
         id: 'wild-1',
         title: 'Offerings & Consecration',
@@ -479,7 +457,7 @@ export const BIBLE_PATHS: Path[] = [
         reflectionPrompt: `What would it look like for you to present your body and schedule as worship?`,
       },
     
-      /* 2 ─ Priesthood & Purity ─ Lev 6‑10 */
+      /* 2 ─ Priesthood & Purity ─ Lev 6-10 */
       {
         id: 'wild-2',
         title: 'Priesthood & Purity',
@@ -491,31 +469,31 @@ export const BIBLE_PATHS: Path[] = [
         reflectionPrompt: `Is there any area where casual familiarity has dulled holy awe?`,
       },
     
-      /* 3 ─ Atonement & Ethics ─ Lev 16‑19 */
+      /* 3 ─ Atonement & Ethics ─ Lev 16-19 */
       {
         id: 'wild-3',
         title: 'Atonement & Ethics',
         reference: createRef('Leviticus', generateChapters(16, 19)),
         description:
-          'The Day of Atonement purges both sanctuary and people once a year. Immediately God links forgiveness to everyday justice and neighbor‑love.',
+          'The Day of Atonement purges both sanctuary and people once a year. Immediately God links forgiveness to everyday justice and neighbor-love.',
         icon: 'heart',
         prayer: `Forgiving Judge, on the Day of Atonement You covered sin and cleansed the camp. Cover my conscience and empower me to love my neighbor as myself.`,
         reflectionPrompt: `Who is God calling you to reconcile with as evidence of forgiven life?`,
       },
     
-      // 4a ─ Festivals of Rest ─ Lev 23‑24 
+      // 4a ─ Festivals of Rest ─ Lev 23-24 
       {
         id: 'wild-4',
         title: 'Festivals of Rest',
         reference: createRef('Leviticus', generateChapters(23, 24)),
         description:
-          'Sabbaths and yearly feasts weave worship into Israel’s calendar, reminding the nation that time itself belongs to Yahweh.',
+          'Sabbaths and yearly feasts weave worship into Israel\'s calendar, reminding the nation that time itself belongs to Yahweh.',
         icon: 'calendar',
         prayer: `Lord of Sabbaths, teach me to pause regularly and remember that all my days are Yours.`,
-        reflectionPrompt: `Which feast‑like rhythm could you add to celebrate God’s faithfulness this week?`,
+        reflectionPrompt: `Which feast-like rhythm could you add to celebrate God's faithfulness this week?`,
       },
     
-      /* 4b ─ Jubilee — Debts Released ─ Lev 25 (stand‑alone long chapter) */
+      /* 4b ─ Jubilee — Debts Released ─ Lev 25 (stand-alone long chapter) */
       {
         id: 'wild-4b',
         title: 'Jubilee — Debts Released',
@@ -527,7 +505,7 @@ export const BIBLE_PATHS: Path[] = [
         reflectionPrompt: `Where can you practise jubilee generosity today?`,
       },
     
-      /* 4c ─ Blessings, Curses & Vows ─ Lev 26‑27 */
+      /* 4c ─ Blessings, Curses & Vows ─ Lev 26-27 */
       {
         id: 'wild-4c',
         title: 'Blessings, Curses & Vows',
@@ -539,19 +517,19 @@ export const BIBLE_PATHS: Path[] = [
         reflectionPrompt: `Which small act of obedience could invite fresh blessing into your sphere?`,
       },
     
-      /* 5a ─ Tribal Census Begins ─ Num 1 (stand‑alone long chapter) */
+      /* 5a ─ Tribal Census Begins ─ Num 1 (stand-alone long chapter) */
       {
         id: 'wild-5',
         title: 'Tribal Census Begins',
         reference: createRef('Numbers', [1]),
         description:
-          'Moses counts every able‑bodied warrior, showing that God values each name in His army.',
+          'Moses counts every able-bodied warrior, showing that God values each name in His army.',
         icon: 'people',
         prayer: `Commander of Hosts, remind me my name is counted and my role matters in Your mission.`,
-        reflectionPrompt: `How does knowing you are “counted” by God affect your sense of purpose today?`,
+        reflectionPrompt: `How does knowing you are "counted" by God affect your sense of purpose today?`,
       },
     
-      /* 5b ─ Camp Arrangement & Levites ─ Num 2‑4 */
+      /* 5b ─ Camp Arrangement & Levites ─ Num 2-4 */
       {
         id: 'wild-5b',
         title: 'Camp Arrangement & Levites',
@@ -560,10 +538,10 @@ export const BIBLE_PATHS: Path[] = [
           'Tribes encamp around the tabernacle like spokes around a hub, and Levites are assigned to carry holy things.',
         icon: 'navigate',
         prayer: `God of Order, center my life around Your presence rather than my preferences.`,
-        reflectionPrompt: `What practical re‑centering could you do to keep God at the hub of your routines?`,
+        reflectionPrompt: `What practical re-centering could you do to keep God at the hub of your routines?`,
       },
     
-      /* 6 ─ Complaints & Spies ─ Num 11‑14  (unchanged) */
+      /* 6 ─ Complaints & Spies ─ Num 11-14  (unchanged) */
       {
         id: 'wild-6',
         title: 'Complaints & Spies',
@@ -575,7 +553,7 @@ export const BIBLE_PATHS: Path[] = [
         reflectionPrompt: `Which fear feels like a giant in your promised land, and what truth counters it?`,
       },
     
-      /* 7 ─ Balaam’s Oracles ─ Num 22‑24  (unchanged) */
+      /* 7 ─ Balaam's Oracles ─ Num 22-24  (unchanged) */
       {
         id: 'wild-7',
         title: "Balaam's Oracles",
@@ -587,7 +565,7 @@ export const BIBLE_PATHS: Path[] = [
         reflectionPrompt: `Where might subtle compromise threaten your devotion, and how can you guard against it?`,
       },
     
-      /* 8a ─ Seduction at Peor ─ Num 25 */
+      /* 8a ─ Seduction at Peor ─ Num 25 */
       {
         id: 'wild-8',
         title: 'Seduction at Peor',
@@ -596,10 +574,10 @@ export const BIBLE_PATHS: Path[] = [
           'Moabite idolatry and immorality provoke deadly judgment, exposing how spiritual unfaithfulness endangers the whole community.',
         icon: 'flame',
         prayer: `Jealous God, guard my heart from attractions that lure me away from covenant loyalty.`,
-        reflectionPrompt: `What “small flirtation” with sin needs decisive action today?`,
+        reflectionPrompt: `What "small flirtation" with sin needs decisive action today?`,
       },
     
-      /* 8b ─ Second Census ─ Num 26 (stand‑alone long chapter) */
+      /* 8b ─ Second Census ─ Num 26 (stand-alone long chapter) */
       {
         id: 'wild-8b',
         title: 'Second Census — New Generation',
@@ -611,19 +589,19 @@ export const BIBLE_PATHS: Path[] = [
         reflectionPrompt: `How can you invest hope in the next generation today?`,
       },
     
-      /* 8c ─ Inheritance & Vows ─ Num 27‑30 */
+      /* 8c ─ Inheritance & Vows ─ Num 27-30 */
       {
         id: 'wild-8c',
         title: 'Inheritance & Vows',
         reference: createRef('Numbers', generateChapters(27, 30)),
         description:
-          'Zelophehad’s daughters secure land rights, Joshua is commissioned, daily offerings are detailed, and vows are regulated—justice and worship intertwine.',
+          'Zelophehad\'s daughters secure land rights, Joshua is commissioned, daily offerings are detailed, and vows are regulated—justice and worship intertwine.',
         icon: 'document-text',
         prayer: `Impartial Judge, ensure my decisions honour the overlooked and uphold Your just character.`,
         reflectionPrompt: `Who in your sphere might feel overlooked and needs advocacy?`,
       },
     
-      /* 8d ─ War against Midian ─ Num 31 (stand‑alone long chapter) */
+      /* 8d ─ War against Midian ─ Num 31 (stand-alone long chapter) */
       {
         id: 'wild-8d',
         title: 'War against Midian',
@@ -635,7 +613,7 @@ export const BIBLE_PATHS: Path[] = [
         reflectionPrompt: `What battle requires both courage and consecration from you?`,
       },
     
-      /* 9 ─ Moses’ First Farewell ─ Deut 1‑6  (unchanged) */
+      /* 9 ─ Moses' First Farewell ─ Deut 1-6  (unchanged) */
       {
         id: 'wild-9',
         title: "Moses' First Farewell",
@@ -647,19 +625,19 @@ export const BIBLE_PATHS: Path[] = [
         reflectionPrompt: `How will you talk about God's faithfulness in your house this week?`,
       },
     
-      /* 10a ─ Covenant Ceremony ─ Deut 27 */
+      /* 10a ─ Covenant Ceremony ─ Deut 27 */
       {
         id: 'wild-10',
         title: 'Covenant Ceremony',
         reference: createRef('Deuteronomy', [27]),
         description:
-          'Stones plastered with Torah and antiphonal shouts of “Amen” set the stage for blessing and curse on Israel’s entry into the land.',
+          'Stones plastered with Torah and antiphonal shouts of "Amen" set the stage for blessing and curse on Israel\'s entry into the land.',
         icon: 'hammer',
         prayer: `Covenant Lord, write Your words plainly before my eyes so my obedience is both public and personal.`,
-        reflectionPrompt: `What visible reminder of God’s word could you place in your daily environment?`,
+        reflectionPrompt: `What visible reminder of God's word could you place in your daily environment?`,
       },
     
-      /* 10b ─ Blessings & Curses ─ Deut 28 (stand‑alone long chapter) */
+      /* 10b ─ Blessings & Curses ─ Deut 28 (stand-alone long chapter) */
       {
         id: 'wild-10b',
         title: 'Blessings & Curses',
@@ -671,7 +649,7 @@ export const BIBLE_PATHS: Path[] = [
         reflectionPrompt: `What small warning sign is God using to call you back today?`,
       },
     
-      /* 10c ─ Choose Life ─ Deut 29‑30 */
+      /* 10c ─ Choose Life ─ Deut 29-30 */
       {
         id: 'wild-10c',
         title: 'Choose Life',
@@ -679,11 +657,11 @@ export const BIBLE_PATHS: Path[] = [
         description:
           'Moses calls heaven and earth as witnesses that real hope lies in a circumcised heart and a conscious choice of life over death.',
         icon: 'heart',
-        prayer: `Life‑Giving God, incline my heart to choose life so descendants may live and love You wholeheartedly.`,
+        prayer: `Life-Giving God, incline my heart to choose life so descendants may live and love You wholeheartedly.`,
         reflectionPrompt: `Which daily choice today will steer your heart toward life?`,
       },
     
-      /* 11 ─ Moses’ Farewell ─ Deut 31‑34  (unchanged) */
+      /* 11 ─ Moses' Farewell ─ Deut 31-34  (unchanged) */
       {
         id: 'wild-11',
         title: "Moses' Farewell",
@@ -726,19 +704,19 @@ export const BIBLE_PATHS: Path[] = [
         description:
           'Israel drifts into a downward spiral of idolatry, oppression, and deliverance. Each judge offers temporary relief but points to the need for a faithful king.',
         icon: 'reload',
-        prayer: `Faithful Judge, cycles of compromise reveal my need for a Savior‑King. Deliver me from apathy and raise zeal for wholehearted devotion.`,
+        prayer: `Faithful Judge, cycles of compromise reveal my need for a Savior-King. Deliver me from apathy and raise zeal for wholehearted devotion.`,
         reflectionPrompt: `Which recurring sin cycle do you need to surrender to the true Judge today?`,
       },
     
-      /*─── 1 Samuel ─────────────────────────────────────────────*/
+      /*─── 1 Samuel ─────────────────────────────────────────────*/
       {
         id: 'kp-3',
-        title: 'Rise of Saul (Part 1)',
+        title: 'Rise of Saul (Part 1)',
         reference: createRef('1 Samuel', generateChapters(8, 13)),
         description:
           'Israel demands a king and Saul is anointed; early victories reveal potential, yet cracks of insecurity already show.',
         icon: 'trending-up',
-        prayer: `King of Kings, guard my heart from Saul‑like insecurity. Teach me to value obedience over outward success.`,
+        prayer: `King of Kings, guard my heart from Saul-like insecurity. Teach me to value obedience over outward success.`,
         reflectionPrompt: `Where are you tempted to sacrifice appearance for obedience?`,
       },
       {
@@ -748,7 +726,7 @@ export const BIBLE_PATHS: Path[] = [
         description:
           "Saul's hasty oath starves troops; Jonathan's honey test exposes leadership folly yet God grants victory.",
         icon: 'warning',
-        prayer: `Wise King, guard my tongue from rash vows that burden others; make my leadership life‑giving.`,
+        prayer: `Wise King, guard my tongue from rash vows that burden others; make my leadership life-giving.`,
         reflectionPrompt: `What spoken commitment might you need to revisit or release because it hinders others?`,
       },
     
@@ -767,10 +745,10 @@ export const BIBLE_PATHS: Path[] = [
         title: 'Sling, Stone & Sudden Victory',
         reference: createRef('1 Samuel', [17]),
         description:
-          'Rejecting armour and embracing covenant confidence, David runs toward danger; one well‑aimed stone topples terror and ignites national faith.',
+          'Rejecting armour and embracing covenant confidence, David runs toward danger; one well-aimed stone topples terror and ignites national faith.',
         icon: 'flash',
         prayer: `Champion Deliverer, teach me to fight with proven trust, not borrowed methods. Use little things wielded in faith for great victories.`,
-        reflectionPrompt: `Which “simple sling”—ordinary gift or habit—could God use powerfully if you run toward the battle?`,
+        reflectionPrompt: `Which "simple sling"—ordinary gift or habit—could God use powerfully if you run toward the battle?`,
       },
       {
         id: 'kp-4c',
@@ -783,7 +761,7 @@ export const BIBLE_PATHS: Path[] = [
         reflectionPrompt: `How can patience in obscurity prepare you for future influence?`,
       },
     
-      /*─── 2 Samuel ─────────────────────────────────────────────*/
+      /*─── 2 Samuel ─────────────────────────────────────────────*/
       {
         id: 'kp-5',
         title: "David's Reign",
@@ -791,11 +769,11 @@ export const BIBLE_PATHS: Path[] = [
         description:
           'Jerusalem becomes capital and God promises an eternal dynasty. Yet private sin will soon threaten public peace.',
         icon: 'ribbon',
-        prayer: `Covenant Keeper, Your promise to David finds “Yes” in Jesus. Keep my private life pure so public witness stays bright.`,
-        reflectionPrompt: `Bring one hidden area into God’s light today—what step will you take?`,
+        prayer: `Covenant Keeper, Your promise to David finds "Yes" in Jesus. Keep my private life pure so public witness stays bright.`,
+        reflectionPrompt: `Bring one hidden area into God's light today—what step will you take?`,
       },
     
-      /*─── 1 Kings 1‑7 ──────────────────────────────────────────*/
+      /*─── 1 Kings 1-7 ──────────────────────────────────────────*/
       {
         id: 'kp-6',
         title: 'Solomon & Temple',
@@ -817,7 +795,7 @@ export const BIBLE_PATHS: Path[] = [
         reflectionPrompt: `Which conversation could you initiate to sow reconciliation where there's division?`,
       },
     
-      /*─── Elijah & Elisha ──────────────────────────────────────*/
+      /*─── Elijah & Elisha ──────────────────────────────────────*/
       {
         id: 'kp-8',
         title: 'Elijah by the Brook',
@@ -830,10 +808,10 @@ export const BIBLE_PATHS: Path[] = [
       },
       {
         id: 'kp-8b',
-        title: 'Fire on Mount Carmel',
+        title: 'Fire on Mount Carmel',
         reference: createRef('1 Kings', [18]),
         description:
-          'A soaked altar and a 63‑word prayer call down fire, silencing Baal and turning Israel’s heart back to Yahweh.',
+          'A soaked altar and a 63-word prayer call down fire, silencing Baal and turning Israel\'s heart back to Yahweh.',
         icon: 'flame',
         prayer: `God Who Answers by Fire, set my life ablaze so others see Your reality.`,
         reflectionPrompt: `Where is God calling you to stand publicly for His honor?`,
@@ -846,7 +824,7 @@ export const BIBLE_PATHS: Path[] = [
           'Exhausted Elijah meets God in a gentle whisper, commissions Elisha, and confronts Ahab—showing that grace follows even the boldest victories.',
         icon: 'wind',
         prayer: `Gentle Whisperer, speak hope into my burnout and recommission me for future battles.`,
-        reflectionPrompt: `How can solitude help you hear God’s whisper after intense service?`,
+        reflectionPrompt: `How can solitude help you hear God's whisper after intense service?`,
       },
     
       /*─── Exile Narratives ─────────────────────────────────────*/
@@ -911,7 +889,7 @@ export const BIBLE_PATHS: Path[] = [
         description:
           `The skies proclaim glory while God's perfect law revives the soul.`,
         icon: 'sunny',
-        prayer: `Creator and Lawgiver, let the heavens' song and Torah's perfection revive my soul, leading me to hidden‑fault repentance.`,
+        prayer: `Creator and Lawgiver, let the heavens' song and Torah's perfection revive my soul, leading me to hidden-fault repentance.`,
         reflectionPrompt: `How does creation currently invite you to praise the Creator?`,
       },
       {
@@ -966,13 +944,13 @@ export const BIBLE_PATHS: Path[] = [
       },
       {
         id: 'psw-9',
-        title: 'Fear of the LORD',
+        title: 'Fear of the LORD',
         reference: createRef('Proverbs', generateChapters(1, 4)),
         description:
-          'Solomon opens with parental appeals: the fear of the LORD is the starting line for all wisdom.',
+          'Solomon opens with parental appeals: the fear of the LORD is the starting line for all wisdom.',
         icon: 'alert',
         prayer: `Holy One, anchor every choice I make in reverent awe of who You are; let true wisdom begin with worship.`,
-        reflectionPrompt: `Which decision before you right now most needs to start with “the fear of the LORD”?`,
+        reflectionPrompt: `Which decision before you right now most needs to start with "the fear of the LORD"?`,
       },
       {
         id: 'psw-10',
@@ -992,7 +970,7 @@ export const BIBLE_PATHS: Path[] = [
           'Ants, vineyards, and sharpened iron illustrate that steady diligence and wise friendships lead to lasting fruit.',
         icon: 'hammer',
         prayer: `Master Craftsman, deliver me from lazy excuses; sharpen me through faithful work and iron‑sharpening friends.`,
-        reflectionPrompt: `Identify one task you’ve been delaying—what first faithful step can you take today?`,
+        reflectionPrompt: `Identify one task you've been delaying—what first faithful step can you take today?`,
       }
     ]
   },
@@ -1017,17 +995,17 @@ export const BIBLE_PATHS: Path[] = [
           'Holy, holy, holy shakes the temple and Isaiah volunteers despite unclean lips. The commissioning anticipates both hardened listeners and a preserved stump.',
         icon: 'eye',
         prayer: `Holy, Holy, Holy Lord, like Isaiah I confess unclean lips. Purge me with coal from Your altar and send me wherever You will.`,
-        reflectionPrompt: `Where do you sense God asking “Whom shall I send?”—and what is your response?`,
+        reflectionPrompt: `Where do you sense God asking "Whom shall I send?"—and what is your response?`,
       },
       {
         id: 'maj-2',
         title: 'Isaiah: The Servant',
         reference: createRef('Isaiah', generateChapters(40, 46)),
         description:
-          'Exile skies turn silky with promises of a highway home. Four servant songs climax in a wounded healer who bears others’ sins.',
+          'Exile skies turn silky with promises of a highway home. Four servant songs climax in a wounded healer who bears others\' sins.',
         icon: 'bandage',
         prayer: `Servant‑King Jesus, wounded for our transgressions, teach me to mirror servant humility and hope to weary exiles.`,
-        reflectionPrompt: `Which facet of the Servant’s character do you need to embody today?`,
+        reflectionPrompt: `Which facet of the Servant's character do you need to embody today?`,
       },
       {
         id: 'maj-3',
@@ -1054,7 +1032,7 @@ export const BIBLE_PATHS: Path[] = [
         title: 'Ezekiel: Wheels & Glory',
         reference: createRef('Ezekiel', generateChapters(1, 7)),
         description:
-          'Exiles by the Kebar River behold a storm‑throne vision beyond imagination. Judgment oracles explain why God’s glory departs the temple.',
+          'Exiles by the Kebar River behold a storm‑throne vision beyond imagination. Judgment oracles explain why God\'s glory departs the temple.',
         icon: 'aperture',
         prayer: `Glorious One, wheels within wheels proclaim Your sovereignty. Expand my vision of Your holiness until idols crumble.`,
         reflectionPrompt: `How does a bigger view of God transform a current worry?`,
@@ -1067,7 +1045,7 @@ export const BIBLE_PATHS: Path[] = [
           'Dry bones rattle back to life, picturing national resurrection. A future Davidic shepherd and a decisive victory over Gog seal the promise.',
         icon: 'expand',
         prayer: `Breath of Life, speak to valley bones. Revive dead hopes and set me under the care of the Good Shepherd‑Prince.`,
-        reflectionPrompt: `Where do you need to invite God’s breath to resurrect dry bones in your life?`,
+        reflectionPrompt: `Where do you need to invite God's breath to resurrect dry bones in your life?`,
       },
       {
         id: 'maj-7',
@@ -1087,7 +1065,7 @@ export const BIBLE_PATHS: Path[] = [
           'Jeremiah foresees a winnowing wind that will scatter proud Babylon, repaying her for all she has done to Zion.',
         icon: 'airplane',
         prayer: `Righteous Judge, guard my heart from Babylonian pride and align me with Your coming justice.`,
-        reflectionPrompt: `Where is subtle pride inviting God’s opposition in your life?`,
+        reflectionPrompt: `Where is subtle pride inviting God's opposition in your life?`,
       },
       {
         id: 'maj-9',
@@ -1430,7 +1408,7 @@ export const BIBLE_PATHS: Path[] = [
         title: 'Habakkuk: Faith in Crisis',
         reference: createRef('Habakkuk', generateChapters(1, 3)),
         description:
-          'A prophet argues with God about unanswered violence. By the end he sings: “The righteous will live by faith.”',
+          'A prophet argues with God about unanswered violence. By the end he sings: "The righteous will live by faith."',
         icon: 'help',
         prayer: `Mighty Savior, refine me with holy fire and quiet me with singing love.`,
         reflectionPrompt: `What impurity is God revealing that His refining fire can remove?`,
@@ -1443,7 +1421,7 @@ export const BIBLE_PATHS: Path[] = [
           'Sweeping day‑of‑the‑LORD announcements purge earth and sky. Yet a humble remnant will sing as God rejoices over them.',
         icon: 'flame',
         prayer: `Purifying Fire, sweep away the dross and impurities from my life.`,
-        reflectionPrompt: `What area of your life needs to be purified and renewed by God’s Spirit?`,
+        reflectionPrompt: `What area of your life needs to be purified and renewed by God's Spirit?`,
       },
       {
         id: 'min-7',
@@ -1456,14 +1434,14 @@ export const BIBLE_PATHS: Path[] = [
           'Returned exiles stall on rebuilding the temple until prophetic urgency stirs them. Initial night visions confirm that angel armies stand behind the project.',
         icon: 'home',
         prayer: `Builder of the House, stir my spirit to prioritise Your temple over personal paneled houses.`,
-        reflectionPrompt: `How can you invest time or resources in God’s kingdom project this week?`,
+        reflectionPrompt: `How can you invest time or resources in God's kingdom project this week?`,
       },
       {
         id: 'min-8',
         title: 'Zechariah: Glory Visions',
         reference: createRef('Zechariah', generateChapters(2, 4)),
         description:
-          'Flying scrolls, lampstands, and a crowned high priest forecast messianic triumph. Jerusalem’s future extends far beyond walls of stone.',
+          'Flying scrolls, lampstands, and a crowned high priest forecast messianic triumph. Jerusalem\'s future extends far beyond walls of stone.',
         icon: 'eye',
         prayer: `Lord of Hosts, through night visions assure me that You stand behind Your people. Strengthen my hands for the work.`,
         reflectionPrompt: `What encouraging sign has God given you recently to keep building?`,
@@ -1476,7 +1454,7 @@ export const BIBLE_PATHS: Path[] = [
           'A skeptical post‑exilic community is confronted about tithes, divorce, and apathy. The closing promise of Elijah hints at the coming of John the Baptist.',
         icon: 'mail',
         prayer: `Faithful Witness, turn my cynical questions into reverent expectation of the Sun of Righteousness rising.`,
-        reflectionPrompt: `Where do you need to replace spiritual apathy with anticipation of Christ’s coming?`,
+        reflectionPrompt: `Where do you need to replace spiritual apathy with anticipation of Christ's coming?`,
       },
     ]
   },
@@ -1500,7 +1478,7 @@ export const BIBLE_PATHS: Path[] = [
         description:
           'Gabriel visits Zechariah and Mary; prophetic songs erupt with hope for Israel. The long‑awaited sunrise is about to break.',
         icon: 'megaphone',
-        prayer: `God of Promise, open my ears like Mary to say, “Let it be to me according to Your word.”`,
+        prayer: `God of Promise, open my ears like Mary to say, "Let it be to me according to Your word."`,
         reflectionPrompt: `Which promise from Luke 1 fuels your faith today?`,
       },
       {
@@ -1521,7 +1499,7 @@ export const BIBLE_PATHS: Path[] = [
           'John calls for repentance; crowds are baptised; heaven opens as the Father affirms His beloved Son and the Spirit descends.',
         icon: 'water',
         prayer: `Purifying Fire, prepare my heart for Your kingdom and plunge me into Your renewing Spirit.`,
-        reflectionPrompt: `How can you bear “fruit in keeping with repentance” this week?`,
+        reflectionPrompt: `How can you bear "fruit in keeping with repentance" this week?`,
       },
       {
         id: 'gos-2',
@@ -1558,7 +1536,7 @@ export const BIBLE_PATHS: Path[] = [
         title: 'Parables of Grace',
         reference: createRef('Luke', generateChapters(15, 17)),
         description:
-          'Sheep, coins, and prodigal sons illustrate heaven’s joy over one repentant sinner. Grace scandalises the self‑righteous and embraces the lost.',
+          'Sheep, coins, and prodigal sons illustrate heaven\'s joy over one repentant sinner. Grace scandalises the self‑righteous and embraces the lost.',
         icon: 'chatbubble',
         prayer: `Shepherd of the Lost, thank You for chasing prodigals. Make my heart celebrate repentance and seek the forgotten.`,
         reflectionPrompt: `Who in your life feels far from God and needs welcoming love?`,
@@ -1571,14 +1549,14 @@ export const BIBLE_PATHS: Path[] = [
           'Mark races through healings, exorcisms, and table fellowship—immediately showcasing a Messiah with unrivalled authority.',
         icon: 'flash',
         prayer: `Lord of Power, display Your authority over chaos in my circumstances so others marvel at who You are.`,
-        reflectionPrompt: `What storm do you need to invite Jesus to speak “Peace, be still” over?`,
+        reflectionPrompt: `What storm do you need to invite Jesus to speak "Peace, be still" over?`,
       },
       {
         id: 'gos-5b',
         title: 'Parables & Storms',
         reference: createRef('Mark', generateChapters(4, 5)),
         description:
-          'Seed parables hint at hidden kingdom growth. Wind, waves, and legions of demons bow to Jesus’ command.',
+          'Seed parables hint at hidden kingdom growth. Wind, waves, and legions of demons bow to Jesus\' command.',
         icon: 'boat',
         prayer: `Seed‑Sowing Savior, grow quiet fruit in me and calm every inner sea that resists Your word.`,
         reflectionPrompt: `Which small seed of obedience could God multiply in your life?`,
@@ -1601,7 +1579,7 @@ export const BIBLE_PATHS: Path[] = [
           'Comforting promises of Spirit and home intertwine with the call to abide in the true Vine and love one another deeply.',
         icon: 'leaf',
         prayer: `True Vine, graft me into Your life so that abiding love bears lasting fruit.`,
-        reflectionPrompt: `What practice helps you remain in Christ’s love today?`,
+        reflectionPrompt: `What practice helps you remain in Christ's love today?`,
       },
       {
         id: 'gos-6c',
@@ -1610,7 +1588,7 @@ export const BIBLE_PATHS: Path[] = [
         description:
           'Jesus promises the Spirit who guides into truth and prays that future believers would be one as the Trinity is one.',
         icon: 'cloud',
-        prayer: `Interceding Savior, let Your prayer for unity and Spirit‑led truth find an answered “Amen” in my life.`,
+        prayer: `Interceding Savior, let Your prayer for unity and Spirit‑led truth find an answered "Amen" in my life.`,
         reflectionPrompt: `How can you pursue unity with another believer this week?`,
       },
       {
@@ -1618,10 +1596,10 @@ export const BIBLE_PATHS: Path[] = [
         title: 'Passion & Cross',
         reference: createRef('John', generateChapters(18, 19)),
         description:
-          'Roman trials, a crown of thorns, and crucifixion fulfil ancient prophecies. “It is finished” signals that the debt of sin is paid in full.',
+          'Roman trials, a crown of thorns, and crucifixion fulfil ancient prophecies. "It is finished" signals that the debt of sin is paid in full.',
         icon: 'add',
         prayer: `Crucified Savior, thank You for bearing my sin. May the cross crucify my pride and free me to love sacrificially.`,
-        reflectionPrompt: `What part of self needs to die so Christ’s love can live through you?`,
+        reflectionPrompt: `What part of self needs to die so Christ's love can live through you?`,
       },
       {
         id: 'gos-8',
@@ -1638,7 +1616,7 @@ export const BIBLE_PATHS: Path[] = [
         title: 'Living Bread & Hard Sayings',
         reference: createRef('John', [6]),
         description:
-          'Multiplication feeds thousands, waves obey “I AM,” and Jesus offers bread that satisfies forever—then tests hearts with hard teaching.',
+          'Multiplication feeds thousands, waves obey "I AM," and Jesus offers bread that satisfies forever—then tests hearts with hard teaching.',
         icon: 'nutrition',
         prayer: `Bread of Life, feed my soul beyond physical needs and anchor me when Your words challenge my comfort.`,
         reflectionPrompt: `Is there a hard saying of Jesus you need to embrace rather than avoid?`,
@@ -1648,9 +1626,9 @@ export const BIBLE_PATHS: Path[] = [
         title: 'Gethsemane & Betrayal',
         reference: createRef('Matthew', [26]),
         description:
-          'Costly perfume, the first Lord’s Supper, anguished prayer, and a kiss of betrayal move the story toward the cross.',
+          'Costly perfume, the first Lord\'s Supper, anguished prayer, and a kiss of betrayal move the story toward the cross.',
         icon: 'wine',
-        prayer: `Suffering Savior, strengthen me to say “Your will be done” in my smaller Gethsemanes.`,
+        prayer: `Suffering Savior, strengthen me to say "Your will be done" in my smaller Gethsemanes.`,
         reflectionPrompt: `Where is God asking for surrendered yes from you?`,
       },
       {
@@ -1658,7 +1636,7 @@ export const BIBLE_PATHS: Path[] = [
         title: 'Garden Arrest & Trials',
         reference: createRef('Mark', [14]),
         description:
-          'Sweat like blood, fleeing disciples, illegal councils, and a rooster’s crow expose both Jesus’ resolve and human frailty.',
+          'Sweat like blood, fleeing disciples, illegal councils, and a rooster\'s crow expose both Jesus\' resolve and human frailty.',
         icon: 'alert',
         prayer: `Truthful King, give me courage to confess You before people no matter the cost.`,
         reflectionPrompt: `Where might fear of opinion silence your witness today?`,
@@ -1671,7 +1649,7 @@ export const BIBLE_PATHS: Path[] = [
           'Conspiracy brews while Jesus establishes the meal of remembrance—His body and blood for a new covenant; betrayal and denial quickly follow.',
         icon: 'restaurant',
         prayer: `Paschal Lamb, keep my heart in awe of redemption every time I break bread.`,
-        reflectionPrompt: `What does the Lord’s Supper mean to you personally?`,
+        reflectionPrompt: `What does the Lord's Supper mean to you personally?`,
       },
     ]
   },
@@ -1693,7 +1671,7 @@ export const BIBLE_PATHS: Path[] = [
         title: 'Pentecost & Peter',
         reference: createRef('Acts', generateChapters(1, 4)),
         description:
-          'Wind, fire, and multilingual praise launch a new era. Peter’s bold preaching turns thousands of skeptics into a Spirit‑filled community.',
+          'Wind, fire, and multilingual praise launch a new era. Peter\'s bold preaching turns thousands of skeptics into a Spirit‑filled community.',
         icon: 'flame',
         prayer: `Spirit of Pentecost, fill me afresh that my words boldly proclaim Jesus across cultural lines.`,
         reflectionPrompt: `Where is God prompting you to witness today?`,
@@ -1710,13 +1688,13 @@ export const BIBLE_PATHS: Path[] = [
       },
       {
         id: 'act-2b',
-        title: 'Stephen’s Speech & Martyrdom',
+        title: 'Stephen\'s Speech & Martyrdom',
         reference: createRef('Acts', [7]),
         description:
-          'From Abraham to Solomon, Stephen retells Israel’s story, indicting hard hearts. Stones silence his voice but scatter the gospel far beyond Jerusalem.',
+          'From Abraham to Solomon, Stephen retells Israel\'s story, indicting hard hearts. Stones silence his voice but scatter the gospel far beyond Jerusalem.',
         icon: 'alert',
-        prayer: `Spirit of Glory, give me Stephen’s vision of Jesus standing for me—stronger than any hostility against me.`,
-        reflectionPrompt: `What would change if you pictured Jesus standing by you in today’s hardest place?`,
+        prayer: `Spirit of Glory, give me Stephen's vision of Jesus standing for me—stronger than any hostility against me.`,
+        reflectionPrompt: `What would change if you pictured Jesus standing by you in today's hardest place?`,
       },
       {
         id: 'act-3',
@@ -1733,9 +1711,9 @@ export const BIBLE_PATHS: Path[] = [
         title: 'Peter & Gentiles',
         reference: createRef('Acts', generateChapters(10, 12)),
         description:
-          'Cornelius’ household receives the Spirit, proving the gospel is borderless. Divine jailbreaks and angelic interventions keep leaders mobile.',
+          'Cornelius\' household receives the Spirit, proving the gospel is borderless. Divine jailbreaks and angelic interventions keep leaders mobile.',
         icon: 'globe',
-        prayer: `Breaker of Barriers, help me welcome those I once called “unclean,” celebrating Your impartial salvation.`,
+        prayer: `Breaker of Barriers, help me welcome those I once called "unclean," celebrating Your impartial salvation.`,
         reflectionPrompt: `Who is outside your comfort zone that God may be calling you to love?`,
       },
       {
@@ -1765,7 +1743,7 @@ export const BIBLE_PATHS: Path[] = [
         description:
           'Ephesus sees city‑wide impact and bonfires of magic scrolls. Farewell tears at Miletus reveal the depth of gospel friendships.',
         icon: 'footsteps',
-        prayer: `Spirit of Encouragement, may my friendships deepen like Paul’s farewell tears, strengthening others for the race.`,
+        prayer: `Spirit of Encouragement, may my friendships deepen like Paul's farewell tears, strengthening others for the race.`,
         reflectionPrompt: `Who encourages your faith, and how can you thank them today?`,
       },
       {
@@ -1773,7 +1751,7 @@ export const BIBLE_PATHS: Path[] = [
         title: 'Trials & Rome',
         reference: createRef('Acts', generateChapters(22, 28)),
         description:
-          "Courtrooms, conspiracies, and shipwreck cannot mute the witness. Acts ends with Paul proclaiming the kingdom unhindered in Caesar’s capital.",
+          "Courtrooms, conspiracies, and shipwreck cannot mute the witness. Acts ends with Paul proclaiming the kingdom unhindered in Caesar's capital.",
         icon: 'business',
         prayer: `Unhindered King, even chains advance the gospel. Grant me resilience to proclaim hope in every trial.`,
         reflectionPrompt: `How can you use your current circumstance—good or hard—for gospel witness?`,
@@ -1798,10 +1776,10 @@ export const BIBLE_PATHS: Path[] = [
         title: 'Romans: Gospel Explained',
         reference: createRef('Romans', generateChapters(1, 7)),
         description:
-          "Paul unfolds humanity’s universal need and God’s surprising solution of justification by faith. The letter’s logical argument has sparked revivals for centuries.",
+          "Paul unfolds humanity's universal need and God's surprising solution of justification by faith. The letter's logical argument has sparked revivals for centuries.",
         icon: 'document-text',
         prayer: `God of the Gospel, root me in justification by faith so grace drives holy living.`,
-        reflectionPrompt: `How does knowing you are “declared righteous” change today’s struggle?`,
+        reflectionPrompt: `How does knowing you are "declared righteous" change today's struggle?`,
       },
       {
         id: 'paul-2',
@@ -1830,7 +1808,7 @@ export const BIBLE_PATHS: Path[] = [
         description:
           'Cosmic praise for electing grace flows into practical unity among Jews and Gentiles. Marriage, parenting, and spiritual warfare all hinge on identity in Christ.',
         icon: 'link',
-        prayer: `God of Unity, reveal the height and depth of Christ’s love, empowering me to walk in worthy humility.`,
+        prayer: `God of Unity, reveal the height and depth of Christ's love, empowering me to walk in worthy humility.`,
         reflectionPrompt: `How will you guard the unity of the Spirit in your relationships today?`,
       },
       {
@@ -1848,24 +1826,24 @@ export const BIBLE_PATHS: Path[] = [
         title: 'Colossians: Christ Supreme',
         reference: createRef('Colossians', generateChapters(1, 4)),
         description:
-          'False philosophies shrink Jesus; Paul paints Him as creator, sustainer, and reconciler. Complete sufficiency in Christ dethrones every competing “ism.”',
+          'False philosophies shrink Jesus; Paul paints Him as creator, sustainer, and reconciler. Complete sufficiency in Christ dethrones every competing "ism."',
         icon: 'star',
         prayer: `Supreme Christ, let Your pre‑eminence dethrone every rival in my mind and habits.`,
-        reflectionPrompt: `Which “ism” or distraction competes for Christ’s supremacy in you?`,
+        reflectionPrompt: `Which "ism" or distraction competes for Christ's supremacy in you?`,
       },
       {
         id: 'paul-7',
-        title: '1 Thessalonians: Hope While Waiting',
+        title: '1 Thessalonians: Hope While Waiting',
         reference: createRef('1 Thessalonians', generateChapters(1, 5)),
         description:
-          "New believers endure persecution with steadfast faith. Paul clarifies that the Lord’s return will reunite the living and the dead.",
+          "New believers endure persecution with steadfast faith. Paul clarifies that the Lord's return will reunite the living and the dead.",
         icon: 'time',
         prayer: `God of Hope, comfort me with the promise of Your return so I grieve with hope and live with expectancy.`,
-        reflectionPrompt: `How does Christ’s return shape your use of time today?`,
+        reflectionPrompt: `How does Christ's return shape your use of time today?`,
       },
       {
         id: 'paul-8',
-        title: '2 Thessalonians: Steadfast',
+        title: '2 Thessalonians: Steadfast',
         reference: createRef('2 Thessalonians', generateChapters(1, 3)),
         description:
           'Confusion about end‑times timetables is corrected with calm assurance. Idleness is rebuked because future hope fuels present diligence.',
@@ -1875,7 +1853,7 @@ export const BIBLE_PATHS: Path[] = [
       },
       {
         id: 'paul-9',
-        title: '1 Timothy: Guarding the Gospel',
+        title: '1 Timothy: Guarding the Gospel',
         reference: createRef('1 Timothy', generateChapters(1, 6)),
         description:
           'A young pastor is charged to silence false teachers and model integrity. Instructions shape healthy doctrine, prayer, and leadership.',
@@ -1888,10 +1866,10 @@ export const BIBLE_PATHS: Path[] = [
         title: 'Titus: Healthy Churches',
         reference: createRef('Titus', generateChapters(1, 3)),
         description:
-          'On Crete, grace trains believers to say “No” to ungodliness and “Yes” to good works. Elders must embody this transformation for the sake of witness.',
+          'On Crete, grace trains believers to say "No" to ungodliness and "Yes" to good works. Elders must embody this transformation for the sake of witness.',
         icon: 'medkit',
-        prayer: `Grace Instructor, train me to say “No” to ungodliness and “Yes” to good works that adorn the gospel.`,
-        reflectionPrompt: `Identify one “good work” the Spirit is prompting you to pursue this week.`,
+        prayer: `Grace Instructor, train me to say "No" to ungodliness and "Yes" to good works that adorn the gospel.`,
+        reflectionPrompt: `Identify one "good work" the Spirit is prompting you to pursue this week.`,
       },
     ]
   },

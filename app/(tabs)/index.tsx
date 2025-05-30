@@ -15,6 +15,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
+import { useAssets } from 'expo-asset';
+import * as Haptics from 'expo-haptics';
+import { useRouter } from 'expo-router';
+import auth from '@react-native-firebase/auth';
+
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
 import JournalComponent from '../../components/JournalComponent';
 import PrayerComponent from '../../components/PrayerComponent';
@@ -22,24 +27,24 @@ import ProgressPill from '../../components/ProgressPill';
 import SecondaryButton from '../../components/SecondaryButton';
 import HeartsExplainerModal from '../../components/HeartsExplainerModal';
 import ExplainerModal from '../../components/ExplainerModal';
-import { HomeMode, useHomeStore } from '../stores/homeStore'; // Import Zustand store
-import { usePathStore } from '../stores/pathStore'; // Import path store
-import { useUIStore } from '../stores/uiStore'; // Import UI store
-import { useUserStore } from '../stores/userStore'; // Import user store
+import WidgetHowToSheet from '../../components/WidgetHowToSheet';
+import darkBg from '../../assets/backgrounds/defaultBackgroundDark.png';
+
+import { HomeMode, useHomeStore } from '../stores/homeStore';
+import { usePathStore } from '../stores/pathStore';
+import { useUIStore } from '../stores/uiStore';
+import { useUserStore } from '../stores/userStore';
 import { useAssetsStore, imageAssets } from '../stores/assetsStore';
-import { useAssets } from 'expo-asset';
-import * as Haptics from 'expo-haptics';
-import { useRouter } from 'expo-router';
+import useSubscriptionStore from '../stores/subscriptionStore';
+import useTranslation from '../hooks/useTranslation';
 
 import analytics from '~/utils/analytics';
-import WidgetHowToSheet from '../../components/WidgetHowToSheet';
-import useSubscriptionStore from '../stores/subscriptionStore';
 import { getLevelData } from '../../utils/levelUtils';
-const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
+import { IS_ANDROID, IS_IOS } from '../utils/utils';
+
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window'); // Get screen height and width
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
 const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
-import auth from '@react-native-firebase/auth';
-import { IS_ANDROID, IS_IOS } from '../utils/utils';
 
 // Max hearts constant
 const MAX_HEARTS = 100;
@@ -56,8 +61,6 @@ const flameIcon = imageAssets[7];
 const gemIcon = imageAssets[8];
 const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
-
-import darkBg from '../../assets/backgrounds/defaultBackgroundDark.png';
 
 // Custom toast config with explicit styling
 const toastConfig: ToastConfig = {
@@ -157,6 +160,7 @@ const toastConfig: ToastConfig = {
 };
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const riveRef = useRef<RiveRef>(null);
   const [riveError, setRiveError] = useState<RNRiveError | null>(null);
   const navigation = useNavigation();
@@ -878,7 +882,7 @@ export default function HomeScreen() {
   const levelPillWidthAnim = useRef(new Animated.Value(0)).current;
   const levelPillOpacityAnim = useRef(new Animated.Value(0)).current;
   // Pre-calculate the expanded width for the pill (use a reasonable fixed width instead of screen-based)
-  const pillExpandedWidth = 350; // Fixed reasonable width that won't overflow
+  const pillExpandedWidth = Math.min(SCREEN_WIDTH * 0.85, 380); // Use 85% of screen width, max 380px
 
   // Calculate level and XP progress for the level pill display
   const levelInfo = useMemo(() => {
@@ -1322,16 +1326,16 @@ export default function HomeScreen() {
 
               <SecondaryButton
                 icon={breadIcon}
-                title="Daily Bread – Read"
-                subtitle="Feed your soul with scripture"
+                title={t('home.dailyBread')}
+                subtitle={t('home.dailyBreadSubtitle')}
                 points={25}
                 onPress={handleReadPress}
                 completed={readingCompleted}
               />
               <SecondaryButton
                 icon={dropIcon}
-                title="Living Water – Pray"
-                subtitle="Refresh your spirit with prayer"
+                title={t('home.livingWater')}
+                subtitle={t('home.livingWaterSubtitle')}
                 points={25}
                 onPress={handlePrayerPress}
                 completed={prayerCompleted}
@@ -1339,8 +1343,8 @@ export default function HomeScreen() {
               />
               <SecondaryButton
                 icon={quillIcon}
-                title="Quiet Time – Reflect"
-                subtitle="Pause and meet with God"
+                title={t('home.quietTime')}
+                subtitle={t('home.quietTimeSubtitle')}
                 points={25}
                 onPress={handleReflectionPress}
                 completed={reflectionCompleted}

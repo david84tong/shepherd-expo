@@ -12,6 +12,7 @@ import analytics from '../../utils/analytics';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useAuth } from '../hooks/authHook';
 import { getLevelData } from '../../utils/levelUtils';
+import { useTranslation } from 'react-i18next';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
@@ -49,6 +50,7 @@ const DISCORD_CARD_DISMISSED_KEY = 'shepherd_discord_card_dismissed_v1';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const {
     getLamb,
     getStreakCount,
@@ -168,13 +170,16 @@ export default function ProfileScreen() {
         date: reading.date,
         data: reading,
         icon: breadIcon,
-        title: `Read ${reading.book} ${reading.chapters?.join(', ') || ''}`,
+        title: t('profile.readActivity', { 
+          book: reading.book, 
+          chapters: reading.chapters?.join(', ') || '' 
+        }),
       })) || [];
 
     const prayers = completedPrayers?.map(prayer => {
-      let prayerTitle = `${prayer.type || 'Daily'} Prayer`;
+      let prayerTitle = t('profile.dailyPrayer');
       if (prayer.topic && prayer.topic.toLowerCase() !== 'general') {
-        prayerTitle = `Prayed for ${prayer.topic}`;
+        prayerTitle = t('profile.prayedFor', { topic: prayer.topic });
       }
       return {
         type: 'prayer' as const,
@@ -192,7 +197,7 @@ export default function ProfileScreen() {
         date: reflection.date,
         data: reflection,
         icon: quillIcon,
-        title: 'Quiet Time',
+        title: t('profile.quietTimeActivity'),
         content: reflection.content,
       })) || [];
 
@@ -202,7 +207,7 @@ export default function ProfileScreen() {
       const dateB = toDateSafe(b.date);
       return dateB.getTime() - dateA.getTime();
     });
-  }, [completedReadings, completedPrayers, completedReflections]);
+  }, [completedReadings, completedPrayers, completedReflections, t]);
 
   // Function to format activity date for headers
   const formatActivityDate = (timestamp: FirebaseFirestoreTypes.Timestamp | any): string => {
@@ -212,12 +217,12 @@ export default function ProfileScreen() {
 
       // Check if the date is today
       if (dayjs(date).isSame(dayjs(today), 'day')) {
-        return 'Today';
+        return t('profile.today');
       }
 
       // Check if the date is yesterday
       if (dayjs(date).isSame(dayjs(today).subtract(1, 'day'), 'day')) {
-        return 'Yesterday';
+        return t('profile.yesterday');
       }
 
       // Otherwise, format the date
@@ -237,36 +242,36 @@ export default function ProfileScreen() {
 
       // Less than a minute
       if (diffMs < 60000) {
-        return 'just now';
+        return t('profile.justNow');
       }
 
       // Minutes
       const diffMins = Math.floor(diffMs / 60000);
       if (diffMins < 60) {
-        return `${diffMins}m ago`;
+        return t('profile.minutesAgo', { count: diffMins });
       }
 
       // Hours
       const diffHours = Math.floor(diffMins / 60);
       if (diffHours < 24) {
-        return `${diffHours}h ago`;
+        return t('profile.hoursAgo', { count: diffHours });
       }
 
       // Days
       const diffDays = Math.floor(diffHours / 24);
       if (diffDays < 30) {
-        return `${diffDays}d ago`;
+        return t('profile.daysAgo', { count: diffDays });
       }
 
       // Months
       const diffMonths = Math.floor(diffDays / 30);
       if (diffMonths < 12) {
-        return `${diffMonths}mo ago`;
+        return t('profile.monthsAgo', { count: diffMonths });
       }
 
       // Years
       const diffYears = Math.floor(diffMonths / 12);
-      return `${diffYears}y ago`;
+      return t('profile.yearsAgo', { count: diffYears });
     } catch (error) {
       console.error('Error formatting relative time:', error, timestamp);
       return '';
@@ -296,25 +301,25 @@ export default function ProfileScreen() {
       // On success, user store will update and card will disappear
     } catch (error: any) {
       let errorMessage = Platform.OS === 'ios'
-        ? 'There was a problem signing in with Apple.'
-        : 'There was a problem signing in with Google.';
+        ? t('profile.errorMessages.defaultAppleError')
+        : t('profile.errorMessages.defaultGoogleError');
 
       if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
-        errorMessage = 'Sign in was canceled. Please try again.';
+        errorMessage = t('profile.errorMessages.signInCanceled');
       } else if (error.message?.includes('network')) {
-        errorMessage = 'Network error. Please check your internet connection and try again.';
+        errorMessage = t('profile.errorMessages.networkError');
       } else if (error.message?.includes('configuration')) {
-        errorMessage = 'Authentication configuration error. Please try another method.';
+        errorMessage = t('profile.errorMessages.configurationError');
       } else if (error.message?.includes('incomplete')) {
-        errorMessage = 'Sign in process was interrupted. Please try again.';
+        errorMessage = t('profile.errorMessages.incompleteError');
       } else if (error.message?.includes("operation couldn't be completed")) {
-        errorMessage = 'Sign in process could not be completed. Please try again.';
+        errorMessage = t('profile.errorMessages.operationError');
       } else if (error.message?.includes('No account found')) {
         errorMessage = Platform.OS === 'ios'
-          ? "We couldn't find an account with this Apple ID. Please create a new account instead."
-          : "We couldn't find an account with this Google account. Please create a new account instead.";
+          ? t('profile.errorMessages.noAccountApple')
+          : t('profile.errorMessages.noAccountGoogle');
       } else if (error.message?.includes('Failed to fetch your account data')) {
-        errorMessage = "We couldn't retrieve your account data. Please try again.";
+        errorMessage = t('profile.errorMessages.fetchDataError');
       }
       setSignInError(errorMessage);
     } finally {
@@ -367,7 +372,7 @@ export default function ProfileScreen() {
         <ScrollView className="flex-1 bg-surfaceCream" contentContainerStyle={{ paddingBottom: 50 }}>
           {/* Header */}
           <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
-            <Text className="font-feather text-h2 text-textPrimary">Profile</Text>
+            <Text className="font-feather text-h2 text-textPrimary">{t('profile.title')}</Text>
             <TouchableOpacity
               onPress={handleShowSettings}
               className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center">
@@ -378,9 +383,9 @@ export default function ProfileScreen() {
           {/* Sign In to Save Progress Card (only for anonymous users) */}
           {isAnonymous && (
             <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-              <Text className="font-feather text-xl text-accentGold mb-2 text-center">Sign in to save your progress</Text>
+              <Text className="font-feather text-xl text-accentGold mb-2 text-center">{t('profile.signInToSave')}</Text>
               <Text className="font-din text-body text-textPrimary mb-4 text-center">
-                Create a free account to sync your streak, XP, and lamb across devices. You can always sign in later!
+                {t('profile.signInDescription')}
               </Text>
 
               <View className="items-center mb-4">
@@ -399,7 +404,7 @@ export default function ProfileScreen() {
                     />
                   )}
                   <Text className={`font-din ${Platform.OS === 'ios' ? 'text-white' : 'text-[#4285F4]'} text-[18px] font-bold`}>
-                    {signInLoading ? 'Signing in...' : Platform.OS === 'ios' ? 'Sign in with Apple' : 'Sign in with Google'}
+                    {signInLoading ? t('profile.signingIn') : Platform.OS === 'ios' ? t('profile.signInWithApple') : t('profile.signInWithGoogle')}
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -423,15 +428,15 @@ export default function ProfileScreen() {
                   <FontAwesome6 name="discord" size={20} color="#5865F2" />
                 </View>
                 <View className="flex-1">
-                  <Text className="font-feather text-xl text-darkPurple">Join our Shepherd Family!</Text>
+                  <Text className="font-feather text-xl text-darkPurple">{t('profile.joinOurFamily')}</Text>
                   <Text className="font-din text-body text-darkPurple opacity-80 mt-1 leading-tight">
-                    Connect, share insights, and grow together on our Discord server.
+                    {t('profile.discordDescription')}
                   </Text>
                 </View>
               </View>
 
               <PrimaryButton
-                title="Join the Herd"
+                title={t('profile.joinTheHerd')}
                 onPress={handleJoinDiscord}
                 primaryColor="bg-darkPurple"
                 textColor="text-white"
@@ -445,7 +450,7 @@ export default function ProfileScreen() {
             <View className="flex-row justify-between items-center mb-6">
               <View className="bg-lightYellow px-4 py-1 rounded-lg opacity-80">
                 <Text className="font-feather text-heading text-primary">
-                  {lamb.name ? lamb.name : 'Your Lamb'}
+                  {lamb.name ? lamb.name : t('profile.yourLamb')}
                 </Text>
               </View>
               <Image
@@ -458,22 +463,22 @@ export default function ProfileScreen() {
             <View className="flex-row justify-between space-x-8">
               <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3 ">
                 <Text className="font-feather text-h2 text-textPrimary">{levelData.level}</Text>
-                <Text className="font-din text-description">Level</Text>
+                <Text className="font-din text-description">{t('profile.level')}</Text>
               </View>
               <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3 mx-4">
                 <Text className="font-feather text-h2 text-textPrimary">{streak}</Text>
-                <Text className="font-din text-description">Day Streak</Text>
+                <Text className="font-din text-description">{t('profile.dayStreak')}</Text>
               </View>
 
               <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3">
                 <Text className="font-feather text-h2 text-textPrimary">{lamb.hearts}</Text>
-                <Text className="font-din text-description">Hearts</Text>
+                <Text className="font-din text-description">{t('profile.hearts')}</Text>
               </View>
             </View>
             {/* XP Bar */}
             <View className="mt-6 mx-2">
               <View className="flex-row justify-between mb-2">
-                <Text className="font-din text-description">Level {levelData.level}</Text>
+                <Text className="font-din text-description">{t('profile.level')} {levelData.level}</Text>
                 <Text className="font-din text-description">{levelData.xpCurrent}/{levelData.xpForNextLevel} XP</Text>
               </View>
               <View className="h-4 bg-lightYellow rounded-full overflow-hidden">
@@ -487,16 +492,16 @@ export default function ProfileScreen() {
 
           {/* Join Date Card */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-            <Text className="font-feather text-heading text-textPrimary mb-2">Journey Started</Text>
+            <Text className="font-feather text-heading text-textPrimary mb-2">{t('profile.journeyStarted')}</Text>
             <Text className="font-din text-description">{joinDate}</Text>
           </View>
 
           {/* Selected Path Card */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-            <Text className="font-feather text-heading text-textPrimary mb-2">Selected Path</Text>
+            <Text className="font-feather text-heading text-textPrimary mb-2">{t('profile.selectedPath')}</Text>
             <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
               <Text className="font-din text-description underline text-accentGold">
-                {selectedPath?.title || 'No path selected'}
+                {selectedPath?.title || t('profile.noPathSelected')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -532,22 +537,22 @@ export default function ProfileScreen() {
           {/* Subscription Management Section */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
             <View className="flex-row justify-between items-center mb-2">
-              <Text className="font-feather text-heading text-textPrimary">Manage Subscription</Text>
+              <Text className="font-feather text-heading text-textPrimary">{t('profile.manageSubscription')}</Text>
               {isProMember && (
                 <View className="bg-lightYellow px-4 py-1 rounded-full">
-                  <Text className="font-din text-accentGold">Pro</Text>
+                  <Text className="font-din text-accentGold">{t('profile.pro')}</Text>
                 </View>
               )}
             </View>
             <Text className="font-din text-description mb-4">
               {isProMember
-                ? 'You have access to all premium features!'
-                : 'Unlock premium features and enhance your spiritual journey'}
+                ? t('profile.proDescription')
+                : t('profile.upgradeDescription')}
             </Text>
             {!isProMember && (
               <>
                 <PrimaryButton
-                  title="Upgrade to Pro"
+                  title={t('profile.upgradeToPro')}
                   onPress={() => {
                     setFromScreen('profile');
                     router.push('/PricingScreen' as any)
@@ -561,22 +566,22 @@ export default function ProfileScreen() {
           {/* Store Section */}
           <View className="mx-6 mt-4 mb-8 bg-white/50 rounded-[20px] p-6 shadow-card">
             <View className="flex-row justify-between items-center">
-              <Text className="font-feather text-heading text-textPrimary">Store</Text>
+              <Text className="font-feather text-heading text-textPrimary">{t('profile.store')}</Text>
               <View className="bg-lightYellow px-4 py-1 rounded-full">
-                <Text className="font-feather text-accentGold">Unlocks at Level 10</Text>
+                <Text className="font-feather text-accentGold">{t('profile.unlocksAtLevel10')}</Text>
               </View>
             </View>
             <Text className="font-din text-description mt-2">
-              Customize your lamb and unlock special items!
+              {t('profile.storeDescription')}
             </Text>
           </View>
           {/* Activity History Timeline Card */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-            <Text className="font-feather text-heading text-textPrimary mb-4">Your Journey</Text>
+            <Text className="font-feather text-heading text-textPrimary mb-4">{t('profile.yourJourney')}</Text>
 
             {allActivities.length === 0 ? (
               <Text className="font-din text-description text-center py-6">
-                No activities yet. Begin your journey today!
+                {t('profile.noActivitiesYet')}
               </Text>
             ) : (
               <View className="mt-2">
@@ -623,9 +628,9 @@ export default function ProfileScreen() {
                               {activity.title}
                             </Text>
                             {/* Display prayer topic or reflection content if available */}
-                            {(activity.type === 'prayer' && activity.data.topic && activity.title !== `Prayed for ${activity.data.topic}`) && (
+                            {(activity.type === 'prayer' && activity.data.topic && activity.title !== t('profile.prayedFor', { topic: activity.data.topic })) && (
                               <Text className="font-din text-sm text-description mt-1">
-                                Topic: {activity.data.topic}
+                                {t('profile.topic')}: {activity.data.topic}
                               </Text>
                             )}
                             {(activity.type === 'reflection' && activity.content) && (
@@ -648,7 +653,7 @@ export default function ProfileScreen() {
           {/* Version Info */}
           <View className="mx-6 mt-2 mb-10 items-center">
             <Text className="font-din text-description text-center text-textSecondary opacity-60">
-              Version {appVersion} (Build {buildNumber})
+              {t('profile.version')} {appVersion} ({t('profile.build')} {buildNumber})
             </Text>
           </View>
         </ScrollView>

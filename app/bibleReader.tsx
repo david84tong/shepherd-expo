@@ -23,6 +23,7 @@ import {
   ToastAndroid,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { useTranslation } from 'react-i18next';
 import { fetchChapter, Verse } from './api/bible';
 import SideButton from '~/components/SideButton';
 import { usePathStore } from './stores/pathStore';
@@ -219,6 +220,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   initialChapter,
   onNavigateBack,
 }) => {
+  const { t } = useTranslation();
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -1117,7 +1119,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                   {/* Card View Toggle */}
                   <View style={styles.toggleContainer}>
                     <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>
-                      Card View
+                      {t('bibleReader.cardView')}
                     </Text>
                     <Switch
                       trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
@@ -1364,7 +1366,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                   {/* Card View Toggle */}
                   <View style={styles.toggleContainer}>
                     <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>
-                      Card View
+                      {t('bibleReader.cardView')}
                     </Text>
                     <Switch
                       trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
