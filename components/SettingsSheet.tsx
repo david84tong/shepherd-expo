@@ -210,27 +210,52 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     analytics.logEvent('Settings_Tapped_SignOut', {
       userId: userId,
     });
+
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 
-      // Check if we're on Android and if the user is not signed in with Google
       const currentUser = auth().currentUser;
-      const isAnonymous = currentUser?.isAnonymous;
+      const isAnonymous = currentUser?.isAnonymous ?? false;
+      const providerId = currentUser?.providerData[0]?.providerId;
 
-      // Proceed with sign out
       await auth().signOut();
 
-      // Only revoke Google access on Android
+      // Revoke access based on the sign-in provider
       if (Platform.OS === 'android' && !isAnonymous) {
-        await GoogleSignin.revokeAccess?.();
+        if (providerId === 'google.com') {
+          await GoogleSignin.revokeAccess?.().catch((err) => {
+            console.warn('Google revokeAccess error:', err);
+          });
+        }
       }
+
+      // Apple sign-out: no explicit revoke needed in Firebase
+      // (Apple does not expose logout in same way as Google)
 
       useUserStore.getState().resetUserStore();
       bottomSheetRef.current?.close();
       setIsModalDimActive(false);
       router.replace({ pathname: '/(auth)' });
     } catch (error) {
-      console.log('Error signing out:', error);
+      const msg = error?.message ?? '';
+
+      const isExpectedLogoutError =
+        msg.includes('[auth/no-current-user]') ||
+        msg.includes('apiClient is null') ||
+        msg.includes('signOut:') ||
+        msg.includes('signOut error');
+
+      if (isExpectedLogoutError) {
+        console.warn('Sign-out error ignored:', error);
+      } else {
+        console.error('Unexpected sign-out error:', error);
+      }
+
+      // Continue with post-logout cleanup regardless
+      useUserStore.getState().resetUserStore();
+      bottomSheetRef.current?.close();
+      setIsModalDimActive(false);
+      router.replace({ pathname: '/(auth)' });
     }
   }, [router, setIsModalDimActive, userId]);
 
