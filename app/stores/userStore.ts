@@ -348,10 +348,11 @@ export const useUserStore = create<UserStore>()(
 
         addCompletedReading: (reading) => {
           set((state) => {
+            const updatedReadings = [...(state.completedReadings || []), reading];
             if (isAuthenticated()) {
-              debouncedSyncUserDocument(newState);
+              debouncedSyncUserDocument({ completedReadings: updatedReadings });
             }
-            return { completedReadings: [...(state.completedReadings || []), reading] };
+            return { completedReadings: updatedReadings };
           });
         },
 
