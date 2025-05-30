@@ -59,12 +59,12 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
     if (isBookChapterSelectorVisible) {
       const bookId = bookChapterSelectorParams.initialBookId || 1;
       const chapter = bookChapterSelectorParams.initialChapter || 1;
-      
+
       console.log(`📖 [GlobalBookChapterSelector] Sheet opened with bookId: ${bookId}, chapter: ${chapter}`);
-      
+
       setSelectedBookId(bookId);
       setSelectedChapter(chapter);
-      
+
       bottomSheetRef.current?.snapToIndex(0);
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
     } else {
@@ -76,12 +76,12 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
   const handleSelectChapter = useCallback((chapter: number) => {
     console.log(`📖 [GlobalBookChapterSelector] Selected chapter: ${chapter} for book: ${selectedBookId}`);
     setSelectedChapter(chapter);
-    
+
     // Save to pathStore as the last read chapter/verse
     const bookName = bookNames[selectedBookId] || 'Unknown';
     setSavedReading(bookName, selectedBookId, chapter);
     console.log(`💾 [GlobalBookChapterSelector] Saved to pathStore: ${bookName} (${selectedBookId}) Chapter ${chapter}`);
-    
+
     if (bookChapterSelectorParams.onSelect) {
       bookChapterSelectorParams.onSelect(selectedBookId, chapter);
     }
@@ -157,6 +157,8 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
       backgroundStyle={styles.sheetBackground}
       handleIndicatorStyle={styles.handleIndicator}
       backdropComponent={renderBackdrop}
+      enableContentPanningGesture={false}
+
     >
       <BottomSheetView style={styles.contentContainer}>
         {/* Header */}
@@ -303,7 +305,7 @@ const styles = StyleSheet.create({
   },
   bookSection: {
     paddingTop: 10,
-    height: 110,
+    height: 120,
   },
   chapterSection: {
     flex: 1,
