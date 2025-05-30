@@ -57,6 +57,7 @@ const initialState: UserDoc = {
   completedReadings: [],
   ageRange: '',
   username: '',
+  isProFromOnboarding: false,
   setNotificationTime: async (time: string) => {
     // This will be overridden by the actual implementation
     console.warn('setNotificationTime not implemented in initial state');
@@ -213,6 +214,7 @@ export const useUserStore = create<UserStore>()(
       setDenomination: (denomination) => set({ denomination }),
       setDisplayName: (displayName) => set({ displayName }),
       setSelectedPathId: (selectedPathId) => set({ selectedPathId }),
+      setIsProFromOnboarding: (isProFromOnboarding) => set({ isProFromOnboarding }),
       setLamb: (lamb) => set({ lamb }),
 
       setStreakCount: (count) => {

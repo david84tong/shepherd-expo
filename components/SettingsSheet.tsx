@@ -231,10 +231,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
       // Apple sign-out: no explicit revoke needed in Firebase
       // (Apple does not expose logout in same way as Google)
-
       useUserStore.getState().resetUserStore();
       bottomSheetRef.current?.close();
       setIsModalDimActive(false);
+
       router.replace({ pathname: '/(auth)' });
     } catch (error) {
       const msg = error?.message ?? '';
@@ -252,10 +252,12 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       }
 
       // Continue with post-logout cleanup regardless
-      useUserStore.getState().resetUserStore();
+
       bottomSheetRef.current?.close();
       setIsModalDimActive(false);
       router.replace({ pathname: '/(auth)' });
+    } finally {
+      useUserStore.getState().resetUserStore();
     }
   }, [router, setIsModalDimActive, userId]);
 

@@ -31,6 +31,19 @@ import Toast from 'react-native-toast-message';
 import { useUIStore } from '../stores/uiStore';
 import { adapty } from 'react-native-adapty';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
+import { UserDoc } from '../models/User';
+
+// Helper function to check premium status from Adapty
+const checkPremiumStatus = async () => {
+  try {
+    const profile = await adapty.getProfile();
+    const accessLevel = profile.accessLevels?.['premium'];
+    return accessLevel?.isActive || false;
+  } catch (error) {
+    console.error('Error checking premium status:', error);
+    return false;
+  }
+};
 
 export default function SaveProgressScreen() {
   const router = useRouter();
@@ -131,12 +144,14 @@ export default function SaveProgressScreen() {
   // Create user object from onboarding responses
   const createUserFromResponses = async (uid: string, displayName: string) => {
     try {
+      const isPremium = await checkPremiumStatus();
+      const isProFromOnboarding = useUserStore.getState().isProFromOnboarding;
       // Get all responses from store to ensure we have latest data
       const allResponses = useOnboardingStore.getState().getAllResponses();
       console.log('Onboarding responses:', JSON.stringify(allResponses));
 
       const spiritualGoal = allResponses.intent || 'Understand';
-      const userData = {
+      const userData: UserDoc = {
         id: uid,
         displayName,
         spiritualGoal,
@@ -148,13 +163,13 @@ export default function SaveProgressScreen() {
               : allResponses.bibleFamiliarity === 'a-lot'
                 ? 'mature'
                 : 'growing',
-        frequencyGoal: allResponses.frequencyGoal,
+        frequencyGoal: allResponses.frequencyGoal || '',
         denomination: allResponses.religiousAffiliation,
-        ageRange: allResponses.ageRange,
+        ageRange: allResponses.ageRange || '',
         notificationEnabled:
           allResponses.notificationEnabled !== undefined ? allResponses.notificationEnabled : false,
-        notificationTime: allResponses.notificationTime || undefined,
-        selectedPathId: allResponses.selectedPath || undefined,
+        notificationTime: allResponses.notificationTime || '',
+        selectedPathId: allResponses.selectedPath || '',
         lamb: {
           level: 1,
           xp: 90,
@@ -167,7 +182,12 @@ export default function SaveProgressScreen() {
       };
 
       console.log('Creating user data:', JSON.stringify(userData));
-
+      // We are checking if user have premium in this mobile also user if purchased before signup from onboarding or user restored from paywall in onboarding before signup.
+      if (isPremium && !isProFromOnboarding) {
+        userData.isPro = true;
+        userData.proExpiryDate = null;
+        useUserStore.getState().setProStatus('pro');
+      }
       // Identify user in Mixpanel
       analytics.setUserId(uid);
       analytics.setUserProperties({
@@ -206,8 +226,6 @@ export default function SaveProgressScreen() {
       // Create user in Firestore
       const success = await createUser(uid, userData);
       console.log('uid, userData =>', { uid, userData });
-      console.log('createUser =>', createUser);
-      console.log('success ====>', success);
 
       if (!success) {
         throw new Error('Failed to create user document');
@@ -235,6 +253,11 @@ export default function SaveProgressScreen() {
         console.log('Apple sign in successful');
 
         if (isLoginMode) {
+          const isPremium = await checkPremiumStatus();
+          const isProFromOnboarding = useUserStore.getState().isProFromOnboarding;
+          if (isPremium && !isProFromOnboarding) {
+            useUserStore.getState().setProStatus('pro');
+          }
           // User exists and data has been fetched in the auth hook
           // Just mark onboarding as completed and navigate to tabs
           await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
@@ -317,6 +340,11 @@ export default function SaveProgressScreen() {
         console.log('Google sign in successful');
 
         if (isLoginMode) {
+          const isPremium = await checkPremiumStatus();
+          const isProFromOnboarding = useUserStore.getState().isProFromOnboarding;
+          if (isPremium && !isProFromOnboarding) {
+            useUserStore.getState().setProStatus('pro');
+          }
           // User exists and data has been fetched in the auth hook
           // Just mark onboarding as completed and navigate to tabs
           await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');

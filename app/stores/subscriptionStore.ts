@@ -24,6 +24,7 @@ async function moveUserToProMode(
   productId?: string,
   fromPaywall?: string
 ) {
+  useUserStore.getState().setIsProFromOnboarding(true);
   analytics.logEvent('subscription_purchase_success', {
     package_id: packageId || 'unknown',
     product_id: productId || 'unknown',
@@ -80,6 +81,7 @@ const handleRestoreCompleted = async ({
     const profile = await adapty.getProfile();
     const accessLevel = profile.accessLevels?.['premium'];
     if (accessLevel?.isActive) {
+      useUserStore.getState().setIsProFromOnboarding(true);
       result = PAYWALL_RESULT.RESTORED;
       moveUserToProMode(true, packageId, productId, fromPaywall);
     } else {

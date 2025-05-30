@@ -34,6 +34,7 @@ export interface UserDoc {
   completedReflections: Reflection[];
   completedPrayers: Prayer[];
   completedReadings: Reading[];
+  isProFromOnboarding: boolean;
 }
 
 export interface UserStore extends UserDoc {
@@ -110,6 +111,7 @@ export interface UserStore extends UserDoc {
   addCompletedReflection: (reflection: Reflection) => void;
   addCompletedPrayer: (prayer: Prayer) => void;
   addCompletedReading: (reading: Reading) => void;
+  setIsProFromOnboarding: (isProFromOnboarding: boolean) => void;
 
   // Setters for Lamb fields
   setLambLevel: (level: number) => void;
