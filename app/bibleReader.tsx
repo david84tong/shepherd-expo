@@ -1222,6 +1222,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
             {
               backgroundColor: THEME_COLORS[currentTheme].background,
               borderBottomColor: THEME_COLORS[currentTheme].border,
+              marginTop: Platform.OS === 'android' ? 18 : 0,
             },
           ]}>
           <View style={styles.headerLeft}>
