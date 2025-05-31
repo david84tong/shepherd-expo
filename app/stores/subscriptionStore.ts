@@ -60,6 +60,14 @@ async function moveUserToProMode(
     position: 'top',
     visibilityTime: 4000,
   });
+  
+  // Show icon selection modal for new purchases (not restored subscriptions)
+  if (!isRestored) {
+    setTimeout(() => {
+      useSubscriptionStore.getState().setShowIconSelectionModal(true);
+    }, 2000); // Show modal after toast disappears
+  }
+  
   // Check if onboarding is completed
   onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
   // Navigate based on onboarding status
@@ -100,6 +108,7 @@ interface SubscriptionState {
   customerInfo: any | null; // Allow AdaptyProfile or CustomerInfo
   isProMember: boolean;
   hasSeenHalfOffPaywall: boolean;
+  showIconSelectionModal: boolean;
   initializeRevenueCat: (apiKey: string, userId: string | null) => Promise<void>;
   presentPaywall: () => Promise<PAYWALL_RESULT | null>;
   presentHalfOffPaywall: () => Promise<PAYWALL_RESULT | null>;
@@ -117,6 +126,8 @@ interface SubscriptionState {
   checkHasSeenHalfOffPaywall: () => Promise<void>;
   markHalfOffPaywallAsSeen: () => Promise<void>;
   shouldShowFreeTrialPaywall: () => boolean;
+  // Icon selection modal methods
+  setShowIconSelectionModal: (show: boolean) => void;
   // Add other state and actions here
 }
 
@@ -126,6 +137,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   customerInfo: null,
   isProMember: false,
   hasSeenHalfOffPaywall: false,
+  showIconSelectionModal: false,
   fromScreen: '',
 
   initializeRevenueCat: async (apiKey: string, userId: string | null) => {
@@ -727,6 +739,9 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   },
   shouldShowFreeTrialPaywall: () => {
     return get().hasSeenHalfOffPaywall;
+  },
+  setShowIconSelectionModal: (show: boolean) => {
+    set({ showIconSelectionModal: show });
   },
 }));
 

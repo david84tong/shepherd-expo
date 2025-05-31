@@ -12,12 +12,16 @@ import {
   Text,
   Alert,
   Linking,
+  StatusBar,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases from 'react-native-purchases';
 import Rive from 'rive-react-native';
 import '../global.css';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Toast from 'react-native-toast-message';
+import auth from '@react-native-firebase/auth';
+import { useAssets } from 'expo-asset';
 
 import AppLoading from '../components/AppLoading';
 import { DebugButton } from '../components/DebugModal';
@@ -30,17 +34,16 @@ import { useUIStore } from './stores/uiStore';
 import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
 import analytics from '~/utils/analytics';
 import { useOnboardingStore } from './stores/onboardingStore';
-// Import the sheet components
-import { useAssets } from 'expo-asset';
-import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
-import GlobalPrayerSheet, {
-  PrayerSheetRef as GlobalPrayerSheetRefInternal,
-} from '../components/GlobalPrayerSheet';
-import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet';
-import OldReflectionSheet from '../components/OldReflectionSheet';
-import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
-import useForceUpdateCheck from './hooks/useForceUpdateCheck';
-import ForceUpdateModal from '~/components/ForceUpdateModal';
+import { useUserStore } from './stores/userStore';
+import { usePathStore } from './stores/pathStore';
+import { useHomeStore } from './stores/homeStore';
+import useSubscriptionStore from './stores/subscriptionStore';
+import { useSoundStore } from './stores/soundStore';
+import { useAssetsStore } from './stores/assetsStore';
+import { isSignedIn } from './hooks/authHook';
+import { useForceUpdateCheck } from './hooks/useForceUpdateCheck';
+import ForceUpdateModal from '../components/ForceUpdateModal';
+import IconSelectionModal from '../components/IconSelectionModal';
 import { disableFontScaling } from './helper/disableFontScaling';
 import { adapty } from 'react-native-adapty';
 import './stores/userStore';
@@ -49,7 +52,6 @@ import { IS_ANDROID, IS_IOS } from './utils/utils';
 // Import highlight store setup function
 import { setupHighlightListeners } from './stores/highlightStore';
 import useHighlightStore from './stores/highlightStore';
-import { useSoundStore } from './stores/soundStore';
 
 // Define missing ref types
 type PrayerSheetRef = {
@@ -571,6 +573,10 @@ export default function RootLayout() {
       {visibleForceUpdate && isInitialized ? (
         <ForceUpdateModal visible={visibleForceUpdate} />
       ) : null}
+      <IconSelectionModal 
+        visible={useSubscriptionStore((state) => state.showIconSelectionModal)}
+        onClose={() => useSubscriptionStore.getState().setShowIconSelectionModal(false)}
+      />
     </GestureHandlerRootView>
   );
 }
