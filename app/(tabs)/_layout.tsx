@@ -57,7 +57,7 @@ export default function TabsLayout() {
   const [isDailyFirstLoad, setIsDailyFirstLoad] = useState<boolean | null>(null);
   // Get isInitialized from the store to ensure savedScreenToNavigateTo is ready
   const { savedScreenToNavigateTo, isInitialized: isOnboardingStoreInitialized } = useOnboardingStore();
-  
+
   // Get subscription status
   const { isProMember, getCustomerInfo } = useSubscriptionStore();
 
@@ -84,7 +84,7 @@ export default function TabsLayout() {
         const isFirst = firstLaunchCompleted !== 'true';
         setIsFirstAppLaunch(isFirst);
         console.log(`[TabsLayout] Is first app launch: ${isFirst}`);
-        
+
         // If this is the first launch, mark it as completed
         if (isFirst) {
           await AsyncStorage.setItem(FIRST_APP_LAUNCH_KEY, 'true');
@@ -107,7 +107,7 @@ export default function TabsLayout() {
         const isDailyFirst = dailyFirstLoadCompleted !== 'true';
         setIsDailyFirstLoad(isDailyFirst);
         console.log(`[TabsLayout] Is daily first load for ${today}: ${isDailyFirst}`);
-        
+
         // Note: We don't mark it as completed here anymore
         // The PricingScreen will mark it as completed when it loads
       } catch (error) {
@@ -169,14 +169,14 @@ export default function TabsLayout() {
     console.log(`[TabsLayout] Case 2A: ${reason}, user is signed in but not pro. Redirecting to PricingScreen.`);
     return <Redirect href="/PricingScreen?fromLoading=true&animateFromBottom=true" />;
   }
-  
+
   // If user is signed in, they should always go to the main app regardless of onboarding completion status
   // Being signed in means they've completed the necessary authentication/setup process
   console.log("[TabsLayout] Case 2B: User is signed in. Proceeding to main app (tabs).");
-  
+
   // Proceed to the main app (tabs)
   console.log("[TabsLayout] Rendering Tabs.");
-  
+
   // Using absolute positioning to prevent the "chin" gap
   const animatedTabBarStyle = {
     position: 'absolute' as const,
@@ -234,7 +234,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View className="items-center justify-center relative mt-4">
               {focused && (
-                <View 
+                <View
                   className="absolute w-16 h-16 rounded-2xl"
                   style={{
                     backgroundColor: '#FFF5D9',
@@ -256,7 +256,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View className="items-center justify-center relative mt-4">
               {focused && (
-                <View 
+                <View
                   className="absolute w-16 h-16 rounded-2xl"
                   style={{
                     backgroundColor: '#FFF5D9',
@@ -277,7 +277,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View className="items-center justify-center relative mt-4">
               {focused && (
-                <View 
+                <View
                   className="absolute w-16 h-16 rounded-2xl"
                   style={{
                     backgroundColor: '#FFF5D9',
@@ -298,7 +298,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View className="items-center justify-center relative mt-4">
               {focused && (
-                <View 
+                <View
                   className="absolute w-16 h-16 rounded-2xl"
                   style={{
                     backgroundColor: '#FFF5D9',
@@ -319,7 +319,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View className="items-center justify-center relative mt-4">
               {focused && (
-                <View 
+                <View
                   className="absolute w-16 h-16 rounded-2xl"
                   style={{
                     backgroundColor: '#FFF5D9',

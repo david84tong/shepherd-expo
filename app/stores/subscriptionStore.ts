@@ -24,6 +24,7 @@ async function moveUserToProMode(
   productId?: string,
   fromPaywall?: string
 ) {
+  useUserStore.getState().setIsProFromOnboarding(true);
   analytics.logEvent('subscription_purchase_success', {
     package_id: packageId || 'unknown',
     product_id: productId || 'unknown',
@@ -80,6 +81,7 @@ const handleRestoreCompleted = async ({
     const profile = await adapty.getProfile();
     const accessLevel = profile.accessLevels?.['premium'];
     if (accessLevel?.isActive) {
+      useUserStore.getState().setIsProFromOnboarding(true);
       result = PAYWALL_RESULT.RESTORED;
       moveUserToProMode(true, packageId, productId, fromPaywall);
     } else {
@@ -253,15 +255,17 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         onCloseButtonPress() {
           result = PAYWALL_RESULT.CANCELLED;
           // Only redirect to subscription management if onboarding is complete
-          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY).then((completed) => {
-            if (completed === 'true') {
-              Linking.openURL('https://apps.apple.com/account/subscriptions').catch(() => {
-                console.log('Could not open subscription management');
-              });
-            }
-          }).catch(() => {
-            console.log('Could not check onboarding status');
-          });
+          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
+            .then((completed) => {
+              if (completed === 'true') {
+                Linking.openURL('https://apps.apple.com/account/subscriptions').catch(() => {
+                  console.log('Could not open subscription management');
+                });
+              }
+            })
+            .catch(() => {
+              console.log('Could not check onboarding status');
+            });
           return true;
         },
         onPurchaseCompleted() {
@@ -562,7 +566,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       console.error('[SubscriptionStore] Error fetching Adapty profile or Firestore:', e);
       analytics.logEvent('subscription_error', {
         error: 'adapty_or_firestore_profile_fetch_failed',
-        message: e?.toString(),
+        message: e?.toString?.(),
       });
     }
   },

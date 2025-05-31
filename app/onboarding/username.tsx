@@ -1,7 +1,7 @@
 import { useAssets } from 'expo-asset';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { View, Text, TextInput, Keyboard, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, Keyboard, ActivityIndicator, Platform } from 'react-native';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
@@ -31,6 +31,7 @@ export default function OnboardingUsernameScreen() {
 
   // Track if animations have been initialized
   const animationsInitialized = useRef(false);
+  const [isAssetsLoaded, setIsAssetsLoaded] = useState(false);
 
   // Create Reanimated shared values for each component
   const screenOpacity = useSharedValue(0);
@@ -45,7 +46,7 @@ export default function OnboardingUsernameScreen() {
 
   // Run animations only once during initial layout
   useLayoutEffect(() => {
-    if (animationsInitialized.current) return;
+    if (animationsInitialized.current || !isAssetsLoaded) return;
 
     const immediate = toBool(params?.immediate);
     screenOpacity.value = immediate ? 1 : 0;
@@ -54,42 +55,54 @@ export default function OnboardingUsernameScreen() {
       screenOpacity.value = withTiming(1, { duration: 250 });
     }
 
-    // Reset animation values with minimal delay
-    const timer = setTimeout(() => {
-      titleOpacity.value = 0;
-      titleTranslateY.value = 20;
-      lambOpacity.value = 0;
-      lambTranslateY.value = 20;
-      inputOpacity.value = 0;
-      inputTranslateY.value = 20;
-      buttonOpacity.value = 0;
-      buttonTranslateY.value = 20;
+    // Reset animation values
+    titleOpacity.value = 0;
+    titleTranslateY.value = 20;
+    lambOpacity.value = 0;
+    lambTranslateY.value = 20;
+    inputOpacity.value = 0;
+    inputTranslateY.value = 20;
+    buttonOpacity.value = 0;
+    buttonTranslateY.value = 20;
 
-      // Staggered animations for each component with shorter delays
-      const animateComponent = (opacity: any, translateY: any, delay: number) => {
-        opacity.value = withDelay(delay, withTiming(1, { duration: 300 }));
-        translateY.value = withDelay(
-          delay,
-          withSpring(0, {
-            damping: 16,
-            stiffness: 100,
-            mass: 0.8,
-          })
-        );
-      };
+    // Staggered animations for each component with platform-specific delays
+    const baseDelay = Platform.OS === 'android' ? 100 : 50;
 
-      // Use short delays between components for faster overall animation
-      animateComponent(titleOpacity, titleTranslateY, 50);
-      animateComponent(lambOpacity, lambTranslateY, 100);
-      animateComponent(inputOpacity, inputTranslateY, 150);
-      animateComponent(buttonOpacity, buttonTranslateY, 200);
+    const animateComponent = (opacity: any, translateY: any, delay: number) => {
+      opacity.value = withDelay(delay, withTiming(1, { duration: 300 }));
+      translateY.value = withDelay(
+        delay,
+        withSpring(0, {
+          damping: 16,
+          stiffness: 100,
+          mass: 0.8,
+        })
+      );
+    };
 
-      // Mark animations as initialized
-      animationsInitialized.current = true;
-    }, 50);
+    // Use platform-specific delays between components
+    animateComponent(titleOpacity, titleTranslateY, baseDelay);
+    animateComponent(lambOpacity, lambTranslateY, baseDelay * 2);
+    animateComponent(inputOpacity, inputTranslateY, baseDelay * 3);
+    animateComponent(buttonOpacity, buttonTranslateY, baseDelay * 4);
 
-    return () => clearTimeout(timer);
-  }, []);
+    // Mark animations as initialized
+    animationsInitialized.current = true;
+  }, [isAssetsLoaded]);
+
+  // Handle asset loading
+  useEffect(() => {
+    if (riveAssets) {
+      // Add a small delay on Android to ensure proper initialization
+      if (Platform.OS === 'android') {
+        setTimeout(() => {
+          setIsAssetsLoaded(true);
+        }, 100);
+      } else {
+        setIsAssetsLoaded(true);
+      }
+    }
+  }, [riveAssets]);
 
   // Keyboard listeners
   useEffect(() => {
@@ -167,7 +180,7 @@ export default function OnboardingUsernameScreen() {
   };
 
   // Show loading indicator while assets load
-  if (!riveAssets) {
+  if (!riveAssets || !isAssetsLoaded) {
     return (
       <View className="flex-1 items-center justify-center bg-surfaceCream pt-4">
         <ActivityIndicator size="large" color="#3C584A" />

@@ -13,6 +13,7 @@ import { adapty } from 'react-native-adapty';
 import analytics, { AnalyticsEvent } from '../../utils/analytics';
 import { checkStreakAndApplyPenalties } from './streakHook';
 import { syncUserDocument } from '../../utils/firestore';
+import { fetchFromFirestore } from '../helper/firebaseHelper';
 
 // Key to check if app has been initialized
 const APP_INITIALIZED_KEY = 'shepherd-app-initialized';
@@ -37,13 +38,14 @@ const formatTimestamp = (timestamp: any) => {
 
 // This function can be called after init or when app comes to foreground
 export const onAppForegroundOrInit = async () => {
+  console.log('onAppForegroundOrInit=====>', onAppForegroundOrInit);
+
   const getUser = useUserStore.getState().getUser;
-  const fetchFromFirestore = useUserStore.getState().fetchFromFirestore;
   const setSelectedPath = usePathStore.getState().setSelectedPath;
   const syncWithFirestore = useUserStore.getState().syncWithFirestore;
   const userData = getUser();
   try {
-    const fetchSuccess = await fetchFromFirestore?.();
+    const fetchSuccess = await fetchFromFirestore?.({});
 
     if (fetchSuccess) {
       const updatedUserData = getUser?.();
@@ -71,6 +73,7 @@ export const useAppInitialization = () => {
   // Get user store actions and getters
   const resetUserStore = useUserStore((state) => state.resetUserStore);
   const getUser = useUserStore((state) => state.getUser);
+  const setUser = useUserStore((state) => state.setUser);
   const setDisplayName = useUserStore((state) => state.setDisplayName);
   const setCreatedAt = useUserStore((state) => state.setCreatedAt);
   const setUpdatedAt = useUserStore((state) => state.setUpdatedAt);
@@ -81,12 +84,70 @@ export const useAppInitialization = () => {
   const setLastReadingPenaltyDate = useUserStore((state) => state.setLastReadingPenaltyDate);
   const setLastPrayerPenaltyDate = useUserStore((state) => state.setLastPrayerPenaltyDate);
   const setLastReflectionPenaltyDate = useUserStore((state) => state.setLastReflectionPenaltyDate);
-  const fetchFromFirestore = useUserStore((state) => state.fetchFromFirestore);
+  const syncWithFirestore = useUserStore((state) => state.syncWithFirestore);
 
   // Get path store actions
   const setSelectedPath = usePathStore((state) => state.setSelectedPath);
   // Get subscription store actions
   const initializeRevenueCat = useSubscriptionStore((state) => state.initializeRevenueCat);
+
+  // Function to restore user state from Firestore
+  const restoreUserState = async () => {
+    try {
+      const firebaseUser = auth().currentUser;
+      if (!firebaseUser) {
+        console.log('No authenticated user found');
+        return false;
+      }
+
+      console.log('Restoring user state for:', firebaseUser.uid);
+
+      // First try to fetch from Firestore
+      const fetchSuccess = await fetchFromFirestore?.({});
+
+      if (!fetchSuccess) {
+        console.log('Failed to fetch user data from Firestore');
+        return false;
+      }
+
+      // Get the updated user data
+      const userData = getUser?.();
+      if (!userData) {
+        console.log('No user data found after fetch');
+        return false;
+      }
+
+      // Update all user store fields
+      setUser(userData);
+      setDisplayName(userData.displayName || 'Anonymous User');
+      setCreatedAt(userData.createdAt);
+      setUpdatedAt(userData.updatedAt);
+      setLastActivityDate(userData.lastActivityDate);
+      setLastReadingDate(userData.lastReadingDate);
+      setLastPrayerDate(userData.lastPrayerDate);
+      setLastReflectionDate(userData.lastReflectionDate);
+      setLastReadingPenaltyDate(userData.lastReadingPenaltyDate);
+      setLastPrayerPenaltyDate(userData.lastPrayerPenaltyDate);
+      setLastReflectionPenaltyDate(userData.lastReflectionPenaltyDate);
+
+      // Set selected path if exists
+      if (userData.selectedPathId) {
+        const pathOption = PATH_OPTIONS.find((path) => path.id === userData.selectedPathId);
+        if (pathOption) {
+          setSelectedPath(pathOption);
+        }
+      }
+
+      // Sync with Firestore to ensure everything is up to date
+      await syncWithFirestore?.();
+
+      console.log('User state restored successfully');
+      return true;
+    } catch (error) {
+      console.log('Error restoring user state:', error);
+      return false;
+    }
+  };
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -94,42 +155,13 @@ export const useAppInitialization = () => {
       const trackAutomaticEvents = false;
       const mixpanel = new Mixpanel('7178bfcd1e0972001d3e6c066e8fb18b', trackAutomaticEvents);
       mixpanel.init();
-      // Initialize Sentry for error tracking
+
+      // Initialize Sentry
       Sentry.init({
         dsn: 'https://c9b3a3c9ed0846a755ee7175b07982f8@o4509279727321088.ingest.us.sentry.io/4509279728828416',
-        // Adds more context data to events (IP address, cookies, user, etc.)
-        // For more information, visit: https://docs.sentry.io/platforms/react-native/data-management/data-collected/
         sendDefaultPii: true,
-        // Set tracesSampleRate to 1.0 to capture 100% of transactions for tracing.
-        // We recommend adjusting this value in production.
         tracesSampleRate: 1.0,
       });
-
-      // RevenueCat Initialization - using actual keys now
-      // IMPORTANT: Store these keys securely, e.g., environment variables, not hardcoded for production builds.
-      const REVENUECAT_API_KEY_IOS = 'appl_HaJSTaiQWLDPXKMjOPocMXEOKrm';
-      const REVENUECAT_API_KEY_ANDROID = ''; // Add your Android key if you have one
-
-      let revenueCatKey = '';
-      if (Platform.OS === 'ios') {
-        revenueCatKey = REVENUECAT_API_KEY_IOS;
-      } else if (Platform.OS === 'android') {
-        revenueCatKey = REVENUECAT_API_KEY_ANDROID;
-      }
-
-      // Determine current user ID for RevenueCat
-      let currentUserIdForRevenueCat: string | null = null;
-      const firebaseUserOnInit = auth().currentUser;
-      if (firebaseUserOnInit) {
-        currentUserIdForRevenueCat = firebaseUserOnInit.uid;
-      } else {
-        // Try to get anonymous ID if exists, otherwise null for first-time init
-        currentUserIdForRevenueCat = await AsyncStorage.getItem('shepherd-anonymous-user-id');
-      }
-
-      // Call initializeRevenueCat from the subscription store
-      // It will set log level and configure Purchases
-      initializeRevenueCat(revenueCatKey, currentUserIdForRevenueCat);
 
       try {
         setIsLoading(true);
@@ -139,15 +171,13 @@ export const useAppInitialization = () => {
 
         // Check if app has been initialized before
         const hasInitialized = await AsyncStorage.getItem(APP_INITIALIZED_KEY);
-        let appUserId = currentUserIdForRevenueCat; // Use the ID we determined for RevenueCat
+        const firebaseUser = auth().currentUser;
 
         if (!hasInitialized) {
           console.log('🚀 First app open, initializing user...');
           analytics.logEvent('First App Open', { isFirstLaunch: true });
 
           const anonymousUserId = generateUUID();
-          appUserId = anonymousUserId; // This is the definitive ID for a new user
-          // adapty.identify(anonymousUserId);
           const currentTime = Timestamp.now();
           await AsyncStorage.setItem('shepherd-anonymous-user-id', anonymousUserId);
 
@@ -158,13 +188,6 @@ export const useAppInitialization = () => {
             createdAt: currentTime,
             updatedAt: currentTime,
             lastActivityDate: currentTime,
-            // Uncomment and add more fields as needed:
-            // lastReadingDate: currentTime,
-            // lastPrayerDate: currentTime,
-            // lastReflectionDate: currentTime,
-            // lastReadingPenaltyDate: currentTime,
-            // lastPrayerPenaltyDate: currentTime,
-            // lastReflectionPenaltyDate: currentTime,
           };
 
           useUserStore.getState().setUser(initialUserData); // Update Zustand store locally
@@ -182,107 +205,39 @@ export const useAppInitialization = () => {
 
           // If it was a truly new anonymous user, re-identify with RevenueCat if it used a different temp ID
           // or if it initialized with null before this ID was generated.
-          if (currentUserIdForRevenueCat !== anonymousUserId) {
+          if (anonymousUserId !== anonymousUserId) {
             console.log(
               'RevenueCat: Logging in new anonymous user after ID generation:',
               anonymousUserId
             );
-            await initializeRevenueCat(revenueCatKey, anonymousUserId); // Re-init or logIn with the new ID
+            await initializeRevenueCat(anonymousUserId, anonymousUserId); // Re-init or logIn with the new ID
           }
         } else {
-          console.log('📱 App already initialized');
+          console.log('📱 App already initialized, restoring state...');
           analytics.logEvent(AnalyticsEvent.APP_OPEN);
 
-          const userData = getUser?.();
-          const firebaseUser = auth().currentUser;
-          if (firebaseUser?.uid) {
-            appUserId = firebaseUser.uid;
-            analytics.setUserId(firebaseUser.uid);
-            analytics.setUserProperties({
-              displayName: userData?.displayName || 'Not set',
-              email: firebaseUser.email || 'Not available',
-              isAnonymous: false,
-            });
-          } else if (userData?.id) {
-            appUserId = userData.id;
-            analytics.setUserId(userData.id);
-          }
-          // Log user state
-          console.log('📊 Current User Data:', {
-            // Auth Status
-            isAuthenticated: !!firebaseUser,
-            firebaseUID: firebaseUser?.uid || 'Not authenticated',
-            firebaseEmail: firebaseUser?.email || 'Not available',
-
-            // User Profile
-            displayName: userData?.displayName || 'Not set',
-            spiritualGoal: userData?.spiritualGoal || 'Not set',
-            experienceLevel: userData?.experienceLevel || 'Not set',
-            frequencyGoal: userData?.frequencyGoal || 'Not set',
-            selectedPathId: userData?.selectedPathId || 'Not set',
-
-            // Stats
-            streakCount: userData?.streakCount || 0,
-            versesReadTotal: userData?.versesReadTotal || 0,
-            chaptersReadTotal: userData?.chaptersReadTotal || 0,
-
-            // Timestamps
-            createdAt: formatTimestamp(userData?.createdAt),
-            lastActivityDate: formatTimestamp(userData?.lastActivityDate),
-
-            // Lamb Status
-            lambLevel: userData?.lamb?.level || 1,
-            lambXp: userData?.lamb?.xp || 0,
-            lambMood: userData?.lamb?.mood || 'lamb-idle',
-            lambHearts: userData?.lamb?.hearts || 50,
-            lambName: userData?.lamb?.name || 'Not set',
-          });
-
-          // Fetch user from Firestore and update userStore
-          try {
-            const fetchSuccess = await fetchFromFirestore?.();
-            // After fetchFromFirestore
-            console.log(
-              'AFTER FETCH - lastActivityDate:',
-              useUserStore.getState().lastActivityDate,
-              'raw Zustand value:',
-              JSON.stringify(useUserStore.getState().lastActivityDate)
-            );
-
-            await useUserStore.getState().syncWithFirestore?.();
-            if (fetchSuccess) {
-              console.log('✅ User data successfully fetched from Firestore');
-              const updatedUserData = getUser?.();
-              if (updatedUserData.selectedPathId) {
-                console.log(
-                  `🛣️ Setting selected path from Firestore: ${updatedUserData.selectedPathId}`
-                );
-                const pathOption = PATH_OPTIONS.find(
-                  (path) => path.id === updatedUserData.selectedPathId
-                );
-                if (pathOption) {
-                  setSelectedPath(pathOption);
-                  console.log(`✅ Selected path set to: ${pathOption.title}`);
-                } else {
-                  console.warn(
-                    `⚠️ Path with ID ${updatedUserData.selectedPathId} not found in PATH_OPTIONS`
-                  );
-                }
-              } else {
-                console.log('ℹ️ No selectedPathId found in user data');
-              }
-            } else {
-              console.warn('⚠️ User data could not be fetched from Firestore');
+          if (firebaseUser) {
+            // User is authenticated, restore their state
+            const restored = await restoreUserState();
+            if (!restored) {
+              console.log('Failed to restore user state, resetting store...');
+              resetUserStore();
             }
-          } catch (firestoreError) {
-            console.log('❌ Error fetching user from Firestore:', firestoreError);
-            analytics.logError('Error fetching user from Firestore', undefined, {
-              errorDetails: String(firestoreError),
-            });
+          } else {
+            // No authenticated user, check for anonymous user
+            const anonymousId = await AsyncStorage.getItem('shepherd-anonymous-user-id');
+            if (anonymousId) {
+              const userData = getUser?.();
+              if (!userData || !userData.id) {
+                console.log('No user data found, resetting store...');
+                resetUserStore();
+              }
+            }
           }
-          console.log('checkStreakAndApplyPenalties');
-          await checkStreakAndApplyPenalties();
         }
+
+        // Check streak regardless of initialization state
+        await checkStreakAndApplyPenalties();
 
         setIsInitialized(true);
       } catch (error) {
@@ -313,6 +268,9 @@ export const useAppInitialization = () => {
     setLastReadingPenaltyDate,
     setLastPrayerPenaltyDate,
     setLastReflectionPenaltyDate,
+    resetUserStore,
+    setUser,
+    syncWithFirestore,
   ]);
 
   return { isInitialized, isLoading };

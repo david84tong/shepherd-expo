@@ -31,9 +31,10 @@ export interface UserDoc {
   lastReadingPenaltyDate: FirebaseFirestoreTypes.Timestamp;
   lastPrayerPenaltyDate: FirebaseFirestoreTypes.Timestamp;
   lastReflectionPenaltyDate: FirebaseFirestoreTypes.Timestamp;
-  completedReflections: [Reflection];
-  completedPrayers: [Prayer];
-  completedReadings: [Reading];
+  completedReflections: Reflection[];
+  completedPrayers: Prayer[];
+  completedReadings: Reading[];
+  isProFromOnboarding: boolean;
 }
 
 export interface UserStore extends UserDoc {
@@ -69,9 +70,9 @@ export interface UserStore extends UserDoc {
   getLastReadingPenaltyDate: () => UserDoc['lastReadingPenaltyDate'];
   getLastPrayerPenaltyDate: () => UserDoc['lastPrayerPenaltyDate'];
   getLastReflectionPenaltyDate: () => UserDoc['lastReflectionPenaltyDate'];
-  getCompletedReflections: () => [Reflection];
-  getCompletedPrayers: () => [Prayer];
-  getCompletedReadings: () => [Reading];
+  getCompletedReflections: () => Reflection[];
+  getCompletedPrayers: () => Prayer[];
+  getCompletedReadings: () => Reading[];
 
   // Getters for Lamb fields
   getLambLevel: () => number;
@@ -110,6 +111,7 @@ export interface UserStore extends UserDoc {
   addCompletedReflection: (reflection: Reflection) => void;
   addCompletedPrayer: (prayer: Prayer) => void;
   addCompletedReading: (reading: Reading) => void;
+  setIsProFromOnboarding: (isProFromOnboarding: boolean) => void;
 
   // Setters for Lamb fields
   setLambLevel: (level: number) => void;
@@ -123,8 +125,8 @@ export interface UserStore extends UserDoc {
   incrementStreak: () => void;
   addXp: (amount: number) => void;
   resetUserStore: () => void;
-  syncWithFirestore: () => Promise<boolean>;
-  fetchFromFirestore: () => Promise<boolean>;
+
+  syncFirestoreData: (firestoreData: UserDoc) => void;
 }
 
 export interface Reading {

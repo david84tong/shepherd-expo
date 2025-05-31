@@ -184,7 +184,8 @@ export default function HomeScreen() {
   const gens = useUserStore((state) => state?.getGens?.());
   const lambMood = useUserStore((state) => state?.getLambMood?.());
   const lambName = useUserStore((state) => state?.getLambName?.()); // Get the lamb's name from userStore
-  const lamb = useUserStore((state) => state.getLamb()); // Get the complete lamb object
+
+  const lamb = useUserStore((state) => state.getLamb?.()); // Get the complete lamb object
 
   console.log('lambHearts streakCount======>', lambHearts, streakCount, gens, lambMood, lambName);
   // State to manage the Rive resource name
@@ -792,7 +793,6 @@ export default function HomeScreen() {
           height: '100%',
           alignItems: 'center',
           justifyContent: 'center',
-
         }}>
         {/* Red shadow behind lamb for level 10+ */}
         {shouldShowRedShadow && (
@@ -827,16 +827,13 @@ export default function HomeScreen() {
             analytics.logEvent('HomeScreen_Tapped_LambName', {
               lambName: lambName,
               currentlyExpanded: isLevelPillExpanded,
-              action: isLevelPillExpanded ? 'collapse' : 'expand'
+              action: isLevelPillExpanded ? 'collapse' : 'expand',
             });
-
-
           }}
           activeOpacity={0.7}
-          className="bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 -mb-2 px-2"
-        >
+          className="bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 -mb-2 px-2">
           <Text className="font-feather text-textPrimary text-xs">
-            {`${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`}
+            {`${lambName?.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`}
           </Text>
         </TouchableOpacity>
         <View
@@ -922,7 +919,6 @@ export default function HomeScreen() {
 
   const isDarkContant = new Date().getHours() >= 19;
 
-
   // HEADER
   return (
     <>
@@ -931,7 +927,7 @@ export default function HomeScreen() {
       <StatusBar
         translucent
         backgroundColor="transparent"
-        barStyle={isDarkContant ? "light-content" : "dark-content"}
+        barStyle={isDarkContant ? 'light-content' : 'dark-content'}
       />
       <Animated.View className="flex-1" style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}>
         {/* Background Layers - Use expo-image for better performance */}
@@ -997,7 +993,8 @@ export default function HomeScreen() {
             { opacity: IS_IOS ? waterOpacityAnim : androidBgOpacityAnim },
           ]}>
           {IS_IOS ? (
-            showBgRive && riveAssets && (
+            showBgRive &&
+            riveAssets && (
               <Rive
                 url={riveAssets[1].uri!}
                 autoplay={true}
@@ -1015,7 +1012,9 @@ export default function HomeScreen() {
 
         <SafeAreaView className="flex-1">
           {/* Header: Contains logic for showing Back OR Title/Stats */}
-          <View className="flex-row justify-between items-center px-4 pt-1.5 pb-2 h-[42px] relative" style={{ zIndex: 9999, marginTop: Platform.OS === 'android' ? 25 : 0 }} >
+          <View
+            className="flex-row justify-between items-center px-4 pt-1.5 pb-2 h-[42px] relative"
+            style={{ zIndex: 9999, marginTop: Platform.OS === 'android' ? 25 : 0 }}>
             {/* Animated Back Button */}
 
             {/* Animated Default Header Elements (Title + Stats) */}
@@ -1070,7 +1069,7 @@ export default function HomeScreen() {
                       {!isLevelPillExpanded ? (
                         <ProgressPill
                           value={0}
-                          label={(lambHearts > 0 ? levelInfo.level : '0').toString()}
+                          label={(lambHearts > 0 ? levelInfo.level : '0')?.toString?.()}
                           icon={starIcon}
                         />
                       ) : (
@@ -1118,9 +1117,7 @@ export default function HomeScreen() {
                               />
                             </View>
                           </Animated.View>
-                          <Animated.View
-                            style={{ opacity: levelPillOpacityAnim }}
-                            className="ml-2">
+                          <Animated.View style={{ opacity: levelPillOpacityAnim }} className="ml-2">
                             <TouchableOpacity
                               onPress={() => {
                                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -1150,7 +1147,11 @@ export default function HomeScreen() {
                             visibilityTime: 4000,
                           });
                         }}>
-                        <ProgressPill value={0} label={streakCount.toString()} icon={flameIcon} />
+                        <ProgressPill
+                          value={0}
+                          label={streakCount?.toString?.()}
+                          icon={flameIcon}
+                        />
                       </TouchableOpacity>
                       <TouchableOpacity
                         onPress={() => {
@@ -1165,7 +1166,7 @@ export default function HomeScreen() {
                             visibilityTime: 4000,
                           });
                         }}>
-                        <ProgressPill value={0} label={gens.toString()} icon={gemIcon} />
+                        <ProgressPill value={0} label={gens?.toString?.()} icon={gemIcon} />
                       </TouchableOpacity>
                     </>
                   )}
@@ -1315,8 +1316,7 @@ export default function HomeScreen() {
                     setShowHeartsModal(true);
                   }}
                   activeOpacity={0.7}
-                  className="flex-row items-center"
-                >
+                  className="flex-row items-center">
                   <Image source={heartIcon} className="w-7 h-7" />
                   <Text className="font-feather text-body text-red ">{lambHearts}</Text>
                 </TouchableOpacity>
@@ -1327,7 +1327,6 @@ export default function HomeScreen() {
                     style={{ width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%` }}
                   />
                 </View>
-
               </View>
 
               <SecondaryButton
@@ -1376,8 +1375,14 @@ export default function HomeScreen() {
           <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
           <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
           <WidgetHowToSheet visible={showWidgetSheet} onClose={() => setShowWidgetSheet(false)} />
-          <HeartsExplainerModal visible={showHeartsModal} onClose={() => setShowHeartsModal(false)} />
-          <ExplainerModal visible={showExplainerModal} onClose={() => setShowExplainerModal(false)} />
+          <HeartsExplainerModal
+            visible={showHeartsModal}
+            onClose={() => setShowHeartsModal(false)}
+          />
+          <ExplainerModal
+            visible={showExplainerModal}
+            onClose={() => setShowExplainerModal(false)}
+          />
         </SafeAreaView>
       </Animated.View>
       <Toast config={toastConfig} />

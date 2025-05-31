@@ -1,18 +1,16 @@
 // authStore.ts
 
-import auth from '@react-native-firebase/auth';
+import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
 import { useState, useEffect } from 'react';
 import { Platform } from 'react-native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
-
 import Constants from 'expo-constants';
-
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
-import useSubscriptionStore from '../stores/subscriptionStore';
+import { fetchFromFirestore } from '../helper/firebaseHelper';
 
 // Helper function to check if user is signed in
 export const isSignedIn = () => {
@@ -38,13 +36,7 @@ export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   // Get user from the store
-  const {
-    getUser,
-    setUser: updateUser,
-    setCreatedAt,
-    setUpdatedAt,
-    fetchFromFirestore,
-  } = useUserStore();
+  const { getUser, setUser: updateUser, setCreatedAt, setUpdatedAt } = useUserStore();
   const user = getUser?.();
 
   // Listen to auth state changes
@@ -61,7 +53,6 @@ export function useAuth() {
     try {
       setLoading(true);
       setError(null);
-
       // Check if Apple Sign In is available on the device
       const isAvailable = await AppleAuthentication.isAvailableAsync();
       if (!isAvailable) {
@@ -95,7 +86,6 @@ export function useAuth() {
         console.log('[Auth] No identityToken returned from Apple');
         throw new Error('Authentication incomplete: No identity token provided from Apple');
       }
-
       // Create a Firebase credential
       const firebaseCredential = auth.AppleAuthProvider.credential(
         identityToken,
@@ -118,10 +108,10 @@ export function useAuth() {
             'No account found with this Apple ID. Please create a new account instead.'
           );
         }
-
         // In login mode, fetch the user's data from Firestore instead of creating new data
         console.log('[Auth] Login mode: fetching existing user data from Firestore');
-        const success = await fetchFromFirestore?.();
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        const success = await fetchFromFirestore?.({ currentLoggedUser: userCredential?.user });
         if (!success) {
           console.log('[Auth] Failed to fetch user data from Firestore');
           throw new Error('Failed to fetch your account data. Please try again.');
@@ -160,13 +150,19 @@ export function useAuth() {
       console.log('[Auth] User document updated in Firestore');
 
       // Update local store
-      updateUser({
+      useUserStore.getState().setUser({
         id: uid,
         displayName,
         email: email || undefined,
       });
       setCreatedAt(firestore.Timestamp.now());
       setUpdatedAt(firestore.Timestamp.now());
+
+      // Wait for auth state to be ready before fetching data
+      await new Promise((resolve) => setTimeout(resolve, 5000));
+
+      // Fetch the complete user data to ensure all fields are synced
+      await fetchFromFirestore({ currentLoggedUser: userCredential.user });
 
       // Log successful sign in
       if (analytics.isInitialized) {
@@ -235,7 +231,7 @@ export function useAuth() {
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
 
       // Update local store
-      updateUser({
+      useUserStore.getState().setUser({
         id: uid,
         displayName: 'Anonymous User',
       });
@@ -316,6 +312,7 @@ export function useAuth() {
       if (!idToken) {
         throw new Error('No idToken returned from Google sign-in.');
       }
+
       // Authenticate with Firebase
       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
       const userCredential = await auth().signInWithCredential(googleCredential);
@@ -329,7 +326,12 @@ export function useAuth() {
             'No account found with this Google account. Please create a new account instead.'
           );
         }
-        const success = await fetchFromFirestore?.();
+
+        // Wait for auth state to be ready before fetching data
+        await new Promise((resolve) => setTimeout(resolve, 5000));
+        console.log('userCredential?.user ===>', userCredential?.user);
+
+        const success = await fetchFromFirestore({ currentLoggedUser: userCredential?.user });
         if (!success) {
           throw new Error('Failed to fetch your account data. Please try again.');
         }
@@ -345,16 +347,23 @@ export function useAuth() {
         createdAt: firestore.Timestamp.now(),
         updatedAt: firestore.Timestamp.now(),
       };
-      console.log('userDoc ====>', userDoc);
 
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
-      console.log('userDoc set in firestore');
 
-      updateUser({ id: uid, displayName: userDoc.displayName, email: userDoc.email });
-      console.log('userDoc updated in store');
+      // Wait for auth state to be ready before fetching data
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Update local store with basic info first
+      useUserStore.getState().setUser({
+        id: uid,
+        displayName: userDoc.displayName,
+        email: userDoc.email,
+      });
       setCreatedAt(firestore.Timestamp.now());
       setUpdatedAt(firestore.Timestamp.now());
-      console.log('createdAt and updatedAt set in store');
+
+      // Fetch the complete user data to ensure all fields are synced
+      await fetchFromFirestore({ currentLoggedUser: userCredential?.user });
 
       if (analytics.isInitialized) {
         analytics.logEvent('auth_success', {

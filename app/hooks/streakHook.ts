@@ -6,6 +6,7 @@ import { useHomeStore } from '../stores/homeStore';
 import { useUserStore } from '../stores/userStore';
 import { useNotificationStore } from '../stores/notificationStore';
 import analytics from '../../utils/analytics';
+import { fetchFromFirestore, syncWithFirestore } from '../helper/firebaseHelper';
 // Penalties for missing activities (hearts lost per day)
 const PENALTIES = {
   READING: 3, // -3 hearts per day missing Bible reading
@@ -35,7 +36,7 @@ const getDaysDifference = (date1: Date, date2: Date): number => {
 
 // Check if two dates fall on different local calendar days
 const isNewCalendarDay = (date1: Date, date2: Date): boolean => {
-  console.log('isNewCalendarDay (local)', date1?.toString(), date2?.toString());
+  console.log('isNewCalendarDay (local)', date1?.toString?.(), date2?.toString?.());
   if (!date1 || !date2) return false;
   return !isSameLocalCalendarDay(date1, date2);
 };
@@ -82,7 +83,7 @@ const syncUserDataToFirestore = async () => {
 
   try {
     console.log('Syncing user data to Firestore');
-    return await useUserStore.getState().syncWithFirestore?.();
+    return await syncWithFirestore?.();
   } catch (error) {
     console.log('Error syncing user data to Firestore:', error);
     return false;
@@ -338,7 +339,7 @@ export const checkStreakAndApplyPenalties = async () => {
         console.log(
           'User is authenticated, fetching latest data from Firestore before checking streak'
         );
-        await useUserStore.getState().fetchFromFirestore?.();
+        await fetchFromFirestore?.({});
       } catch (fetchError) {
         console.log('Error fetching from Firestore, continuing with local data:', fetchError);
         // Continue with local data if fetch fails
@@ -441,7 +442,7 @@ export const useStreakManager = () => {
     try {
       // First, try to fetch latest data from Firestore if user is authenticated
       if (isAuthenticated()) {
-        await userStore.fetchFromFirestore?.();
+        await fetchFromFirestore?.({});
       }
 
       const lambHearts = userStore.getLambHearts?.();
@@ -490,7 +491,7 @@ export const useStreakManager = () => {
       // Sync changes back to Firestore if authenticated and there were significant changes
       if (isAuthenticated() && (result.heartPenalty > 0 || result.streakBroken || result.newDay)) {
         console.log('Syncing streak changes back to Firestore');
-        await userStore.syncWithFirestore?.();
+        await syncWithFirestore?.();
       }
 
       return result;

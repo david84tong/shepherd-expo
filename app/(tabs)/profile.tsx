@@ -12,6 +12,7 @@ import analytics from '../../utils/analytics';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useAuth } from '../hooks/authHook';
 import { getLevelData } from '../../utils/levelUtils';
+import { isSignedInWithGoogle, isSignedInWithApple } from '../helper/helper';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
@@ -377,7 +378,7 @@ export default function ProfileScreen() {
           </View>
 
           {/* Sign In to Save Progress Card (only for anonymous users) */}
-          {isAnonymous && (
+          {isAnonymous && !isSignedInWithGoogle() && !isSignedInWithApple() && (
             <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
               <Text className="font-feather text-xl text-accentGold mb-2 text-center">Sign in to save your progress</Text>
               <Text className="font-din text-body text-textPrimary mb-4 text-center">
