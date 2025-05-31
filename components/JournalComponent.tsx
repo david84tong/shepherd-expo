@@ -23,6 +23,7 @@ import { useUserStore } from '../app/stores/userStore';
 import { BIBLE_BOOK_IDS } from '../app/models/Path';
 import analytics from '~/utils/analytics';
 import { IS_ANDROID, IS_IOS } from '~/app/utils/utils';
+import useTranslation from '../app/hooks/useTranslation';
 
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
@@ -51,6 +52,7 @@ const MIN_CHARS_REQUIRED = 10;
  * Includes an auto-focusing TextInput and handles keyboard appearance.
  */
 const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
+  const { t } = useTranslation();
   const inputRef = useRef<TextInput>(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -108,9 +110,9 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       // Create readable reference
       const reference = chapterText ? `${bookName} ${chapterText}` : bookName;
 
-      return `What stands out to you in ${reference}? How does this passage speak to your life today?`;
+      return `${t('journal.whatStandsOut')} ${reference}? ${t('journal.howDoesSpeak')}`;
     }
-    return "What's on your mind today?";
+    return t('journal.whatsOnMind');
   };
 
   // Keyboard event listeners with height information
@@ -353,7 +355,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         {isSmallDevice && (
           <View style={{ zIndex: 30, marginLeft: 64, marginTop: 24 }}>
             <PrimaryButton
-              title="Save Thought"
+              title={t('journal.saveThought')}
               onPress={() => {
                 console.log('Small device Save button pressed');
                 handleSave();
@@ -370,14 +372,14 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         className={`w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto ${isSmallDevice ? 'mt-[20px]' : 'mt-[120px]'} border-4 border-border pb-4`}
         style={cardStyle}>
         <Text className="text-body font-feather text-textPrimary mb-2 text-center leading-tight">
-          {tappedReflectAboutVerse ? (currentPath?.reflection ?? 'Reflection') : 'Reflection'}
+          {tappedReflectAboutVerse ? (currentPath?.reflection ?? t('journal.reflection')) : t('journal.reflection')}
         </Text>
 
         {tappedReflectAboutVerse && currentPath && currentPath.bookId && (
           <Text className="text-body font-din text-description mb-2 text-center">
             {currentPath?.bookId && typeof currentPath?.startChapter === 'number'
               ? `${getBookNameFromId(currentPath?.bookId)} ${currentPath?.startChapter}${currentPath?.endChapter > currentPath?.startChapter ? `-${currentPath?.endChapter}` : ''}`
-              : 'Scripture Reading'}
+              : t('journal.scriptureReading')}
           </Text>
         )}
 
@@ -405,7 +407,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         {/* Character count instruction (only show when under minimum) */}
         {charCount < MIN_CHARS_REQUIRED && (
           <Text className="font-din text-sm text-description mt-2 text-right self-end">
-            Please write at least {MIN_CHARS_REQUIRED} characters
+            {t('journal.pleaseWriteMinimum')} {MIN_CHARS_REQUIRED} {t('journal.characters')}
           </Text>
         )}
       </Animated.View>
@@ -416,19 +418,27 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         style={bottomContentStyle}>
         {/* Rive Animation */}
         <View className="w-[100px] h-[100px] -ml-5 -mb-2">
-          <Rive
-            url={IS_IOS ? riveAssets[0].uri! : undefined}
-            resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-            artboardName="lamb-writing"
-            autoplay
-            style={{ width: '130%', height: '130%' }}
-          />
+          {IS_IOS ? (
+            <Rive
+              url={riveAssets?.[0]?.uri}
+              artboardName="lamb-writing"
+              autoplay
+              style={{ width: '130%', height: '130%' }}
+            />
+          ) : (
+            <Rive
+              resourceName="home_lamb"
+              artboardName="lamb-writing"
+              autoplay
+              style={{ width: '130%', height: '130%' }}
+            />
+          )}
         </View>
 
         {/* Save Button (hidden on small devices since it's in header) */}
         {!isSmallDevice && (
           <View className="flex-1 items-end w-[280px] ml-8 mt-4">
-            <PrimaryButton title="Save Thought" onPress={handleSave} disabled={!isButtonEnabled} />
+            <PrimaryButton title={t('journal.saveThought')} onPress={handleSave} disabled={!isButtonEnabled} />
           </View>
         )}
       </Animated.View>

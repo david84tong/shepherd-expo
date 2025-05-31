@@ -1160,7 +1160,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 onPress={() => animateToggle(!notificationsEnabled)}
                 activeOpacity={0.7}>
                 <Text style={styles.translationText}>
-                  {notificationsEnabled ? 'Notifications enabled' : 'Notifications disabled'}
+                  {notificationsEnabled ? t('settings.notificationsEnabled') : t('settings.notificationsDisabled')}
                 </Text>
                 <View
                   style={[
@@ -1216,7 +1216,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   </View>
 
                   <TouchableOpacity style={styles.donePickingButton} onPress={handleTimeConfirm}>
-                    <Text style={styles.donePickingText}>Done</Text>
+                    <Text style={styles.donePickingText}>{t('settings.donePickingTime')}</Text>
                   </TouchableOpacity>
                 </Animated.View>
               )}
@@ -1246,7 +1246,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               <TouchableOpacity style={styles.discordButton} onPress={handleOpenDiscord}>
                 <View style={styles.discordButtonContent}>
                   <FontAwesome6 name="discord" size={20} color="#5865F2" />
-                  <Text style={styles.discordButtonText}>Join the Shepherd Family!</Text>
+                  <Text style={styles.discordButtonText}>{t('settings.joinShepherdFamily')}</Text>
                 </View>
                 <Feather name="external-link" size={18} color="#3C584A" />
               </TouchableOpacity>
@@ -1254,7 +1254,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               <TouchableOpacity style={styles.roadmapButton} onPress={handleOpenRoadmap}>
                 <View style={styles.roadmapButtonContent}>
                   <Feather name="map" size={20} color="#22C55E" />
-                  <Text style={styles.roadmapButtonText}>Roadmap & Feature Requests</Text>
+                  <Text style={styles.roadmapButtonText}>{t('settings.roadmapFeatureRequests')}</Text>
                 </View>
                 <Feather name="external-link" size={18} color="#3C584A" />
               </TouchableOpacity>
@@ -1264,30 +1264,30 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
             {/* Subscription Section */}
             <View className="mb-6">
-              <Text className="font-feather text-xl text-[#5D5531] mb-2">Subscription</Text>
+              <Text className="font-feather text-xl text-[#5D5531] mb-2">{t('settings.subscription')}</Text>
               <View className="bg-white rounded-xl p-4 shadow-sm mb-2">
                 <View className="flex-row justify-between items-center">
                   <View className="flex-1 mr-4">
                     <Text className="font-feather text-base text-textPrimary">
-                      {isProMember ? 'Super Shepherd (Active)' : 'Upgrade to Super Shepherd'}
+                      {isProMember ? t('settings.superShepherdActive') : t('settings.upgradeToSuperShepherd')}
                     </Text>
                     <Text className="font-din text-description mt-1">
                       {isProMember
-                        ? 'Thank you for supporting our mission!'
-                        : 'Unlock premium features and support our mission'}
+                        ? t('settings.thankYouSupporting')
+                        : t('settings.unlockPremiumFeatures')}
                     </Text>
                   </View>
                   {isProMember ? (
                     <TouchableOpacity
                       onPress={handleOpenCancellationModal}
                       className="bg-red/10 px-4 py-2 rounded-lg border border-red">
-                      <Text className="font-feather text-red">Cancel</Text>
+                      <Text className="font-feather text-red">{t('settings.cancel')}</Text>
                     </TouchableOpacity>
                   ) : (
                     <TouchableOpacity
                       onPress={handleSubscriptionPress}
                       className="bg-[#FFE07D] px-4 py-2 rounded-lg">
-                      <Text className="font-feather text-textPrimary">Upgrade</Text>
+                      <Text className="font-feather text-textPrimary">{t('settings.upgrade')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>

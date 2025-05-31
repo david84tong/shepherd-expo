@@ -16,6 +16,7 @@ import {
   ScrollView,
 } from 'react-native';
 import Rive, { RiveRef } from 'rive-react-native';
+import useTranslation from '../app/hooks/useTranslation';
 
 import PrimaryButton from './PrimaryButton';
 import { StreakScreen } from './StreakScreen';
@@ -52,6 +53,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   subMessage: propSubMessage,
   onClose: propOnClose,
 }) => {
+  const { t } = useTranslation();
   const riveRef = useRef<RiveRef>(null);
   const setHomeMode = useHomeStore((state) => state.setMode);
   const successType = useHomeStore((state) => state.successType);
@@ -62,7 +64,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   // Load Rive assets
   const [riveAssets] = useAssets([require('../assets/riveAnimations/successLamb.riv')]);
   const [homeLambAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
-
 
   // -------- Other hooks below (must appear before any conditional return) --------
   // Get completion states
@@ -87,8 +88,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const getGens = useUserStore((state) => state.getGens);
   const setGens = useUserStore((state) => state.setGens);
   const setLambMood = useUserStore((state) => state.setLambMood);
-
-
 
   // Determine which type to use for rendering
   const effectiveType = successType ?? SuccessAnimationType.READING;
@@ -629,7 +628,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Determine the action for the button press
   const handlePress = propOnClose || handleGoHome;
-  const buttonText = propOnClose ? 'Close' : 'Return Home';
+  const buttonText = propOnClose ? t('successAnimation.close') : t('successAnimation.returnHome');
 
   // Handler for prayer button
   const handleGoToPrayer = () => {
@@ -719,7 +718,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     return (
       <View className="flex-1 items-center justify-center bg-surfaceCream">
         <ActivityIndicator size="large" color="#3C584A" />
-        <Text className="font-feather text-textPrimary mt-4">Loading animation...</Text>
+        <Text className="font-feather text-textPrimary mt-4">{t('successAnimation.loadingAnimation')}</Text>
       </View>
     );
   }
@@ -757,27 +756,49 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
               ],
             }}>
             {effectiveType === SuccessAnimationType.SECTION_COMPLETE ? (
-              <Rive
-                ref={riveRef}
-                url={IS_IOS ? homeLambAssets && homeLambAssets[0] && homeLambAssets[0].uri || '' : undefined}
-                autoplay={true}
-                resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-                artboardName='lamb-milestone'
-                style={{
-                  width: '100%', height: '100%', maxWidth: 300,
-                  maxHeight: 300,
-                  alignSelf: 'center'
-                }}
-              />
+              IS_IOS ? (
+                <Rive
+                  ref={riveRef}
+                  url={homeLambAssets?.[0]?.uri}
+                  autoplay={true}
+                  artboardName='lamb-milestone'
+                  style={{
+                    width: '100%', height: '100%', maxWidth: 300,
+                    maxHeight: 300,
+                    alignSelf: 'center'
+                  }}
+                />
+              ) : (
+                <Rive
+                  ref={riveRef}
+                  resourceName='home_lamb'
+                  autoplay={true}
+                  artboardName='lamb-milestone'
+                  style={{
+                    width: '100%', height: '100%', maxWidth: 300,
+                    maxHeight: 300,
+                    alignSelf: 'center'
+                  }}
+                />
+              )
             ) : (
-              <Rive
-                ref={riveRef}
-                url={IS_IOS ? riveAssets && riveAssets[0] && riveAssets[0].uri || '' : undefined}
-                resourceName={IS_ANDROID ? 'success_lamb' : undefined}
-                autoplay={true}
-                style={{ width: '100%', height: '100%' }}
-                {...(riveArtboard ? { artboardName: riveArtboard } : {})}
-              />
+              IS_IOS ? (
+                <Rive
+                  ref={riveRef}
+                  url={riveAssets?.[0]?.uri}
+                  autoplay={true}
+                  style={{ width: '100%', height: '100%' }}
+                  {...(riveArtboard ? { artboardName: riveArtboard } : {})}
+                />
+              ) : (
+                <Rive
+                  ref={riveRef}
+                  resourceName='success_lamb'
+                  autoplay={true}
+                  style={{ width: '100%', height: '100%' }}
+                  {...(riveArtboard ? { artboardName: riveArtboard } : {})}
+                />
+              )
             )}
           </Animated.View>
         </View>
@@ -803,14 +824,14 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
           }}>
           <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
-            {rewardTitle}
+            {t('successAnimation.rewardsTitle')}
           </Text>
 
           {effectiveType === SuccessAnimationType.BONUS ? (
             // Special bonus reward display
             <View className="flex-row items-center justify-center mb-2">
               <Image source={gemIcon} className="w-6 h-6 mr-2" />
-              <Text className="font-din text-textPrimary text-xl">+9 Gems</Text>
+              <Text className="font-din text-textPrimary text-xl">{t('successAnimation.bonusGems')}</Text>
             </View>
           ) : (
             // Standard rewards display for other success types
@@ -820,23 +841,23 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                 <View className="flex-row items-center justify-center mb-2">
                   <Image source={heartIcon} className="w-6 h-6 mr-2" />
                   <Text className="font-din text-textPrimary text-xl">
-                    +{actualHeartReward} Hearts
+                    +{actualHeartReward} {t('successAnimation.hearts')}
                   </Text>
                 </View>
               )}
               <View className="flex-row items-center justify-center">
                 <Image source={starIcon} className="w-6 h-6 mr-2" />
-                <Text className="font-din text-textPrimary text-xl">+{xpReward} Soul Points</Text>
+                <Text className="font-din text-textPrimary text-xl">+{xpReward} {t('successAnimation.soulPoints')}</Text>
               </View>
 
               {/* Show level up message if user leveled up */}
               {leveledUp && (
                 <View className="mt-4 py-2 bg-lightYellow rounded-xl">
                   <Text className="font-feather text-xl text-primary text-center">
-                    LEVEL UP!
+                    {t('successAnimation.levelUp')}
                   </Text>
                   <Text className="font-din text-description text-center mt-1">
-                    Your lamb grew to level {newLevel}
+                    {t('successAnimation.lambGrew')} {newLevel}
                   </Text>
                 </View>
               )}
@@ -857,7 +878,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
               {/* Show Pray button only if prayer is not completed */}
               {!prayerCompleted && (
                 <PrimaryButton
-                  title="Pray about this verse"
+                  title={t('successAnimation.prayAboutVerse')}
                   onPress={handleGoToPrayer}
                   style={reflectionCompleted ? "w-full" : "flex-1 h-32"}
                   buttonType="blue"
@@ -867,7 +888,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
               {/* Show Reflect button only if reflection is not completed */}
               {!reflectionCompleted && (
                 <PrimaryButton
-                  title="Reflect on this verse"
+                  title={t('successAnimation.reflectOnVerse')}
                   onPress={handleGoToReflection}
                   style={(prayerCompleted || effectiveType === SuccessAnimationType.PRAYER) ? "w-full" : "flex-1 h-24"}
                 />
@@ -887,7 +908,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
           >
             {/* Pray button as primary action */}
             <PrimaryButton
-              title="Pray about today's verse"
+              title={t('successAnimation.prayAboutTodaysVerse')}
               onPress={handleGoToPrayer}
               buttonType="blue"
             />
@@ -904,7 +925,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                 className="mt-4"
                 onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
               >
-                <Text className="font-feather text-description text-center underline mt-4">Go Home</Text>
+                <Text className="font-feather text-description text-center underline mt-4">{t('successAnimation.goHome')}</Text>
               </TouchableOpacity>
             </Animated.View>
           </Animated.View>
@@ -936,7 +957,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
               className="mt-4"
               onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}
             >
-              <Text className="font-feather text-description text-center underline">Go Home</Text>
+              <Text className="font-feather text-description text-center underline">{t('successAnimation.goHome')}</Text>
             </TouchableOpacity>
           </Animated.View>
         )}

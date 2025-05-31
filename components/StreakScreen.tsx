@@ -21,6 +21,7 @@ import { getStreakSubtext } from '../app/hooks/streakHook';
 import analytics from '../utils/analytics';
 import * as StoreReview from 'expo-store-review';
 import { IS_ANDROID, IS_IOS } from '~/app/utils/utils';
+import useTranslation from '../app/hooks/useTranslation';
 /* ─────────────── helper ─────────────── */
 type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE';
 
@@ -93,6 +94,7 @@ const calculateStreakLogic = (
 };
 
 export const StreakScreen = () => {
+  const { t } = useTranslation();
   // Animation states
   const animationsInitialized = useRef(false);
   const screenOpacity = useSharedValue(0);
@@ -414,17 +416,29 @@ export const StreakScreen = () => {
         <View className="relative justify-center items-center mb-1">
           <View
             className={`${insets.top > 20 ? 'w-96 h-96' : 'w-56 h-56'} justify-center items-center`}>
-            <Rive
-              url={IS_IOS ? riveAssets[0].uri! : undefined}
-              resourceName={IS_ANDROID ? 'success_lamb' : undefined}
-              artboardName="streak"
-              autoplay
-              style={{
-                width: insets.top < 20 ? '100%' : '200%',
-                height: insets.top < 20 ? '100%' : '200%',
-              }}
-              ref={riveRef}
-            />
+            {IS_IOS ? (
+              <Rive
+                url={riveAssets?.[0]?.uri}
+                artboardName="streak"
+                autoplay
+                style={{
+                  width: insets.top < 20 ? '100%' : '200%',
+                  height: insets.top < 20 ? '100%' : '200%',
+                }}
+                ref={riveRef}
+              />
+            ) : (
+              <Rive
+                resourceName="success_lamb"
+                artboardName="streak"
+                autoplay
+                style={{
+                  width: insets.top < 20 ? '100%' : '200%',
+                  height: insets.top < 20 ? '100%' : '200%',
+                }}
+                ref={riveRef}
+              />
+            )}
           </View>
         </View>
         <View className="flex flex-col justify-center items-center -mt-20">
@@ -485,7 +499,7 @@ export const StreakScreen = () => {
 
       {/* Continue button */}
       <Animated.View style={buttonStyle} className="px-6 pb-10 mt-8">
-        <PrimaryButton title="Continue" onPress={handleContinue} />
+        <PrimaryButton title={t('common.continue')} onPress={handleContinue} />
       </Animated.View>
 
       {/* Development debug info */}

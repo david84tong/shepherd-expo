@@ -4,6 +4,7 @@ import BottomSheet, { BottomSheetView, BottomSheetBackdrop, BottomSheetBackdropP
 import { BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from '../app/models/Path';
 import { useUIStore } from '../app/stores/uiStore';
 import * as Haptics from 'expo-haptics';
+import useTranslation from '../app/hooks/useTranslation';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -12,6 +13,8 @@ const { height: SCREEN_HEIGHT } = Dimensions.get('window');
  * and controlled via uiStore. Ensures it's rendered above tab bar.
  */
 const GlobalBookChapterSelectorSheet: React.FC = () => {
+  const { t } = useTranslation();
+
   // Access uiStore to control visibility
   const isBookChapterSelectorVisible = useUIStore(state => state.isBookChapterSelectorVisible);
   const bookChapterSelectorParams = useUIStore(state => state.bookChapterSelectorParams);
@@ -147,9 +150,9 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
       <BottomSheetView style={styles.contentContainer}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Select Book & Chapter</Text>
+          <Text style={styles.headerTitle}>{t('bookChapterSelector.title')}</Text>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-            <Text style={styles.closeButtonText}>Done</Text>
+            <Text style={styles.closeButtonText}>{t('bookChapterSelector.done')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -157,7 +160,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
         <View style={styles.mainContent}>
           {/* Book List */}
           <View style={styles.bookSection}>
-            <Text style={styles.listTitle}>Book</Text>
+            <Text style={styles.listTitle}>{t('bookChapterSelector.book')}</Text>
             <ScrollView
               ref={bookScrollViewRef}
               horizontal
@@ -211,7 +214,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
 
           {/* Chapter Grid */}
           <View style={styles.chapterSection}>
-            <Text style={styles.listTitle}>Chapter</Text>
+            <Text style={styles.listTitle}>{t('bookChapterSelector.chapter')}</Text>
             <View style={styles.chapterScrollContainer}>
               <ScrollView
                 showsVerticalScrollIndicator={true}

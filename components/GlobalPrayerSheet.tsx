@@ -23,6 +23,7 @@ import { useUIStore } from '../app/stores/uiStore';
 import { useHomeStore } from '../app/stores/homeStore';
 import { KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import useTranslation from '../app/hooks/useTranslation';
 
 interface PrayerSheetProps {
   prayerSheetRef: React.RefObject<PrayerSheetRef>;
@@ -42,6 +43,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
   snapPoints,
   onPrayerGenerated,
 }) => {
+  const { t } = useTranslation();
   const [prayerInput, setPrayerInput] = useState('');
   const [isCustomInput, setIsCustomInput] = useState(true);
 
@@ -132,15 +134,15 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
       } else {
         // Fallback if no callback provided - show the alert as before
         console.log('No callback provided, showing alert');
-        Alert.alert('Prayer Generated', `Your prayer for "${prayerInput}" has been generated.`, [
-          { text: 'Amen', style: 'default' },
+        Alert.alert(t('prayer.prayerGenerated'), `${t('prayer.yourPrayerGenerated')} "${prayerInput}" ${t('prayer.hasBeenGenerated')}`, [
+          { text: t('prayer.amen'), style: 'default' },
         ]);
       }
 
       // Clear input state after callback execution
       setPrayerInput('');
     }, 500); // Slightly longer delay to ensure state propagation
-  }, [prayerInput, incrementTopicCount, addRecentPrayer, onPrayerGenerated, prayerGeneratedCallback, isCustomInput, orderedTopics, setTappedPrayAboutVerse]);
+  }, [prayerInput, incrementTopicCount, addRecentPrayer, onPrayerGenerated, prayerGeneratedCallback, isCustomInput, orderedTopics, setTappedPrayAboutVerse, t]);
 
   // Close the prayer sheet
   const handleClose = useCallback(() => {
@@ -211,9 +213,9 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
             <TouchableOpacity onPress={handleClose} style={{ padding: 5 }}>
               <Ionicons name="close" size={24} color="#3C584A" />
             </TouchableOpacity>
-            <Text style={styles.prayerTitle}>My Prayers</Text>
+            <Text style={styles.prayerTitle}>{t('prayer.myPrayers')}</Text>
             <TouchableOpacity onPress={handleClose} style={{ padding: 5 }}>
-              <Text style={styles.doneButton}>Done</Text>
+              <Text style={styles.doneButton}>{t('prayer.done')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -231,11 +233,11 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
             {/* Prayer input */}
             <View style={styles.prayerInputContainer}>
               <View style={styles.prayerInputWrapper}>
-                <Text style={styles.prayerInputLabel}>I want to pray for</Text>
+                <Text style={styles.prayerInputLabel}>{t('prayer.wantToPrayFor')}</Text>
                 <TextInput
                   value={prayerInput}
                   onChangeText={handleTextInputChange}
-                  placeholder="guidance..."
+                  placeholder={t('prayer.guidancePlaceholder')}
                   placeholderTextColor="#B89B4C"
                   style={styles.prayerInputText}
                 />
@@ -245,7 +247,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
             {/* Recent prayers section - show if there are any TRULY CUSTOM prayers */}
             {recentPrayers.length > 0 && (
               <View style={styles.recentPrayersContainer}>
-                <Text style={styles.prayerTopicsLabel}>Custom prayers:</Text>
+                <Text style={styles.prayerTopicsLabel}>{t('prayer.customPrayers')}</Text>
                 <ScrollView
                   horizontal
                   showsHorizontalScrollIndicator={false}
@@ -274,7 +276,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
 
             {/* Prayer topic options */}
             <View style={styles.prayerTopicsContainer}>
-              <Text style={styles.prayerTopicsLabel}>Or pick one of these:</Text>
+              <Text style={styles.prayerTopicsLabel}>{t('prayer.orPickOne')}</Text>
               <View style={styles.prayerTopicsGrid}>
                 {orderedTopics
                   .slice(0, 8)
@@ -295,7 +297,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
               marginTop: 20
             }}>
               <PrimaryButton
-                title="Generate a prayer"
+                title={t('prayer.generatePrayer')}
                 onPress={handlePrayerGenerate}
                 disabled={!prayerInput.trim()}
               />
