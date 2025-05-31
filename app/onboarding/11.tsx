@@ -32,6 +32,8 @@ import { useUIStore } from '../stores/uiStore';
 import { adapty } from 'react-native-adapty';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import { UserDoc } from '../models/User';
+import firestore from '@react-native-firebase/firestore';
+
 
 // Helper function to check premium status from Adapty
 const checkPremiumStatus = async () => {
@@ -256,11 +258,20 @@ export default function SaveProgressScreen() {
           const isPremium = await checkPremiumStatus();
           const isProFromOnboarding = useUserStore.getState().isProFromOnboarding;
           if (isPremium && !isProFromOnboarding) {
+
             useUserStore.getState().setProStatus('pro');
+            await firestore().collection('users').doc(user.uid).set(
+              {
+                isPro: true,
+                proExpiryDate: null,
+              },
+              { merge: true }
+            );
           }
           // User exists and data has been fetched in the auth hook
           // Just mark onboarding as completed and navigate to tabs
           await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+
 
           // Animate out all components before navigation using Reanimated
           headerOpacity.value = withTiming(0, { duration: 400 });
