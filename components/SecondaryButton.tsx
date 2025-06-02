@@ -3,6 +3,7 @@ import { View, Text, Image, ImageSourcePropType, Pressable, Platform } from 'rea
 import * as Haptics from 'expo-haptics';
 import analytics from '../utils/analytics';
 import { useSoundStore } from '../app/stores/soundStore';
+import { responsiveHeight, responsiveWidth, responsiveFontSize } from 'react-native-responsive-dimensions';
 
 interface SecondaryButtonProps {
   icon: ImageSourcePropType;
@@ -61,36 +62,50 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   };
 
   return (
-    <View className={`mt-6 h-[80px] w-full ${style || ''}`}>
+    <View style={{ marginTop: responsiveHeight(2), height: responsiveHeight(10), width: '100%' }}>
       <Pressable
         className={`
-          flex-row items-center h-full w-full rounded-card border-[3px] ${borderColor} px-4
+          flex-row items-center w-full rounded-card border-[3px] ${borderColor} 
           ${bgColor} transform ${opacityClass}
           ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}
         `}
-        style={shadowStyles}
+        style={[shadowStyles, { height: '100%', paddingHorizontal: responsiveWidth(4) }]}
         onPress={handlePress}
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}
       >
-        <Image source={icon} className="w-[48px] h-[48px] mr-2 -ml-2" resizeMode="contain" />
-        <View className="flex-1">
-          <Text className="font-feather text-textPrimary text-heading">{title}</Text>
-          <Text className="font-din text-textPrimary/70 text-body">{subtitle}</Text>
+        <Image source={icon} style={{ width: responsiveWidth(11), height: responsiveWidth(11), marginRight: responsiveWidth(2), marginLeft: -responsiveWidth(2) }} resizeMode="contain" />
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text
+            className="font-feather text-textPrimary"
+            style={{ fontSize: responsiveFontSize(2.3), fontWeight: '700' }}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {title}
+          </Text>
+          <Text
+            className="font-din text-textPrimary/70"
+            style={{ fontSize: responsiveFontSize(1.7), flexWrap: 'wrap', flexShrink: 1 }}
+            numberOfLines={2}
+            ellipsizeMode="tail"
+          >
+            {subtitle}
+          </Text>
         </View>
-        <View className="rounded-full px-2 py-0.5 flex-row items-center">
+        <View style={{ borderRadius: 999, paddingHorizontal: responsiveWidth(2), paddingVertical: responsiveHeight(0.5), flexDirection: 'row', alignItems: 'center' }}>
           {completed ? (
-            <View className="w-6 h-6 rounded-full bg-darkGreen items-center justify-center">
-              <Text className="font-feather text-white text-caption">✓</Text>
+            <View style={{ width: responsiveWidth(6), height: responsiveWidth(6), borderRadius: 999, backgroundColor: '#1B7F5C', alignItems: 'center', justifyContent: 'center' }}>
+              <Text className="font-feather text-white" style={{ fontSize: responsiveFontSize(1.5) }}>✓</Text>
             </View>
           ) : (
             <>
               <Image
                 source={require('../assets/icons/starIcon.png')}
-                className="w-5 h-5"
+                style={{ width: responsiveWidth(5), height: responsiveWidth(5) }}
                 resizeMode="contain"
               />
-              <Text className="font-feather text-textPrimary/70 text-caption">+{points}</Text>
+              <Text className="font-feather text-textPrimary/70" style={{ fontSize: responsiveFontSize(1.5) }}>+{points}</Text>
             </>
           )}
         </View>

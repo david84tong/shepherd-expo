@@ -9,7 +9,8 @@ import {
   SectionList,
   Text,
   View,
-  ViewToken
+  ViewToken,
+  StatusBar,
 } from 'react-native';
 
 import PathNode, { NodeStatus } from '../../components/MapComponents/PathNode';
@@ -334,7 +335,8 @@ export default function MapScreen() {
           // Add a flag to help identify where this navigation came from
           source: 'map',
           timestamp: Date.now()?.toString(), // Force new params by adding timestamp
-          isLastUnitInSection: isLastUnitInSection?.toString()
+          isLastUnitInSection: isLastUnitInSection?.toString(),
+          isFromDailyBread: 'true',
         },
       });
     } else {
@@ -541,6 +543,7 @@ export default function MapScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surfaceCream">
+      <StatusBar translucent backgroundColor="transparent" />
       <SectionList<Unit, BibleSection>
         ref={sectionListRef}
         sections={sections}

@@ -50,7 +50,9 @@ import { IS_ANDROID, IS_IOS } from './utils/utils';
 import { setupHighlightListeners } from './stores/highlightStore';
 import useHighlightStore from './stores/highlightStore';
 import { useSoundStore } from './stores/soundStore';
-
+import './stores/userStore';
+import './stores/subscriptionStore';
+import SaveProgressScreen from './onboarding/11';
 // Define missing ref types
 type PrayerSheetRef = {
   show: () => void;
@@ -462,7 +464,7 @@ export default function RootLayout() {
     };
   }, [router]);
   // Move the sound store hooks inside the component
-  const backgroundMusicEnabled = useSoundStore.getState().backgroundMusicEnabled
+  const backgroundMusicEnabled = useSoundStore.getState().backgroundMusicEnabled;
   // Initialize background music
   useEffect(() => {
     if (backgroundMusicEnabled) {
@@ -478,7 +480,7 @@ export default function RootLayout() {
       <View style={[styles.riveContainer, { backgroundColor: '#FFF4D9' }]}>
         <Rive
           url={IS_IOS ? riveAssets[0].uri! : undefined}
-          resourceName={IS_ANDROID ? "shepherd_splash_screen" : undefined}
+          resourceName={IS_ANDROID ? 'shepherd_splash_screen' : undefined}
           style={styles.riveAnimation}
           autoplay={true}
           onPause={() => {
@@ -493,7 +495,7 @@ export default function RootLayout() {
   }
 
   // Loading states with error handling
-  if (!fontsLoaded && !fontError) {
+  if (!fontsLoaded && !fontError && !IS_ANDROID) {
     return null; // Let the native splash screen show
   }
 
@@ -502,7 +504,7 @@ export default function RootLayout() {
   }
 
   if (hasError) return <AppLoading loadingMessage="Something went wrong. Please try again..." />;
-
+  // return <SaveProgressScreen />
   console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
 
   return (
@@ -517,7 +519,7 @@ export default function RootLayout() {
                 headerShown: false,
                 animation: 'fade',
                 animationDuration: 200,
-                contentStyle: { backgroundColor: '#FFF4D9' }
+                contentStyle: { backgroundColor: '#FFF4D9' },
               }}
             />
 

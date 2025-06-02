@@ -12,13 +12,17 @@ import Reanimated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { HIGHLIGHT_COLORS, HighlightColorKey } from '~/app/stores/highlightStore';
+import analytics from '../utils/analytics';
 
 interface HighlightColorPickerProps {
   isVisible: boolean;
   initialColor?: HighlightColorKey | null;
   onClose: () => void;
-  onSelectColor: (colorKey: HighlightColorKey) => void;
+  onSelectColor: (colorKey: HighlightColorKey | null) => void;
   versePreview?: string;
+  bookName?: string;
+  chapter?: number;
+  verseNumber?: number;
 }
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -30,7 +34,10 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
   initialColor,
   onClose,
   onSelectColor,
-  versePreview
+  versePreview,
+  bookName,
+  chapter,
+  verseNumber
 }) => {
   // Create color options from the HIGHLIGHT_COLORS object
   const colorOptions = Object.entries(HIGHLIGHT_COLORS).map(([key, value]) => ({
@@ -49,6 +56,15 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
     if (isVisible) {
       setSelectedColor(initialColor || defaultColor);
       
+      // Track color picker opened
+      analytics.logEvent("Highlight_ColorPicker_Opened", {
+        book: bookName || 'unknown',
+        chapter: chapter || 0,
+        verse: verseNumber || 0,
+        initialColor: initialColor || 'none',
+        hasExistingHighlight: !!initialColor
+      });
+      
       // Animate modal appearance
       modalScale.value = 0.95;
       modalOpacity.value = 0;
@@ -62,24 +78,40 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
         duration: 250
       });
     }
-  }, [isVisible, initialColor, defaultColor, modalScale, modalOpacity]);
+  }, [isVisible, initialColor, defaultColor, modalScale, modalOpacity, bookName, chapter, verseNumber]);
 
   const handleColorSelect = (colorKey: HighlightColorKey) => {
     // Provide haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    // Track color selection
+    analytics.logEvent("Highlight_ColorSelected", {
+      book: bookName || 'unknown',
+      chapter: chapter || 0,
+      verse: verseNumber || 0,
+      selectedColor: colorKey,
+      previousColor: selectedColor || 'none'
+    });
+    
     setSelectedColor(colorKey);
   };
 
   const handleConfirm = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     
-    // For null selection, pass it to parent to remove the highlight
-    if (selectedColor === null && initialColor) {
-      onSelectColor(selectedColor as any);
-    } else if (selectedColor) {
-      // For regular color selection
-      onSelectColor(selectedColor);
-    }
+    // Track highlight action
+    const isRemoving = selectedColor === null && initialColor;
+    analytics.logEvent(isRemoving ? "Highlight_Removed" : "Highlight_Applied", {
+      book: bookName || 'unknown',
+      chapter: chapter || 0,
+      verse: verseNumber || 0,
+      color: selectedColor || 'none',
+      previousColor: initialColor || 'none',
+      action: isRemoving ? 'remove' : 'apply'
+    });
+    
+    // Pass the selected color (including null for removal) to parent
+    onSelectColor(selectedColor);
     
     // Animate out before closing
     modalScale.value = withTiming(0.95, { duration: 200 });
@@ -93,6 +125,15 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
   };
 
   const handleCancel = () => {
+    // Track cancel action
+    analytics.logEvent("Highlight_ColorPicker_Cancelled", {
+      book: bookName || 'unknown',
+      chapter: chapter || 0,
+      verse: verseNumber || 0,
+      initialColor: initialColor || 'none',
+      selectedColor: selectedColor || 'none'
+    });
+    
     // Animate out
     modalScale.value = withTiming(0.95, { duration: 180 });
     modalOpacity.value = withTiming(0, { 
@@ -175,11 +216,11 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
                 <TouchableOpacity 
                   style={[
                     styles.confirmButton, 
-                    // Only disable if no color is selected (which shouldn't happen now with default)
-                    !selectedColor && styles.disabledButton
+                    // Button should only be disabled if we have no selection and no initial color to remove
+                    (selectedColor === null && !initialColor) && styles.disabledButton
                   ]} 
                   onPress={handleConfirm}
-                  disabled={!selectedColor}
+                  disabled={selectedColor === null && !initialColor}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.confirmText}>
@@ -194,6 +235,16 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
                   style={styles.removeButton}
                   onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    
+                    // Track remove highlight button tap
+                    analytics.logEvent("Highlight_RemoveButtonTapped", {
+                      book: bookName || 'unknown',
+                      chapter: chapter || 0,
+                      verse: verseNumber || 0,
+                      currentColor: initialColor,
+                      selectedColor: selectedColor || 'none'
+                    });
+                    
                     setSelectedColor(null);
                   }}
                 >

@@ -21,6 +21,7 @@ import {
   Switch,
   Platform,
   ToastAndroid,
+  StatusBar,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchChapter, Verse } from './api/bible';
@@ -887,24 +888,22 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       version: currentVersion,
       chapter: currentChapter,
     });
+
+    // Always set pathInProgress to false when navigating back, regardless of context
+    setPathInProgress(false);
+
     if (onNavigateBack) {
       // Custom back navigation when embedded
       onNavigateBack();
     } else if (!isEmbedded && effectiveParams?.source === 'map') {
       // Navigation back to map when coming from map
-      console.log('📱 Navigating back to map, setting pathInProgress to false');
-
-      // Always set pathInProgress to false BEFORE navigating back
-      setPathInProgress(false);
+      console.log('📱 Navigating back to map, pathInProgress set to false');
 
       // Allow state update to complete before navigation
       setTimeout(() => {
         router.back();
       }, 50);
     } else {
-      // Always reset pathInProgress for any other back navigation too
-      setPathInProgress(false);
-
       // Default back navigation with small delay to allow state update
       setTimeout(() => {
         router.back();
@@ -1072,6 +1071,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   if (useCardView) {
     return (
       <>
+        <StatusBar translucent backgroundColor="transparent" />
         <NewBibleReader
           bookId={currentBookId}
           chapter={currentChapter}
@@ -1215,12 +1215,14 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     return (
       <SafeAreaView
         style={[styles.container, { backgroundColor: THEME_COLORS[currentTheme].background }]}>
+        <StatusBar translucent backgroundColor="transparent" />
         <View
           style={[
             styles.newHeaderContainer,
             {
               backgroundColor: THEME_COLORS[currentTheme].background,
               borderBottomColor: THEME_COLORS[currentTheme].border,
+              marginTop: Platform.OS === 'android' ? 18 : 0,
             },
           ]}>
           <View style={styles.headerLeft}>
@@ -1260,7 +1262,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           style={[
             {
               position: 'absolute',
-              bottom: isEmbedded ? 100 : 50,
+              bottom: isEmbedded ? 100 : effectiveParams?.isFromDailyBread ? 50 : 100,
               left: 0,
               right: 0,
               flexDirection: 'row',
@@ -1532,8 +1534,8 @@ const styles = StyleSheet.create<BibleReaderStyles>({
   },
   navButtonText: {
     color: '#3C584A',
+    fontFamily: 'Inter-Bold',
     fontSize: 24,
-    fontWeight: '700',
   },
   disabledNavButton: {
     backgroundColor: 'rgba(220, 178, 128, 0.1)',
@@ -1555,7 +1557,7 @@ const styles = StyleSheet.create<BibleReaderStyles>({
     flex: 1,
   },
   scrollContainer: {
-    paddingBottom: 100,
+    paddingBottom: 130,
     paddingHorizontal: 20,
     paddingTop: 10,
   },

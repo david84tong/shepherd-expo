@@ -402,6 +402,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     chapter: number;
   } | null>(null);
 
+  // Track current book and chapter internally (separate from props)
+  const [currentBookId, setCurrentBookId] = useState(bookId);
+  const [currentChapter, setCurrentChapter] = useState(chapter);
+
   // Animation values
   const fadeOpacity = useSharedValue(1);
   const menuScaleAnim = useSharedValue(0);
@@ -461,6 +465,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const setHomeMode = useHomeStore((s) => s.setMode);
   const setSuccessType = useHomeStore((s) => s.setSuccessType);
   const setReadingCompleted = useHomeStore((s) => s.setReadingCompleted);
+  const readingCompleted = useHomeStore((s) => s.readingCompleted);
   const prayerCompleted = useHomeStore((s) => s.prayerCompleted);
   const reflectionCompleted = useHomeStore((s) => s.reflectionCompleted);
   const sawDailyBonus = useHomeStore((s) => s.sawDailyBonus);
@@ -534,6 +539,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           return false;
         } else {
           setChapterData(res);
+          // Update internal tracking of current book and chapter
+          setCurrentBookId(bookId);
+          setCurrentChapter(chapter);
+          console.log(`📖 [NewBibleReader] Updated internal state - bookId: ${bookId}, chapter: ${chapter}`);
           setLoading(false);
           return true;
         }
@@ -819,7 +828,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     if (newSize >= MIN_FONT_SIZE && newSize <= MAX_FONT_SIZE) {
       setFontSize(newSize);
       try {
-        await AsyncStorage.setItem(FONT_SIZE_KEY, newSize.toString());
+        await AsyncStorage.setItem(FONT_SIZE_KEY, newSize?.toString());
       } catch (e) {
         console.error('Failed to save font size', e);
       }
@@ -839,7 +848,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     setLineHeightPreset(preset);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     try {
-      await AsyncStorage.setItem(LINE_HEIGHT_KEY, LINE_HEIGHT_PRESETS[preset].toString());
+      await AsyncStorage.setItem(LINE_HEIGHT_KEY, LINE_HEIGHT_PRESETS[preset]?.toString());
     } catch (e) {
       console.error('Failed to save line height', e);
     }
@@ -881,12 +890,16 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   );
 
   // Handler for opening the selector
-  const handleOpenSelector = () => {
+  const handleOpenSelector = useCallback(() => {
+    console.log(`📖 [NewBibleReader] Opening selector with currentBookId: ${currentBookId}, currentChapter: ${currentChapter}`);
+    console.log(`📖 [NewBibleReader] Props bookId: ${bookId}, chapter: ${chapter}`);
+    console.log(`📖 [NewBibleReader] chapterData:`, chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'null');
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    showBookChapterSelector(bookId, chapter, (newBookId: number, newChapter: number) => {
+    showBookChapterSelector(currentBookId, currentChapter, (newBookId: number, newChapter: number) => {
+      console.log(`📖 [NewBibleReader] Selector callback - newBookId: ${newBookId}, newChapter: ${newChapter}`);
       loadChapter(newBookId, newChapter);
     });
-  };
+  }, [currentBookId, currentChapter, bookId, chapter, showBookChapterSelector, loadChapter, chapterData]);
 
   useEffect(() => {
     if (
@@ -994,7 +1007,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     setShowChatView(false);
     setSelectedVerse(null);
     setIsFadingToChat(false);
-
+    //commented out to fix bug where the chat view would not fade out
     // Reset animation value before starting new animation
     fadeOpacity.value = 0;
     fadeOpacity.value = withTiming(1, {
@@ -1322,15 +1335,15 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Add a reset highlights function
   const resetAndLoadHighlights = useCallback(() => {
-    // Make a new request to load highlights whenever bookId/chapter changes
-    console.log(`Resetting and loading highlights for ${bookId}:${chapter}`);
+    // Make a new request to load highlights whenever currentBookId/currentChapter changes
+    console.log(`Resetting and loading highlights for ${currentBookId}:${currentChapter}`);
     loadHighlights();
-  }, [bookId, chapter, loadHighlights]);
+  }, [currentBookId, currentChapter, loadHighlights]);
 
-  // Load highlights when component mounts or when bookId/chapter changes
+  // Load highlights when component mounts or when currentBookId/currentChapter changes
   useEffect(() => {
     resetAndLoadHighlights();
-  }, [bookId, chapter, resetAndLoadHighlights]);
+  }, [currentBookId, currentChapter, resetAndLoadHighlights]);
 
   // Sync highlights when component unmounts
   useEffect(() => {
@@ -1345,7 +1358,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     setVerseToHighlight(verse);
 
     // Check if the verse is already highlighted
-    const existingHighlight = getHighlight(bookId, chapter, verse.verse);
+    const existingHighlight = getHighlight(currentBookId, currentChapter, verse.verse);
     const initialColor = existingHighlight?.colorKey || null;
 
     // Show highlight picker with the verse preview
@@ -1369,7 +1382,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
     // If colorKey is null, remove the highlight
     if (colorKey === null) {
-      removeHighlight(bookId, chapter, verseToHighlight.verse);
+      removeHighlight(currentBookId, currentChapter, verseToHighlight.verse);
 
       // Show removal confirmation
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -1388,7 +1401,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       });
     } else {
       // Add highlight to store
-      addHighlight(bookId, chapter, verseToHighlight.verse, colorKey);
+      addHighlight(currentBookId, currentChapter, verseToHighlight.verse, colorKey);
 
       // Show confirmation
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -1421,7 +1434,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Function to remove highlight
   const handleRemoveHighlight = (verse: Verse) => {
-    removeHighlight(bookId, chapter, verse.verse);
+    removeHighlight(currentBookId, currentChapter, verse.verse);
 
     // Show confirmation
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -1449,22 +1462,19 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const loadNotes = useNoteStore((state) => state.loadNotes);
   const syncNotes = useNoteStore((state) => state.syncNotes);
 
-  // Memoized highlight and note getters to avoid re-rendering issues
-  const getVerseHighlightColor = useCallback(
-    (verse: Verse): string | null => {
-      if (!verse) return null;
-      const highlight = getHighlight(bookId, chapter, verse.verse);
-      return highlight ? HIGHLIGHT_COLORS[highlight.colorKey] : null;
-    },
-    [getHighlight, bookId, chapter]
-  );
+  // Remove the memoized getVerseHighlightColor function and replace with direct function
+  const getVerseHighlightColor = (verse: Verse): string | null => {
+    if (!verse) return null;
+    const highlight = getHighlight(currentBookId, currentChapter, verse.verse);
+    return highlight ? HIGHLIGHT_COLORS[highlight.colorKey] : null;
+  };
 
   const hasNote = useCallback(
     (verse: Verse): boolean => {
       if (!verse) return false;
-      return !!getNote(bookId, chapter, verse.verse);
+      return !!getNote(currentBookId, currentChapter, verse.verse);
     },
-    [getNote, bookId, chapter]
+    [getNote, currentBookId, currentChapter]
   );
 
   // Load notes when component mounts
@@ -1858,8 +1868,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                   <TouchableOpacity
                     onPress={() => {
                       if (isFadingToChat) return;
-                      console.log('📖 [NewBibleReader] Finish tapped');
-                      handleFinishReading();
+                      // If daily reading is completed and not in path mode, go to next chapter
+                      if (readingCompleted && !isInPathMode) {
+                        console.log('📖 [NewBibleReader] Next Chapter tapped - daily reading completed');
+                        navigateToNextChapter();
+                      } else {
+                        console.log('📖 [NewBibleReader] Finish tapped');
+                        handleFinishReading();
+                      }
                     }}
                     activeOpacity={0.8}
                     disabled={isFadingToChat}>
@@ -1877,7 +1893,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                           fontFamily: 'Feather Bold',
                           fontSize: 16,
                         }}>
-                        Finish Reading 🎉
+                        {readingCompleted && !isInPathMode ? 'Next Chapter →' : 'Finish Reading 🎉'}
                       </Text>
                     </View>
                   </TouchableOpacity>
@@ -2069,7 +2085,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       {verseToHighlight && (
         <HighlightColorPicker
           isVisible={isHighlightPickerVisible}
-          initialColor={getHighlight(bookId, chapter, verseToHighlight.verse)?.colorKey || null}
+          initialColor={getHighlight(currentBookId, currentChapter, verseToHighlight.verse)?.colorKey || null}
           onClose={handleCloseHighlightPicker}
           onSelectColor={handleApplyHighlight}
           versePreview={verseToHighlight.text}
@@ -2080,8 +2096,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       {verseForNote && chapterData && (
         <NoteEditor
           isVisible={isNoteEditorVisible}
-          bookId={bookId}
-          chapter={chapter}
+          bookId={currentBookId}
+          chapter={currentChapter}
           verse={verseForNote.verse}
           verseText={verseForNote.text}
           bookName={chapterData.book}

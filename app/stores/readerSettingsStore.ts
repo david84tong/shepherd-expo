@@ -58,7 +58,7 @@ export const useReaderSettingsStore = create<ReaderSettings>((set, get) => ({
     if (size >= MIN_FONT_SIZE && size <= MAX_FONT_SIZE) {
       set({ fontSize: size });
       try {
-        await AsyncStorage.setItem(FONT_SIZE_KEY, size?.toString());
+        await AsyncStorage.setItem(FONT_SIZE_KEY, size?.toString?.());
         console.log(`📐 Font size saved: ${size}`);
       } catch (e) {
         console.error('Failed to save font size to AsyncStorage', e);
@@ -71,7 +71,7 @@ export const useReaderSettingsStore = create<ReaderSettings>((set, get) => ({
     set({ lineHeightPreset: preset });
     try {
       const lineHeight = LINE_HEIGHT_PRESETS[preset];
-      await AsyncStorage.setItem(LINE_HEIGHT_KEY, lineHeight?.toString());
+      await AsyncStorage.setItem(LINE_HEIGHT_KEY, lineHeight?.toString?.());
       console.log(`📏 Line height preset saved: ${preset} (${lineHeight})`);
     } catch (e) {
       console.error('Failed to save line height to AsyncStorage', e);
@@ -121,7 +121,7 @@ export const useReaderSettingsStore = create<ReaderSettings>((set, get) => ({
         const preset = Object.entries(LINE_HEIGHT_PRESETS).find(
           ([_, value]) => Math.abs(value - lineHeight) < 0.1
         )?.[0] as LineHeightPreset | undefined;
-        
+
         if (preset) {
           set({ lineHeightPreset: preset });
         }
@@ -149,4 +149,4 @@ export const useReaderSettingsStore = create<ReaderSettings>((set, get) => ({
 }));
 
 // Initialize settings on import
-useReaderSettingsStore.getState().initializeSettings(); 
+useReaderSettingsStore.getState().initializeSettings();

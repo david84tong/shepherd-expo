@@ -1,6 +1,6 @@
 import dayjs from 'dayjs';
 import { useCallback, useState, useEffect, useRef } from 'react';
-import { Alert, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, TouchableWithoutFeedback, View, Modal } from 'react-native';
+import { Alert, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, TouchableWithoutFeedback, View, Modal, StatusBar } from 'react-native';
 import { useUIStore } from '../stores/uiStore';
 import { useUserStore } from '../stores/userStore';
 import useHighlightStore, { VerseHighlight, HIGHLIGHT_COLORS } from '../stores/highlightStore';
@@ -12,7 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { Prayer, Reading, Reflection } from '../models/User';
 
 // Bible book names mapping
-const BIBLE_BOOK_NAMES: {[bookId: number]: string} = {
+const BIBLE_BOOK_NAMES: { [bookId: number]: string } = {
   1: "Genesis", 2: "Exodus", 3: "Leviticus", 4: "Numbers", 5: "Deuteronomy",
   6: "Joshua", 7: "Judges", 8: "Ruth", 9: "1 Samuel", 10: "2 Samuel",
   11: "1 Kings", 12: "2 Kings", 13: "1 Chronicles", 14: "2 Chronicles",
@@ -374,7 +374,7 @@ export default function StatsScreen() {
   // Handle dropdown toggle
   const handleDropdownToggle = () => {
     triggerHaptic();
-    
+
     if (!isDropdownOpen && dropdownButtonRef.current) {
       // Measure the button position
       dropdownButtonRef.current.measure((x, y, width, height, pageX, pageY) => {
@@ -436,14 +436,14 @@ export default function StatsScreen() {
         return recentHighlights.length > 0 ? (
           <View className="space-y-4">
             {recentHighlights.map((highlight, i) => (
-                <TouchableOpacity
+              <TouchableOpacity
                 key={highlight.id}
                 className="bg-surfaceCream rounded-xl p-4 my-2"
                 onPress={() => handleHighlightPress(highlight)}
-                  activeOpacity={0.7}
-                >
+                activeOpacity={0.7}
+              >
                 <View className="flex-row items-center">
-                  <View 
+                  <View
                     className="w-10 h-10 rounded-full items-center justify-center mr-4"
                     style={{ backgroundColor: HIGHLIGHT_COLORS[highlight.colorKey] }}
                   >
@@ -460,10 +460,10 @@ export default function StatsScreen() {
                     </View>
                     <Text className="font-din text-description text-sm ml-2">
                       {formatTimestamp(highlight.timestamp)}
-                  </Text>
+                    </Text>
                   </View>
                 </View>
-                </TouchableOpacity>
+              </TouchableOpacity>
             ))}
           </View>
         ) : (
@@ -572,123 +572,124 @@ export default function StatsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
+      <StatusBar translucent backgroundColor="transparent" />
       <TouchableWithoutFeedback onPress={() => setIsDropdownOpen(false)}>
-      <ScrollView className="flex-1 bg-surfaceCream" contentContainerStyle={{ paddingBottom: 40 }}>
-        {/* Header */}
-        <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
-          <Text className="font-feather text-h2 text-textPrimary">Heart Posture</Text>
-        </View>
-
-        {/* Heatmap Card */}
-        <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-          <View className="flex-row justify-between items-center mb-4">
-            <Text className="font-feather text-heading text-textPrimary">Monthly Activity</Text>
-            <TouchableOpacity
-              className="bg-lightYellow px-4 py-1 rounded-full"
-              onPress={handleMonthPress}
-              activeOpacity={0.7}
-            >
-              <Text className="font-feather text-accentGold">{now.format('MMMM YYYY')}</Text>
-            </TouchableOpacity>
+        <ScrollView className="flex-1 bg-surfaceCream" contentContainerStyle={{ paddingBottom: 40 }}>
+          {/* Header */}
+          <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
+            <Text className="font-feather text-h2 text-textPrimary">Heart Posture</Text>
           </View>
 
-          {/* Day headers with proper spacing */}
-          <View className="flex-row justify-between mb-2">
-            {DAYS.map((d) => (
-              <Text key={d} className="text-caption font-din text-description w-8 text-center">
-                {d}
-              </Text>
+          {/* Heatmap Card */}
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+            <View className="flex-row justify-between items-center mb-4">
+              <Text className="font-feather text-heading text-textPrimary">Monthly Activity</Text>
+              <TouchableOpacity
+                className="bg-lightYellow px-4 py-1 rounded-full"
+                onPress={handleMonthPress}
+                activeOpacity={0.7}
+              >
+                <Text className="font-feather text-accentGold">{now.format('MMMM YYYY')}</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Day headers with proper spacing */}
+            <View className="flex-row justify-between mb-2">
+              {DAYS.map((d) => (
+                <Text key={d} className="text-caption font-din text-description w-8 text-center">
+                  {d}
+                </Text>
+              ))}
+            </View>
+
+            {/* Month grid */}
+            {monthGrid.map((week, weekIdx) => (
+              <View key={weekIdx} className="flex-row justify-between mt-2">
+                {week.map((day, dayIdx) => {
+                  if (!day)
+                    return <View key={dayIdx} className="w-8 h-8 rounded-md bg-transparent" />;
+                  const count = [day.reading, day.prayer, day.reflection].filter(Boolean).length;
+                  return (
+                    <TouchableOpacity
+                      key={day.date}
+                      className={`w-8 h-8 rounded-md ${COLORS[count]}`}
+                      activeOpacity={0.8}
+                      onPress={() => {
+                        // Provide light haptic feedback
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+
+                        // In the future, this could show detail for the specific day
+                        console.log('Day pressed:', day.date);
+                      }}
+                    />
+                  );
+                })}
+              </View>
             ))}
-          </View>
 
-          {/* Month grid */}
-          {monthGrid.map((week, weekIdx) => (
-            <View key={weekIdx} className="flex-row justify-between mt-2">
-              {week.map((day, dayIdx) => {
-                if (!day)
-                  return <View key={dayIdx} className="w-8 h-8 rounded-md bg-transparent" />;
-                const count = [day.reading, day.prayer, day.reflection].filter(Boolean).length;
-                return (
-                  <TouchableOpacity
-                    key={day.date}
-                    className={`w-8 h-8 rounded-md ${COLORS[count]}`}
-                    activeOpacity={0.8}
-                    onPress={() => {
-                      // Provide light haptic feedback
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
-
-                      // In the future, this could show detail for the specific day
-                      console.log('Day pressed:', day.date);
-                    }}
-                  />
-                );
-              })}
-            </View>
-          ))}
-
-          <View className="flex-row justify-end mt-4">
-            <View className="flex-row items-center mr-3">
-              <View className="w-3 h-3 rounded-sm bg-pillBorder mr-1" />
-              <Text className="font-din text-description text-xs">0</Text>
-            </View>
-            <View className="flex-row items-center mr-3">
-              <View className="w-3 h-3 rounded-sm bg-accentGold/60 mr-1" />
-              <Text className="font-din text-description text-xs">1</Text>
-            </View>
-            <View className="flex-row items-center mr-3">
-              <View className="w-3 h-3 rounded-sm bg-accentGold/80 mr-1" />
-              <Text className="font-din text-description text-xs">2</Text>
-            </View>
-            <View className="flex-row items-center">
-              <View className="w-3 h-3 rounded-sm bg-accentGold mr-1" />
-              <Text className="font-din text-description text-xs">3</Text>
+            <View className="flex-row justify-end mt-4">
+              <View className="flex-row items-center mr-3">
+                <View className="w-3 h-3 rounded-sm bg-pillBorder mr-1" />
+                <Text className="font-din text-description text-xs">0</Text>
+              </View>
+              <View className="flex-row items-center mr-3">
+                <View className="w-3 h-3 rounded-sm bg-accentGold/60 mr-1" />
+                <Text className="font-din text-description text-xs">1</Text>
+              </View>
+              <View className="flex-row items-center mr-3">
+                <View className="w-3 h-3 rounded-sm bg-accentGold/80 mr-1" />
+                <Text className="font-din text-description text-xs">2</Text>
+              </View>
+              <View className="flex-row items-center">
+                <View className="w-3 h-3 rounded-sm bg-accentGold mr-1" />
+                <Text className="font-din text-description text-xs">3</Text>
+              </View>
             </View>
           </View>
-        </View>
 
-        {/* Activity Summary Card - Moved to bottom */}
-        <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-cardx mt-8">
-          <Text className="font-feather text-heading text-textPrimary mb-4">Activity Summary</Text>
+          {/* Activity Summary Card - Moved to bottom */}
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-cardx mt-8">
+            <Text className="font-feather text-heading text-textPrimary mb-4">Activity Summary</Text>
 
-          <View className="flex-row justify-between">
-            <TouchableOpacity
-              className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1"
-              activeOpacity={0.8}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
-                console.log('Readings summary pressed');
-              }}
-            >
-              <Text className="font-feather text-h2 text-textPrimary">{totalBibleReadings}</Text>
-              <Text className="font-din text-description text-center">Readings</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1"
-              activeOpacity={0.8}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
-                console.log('Prayers summary pressed');
-              }}
-            >
-              <Text className="font-feather text-h2 text-textPrimary">{totalPrayerSessions}</Text>
-              <Text className="font-din text-description text-center">Prayers</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1"
-              activeOpacity={0.8}
-              onPress={() => {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
-                console.log('Reflections summary pressed');
-              }}
-            >
-              <Text className="font-feather text-h2 text-textPrimary">{totalReflections}</Text>
-              <Text className="font-din text-description text-center">Reflections</Text>
-            </TouchableOpacity>
+            <View className="flex-row justify-between">
+              <TouchableOpacity
+                className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1"
+                activeOpacity={0.8}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+                  console.log('Readings summary pressed');
+                }}
+              >
+                <Text className="font-feather text-h2 text-textPrimary">{totalBibleReadings}</Text>
+                <Text className="font-din text-description text-center">Readings</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1"
+                activeOpacity={0.8}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+                  console.log('Prayers summary pressed');
+                }}
+              >
+                <Text className="font-feather text-h2 text-textPrimary">{totalPrayerSessions}</Text>
+                <Text className="font-din text-description text-center">Prayers</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1"
+                activeOpacity={0.8}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+                  console.log('Reflections summary pressed');
+                }}
+              >
+                <Text className="font-feather text-h2 text-textPrimary">{totalReflections}</Text>
+                <Text className="font-din text-description text-center">Reflections</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
 
-        {/* Recent reflections */}
-        <View className="mx-6 mt-8 bg-white rounded-[20px] p-6 shadow-card mb-24">
+          {/* Recent reflections */}
+          <View className="mx-6 mt-8 bg-white rounded-[20px] p-6 shadow-card mb-24">
             <View className="flex-row justify-between items-center mb-4">
               <Text className="font-feather text-heading text-textPrimary">Recent Activity</Text>
 
@@ -702,11 +703,11 @@ export default function StatsScreen() {
                 >
                   <Text className="font-feather text-accentGold mr-2 capitalize">
                     {selectedContentType}
-                        </Text>
-                  <Feather 
-                    name={isDropdownOpen ? "chevron-up" : "chevron-down"} 
-                    size={16} 
-                    color="#F7B500" 
+                  </Text>
+                  <Feather
+                    name={isDropdownOpen ? "chevron-up" : "chevron-down"}
+                    size={16}
+                    color="#F7B500"
                   />
                 </TouchableOpacity>
               </View>
@@ -727,7 +728,7 @@ export default function StatsScreen() {
       >
         <TouchableWithoutFeedback onPress={() => setIsDropdownOpen(false)}>
           <View className="flex-1">
-            <View 
+            <View
               className="absolute bg-white rounded-xl shadow-card border border-border min-w-[140px]"
               style={{
                 top: dropdownPosition.top,
@@ -790,14 +791,14 @@ export default function StatsScreen() {
                   <Text className="font-din text-description">Loading verse...</Text>
                 </View>
               ) : (
-                <View 
+                <View
                   className="p-4 rounded-xl border-2"
                   style={{
-                    backgroundColor: selectedVerse?.type === 'highlight' && selectedVerse.highlight 
-                      ? HIGHLIGHT_COLORS[selectedVerse.highlight.colorKey] 
+                    backgroundColor: selectedVerse?.type === 'highlight' && selectedVerse.highlight
+                      ? HIGHLIGHT_COLORS[selectedVerse.highlight.colorKey]
                       : '#FFF9E6',
-                    borderColor: selectedVerse?.type === 'highlight' && selectedVerse.highlight 
-                      ? HIGHLIGHT_COLORS[selectedVerse.highlight.colorKey] 
+                    borderColor: selectedVerse?.type === 'highlight' && selectedVerse.highlight
+                      ? HIGHLIGHT_COLORS[selectedVerse.highlight.colorKey]
                       : '#FFE4A8'
                   }}
                 >
@@ -812,7 +813,7 @@ export default function StatsScreen() {
             {selectedVerse?.type === 'highlight' && selectedVerse.highlight && (
               <View className="mb-4">
                 <View className="flex-row items-center mb-2">
-                  <View 
+                  <View
                     className="w-4 h-4 rounded-full mr-2"
                     style={{ backgroundColor: HIGHLIGHT_COLORS[selectedVerse.highlight.colorKey] }}
                   />
@@ -837,9 +838,9 @@ export default function StatsScreen() {
                 </View>
                 <Text className="font-din text-description text-sm">
                   {formatTimestamp(selectedVerse.note.timestamp)}
-              </Text>
-            </View>
-          )}
+                </Text>
+              </View>
+            )}
 
             {/* Close Button */}
             <TouchableOpacity

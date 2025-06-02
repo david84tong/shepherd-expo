@@ -1,13 +1,13 @@
 import { useAssets } from 'expo-asset';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { View, Text, TextInput, Keyboard, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, Keyboard, ActivityIndicator, Image } from 'react-native';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
 import PrimaryButton from '../../components/PrimaryButton';
 import Rive from 'rive-react-native';
-import Animated, {
+import {
   useAnimatedStyle,
   withTiming,
   withSpring,
@@ -27,9 +27,8 @@ export default function OnboardingLambNameScreen() {
   const [inputLambName, setInputLambName] = useState('');
   const [error, setError] = useState<string | undefined>();
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+  const [hasRiveError, setRiveError] = useState(false);
   const inputRef = useRef<TextInput>(null);
-
-  // Use the helper hook for screen tracking
 
   // Load Rive assets
   const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
@@ -175,9 +174,9 @@ export default function OnboardingLambNameScreen() {
   };
 
   // Show loading indicator while assets load
-  if (!riveAssets) {
+  if (!riveAssets && IS_IOS) {
     return (
-      <View className="flex-1 items-center justify-center bg-surfaceCream">
+      <View className="flex-1 items-center justify-center bg-[#FFF4D9] px-6">
         <ActivityIndicator size="large" color="#3C584A" />
         <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
       </View>
@@ -193,16 +192,20 @@ export default function OnboardingLambNameScreen() {
         </Text>
       </CustomAnimatedView>
 
-      {/* Rive Animation */}
+      {/* Rive Animation with Fallback */}
       <CustomAnimatedView
         style={lambStyle}
         className="h-[160px] w-full justify-center items-center my-4">
         <Rive
-          url={IS_IOS ? riveAssets[0].uri : undefined}
+          url={IS_IOS ? riveAssets?.[0]?.uri : undefined}
           resourceName={IS_ANDROID ? 'home_lamb' : undefined}
           artboardName="lamb-idle"
           autoplay
           style={{ width: '80%', height: '80%' }}
+          onError={(error) => {
+            console.warn('Rive animation error:', error);
+            // setRiveError(true);
+          }}
         />
       </CustomAnimatedView>
 
@@ -220,11 +223,7 @@ export default function OnboardingLambNameScreen() {
           autoCapitalize="none"
           spellCheck={false}
         />
-        {error && (
-          <Text className="font-din text-sm text-red-500 mt-2 text-center">
-            {error}
-          </Text>
-        )}
+        {error && <Text className="font-din text-sm text-red-500 mt-2 text-center">{error}</Text>}
       </CustomAnimatedView>
 
       {/* Continue Button */}

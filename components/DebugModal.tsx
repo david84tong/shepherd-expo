@@ -2,7 +2,16 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import firestore from '@react-native-firebase/firestore';
 import { useRouter, usePathname } from 'expo-router';
 import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
-import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert, Platform } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  SafeAreaView,
+  ScrollView,
+  Alert,
+  Platform,
+} from 'react-native';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Haptics from 'expo-haptics';
@@ -17,6 +26,7 @@ import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAni
 import { HalfModalType } from '../app/halfModal';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { calculateExpForLevel, calculateXpForNextLevel } from '../utils/levelUtils';
+import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -120,7 +130,7 @@ export function DebugButton() {
     Toast.show({
       type: 'success',
       text1: 'Daily bread completed!',
-      text2: 'You\'ve earned 5 hearts for your lamb.',
+      text2: "You've earned 5 hearts for your lamb.",
       position: 'top',
       visibilityTime: 4000,
     });
@@ -129,7 +139,7 @@ export function DebugButton() {
   const showErrorToast = useCallback(() => {
     Toast.show({
       type: 'error',
-      text1: 'Prayer couldn\'t be saved',
+      text1: "Prayer couldn't be saved",
       text2: 'Please check your connection and try again.',
       position: 'top',
       visibilityTime: 4000,
@@ -140,7 +150,7 @@ export function DebugButton() {
     Toast.show({
       type: 'info',
       text1: 'Streak reminder set',
-      text2: 'We\'ll remind you to read Scripture daily.',
+      text2: "We'll remind you to read Scripture daily.",
       position: 'top',
       visibilityTime: 4000,
     });
@@ -251,7 +261,7 @@ export function DebugButton() {
             userStore.setCompletedReadings([] as any);
 
             // Sync with Firestore to save changes
-            userStore.syncWithFirestore();
+            syncWithFirestore();
 
             Alert.alert('Reset Complete', 'HomeStore data and completed readings have been reset.');
           },
@@ -298,7 +308,7 @@ export function DebugButton() {
               pathStore.setPathInProgress(false);
 
               // Sync changes to Firestore
-              userStore.syncWithFirestore();
+              syncWithFirestore();
 
               Toast.show({
                 type: 'success',
@@ -370,42 +380,38 @@ export function DebugButton() {
 
   // Handler for sign out
   const handleSignOut = useCallback(async () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              setModalVisible(false);
-              await signOut();
-              useUserStore.getState().resetUserStore();
-              router.replace('/(auth)');
-              
-              Toast.show({
-                type: 'success',
-                text1: 'Signed out successfully',
-                text2: 'You have been signed out of your account.',
-                position: 'top',
-                visibilityTime: 3000,
-              });
-            } catch (error) {
-              console.log('Error signing out:', error);
-              Toast.show({
-                type: 'error',
-                text1: 'Sign out failed',
-                text2: 'Please try again.',
-                position: 'top',
-                visibilityTime: 3000,
-              });
-            }
-          },
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            setModalVisible(false);
+            await signOut();
+            useUserStore.getState().resetUserStore();
+            router.replace('/(auth)');
+
+            Toast.show({
+              type: 'success',
+              text1: 'Signed out successfully',
+              text2: 'You have been signed out of your account.',
+              position: 'top',
+              visibilityTime: 3000,
+            });
+          } catch (error) {
+            console.log('Error signing out:', error);
+            Toast.show({
+              type: 'error',
+              text1: 'Sign out failed',
+              text2: 'Please try again.',
+              position: 'top',
+              visibilityTime: 3000,
+            });
+          }
         },
-      ]
-    );
+      },
+    ]);
   }, [signOut, router]);
 
   const navigateTo = (item: DebugScreen) => {
@@ -442,9 +448,7 @@ export function DebugButton() {
             <ScrollView className="p-4">
               {/* Toast Message Section */}
               <View className="mb-4">
-                <Text className="font-feather text-lg text-textPrimary mb-3">
-                  Toast Messages
-                </Text>
+                <Text className="font-feather text-lg text-textPrimary mb-3">Toast Messages</Text>
                 <View className="flex-row flex-wrap gap-2">
                   <TouchableOpacity
                     className="bg-[#E8F3E0] px-3 py-2 rounded-lg border border-darkGreen mb-1"
@@ -539,7 +543,7 @@ export function DebugButton() {
                       setTimeout(() => {
                         router.push({
                           pathname: '/newBibleReader',
-                          params: { bookId: 43, chapter: 3, translation: 'ESV' }
+                          params: { bookId: 43, chapter: 3, translation: 'ESV' },
                         } as any);
                       }, 300);
                     }}>
@@ -583,28 +587,33 @@ export function DebugButton() {
                         onPress={() => {
                           // Set level in UserStore
                           const userStore = useUserStore.getState();
-                          
+
                           // Calculate XP for this level using the level utility function
                           const xpForLevel = calculateExpForLevel(level);
-                          
+
                           // Set XP to be exactly 3 points away from next level
                           const xpForNextLevel = calculateExpForLevel(level + 1);
                           const newXp = xpForNextLevel - 3;
-                          
+
                           // Update both level and XP in UserStore
                           userStore.setLambLevel(level);
                           userStore.setLambXp(newXp);
-                          
+
                           // Force sync to Firestore
-                          userStore.syncWithFirestore();
-                          
+                          syncWithFirestore();
+
                           // Try to refresh the UI state by updating key properties
                           const updatedLamb = userStore.getLamb();
                           console.log(`Debug: Set lamb to level ${level} (${newXp} XP)`);
-                          console.log(`Debug: Level ${level} requires ${xpForLevel} XP, next level needs ${xpForNextLevel} XP`);
+                          console.log(
+                            `Debug: Level ${level} requires ${xpForLevel} XP, next level needs ${xpForNextLevel} XP`
+                          );
                           console.log(`Debug: Updated lamb: ${JSON.stringify(updatedLamb)}`);
-                          
-                          Alert.alert('Level Set', `Lamb level set to ${level} (${newXp} XP)\nJust 3 XP away from level ${level+1}!`);
+
+                          Alert.alert(
+                            'Level Set',
+                            `Lamb level set to ${level} (${newXp} XP)\nJust 3 XP away from level ${level + 1}!`
+                          );
                         }}>
                         <Text className="font-din text-sm text-textPrimary">{`Level ${level} ⭐`}</Text>
                       </TouchableOpacity>
@@ -662,30 +671,34 @@ export function DebugButton() {
                   onPress={() => {
                     // Override the current time to simulate night mode (7 PM)
                     const isCurrentlyNight = new Date().getHours() >= 19;
-                    
+
                     if (isCurrentlyNight) {
                       // Currently night mode, switch to day mode (12 PM)
-                      Date.prototype.getHours = function() { return 12; };
+                      Date.prototype.getHours = function () {
+                        return 12;
+                      };
                     } else {
                       // Currently day mode, switch to night mode (8 PM)
-                      Date.prototype.getHours = function() { return 20; };
+                      Date.prototype.getHours = function () {
+                        return 20;
+                      };
                     }
-                    
+
                     // Show toast instead of alert to avoid presentation conflicts
                     Toast.show({
                       type: 'info',
                       text1: isCurrentlyNight ? 'Day Mode Activated' : 'Night Mode Activated',
-                      text2: isCurrentlyNight ? 'Light background enabled' : 'Dark background enabled',
+                      text2: isCurrentlyNight
+                        ? 'Light background enabled'
+                        : 'Dark background enabled',
                       position: 'top',
                       visibilityTime: 2000,
                     });
-                    
+
                     // Close modal to see the changes
                     setModalVisible(false);
                   }}>
-                  <Text className="font-feather text-base text-white">
-                    Toggle Night Mode
-                  </Text>
+                  <Text className="font-feather text-base text-white">Toggle Night Mode</Text>
                   <Text className="font-din text-sm text-white/80 mt-1">
                     {new Date().getHours() >= 19 ? 'Switch to Day Mode' : 'Switch to Night Mode'}
                   </Text>
@@ -697,7 +710,7 @@ export function DebugButton() {
                   onPress={() => {
                     // Reset the Date.prototype.getHours to original
                     delete (Date.prototype as any).getHours;
-                    
+
                     // Show toast instead of alert
                     Toast.show({
                       type: 'success',
@@ -706,7 +719,7 @@ export function DebugButton() {
                       position: 'top',
                       visibilityTime: 2000,
                     });
-                    
+
                     // Close modal to see the changes
                     setModalVisible(false);
                   }}>
@@ -714,7 +727,8 @@ export function DebugButton() {
                     Reset to System Time
                   </Text>
                   <Text className="font-din text-sm text-[#6A8A94] mt-1">
-                    Current time: {new Date().getHours()}:00 ({new Date().getHours() >= 19 ? 'Night' : 'Day'})
+                    Current time: {new Date().getHours()}:00 (
+                    {new Date().getHours() >= 19 ? 'Night' : 'Day'})
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -739,9 +753,7 @@ export function DebugButton() {
                 <TouchableOpacity
                   className="bg-[#FF6666] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF0000]"
                   onPress={handleDeleteAllData}>
-                  <Text className="font-feather text-base text-white">
-                    Delete All Data
-                  </Text>
+                  <Text className="font-feather text-base text-white">Delete All Data</Text>
                   <Text className="font-din text-sm text-white/80 mt-1">
                     WARNING: Permanently delete all user data and reset app
                   </Text>
@@ -804,9 +816,7 @@ export function DebugButton() {
                   <TouchableOpacity
                     className="bg-red p-4 rounded-xl border-l-4 border-l-[#FF0000]"
                     onPress={handleSignOut}>
-                    <Text className="font-feather text-base text-white text-center">
-                      Sign Out
-                    </Text>
+                    <Text className="font-feather text-base text-white text-center">Sign Out</Text>
                     <Text className="font-din text-sm text-white/80 mt-1 text-center">
                       Sign out of your account
                     </Text>

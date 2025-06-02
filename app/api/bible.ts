@@ -54,16 +54,28 @@ export const fetchChapter = async (
 ): Promise<ChapterResponse | FetchError> => {
   // Construct the URL for the new API
   const url = `${BASE_URL}/books/${bookId}/chapters/${chapter}/${translation}`;
-  console.log(`Fetching: ${url}`);
+  console.log(`🌐 Fetching: ${url}`);
+  console.log(`📱 Platform: React Native, UserAgent: ${navigator?.userAgent || 'unknown'}`);
 
   try {
-    const response = await fetch(url);
+    console.log(`🔄 Starting fetch request...`);
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'ShepherdApp/1.0'
+      },
+    });
+    console.log(`✅ Fetch completed. Status: ${response.status}, StatusText: ${response.statusText}`);
+    console.log(`📄 Response headers:`, response.headers);
 
     if (!response.ok) {
       // Attempt to get error message from API response body if available
       let apiErrorMessage = `Failed to fetch chapter ${bookId}:${chapter} (${translation}). Status: ${response.status}`;
       try {
         const errorBody = await response.json();
+        console.log('❌ ERROR RESPONSE BODY:', JSON.stringify(errorBody, null, 2));
         if (errorBody && errorBody.message) {
           apiErrorMessage = errorBody.message; // Use API's error message
         }
@@ -80,12 +92,16 @@ export const fetchChapter = async (
     }
 
     const rawJson = await response.json();
+    console.log('📋 RAW JSON RESPONSE:');
+    console.log(JSON.stringify(rawJson, null, 2));
+    console.log('📋 END RAW JSON RESPONSE');
 
     let transformedVerses: Verse[] = [];
     let bookName = '';
 
     if (Array.isArray(rawJson)) {
       // Old/array format
+      console.log('🔄 Processing as ARRAY format');
       const rawData: RawApiResponseArray = rawJson;
       if (rawData.length === 0) {
         console.warn(`API returned empty data array for ${url}`);
@@ -93,13 +109,17 @@ export const fetchChapter = async (
       }
       transformedVerses = rawData.map((v) => ({ verse: v.verseId, text: v.verse }));
       bookName = rawData[0].book.name;
+      console.log(`✅ Array format: Found ${transformedVerses.length} verses for ${bookName}`);
     } else if (rawJson && rawJson.verses) {
       // New object format
+      console.log('🔄 Processing as OBJECT format');
       const dataObj = rawJson as ApiChapterObject;
       transformedVerses = dataObj.verses.map((v) => ({ verse: v.verse, text: v.content }));
       bookName = dataObj.book.name;
+      console.log(`✅ Object format: Found ${transformedVerses.length} verses for ${bookName}`);
     } else {
-      console.log(`Invalid data format received for ${url}:`, rawJson);
+      console.log(`❌ Invalid data format received for ${url}:`, rawJson);
+      console.log('❌ Expected either an array or an object with "verses" property');
       return { error: true, message: 'Invalid data format received from API.' };
     }
 
@@ -112,7 +132,12 @@ export const fetchChapter = async (
 
     return chapterResponse;
   } catch (err) {
-    console.log(`Network or parsing error fetching ${url}:`, err);
+    console.log(`🚨 NETWORK ERROR fetching ${url}:`);
+    console.log(`❌ Error type: ${typeof err}`);
+    console.log(`❌ Error name: ${err instanceof Error ? err.name : 'Unknown'}`);
+    console.log(`❌ Error message: ${err instanceof Error ? err.message : String(err)}`);
+    console.log(`❌ Error stack: ${err instanceof Error ? err.stack : 'No stack'}`);
+    
     const message = err instanceof Error ? err.message : 'An unknown error occurred.';
     return { error: true, message: `Network or JSON parsing error: ${message}` };
   }

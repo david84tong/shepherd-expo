@@ -73,7 +73,6 @@ const PricingScreen = () => {
   const [trialEnabled, setTrialEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [animationReady, setAnimationReady] = useState(false); // Ensures animations run after mount
-  const [showCloseButton, setShowCloseButton] = useState(false); // New state for X mark visibility
 
   const animateScreenFromBottom = params.animateFromBottom === 'true';
   const fromLoading = params.fromLoading === 'true';
@@ -101,21 +100,7 @@ const PricingScreen = () => {
     setDailyFirstLoad();
   }, []);
 
-  // Show close button after delay on iOS, immediately on Android
-  useEffect(() => {
-    if (Platform.OS === 'android') {
-      // Show immediately on Android
-     const closeButtonTimer = setTimeout(() => {
-        setShowCloseButton(true);
-      }, 2000);
 
-      return () => clearTimeout(closeButtonTimer);
-    } else {
-      // setShowCloseButton(true);
-      // Show after delay on iOS
-  
-    }
-  }, []);
 
   // Screen container just fades in quickly
   const screenOpacity = useSharedValue(0);
@@ -173,17 +158,17 @@ const PricingScreen = () => {
       } else {
         router.replace('/(tabs)');
       }
-  } else if (isSignedIn()) {
-    // If user is signed in, go to tabs
-    if (router.canGoBack()) {
-      router.back();
+    } else if (isSignedIn()) {
+      // If user is signed in, go to tabs
+      if (router.canGoBack()) {
+        router.back();
+      } else {
+        router.replace('/(tabs)');
+      }
     } else {
-      router.replace('/(tabs)');
+      // If user is not signed in, send them to onboarding screen 11
+      router.replace('/onboarding/11');
     }
-  } else {
-    // If user is not signed in, send them to onboarding screen 11
-    router.replace('/onboarding/11');
-  }
   };
 
 
@@ -228,7 +213,7 @@ const PricingScreen = () => {
         {/* Header */}
         <AnimatedItem index={0} animateItemFromBottom={animateScreenFromBottom}>
           <View className="flex-row items-center justify-between px-5 py-3 mb-3">
-            {showCloseButton && (
+            {__DEV__ && (
               <Animated.View entering={FadeIn.duration(600)}>
                 <TouchableOpacity onPress={handleBack} className="p-2">
                   <Feather name="x" size={28} color="#B89B4C" />
@@ -292,64 +277,64 @@ const PricingScreen = () => {
               </Text>
             </View>
           </AnimatedItem>
-          
+
           {/* How Trial Works Section */}
           <AnimatedItem index={2.5} animateItemFromBottom={animateScreenFromBottom}>
-          <View className="mb-10">
-            <Text className="font-feather text-h2 text-textPrimary mb-6">How the trial works</Text>
-            
-            <View className="bg-white rounded-2xl shadow-card p-5">
-              {/* Today */}
-              <View className="flex-row items-start mb-6">
-                <View className="w-10 h-10 bg-lightGreen rounded-full items-center justify-center mr-4 shadow-sm">
-                  <Feather name="unlock" size={20} color="#24CA17" />
+            <View className="mb-10">
+              <Text className="font-feather text-h2 text-textPrimary mb-6">How the trial works</Text>
+
+              <View className="bg-white rounded-2xl shadow-card p-5">
+                {/* Today */}
+                <View className="flex-row items-start mb-6">
+                  <View className="w-10 h-10 bg-lightGreen rounded-full items-center justify-center mr-4 shadow-sm">
+                    <Feather name="unlock" size={20} color="#24CA17" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-feather text-lg text-textPrimary mb-0.5">Today</Text>
+                    <Text className="font-din text-body text-description leading-snug">Unlock premium access to all content for free. No payment needed to start.</Text>
+                  </View>
                 </View>
-                <View className="flex-1">
-                  <Text className="font-feather text-lg text-textPrimary mb-0.5">Today</Text>
-                  <Text className="font-din text-body text-description leading-snug">Unlock premium access to all content for free. No payment needed to start.</Text>
+
+                {/* Day 5 */}
+                <View className="flex-row items-start mb-6">
+                  <View className="w-10 h-10 bg-lightGreen rounded-full items-center justify-center mr-4 shadow-sm">
+                    <Feather name="bell" size={20} color="#24CA17" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-feather text-lg text-textPrimary mb-0.5">Day 5</Text>
+                    <Text className="font-din text-body text-description leading-snug">We&apos;ll send a reminder before your free trial ends.</Text>
+                  </View>
                 </View>
-              </View>
-              
-              {/* Day 5 */}
-              <View className="flex-row items-start mb-6">
-                <View className="w-10 h-10 bg-lightGreen rounded-full items-center justify-center mr-4 shadow-sm">
-                  <Feather name="bell" size={20} color="#24CA17" />
-                </View>
-                <View className="flex-1">
-                  <Text className="font-feather text-lg text-textPrimary mb-0.5">Day 5</Text>
-                  <Text className="font-din text-body text-description leading-snug">We&apos;ll send a reminder before your free trial ends.</Text>
-                </View>
-              </View>
-              
-              {/* Day 7 */}
-              <View className="flex-row items-start">
-                <View className="w-10 h-10 bg-lightGreen rounded-full items-center justify-center mr-4 shadow-sm">
-                  <Feather name="calendar" size={20} color="#24CA17" />
-                </View>
-                <View className="flex-1">
-                  <Text className="font-feather text-lg text-textPrimary mb-0.5">Day 7</Text>
-                  <Text className="font-din text-body text-description leading-snug">Your subscription begins. Cancel anytime before if you change your mind.</Text>
+
+                {/* Day 7 */}
+                <View className="flex-row items-start">
+                  <View className="w-10 h-10 bg-lightGreen rounded-full items-center justify-center mr-4 shadow-sm">
+                    <Feather name="calendar" size={20} color="#24CA17" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-feather text-lg text-textPrimary mb-0.5">Day 7</Text>
+                    <Text className="font-din text-body text-description leading-snug">Your subscription begins. Cancel anytime before if you change your mind.</Text>
+                  </View>
                 </View>
               </View>
             </View>
-          </View>
           </AnimatedItem>
 
-           
-           {/* Unlock Trial Toggle */}
-           <AnimatedItem index={2.8} animateItemFromBottom={animateScreenFromBottom}>
-             <View className="bg-white rounded-2xl shadow-card p-5 mb-8 flex-row justify-between items-center">
-               <Text className="font-feather text-lg text-textPrimary">Unlock 7-day trial & reminder</Text>
-               <Switch
-                 trackColor={{ false: '#E9E2C7', true: '#A8F093' }}
-                 thumbColor={trialEnabled ? '#24CA17' : '#FFF4D9'}
-                 ios_backgroundColor="#E9E2C7"
-                 onValueChange={toggleSwitch}
-                 value={trialEnabled}
-                 style={{ transform: [{ scaleX: 1.1 }, { scaleY: 1.1 }] }}
-               />
-             </View>
-           </AnimatedItem>
+
+          {/* Unlock Trial Toggle */}
+          <AnimatedItem index={2.8} animateItemFromBottom={animateScreenFromBottom}>
+            <View className="bg-white rounded-2xl shadow-card p-5 mb-8 flex-row justify-between items-center">
+              <Text className="font-feather text-lg text-textPrimary">Unlock 7-day trial & reminder</Text>
+              <Switch
+                trackColor={{ false: '#E9E2C7', true: '#A8F093' }}
+                thumbColor={trialEnabled ? '#24CA17' : '#FFF4D9'}
+                ios_backgroundColor="#E9E2C7"
+                onValueChange={toggleSwitch}
+                value={trialEnabled}
+                style={{ transform: [{ scaleX: 1.1 }, { scaleY: 1.1 }] }}
+              />
+            </View>
+          </AnimatedItem>
           <AnimatedItem index={3} animateItemFromBottom={animateScreenFromBottom}>
             <View className="bg-white rounded-2xl shadow-card mb-8 overflow-hidden">
               <View className="flex-row">
