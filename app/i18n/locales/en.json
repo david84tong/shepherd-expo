@@ -238,6 +238,16 @@
     "bibleTranslation": "Bible Translation",
     "language": "Language",
     "dailyReadingTime": "Daily Reading Time",
+    "readingTimeOptions": {
+      "1-5": "1-5 mins (1 chapter)",
+      "6-10": "6-10 mins (3-4 chapters)",
+      "11-15": "11-15 mins (6-8 chapters)",
+      "15-25": "11-15 mins (6-8 chapters)",
+      "default": "5-10 mins",
+      "short": "1-5 mins (1 chapter)",
+      "medium": "6-10 mins (3-4 chapters)",
+      "long": "15-25 mins (6-8 chapters)"
+    },
     "notificationTime": "Notification Time",
     "notificationsEnabled": "Notifications enabled",
     "notificationsDisabled": "Notifications disabled",
@@ -474,6 +484,8 @@
     "goBackAccessibility": "Go back to previous chapter",
     "swipeGuidance": "← Swipe left for annotations • Swipe right for chat →",
     "finishReading": "Finish Reading 🎉",
+    "tapForNextVerse": "Tap for next verse →",
+    "tapToShowFullVerse": "Tap to show full verse",
     "menuActions": {
       "copy": "Copy",
       "explain": "Explain",
@@ -517,7 +529,9 @@
     "characters": "characters",
     "whatsOnMind": "What's on your mind today?",
     "whatStandsOut": "What stands out to you in",
-    "howDoesSpeak": "How does this passage speak to your life today?"
+    "howDoesSpeak": "How does this passage speak to your life today?",
+    "thisPassage": "this passage",
+    "defaultReflection": "Reflected on my spiritual journey today."
   },
   "prayer": {
     "myPrayers": "My Prayers",

@@ -169,6 +169,16 @@
     "bibleTranslation": "Bibelübersetzung",
     "language": "Sprache",
     "dailyReadingTime": "Tägliche Lesezeit",
+    "readingTimeOptions": {
+      "1-5": "1-5 Min (1 Kapitel)",
+      "6-10": "6-10 Min (3-4 Kapitel)",
+      "11-15": "11-15 Min (6-8 Kapitel)",
+      "15-25": "11-15 Min (6-8 Kapitel)",
+      "default": "5-10 Min",
+      "short": "1-5 Min (1 Kapitel)",
+      "medium": "6-10 Min (3-4 Kapitel)",
+      "long": "15-25 Min (6-8 Kapitel)"
+    },
     "notificationTime": "Benachrichtigungszeit",
     "notificationsEnabled": "Benachrichtigungen aktiviert",
     "notificationsDisabled": "Benachrichtigungen deaktiviert",
@@ -347,15 +357,17 @@
     "compact": "Kompakt",
     "regular": "Normal",
     "relaxed": "Entspannt",
-    "lastChapterMessage": "Sie haben Offenbarung 22, das letzte Kapitel der Bibel, erreicht.",
+    "lastChapterMessage": "Du hast Offenbarung 22 erreicht, das letzte Kapitel der Bibel.",
     "goBackAccessibility": "Zurück zum vorherigen Kapitel",
-    "swipeGuidance": "← Links wischen für Anmerkungen • Rechts wischen für Chat →",
-    "finishReading": "Lesen Beenden 🎉",
+    "swipeGuidance": "← Nach links wischen für Anmerkungen • Nach rechts wischen für Chat →",
+    "finishReading": "Lesen beenden 🎉",
+    "tapForNextVerse": "Tippen für nächsten Vers →",
+    "tapToShowFullVerse": "Tippen um vollständigen Vers zu zeigen",
     "menuActions": {
       "copy": "Kopieren",
       "explain": "Erklären",
-      "highlight": "Markieren",
-      "addNote": "Notiz Hinzufügen"
+      "highlight": "Hervorheben",
+      "addNote": "Notiz hinzufügen"
     }
   },
   "bookChapterSelector": {
@@ -394,6 +406,8 @@
     "characters": "Zeichen",
     "whatsOnMind": "Was beschäftigt dich heute?",
     "whatStandsOut": "Was fällt dir auf in",
-    "howDoesSpeak": "Wie spricht diese Passage zu deinem Leben heute?"
+    "howDoesSpeak": "Wie spricht diese Passage zu deinem Leben heute?",
+    "thisPassage": "dieser Passage",
+    "defaultReflection": "Ich habe heute über meine spirituelle Reise nachgedacht."
   }
 } 

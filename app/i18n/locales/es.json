@@ -248,6 +248,16 @@
     "bibleTranslation": "Traducción Bíblica",
     "language": "Idioma",
     "dailyReadingTime": "Tiempo de Lectura Diaria",
+    "readingTimeOptions": {
+      "1-5": "1-5 min (1 capítulo)",
+      "6-10": "6-10 min (3-4 capítulos)",
+      "11-15": "11-15 min (6-8 capítulos)",
+      "15-25": "11-15 min (6-8 capítulos)",
+      "default": "5-10 min",
+      "short": "1-5 min (1 capítulo)",
+      "medium": "6-10 min (3-4 capítulos)",
+      "long": "15-25 min (6-8 capítulos)"
+    },
     "notificationTime": "Hora de Notificación",
     "notificationsEnabled": "Notificaciones habilitadas",
     "notificationsDisabled": "Notificaciones deshabilitadas",
@@ -412,11 +422,13 @@
     "goBackAccessibility": "Volver al capítulo anterior",
     "swipeGuidance": "← Desliza izquierda para anotaciones • Desliza derecha para chat →",
     "finishReading": "Terminar Lectura 🎉",
+    "tapForNextVerse": "Toca para el siguiente versículo →",
+    "tapToShowFullVerse": "Toca para mostrar el versículo completo",
     "menuActions": {
       "copy": "Copiar",
       "explain": "Explicar",
       "highlight": "Resaltar",
-      "addNote": "Agregar Nota"
+      "addNote": "Añadir Nota"
     }
   },
   "bookChapterSelector": {
@@ -455,6 +467,8 @@
     "characters": "caracteres",
     "whatsOnMind": "¿Qué tienes en mente hoy?",
     "whatStandsOut": "¿Qué te llama la atención en",
-    "howDoesSpeak": "¿Cómo te habla este pasaje en tu vida hoy?"
+    "howDoesSpeak": "¿Cómo te habla este pasaje en tu vida hoy?",
+    "thisPassage": "este pasaje",
+    "defaultReflection": "Reflexioné sobre mi viaje espiritual hoy."
   }
 } 

@@ -169,6 +169,16 @@
     "bibleTranslation": "Bijbelvertaling",
     "language": "Taal",
     "dailyReadingTime": "Dagelijkse Leestijd",
+    "readingTimeOptions": {
+      "1-5": "1-5 min (1 hoofdstuk)",
+      "6-10": "6-10 min (3-4 hoofdstukken)",
+      "11-15": "11-15 min (6-8 hoofdstukken)",
+      "15-25": "11-15 min (6-8 hoofdstukken)",
+      "default": "5-10 min",
+      "short": "1-5 min (1 hoofdstuk)",
+      "medium": "6-10 min (3-4 hoofdstukken)",
+      "long": "15-25 min (6-8 hoofdstukken)"
+    },
     "notificationTime": "Notificatietijd",
     "notificationsEnabled": "Notificaties ingeschakeld",
     "notificationsDisabled": "Notificaties uitgeschakeld",
@@ -348,14 +358,16 @@
     "regular": "Normaal",
     "relaxed": "Ontspannen",
     "lastChapterMessage": "Je hebt Openbaring 22 bereikt, het laatste hoofdstuk van de Bijbel.",
-    "goBackAccessibility": "Terug naar vorig hoofdstuk",
-    "swipeGuidance": "← Veeg links voor aantekeningen • Veeg rechts voor chat →",
-    "finishReading": "Lezen Voltooien 🎉",
+    "goBackAccessibility": "Ga terug naar vorig hoofdstuk",
+    "swipeGuidance": "← Veeg links voor annotaties • Veeg rechts voor chat →",
+    "finishReading": "Lezen voltooien 🎉",
+    "tapForNextVerse": "Tik voor volgende vers →",
+    "tapToShowFullVerse": "Tik om volledig vers te tonen",
     "menuActions": {
       "copy": "Kopiëren",
       "explain": "Uitleggen",
       "highlight": "Markeren",
-      "addNote": "Notitie Toevoegen"
+      "addNote": "Notitie toevoegen"
     }
   },
   "bookChapterSelector": {
@@ -389,11 +401,13 @@
   "journal": {
     "reflection": "Reflectie",
     "scriptureReading": "Schriftlezing",
-    "saveThought": "Gedachte Opslaan",
+    "saveThought": "Gedachte opslaan",
     "pleaseWriteMinimum": "Schrijf alsjeblieft minimaal",
-    "characters": "karakters",
+    "characters": "tekens",
     "whatsOnMind": "Wat houdt je vandaag bezig?",
     "whatStandsOut": "Wat valt je op in",
-    "howDoesSpeak": "Hoe spreekt deze passage tot je leven vandaag?"
+    "howDoesSpeak": "Hoe spreekt deze passage tot je leven vandaag?",
+    "thisPassage": "deze passage",
+    "defaultReflection": "Ik heb vandaag gereflecteerd op mijn spirituele reis."
   }
 } 

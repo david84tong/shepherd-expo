@@ -55,10 +55,10 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   };
   
   return (
-    <View className={`mt-6 h-[80px] w-full ${style || ''}`}>
+    <View className={`mt-6 min-h-[80px] w-full ${style || ''}`}>
       <Pressable
         className={`
-          flex-row items-center h-full w-full rounded-card border-[3px] ${borderColor} px-4
+          flex-row items-center min-h-[80px] w-full rounded-card border-[3px] ${borderColor} px-4 py-3
           ${bgColor} transform ${opacityClass}
           ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}
         `}
@@ -69,9 +69,9 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
         onPressOut={() => setIsPressed(false)}
       >
         <Image source={icon} className="w-[48px] h-[48px] mr-2 -ml-2" resizeMode="contain" />
-        <View className="flex-1">
-          <Text className="font-feather text-textPrimary text-heading">{title}</Text>
-          <Text className="font-din text-textPrimary/70 text-body">{subtitle}</Text>
+        <View className="flex-1 justify-center py-1">
+          <Text className="font-feather text-textPrimary text-body leading-tight mb-1" numberOfLines={2}>{title}</Text>
+          <Text className="font-din text-textPrimary/70 text-smallCaption leading-tight">{subtitle}</Text>
         </View>
         <View className="rounded-full px-2 py-0.5 flex-row items-center">
           {completed ? (

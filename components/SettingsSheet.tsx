@@ -848,16 +848,16 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   const getReadingTimeDisplay = useCallback(() => {
     switch (frequencyGoal) {
       case '1-5':
-        return '1-5 mins (1 chapter)';
+        return t('settings.readingTimeOptions.1-5');
       case '6-10':
-        return '6-10 mins (3-4 chapters)';
+        return t('settings.readingTimeOptions.6-10');
       case '15-25':
       case '11-15': // Handle both possible values
-        return '11-15 mins (6-8 chapters)';
+        return t('settings.readingTimeOptions.11-15');
       default:
-        return '5-10 mins';
+        return t('settings.readingTimeOptions.default');
     }
-  }, [frequencyGoal]);
+  }, [frequencyGoal, t]);
 
   // Handle navigation to reading time selection
   const handleEditReadingTime = useCallback(() => {

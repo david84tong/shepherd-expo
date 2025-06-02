@@ -168,7 +168,17 @@
     "bibleTranslation": "Tradução Bíblica",
     "language": "Idioma",
     "dailyReadingTime": "Tempo de Leitura Diária",
-    "notificationTime": "Hora da Notificação",
+    "readingTimeOptions": {
+      "1-5": "1-5 min (1 capítulo)",
+      "6-10": "6-10 min (3-4 capítulos)",
+      "11-15": "11-15 min (6-8 capítulos)",
+      "15-25": "11-15 min (6-8 capítulos)",
+      "default": "5-10 min",
+      "short": "1-5 min (1 capítulo)",
+      "medium": "6-10 min (3-4 capítulos)",
+      "long": "15-25 min (6-8 capítulos)"
+    },
+    "notificationTime": "Hora de Notificação",
     "notificationsEnabled": "Notificações habilitadas",
     "notificationsDisabled": "Notificações desabilitadas",
     "donePickingTime": "Concluído",
@@ -339,7 +349,7 @@
   },
   "bibleReader": {
     "loading": "Carregando...",
-    "cardView": "Vista de Cartão",
+    "cardView": "Visualização de Cartão",
     "fontSize": "Tamanho da Fonte",
     "lineSpacing": "Espaçamento de Linha",
     "theme": "Tema",
@@ -350,6 +360,8 @@
     "goBackAccessibility": "Voltar ao capítulo anterior",
     "swipeGuidance": "← Deslize à esquerda para anotações • Deslize à direita para chat →",
     "finishReading": "Terminar Leitura 🎉",
+    "tapForNextVerse": "Toque para o próximo versículo →",
+    "tapToShowFullVerse": "Toque para mostrar o versículo completo",
     "menuActions": {
       "copy": "Copiar",
       "explain": "Explicar",
@@ -389,10 +401,12 @@
     "reflection": "Reflexão",
     "scriptureReading": "Leitura das Escrituras",
     "saveThought": "Salvar Pensamento",
-    "pleaseWriteMinimum": "Por favor, escreva pelo menos",
+    "pleaseWriteMinimum": "Por favor escreva pelo menos",
     "characters": "caracteres",
     "whatsOnMind": "O que está em sua mente hoje?",
     "whatStandsOut": "O que se destaca para você em",
-    "howDoesSpeak": "Como esta passagem fala à sua vida hoje?"
+    "howDoesSpeak": "Como esta passagem fala à sua vida hoje?",
+    "thisPassage": "esta passagem",
+    "defaultReflection": "Refleti sobre minha jornada espiritual hoje."
   }
 } 

@@ -419,6 +419,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
 
+  // Add ref to track current loading request to prevent race conditions
+  const currentLoadingRequest = useRef<string | null>(null);
+
   const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
   const [lineHeightPreset, setLineHeightPreset] = useState<LineHeightPreset>('REGULAR');
   const [currentTheme, setCurrentTheme] = useState<ThemeType>('light');
@@ -503,6 +506,21 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Helper function to load a chapter
   const loadChapter = useCallback(
     async (bookId: number, chapter: number) => {
+      const requestId = `${bookId}:${chapter}`;
+      
+      // Prevent multiple simultaneous API calls for the same chapter
+      if (loading && currentLoadingRequest.current === requestId) {
+        console.log('📖 [NewBibleReader] Already loading this chapter, skipping duplicate call');
+        return false;
+      }
+
+      // Cancel any previous request
+      if (currentLoadingRequest.current && currentLoadingRequest.current !== requestId) {
+        console.log(`📖 [NewBibleReader] Canceling previous request: ${currentLoadingRequest.current}`);
+      }
+
+      currentLoadingRequest.current = requestId;
+      console.log(`📖 [NewBibleReader] Loading chapter ${requestId}`);
       setLoading(true);
       setCurrentIndex(0); // Reset to first verse when loading a new chapter
       setIsTypingComplete(false);
@@ -511,22 +529,33 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
       try {
         const res = await fetchChapter(translation, bookId, chapter);
+        
+        // Check if this request is still current
+        if (currentLoadingRequest.current !== requestId) {
+          console.log(`📖 [NewBibleReader] Request ${requestId} was superseded, ignoring result`);
+          return false;
+        }
+
         if ('error' in res) {
-          console.error(res.message);
+          console.error('📖 [NewBibleReader] API Error:', res.message);
           setLoading(false);
+          currentLoadingRequest.current = null;
           return false;
         } else {
+          console.log(`📖 [NewBibleReader] Successfully loaded ${res.book} ${res.chapter}`);
           setChapterData(res);
           setLoading(false);
+          currentLoadingRequest.current = null;
           return true;
         }
       } catch (error) {
-        console.error('Error loading chapter:', error);
+        console.error('📖 [NewBibleReader] Network Error:', error);
         setLoading(false);
+        currentLoadingRequest.current = null;
         return false;
       }
     },
-    [translation, progressValue]
+    [translation, progressValue, loading]
   );
 
   // Function to navigate to the next chapter
@@ -562,7 +591,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       // Go to next chapter in current book
       loadChapter(bookId, chapter + 1);
     }
-  }, [bookId, chapter, chapterData, loadChapter, t]);
+  }, [bookId, chapter, chapterData, t]); // Removed loadChapter from dependencies
 
   // Function to navigate back to the previous chapter
   const navigateToPreviousChapter = useCallback(() => {
@@ -585,7 +614,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         }, 300); // Small delay to ensure chapter data is loaded
       }
     });
-  }, [previousChapterInfo, loadChapter, chapterData]);
+  }, [previousChapterInfo, chapterData]); // Removed loadChapter from dependencies
 
   useEffect(() => {
     // Reset back button state when chapter props change directly
@@ -594,7 +623,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
     // Initial chapter load
     loadChapter(bookId, chapter);
-  }, [bookId, chapter, loadChapter]);
+  }, [bookId, chapter]); // Removed loadChapter from dependencies to prevent infinite loop
 
   useEffect(() => {
     if (chapterData?.verses?.length) {
@@ -894,21 +923,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Add this useEffect to sync chapter changes
   useEffect(() => {
-    if (bookId && chapter) {
+    if (bookId && chapter && !loading && chapterData) {
       // This ensures the UI state in the selector modal stays in sync
-      const updateUIState = async () => {
-        // Allow the chapter data to load first
-        if (!loading && chapterData) {
-          console.log(
-            `📚 [NewBibleReader] Syncing UI state for book ${bookId}, chapter ${chapter}`
-          );
-          setSavedReading(chapterData.book, bookId, chapter);
-        }
-      };
-
-      updateUIState();
+      console.log(
+        `📚 [NewBibleReader] Syncing UI state for book ${bookId}, chapter ${chapter}`
+      );
+      setSavedReading(chapterData.book, bookId, chapter);
     }
-  }, [bookId, chapter, chapterData, loading, setSavedReading]);
+  }, [bookId, chapter, chapterData?.book, loading]); // Optimized dependencies to prevent excessive calls
 
   // Add new state for chat view
   const [showChatView, setShowChatView] = useState(false);
@@ -1849,7 +1871,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                           fontSize: 16,
                           opacity: 0.7,
                         }}>
-                        {isTypingComplete ? 'Tap for next verse →' : 'Tap to show full verse'}
+                        {isTypingComplete ? t('bibleReader.tapForNextVerse') : t('bibleReader.tapToShowFullVerse')}
                       </Text>
                     )}
                     {showSwipeGuidance && (
@@ -1860,6 +1882,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                           fontSize: 14,
                           opacity: 0.6,
                           marginTop: 4,
+                          textAlign: 'center',
                         }}>
                         {t('bibleReader.swipeGuidance')}
                       </Text>

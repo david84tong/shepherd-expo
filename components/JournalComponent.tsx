@@ -1,7 +1,7 @@
 import firestore from '@react-native-firebase/firestore';
 import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -98,11 +98,11 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   const isSmallDevice = insets.top < 25 || SCREEN_HEIGHT < 700; // Detect small/non-notch devices like iPhone SE
 
   // Get appropriate placeholder text based on whether this is verse reflection
-  const getPlaceholderText = () => {
+  const getPlaceholderText = useCallback(() => {
     if (tappedReflectAboutVerse && currentPath) {
       console.log('currentPath =', currentPath.bookId);
       // Get book name from book ID
-      const bookName = currentPath.bookId ? getBookNameFromId(currentPath.bookId) : 'this passage';
+      const bookName = currentPath.bookId ? getBookNameFromId(currentPath.bookId) : t('journal.thisPassage');
       const chapterText = currentPath.startChapter
         ? `${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}`
         : '';
@@ -113,7 +113,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       return `${t('journal.whatStandsOut')} ${reference}? ${t('journal.howDoesSpeak')}`;
     }
     return t('journal.whatsOnMind');
-  };
+  }, [tappedReflectAboutVerse, currentPath, t]);
 
   // Keyboard event listeners with height information
   useEffect(() => {
@@ -271,20 +271,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     };
   }, [bottomContentOpacity, bottomContentAnimY, keyboardVisible, keyboardHeight]);
 
-  if (!visible) return null;
-
-  // Show loading indicator if assets aren't loaded yet
-  if (!riveAssets) {
-    return (
-      <View
-        className="absolute flex w-full h-full justify-center items-center"
-        style={{ backgroundColor: 'rgba(255, 255, 255, 0.7)' }}>
-        <ActivityIndicator size="large" color="#3C584A" />
-      </View>
-    );
-  }
-
-  const handleSave = () => {
+  const handleSave = useCallback(() => {
     console.log('handleSave called');
     // Don't save if not enough characters
     if (reflectionContent.length < MIN_CHARS_REQUIRED) return;
@@ -313,7 +300,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         content:
           tappedReflectAboutVerse && currentPath && currentPath.bookId
             ? `[${getBookNameFromId(currentPath.bookId)} ${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}] ${reflectionContent.trim()}`
-            : reflectionContent.trim() || 'Reflected on my spiritual journey today.',
+            : reflectionContent.trim() || t('journal.defaultReflection'),
       });
 
       // Update last reflection date
@@ -332,7 +319,31 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
 
     // Navigate to success screen
     router.push('/success');
-  };
+  }, [reflectionContent, currentPath, tappedReflectAboutVerse, readingCompleted, prayerCompleted, sawDailyBonus, setPathInProgress, setReflectionCompleted, addCompletedReflection, setLastReflectionDate, setSuccessType, t]);
+
+  const handleClose = useCallback(() => {
+    setPathInProgress(false);
+    analytics.logEvent('Journal_Tapped_Cancel', {
+      prompt: currentPath?.reflection,
+    });
+    useHomeStore.getState().setTappedReflectAboutVerse(false);
+    console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
+    onClose();
+  }, [currentPath, setPathInProgress, onClose]);
+
+  if (!visible) return null;
+
+  // Show loading indicator if assets aren't loaded yet
+  if (!riveAssets) {
+    return (
+      <View
+        className="absolute flex w-full h-full justify-center items-center"
+        style={{ backgroundColor: 'rgba(255, 255, 255, 0.7)' }}>
+        <ActivityIndicator size="large" color="#3C584A" />
+        <Text className="font-din text-textPrimary mt-4">{t('common.loading')}</Text>
+      </View>
+    );
+  }
 
   return (
     <Animated.View
@@ -341,25 +352,12 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       pointerEvents="box-none">
       {/* Header Row: Back + (Save on small devices) */}
       <View className="flex-row items-center justify-between px-4 mt-0">
-        <BackButton
-          onPress={() => {
-            setPathInProgress(false);
-            analytics.logEvent('Journal_Tapped_Cancel', {
-              prompt: currentPath?.reflection,
-            });
-            useHomeStore.getState().setTappedReflectAboutVerse(false);
-            console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
-            onClose();
-          }}
-        />
+        <BackButton onPress={handleClose} />
         {isSmallDevice && (
           <View style={{ zIndex: 30, marginLeft: 64, marginTop: 24 }}>
             <PrimaryButton
               title={t('journal.saveThought')}
-              onPress={() => {
-                console.log('Small device Save button pressed');
-                handleSave();
-              }}
+              onPress={handleSave}
               disabled={!isButtonEnabled}
               style="w-36"
             />
@@ -399,7 +397,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
           />
 
           {/* Character count bubble */}
-          <View className="absolute -top-3 -right-2 bg-white rounded-full py-1 px-3  border border-[#FFE4A8]">
+          <View className="absolute -top-3 -right-2 bg-white rounded-full py-1 px-3 border border-[#FFE4A8]">
             <Text className="font-feather text-sm text-textPrimary">{charCount}</Text>
           </View>
         </View>
@@ -407,7 +405,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         {/* Character count instruction (only show when under minimum) */}
         {charCount < MIN_CHARS_REQUIRED && (
           <Text className="font-din text-sm text-description mt-2 text-right self-end">
-            {t('journal.pleaseWriteMinimum')} {MIN_CHARS_REQUIRED} {t('journal.characters')}
+            {`${t('journal.pleaseWriteMinimum')} ${MIN_CHARS_REQUIRED} ${t('journal.characters')}`}
           </Text>
         )}
       </Animated.View>
