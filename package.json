@@ -48,6 +48,7 @@
     "expo-dev-client": "~5.0.20",
     "expo-device": "~7.0.3",
     "expo-font": "~13.0.4",
+    "expo-gl": "~15.0.5",
     "expo-haptics": "~14.0.1",
     "expo-image": "~2.0.7",
     "expo-linear-gradient": "~14.0.2",
@@ -60,6 +61,7 @@
     "expo-status-bar": "~2.0.1",
     "expo-store-review": "~8.0.1",
     "expo-system-ui": "~4.0.9",
+    "expo-three": "^8.0.0",
     "expo-web-browser": "~14.0.2",
     "firebase": "^10.5.2",
     "lodash": "^4.17.21",
@@ -80,6 +82,7 @@
     "react-native-toast-message": "^2.3.0",
     "react-native-web": "~0.19.10",
     "rive-react-native": "^9.2.1",
+    "three": "^0.176.0",
     "zustand": "4.5.5"
   },
   "devDependencies": {
