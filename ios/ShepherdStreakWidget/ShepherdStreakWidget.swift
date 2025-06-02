@@ -63,6 +63,26 @@ enum StreakState {
         }
     }
     
+    var backgroundImageName: String {
+        switch self {
+        case .noStreak:
+            return "streak_0"  // Image for 0 day streak
+        case .active(let days):
+            // Cap the streak display at 8 days
+            let cappedDays = min(days, 8)
+            return "streak_\(cappedDays)"
+        case .atRisk, .broken:
+            // For broken streaks, use the inactivity images (1-3 days)
+            let daysMissed: Int
+            if case .broken(let missed) = self {
+                daysMissed = min(missed, 3)  // Cap at 3 days of inactivity
+            } else {
+                daysMissed = 1  // For atRisk, show 1 day inactive
+            }
+            return "inactive_\(daysMissed)"
+        }
+    }
+    
     var iconName: String {
         switch self {
         case .noStreak:
@@ -141,29 +161,30 @@ struct ShepherdStreakWidgetEntryView : View {
     var body: some View {
         let state = entry.streakData.streakState
         
+        // Get the recommended widget size for the current family
+        let widgetSize = WidgetFamily.systemSmall.getRecommendedSize()
+        
         ZStack {
-            // Background for iOS 17+
-            if #available(iOS 17.0, *) {
-                Color.clear
-                    .containerBackground(.fill.tertiary, for: .widget)
-            } else {
-                Color(UIColor.systemBackground)
-            }
+            // Background Image with explicit frame and content mode
+            Image(state.backgroundImageName)
+                .resizable()
+                // .border(Color.black, width: 4)
+                .scaledToFill()
+                .frame(width: widgetSize.width + 15, height: widgetSize.height + 15)
+                .clipped()
             
-            // Content
+            // Content overlay
             VStack(spacing: 8) {
-                // Icon
                 Image(systemName: state.iconName)
-                    .font(.system(size: 32))
+                    .font(.system(size: 33))
                     .foregroundColor(state.iconColor)
                 
-                // Text
                 Text(state.labelText)
                     .font(.system(size: 14, weight: .semibold))
                     .multilineTextAlignment(.center)
                     .foregroundColor(.primary)
+                    .minimumScaleFactor(0.5) // Allow text to scale down if needed
                 
-                // CTA text
                 if case .atRisk = state {
                     Text("Open app now!")
                         .font(.system(size: 12))
@@ -175,6 +196,22 @@ struct ShepherdStreakWidgetEntryView : View {
                 }
             }
             .padding()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .edgesIgnoringSafeArea(.all)
+        .background(Color.clear)
+    }
+}
+
+// Extension to get recommended widget sizes
+extension WidgetFamily {
+    func getRecommendedSize() -> CGSize {
+        switch self {
+        case .systemSmall:
+            // Standard small widget size (2x2)
+            return CGSize(width: 169, height: 169)
+        default:
+            return CGSize(width: 169, height: 169)
         }
     }
 }
