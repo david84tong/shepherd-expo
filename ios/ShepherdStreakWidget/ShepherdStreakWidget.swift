@@ -53,13 +53,13 @@ enum StreakState {
     var labelText: String {
         switch self {
         case .noStreak:
-            return "Start your first streak!"
+            return "Start streak!"
         case .active(let days):
             return "\(days) day"
         case .atRisk(let days):
-            return "\(days) day streak - at risk!"
+            return "\(days)-day risk"
         case .broken(let daysMissed):
-            return "Streak broken: \(daysMissed) days missed"
+            return "\(daysMissed) days missed"
         }
     }
     
