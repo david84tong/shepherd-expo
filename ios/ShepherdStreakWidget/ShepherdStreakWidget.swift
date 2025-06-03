@@ -173,6 +173,18 @@ struct ShepherdStreakWidgetEntryView : View {
                 .frame(width: widgetSize.width + 15, height: widgetSize.height + 15)
                 .clipped()
             
+            // Black gradient overlay
+            LinearGradient(
+                gradient: Gradient(
+                    colors: [
+                        Color.black.opacity(0.4),
+                        Color.black.opacity(0)
+                    ]
+                ),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            
             // Content overlay
             VStack(spacing: 4) {
                 HStack(spacing: 2) {
@@ -186,8 +198,7 @@ struct ShepherdStreakWidgetEntryView : View {
                         .font(.custom("Nunito-ExtraBold", size: 16))
                         .multilineTextAlignment(.center)
                         .foregroundColor(.white.opacity(0.9))
-                        .minimumScaleFactor(0.5) // Allow text to scale down if needed
-                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                        .minimumScaleFactor(0.5) 
                 }
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.top, 8)
@@ -196,7 +207,6 @@ struct ShepherdStreakWidgetEntryView : View {
                     .font(.custom("Nunito-Bold", size: 12))
                     .foregroundColor(.white.opacity(0.8))
                     .multilineTextAlignment(.center)
-                    .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                     .padding(.top, -2)
                 
                 Spacer()
