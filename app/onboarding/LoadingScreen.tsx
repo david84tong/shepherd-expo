@@ -1,297 +1,398 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { View, Text, ActivityIndicator, Animated, Easing } from 'react-native';
-import * as Haptics from 'expo-haptics';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
-import Rive, { Fit, Alignment } from 'rive-react-native';
-import { useAssets } from 'expo-asset';
-import analytics from '../../utils/analytics';
-import useSubscriptionStore from '../stores/subscriptionStore';
-import { IS_ANDROID, IS_IOS } from '../utils/utils';
-interface LoadingScreenProps {
-  initialMessage?: string;
-  onLoadingComplete?: () => void;
-  redirectTo?: any; // Use any for now to allow any valid route path
-}
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, Animated, Easing, Dimensions, ActivityIndicator, StatusBar } from 'react-native';
+import { GLView, ExpoWebGLRenderingContext } from 'expo-gl';
+import { Renderer } from 'expo-three';
+// @ts-ignore: If you get type errors for 'three', install @types/three for type support
+import * as THREE from 'three';
+import Svg, { Circle } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
-const LOADING_MESSAGES = [
+const { width, height } = Dimensions.get('window');
+
+const ORANGE = '#FCD34D';
+const DARK_BG = '#FFF4D9';
+const TEXT_PRIMARY = '#3C584A';
+const DESCRIPTION = '#B89B4C';
+const GRAY_400 = '#9ca3af';
+const GRAY_500 = '#6b7280';
+
+const LOADING_POINTS = [
   "Saving your responses",
   "Encrypting your data",
   "Sprinkling some holy water",
   "Generating your custom bible study plan"
 ];
-const LoadingScreen: React.FC<LoadingScreenProps> = ({
-  initialMessage,
-  onLoadingComplete,
-  redirectTo
-}) => {
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+export default function LoadingScreen() {
+  const [currentStep, setCurrentStep] = useState(0);
+  const [anim, setAnim] = useState(0);
+  const animRef = useRef(0);
   const router = useRouter();
-  const params = useLocalSearchParams();
-  const { setFromScreen } = useSubscriptionStore();
 
-  // Get route parameters
-  const initialMessageFromParams = params.initialMessage as string;
-  const redirectAfterLoading = params.redirectAfterLoading as string;
-
-  // Use params if available, otherwise use props
-  const [progress, setProgress] = useState(0);
-  const [currentMessageIndex, setCurrentMessageIndex] = useState(0);
-  const [currentMessage, setCurrentMessage] = useState(
-    initialMessageFromParams || initialMessage || LOADING_MESSAGES[0]
+  // Animation values for checklist items
+  const animValuesRef = useRef(
+    Array(LOADING_POINTS.length)
+      .fill(0)
+      .map(() => new Animated.Value(0))
   );
 
-  // Animation values
-  const fadeAnim = useRef(new Animated.Value(1)).current;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const pulseAnim = useRef(new Animated.Value(1)).current;
-
-  // Load the Rive asset
-  const [assets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
-
+  // Spinner rotation animation value (only one, for the current loading item)
+  const spinnerAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
-    setFromScreen('onboarding');
-    analytics.logEvent("OnboardingLoadingScreen_Viewed", {
-      initialMessage: initialMessageFromParams || initialMessage,
-      redirectTarget: redirectAfterLoading || redirectTo || "PricingScreen"
-    });
-  }, [initialMessageFromParams, initialMessage, redirectAfterLoading, redirectTo]);
-
-  // Handle text changes based on progress
-  useEffect(() => {
-    // Use custom message if provided, otherwise cycle through default messages
-    if (!initialMessageFromParams) {
-      // Calculate which message to show based on progress
-      const messageIndex = Math.min(
-        Math.floor((progress / 100) * LOADING_MESSAGES.length),
-        LOADING_MESSAGES.length - 1
-      );
-
-      if (messageIndex !== currentMessageIndex) {
-        // Fade out current text
-        Animated.timing(fadeAnim, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }).start(() => {
-          // Change text while invisible
-          setCurrentMessageIndex(messageIndex);
-          setCurrentMessage(LOADING_MESSAGES[messageIndex]);
-
-          // Fade in new text
-          Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }).start();
-        });
-      }
-    }
-  }, [progress, currentMessageIndex, initialMessageFromParams]);
-
-  // Setup pulse animation
-  useEffect(() => {
-    const pulse = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulseAnim, {
-          toValue: 1.1,
-          duration: 800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(pulseAnim, {
-          toValue: 1,
-          duration: 800,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ])
+    spinnerAnim.setValue(0); // Reset to 0 on each new step
+    const loop = Animated.loop(
+      Animated.timing(spinnerAnim, {
+        toValue: 1,
+        duration: 1200, // Smoother
+        easing: Easing.linear,
+        useNativeDriver: true,
+      })
     );
+    loop.start();
+    return () => loop.stop();
+  }, [currentStep]);
 
-    pulse.start();
-
-    return () => {
-      pulse.stop();
+  // Animate glow
+  useEffect(() => {
+    let frame: number;
+    const animate = () => {
+      animRef.current += 0.02;
+      setAnim(animRef.current);
+      frame = requestAnimationFrame(animate);
     };
-  }, [pulseAnim]);
+    animate();
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
-  // Function to finalize and navigate
-  const finalizeAndNavigate = async () => {
+  // Step-by-step checklist progression
+  useEffect(() => {
+    if (currentStep < LOADING_POINTS.length) {
+      const timer = setTimeout(() => {
+        setCurrentStep((step) => step + 1);
+      }, 2000); // Slower: 2 seconds per checklist step
+      return () => clearTimeout(timer);
+    } else {
+      // All steps complete, navigate
+      setTimeout(() => {
+        router.replace({ pathname: '/PricingScreen', params: { animateFromBottom: 'true' } });
+      }, 600);
+    }
+  }, [currentStep, router]);
+
+  // Animate the current checklist item when it appears
+  useEffect(() => {
+    if (currentStep < LOADING_POINTS.length) {
+      Animated.timing(animValuesRef.current[currentStep], {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [currentStep]);
+
+  // Animated progress value for smooth circular progress bar
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const CIRCLE_RADIUS = 52;
+  const CIRCLE_CIRCUM = 2 * Math.PI * CIRCLE_RADIUS;
+
+  useEffect(() => {
+    Animated.timing(progressAnim, {
+      toValue: currentStep / LOADING_POINTS.length,
+      duration: 700,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false, // SVG props can't use native driver
+    }).start();
+  }, [currentStep]);
+
+  // Build checklist state (stepper style)
+  const checklist = LOADING_POINTS.map((label, idx) => {
+    if (idx < currentStep) return { label, status: 'done' };
+    if (idx === currentStep) return { label, status: 'loading' };
+    return { label, status: 'pending' };
+  }).slice(0, currentStep + 1);
+
+  // --- GLOWING BORDER EFFECT ---
+  // We'll use a ref to keep track of the animation frame for Three.js
+  const glViewRef = useRef<{ stop: () => void } | null>(null);
+  const threeFrameRef = useRef<number | null>(null);
+
+  // Handler for GLView context creation
+  const handleContextCreate = async (gl: ExpoWebGLRenderingContext) => {
+    let scene: THREE.Scene;
+    let camera: THREE.Camera;
+    let renderer: THREE.WebGLRenderer;
+    let material: THREE.ShaderMaterial;
+    let plane: THREE.Mesh;
+    let shouldAnimate = true;
+
     try {
-      // Handle different navigation behaviors based on redirectAfterLoading
-      if (redirectAfterLoading === "back") {
-        // Navigate back to PricingScreen with a param to indicate we're coming from loading
-        analytics.logEvent("LoadingScreen_Redirect_Completed", {
-          redirectTarget: "PricingScreen",
-          redirectType: "back"
-        });
+      renderer = new Renderer({ gl });
+      renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
+      renderer.setClearColor(DARK_BG, 1);
 
-        router.navigate({
-          pathname: "/PricingScreen",
-          params: { fromLoading: "true", animateFromBottom: "true" }
-        });
-      } else if (redirectTo || redirectAfterLoading) {
-        // Navigate to specified redirect
-        const targetPath = redirectAfterLoading || redirectTo;
-        console.log('Loading complete, navigating to:', targetPath);
+      scene = new THREE.Scene();
+      camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+      camera.position.z = 1;
 
-        analytics.logEvent("LoadingScreen_Redirect_Completed", {
-          redirectTarget: targetPath,
-          redirectType: "custom"
-        });
+      const geometry = new THREE.PlaneGeometry(2, 2);
+      material = new THREE.ShaderMaterial({
+        uniforms: {
+          u_time: { value: 0 },
+          u_resolution: { value: new THREE.Vector2(gl.drawingBufferWidth, gl.drawingBufferHeight) },
+          u_color: { value: new THREE.Color(ORANGE) },
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+  precision highp float;
+  uniform float u_time;
+  uniform vec2 u_resolution;
+  uniform vec3 u_color;
+  varying vec2 vUv;
+  
+  float noise(vec2 p) {
+    return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453);
+  }
+  
+  // Animated side glow (left & right)
+  float edgeGlow(float x, float y, float time, float edge) {
+    float spotY = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
+    float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
+    float edgeDist = abs(x - edge);
+    float yDist = abs(y - spotY);
+    float spot = exp(-pow(yDist / spotWidth, 2.0) * 6.0);
+    float flicker = 0.6 + 0.4 * noise(vec2(y * 10.0, time * 0.5 + edge * 10.0));
+    return smoothstep(0.12, 0.0, edgeDist) * (0.5 + 0.8 * spot * flicker);
+  }
+  
+  // Static glow for top and bottom
+  float staticGlow(float y, float edge) {
+    float edgeDist = abs(y - edge);
+    return smoothstep(0.06, 0.0, edgeDist);
+  }
+  
+  float verticalEdgeGlow(float x, float y, float time, float edge) {
+    float spotX = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
+    float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
+    float edgeDist = abs(y - edge);
+    float xDist = abs(x - spotX);
+    float spot = exp(-pow(xDist / spotWidth, 2.0) * 6.0);
+    float flicker = 0.6 + 0.4 * noise(vec2(x * 10.0, time * 0.5 + edge * 10.0));
+    return smoothstep(0.08, 0.0, edgeDist) * (0.5 + 0.5 * spot * flicker);
+  }
+  
+  void main() {
+    float t = u_time;
+  
+    // Center fading glow
+    float edgeDist = min(vUv.x, 1.0 - vUv.x);
+    float n = noise(vUv * 10.0 + t * 0.2);
+    float glow = smoothstep(0.0, 0.25 + 0.08 * sin(t + n * 6.0), edgeDist);
+    float intensity = (1.0 - glow) * (0.7 + 0.3 * sin(t + vUv.x * 10.0));
+    float centerAlpha = pow(1.0 - edgeDist, 2.5) * intensity;
+  
+    // Animated left/right
+    float leftGlow = edgeGlow(vUv.x, vUv.y, t, 0.0);
+    float rightGlow = edgeGlow(vUv.x, vUv.y, t, 1.0);
+  
+    // Static top/bottom
+    float bottomGlow = staticGlow(vUv.y, 0.0);
+    float topGlow = staticGlow(vUv.y, 1.0);
+  
+    // Combine
+    float sideAlpha = leftGlow + rightGlow;
+    float verticalAlpha = bottomGlow + topGlow;
+    float finalAlpha = centerAlpha + sideAlpha + verticalAlpha;
+  
+    gl_FragColor = vec4(u_color, finalAlpha);
+  }
+  
+  
+        `,
+        transparent: true,
+        depthWrite: false,
 
-        router.replace(targetPath);
-      } else {
-        // Default behavior for onboarding
+        // ... your existing shader material code
+      });
 
+      plane = new THREE.Mesh(geometry, material);
+      scene.add(plane);
 
-        // Call completion handler if provided
-        if (onLoadingComplete) {
-          onLoadingComplete();
+      const animate = () => {
+        if (!shouldAnimate) return;
+
+        material.uniforms.u_time.value += 0.016;
+        renderer.render(scene, camera);
+        gl.endFrameEXP();
+        threeFrameRef.current = requestAnimationFrame(animate);
+      };
+
+      animate();
+
+      // Store cleanup function
+      glViewRef.current = {
+        stop: () => {
+          shouldAnimate = false;
+          if (threeFrameRef.current) {
+            cancelAnimationFrame(threeFrameRef.current);
+          }
+          // Clean up Three.js resources
+          if (geometry) geometry.dispose();
+          if (material) material.dispose();
+          if (plane) scene?.remove(plane);
         }
-
-        // Navigate to pricing screen with animation param
-        console.log('Onboarding complete, navigating to pricing screen');
-
-        analytics.logEvent("LoadingScreen_Redirect_Completed", {
-          redirectTarget: "PricingScreen",
-          redirectType: "default",
-          onboardingCompleted: true
-        });
-
-        router.replace({
-          pathname: '/PricingScreen',
-          params: { animateFromBottom: "true" }
-        });
-      }
-
-      analytics.logEvent("OnboardingLoadingScreen_Completed", {
-        progress: 100,
-        finalMessage: currentMessage
-      });
+      };
     } catch (error) {
-      console.error('Error finalizing loading screen:', error);
-
-      analytics.logEvent("LoadingScreen_Redirect_Error", {
-        errorMessage: (error as Error)?.message || "Unknown error"
-      });
-
-      // Fallback navigation
-      router.replace({
-        pathname: '/PricingScreen',
-        params: { animateFromBottom: "true" }
-      });
+      console.error('GLView error:', error);
+      if (glViewRef.current?.stop) glViewRef.current.stop();
     }
   };
 
-  // Handle progress simulation
   useEffect(() => {
-    let lastProgress = 0;
-
-    // Simulate loading progress - faster for subscription flow
-    const incrementSpeed = redirectAfterLoading === "back" ? 40 : 120; // Faster for subscription flow
-
-    // Simulate loading progress
-    const interval: NodeJS.Timeout = setInterval(() => {
-      if (progress < 100) {
-        // Generate next progress value with slight randomization for natural feel
-        const increment = Math.max(1, Math.floor(Math.random() * 3));
-        const nextProgress = Math.min(100, progress + increment);
-
-        // Update progress
-        setProgress(nextProgress);
-
-        // Provide haptic feedback for each percentage point change
-        if (Math.floor(nextProgress) > Math.floor(lastProgress)) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
-        }
-
-        // Small animation pulse on progress change
-        Animated.sequence([
-          Animated.timing(scaleAnim, {
-            toValue: 1.05,
-            duration: 100,
-            useNativeDriver: true,
-          }),
-          Animated.timing(scaleAnim, {
-            toValue: 1,
-            duration: 200,
-            useNativeDriver: true,
-          }),
-        ]).start();
-
-        lastProgress = nextProgress;
-      } else {
-        // Loading complete
-        clearInterval(interval);
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
-
-        // Wait a moment before calling completion handler and navigating
-        setTimeout(() => {
-          finalizeAndNavigate();
-        }, 400);
-      }
-    }, incrementSpeed); // Adjust speed of progress
-
     return () => {
-      clearInterval(interval);
+      if (glViewRef.current?.stop) {
+        glViewRef.current.stop();
+      }
     };
-  }, [progress, onLoadingComplete, redirectTo, redirectAfterLoading, router]);
-
-  // Show loading indicator while assets are loading
-  if (!assets) {
-    return (
-      <View className="flex-1 items-center justify-center bg-surfaceCream">
-        <ActivityIndicator size="large" color="#3C584A" />
-      </View>
-    );
-  }
+  }, []);
 
   return (
-    <View className="flex-1 items-center justify-center bg-surfaceCream px-8">
-      {/* Pulsing Rive animation */}
-      <View className="w-56 h-56 mb-24 flex items-center justify-center">
-        <Rive
-          url={IS_IOS ? assets[0].uri! : undefined}
-          artboardName="lamb-writing"
-          resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-          autoplay={true}
-          fit={Fit.Contain}
-          alignment={Alignment.Center}
-          style={{ width: 240, height: 240 }}
-        />
-      </View>
-
-      {/* Animated message text */}
-      <Animated.View
+    <View className="flex-1 items-center justify-center bg-surfaceCream" style={{ backgroundColor: DARK_BG }}>
+      <StatusBar translucent backgroundColor="transparent" />
+      {/* Glowing border background */}
+      <GLView
         style={{
-          opacity: fadeAnim,
-          transform: [{ scale: scaleAnim }],
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          zIndex: 0,
         }}
-        className="mb-8 min-h-[30px]"
-      >
-        <Text className="font-feather text-textPrimary text-2xl text-center">
-          {currentMessage}...
-        </Text>
-      </Animated.View>
-
-      {/* Progress indicator */}
-      <View className="w-96 items-center">
-        <View className="w-full h-4 bg-surfaceLight rounded-full overflow-hidden mb-2">
-          <Animated.View
-            className="h-full bg-accentGold rounded-full"
-            style={{
-              width: `${progress}%`,
-              transform: [{ scale: scaleAnim }]
-            }}
-          />
+        pointerEvents="none"
+        onContextCreate={handleContextCreate}
+      />
+      {/* All content stacked and centered */}
+      <View className="items-center w-full max-w-[340px]" style={{ zIndex: 1 }}>
+        {/* Circular progress */}
+        <View className="items-center justify-center mb-8">
+          <Svg height="120" width="120">
+            <Circle
+              cx="60"
+              cy="60"
+              r={CIRCLE_RADIUS}
+              stroke="#ffe49c"
+              strokeWidth="10"
+              fill="none"
+            />
+            <AnimatedCircle
+              cx="60"
+              cy="60"
+              r={CIRCLE_RADIUS}
+              stroke={ORANGE}
+              strokeWidth="12"
+              fill="none"
+              strokeDasharray={CIRCLE_CIRCUM}
+              strokeDashoffset={progressAnim.interpolate({
+                inputRange: [0, 1],
+                outputRange: [CIRCLE_CIRCUM, 0],
+              })}
+              strokeLinecap="round"
+              rotation="-90"
+              origin="60,60"
+            />
+          </Svg>
+          <Text className="absolute top-0 left-0 w-[120px] h-[120px] text-center text-2xl font-feather text-accentGold flex items-center justify-center" style={{ lineHeight: 120, color: ORANGE }}>{Math.round((currentStep / LOADING_POINTS.length) * 100)}%</Text>
         </View>
-        <Text className="font-feather text-description text-h1 mt-4">
-          {progress}%
-        </Text>
+
+        {/* Headline and subheadline */}
+        <Text className="text-3xl font-feather text-center mb-2" style={{ color: TEXT_PRIMARY }}>Just a moment</Text>
+        <Text className="text-lg font-din text-center mb-8" style={{ color: DESCRIPTION }}>Building a personalized plan</Text>
+
+        {/* Checklist directly below */}
+        <View className="w-[75%] min-h-[160px] flex-col justify-start self-center" style={{ zIndex: 1, }}>
+          {checklist.map((item, idx) => (
+            <Animated.View
+              key={item.label}
+              style={{
+                opacity: animValuesRef.current[idx],
+                transform: [
+                  {
+                    translateY: animValuesRef.current[idx].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [24, 0],
+                    }),
+                  },
+                ],
+              }}
+              className="flex-row items-start mb-4"
+            >
+              {item.status === 'done' && (
+                <Ionicons name="checkmark-circle" size={24} color={ORANGE} className="mr-2" />
+              )}
+              {item.status === 'loading' && idx === currentStep && (
+                <Animated.View
+                  style={{
+                    marginRight: 8,
+                    transform: [
+                      {
+                        rotate: spinnerAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: ['0deg', '360deg'],
+                        }),
+                      },
+                    ],
+                  }}
+                >
+                  <Svg height="24" width="24">
+                    <Circle
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke={ORANGE}
+                      strokeWidth="3"
+                      fill="none"
+                      strokeDasharray="60"
+                      strokeDashoffset={24}
+                    />
+                  </Svg>
+                </Animated.View>
+              )}
+              {/* If not the current loading item, show static spinner (no animation) for safety */}
+              {item.status === 'loading' && idx !== currentStep && (
+                <Svg height="24" width="24" style={{ marginRight: 8 }}>
+                  <Circle
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke={ORANGE}
+                    strokeWidth="3"
+                    fill="none"
+                    strokeDasharray="60"
+                    strokeDashoffset={24}
+                  />
+                </Svg>
+              )}
+              <Text
+                className={`text-lg font-din ${item.status === 'done' || item.status === 'loading' ? '' : 'text-gray-400'}`}
+                style={{ color: item.status === 'done' || item.status === 'loading' ? TEXT_PRIMARY : GRAY_400 }}
+              >
+                {item.label}
+              </Text>
+            </Animated.View>
+          ))}
+        </View>
       </View>
     </View>
   );
-};
+}
 
-export default LoadingScreen;
+
