@@ -55,11 +55,11 @@ enum StreakState {
         case .noStreak:
             return "Start streak!"
         case .active(let days):
-            return "\(days) day"
+            return days == 1 ? "\(days) day" : "\(days) days"
         case .atRisk(let days):
-            return "\(days)-day risk"
+            return days == 1 ? "\(days)-day risk" : "\(days)-days risk"
         case .broken(let daysMissed):
-            return "\(daysMissed) days missed"
+            return daysMissed == 1 ? "\(daysMissed) day missed" : "\(daysMissed) days missed"
         }
     }
     
