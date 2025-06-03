@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
@@ -162,41 +162,44 @@ export default function OnboardingReadingTimeScreen() {
   ] as const;
 
   return (
-    <View className="flex-1 bg-surfaceCream px-6 pt-12">
-      {/* Close button (only when coming from settings) */}
-      {fromSettings && (
-        <TouchableOpacity
-          onPress={handleBackFromSettings}
-          className="absolute top-7 right-3 z-10 p-2"
-          hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}>
-          <Feather name="x" size={24} color="#3C584A" />
-        </TouchableOpacity>
-      )}
+    <>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <View className="flex-1 bg-surfaceCream px-6 pt-12">
+        {/* Close button (only when coming from settings) */}
+        {fromSettings && (
+          <TouchableOpacity
+            onPress={handleBackFromSettings}
+            className="absolute top-7 right-3 z-10 p-2"
+            hitSlop={{ top: 15, right: 15, bottom: 15, left: 15 }}>
+            <Feather name="x" size={24} color="#3C584A" />
+          </TouchableOpacity>
+        )}
 
-      {/* Question Text */}
-      <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h2 text-center text-textPrimary mb-0">
-          How many minutes per day can you spend with God?
-        </Text>
-      </Animated.View>
-
-      {/* Options Container */}
-      <ScrollView
-        contentContainerStyle={{ paddingBottom: 100 }}
-        showsVerticalScrollIndicator={false}>
-        <Animated.View style={optionsStyle} className="space-y-4 mt-4">
-          {options.map((option) => (
-            <PrimaryButton
-              key={option.id}
-              title={option.title}
-              onPress={() => handleSelection(option.id)}
-              isActive={true}
-              primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
-              textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
-            />
-          ))}
+        {/* Question Text */}
+        <Animated.View style={titleStyle}>
+          <Text className="font-feather text-h2 text-center text-textPrimary mb-0">
+            How many minutes per day can you spend with God?
+          </Text>
         </Animated.View>
-      </ScrollView>
-    </View>
+
+        {/* Options Container */}
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 100 }}
+          showsVerticalScrollIndicator={false}>
+          <Animated.View style={optionsStyle} className="space-y-4 mt-4">
+            {options.map((option) => (
+              <PrimaryButton
+                key={option.id}
+                title={option.title}
+                onPress={() => handleSelection(option.id)}
+                isActive={true}
+                primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
+                textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
+              />
+            ))}
+          </Animated.View>
+        </ScrollView>
+      </View>
+    </>
   );
 }

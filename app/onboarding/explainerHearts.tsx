@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useEffect } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StatusBar } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -118,53 +118,56 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
   ];
 
   return (
-    <View className="flex-1 bg-surfaceCream pt-12 w-full items-center" style={{ paddingBottom: insets.bottom }}>
-      {/* Title */}
-      <Animated.View style={titleStyle} className="mb-8 px-6">
-        <Text className="font-feather text-2xl text-textPrimary text-center mb-0 mt-16">
-          Everyday you don&apos;t read, {lambName}&apos;s health will suffer...
-        </Text>
-      </Animated.View>
+    <>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <View className="flex-1 bg-surfaceCream pt-12 w-full items-center" style={{ paddingBottom: insets.bottom }}>
+        {/* Title */}
+        <Animated.View style={titleStyle} className="mb-8 px-6">
+          <Text className="font-feather text-2xl text-textPrimary text-center mb-0 mt-16">
+            Everyday you don&apos;t read, {lambName}&apos;s health will suffer...
+          </Text>
+        </Animated.View>
 
-      {/* Lamb grid */}
-      <View className="flex-row flex-wrap justify-center items-center gap-4 mb-4">
-        {lambStates.map((state, index) => (
-          <Animated.View
-            key={index}
-            style={[
-              cardStyles[index],
-              {
-                // Add conditional glow effect
-                shadowColor: state.glow ? '#FDE047' : 'transparent',
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: state.glow ? 0.6 : 0,
-                shadowRadius: 15,
-              }
-            ]}
-            className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-lightRed items-center justify-center relative"
-          >
-            {riveAssets && (
-              <View className="w-36 h-36">
-                <Rive
-                  resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-                  url={IS_IOS ? riveAssets[0].uri! : undefined}
-                  artboardName={state.artboard}
-                  style={{ width: '100%', height: '100%' }}
-                />
+        {/* Lamb grid */}
+        <View className="flex-row flex-wrap justify-center items-center gap-4 mb-4">
+          {lambStates.map((state, index) => (
+            <Animated.View
+              key={index}
+              style={[
+                cardStyles[index],
+                {
+                  // Add conditional glow effect
+                  shadowColor: state.glow ? '#FDE047' : 'transparent',
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: state.glow ? 0.6 : 0,
+                  shadowRadius: 15,
+                }
+              ]}
+              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-lightRed items-center justify-center relative"
+            >
+              {riveAssets && (
+                <View className="w-36 h-36">
+                  <Rive
+                    resourceName={IS_ANDROID ? 'home_lamb' : undefined}
+                    url={IS_IOS ? riveAssets[0].uri! : undefined}
+                    artboardName={state.artboard}
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </View>
+              )}
+              <View className="absolute top-2.5 right-2.5 bg-lightRed px-4 py-1 rounded-full">
+                <Text className="font-feather text-darkRed">{state.hearts} ❤️</Text>
               </View>
-            )}
-            <View className="absolute top-2.5 right-2.5 bg-lightRed px-4 py-1 rounded-full">
-              <Text className="font-feather text-darkRed">{state.hearts} ❤️</Text>
-            </View>
-          </Animated.View>
-        ))}
-      </View>
+            </Animated.View>
+          ))}
+        </View>
 
 
-      {/* Continue Button - fixed at bottom */}
-      <View className="absolute left-6 right-6" style={{ bottom: Math.max(insets.bottom + 16, 24) }}>
-        <PrimaryButton title="Continue" onPress={handleContinue} />
+        {/* Continue Button - fixed at bottom */}
+        <View className="absolute left-6 right-6" style={{ bottom: Math.max(insets.bottom + 16, 24) }}>
+          <PrimaryButton title="Continue" onPress={handleContinue} />
+        </View>
       </View>
-    </View>
+    </>
   );
 }

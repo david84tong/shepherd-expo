@@ -9,7 +9,7 @@
 // Prefer not to say
 
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
@@ -143,31 +143,34 @@ export default function OnboardingReligiousAffiliationScreen() {
   ];
 
   return (
-    <View className="flex-1 bg-surfaceCream px-6 pt-12">
-      {/* Question Text */}
-      <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h2 text-center text-textPrimary mb-4">
-          Which best describes your beliefs?
-        </Text>
-      </Animated.View>
+    <>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <View className="flex-1 bg-surfaceCream px-6 pt-12">
+        {/* Question Text */}
+        <Animated.View style={titleStyle}>
+          <Text className="font-feather text-h2 text-center text-textPrimary mb-4">
+            Which best describes your beliefs?
+          </Text>
+        </Animated.View>
 
-      {/* Options Container */}
-      <Animated.View style={optionsStyle} className="space-y-4 mt-0">
-        <ScrollView contentContainerStyle={{ paddingBottom: 160 }} showsVerticalScrollIndicator={false}>
-          <View className="space-y-4">
-            {options.map((option) => (
-              <PrimaryButton
-                key={option.id}
-                title={option.title}
-                onPress={() => handleSelection(option.id)}
-                isActive={true}
-                primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
-                textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
-              />
-            ))}
-          </View>
-        </ScrollView>
-      </Animated.View>
-    </View>
+        {/* Options Container */}
+        <Animated.View style={optionsStyle} className="space-y-4 mt-0">
+          <ScrollView contentContainerStyle={{ paddingBottom: 160 }} showsVerticalScrollIndicator={false}>
+            <View className="space-y-4">
+              {options.map((option) => (
+                <PrimaryButton
+                  key={option.id}
+                  title={option.title}
+                  onPress={() => handleSelection(option.id)}
+                  isActive={true}
+                  primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
+                  textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
+                />
+              ))}
+            </View>
+          </ScrollView>
+        </Animated.View>
+      </View>
+    </>
   );
 }

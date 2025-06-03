@@ -8,7 +8,8 @@ import {
   ActivityIndicator,
   Switch,
   Image,
-  Platform
+  Platform,
+  StatusBar
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -501,39 +502,42 @@ const PricingScreen = () => {
   };
 
   return (
-    <ImageBackground
-      source={require('../assets/backgrounds/godBackground.png')}
-      className="flex-1"
-      resizeMode="cover">
-      <LinearGradient
-        colors={['rgba(255, 255, 255, 0.15)', 'rgba(255, 255, 255, 0.35)', 'rgba(0,0,0,0)']}
-        locations={[0, 0.5, 1]}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
-        style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, zIndex: 5 }}
-      />
+    <>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <ImageBackground
+        source={require('../assets/backgrounds/godBackground.png')}
+        className="flex-1"
+        resizeMode="cover">
+        <LinearGradient
+          colors={['rgba(255, 255, 255, 0.15)', 'rgba(255, 255, 255, 0.35)', 'rgba(0,0,0,0)']}
+          locations={[0, 0.5, 1]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, zIndex: 5 }}
+        />
 
-      <Animated.View
-        className="flex-1 relative z-10"
-        style={[screenContainerStyle, { paddingTop: insets.top }]}>
-        {renderAnimatedContent()}
+        <Animated.View
+          className="flex-1 relative z-10"
+          style={[screenContainerStyle, { paddingTop: insets.top }]}>
+          {renderAnimatedContent()}
 
-        {/* Full Screen Loading Overlay (shown during paywall transitions) */}
-        {isLoading && (
-          <Animated.View
-            className="absolute inset-0 bg-black/30 items-center justify-center z-50"
-            entering={FadeIn.duration(200)}
-            style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
-            <View className="bg-white p-5 rounded-xl items-center">
-              <ActivityIndicator size="large" color="#F7B500" />
-              <Text className="font-din text-body text-textPrimary mt-3">
-                Loading subscription options...
-              </Text>
-            </View>
-          </Animated.View>
-        )}
-      </Animated.View>
-    </ImageBackground>
+          {/* Full Screen Loading Overlay (shown during paywall transitions) */}
+          {isLoading && (
+            <Animated.View
+              className="absolute inset-0 bg-black/30 items-center justify-center z-50"
+              entering={FadeIn.duration(200)}
+              style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}>
+              <View className="bg-white p-5 rounded-xl items-center">
+                <ActivityIndicator size="large" color="#F7B500" />
+                <Text className="font-din text-body text-textPrimary mt-3">
+                  Loading subscription options...
+                </Text>
+              </View>
+            </Animated.View>
+          )}
+        </Animated.View>
+      </ImageBackground>
+    </>
   );
 };
 

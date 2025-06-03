@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Pressable, Alert, Linking, ScrollView } from 'react-native';
+import { View, Text, Pressable, Alert, Linking, ScrollView, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboardingStore } from '../stores/onboardingStore';
@@ -239,54 +239,58 @@ export default function OnboardingReminderTimeScreen() {
   ] as const;
 
   return (
-    <View className="flex-1 bg-surfaceCream px-6 pt-16">
-      {/* Question Text */}
-      <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h2 text-center text-textPrimary mb-4 ">
-          When would you like to be reminded to read?
-        </Text>
-      </Animated.View>
+    <>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <View className="flex-1 bg-surfaceCream px-6 pt-16">
 
-      {/* Subtext */}
-      <Animated.View style={subtextStyle}>
-        <Text className="font-din text-center text-description text-body mb-4">
-          This can be edited later in settings
-        </Text>
-      </Animated.View>
+        {/* Question Text */}
+        <Animated.View style={titleStyle}>
+          <Text className="font-feather text-h2 text-center text-textPrimary mb-4 ">
+            When would you like to be reminded to read?
+          </Text>
+        </Animated.View>
 
-      {/* Options Container */}
-      <ScrollView contentContainerStyle={{ paddingBottom: 90 }} showsVerticalScrollIndicator={false}>
-        <Animated.View style={optionsStyle} className="space-y-4 mt-4">
-          <View className="space-y-4">
-            {options.map((option) => (
-              <Pressable
-                key={option.id}
-                onPress={() => handleSelection(option.id)}
-                onPressIn={() => setPressedButton(option.id)}
-                onPressOut={() => setPressedButton(null)}
-                className={`
+        {/* Subtext */}
+        <Animated.View style={subtextStyle}>
+          <Text className="font-din text-center text-description text-body mb-4">
+            This can be edited later in settings
+          </Text>
+        </Animated.View>
+
+        {/* Options Container */}
+        <ScrollView contentContainerStyle={{ paddingBottom: 90 }} showsVerticalScrollIndicator={false}>
+          <Animated.View style={optionsStyle} className="space-y-4 mt-4">
+            <View className="space-y-4">
+              {options.map((option) => (
+                <Pressable
+                  key={option.id}
+                  onPress={() => handleSelection(option.id)}
+                  onPressIn={() => setPressedButton(option.id)}
+                  onPressOut={() => setPressedButton(null)}
+                  className={`
               my-2
               h-[80px] bg-white rounded-card border-[3px] border-border px-4
               flex-row items-center shadow-buttonShadow
               ${pressedButton === option.id ? 'translate-y-[3px] shadow-none' : 'translate-y-0'}
               ${selectedOption === option.id ? 'border-accentGold bg-surfaceCream' : ''}
             `}
-              >
-                <View className={`${option.bgColor} rounded-xl p-3`}>
-                  <Ionicons name={option.icon as any} size={24} color={option.color} />
-                </View>
-                <View className="ml-4 flex-1">
-                  <Text className="font-feather text-lg text-textPrimary">{option.title}</Text>
-                  <Text className="font-din text-md text-description mt-1">
-                    {option.description}
-                  </Text>
-                </View>
-              </Pressable>
-            ))}
-          </View>
-        </Animated.View>
-      </ScrollView>
+                >
+                  <View className={`${option.bgColor} rounded-xl p-3`}>
+                    <Ionicons name={option.icon as any} size={24} color={option.color} />
+                  </View>
+                  <View className="ml-4 flex-1">
+                    <Text className="font-feather text-lg text-textPrimary">{option.title}</Text>
+                    <Text className="font-din text-md text-description mt-1">
+                      {option.description}
+                    </Text>
+                  </View>
+                </Pressable>
+              ))}
+            </View>
+          </Animated.View>
+        </ScrollView>
 
-    </View>
+      </View>
+    </>
   );
 }

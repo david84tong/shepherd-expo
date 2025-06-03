@@ -572,7 +572,7 @@ export default function StatsScreen() {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
-      <StatusBar translucent backgroundColor="transparent" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <TouchableWithoutFeedback onPress={() => setIsDropdownOpen(false)}>
         <ScrollView className="flex-1 bg-surfaceCream" contentContainerStyle={{ paddingBottom: 40 }}>
           {/* Header */}

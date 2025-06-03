@@ -1215,7 +1215,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     return (
       <SafeAreaView
         style={[styles.container, { backgroundColor: THEME_COLORS[currentTheme].background }]}>
-        <StatusBar translucent backgroundColor="transparent" />
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
         <View
           style={[
             styles.newHeaderContainer,

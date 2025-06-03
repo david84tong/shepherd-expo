@@ -543,7 +543,7 @@ export default function MapScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-surfaceCream">
-      <StatusBar translucent backgroundColor="transparent" />
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <SectionList<Unit, BibleSection>
         ref={sectionListRef}
         sections={sections}

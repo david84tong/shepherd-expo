@@ -1,7 +1,7 @@
 import { useAssets } from 'expo-asset';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { View, Text, TextInput, Keyboard, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, TextInput, Keyboard, ActivityIndicator, Platform, StatusBar } from 'react-native';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
@@ -190,58 +190,61 @@ export default function OnboardingUsernameScreen() {
   }
 
   return (
-    <Animated.View style={screenStyle} className="px-6  pt-6">
-      {/* Question Text */}
-      <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-8">
-          Choose your username
-        </Text>
-        <Text className="font-din text-body text-center text-textSecondary mb-4">
-          This is how other shepherds will know you
-        </Text>
-      </Animated.View>
-
-      {/* Rive Animation */}
-      {/* <Animated.View
-        style={lambStyle}
-        className="h-[160px] w-full justify-center items-center my-4">
-        <Rive
-          url={riveAssets[0].uri!}
-
-          autoplay
-          style={{ width: '80%', height: '80%' }}
-        />
-      </Animated.View> */}
-
-      {/* Username Input */}
-      <Animated.View style={inputStyle}>
-        <TextInput
-          ref={inputRef}
-          className="font-feather text-3xl text-center text-textPrimary bg-white mt-12 p-6 rounded-2xl border-4 border-border"
-          placeholder="@username"
-          placeholderTextColor="#B89B4C"
-          value={inputUsername}
-          onChangeText={handleInputChange}
-          maxLength={16}
-          autoCapitalize="none"
-          autoCorrect={false}
-        />
-        {error && (
-          <Text className="font-din text-sm text-red-500 mt-2 text-center">
-            {error}
+    <>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <Animated.View style={screenStyle} className="px-6  pt-6">
+        {/* Question Text */}
+        <Animated.View style={titleStyle}>
+          <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-8">
+            Choose your username
           </Text>
-        )}
-      </Animated.View>
+          <Text className="font-din text-body text-center text-textSecondary mb-4">
+            This is how other shepherds will know you
+          </Text>
+        </Animated.View>
 
-      {/* Continue Button */}
-      <Animated.View style={buttonStyle} className={`mt-8 ${isKeyboardVisible ? 'mb-4' : 'mb-8'}`}>
-        <PrimaryButton
-          title="Continue"
-          onPress={handleContinue}
-          disabled={!inputUsername.trim() || !!error}
-          isActive={!!inputUsername.trim() && !error}
-        />
+        {/* Rive Animation */}
+        {/* <Animated.View
+          style={lambStyle}
+          className="h-[160px] w-full justify-center items-center my-4">
+          <Rive
+            url={riveAssets[0].uri!}
+
+            autoplay
+            style={{ width: '80%', height: '80%' }}
+          />
+        </Animated.View> */}
+
+        {/* Username Input */}
+        <Animated.View style={inputStyle}>
+          <TextInput
+            ref={inputRef}
+            className="font-feather text-3xl text-center text-textPrimary bg-white mt-12 p-6 rounded-2xl border-4 border-border"
+            placeholder="@username"
+            placeholderTextColor="#B89B4C"
+            value={inputUsername}
+            onChangeText={handleInputChange}
+            maxLength={16}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {error && (
+            <Text className="font-din text-sm text-red-500 mt-2 text-center">
+              {error}
+            </Text>
+          )}
+        </Animated.View>
+
+        {/* Continue Button */}
+        <Animated.View style={buttonStyle} className={`mt-8 ${isKeyboardVisible ? 'mb-4' : 'mb-8'}`}>
+          <PrimaryButton
+            title="Continue"
+            onPress={handleContinue}
+            disabled={!inputUsername.trim() || !!error}
+            isActive={!!inputUsername.trim() && !error}
+          />
+        </Animated.View>
       </Animated.View>
-    </Animated.View>
+    </>
   );
 }

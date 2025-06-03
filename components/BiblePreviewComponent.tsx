@@ -307,7 +307,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
       style={{ opacity: containerOpacity, zIndex: 1000 }}>
 
       {/* Back Button - High z-index wrapper to ensure it's above everything */}
-      <View className="absolute top-0 left-0 right-0 z-50" style={{ zIndex: 10000 }} pointerEvents="box-none">
+      <View className="absolute top-0 left-0 right-0 z-50" style={{ zIndex: 9999 }} pointerEvents="box-none">
         <BackButton
           onPress={handleBack}
           containerClassName=""

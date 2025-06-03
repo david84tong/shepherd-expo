@@ -1,7 +1,7 @@
 import { useAssets } from 'expo-asset';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { View, Text, TextInput, Keyboard, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TextInput, Keyboard, ActivityIndicator, Image, StatusBar } from 'react-native';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
@@ -184,57 +184,61 @@ export default function OnboardingLambNameScreen() {
   }
 
   return (
-    <CustomAnimatedView style={screenStyle} className="px-6 pt-12">
-      {/* Question Text */}
-      <CustomAnimatedView style={titleStyle}>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-0">
-          What should we call your lamb?
-        </Text>
-      </CustomAnimatedView>
+    <>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <CustomAnimatedView style={screenStyle} className="px-6 pt-12">
 
-      {/* Rive Animation with Fallback */}
-      <CustomAnimatedView
-        style={lambStyle}
-        className="h-[160px] w-full justify-center items-center my-4">
-        <Rive
-          url={IS_IOS ? riveAssets?.[0]?.uri : undefined}
-          resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-          artboardName="lamb-idle"
-          autoplay
-          style={{ width: '80%', height: '80%' }}
-          onError={(error) => {
-            console.warn('Rive animation error:', error);
-            // setRiveError(true);
-          }}
-        />
-      </CustomAnimatedView>
+        {/* Question Text */}
+        <CustomAnimatedView style={titleStyle}>
+          <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-0">
+            What should we call your lamb?
+          </Text>
+        </CustomAnimatedView>
 
-      {/* Name Input */}
-      <CustomAnimatedView style={inputStyle}>
-        <TextInput
-          ref={inputRef}
-          className="font-feather text-3xl text-center text-textPrimary bg-white p-6 rounded-2xl border-4 border-border"
-          placeholder="Enter name"
-          placeholderTextColor="#B89B4C"
-          maxLength={16}
-          value={inputLambName}
-          onChangeText={handleInputChange}
-          autoCorrect={false}
-          autoCapitalize="none"
-          spellCheck={false}
-        />
-        {error && <Text className="font-din text-sm text-red-500 mt-2 text-center">{error}</Text>}
-      </CustomAnimatedView>
+        {/* Rive Animation with Fallback */}
+        <CustomAnimatedView
+          style={lambStyle}
+          className="h-[160px] w-full justify-center items-center my-4">
+          <Rive
+            url={IS_IOS ? riveAssets?.[0]?.uri : undefined}
+            resourceName={IS_ANDROID ? 'home_lamb' : undefined}
+            artboardName="lamb-idle"
+            autoplay
+            style={{ width: '80%', height: '80%' }}
+            onError={(error) => {
+              console.warn('Rive animation error:', error);
+              // setRiveError(true);
+            }}
+          />
+        </CustomAnimatedView>
 
-      {/* Continue Button */}
-      <CustomAnimatedView style={buttonStyle} className="mt-0">
-        <PrimaryButton
-          title="Continue"
-          onPress={handleContinue}
-          disabled={!inputLambName.trim() || !!error}
-          isActive={!!inputLambName.trim() && !error}
-        />
+        {/* Name Input */}
+        <CustomAnimatedView style={inputStyle}>
+          <TextInput
+            ref={inputRef}
+            className="font-feather text-3xl text-center text-textPrimary bg-white p-6 rounded-2xl border-4 border-border"
+            placeholder="Enter name"
+            placeholderTextColor="#B89B4C"
+            maxLength={16}
+            value={inputLambName}
+            onChangeText={handleInputChange}
+            autoCorrect={false}
+            autoCapitalize="none"
+            spellCheck={false}
+          />
+          {error && <Text className="font-din text-sm text-red-500 mt-2 text-center">{error}</Text>}
+        </CustomAnimatedView>
+
+        {/* Continue Button */}
+        <CustomAnimatedView style={buttonStyle} className="mt-0">
+          <PrimaryButton
+            title="Continue"
+            onPress={handleContinue}
+            disabled={!inputLambName.trim() || !!error}
+            isActive={!!inputLambName.trim() && !error}
+          />
+        </CustomAnimatedView>
       </CustomAnimatedView>
-    </CustomAnimatedView>
+    </>
   );
 }

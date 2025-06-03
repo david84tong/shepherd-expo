@@ -1,5 +1,5 @@
 import React, { useRef, useLayoutEffect, useState, useEffect } from 'react';
-import { View, Text, SafeAreaView, Image, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, SafeAreaView, Image, TouchableOpacity, Platform, ActivityIndicator, StatusBar } from 'react-native';
 import Lottie from 'lottie-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -156,60 +156,66 @@ const Rating = () => {
   // Show loading indicator while assets load
   if (!isAssetsLoaded) {
     return (
-      <View className="flex-1 items-center justify-center bg-surfaceCream pt-4">
-        <ActivityIndicator size="large" color="#3C584A" />
-        <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
-      </View>
+      <>
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+        <View className="flex-1 items-center justify-center bg-surfaceCream pt-4">
+          <ActivityIndicator size="large" color="#3C584A" />
+          <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
+        </View>
+      </>
     );
   }
 
   return (
-    <Animated.View style={screenStyle}>
-      <SafeAreaView className="flex-1">
-        <View className="flex-1 px-6 pt-6 items-center">
-          {/* Title at the top */}
-          <Animated.View style={titleStyle}>
-            <Text className="font-feather-bold text-3xl text-center text-textPrimary mb-4 mt-12">
-              Support our small team!
-            </Text>
-            <Text className="font-feather-bold text-xl text-center text-description ">
-              Help spread the word
-            </Text>
-          </Animated.View>
-
-          {/* Centered stars animation */}
-          <Animated.View style={starsStyle} className="justify-center items-center mb-6 -mt-24">
-            <Lottie
-              source={require('../../assets/riveAnimations/stars.json')}
-              autoPlay
-              loop={false}
-              style={{ width: 350, height: 300 }}
-            />
-          </Animated.View>
-
-          {/* shepherd Ratings image */}
-          <Animated.View style={imageStyle} className="items-center -mt-48 mb-12">
-            <Image
-              source={require('../../assets/onboarding/shepReviews.png')}
-              style={{ width: 400, height: 420, resizeMode: 'cover' }}
-              defaultSource={require('../../assets/icon.png')}
-              className={`rounded ${Platform.OS === 'ios' ? 'shadow-md' : undefined}`}
-            />
-          </Animated.View>
-
-          {/* Bottom button */}
-          <Animated.View style={buttonStyle} className="items-center mt-12">
-            <PrimaryButton title="Leave a rating" onPress={handleRateApp} buttonType="gold" />
-
-            <TouchableOpacity onPress={handleIRatedPress} className="mt-6 items-center">
-              <Text className="font-din text-description underline text-[16px]">
-                👍 Ok, I rated
+    <>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <Animated.View style={screenStyle}>
+        <SafeAreaView className="flex-1">
+          <View className="flex-1 px-6 pt-6 items-center">
+            {/* Title at the top */}
+            <Animated.View style={titleStyle}>
+              <Text className="font-feather-bold text-3xl text-center text-textPrimary mb-4 mt-12">
+                Support our small team!
               </Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      </SafeAreaView>
-    </Animated.View>
+              <Text className="font-feather-bold text-xl text-center text-description ">
+                Help spread the word
+              </Text>
+            </Animated.View>
+
+            {/* Centered stars animation */}
+            <Animated.View style={starsStyle} className="justify-center items-center mb-6 -mt-24">
+              <Lottie
+                source={require('../../assets/riveAnimations/stars.json')}
+                autoPlay
+                loop={false}
+                style={{ width: 350, height: 300 }}
+              />
+            </Animated.View>
+
+            {/* shepherd Ratings image */}
+            <Animated.View style={imageStyle} className="items-center -mt-48 mb-12">
+              <Image
+                source={require('../../assets/onboarding/shepReviews.png')}
+                style={{ width: 400, height: 420, resizeMode: 'cover' }}
+                defaultSource={require('../../assets/icon.png')}
+                className={`rounded ${Platform.OS === 'ios' ? 'shadow-md' : undefined}`}
+              />
+            </Animated.View>
+
+            {/* Bottom button */}
+            <Animated.View style={buttonStyle} className="items-center mt-12">
+              <PrimaryButton title="Leave a rating" onPress={handleRateApp} buttonType="gold" />
+
+              <TouchableOpacity onPress={handleIRatedPress} className="mt-6 items-center">
+                <Text className="font-din text-description underline text-[16px]">
+                  👍 Ok, I rated
+                </Text>
+              </TouchableOpacity>
+            </Animated.View>
+          </View>
+        </SafeAreaView>
+      </Animated.View>
+    </>
   );
 };
 

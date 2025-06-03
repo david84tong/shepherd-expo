@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { View, Text, Pressable, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, Pressable, ActivityIndicator, ScrollView, StatusBar } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -206,68 +206,71 @@ export default function OnboardingIntentScreen() {
   ];
 
   return (
-    <Animated.View style={screenStyle} className="px-6 pt-12 pb-24">
-      {/* Question Text */}
-      <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-4 px-12">
-          What brings you here today?
-        </Text>
-      </Animated.View>
+    <>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <Animated.View style={screenStyle} className="px-6 pt-12 pb-24">
+        {/* Question Text */}
+        <Animated.View style={titleStyle}>
+          <Text className="font-feather text-h1 text-center text-textPrimary mb-4 px-12">
+            What brings you here today?
+          </Text>
+        </Animated.View>
 
-      <Animated.View style={subtitleStyle}>
-        <Text className="font-din text-lg text-description text-center mt-0">
-          Select all that apply
-        </Text>
-      </Animated.View>
+        <Animated.View style={subtitleStyle}>
+          <Text className="font-din text-lg text-description text-center mt-0">
+            Select all that apply
+          </Text>
+        </Animated.View>
 
-      {/* Buttons Container - with padding at bottom to make space for fixed button */}
-      <Animated.View style={buttonsStyle} className="space-y-4 mt-8 mb-20">
-        <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
-          {buttons.map((button) => (
-            <Pressable
-              key={button.id}
-              onPress={() => handleSelection(button.id)}
-              onPressIn={() => setPressedButton(button.id)}
-              onPressOut={() => setPressedButton(null)}
-              className={`
-              h-[80px] bg-white rounded-card border-[3px] border-border px-4
-              flex-row items-center shadow-buttonShadow mt-4
-              ${pressedButton === button.id ? 'translate-y-[3px] shadow-none' : 'translate-y-0'}
-              ${selectedIntents.includes(button.id) ? 'border-accentGold bg-surfaceCream' : ''}
-            `}>
-              <View className={`${button.bgColor} rounded-xl p-3`}>
-                <Ionicons name={button.icon as any} size={24} color={button.color} />
-              </View>
-              <View className="ml-4 flex-1">
-                <Text className="font-feather text-lg text-textPrimary">{button.title}</Text>
-                <Text className="font-din text-md text-description mt-1">{button.description}</Text>
-              </View>
-              <View
+        {/* Buttons Container - with padding at bottom to make space for fixed button */}
+        <Animated.View style={buttonsStyle} className="space-y-4 mt-8 mb-20">
+          <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+            {buttons.map((button) => (
+              <Pressable
+                key={button.id}
+                onPress={() => handleSelection(button.id)}
+                onPressIn={() => setPressedButton(button.id)}
+                onPressOut={() => setPressedButton(null)}
                 className={`
-              w-6 h-6 rounded-full border-2 items-center justify-center
-              ${selectedIntents.includes(button.id)
-                    ? 'bg-accentGold border-accentGold'
-                    : 'border-description'
-                  }
-            `}>
-                {selectedIntents.includes(button.id) && (
-                  <Ionicons name="checkmark" size={16} color="white" />
-                )}
-              </View>
-            </Pressable>
-          ))}
-        </ScrollView>
-      </Animated.View>
+                h-[80px] bg-white rounded-card border-[3px] border-border px-4
+                flex-row items-center shadow-buttonShadow mt-4
+                ${pressedButton === button.id ? 'translate-y-[3px] shadow-none' : 'translate-y-0'}
+                ${selectedIntents.includes(button.id) ? 'border-accentGold bg-surfaceCream' : ''}
+              `}>
+                <View className={`${button.bgColor} rounded-xl p-3`}>
+                  <Ionicons name={button.icon as any} size={24} color={button.color} />
+                </View>
+                <View className="ml-4 flex-1">
+                  <Text className="font-feather text-lg text-textPrimary">{button.title}</Text>
+                  <Text className="font-din text-md text-description mt-1">{button.description}</Text>
+                </View>
+                <View
+                  className={`
+                w-6 h-6 rounded-full border-2 items-center justify-center
+                ${selectedIntents.includes(button.id)
+                      ? 'bg-accentGold border-accentGold'
+                      : 'border-description'
+                    }
+              `}>
+                  {selectedIntents.includes(button.id) && (
+                    <Ionicons name="checkmark" size={16} color="white" />
+                  )}
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </Animated.View>
 
-      {/* Continue Button - Fixed at bottom */}
-      <Animated.View style={continueStyle}>
-        <PrimaryButton
-          title="Continue"
-          onPress={handleContinue}
-          disabled={selectedIntents.length === 0}
-          isActive={selectedIntents.length > 0}
-        />
+        {/* Continue Button - Fixed at bottom */}
+        <Animated.View style={continueStyle}>
+          <PrimaryButton
+            title="Continue"
+            onPress={handleContinue}
+            disabled={selectedIntents.length === 0}
+            isActive={selectedIntents.length > 0}
+          />
+        </Animated.View>
       </Animated.View>
-    </Animated.View>
+    </>
   );
 }

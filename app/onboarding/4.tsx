@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import { OnboardingResponses } from '../models/Onboarding';
-import Animated, { 
-  useAnimatedStyle, 
-  withTiming, 
+import Animated, {
+  useAnimatedStyle,
+  withTiming,
   withSpring,
   useSharedValue,
   withDelay,
@@ -25,10 +25,10 @@ export default function OnboardingBibleFamiliarityScreen() {
   // Create Reanimated shared values for each component
   const iconOpacity = useSharedValue(0);
   const iconTranslateY = useSharedValue(40);
-  
+
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(40);
-  
+
   const optionsOpacity = useSharedValue(0);
   const optionsTranslateY = useSharedValue(40);
 
@@ -40,12 +40,12 @@ export default function OnboardingBibleFamiliarityScreen() {
     titleTranslateY.value = 40;
     optionsOpacity.value = 0;
     optionsTranslateY.value = 40;
-    
+
     // Staggered animations for each component
     const animateComponent = (opacity: any, translateY: any, delay: number) => {
       opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
-      translateY.value = withDelay(delay, 
-        withSpring(0, { 
+      translateY.value = withDelay(delay,
+        withSpring(0, {
           damping: 20,
           stiffness: 90,
         })
@@ -82,10 +82,10 @@ export default function OnboardingBibleFamiliarityScreen() {
       'on-off': 'Intermediate',
       'consistently': 'Advanced'
     } as const;
-    
+
     // Set in user store
     setExperienceLevel(familiarity || 'Beginner');
-    
+
     // Trigger light haptic feedback
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
@@ -94,7 +94,7 @@ export default function OnboardingBibleFamiliarityScreen() {
     } catch (error) {
       console.log('Haptics not available');
     }
-    
+
     analytics.logEvent("OnboardingFamilarityScreen_Tapped_Continue", {
       familiarity: familiarity,
     });
@@ -118,7 +118,7 @@ export default function OnboardingBibleFamiliarityScreen() {
     {
       id: 'on-off',
       title: 'Fairly',
-      description: `I've read some of the books` ,
+      description: `I've read some of the books`,
     },
     {
       id: 'consistently',
@@ -133,29 +133,32 @@ export default function OnboardingBibleFamiliarityScreen() {
   ] as const;
 
   return (
-    <View className="flex-1 bg-surfaceCream px-6 pt-12">
-      {/* Decorative Background Elements */}
-  
-      {/* Question Text */}
-      <Animated.View style={titleStyle}>
-        <Text className="font-feather text-h2 text-center text-textPrimary mb-0">
-          How familiar are you with the Bible??
-        </Text>
-      </Animated.View>
+    <>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <View className="flex-1 bg-surfaceCream px-6 pt-12">
+        {/* Decorative Background Elements */}
 
-      {/* Options Container */}
-      <Animated.View style={optionsStyle} className="space-y-4 mt-4">
-        {options.map((option) => (
-          <PrimaryButton
-            key={option.id}
-            title={option.title}
-            onPress={() => handleSelection(option.id as OnboardingResponses['bibleFamiliarity'])}
-            isActive={true}
-            primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
-            textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
-          />
-        ))}
-      </Animated.View>
-    </View>
+        {/* Question Text */}
+        <Animated.View style={titleStyle}>
+          <Text className="font-feather text-h2 text-center text-textPrimary mb-0">
+            How familiar are you with the Bible??
+          </Text>
+        </Animated.View>
+
+        {/* Options Container */}
+        <Animated.View style={optionsStyle} className="space-y-4 mt-4">
+          {options.map((option) => (
+            <PrimaryButton
+              key={option.id}
+              title={option.title}
+              onPress={() => handleSelection(option.id as OnboardingResponses['bibleFamiliarity'])}
+              isActive={true}
+              primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
+              textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
+            />
+          ))}
+        </Animated.View>
+      </View>
+    </>
   );
 }

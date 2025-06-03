@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useEffect } from 'react';
-import { View, Text, Image } from 'react-native';
+import { View, Text, Image, StatusBar } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -109,90 +109,34 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
   ];
 
   return (
-    <View className="flex-1 bg-surfaceCream pt-12 w-full items-center" style={{ paddingBottom: insets.bottom }}>
-      {/* Title */}
-      <Animated.View style={titleStyle} className="mb-8 px-6">
-        <Text className="font-feather text-2xl text-textPrimary text-center mb-0">
-          But if you read, pray and reflect, your lamb grows...
-        </Text>
-      </Animated.View>
-
-      {/* Lamb grid */}
-      <View className="flex-row flex-wrap justify-center items-center gap-4 mb-4">
-        {/* Row 1 */}
-        <Animated.View
-          style={[
-            cardStyles[0],
-            {
-              // No glow for level 1
-              shadowColor: 'transparent',
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0,
-              shadowRadius: 0,
-            }
-          ]}
-          className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
-        >
-          {riveAssets && (
-            <View className="w-20 h-20">
-              <Rive
-                resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-                url={IS_IOS ? riveAssets[0].uri! : undefined}
-                artboardName="lamb-idle"
-                style={{ width: '100%', height: '100%' }}
-              />
-            </View>
-          )}
-          <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-            <Text className="font-feather text-accentGold">LVL 1</Text>
-          </View>
+    <>
+      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+      <View className="flex-1 bg-surfaceCream pt-12 w-full items-center" style={{ paddingBottom: insets.bottom }}>
+        {/* Title */}
+        <Animated.View style={titleStyle} className="mb-8 px-6">
+          <Text className="font-feather text-2xl text-textPrimary text-center mb-0">
+            But if you read, pray and reflect, your lamb grows...
+          </Text>
         </Animated.View>
-        <Animated.View
-          style={[
-            cardStyles[1],
-            {
-              // No glow for level 10
-              shadowColor: 'transparent',
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: 0,
-              shadowRadius: 0,
-            }
-          ]}
-          className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
-        >
-          {riveAssets && (
-            <View className="w-[110px] h-[110px]">
-              <Rive
-                resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-                url={IS_IOS ? riveAssets[0].uri! : undefined}
-                artboardName="lamb-idle"
-                style={{ width: '100%', height: '100%' }}
-              />
-            </View>
-          )}
-          <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-            <Text className="font-feather text-accentGold">LVL 10</Text>
-          </View>
-        </Animated.View>
-        {/* Row 2 */}
-        <Animated.View
-          style={[
-            cardStyles[2],
-            {
-              // Remove card-level shadow since we want glow behind the lamb
-            }
-          ]}
-          className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
-        >
-          {riveAssets && (
-            <>
-              {/* Multiple background elements for blur effect */}
 
-
-              {/* BlurView that blurs all the elements above */}
-              <Image source={require('../../assets/redShadow.png')} className="absolute w-[200px] h-[200px]" />
-
-              <View className="w-[120px] h-[120px]">
+        {/* Lamb grid */}
+        <View className="flex-row flex-wrap justify-center items-center gap-4 mb-4">
+          {/* Row 1 */}
+          <Animated.View
+            style={[
+              cardStyles[0],
+              {
+                // No glow for level 1
+                shadowColor: 'transparent',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0,
+                shadowRadius: 0,
+              }
+            ]}
+            className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
+          >
+            {riveAssets && (
+              <View className="w-20 h-20">
                 <Rive
                   resourceName={IS_ANDROID ? 'home_lamb' : undefined}
                   url={IS_IOS ? riveAssets[0].uri! : undefined}
@@ -200,50 +144,109 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
                   style={{ width: '100%', height: '100%' }}
                 />
               </View>
-            </>
-          )}
-          <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-            <Text className="font-feather text-accentGold">LVL 20</Text>
-          </View>
-        </Animated.View>
-        <Animated.View
-          style={[
-            cardStyles[3],
-            {
-
-            }
-          ]}
-          className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
-        >
-          <Image source={require('../../assets/yellowShadow.png')} className="absolute w-[200px] h-[200px]" />
-
-          {riveAssets && (
-            <View className="w-[140px] h-[140px]">
-              <Rive
-                resourceName={IS_ANDROID ? 'lamb_wings_idle' : undefined}
-                url={IS_IOS ? riveAssets[1].uri! : undefined}
-                style={{ width: '100%', height: '100%' }}
-              />
+            )}
+            <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
+              <Text className="font-feather text-accentGold">LVL 1</Text>
             </View>
-          )}
+          </Animated.View>
+          <Animated.View
+            style={[
+              cardStyles[1],
+              {
+                // No glow for level 10
+                shadowColor: 'transparent',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: 0,
+                shadowRadius: 0,
+              }
+            ]}
+            className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
+          >
+            {riveAssets && (
+              <View className="w-[110px] h-[110px]">
+                <Rive
+                  resourceName={IS_ANDROID ? 'home_lamb' : undefined}
+                  url={IS_IOS ? riveAssets[0].uri! : undefined}
+                  artboardName="lamb-idle"
+                  style={{ width: '100%', height: '100%' }}
+                />
+              </View>
+            )}
+            <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
+              <Text className="font-feather text-accentGold">LVL 10</Text>
+            </View>
+          </Animated.View>
+          {/* Row 2 */}
+          <Animated.View
+            style={[
+              cardStyles[2],
+              {
+                // Remove card-level shadow since we want glow behind the lamb
+              }
+            ]}
+            className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
+          >
+            {riveAssets && (
+              <>
+                {/* Multiple background elements for blur effect */}
+
+
+                {/* BlurView that blurs all the elements above */}
+                <Image source={require('../../assets/redShadow.png')} className="absolute w-[200px] h-[200px]" />
+
+                <View className="w-[120px] h-[120px]">
+                  <Rive
+                    resourceName={IS_ANDROID ? 'home_lamb' : undefined}
+                    url={IS_IOS ? riveAssets[0].uri! : undefined}
+                    artboardName="lamb-idle"
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </View>
+              </>
+            )}
+            <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
+              <Text className="font-feather text-accentGold">LVL 20</Text>
+            </View>
+          </Animated.View>
+          <Animated.View
+            style={[
+              cardStyles[3],
+              {
+
+              }
+            ]}
+            className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
+          >
+            <Image source={require('../../assets/yellowShadow.png')} className="absolute w-[200px] h-[200px]" />
+
+            {riveAssets && (
+              <View className="w-[140px] h-[140px]">
+                <Rive
+                  resourceName={IS_ANDROID ? 'lamb_wings_idle' : undefined}
+                  url={IS_IOS ? riveAssets[1].uri! : undefined}
+                  style={{ width: '100%', height: '100%' }}
+                />
+              </View>
+            )}
+            <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
+              <Text className="font-feather text-accentGold">LVL 33</Text>
+            </View>
+          </Animated.View>
+        </View>
+
+        {/* Skins section */}
+        <Animated.View style={cardStyles[4]} className="w-[340px] h-[140px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative mb-4">
+          <Image source={skins} className="w-full h-[120px]" resizeMode="contain" />
           <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-            <Text className="font-feather text-accentGold">LVL 33</Text>
+            <Text className="font-feather text-accentGold">Shop for skins at level 10</Text>
           </View>
         </Animated.View>
-      </View>
 
-      {/* Skins section */}
-      <Animated.View style={cardStyles[4]} className="w-[340px] h-[140px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative mb-4">
-        <Image source={skins} className="w-full h-[120px]" resizeMode="contain" />
-        <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-          <Text className="font-feather text-accentGold">Shop for skins at level 10</Text>
+        {/* Continue Button - fixed at bottom */}
+        <View className="absolute left-6 right-6" style={{ bottom: Math.max(insets.bottom + 16, 24) }}>
+          <PrimaryButton title="Continue" onPress={handleContinue} />
         </View>
-      </Animated.View>
-
-      {/* Continue Button - fixed at bottom */}
-      <View className="absolute left-6 right-6" style={{ bottom: Math.max(insets.bottom + 16, 24) }}>
-        <PrimaryButton title="Continue" onPress={handleContinue} />
       </View>
-    </View>
+    </>
   );
 }
