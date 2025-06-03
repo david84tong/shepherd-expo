@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Animated, Easing, Dimensions, ActivityIndicator } from 'react-native';
+import { View, Text, Animated, Easing, Dimensions, ActivityIndicator, StatusBar } from 'react-native';
 import { GLView, ExpoWebGLRenderingContext } from 'expo-gl';
 import { Renderer } from 'expo-three';
 // @ts-ignore: If you get type errors for 'three', install @types/three for type support
@@ -121,130 +121,152 @@ export default function LoadingScreen() {
 
   // Handler for GLView context creation
   const handleContextCreate = async (gl: ExpoWebGLRenderingContext) => {
-    // @ts-ignore
-    const renderer = new Renderer({ gl });
-    // @ts-ignore
-    renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
-    // @ts-ignore
-    renderer.setClearColor(DARK_BG, 1);
+    let scene: THREE.Scene;
+    let camera: THREE.Camera;
+    let renderer: THREE.WebGLRenderer;
+    let material: THREE.ShaderMaterial;
+    let plane: THREE.Mesh;
+    let shouldAnimate = true;
 
-    const scene = new THREE.Scene();
-    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
-    camera.position.z = 1;
+    try {
+      renderer = new Renderer({ gl });
+      renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
+      renderer.setClearColor(DARK_BG, 1);
 
-    // Fullscreen plane geometry
-    const geometry = new THREE.PlaneGeometry(2, 2);
+      scene = new THREE.Scene();
+      camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+      camera.position.z = 1;
 
-    // Custom shader material for organic animated glow
-    const material = new THREE.ShaderMaterial({
-      uniforms: {
-        u_time: { value: 0 },
-        u_resolution: { value: new THREE.Vector2(gl.drawingBufferWidth, gl.drawingBufferHeight) },
-        u_color: { value: new THREE.Color(ORANGE) },
-      },
-      vertexShader: `
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+      const geometry = new THREE.PlaneGeometry(2, 2);
+      material = new THREE.ShaderMaterial({
+        uniforms: {
+          u_time: { value: 0 },
+          u_resolution: { value: new THREE.Vector2(gl.drawingBufferWidth, gl.drawingBufferHeight) },
+          u_color: { value: new THREE.Color(ORANGE) },
+        },
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+  precision highp float;
+  uniform float u_time;
+  uniform vec2 u_resolution;
+  uniform vec3 u_color;
+  varying vec2 vUv;
+  
+  float noise(vec2 p) {
+    return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453);
+  }
+  
+  // Animated side glow (left & right)
+  float edgeGlow(float x, float y, float time, float edge) {
+    float spotY = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
+    float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
+    float edgeDist = abs(x - edge);
+    float yDist = abs(y - spotY);
+    float spot = exp(-pow(yDist / spotWidth, 2.0) * 6.0);
+    float flicker = 0.6 + 0.4 * noise(vec2(y * 10.0, time * 0.5 + edge * 10.0));
+    return smoothstep(0.12, 0.0, edgeDist) * (0.5 + 0.8 * spot * flicker);
+  }
+  
+  // Static glow for top and bottom
+  float staticGlow(float y, float edge) {
+    float edgeDist = abs(y - edge);
+    return smoothstep(0.06, 0.0, edgeDist);
+  }
+  
+  float verticalEdgeGlow(float x, float y, float time, float edge) {
+    float spotX = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
+    float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
+    float edgeDist = abs(y - edge);
+    float xDist = abs(x - spotX);
+    float spot = exp(-pow(xDist / spotWidth, 2.0) * 6.0);
+    float flicker = 0.6 + 0.4 * noise(vec2(x * 10.0, time * 0.5 + edge * 10.0));
+    return smoothstep(0.08, 0.0, edgeDist) * (0.5 + 0.5 * spot * flicker);
+  }
+  
+  void main() {
+    float t = u_time;
+  
+    // Center fading glow
+    float edgeDist = min(vUv.x, 1.0 - vUv.x);
+    float n = noise(vUv * 10.0 + t * 0.2);
+    float glow = smoothstep(0.0, 0.25 + 0.08 * sin(t + n * 6.0), edgeDist);
+    float intensity = (1.0 - glow) * (0.7 + 0.3 * sin(t + vUv.x * 10.0));
+    float centerAlpha = pow(1.0 - edgeDist, 2.5) * intensity;
+  
+    // Animated left/right
+    float leftGlow = edgeGlow(vUv.x, vUv.y, t, 0.0);
+    float rightGlow = edgeGlow(vUv.x, vUv.y, t, 1.0);
+  
+    // Static top/bottom
+    float bottomGlow = staticGlow(vUv.y, 0.0);
+    float topGlow = staticGlow(vUv.y, 1.0);
+  
+    // Combine
+    float sideAlpha = leftGlow + rightGlow;
+    float verticalAlpha = bottomGlow + topGlow;
+    float finalAlpha = centerAlpha + sideAlpha + verticalAlpha;
+  
+    gl_FragColor = vec4(u_color, finalAlpha);
+  }
+  
+  
+        `,
+        transparent: true,
+        depthWrite: false,
+
+        // ... your existing shader material code
+      });
+
+      plane = new THREE.Mesh(geometry, material);
+      scene.add(plane);
+
+      const animate = () => {
+        if (!shouldAnimate) return;
+
+        material.uniforms.u_time.value += 0.016;
+        renderer.render(scene, camera);
+        gl.endFrameEXP();
+        threeFrameRef.current = requestAnimationFrame(animate);
+      };
+
+      animate();
+
+      // Store cleanup function
+      glViewRef.current = {
+        stop: () => {
+          shouldAnimate = false;
+          if (threeFrameRef.current) {
+            cancelAnimationFrame(threeFrameRef.current);
+          }
+          // Clean up Three.js resources
+          if (geometry) geometry.dispose();
+          if (material) material.dispose();
+          if (plane) scene?.remove(plane);
         }
-      `,
-      fragmentShader: `
-precision highp float;
-uniform float u_time;
-uniform vec2 u_resolution;
-uniform vec3 u_color;
-varying vec2 vUv;
-
-float noise(vec2 p) {
-  return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453);
-}
-
-// Animated side glow (left & right)
-float edgeGlow(float x, float y, float time, float edge) {
-  float spotY = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
-  float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
-  float edgeDist = abs(x - edge);
-  float yDist = abs(y - spotY);
-  float spot = exp(-pow(yDist / spotWidth, 2.0) * 6.0);
-  float flicker = 0.6 + 0.4 * noise(vec2(y * 10.0, time * 0.5 + edge * 10.0));
-  return smoothstep(0.12, 0.0, edgeDist) * (0.5 + 0.8 * spot * flicker);
-}
-
-// Static glow for top and bottom
-float staticGlow(float y, float edge) {
-  float edgeDist = abs(y - edge);
-  return smoothstep(0.06, 0.0, edgeDist);
-}
-
-float verticalEdgeGlow(float x, float y, float time, float edge) {
-  float spotX = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
-  float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
-  float edgeDist = abs(y - edge);
-  float xDist = abs(x - spotX);
-  float spot = exp(-pow(xDist / spotWidth, 2.0) * 6.0);
-  float flicker = 0.6 + 0.4 * noise(vec2(x * 10.0, time * 0.5 + edge * 10.0));
-  return smoothstep(0.08, 0.0, edgeDist) * (0.5 + 0.5 * spot * flicker);
-}
-
-void main() {
-  float t = u_time;
-
-  // Center fading glow
-  float edgeDist = min(vUv.x, 1.0 - vUv.x);
-  float n = noise(vUv * 10.0 + t * 0.2);
-  float glow = smoothstep(0.0, 0.25 + 0.08 * sin(t + n * 6.0), edgeDist);
-  float intensity = (1.0 - glow) * (0.7 + 0.3 * sin(t + vUv.x * 10.0));
-  float centerAlpha = pow(1.0 - edgeDist, 2.5) * intensity;
-
-  // Animated left/right
-  float leftGlow = edgeGlow(vUv.x, vUv.y, t, 0.0);
-  float rightGlow = edgeGlow(vUv.x, vUv.y, t, 1.0);
-
-  // Static top/bottom
-  float bottomGlow = staticGlow(vUv.y, 0.0);
-  float topGlow = staticGlow(vUv.y, 1.0);
-
-  // Combine
-  float sideAlpha = leftGlow + rightGlow;
-  float verticalAlpha = bottomGlow + topGlow;
-  float finalAlpha = centerAlpha + sideAlpha + verticalAlpha;
-
-  gl_FragColor = vec4(u_color, finalAlpha);
-}
-
-
-      `,
-      transparent: true,
-      depthWrite: false,
-    });
-
-    const plane = new THREE.Mesh(geometry, material);
-    scene.add(plane);
-
-    let t = 0;
-    const animate = () => {
-      t += 0.016;
-      material.uniforms.u_time.value = t;
-      // @ts-ignore
-      renderer.render(scene, camera);
-      gl.endFrameEXP();
-      threeFrameRef.current = requestAnimationFrame(animate);
-    };
-    animate();
-
-    // Clean up on unmount
-    glViewRef.current = { stop: () => { if (threeFrameRef.current) cancelAnimationFrame(threeFrameRef.current); } };
+      };
+    } catch (error) {
+      console.error('GLView error:', error);
+      if (glViewRef.current?.stop) glViewRef.current.stop();
+    }
   };
 
   useEffect(() => {
     return () => {
-      if (glViewRef.current && typeof glViewRef.current.stop === 'function') glViewRef.current.stop();
+      if (glViewRef.current?.stop) {
+        glViewRef.current.stop();
+      }
     };
   }, []);
 
   return (
     <View className="flex-1 items-center justify-center bg-surfaceCream" style={{ backgroundColor: DARK_BG }}>
+      <StatusBar translucent backgroundColor="transparent" />
       {/* Glowing border background */}
       <GLView
         style={{
