@@ -86,13 +86,13 @@ enum StreakState {
     var iconName: String {
         switch self {
         case .noStreak:
-            return "flame.slash"
+            return "fireWidget"
         case .active:
-            return "flame.fill"
+            return "fireWidget"
         case .atRisk:
-            return "flame"
+            return "fireWidget"
         case .broken:
-            return "flame.slash"
+            return "fireWidget"
         }
     }
     
@@ -175,24 +175,34 @@ struct ShepherdStreakWidgetEntryView : View {
             
             // Content overlay
             VStack(spacing: 8) {
-                Image(systemName: state.iconName)
-                    .font(.system(size: 33))
-                    .foregroundColor(state.iconColor)
+                HStack(spacing: 2) {
+                    Image(state.iconName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 40, height: 40)
+                        .foregroundColor(state.iconColor)
+                    
+                    Text(state.labelText)
+                        .font(.system(size: 16, weight: .bold))
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(.white.opacity(0.9))
+                        .minimumScaleFactor(0.5) // Allow text to scale down if needed
+                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                }
+                .padding(.top, 4)
                 
-                Text(state.labelText)
-                    .font(.system(size: 14, weight: .semibold))
-                    .multilineTextAlignment(.center)
-                    .foregroundColor(.primary)
-                    .minimumScaleFactor(0.5) // Allow text to scale down if needed
+                Spacer()
                 
                 if case .atRisk = state {
                     Text("Open app now!")
-                        .font(.system(size: 12))
-                        .foregroundColor(.red)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.9))
+                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                 } else if case .broken = state {
                     Text("Restart your journey")
-                        .font(.system(size: 12))
-                        .foregroundColor(.blue)
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.9))
+                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                 }
             }
             .padding()
