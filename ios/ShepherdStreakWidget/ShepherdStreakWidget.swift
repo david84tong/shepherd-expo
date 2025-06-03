@@ -55,7 +55,7 @@ enum StreakState {
         case .noStreak:
             return "Start your first streak!"
         case .active(let days):
-            return "\(days) day streak"
+            return "\(days) day"
         case .atRisk(let days):
             return "\(days) day streak - at risk!"
         case .broken(let daysMissed):
@@ -195,7 +195,7 @@ struct ShepherdStreakWidgetEntryView : View {
                         .foregroundColor(state.iconColor)
                     
                     Text(state.labelText)
-                        .font(.custom("Nunito-ExtraBold", size: 16))
+                        .font(.custom("Nunito-ExtraBold", size: 18))
                         .multilineTextAlignment(.center)
                         .foregroundColor(.white.opacity(0.9))
                         .minimumScaleFactor(0.5) 
