@@ -55,7 +55,7 @@ enum StreakState {
         case .noStreak:
             return "Start your first streak!"
         case .active(let days):
-            return "\(days) day streak"
+            return "\(days) day"
         case .atRisk(let days):
             return "\(days) day streak - at risk!"
         case .broken(let daysMissed):
@@ -63,16 +63,36 @@ enum StreakState {
         }
     }
     
+    var backgroundImageName: String {
+        switch self {
+        case .noStreak:
+            return "streak_0"  // Image for 0 day streak
+        case .active(let days):
+            // Cap the streak display at 8 days
+            let cappedDays = min(days, 8)
+            return "streak_\(cappedDays)"
+        case .atRisk, .broken:
+            // For broken streaks, use the inactivity images (1-3 days)
+            let daysMissed: Int
+            if case .broken(let missed) = self {
+                daysMissed = min(missed, 3)  // Cap at 3 days of inactivity
+            } else {
+                daysMissed = 1  // For atRisk, show 1 day inactive
+            }
+            return "inactive_\(daysMissed)"
+        }
+    }
+    
     var iconName: String {
         switch self {
         case .noStreak:
-            return "flame.slash"
+            return "fireWidget"
         case .active:
-            return "flame.fill"
+            return "fireWidget"
         case .atRisk:
-            return "flame"
+            return "fireWidget"
         case .broken:
-            return "flame.slash"
+            return "fireWidget"
         }
     }
     
@@ -141,40 +161,85 @@ struct ShepherdStreakWidgetEntryView : View {
     var body: some View {
         let state = entry.streakData.streakState
         
+        // Get the recommended widget size for the current family
+        let widgetSize = WidgetFamily.systemSmall.getRecommendedSize()
+        
         ZStack {
-            // Background for iOS 17+
-            if #available(iOS 17.0, *) {
-                Color.clear
-                    .containerBackground(.fill.tertiary, for: .widget)
-            } else {
-                Color(UIColor.systemBackground)
-            }
+            // Background Image with explicit frame and content mode
+            Image(state.backgroundImageName)
+                .resizable()
+                // .border(Color.black, width: 4)
+                .scaledToFill()
+                .frame(width: widgetSize.width + 15, height: widgetSize.height + 15)
+                .clipped()
             
-            // Content
-            VStack(spacing: 8) {
-                // Icon
-                Image(systemName: state.iconName)
-                    .font(.system(size: 32))
-                    .foregroundColor(state.iconColor)
+            // Black gradient overlay
+            LinearGradient(
+                gradient: Gradient(
+                    colors: [
+                        Color.black.opacity(0.4),
+                        Color.black.opacity(0)
+                    ]
+                ),
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            
+            // Content overlay
+            VStack(spacing: 4) {
+                HStack(spacing: 2) {
+                    Image(state.iconName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 24, height: 24)
+                        .foregroundColor(state.iconColor)
+                    
+                    Text(state.labelText)
+                        .font(.custom("Nunito-ExtraBold", size: 18))
+                        .multilineTextAlignment(.center)
+                        .foregroundColor(.white.opacity(0.9))
+                        .minimumScaleFactor(0.5) 
+                }
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, 8)
                 
-                // Text
-                Text(state.labelText)
-                    .font(.system(size: 14, weight: .semibold))
+                Text("Keep your streak alive!")
+                    .font(.custom("Nunito-Bold", size: 12))
+                    .foregroundColor(.white.opacity(0.8))
                     .multilineTextAlignment(.center)
-                    .foregroundColor(.primary)
+                    .padding(.top, -2)
                 
-                // CTA text
+                Spacer()
+                
                 if case .atRisk = state {
                     Text("Open app now!")
-                        .font(.system(size: 12))
-                        .foregroundColor(.red)
+                        .font(.custom("Nunito-Bold", size: 12))
+                        .foregroundColor(.white.opacity(0.9))
+                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                 } else if case .broken = state {
                     Text("Restart your journey")
-                        .font(.system(size: 12))
-                        .foregroundColor(.blue)
+                        .font(.custom("Nunito-Bold", size: 12))
+                        .foregroundColor(.white.opacity(0.9))
+                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                 }
             }
             .padding()
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .edgesIgnoringSafeArea(.all)
+        .background(Color.clear)
+    }
+}
+
+// Extension to get recommended widget sizes
+extension WidgetFamily {
+    func getRecommendedSize() -> CGSize {
+        switch self {
+        case .systemSmall:
+            // Standard small widget size (2x2)
+            return CGSize(width: 169, height: 169)
+        default:
+            return CGSize(width: 169, height: 169)
         }
     }
 }
