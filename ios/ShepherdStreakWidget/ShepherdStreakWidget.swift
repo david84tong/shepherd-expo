@@ -92,7 +92,7 @@ enum StreakState {
         case .atRisk:
             return "fireWidget"
         case .broken:
-            return "fireWidget"
+            return "" 
         }
     }
     
@@ -188,11 +188,13 @@ struct ShepherdStreakWidgetEntryView : View {
             // Content overlay
             VStack(spacing: 4) {
                 HStack(spacing: 2) {
-                    Image(state.iconName)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 24, height: 24)
-                        .foregroundColor(state.iconColor)
+                    if !state.iconName.isEmpty {
+                        Image(state.iconName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+                            .foregroundColor(state.iconColor)
+                    }
                     
                     Text(state.labelText)
                         .font(.custom("Nunito-ExtraBold", size: 18))
@@ -203,21 +205,23 @@ struct ShepherdStreakWidgetEntryView : View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.top, 8)
                 
-                Text("Keep your streak alive!")
-                    .font(.custom("Nunito-Bold", size: 12))
-                    .foregroundColor(.white.opacity(0.8))
-                    .multilineTextAlignment(.center)
-                    .padding(.top, -2)
+                if case .broken = state {
+                    Text("Restart journey")
+                        .font(.custom("Nunito-Bold", size: 12))
+                        .foregroundColor(.white.opacity(0.9))
+                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                } else {
+                    Text("Keep your streak alive!")
+                        .font(.custom("Nunito-Bold", size: 12))
+                        .foregroundColor(.white.opacity(0.8))
+                        .multilineTextAlignment(.center)
+                        .padding(.top, -2)
+                }
                 
                 Spacer()
                 
                 if case .atRisk = state {
                     Text("Open app now!")
-                        .font(.custom("Nunito-Bold", size: 12))
-                        .foregroundColor(.white.opacity(0.9))
-                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
-                } else if case .broken = state {
-                    Text("Restart your journey")
                         .font(.custom("Nunito-Bold", size: 12))
                         .foregroundColor(.white.opacity(0.9))
                         .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
