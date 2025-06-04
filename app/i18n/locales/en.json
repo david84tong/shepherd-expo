@@ -29,12 +29,21 @@
   },
   "onboarding": {
     "welcome": {
+      "firstText": "Every Shepherd starts with one lost lamb...",
+      "secondText": "This one's yours.",
+      "tapPrompt": "Tap to wake it up",
       "claimLamb": "Claim Lost Lamb",
       "beginJourney": "Begin Journey"
     },
     "lambName": {
       "title": "What should we call your lamb?",
       "placeholder": "Enter name",
+      "continue": "Continue",
+      "loading": "Loading..."
+    },
+    "username": {
+      "title": "What should we call you?",
+      "placeholder": "Enter your name",
       "continue": "Continue"
     },
     "intentions": {
@@ -90,6 +99,100 @@
         "exploring": "I'm exploring Christianity",
         "curious": "I'm curious about faith",
         "other": "Other/Prefer not to say"
+      }
+    },
+    "familiarity": {
+      "title": "How familiar are you with the Bible?",
+      "options": {
+        "veryFamiliar": "Very familiar - I've read most of it",
+        "somewhatFamiliar": "Somewhat familiar - I know some stories",
+        "notVeryFamiliar": "Not very familiar - I've heard some things",
+        "notFamiliar": "Not familiar at all"
+      }
+    },
+    "readingTime": {
+      "title": "How much time can you dedicate to daily reading?",
+      "subtitle": "This helps us tailor your experience",
+      "options": {
+        "1-5": "1-5 minutes",
+        "6-10": "6-10 minutes", 
+        "11-15": "11-15 minutes",
+        "16-25": "16-25 minutes",
+        "25plus": "25+ minutes"
+      }
+    },
+    "age": {
+      "title": "What's your age?",
+      "subtitle": "This helps us provide age-appropriate content",
+      "selectBirthDate": "Select Your Birth Date",
+      "parentGuardian": "I'm a parent/guardian"
+    },
+    "religousAffiliation": {
+      "title": "What's your religious background?",
+      "subtitle": "This helps us personalize your experience",
+      "options": {
+        "protestant": "Protestant/Evangelical",
+        "catholic": "Catholic",
+        "orthodox": "Orthodox",
+        "nonDenominational": "Non-denominational",
+        "exploring": "Exploring Christianity",
+        "other": "Other/None"
+      }
+    },
+    "notifications": {
+      "title": "Stay on track with daily reminders",
+      "subtitle": "Get gentle nudges to maintain your reading streak",
+      "permissionTitle": "\"Shepherd\" would like to send you notifications",
+      "permissionDescription": "Notifications may include alerts, sounds, and icon badges. These can be configured in Settings.",
+      "mockNotification": {
+        "from": "From Shepherd",
+        "time": "now",
+        "message": "Your streak is gonna be broken!"
+      },
+      "dontAllow": "Don't Allow",
+      "allow": "Allow",
+      "remindMe": "Remind Me!",
+      "alreadyEnabled": "Notifications are already enabled!",
+      "enabledSuccess": "Great! You'll get daily reminders to keep your streak alive.",
+      "deniedMessage": "No worries! You can always enable notifications later in your device settings if you change your mind.",
+      "openSettings": "Open Settings"
+    },
+    "hearts": {
+      "title": "Introducing Hearts",
+      "subtitle": "Hearts represent your spiritual energy and motivation to grow closer to God",
+      "description": "Start each day with 3 hearts. Reading, praying, and reflecting helps maintain them. Don't worry - you'll never lose progress, hearts just encourage consistent spiritual growth!",
+      "heartsLabel": "3 ❤️"
+    },
+    "loading": {
+      "messages": {
+        "saving": "Saving your responses",
+        "encrypting": "Encrypting your data", 
+        "blessing": "Sprinkling some holy water",
+        "generating": "Generating your custom bible study plan"
+      }
+    },
+    "rating": {
+      "title": "How are we doing?",
+      "subtitle": "Your feedback helps us improve Shepherd for everyone",
+      "leaveRating": "Leave a rating",
+      "alreadyRated": "I already rated the app"
+    },
+    "explainer": {
+      "title": "Welcome to your spiritual journey!",
+      "subtitle": "Here's how Shepherd works",
+      "features": {
+        "reading": {
+          "title": "Daily Reading",
+          "description": "Read bite-sized portions of the Bible each day"
+        },
+        "prayer": {
+          "title": "Prayer Time", 
+          "description": "Learn to pray with guided prompts and templates"
+        },
+        "reflection": {
+          "title": "Quiet Reflection",
+          "description": "Take time to process what you've learned"
+        }
       }
     },
     "saveProgress": {
@@ -230,7 +333,28 @@
   "prayer": {
     "title": "Prayer",
     "prayAboutVerse": "Pray about today's verse",
-    "defaultTemplate": "Dear God, I come before you today with a heart full of gratitude. Please help me find inner peace and wisdom in all that I do. Amen."
+    "defaultTemplate": "Dear God, I come before you today with a heart full of gratitude. Please help me find inner peace and wisdom in all that I do. Amen.",
+    "myPrayers": "My Prayers",
+    "done": "Done",
+    "wantToPrayFor": "I want to pray for",
+    "guidancePlaceholder": "guidance...",
+    "customPrayers": "Custom prayers:",
+    "orPickOne": "Or pick one of these:",
+    "generatePrayer": "Generate a prayer",
+    "prayerGenerated": "Prayer Generated",
+    "yourPrayerGenerated": "Your prayer for",
+    "hasBeenGenerated": "has been generated.",
+    "amen": "Amen",
+    "topics": {
+      "health": "Health",
+      "repentance": "Repentance",
+      "patience": "Patience",
+      "family": "Family",
+      "peace": "Peace",
+      "forgiveness": "Forgiveness",
+      "strength": "Strength",
+      "wisdom": "Wisdom"
+    }
   },
   "settings": {
     "title": "Settings",
@@ -486,6 +610,8 @@
     "finishReading": "Finish Reading 🎉",
     "tapForNextVerse": "Tap for next verse →",
     "tapToShowFullVerse": "Tap to show full verse",
+    "readingComplete": "Reading Complete!",
+    "greatProgress": "Great progress!",
     "menuActions": {
       "copy": "Copy",
       "explain": "Explain",
@@ -532,18 +658,5 @@
     "howDoesSpeak": "How does this passage speak to your life today?",
     "thisPassage": "this passage",
     "defaultReflection": "Reflected on my spiritual journey today."
-  },
-  "prayer": {
-    "myPrayers": "My Prayers",
-    "done": "Done",
-    "wantToPrayFor": "I want to pray for",
-    "guidancePlaceholder": "guidance...",
-    "customPrayers": "Custom prayers:",
-    "orPickOne": "Or pick one of these:",
-    "generatePrayer": "Generate a prayer",
-    "prayerGenerated": "Prayer Generated",
-    "yourPrayerGenerated": "Your prayer for",
-    "hasBeenGenerated": "has been generated.",
-    "amen": "Amen"
   }
 } 

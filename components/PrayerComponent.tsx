@@ -19,6 +19,7 @@ import PrimaryButton from './PrimaryButton';
 import { BIBLE_BOOK_IDS } from '../app/models/Path';
 import analytics from '../utils/analytics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 
 const screenHeight = Dimensions.get('window').height;
 
@@ -60,6 +61,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   onClose,
   buttonClassName, // Note: buttonClassName is not used currently, PrimaryButton handles its own styles
 }) => {
+  const { t } = useTranslation();
   const { bottom: bottomPadding } = useSafeAreaInsets()
   // Animation values for button entry
   const buttonAnim = useRef(new Animated.Value(50)).current; // Start 50 units below final position
@@ -93,6 +95,34 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   const { recentPrayers } = usePrayerStore();
   const prayerTopic = recentPrayers.length > 0 ? recentPrayers[0] : '';
 
+  // Helper function to translate default prayer topics
+  const translateTopic = (topic: string): string => {
+    const topicKey = topic.toLowerCase();
+    
+    // Check if this is one of our default topics
+    switch (topicKey) {
+      case 'health':
+        return t('prayer.topics.health');
+      case 'repentance':
+        return t('prayer.topics.repentance');
+      case 'patience':
+        return t('prayer.topics.patience');
+      case 'family':
+        return t('prayer.topics.family');
+      case 'peace':
+        return t('prayer.topics.peace');
+      case 'forgiveness':
+        return t('prayer.topics.forgiveness');
+      case 'strength':
+        return t('prayer.topics.strength');
+      case 'wisdom':
+        return t('prayer.topics.wisdom');
+      default:
+        // Return the original topic if it's not a default one (custom topics)
+        return topic;
+    }
+  };
+
   // Generate prayer text based on the user's selected topic or currentPath
   const generatePrayerText = () => {
     // If we're praying about the verse (coming from reading success)
@@ -104,7 +134,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
     // Otherwise use topic-based prayer or default
     if (!prayerTopic) return DEFAULT_PRAYER_TEMPLATE;
 
-    return `Dear God, I come before you today with a humble heart. Please help me with ${prayerTopic.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
+    return `Dear God, I come before you today with a humble heart. Please help me with ${translateTopic(prayerTopic)} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
   };
 
   // Prayer text to display (with the user's topic)
@@ -147,7 +177,7 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
 
         // Generate fresh prayer text based on the current topic
         if (currentPrayerTopic) {
-          newPrayerText = `Dear God, I come before you today with a humble heart. Please help me with ${currentPrayerTopic.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
+          newPrayerText = `Dear God, I come before you today with a humble heart. Please help me with ${translateTopic(currentPrayerTopic)} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
           console.log('Generated custom prayer text for:', currentPrayerTopic);
           console.log('DEBUG - Generated prayer text:', newPrayerText);
         } else {
@@ -296,14 +326,15 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
       return <Text className="text-body text-textPrimary font-din">{typedText}</Text>;
     }
 
-    // Check if the prayer topic is in the typed text (case insensitive)
+    // Check if the translated prayer topic is in the typed text (case insensitive)
+    const translatedTopic = translateTopic(prayerTopic);
     const lowerTypedText = typedText.toLowerCase();
-    const lowerPrayerTopic = prayerTopic.toLowerCase();
+    const lowerTranslatedTopic = translatedTopic.toLowerCase();
 
-    if (lowerTypedText.includes(lowerPrayerTopic)) {
+    if (lowerTypedText.includes(lowerTranslatedTopic)) {
       // Find the actual case as it appears in typed text
-      const startIndex = lowerTypedText.indexOf(lowerPrayerTopic);
-      const endIndex = startIndex + prayerTopic.length;
+      const startIndex = lowerTypedText.indexOf(lowerTranslatedTopic);
+      const endIndex = startIndex + translatedTopic.length;
 
       // Split text into parts: before topic, topic, after topic
       const beforeTopic = typedText.substring(0, startIndex);

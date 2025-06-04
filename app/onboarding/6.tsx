@@ -24,6 +24,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import analytics from '../../utils/analytics';
+import { useTranslation } from 'react-i18next';
 
 
 export default function OnboardingReligiousAffiliationScreen() {
@@ -31,6 +32,7 @@ export default function OnboardingReligiousAffiliationScreen() {
   const { setResponse } = useOnboardingStore();
   const { setDenomination } = useUserStore();
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   // Create Reanimated shared values for each component
   const titleOpacity = useSharedValue(0);
@@ -109,37 +111,28 @@ export default function OnboardingReligiousAffiliationScreen() {
   const options = [
     {
       id: 'protestant',
-      title: 'Protestant',
+      title: t('onboarding.religousAffiliation.options.protestant'),
     },
     {
       id: 'catholic',
-      title: 'Catholic',
+      title: t('onboarding.religousAffiliation.options.catholic'),
     },
     {
       id: 'orthodox',
-      title: 'Eastern / Oriental Orthodox',
+      title: t('onboarding.religousAffiliation.options.orthodox'),
     },
     {
-      id: 'evangelical',
-      title: 'Non-Denominational',
+      id: 'nonDenominational',
+      title: t('onboarding.religousAffiliation.options.nonDenominational'),
     },
     {
-      id: 'jewish',
-      title: 'Jewish',
-    },
-    {
-      id: 'agnostic',
-      title: 'Agnostic',
-    },
-    {
-      id: 'spiritual',
-      title: 'Spiritual but not religious',
+      id: 'exploring',
+      title: t('onboarding.religousAffiliation.options.exploring'),
     },
     {
       id: 'other',
-      title: 'Other',
+      title: t('onboarding.religousAffiliation.options.other'),
     },
-
   ];
 
   return (
@@ -147,7 +140,10 @@ export default function OnboardingReligiousAffiliationScreen() {
       {/* Question Text */}
       <Animated.View style={titleStyle}>
         <Text className="font-feather text-h2 text-center text-textPrimary mb-4">
-          Which best describes your beliefs?
+          {t('onboarding.religousAffiliation.title')}
+        </Text>
+        <Text className="font-din text-body text-center text-textSecondary mb-4">
+          {t('onboarding.religousAffiliation.subtitle')}
         </Text>
       </Animated.View>
 

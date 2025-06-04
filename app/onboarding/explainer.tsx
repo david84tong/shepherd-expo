@@ -11,10 +11,12 @@ import analytics from '../../utils/analytics';
 import skins from '../../assets/onboarding/skins.png';
 import { IS_IOS } from '../utils/utils';
 import { IS_ANDROID } from '../utils/utils';
+import { useTranslation } from 'react-i18next';
 
 export default function OnboardingExplainerScreen({ onContinue }: { onContinue?: () => void }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useTranslation();
   // Load Rive assets
   const [riveAssets] = useAssets([
     require('../../assets/riveAnimations/homeLamb.riv'),
@@ -113,7 +115,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
       {/* Title */}
       <Animated.View style={titleStyle} className="mb-8 px-6">
         <Text className="font-feather text-2xl text-textPrimary text-center mb-0">
-          But if you read, pray and reflect, your lamb grows...
+          {t('onboarding.explainer.title')}
         </Text>
       </Animated.View>
 
@@ -236,13 +238,13 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
       <Animated.View style={cardStyles[4]} className="w-[340px] h-[140px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative mb-4">
         <Image source={skins} className="w-full h-[120px]" resizeMode="contain" />
         <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-          <Text className="font-feather text-accentGold">Shop for skins at level 10</Text>
+          <Text className="font-feather text-accentGold">{t('onboarding.explainer.shopForSkins')}</Text>
         </View>
       </Animated.View>
 
       {/* Continue Button - fixed at bottom */}
       <View className="absolute left-6 right-6" style={{ bottom: Math.max(insets.bottom + 16, 24) }}>
-        <PrimaryButton title="Continue" onPress={handleContinue} />
+        <PrimaryButton title={t('common.continue')} onPress={handleContinue} />
       </View>
     </View>
   );

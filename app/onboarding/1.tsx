@@ -1,33 +1,30 @@
-import { useAssets } from 'expo-asset';
-import * as Haptics from 'expo-haptics';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useRouter } from 'expo-router';
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import {
   View,
   Text,
-  Animated,
-  ImageBackground,
-  Easing,
   Pressable,
+  ImageBackground,
   ActivityIndicator,
+  Animated,
+  Easing,
 } from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Haptics from 'expo-haptics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useOnboardingStore } from '../stores/onboardingStore';
-import { useAnalytics } from '../hooks/useAnalytics';
+import Rive, { Fit, Alignment } from 'rive-react-native';
+import { useAssets } from 'expo-asset';
+
 import PrimaryButton from '../../components/PrimaryButton';
-import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
-
 import analytics from '../../utils/analytics';
-import { IS_ANDROID, IS_IOS } from '../utils/utils';
+import { IS_IOS } from '../utils/utils';
 import useTranslation from '../hooks/useTranslation';
+import { useOnboardingStore } from '../stores/onboardingStore';
 
-const FIRST_WELCOME_TEXT = 'Every Shepherd starts with one lost lamb...';
-const SECOND_WELCOME_TEXT = "This one's yours.";
-const SECOND_STAGE_PROMPT = 'Tap to wake it up';
-const TYPING_SPEED = 75; // Speed for all typing effects
+// Constants for the welcome screen
+const TYPING_SPEED = 80; // Milliseconds per character
+const TRANSITION_DURATION = 800; // Duration for screen transitions
 const ZOOM_DURATION = 3000; // Slow zoom effect (3 seconds)
-const TRANSITION_DURATION = 350; // Faster transition animation duration
 
 // Function to trigger a light haptic feedback
 const triggerTypeHaptic = () => {
@@ -42,52 +39,16 @@ const triggerTypeHaptic = () => {
   }
 };
 
-export default function OnboardingWelcomeScreen() {
+const OnboardingWelcomeScreen: React.FC = () => {
+  const { t } = useTranslation();
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { setResponse } = useOnboardingStore();
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
 
   // Initialize analytics
-  const { logScreenView, logButtonPress, logEvent, AnalyticsEvent, EventCategory } = useAnalytics();
-
-  // Log screen view when component mounts
   useEffect(() => {
-    analytics.logEvent('LambLostScreenViewed', {
-      screenName: 'OnboardingWelcomeScreen',
-      step: 1,
-    });
-
-    // Start entrance animation
-    const startEntranceAnimation = () => {
-      // Animate screen entrance
-      Animated.parallel([
-        Animated.timing(screenFadeAnim, {
-          toValue: 1,
-          duration: 600,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-        Animated.timing(screenScaleAnim, {
-          toValue: 1,
-          duration: 600,
-          easing: Easing.out(Easing.ease),
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        // After entrance animation, start text animation
-        setTimeout(() => {
-          Animated.timing(textOpacityAnim, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: true,
-          }).start();
-        }, 200);
-      });
-    };
-
-    // Slight delay to ensure smooth transition from previous screen
-    setTimeout(startEntranceAnimation, 100);
+    analytics.logEvent('OnboardingWelcomeScreen_Viewed');
   }, []);
 
   // State for UI and flow
@@ -104,11 +65,16 @@ export default function OnboardingWelcomeScreen() {
   const translateYAnim = useRef(new Animated.Value(0)).current;
   const textOpacityAnim = useRef(new Animated.Value(0)).current; // Start with 0 opacity
   const gradientOpacityAnim = useRef(new Animated.Value(0)).current;
-  const screenFadeAnim = useRef(new Animated.Value(0)).current; // Start with 0 for entrance
-  const screenScaleAnim = useRef(new Animated.Value(0.95)).current; // Start slightly scaled down
+  const screenFadeAnim = useRef(new Animated.Value(1)).current; // Start with 0 for entrance
+  const screenScaleAnim = useRef(new Animated.Value(1)).current; // Start slightly scaled down
 
   // Reference to the Rive state machine
-  const riveRef = useRef<RiveRef>(null);
+  const riveRef = useRef<any>(null);
+
+  // Get translated text constants
+  const FIRST_WELCOME_TEXT = t('onboarding.welcome.firstText');
+  const SECOND_WELCOME_TEXT = t('onboarding.welcome.secondText');
+  const TAP_PROMPT_TEXT = t('onboarding.welcome.tapPrompt');
 
   // Function to start typing the second welcome text
   const startSecondWelcomeText = () => {
@@ -184,7 +150,7 @@ export default function OnboardingWelcomeScreen() {
     } else if (textPhase === 2) {
       textToType = SECOND_WELCOME_TEXT;
     } else if (textPhase === 3 && secondStageActive) {
-      textToType = SECOND_STAGE_PROMPT;
+      textToType = TAP_PROMPT_TEXT;
     } else {
       return; // No text to type
     }
@@ -273,7 +239,7 @@ export default function OnboardingWelcomeScreen() {
     if (!secondStageActive || isLambTapped) return;
 
     // Log the lamb tap interaction
-    logEvent('lamb_tap', EventCategory.USER_ACTION, {
+    analytics.logEvent('lamb_tap', {
       step: 1,
       screenName: 'Welcome',
       stage: 'second_stage',
@@ -525,4 +491,6 @@ export default function OnboardingWelcomeScreen() {
       </Animated.View>
     </Animated.View>
   );
-}
+};
+
+export default OnboardingWelcomeScreen;

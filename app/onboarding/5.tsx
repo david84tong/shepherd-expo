@@ -17,6 +17,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import { useTranslation } from 'react-i18next';
 
 export default function OnboardingReadingTimeScreen() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function OnboardingReadingTimeScreen() {
   const { setResponse } = useOnboardingStore();
   const { frequencyGoal, setFrequencyGoal } = useUserStore();
   const [selectedOption, setSelectedOption] = useState<string | undefined>(frequencyGoal);
+  const { t } = useTranslation();
 
   // Create Reanimated shared values for each component
   const iconOpacity = useSharedValue(0);
@@ -149,15 +151,15 @@ export default function OnboardingReadingTimeScreen() {
   const options = [
     {
       id: '1-5',
-      title: '3-6 mins (1 chapter)',
+      title: t('onboarding.readingTime.options.1-5'),
     },
     {
       id: '6-10',
-      title: '7-10 mins (3-4 chapters)',
+      title: t('onboarding.readingTime.options.6-10'),
     },
     {
-      id: '15-25',
-      title: '11-15 mins (6-8 chapters)',
+      id: '11-15',
+      title: t('onboarding.readingTime.options.11-15'),
     },
   ] as const;
 
@@ -176,7 +178,10 @@ export default function OnboardingReadingTimeScreen() {
       {/* Question Text */}
       <Animated.View style={titleStyle}>
         <Text className="font-feather text-h2 text-center text-textPrimary mb-0">
-          How many minutes per day can you spend with God?
+          {t('onboarding.readingTime.title')}
+        </Text>
+        <Text className="font-din text-body text-center text-textSecondary mt-2">
+          {t('onboarding.readingTime.subtitle')}
         </Text>
       </Animated.View>
 

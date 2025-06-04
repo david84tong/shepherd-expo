@@ -15,12 +15,14 @@ import Animated, {
 import { useNotificationStore } from '../stores/notificationStore';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
+import { useTranslation } from 'react-i18next';
 
 export default function NotificationPermissionScreen() {
   const router = useRouter();
   const [showingAlert, setShowingAlert] = useState(false);
   const notificationStore = useNotificationStore();
   const { setNotificationPreference } = useOnboardingStore();
+  const { t } = useTranslation();
 
   // Create Reanimated shared values for each component
   const titleOpacity = useSharedValue(0);
@@ -161,18 +163,18 @@ export default function NotificationPermissionScreen() {
 
         // Show alert offering to open system settings
         Alert.alert(
-          'Enable Notifications',
-          'To receive daily reminders and streak notifications, please enable notifications in your device settings.',
+          t('onboarding.notifications.enabledSuccess'),
+          t('onboarding.notifications.deniedMessage'),
           [
             {
-              text: 'Open Settings',
+              text: t('onboarding.notifications.openSettings'),
               onPress: () => {
                 analytics.logEvent("Onboarding_Opened_SystemSettings_Notifications");
                 Linking.openSettings();
               }
             },
             {
-              text: 'Continue Anyway',
+              text: t('common.continue'),
               style: 'cancel'
             }
           ]
@@ -225,7 +227,10 @@ export default function NotificationPermissionScreen() {
     <View className="flex-1 bg-surfaceCream items-center px-5">
       <Animated.View style={titleStyle}>
         <Text className="font-feather text-h1 text-center text-textPrimary mb-12 mt-32 mx-12">
-          Get Support from Shepherd
+          {t('onboarding.notifications.title')}
+        </Text>
+        <Text className="font-din text-body text-center text-textSecondary mb-6 mx-6">
+          {t('onboarding.notifications.subtitle')}
         </Text>
       </Animated.View>
 
@@ -238,10 +243,10 @@ export default function NotificationPermissionScreen() {
           />
           <View className="flex-1">
             <View className="flex-row justify-between">
-              <Text className="font-bold text-black">From Shepherd</Text>
-              <Text className="text-gray-400 text-xs">now</Text>
+              <Text className="font-bold text-black">{t('onboarding.notifications.mockNotification.from')}</Text>
+              <Text className="text-gray-400 text-xs">{t('onboarding.notifications.mockNotification.time')}</Text>
             </View>
-            <Text className="text-black text-sm">Your streak is gonna be broken!</Text>
+            <Text className="text-black text-sm">{t('onboarding.notifications.mockNotification.message')}</Text>
           </View>
         </View>
 
@@ -250,11 +255,10 @@ export default function NotificationPermissionScreen() {
           <View className="bg-white rounded-[14px] w-[280px] overflow-hidden shadow-lg">
             <View className="p-4">
               <Text className="text-black text-[17px] font-feather text-center mb-2 mt-2">
-                &ldquo;Shepherd&rdquo; Would Like to Send You Notifications
+                {t('onboarding.notifications.permissionTitle')}
               </Text>
               <Text className="text-[#666666] text-[15px] font-din text-center px-6 mb-2">
-                Notifications may include alerts, sounds, and icon badges. These can be configured
-                in Settings.
+                {t('onboarding.notifications.permissionDescription')}
               </Text>
             </View>
 
@@ -262,11 +266,11 @@ export default function NotificationPermissionScreen() {
               <TouchableOpacity
                 className="flex-1 py-[12px] border-r border-gray-200"
                 onPress={handleDontAllow}>
-                <Text className="text-[#007AFF] text-[17px] text-center font-din">Don&apos;t Allow</Text>
+                <Text className="text-[#007AFF] text-[17px] text-center font-din">{t('onboarding.notifications.dontAllow')}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity className="flex-1 py-[12px]" onPress={handleAllow}>
-                <Text className="text-accentGold text-[17px] text-center font-bold">Allow</Text>
+                <Text className="text-accentGold text-[17px] text-center font-bold">{t('onboarding.notifications.allow')}</Text>
               </TouchableOpacity>
             </View>
           </View>

@@ -29,12 +29,21 @@
   },
   "onboarding": {
     "welcome": {
+      "firstText": "Cada Pastor comienza con una oveja perdida...",
+      "secondText": "Esta es tuya.",
+      "tapPrompt": "Toca para despertarla",
       "claimLamb": "Reclamar Cordero Perdido",
       "beginJourney": "Comenzar Viaje"
     },
     "lambName": {
       "title": "¿Cómo deberíamos llamar a tu cordero?",
       "placeholder": "Ingresa un nombre",
+      "continue": "Continuar",
+      "loading": "Cargando..."
+    },
+    "username": {
+      "title": "¿Cómo deberíamos llamarte?",
+      "placeholder": "Ingresa tu nombre",
       "continue": "Continuar"
     },
     "intentions": {
@@ -90,6 +99,100 @@
         "exploring": "Estoy explorando el cristianismo",
         "curious": "Tengo curiosidad sobre la fe",
         "other": "Otro/Prefiero no decir"
+      }
+    },
+    "familiarity": {
+      "title": "¿Qué tan familiarizado estás con la Biblia?",
+      "options": {
+        "veryFamiliar": "Muy familiarizado - He leído la mayor parte",
+        "somewhatFamiliar": "Algo familiarizado - Conozco algunas historias",
+        "notVeryFamiliar": "No muy familiarizado - He escuchado algunas cosas",
+        "notFamiliar": "Para nada familiarizado"
+      }
+    },
+    "readingTime": {
+      "title": "¿Cuánto tiempo puedes dedicar a la lectura diaria?",
+      "subtitle": "Esto nos ayuda a personalizar tu experiencia",
+      "options": {
+        "1-5": "1-5 minutos",
+        "6-10": "6-10 minutos",
+        "11-15": "11-15 minutos",
+        "16-25": "16-25 minutos",
+        "25plus": "25+ minutos"
+      }
+    },
+    "age": {
+      "title": "¿Cuál es tu edad?",
+      "subtitle": "Esto nos ayuda a proporcionar contenido apropiado para la edad",
+      "selectBirthDate": "Selecciona Tu Fecha de Nacimiento",
+      "parentGuardian": "Soy padre/tutor"
+    },
+    "religousAffiliation": {
+      "title": "¿Cuál es tu trasfondo religioso?",
+      "subtitle": "Esto nos ayuda a personalizar tu experiencia",
+      "options": {
+        "protestant": "Protestante/Evangélico",
+        "catholic": "Católico",
+        "orthodox": "Ortodoxo",
+        "nonDenominational": "No denominacional",
+        "exploring": "Explorando el cristianismo",
+        "other": "Otro/Ninguno"
+      }
+    },
+    "notifications": {
+      "title": "Mantente en el camino con recordatorios diarios",
+      "subtitle": "Recibe suaves recordatorios para mantener tu racha de lectura",
+      "permissionTitle": "\"Shepherd\" quisiera enviarte notificaciones",
+      "permissionDescription": "Las notificaciones pueden incluir alertas, sonidos e insignias de iconos. Estas pueden configurarse en Configuración.",
+      "mockNotification": {
+        "from": "De Shepherd",
+        "time": "ahora",
+        "message": "¡Tu racha va a romperse!"
+      },
+      "dontAllow": "No Permitir",
+      "allow": "Permitir",
+      "remindMe": "¡Recordármelo!",
+      "alreadyEnabled": "¡Las notificaciones ya están habilitadas!",
+      "enabledSuccess": "¡Excelente! Recibirás recordatorios diarios para mantener tu racha viva.",
+      "deniedMessage": "¡No te preocupes! Siempre puedes habilitar las notificaciones más tarde en la configuración de tu dispositivo si cambias de opinión.",
+      "openSettings": "Abrir Configuración"
+    },
+    "hearts": {
+      "title": "Introduciendo Corazones",
+      "subtitle": "Los corazones representan tu energía espiritual y motivación para acercarte más a Dios",
+      "description": "Comienza cada día con 3 corazones. Leer, orar y reflexionar ayuda a mantenerlos. ¡No te preocupes - nunca perderás progreso, los corazones solo fomentan el crecimiento espiritual constante!",
+      "heartsLabel": "3 ❤️"
+    },
+    "loading": {
+      "messages": {
+        "saving": "Guardando tus respuestas",
+        "encrypting": "Encriptando tus datos",
+        "blessing": "Rociando un poco de agua bendita",
+        "generating": "Generando tu plan de estudio bíblico personalizado"
+      }
+    },
+    "rating": {
+      "title": "¿Cómo lo estamos haciendo?",
+      "subtitle": "Tus comentarios nos ayudan a mejorar Shepherd para todos",
+      "leaveRating": "Dejar una calificación",
+      "alreadyRated": "Ya califiqué la aplicación"
+    },
+    "explainer": {
+      "title": "¡Bienvenido a tu viaje espiritual!",
+      "subtitle": "Así es como funciona Shepherd",
+      "features": {
+        "reading": {
+          "title": "Lectura Diaria",
+          "description": "Lee porciones pequeñas de la Biblia cada día"
+        },
+        "prayer": {
+          "title": "Tiempo de Oración",
+          "description": "Aprende a orar con indicaciones y plantillas guiadas"
+        },
+        "reflection": {
+          "title": "Reflexión Silenciosa",
+          "description": "Tómate tiempo para procesar lo que has aprendido"
+        }
       }
     },
     "saveProgress": {
@@ -240,7 +343,17 @@
     "prayerGenerated": "Oración Generada",
     "yourPrayerGenerated": "Tu oración por",
     "hasBeenGenerated": "ha sido generada.",
-    "amen": "Amén"
+    "amen": "Amén",
+    "topics": {
+      "health": "Salud",
+      "repentance": "Arrepentimiento",
+      "patience": "Paciencia",
+      "family": "Familia",
+      "peace": "Paz",
+      "forgiveness": "Perdón",
+      "strength": "Fuerza",
+      "wisdom": "Sabiduría"
+    }
   },
   "settings": {
     "title": "Configuración",
@@ -424,6 +537,8 @@
     "finishReading": "Terminar Lectura 🎉",
     "tapForNextVerse": "Toca para el siguiente versículo →",
     "tapToShowFullVerse": "Toca para mostrar el versículo completo",
+    "readingComplete": "¡Lectura Completa!",
+    "greatProgress": "¡Gran progreso!",
     "menuActions": {
       "copy": "Copiar",
       "explain": "Explicar",

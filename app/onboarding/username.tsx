@@ -15,6 +15,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { toBool } from '../utils/toBool';
 import { validateName } from '../../utils/validation';
+import CustomAnimatedView from '../components/CustomAnimatedView';
+import { useTranslation } from 'react-i18next';
 
 export default function OnboardingUsernameScreen() {
   const router = useRouter();
@@ -25,6 +27,7 @@ export default function OnboardingUsernameScreen() {
   const [error, setError] = useState<string | undefined>();
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const { t } = useTranslation();
 
   // Load Rive assets
   const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
@@ -171,25 +174,22 @@ export default function OnboardingUsernameScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-surfaceCream pt-4">
         <ActivityIndicator size="large" color="#3C584A" />
-        <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
+        <Text className="font-feather text-textPrimary mt-4">{t('common.loading')}</Text>
       </View>
     );
   }
 
   return (
-    <Animated.View style={screenStyle} className="px-6  pt-6">
+    <CustomAnimatedView style={screenStyle} className="px-6  pt-6">
       {/* Question Text */}
-      <Animated.View style={titleStyle}>
+      <CustomAnimatedView style={titleStyle}>
         <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-8">
-          Choose your username
+          {t('onboarding.username.title')}
         </Text>
-        <Text className="font-din text-body text-center text-textSecondary mb-4">
-          This is how other shepherds will know you
-        </Text>
-      </Animated.View>
+      </CustomAnimatedView>
 
       {/* Rive Animation */}
-      {/* <Animated.View
+      {/* <CustomAnimatedView
         style={lambStyle}
         className="h-[160px] w-full justify-center items-center my-4">
         <Rive
@@ -198,14 +198,14 @@ export default function OnboardingUsernameScreen() {
           autoplay
           style={{ width: '80%', height: '80%' }}
         />
-      </Animated.View> */}
+      </CustomAnimatedView> */}
 
       {/* Username Input */}
-      <Animated.View style={inputStyle}>
+      <CustomAnimatedView style={inputStyle}>
         <TextInput
           ref={inputRef}
           className="font-feather text-3xl text-center text-textPrimary bg-white mt-12 p-6 rounded-2xl border-4 border-border"
-          placeholder="@username"
+          placeholder={t('onboarding.username.placeholder')}
           placeholderTextColor="#B89B4C"
           value={inputUsername}
           onChangeText={handleInputChange}
@@ -218,17 +218,17 @@ export default function OnboardingUsernameScreen() {
             {error}
           </Text>
         )}
-      </Animated.View>
+      </CustomAnimatedView>
 
       {/* Continue Button */}
-      <Animated.View style={buttonStyle} className={`mt-8 ${isKeyboardVisible ? 'mb-4' : 'mb-8'}`}>
+      <CustomAnimatedView style={buttonStyle} className={`mt-8 ${isKeyboardVisible ? 'mb-4' : 'mb-8'}`}>
         <PrimaryButton
-          title="Continue"
+          title={t('onboarding.username.continue')}
           onPress={handleContinue}
           disabled={!inputUsername.trim() || !!error}
           isActive={!!inputUsername.trim() && !error}
         />
-      </Animated.View>
-    </Animated.View>
+      </CustomAnimatedView>
+    </CustomAnimatedView>
   );
 }

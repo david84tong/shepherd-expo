@@ -24,7 +24,13 @@
     "profile": "Perfil"
   },
   "onboarding": {
-    "welcome": "Bem-vindo ao Shepherd",
+    "welcome": {
+      "firstText": "Todo Pastor começa com uma ovelha perdida...",
+      "secondText": "Esta é sua.",
+      "tapPrompt": "Toque para acordá-la",
+      "claimLamb": "Reclamar Cordeiro Perdido",
+      "beginJourney": "Começar Jornada"
+    },
     "subtitle": "Seu companheiro espiritual diário",
     "getStarted": "Começar",
     "chooseTopics": "Escolha seus tópicos",
@@ -41,7 +47,175 @@
     "gratitude": "Gratidão",
     "setupComplete": "Configuração concluída!",
     "readyToStart": "Você está pronto para começar sua jornada espiritual.",
-    "letsGo": "Vamos lá!"
+    "letsGo": "Vamos lá!",
+    "lambName": {
+      "title": "Como devemos chamar seu cordeiro?",
+      "placeholder": "Digite um nome",
+      "continue": "Continuar",
+      "loading": "Carregando..."
+    },
+    "username": {
+      "title": "Como devemos chamá-lo?",
+      "placeholder": "Digite seu nome",
+      "continue": "Continuar"
+    },
+    "intentions": {
+      "title": "O que te traz aqui hoje?",
+      "subtitle": "Selecione todas que se aplicam",
+      "options": {
+        "readBible": {
+          "title": "Ler a Bíblia",
+          "description": "Comece sua jornada através das escrituras"
+        },
+        "talkToGod": {
+          "title": "Falar com Deus",
+          "description": "Aprenda a orar com confiança"
+        },
+        "reflection": {
+          "title": "Reflexão e Tempo Silencioso",
+          "description": "Momentos diários de paz com Deus"
+        },
+        "exploring": {
+          "title": "Apenas Explorando",
+          "description": "Descubra no seu próprio ritmo"
+        },
+        "deeperFaith": {
+          "title": "Aprofundar minha fé",
+          "description": "Crescer mais próximo a Deus através da prática diária"
+        },
+        "readBibleMore": {
+          "title": "Ler mais a Bíblia",
+          "description": "Construir um hábito de leitura consistente"
+        },
+        "prayer": {
+          "title": "Melhorar minha vida de oração",
+          "description": "Aprender a orar com intenção e foco"
+        },
+        "community": {
+          "title": "Conectar com a comunidade",
+          "description": "Encontrar companheirismo e apoio espiritual"
+        },
+        "questions": {
+          "title": "Explorar questões sobre a fé",
+          "description": "Buscar respostas e compreensão"
+        },
+        "peace": {
+          "title": "Encontrar paz e conforto",
+          "description": "Descobrir a presença de Deus em tempos difíceis"
+        }
+      }
+    },
+    "beliefs": {
+      "title": "Qual melhor descreve suas crenças?",
+      "options": {
+        "christian": "Sou cristão",
+        "exploring": "Estou explorando o cristianismo",
+        "curious": "Tenho curiosidade sobre a fé",
+        "other": "Outro/Prefiro não dizer"
+      }
+    },
+    "familiarity": {
+      "title": "Quão familiarizado você está com a Bíblia?",
+      "options": {
+        "veryFamiliar": "Muito familiarizado - Li a maior parte dela",
+        "somewhatFamiliar": "Algo familiarizado - Conheço algumas histórias",
+        "notVeryFamiliar": "Não muito familiarizado - Ouvi algumas coisas",
+        "notFamiliar": "Não familiarizado de forma alguma"
+      }
+    },
+    "readingTime": {
+      "title": "Quanto tempo você pode dedicar à leitura diária?",
+      "subtitle": "Isso nos ajuda a personalizar sua experiência",
+      "options": {
+        "1-5": "1-5 minutos",
+        "6-10": "6-10 minutos",
+        "11-15": "11-15 minutos",
+        "16-25": "16-25 minutos",
+        "25plus": "25+ minutos"
+      }
+    },
+    "age": {
+      "title": "Qual é sua idade?",
+      "subtitle": "Isso nos ajuda a fornecer conteúdo apropriado para a idade",
+      "selectBirthDate": "Selecione Sua Data de Nascimento",
+      "parentGuardian": "Sou pai/responsável"
+    },
+    "religousAffiliation": {
+      "title": "Qual é sua formação religiosa?",
+      "subtitle": "Isso nos ajuda a personalizar sua experiência",
+      "options": {
+        "protestant": "Protestante/Evangélico",
+        "catholic": "Católico",
+        "orthodox": "Ortodoxo",
+        "nonDenominational": "Não-denominacional",
+        "exploring": "Explorando o cristianismo",
+        "other": "Outro/Nenhum"
+      }
+    },
+    "notifications": {
+      "title": "Mantenha-se no caminho com lembretes diários",
+      "subtitle": "Receba lembretes gentis para manter sua sequência de leitura",
+      "permissionTitle": "\"Shepherd\" gostaria de enviar notificações",
+      "permissionDescription": "Notificações podem incluir alertas, sons e ícones de badges. Estas podem ser configuradas nas Configurações.",
+      "mockNotification": {
+        "from": "Do Shepherd",
+        "time": "agora",
+        "message": "Sua sequência vai ser quebrada!"
+      },
+      "dontAllow": "Não Permitir",
+      "allow": "Permitir",
+      "remindMe": "Me Lembre!",
+      "alreadyEnabled": "Notificações já estão habilitadas!",
+      "enabledSuccess": "Ótimo! Você receberá lembretes diários para manter sua sequência viva.",
+      "deniedMessage": "Sem problemas! Você sempre pode habilitar notificações mais tarde nas configurações do seu dispositivo se mudar de ideia.",
+      "openSettings": "Abrir Configurações"
+    },
+    "hearts": {
+      "title": "Apresentando Corações",
+      "subtitle": "Corações representam sua energia espiritual e motivação para crescer mais próximo a Deus",
+      "description": "Comece cada dia com 3 corações. Ler, orar e refletir ajuda a mantê-los. Não se preocupe - você nunca perderá progresso, corações apenas encorajam crescimento espiritual consistente!",
+      "heartsLabel": "3 ❤️"
+    },
+    "loading": {
+      "messages": {
+        "saving": "Salvando suas respostas",
+        "encrypting": "Criptografando seus dados",
+        "blessing": "Borrifando um pouco de água benta",
+        "generating": "Gerando seu plano de estudo bíblico personalizado"
+      }
+    },
+    "rating": {
+      "title": "Como estamos indo?",
+      "subtitle": "Seu feedback nos ajuda a melhorar o Shepherd para todos",
+      "leaveRating": "Deixar uma avaliação",
+      "alreadyRated": "Já avaliei o aplicativo"
+    },
+    "explainer": {
+      "title": "Bem-vindo à sua jornada espiritual!",
+      "subtitle": "Veja como o Shepherd funciona",
+      "features": {
+        "reading": {
+          "title": "Leitura Diária",
+          "description": "Leia pequenas porções da Bíblia a cada dia"
+        },
+        "prayer": {
+          "title": "Tempo de Oração",
+          "description": "Aprenda a orar com prompts guiados e modelos"
+        },
+        "reflection": {
+          "title": "Reflexão Silenciosa",
+          "description": "Reserve tempo para processar o que você aprendeu"
+        }
+      }
+    },
+    "saveProgress": {
+      "title": "Salve Seu Progresso",
+      "subtitle": "Crie uma conta para manter sua sequência de leitura e desbloquear todas as funcionalidades",
+      "skipForNow": "Pular por enquanto",
+      "backToHome": "Voltar ao Início",
+      "pleaseWait": "Por favor aguarde...",
+      "noAccountToast": "Por favor complete a introdução."
+    }
   },
   "home": {
     "dailyBread": "Pão Diário – Ler",
@@ -160,7 +334,17 @@
     "generatePrayer": "Gerar uma oração",
     "prayerGenerated": "Oração Gerada",
     "yourPrayerGenerated": "Sua oração por",
-    "hasBeenGenerated": "foi gerada."
+    "hasBeenGenerated": "foi gerada.",
+    "topics": {
+      "health": "Saúde",
+      "repentance": "Arrependimento",
+      "patience": "Paciência",
+      "family": "Família",
+      "peace": "Paz",
+      "forgiveness": "Perdão",
+      "strength": "Força",
+      "wisdom": "Sabedoria"
+    }
   },
   "settings": {
     "title": "Configurações",
@@ -362,6 +546,8 @@
     "finishReading": "Terminar Leitura 🎉",
     "tapForNextVerse": "Toque para o próximo versículo →",
     "tapToShowFullVerse": "Toque para mostrar o versículo completo",
+    "readingComplete": "Leitura Completa!",
+    "greatProgress": "Ótimo progresso!",
     "menuActions": {
       "copy": "Copiar",
       "explain": "Explicar",

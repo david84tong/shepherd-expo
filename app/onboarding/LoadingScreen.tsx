@@ -9,23 +9,20 @@ import { useAssets } from 'expo-asset';
 import analytics from '../../utils/analytics';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
+import useTranslation from '../hooks/useTranslation';
+
 interface LoadingScreenProps {
   initialMessage?: string;
   onLoadingComplete?: () => void;
   redirectTo?: any; // Use any for now to allow any valid route path
 }
 
-const LOADING_MESSAGES = [
-  "Saving your responses",
-  "Encrypting your data",
-  "Sprinkling some holy water",
-  "Generating your custom bible study plan"
-];
 const LoadingScreen: React.FC<LoadingScreenProps> = ({
   initialMessage,
   onLoadingComplete,
   redirectTo
 }) => {
+  const { t } = useTranslation();
   const router = useRouter();
   const params = useLocalSearchParams();
   const { setFromScreen } = useSubscriptionStore();
@@ -33,6 +30,14 @@ const LoadingScreen: React.FC<LoadingScreenProps> = ({
   // Get route parameters
   const initialMessageFromParams = params.initialMessage as string;
   const redirectAfterLoading = params.redirectAfterLoading as string;
+
+  // Get loading messages from translations
+  const LOADING_MESSAGES = [
+    t('onboarding.loading.messages.saving'),
+    t('onboarding.loading.messages.encrypting'),
+    t('onboarding.loading.messages.blessing'),
+    t('onboarding.loading.messages.generating')
+  ];
 
   // Use params if available, otherwise use props
   const [progress, setProgress] = useState(0);

@@ -13,10 +13,12 @@ import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import { useRouter } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
+import { useTranslation } from 'react-i18next';
 
 const Rating = () => {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useTranslation();
 
   // Animation refs
   const animationsInitialized = useRef(false);
@@ -152,10 +154,10 @@ const Rating = () => {
           {/* Title at the top */}
           <Animated.View style={titleStyle}>
             <Text className="font-feather-bold text-3xl text-center text-textPrimary mb-4 mt-12">
-              Support our small team!
+              {t('onboarding.rating.title')}
             </Text>
             <Text className="font-feather-bold text-xl text-center text-description ">
-              Help spread the word
+              {t('onboarding.rating.subtitle')}
             </Text>
           </Animated.View>
 
@@ -181,11 +183,11 @@ const Rating = () => {
 
           {/* Bottom button */}
           <Animated.View style={buttonStyle} className="items-center mt-12">
-            <PrimaryButton title="Leave a rating" onPress={handleRateApp} buttonType="gold" />
+            <PrimaryButton title={t('onboarding.rating.leaveRating')} onPress={handleRateApp} buttonType="gold" />
 
             <TouchableOpacity onPress={handleIRatedPress} className="mt-6 items-center">
               <Text className="font-din text-description underline text-[16px]">
-                👍 Ok, I rated
+                {t('onboarding.rating.okIRated')}
               </Text>
             </TouchableOpacity>
           </Animated.View>

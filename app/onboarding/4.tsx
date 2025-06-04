@@ -15,12 +15,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import analytics from '~/utils/analytics';
+import { useTranslation } from 'react-i18next';
 
 export default function OnboardingBibleFamiliarityScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
   const { setExperienceLevel } = useUserStore();
   const [selectedOption, setSelectedOption] = useState<OnboardingResponses['bibleFamiliarity']>(undefined);
+  const { t } = useTranslation();
 
   // Create Reanimated shared values for each component
   const iconOpacity = useSharedValue(0);
@@ -107,28 +109,18 @@ export default function OnboardingBibleFamiliarityScreen() {
   const options = [
     {
       id: 'never',
-      title: 'Not at all',
-      description: 'Starting fresh on this journey',
+      title: t('onboarding.familiarity.options.notFamiliar'),
+      description: '',
     },
     {
       id: 'a-little',
-      title: 'Somewhat',
-      description: 'Starting fresh on this journey',
+      title: t('onboarding.familiarity.options.notVeryFamiliar'),
+      description: '',
     },
     {
-      id: 'on-off',
-      title: 'Fairly',
-      description: `I've read some of the books` ,
-    },
-    {
-      id: 'consistently',
-      title: 'Very',
-      description: `I've read most of it`,
-    },
-    {
-      id: 'extremely',
-      title: 'Extremely',
-      description: `I've read it all or nearly all`,
+      id: 'a-lot',
+      title: t('onboarding.familiarity.options.veryFamiliar'),
+      description: '',
     },
   ] as const;
 
@@ -139,7 +131,7 @@ export default function OnboardingBibleFamiliarityScreen() {
       {/* Question Text */}
       <Animated.View style={titleStyle}>
         <Text className="font-feather text-h2 text-center text-textPrimary mb-0">
-          How familiar are you with the Bible??
+          {t('onboarding.familiarity.title')}
         </Text>
       </Animated.View>
 

@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import analytics from '../../utils/analytics';
 import { useNotificationStore, NotificationTimeOption } from '../stores/notificationStore';
+import { useTranslation } from 'react-i18next';
 
 export default function OnboardingReminderTimeScreen() {
   const router = useRouter();
@@ -27,6 +28,7 @@ export default function OnboardingReminderTimeScreen() {
   } = useNotificationStore();
   const [selectedOption, setSelectedOption] = useState<string | undefined>(undefined);
   const [pressedButton, setPressedButton] = useState<string | null>(null);
+  const { t } = useTranslation();
 
   // Create Reanimated shared values for each component
   const iconOpacity = useSharedValue(0);
@@ -136,18 +138,18 @@ export default function OnboardingReminderTimeScreen() {
           // Alert user that notifications won't work without permission
           console.log('📱 Onboarding: Notification permission denied');
           Alert.alert(
-            'Notification Permission Required',
-            'Without notification permission, we cannot send you reading reminders. You can enable this in your device settings.',
+            t('onboarding.reminderTime.permissionRequired'),
+            t('onboarding.reminderTime.permissionMessage'),
             [
               {
-                text: 'Open Settings',
+                text: t('onboarding.reminderTime.openSettings'),
                 onPress: () => {
                   analytics.logEvent("Onboarding_Opened_SystemSettings_Notifications");
                   Linking.openSettings();
                 }
               },
               {
-                text: 'Continue Anyway',
+                text: t('onboarding.reminderTime.continueAnyway'),
                 style: 'default',
                 onPress: () => {
                   router.push('/onboarding/rating');
@@ -201,40 +203,40 @@ export default function OnboardingReminderTimeScreen() {
       icon: 'sunny-outline',
       color: '#F7B500', // Yellow for morning sun
       bgColor: 'bg-lightYellow',
-      title: 'Morning (7-9 AM)',
-      description: 'Start your day with scripture',
+      title: t('onboarding.reminderTime.options.morning.title'),
+      description: t('onboarding.reminderTime.options.morning.description'),
     },
     {
       id: 'afternoon',
       icon: 'partly-sunny-outline',
       color: '#FF8C1A', // Orange for afternoon
       bgColor: 'bg-lightOrange',
-      title: 'Afternoon (2-5 PM)',
-      description: 'Mid-day reflection time',
+      title: t('onboarding.reminderTime.options.afternoon.title'),
+      description: t('onboarding.reminderTime.options.afternoon.description'),
     },
     {
       id: 'evening',
       icon: 'moon-outline',
       color: '#7B2BFF', // Purple for evening
       bgColor: 'bg-lightPurple',
-      title: 'Evening (6-8 PM)',
-      description: 'Wind down with God\'s word',
+      title: t('onboarding.reminderTime.options.evening.title'),
+      description: t('onboarding.reminderTime.options.evening.description'),
     },
     {
       id: 'night',
       icon: 'star-outline',
       color: '#3040FF', // Blue for night sky
       bgColor: 'bg-lightIndigo',
-      title: 'Night (9-11 PM)',
-      description: 'Peaceful moments before sleep',
+      title: t('onboarding.reminderTime.options.night.title'),
+      description: t('onboarding.reminderTime.options.night.description'),
     },
     {
       id: 'none',
       icon: 'notifications-off-outline',
       color: '#B89B4C', // Description color
       bgColor: 'bg-surfaceLight',
-      title: 'No reminders, please',
-      description: 'I\'ll remember on my own',
+      title: t('onboarding.reminderTime.options.none.title'),
+      description: t('onboarding.reminderTime.options.none.description'),
     },
   ] as const;
 
@@ -243,14 +245,14 @@ export default function OnboardingReminderTimeScreen() {
       {/* Question Text */}
       <Animated.View style={titleStyle}>
         <Text className="font-feather text-h2 text-center text-textPrimary mb-4 ">
-          When would you like to be reminded to read?
+          {t('onboarding.reminderTime.title')}
         </Text>
       </Animated.View>
 
       {/* Subtext */}
       <Animated.View style={subtextStyle}>
         <Text className="font-din text-center text-description text-body mb-4">
-          This can be edited later in settings
+          {t('onboarding.reminderTime.subtitle')}
         </Text>
       </Animated.View>
 

@@ -10,10 +10,12 @@ import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
+import { useTranslation } from 'react-i18next';
 
 export default function OnboardingExplainerHeartsScreen({ onContinue }: { onContinue?: () => void }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { t } = useTranslation();
 
   // Get lamb name from onboarding store
   const { responses } = useOnboardingStore();
@@ -122,7 +124,7 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
       {/* Title */}
       <Animated.View style={titleStyle} className="mb-8 px-6">
         <Text className="font-feather text-2xl text-textPrimary text-center mb-0 mt-16">
-          Everyday you don&apos;t read, {lambName}&apos;s health will suffer...
+          {t('onboarding.heartsExplainer.title', { lambName })}
         </Text>
       </Animated.View>
 
@@ -163,7 +165,7 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
 
       {/* Continue Button - fixed at bottom */}
       <View className="absolute left-6 right-6" style={{ bottom: Math.max(insets.bottom + 16, 24) }}>
-        <PrimaryButton title="Continue" onPress={handleContinue} />
+        <PrimaryButton title={t('common.continue')} onPress={handleContinue} />
       </View>
     </View>
   );

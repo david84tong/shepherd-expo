@@ -179,7 +179,7 @@ export default function ProfileScreen() {
     const prayers = completedPrayers?.map(prayer => {
       let prayerTitle = t('profile.dailyPrayer');
       if (prayer.topic && prayer.topic.toLowerCase() !== 'general') {
-        prayerTitle = t('profile.prayedFor', { topic: prayer.topic });
+        prayerTitle = t('profile.prayedFor', { topic: translateTopic(prayer.topic) });
       }
       return {
         type: 'prayer' as const,
@@ -365,6 +365,34 @@ export default function ProfileScreen() {
       xpCurrent: data.xp // Alias for backwards compatibility
     };
   }, [lamb?.xp]);
+
+  // Helper function to translate default prayer topics
+  const translateTopic = (topic: string): string => {
+    const topicKey = topic.toLowerCase();
+    
+    // Check if this is one of our default topics
+    switch (topicKey) {
+      case 'health':
+        return t('prayer.topics.health');
+      case 'repentance':
+        return t('prayer.topics.repentance');
+      case 'patience':
+        return t('prayer.topics.patience');
+      case 'family':
+        return t('prayer.topics.family');
+      case 'peace':
+        return t('prayer.topics.peace');
+      case 'forgiveness':
+        return t('prayer.topics.forgiveness');
+      case 'strength':
+        return t('prayer.topics.strength');
+      case 'wisdom':
+        return t('prayer.topics.wisdom');
+      default:
+        // Return the original topic if it's not a default one (custom topics)
+        return topic;
+    }
+  };
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -630,7 +658,7 @@ export default function ProfileScreen() {
                             {/* Display prayer topic or reflection content if available */}
                             {(activity.type === 'prayer' && activity.data.topic && activity.title !== t('profile.prayedFor', { topic: activity.data.topic })) && (
                               <Text className="font-din text-sm text-description mt-1">
-                                {t('profile.topic')}: {activity.data.topic}
+                                {t('profile.topic')}: {translateTopic(activity.data.topic)}
                               </Text>
                             )}
                             {(activity.type === 'reflection' && activity.content) && (

@@ -24,7 +24,13 @@
     "profile": "Profiel"
   },
   "onboarding": {
-    "welcome": "Welkom bij Shepherd",
+    "welcome": {
+      "firstText": "Elke herder begint met één verloren lam...",
+      "secondText": "Deze is van jou.",
+      "tapPrompt": "Tik om het wakker te maken",
+      "claimLamb": "Verloren Lam Claimen",
+      "beginJourney": "Reis Beginnen"
+    },
     "subtitle": "Jouw dagelijkse spirituele metgezel",
     "getStarted": "Beginnen",
     "chooseTopics": "Kies je onderwerpen",
@@ -41,7 +47,175 @@
     "gratitude": "Dankbaarheid",
     "setupComplete": "Installatie voltooid!",
     "readyToStart": "Je bent klaar om je spirituele reis te beginnen.",
-    "letsGo": "Laten we gaan!"
+    "letsGo": "Laten we gaan!",
+    "lambName": {
+      "title": "Hoe moeten we jouw lam noemen?",
+      "placeholder": "Voer een naam in",
+      "continue": "Doorgaan",
+      "loading": "Laden..."
+    },
+    "username": {
+      "title": "Hoe moeten we jou noemen?",
+      "placeholder": "Voer je naam in",
+      "continue": "Doorgaan"
+    },
+    "intentions": {
+      "title": "Wat brengt je hier vandaag?",
+      "subtitle": "Selecteer alle die van toepassing zijn",
+      "options": {
+        "readBible": {
+          "title": "De Bijbel lezen",
+          "description": "Begin je reis door de Schrift"
+        },
+        "talkToGod": {
+          "title": "Met God praten",
+          "description": "Leer bidden met vertrouwen"
+        },
+        "reflection": {
+          "title": "Reflectie & Stille Tijd",
+          "description": "Dagelijkse momenten van vrede met God"
+        },
+        "exploring": {
+          "title": "Gewoon aan het verkennen",
+          "description": "Ontdek op je eigen tempo"
+        },
+        "deeperFaith": {
+          "title": "Mijn geloof verdiepen",
+          "description": "Dichter bij God komen door dagelijkse praktijk"
+        },
+        "readBibleMore": {
+          "title": "Meer Bijbel lezen",
+          "description": "Een consistente leesgewoonte opbouwen"
+        },
+        "prayer": {
+          "title": "Mijn gebedsleven verbeteren",
+          "description": "Leren bidden met intentie en focus"
+        },
+        "community": {
+          "title": "Verbinden met de gemeenschap",
+          "description": "Gemeenschap en spirituele ondersteuning vinden"
+        },
+        "questions": {
+          "title": "Vragen over geloof verkennen",
+          "description": "Antwoorden en begrip zoeken"
+        },
+        "peace": {
+          "title": "Vrede en troost vinden",
+          "description": "Gods aanwezigheid ontdekken in moeilijke tijden"
+        }
+      }
+    },
+    "beliefs": {
+      "title": "Wat beschrijft je overtuigingen het beste?",
+      "options": {
+        "christian": "Ik ben een christen",
+        "exploring": "Ik verken het christendom",
+        "curious": "Ik ben nieuwsgierig naar geloof",
+        "other": "Anders/Zeg ik liever niet"
+      }
+    },
+    "familiarity": {
+      "title": "Hoe bekend ben je met de Bijbel?",
+      "options": {
+        "veryFamiliar": "Zeer bekend - Ik heb het meeste ervan gelezen",
+        "somewhatFamiliar": "Enigszins bekend - Ik ken enkele verhalen",
+        "notVeryFamiliar": "Niet erg bekend - Ik heb enkele dingen gehoord",
+        "notFamiliar": "Helemaal niet bekend"
+      }
+    },
+    "readingTime": {
+      "title": "Hoeveel tijd kun je besteden aan dagelijks lezen?",
+      "subtitle": "Dit helpt ons je ervaring aan te passen",
+      "options": {
+        "1-5": "1-5 minuten",
+        "6-10": "6-10 minuten",
+        "11-15": "11-15 minuten",
+        "16-25": "16-25 minuten",
+        "25plus": "25+ minuten"
+      }
+    },
+    "age": {
+      "title": "Wat is je leeftijd?",
+      "subtitle": "Dit helpt ons leeftijdsgeschikte content te bieden",
+      "selectBirthDate": "Selecteer je geboortedatum",
+      "parentGuardian": "Ik ben een ouder/voogd"
+    },
+    "religousAffiliation": {
+      "title": "Wat is je religieuze achtergrond?",
+      "subtitle": "Dit helpt ons je ervaring te personaliseren",
+      "options": {
+        "protestant": "Protestants/Evangelisch",
+        "catholic": "Katholiek",
+        "orthodox": "Orthodox",
+        "nonDenominational": "Niet-denominationeel",
+        "exploring": "Christendom verkennen",
+        "other": "Anders/Geen"
+      }
+    },
+    "notifications": {
+      "title": "Blijf op koers met dagelijkse herinneringen",
+      "subtitle": "Ontvang zachte aanmoedigingen om je lees-streak vol te houden",
+      "permissionTitle": "\"Shepherd\" wil je notificaties sturen",
+      "permissionDescription": "Notificaties kunnen waarschuwingen, geluiden en app-badges bevatten. Deze kunnen worden geconfigureerd in Instellingen.",
+      "mockNotification": {
+        "from": "Van Shepherd",
+        "time": "nu",
+        "message": "Je streak gaat kapot!"
+      },
+      "dontAllow": "Niet toestaan",
+      "allow": "Toestaan",
+      "remindMe": "Herinner me!",
+      "alreadyEnabled": "Notificaties zijn al ingeschakeld!",
+      "enabledSuccess": "Geweldig! Je krijgt dagelijkse herinneringen om je streak levend te houden.",
+      "deniedMessage": "Geen probleem! Je kunt notificaties altijd later inschakelen in je apparaatinstellingen als je van gedachten verandert.",
+      "openSettings": "Instellingen openen"
+    },
+    "hearts": {
+      "title": "Hartjes introduceren",
+      "subtitle": "Hartjes vertegenwoordigen je spirituele energie en motivatie om dichter bij God te komen",
+      "description": "Begin elke dag met 3 hartjes. Lezen, bidden en reflecteren helpt ze te behouden. Maak je geen zorgen - je verliest nooit vooruitgang, hartjes moedigen alleen consistente spirituele groei aan!",
+      "heartsLabel": "3 ❤️"
+    },
+    "loading": {
+      "messages": {
+        "saving": "Je antwoorden opslaan",
+        "encrypting": "Je gegevens versleutelen",
+        "blessing": "Wat wijwater sprenkelen",
+        "generating": "Je aangepaste bijbelstudie plan genereren"
+      }
+    },
+    "rating": {
+      "title": "Hoe doen we het?",
+      "subtitle": "Je feedback helpt ons Shepherd voor iedereen te verbeteren",
+      "leaveRating": "Een beoordeling achterlaten",
+      "alreadyRated": "Ik heb de app al beoordeeld"
+    },
+    "explainer": {
+      "title": "Welkom bij je spirituele reis!",
+      "subtitle": "Zo werkt Shepherd",
+      "features": {
+        "reading": {
+          "title": "Dagelijks Lezen",
+          "description": "Lees elke dag kleine stukjes van de Bijbel"
+        },
+        "prayer": {
+          "title": "Gebedstijd",
+          "description": "Leer bidden met begeleide aanwijzingen en sjablonen"
+        },
+        "reflection": {
+          "title": "Stille Reflectie",
+          "description": "Neem tijd om te verwerken wat je hebt geleerd"
+        }
+      }
+    },
+    "saveProgress": {
+      "title": "Sla je voortgang op",
+      "subtitle": "Maak een account om je lees-streak te behouden en alle functies te ontgrendelen",
+      "skipForNow": "Voor nu overslaan",
+      "backToHome": "Terug naar Home",
+      "pleaseWait": "Even geduld...",
+      "noAccountToast": "Ga door de onboarding."
+    }
   },
   "home": {
     "dailyBread": "Dagelijks Brood – Lezen",
@@ -161,7 +335,17 @@
     "generatePrayer": "Een gebed genereren",
     "prayerGenerated": "Gebed Gegenereerd",
     "yourPrayerGenerated": "Je gebed voor",
-    "hasBeenGenerated": "is gegenereerd."
+    "hasBeenGenerated": "is gegenereerd.",
+    "topics": {
+      "health": "Gezondheid",
+      "repentance": "Berouw",
+      "patience": "Geduld",
+      "family": "Familie",
+      "peace": "Vrede",
+      "forgiveness": "Vergeving",
+      "strength": "Kracht",
+      "wisdom": "Wijsheid"
+    }
   },
   "settings": {
     "title": "Instellingen",
@@ -363,6 +547,8 @@
     "finishReading": "Lezen voltooien 🎉",
     "tapForNextVerse": "Tik voor volgende vers →",
     "tapToShowFullVerse": "Tik om volledig vers te tonen",
+    "readingComplete": "Lezing Voltooid!",
+    "greatProgress": "Geweldige vooruitgang!",
     "menuActions": {
       "copy": "Kopiëren",
       "explain": "Uitleggen",

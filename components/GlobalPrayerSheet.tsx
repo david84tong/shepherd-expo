@@ -23,7 +23,7 @@ import { useUIStore } from '../app/stores/uiStore';
 import { useHomeStore } from '../app/stores/homeStore';
 import { KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import useTranslation from '../app/hooks/useTranslation';
+import { useTranslation } from 'react-i18next';
 
 interface PrayerSheetProps {
   prayerSheetRef: React.RefObject<PrayerSheetRef>;
@@ -57,6 +57,34 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
 
   // Access home store
   const setTappedPrayAboutVerse = useHomeStore(state => state.setTappedPrayAboutVerse);
+
+  // Helper function to translate default prayer topics
+  const translateTopic = useCallback((topic: string): string => {
+    const topicKey = topic.toLowerCase();
+    
+    // Check if this is one of our default topics
+    switch (topicKey) {
+      case 'health':
+        return t('prayer.topics.health');
+      case 'repentance':
+        return t('prayer.topics.repentance');
+      case 'patience':
+        return t('prayer.topics.patience');
+      case 'family':
+        return t('prayer.topics.family');
+      case 'peace':
+        return t('prayer.topics.peace');
+      case 'forgiveness':
+        return t('prayer.topics.forgiveness');
+      case 'strength':
+        return t('prayer.topics.strength');
+      case 'wisdom':
+        return t('prayer.topics.wisdom');
+      default:
+        // Return the original topic if it's not a default one (custom topics)
+        return topic;
+    }
+  }, [t]);
 
   // Get ordered topics
   const [orderedTopics, setOrderedTopics] = useState(getOrderedTopics().map((topic) => topic.name));
@@ -285,7 +313,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
                       key={topic}
                       onPress={() => handlePrayerTopicPress(topic)}
                       style={styles.prayerTopicButton}>
-                      <Text style={styles.prayerTopicText}>{topic}</Text>
+                      <Text style={styles.prayerTopicText}>{translateTopic(topic)}</Text>
                     </TouchableOpacity>
                   ))}
               </View>

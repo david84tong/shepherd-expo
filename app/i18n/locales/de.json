@@ -24,7 +24,13 @@
     "profile": "Profil"
   },
   "onboarding": {
-    "welcome": "Willkommen bei Shepherd",
+    "welcome": {
+      "firstText": "Jeder Hirte beginnt mit einem verlorenen Lamm...",
+      "secondText": "Dieses gehört dir.",
+      "tapPrompt": "Tippen, um es aufzuwecken",
+      "claimLamb": "Verlorenes Lamm beanspruchen",
+      "beginJourney": "Reise beginnen"
+    },
     "subtitle": "Dein täglicher spiritueller Begleiter",
     "getStarted": "Loslegen",
     "chooseTopics": "Wähle deine Themen",
@@ -41,7 +47,175 @@
     "gratitude": "Dankbarkeit",
     "setupComplete": "Einrichtung abgeschlossen!",
     "readyToStart": "Du bist bereit, deine spirituelle Reise zu beginnen.",
-    "letsGo": "Los geht's!"
+    "letsGo": "Los geht's!",
+    "lambName": {
+      "title": "Wie sollen wir dein Lamm nennen?",
+      "placeholder": "Namen eingeben",
+      "continue": "Weiter",
+      "loading": "Laden..."
+    },
+    "username": {
+      "title": "Wie sollen wir dich nennen?",
+      "placeholder": "Deinen Namen eingeben",
+      "continue": "Weiter"
+    },
+    "intentions": {
+      "title": "Was bringt dich heute hierher?",
+      "subtitle": "Wähle alle zutreffenden aus",
+      "options": {
+        "readBible": {
+          "title": "Die Bibel lesen",
+          "description": "Beginne deine Reise durch die Schrift"
+        },
+        "talkToGod": {
+          "title": "Mit Gott sprechen",
+          "description": "Lerne mit Vertrauen zu beten"
+        },
+        "reflection": {
+          "title": "Besinnung & Stille Zeit",
+          "description": "Tägliche Momente der Ruhe mit Gott"
+        },
+        "exploring": {
+          "title": "Nur am Erkunden",
+          "description": "Entdecke in deinem eigenen Tempo"
+        },
+        "deeperFaith": {
+          "title": "Meinen Glauben vertiefen",
+          "description": "Gott durch tägliche Praxis näher kommen"
+        },
+        "readBibleMore": {
+          "title": "Mehr Bibel lesen",
+          "description": "Eine beständige Lesegewohnheit aufbauen"
+        },
+        "prayer": {
+          "title": "Mein Gebetsleben verbessern",
+          "description": "Lernen mit Absicht und Fokus zu beten"
+        },
+        "community": {
+          "title": "Mit der Gemeinschaft verbinden",
+          "description": "Gemeinschaft und spirituelle Unterstützung finden"
+        },
+        "questions": {
+          "title": "Fragen über den Glauben erkunden",
+          "description": "Antworten und Verständnis suchen"
+        },
+        "peace": {
+          "title": "Frieden und Trost finden",
+          "description": "Gottes Gegenwart in schweren Zeiten entdecken"
+        }
+      }
+    },
+    "beliefs": {
+      "title": "Was beschreibt deine Überzeugungen am besten?",
+      "options": {
+        "christian": "Ich bin ein Christ",
+        "exploring": "Ich erkunde das Christentum",
+        "curious": "Ich bin neugierig auf den Glauben",
+        "other": "Anderes/Möchte nicht sagen"
+      }
+    },
+    "familiarity": {
+      "title": "Wie vertraut bist du mit der Bibel?",
+      "options": {
+        "veryFamiliar": "Sehr vertraut - Ich habe das meiste davon gelesen",
+        "somewhatFamiliar": "Einigermaßen vertraut - Ich kenne einige Geschichten",
+        "notVeryFamiliar": "Nicht sehr vertraut - Ich habe einige Dinge gehört",
+        "notFamiliar": "Überhaupt nicht vertraut"
+      }
+    },
+    "readingTime": {
+      "title": "Wie viel Zeit kannst du dem täglichen Lesen widmen?",
+      "subtitle": "Das hilft uns, deine Erfahrung anzupassen",
+      "options": {
+        "1-5": "1-5 Minuten",
+        "6-10": "6-10 Minuten",
+        "11-15": "11-15 Minuten",
+        "16-25": "16-25 Minuten",
+        "25plus": "25+ Minuten"
+      }
+    },
+    "age": {
+      "title": "Wie alt bist du?",
+      "subtitle": "Das hilft uns, altersgerechte Inhalte anzubieten",
+      "selectBirthDate": "Wähle dein Geburtsdatum",
+      "parentGuardian": "Ich bin ein Elternteil/Vormund"
+    },
+    "religousAffiliation": {
+      "title": "Was ist dein religiöser Hintergrund?",
+      "subtitle": "Das hilft uns, deine Erfahrung zu personalisieren",
+      "options": {
+        "protestant": "Protestantisch/Evangelisch",
+        "catholic": "Katholisch",
+        "orthodox": "Orthodox",
+        "nonDenominational": "Nicht-konfessionell",
+        "exploring": "Christentum erkunden",
+        "other": "Anderes/Keines"
+      }
+    },
+    "notifications": {
+      "title": "Bleib mit täglichen Erinnerungen auf Kurs",
+      "subtitle": "Erhalte sanfte Hinweise, um deine Leseserie aufrechtzuerhalten",
+      "permissionTitle": "\"Shepherd\" möchte dir Mitteilungen senden",
+      "permissionDescription": "Mitteilungen können Benachrichtigungen, Töne und Symbol-Badges enthalten. Diese können in den Einstellungen konfiguriert werden.",
+      "mockNotification": {
+        "from": "Von Shepherd",
+        "time": "jetzt",
+        "message": "Deine Serie wird unterbrochen!"
+      },
+      "dontAllow": "Nicht erlauben",
+      "allow": "Erlauben",
+      "remindMe": "Erinnere mich!",
+      "alreadyEnabled": "Benachrichtigungen sind bereits aktiviert!",
+      "enabledSuccess": "Großartig! Du erhältst täglich Erinnerungen, um deine Serie am Leben zu halten.",
+      "deniedMessage": "Kein Problem! Du kannst Benachrichtigungen jederzeit später in deinen Geräteeinstellungen aktivieren, wenn du deine Meinung änderst.",
+      "openSettings": "Einstellungen öffnen"
+    },
+    "hearts": {
+      "title": "Herzen vorstellen",
+      "subtitle": "Herzen repräsentieren deine spirituelle Energie und Motivation, Gott näher zu kommen",
+      "description": "Beginne jeden Tag mit 3 Herzen. Lesen, Beten und Reflektieren hilft, sie zu erhalten. Keine Sorge - du verlierst nie Fortschritt, Herzen ermutigen nur zu beständigem spirituellem Wachstum!",
+      "heartsLabel": "3 ❤️"
+    },
+    "loading": {
+      "messages": {
+        "saving": "Deine Antworten speichern",
+        "encrypting": "Deine Daten verschlüsseln",
+        "blessing": "Etwas Weihwasser versprühen",
+        "generating": "Deinen benutzerdefinierten Bibelstudienplan erstellen"
+      }
+    },
+    "rating": {
+      "title": "Wie machen wir uns?",
+      "subtitle": "Dein Feedback hilft uns, Shepherd für alle zu verbessern",
+      "leaveRating": "Eine Bewertung hinterlassen",
+      "alreadyRated": "Ich habe die App bereits bewertet"
+    },
+    "explainer": {
+      "title": "Willkommen zu deiner spirituellen Reise!",
+      "subtitle": "So funktioniert Shepherd",
+      "features": {
+        "reading": {
+          "title": "Tägliches Lesen",
+          "description": "Lies täglich kleine Abschnitte der Bibel"
+        },
+        "prayer": {
+          "title": "Gebetszeit",
+          "description": "Lerne mit geführten Hinweisen und Vorlagen zu beten"
+        },
+        "reflection": {
+          "title": "Stille Besinnung",
+          "description": "Nimm dir Zeit, um zu verarbeiten, was du gelernt hast"
+        }
+      }
+    },
+    "saveProgress": {
+      "title": "Speichere deinen Fortschritt",
+      "subtitle": "Erstelle ein Konto, um deine Leseserie zu behalten und alle Funktionen freizuschalten",
+      "skipForNow": "Vorerst überspringen",
+      "backToHome": "Zurück zur Startseite",
+      "pleaseWait": "Bitte warten...",
+      "noAccountToast": "Bitte durchlaufe das Onboarding."
+    }
   },
   "home": {
     "dailyBread": "Tägliches Brot – Lesen",
@@ -161,7 +335,17 @@
     "generatePrayer": "Ein Gebet generieren",
     "prayerGenerated": "Gebet Generiert",
     "yourPrayerGenerated": "Dein Gebet für",
-    "hasBeenGenerated": "wurde generiert."
+    "hasBeenGenerated": "wurde generiert.",
+    "topics": {
+      "health": "Gesundheit",
+      "repentance": "Buße",
+      "patience": "Geduld",
+      "family": "Familie",
+      "peace": "Frieden",
+      "forgiveness": "Vergebung",
+      "strength": "Stärke",
+      "wisdom": "Weisheit"
+    }
   },
   "settings": {
     "title": "Einstellungen",
@@ -363,6 +547,8 @@
     "finishReading": "Lesen beenden 🎉",
     "tapForNextVerse": "Tippen für nächsten Vers →",
     "tapToShowFullVerse": "Tippen um vollständigen Vers zu zeigen",
+    "readingComplete": "Lesen abgeschlossen!",
+    "greatProgress": "Großer Fortschritt!",
     "menuActions": {
       "copy": "Kopieren",
       "explain": "Erklären",

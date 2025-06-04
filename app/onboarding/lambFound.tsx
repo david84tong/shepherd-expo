@@ -3,15 +3,17 @@ import { useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { View, Text, Animated, ImageBackground, ActivityIndicator } from 'react-native';
 import Rive from 'rive-react-native';
-
-import PrimaryButton from '../../components/PrimaryButton';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import ProgressBar from './components/ProgressBar';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
+import { useTranslation } from 'react-i18next';
+
+import PrimaryButton from '../../components/PrimaryButton';
 
 export default function OnboardingWelcomeScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
+  const { t } = useTranslation();
 
   // Load Rive assets
   const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
@@ -67,7 +69,7 @@ export default function OnboardingWelcomeScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-surfaceCream">
         <ActivityIndicator size="large" color="#3C584A" />
-        <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
+        <Text className="font-feather text-textPrimary mt-4">{t('common.loading')}</Text>
       </View>
     );
   }
@@ -88,7 +90,7 @@ export default function OnboardingWelcomeScreen() {
         {/* Question Text */}
         <Animated.View style={getAnimatedStyle(titleAnimation)} className="mt-12">
           <Text className="font-feather text-h1 text-center text-textPrimary mb-4">
-            Welcome to Shepherd
+            {t('onboarding.welcome.title')}
           </Text>
         </Animated.View>
 
@@ -109,7 +111,7 @@ export default function OnboardingWelcomeScreen() {
 
         {/* Continue Button */}
         <Animated.View style={getAnimatedStyle(buttonAnimation)} className="pb-8">
-          <PrimaryButton title="Begin Journey" onPress={handleContinue} isActive />
+          <PrimaryButton title={t('onboarding.welcome.beginJourney')} onPress={handleContinue} isActive />
         </Animated.View>
       </View>
     </View>

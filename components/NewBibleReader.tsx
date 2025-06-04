@@ -711,8 +711,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     router.replace({
       pathname: '/success',
       params: {
-        message: 'Reading Complete!',
-        subMessage: 'Great progress!',
+        message: t('bibleReader.readingComplete'),
+        subMessage: t('bibleReader.greatProgress'),
       },
     });
   }, [

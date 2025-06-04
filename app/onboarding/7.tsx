@@ -16,6 +16,7 @@ import { OnboardingResponses } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
+import { useTranslation } from 'react-i18next';
 
 export default function OnboardingAgeRangeScreen() {
   const router = useRouter();
@@ -24,6 +25,7 @@ export default function OnboardingAgeRangeScreen() {
   const [selectedOption, setSelectedOption] = useState<OnboardingResponses['ageRange']>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const { t } = useTranslation();
 
   // Create Reanimated shared values for each component
   const titleOpacity = useSharedValue(0);
@@ -85,10 +87,6 @@ export default function OnboardingAgeRangeScreen() {
     isDatePicker = false
   ) => {
     // Trigger light haptic feedback
-    if (ageRange === 'under-12' && Platform.OS === 'android' && !isDatePicker) {
-      setShowDatePicker(true);
-      return;
-    }
     try {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
         console.log('Haptics not available');
@@ -119,7 +117,7 @@ export default function OnboardingAgeRangeScreen() {
   const options = [
     {
       id: 'parent',
-      title: "I'm a parent/guardian",
+      title: t('onboarding.age.parentGuardian'),
     },
     {
       id: 'under-12',
@@ -156,7 +154,10 @@ export default function OnboardingAgeRangeScreen() {
       {/* Question Text */}
       <Animated.View style={titleStyle}>
         <Text className="font-feather text-h2 text-center text-textPrimary mb-4">
-          What is your age range?
+          {t('onboarding.age.title')}
+        </Text>
+        <Text className="font-din text-body text-center text-textSecondary mb-4">
+          {t('onboarding.age.subtitle')}
         </Text>
       </Animated.View>
 

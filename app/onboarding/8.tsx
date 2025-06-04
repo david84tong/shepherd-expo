@@ -10,6 +10,7 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 
 import PrimaryButton from '../../components/PrimaryButton';
 import { PATH_OPTIONS } from '../models/Path';
@@ -31,6 +32,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
   const { setSelectedPath } = usePathStore();
   const [selectedPathId, setSelectedPathId] = useState(externalSelectedPathId || 'knowing-jesus');
   const [pressedId, setPressedId] = useState<string | undefined>(undefined);
+  const { t } = useTranslation();
 
   // Create Reanimated shared values for each component
   const titleOpacity = useSharedValue(0);
@@ -189,7 +191,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
       {/* Continue Button */}
       {!hideContinueButton && (
         <PrimaryButton
-          title="Continue"
+          title={t('common.continue')}
           onPress={handleContinue}
           disabled={!selectedPathId}
           style="mt-6 mb-12"

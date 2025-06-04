@@ -181,7 +181,7 @@ export default function OnboardingLambNameScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-surfaceCream">
         <ActivityIndicator size="large" color="#3C584A" />
-        <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
+        <Text className="font-feather text-textPrimary mt-4">{t('onboarding.lambName.loading')}</Text>
       </View>
     );
   }
