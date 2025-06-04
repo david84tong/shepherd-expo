@@ -53,6 +53,7 @@ import { useSoundStore } from './stores/soundStore';
 import './stores/userStore';
 import './stores/subscriptionStore';
 import SaveProgressScreen from './onboarding/11';
+import { useRemoteConfig } from './hooks/useRemoteConfig';
 // Define missing ref types
 type PrayerSheetRef = {
   show: () => void;
@@ -183,6 +184,7 @@ export default function RootLayout() {
   const appState = useRef(AppState.currentState);
 
   usePreloadAssets(); // Garante preload global dos assets
+  useRemoteConfig();
 
   // Call onAppForegroundOrInit after initialization
   useEffect(() => {
@@ -364,7 +366,7 @@ export default function RootLayout() {
         await checkOnboarding();
         await checkStreakStatus();
         await initializeNotifications();
-      } catch (error) { }
+      } catch (error) {}
       // Set Rive ready
       setIsRiveReady(true);
       setShowRiveAnimation(true);
