@@ -53,13 +53,13 @@ enum StreakState {
     var labelText: String {
         switch self {
         case .noStreak:
-            return "Start streak!"
+            return "Let's start!"
         case .active(let days):
             return days == 1 ? "\(days) day" : "\(days) days"
         case .atRisk(let days):
             return days == 1 ? "\(days)-day risk" : "\(days)-days risk"
         case .broken(let daysMissed):
-            return daysMissed == 1 ? "\(daysMissed) day missed" : "\(daysMissed) days missed"
+            return daysMissed == 1 ? "\(daysMissed) day" : "\(daysMissed) days"
         }
     }
     
@@ -68,9 +68,9 @@ enum StreakState {
         case .noStreak:
             return "streak_0"  // Image for 0 day streak
         case .active(let days):
-            // Cap the streak display at 8 days
-            let cappedDays = min(days, 8)
-            return "streak_\(cappedDays)"
+            // Calculate the cycling day (1-8) for images only
+            let cyclingDay = ((days - 1) % 8) + 1
+            return "streak_\(cyclingDay)"
         case .atRisk, .broken:
             // For broken streaks, use the inactivity images (1-3 days)
             let daysMissed: Int
