@@ -15,6 +15,7 @@ interface PrimaryButtonProps {
   textColor?: string;
   shadowStyle?: string;
   buttonType?: 'default' | 'blue' | 'gold';
+  buttonHeight?: number;
 }
 
 const PrimaryButton: React.FC<PrimaryButtonProps> = ({
@@ -27,13 +28,14 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   textColor = 'white',
   shadowStyle,
   buttonType = 'default',
+  buttonHeight,
 }) => {
   // Simple state to track pressed state
   const [isPressed, setIsPressed] = useState(false);
   const insets = useSafeAreaInsets();
 
   // Calculate height dynamically
-  const buttonContainerHeight = insets.top > 20 ? 70 : 56;
+  const buttonContainerHeight = buttonHeight ? buttonHeight : insets.top > 20 ? 70 : 56;
 
   // Set colors based on button type
   let bgColor = 'bg-accentGold';
@@ -77,35 +79,35 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   const handlePress = () => {
     triggerHaptic();
     if (disabled) {
-      useSoundStore.getState()?.playDisabledSound()
+      useSoundStore.getState()?.playDisabledSound();
     } else {
-      useSoundStore.getState()?.playButtonSound()
+      useSoundStore.getState()?.playButtonSound();
     }
-    if (disabled) return
+    if (disabled) return;
     analytics.logEvent(`${title}_Tapped`);
     onPress();
   };
 
   // Platform-specific shadow styles
-  const shadowStyles = !isPressed && isActive && !disabled ? {
-    ...Platform.select({
-      ios: {
-        shadowColor: shadowColor,
-        shadowOffset: { width: 0, height: 5.716 },
-        shadowOpacity: 1,
-        shadowRadius: 0,
-      },
-      android: {
-        elevation: 6,
-      },
-    }),
-  } : {};
+  const shadowStyles =
+    !isPressed && isActive && !disabled
+      ? {
+          ...Platform.select({
+            ios: {
+              shadowColor: shadowColor,
+              shadowOffset: { width: 0, height: 5.716 },
+              shadowOpacity: 1,
+              shadowRadius: 0,
+            },
+            android: {
+              elevation: 6,
+            },
+          }),
+        }
+      : {};
 
   return (
-    <View
-      className={`mt-4 w-full ${style || ''}`}
-      style={{ height: buttonContainerHeight }}
-    >
+    <View className={`mt-4 w-full ${style || ''}`} style={{ height: buttonContainerHeight }}>
       <Pressable
         className={
           `flex-row items-center justify-center px-5 h-full w-full rounded-[20px] border-[3px] ` +
