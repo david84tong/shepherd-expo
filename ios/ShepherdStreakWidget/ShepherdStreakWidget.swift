@@ -197,7 +197,7 @@ struct ShepherdStreakWidgetEntryView : View {
                     }
                     
                     Text(state.labelText)
-                        .font(.custom("Nunito-ExtraBold", size: 18))
+                        .font(.custom("Nunito-ExtraBold", size: 20))
                         .multilineTextAlignment(.center)
                         .foregroundColor(.white.opacity(0.9))
                         .minimumScaleFactor(0.5) 
@@ -208,14 +208,15 @@ struct ShepherdStreakWidgetEntryView : View {
                 if case .broken = state {
                     Text("Restart journey")
                         .font(.custom("Nunito-Bold", size: 12))
-                        .foregroundColor(.white.opacity(0.9))
+                        .foregroundColor(.white.opacity(0.6))
                         .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                        .padding(.top, -4)
                 } else {
                     Text("Keep your streak alive!")
                         .font(.custom("Nunito-Bold", size: 12))
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(.white.opacity(0.6))
                         .multilineTextAlignment(.center)
-                        .padding(.top, -2)
+                        .padding(.top, -4)
                 }
                 
                 Spacer()
