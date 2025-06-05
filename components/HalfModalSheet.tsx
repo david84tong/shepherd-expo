@@ -72,7 +72,7 @@ const HalfModalSheet: React.FC<HalfModalSheetProps> = ({ halfModalRef, snapPoint
       handleIndicatorStyle={styles.handleIndicator}
       backdropComponent={renderBackdrop}>
       <BottomSheetView style={styles.contentContainer}>
-        {params.type === HalfModalType.HEART_PENALTY && (
+        {params.type === HalfModalType.HEART_PENALTY ? (
           <>
             <Image
               source={require('../assets/lambStatic/cryingLamb.png')}
@@ -80,18 +80,16 @@ const HalfModalSheet: React.FC<HalfModalSheetProps> = ({ halfModalRef, snapPoint
               resizeMode="contain"
             />
             <Text style={styles.title}>{params.message || 'Hearts Lost!'}</Text>
-            {params.penalty && params.daysMissed && (
+            {params.penalty && params.daysMissed ? (
               <View>
                 <Text style={styles.penaltyText}>
                   ❤️ {useUserStore.getState().getLambName()} lost {params.penalty} hearts after{' '}
                   {params.daysMissed} days away.
                 </Text>
               </View>
-            )}
+            ) : null}
           </>
-        )}
-
-        {params.type !== HalfModalType.HEART_PENALTY && (
+        ) : (
           <>
             <Image
               source={require('../assets/icons/heartIcon.png')}
@@ -133,12 +131,12 @@ const styles = StyleSheet.create({
     width: 240,
   },
   penaltyText: {
+    color: '#666', // secondaryText
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 18,
-    color: '#666', // secondaryText
     marginBottom: 20,
-    textAlign: 'center',
     paddingHorizontal: 16,
+    textAlign: 'center',
   },
   sheetBackground: {
     backgroundColor: '#FFF4D9', // surfaceCream
@@ -146,9 +144,9 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 20,
   },
   title: {
+    color: '#3C584A', // textPrimary
     fontFamily: 'Nunito-Black',
     fontSize: 32,
-    color: '#3C584A', // textPrimary
     marginBottom: 16,
     textAlign: 'center',
   },

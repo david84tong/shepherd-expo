@@ -569,6 +569,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       console.log(`Analytics: Logged ${eventName}`, params);
     }
   }, [successType, xpReward, actualHeartReward, sawDailyBonus]);
+  useEffect(() => {
+    return () => {
+      if (riveRef.current?.reset) {
+        riveRef.current.reset();
+      }
+    };
+  }, []);
 
   // Default navigation behavior
   const handleGoHome = () => {
@@ -730,14 +737,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       </View>
     );
   }
-
-  useEffect(() => {
-    return () => {
-      if (riveRef.current?.reset) {
-        riveRef.current.reset();
-      }
-    };
-  }, []);
 
   return (
     <ScrollView

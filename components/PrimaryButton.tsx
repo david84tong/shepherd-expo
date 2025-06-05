@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
-import { Text, View, Pressable, Platform } from 'react-native';
+import { Text, View, Pressable, Platform, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import analytics from '../utils/analytics';
 import { useSoundStore } from '../app/stores/soundStore';
@@ -16,6 +16,7 @@ interface PrimaryButtonProps {
   shadowStyle?: string;
   buttonType?: 'default' | 'blue' | 'gold';
   buttonHeight?: number;
+  loading?: boolean;
 }
 
 const PrimaryButton: React.FC<PrimaryButtonProps> = ({
@@ -29,6 +30,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   shadowStyle,
   buttonType = 'default',
   buttonHeight,
+  loading = false,
 }) => {
   // Simple state to track pressed state
   const [isPressed, setIsPressed] = useState(false);
@@ -118,10 +120,14 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
         onPress={handlePress}
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}>
-        <Text
-          className={`font-feather ${disabled || !isActive ? 'text-gray-400' : txtColor} text-heading text-center w-full`}>
-          {title}
-        </Text>
+        {loading ? (
+          <ActivityIndicator size="small" color="#FCD34D" />
+        ) : (
+          <Text
+            className={`font-feather ${disabled || !isActive ? 'text-gray-400' : txtColor} text-heading text-center w-full`}>
+            {title}
+          </Text>
+        )}
       </Pressable>
     </View>
   );

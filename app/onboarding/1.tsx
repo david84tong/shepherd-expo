@@ -259,6 +259,14 @@ export default function OnboardingWelcomeScreen() {
       return () => clearInterval(typingInterval);
     }
   }, [textPhase, secondStageActive]);
+  useEffect(() => {
+    return () => {
+      // Cleanup Rive resources
+      if (riveRef.current?.reset) {
+        riveRef.current.reset();
+      }
+    };
+  }, []);
 
   // Handle tapping the lamb in the second stage
   const handleLambTap = () => {
@@ -363,15 +371,6 @@ export default function OnboardingWelcomeScreen() {
       </View>
     );
   }
-
-  useEffect(() => {
-    return () => {
-      // Cleanup Rive resources
-      if (riveRef.current?.reset) {
-        riveRef.current.reset();
-      }
-    };
-  }, []);
 
   return (
     <>

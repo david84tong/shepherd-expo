@@ -68,7 +68,7 @@ export default function LoginScreen() {
       const exitAnimation = () => {
         return new Promise<void>((resolve) => {
           // Animate screen elements out
-          screenOpacity.value = withTiming(0, { duration: 400 });
+          // screenOpacity.value = withTiming(0, { duration: 400 });
           lambScale.value = withTiming(0.8, { duration: 500 });
           buttonOpacity.value = withTiming(0, { duration: 300 });
           titleOpacity.value = withTiming(0, { duration: 300 });

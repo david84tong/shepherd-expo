@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Platform, StatusBar } from 'react-native';
+import { View, Text, ScrollView, Platform, StatusBar, ActivityIndicator } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Animated, {
   useAnimatedStyle,
@@ -24,6 +24,8 @@ export default function OnboardingAgeRangeScreen() {
   const [selectedOption, setSelectedOption] = useState<OnboardingResponses['ageRange']>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [isLoading, setIsLoading] = useState(false);
+  const [loadingOption, setLoadingOption] = useState<string | undefined>(undefined);
 
   // Create Reanimated shared values for each component
   const titleOpacity = useSharedValue(0);
@@ -84,36 +86,49 @@ export default function OnboardingAgeRangeScreen() {
     ageRange: OnboardingResponses['ageRange'],
     isDatePicker = false
   ) => {
-    // Trigger light haptic feedback
-    if (ageRange === 'under-12' && Platform.OS === 'android' && !isDatePicker) {
-      setShowDatePicker(true);
-      return;
-    }
+    if (isLoading) return;
+
+    setLoadingOption(ageRange as string);
+    setIsLoading(true);
+
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
+      // Trigger light haptic feedback
+      if (ageRange === 'under-18' && Platform.OS === 'android' && !isDatePicker) {
+        setShowDatePicker(true);
+        setIsLoading(false);
+        setLoadingOption(undefined);
+        return;
+      }
+
+      try {
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      } catch (error) {
         console.log('Haptics not available');
+      }
+
+      analytics.logEvent('OnboardingAgeRangeScreen_Tapped_Option', {
+        value: ageRange,
       });
+
+      setSelectedOption(ageRange);
+      await setResponse('ageRange', ageRange);
+
+      // Save to user store
+      await setUser({ ageRange });
+      await adapty.updateProfile({
+        codableCustomAttributes: {
+          age_range: ageRange,
+        },
+      });
+
+      // Navigate to next screen
+      router.push('/onboarding/8' as any);
     } catch (error) {
-      console.log('Haptics not available');
+      console.error('Error processing selection:', error);
+    } finally {
+      setIsLoading(false);
+      setLoadingOption(undefined);
     }
-
-    analytics.logEvent('OnboardingAgeRangeScreen_Tapped_Option', {
-      value: ageRange,
-    });
-
-    setSelectedOption(ageRange);
-    await setResponse('ageRange', ageRange);
-
-    // Save to user store
-    setUser({ ageRange });
-    await adapty.updateProfile({
-      codableCustomAttributes: {
-        age_range: ageRange,
-      },
-    });
-
-    // Navigate to next screen
-    router.push('/onboarding/8' as any);
   };
 
   const options = [
@@ -199,17 +214,21 @@ export default function OnboardingAgeRangeScreen() {
             showsVerticalScrollIndicator={false}>
             <View className="space-y-4">
               {options.map((option) => {
-                console.log('option ==>', option?.id);
+                const isOptionLoading = loadingOption === option.id;
 
                 return (
-                  <PrimaryButton
-                    key={option.id}
-                    title={option.title}
-                    onPress={() => handleSelection(option.id as OnboardingResponses['ageRange'])}
-                    isActive
-                    primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
-                    textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
-                  />
+                  <View key={option.id} className="relative">
+                    <PrimaryButton
+                      loading={isOptionLoading}
+                      title={option.title}
+                      onPress={() => handleSelection(option.id as OnboardingResponses['ageRange'])}
+                      isActive
+                      primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
+                      textColor={
+                        selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'
+                      }
+                    />
+                  </View>
                 );
               })}
             </View>
