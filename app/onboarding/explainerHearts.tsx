@@ -1,6 +1,12 @@
 import React, { useLayoutEffect, useEffect } from 'react';
 import { View, Text, StatusBar } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming, withSpring } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+  withSpring,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
@@ -11,7 +17,11 @@ import analytics from '../../utils/analytics';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 
-export default function OnboardingExplainerHeartsScreen({ onContinue }: { onContinue?: () => void }) {
+export default function OnboardingExplainerHeartsScreen({
+  onContinue,
+}: {
+  onContinue?: () => void;
+}) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
 
@@ -20,19 +30,31 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
   const lambName = responses.lambName || 'your lamb';
 
   // Load Rive assets
-  const [riveAssets] = useAssets([
-    require('../../assets/riveAnimations/homeLamb.riv'),
-  ]);
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
 
   // Animation shared values
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
-  const cardOpacities = [useSharedValue(0), useSharedValue(0), useSharedValue(0), useSharedValue(0), useSharedValue(0), useSharedValue(0)];
-  const cardTranslateYs = [useSharedValue(40), useSharedValue(40), useSharedValue(40), useSharedValue(40), useSharedValue(40), useSharedValue(40)];
+  const cardOpacities = [
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+  ];
+  const cardTranslateYs = [
+    useSharedValue(40),
+    useSharedValue(40),
+    useSharedValue(40),
+    useSharedValue(40),
+    useSharedValue(40),
+    useSharedValue(40),
+  ];
 
   // Log screen view when component mounts
   useEffect(() => {
-    analytics.logEvent("OnboardingExplainerHeartsScreen_Viewed");
+    analytics.logEvent('OnboardingExplainerHeartsScreen_Viewed');
   }, []);
 
   // Animate in on mount
@@ -47,7 +69,10 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
     // Animate cards staggered
     cardOpacities.forEach((v, i) => {
       v.value = withDelay(300 + i * 120, withTiming(1, { duration: 400 }));
-      cardTranslateYs[i].value = withDelay(300 + i * 120, withSpring(0, { damping: 18, stiffness: 90 }));
+      cardTranslateYs[i].value = withDelay(
+        300 + i * 120,
+        withSpring(0, { damping: 18, stiffness: 90 })
+      );
     });
   }, []);
 
@@ -63,7 +88,7 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
     }
 
     // Log continue button press
-    analytics.logEvent("OnboardingExplainerHeartsScreen_Tapped_Continue");
+    analytics.logEvent('OnboardingExplainerHeartsScreen_Tapped_Continue');
 
     // Call the provided onContinue function if it exists
     if (onContinue) {
@@ -120,7 +145,9 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
   return (
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      <View className="flex-1 bg-surfaceCream pt-12 w-full items-center" style={{ paddingBottom: insets.bottom }}>
+      <View
+        className="flex-1 bg-surfaceCream pt-12 w-full items-center"
+        style={{ paddingBottom: insets.bottom }}>
         {/* Title */}
         <Animated.View style={titleStyle} className="mb-8 px-6">
           <Text className="font-feather text-2xl text-textPrimary text-center mb-0 mt-16">
@@ -141,18 +168,24 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
                   shadowOffset: { width: 0, height: 0 },
                   shadowOpacity: state.glow ? 0.6 : 0,
                   shadowRadius: 15,
-                }
+                },
               ]}
-              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-lightRed items-center justify-center relative"
-            >
+              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-lightRed items-center justify-center relative">
               {riveAssets && (
                 <View className="w-36 h-36">
-                  <Rive
-                    resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-                    url={IS_IOS ? riveAssets[0].uri! : undefined}
-                    artboardName={state.artboard}
-                    style={{ width: '100%', height: '100%' }}
-                  />
+                  {IS_ANDROID ? (
+                    <Rive
+                      resourceName={'home_lamb'}
+                      artboardName={state.artboard}
+                      style={{ width: '100%', height: '100%' }}
+                    />
+                  ) : (
+                    <Rive
+                      url={riveAssets[0].uri!}
+                      artboardName={state.artboard}
+                      style={{ width: '100%', height: '100%' }}
+                    />
+                  )}
                 </View>
               )}
               <View className="absolute top-2.5 right-2.5 bg-lightRed px-4 py-1 rounded-full">
@@ -162,9 +195,10 @@ export default function OnboardingExplainerHeartsScreen({ onContinue }: { onCont
           ))}
         </View>
 
-
         {/* Continue Button - fixed at bottom */}
-        <View className="absolute left-6 right-6" style={{ bottom: Math.max(insets.bottom + 16, 24) }}>
+        <View
+          className="absolute left-6 right-6"
+          style={{ bottom: Math.max(insets.bottom + 16, 24) }}>
           <PrimaryButton title="Continue" onPress={handleContinue} />
         </View>
       </View>

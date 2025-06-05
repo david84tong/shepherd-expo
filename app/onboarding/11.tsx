@@ -625,15 +625,27 @@ export default function SaveProgressScreen() {
             {/* Icon */}
             <View className="mb-8 overflow-hidden w-64 h-64 items-center justify-center">
               {riveAssets && riveAssets[0]?.uri && (
-                <Rive
-                  url={IS_IOS ? riveAssets[0].uri! : undefined}
-                  resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-                  artboardName={'lamb-workout'}
-                  autoplay={true}
-                  fit={Fit.Contain}
-                  alignment={Alignment.Center}
-                  style={{ width: 240, height: 240 }}
-                />
+                <>
+                  {IS_ANDROID ? (
+                    <Rive
+                      resourceName={'home_lamb'}
+                      artboardName={'lamb-workout'}
+                      autoplay={true}
+                      fit={Fit.Contain}
+                      alignment={Alignment.Center}
+                      style={{ width: 240, height: 240 }}
+                    />
+                  ) : (
+                    <Rive
+                      url={riveAssets[0].uri!}
+                      artboardName={'lamb-workout'}
+                      autoplay={true}
+                      fit={Fit.Contain}
+                      alignment={Alignment.Center}
+                      style={{ width: 240, height: 240 }}
+                    />
+                  )}
+                </>
               )}
             </View>
           </Animated.View>

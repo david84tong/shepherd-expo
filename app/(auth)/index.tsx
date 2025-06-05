@@ -253,13 +253,21 @@ export default function LoginScreen() {
           <CustomAnimatedView
             style={lambStyle}
             className="h-[200px] w-full justify-center items-center -mt-24">
-            <Rive
-              resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-              url={IS_IOS ? riveAssets[0].uri! : undefined}
-              artboardName="lamb-reading"
-              autoplay
-              style={{ width: '120%', height: '120%' }}
-            />
+            {IS_ANDROID ? (
+              <Rive
+                resourceName={'home_lamb'}
+                artboardName="lamb-reading"
+                autoplay
+                style={{ width: '120%', height: '120%' }}
+              />
+            ) : (
+              <Rive
+                url={riveAssets[0].localUri!}
+                artboardName="lamb-reading"
+                autoplay
+                style={{ width: '120%', height: '120%' }}
+              />
+            )}
           </CustomAnimatedView>
 
           {/* Button at the bottom */}

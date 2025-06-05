@@ -855,21 +855,33 @@ export default function HomeScreen() {
             overflow: 'hidden',
             zIndex: 10,
           }}>
-          <Rive
-            key={riveKey}
-            ref={riveRef}
-            resourceName={
-              IS_ANDROID ? (lambAssetIndex === 2 ? 'gold_lamb' : 'home_lamb') : undefined
-            }
-            url={IS_IOS ? riveAssets[lambAssetIndex].uri! : undefined}
-            artboardName={artboardName}
-            onError={handleRiveError}
-            style={{
-              width: '100%',
-              height: '100%',
-              opacity: new Date().getHours() >= 19 ? 0.85 : 1,
-            }}
-          />
+          {IS_ANDROID ? (
+            <Rive
+              key={riveKey}
+              ref={riveRef}
+              resourceName={lambAssetIndex === 2 ? 'gold_lamb' : 'home_lamb'}
+              artboardName={artboardName}
+              onError={handleRiveError}
+              style={{
+                width: '100%',
+                height: '100%',
+                opacity: new Date().getHours() >= 19 ? 0.85 : 1,
+              }}
+            />
+          ) : (
+            <Rive
+              key={riveKey}
+              ref={riveRef}
+              url={riveAssets[lambAssetIndex].uri!}
+              artboardName={artboardName}
+              onError={handleRiveError}
+              style={{
+                width: '100%',
+                height: '100%',
+                opacity: new Date().getHours() >= 19 ? 0.85 : 1,
+              }}
+            />
+          )}
         </View>
       </View>
     );
@@ -1398,8 +1410,6 @@ export default function HomeScreen() {
                 completed={reflectionCompleted}
                 disabled={!readingCompleted}
               />
-
-
             </ScrollView>
           </Animated.View>
 
