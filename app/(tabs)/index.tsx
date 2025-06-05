@@ -13,7 +13,7 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
@@ -1366,16 +1366,16 @@ export default function HomeScreen() {
               />
 
               {/* Widget How-To Sheet test button */}
-              {/* <TouchableOpacity
-              onPress={() => setShowWidgetSheet(true)}
-              className="mt-6 flex-row items-center justify-center py-3 px-4 bg-amber-100 border border-amber-300 rounded-xl"
-              activeOpacity={0.7}
-            >
-              <Feather name="smartphone" size={20} color="#B45309" style={{ marginRight: 8 }} />
-              <Text className="font-feather text-base text-amber-800">
-                How to Add Widget
-              </Text>
-            </TouchableOpacity> */}
+              {IS_IOS && <TouchableOpacity
+                onPress={() => setShowWidgetSheet(true)}
+                className="mt-6 flex-row items-center justify-center py-3 px-4 bg-amber-100 border border-amber-300 rounded-xl"
+                activeOpacity={0.7}
+              >
+                <Feather name="smartphone" size={20} color="#B45309" style={{ marginRight: 8 }} />
+                <Text className="font-feather text-base text-amber-800">
+                  How to Add Widget
+                </Text>
+              </TouchableOpacity>}
             </ScrollView>
           </Animated.View>
 

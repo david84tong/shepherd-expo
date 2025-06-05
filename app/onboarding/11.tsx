@@ -682,7 +682,7 @@ export default function SaveProgressScreen() {
           )}
 
           {/* Email/Password Form - Always Visible */}
-          {showEmailPassword && (
+          {showEmailPassword && IS_ANDROID && (
             <Animated.View style={buttonsStyle} className="mb-6">
               <View className="w-full mb-4">
                 <TextInput
@@ -739,7 +739,7 @@ export default function SaveProgressScreen() {
           {!hideGoogleLogin || IS_IOS ? (
             <>
               {/* OR Separator */}
-              {showEmailPassword ? (
+              {showEmailPassword && IS_ANDROID ? (
                 <Animated.View
                   style={buttonsStyle}
                   className="flex-row items-center justify-center mb-6">
