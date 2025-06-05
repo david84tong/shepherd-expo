@@ -364,6 +364,15 @@ export default function OnboardingWelcomeScreen() {
     );
   }
 
+  useEffect(() => {
+    return () => {
+      // Cleanup Rive resources
+      if (riveRef.current?.reset) {
+        riveRef.current.reset();
+      }
+    };
+  }, []);
+
   return (
     <>
       <StatusBar translucent backgroundColor="transparent" />

@@ -1118,6 +1118,17 @@
 "@eslint/js@8.57.1":
   version "8.57.1"
 
+"@expo/browser-polyfill@^1.0.1":
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/@expo/browser-polyfill/-/browser-polyfill-1.0.1.tgz"
+  integrity sha512-0K6USycVKDj/k9Gr2UYa+7MiCjb0f2NznsE4LX11H85vQMJma5JS3a2oe6lxCfleY9hDcQ/9zKCYS8O6crsv3A==
+  dependencies:
+    expo-2d-context "^0.0.3"
+    fbemitter "^2.1.1"
+    text-encoding "^0.7.0"
+    uuid "^8.3.2"
+    xmldom-qsa "^1.0.3"
+
 "@expo/bunyan@^4.0.0":
   version "4.0.1"
   dependencies:
@@ -2913,6 +2924,16 @@ acorn-jsx@^5.3.2:
 "acorn@^6.0.0 || ^7.0.0 || ^8.0.0", acorn@^8.14.0, acorn@^8.9.0:
   version "8.14.1"
 
+adaptive-bezier-curve@1.0.3:
+  version "1.0.3"
+  resolved "https://registry.npmjs.org/adaptive-bezier-curve/-/adaptive-bezier-curve-1.0.3.tgz"
+  integrity sha512-mDcwN284LlNAdunqnVmS0PAoDNHKze/PY8zvpCdxzyXD+ZZFeMWQ3FKNBw0VMOd9IfnhIyzAWJDXzRcWnXtoSg==
+
+adaptive-quadratic-curve@1.0.2:
+  version "1.0.2"
+  resolved "https://registry.npmjs.org/adaptive-quadratic-curve/-/adaptive-quadratic-curve-1.0.2.tgz"
+  integrity sha512-D6NxIKnelgRDqQijGR6FQzdWPgs4bC7H54LyukFKxTkoZW4+zNemU2JevF4BuMraoxYogvAIMRc2LD5oSCL34g==
+
 agent-base@6:
   version "6.0.2"
   dependencies:
@@ -3518,6 +3539,13 @@ color-convert@^1.9.0:
   dependencies:
     color-name "1.1.3"
 
+color-convert@^1.9.3:
+  version "1.9.3"
+  resolved "https://registry.npmjs.org/color-convert/-/color-convert-1.9.3.tgz"
+  integrity sha512-QfAUtd+vFdAtFQcC8CCyYt1fYWxSqAiK2cSD6zDB8N3cpsEBAvRxp9zOGg6G/SHHJYAT88/az/IuDGALsNVbGg==
+  dependencies:
+    color-name "1.1.3"
+
 color-convert@^2.0.1:
   version "2.0.1"
   dependencies:
@@ -3528,6 +3556,8 @@ color-name@^1.0.0, color-name@~1.1.4:
 
 color-name@1.1.3:
   version "1.1.3"
+  resolved "https://registry.npmjs.org/color-name/-/color-name-1.1.3.tgz"
+  integrity sha512-72fSenhMw2HZMTVHeCA9KCmpEIbzWiQsjN+BHcBbS9vr1mtt+vJjPdksIBNUmKAW8TFUDPJK5SUU3QhE9NEXDw==
 
 color-string@^1.9.0:
   version "1.9.1"
@@ -3611,6 +3641,11 @@ core-js-compat@^3.40.0:
   dependencies:
     browserslist "^4.24.4"
 
+core-js@^1.0.0:
+  version "1.2.7"
+  resolved "https://registry.npmjs.org/core-js/-/core-js-1.2.7.tgz"
+  integrity sha512-ZiPp9pZlgxpWRu0M+YWbm6+aQ84XEfH1JRXvfOc/fILWI0VKhLC2LX13X1NYq4fULzLMq7Hfh43CSo2/aIaUPA==
+
 core-util-is@^1.0.3:
   version "1.0.3"
 
@@ -3648,6 +3683,11 @@ crypt@0.0.2:
 
 crypto-random-string@^2.0.0:
   version "2.0.0"
+
+css-font-parser@0.2.3:
+  version "0.2.3"
+  resolved "https://registry.npmjs.org/css-font-parser/-/css-font-parser-0.2.3.tgz"
+  integrity sha512-QhdfNV+RjQLVg24d/ls4I8UrA/5WCeEfUmi1je8ISPr7RGZJXwWU2AwZpCiUmWuLZW7dKaB3ER0Bq1W9UhEUag==
 
 css-in-js-utils@^3.1.0:
   version "3.1.0"
@@ -3838,6 +3878,13 @@ dom-serializer@^2.0.0:
 domelementtype@^2.3.0:
   version "2.3.0"
 
+domexception@1.0.1:
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/domexception/-/domexception-1.0.1.tgz"
+  integrity sha512-raigMkn7CJNNo6Ihro1fzG7wr3fHuYVytzquZKX5n0yizGsTcYgzdIUwj1X9pK0VvjeihV+XiclP+DjwbsSKug==
+  dependencies:
+    webidl-conversions "^4.0.2"
+
 domhandler@^5.0.2, domhandler@^5.0.3:
   version "5.0.3"
   dependencies:
@@ -3865,6 +3912,11 @@ dunder-proto@^1.0.0, dunder-proto@^1.0.1:
     es-errors "^1.3.0"
     gopd "^1.2.0"
 
+earcut@2.1.1:
+  version "2.1.1"
+  resolved "https://registry.npmjs.org/earcut/-/earcut-2.1.1.tgz"
+  integrity sha512-+BGT9Mffq3Oxf2nDOtzaJDd9P8g/z3WNYGO84Q23hDBot5VU8DNGY73Vc94eVDvHjMyhonnuEg+DNwEQ6iZn3w==
+
 eastasianwidth@^0.2.0:
   version "0.2.0"
 
@@ -3886,7 +3938,7 @@ encodeurl@~1.0.2:
 encodeurl@~2.0.0:
   version "2.0.0"
 
-encoding@^0.1.0:
+encoding@^0.1.0, encoding@^0.1.11:
   version "0.1.13"
   dependencies:
     iconv-lite "^0.6.2"
@@ -4265,13 +4317,34 @@ execa@^5.1.1:
     signal-exit "^3.0.3"
     strip-final-newline "^2.0.0"
 
+expo-2d-context@^0.0.3:
+  version "0.0.3"
+  resolved "https://registry.npmjs.org/expo-2d-context/-/expo-2d-context-0.0.3.tgz"
+  integrity sha512-loO/cIj5owNXv0GJxEQ7Sm1vlGOYoJwHCaf2uiPKG3BZm+gQw6GnDgxN+2WDisNZKLTjnMLUGP1HhBsNnElt6g==
+  dependencies:
+    adaptive-bezier-curve "1.0.3"
+    adaptive-quadratic-curve "1.0.2"
+    color-convert "^1.9.3"
+    css-font-parser "0.2.3"
+    domexception "1.0.1"
+    earcut "2.1.1"
+    gl-matrix "^2.4.0"
+    parse-bmfont-ascii "1.0.6"
+    string-format "0.5.0"
+    tess2 "^1.0.0"
+
 expo-apple-authentication@~7.1.3:
   version "7.1.3"
 
 expo-application@~6.0.2:
   version "6.0.2"
 
-expo-asset@~11.0.5:
+expo-asset-utils@~3.0.0:
+  version "3.0.0"
+  resolved "https://registry.npmjs.org/expo-asset-utils/-/expo-asset-utils-3.0.0.tgz"
+  integrity sha512-CgIbNvTqKqQi1lrlptmwoaCMu4ZVOZf8tghmytlor23CjIOuorw6cfuOqiqWkJLz23arTt91maYEU9XLMPB23A==
+
+expo-asset@*, expo-asset@~11.0.5:
   version "11.0.5"
   dependencies:
     "@expo/image-utils" "^0.6.5"
@@ -4347,7 +4420,7 @@ expo-device@~7.0.3:
   dependencies:
     ua-parser-js "^0.7.33"
 
-expo-file-system@~18.0.12:
+expo-file-system@*, expo-file-system@^13.2.0, expo-file-system@~18.0.12:
   version "18.0.12"
   dependencies:
     web-streams-polyfill "^3.3.2"
@@ -4356,6 +4429,13 @@ expo-font@*, expo-font@~13.0.4:
   version "13.0.4"
   dependencies:
     fontfaceobserver "^2.1.0"
+
+expo-gl@15.0.4:
+  version "15.0.4"
+  resolved "https://registry.npmjs.org/expo-gl/-/expo-gl-15.0.4.tgz"
+  integrity sha512-7Oefd8BesUVP7XlnhWYoc0rX/fkXnTiFoWj4qLYCoBnJ7cIYaaxNpbbeDjn66T2xKeKMkU83PoZ4Zuh+TQ/lzA==
+  dependencies:
+    invariant "^2.2.4"
 
 expo-haptics@~14.0.1:
   version "14.0.1"
@@ -4396,7 +4476,7 @@ expo-modules-autolinking@2.0.8:
     require-from-string "^2.0.2"
     resolve-from "^5.0.0"
 
-expo-modules-core@2.2.3:
+expo-modules-core@*, expo-modules-core@2.2.3:
   version "2.2.3"
   dependencies:
     invariant "^2.2.4"
@@ -4454,6 +4534,14 @@ expo-system-ui@~4.0.9:
   dependencies:
     "@react-native/normalize-colors" "0.76.8"
     debug "^4.3.2"
+
+expo-three@7.0.1:
+  version "7.0.1"
+  resolved "https://registry.npmjs.org/expo-three/-/expo-three-7.0.1.tgz"
+  integrity sha512-B8OyGwjQZ+NbGBMT3zqe2ngV7mI147yJL8eR56y9SQLrsEkv8+DiMpm3f88r7/LJoFXKGg8mmMrK09hMvRqGHg==
+  dependencies:
+    "@expo/browser-polyfill" "^1.0.1"
+    expo-asset-utils "~3.0.0"
 
 expo-updates-interface@~1.0.0:
   version "1.0.0"
@@ -4538,6 +4626,13 @@ fb-watchman@^2.0.0:
   dependencies:
     bser "2.1.1"
 
+fbemitter@^2.1.1:
+  version "2.1.1"
+  resolved "https://registry.npmjs.org/fbemitter/-/fbemitter-2.1.1.tgz"
+  integrity sha512-hd8PgD+Q6RQtlcGrkM9oY3MFIjq6CA6wurCK1TKn2eaA76Ww4VAOihmq98NyjRhjJi/axgznZnh9lF8+TcTsNQ==
+  dependencies:
+    fbjs "^0.8.4"
+
 fbemitter@^3.0.0:
   version "3.0.0"
   dependencies:
@@ -4545,6 +4640,19 @@ fbemitter@^3.0.0:
 
 fbjs-css-vars@^1.0.0:
   version "1.0.2"
+
+fbjs@^0.8.4:
+  version "0.8.18"
+  resolved "https://registry.npmjs.org/fbjs/-/fbjs-0.8.18.tgz"
+  integrity sha512-EQaWFK+fEPSoibjNy8IxUtaFOMXcWsY0JaVrQoZR9zC8N2Ygf9iDITPWjUTVIax95b6I742JFLqASHfsag/vKA==
+  dependencies:
+    core-js "^1.0.0"
+    isomorphic-fetch "^2.1.1"
+    loose-envify "^1.0.0"
+    object-assign "^4.1.0"
+    promise "^7.1.1"
+    setimmediate "^1.0.5"
+    ua-parser-js "^0.7.30"
 
 fbjs@^3.0.0, fbjs@^3.0.4:
   version "3.0.5"
@@ -4847,6 +4955,11 @@ get-symbol-description@^1.1.0:
 
 getenv@^1.0.0:
   version "1.0.0"
+
+gl-matrix@^2.4.0:
+  version "2.8.1"
+  resolved "https://registry.npmjs.org/gl-matrix/-/gl-matrix-2.8.1.tgz"
+  integrity sha512-0YCjVpE3pS5XWlN3J4X7AiAx65+nqAI54LndtVFnQZB6G/FVLkZH8y8V6R3cIoOQR4pUdfwQGd1iwyoXHJ4Qfw==
 
 glob-parent@^5.1.2:
   version "5.1.2"
@@ -5281,6 +5394,11 @@ is-shared-array-buffer@^1.0.4:
   dependencies:
     call-bound "^1.0.3"
 
+is-stream@^1.0.1:
+  version "1.1.0"
+  resolved "https://registry.npmjs.org/is-stream/-/is-stream-1.1.0.tgz"
+  integrity sha512-uQPm8kcs47jx38atAcWTVxyltQYoPT68y9aWYdV6yWXSyW8mzSat0TL6CiWdZeCdF3KrAvpVtnHbTv4RN+rqdQ==
+
 is-stream@^1.1.0:
   version "1.1.0"
 
@@ -5340,6 +5458,14 @@ isexe@^2.0.0:
 
 isobject@^3.0.1:
   version "3.0.1"
+
+isomorphic-fetch@^2.1.1:
+  version "2.2.1"
+  resolved "https://registry.npmjs.org/isomorphic-fetch/-/isomorphic-fetch-2.2.1.tgz"
+  integrity sha512-9c4TNAKYXM5PRyVcwUZrF3W09nQ+sO7+jydgs4ZGW9dhsLG2VOlISJABombdQqQRXCwuYG3sYV/puGf5rp0qmA==
+  dependencies:
+    node-fetch "^1.0.1"
+    whatwg-fetch ">=0.10.0"
 
 istanbul-lib-coverage@^3.2.0:
   version "3.2.2"
@@ -6027,6 +6153,14 @@ node-dir@^0.1.17:
   dependencies:
     minimatch "^3.0.2"
 
+node-fetch@^1.0.1:
+  version "1.7.3"
+  resolved "https://registry.npmjs.org/node-fetch/-/node-fetch-1.7.3.tgz"
+  integrity sha512-NhZ4CsKx7cYm2vSrBAr2PvFOe6sWDf0UYLRqA6svUYg7+/TSfVAu49jYC4BvQ4Sms9SZgdqGBgroqfDhJdTyKQ==
+  dependencies:
+    encoding "^0.1.11"
+    is-stream "^1.0.1"
+
 node-fetch@^2.2.0, node-fetch@^2.6.1, node-fetch@^2.6.7, node-fetch@^2.7.0:
   version "2.7.0"
   dependencies:
@@ -6276,6 +6410,11 @@ parent-module@^1.0.0:
   dependencies:
     callsites "^3.0.0"
 
+parse-bmfont-ascii@1.0.6:
+  version "1.0.6"
+  resolved "https://registry.npmjs.org/parse-bmfont-ascii/-/parse-bmfont-ascii-1.0.6.tgz"
+  integrity sha512-U4RrVsUFCleIOBsIGYOMKjn9PavsGOXxbvYGtMOEfnId0SVNsgehXh1DxUdVPLoxd5mvcEtvmKs2Mmf0Mpa1ZA==
+
 parse-json@^4.0.0:
   version "4.0.0"
   dependencies:
@@ -6445,6 +6584,8 @@ progress@^2.0.3:
 
 promise@^7.1.1:
   version "7.3.1"
+  resolved "https://registry.npmjs.org/promise/-/promise-7.3.1.tgz"
+  integrity sha512-nolQXZ/4L+bP/UGlkfaIujX9BKxGwmQ9OT4mOt5yvy8iK1h3wqTEJCijzGANTCCl9nWjY41juyAn2K3Q1hLLTg==
   dependencies:
     asap "~2.0.3"
 
@@ -6664,7 +6805,7 @@ react-native-web@*, react-native-web@~0.19.10:
     postcss-value-parser "^4.2.0"
     styleq "^0.1.3"
 
-react-native@*, "react-native@^0.0.0-0 || >=0.60 <1.0", "react-native@>= 0.60.0", "react-native@>= 0.61.5", react-native@>=0.44.1, react-native@>=0.46, react-native@>=0.57, react-native@>=0.65.0, react-native@0.76.9:
+react-native@*, "react-native@^0.0.0-0 || >=0.60 <1.0", react-native@^0.64.3, "react-native@>= 0.60.0", "react-native@>= 0.61.5", react-native@>=0.44.1, react-native@>=0.46, react-native@>=0.57, react-native@>=0.65.0, react-native@0.76.9:
   version "0.76.9"
   dependencies:
     "@jest/create-cache-key-function" "^29.6.3"
@@ -6709,10 +6850,18 @@ react-native@*, "react-native@^0.0.0-0 || >=0.60 <1.0", "react-native@>= 0.60.0"
 react-refresh@^0.14.0, react-refresh@^0.14.2:
   version "0.14.2"
 
-react@*, "react@^16.14.0 || 17.x || 18.x || 19.x", "react@^16.6.0 || ^17.0.0 || ^18.0.0", "react@^16.8 || ^17.0 || ^18.0", "react@^16.8.0 || ^17.0.0 || ^18.0.0", "react@^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", react@^18.0.0, react@^18.2.0, react@^18.3.1, "react@>= 16.6.3", "react@>= 16.9.0", "react@>= 18.2.0", react@>=16, react@>=16.8, react@>=17.0.0, react@>=18, react@18.3.1:
+react@*, "react@^16.14.0 || 17.x || 18.x || 19.x", "react@^16.6.0 || ^17.0.0 || ^18.0.0", "react@^16.8 || ^17.0 || ^18.0", "react@^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", react@^18.0.0, react@^18.2.0, react@^18.3.1, "react@>= 16.6.3", "react@>= 16.9.0", "react@>= 18.2.0", react@>=16, react@>=16.8, react@>=17.0.0, react@>=18, react@18.3.1:
   version "18.3.1"
   dependencies:
     loose-envify "^1.1.0"
+
+react@^17.0.1:
+  version "17.0.1"
+  resolved "https://registry.npmjs.org/react/-/react-17.0.1.tgz"
+  integrity sha512-lG9c9UuMHdcAexXtigOZLX8exLWkW0Ku29qPRU8uhF2R9BN96dLCt0psvzPLlHc5OWkgymP3qwTRgbnw5BKx3w==
+  dependencies:
+    loose-envify "^1.1.0"
+    object-assign "^4.1.1"
 
 read-cache@^1.0.0:
   version "1.0.0"
@@ -7191,6 +7340,11 @@ stream-buffers@~2.2.0, stream-buffers@2.2.x:
 strict-uri-encode@^2.0.0:
   version "2.0.0"
 
+string-format@0.5.0:
+  version "0.5.0"
+  resolved "https://registry.npmjs.org/string-format/-/string-format-0.5.0.tgz"
+  integrity sha512-c/CiKQMy7uuEzi+Tsvnn63/PQw/F7IOSLHNuQ44Eypd0x5VvFnDXMd2T9H0ntphv8nrHAKoZcINPb/yitOAB/g==
+
 "string-width-cjs@npm:string-width@^4.2.0":
   version "4.2.3"
   dependencies:
@@ -7415,12 +7569,22 @@ terser@^5.15.0:
     commander "^2.20.0"
     source-map-support "~0.5.20"
 
+tess2@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.npmjs.org/tess2/-/tess2-1.0.0.tgz"
+  integrity sha512-iSWBSOUoPn3cCT26L5Wi6mvVgL11RV4kReSnVIIPdMN7qNpkL5SLKen5BJcWj+ZTN7kK6JrHBdqTV7vvL8g+9w==
+
 test-exclude@^6.0.0:
   version "6.0.0"
   dependencies:
     "@istanbuljs/schema" "^0.1.2"
     glob "^7.1.4"
     minimatch "^3.0.4"
+
+text-encoding@^0.7.0:
+  version "0.7.0"
+  resolved "https://registry.npmjs.org/text-encoding/-/text-encoding-0.7.0.tgz"
+  integrity sha512-oJQ3f1hrOnbRLOcwKz0Liq2IcrvDeZRHXhd9RgLrsT+DjWY/nty1Hi7v3dtkaEYbPYe0mUoOfzRrMwfXXwgPUA==
 
 text-table@^0.2.0:
   version "0.2.0"
@@ -7434,6 +7598,11 @@ thenify-all@^1.0.0:
   version "3.3.1"
   dependencies:
     any-promise "^1.0.0"
+
+three@^0.145.0, three@^0.176.0:
+  version "0.176.0"
+  resolved "https://registry.npmjs.org/three/-/three-0.176.0.tgz"
+  integrity sha512-PWRKYWQo23ojf9oZSlRGH8K09q7nRSWx6LY/HF/UUrMdYgN9i1e2OwJYHoQjwc6HF/4lvvYLC5YC1X8UJL2ZpA==
 
 throat@^5.0.0:
   version "5.0.0"
@@ -7534,7 +7703,7 @@ typed-array-length@^1.0.7:
 typescript@^5.0.0, typescript@>=4.2.0, typescript@~5.3.3:
   version "5.3.3"
 
-ua-parser-js@^0.7.33:
+ua-parser-js@^0.7.30, ua-parser-js@^0.7.33:
   version "0.7.40"
 
 ua-parser-js@^1.0.35:
@@ -7613,13 +7782,8 @@ uri-js@^4.2.2:
 use-latest-callback@^0.2.3:
   version "0.2.3"
 
-use-sync-external-store@^1.5.0:
+use-sync-external-store@^1.2.2, use-sync-external-store@^1.5.0:
   version "1.5.0"
-
-use-sync-external-store@1.2.2:
-  version "1.2.2"
-  resolved "https://registry.npmjs.org/use-sync-external-store/-/use-sync-external-store-1.2.2.tgz"
-  integrity sha512-PElTlVMwpblvbNqQ82d2n6RjStvdSoNe9FG28kNfz3WiXilJm4DdNkEzRhCZuIDwY8U08WVihhGR5iRqAwfDiw==
 
 util-deprecate@^1.0.2:
   version "1.0.2"
@@ -7684,6 +7848,11 @@ web-vitals@^4.2.4:
 webidl-conversions@^3.0.0:
   version "3.0.1"
 
+webidl-conversions@^4.0.2:
+  version "4.0.2"
+  resolved "https://registry.npmjs.org/webidl-conversions/-/webidl-conversions-4.0.2.tgz"
+  integrity sha512-YQ+BmxuTgd6UXZW3+ICGfyqRyHXVlD5GtQr5+qjiNW7bF0cqrzX500HVXPBOvgXb5YnzDd+h0zqyv61KUD7+Sg==
+
 webidl-conversions@^5.0.0:
   version "5.0.0"
 
@@ -7697,7 +7866,7 @@ websocket-driver@>=0.5.1:
 websocket-extensions@>=0.1.1:
   version "0.1.4"
 
-whatwg-fetch@^3.0.0:
+whatwg-fetch@^3.0.0, whatwg-fetch@>=0.10.0:
   version "3.6.20"
 
 whatwg-url-without-unicode@8.0.0-3:
@@ -7843,6 +8012,11 @@ xmlbuilder@^15.1.1:
 xmlbuilder@~11.0.0:
   version "11.0.1"
 
+xmldom-qsa@^1.0.3:
+  version "1.1.3"
+  resolved "https://registry.npmjs.org/xmldom-qsa/-/xmldom-qsa-1.1.3.tgz"
+  integrity sha512-IJBOczBpAYrIBJFFsmCBwfBhwe4zdMR3Xz0ZBX0OFtgO49rLy/BWbhkegOwsthdBWb1gUtFK6ZZnGdT8ZqPRBA==
+
 y18n@^5.0.5:
   version "5.0.8"
 
@@ -7875,9 +8049,9 @@ yargs@^17.6.2, yargs@^17.7.2:
 yocto-queue@^0.1.0:
   version "0.1.0"
 
-zustand@4.5.5:
-  version "4.5.5"
-  resolved "https://registry.npmjs.org/zustand/-/zustand-4.5.5.tgz"
-  integrity sha512-+0PALYNJNgK6hldkgDq2vLrw5f6g/jCInz52n9RTpropGgeAf/ioFUCdtsjCqu4gNhW9D01rUQBROoRjdzyn2Q==
+zustand@4.5.6:
+  version "4.5.6"
+  resolved "https://registry.npmjs.org/zustand/-/zustand-4.5.6.tgz"
+  integrity sha512-ibr/n1hBzLLj5Y+yUcU7dYw8p6WnIVzdJbnX+1YpaScvZVF2ziugqHs+LAmHw4lWO9c/zRj+K1ncgWDQuthEdQ==
   dependencies:
-    use-sync-external-store "1.2.2"
+    use-sync-external-store "^1.2.2"

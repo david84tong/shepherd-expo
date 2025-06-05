@@ -60,7 +60,7 @@ export default function LoginScreen() {
 
     try {
       // Trigger haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
       setLoading(true);
 
@@ -69,7 +69,7 @@ export default function LoginScreen() {
         return new Promise<void>((resolve) => {
           // Animate screen elements out
           screenOpacity.value = withTiming(0, { duration: 400 });
-          lambScale.value = withTiming(0.8, { duration: 400 });
+          lambScale.value = withTiming(0.8, { duration: 500 });
           buttonOpacity.value = withTiming(0, { duration: 300 });
           titleOpacity.value = withTiming(0, { duration: 300 });
 

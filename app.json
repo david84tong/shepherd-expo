@@ -42,6 +42,8 @@
       }
     ],
     "ios": {
+      "enableRiveRuntime": true,
+      "enableJSEngine": false,
       "bundleIdentifier": "second.round.shepherd",
       "buildNumber": "41",
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -76,6 +78,7 @@
       ]
     },
     "android": {
+      "enableRiveRuntime": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"

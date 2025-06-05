@@ -730,6 +730,15 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       </View>
     );
   }
+
+  useEffect(() => {
+    return () => {
+      if (riveRef.current?.reset) {
+        riveRef.current.reset();
+      }
+    };
+  }, []);
+
   return (
     <ScrollView
       contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}

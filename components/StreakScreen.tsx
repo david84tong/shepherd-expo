@@ -406,6 +406,15 @@ export const StreakScreen = () => {
     );
   }
 
+  useEffect(() => {
+    return () => {
+      // Cleanup Rive resources
+      if (riveRef.current?.reset) {
+        riveRef.current.reset();
+      }
+    };
+  }, []);
+
   return (
     <Animated.View style={containerStyle} className="flex-1 bg-surfaceCream justify-between">
       {/* Large flame with streak number */}

@@ -732,6 +732,13 @@ export default function HomeScreen() {
         setIsFirstLoad(false);
       });
     }
+
+    return () => {
+      // Cleanup Rive resources
+      if (riveRef.current?.reset) {
+        riveRef.current.reset();
+      }
+    };
   }, []);
 
   // Add screen view analytics tracking
@@ -833,7 +840,9 @@ export default function HomeScreen() {
           activeOpacity={0.7}
           className="bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 -mb-2 px-2">
           <Text className="font-feather text-textPrimary text-xs">
-            {`${lambName?.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`}
+            {lambName
+              ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
+              : ''}
           </Text>
         </TouchableOpacity>
         <View
