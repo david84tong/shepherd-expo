@@ -118,36 +118,7 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
           <Text style={styles.headerTitle}>Add Widget to Home Screen</Text>
           <View style={{ width: 40 }} />
         </View>
-        
-        {/* Scrollable Content Area */}
-        <ScrollView 
-          ref={scrollViewRef}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollViewContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Image for Step - Now above instructions */}
-          <View style={styles.imageContainer}>
-            <Image
-              source={steps[step].image}
-              style={styles.image}
-              resizeMode="contain"
-            />
-          </View>
-          
-          {/* Main instruction */}
-          <Text style={styles.mainInstruction}>
-            {steps[step].instruction}
-          </Text>
-          
-          {/* Bottom padding to ensure content doesn't get cut off by fixed elements */}
-          <View style={{ height: 100 }} />
-        </ScrollView>
-        
-        {/* Fixed Bottom Area */}
-        <View style={styles.fixedBottomContainer}>
-          {/* Progress indicators - Now clickable */}
-          <View style={styles.progressContainer}>
+        <View style={styles.progressContainer}>
             <View style={styles.progressTrack}>
               {steps.map((_, i) => (
                 <React.Fragment key={i}>
@@ -164,6 +135,33 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
               ))}
             </View>
           </View>
+        {/* Scrollable Content Area */}
+        <View
+        className='flex-1 justify-center items-center'
+        >
+     
+          
+          {/* Main instruction */}
+          <Text style={styles.mainInstruction}>
+            {steps[step].instruction}
+          </Text>
+         
+          {/* Bottom padding to ensure content doesn't get cut off by fixed elements */}
+          <View style={{ height: 100 }} />
+               {/* Image for Step - Now above instructions */}
+               <View style={styles.imageContainer}>
+            <Image
+              source={steps[step].image}
+              style={styles.image}
+              resizeMode="contain"
+            />
+          </View>
+        </View>
+        
+        {/* Fixed Bottom Area */}
+        <View style={styles.fixedBottomContainer}>
+          {/* Progress indicators - Now clickable */}
+     
           
           {/* Button */}
           <TouchableOpacity
@@ -256,6 +254,7 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     marginBottom: 16,
+    marginHorizontal: 24,
   },
   progressTrack: {
     flexDirection: 'row',
