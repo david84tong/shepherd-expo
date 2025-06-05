@@ -9,7 +9,6 @@ export interface UserDoc {
   experienceLevel: string;
   notificationTime: string;
   setNotificationTime: (time: string) => Promise<void>;
-
   frequencyGoal: string;
   denomination?: string;
   ageRange: string;
@@ -36,6 +35,14 @@ export interface UserDoc {
   completedReadings: Reading[];
   isProFromOnboarding: boolean;
   hasSeenWidgetModal: boolean;
+  // Progress data
+  level: number;
+  xp: number;
+  streak: number;
+  // Pro status
+  isPro: boolean;
+  isProWithReferral: boolean;
+  proExpiryDate: FirebaseFirestoreTypes.Timestamp;
 }
 
 export interface UserStore extends UserDoc {
