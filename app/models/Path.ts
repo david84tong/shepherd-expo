@@ -252,7 +252,7 @@ export const BIBLE_PATHS: Path[] = [
       {
         id: 'gen-4',
         title: 'Nations & Babel',
-        reference: createRef('Genesis', generateChapters(10, 12)),
+        reference: createRef('Genesis', generateChapters(10, 11)),
         description:
           'Humanity scatters into distinct peoples after a prideful tower‑project. Out of the confusion God calls one man, Abram, to become a blessing to all nations.',
         icon: 'language',
@@ -273,7 +273,7 @@ export const BIBLE_PATHS: Path[] = [
       {
         id: 'gen-6',
         title: "Isaac's Family",
-        reference: createRef('Genesis', [24]),          // ⬅️  now a standalone long chapter
+        reference: createRef('Genesis', generateChapters(18, 24)),          // ⬅️  now a standalone long chapter
         description:
           'A miraculous son carries the covenant line forward. His marriage to Rebekah ensures the promise continues despite human weakness.',
         icon: 'people',
@@ -303,7 +303,7 @@ export const BIBLE_PATHS: Path[] = [
       {
         id: 'gen-9',
         title: 'Joseph: Dreams to Dungeon',
-        reference: createRef('Genesis', generateChapters(37, 41)),
+        reference: createRef('Genesis', generateChapters(34, 41)),
         description:
           "Joseph's coat, dreams, and betrayal plunge him into slavery and prison. Yet every setback becomes a setup for God's providential rise to Egyptian power.",
         icon: 'bed',

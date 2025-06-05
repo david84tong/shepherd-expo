@@ -405,6 +405,126 @@ export function useAuth() {
     }
   };
 
+  const signUpWithEmailPassword = async (email: string, password: string, displayName: string) => {
+    console.log('[Auth] signUpWithEmailPassword() called');
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Create user with email and password
+      const userCredential = await auth().createUserWithEmailAndPassword(email, password);
+      console.log('[Auth] Email/Password sign-up successful, uid:', userCredential.user.uid);
+
+      // Update display name
+      await userCredential.user.updateProfile({ displayName });
+
+      // Create user document
+      const { uid } = userCredential.user;
+      const userDoc = {
+        id: uid,
+        email,
+        displayName,
+        createdAt: firestore.Timestamp.now(),
+        updatedAt: firestore.Timestamp.now(),
+      };
+
+      await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
+
+      // Update local store
+      useUserStore.getState().setUser({
+        id: uid,
+        displayName,
+        email,
+      });
+      setCreatedAt(firestore.Timestamp.now());
+      setUpdatedAt(firestore.Timestamp.now());
+
+      // Wait for auth state to be ready before fetching data
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Fetch the complete user data
+      await fetchFromFirestore({ currentLoggedUser: userCredential.user });
+
+      if (analytics.isInitialized) {
+        analytics.logEvent('auth_success', {
+          method: 'email',
+          uid: uid.substring(0, 8),
+        });
+      }
+
+      return userCredential.user;
+    } catch (err) {
+      const error = err as Error;
+      if (analytics.isInitialized) {
+        analytics.logError('Authentication error', 'email_signup_failed', {
+          error_message: error.message,
+        });
+      }
+      setError(error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const signInWithEmailPassword = async (email: string, password: string, isLoginMode = false) => {
+    console.log('[Auth] signInWithEmailPassword() called');
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Sign in with email and password
+      const userCredential = await auth().signInWithEmailAndPassword(email, password);
+      console.log('[Auth] Email/Password sign-in successful, uid:', userCredential.user.uid);
+
+      // In login mode, verify the user account exists
+      if (isLoginMode) {
+        const userExists = await checkUserExists(userCredential.user.uid);
+        if (!userExists) {
+          await auth().signOut();
+          throw new Error('No account found with this email. Please create a new account instead.');
+        }
+
+        // Wait for auth state to be ready before fetching data
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        const success = await fetchFromFirestore({ currentLoggedUser: userCredential.user });
+        if (!success) {
+          throw new Error('Failed to fetch your account data. Please try again.');
+        }
+        return userCredential.user;
+      }
+
+      // Update local store
+      const { uid, displayName } = userCredential.user;
+      useUserStore.getState().setUser({
+        id: uid,
+        displayName: displayName || 'Email User',
+        email,
+      });
+
+      if (analytics.isInitialized) {
+        analytics.logEvent('auth_success', {
+          method: 'email',
+          uid: uid.substring(0, 8),
+        });
+      }
+
+      return userCredential.user;
+    } catch (err) {
+      const error = err as Error;
+      if (analytics.isInitialized) {
+        analytics.logError('Authentication error', 'email_signin_failed', {
+          error_message: error.message,
+        });
+      }
+      setError(error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     user,
     loading,
@@ -413,6 +533,8 @@ export function useAuth() {
     signInWithApple,
     signInWithGoogle,
     signInAnonymously,
+    signUpWithEmailPassword,
+    signInWithEmailPassword,
     checkUserExists,
     signOut,
     getFirebaseIdToken,

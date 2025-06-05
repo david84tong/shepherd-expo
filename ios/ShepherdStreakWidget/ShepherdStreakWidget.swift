@@ -53,13 +53,13 @@ enum StreakState {
     var labelText: String {
         switch self {
         case .noStreak:
-            return "Start streak!"
+            return "Let's start!"
         case .active(let days):
-            return "\(days) day"
+            return days == 1 ? "\(days) day" : "\(days) days"
         case .atRisk(let days):
-            return "\(days)-day risk"
+            return days == 1 ? "\(days)-day risk" : "\(days)-days risk"
         case .broken(let daysMissed):
-            return "\(daysMissed) days missed"
+            return daysMissed == 1 ? "\(daysMissed) day" : "\(daysMissed) days"
         }
     }
     
@@ -68,9 +68,9 @@ enum StreakState {
         case .noStreak:
             return "streak_0"  // Image for 0 day streak
         case .active(let days):
-            // Cap the streak display at 8 days
-            let cappedDays = min(days, 8)
-            return "streak_\(cappedDays)"
+            // Calculate the cycling day (1-8) for images only
+            let cyclingDay = ((days - 1) % 8) + 1
+            return "streak_\(cyclingDay)"
         case .atRisk, .broken:
             // For broken streaks, use the inactivity images (1-3 days)
             let daysMissed: Int
@@ -92,7 +92,7 @@ enum StreakState {
         case .atRisk:
             return "fireWidget"
         case .broken:
-            return "fireWidget"
+            return "" 
         }
     }
     
@@ -188,14 +188,16 @@ struct ShepherdStreakWidgetEntryView : View {
             // Content overlay
             VStack(spacing: 4) {
                 HStack(spacing: 2) {
-                    Image(state.iconName)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 24, height: 24)
-                        .foregroundColor(state.iconColor)
+                    if !state.iconName.isEmpty {
+                        Image(state.iconName)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 24, height: 24)
+                            .foregroundColor(state.iconColor)
+                    }
                     
                     Text(state.labelText)
-                        .font(.custom("Nunito-ExtraBold", size: 18))
+                        .font(.custom("Nunito-ExtraBold", size: 20))
                         .multilineTextAlignment(.center)
                         .foregroundColor(.white.opacity(0.9))
                         .minimumScaleFactor(0.5) 
@@ -203,21 +205,24 @@ struct ShepherdStreakWidgetEntryView : View {
                 .frame(maxWidth: .infinity, alignment: .center)
                 .padding(.top, 8)
                 
-                Text("Keep your streak alive!")
-                    .font(.custom("Nunito-Bold", size: 12))
-                    .foregroundColor(.white.opacity(0.8))
-                    .multilineTextAlignment(.center)
-                    .padding(.top, -2)
+                if case .broken = state {
+                    Text("Restart journey")
+                        .font(.custom("Nunito-Bold", size: 12))
+                        .foregroundColor(.white.opacity(0.6))
+                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
+                        .padding(.top, -4)
+                } else {
+                    Text("Keep your streak alive!")
+                        .font(.custom("Nunito-Bold", size: 12))
+                        .foregroundColor(.white.opacity(0.6))
+                        .multilineTextAlignment(.center)
+                        .padding(.top, -4)
+                }
                 
                 Spacer()
                 
                 if case .atRisk = state {
                     Text("Open app now!")
-                        .font(.custom("Nunito-Bold", size: 12))
-                        .foregroundColor(.white.opacity(0.9))
-                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
-                } else if case .broken = state {
-                    Text("Restart your journey")
                         .font(.custom("Nunito-Bold", size: 12))
                         .foregroundColor(.white.opacity(0.9))
                         .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)

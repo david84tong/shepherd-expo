@@ -8,6 +8,9 @@ import {
   Platform,
   Dimensions,
   StatusBar,
+  TextInput,
+  ScrollView,
+  KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { AntDesign } from '@expo/vector-icons';
@@ -33,7 +36,10 @@ import { adapty } from 'react-native-adapty';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import { UserDoc } from '../models/User';
 import firestore from '@react-native-firebase/firestore';
+import PrimaryButton from '../../components/PrimaryButton';
+import { useRemoteConfig } from '../hooks/useRemoteConfig';
 
+// Add this near the top of the file, after imports
 
 // Helper function to check premium status from Adapty
 const checkPremiumStatus = async () => {
@@ -53,8 +59,20 @@ export default function SaveProgressScreen() {
   const isLoginMode = params.isLogin === 'true';
 
   const [loading, setLoading] = useState(false);
-  const { signInWithApple, signInWithGoogle, signInAnonymously } = useAuth();
-  const { clearResponses, responses } = useOnboardingStore();
+  const {
+    signInWithApple,
+    signInWithGoogle,
+    signInAnonymously,
+    signInWithEmailPassword,
+    signUpWithEmailPassword,
+  } = useAuth();
+  // const { showEmailPassword, hideGoogleLogin } = useRemoteConfig();
+  const showEmailPassword = (global as any).showEmailPassword;
+  const hideGoogleLogin = (global as any).hideGoogleLogin;
+  console.log('hideGoogleLogin ==>', hideGoogleLogin);
+  console.log('showEmailPassword ==>', showEmailPassword);
+
+  const { clearResponses, responses, getAllResponses } = useOnboardingStore();
   const { createUser } = useUserStore();
   const [showNoAccountToast, setShowNoAccountToast] = useState(false);
   const ageRange = useOnboardingStore.getState().getAllResponses().ageRange;
@@ -71,6 +89,12 @@ export default function SaveProgressScreen() {
 
   // Load Rive assets
   const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+
+  // Add new state for email auth
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [displayName, setDisplayName] = useState('');
+  const [showEmailForm, setShowEmailForm] = useState(false);
 
   useEffect(() => {
     // Reset animation values
@@ -149,7 +173,7 @@ export default function SaveProgressScreen() {
       const isPremium = await checkPremiumStatus();
       const isProFromOnboarding = useUserStore.getState().isProFromOnboarding;
       // Get all responses from store to ensure we have latest data
-      const allResponses = useOnboardingStore.getState().getAllResponses();
+      const allResponses = getAllResponses();
       console.log('Onboarding responses:', JSON.stringify(allResponses));
 
       const spiritualGoal = allResponses.intent || 'Understand';
@@ -258,7 +282,6 @@ export default function SaveProgressScreen() {
           const isPremium = await checkPremiumStatus();
           const isProFromOnboarding = useUserStore.getState().isProFromOnboarding;
           if (isPremium && !isProFromOnboarding) {
-
             useUserStore.getState().setProStatus('pro');
             await firestore().collection('users').doc(user.uid).set(
               {
@@ -271,7 +294,6 @@ export default function SaveProgressScreen() {
           // User exists and data has been fetched in the auth hook
           // Just mark onboarding as completed and navigate to tabs
           await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
-
 
           // Animate out all components before navigation using Reanimated
           headerOpacity.value = withTiming(0, { duration: 400 });
@@ -408,6 +430,129 @@ export default function SaveProgressScreen() {
       setLoading(false);
     }
   };
+
+  // Add new handler for email/password auth
+  const handleEmailAuth = async () => {
+    if (!email || !password) {
+      Alert.alert('Missing Information', 'Please enter both email and password to continue.', [
+        { text: 'OK' },
+      ]);
+      return;
+    }
+
+    // Basic email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address.', [{ text: 'OK' }]);
+      return;
+    }
+
+    // Basic password validation
+    if (password.length < 6) {
+      Alert.alert('Invalid Password', 'Password must be at least 6 characters long.', [
+        { text: 'OK' },
+      ]);
+      return;
+    }
+
+    try {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      setLoading(true);
+
+      let user;
+      if (isLoginMode) {
+        try {
+          user = await signInWithEmailPassword(email, password, true);
+          analytics.logEvent('Login_Success_Email');
+
+          // After successful login
+          await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+          router.replace('/(tabs)');
+        } catch (loginError: any) {
+          console.log('Login error:', loginError.message);
+          let errorMessage = 'Unable to sign in. Please try again.';
+
+          if (loginError.code === 'auth/user-not-found') {
+            errorMessage =
+              'No account found with this email. Please check your email or create a new account.';
+          } else if (loginError.code === 'auth/wrong-password') {
+            errorMessage = 'Incorrect password. Please try again or reset your password.';
+          } else if (loginError.code === 'auth/invalid-email') {
+            errorMessage = 'Please enter a valid email address.';
+          } else if (loginError.code === 'auth/user-disabled') {
+            errorMessage = 'This account has been disabled. Please contact support.';
+          } else if (loginError.code === 'auth/too-many-requests') {
+            errorMessage =
+              'Too many failed attempts. Please try again later or reset your password.';
+          }
+
+          Alert.alert('Sign In Failed', errorMessage, [
+            {
+              text: 'OK',
+              style: 'default',
+            },
+          ]);
+
+          analytics.logEvent('Login_Failed_Email', {
+            error: loginError.code || loginError.message,
+          });
+          return;
+        }
+      } else {
+        // Signup mode
+        try {
+          const allResponses = getAllResponses();
+          const displayName = allResponses.username || 'Anonymous User';
+
+          user = await signUpWithEmailPassword(email, password, displayName);
+          analytics.logEvent('OnboardingSignUp_Success_Email');
+
+          await createUserFromResponses(user.uid, displayName);
+          await completeOnboarding();
+        } catch (signupError: any) {
+          console.log('Signup error:', signupError.message);
+          let errorMessage = 'Unable to create account. Please try again.';
+
+          if (signupError.code === 'auth/email-already-in-use') {
+            errorMessage = 'An account already exists with this email. Please sign in instead.';
+          } else if (signupError.code === 'auth/invalid-email') {
+            errorMessage = 'Please enter a valid email address.';
+          } else if (signupError.code === 'auth/operation-not-allowed') {
+            errorMessage = 'Email/password accounts are not enabled. Please contact support.';
+          } else if (signupError.code === 'auth/weak-password') {
+            errorMessage =
+              'Please choose a stronger password. It should be at least 6 characters long.';
+          }
+
+          Alert.alert('Sign Up Failed', errorMessage, [
+            {
+              text: 'OK',
+              style: 'default',
+            },
+          ]);
+
+          analytics.logEvent('OnboardingSignUp_Failed_Email', {
+            error: signupError.code || signupError.message,
+          });
+          return;
+        }
+      }
+    } catch (error: any) {
+      console.log('General auth error:', error.message);
+      Alert.alert(
+        isLoginMode ? 'Sign In Failed' : 'Sign Up Failed',
+        'An unexpected error occurred. Please try again later.',
+        [{ text: 'OK' }]
+      );
+
+      analytics.logEvent(isLoginMode ? 'Login_Failed_Email' : 'OnboardingSignUp_Failed_Email', {
+        error: error.message,
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   console.log('isSmaleAge ==>', isSmaleAge);
 
   // Handle anonymous sign in - only available in onboarding mode
@@ -454,153 +599,255 @@ export default function SaveProgressScreen() {
   };
 
   return (
-    <View className="flex-1 bg-surfaceCream px-6">
-      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      {/* Header */}
-      <Animated.View style={headerStyle} className="items-center mt-16 mb-8">
-        <Text className="font-feather text-h1 text-center text-textPrimary mb-3">
-          {isLoginMode ? 'Welcome Back' : 'Save Your Progress'}
-        </Text>
-        <Text className="font-din text-body text-center text-description mb-6">
-          {isLoginMode
-            ? 'Sign in to your existing account to continue your journey.'
-            : 'Sign in to keep your reading streak and Bible progress synced across devices.'}
-        </Text>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      className="flex-1"
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 49 : 20}>
+      <ScrollView
+        className="flex-1 bg-surfaceCream"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: 100 }}
+        keyboardShouldPersistTaps="handled">
+        <View className="px-6 pb-6">
+          <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
 
-        {/* Icon */}
-        <View className="mb-8 overflow-hidden w-64 h-64 items-center justify-center">
-          {riveAssets && riveAssets[0]?.uri && (
-            <Rive
-              url={IS_IOS ? riveAssets[0].uri! : undefined}
-              resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-              artboardName={'lamb-workout'}
-              autoplay={true}
-              fit={Fit.Contain}
-              alignment={Alignment.Center}
-              style={{ width: 240, height: 240 }}
-            />
+          {/* Header */}
+          <Animated.View style={headerStyle} className="items-center mt-16 mb-8">
+            <Text className="font-feather text-h1 text-center text-textPrimary mb-3">
+              {isLoginMode ? 'Welcome Back' : 'Save Your Progress'}
+            </Text>
+            <Text className="font-din text-body text-center text-description mb-6">
+              {isLoginMode
+                ? 'Sign in to your existing account to continue your journey.'
+                : 'Sign in to keep your reading streak and Bible progress synced across devices.'}
+            </Text>
+
+            {/* Icon */}
+            <View className="mb-8 overflow-hidden w-64 h-64 items-center justify-center">
+              {riveAssets && riveAssets[0]?.uri && (
+                <Rive
+                  url={IS_IOS ? riveAssets[0].uri! : undefined}
+                  resourceName={IS_ANDROID ? 'home_lamb' : undefined}
+                  artboardName={'lamb-workout'}
+                  autoplay={true}
+                  fit={Fit.Contain}
+                  alignment={Alignment.Center}
+                  style={{ width: 240, height: 240 }}
+                />
+              )}
+            </View>
+          </Animated.View>
+
+          {/* Benefits - only show in onboarding mode */}
+          {!isLoginMode && (
+            <Animated.View style={benefitsStyle} className="mb-8">
+              <View className="flex-row items-center mb-4">
+                <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
+                  <AntDesign name="check" size={18} color="#24CA17" />
+                </View>
+                <Text className="font-din text-body text-textPrimary flex-1">
+                  Save your reading progress
+                </Text>
+              </View>
+
+              <View className="flex-row items-center mb-4">
+                <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
+                  <AntDesign name="check" size={18} color="#24CA17" />
+                </View>
+                <Text className="font-din text-body text-textPrimary flex-1">
+                  Transfer between devices
+                </Text>
+              </View>
+
+              <View className="flex-row items-center mb-4">
+                <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
+                  <AntDesign name="check" size={18} color="#24CA17" />
+                </View>
+                <Text className="font-din text-body text-textPrimary flex-1">
+                  Keep your reading streak safe
+                </Text>
+              </View>
+            </Animated.View>
           )}
+
+          {/* Login message for login mode */}
+          {isLoginMode && (
+            <Animated.View style={benefitsStyle} className="mb-8">
+              <Text className="font-din text-body text-center text-description mb-2">
+                {IS_IOS
+                  ? 'Please sign in with the same Apple ID you used to create your account.'
+                  : 'Please sign in with the same Google account you used to create your account.'}
+              </Text>
+            </Animated.View>
+          )}
+
+          {/* Email/Password Form - Always Visible */}
+          {showEmailPassword && IS_ANDROID && (
+            <Animated.View style={buttonsStyle} className="mb-6">
+              <View className="w-full mb-4">
+                <TextInput
+                  className="font-feather text-2xl text-textPrimary bg-white px-6 py-5 rounded-2xl border-4 border-border"
+                  placeholder="Email"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  placeholderTextColor="#9CA3AF"
+                />
+                <TextInput
+                  className="font-feather text-2xl text-textPrimary bg-white mt-1 px-6 py-5 rounded-2xl border-4 border-border"
+                  placeholder="Password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry
+                  placeholderTextColor="#9CA3AF"
+                />
+                <View className="mt-4">
+                  <PrimaryButton
+                    title={loading ? 'Please wait...' : isLoginMode ? 'Sign In' : 'Sign Up'}
+                    onPress={handleEmailAuth}
+                    disabled={loading}
+                    buttonType="default"
+                    buttonHeight={60}
+                  />
+                </View>
+              </View>
+              {isLoginMode && IS_ANDROID && hideGoogleLogin && (
+                <TouchableOpacity
+                  onPress={() => {
+                    if (showNoAccountToast) {
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Please go through onboarding.',
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                      setShowNoAccountToast(false);
+                    }
+                    router.back();
+                  }}
+                  className="items-center mt-3"
+                  disabled={loading}>
+                  <Text className="font-din text-description underline text-[16px]">
+                    {loading ? 'Please wait...' : 'Back to Home'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+            </Animated.View>
+          )}
+
+          {!hideGoogleLogin || IS_IOS ? (
+            <>
+              {/* OR Separator */}
+              {showEmailPassword && IS_ANDROID ? (
+                <Animated.View
+                  style={buttonsStyle}
+                  className="flex-row items-center justify-center mb-6">
+                  <View className="flex-1 h-[1px] bg-gray-300" />
+                  <Text className="font-din text-description mx-4">OR</Text>
+                  <View className="flex-1 h-[1px] bg-gray-300" />
+                </Animated.View>
+              ) : null}
+
+              {/* Social Sign In Buttons */}
+              <Animated.View style={buttonsStyle}>
+                {isSmaleAge && Platform.OS === 'android' ? null : (
+                  <View className="items-center mb-4">
+                    {Platform.OS === 'ios' ? (
+                      <TouchableOpacity
+                        className="flex-row items-center justify-center bg-black w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow"
+                        onPress={handleAppleSignIn}
+                        disabled={loading}>
+                        {loading ? (
+                          <ActivityIndicator
+                            color="white"
+                            size="small"
+                            style={{ marginRight: 10 }}
+                          />
+                        ) : (
+                          <AntDesign
+                            name="apple1"
+                            size={24}
+                            color="white"
+                            style={{ marginRight: 10 }}
+                          />
+                        )}
+                        <Text className="font-din text-white text-[18px] font-bold">
+                          {loading ? 'Signing in...' : 'Continue with Apple'}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        className="flex-row items-center justify-center bg-white w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow border-2 border-gray-200"
+                        onPress={handleGoogleSignIn}
+                        disabled={loading}>
+                        {loading ? (
+                          <ActivityIndicator
+                            color="#4285F4"
+                            size="small"
+                            style={{ marginRight: 10 }}
+                          />
+                        ) : (
+                          <AntDesign
+                            name="google"
+                            size={24}
+                            color="#4285F4"
+                            style={{ marginRight: 10 }}
+                          />
+                        )}
+                        <Text className="font-din text-[#4285F4] text-[18px] font-bold">
+                          {loading ? 'Signing in...' : 'Continue with Google'}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                )}
+
+                {/* Skip/Back button */}
+                {!isLoginMode && (
+                  <TouchableOpacity
+                    onPress={() => handleSkip(true)}
+                    className="items-center"
+                    style={{
+                      marginTop:
+                        isSmaleAge && Platform.OS === 'android'
+                          ? Dimensions.get('window').height * 0.05
+                          : 0,
+                    }}
+                    disabled={loading}>
+                    <Text className="font-din text-description underline text-[16px]">
+                      {loading ? 'Please wait...' : 'Skip for now'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+
+                {/* Back button - only show in login mode */}
+                {isLoginMode && (
+                  <TouchableOpacity
+                    onPress={() => {
+                      if (showNoAccountToast) {
+                        Toast.show({
+                          type: 'error',
+                          text1: 'Please go through onboarding.',
+                          position: 'top',
+                          visibilityTime: 3000,
+                        });
+                        setShowNoAccountToast(false);
+                      }
+                      router.back();
+                    }}
+                    className="items-center"
+                    disabled={loading}>
+                    <Text className="font-din text-description underline text-[16px]">
+                      {loading ? 'Please wait...' : 'Back to Home'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </Animated.View>
+            </>
+          ) : null}
         </View>
-      </Animated.View>
-
-      {/* Benefits - only show in onboarding mode */}
-      {!isLoginMode && (
-        <Animated.View style={benefitsStyle} className="mb-8">
-          <View className="flex-row items-center mb-4">
-            <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
-              <AntDesign name="check" size={18} color="#24CA17" />
-            </View>
-            <Text className="font-din text-body text-textPrimary flex-1">
-              Save your reading progress
-            </Text>
-          </View>
-
-          <View className="flex-row items-center mb-4">
-            <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
-              <AntDesign name="check" size={18} color="#24CA17" />
-            </View>
-            <Text className="font-din text-body text-textPrimary flex-1">
-              Transfer between devices
-            </Text>
-          </View>
-
-          <View className="flex-row items-center mb-4">
-            <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
-              <AntDesign name="check" size={18} color="#24CA17" />
-            </View>
-            <Text className="font-din text-body text-textPrimary flex-1">
-              Keep your reading streak safe
-            </Text>
-          </View>
-        </Animated.View>
-      )}
-
-      {/* Login message for login mode */}
-      {isLoginMode && (
-        <Animated.View style={benefitsStyle} className="mb-8">
-          <Text className="font-din text-body text-center text-description mb-2">
-            Please sign in with the same Apple ID you used to create your account.
-          </Text>
-        </Animated.View>
-      )}
-
-      {/* Sign in button and Skip button */}
-      <Animated.View style={buttonsStyle}>
-        {isSmaleAge && Platform.OS === 'android' ? null : (
-          <View className="items-center mb-4">
-            {Platform.OS === 'ios' ? (
-              <TouchableOpacity
-                className="flex-row items-center justify-center bg-black w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow"
-                onPress={handleAppleSignIn}
-                disabled={loading}>
-                {loading ? (
-                  <ActivityIndicator color="white" size="small" style={{ marginRight: 10 }} />
-                ) : (
-                  <AntDesign name="apple1" size={24} color="white" style={{ marginRight: 10 }} />
-                )}
-                <Text className="font-din text-white text-[18px] font-bold">
-                  {loading ? 'Signing in...' : 'Sign in with Apple'}
-                </Text>
-              </TouchableOpacity>
-            ) : (
-              <TouchableOpacity
-                className="flex-row items-center justify-center bg-white w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow border border-gray-300"
-                onPress={handleGoogleSignIn}
-                disabled={loading}>
-                {loading ? (
-                  <ActivityIndicator color="#4285F4" size="small" style={{ marginRight: 10 }} />
-                ) : (
-                  <AntDesign name="google" size={24} color="#4285F4" style={{ marginRight: 10 }} />
-                )}
-                <Text className="font-din text-[#4285F4] text-[18px] font-bold">
-                  {loading ? 'Signing in...' : 'Sign in with Google'}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
-
-        {/* Skip button - only show in onboarding mode */}
-        {!isLoginMode && (
-          <TouchableOpacity
-            onPress={() => handleSkip(true)}
-            className="items-center"
-            style={{
-              marginTop:
-                isSmaleAge && Platform.OS === 'android'
-                  ? Dimensions.get('window').height * 0.05
-                  : 0,
-            }}
-            disabled={loading}>
-            <Text className="font-din text-description underline text-[16px]">
-              {loading ? 'Please wait...' : 'Skip for now'}
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        {/* Back button - only show in login mode */}
-        {isLoginMode && (
-          <TouchableOpacity
-            onPress={() => {
-              if (showNoAccountToast) {
-                Toast.show({
-                  type: 'error',
-                  text1: 'Please go through onboarding.',
-                  position: 'top',
-                  visibilityTime: 3000,
-                });
-                setShowNoAccountToast(false);
-              }
-              router.back();
-            }}
-            className="items-center"
-            disabled={loading}>
-            <Text className="font-din text-description underline text-[16px]">
-              {loading ? 'Please wait...' : 'Back to Home'}
-            </Text>
-          </TouchableOpacity>
-        )}
-      </Animated.View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
