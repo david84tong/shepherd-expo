@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import EmptyModal from './EmptyModal';
 import { Feather } from '@expo/vector-icons';
+import { analytics } from '~/utils/analytics';
 
 // Image references
 const PREVIEW_IMAGE = require('../assets/images/widgetPreviewStep.png');
@@ -27,7 +28,7 @@ const steps = [
     image: STEP1_IMAGE,
   },
   {
-    instruction: 'Tap the plus (+) button in the top-left corner of your screen.',
+    instruction: 'Tap the Edit button in the top-left corner of your screen.',
     image: STEP2_IMAGE,
   },
   {
@@ -80,9 +81,11 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
 
   const handleNextStep = () => {
     if (step < steps.length - 1) {
+      analytics.logEvent(`how_to_widget_sheet_next_step_${steps?.length || 1}_pressed`);
       setStep(step + 1);
       scrollViewRef.current?.scrollTo({ y: 0, animated: true });
     } else {
+      analytics.logEvent('how_to_widget_sheet_done_pressed');
       handleClose();
     }
   };
@@ -90,6 +93,16 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
   const goToStep = (stepIndex: number) => {
     setStep(stepIndex);
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  const onNoThanksPressed = () => {
+    analytics.logEvent('how_to_widget_sheet_no_thanks_pressed');
+    handleClose();
+  };
+
+  const onAddWidgetPressed = () => {
+    analytics.logEvent('how_to_widget_sheet_add_widget_pressed');
+    setShowInstructions(true)
   };
 
   return (
@@ -128,14 +141,14 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
             </View>
             <TouchableOpacity
               className="w-full rounded-full py-4 mb-4"
-              onPress={() => setShowInstructions(true)}
+              onPress={onAddWidgetPressed}
               style={{ backgroundColor: '#FCD34D' }}
             >
               <Text className="text-lg font-feather font-bold text-[#3C584A] text-center">Add widget</Text>
             </TouchableOpacity>
             <TouchableOpacity
               className="w-full rounded-full py-4"
-              onPress={handleClose}
+              onPress={onNoThanksPressed}
             >
               <Text className="text-lg font-feather text-[#3C584A] text-center">No thanks</Text>
             </TouchableOpacity>
