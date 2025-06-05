@@ -22,6 +22,14 @@
           }
         },
         {
+          "client_id": "226457915179-t96t4vqceks17l423fsh3k40roq3f59m.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "second.round.shepherd",
+            "certificate_hash": "5fb8aa3f63cb9d37b9b9e7044391b5ce856b482f"
+          }
+        },
+        {
           "client_id": "226457915179-tbsa7rptki8iedbirm5mp0ug9dob8kf0.apps.googleusercontent.com",
           "client_type": 3
         }
