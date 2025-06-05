@@ -1,7 +1,7 @@
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import firestore from '@react-native-firebase/firestore';
 import { useRouter, usePathname } from 'expo-router';
-import React, { useState, useRef, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useRef, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,23 +10,19 @@ import {
   SafeAreaView,
   ScrollView,
   Alert,
-  Platform,
 } from 'react-native';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Haptics from 'expo-haptics';
-import analytics from '../utils/analytics';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { useUserStore } from '../app/stores/userStore';
 import { usePathStore } from '../app/stores/pathStore';
-import { useUIStore } from '../app/stores/uiStore';
 import { useAuth, isSignedIn } from '../app/hooks/authHook';
 import SuccessAnimation from './SuccessAnimation'; // Import the full SuccessAnimation component
 import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
 import { HalfModalType } from '../app/halfModal';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { calculateExpForLevel, calculateXpForNextLevel } from '../utils/levelUtils';
+import { calculateExpForLevel } from '../utils/levelUtils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
+import WidgetHowToSheet from './WidgetHowToSheet';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -83,6 +79,7 @@ export function DebugButton() {
   const pathname = usePathname();
   const [modalVisible, setModalVisible] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [showWidgetSheet, setShowWidgetSheet] = useState(false);
   const { signOut } = useAuth();
 
   // Reference to the success bottom sheet modal
@@ -259,6 +256,8 @@ export function DebugButton() {
             // Clear completedReadings from userStore
             const userStore = useUserStore.getState();
             userStore.setCompletedReadings([] as any);
+
+        
 
             // Sync with Firestore to save changes
             syncWithFirestore();
@@ -760,6 +759,59 @@ export function DebugButton() {
                 </TouchableOpacity>
               </View>
 
+              {/* Devotional Testing */}
+              <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">Devotional Testing</Text>
+
+                {/* Fetch Today's Devotional Button */}
+                <TouchableOpacity
+                  className="bg-[#E8F3E0] p-4 rounded-xl my-1.5 border-l-4 border-l-[#A0D468]"
+                  onPress={() => {
+                    console.log('🔍 DEBUG: Manual devotional fetch triggered from DebugModal');
+                    const devotionalStore = useDevotionalStore.getState();
+                    devotionalStore.fetchTodaysDevotional();
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Fetch Today&apos;s Devotional
+                  </Text>
+                  <Text className="font-din text-sm text-[#7C927E] mt-1">
+                    Test fetching devotional from Firestore and Bible API
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Clear Devotional Data Button */}
+                <TouchableOpacity
+                  className="bg-[#FFF4D9] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FCD34D]"
+                  onPress={() => {
+                    console.log('🔍 DEBUG: Clearing devotional data');
+                    const devotionalStore = useDevotionalStore.getState();
+                    devotionalStore.reset();
+                    Alert.alert('Devotional Data Cleared', 'All devotional data has been reset.');
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Clear Devotional Data
+                  </Text>
+                  <Text className="font-din text-sm text-[#B89B4C] mt-1">
+                    Reset devotional store to empty state
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Test Widget Instructions Button */}
+                <TouchableOpacity
+                  className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
+                  onPress={() => {
+                    console.log('🔍 DEBUG: Opening widget instructions modal');
+                    setShowWidgetSheet(true);
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Test Widget Instructions
+                  </Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Open widget setup instructions modal
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
               {/* Onboarding Navigation */}
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">
@@ -858,6 +910,9 @@ export function DebugButton() {
 
       {/* Register custom toast config */}
       <Toast config={toastConfig} />
+
+      {/* Widget How-To Sheet */}
+      <WidgetHowToSheet visible={showWidgetSheet} onClose={() => setShowWidgetSheet(false)} />
     </>
   );
 }
