@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Image, 
-  Dimensions, 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  Dimensions,
   ScrollView,
   Animated,
 } from 'react-native';
@@ -13,11 +13,12 @@ import EmptyModal from './EmptyModal';
 import { Feather } from '@expo/vector-icons';
 
 // Image references
-const STEP1_IMAGE = require('../assets/images/widget-step1.png');
-const STEP2_IMAGE = require('../assets/images/widget-step2.png');
-const STEP3_IMAGE = require('../assets/images/widget-step3.png');
-const STEP4_IMAGE = require('../assets/images/widget-step4.png');
-const PREVIEW_IMAGE = require('../assets/images/sheep-widget-preview.png');
+const PREVIEW_IMAGE = require('../assets/images/widgetPreviewStep.png');
+const STEP1_IMAGE = require('../assets/images/widgetStep1.png');
+const STEP2_IMAGE = require('../assets/images/widgetStep2.png');
+const STEP3_IMAGE = require('../assets/images/widgetStep3.png');
+const STEP4_IMAGE = require('../assets/images/widgetStep4.png');
+
 
 // Simplified steps with concise instructions
 const steps = [
@@ -34,12 +35,8 @@ const steps = [
     image: STEP3_IMAGE,
   },
   {
-    instruction: 'Choose the Shepherd widget size by swiping left or right.',
-    image: STEP4_IMAGE,
-  },
-  {
     instruction: 'Tap "Add Widget" and position it on your home screen.',
-    image: PREVIEW_IMAGE,
+    image: STEP4_IMAGE,
   },
 ];
 
@@ -50,20 +47,20 @@ interface WidgetHowToSheetProps {
 
 export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetProps) {
   const [step, setStep] = useState(0);
+  const [showInstructions, setShowInstructions] = useState(false);
   const scrollViewRef = useRef<ScrollView>(null);
   const translateY = useRef(new Animated.Value(0)).current;
   const opacity = useRef(new Animated.Value(1)).current;
-  
-  // Reset animation values when modal becomes visible
+
   useEffect(() => {
     if (visible) {
       translateY.setValue(0);
       opacity.setValue(1);
       setStep(0);
+      setShowInstructions(false); // Reset to landing screen
     }
   }, [visible]);
 
-  // Handle closing animation
   const handleClose = () => {
     Animated.parallel([
       Animated.timing(translateY, {
@@ -81,7 +78,6 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
     });
   };
 
-  // When the step changes, scroll to the top
   const handleNextStep = () => {
     if (step < steps.length - 1) {
       setStep(step + 1);
@@ -91,7 +87,6 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
     }
   };
 
-  // Navigate to a specific step when progress indicator is clicked
   const goToStep = (stepIndex: number) => {
     setStep(stepIndex);
     scrollViewRef.current?.scrollTo({ y: 0, animated: true });
@@ -99,7 +94,7 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
 
   return (
     <EmptyModal visible={visible} onClose={handleClose}>
-      <Animated.View 
+      <Animated.View
         style={[
           styles.modalContent,
           { transform: [{ translateY }], opacity }
@@ -109,72 +104,98 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
         <View style={styles.handleContainer}>
           <View style={styles.handle} />
         </View>
-        
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <Feather name="x" size={24} color="#3C584A" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Add Widget to Home Screen</Text>
+          <Text style={styles.headerTitle}>Shepherd Widget</Text>
           <View style={{ width: 40 }} />
         </View>
-        
-        {/* Scrollable Content Area */}
-        <ScrollView 
-          ref={scrollViewRef}
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollViewContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Image for Step - Now above instructions */}
-          <View style={styles.imageContainer}>
-            <Image
-              source={steps[step].image}
-              style={styles.image}
-              resizeMode="contain"
-            />
-          </View>
-          
-          {/* Main instruction */}
-          <Text style={styles.mainInstruction}>
-            {steps[step].instruction}
-          </Text>
-          
-          {/* Bottom padding to ensure content doesn't get cut off by fixed elements */}
-          <View style={{ height: 100 }} />
-        </ScrollView>
-        
-        {/* Fixed Bottom Area */}
-        <View style={styles.fixedBottomContainer}>
-          {/* Progress indicators - Now clickable */}
-          <View style={styles.progressContainer}>
-            <View style={styles.progressTrack}>
-              {steps.map((_, i) => (
-                <React.Fragment key={i}>
-                  {i > 0 && <View style={[styles.progressLine, i <= step ? styles.activeLine : styles.inactiveLine]} />}
-                  <TouchableOpacity 
-                    onPress={() => goToStep(i)}
-                    style={[styles.progressCircle, i <= step ? styles.activeCircle : styles.inactiveCircle]}
-                  >
-                    <Text style={[styles.progressNumber, i <= step ? styles.activeNumber : styles.inactiveNumber]}>
-                      {i + 1}
-                    </Text>
-                  </TouchableOpacity>
-                </React.Fragment>
-              ))}
-            </View>
-          </View>
-          
-          {/* Button */}
-          <TouchableOpacity
-            style={styles.button}
-            onPress={handleNextStep}
+        {/* Landing screen or instructions */}
+        {!showInstructions ? (
+          <ScrollView
+            contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}
+            showsVerticalScrollIndicator={false}
           >
-            <Text style={styles.buttonText}>
-              {step < steps.length - 1 ? 'Next' : 'Done'}
-            </Text>
-          </TouchableOpacity>
-        </View>
+            <Text className="text-2xl font-feather font-bold text-center text-[#3C584A] mb-8 ">Add Shepherd to your home screen with the widget!</Text>
+            <View style={styles.imageContainerPreview}>
+              <Image
+                source={PREVIEW_IMAGE}
+                style={styles.image}
+                resizeMode="contain"
+              />
+            </View>
+            <TouchableOpacity
+              className="w-full rounded-full py-4 mb-4"
+              onPress={() => setShowInstructions(true)}
+              style={{ backgroundColor: '#FCD34D' }}
+            >
+              <Text className="text-lg font-feather font-bold text-[#3C584A] text-center">Add widget</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="w-full rounded-full py-4"
+              onPress={handleClose}
+            >
+              <Text className="text-lg font-feather text-[#3C584A] text-center">No thanks</Text>
+            </TouchableOpacity>
+          </ScrollView>
+        ) : (
+          <>
+            {/* Scrollable Content Area */}
+            <ScrollView
+              ref={scrollViewRef}
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollViewContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Progress indicators - moved to top */}
+              <View style={styles.progressContainer}>
+                <View style={styles.progressTrack}>
+                  {steps.map((_, i) => (
+                    <React.Fragment key={i}>
+                      {i > 0 && <View style={[styles.progressLine, i <= step ? styles.activeLine : styles.inactiveLine]} />}
+                      <TouchableOpacity
+                        onPress={() => goToStep(i)}
+                        style={[styles.progressCircle, i <= step ? styles.activeCircle : styles.inactiveCircle]}
+                      >
+                        <Text style={[styles.progressNumber, i <= step ? styles.activeNumber : styles.inactiveNumber]}>
+                          {i + 1}
+                        </Text>
+                      </TouchableOpacity>
+                    </React.Fragment>
+                  ))}
+                </View>
+              </View>
+              {/* Main instruction text below progress */}
+              <Text style={styles.mainInstruction}>
+                {steps[step].instruction}
+              </Text>
+              {/* Image below text */}
+              <View style={styles.imageContainer}>
+                <Image
+                  source={steps[step].image}
+                  style={styles.image}
+                  resizeMode="cover"
+
+                />
+              </View>
+              <View style={{ height: 100 }} />
+            </ScrollView>
+            {/* Fixed Bottom Area */}
+            <View style={styles.fixedBottomContainer}>
+              {/* Button */}
+              <TouchableOpacity
+                style={styles.button}
+                onPress={handleNextStep}
+              >
+                <Text style={styles.buttonText}>
+                  {step < steps.length - 1 ? 'Next' : 'Done'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        )}
       </Animated.View>
     </EmptyModal>
   );
@@ -225,19 +246,28 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   imageContainer: {
-    width: Dimensions.get('window').width * 0.8,
-    height: Dimensions.get('window').width * 0.6,
-    marginBottom: 24,
+    width: 240,
+    height: Dimensions.get('window').width * 0.8,
+    marginTop: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    // Added rounded corners
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  imageContainerPreview: {
+    width: Dimensions.get('window').width * 0.8,
+    height: Dimensions.get('window').width * 0.8,
+    marginBottom: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 16,
     overflow: 'hidden',
   },
   image: {
     width: '100%',
     height: '100%',
-    borderRadius: 16, // Added rounded corners to the image
+    borderRadius: 16,
+    overflow: 'hidden',
   },
   mainInstruction: {
     fontFamily: 'feather',
@@ -245,7 +275,6 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#3C584A',
     textAlign: 'center',
-    paddingHorizontal: 16,
   },
   fixedBottomContainer: {
     width: '100%',
@@ -256,6 +285,7 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     marginBottom: 16,
+    width: '100%',
   },
   progressTrack: {
     flexDirection: 'row',
