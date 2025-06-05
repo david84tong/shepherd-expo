@@ -61,7 +61,7 @@
       },
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.shepherd.widget.streak"
+          "group.shepherd.widget.streak1"
         ]
       },
       "associatedDomains": [],
@@ -71,7 +71,7 @@
           "bundleIdentifier": "second.round.shepherd.widget",
           "entitlements": {
             "com.apple.security.application-groups": [
-              "group.shepherd.widget.streak"
+              "group.shepherd.widget.streak1"
             ]
           }
         }

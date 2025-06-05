@@ -132,7 +132,7 @@ struct Provider: TimelineProvider {
     }
     
     private func loadStreakData() -> StreakData {
-        let defaults = UserDefaults(suiteName: "group.shepherd.widget.streak")
+        let defaults = UserDefaults(suiteName: "group.shepherd.widget.streak1")
         let streak = defaults?.integer(forKey: "currentStreak") ?? 0
         
         var lastActivityDate: Date? = nil
