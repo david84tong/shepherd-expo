@@ -923,6 +923,40 @@ export default function HomeScreen() {
     }
   }, [mode]);
 
+  // Get widget modal state from user store
+  const hasSeenWidgetModal = useUserStore((state) => state.getHasSeenWidgetModal());
+  const setHasSeenWidgetModal = useUserStore((state) => state.setHasSeenWidgetModal);
+
+  // Add effect to show widget modal on first signup
+  useEffect(() => {
+    const showWidgetModalOnFirstSignup = async () => {
+      // Only show for iOS users who haven't seen the modal
+      if (Platform.OS === 'ios' && !hasSeenWidgetModal) {
+        // Check if this is a new signup by comparing creation time
+        const createdAt = useUserStore.getState().getCreatedAt();
+        const now = new Date();
+        const signupTime = createdAt?.toDate?.() || new Date();
+
+        // If signup was within the last 5 minutes, show the modal
+        if (now.getTime() - signupTime.getTime() < 5 * 60 * 1000) {
+          analytics.logEvent('HomeScreen_Tapped_WidgetHowTo_new_user');
+          setShowWidgetSheet(true);
+        }
+      }
+    };
+
+    showWidgetModalOnFirstSignup();
+  }, [hasSeenWidgetModal]);
+
+  // Modify the widget sheet close handler
+  const handleWidgetSheetClose = () => {
+    setShowWidgetSheet(false);
+    // Mark as seen when closed
+    if (setHasSeenWidgetModal) {
+      setHasSeenWidgetModal(true);
+    }
+  };
+
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
 
@@ -1365,17 +1399,7 @@ export default function HomeScreen() {
                 disabled={!readingCompleted}
               />
 
-              {/* Widget How-To Sheet test button */}
-              {IS_IOS && <TouchableOpacity
-                onPress={() => setShowWidgetSheet(true)}
-                className="mt-6 flex-row items-center justify-center py-3 px-4 bg-amber-100 border border-amber-300 rounded-xl"
-                activeOpacity={0.7}
-              >
-                <Feather name="smartphone" size={20} color="#B45309" style={{ marginRight: 8 }} />
-                <Text className="font-feather text-base text-amber-800">
-                  How to Add Widget
-                </Text>
-              </TouchableOpacity>}
+
             </ScrollView>
           </Animated.View>
 
@@ -1383,7 +1407,7 @@ export default function HomeScreen() {
           <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
           <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
           <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
-          <WidgetHowToSheet visible={showWidgetSheet} onClose={() => setShowWidgetSheet(false)} />
+          <WidgetHowToSheet visible={showWidgetSheet} onClose={handleWidgetSheetClose} />
           <HeartsExplainerModal
             visible={showHeartsModal}
             onClose={() => setShowHeartsModal(false)}
