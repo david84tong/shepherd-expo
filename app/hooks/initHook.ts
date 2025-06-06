@@ -6,6 +6,7 @@ import * as Sentry from '@sentry/react-native';
 import { useUserStore } from '../stores/userStore';
 import { usePathStore } from '../stores/pathStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
+import { useDevotionalStore } from '../stores/devotionalStore';
 import { Mixpanel } from 'mixpanel-react-native';
 import { PATH_OPTIONS } from '../models/Path';
 import { Platform } from 'react-native';
@@ -44,6 +45,27 @@ export const onAppForegroundOrInit = async () => {
   const setSelectedPath = usePathStore.getState().setSelectedPath;
   const syncWithFirestore = useUserStore.getState().syncWithFirestore;
   const userData = getUser();
+  
+  // Check and fetch today's devotional
+  const devotionalStore = useDevotionalStore.getState();
+  const todayUTC = new Date().toISOString().split('T')[0];
+  const currentDevotional = devotionalStore.currentDevotional;
+  
+  // Fetch devotional if it doesn't exist or if it's not today's devotional
+  if (!currentDevotional || currentDevotional.id !== todayUTC) {
+    console.log('📖 Fetching today\'s devotional - current:', currentDevotional?.id, 'today:', todayUTC);
+    try {
+      await devotionalStore.fetchTodaysDevotional();
+    } catch (error) {
+      console.log('❌ Error fetching devotional:', error);
+      analytics.logError('Error fetching daily devotional', undefined, {
+        errorDetails: String(error),
+      });
+    }
+  } else {
+    console.log('✅ Today\'s devotional already loaded:', currentDevotional.id);
+  }
+  
   try {
     const fetchSuccess = await fetchFromFirestore?.({});
 
@@ -238,6 +260,20 @@ export const useAppInitialization = () => {
 
         // Check streak regardless of initialization state
         await checkStreakAndApplyPenalties();
+        
+        // Fetch today's devotional after user initialization
+        const devotionalStore = useDevotionalStore.getState();
+        const todayUTC = new Date().toISOString().split('T')[0];
+        const currentDevotional = devotionalStore.currentDevotional;
+        
+        if (!currentDevotional || currentDevotional.id !== todayUTC) {
+          console.log('📖 Fetching today\'s devotional during app init');
+          try {
+            await devotionalStore.fetchTodaysDevotional();
+          } catch (error) {
+            console.log('❌ Error fetching devotional during init:', error);
+          }
+        }
 
         setIsInitialized(true);
       } catch (error) {

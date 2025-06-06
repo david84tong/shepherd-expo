@@ -18,6 +18,15 @@ service cloud.firestore {
         && request.resource.data.uid == userId;
     }
     
+    // Daily Devotionals collection rules
+    match /dailyDevotionals/{devotionalId} {
+      // Allow all authenticated users to read devotionals
+      allow read: if request.auth != null;
+      
+      // Only allow admins to write devotionals (you can adjust this based on your needs)
+      allow write: if false; // For now, no writes from client
+    }
+    
     // Feedback collection rules
     match /feedback/{feedbackId} {
       // Allow authenticated users to create feedback documents

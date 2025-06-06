@@ -32,11 +32,13 @@ import { useAssetsStore, imageAssets } from '../stores/assetsStore';
 import { useAssets } from 'expo-asset';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { Image as ExpoImage } from 'expo-image';
 
 import analytics from '~/utils/analytics';
 import WidgetHowToSheet from '../../components/WidgetHowToSheet';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import { getLevelData } from '../../utils/levelUtils';
+import { useDevotionalStore } from '../stores/devotionalStore'; // Import devotional store
 import bibleIcon from '../../assets/icons/bibleIcon.png';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
@@ -189,7 +191,14 @@ export default function HomeScreen() {
 
   const lamb = useUserStore((state) => state.getLamb?.()); // Get the complete lamb object
 
-  console.log('lambHearts streakCount======>', lambHearts, streakCount, gens, lambMood, lambName);
+  // Get devotional data from devotionalStore
+  const currentDevotional = useDevotionalStore((state) => state.currentDevotional);
+  const isLoadingDevotional = useDevotionalStore((state) => state.isLoading);
+  const devotionalError = useDevotionalStore((state) => state.error);
+  const fetchTodaysDevotional = useDevotionalStore((state) => state.fetchTodaysDevotional);
+
+ 
+
   // State to manage the Rive resource name
   const [artboardName, setArtboardName] = useState('lamb-idle'); // Default artboard
   // State to control background Rive animation
@@ -738,8 +747,14 @@ export default function HomeScreen() {
 
   // Add screen view analytics tracking
   useEffect(() => {
+    console.log('🏠 Home screen useEffect called');
     // Log screen view when component mounts
     analytics.logEvent('HomeScreen_Viewed');
+    
+    // Fetch today's devotional when component mounts
+    console.log('📖 About to call fetchTodaysDevotional');
+    fetchTodaysDevotional();
+    console.log('📖 fetchTodaysDevotional call completed');
   }, []);
 
   // Add the hooks with the other state hooks (right before line 619)
@@ -1411,6 +1426,124 @@ export default function HomeScreen() {
                   />
                 </View>
               </View>
+
+              {/* Daily Verse Card */}
+              {currentDevotional?.verse && (
+                <TouchableOpacity
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    analytics.logEvent('HomeScreen_Tapped_DailyVerse', {
+                      bibleReference: currentDevotional.bibleReference,
+                    });
+                    // TODO: Navigate to full devotional or reader in future
+                  }}
+                  activeOpacity={0.9}
+                  className="rounded-2xl overflow-hidden mb-4">
+                  {currentDevotional.imageURL ? (
+                    <>
+                      <ExpoImage
+                        source={{ uri: currentDevotional.imageURL }}
+                        style={{ width: '100%', height: 180 }}
+                        contentFit="cover"
+                      />
+                      {/* Dark overlay for readability */}
+                      <View className="absolute inset-0 bg-black/30" />
+
+                      {/* Star icon */}
+                      <View
+                        className="absolute items-center w-full"
+                        style={{ top: 4 }}>
+                        <Ionicons name="star" size={28} color="#FFD629" />
+                      </View>
+
+                      {/* Text content */}
+                      <View className="absolute inset-0 p-4 justify-end">
+                        <Text className="font-feather text-white text-heading mb-1">
+                          {currentDevotional.bibleReference}
+                        </Text>
+                        <Text className="font-feather text-white/90 text-caption mb-1">
+                          Verse of the Day
+                        </Text>
+                        <Text
+                          className="font-din text-white text-body leading-[20px]"
+                          numberOfLines={3}>
+                          {currentDevotional.verse}
+                        </Text>
+                      </View>
+                    </>
+                  ) : (
+                    /* Fallback cream card if no image */
+                    <View className="bg-surfaceCream px-5 py-4 border border-buttonBorder shadow-card">
+                      <View className="flex-row items-center mb-3">
+                        <View className="w-7 h-7 bg-lightGreen rounded-lg items-center justify-center mr-3">
+                          <Text className="text-darkGreen text-[18px]">📖</Text>
+                        </View>
+                        <Text className="font-feather text-heading text-textPrimary">Daily Verse</Text>
+                      </View>
+                      <Text className="font-din text-body text-textPrimary/90 leading-[22px] italic mb-3">
+                        “{currentDevotional.verse}”
+                      </Text>
+                      <Text className="font-feather text-sm text-description text-right">
+                        — {currentDevotional.bibleReference}
+                      </Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              )}
+
+              {/* Loading state for devotional */}
+              {isLoadingDevotional && (
+                <View className="bg-white/60 rounded-xl p-4 mb-4 border border-lightGreen/20">
+                  <View className="flex-row items-center mb-2">
+                    <View className="w-6 h-6 bg-lightGreen rounded-full items-center justify-center mr-2">
+                      <Text className="text-darkGreen text-xs font-feather">📖</Text>
+                    </View>
+                    <Text className="font-feather text-base text-description">Loading daily verse...</Text>
+                  </View>
+                </View>
+              )}
+
+              {/* Error state for devotional */}
+              {devotionalError && !currentDevotional && (
+                <View className="bg-red/10 rounded-xl p-4 mb-4 border border-red/20">
+                  <View className="flex-row items-center mb-2">
+                    <View className="w-6 h-6 bg-red rounded-full items-center justify-center mr-2">
+                      <Text className="text-white text-xs font-feather">⚠️</Text>
+                    </View>
+                    <Text className="font-feather text-base text-red">Daily verse unavailable</Text>
+                  </View>
+                  <Text className="font-din text-sm text-description">
+                    Check your connection and try again later.
+                  </Text>
+                </View>
+              )}
+
+              <SecondaryButton
+                icon={breadIcon}
+                title="Daily Bread – Read"
+                subtitle="Feed your soul with scripture"
+                points={25}
+                onPress={handleReadPress}
+                completed={readingCompleted}
+              />
+              <SecondaryButton
+                icon={dropIcon}
+                title="Living Water – Pray"
+                subtitle="Refresh your spirit with prayer"
+                points={25}
+                onPress={handlePrayerPress}
+                completed={prayerCompleted}
+                disabled={!readingCompleted}
+              />
+              <SecondaryButton
+                icon={quillIcon}
+                title="Quiet Time – Reflect"
+                subtitle="Pause and meet with God"
+                points={25}
+                onPress={handleReflectionPress}
+                completed={reflectionCompleted}
+                disabled={!readingCompleted}
+              />
 
 
             </ScrollView>
