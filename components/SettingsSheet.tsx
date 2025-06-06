@@ -700,6 +700,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
               // Reset user store regardless of other errors
               useUserStore.getState().resetUserStore();
+              syncStreakDataToWidget(0, dayjs().toDate());
               console.log('✅ User store reset');
 
               try {
