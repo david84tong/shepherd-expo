@@ -554,6 +554,83 @@ export function useAuth() {
     }
   };
 
+  // Separate function for handling anonymous to Apple upgrade from profile screen
+  const upgradeAnonymousToApple = async () => {
+    console.log('[Auth] Starting anonymous to Apple upgrade from profile');
+    try {
+      // First check if we have an anonymous user
+      const currentUser = auth().currentUser;
+      if (!currentUser?.isAnonymous) {
+        console.log('[Auth] Current user is not anonymous, aborting upgrade');
+        throw new Error('Current user is not anonymous');
+      }
+
+      // Get Apple credential
+      const appleCredential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      if (!appleCredential.identityToken) {
+        throw new Error('No identity token from Apple');
+      }
+
+      // Create Firebase credential
+      const firebaseCredential = auth.AppleAuthProvider.credential(
+        appleCredential.identityToken,
+        appleCredential.authorizationCode || undefined
+      );
+
+      try {
+        // First sign out the anonymous user
+        console.log('[Auth] Signing out anonymous user');
+        await auth().signOut();
+
+        // Then sign in with Apple
+        console.log('[Auth] Signing in with Apple');
+        const result = await auth().signInWithCredential(firebaseCredential);
+
+        // Update user profile with Apple info
+        const email = result.user.email || appleCredential.email || '';
+        const displayName = appleCredential.fullName?.givenName
+          ? `${appleCredential.fullName.givenName} ${appleCredential.fullName.familyName || ''}`
+          : result.user.displayName || 'Anonymous User';
+
+        // Update Firestore document
+        await firestore().collection('users').doc(result.user.uid).set(
+          {
+            email,
+            displayName,
+            isAnonymous: false,
+            updatedAt: firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+        // Fetch and sync user data
+        await fetchFromFirestore({ currentLoggedUser: result.user });
+
+        console.log('[Auth] Successfully upgraded to Apple account');
+        return result;
+      } catch (error: any) {
+        console.error('[Auth] Error during upgrade:', error);
+        if (error.code === 'auth/credential-already-in-use') {
+          // If the Apple ID is already in use, just sign in with it
+          console.log('[Auth] Apple ID already in use, signing in with existing account');
+          const result = await auth().signInWithCredential(firebaseCredential);
+          await fetchFromFirestore({ currentLoggedUser: result.user });
+          return result;
+        }
+        throw error;
+      }
+    } catch (error: any) {
+      console.error('[Auth] Apple upgrade failed:', error);
+      throw error;
+    }
+  };
+
   return {
     user,
     loading,
@@ -567,6 +644,7 @@ export function useAuth() {
     checkUserExists,
     signOut,
     getFirebaseIdToken,
+    upgradeAnonymousToApple,
   };
 }
 
