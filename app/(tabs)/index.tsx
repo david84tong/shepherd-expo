@@ -1413,10 +1413,7 @@ export default function HomeScreen() {
             </ScrollView>
           </Animated.View>
 
-          {/* Overlays */}
-          <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
-          <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
-          <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
+          {/* Widget and Explainer Modals - Keep these inside SafeAreaView */}
           <WidgetHowToSheet visible={showWidgetSheet} onClose={handleWidgetSheetClose} />
           <HeartsExplainerModal
             visible={showHeartsModal}
@@ -1428,6 +1425,12 @@ export default function HomeScreen() {
           />
         </SafeAreaView>
       </Animated.View>
+
+      {/* Overlays - Moved outside of SafeAreaView and Animated.View wrapper */}
+      <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
+      <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
+      <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
+      
       <Toast config={toastConfig} />
     </>
   );
