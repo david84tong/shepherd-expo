@@ -1,7 +1,7 @@
 import * as Haptics from 'expo-haptics';
 import { Redirect, Tabs } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Image, Platform, Pressable, View, ViewStyle } from 'react-native';
+import { Animated, Image, Platform, Pressable, Text, View, ViewStyle } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { isSignedIn } from '../hooks/authHook';
@@ -10,6 +10,7 @@ import { usePathStore } from '../stores/pathStore';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
+import { RPH, RPW } from '../helper/helper';
 
 // Key for tracking first app launch
 const FIRST_APP_LAUNCH_KEY = 'first_app_launch_completed';
@@ -41,8 +42,8 @@ function CustomTabBarButton(props: any) {
   return (
     <Pressable
       onPress={handlePress}
-      // Apply base flex styling and only horizontal margin
-      className="flex-1 items-center justify-center mx-1">
+      // Apply base flex styling, horizontal margin, and horizontal padding for spacing
+      className="flex-1  items-center justify-center mx-1 ">
       {children}
     </Pressable>
   );
@@ -183,7 +184,7 @@ export default function TabsLayout() {
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FEE4A9',
+    backgroundColor: '#FDEBB8',
     opacity: tabBarAnim,
     // Pull tab bar completely out of view when hidden
     transform: [
@@ -199,7 +200,7 @@ export default function TabsLayout() {
     ...Platform.select({
       ios: {
         shadowColor: '#FFE4A8',
-        shadowOffset: { width: 0, height: -3 },
+        shadowOffset: { width: 0, height: -0.9 },
         shadowOpacity: 1,
         shadowRadius: 0,
       },
@@ -209,6 +210,7 @@ export default function TabsLayout() {
     }),
     // Ensure a minimum height for the tab bar
     height: Platform.OS === 'ios' ? 90 : 70,
+    paddingHorizontal: 50
   } as ViewStyle; // Cast to ViewStyle for type safety
 
   return (
@@ -216,8 +218,6 @@ export default function TabsLayout() {
       initialRouteName='index'
       screenOptions={{
         tabBarStyle: animatedTabBarStyle,
-        tabBarActiveTintColor: '#3C584A',
-        tabBarInactiveTintColor: '#3C584A80',
         headerShown: false,
         tabBarLabelStyle: {
           marginTop: 2,
@@ -226,23 +226,16 @@ export default function TabsLayout() {
         // Use the custom button component for all tabs
         tabBarButton: (props) => <CustomTabBarButton {...props} />,
       }}>
+
       <Tabs.Screen
-        name="map"
+        name="index"
         options={{
-          title: 'map',
+          title: 'sheep',
           tabBarButton: (props) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center relative mt-4">
-              {focused && (
-                <View
-                  className="absolute w-16 h-16 rounded-2xl"
-                  style={{
-                    backgroundColor: '#FFF5D9',
-                    zIndex: -1,
-                  }}
-                />
-              )}
-              <Image source={require('../../assets/icons/trophyIcon.png')} className="w-12 h-12" />
+            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
+              <Image source={focused ? require('../../assets/icons/homeShadow.png') : require('../../assets/icons/today.png')} className="w-7 h-7" />
+              <Text className={`mt-1 text-[12px] font-bold text-brown/70`} style={{ fontFamily: 'din' }}>Today</Text>
             </View>
           ),
         }}
@@ -254,59 +247,23 @@ export default function TabsLayout() {
           title: 'heart',
           tabBarButton: (props) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center relative mt-4">
-              {focused && (
-                <View
-                  className="absolute w-16 h-16 rounded-2xl"
-                  style={{
-                    backgroundColor: '#FFF5D9',
-                    zIndex: -1,
-                  }}
-                />
-              )}
-              <Image source={require('../../assets/icons/heartIcon.png')} className="w-12 h-12" />
+            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
+              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/stats.png')} className="w-7 h-7" />
+              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>Stats</Text>
             </View>
           ),
         }}
       />
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'sheep',
-          tabBarButton: (props) => <CustomTabBarButton {...props} />,
-          tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center relative mt-4">
-              {focused && (
-                <View
-                  className="absolute w-16 h-16 rounded-2xl"
-                  style={{
-                    backgroundColor: '#FFF5D9',
-                    zIndex: -1,
-                  }}
-                />
-              )}
-              <Image source={require('../../assets/icons/sheepIcon.png')} className="w-16 h-16" />
-            </View>
-          ),
-        }}
-      />
+
       <Tabs.Screen
         name="bible"
         options={{
           title: 'Bible',
           tabBarButton: (props) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center relative mt-4">
-              {focused && (
-                <View
-                  className="absolute w-16 h-16 rounded-2xl"
-                  style={{
-                    backgroundColor: '#FFF5D9',
-                    zIndex: -1,
-                  }}
-                />
-              )}
-              <Image source={require('../../assets/icons/bibleIcon.png')} className="w-14 h-14" />
+            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
+              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/bible.png')} className="w-7 h-7" />
+              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>Bible</Text>
             </View>
           ),
         }}
@@ -317,17 +274,9 @@ export default function TabsLayout() {
           title: 'Profile',
           tabBarButton: (props) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center relative mt-4">
-              {focused && (
-                <View
-                  className="absolute w-16 h-16 rounded-2xl"
-                  style={{
-                    backgroundColor: '#FFF5D9',
-                    zIndex: -1,
-                  }}
-                />
-              )}
-              <Image source={require('../../assets/icons/profileIcon.png')} className="w-14 h-14" />
+            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
+              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/profile.png')} className="w-6 h-7" />
+              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>Profile</Text>
             </View>
           ),
         }}

@@ -35,6 +35,7 @@ export interface UserDoc {
   completedPrayers: Prayer[];
   completedReadings: Reading[];
   isProFromOnboarding: boolean;
+  hasSeenWidgetModal: boolean;
 }
 
 export interface UserStore extends UserDoc {
@@ -127,6 +128,10 @@ export interface UserStore extends UserDoc {
   resetUserStore: () => void;
 
   syncFirestoreData: (firestoreData: UserDoc) => void;
+
+  // Add new getter/setter for widget modal
+  getHasSeenWidgetModal: () => boolean;
+  setHasSeenWidgetModal: (hasSeen: boolean) => void;
 }
 
 export interface Reading {

@@ -47,11 +47,11 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
       titleTranslateY.value = 20;
       cardOpacities.forEach((v, i) => (v.value = 0));
       cardTranslateYs.forEach((v, i) => (v.value = 40));
-      
+
       // Animate title
       titleOpacity.value = withDelay(100, withTiming(1, { duration: 400 }));
       titleTranslateY.value = withDelay(100, withSpring(0, { damping: 18, stiffness: 90 }));
-      
+
       // Animate cards staggered
       cardOpacities.forEach((v, i) => {
         v.value = withDelay(300 + i * 120, withTiming(1, { duration: 400 }));
@@ -142,18 +142,18 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
               ]}
               className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
             >
-                             {riveAssets && (
-                 <View className="w-20 h-20">
-                   <Rive
-                     {...(IS_ANDROID 
-                       ? { resourceName: 'home_lamb' }
-                       : { url: riveAssets[0].uri! }
-                     )}
-                     artboardName="lamb-idle"
-                     style={{ width: '100%', height: '100%' }}
-                   />
-                 </View>
-               )}
+              {riveAssets && (
+                <View className="w-20 h-20">
+                  <Rive
+                    {...(IS_ANDROID
+                      ? { resourceName: 'home_lamb' }
+                      : { url: riveAssets[0].uri! }
+                    )}
+                    artboardName="lamb-idle"
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </View>
+              )}
               <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
                 <Text className="font-feather text-accentGold">LVL 1</Text>
               </View>
@@ -171,18 +171,18 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
               ]}
               className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
             >
-                             {riveAssets && (
-                 <View className="w-[110px] h-[110px]">
-                   <Rive
-                     {...(IS_ANDROID 
-                       ? { resourceName: 'home_lamb' }
-                       : { url: riveAssets[0].uri! }
-                     )}
-                     artboardName="lamb-idle"
-                     style={{ width: '100%', height: '100%' }}
-                   />
-                 </View>
-               )}
+              {riveAssets && (
+                <View className="w-[110px] h-[110px]">
+                  <Rive
+                    {...(IS_ANDROID
+                      ? { resourceName: 'home_lamb' }
+                      : { url: riveAssets[0].uri! }
+                    )}
+                    artboardName="lamb-idle"
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </View>
+              )}
               <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
                 <Text className="font-feather text-accentGold">LVL 10</Text>
               </View>
@@ -202,16 +202,16 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
                   {/* Red shadow for level 20 */}
                   <Image source={require('../assets/redShadow.png')} className="absolute w-[200px] h-[200px]" />
 
-                                     <View className="w-[120px] h-[120px]" >
-                     <Rive
-                       {...(IS_ANDROID 
-                         ? { resourceName: 'home_lamb' }
-                         : { url: riveAssets[0].uri! }
-                       )}
-                       artboardName="lamb-idle"
-                       style={{ width: '100%', height: '100%' }}
-                     />
-                   </View>
+                  <View className="w-[120px] h-[120px]" >
+                    <Rive
+                      {...(IS_ANDROID
+                        ? { resourceName: 'home_lamb' }
+                        : { url: riveAssets[0].uri! }
+                      )}
+                      artboardName="lamb-idle"
+                      style={{ width: '100%', height: '100%' }}
+                    />
+                  </View>
                 </>
               )}
               <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full z-12">
@@ -229,14 +229,14 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
             >
               <Image source={require('../assets/yellowShadow.png')} className="absolute w-[200px] h-[200px]" />
 
-                             {riveAssets && (
-                 <View className="w-[140px] h-[140px]">
-                   <Rive
-                     {...(IS_IOS ? { url: riveAssets[1].uri! } : {})}
-                     style={{ width: '100%', height: '100%' }}
-                   />
-                 </View>
-               )}
+              {riveAssets && (
+                <View className="w-[140px] h-[140px]">
+                  <Rive
+                    {...(IS_IOS ? { url: riveAssets[1].uri! } : { resourceName: 'lamb_wings_idle' })}
+                    style={{ width: '100%', height: '100%' }}
+                  />
+                </View>
+              )}
               <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
                 <Text className="font-feather text-accentGold">LVL 33</Text>
               </View>

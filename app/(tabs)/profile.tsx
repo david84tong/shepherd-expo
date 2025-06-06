@@ -4,7 +4,20 @@ import dayjs from 'dayjs';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, Image, Linking, Alert, Modal, ActivityIndicator, Platform, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  Image,
+  Linking,
+  Alert,
+  Modal,
+  ActivityIndicator,
+  Platform,
+  StatusBar,
+} from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -13,6 +26,7 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import { useAuth } from '../hooks/authHook';
 import { getLevelData } from '../../utils/levelUtils';
 import { isSignedInWithGoogle, isSignedInWithApple } from '../helper/helper';
+import auth from '@react-native-firebase/auth';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
@@ -61,12 +75,7 @@ export default function ProfileScreen() {
   } = useUserStore();
 
   // Get subscription state and actions from the store
-  const {
-    isProMember,
-    presentPaywall,
-    getCustomerInfo,
-    setFromScreen,
-  } = useSubscriptionStore();
+  const { isProMember, presentPaywall, getCustomerInfo, setFromScreen } = useSubscriptionStore();
 
   const lamb = getLamb();
   const streak = getStreakCount();
@@ -83,7 +92,7 @@ export default function ProfileScreen() {
   const [signInError, setSignInError] = useState<string | null>(null);
 
   // Detect if user is anonymous (no email and displayName is 'Anonymous User')
-  const isAnonymous = !user?.email
+  const isAnonymous = !user?.email;
 
   // Fetch customer info when the component mounts or when app comes to foreground
   useEffect(() => {
@@ -156,8 +165,11 @@ export default function ProfileScreen() {
       // Replace 'YOUR_DISCORD_INVITE_LINK' with your actual Discord server invite link
       await Linking.openURL('https://discord.gg/W9MZdVaKBs');
     } catch (err) {
-      console.error("Failed to open Discord link", err);
-      Alert.alert("Error", "Could not open the Discord link. Please ensure Discord is installed or try again later.");
+      console.error('Failed to open Discord link', err);
+      Alert.alert(
+        'Error',
+        'Could not open the Discord link. Please ensure Discord is installed or try again later.'
+      );
     }
   }, [handleDismissDiscordCard]);
 
@@ -172,20 +184,21 @@ export default function ProfileScreen() {
         title: `Read ${reading.book} ${reading.chapters?.join(', ') || ''}`,
       })) || [];
 
-    const prayers = completedPrayers?.map(prayer => {
-      let prayerTitle = `${prayer.type || 'Daily'} Prayer`;
-      if (prayer.topic && prayer.topic.toLowerCase() !== 'general') {
-        prayerTitle = `Prayed for ${prayer.topic}`;
-      }
-      return {
-        type: 'prayer' as const,
-        date: prayer.date,
-        data: prayer, // raw prayer object for potential future use
-        icon: dropIcon,
-        title: prayerTitle,
-        // content: prayer.content, // Only if prayer.content exists on the Prayer type
-      };
-    }) || [];
+    const prayers =
+      completedPrayers?.map((prayer) => {
+        let prayerTitle = `${prayer.type || 'Daily'} Prayer`;
+        if (prayer.topic && prayer.topic.toLowerCase() !== 'general') {
+          prayerTitle = `Prayed for ${prayer.topic}`;
+        }
+        return {
+          type: 'prayer' as const,
+          date: prayer.date,
+          data: prayer, // raw prayer object for potential future use
+          icon: dropIcon,
+          title: prayerTitle,
+          // content: prayer.content, // Only if prayer.content exists on the Prayer type
+        };
+      }) || [];
 
     const reflections =
       completedReflections?.map((reflection) => ({
@@ -296,9 +309,10 @@ export default function ProfileScreen() {
       }
       // On success, user store will update and card will disappear
     } catch (error: any) {
-      let errorMessage = Platform.OS === 'ios'
-        ? 'There was a problem signing in with Apple.'
-        : 'There was a problem signing in with Google.';
+      let errorMessage =
+        Platform.OS === 'ios'
+          ? 'There was a problem signing in with Apple.'
+          : 'There was a problem signing in with Google.';
 
       if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
         errorMessage = 'Sign in was canceled. Please try again.';
@@ -311,9 +325,10 @@ export default function ProfileScreen() {
       } else if (error.message?.includes("operation couldn't be completed")) {
         errorMessage = 'Sign in process could not be completed. Please try again.';
       } else if (error.message?.includes('No account found')) {
-        errorMessage = Platform.OS === 'ios'
-          ? "We couldn't find an account with this Apple ID. Please create a new account instead."
-          : "We couldn't find an account with this Google account. Please create a new account instead.";
+        errorMessage =
+          Platform.OS === 'ios'
+            ? "We couldn't find an account with this Apple ID. Please create a new account instead."
+            : "We couldn't find an account with this Google account. Please create a new account instead.";
       } else if (error.message?.includes('Failed to fetch your account data')) {
         errorMessage = "We couldn't retrieve your account data. Please try again.";
       }
@@ -351,22 +366,34 @@ export default function ProfileScreen() {
         xpForNextLevel: 90,
         xpProgress: 0,
         xpNeeded: 90,
-        progress: 0
+        progress: 0,
       };
     }
 
     const data = getLevelData(lamb.xp);
     return {
       ...data,
-      xpCurrent: data.xp // Alias for backwards compatibility
+      xpCurrent: data.xp, // Alias for backwards compatibility
     };
   }, [lamb?.xp]);
+
+  // Add check for email/password sign in
+  const isSignedInWithEmail = useMemo(() => {
+    const currentUser = auth().currentUser;
+    if (!currentUser) return false;
+
+    // Check if user has email/password provider and is not anonymous
+    const providers = currentUser.providerData.map((provider) => provider?.providerId);
+    return providers.includes('password') && !currentUser.isAnonymous;
+  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
-        <ScrollView className="flex-1 bg-surfaceCream" contentContainerStyle={{ paddingBottom: 50 }}>
+        <ScrollView
+          className="flex-1 bg-surfaceCream"
+          contentContainerStyle={{ paddingBottom: 50 }}>
           {/* Header */}
           <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
             <Text className="font-feather text-h2 text-textPrimary">Profile</Text>
@@ -377,39 +404,54 @@ export default function ProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Sign In to Save Progress Card (only for anonymous users) */}
-          {isAnonymous && !isSignedInWithGoogle() && !isSignedInWithApple() && (
-            <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-              <Text className="font-feather text-xl text-accentGold mb-2 text-center">Sign in to save your progress</Text>
-              <Text className="font-din text-body text-textPrimary mb-4 text-center">
-                Create a free account to sync your streak, XP, and lamb across devices. You can always sign in later!
-              </Text>
+          {/* Sign In to Save Progress Card (only for anonymous users and not signed in with any method) */}
+          {isAnonymous &&
+            !isSignedInWithGoogle() &&
+            !isSignedInWithApple() &&
+            !isSignedInWithEmail && (
+              <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+                <Text className="font-feather text-xl text-accentGold mb-2 text-center">
+                  Sign in to save your progress
+                </Text>
+                <Text className="font-din text-body text-textPrimary mb-4 text-center">
+                  Create a free account to sync your streak, XP, and lamb across devices. You can
+                  always sign in later!
+                </Text>
 
-              <View className="items-center mb-4">
-                <TouchableOpacity
-                  className={`flex-row items-center justify-center ${Platform.OS === 'ios' ? 'bg-black' : 'bg-white border border-gray-300'} w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow`}
-                  onPress={handleSignIn}
-                  disabled={signInLoading}>
-                  {signInLoading ? (
-                    <ActivityIndicator color={Platform.OS === 'ios' ? "white" : "#4285F4"} size="small" style={{ marginRight: 10 }} />
-                  ) : (
-                    <AntDesign
-                      name={Platform.OS === 'ios' ? "apple1" : "google"}
-                      size={24}
-                      color={Platform.OS === 'ios' ? "white" : "#4285F4"}
-                      style={{ marginRight: 10 }}
-                    />
-                  )}
-                  <Text className={`font-din ${Platform.OS === 'ios' ? 'text-white' : 'text-[#4285F4]'} text-[18px] font-bold`}>
-                    {signInLoading ? 'Signing in...' : Platform.OS === 'ios' ? 'Sign in with Apple' : 'Sign in with Google'}
-                  </Text>
-                </TouchableOpacity>
+                <View className="items-center mb-4">
+                  <TouchableOpacity
+                    className={`flex-row items-center justify-center ${Platform.OS === 'ios' ? 'bg-black' : 'bg-white border border-gray-300'} w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow`}
+                    onPress={handleSignIn}
+                    disabled={signInLoading}>
+                    {signInLoading ? (
+                      <ActivityIndicator
+                        color={Platform.OS === 'ios' ? 'white' : '#4285F4'}
+                        size="small"
+                        style={{ marginRight: 10 }}
+                      />
+                    ) : (
+                      <AntDesign
+                        name={Platform.OS === 'ios' ? 'apple1' : 'google'}
+                        size={24}
+                        color={Platform.OS === 'ios' ? 'white' : '#4285F4'}
+                        style={{ marginRight: 10 }}
+                      />
+                    )}
+                    <Text
+                      className={`font-din ${Platform.OS === 'ios' ? 'text-white' : 'text-[#4285F4]'} text-[18px] font-bold`}>
+                      {signInLoading
+                        ? 'Signing in...'
+                        : Platform.OS === 'ios'
+                          ? 'Sign in with Apple'
+                          : 'Sign in with Google'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+                {signInError && (
+                  <Text className="font-din text-red-500 text-center mt-2">{signInError}</Text>
+                )}
               </View>
-              {signInError && (
-                <Text className="font-din text-red-500 text-center mt-2">{signInError}</Text>
-              )}
-            </View>
-          )}
+            )}
 
           {/* Discord Card */}
           {showDiscordCard && (
@@ -425,7 +467,9 @@ export default function ProfileScreen() {
                   <FontAwesome6 name="discord" size={20} color="#5865F2" />
                 </View>
                 <View className="flex-1">
-                  <Text className="font-feather text-xl text-darkPurple">Join our Shepherd Family!</Text>
+                  <Text className="font-feather text-xl text-darkPurple">
+                    Join our Shepherd Family!
+                  </Text>
                   <Text className="font-din text-body text-darkPurple opacity-80 mt-1 leading-tight">
                     Connect, share insights, and grow together on our Discord server.
                   </Text>
@@ -450,10 +494,7 @@ export default function ProfileScreen() {
                   {lamb.name ? lamb.name : 'Your Lamb'}
                 </Text>
               </View>
-              <Image
-                source={sheepIcon}
-                className="w-12 h-12 rounded-full"
-              />
+              <Image source={sheepIcon} className="w-12 h-12 rounded-full" />
             </View>
 
             {/* Stats Grid */}
@@ -476,7 +517,9 @@ export default function ProfileScreen() {
             <View className="mt-6 mx-2">
               <View className="flex-row justify-between mb-2">
                 <Text className="font-din text-description">Level {levelData.level}</Text>
-                <Text className="font-din text-description">{levelData.xpCurrent}/{levelData.xpForNextLevel} XP</Text>
+                <Text className="font-din text-description">
+                  {levelData.xpCurrent}/{levelData.xpForNextLevel} XP
+                </Text>
               </View>
               <View className="h-4 bg-lightYellow rounded-full overflow-hidden">
                 <View
@@ -508,16 +551,25 @@ export default function ProfileScreen() {
             visible={showPathModal}
             animationType="slide"
             transparent={false}
-            onRequestClose={() => setShowPathModal(false)}
-          >
+            onRequestClose={() => setShowPathModal(false)}>
             <View style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
               {/* Show X button if onboarding_completed */}
               {onboardingCompleted && (
                 <TouchableOpacity
                   onPress={() => setShowPathModal(false)}
-                  style={{ position: 'absolute', top: 48, right: 24, zIndex: 10, backgroundColor: '#fff', borderRadius: 20, padding: 8, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 4 }}
-                  hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
-                >
+                  style={{
+                    position: 'absolute',
+                    top: 48,
+                    right: 24,
+                    zIndex: 10,
+                    backgroundColor: '#fff',
+                    borderRadius: 20,
+                    padding: 8,
+                    shadowColor: '#000',
+                    shadowOpacity: 0.08,
+                    shadowRadius: 4,
+                  }}
+                  hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
                   <Feather name="x" size={24} color="#3C584A" />
                 </TouchableOpacity>
               )}
@@ -534,7 +586,9 @@ export default function ProfileScreen() {
           {/* Subscription Management Section */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
             <View className="flex-row justify-between items-center mb-2">
-              <Text className="font-feather text-heading text-textPrimary">Manage Subscription</Text>
+              <Text className="font-feather text-heading text-textPrimary">
+                Manage Subscription
+              </Text>
               {isProMember && (
                 <View className="bg-lightYellow px-4 py-1 rounded-full">
                   <Text className="font-din text-accentGold">Pro</Text>
@@ -552,7 +606,7 @@ export default function ProfileScreen() {
                   title="Upgrade to Pro"
                   onPress={() => {
                     setFromScreen('profile');
-                    router.push('/PricingScreen' as any)
+                    router.push('/PricingScreen' as any);
                   }}
                   style="mt-0 mb-3"
                 />
@@ -590,7 +644,7 @@ export default function ProfileScreen() {
                   const showDateHeader =
                     index === 0 ||
                     formatActivityDate(activity.date) !==
-                    formatActivityDate(allActivities[index - 1].date);
+                      formatActivityDate(allActivities[index - 1].date);
 
                   return (
                     <View key={`${activity.type}-${index}`}>
@@ -625,13 +679,18 @@ export default function ProfileScreen() {
                               {activity.title}
                             </Text>
                             {/* Display prayer topic or reflection content if available */}
-                            {(activity.type === 'prayer' && activity.data.topic && activity.title !== `Prayed for ${activity.data.topic}`) && (
-                              <Text className="font-din text-sm text-description mt-1">
-                                Topic: {activity.data.topic}
-                              </Text>
-                            )}
-                            {(activity.type === 'reflection' && activity.content) && (
-                              <Text className="font-din text-sm text-description mt-1" numberOfLines={1} ellipsizeMode="tail">
+                            {activity.type === 'prayer' &&
+                              activity.data.topic &&
+                              activity.title !== `Prayed for ${activity.data.topic}` && (
+                                <Text className="font-din text-sm text-description mt-1">
+                                  Topic: {activity.data.topic}
+                                </Text>
+                              )}
+                            {activity.type === 'reflection' && activity.content && (
+                              <Text
+                                className="font-din text-sm text-description mt-1"
+                                numberOfLines={1}
+                                ellipsizeMode="tail">
                                 {activity.content}
                               </Text>
                             )}
@@ -655,6 +714,6 @@ export default function ProfileScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
-    </GestureHandlerRootView >
+    </GestureHandlerRootView>
   );
 }

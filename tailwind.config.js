@@ -19,10 +19,13 @@ module.exports = {
         lightGreen: '#D2FFC6',
         darkGreen: '#24CA17',
         accentGold: '#FCD34D', // Buttons, progress, XP fill
-        surfaceCream: '#FFF4D9', // Card backgrounds, pills
+        surfaceCream: '#FDEBB8', // Card backgrounds, pills
+        surfaceCreamLight: '#fff1c9', // Card backgrounds, pills
         forestGreen50: '#A8F093', // Light background shapes
         forestGreen80: '#24CA17', // Trees, path outlines
-        textPrimary: '#3C584A', // All primary text
+        textPrimary: '#795323', // All primary text
+        orange: '#FF8800', // All primary text
+        brown: '#634012', // All primary text
         shadowColor: 'rgba(0,0,0,0.08)', // Shadow color separate for RN
         pillBorder: '#E9E2C7', // Border for metric pills
         description: '#B89B4C',

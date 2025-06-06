@@ -12,12 +12,15 @@ import {
   Switch,
   Alert,
   Dimensions,
+  ImageBackground,
+  Image,
+  StatusBar,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slider from '@react-native-community/slider';
 import { fetchChapter, Verse, ChapterResponse } from '~/app/api/bible';
 import { usePathStore } from '~/app/stores/pathStore';
-import { Feather } from '@expo/vector-icons';
+import { Feather, MaterialIcons } from '@expo/vector-icons';
 import Reanimated, {
   FadeInUp,
   useAnimatedStyle,
@@ -58,6 +61,8 @@ import useHighlightStore, {
 import HighlightColorPicker from './HighlightColorPicker';
 import useNoteStore from '~/app/stores/noteStore';
 import NoteEditor from './NoteEditor';
+import Animated from 'react-native-reanimated';
+import { responsiveFontSize } from 'react-native-responsive-dimensions';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -1589,522 +1594,510 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const versesToShow: Verse[] = chapterData.verses.slice(0, currentIndex + 1);
 
   return (
-    <SafeAreaView style={{ backgroundColor: theme.background, flex: 1 }}>
-      {/* Absolute background to cover outer safe areas */}
-      <View style={{ ...StyleSheet.absoluteFillObject }} pointerEvents="none" />
+    <>
+      <StatusBar
+        translucent
+        backgroundColor="transparent"
+        barStyle={'dark-content'}
+      />
+      <Animated.View className="flex-1" style={{ opacity: 1 }}>
+        <Animated.View
+          style={[
+            { position: 'absolute', width: '100%', height: '100%', },
 
-      <Reanimated.View
-        style={[
-          { flex: 1, paddingBottom: 24, paddingHorizontal: 16, paddingTop: 16 },
-          fadeAnimStyle,
-        ]}>
-        {/* HEADER: Bible Book/Chapter, tap to open selector, styled like bibleReader.tsx */}
-        <View className="flex-row items-center justify-between mb-3  px-[4px] py-[10px]">
-          <View className="flex-row items-center">
-            {isInPathMode && onNavigateBack && (
-              <TouchableOpacity
-                onPress={onNavigateBack}
-                className="mr-2 bg-[#DCB28033] rounded-[22px] p-[6px]"
-                disabled={isFadingToChat}>
-                <Feather name="arrow-left" size={20} color={theme.iconColor} />
+          ]}>
+          <ImageBackground
+            source={require('../assets/backgrounds/mainBackground2.png')}
+            style={{ width: '100%', height: '100%' }}
+          >
+            <Image
+              source={require('../assets/backgrounds/mainBackground2.png')}
+              style={{ width: '100%', height: '100%' }}
+            />
+          </ImageBackground>
+        </Animated.View>
+
+        <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
+          <View
+            className="bg-surfaceCream rounded-t-card "
+            style={{ width: "100%", height: "90%", position: 'absolute', bottom: 0, }}>
+
+
+            <Text
+              className="font-feather-bold text-white"
+              style={{
+                fontSize: responsiveFontSize(3),
+                fontWeight: "400",
+                position: 'absolute',
+                left: 20,
+                top: -50
+              }}
+            >
+              Reading
+            </Text>
+
+            <View style={[{ position: "absolute", right: 10, top: -50 }]}>
+              <TouchableOpacity onPress={handlePresentSettingsModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+                <MaterialIcons
+                  name="settings"
+                  size={22}
+                  color="#795323"
+                  style={{ opacity: 0.4 }}
+                />
               </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              onPress={handleOpenSelector}
-              className="bg-[#DCB28033] rounded-[15px] py-[5px] px-[12px] mr-2"
-              disabled={isFadingToChat}>
-              <Text className="font-feather text-[14px] text-[#3C584A]">
-                {chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'Loading...'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity
-            onPress={handlePresentSettingsModal}
-            className="bg-[#DCB28033] rounded-[15px] py-[5px] px-[12px] items-center justify-center"
-            disabled={isFadingToChat}>
-            <Feather name="settings" size={20} color={theme.iconColor} />
-          </TouchableOpacity>
-        </View>
-        {/* Add progress bar at the top */}
-        <View
-          style={{
-            height: 8,
-            backgroundColor: theme.progressBarBackground,
-            borderRadius: 2,
-            marginBottom: 8,
-            overflow: 'hidden',
-          }}>
-          <Reanimated.View
-            style={[
-              {
-                height: '100%',
-                backgroundColor: theme.progressBarFill,
-                borderRadius: 2,
-              },
-              animatedProgressStyle,
-            ]}
-          />
-        </View>
-        <ScrollView
-          ref={scrollViewRef}
-          className="flex-1"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 100 }}
-          onScrollBeginDrag={() => setIsScrolling(true)}
-          onScrollEndDrag={handleScroll}
-          onMomentumScrollBegin={() => setIsScrolling(true)}
-          onMomentumScrollEnd={handleScroll}
-          scrollEventThrottle={16}
-          bounces={!isFadingToChat}
-          scrollEnabled={!isFadingToChat}>
-          {/* Wrap TouchableWithoutFeedback with GestureHandlerRootView for proper functioning of gestures */}
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <TouchableWithoutFeedback onPress={handleNextVerse}>
-              <View style={{ minHeight: '100%' }}>
-                {versesToShow.map((v, index) => {
-                  // Get highlight color for this verse if it exists
-                  const highlightColor = getVerseHighlightColor(v);
-
-                  return (
-                    <LongPressGestureHandler
-                      key={v.verse}
-                      minDurationMs={800}
-                      onHandlerStateChange={(e) => {
-                        if (e.nativeEvent.state === State.ACTIVE) {
-                          handleLongPress(e, v);
-                        }
-                      }}>
-                      <View>
-                        <Swipeable
-                          ref={(ref) => {
-                            if (ref) {
-                              swipeableRefs.current.set(v.verse, ref);
-                            } else {
-                              swipeableRefs.current.delete(v.verse);
-                            }
-                          }}
-                          renderRightActions={(progress, dragX) =>
-                            renderRightActions(progress, dragX, v)
-                          }
-                          renderLeftActions={(progress, dragX) =>
-                            renderLeftActions(progress, dragX, v)
-                          }
-                          onSwipeableOpen={(direction) => {
-                            if (direction === 'right') {
-                              handleSwipeVerseToChat(v);
-                            } else if (direction === 'left') {
-                              handleSwipeVerseToMenu(v);
-                            }
-                          }}
-                          onSwipeableClose={() => {
-                            if (swipeProgress.current.isActive) {
-                              swipeProgress.current.isActive = false;
-                            }
-                          }}
-                          overshootRight={false}
-                          overshootLeft={false}
-                          friction={0.8}
-                          rightThreshold={SCREEN_WIDTH * SWIPE_THRESHOLD}
-                          leftThreshold={SCREEN_WIDTH * SWIPE_THRESHOLD}
-                          enabled={!isFadingToChat && !floatingMenu.isVisible}
-                          containerStyle={{ marginBottom: 16 }}
-                          onSwipeableWillOpen={(direction) => {
-                            if (direction === 'right') {
-                              handleSwipeRelease(1, v);
-                            } else if (direction === 'left') {
-                              handleLeftSwipeRelease(1, v);
-                            }
-                          }}>
-                          <Reanimated.View
-                            entering={FadeInUp.duration(300).delay(index * 60)}
-                            layout={Layout.springify()}
-                            ref={(ref) => {
-                              if (ref) {
-                                viewRefs.current.set(v.verse, ref);
-                              } else {
-                                viewRefs.current.delete(v.verse);
-                              }
-                            }}>
-                            <View
-                              style={[
-                                styles.verseBubble,
-                                {
-                                  backgroundColor: highlightColor
-                                    ? `${highlightColor}80`
-                                    : theme.bubbleBackground,
-                                  borderColor: highlightColor || theme.bubbleBorder,
-                                },
-                              ]}>
-                              <View
-                                style={{
-                                  marginBottom: 12,
-                                }}>
-                                {index === currentIndex ? (
-                                  <TypingText
-                                    text={v.text}
-                                    baseTextStyle={{
-                                      ...verseTextStyle,
-                                      fontFamily: 'DIN Next Rounded LT W01 Regular',
-                                    }}
-                                    speed={20}
-                                    skipAnimation={skipTyping}
-                                    onComplete={handleTypingComplete}
-                                  />
-                                ) : (
-                                  <Text
-                                    style={{
-                                      ...verseTextStyle,
-                                      fontFamily: 'DIN Next Rounded LT W01 Regular',
-                                    }}>
-                                    {v.text}
-                                  </Text>
-                                )}
-                              </View>
-
-                              <View
-                                style={{
-                                  borderTopColor: theme.bubbleBorder,
-                                  opacity: 0.3,
-                                  flexDirection: 'row',
-                                  alignItems: 'center',
-                                  justifyContent: 'space-between',
-                                  marginTop: 0,
-                                  paddingTop: 8,
-                                }}>
-                                <View
-                                  style={{
-                                    backgroundColor: theme.verseNumberBackground,
-                                    height: 32,
-                                    width: 32,
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderRadius: 16,
-                                  }}>
-                                  <Text
-                                    style={{
-                                      color: theme.verseNumberText,
-                                      fontFamily: 'Feather Bold',
-                                      fontSize: 14,
-                                    }}>
-                                    {v.verse}
-                                  </Text>
-                                </View>
-                                <View
-                                  style={{
-                                    flexDirection: 'row',
-                                    columnGap: 20,
-                                  }}>
-                                  {/* Only show edit note button if verse has a note */}
-                                  {hasNote(v) && (
-                                    <TouchableOpacity
-                                      onPress={(e) => {
-                                        e.stopPropagation();
-                                        if (isFadingToChat) return;
-                                        handleAddNote(v);
-                                      }}
-                                      disabled={isFadingToChat}
-                                      style={styles.actionIcon}>
-                                      <Feather name="edit-3" size={16} color={theme.iconColor} />
-                                    </TouchableOpacity>
-                                  )}
-
-                                  {/* Copy button */}
-                                  <TouchableOpacity
-                                    onPress={(e) => {
-                                      e.stopPropagation();
-                                      if (isFadingToChat) return;
-                                      Clipboard.setString(
-                                        `${chapterData.book} ${chapterData.chapter}:${v.verse} - ${v.text}`
-                                      );
-                                      Toast.show({
-                                        type: 'success',
-                                        text1: 'Verse copied to clipboard',
-                                        position: 'top',
-                                        visibilityTime: 2000,
-                                      });
-                                    }}
-                                    disabled={isFadingToChat}
-                                    style={styles.actionIcon}>
-                                    <Feather name="copy" size={16} color={theme.iconColor} />
-                                  </TouchableOpacity>
-                                </View>
-                              </View>
-                            </View>
-                          </Reanimated.View>
-                        </Swipeable>
-                      </View>
-                    </LongPressGestureHandler>
-                  );
-                })}
-
-                {currentIndex < chapterData.verses.length - 1 ? (
-                  <View style={{ alignItems: 'center', marginTop: 16 }}>
-                    {showTapGuidance && (
-                      <Text
-                        style={{
-                          color: theme.headerText,
-                          fontFamily: 'DIN Next Rounded LT W01 Regular',
-                          fontSize: 16,
-                          opacity: 0.7,
-                        }}>
-                        {isTypingComplete ? 'Tap for next verse →' : 'Tap to show full verse'}
-                      </Text>
-                    )}
-                    {showSwipeGuidance && (
-                      <Text
-                        style={{
-                          color: theme.headerText,
-                          fontFamily: 'DIN Next Rounded LT W01 Regular',
-                          fontSize: 14,
-                          opacity: 0.6,
-                          marginTop: 4,
-                        }}>
-                        ← Swipe left for annotations • Swipe right for chat →
-                      </Text>
-                    )}
-                  </View>
-                ) : (
-                  <TouchableOpacity
-                    onPress={() => {
-                      if (isFadingToChat) return;
-                      // If daily reading is completed and not in path mode, go to next chapter
-                      if (readingCompleted && !isInPathMode) {
-                        console.log('📖 [NewBibleReader] Next Chapter tapped - daily reading completed');
-                        navigateToNextChapter();
-                      } else {
-                        console.log('📖 [NewBibleReader] Finish tapped');
-                        handleFinishReading();
-                      }
-                    }}
-                    activeOpacity={0.8}
-                    disabled={isFadingToChat}>
-                    <View
-                      style={{
-                        backgroundColor: theme.progressBarBackground,
-                        paddingVertical: 12,
-                        alignItems: 'center',
-                        marginTop: 24,
-                        borderRadius: 12,
-                      }}>
-                      <Text
-                        style={{
-                          color: theme.headerText,
-                          fontFamily: 'Feather Bold',
-                          fontSize: 16,
-                        }}>
-                        {readingCompleted && !isInPathMode ? 'Next Chapter →' : 'Finish Reading 🎉'}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                )}
-
-                {/* Add invisible spacer to ensure touchable area extends to bottom padding */}
-                <View style={{ height: 80 }} />
-              </View>
-            </TouchableWithoutFeedback>
-          </GestureHandlerRootView>
-        </ScrollView>
-      </Reanimated.View>
-
-      {/* Back button at bottom of screen */}
-      {showBackButton && !isFadingToChat && (
-        <Reanimated.View
-          entering={FadeInUp.duration(300)}
-          style={[styles.backButton, { backgroundColor: theme.progressBarBackground }]}>
-          <TouchableOpacity
-            onPress={navigateToPreviousChapter}
-            accessibilityLabel="Go back to previous chapter"
-            disabled={isFadingToChat}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Feather name="chevron-left" size={24} color={theme.iconColor} />
             </View>
-          </TouchableOpacity>
-        </Reanimated.View>
-      )}
 
-      {/* Render the local settings modal only when no shared handler is
-          provided. */}
-      {!onOpenSettings && (
-        <Modal
-          visible={isSettingsModalVisible}
-          transparent
-          animationType="none"
-          onRequestClose={handleCloseSettingsModal}>
-          <TouchableWithoutFeedback onPress={handleCloseSettingsModal}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback>
-                <RNAnimated.View
-                  style={[
-                    styles.modalContent,
-                    {
-                      backgroundColor: theme.modalBackground,
-                      transform: [
-                        {
-                          translateY: slideAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [400, 0],
-                          }),
-                        },
-                      ],
-                    },
-                  ]}>
-                  <View style={[styles.modalHandle, { backgroundColor: theme.border }]} />
+            {/* Absolute background to cover outer safe areas */}
+            <View style={{ ...StyleSheet.absoluteFillObject }} pointerEvents="none" />
 
-                  {/* Default Reader Toggle */}
-                  <View style={styles.toggleContainer}>
-                    <Text style={[styles.toggleLabel, { color: theme.text }]}>Card View</Text>
-                    <Switch
-                      trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
-                      thumbColor={!useDefaultReader ? '#FFFFFF' : '#FFFFFF'}
-                      ios_backgroundColor="#E0E0E0"
-                      onValueChange={(value) => handleDefaultReaderToggle(!value)}
-                      value={!useDefaultReader}
-                    />
-                  </View>
 
-                  <Text style={[styles.modalSectionTitle, { color: theme.text }]}>Font Size</Text>
-                  <View style={styles.sliderContainer}>
-                    <Text style={[styles.sliderLabel, { color: theme.text }]}>A</Text>
-                    <Slider
-                      style={styles.slider}
-                      minimumValue={MIN_FONT_SIZE}
-                      maximumValue={MAX_FONT_SIZE}
-                      value={fontSize}
-                      onValueChange={handleFontSizeChange}
-                      minimumTrackTintColor={theme.progressBarFill}
-                      maximumTrackTintColor={theme.sliderTrack}
-                      thumbTintColor={theme.progressBarFill}
-                    />
-                    <Text style={[styles.sliderLabelLarge, { color: theme.text }]}>A</Text>
-                  </View>
 
-                  <Text style={[styles.modalSectionTitle, { color: theme.text, marginTop: 16 }]}>
-                    Line Spacing
-                  </Text>
-                  <View style={styles.lineHeightButtons}>
-                    {(Object.keys(LINE_HEIGHT_PRESETS) as LineHeightPreset[]).map((preset) => (
-                      <TouchableOpacity
-                        key={preset}
-                        style={[
-                          styles.lineHeightButton,
-                          {
-                            borderColor: theme.border,
-                            backgroundColor:
-                              lineHeightPreset === preset ? theme.progressBarFill : 'transparent',
-                          },
-                        ]}
-                        onPress={() => handleLineHeightChange(preset)}>
-                        <Text
-                          style={[
-                            styles.lineHeightButtonText,
-                            {
-                              color:
-                                lineHeightPreset === preset
-                                  ? currentTheme === 'dark'
-                                    ? theme.modalBackground
-                                    : theme.bubbleBackground
-                                  : theme.text,
-                            },
-                          ]}>
-                          {preset.charAt(0).toUpperCase() + preset.slice(1).toLowerCase()}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-
-                  <Text style={[styles.modalSectionTitle, { color: theme.text, marginTop: 24 }]}>
-                    Theme
-                  </Text>
-                  <View style={styles.themeButtonsContainer}>
-                    {(Object.keys(THEME_COLORS) as ThemeType[]).map((themeKey) => (
-                      <TouchableOpacity
-                        key={themeKey}
-                        style={[
-                          styles.themeButton,
-                          {
-                            backgroundColor: THEME_COLORS[themeKey].bubbleBackground,
-                            borderColor: THEME_COLORS[themeKey].bubbleBorder,
-                          },
-                          currentTheme === themeKey && styles.selectedThemeButton,
-                          currentTheme === themeKey && {
-                            borderColor: THEME_COLORS[themeKey].progressBarFill,
-                          },
-                        ]}
-                        onPress={() => handleThemeChange(themeKey)}
-                      />
-                    ))}
-                  </View>
-                </RNAnimated.View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-      )}
-
-      {/* Floating menu overlay */}
-      {floatingMenu.isVisible && floatingMenu.verse && (
-        <TouchableWithoutFeedback onPress={handleCloseFloatingMenu}>
-          <View style={styles.menuOverlay}>
             <Reanimated.View
               style={[
-                styles.floatingMenu,
-                {
-                  top: floatingMenu.position.y,
-                  left: floatingMenu.position.x,
-                  backgroundColor: theme.bubbleBackground,
-                  borderColor: theme.bubbleBorder,
-                  borderWidth: 1,
-                },
-                menuAnimatedStyle,
+                { flex: 1, paddingBottom: 24, paddingHorizontal: 16, paddingTop: 16 },
+                fadeAnimStyle,
               ]}>
-              {menuActions.map((action) => (
-                <TouchableOpacity
-                  key={action.id}
-                  style={styles.menuItem}
-                  onPress={() => action.action(floatingMenu.verse!)}
-                  activeOpacity={0.7}>
-                  <View
-                    style={[
-                      styles.menuIconContainer,
-                      {
-                        backgroundColor: `${action.color}22`, // Add transparency to icon background
-                      },
-                    ]}>
-                    <Feather name={action.icon} size={18} color={action.color} />
-                  </View>
-                  <Text style={[styles.menuText, { color: theme.text }]}>{action.label}</Text>
-                </TouchableOpacity>
-              ))}
+              {/* HEADER: Bible Book/Chapter, tap to open selector, styled like bibleReader.tsx */}
+              <View className="flex-row items-center justify-between mb-3  px-[4px] py-[10px]">
+                <View className="flex-row items-center">
+                  {isInPathMode && onNavigateBack && (
+                    <TouchableOpacity
+                      onPress={onNavigateBack}
+                      className="mr-2 bg-[#DCB28033] rounded-[22px] p-[6px]"
+                      disabled={isFadingToChat}>
+                      <Feather name="arrow-left" size={20} color={theme.iconColor} />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <View style={{ width: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                  <TouchableOpacity onPress={handleOpenSelector} >
+                    <Text
+                      className="font-feather-bold text-textPrimary/30 text-center"
+                      style={{
+                        fontSize: responsiveFontSize(2),
+                        fontWeight: "600",
+                      }}
+                    >
+                      {chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'Loading...'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+              </View>
+              {/* Add progress bar at the top */}
+              <View
+                style={{
+                  height: 12,
+                  borderRadius: 12,
+                  marginBottom: 8,
+                  overflow: 'hidden',
+                }}
+                className='bg-brown/5'>
+                <Reanimated.View
+                  style={[
+                    {
+                      height: '100%',
+                      backgroundColor: theme.progressBarFill,
+                      borderRadius: 2,
+                    },
+                    animatedProgressStyle,
+                  ]}
+                />
+              </View>
+              <ScrollView
+                ref={scrollViewRef}
+                className="flex-1"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }}
+                onScrollBeginDrag={() => setIsScrolling(true)}
+                onScrollEndDrag={handleScroll}
+                onMomentumScrollBegin={() => setIsScrolling(true)}
+                onMomentumScrollEnd={handleScroll}
+                scrollEventThrottle={16}
+                bounces={!isFadingToChat}
+                scrollEnabled={!isFadingToChat}>
+                {/* Wrap TouchableWithoutFeedback with GestureHandlerRootView for proper functioning of gestures */}
+                <GestureHandlerRootView style={{ flex: 1 }}>
+                  <TouchableWithoutFeedback onPress={handleNextVerse}>
+                    <View style={{ minHeight: '100%' }}>
+                      {versesToShow.map((v, index) => {
+                        // Get highlight color for this verse if it exists
+                        const highlightColor = getVerseHighlightColor(v);
+
+                        return (
+                          <LongPressGestureHandler
+                            key={v.verse}
+                            minDurationMs={800}
+                            onHandlerStateChange={(e) => {
+                              if (e.nativeEvent.state === State.ACTIVE) {
+                                handleLongPress(e, v);
+                              }
+                            }}>
+                            <View>
+                              <Swipeable
+                                ref={(ref) => {
+                                  if (ref) {
+                                    swipeableRefs.current.set(v.verse, ref);
+                                  } else {
+                                    swipeableRefs.current.delete(v.verse);
+                                  }
+                                }}
+                                renderRightActions={(progress, dragX) =>
+                                  renderRightActions(progress, dragX, v)
+                                }
+                                renderLeftActions={(progress, dragX) =>
+                                  renderLeftActions(progress, dragX, v)
+                                }
+                                onSwipeableOpen={(direction) => {
+                                  if (direction === 'right') {
+                                    handleSwipeVerseToChat(v);
+                                  } else if (direction === 'left') {
+                                    handleSwipeVerseToMenu(v);
+                                  }
+                                }}
+                                onSwipeableClose={() => {
+                                  if (swipeProgress.current.isActive) {
+                                    swipeProgress.current.isActive = false;
+                                  }
+                                }}
+                                overshootRight={false}
+                                overshootLeft={false}
+                                friction={0.8}
+                                rightThreshold={SCREEN_WIDTH * SWIPE_THRESHOLD}
+                                leftThreshold={SCREEN_WIDTH * SWIPE_THRESHOLD}
+                                enabled={!isFadingToChat && !floatingMenu.isVisible}
+                                containerStyle={{ marginBottom: 16 }}
+                                onSwipeableWillOpen={(direction) => {
+                                  if (direction === 'right') {
+                                    handleSwipeRelease(1, v);
+                                  } else if (direction === 'left') {
+                                    handleLeftSwipeRelease(1, v);
+                                  }
+                                }}>
+                                <Reanimated.View
+                                  entering={FadeInUp.duration(300).delay(index * 60)}
+                                  layout={Layout.springify()}
+                                  ref={(ref) => {
+                                    if (ref) {
+                                      viewRefs.current.set(v.verse, ref);
+                                    } else {
+                                      viewRefs.current.delete(v.verse);
+                                    }
+                                  }}>
+                                  <View
+                                    className={`bg-surfaceCreamLight`}
+                                    style={[
+                                      styles.verseBubble,
+                                      {
+                                        backgroundColor: highlightColor
+                                          ? `${highlightColor}80`
+                                          : "#fff1c9",
+                                      },
+                                    ]}>
+                                    <View
+                                      style={{
+                                        marginBottom: 12,
+                                      }}>
+                                      {index === currentIndex ? (
+                                        <TypingText
+                                          className='text-brown/90 text-[17px] leading-[25px]'
+                                          text={`${v.verse}. ${v.text}`}
+                                          speed={20}
+                                          skipAnimation={skipTyping}
+                                          onComplete={handleTypingComplete}
+                                        />
+                                      ) : (
+                                        <Text
+                                          className='text-brown/90 text-[17px]'
+                                        >
+                                          {`${v.verse}. ${v.text}`}
+                                        </Text>
+                                      )}
+                                    </View>
+
+
+
+
+
+                                  </View>
+                                </Reanimated.View>
+                              </Swipeable>
+                            </View>
+                          </LongPressGestureHandler>
+                        );
+                      })}
+
+                      {currentIndex < chapterData.verses.length - 1 ? (
+                        <View style={{ alignItems: 'center', marginTop: 16 }}>
+                          {showTapGuidance && (
+                            <Text
+                              style={{
+                                color: theme.headerText,
+                                fontFamily: 'DIN Next Rounded LT W01 Regular',
+                                fontSize: 16,
+                                opacity: 0.7,
+                              }}>
+                              {isTypingComplete ? 'Tap for next verse →' : 'Tap to show full verse'}
+                            </Text>
+                          )}
+                          {showSwipeGuidance && (
+                            <Text
+                              style={{
+                                color: theme.headerText,
+                                fontFamily: 'DIN Next Rounded LT W01 Regular',
+                                fontSize: 14,
+                                opacity: 0.6,
+                                marginTop: 4,
+                              }}>
+                              ← Swipe left for annotations • Swipe right for chat →
+                            </Text>
+                          )}
+                        </View>
+                      ) : (
+                        <TouchableOpacity
+                          onPress={() => {
+                            if (isFadingToChat) return;
+                            // If daily reading is completed and not in path mode, go to next chapter
+                            if (readingCompleted && !isInPathMode) {
+                              console.log('📖 [NewBibleReader] Next Chapter tapped - daily reading completed');
+                              navigateToNextChapter();
+                            } else {
+                              console.log('📖 [NewBibleReader] Finish tapped');
+                              handleFinishReading();
+                            }
+                          }}
+                          activeOpacity={0.8}
+                          disabled={isFadingToChat}>
+                          <View
+                            style={{
+                              backgroundColor: theme.progressBarBackground,
+                              paddingVertical: 12,
+                              alignItems: 'center',
+                              marginTop: 24,
+                              borderRadius: 12,
+                            }}>
+                            <Text
+                              style={{
+                                color: theme.headerText,
+                                fontFamily: 'Feather Bold',
+                                fontSize: 16,
+                              }}>
+                              {readingCompleted && !isInPathMode ? 'Next Chapter →' : 'Finish Reading 🎉'}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      )}
+
+                      {/* Add invisible spacer to ensure touchable area extends to bottom padding */}
+                      <View style={{ height: 80 }} />
+                    </View>
+                  </TouchableWithoutFeedback>
+                </GestureHandlerRootView>
+              </ScrollView>
             </Reanimated.View>
+
+            {/* Back button at bottom of screen */}
+            {showBackButton && !isFadingToChat && (
+              <Reanimated.View
+                entering={FadeInUp.duration(300)}
+                style={[styles.backButton, { backgroundColor: theme.progressBarBackground }]}>
+                <TouchableOpacity
+                  onPress={navigateToPreviousChapter}
+                  accessibilityLabel="Go back to previous chapter"
+                  disabled={isFadingToChat}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Feather name="chevron-left" size={24} color={theme.iconColor} />
+                  </View>
+                </TouchableOpacity>
+              </Reanimated.View>
+            )}
+
+            {/* Render the local settings modal only when no shared handler is
+          provided. */}
+            {!onOpenSettings && (
+              <Modal
+                visible={isSettingsModalVisible}
+                transparent
+                animationType="none"
+                onRequestClose={handleCloseSettingsModal}>
+                <TouchableWithoutFeedback onPress={handleCloseSettingsModal}>
+                  <View style={styles.modalOverlay}>
+                    <TouchableWithoutFeedback>
+                      <RNAnimated.View
+                        style={[
+                          styles.modalContent,
+                          {
+                            backgroundColor: theme.modalBackground,
+                            transform: [
+                              {
+                                translateY: slideAnim.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [400, 0],
+                                }),
+                              },
+                            ],
+                          },
+                        ]}>
+                        <View style={[styles.modalHandle, { backgroundColor: theme.border }]} />
+
+                        {/* Default Reader Toggle */}
+                        <View style={styles.toggleContainer}>
+                          <Text style={[styles.toggleLabel, { color: theme.text }]}>Card View</Text>
+                          <Switch
+                            trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
+                            thumbColor={!useDefaultReader ? '#FFFFFF' : '#FFFFFF'}
+                            ios_backgroundColor="#E0E0E0"
+                            onValueChange={(value) => handleDefaultReaderToggle(!value)}
+                            value={!useDefaultReader}
+                          />
+                        </View>
+
+                        <Text style={[styles.modalSectionTitle, { color: theme.text }]}>Font Size</Text>
+                        <View style={styles.sliderContainer}>
+                          <Text style={[styles.sliderLabel, { color: theme.text }]}>A</Text>
+                          <Slider
+                            style={styles.slider}
+                            minimumValue={MIN_FONT_SIZE}
+                            maximumValue={MAX_FONT_SIZE}
+                            value={fontSize}
+                            onValueChange={handleFontSizeChange}
+                            minimumTrackTintColor={theme.progressBarFill}
+                            maximumTrackTintColor={theme.sliderTrack}
+                            thumbTintColor={theme.progressBarFill}
+                          />
+                          <Text style={[styles.sliderLabelLarge, { color: theme.text }]}>A</Text>
+                        </View>
+
+                        <Text style={[styles.modalSectionTitle, { color: theme.text, marginTop: 16 }]}>
+                          Line Spacing
+                        </Text>
+                        <View style={styles.lineHeightButtons}>
+                          {(Object.keys(LINE_HEIGHT_PRESETS) as LineHeightPreset[]).map((preset) => (
+                            <TouchableOpacity
+                              key={preset}
+                              style={[
+                                styles.lineHeightButton,
+                                {
+                                  borderColor: theme.border,
+                                  backgroundColor:
+                                    lineHeightPreset === preset ? theme.progressBarFill : 'transparent',
+                                },
+                              ]}
+                              onPress={() => handleLineHeightChange(preset)}>
+                              <Text
+                                style={[
+                                  styles.lineHeightButtonText,
+                                  {
+                                    color:
+                                      lineHeightPreset === preset
+                                        ? currentTheme === 'dark'
+                                          ? theme.modalBackground
+                                          : theme.bubbleBackground
+                                        : theme.text,
+                                  },
+                                ]}>
+                                {preset.charAt(0).toUpperCase() + preset.slice(1).toLowerCase()}
+                              </Text>
+                            </TouchableOpacity>
+                          ))}
+                        </View>
+
+                        <Text style={[styles.modalSectionTitle, { color: theme.text, marginTop: 24 }]}>
+                          Theme
+                        </Text>
+                        <View style={styles.themeButtonsContainer}>
+                          {(Object.keys(THEME_COLORS) as ThemeType[]).map((themeKey) => (
+                            <TouchableOpacity
+                              key={themeKey}
+                              style={[
+                                styles.themeButton,
+                                {
+                                  backgroundColor: THEME_COLORS[themeKey].bubbleBackground,
+                                  borderColor: THEME_COLORS[themeKey].bubbleBorder,
+                                },
+                                currentTheme === themeKey && styles.selectedThemeButton,
+                                currentTheme === themeKey && {
+                                  borderColor: THEME_COLORS[themeKey].progressBarFill,
+                                },
+                              ]}
+                              onPress={() => handleThemeChange(themeKey)}
+                            />
+                          ))}
+                        </View>
+                      </RNAnimated.View>
+                    </TouchableWithoutFeedback>
+                  </View>
+                </TouchableWithoutFeedback>
+              </Modal>
+            )}
+
+            {/* Floating menu overlay */}
+            {floatingMenu.isVisible && floatingMenu.verse && (
+              <TouchableWithoutFeedback onPress={handleCloseFloatingMenu}>
+                <View style={styles.menuOverlay}>
+                  <Reanimated.View
+                    style={[
+                      styles.floatingMenu,
+                      {
+                        top: floatingMenu.position.y,
+                        left: floatingMenu.position.x,
+                        backgroundColor: theme.bubbleBackground,
+                        borderColor: theme.bubbleBorder,
+                        borderWidth: 1,
+                      },
+                      menuAnimatedStyle,
+                    ]}>
+                    {menuActions.map((action) => (
+                      <TouchableOpacity
+                        key={action.id}
+                        style={styles.menuItem}
+                        onPress={() => action.action(floatingMenu.verse!)}
+                        activeOpacity={0.7}>
+                        <View
+                          style={[
+                            styles.menuIconContainer,
+                            {
+                              backgroundColor: `${action.color}22`, // Add transparency to icon background
+                            },
+                          ]}>
+                          <Feather name={action.icon} size={18} color={action.color} />
+                        </View>
+                        <Text style={[styles.menuText, { color: theme.text }]}>{action.label}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </Reanimated.View>
+                </View>
+              </TouchableWithoutFeedback>
+            )}
+
+            {/* HighlightColorPicker modal */}
+            {verseToHighlight && (
+              <HighlightColorPicker
+                isVisible={isHighlightPickerVisible}
+                initialColor={getHighlight(currentBookId, currentChapter, verseToHighlight.verse)?.colorKey || null}
+                onClose={handleCloseHighlightPicker}
+                onSelectColor={handleApplyHighlight}
+                versePreview={verseToHighlight.text}
+              />
+            )}
+
+            {/* Note Editor Modal */}
+            {verseForNote && chapterData && (
+              <NoteEditor
+                isVisible={isNoteEditorVisible}
+                bookId={currentBookId}
+                chapter={currentChapter}
+                verse={verseForNote.verse}
+                verseText={verseForNote.text}
+                bookName={chapterData.book}
+                onClose={handleCloseNoteEditor}
+              />
+            )}
           </View>
-        </TouchableWithoutFeedback>
-      )}
-
-      {/* HighlightColorPicker modal */}
-      {verseToHighlight && (
-        <HighlightColorPicker
-          isVisible={isHighlightPickerVisible}
-          initialColor={getHighlight(currentBookId, currentChapter, verseToHighlight.verse)?.colorKey || null}
-          onClose={handleCloseHighlightPicker}
-          onSelectColor={handleApplyHighlight}
-          versePreview={verseToHighlight.text}
-        />
-      )}
-
-      {/* Note Editor Modal */}
-      {verseForNote && chapterData && (
-        <NoteEditor
-          isVisible={isNoteEditorVisible}
-          bookId={currentBookId}
-          chapter={currentChapter}
-          verse={verseForNote.verse}
-          verseText={verseForNote.text}
-          bookName={chapterData.book}
-          onClose={handleCloseNoteEditor}
-        />
-      )}
-    </SafeAreaView>
+        </SafeAreaView>
+      </Animated.View>
+    </>
   );
 };
 
@@ -2290,7 +2283,6 @@ const styles = StyleSheet.create({
     padding: 2, // Add some padding for easier touch
   },
   verseBubble: {
-    borderWidth: 2,
     padding: 16,
     borderRadius: 16,
     shadowColor: '#000',

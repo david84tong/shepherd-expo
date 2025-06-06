@@ -58,6 +58,7 @@ const initialState: UserDoc = {
   ageRange: '',
   username: '',
   isProFromOnboarding: false,
+  hasSeenWidgetModal: false,
   setNotificationTime: async (time: string) => {
     // This will be overridden by the actual implementation
     console.warn('setNotificationTime not implemented in initial state');
@@ -206,6 +207,7 @@ export const useUserStore = create<UserStore>()(
       getLambHearts: () => get().lamb?.hearts || initialState.lamb.hearts,
       getLambName: () => get().lamb?.name || initialState.lamb.name,
       getLambSkin: () => get().lamb?.skin || initialState.lamb.skin,
+      getHasSeenWidgetModal: () => get().hasSeenWidgetModal || false,
 
       // Setters
       setSpiritualGoal: (spiritualGoal) => set({ spiritualGoal }),
@@ -407,6 +409,13 @@ export const useUserStore = create<UserStore>()(
         }));
         if (isAuthenticated()) {
           updateField('lamb.xp', get().lamb?.xp || 0);
+        }
+      },
+
+      setHasSeenWidgetModal: (hasSeen: boolean) => {
+        set({ hasSeenWidgetModal: hasSeen });
+        if (isAuthenticated()) {
+          updateField('hasSeenWidgetModal', hasSeen);
         }
       },
     }),
