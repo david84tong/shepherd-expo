@@ -172,6 +172,7 @@ export default function HomeScreen() {
   // Use Zustand store for mode management
   const mode = useHomeStore((state) => state.mode);
   const setMode = useHomeStore((state) => state.setMode);
+  const setDevotionalReaderVisible = useHomeStore((state) => state.setDevotionalReaderVisible);
 
   // Get completion states from the store
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
@@ -246,10 +247,18 @@ export default function HomeScreen() {
 
   // Opacity for the main screen's Rive wrapper
   const lambOpacityAnim = useRef(new Animated.Value(1)).current; // 1 = visible, 0 = hidden
+  
+  // Add lamb artboard change animation
+  const lambChangeOpacityAnim = useRef(new Animated.Value(1)).current;
 
   // Add Rive view specific animations
   const riveScaleAnim = useRef(new Animated.Value(1)).current; // Scale animation
   const riveRotateAnim = useRef(new Animated.Value(0)).current; // Rotation animation
+
+  // Devotional card animation values
+  const devotionalCardHeightAnim = useRef(new Animated.Value(1)).current; // 1 = normal height
+  const devotionalCardTranslateYAnim = useRef(new Animated.Value(0)).current; // 0 = normal position
+  const devotionalCardOpacityAnim = useRef(new Animated.Value(1)).current; // 1 = visible
 
   // --- Derived Animated Values (memoized to avoid recreating nodes each render) ---
 
@@ -384,7 +393,7 @@ export default function HomeScreen() {
 
     if (mode === 'PREVIEW') {
       setArtboardName('lamb-idle');
-      // Update artboard based on lamb mood from userStore
+      // Update artboard based on lamb mood from userStorei
       const currentMood = useUserStore.getState()?.getLambMood?.();
       console.log('Current mood:', currentMood);
       if (currentMood && moodToArtboard[currentMood]) {
@@ -563,9 +572,71 @@ export default function HomeScreen() {
     } else {
       console.log('Read the word button pressed');
       
-      // Show the DevotionalReader and change lamb artboard
+      // Complex card transformation animation sequence
+      Animated.sequence([
+        // 1. Increase card height and move up slightly with lamb fade
+        Animated.parallel([
+          Animated.timing(devotionalCardHeightAnim, {
+            toValue: 1.3, // Increase height by 30%
+            duration: 400,
+            useNativeDriver: false,
+            easing: Easing.out(Easing.quad),
+          }),
+          Animated.timing(devotionalCardTranslateYAnim, {
+            toValue: -50, // Move up slightly
+            duration: 400,
+            useNativeDriver: false,
+            easing: Easing.out(Easing.quad),
+          }),
+          Animated.timing(lambChangeOpacityAnim, {
+            toValue: 0.3,
+            duration: 300,
+            useNativeDriver: true,
+          }),
+        ]),
+        
+        // 2. Small pause at peak
+        Animated.delay(100),
+        
+        // 3. Drop down off screen quickly
+        Animated.timing(devotionalCardTranslateYAnim, {
+          toValue: SCREEN_HEIGHT * 1.2, // Move down off screen
+          duration: 400,
+          useNativeDriver: false,
+          easing: Easing.in(Easing.quad),
+        }),
+        
+        // 4. Bring back up from bottom with devotional content
+        Animated.parallel([
+          Animated.timing(devotionalCardTranslateYAnim, {
+            toValue: 0, // Back to normal position
+            duration: 600,
+            useNativeDriver: false,
+            easing: Easing.out(Easing.cubic),
+          }),
+          Animated.timing(devotionalCardHeightAnim, {
+            toValue: 1, // Back to normal height
+            duration: 600,
+            useNativeDriver: false,
+            easing: Easing.out(Easing.cubic),
+          }),
+          Animated.timing(lambChangeOpacityAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ]),
+      ]).start();
+      
+      // Show DevotionalReader state immediately
       setShowDevotionalReader(true);
+      setDevotionalReaderVisible(true); // Hide tab bar
       setArtboardName('lamb-reading');
+      
+      // Show devotional content when card is at bottom, ready to come up
+      setTimeout(() => {
+        setShowDevotionalContent(true);
+      }, 900); // After height increase + pause + drop down (400 + 100 + 400 = 900ms)
       
       // Log analytics
       analytics.logEvent('HomeScreen_Tapped_DailyBread', {
@@ -878,6 +949,7 @@ export default function HomeScreen() {
   const [showExplainerModal, setShowExplainerModal] = useState(false);
   // Add devotional reader state
   const [showDevotionalReader, setShowDevotionalReader] = useState(false);
+  const [showDevotionalContent, setShowDevotionalContent] = useState(false);
   const levelPillWidthAnim = useRef(new Animated.Value(0)).current;
   const levelPillOpacityAnim = useRef(new Animated.Value(0)).current;
   // Pre-calculate the expanded width for the pill (use a reasonable fixed width instead of screen-based)
@@ -1223,7 +1295,7 @@ export default function HomeScreen() {
           <Animated.View
             className="items-center justify-center"
             style={{
-              opacity: lambOpacityAnim,
+              opacity: Animated.multiply(lambOpacityAnim, lambChangeOpacityAnim),
               transform: [{ translateX: lambTranslateX }, { translateY: lambTranslateY }],
               height: BASE_LAMB_SIZE,
               // Add conditional shadow for the glow effect
@@ -1334,32 +1406,108 @@ export default function HomeScreen() {
             </TouchableOpacity>
           )}
 
-          {/* Bottom Section - Action Buttons Card or DevotionalReader */}
+                    {/* Bottom Section - Action Buttons Card or DevotionalReader */}
           <Animated.View
-            className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-24"
             style={{
-              ...Platform.select({
-                ios: {
-                  shadowColor: 'rgba(0,0,0,0.08)',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowRadius: 4,
-                  shadowOpacity: 1,
-                },
-                android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
-              }),
+              flex: 1,
+              marginTop: showDevotionalContent ? -124 : -124,
               opacity: bottomCardOpacity,
+              marginBottom: -120
             }}>
-            <View className="w-[50px] h-[5] bg-textPrimary/15 rounded-full" style={{ position: 'absolute', top: 10, alignSelf: "center" }} />
-
-            {/* Conditionally show DevotionalReader or normal content */}
-            {showDevotionalReader ? (
+            <Animated.View
+              className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2"
+              style={{
+                ...Platform.select({
+                  ios: {
+                    shadowColor: 'rgba(0,0,0,0.08)',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowRadius: 4,
+                    shadowOpacity: 1,
+                  },
+                  android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
+                }),
+                transform: [
+                  { 
+                    scaleY: devotionalCardHeightAnim 
+                  },
+                  { 
+                    translateY: devotionalCardTranslateYAnim 
+                  },
+                ],
+                transformOrigin: 'bottom', // Scale from bottom
+              }}>
+              <View className="w-[50px] h-[5] bg-textPrimary/15 rounded-full" style={{ position: 'absolute', top: 10, alignSelf: "center" }} />
+              {/* Conditionally show DevotionalReader or normal content */}
+              {showDevotionalContent ? (
               <DevotionalReader 
-                visible={showDevotionalReader}
+                visible={showDevotionalContent}
                 onClose={() => {
-                  setShowDevotionalReader(false);
-                  // Reset lamb artboard back to normal state
-                  const currentMood = useUserStore.getState()?.getLambMood?.();
-                  setArtboardName(moodToArtboard[currentMood] || 'lamb-idle');
+                  // Reverse card animation sequence
+                  Animated.sequence([
+                    // 1. Start by moving card down slightly with height increase
+                    Animated.parallel([
+                      Animated.timing(devotionalCardHeightAnim, {
+                        toValue: 1.15,
+                        duration: 300,
+                        useNativeDriver: false,
+                        easing: Easing.out(Easing.quad),
+                      }),
+                      Animated.timing(devotionalCardTranslateYAnim, {
+                        toValue: 30,
+                        duration: 300,
+                        useNativeDriver: false,
+                        easing: Easing.out(Easing.quad),
+                      }),
+                      Animated.timing(lambChangeOpacityAnim, {
+                        toValue: 0.3,
+                        duration: 200,
+                        useNativeDriver: true,
+                      }),
+                    ]),
+                    
+                    // 2. Drop card down off screen
+                    Animated.timing(devotionalCardTranslateYAnim, {
+                      toValue: SCREEN_HEIGHT * 1.2,
+                      duration: 400,
+                      useNativeDriver: false,
+                      easing: Easing.in(Easing.quad),
+                    }),
+                    
+                    // 3. Bring back up with normal content from bottom
+                    Animated.parallel([
+                      Animated.timing(devotionalCardTranslateYAnim, {
+                        toValue: 0,
+                        duration: 600,
+                        useNativeDriver: false,
+                        easing: Easing.out(Easing.cubic),
+                      }),
+                      Animated.timing(devotionalCardHeightAnim, {
+                        toValue: 1,
+                        duration: 600,
+                        useNativeDriver: false,
+                        easing: Easing.out(Easing.cubic),
+                      }),
+                      Animated.timing(lambChangeOpacityAnim, {
+                        toValue: 1,
+                        duration: 500,
+                        useNativeDriver: true,
+                      }),
+                    ]),
+                  ]).start();
+                  
+                  // Hide devotional content when card starts dropping
+                  setTimeout(() => {
+                    setShowDevotionalContent(false);
+                  }, 300); // After initial height change
+                  
+                  // Reset reader state after animation completes
+                  setTimeout(() => {
+                    setShowDevotionalReader(false);
+                    setDevotionalReaderVisible(false); // Show tab bar again
+                    // Reset lamb artboard back to normal state
+                    const currentMood = useUserStore.getState()?.getLambMood?.();
+                    setArtboardName(moodToArtboard[currentMood] || 'lamb-idle');
+                  }, 1300); // After full animation completes
                 }} 
               />
             ) : (
@@ -1520,6 +1668,7 @@ export default function HomeScreen() {
 
               </ScrollView>
             )}
+            </Animated.View>
           </Animated.View>
 
           {/* Overlays */}

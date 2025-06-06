@@ -18,8 +18,6 @@ import Reanimated, {
   useSharedValue,
   withTiming,
   Layout,
-  SlideInRight,
-  SlideOutRight,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
@@ -91,6 +89,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
   const [showTapGuidance, setShowTapGuidance] = useState(true);
   const [tapCount, setTapCount] = useState(0);
   const [contextSentences, setContextSentences] = useState<string[]>([]);
+  const [showContent, setShowContent] = useState(false);
 
   // Animation values
   const progressValue = useSharedValue(0);
@@ -110,10 +109,17 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
     }
   }, [currentDevotional]);
 
-  // Load devotional on mount
+  // Load devotional on mount and show content after animation starts
   useEffect(() => {
     console.log('🙏 DevotionalReader: Fetching today\'s devotional');
     fetchTodaysDevotional();
+    
+    // Delay showing content to let slide animation start
+    const timer = setTimeout(() => {
+      setShowContent(true);
+    }, 100); // Short delay to let slide animation begin
+    
+    return () => clearTimeout(timer);
   }, [fetchTodaysDevotional]);
 
   // Debug log when devotional changes
@@ -187,7 +193,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
     return { width: `${progressValue.value * 100}%` };
   });
 
-  if (isLoading) {
+  if (isLoading && showContent) {
     return (
       <SafeAreaView className="flex-1 bg-surfaceCream items-center justify-center">
         <ActivityIndicator size="large" color="#DCB280" />
@@ -196,7 +202,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
     );
   }
 
-  if (!currentDevotional) {
+  if (!currentDevotional && showContent) {
     return (
       <SafeAreaView className="flex-1 bg-surfaceCream items-center justify-center px-6">
         <Text className="text-brown/90 text-lg font-feather-bold mb-2">No Devotional Available</Text>
@@ -219,8 +225,8 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
   if (currentIndex >= 0) {
     cardsToShow.push({
       type: 'verse',
-      content: currentDevotional.verse || 'No verse available for today.',
-      reference: currentDevotional.bibleReference || '',
+      content: currentDevotional?.verse || 'No verse available for today.',
+      reference: currentDevotional?.bibleReference || '',
     });
   }
 
@@ -233,40 +239,44 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
     });
   }
 
-    if (!visible) return null;
+  if (!visible) return null;
+
+  // Don't show content until parent animation starts
+  if (!showContent) {
+    return (
+      <View className="flex-1">
+        <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} />
+      </View>
+    );
+  }
 
   return (
-    <Reanimated.View 
-      entering={SlideInRight.duration(400)}
-      exiting={SlideOutRight.duration(300)}
-      className="flex-1">
-      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
-            <View className="bg-surfaceCream rounded-t-card" style={{ width: "100%", height: "90%", position: 'absolute', bottom: 0 }}>
-            
-            {/* Header */}
-            <Text
-              className="font-feather-bold text-white"
-              style={{
-                fontSize: responsiveFontSize(3),
-                fontWeight: "400",
-                position: 'absolute',
-                left: 20,
-                top: -50
-              }}
-            >
-              Daily Devotional
-            </Text>
+    <View style={{ flex: 1, marginTop: 65 }}>
+      {/* Header */}
+      <Text
+        className="font-feather-bold text-white"
+        style={{
+          fontSize: responsiveFontSize(3),
+          fontWeight: "400",
+          position: 'absolute',
+          left: 20,
+          top: -50,
+          zIndex: 10
+        }}
+      >
+        Daily Devotional
+      </Text>
 
-            {/* Close button */}
-            {onClose && (
-              <View style={{ position: "absolute", right: 10, top: -50 }}>
-                <TouchableOpacity onPress={onClose} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
-                  <Feather name="x" size={22} color="#795323" style={{ opacity: 0.4 }} />
-                </TouchableOpacity>
-              </View>
-            )}
+      {/* Close button */}
+      {onClose && (
+        <View style={{ position: "absolute", right: 10, top: -50, zIndex: 10 }}>
+          <TouchableOpacity onPress={onClose} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+            <Feather name="x" size={22} color="#795323" style={{ opacity: 0.4 }} />
+          </TouchableOpacity>
+        </View>
+      )}
 
-            <View style={{ flex: 1, paddingBottom: 24, paddingHorizontal: 16, paddingTop: 16 }}>
+      <View style={{ flex: 1, paddingBottom: 0, paddingTop: 8 }}>
               {/* Date Header */}
               <View className="flex-row items-center justify-center mb-3 px-[4px] py-[10px]">
                 <Text className="font-feather-bold text-textPrimary/30 text-center" style={{ fontSize: responsiveFontSize(2), fontWeight: "600" }}>
@@ -293,7 +303,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
                 ref={scrollViewRef}
                 className="flex-1"
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 100, paddingTop: 10 }}
+                contentContainerStyle={{ paddingBottom: 80, paddingTop: 10, paddingHorizontal: 16 }}
                 scrollEventThrottle={16}>
                 <TouchableWithoutFeedback onPress={handleNextCard}>
                   <View style={{ minHeight: '100%' }}>
@@ -362,6 +372,10 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
                           const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
                           setReadingCompleted(true);
                           
+                          // Show tab bar again
+                          const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
+                          setDevotionalReaderVisible(false);
+                          
                           // Log completion analytics
                           analytics.logEvent('DevotionalReader_Completed', {
                             bibleReference: currentDevotional?.bibleReference,
@@ -395,14 +409,12 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
                     )}
 
                     {/* Invisible spacer */}
-                    <View style={{ height: 80 }} />
+                    <View style={{ height: 20 }} />
                   </View>
                 </TouchableWithoutFeedback>
               </ScrollView>
             </View>
-        </View>
-      </SafeAreaView>
-    </Reanimated.View>
+    </View>
   );
 };
 

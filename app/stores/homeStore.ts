@@ -18,6 +18,7 @@ interface HomeState {
   // UI mode states
   mode: HomeMode;
   successType: SuccessAnimationType | null;
+  devotionalReaderVisible: boolean; // Track if devotional reader is showing
 
   // Completion tracking states
   readingCompleted: boolean;
@@ -31,6 +32,7 @@ interface HomeState {
   // Setter functions
   setMode: (mode: HomeMode) => void;
   setSuccessType: (type: SuccessAnimationType | null) => void;
+  setDevotionalReaderVisible: (visible: boolean) => void;
   setReadingCompleted: (completed: boolean) => void;
   setPrayerCompleted: (completed: boolean) => void;
   setReflectionCompleted: (completed: boolean) => void;
@@ -51,6 +53,7 @@ export const useHomeStore = create<HomeState>()(
       // Default UI states
       mode: 'DEFAULT',
       successType: null,
+      devotionalReaderVisible: false,
 
       // Default completion states
       readingCompleted: false,
@@ -64,6 +67,7 @@ export const useHomeStore = create<HomeState>()(
       // Setter functions
       setMode: (mode) => set({ mode }),
       setSuccessType: (type) => set({ successType: type }),
+      setDevotionalReaderVisible: (visible) => set({ devotionalReaderVisible: visible }),
       setReadingCompleted: (completed) => set({ readingCompleted: completed }),
       setPrayerCompleted: (completed) => set({ prayerCompleted: completed }),
       setReflectionCompleted: (completed) => set({ reflectionCompleted: completed }),

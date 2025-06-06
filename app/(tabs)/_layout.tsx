@@ -10,7 +10,7 @@ import { usePathStore } from '../stores/pathStore';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
-import { RPH, RPW } from '../helper/helper';
+import { RPW } from '../helper/helper';
 
 // Key for tracking first app launch
 const FIRST_APP_LAUNCH_KEY = 'first_app_launch_completed';
@@ -128,6 +128,7 @@ export default function TabsLayout() {
 
   // Zustand selectors – always call, even if the user ends up being redirected.}
   const mode = useHomeStore((state) => state.mode);
+  const devotionalReaderVisible = useHomeStore((state) => state.devotionalReaderVisible);
   const pathInProgress = usePathStore((state) => state.pathInProgress);
 
   // Ref that drives tab-bar show / hide animation
@@ -135,11 +136,11 @@ export default function TabsLayout() {
 
   useEffect(() => {
     Animated.timing(tabBarAnim, {
-      toValue: mode === 'DEFAULT' && !pathInProgress ? 1 : 0,
+      toValue: mode === 'DEFAULT' && !pathInProgress && !devotionalReaderVisible ? 1 : 0,
       duration: 300,
       useNativeDriver: true,
     }).start();
-  }, [mode, pathInProgress]);
+  }, [mode, pathInProgress, devotionalReaderVisible]);
 
   // Wait for both onboarding status from AsyncStorage and onboardingStore to be initialized
   if (onboardingCompleted === null || !isOnboardingStoreInitialized || isFirstAppLaunch === null || isDailyFirstLoad === null) {
