@@ -23,12 +23,6 @@ import Reanimated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  interpolate,
-  runOnJS,
-  FadeIn,
-  FadeOut,
-  withSequence,
-  withDelay,
   Easing,
   Layout,
 } from 'react-native-reanimated';
@@ -46,7 +40,6 @@ import analytics from '../utils/analytics';
 import {
   Swipeable,
   GestureHandlerRootView,
-  PanGestureHandler,
   State,
   LongPressGestureHandler,
 } from 'react-native-gesture-handler';
@@ -563,14 +556,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     // Store current chapter info for back button
-    setPreviousChapterInfo({ bookId, chapter });
+    setPreviousChapterInfo({ bookId: currentBookId, chapter: currentChapter });
     setShowBackButton(true);
 
-    const chaptersInCurrentBook = BIBLE_CHAPTER_COUNTS[bookId];
+    const chaptersInCurrentBook = BIBLE_CHAPTER_COUNTS[currentBookId];
 
-    if (chapter >= chaptersInCurrentBook) {
+    if (currentChapter >= chaptersInCurrentBook) {
       // At the last chapter of current book, go to next book
-      const nextBookId = bookId + 1;
+      const nextBookId = currentBookId + 1;
 
       if (nextBookId <= 66) {
         // 66 books in the Bible
@@ -588,9 +581,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       }
     } else {
       // Go to next chapter in current book
-      loadChapter(bookId, chapter + 1);
+      loadChapter(currentBookId, currentChapter + 1);
     }
-  }, [bookId, chapter, chapterData, loadChapter]);
+  }, [currentBookId, currentChapter, chapterData, loadChapter]);
 
   // Function to navigate back to the previous chapter
   const navigateToPreviousChapter = useCallback(() => {

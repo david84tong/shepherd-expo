@@ -126,6 +126,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   useEffect(() => {
     if (visible) {
       console.log('📱 BiblePreviewComponent is now visible');
+      console.log('📱 Component mounted with visible=true');
 
       // Reset the navigation return flag
       setHasReturnedFromNavigation(true);
@@ -197,6 +198,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
     console.log('🔙 BiblePreview handleBack called');
     console.log('🔙 hasReturnedFromNavigation:', hasReturnedFromNavigation);
     console.log('🔙 visible:', visible);
+    console.log('🔙 mode prop:', visible ? 'PREVIEW' : 'NOT PREVIEW');
     setPathInProgress(false);
     onClose();
   };
@@ -303,16 +305,15 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
 
   return (
     <Animated.View
-      className="absolute inset-0 flex flex-col w-full h-full"
-      style={{ opacity: containerOpacity, zIndex: 1000 }}>
+      className="absolute inset-0 flex flex-col w-full h-full overflow-visible"
+      style={{ opacity: containerOpacity, zIndex: 9999 }}
+      pointerEvents={visible ? 'auto' : 'none'}>
 
-      {/* Back Button - High z-index wrapper to ensure it's above everything */}
-      <View className="absolute top-0 left-0 right-0 z-50" style={{ zIndex: 9999 }} pointerEvents="box-none">
-        <BackButton
-          onPress={handleBack}
-          containerClassName=""
-        />
-      </View>
+      {/* Back Button - Already has absolute positioning built-in */}
+      <BackButton
+        onPress={handleBack}
+        containerClassName="z-[100]"
+      />
 
       {/* Content Area - Scrolls if needed, takes up available space */}
       <ScrollView

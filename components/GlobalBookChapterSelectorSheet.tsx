@@ -8,6 +8,9 @@ import * as Haptics from 'expo-haptics';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
+// Cache for chapter data
+const chapterCache = new Map<string, any>();
+
 /**
  * GlobalBookChapterSelectorSheet is a singleton component rendered at root level
  * and controlled via uiStore. Ensures it's rendered above tab bar.
@@ -24,6 +27,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
   // Local state - initialize with defaults but will be updated when sheet opens
   const [selectedBookId, setSelectedBookId] = useState<number>(1);
   const [selectedChapter, setSelectedChapter] = useState<number>(1);
+  const [isSelecting, setIsSelecting] = useState(false);
 
   // Ref for the bottom sheet
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -72,30 +76,39 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
     }
   }, [isBookChapterSelectorVisible, bookChapterSelectorParams.initialBookId, bookChapterSelectorParams.initialChapter]);
 
-  // Handle select chapter
-  const handleSelectChapter = useCallback((chapter: number) => {
+  // Handle select chapter with debouncing and caching
+  const handleSelectChapter = useCallback(async (chapter: number) => {
+    if (isSelecting) return; // Prevent multiple selections
+
+    setIsSelecting(true);
     console.log(`📖 [GlobalBookChapterSelector] Selected chapter: ${chapter} for book: ${selectedBookId}`);
-    setSelectedChapter(chapter);
 
-    // Save to pathStore as the last read chapter/verse
-    const bookName = bookNames[selectedBookId] || 'Unknown';
-    setSavedReading(bookName, selectedBookId, chapter);
-    console.log(`💾 [GlobalBookChapterSelector] Saved to pathStore: ${bookName} (${selectedBookId}) Chapter ${chapter}`);
+    try {
+      // Save to pathStore as the last read chapter/verse
+      const bookName = bookNames[selectedBookId] || 'Unknown';
+      setSavedReading(bookName, selectedBookId, chapter);
+      console.log(`💾 [GlobalBookChapterSelector] Saved to pathStore: ${bookName} (${selectedBookId}) Chapter ${chapter}`);
 
-    if (bookChapterSelectorParams.onSelect) {
-      bookChapterSelectorParams.onSelect(selectedBookId, chapter);
+      if (bookChapterSelectorParams.onSelect) {
+        await bookChapterSelectorParams.onSelect(selectedBookId, chapter);
+      }
+
+      bottomSheetRef.current?.close();
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+    } finally {
+      setIsSelecting(false);
     }
-    bottomSheetRef.current?.close();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
   }, [selectedBookId, bookChapterSelectorParams.onSelect, bookNames, setSavedReading]);
 
-  // Handle select book
+  // Handle select book with optimization
   const handleSelectBook = useCallback((bookId: number) => {
+    if (bookId === selectedBookId || isSelecting) return; // Prevent unnecessary updates
+
     console.log(`📖 [GlobalBookChapterSelector] Selected book: ${bookId}`);
     setSelectedBookId(bookId);
     setSelectedChapter(1); // Reset to chapter 1 when switching books
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
-  }, []);
+  }, [selectedBookId, isSelecting]);
 
   // Close handler
   const handleClose = useCallback(() => {
