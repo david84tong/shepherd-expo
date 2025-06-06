@@ -27,7 +27,8 @@ import {
   withDelay,
 } from 'react-native-reanimated';
 import CustomAnimatedView from '../components/CustomAnimatedView';
-import { IS_ANDROID, IS_IOS } from '../utils/utils';
+import { IS_ANDROID } from '../utils/utils';
+import { useOnboardingStore } from '../stores/onboardingStore';
 
 // We'll use the background directly in the source prop
 
@@ -85,7 +86,7 @@ export default function LoginScreen() {
 
       // Remove the onboarding completed key
       await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
-
+      await AsyncStorage.removeItem('isLoginButtonPressed');
       // Navigate to onboarding with a slight delay for smoother transition
       setTimeout(() => {
         router.replace('/onboarding/1');
@@ -281,8 +282,12 @@ export default function LoginScreen() {
             </CustomAnimatedView>
             <CustomAnimatedView style={linkStyle}>
               <TouchableOpacity
-                onPress={() => {
+                onPress={async () => {
                   analytics.logEvent('WelcomeScreen_Tapped_Login');
+                  // Set login mode and clear navigation state
+                  await AsyncStorage.setItem('isLoginMode', 'true');
+                  await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
+                  useOnboardingStore.getState().clearSavedScreenNavigation();
                   router.push({
                     pathname: '/onboarding/11',
                     params: { isLogin: 'true' },

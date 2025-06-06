@@ -73,6 +73,12 @@ export const onAppForegroundOrInit = async () => {
           setSelectedPath(pathOption);
         }
       }
+
+      // Update completedMapPaths from Firestore if available
+      if (firestoreData?.completedMapPaths) {
+        console.log('Syncing completedMapPaths from Firestore:', firestoreData.completedMapPaths);
+        useUserStore.getState().setCompletedMapPaths(firestoreData.completedMapPaths);
+      }
     }
     console.log('onAppForegroundOrInit complete');
   } catch (firestoreError) {
@@ -107,6 +113,7 @@ const restoreUserState = async () => {
     const prayerCompleted = useHomeStore.getState().prayerCompleted;
     const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
     const readingCompleted = useHomeStore.getState().readingCompleted;
+    const completedMapPaths = useUserStore.getState().completedMapPaths;
 
     // Update the Zustand store with Firestore data
     useUserStore.getState().syncFirestoreData(firestoreData);
@@ -160,6 +167,9 @@ const restoreUserState = async () => {
       if (hasReadToday) {
         useHomeStore.getState().setReadingCompleted(true);
       }
+    }
+    if (firestoreData?.completedMapPaths && !completedMapPaths?.length) {
+      useUserStore.getState().setCompletedMapPaths(firestoreData?.completedMapPaths);
     }
 
     // If we have a selected path, update the path store

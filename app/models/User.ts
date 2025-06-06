@@ -1,5 +1,16 @@
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
+export interface MapPathCompletion {
+  date: FirebaseFirestoreTypes.Timestamp;
+  pathId: string;
+  pathTitle: string;
+  unitId: string;
+  unitTitle: string;
+  bookId: number;
+  startChapter: number;
+  endChapter: number;
+}
+
 export interface UserDoc {
   //onboarding questions
   id: string;
@@ -43,6 +54,7 @@ export interface UserDoc {
   isPro: boolean;
   isProWithReferral: boolean;
   proExpiryDate: FirebaseFirestoreTypes.Timestamp;
+  completedMapPaths: MapPathCompletion[];
 }
 
 export interface UserStore extends UserDoc {
@@ -139,6 +151,9 @@ export interface UserStore extends UserDoc {
   // Add new getter/setter for widget modal
   getHasSeenWidgetModal: () => boolean;
   setHasSeenWidgetModal: (hasSeen: boolean) => void;
+
+  setCompletedMapPaths: (paths: MapPathCompletion[]) => void;
+  addCompletedMapPath: (path: MapPathCompletion) => void;
 }
 
 export interface Reading {

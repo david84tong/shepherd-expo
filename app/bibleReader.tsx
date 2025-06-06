@@ -555,6 +555,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       version: currentVersion,
       chapter: currentChapter,
     });
+
     // Add haptic feedback - medium for completion
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
@@ -588,39 +589,46 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       setVersesReadTotal(currentVerses + versesInChapter);
       setChaptersReadTotal(currentChapters + 1);
 
-      console.log(`Reading saved successfully. Added ${versesInChapter} verses and 1 chapter.`);
-      console.log(
-        `New totals: ${currentVerses + versesInChapter} verses, ${currentChapters + 1} chapters`
-      );
-    } catch (error) {
-      console.error('Error saving reading data:', error);
-    }
+      // If we are in a path and at the end chapter, mark the UNIT as completed
+      // and track it in Firestore
+      if (pathInProgress && currentPath && isAtEndChapter) {
+        console.log(`✅ Unit ${currentPath.unitId} completed! Attempting to mark...`);
+        markUnitAsCompleted(currentPath.unitId);
 
-    // If we are in a path and at the end chapter, mark the UNIT as completed
-    if (pathInProgress && currentPath && isAtEndChapter) {
-      console.log(`✅ Unit ${currentPath.unitId} completed! Attempting to mark...`);
-      markUnitAsCompleted(currentPath.unitId);
+        // Add completed map path to Firestore
+        const addCompletedMapPath = useUserStore.getState().addCompletedMapPath;
+        addCompletedMapPath({
+          date: now,
+          pathId: currentPath.pathId,
+          pathTitle: currentPath.pathTitle,
+          unitId: currentPath.unitId,
+          unitTitle: currentPath.unitTitle,
+          bookId: currentPath.bookId,
+          startChapter: currentPath.startChapter,
+          endChapter: currentPath.endChapter,
+        });
 
-      // Find the next unit logic
-      const currentPathIndex = BIBLE_PATHS.findIndex((p) => p.id === currentPath.pathId);
-      if (currentPathIndex !== -1) {
-        const currentPathData = BIBLE_PATHS[currentPathIndex];
-        const currentUnitIndex = currentPathData.units.findIndex(
-          (u) => u.id === currentPath.unitId
-        );
+        // Find the next unit logic
+        const currentPathIndex = BIBLE_PATHS.findIndex((p) => p.id === currentPath.pathId);
+        if (currentPathIndex !== -1) {
+          const currentPathData = BIBLE_PATHS[currentPathIndex];
+          const currentUnitIndex = currentPathData.units.findIndex(
+            (u) => u.id === currentPath.unitId
+          );
 
-        if (currentUnitIndex !== -1) {
-          // Check if there's a next unit in the current path
-          if (currentUnitIndex < currentPathData.units.length - 1) {
-            nextUnit = currentPathData.units[currentUnitIndex + 1];
-            console.log(`🔜 Next unit in same path found: ${nextUnit.title}`);
-          } else {
-            // Check if there's a next path
-            if (currentPathIndex < BIBLE_PATHS.length - 1) {
-              const nextPath = BIBLE_PATHS[currentPathIndex + 1];
-              if (nextPath.units.length > 0) {
-                nextUnit = nextPath.units[0];
-                console.log(`⏭️ Next unit in next path found: ${nextUnit.title}`);
+          if (currentUnitIndex !== -1) {
+            // Check if there's a next unit in the current path
+            if (currentUnitIndex < currentPathData.units.length - 1) {
+              nextUnit = currentPathData.units[currentUnitIndex + 1];
+              console.log(`🔜 Next unit in same path found: ${nextUnit.title}`);
+            } else {
+              // Check if there's a next path
+              if (currentPathIndex < BIBLE_PATHS.length - 1) {
+                const nextPath = BIBLE_PATHS[currentPathIndex + 1];
+                if (nextPath.units.length > 0) {
+                  nextUnit = nextPath.units[0];
+                  console.log(`⏭️ Next unit in next path found: ${nextUnit.title}`);
+                }
               }
             }
           }
@@ -633,12 +641,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       } else {
         console.log(`🏁 Reached the end of all paths.`);
       }
-    } else {
-      // Log why it wasn't marked / why we didn't look for the next unit
-      console.log('⚠️ Did not mark unit or look for next unit. Conditions:');
-      console.log(`   - pathInProgress: ${pathInProgress}`);
-      console.log(`   - currentPath: ${JSON.stringify(currentPath)}`);
-      console.log(`   - isAtEndChapter: ${isAtEndChapter}`);
+
+      console.log(`Reading saved successfully. Added ${versesInChapter} verses and 1 chapter.`);
+      console.log(
+        `New totals: ${currentVerses + versesInChapter} verses, ${currentChapters + 1} chapters`
+      );
+    } catch (error) {
+      console.error('Error saving reading data:', error);
     }
 
     // Update store state

@@ -151,15 +151,11 @@ const PricingScreen = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     analytics.logEvent('PricingScreen_BackButton_Tapped');
 
-    if (fromLoading) {
-      // If we came from loading screen, try to go back, but fallback to home if no screen to go back to
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/(tabs)');
-      }
-    } else if (isSignedIn()) {
-      // If user is signed in, go to tabs
+    // Always navigate to tabs when closing pricing screen for logged in users
+    if (isSignedIn()) {
+      router.replace('/(tabs)');
+    } else if (fromLoading) {
+      // If we came from loading screen and not signed in, try to go back
       if (router.canGoBack()) {
         router.back();
       } else {

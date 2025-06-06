@@ -5,7 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { updateField, createUserDocument } from '../../utils/firestore';
 import { syncStreakDataToWidget } from '../../utils/widgetSync';
-import { UserDoc, Lamb, UserStore } from '../models/User';
+import { UserDoc, Lamb, UserStore, MapPathCompletion } from '../models/User';
 import { isAuthenticated, updateUserData } from '../helper/firebaseHelper';
 import { zuStandStorage } from './storage';
 
@@ -65,6 +65,7 @@ const initialState: UserDoc = {
   isPro: false,
   isProWithReferral: false,
   proExpiryDate: Timestamp.now(),
+  completedMapPaths: [],
   setNotificationTime: async (time: string) => {
     // This will be overridden by the actual implementation
     console.warn('setNotificationTime not implemented in initial state');
@@ -132,11 +133,17 @@ export const useUserStore = create<UserStore>()(
             completedPrayers: firestoreData.completedPrayers ?? state.completedPrayers ?? [],
             completedReflections:
               firestoreData.completedReflections ?? state.completedReflections ?? [],
+            // Ensure completedMapPaths is properly synced from Firestore
+            completedMapPaths: firestoreData.completedMapPaths ?? state.completedMapPaths ?? [],
             // Sync lamb data
             lamb: {
               ...(state.lamb || {}),
               ...(firestoreData.lamb || {}),
-              name: firestoreData.lamb?.name || state.lamb?.name || 'My Lamb',
+              name:
+                firestoreData.lamb?.name ||
+                firestoreData?.displayName ||
+                state.lamb?.name ||
+                'My Lamb',
               level: firestoreData.lamb?.level || state.lamb?.level || 1,
             },
             // Sync path data
@@ -461,6 +468,22 @@ export const useUserStore = create<UserStore>()(
           updateField('hasSeenWidgetModal', hasSeen);
         }
       },
+
+      setCompletedMapPaths: (completedMapPaths: MapPathCompletion[]) => {
+        set({ completedMapPaths });
+        if (isAuthenticated()) {
+          updateUserData({ completedMapPaths });
+        }
+      },
+
+      addCompletedMapPath: (path: MapPathCompletion) =>
+        set((state) => {
+          const updatedPaths = [...(state.completedMapPaths || []), path];
+          if (isAuthenticated()) {
+            updateUserData({ completedMapPaths: updatedPaths });
+          }
+          return { completedMapPaths: updatedPaths };
+        }),
     }),
     {
       name: 'shepherd-user-storage',
