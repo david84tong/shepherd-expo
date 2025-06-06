@@ -542,7 +542,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           // Update internal tracking of current book and chapter
           setCurrentBookId(bookId);
           setCurrentChapter(chapter);
-          console.log(`📖 [NewBibleReader] Updated internal state - bookId: ${bookId}, chapter: ${chapter}`);
+          console.log(
+            `📖 [NewBibleReader] Updated internal state - bookId: ${bookId}, chapter: ${chapter}`
+          );
           setLoading(false);
           return true;
         }
@@ -674,6 +676,19 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     // mark unit complete
     markUnitAsCompleted(currentPath.unitId);
 
+    // Add completed map path to Firestore
+    const addCompletedMapPath = useUserStore.getState().addCompletedMapPath;
+    addCompletedMapPath({
+      date: now,
+      pathId: currentPath.pathId,
+      pathTitle: currentPath.pathTitle,
+      unitId: currentPath.unitId,
+      unitTitle: currentPath.unitTitle,
+      bookId: currentPath.bookId,
+      startChapter: currentPath.startChapter,
+      endChapter: currentPath.endChapter,
+    });
+
     // next unit preview similar to default reader
     let nextUnit: any = null;
     const pathIdx = BIBLE_PATHS.findIndex((p) => p.id === currentPath.pathId);
@@ -719,6 +734,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     setLastReadingDate,
     getVersesReadTotal,
     getChaptersReadTotal,
+    setVersesReadTotal,
+    setChaptersReadTotal,
     markUnitAsCompleted,
     setNextUnitPreview,
     setPathInProgress,
@@ -891,15 +908,34 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Handler for opening the selector
   const handleOpenSelector = useCallback(() => {
-    console.log(`📖 [NewBibleReader] Opening selector with currentBookId: ${currentBookId}, currentChapter: ${currentChapter}`);
+    console.log(
+      `📖 [NewBibleReader] Opening selector with currentBookId: ${currentBookId}, currentChapter: ${currentChapter}`
+    );
     console.log(`📖 [NewBibleReader] Props bookId: ${bookId}, chapter: ${chapter}`);
-    console.log(`📖 [NewBibleReader] chapterData:`, chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'null');
+    console.log(
+      `📖 [NewBibleReader] chapterData:`,
+      chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'null'
+    );
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    showBookChapterSelector(currentBookId, currentChapter, (newBookId: number, newChapter: number) => {
-      console.log(`📖 [NewBibleReader] Selector callback - newBookId: ${newBookId}, newChapter: ${newChapter}`);
-      loadChapter(newBookId, newChapter);
-    });
-  }, [currentBookId, currentChapter, bookId, chapter, showBookChapterSelector, loadChapter, chapterData]);
+    showBookChapterSelector(
+      currentBookId,
+      currentChapter,
+      (newBookId: number, newChapter: number) => {
+        console.log(
+          `📖 [NewBibleReader] Selector callback - newBookId: ${newBookId}, newChapter: ${newChapter}`
+        );
+        loadChapter(newBookId, newChapter);
+      }
+    );
+  }, [
+    currentBookId,
+    currentChapter,
+    bookId,
+    chapter,
+    showBookChapterSelector,
+    loadChapter,
+    chapterData,
+  ]);
 
   useEffect(() => {
     if (
@@ -962,45 +998,48 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   }, [fadeOpacity, menuScaleAnim, menuOpacityAnim, progressValue]);
 
   // Update handleSwipeVerseToChat
-  const handleSwipeVerseToChat = useCallback((verse: Verse) => {
-    if (isFadingToChat) return;
+  const handleSwipeVerseToChat = useCallback(
+    (verse: Verse) => {
+      if (isFadingToChat) return;
 
-    if (showSwipeGuidance) {
-      setShowSwipeGuidance(false);
-      AsyncStorage.setItem(SWIPE_GUIDANCE_KEY, 'true').catch((e) =>
-        console.error('Failed to save swipe guidance setting', e)
-      );
-    }
-
-    setIsFadingToChat(true);
-    setSelectedVerse(verse);
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    // Reset animation value before starting new animation
-    fadeOpacity.value = 1;
-    fadeOpacity.value = withTiming(0, {
-      duration: FADE_DURATION,
-      easing: Easing.out(Easing.cubic),
-    });
-
-    setTimeout(() => {
-      setShowChatView(true);
-    }, FADE_DURATION);
-
-    setTimeout(() => {
-      const swipeableRef = swipeableRefs.current.get(verse.verse);
-      if (swipeableRef) {
-        swipeableRef.close();
+      if (showSwipeGuidance) {
+        setShowSwipeGuidance(false);
+        AsyncStorage.setItem(SWIPE_GUIDANCE_KEY, 'true').catch((e) =>
+          console.error('Failed to save swipe guidance setting', e)
+        );
       }
-    }, 50);
 
-    analytics.logEvent('CardBibleReader_Swiped_VerseToChat', {
-      book: chapterData?.book,
-      chapter: chapterData?.chapter,
-      verse: verse.verse,
-    });
-  }, [isFadingToChat, showSwipeGuidance, fadeOpacity, chapterData]);
+      setIsFadingToChat(true);
+      setSelectedVerse(verse);
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      // Reset animation value before starting new animation
+      fadeOpacity.value = 1;
+      fadeOpacity.value = withTiming(0, {
+        duration: FADE_DURATION,
+        easing: Easing.out(Easing.cubic),
+      });
+
+      setTimeout(() => {
+        setShowChatView(true);
+      }, FADE_DURATION);
+
+      setTimeout(() => {
+        const swipeableRef = swipeableRefs.current.get(verse.verse);
+        if (swipeableRef) {
+          swipeableRef.close();
+        }
+      }, 50);
+
+      analytics.logEvent('CardBibleReader_Swiped_VerseToChat', {
+        book: chapterData?.book,
+        chapter: chapterData?.chapter,
+        verse: verse.verse,
+      });
+    },
+    [isFadingToChat, showSwipeGuidance, fadeOpacity, chapterData]
+  );
 
   // Update handleCloseChatView
   const handleCloseChatView = useCallback(() => {
@@ -1017,35 +1056,38 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   }, [fadeOpacity]);
 
   // Update handleLongPress
-  const handleLongPress = useCallback((event: any, verse: Verse) => {
-    if (isFadingToChat) return;
+  const handleLongPress = useCallback(
+    (event: any, verse: Verse) => {
+      if (isFadingToChat) return;
 
-    const { absoluteX, absoluteY } = event.nativeEvent;
+      const { absoluteX, absoluteY } = event.nativeEvent;
 
-    const menuX = Math.min(absoluteX, SCREEN_WIDTH - 240);
-    const menuY = Math.min(absoluteY - 50, SCREEN_HEIGHT - 130);
+      const menuX = Math.min(absoluteX, SCREEN_WIDTH - 240);
+      const menuY = Math.min(absoluteY - 50, SCREEN_HEIGHT - 130);
 
-    setFloatingMenu({
-      isVisible: true,
-      verse: verse,
-      position: { x: menuX, y: menuY },
-    });
+      setFloatingMenu({
+        isVisible: true,
+        verse: verse,
+        position: { x: menuX, y: menuY },
+      });
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // Reset animation values before starting new animations
-    menuScaleAnim.value = 0;
-    menuOpacityAnim.value = 0;
+      // Reset animation values before starting new animations
+      menuScaleAnim.value = 0;
+      menuOpacityAnim.value = 0;
 
-    menuScaleAnim.value = withTiming(1, {
-      duration: 200,
-      easing: Easing.out(Easing.back(1.5)),
-    });
+      menuScaleAnim.value = withTiming(1, {
+        duration: 200,
+        easing: Easing.out(Easing.back(1.5)),
+      });
 
-    menuOpacityAnim.value = withTiming(1, {
-      duration: 150,
-    });
-  }, [isFadingToChat, menuScaleAnim, menuOpacityAnim]);
+      menuOpacityAnim.value = withTiming(1, {
+        duration: 150,
+      });
+    },
+    [isFadingToChat, menuScaleAnim, menuOpacityAnim]
+  );
 
   // Update handleCloseFloatingMenu
   const handleCloseFloatingMenu = useCallback(() => {
@@ -1870,7 +1912,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                       if (isFadingToChat) return;
                       // If daily reading is completed and not in path mode, go to next chapter
                       if (readingCompleted && !isInPathMode) {
-                        console.log('📖 [NewBibleReader] Next Chapter tapped - daily reading completed');
+                        console.log(
+                          '📖 [NewBibleReader] Next Chapter tapped - daily reading completed'
+                        );
                         navigateToNextChapter();
                       } else {
                         console.log('📖 [NewBibleReader] Finish tapped');
@@ -2085,7 +2129,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       {verseToHighlight && (
         <HighlightColorPicker
           isVisible={isHighlightPickerVisible}
-          initialColor={getHighlight(currentBookId, currentChapter, verseToHighlight.verse)?.colorKey || null}
+          initialColor={
+            getHighlight(currentBookId, currentChapter, verseToHighlight.verse)?.colorKey || null
+          }
           onClose={handleCloseHighlightPicker}
           onSelectColor={handleApplyHighlight}
           versePreview={verseToHighlight.text}
