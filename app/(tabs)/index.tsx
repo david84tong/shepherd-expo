@@ -14,12 +14,13 @@ import {
   ScrollView,
   StatusBar,
 } from 'react-native';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import BiblePreviewComponent from '../../components/BiblePreviewComponent';
 import JournalComponent from '../../components/JournalComponent';
 import PrayerComponent from '../../components/PrayerComponent';
+import DevotionalReader from '../../components/DevotionalReader';
 import ProgressPill from '../../components/ProgressPill';
 import SecondaryButton from '../../components/SecondaryButton';
 import HeartsExplainerModal from '../../components/HeartsExplainerModal';
@@ -45,11 +46,9 @@ const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
 const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
 import auth from '@react-native-firebase/auth';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
-
 // Max hearts constant
 const MAX_HEARTS = 100;
 
-// Backgrounds e ícones - lista única para pré-carregamento
 const grassBg = imageAssets[0];
 const waterBg = imageAssets[1];
 const pathBg = imageAssets[2];
@@ -61,7 +60,7 @@ const gemIcon = imageAssets[8];
 const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
 
-import darkBg from '../../assets/backgrounds/defaultBackgroundDark.png';
+
 import { responsiveHeight } from 'react-native-responsive-dimensions';
 
 // Custom toast config with explicit styling
@@ -563,29 +562,16 @@ export default function HomeScreen() {
       handleSubscriptionPress();
     } else {
       console.log('Read the word button pressed');
-
-      // Remove heavy haptic feedback
-
-      // Animate mode transition
-      animateToState(0.5, pathOpacityAnim, 800, 'PREVIEW');
+      
+      // Show the DevotionalReader and change lamb artboard
+      setShowDevotionalReader(true);
       setArtboardName('lamb-reading');
-
-      // Update the mode in the store
-      setMode('PREVIEW');
-
-      // Animate the Rive view a bit
-      Animated.sequence([
-        Animated.timing(riveScaleAnim, {
-          toValue: 1.05,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-        Animated.timing(riveScaleAnim, {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }),
-      ]).start();
+      
+      // Log analytics
+      analytics.logEvent('HomeScreen_Tapped_DailyBread', {
+        hasDevotional: !!currentDevotional,
+        bibleReference: currentDevotional?.bibleReference,
+      });
     }
   };
 
@@ -890,6 +876,8 @@ export default function HomeScreen() {
   const [showHeartsModal, setShowHeartsModal] = useState(false);
   // Add explainer modal state
   const [showExplainerModal, setShowExplainerModal] = useState(false);
+  // Add devotional reader state
+  const [showDevotionalReader, setShowDevotionalReader] = useState(false);
   const levelPillWidthAnim = useRef(new Animated.Value(0)).current;
   const levelPillOpacityAnim = useRef(new Animated.Value(0)).current;
   // Pre-calculate the expanded width for the pill (use a reasonable fixed width instead of screen-based)
@@ -1346,7 +1334,7 @@ export default function HomeScreen() {
             </TouchableOpacity>
           )}
 
-          {/* Bottom Section - Action Buttons Card */}
+          {/* Bottom Section - Action Buttons Card or DevotionalReader */}
           <Animated.View
             className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2 -mt-24"
             style={{
@@ -1363,12 +1351,21 @@ export default function HomeScreen() {
             }}>
             <View className="w-[50px] h-[5] bg-textPrimary/15 rounded-full" style={{ position: 'absolute', top: 10, alignSelf: "center" }} />
 
-
-
-
-            <ScrollView
-              showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 120 }}>
+            {/* Conditionally show DevotionalReader or normal content */}
+            {showDevotionalReader ? (
+              <DevotionalReader 
+                visible={showDevotionalReader}
+                onClose={() => {
+                  setShowDevotionalReader(false);
+                  // Reset lamb artboard back to normal state
+                  const currentMood = useUserStore.getState()?.getLambMood?.();
+                  setArtboardName(moodToArtboard[currentMood] || 'lamb-idle');
+                }} 
+              />
+            ) : (
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: 120 }}>
 
               <View className="flex-row items-center justify-between " style={{ marginTop: responsiveHeight(2), }}>
                 {/* Circle/checkmark indicator for Daily Bread */}
@@ -1518,35 +1515,11 @@ export default function HomeScreen() {
                 </View>
               )}
 
-              <SecondaryButton
-                icon={breadIcon}
-                title="Daily Bread – Read"
-                subtitle="Feed your soul with scripture"
-                points={25}
-                onPress={handleReadPress}
-                completed={readingCompleted}
-              />
-              <SecondaryButton
-                icon={dropIcon}
-                title="Living Water – Pray"
-                subtitle="Refresh your spirit with prayer"
-                points={25}
-                onPress={handlePrayerPress}
-                completed={prayerCompleted}
-                disabled={!readingCompleted}
-              />
-              <SecondaryButton
-                icon={quillIcon}
-                title="Quiet Time – Reflect"
-                subtitle="Pause and meet with God"
-                points={25}
-                onPress={handleReflectionPress}
-                completed={reflectionCompleted}
-                disabled={!readingCompleted}
-              />
+       
 
 
-            </ScrollView>
+              </ScrollView>
+            )}
           </Animated.View>
 
           {/* Overlays */}
