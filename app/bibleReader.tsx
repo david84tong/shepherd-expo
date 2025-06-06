@@ -212,6 +212,10 @@ type SelectionsMap = {
 // Handoff type for chapter data
 import type { ChapterResponse } from './api/bible';
 
+// Add at the top of the file, after imports
+const chapterCache = new Map<string, any>();
+const LOADING_TIMEOUT = 300; // ms
+
 // Export the component for reuse
 export const BibleReader: React.FC<BibleReaderProps> = ({
   isEmbedded = false,
@@ -387,6 +391,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   }, [savedTranslation]);
 
   const loadChapter = async (version: string, book: string, bookId: number, chapter: number) => {
+    // Prevent multiple simultaneous loads
+    if (loading) return;
+
     setLoading(true);
     setError(null);
 
@@ -396,9 +403,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
     // Save current selections before changing chapter
     if (selectedVerses.size > 0) {
-      setSelectionsHistory((prev) => ({
+      setSelectionsHistory(prev => ({
         ...prev,
-        [previousChapterKey]: new Set(selectedVerses),
+        [previousChapterKey]: new Set(selectedVerses)
       }));
     }
 
@@ -407,13 +414,28 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     setSelectedVerses(savedSelections ? new Set(savedSelections) : new Set());
     setIsSelectionMode(savedSelections ? savedSelections.size > 0 : false);
 
-    console.log(
-      `📚 LOADING CHAPTER - version:${version}, book:${book}, bookId:${bookId}, chapter:${chapter}`
-    );
+    console.log(`📚 LOADING CHAPTER - version:${version}, book:${book}, bookId:${bookId}, chapter:${chapter}`);
 
     try {
-      // Key line: bookId is now being passed properly to the API
-      const result = await fetchChapter(version, bookId, chapter);
+      // Check cache first
+      const cacheKey = `${version}-${bookId}-${chapter}`;
+      let result;
+
+      if (chapterCache.has(cacheKey)) {
+        console.log('📚 Using cached chapter data');
+        result = chapterCache.get(cacheKey);
+      } else {
+        // Add a small delay to prevent rapid API calls
+        await new Promise(resolve => setTimeout(resolve, LOADING_TIMEOUT));
+
+        // Key line: bookId is now being passed properly to the API
+        result = await fetchChapter(version, bookId, chapter);
+
+        // Cache the result
+        if (!('error' in result)) {
+          chapterCache.set(cacheKey, result);
+        }
+      }
 
       if ('error' in result) {
         console.error(`❌ Error loading chapter: ${result.message}`);
