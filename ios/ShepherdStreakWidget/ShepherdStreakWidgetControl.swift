@@ -10,7 +10,7 @@ import SwiftUI
 import WidgetKit
 
 struct ShepherdStreakWidgetControl: ControlWidget {
-    static let kind: String = "second.round.shepherd.ShepherdStreakWidget"
+    static let kind: String = "second.round.shepherd.ShepherdStreakWidget1"
 
     var body: some ControlWidgetConfiguration {
         AppIntentControlConfiguration(

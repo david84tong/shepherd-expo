@@ -416,13 +416,21 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         style={bottomContentStyle}>
         {/* Rive Animation */}
         <View className="w-[100px] h-[100px] -ml-5 -mb-2">
-          <Rive
-            url={IS_IOS ? riveAssets[0].uri! : undefined}
-            resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-            artboardName="lamb-writing"
-            autoplay
-            style={{ width: '130%', height: '130%' }}
-          />
+          {IS_ANDROID ? (
+            <Rive
+              resourceName={'home_lamb'}
+              artboardName="lamb-writing"
+              autoplay
+              style={{ width: '130%', height: '130%' }}
+            />
+          ) : (
+            <Rive
+              url={riveAssets[0].uri!}
+              artboardName="lamb-writing"
+              autoplay
+              style={{ width: '130%', height: '130%' }}
+            />
+          )}
         </View>
 
         {/* Save Button (hidden on small devices since it's in header) */}

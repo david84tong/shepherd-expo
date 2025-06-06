@@ -19,17 +19,20 @@ const BackButton: React.FC<BackButtonProps> = ({
   const [isPressed, setIsPressed] = useState(false);
 
   const handlePress = () => {
-    console.log('🔘 BackButton handlePress called');
     // Trigger light haptic feedback
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
     onPress();
   };
 
   return (
-    <View className={`${Platform.OS === 'ios' ? 'pt-[60px]' : 'pt-[40px]'} px-5 w-full absolute -top-4 left-0 z-20 ${containerClassName}`}>
+    <View 
+      className={`${Platform.OS === 'ios' ? 'pt-[60px]' : 'pt-[40px]'} px-5 w-full absolute top-0 left-0 z-[100] ${containerClassName}`} 
+      pointerEvents="box-none"
+    >
       <Pressable 
         onPress={handlePress} 
         disabled={disabled}
+        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
         className={`
           w-[42px] h-[42px] rounded-full bg-[rgba(255,244,217,0.95)] 
           items-center justify-center border-2 border-border

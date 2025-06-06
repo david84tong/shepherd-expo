@@ -11,6 +11,7 @@ import Constants from 'expo-constants';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
+import { syncStreakDataToWidget } from '~/utils/widgetSync';
 
 // Helper function to check if user is signed in
 export const isSignedIn = () => {
@@ -97,18 +98,23 @@ export function useAuth() {
       const userCredential = await auth().signInWithCredential(firebaseCredential);
       console.log('[Auth] Firebase sign-in successful, uid:', userCredential.user.uid);
 
-      // In login mode, verify the user account exists
+      // Check if user exists in Firestore
+      const userExists = await checkUserExists(userCredential.user.uid);
+
+      if (userExists && !isLoginMode) {
+        // User exists but we're in signup mode
+        await auth().signOut();
+        throw new Error('EXISTS');
+      } else if (!userExists && isLoginMode) {
+        // User doesn't exist but we're in login mode
+        await auth().signOut();
+        throw new Error(
+          'No account found with this Apple ID. Please create a new account instead.'
+        );
+      }
+
       if (isLoginMode) {
-        const userExists = await checkUserExists(userCredential.user.uid);
-        if (!userExists) {
-          console.log('[Auth] Account not found during login attempt');
-          // Force sign out since this is a login attempt but no account exists
-          await auth().signOut();
-          throw new Error(
-            'No account found with this Apple ID. Please create a new account instead.'
-          );
-        }
-        // In login mode, fetch the user's data from Firestore instead of creating new data
+        // In login mode, fetch the user's data from Firestore
         console.log('[Auth] Login mode: fetching existing user data from Firestore');
         await new Promise((resolve) => setTimeout(resolve, 5000));
         const success = await fetchFromFirestore?.({ currentLoggedUser: userCredential?.user });
@@ -116,8 +122,6 @@ export function useAuth() {
           console.log('[Auth] Failed to fetch user data from Firestore');
           throw new Error('Failed to fetch your account data. Please try again.');
         }
-
-        // Return the user credential after successful fetch
         return userCredential.user;
       }
 
@@ -169,11 +173,6 @@ export function useAuth() {
         analytics.logEvent('auth_success');
       }
 
-      // Adapty: login user after successful sign in
-      // if (userCredential?.user?.uid) {
-      //   await useSubscriptionStore.getState().loginAdaptyUser(userCredential.user.uid);
-      // }
-
       return userCredential.user;
     } catch (err) {
       const error = err as Error;
@@ -190,6 +189,9 @@ export function useAuth() {
       } else if (error.message?.includes('canceled')) {
         console.log('[Auth] User canceled the Apple Sign In');
         error.message = 'Apple Sign In was canceled. Please try again.';
+      } else if (error.message === 'EXISTS') {
+        error.message =
+          'An account with this Apple ID already exists. Would you like to login instead?';
       }
 
       // Log authentication error
@@ -201,7 +203,6 @@ export function useAuth() {
       }
 
       setError(error);
-      // Explicitly pass the error upward for the UI to handle
       throw error;
     } finally {
       setLoading(false);
@@ -237,7 +238,7 @@ export function useAuth() {
       });
       setCreatedAt(firestore.Timestamp.now());
       setUpdatedAt(firestore.Timestamp.now());
-
+      syncStreakDataToWidget(0, firestore.Timestamp.now()?.toDate());
       // Log successful anonymous sign in
       if (analytics.isInitialized) {
         analytics.logEvent('auth_success_anonymously_by_clicking_skip_button');
@@ -317,16 +318,22 @@ export function useAuth() {
       const googleCredential = auth.GoogleAuthProvider.credential(idToken);
       const userCredential = await auth().signInWithCredential(googleCredential);
 
-      // In login mode, verify the user account exists
-      if (isLoginMode) {
-        const userExists = await checkUserExists(userCredential.user.uid);
-        if (!userExists) {
-          await auth().signOut();
-          throw new Error(
-            'No account found with this Google account. Please create a new account instead.'
-          );
-        }
+      // Check if user exists in Firestore
+      const userExists = await checkUserExists(userCredential.user.uid);
 
+      if (userExists && !isLoginMode) {
+        // User exists but we're in signup mode
+        await auth().signOut();
+        throw new Error('EXISTS');
+      } else if (!userExists && isLoginMode) {
+        // User doesn't exist but we're in login mode
+        await auth().signOut();
+        throw new Error(
+          'No account found with this Google account. Please create a new account instead.'
+        );
+      }
+
+      if (isLoginMode) {
         // Wait for auth state to be ready before fetching data
         await new Promise((resolve) => setTimeout(resolve, 5000));
         console.log('userCredential?.user ===>', userCredential?.user);
@@ -374,6 +381,10 @@ export function useAuth() {
       return userCredential.user;
     } catch (err) {
       const error = err as Error;
+      if (error.message === 'EXISTS') {
+        error.message =
+          'An account with this Google account already exists. Would you like to login instead?';
+      }
       if (analytics.isInitialized) {
         analytics.logError('Authentication error', 'google_auth_failed', {
           error_message: error.message,
@@ -410,6 +421,24 @@ export function useAuth() {
     try {
       setLoading(true);
       setError(null);
+
+      // Check if user already exists by trying to sign in
+      try {
+        await auth().signInWithEmailAndPassword(email, password);
+        // If we get here, the user exists
+        await auth().signOut(); // Sign out immediately
+        throw new Error('EXISTS');
+      } catch (err: any) {
+        // If error code is user-not-found, proceed with signup
+        if (err.code !== 'auth/user-not-found') {
+          if (err.message === 'EXISTS') {
+            throw new Error(
+              'An account with this email already exists. Would you like to login instead?'
+            );
+          }
+          throw err;
+        }
+      }
 
       // Create user with email and password
       const userCredential = await auth().createUserWithEmailAndPassword(email, password);
@@ -525,6 +554,83 @@ export function useAuth() {
     }
   };
 
+  // Separate function for handling anonymous to Apple upgrade from profile screen
+  const upgradeAnonymousToApple = async () => {
+    console.log('[Auth] Starting anonymous to Apple upgrade from profile');
+    try {
+      // First check if we have an anonymous user
+      const currentUser = auth().currentUser;
+      if (!currentUser?.isAnonymous) {
+        console.log('[Auth] Current user is not anonymous, aborting upgrade');
+        throw new Error('Current user is not anonymous');
+      }
+
+      // Get Apple credential
+      const appleCredential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+
+      if (!appleCredential.identityToken) {
+        throw new Error('No identity token from Apple');
+      }
+
+      // Create Firebase credential
+      const firebaseCredential = auth.AppleAuthProvider.credential(
+        appleCredential.identityToken,
+        appleCredential.authorizationCode || undefined
+      );
+
+      try {
+        // First sign out the anonymous user
+        console.log('[Auth] Signing out anonymous user');
+        await auth().signOut();
+
+        // Then sign in with Apple
+        console.log('[Auth] Signing in with Apple');
+        const result = await auth().signInWithCredential(firebaseCredential);
+
+        // Update user profile with Apple info
+        const email = result.user.email || appleCredential.email || '';
+        const displayName = appleCredential.fullName?.givenName
+          ? `${appleCredential.fullName.givenName} ${appleCredential.fullName.familyName || ''}`
+          : result.user.displayName || 'Anonymous User';
+
+        // Update Firestore document
+        await firestore().collection('users').doc(result.user.uid).set(
+          {
+            email,
+            displayName,
+            isAnonymous: false,
+            updatedAt: firestore.FieldValue.serverTimestamp(),
+          },
+          { merge: true }
+        );
+
+        // Fetch and sync user data
+        await fetchFromFirestore({ currentLoggedUser: result.user });
+
+        console.log('[Auth] Successfully upgraded to Apple account');
+        return result;
+      } catch (error: any) {
+        console.error('[Auth] Error during upgrade:', error);
+        if (error.code === 'auth/credential-already-in-use') {
+          // If the Apple ID is already in use, just sign in with it
+          console.log('[Auth] Apple ID already in use, signing in with existing account');
+          const result = await auth().signInWithCredential(firebaseCredential);
+          await fetchFromFirestore({ currentLoggedUser: result.user });
+          return result;
+        }
+        throw error;
+      }
+    } catch (error: any) {
+      console.error('[Auth] Apple upgrade failed:', error);
+      throw error;
+    }
+  };
+
   return {
     user,
     loading,
@@ -538,6 +644,7 @@ export function useAuth() {
     checkUserExists,
     signOut,
     getFirebaseIdToken,
+    upgradeAnonymousToApple,
   };
 }
 

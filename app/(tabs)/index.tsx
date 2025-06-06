@@ -732,6 +732,13 @@ export default function HomeScreen() {
         setIsFirstLoad(false);
       });
     }
+
+    return () => {
+      // Cleanup Rive resources
+      if (riveRef.current?.reset) {
+        riveRef.current.reset();
+      }
+    };
   }, []);
 
   // Add screen view analytics tracking
@@ -833,7 +840,9 @@ export default function HomeScreen() {
           activeOpacity={0.7}
           className="bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 -mb-2 px-2">
           <Text className="font-feather text-textPrimary text-xs">
-            {`${lambName?.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`}
+            {lambName
+              ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
+              : ''}
           </Text>
         </TouchableOpacity>
         <View
@@ -846,21 +855,33 @@ export default function HomeScreen() {
             overflow: 'hidden',
             zIndex: 10,
           }}>
-          <Rive
-            key={riveKey}
-            ref={riveRef}
-            resourceName={
-              IS_ANDROID ? (lambAssetIndex === 2 ? 'gold_lamb' : 'home_lamb') : undefined
-            }
-            url={IS_IOS ? riveAssets[lambAssetIndex].uri! : undefined}
-            artboardName={artboardName}
-            onError={handleRiveError}
-            style={{
-              width: '100%',
-              height: '100%',
-              opacity: new Date().getHours() >= 19 ? 0.85 : 1,
-            }}
-          />
+          {IS_ANDROID ? (
+            <Rive
+              key={riveKey}
+              ref={riveRef}
+              resourceName={lambAssetIndex === 2 ? 'gold_lamb' : 'home_lamb'}
+              artboardName={artboardName}
+              onError={handleRiveError}
+              style={{
+                width: '100%',
+                height: '100%',
+                opacity: new Date().getHours() >= 19 ? 0.85 : 1,
+              }}
+            />
+          ) : (
+            <Rive
+              key={riveKey}
+              ref={riveRef}
+              url={riveAssets[lambAssetIndex].uri!}
+              artboardName={artboardName}
+              onError={handleRiveError}
+              style={{
+                width: '100%',
+                height: '100%',
+                opacity: new Date().getHours() >= 19 ? 0.85 : 1,
+              }}
+            />
+          )}
         </View>
       </View>
     );
@@ -1389,15 +1410,10 @@ export default function HomeScreen() {
                 completed={reflectionCompleted}
                 disabled={!readingCompleted}
               />
-
-
             </ScrollView>
           </Animated.View>
 
-          {/* Overlays */}
-          <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
-          <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
-          <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
+          {/* Widget and Explainer Modals - Keep these inside SafeAreaView */}
           <WidgetHowToSheet visible={showWidgetSheet} onClose={handleWidgetSheetClose} />
           <HeartsExplainerModal
             visible={showHeartsModal}
@@ -1409,6 +1425,12 @@ export default function HomeScreen() {
           />
         </SafeAreaView>
       </Animated.View>
+
+      {/* Overlays - Moved outside of SafeAreaView and Animated.View wrapper */}
+      <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
+      <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
+      <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
+      
       <Toast config={toastConfig} />
     </>
   );

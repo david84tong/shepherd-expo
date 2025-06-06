@@ -267,6 +267,14 @@ export const StreakScreen = () => {
       streak: streak,
     });
   }, [streak, setStreakCount]);
+  useEffect(() => {
+    return () => {
+      // Cleanup Rive resources
+      if (riveRef.current?.reset) {
+        riveRef.current.reset();
+      }
+    };
+  }, []);
 
   // Effect to update debug display info when relevant data changes
   useEffect(() => {
@@ -413,17 +421,29 @@ export const StreakScreen = () => {
         <View className="relative justify-center items-center mb-1">
           <View
             className={`${insets.top > 20 ? 'w-96 h-96' : 'w-56 h-56'} justify-center items-center`}>
-            <Rive
-              url={IS_IOS ? riveAssets[0].uri! : undefined}
-              resourceName={IS_ANDROID ? 'success_lamb' : undefined}
-              artboardName="streak"
-              autoplay
-              style={{
-                width: insets.top < 20 ? '100%' : '200%',
-                height: insets.top < 20 ? '100%' : '200%',
-              }}
-              ref={riveRef}
-            />
+            {IS_ANDROID ? (
+              <Rive
+                resourceName={'success_lamb'}
+                artboardName="streak"
+                autoplay
+                style={{
+                  width: insets.top < 20 ? '100%' : '200%',
+                  height: insets.top < 20 ? '100%' : '200%',
+                }}
+                ref={riveRef}
+              />
+            ) : (
+              <Rive
+                url={riveAssets[0].uri!}
+                artboardName="streak"
+                autoplay
+                style={{
+                  width: insets.top < 20 ? '100%' : '200%',
+                  height: insets.top < 20 ? '100%' : '200%',
+                }}
+                ref={riveRef}
+              />
+            )}
           </View>
         </View>
         <View className="flex flex-col justify-center items-center -mt-20">

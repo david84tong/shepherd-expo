@@ -187,7 +187,6 @@ export default function OnboardingLambNameScreen() {
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <CustomAnimatedView style={screenStyle} className="px-6 pt-12">
-
         {/* Question Text */}
         <CustomAnimatedView style={titleStyle}>
           <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-0">
@@ -199,17 +198,29 @@ export default function OnboardingLambNameScreen() {
         <CustomAnimatedView
           style={lambStyle}
           className="h-[160px] w-full justify-center items-center my-4">
-          <Rive
-            url={IS_IOS ? riveAssets?.[0]?.uri : undefined}
-            resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-            artboardName="lamb-idle"
-            autoplay
-            style={{ width: '80%', height: '80%' }}
-            onError={(error) => {
-              console.warn('Rive animation error:', error);
-              // setRiveError(true);
-            }}
-          />
+          {IS_ANDROID ? (
+            <Rive
+              resourceName={IS_ANDROID ? 'home_lamb' : undefined}
+              artboardName="lamb-idle"
+              autoplay
+              style={{ width: '80%', height: '80%' }}
+              onError={(error) => {
+                console.warn('Rive animation error:', error);
+                // setRiveError(true);
+              }}
+            />
+          ) : (
+            <Rive
+              url={riveAssets?.[0]?.uri}
+              resourceName={IS_ANDROID ? 'home_lamb' : undefined}
+              autoplay
+              style={{ width: '80%', height: '80%' }}
+              onError={(error) => {
+                console.warn('Rive animation error:', error);
+                // setRiveError(true);
+              }}
+            />
+          )}
         </CustomAnimatedView>
 
         {/* Name Input */}

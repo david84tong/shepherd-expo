@@ -212,6 +212,10 @@ type SelectionsMap = {
 // Handoff type for chapter data
 import type { ChapterResponse } from './api/bible';
 
+// Add at the top of the file, after imports
+const chapterCache = new Map<string, any>();
+const LOADING_TIMEOUT = 300; // ms
+
 // Export the component for reuse
 export const BibleReader: React.FC<BibleReaderProps> = ({
   isEmbedded = false,
@@ -329,11 +333,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       console.log(`🎯 Loading: bookId: ${bookIdToLoad}, chapter: ${chapterToLoad}`);
 
       // Load from determined values, not default state
+      // Force load to ensure chapter loads when switching from card view
       await loadChapter(
         currentVersion,
         initialBookName || 'Loading...',
         bookIdToLoad,
-        chapterToLoad
+        chapterToLoad,
+        true // Force load on initial mount
       );
     };
 
@@ -386,7 +392,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     }
   }, [savedTranslation]);
 
-  const loadChapter = async (version: string, book: string, bookId: number, chapter: number) => {
+  const loadChapter = async (version: string, book: string, bookId: number, chapter: number, force: boolean = false) => {
+    // Prevent multiple simultaneous loads unless forced
+    if (loading && !force) return;
+
     setLoading(true);
     setError(null);
 
@@ -396,9 +405,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
     // Save current selections before changing chapter
     if (selectedVerses.size > 0) {
-      setSelectionsHistory((prev) => ({
+      setSelectionsHistory(prev => ({
         ...prev,
-        [previousChapterKey]: new Set(selectedVerses),
+        [previousChapterKey]: new Set(selectedVerses)
       }));
     }
 
@@ -407,13 +416,28 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     setSelectedVerses(savedSelections ? new Set(savedSelections) : new Set());
     setIsSelectionMode(savedSelections ? savedSelections.size > 0 : false);
 
-    console.log(
-      `📚 LOADING CHAPTER - version:${version}, book:${book}, bookId:${bookId}, chapter:${chapter}`
-    );
+    console.log(`📚 LOADING CHAPTER - version:${version}, book:${book}, bookId:${bookId}, chapter:${chapter}`);
 
     try {
-      // Key line: bookId is now being passed properly to the API
-      const result = await fetchChapter(version, bookId, chapter);
+      // Check cache first
+      const cacheKey = `${version}-${bookId}-${chapter}`;
+      let result;
+
+      if (chapterCache.has(cacheKey)) {
+        console.log('📚 Using cached chapter data');
+        result = chapterCache.get(cacheKey);
+      } else {
+        // Add a small delay to prevent rapid API calls
+        await new Promise(resolve => setTimeout(resolve, LOADING_TIMEOUT));
+
+        // Key line: bookId is now being passed properly to the API
+        result = await fetchChapter(version, bookId, chapter);
+
+        // Cache the result
+        if (!('error' in result)) {
+          chapterCache.set(cacheKey, result);
+        }
+      }
 
       if ('error' in result) {
         console.error(`❌ Error loading chapter: ${result.message}`);
@@ -555,6 +579,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       version: currentVersion,
       chapter: currentChapter,
     });
+
     // Add haptic feedback - medium for completion
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
@@ -588,39 +613,46 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       setVersesReadTotal(currentVerses + versesInChapter);
       setChaptersReadTotal(currentChapters + 1);
 
-      console.log(`Reading saved successfully. Added ${versesInChapter} verses and 1 chapter.`);
-      console.log(
-        `New totals: ${currentVerses + versesInChapter} verses, ${currentChapters + 1} chapters`
-      );
-    } catch (error) {
-      console.error('Error saving reading data:', error);
-    }
+      // If we are in a path and at the end chapter, mark the UNIT as completed
+      // and track it in Firestore
+      if (pathInProgress && currentPath && isAtEndChapter) {
+        console.log(`✅ Unit ${currentPath.unitId} completed! Attempting to mark...`);
+        markUnitAsCompleted(currentPath.unitId);
 
-    // If we are in a path and at the end chapter, mark the UNIT as completed
-    if (pathInProgress && currentPath && isAtEndChapter) {
-      console.log(`✅ Unit ${currentPath.unitId} completed! Attempting to mark...`);
-      markUnitAsCompleted(currentPath.unitId);
+        // Add completed map path to Firestore
+        const addCompletedMapPath = useUserStore.getState().addCompletedMapPath;
+        addCompletedMapPath({
+          date: now,
+          pathId: currentPath.pathId,
+          pathTitle: currentPath.pathTitle,
+          unitId: currentPath.unitId,
+          unitTitle: currentPath.unitTitle,
+          bookId: currentPath.bookId,
+          startChapter: currentPath.startChapter,
+          endChapter: currentPath.endChapter,
+        });
 
-      // Find the next unit logic
-      const currentPathIndex = BIBLE_PATHS.findIndex((p) => p.id === currentPath.pathId);
-      if (currentPathIndex !== -1) {
-        const currentPathData = BIBLE_PATHS[currentPathIndex];
-        const currentUnitIndex = currentPathData.units.findIndex(
-          (u) => u.id === currentPath.unitId
-        );
+        // Find the next unit logic
+        const currentPathIndex = BIBLE_PATHS.findIndex((p) => p.id === currentPath.pathId);
+        if (currentPathIndex !== -1) {
+          const currentPathData = BIBLE_PATHS[currentPathIndex];
+          const currentUnitIndex = currentPathData.units.findIndex(
+            (u) => u.id === currentPath.unitId
+          );
 
-        if (currentUnitIndex !== -1) {
-          // Check if there's a next unit in the current path
-          if (currentUnitIndex < currentPathData.units.length - 1) {
-            nextUnit = currentPathData.units[currentUnitIndex + 1];
-            console.log(`🔜 Next unit in same path found: ${nextUnit.title}`);
-          } else {
-            // Check if there's a next path
-            if (currentPathIndex < BIBLE_PATHS.length - 1) {
-              const nextPath = BIBLE_PATHS[currentPathIndex + 1];
-              if (nextPath.units.length > 0) {
-                nextUnit = nextPath.units[0];
-                console.log(`⏭️ Next unit in next path found: ${nextUnit.title}`);
+          if (currentUnitIndex !== -1) {
+            // Check if there's a next unit in the current path
+            if (currentUnitIndex < currentPathData.units.length - 1) {
+              nextUnit = currentPathData.units[currentUnitIndex + 1];
+              console.log(`🔜 Next unit in same path found: ${nextUnit.title}`);
+            } else {
+              // Check if there's a next path
+              if (currentPathIndex < BIBLE_PATHS.length - 1) {
+                const nextPath = BIBLE_PATHS[currentPathIndex + 1];
+                if (nextPath.units.length > 0) {
+                  nextUnit = nextPath.units[0];
+                  console.log(`⏭️ Next unit in next path found: ${nextUnit.title}`);
+                }
               }
             }
           }
@@ -633,12 +665,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       } else {
         console.log(`🏁 Reached the end of all paths.`);
       }
-    } else {
-      // Log why it wasn't marked / why we didn't look for the next unit
-      console.log('⚠️ Did not mark unit or look for next unit. Conditions:');
-      console.log(`   - pathInProgress: ${pathInProgress}`);
-      console.log(`   - currentPath: ${JSON.stringify(currentPath)}`);
-      console.log(`   - isAtEndChapter: ${isAtEndChapter}`);
+
+      console.log(`Reading saved successfully. Added ${versesInChapter} verses and 1 chapter.`);
+      console.log(
+        `New totals: ${currentVerses + versesInChapter} verses, ${currentChapters + 1} chapters`
+      );
+    } catch (error) {
+      console.error('Error saving reading data:', error);
     }
 
     // Update store state
@@ -989,28 +1022,26 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       // Update the store (which will save to AsyncStorage)
       readerSettings.setCardView(value);
 
+      // Close the reader preference modal instantly when switching to card view
       if (value) {
         // Instantly hide modal when switching to Card View
         setIsModalVisible(false);
+        slideAnim.setValue(0); // Reset animation immediately
       } else {
         // When switching to Default Reader, close modal and wait for overlay to disappear
         setIsModalVisible(false);
+        slideAnim.setValue(0); // Reset animation immediately
         setTimeout(() => {
           (async () => {
             try {
-              await loadChapter(currentVersion, currentBook, currentBookId, currentChapter);
-              const tempChapterData = chapterData ? { ...chapterData } : null;
-              setTimeout(() => {
-                if (!chapterData && tempChapterData && 'book' in tempChapterData) {
-                  setChapterData(tempChapterData);
-                }
-              }, 300);
+              // Force reload the chapter
+              await loadChapter(currentVersion, currentBook, currentBookId, currentChapter, true);
               analytics.logEvent('BibleReader_SwitchedToDefaultReader');
             } catch (error) {
               console.error('Failed to switch reader mode:', error);
             }
           })();
-        }, 350); // Wait for modal close animation to finish
+        }, 100); // Shorter delay since we reset animation immediately
       }
     },
     [
@@ -1026,7 +1057,20 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   // Function to receive chapter data from Card View before switching
   const handleHandoffChapterData = useCallback((data: ChapterResponse | null) => {
-    if (data) setPendingChapterData(data);
+    console.log('[BibleReader] Received handoff chapter data:', data?.book, data?.chapter);
+    if (data) {
+      setPendingChapterData(data);
+      setChapterData(data);
+      setLoading(false); // Ensure loading is false when we have data
+      setError(null);
+      
+      // Update internal state to match the handoff data
+      setCurrentBook(data.book);
+      setCurrentChapter(data.chapter);
+      
+      // Note: bookId might not be in the ChapterResponse, so we keep currentBookId as is
+      // unless we can derive it from the data
+    }
   }, []);
 
   // Function to switch from card view back to default reader
@@ -1040,7 +1084,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       readerSettings.setCardView(false);
 
       // Reload current chapter data to ensure full content
-      await loadChapter(currentVersion, currentBook, currentBookId, currentChapter);
+      await loadChapter(currentVersion, currentBook, currentBookId, currentChapter, true);
 
       // After loading is complete, ensure modal is still closed
       setIsModalVisible(false);

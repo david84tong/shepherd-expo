@@ -1,6 +1,12 @@
 import React, { useLayoutEffect, useEffect } from 'react';
 import { View, Text, Modal, TouchableOpacity, Dimensions, Image } from 'react-native';
-import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming, withSpring } from 'react-native-reanimated';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+  withSpring,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useAssets } from 'expo-asset';
@@ -29,13 +35,25 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
   // Animation shared values
   const titleOpacity = useSharedValue(0);
   const titleTranslateY = useSharedValue(20);
-  const cardOpacities = [useSharedValue(0), useSharedValue(0), useSharedValue(0), useSharedValue(0), useSharedValue(0)];
-  const cardTranslateYs = [useSharedValue(40), useSharedValue(40), useSharedValue(40), useSharedValue(40), useSharedValue(40)];
+  const cardOpacities = [
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+    useSharedValue(0),
+  ];
+  const cardTranslateYs = [
+    useSharedValue(40),
+    useSharedValue(40),
+    useSharedValue(40),
+    useSharedValue(40),
+    useSharedValue(40),
+  ];
 
   // Log screen view when modal becomes visible
   useEffect(() => {
     if (visible) {
-      analytics.logEvent("ExplainerModal_Viewed");
+      analytics.logEvent('ExplainerModal_Viewed');
     }
   }, [visible]);
 
@@ -55,7 +73,10 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
       // Animate cards staggered
       cardOpacities.forEach((v, i) => {
         v.value = withDelay(300 + i * 120, withTiming(1, { duration: 400 }));
-        cardTranslateYs[i].value = withDelay(300 + i * 120, withSpring(0, { damping: 18, stiffness: 90 }));
+        cardTranslateYs[i].value = withDelay(
+          300 + i * 120,
+          withSpring(0, { damping: 18, stiffness: 90 })
+        );
       });
     }
   }, [visible]);
@@ -63,7 +84,7 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
   // Handle close with haptic feedback and analytics
   const handleClose = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    analytics.logEvent("ExplainerModal_Tapped_Close");
+    analytics.logEvent('ExplainerModal_Tapped_Close');
     onClose();
   };
 
@@ -101,16 +122,14 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
-      onRequestClose={handleClose}
-    >
+      onRequestClose={handleClose}>
       <View className="flex-1 bg-surfaceCream" style={{ paddingTop: 0 }}>
         {/* Header with X button */}
         <View className="flex-row justify-between items-center px-6 pt-12">
           <TouchableOpacity
             onPress={handleClose}
             className="w-8 h-8 rounded-full bg-gray-200 items-center justify-center"
-            activeOpacity={0.7}
-          >
+            activeOpacity={0.7}>
             <Ionicons name="close" size={20} color="#3C584A" />
           </TouchableOpacity>
           <Text className="font-feather text-xl text-textPrimary">Lamb Growth</Text>
@@ -138,17 +157,13 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
                   shadowOffset: { width: 0, height: 0 },
                   shadowOpacity: 0,
                   shadowRadius: 0,
-                }
+                },
               ]}
-              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
-            >
+              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
               {riveAssets && (
                 <View className="w-20 h-20">
                   <Rive
-                    {...(IS_ANDROID
-                      ? { resourceName: 'home_lamb' }
-                      : { url: riveAssets[0].uri! }
-                    )}
+                    {...(IS_ANDROID ? { resourceName: 'home_lamb' } : { url: riveAssets[0].uri! })}
                     artboardName="lamb-idle"
                     style={{ width: '100%', height: '100%' }}
                   />
@@ -167,17 +182,13 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
                   shadowOffset: { width: 0, height: 0 },
                   shadowOpacity: 0,
                   shadowRadius: 0,
-                }
+                },
               ]}
-              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
-            >
+              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
               {riveAssets && (
                 <View className="w-[110px] h-[110px]">
                   <Rive
-                    {...(IS_ANDROID
-                      ? { resourceName: 'home_lamb' }
-                      : { url: riveAssets[0].uri! }
-                    )}
+                    {...(IS_ANDROID ? { resourceName: 'home_lamb' } : { url: riveAssets[0].uri! })}
                     artboardName="lamb-idle"
                     style={{ width: '100%', height: '100%' }}
                   />
@@ -193,21 +204,22 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
                 cardStyles[2],
                 {
                   // Remove card-level shadow since we want glow behind the lamb
-                }
+                },
               ]}
-              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
-            >
+              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
               {riveAssets && (
                 <>
                   {/* Red shadow for level 20 */}
-                  <Image source={require('../assets/redShadow.png')} className="absolute w-[200px] h-[200px]" />
+                  <Image
+                    source={require('../assets/redShadow.png')}
+                    className="absolute w-[200px] h-[200px]"
+                  />
 
-                  <View className="w-[120px] h-[120px]" >
+                  <View className="w-[120px] h-[120px]">
                     <Rive
                       {...(IS_ANDROID
                         ? { resourceName: 'home_lamb' }
-                        : { url: riveAssets[0].uri! }
-                      )}
+                        : { url: riveAssets[0].uri! })}
                       artboardName="lamb-idle"
                       style={{ width: '100%', height: '100%' }}
                     />
@@ -223,16 +235,20 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
                 cardStyles[3],
                 {
                   // Yellow glow for level 33
-                }
+                },
               ]}
-              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative"
-            >
-              <Image source={require('../assets/yellowShadow.png')} className="absolute w-[200px] h-[200px]" />
+              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
+              <Image
+                source={require('../assets/yellowShadow.png')}
+                className="absolute w-[200px] h-[200px]"
+              />
 
               {riveAssets && (
                 <View className="w-[140px] h-[140px]">
                   <Rive
-                    {...(IS_IOS ? { url: riveAssets[1].uri! } : { resourceName: 'lamb_wings_idle' })}
+                    {...(IS_IOS
+                      ? { url: riveAssets[1].uri! }
+                      : { resourceName: 'lamb_wings_idle' })}
                     style={{ width: '100%', height: '100%' }}
                   />
                 </View>
@@ -244,7 +260,9 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
           </View>
 
           {/* Skins section */}
-          <Animated.View style={cardStyles[4]} className="w-[340px] h-[140px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative mb-4">
+          <Animated.View
+            style={cardStyles[4]}
+            className="w-[340px] h-[140px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative mb-4">
             <Image source={skins} className="w-full h-[120px]" resizeMode="contain" />
             <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
               <Text className="font-feather text-accentGold">Shop for skins at level 10</Text>
@@ -254,4 +272,4 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
       </View>
     </Modal>
   );
-} 
+}

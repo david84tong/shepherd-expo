@@ -569,6 +569,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       console.log(`Analytics: Logged ${eventName}`, params);
     }
   }, [successType, xpReward, actualHeartReward, sawDailyBonus]);
+  useEffect(() => {
+    return () => {
+      if (riveRef.current?.reset) {
+        riveRef.current.reset();
+      }
+    };
+  }, []);
 
   // Default navigation behavior
   const handleGoHome = () => {
@@ -730,6 +737,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       </View>
     );
   }
+
   return (
     <ScrollView
       contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
@@ -763,33 +771,57 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
               ],
             }}>
             {effectiveType === SuccessAnimationType.SECTION_COMPLETE ? (
-              <Rive
-                ref={riveRef}
-                url={
-                  IS_IOS
-                    ? (homeLambAssets && homeLambAssets[0] && homeLambAssets[0].uri) || ''
-                    : undefined
-                }
-                autoplay={true}
-                resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-                artboardName="lamb-milestone"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  maxWidth: 300,
-                  maxHeight: 300,
-                  alignSelf: 'center',
-                }}
-              />
+              <>
+                {IS_ANDROID ? (
+                  <Rive
+                    ref={riveRef}
+                    autoplay={true}
+                    resourceName={'home_lamb'}
+                    artboardName="lamb-milestone"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      maxWidth: 300,
+                      maxHeight: 300,
+                      alignSelf: 'center',
+                    }}
+                  />
+                ) : (
+                  <Rive
+                    ref={riveRef}
+                    url={(homeLambAssets && homeLambAssets[0] && homeLambAssets[0].uri) || ''}
+                    autoplay={true}
+                    artboardName="lamb-milestone"
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      maxWidth: 300,
+                      maxHeight: 300,
+                      alignSelf: 'center',
+                    }}
+                  />
+                )}
+              </>
             ) : (
-              <Rive
-                ref={riveRef}
-                url={IS_IOS ? (riveAssets && riveAssets[0] && riveAssets[0].uri) || '' : undefined}
-                resourceName={IS_ANDROID ? 'success_lamb' : undefined}
-                autoplay={true}
-                style={{ width: '100%', height: '100%' }}
-                {...(riveArtboard ? { artboardName: riveArtboard } : {})}
-              />
+              <>
+                {IS_ANDROID ? (
+                  <Rive
+                    ref={riveRef}
+                    resourceName={'success_lamb'}
+                    autoplay={true}
+                    style={{ width: '100%', height: '100%' }}
+                    {...(riveArtboard ? { artboardName: riveArtboard } : {})}
+                  />
+                ) : (
+                  <Rive
+                    ref={riveRef}
+                    url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
+                    autoplay={true}
+                    style={{ width: '100%', height: '100%' }}
+                    {...(riveArtboard ? { artboardName: riveArtboard } : {})}
+                  />
+                )}
+              </>
             )}
           </Animated.View>
         </View>
