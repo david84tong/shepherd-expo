@@ -22,6 +22,8 @@ import {
   Platform,
   ToastAndroid,
   StatusBar,
+  ImageBackground,
+  Image,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchChapter, Verse } from './api/bible';
@@ -211,6 +213,9 @@ type SelectionsMap = {
 
 // Handoff type for chapter data
 import type { ChapterResponse } from './api/bible';
+import Animated from 'react-native-reanimated';
+import { responsiveFontSize, responsiveHeight } from 'react-native-responsive-dimensions';
+import { Feather, MaterialIcons } from '@expo/vector-icons';
 
 // Export the component for reuse
 export const BibleReader: React.FC<BibleReaderProps> = ({
@@ -1213,239 +1218,289 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     }
 
     return (
-      <SafeAreaView
-        style={[styles.container, { backgroundColor: THEME_COLORS[currentTheme].background }]}>
-        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-        <View
-          style={[
-            styles.newHeaderContainer,
-            {
-              backgroundColor: THEME_COLORS[currentTheme].background,
-              borderBottomColor: THEME_COLORS[currentTheme].border,
-              marginTop: Platform.OS === 'android' ? 18 : 0,
-            },
-          ]}>
-          <View style={styles.headerLeft}>
-            {pathInProgress && (
-              <TouchableOpacity onPress={handleBackNavigation} style={styles.backButton}>
-                <Text style={[styles.backButtonText, { color: THEME_COLORS[currentTheme].text }]}>
-                  ←
-                </Text>
-              </TouchableOpacity>
-            )}
+      <>
+        <StatusBar
+          translucent
+          backgroundColor="transparent"
+          barStyle={'dark-content'}
+        />
+        <Animated.View className="flex-1" style={{ opacity: 1 }}>
+          <Animated.View
+            style={[
+              { position: 'absolute', width: '100%', height: '100%' },
 
-            <TouchableOpacity style={styles.headerButton} onPress={handleOpenSelector}>
-              <Text style={[styles.headerButtonText, { color: THEME_COLORS[currentTheme].text }]}>
-                {effectiveChapterData
-                  ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}`
-                  : 'Loading...'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.headerRight}>
-            <TouchableOpacity onPress={handlePresentModal} style={styles.fontSizeButton}>
-              <Text style={[styles.fontSizeButtonText, { color: THEME_COLORS[currentTheme].text }]}>
-                Aa
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View
-          style={[styles.contentArea, { backgroundColor: THEME_COLORS[currentTheme].background }]}>
-          {effectiveChapterData && renderBibleContent(effectiveChapterData)}
-        </View>
-
-        {/* Bottom Navigation Row - Contains Next Chapter/Book and Nav Buttons */}
-        <RNAnimated.View
-          style={[
-            {
-              position: 'absolute',
-              bottom: isEmbedded ? 100 : effectiveParams?.isFromDailyBread ? 50 : 100,
-              left: 0,
-              right: 0,
-              flexDirection: 'row',
-              justifyContent: 'flex-end',
-              alignItems: 'center',
-              paddingHorizontal: 20,
-              zIndex: 10,
-            },
-            buttonsContainerStyle,
-          ]}>
-          {/* Next Chapter/Book Button (in path mode) */}
-          {!isEmbedded && pathInProgress && (
-            <View style={{ flex: 1, marginRight: -100 }}>
-              <SideButton
-                title={
-                  isJustReadMode
-                    ? 'Finish Reading'
-                    : isAtEndChapter
-                      ? 'Complete Unit'
-                      : 'Next Chapter'
-                }
-                onPress={
-                  isJustReadMode
-                    ? handleFinishReading
-                    : isAtEndChapter
-                      ? handleFinishReading
-                      : navigateToNextChapter
-                }
-                disabled={!hasScrolledToBottom || loading}
+            ]}>
+            <ImageBackground
+              source={require('../assets/backgrounds/mainBackground2.png')}
+              style={{ width: '100%', height: '100%' }}
+            >
+              <Image
+                source={require('../assets/backgrounds/mainBackground2.png')}
+                style={{ width: '100%', height: '100%' }}
               />
-            </View>
-          )}
-          {/* Navigation Buttons */}
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
-            <TouchableOpacity
-              style={[
-                styles.navButton,
-                (currentChapter <= 1 || loading) && styles.disabledNavButton,
-              ]}
-              onPress={navigateToPreviousChapter}
-              disabled={currentChapter <= 1 || loading}
-              activeOpacity={0.7}>
-              <Text
-                style={[
-                  styles.navButtonText,
-                  (currentChapter <= 1 || loading) && styles.disabledButtonText,
-                ]}>
-                ←
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.navButton,
-                (loading || (pathInProgress && isAtEndChapter)) && styles.disabledNavButton,
-              ]}
-              onPress={navigateToNextChapter}
-              disabled={loading || (pathInProgress && isAtEndChapter)}
-              activeOpacity={0.7}>
-              <Text
-                style={[
-                  styles.navButtonText,
-                  (loading || (pathInProgress && isAtEndChapter)) && styles.disabledButtonText,
-                ]}>
-                →
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </RNAnimated.View>
+            </ImageBackground>
+          </Animated.View>
+          <SafeAreaView className="flex-1" style={{}}>
+            <View
+              className="bg-surfaceCream rounded-t-card "
+              style={{ width: "100%", height: "90%", position: 'absolute', bottom: 0, }}>
+              <View>
+                <Text
+                  className="font-feather-bold text-white"
+                  style={{
+                    fontSize: responsiveFontSize(3),
+                    fontWeight: "400",
+                    position: 'absolute',
+                    left: 20,
+                    top: -50
+                  }}
+                >
+                  Reading
+                </Text>
+                <View style={styles.headerLeft}>
+                  {pathInProgress && (
+                    <TouchableOpacity onPress={handleBackNavigation} style={styles.backButton}>
+                      <Text style={[styles.backButtonText, { color: THEME_COLORS[currentTheme].text }]}>
+                        ←
+                      </Text>
+                    </TouchableOpacity>
+                  )}
 
-        {/* Settings Modal for DEFAULT reader branch!!! */}
-        <Modal
-          visible={isModalVisible}
-          transparent
-          animationType="none"
-          onRequestClose={handleCloseModal}>
-          <TouchableWithoutFeedback onPress={handleCloseModal}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback>
-                <RNAnimated.View
-                  style={[
-                    styles.modalContent,
-                    {
-                      backgroundColor: THEME_COLORS[currentTheme].modalBackground,
-                      transform: [
-                        {
-                          translateY: slideAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [300, 0],
-                          }),
-                        },
-                      ],
-                    },
-                  ]}>
-                  <View
+                  <View style={styles.headerButton} >
+                    <TouchableOpacity onPress={handleOpenSelector} >
+                      <Text
+                        className="font-feather-bold text-textPrimary/30 text-center"
+                        style={{
+                          fontSize: responsiveFontSize(2),
+                          fontWeight: "600",
+                        }}
+                      >
+                        {effectiveChapterData
+                          ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}`
+                          : 'Loading...'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                </View>
+
+                <View style={[styles.headerRight, { position: "absolute", right: 10, top: -50 }]}>
+                  <TouchableOpacity onPress={handlePresentModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+                    <MaterialIcons
+                      name="settings"
+                      size={22}
+                      color="#795323"
+                      style={{ opacity: 0.4 }}
+                    />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <View
+              >
+                {effectiveChapterData && renderBibleContent(effectiveChapterData)}
+              </View>
+
+              {/* Bottom Navigation Row - Contains Next Chapter/Book and Nav Buttons */}
+              <RNAnimated.View
+                style={[
+                  {
+                    position: 'absolute',
+                    bottom: isEmbedded ? 100 : effectiveParams?.isFromDailyBread ? 50 : 100,
+                    left: 0,
+                    right: 0,
+                    flexDirection: 'row',
+                    justifyContent: 'flex-end',
+                    alignItems: 'center',
+                    paddingHorizontal: 20,
+                    zIndex: 10,
+                  },
+                  buttonsContainerStyle,
+                ]}>
+                {/* Next Chapter/Book Button (in path mode) */}
+                {!isEmbedded && pathInProgress && (
+                  <View style={{ flex: 1, marginRight: -100 }}>
+                    <SideButton
+                      title={
+                        isJustReadMode
+                          ? 'Finish Reading'
+                          : isAtEndChapter
+                            ? 'Complete Unit'
+                            : 'Next Chapter'
+                      }
+                      onPress={
+                        isJustReadMode
+                          ? handleFinishReading
+                          : isAtEndChapter
+                            ? handleFinishReading
+                            : navigateToNextChapter
+                      }
+                      disabled={!hasScrolledToBottom || loading}
+                    />
+                  </View>
+                )}
+                {/* Navigation Buttons */}
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
+                  <TouchableOpacity
                     style={[
-                      styles.modalHandle,
-                      { backgroundColor: THEME_COLORS[currentTheme].border },
+                      styles.navButton,
+                      (currentChapter <= 1 || loading) && styles.disabledNavButton,
                     ]}
-                  />
-
-                  {/* Card View Toggle */}
-                  <View style={styles.toggleContainer}>
-                    <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>
-                      Card View
-                    </Text>
-                    <Switch
-                      trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
-                      thumbColor={useCardView ? '#FFFFFF' : '#FFFFFF'}
-                      ios_backgroundColor="#E0E0E0"
-                      onValueChange={handleCardViewToggle}
-                      value={useCardView}
-                    />
-                  </View>
-
-                  {/* Font Size Controls */}
-                  <View style={styles.sliderContainer}>
-                    <Text style={[styles.sliderLabel, { color: THEME_COLORS[currentTheme].text }]}>
-                      A
-                    </Text>
-                    <Slider
-                      style={styles.slider}
-                      minimumValue={MIN_FONT_SIZE}
-                      maximumValue={MAX_FONT_SIZE}
-                      value={fontSize}
-                      onValueChange={handleFontSizeChange}
-                      minimumTrackTintColor="#DCB280"
-                      maximumTrackTintColor={THEME_COLORS[currentTheme].sliderTrack}
-                      thumbTintColor="#DCB280"
-                    />
+                    onPress={navigateToPreviousChapter}
+                    disabled={currentChapter <= 1 || loading}
+                    activeOpacity={0.7}>
                     <Text
-                      style={[styles.sliderLabelLarge, { color: THEME_COLORS[currentTheme].text }]}>
-                      A
+                      style={[
+                        styles.navButtonText,
+                        (currentChapter <= 1 || loading) && styles.disabledButtonText,
+                      ]}>
+                      ←
                     </Text>
-                  </View>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.navButton,
+                      (loading || (pathInProgress && isAtEndChapter)) && styles.disabledNavButton,
+                    ]}
+                    onPress={navigateToNextChapter}
+                    disabled={loading || (pathInProgress && isAtEndChapter)}
+                    activeOpacity={0.7}>
+                    <Text
+                      style={[
+                        styles.navButtonText,
+                        (loading || (pathInProgress && isAtEndChapter)) && styles.disabledButtonText,
+                      ]}>
+                      →
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </RNAnimated.View>
 
-                  {/* Line Height Controls */}
-                  <View style={styles.lineHeightContainer}>
-                    <View style={styles.lineHeightButtons}>
-                      {(['COMPACT', 'REGULAR', 'RELAXED'] as const).map((p) => (
-                        <TouchableOpacity
-                          key={p}
-                          style={[
-                            styles.lineHeightButton,
-                            lineHeightPreset === p && styles.lineHeightButtonSelected,
-                            { borderColor: THEME_COLORS[currentTheme].border },
-                          ]}
-                          onPress={() => handleLineHeightChange(p)}>
-                          <Text
-                            style={[
-                              styles.lineHeightButtonText,
-                              { color: THEME_COLORS[currentTheme].text },
-                              lineHeightPreset === p && styles.lineHeightButtonTextSelected,
-                            ]}>
-                            {p.charAt(0) + p.slice(1).toLowerCase()}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-
-                  {/* Theme Buttons */}
-                  <View style={styles.themeButtonsContainer}>
-                    {(Object.keys(THEME_COLORS) as ThemeType[]).map((k) => (
-                      <TouchableOpacity
-                        key={k}
+              {/* Settings Modal for DEFAULT reader branch!!! */}
+              <Modal
+                visible={isModalVisible}
+                transparent
+                animationType="none"
+                onRequestClose={handleCloseModal}>
+                <TouchableWithoutFeedback onPress={handleCloseModal}>
+                  <View style={styles.modalOverlay}>
+                    <TouchableWithoutFeedback>
+                      <RNAnimated.View
                         style={[
-                          styles.themeButton,
-                          { backgroundColor: THEME_COLORS[k].background },
-                          currentTheme === k && [
-                            styles.selectedThemeButton,
-                            { borderColor: THEME_COLORS[k].border },
-                          ],
-                        ]}
-                        onPress={() => handleThemeChange(k)}
-                      />
-                    ))}
+                          styles.modalContent,
+                          {
+                            backgroundColor: THEME_COLORS[currentTheme].modalBackground,
+                            transform: [
+                              {
+                                translateY: slideAnim.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [300, 0],
+                                }),
+                              },
+                            ],
+                          },
+                        ]}>
+                        <View
+                          style={[
+                            styles.modalHandle,
+                            { backgroundColor: THEME_COLORS[currentTheme].border },
+                          ]}
+                        />
+
+                        {/* Card View Toggle */}
+                        <View style={styles.toggleContainer}>
+                          <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>
+                            Card View
+                          </Text>
+                          <Switch
+                            trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
+                            thumbColor={useCardView ? '#FFFFFF' : '#FFFFFF'}
+                            ios_backgroundColor="#E0E0E0"
+                            onValueChange={handleCardViewToggle}
+                            value={useCardView}
+                          />
+                        </View>
+
+                        {/* Font Size Controls */}
+                        <View style={styles.sliderContainer}>
+                          <Text style={[styles.sliderLabel, { color: THEME_COLORS[currentTheme].text }]}>
+                            A
+                          </Text>
+                          <Slider
+                            style={styles.slider}
+                            minimumValue={MIN_FONT_SIZE}
+                            maximumValue={MAX_FONT_SIZE}
+                            value={fontSize}
+                            onValueChange={handleFontSizeChange}
+                            minimumTrackTintColor="#DCB280"
+                            maximumTrackTintColor={THEME_COLORS[currentTheme].sliderTrack}
+                            thumbTintColor="#DCB280"
+                          />
+                          <Text
+                            style={[styles.sliderLabelLarge, { color: THEME_COLORS[currentTheme].text }]}>
+                            A
+                          </Text>
+                        </View>
+
+                        {/* Line Height Controls */}
+                        <View style={styles.lineHeightContainer}>
+                          <View style={styles.lineHeightButtons}>
+                            {(['COMPACT', 'REGULAR', 'RELAXED'] as const).map((p) => (
+                              <TouchableOpacity
+                                key={p}
+                                style={[
+                                  styles.lineHeightButton,
+                                  lineHeightPreset === p && styles.lineHeightButtonSelected,
+                                  { borderColor: THEME_COLORS[currentTheme].border },
+                                ]}
+                                onPress={() => handleLineHeightChange(p)}>
+                                <Text
+                                  style={[
+                                    styles.lineHeightButtonText,
+                                    { color: THEME_COLORS[currentTheme].text },
+                                    lineHeightPreset === p && styles.lineHeightButtonTextSelected,
+                                  ]}>
+                                  {p.charAt(0) + p.slice(1).toLowerCase()}
+                                </Text>
+                              </TouchableOpacity>
+                            ))}
+                          </View>
+                        </View>
+
+                        {/* Theme Buttons */}
+                        <View style={styles.themeButtonsContainer}>
+                          {(Object.keys(THEME_COLORS) as ThemeType[]).map((k) => (
+                            <TouchableOpacity
+                              key={k}
+                              style={[
+                                styles.themeButton,
+                                { backgroundColor: THEME_COLORS[k].background },
+                                currentTheme === k && [
+                                  styles.selectedThemeButton,
+                                  { borderColor: THEME_COLORS[k].border },
+                                ],
+                              ]}
+                              onPress={() => handleThemeChange(k)}
+                            />
+                          ))}
+                        </View>
+                      </RNAnimated.View>
+                    </TouchableWithoutFeedback>
                   </View>
-                </RNAnimated.View>
-              </TouchableWithoutFeedback>
+                </TouchableWithoutFeedback>
+              </Modal>
+
+
+
             </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-      </SafeAreaView>
+
+
+
+
+
+          </SafeAreaView>
+        </Animated.View >
+      </>
     );
   }
 };
@@ -1506,11 +1561,12 @@ const styles = StyleSheet.create<BibleReaderStyles>({
     fontSize: 24,
   },
   headerButton: {
-    backgroundColor: 'rgba(220, 178, 128, 0.2)',
-    borderRadius: 15,
-    marginRight: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 5,
+    alignSelf: "center",
+    width: "100%",
+    height: 50,
+    justifyContent: "center",
+    alignItems: "center",
+
   },
   headerButtonText: {
     color: '#3C584A',

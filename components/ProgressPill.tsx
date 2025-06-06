@@ -18,7 +18,7 @@ const ProgressPill: React.FC<ProgressPillProps> = ({
   const safeValue = Math.max(0, Math.min(100, value));
 
   return (
-    <View className="flex-row items-center bg-surfaceCream rounded-full h-10 border border-border shadow-card overflow-hidden">
+    <View className="flex-row items-center bg-surfaceCream rounded-full h-8 border border-brown/15 border-[1px] shadow-card overflow-hidden">
       {/* Progress background indicator */}
       <View
         style={{

@@ -5,6 +5,7 @@ import {
   Dimensions,
   Easing,
   Image,
+  ImageBackground,
   Platform,
   SafeAreaView,
   Text,
@@ -36,6 +37,7 @@ import analytics from '~/utils/analytics';
 import WidgetHowToSheet from '../../components/WidgetHowToSheet';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import { getLevelData } from '../../utils/levelUtils';
+import bibleIcon from '../../assets/icons/bibleIcon.png';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
 const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
@@ -52,13 +54,13 @@ const pathBg = imageAssets[2];
 const journalBg = imageAssets[3];
 const breadIcon = imageAssets[4];
 const dropIcon = imageAssets[5];
-const quillIcon = imageAssets[6];
 const flameIcon = imageAssets[7];
 const gemIcon = imageAssets[8];
 const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
 
 import darkBg from '../../assets/backgrounds/defaultBackgroundDark.png';
+import { responsiveHeight } from 'react-native-responsive-dimensions';
 
 // Custom toast config with explicit styling
 const toastConfig: ToastConfig = {
@@ -970,10 +972,15 @@ export default function HomeScreen() {
             { position: 'absolute', width: '100%', height: '100%' },
             { opacity: grassOpacityAnim },
           ]}>
-          <Image
-            source={new Date().getHours() >= 19 ? darkBg : grassBg}
+          <ImageBackground
+            source={require('../../assets/backgrounds/mainBackground2.png')}
             style={{ width: '100%', height: '100%' }}
-          />
+          >
+            <Image
+              source={require('../../assets/backgrounds/mainBackground2.png')}
+              style={{ width: '100%', height: '100%' }}
+            />
+          </ImageBackground>
         </Animated.View>
 
         <Animated.View
@@ -998,10 +1005,15 @@ export default function HomeScreen() {
             { position: 'absolute', width: '100%', height: '100%' },
             { opacity: grassOpacityAnim },
           ]}>
-          <Image
-            source={new Date().getHours() >= 19 ? darkBg : grassBg}
+          <ImageBackground
+            source={require('../../assets/backgrounds/mainBackground2.png')}
             style={{ width: '100%', height: '100%' }}
-          />
+          >
+            <Image
+              source={require('../../assets/backgrounds/mainBackground2.png')}
+              style={{ width: '100%', height: '100%' }}
+            />
+          </ImageBackground>
         </Animated.View>
 
         <Animated.View
@@ -1057,17 +1069,15 @@ export default function HomeScreen() {
               style={{ opacity: headerDefaultOpacityAnim }}
               pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}>
               <View className="flex-row items-center flex-1 justify-between">
-                {!isLevelPillExpanded && (
-                  <Text
-                    className="text-h1 font-feather text-white tracking-wide right-2"
-                    style={{
-                      textShadowColor: 'rgba(0, 0, 0, 0.2)',
-                      textShadowOffset: { width: 0, height: 1 },
-                      textShadowRadius: 2,
-                    }}>
-                    {'Shepherd'}
-                  </Text>
-                )}
+                <Text
+                  className="text-h1 font-feather text-white tracking-wide right-2"
+                  style={{
+                    textShadowColor: 'rgba(0, 0, 0, 0.2)',
+                    textShadowOffset: { width: 0, height: 1 },
+                    textShadowRadius: 2,
+                  }}>
+                  {'Shepherd'}
+                </Text>
                 <View className="flex-row gap-2 justify-end ml-2">
                   <TouchableOpacity
                     onPress={() => {
@@ -1100,110 +1110,107 @@ export default function HomeScreen() {
                       ]).start();
                     }}>
                     <View style={{ position: 'relative', zIndex: 2 }}>
-                      {!isLevelPillExpanded ? (
-                        <ProgressPill
-                          value={0}
-                          label={(lambHearts > 0 ? levelInfo.level : '0')?.toString?.()}
-                          icon={starIcon}
-                        />
-                      ) : (
-                        <Animated.View
-                          className="bg-pillBorder rounded-full overflow-hidden flex-row items-center justify-between -mt-8 p-2"
-                          style={{
-                            position: 'absolute',
-                            right: -36,
-                            width: levelPillWidthAnim.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [40, pillExpandedWidth],
-                            }),
-                          }}
-                          onLayout={() => {
-                            // Debug log to verify the XP calculation
-                            console.log(
-                              `Level Pill Debug - Level: ${levelInfo.level}, Total XP: ${levelInfo.xp}`
-                            );
-                            console.log(
-                              `XP to next level: ${levelInfo.xpProgress}/${levelInfo.xpNeeded} (${Math.round(levelInfo.progress)}%)`
-                            );
-                          }}>
-                          <View className="bg-white w-8 h-8 rounded-full items-center justify-center">
-                            <Image source={starIcon} className="w-7 h-5" />
-                          </View>
-                          <Animated.View
-                            className="flex-1 pl-2"
-                            style={{ opacity: levelPillOpacityAnim }}>
-                            <View className="flex-row items-center justify-between">
-                              <Text className="font-feather text-body text-description">
-                                Level {levelInfo.level}
-                              </Text>
-                              <Text className="font-din text-xs text-description mt-0.5 mr-2">
-                                {/* Show actual XP values: current XP / XP needed for next level */}
-                                {levelInfo.xp}/{levelInfo.xpForNextLevel} XP
-                              </Text>
-                            </View>
 
-                            <View className="h-3 bg-lightYellow rounded-full overflow-hidden mb-1 mr-2">
-                              <View
-                                className="h-full bg-accentGold rounded-full"
-                                style={{
-                                  width: `${Math.max(Math.min(levelInfo.progress, 100), 1)}%`,
-                                }}
-                              />
-                            </View>
-                          </Animated.View>
-                          <Animated.View style={{ opacity: levelPillOpacityAnim }} className="ml-2">
-                            <TouchableOpacity
-                              onPress={() => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                analytics.logEvent('HomeScreen_Tapped_LevelInfo');
-                                setShowExplainerModal(true);
+                      <ProgressPill
+                        value={0}
+                        label={(lambHearts > 0 ? levelInfo.level : '0')?.toString?.()}
+                        icon={heartIcon}
+                      />
+
+                      {isLevelPillExpanded && <Animated.View
+                        className="bg-surfaceCreamLight rounded-xl overflow-hidden flex-row items-center p-2"
+                        style={{
+                          position: 'absolute',
+                          top: 40,
+                          left: '50%',
+                          transform: [
+                            {
+                              translateX: levelPillWidthAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [0, -pillExpandedWidth / 2],
+                              }),
+                            },
+                          ],
+                          width: levelPillWidthAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: [40, pillExpandedWidth],
+                          }),
+                        }}
+                        onLayout={() => {
+                          // Debug log to verify the XP calculation
+                          console.log(
+                            `Level Pill Debug - Level: ${levelInfo.level}, Total XP: ${levelInfo.xp}`
+                          );
+                          console.log(
+                            `XP to next level: ${levelInfo.xpProgress}/${levelInfo.xpNeeded} (${Math.round(levelInfo.progress)}%)`
+                          );
+                        }}>
+
+                        <View style={{ flexDirection: "row", alignItems: "center", paddingRight: 10 }} >
+                          <Image source={heartIcon} className="w-7 h-7" />
+                          <Image source={starIcon} tintColor={"#FF8800"} className="w-7 h-7" />
+                        </View>
+
+                        <View style={{ width: "80%" }}>
+
+                          <View className="h-2 bg-red/25 rounded-md overflow-hidden">
+                            <View
+                              className="h-full bg-red rounded-full"
+                              style={{ width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%` }}
+                            />
+                          </View>
+
+
+                          <View className="h-2 bg-orange/25 rounded-full overflow-hidden mt-1 ">
+                            <View
+                              className="h-full bg-orange rounded-full"
+                              style={{
+                                width: `${Math.max(Math.min(levelInfo.progress, 100), 1)}%`,
                               }}
-                              activeOpacity={0.7}
-                              className="w-6 h-6 rounded-full bg-white/80 items-center justify-center">
-                              <Ionicons name="information" size={14} color="#B89B4C" />
-                            </TouchableOpacity>
-                          </Animated.View>
-                        </Animated.View>
-                      )}
+                            />
+                          </View>
+
+                        </View>
+
+                      </Animated.View>}
                     </View>
                   </TouchableOpacity>
-                  {!isLevelPillExpanded && (
-                    <>
-                      <TouchableOpacity
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          analytics.logEvent('HomeScreen_Tapped_Star');
-                          Toast.show({
-                            type: 'info',
-                            text1: 'Increase your streak!',
-                            text2: 'Complete your daily bread reading to build your streak.',
-                            position: 'top',
-                            visibilityTime: 4000,
-                          });
-                        }}>
-                        <ProgressPill
-                          value={0}
-                          label={streakCount?.toString?.()}
-                          icon={flameIcon}
-                        />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          analytics.logEvent('HomeScreen_Tapped_Gems');
-                          // Show toast message using Toast component
-                          Toast.show({
-                            type: 'info',
-                            text1: 'Unlock skins at lvl 10!',
-                            text2: 'Customize your lamb with special skins from the shop.',
-                            position: 'top',
-                            visibilityTime: 4000,
-                          });
-                        }}>
-                        <ProgressPill value={0} label={gens?.toString?.()} icon={gemIcon} />
-                      </TouchableOpacity>
-                    </>
-                  )}
+                  <>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        analytics.logEvent('HomeScreen_Tapped_Gems');
+                        // Show toast message using Toast component
+                        Toast.show({
+                          type: 'info',
+                          text1: 'Unlock skins at lvl 10!',
+                          text2: 'Customize your lamb with special skins from the shop.',
+                          position: 'top',
+                          visibilityTime: 4000,
+                        });
+                      }}>
+                      <ProgressPill value={0} label={gens?.toString?.()} icon={gemIcon} />
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        analytics.logEvent('HomeScreen_Tapped_Star');
+                        Toast.show({
+                          type: 'info',
+                          text1: 'Increase your streak!',
+                          text2: 'Complete your daily bread reading to build your streak.',
+                          position: 'top',
+                          visibilityTime: 4000,
+                        });
+                      }}>
+                      <ProgressPill
+                        value={0}
+                        label={streakCount?.toString?.()}
+                        icon={dropIcon}
+                      />
+                    </TouchableOpacity>
+
+                  </>
                 </View>
               </View>
             </Animated.View>
@@ -1339,56 +1346,71 @@ export default function HomeScreen() {
               }),
               opacity: bottomCardOpacity,
             }}>
+            <View className="w-[50px] h-[5] bg-textPrimary/15 rounded-full" style={{ position: 'absolute', top: 10, alignSelf: "center" }} />
+
+
+
+
             <ScrollView
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 120 }}>
-              <View className="flex-row items-center gap-2.5 mb-0 ">
-                <TouchableOpacity
-                  onPress={() => {
-                    analytics.logEvent('HomeScreen_Tapped_Hearts', {});
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    setShowHeartsModal(true);
-                  }}
-                  activeOpacity={0.7}
-                  className="flex-row items-center">
-                  <Image source={heartIcon} className="w-7 h-7" />
-                  <Text className="font-feather text-body text-red ">{lambHearts}</Text>
-                </TouchableOpacity>
 
-                <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
-                  <View
-                    className="h-full bg-red rounded-full"
-                    style={{ width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%` }}
+              <View className="flex-row items-center justify-between " style={{ marginTop: responsiveHeight(2), }}>
+                {/* Circle/checkmark indicator for Daily Bread */}
+                <View style={{ width: 22, marginRight: 10, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {readingCompleted ? (
+                    <Image source={require('../../assets/icons/checkMini.png')} style={{ width: 20, height: 20, resizeMode: 'contain' }} />
+                  ) : <View className='bg-textPrimary/15' style={{ width: 20, height: 20, borderRadius: 12, }} />}
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <SecondaryButton
+                    icon={breadIcon}
+                    title="Daily Bread – Read"
+                    subtitle="Feed your soul with scripture"
+                    points={25}
+                    onPress={handleReadPress}
+                    completed={readingCompleted}
                   />
                 </View>
               </View>
-
-              <SecondaryButton
-                icon={breadIcon}
-                title="Daily Bread – Read"
-                subtitle="Feed your soul with scripture"
-                points={25}
-                onPress={handleReadPress}
-                completed={readingCompleted}
-              />
-              <SecondaryButton
-                icon={dropIcon}
-                title="Living Water – Pray"
-                subtitle="Refresh your spirit with prayer"
-                points={25}
-                onPress={handlePrayerPress}
-                completed={prayerCompleted}
-                disabled={!readingCompleted}
-              />
-              <SecondaryButton
-                icon={quillIcon}
-                title="Quiet Time – Reflect"
-                subtitle="Pause and meet with God"
-                points={25}
-                onPress={handleReflectionPress}
-                completed={reflectionCompleted}
-                disabled={!readingCompleted}
-              />
+              <View className="flex-row items-center " style={{ marginTop: responsiveHeight(2) }}>
+                {/* Circle/checkmark indicator for Living Water */}
+                <View style={{ width: 22, marginRight: 10, alignItems: 'center', justifyContent: 'center', }}>
+                  {prayerCompleted ? (
+                    <Image source={require('../../assets/icons/checkMini.png')} style={{ width: 20, height: 20, resizeMode: 'contain' }} />
+                  ) : <View className='bg-textPrimary/15' style={{ width: 20, height: 20, borderRadius: 12, }} />}
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <SecondaryButton
+                    icon={dropIcon}
+                    title="Living Water – Pray"
+                    subtitle="Feed your soul with scripture"
+                    points={25}
+                    onPress={handlePrayerPress}
+                    completed={prayerCompleted}
+                    disabled={!readingCompleted}
+                  />
+                </View>
+              </View>
+              <View className="flex-row items-center" style={{ marginTop: responsiveHeight(2) }}>
+                {/* Circle/checkmark indicator for Quiet Time */}
+                <View style={{ width: 22, marginRight: 10, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  {reflectionCompleted ? (
+                    <Image source={require('../../assets/icons/checkMini.png')} style={{ width: 20, height: 20, resizeMode: 'contain' }} />
+                  ) : <View className='bg-textPrimary/15' style={{ width: 20, height: 20, borderRadius: 12, }} />}
+                </View>
+                <View style={{ flex: 1, }}>
+                  <SecondaryButton
+                    icon={bibleIcon}
+                    title="Quiet Time – Reflect"
+                    subtitle="Feed your soul with scripture"
+                    points={25}
+                    onPress={handleReflectionPress}
+                    completed={reflectionCompleted}
+                    disabled={!readingCompleted}
+                  />
+                </View>
+              </View>
 
 
             </ScrollView>
@@ -1407,8 +1429,8 @@ export default function HomeScreen() {
             visible={showExplainerModal}
             onClose={() => setShowExplainerModal(false)}
           />
-        </SafeAreaView>
-      </Animated.View>
+        </SafeAreaView >
+      </Animated.View >
       <Toast config={toastConfig} />
     </>
   );
