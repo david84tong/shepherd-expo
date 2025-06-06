@@ -370,38 +370,34 @@ export default function SaveProgressScreen() {
               { merge: true }
             );
           }
-          await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
-          await syncUser(user);
           // User exists and data has been fetched in the auth hook
           // Just mark onboarding as completed and navigate to tabs
           await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+          await syncUser(user);
 
           // Animate out all components before navigation using Reanimated
           headerOpacity.value = withTiming(0, { duration: 400 });
           benefitsOpacity.value = withTiming(0, { duration: 400 });
           buttonsOpacity.value = withTiming(0, { duration: 400 });
-
-          // Navigate after animation duration
-          setTimeout(() => {
-            // Check if user is pro before navigating
-            const isProMember = useUserStore.getState().getProStatus() === 'pro';
-            if (!isProMember) {
-              setTimeout(() => {
-                router.replace('/PricingScreen?fromLoading=true&animateFromBottom=true');
-              }, 1000);
-            } else {
+          // Check if user is pro before navigating
+          const isProMember = useUserStore.getState().getProStatus() === 'pro';
+          if (!isProMember) {
+            setTimeout(() => {
+              router.replace('/PricingScreen?fromLoading=true&animateFromBottom=true');
+            }, 1000);
+          } else {
+            setTimeout(() => {
               router.replace('/(tabs)');
-            }
-          }, 1000);
+            }, 1000);
+          }
         } else {
           // In onboarding mode, create new user from responses
           console.log('Creating user...');
           await createUserFromResponses(user.uid, user.displayName || 'Anonymous User');
+          console.log('User created from responses');
           await completeOnboarding();
+          console.log('Onboarding completed');
         }
-      } else {
-        console.log('Apple sign in returned no user');
-        throw new Error('No user data returned from Apple');
       }
     } catch (error: any) {
       console.log('Apple sign in error:', error);
@@ -409,7 +405,22 @@ export default function SaveProgressScreen() {
       // Provide more specific feedback based on the error
       let errorMessage = 'There was a problem signing in with Apple.';
 
-      if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
+      if (error.message?.includes('Would you like to login instead?')) {
+        Alert.alert('Account Exists', 'An account with this Apple ID already exists.', [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Login',
+            onPress: () => {
+              setIsLoginMode(true);
+              AsyncStorage.setItem('isLoginMode', 'true');
+            },
+          },
+        ]);
+        return;
+      } else if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
         errorMessage = 'Sign in was canceled. Please try again.';
       } else if (error.message?.includes('network')) {
         errorMessage = 'Network error. Please check your internet connection and try again.';
@@ -422,7 +433,6 @@ export default function SaveProgressScreen() {
       } else if (error.message?.includes('No account found')) {
         errorMessage =
           "We couldn't find an account with this Apple ID. Please create a new account instead.";
-        setShowNoAccountToast(true);
       } else if (error.message?.includes('Failed to fetch your account data')) {
         errorMessage = "We couldn't retrieve your account data. Please try again.";
       }
@@ -434,11 +444,13 @@ export default function SaveProgressScreen() {
         error: error.message,
       });
 
-      Alert.alert(
-        'Sign In Failed',
-        `${errorMessage} ${isLoginMode ? '' : 'You can try again or use the anonymous option to continue.'}`,
-        [{ text: 'OK' }]
-      );
+      if (!error.message?.includes('Would you like to login instead?')) {
+        Alert.alert(
+          'Sign In Failed',
+          `${errorMessage} ${isLoginMode ? '' : 'You can try again or use the anonymous option to continue.'}`,
+          [{ text: 'OK' }]
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -490,9 +502,6 @@ export default function SaveProgressScreen() {
           await completeOnboarding();
           console.log('Onboarding completed');
         }
-      } else {
-        console.log('Google sign in returned no user');
-        throw new Error('No user data returned from Google');
       }
     } catch (error: any) {
       console.log('Google sign in error:', error);
@@ -500,7 +509,22 @@ export default function SaveProgressScreen() {
       // Provide more specific feedback based on the error
       let errorMessage = 'There was a problem signing in with Google.';
 
-      if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
+      if (error.message?.includes('Would you like to login instead?')) {
+        Alert.alert('Account Exists', 'An account with this Google account already exists.', [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Login',
+            onPress: () => {
+              setIsLoginMode(true);
+              AsyncStorage.setItem('isLoginMode', 'true');
+            },
+          },
+        ]);
+        return;
+      } else if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
         errorMessage = 'Sign in was canceled. Please try again.';
       } else if (error.message?.includes('network')) {
         errorMessage = 'Network error. Please check your internet connection and try again.';
@@ -520,11 +544,13 @@ export default function SaveProgressScreen() {
         error: error.message,
       });
 
-      Alert.alert(
-        'Sign In Failed',
-        `${errorMessage} ${isLoginMode ? '' : 'You can try again or use the anonymous option to continue.'}`,
-        [{ text: 'OK' }]
-      );
+      if (!error.message?.includes('Would you like to login instead?')) {
+        Alert.alert(
+          'Sign In Failed',
+          `${errorMessage} ${isLoginMode ? '' : 'You can try again or use the anonymous option to continue.'}`,
+          [{ text: 'OK' }]
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -614,8 +640,21 @@ export default function SaveProgressScreen() {
           console.log('Signup error:', signupError.message);
           let errorMessage = 'Unable to create account. Please try again.';
 
-          if (signupError.code === 'auth/email-already-in-use') {
-            errorMessage = 'An account already exists with this email. Please sign in instead.';
+          if (signupError.message?.includes('Would you like to login instead?')) {
+            Alert.alert('Account Exists', 'An account with this email already exists.', [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+              {
+                text: 'Login',
+                onPress: () => {
+                  setIsLoginMode(true);
+                  AsyncStorage.setItem('isLoginMode', 'true');
+                },
+              },
+            ]);
+            return;
           } else if (signupError.code === 'auth/invalid-email') {
             errorMessage = 'Please enter a valid email address.';
           } else if (signupError.code === 'auth/operation-not-allowed') {

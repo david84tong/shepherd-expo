@@ -57,6 +57,8 @@ import Animated, {
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 import { useHomeStore } from '~/app/stores/homeStore';
+import { syncStreakDataToWidget } from '~/utils/widgetSync';
+import dayjs from 'dayjs';
 
 interface SettingsSheetProps {
   settingsSheetRef: React.RefObject<SettingsSheetRef>;
@@ -232,8 +234,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
       // Apple sign-out: no explicit revoke needed in Firebase
       // (Apple does not expose logout in same way as Google)
+
       useUserStore.getState().resetUserStore();
       useHomeStore.getState().resetCompletionStates();
+      syncStreakDataToWidget(0, dayjs()?.toDate());
       bottomSheetRef.current?.close();
       setIsModalDimActive(false);
 

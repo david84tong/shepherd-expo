@@ -86,7 +86,7 @@ export default function LoginScreen() {
 
       // Remove the onboarding completed key
       await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
-      await AsyncStorage.removeItem('isLoginButtonPressed');
+      await AsyncStorage.removeItem('isLoginMode');
       // Navigate to onboarding with a slight delay for smoother transition
       setTimeout(() => {
         router.replace('/onboarding/1');

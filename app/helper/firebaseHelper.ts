@@ -3,6 +3,7 @@ import firestore, { Timestamp } from '@react-native-firebase/firestore';
 import { UserDoc } from '../models/User';
 import { syncUserDocument, batchUpdate } from '../../utils/firestore';
 import { useUserStore } from '../stores/userStore';
+import { syncStreakDataToWidget } from '../../utils/widgetSync';
 
 // Constants
 const USER_FETCH_CACHE_DURATION = 5000; // 5 seconds
@@ -133,6 +134,24 @@ export const fetchFromFirestore = async ({
 
         // Sync the data to store
         useUserStore.getState().syncFirestoreData(convertedUserData);
+
+        // Sync streak data to widget
+        const syncStreakWithWidget = (streakCount: number, lastActivityDate: any) => {
+          let activityDate: Date | null = null;
+          if (lastActivityDate) {
+            activityDate =
+              lastActivityDate instanceof Date ? lastActivityDate : lastActivityDate.toDate();
+          }
+          syncStreakDataToWidget(streakCount, activityDate).catch((error: Error) =>
+            console.log('Failed to sync streak with widget:', error)
+          );
+        };
+
+        // Sync streak data to widget after store sync
+        syncStreakWithWidget(
+          convertedUserData.streakCount || 0,
+          convertedUserData.lastActivityDate
+        );
 
         return { success: true, data: convertedUserData };
       }
