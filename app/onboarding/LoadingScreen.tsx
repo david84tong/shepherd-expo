@@ -1,5 +1,13 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Animated, Easing, Dimensions, ActivityIndicator, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  Animated,
+  Easing,
+  Dimensions,
+  ActivityIndicator,
+  StatusBar,
+} from 'react-native';
 import { GLView, ExpoWebGLRenderingContext } from 'expo-gl';
 import { Renderer } from 'expo-three';
 // @ts-ignore: If you get type errors for 'three', install @types/three for type support
@@ -11,17 +19,17 @@ import { useRouter } from 'expo-router';
 const { width, height } = Dimensions.get('window');
 
 const ORANGE = '#FCD34D';
-const DARK_BG = '#FFF4D9';
+const DARK_BG = '#FDEBB8';
 const TEXT_PRIMARY = '#3C584A';
 const DESCRIPTION = '#B89B4C';
 const GRAY_400 = '#9ca3af';
 const GRAY_500 = '#6b7280';
 
 const LOADING_POINTS = [
-  "Saving your responses",
-  "Encrypting your data",
-  "Sprinkling some holy water",
-  "Generating your custom bible study plan"
+  'Saving your responses',
+  'Encrypting your data',
+  'Sprinkling some holy water',
+  'Generating your custom bible study plan',
 ];
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -248,7 +256,7 @@ export default function LoadingScreen() {
           if (geometry) geometry.dispose();
           if (material) material.dispose();
           if (plane) scene?.remove(plane);
-        }
+        },
       };
     } catch (error) {
       console.error('GLView error:', error);
@@ -265,7 +273,9 @@ export default function LoadingScreen() {
   }, []);
 
   return (
-    <View className="flex-1 items-center justify-center bg-surfaceCream" style={{ backgroundColor: DARK_BG }}>
+    <View
+      className="flex-1 items-center justify-center bg-surfaceCream"
+      style={{ backgroundColor: DARK_BG }}>
       <StatusBar translucent backgroundColor="transparent" />
       {/* Glowing border background */}
       <GLView
@@ -310,15 +320,25 @@ export default function LoadingScreen() {
               origin="60,60"
             />
           </Svg>
-          <Text className="absolute top-0 left-0 w-[120px] h-[120px] text-center text-2xl font-feather text-accentGold flex items-center justify-center" style={{ lineHeight: 120, color: ORANGE }}>{Math.round((currentStep / LOADING_POINTS.length) * 100)}%</Text>
+          <Text
+            className="absolute top-0 left-0 w-[120px] h-[120px] text-center text-2xl font-feather text-accentGold flex items-center justify-center"
+            style={{ lineHeight: 120, color: ORANGE }}>
+            {Math.round((currentStep / LOADING_POINTS.length) * 100)}%
+          </Text>
         </View>
 
         {/* Headline and subheadline */}
-        <Text className="text-3xl font-feather text-center mb-2" style={{ color: TEXT_PRIMARY }}>Just a moment</Text>
-        <Text className="text-lg font-din text-center mb-8" style={{ color: DESCRIPTION }}>Building a personalized plan</Text>
+        <Text className="text-3xl font-feather text-center mb-2" style={{ color: TEXT_PRIMARY }}>
+          Just a moment
+        </Text>
+        <Text className="text-lg font-din text-center mb-8" style={{ color: DESCRIPTION }}>
+          Building a personalized plan
+        </Text>
 
         {/* Checklist directly below */}
-        <View className="w-[75%] min-h-[160px] flex-col justify-start self-center" style={{ zIndex: 1, }}>
+        <View
+          className="w-[75%] min-h-[160px] flex-col justify-start self-center"
+          style={{ zIndex: 1 }}>
           {checklist.map((item, idx) => (
             <Animated.View
               key={item.label}
@@ -333,8 +353,7 @@ export default function LoadingScreen() {
                   },
                 ],
               }}
-              className="flex-row items-start mb-4"
-            >
+              className="flex-row items-start mb-4">
               {item.status === 'done' && (
                 <Ionicons name="checkmark-circle" size={24} color={ORANGE} className="mr-2" />
               )}
@@ -350,8 +369,7 @@ export default function LoadingScreen() {
                         }),
                       },
                     ],
-                  }}
-                >
+                  }}>
                   <Svg height="24" width="24">
                     <Circle
                       cx="12"
@@ -383,8 +401,10 @@ export default function LoadingScreen() {
               )}
               <Text
                 className={`text-lg font-din ${item.status === 'done' || item.status === 'loading' ? '' : 'text-gray-400'}`}
-                style={{ color: item.status === 'done' || item.status === 'loading' ? TEXT_PRIMARY : GRAY_400 }}
-              >
+                style={{
+                  color:
+                    item.status === 'done' || item.status === 'loading' ? TEXT_PRIMARY : GRAY_400,
+                }}>
                 {item.label}
               </Text>
             </Animated.View>
@@ -394,5 +414,3 @@ export default function LoadingScreen() {
     </View>
   );
 }
-
-

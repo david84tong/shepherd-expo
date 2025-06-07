@@ -523,7 +523,7 @@ export default function RootLayout() {
   console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
       <BottomSheetModalProvider>
         {visibleForceUpdate ? (
           <ForceUpdateModal visible={visibleForceUpdate} />
@@ -534,7 +534,7 @@ export default function RootLayout() {
                 headerShown: false,
                 animation: 'fade',
                 animationDuration: 200,
-                contentStyle: { backgroundColor: '#FFF4D9' },
+                contentStyle: { backgroundColor: '#FDEBB8' },
               }}
             />
 

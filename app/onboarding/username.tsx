@@ -1,7 +1,15 @@
 import { useAssets } from 'expo-asset';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { View, Text, TextInput, Keyboard, ActivityIndicator, Platform, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Keyboard,
+  ActivityIndicator,
+  Platform,
+  StatusBar,
+} from 'react-native';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
@@ -123,7 +131,7 @@ export default function OnboardingUsernameScreen() {
   const screenStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
     flex: 1,
-    backgroundColor: '#FFF4D9',
+    backgroundColor: '#FDEBB8',
   }));
 
   // Create animated styles for each component
@@ -228,15 +236,13 @@ export default function OnboardingUsernameScreen() {
             autoCapitalize="none"
             autoCorrect={false}
           />
-          {error && (
-            <Text className="font-din text-sm text-red-500 mt-2 text-center">
-              {error}
-            </Text>
-          )}
+          {error && <Text className="font-din text-sm text-red-500 mt-2 text-center">{error}</Text>}
         </Animated.View>
 
         {/* Continue Button */}
-        <Animated.View style={buttonStyle} className={`mt-8 ${isKeyboardVisible ? 'mb-4' : 'mb-8'}`}>
+        <Animated.View
+          style={buttonStyle}
+          className={`mt-8 ${isKeyboardVisible ? 'mb-4' : 'mb-8'}`}>
           <PrimaryButton
             title="Continue"
             onPress={handleContinue}

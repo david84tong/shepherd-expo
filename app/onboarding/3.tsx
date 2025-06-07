@@ -46,7 +46,7 @@ export default function OnboardingIntentScreen() {
 
   // Log screen view when component mounts
   useEffect(() => {
-    analytics.logEvent("OnboardingIntentScreen_Viewed");
+    analytics.logEvent('OnboardingIntentScreen_Viewed');
   }, []);
 
   // Run animations only once during initial layout
@@ -103,7 +103,7 @@ export default function OnboardingIntentScreen() {
   const screenStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
     flex: 1,
-    backgroundColor: '#FFF4D9', // Explicitly set the cream background color
+    backgroundColor: '#FDEBB8', // Explicitly set the cream background color
   }));
 
   // Create animated styles for each component
@@ -141,10 +141,10 @@ export default function OnboardingIntentScreen() {
       console.log('Haptics not available');
     }
 
-    analytics.logEvent("OnboardingIntentScreen_Tapped_Option", {
+    analytics.logEvent('OnboardingIntentScreen_Tapped_Option', {
       value: intent,
     });
-    setSelectedIntents(prev => {
+    setSelectedIntents((prev) => {
       const newSelection = prev.includes(intent)
         ? prev.filter((i) => i !== intent)
         : [...prev, intent];
@@ -224,7 +224,9 @@ export default function OnboardingIntentScreen() {
 
         {/* Buttons Container - with padding at bottom to make space for fixed button */}
         <Animated.View style={buttonsStyle} className="space-y-4 mt-8 mb-20">
-          <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: 120 }}
+            showsVerticalScrollIndicator={false}>
             {buttons.map((button) => (
               <Pressable
                 key={button.id}
@@ -242,15 +244,18 @@ export default function OnboardingIntentScreen() {
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="font-feather text-lg text-textPrimary">{button.title}</Text>
-                  <Text className="font-din text-md text-description mt-1">{button.description}</Text>
+                  <Text className="font-din text-md text-description mt-1">
+                    {button.description}
+                  </Text>
                 </View>
                 <View
                   className={`
                 w-6 h-6 rounded-full border-2 items-center justify-center
-                ${selectedIntents.includes(button.id)
-                      ? 'bg-accentGold border-accentGold'
-                      : 'border-description'
-                    }
+                ${
+                  selectedIntents.includes(button.id)
+                    ? 'bg-accentGold border-accentGold'
+                    : 'border-description'
+                }
               `}>
                   {selectedIntents.includes(button.id) && (
                     <Ionicons name="checkmark" size={16} color="white" />

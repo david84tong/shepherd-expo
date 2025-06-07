@@ -67,7 +67,7 @@ const toastConfig: ToastConfig = {
   success: ({ text1, text2 }: ToastConfigParams<any>) => (
     <View
       style={{
-        backgroundColor: '#FFF4D9',
+        backgroundColor: '#FDEBB8',
         borderRadius: 12,
         paddingHorizontal: 16,
         paddingVertical: 12,
@@ -98,7 +98,7 @@ const toastConfig: ToastConfig = {
   error: ({ text1, text2 }: ToastConfigParams<any>) => (
     <View
       style={{
-        backgroundColor: '#FFF4D9',
+        backgroundColor: '#FDEBB8',
         borderRadius: 12,
         paddingHorizontal: 16,
         paddingVertical: 12,
@@ -129,7 +129,7 @@ const toastConfig: ToastConfig = {
   info: ({ text1, text2 }: ToastConfigParams<any>) => (
     <View
       style={{
-        backgroundColor: '#FFF4D9',
+        backgroundColor: '#FDEBB8',
         borderRadius: 12,
         paddingHorizontal: 16,
         paddingVertical: 12,

@@ -20,7 +20,8 @@ export default function OnboardingBibleFamiliarityScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
   const { setExperienceLevel } = useUserStore();
-  const [selectedOption, setSelectedOption] = useState<OnboardingResponses['bibleFamiliarity']>(undefined);
+  const [selectedOption, setSelectedOption] =
+    useState<OnboardingResponses['bibleFamiliarity']>(undefined);
 
   // Create Reanimated shared values for each component
   const iconOpacity = useSharedValue(0);
@@ -44,7 +45,8 @@ export default function OnboardingBibleFamiliarityScreen() {
     // Staggered animations for each component
     const animateComponent = (opacity: any, translateY: any, delay: number) => {
       opacity.value = withDelay(delay, withTiming(1, { duration: 600 }));
-      translateY.value = withDelay(delay,
+      translateY.value = withDelay(
+        delay,
         withSpring(0, {
           damping: 20,
           stiffness: 90,
@@ -61,26 +63,26 @@ export default function OnboardingBibleFamiliarityScreen() {
   // Create animated styles for each component
   const iconStyle = useAnimatedStyle(() => ({
     opacity: iconOpacity.value,
-    transform: [{ translateY: iconTranslateY.value }]
+    transform: [{ translateY: iconTranslateY.value }],
   }));
 
   const titleStyle = useAnimatedStyle(() => ({
     opacity: titleOpacity.value,
-    transform: [{ translateY: titleTranslateY.value }]
+    transform: [{ translateY: titleTranslateY.value }],
   }));
 
   const optionsStyle = useAnimatedStyle(() => ({
     opacity: optionsOpacity.value,
-    transform: [{ translateY: optionsTranslateY.value }]
+    transform: [{ translateY: optionsTranslateY.value }],
   }));
 
   const handleSelection = async (familiarity: OnboardingResponses['bibleFamiliarity']) => {
     // Map familiarity to experience level
     const experienceMap = {
-      'never': 'Beginner',
+      never: 'Beginner',
       'a-little': 'Beginner',
       'on-off': 'Intermediate',
-      'consistently': 'Advanced'
+      consistently: 'Advanced',
     } as const;
 
     // Set in user store
@@ -95,7 +97,7 @@ export default function OnboardingBibleFamiliarityScreen() {
       console.log('Haptics not available');
     }
 
-    analytics.logEvent("OnboardingFamilarityScreen_Tapped_Continue", {
+    analytics.logEvent('OnboardingFamilarityScreen_Tapped_Continue', {
       familiarity: familiarity,
     });
 

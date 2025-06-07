@@ -117,7 +117,7 @@ export default function OnboardingLambNameScreen() {
   const screenStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
     flex: 1,
-    backgroundColor: '#FFF4D9', // Explicitly set the cream background color
+    backgroundColor: '#FDEBB8', // Explicitly set the cream background color
   }));
 
   // Create animated styles for each component

@@ -1,5 +1,14 @@
 import React, { useRef, useLayoutEffect, useState, useEffect } from 'react';
-import { View, Text, SafeAreaView, Image, TouchableOpacity, Platform, ActivityIndicator, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  Image,
+  TouchableOpacity,
+  Platform,
+  ActivityIndicator,
+  StatusBar,
+} from 'react-native';
 import Lottie from 'lottie-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -100,7 +109,7 @@ const Rating = () => {
   const screenStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
     flex: 1,
-    backgroundColor: '#FFF4D9',
+    backgroundColor: '#FDEBB8',
   }));
 
   const titleStyle = useAnimatedStyle(() => ({

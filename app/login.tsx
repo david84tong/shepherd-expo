@@ -64,7 +64,7 @@ export default function LoginScreen() {
   const handleBeginJourney = async () => {
     try {
       // Trigger haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
       // Remove the onboarding completed key
       await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
       // Navigate to onboarding
@@ -76,38 +76,40 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-[#FFF4D9] justify-center px-6">
+    <SafeAreaView className="flex-1 bg-[#FDEBB8] justify-center px-6">
       <View className="items-center mb-10">
         <Image source={require('../assets/icon.png')} className="w-20 h-20 mb-4 rounded-full" />
-        <Text className="text-base font-din text-slate-600 text-center">Welcome to Shepherd! Choose how you&apos;d like to begin.</Text>
+        <Text className="text-base font-din text-slate-600 text-center">
+          Welcome to Shepherd! Choose how you&apos;d like to begin.
+        </Text>
       </View>
       <View className="mb-6">
         <TouchableOpacity
           className="flex-row items-center justify-center bg-black w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow"
           onPress={handleAppleLogin}
-          disabled={loading}
-        >
+          disabled={loading}>
           {loadingProvider === 'apple' ? (
             <ActivityIndicator color="white" size="small" style={{ marginRight: 10 }} />
           ) : (
             <AntDesign name="apple1" size={24} color="white" style={{ marginRight: 10 }} />
           )}
           <Text className="font-din text-white text-[18px] font-bold">
-            {loadingProvider === 'apple' ? "Signing in..." : "Sign in with Apple"}
+            {loadingProvider === 'apple' ? 'Signing in...' : 'Sign in with Apple'}
           </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
           className="flex-row items-center justify-center bg-[#F7B500] w-full py-4 px-6 rounded-[16px] mb-4 shadow-buttonShadow"
           onPress={handleBeginJourney}
-          disabled={loading}
-        >
+          disabled={loading}>
           <Text className="font-din text-white text-[18px] font-bold">Begin Your Journey</Text>
         </TouchableOpacity>
       </View>
       <View className="items-center mt-6">
-        <Text className="font-din text-slate-500 text-center text-xs">By signing in, you agree to our Terms of Use and Privacy Policy.</Text>
+        <Text className="font-din text-slate-500 text-center text-xs">
+          By signing in, you agree to our Terms of Use and Privacy Policy.
+        </Text>
       </View>
     </SafeAreaView>
   );
-} 
+}

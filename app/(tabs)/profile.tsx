@@ -399,7 +399,7 @@ export default function ProfileScreen() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
+      <SafeAreaView style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
         <ScrollView
           className="flex-1 bg-surfaceCream"
           contentContainerStyle={{ paddingBottom: 50 }}>
@@ -561,7 +561,7 @@ export default function ProfileScreen() {
             animationType="slide"
             transparent={false}
             onRequestClose={() => setShowPathModal(false)}>
-            <View style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
+            <View style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
               {/* Show X button if onboarding_completed */}
               {onboardingCompleted && (
                 <TouchableOpacity
