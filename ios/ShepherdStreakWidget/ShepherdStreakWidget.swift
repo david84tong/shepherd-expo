@@ -26,20 +26,29 @@ struct StreakData {
         let today = calendar.startOfDay(for: Date())
         let lastActivity = calendar.startOfDay(for: lastActivityDate)
         
-        // Check if the last activity was today or yesterday
+        // First check if the last activity was today
         if calendar.isDateInToday(lastActivity) {
-            return .active(days: currentStreak) // Activity today, streak is active
-        } else if calendar.isDateInYesterday(lastActivity) {
-            return .atRisk(days: currentStreak) // Activity yesterday, streak at risk
-        } else {
-            let components = calendar.dateComponents([.day], from: lastActivity, to: today)
-            if let days = components.day, days > 1 {
-                // More than 1 day since last activity, streak is broken
-                return .broken(daysMissed: days - 1)
+            return .active(days: currentStreak)
+        }
+        
+        // If not today, check if it was yesterday
+        if calendar.isDateInYesterday(lastActivity) {
+            // Only show at risk if streak is more than 1 day
+            if currentStreak > 1 {
+                return .atRisk(days: currentStreak)
             } else {
-                return .active(days: currentStreak) // Fallback
+                return .active(days: currentStreak)
             }
         }
+        
+        // If more than 1 day has passed
+        let components = calendar.dateComponents([.day], from: lastActivity, to: today)
+        if let days = components.day, days > 1 {
+            return .broken(daysMissed: days - 1)
+        }
+        
+        // Default to active
+        return .active(days: currentStreak)
     }
 }
 
@@ -132,7 +141,7 @@ struct Provider: TimelineProvider {
     }
     
     private func loadStreakData() -> StreakData {
-        let defaults = UserDefaults(suiteName: "group.shepherd.widget.streak")
+        let defaults = UserDefaults(suiteName: "group.shepherd.widget.streak1")
         let streak = defaults?.integer(forKey: "currentStreak") ?? 0
         
         var lastActivityDate: Date? = nil

@@ -5,7 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { updateField, createUserDocument } from '../../utils/firestore';
 import { syncStreakDataToWidget } from '../../utils/widgetSync';
-import { UserDoc, Lamb, UserStore } from '../models/User';
+import { UserDoc, Lamb, UserStore, MapPathCompletion } from '../models/User';
 import { isAuthenticated, updateUserData } from '../helper/firebaseHelper';
 import { zuStandStorage } from './storage';
 
@@ -59,6 +59,13 @@ const initialState: UserDoc = {
   username: '',
   isProFromOnboarding: false,
   hasSeenWidgetModal: false,
+  level: 1,
+  xp: 0,
+  streak: 0,
+  isPro: false,
+  isProWithReferral: false,
+  proExpiryDate: Timestamp.now(),
+  completedMapPaths: [],
   setNotificationTime: async (time: string) => {
     // This will be overridden by the actual implementation
     console.warn('setNotificationTime not implemented in initial state');
@@ -102,28 +109,63 @@ export const useUserStore = create<UserStore>()(
         return state ? { ...state } : { ...initialState };
       },
 
-      // Add new function to sync Firestore data
+      // Enhanced function to sync Firestore data
       syncFirestoreData: (firestoreData: UserDoc) => {
-        console.log('syncFirestoreData', firestoreData);
+        console.log('Syncing Firestore data to local store:', firestoreData);
         set((state) => {
+          // Ensure we keep local data if Firestore data is undefined
           return {
+            ...(state || {}),
             ...(firestoreData || {}),
+            // Ensure critical fields are properly synced
+            id: firestoreData.id || state.id,
+            displayName: firestoreData.displayName || state.displayName,
+            email: firestoreData.email || state.email,
+            createdAt: firestoreData.createdAt || state.createdAt,
+            updatedAt: firestoreData.updatedAt || state.updatedAt,
+            lastActivityDate: firestoreData.lastActivityDate || state.lastActivityDate,
+            // Sync progress data
+            level: firestoreData.level || state.level,
+            xp: firestoreData.xp || state.xp,
+            streak: firestoreData.streak || state.streak,
+            // Sync completion data - use Firestore data if available
+            completedReadings: firestoreData.completedReadings ?? state.completedReadings ?? [],
+            completedPrayers: firestoreData.completedPrayers ?? state.completedPrayers ?? [],
+            completedReflections:
+              firestoreData.completedReflections ?? state.completedReflections ?? [],
+            // Ensure completedMapPaths is properly synced from Firestore
+            completedMapPaths: firestoreData.completedMapPaths ?? state.completedMapPaths ?? [],
+            // Sync lamb data
             lamb: {
               ...(state.lamb || {}),
               ...(firestoreData.lamb || {}),
               name:
                 firestoreData.lamb?.name ||
-                firestoreData.displayName ||
+                firestoreData?.displayName ||
                 state.lamb?.name ||
                 'My Lamb',
+              level: firestoreData.lamb?.level || state.lamb?.level || 1,
             },
-            completedReadings: firestoreData.completedReadings || state.completedReadings || [],
-            completedPrayers: firestoreData.completedPrayers || state.completedPrayers || [],
-            completedReflections:
-              firestoreData.completedReflections || state.completedReflections || [],
-            updatedAt: Timestamp.now(),
+            // Sync path data
+            selectedPathId: firestoreData.selectedPathId || state.selectedPathId,
+            // Sync dates
+            lastReadingDate: firestoreData.lastReadingDate || state.lastReadingDate,
+            lastPrayerDate: firestoreData.lastPrayerDate || state.lastPrayerDate,
+            lastReflectionDate: firestoreData.lastReflectionDate || state.lastReflectionDate,
+            // Sync penalty dates
+            lastReadingPenaltyDate:
+              firestoreData.lastReadingPenaltyDate || state.lastReadingPenaltyDate,
+            lastPrayerPenaltyDate:
+              firestoreData.lastPrayerPenaltyDate || state.lastPrayerPenaltyDate,
+            lastReflectionPenaltyDate:
+              firestoreData.lastReflectionPenaltyDate || state.lastReflectionPenaltyDate,
+            // Sync pro status
+            isPro: firestoreData.isPro || state.isPro || false,
+            isProWithReferral: firestoreData.isProWithReferral || state.isProWithReferral || false,
+            proExpiryDate: firestoreData.proExpiryDate || state.proExpiryDate,
           };
         });
+        console.log('Firestore data sync complete');
       },
 
       createUser: async (id: string, userData: Partial<UserDoc>) => {
@@ -326,14 +368,22 @@ export const useUserStore = create<UserStore>()(
       setCompletedReadings: (completedReadings) => set({ completedReadings }),
 
       addCompletedReflection: (reflection) =>
-        set((state) => ({
-          completedReflections: [...(state.completedReflections || []), reflection],
-        })),
+        set((state) => {
+          const updatedReflections = [...(state.completedReflections || []), reflection];
+          if (isAuthenticated()) {
+            updateUserData({ completedReflections: updatedReflections });
+          }
+          return { completedReflections: updatedReflections };
+        }),
 
       addCompletedPrayer: (prayer) =>
-        set((state) => ({
-          completedPrayers: [...(state.completedPrayers || []), prayer],
-        })),
+        set((state) => {
+          const updatedPrayers = [...(state.completedPrayers || []), prayer];
+          if (isAuthenticated()) {
+            updateUserData({ completedPrayers: updatedPrayers });
+          }
+          return { completedPrayers: updatedPrayers };
+        }),
 
       addCompletedReading: (reading) => {
         set((state) => {
@@ -418,6 +468,22 @@ export const useUserStore = create<UserStore>()(
           updateField('hasSeenWidgetModal', hasSeen);
         }
       },
+
+      setCompletedMapPaths: (completedMapPaths: MapPathCompletion[]) => {
+        set({ completedMapPaths });
+        if (isAuthenticated()) {
+          updateUserData({ completedMapPaths });
+        }
+      },
+
+      addCompletedMapPath: (path: MapPathCompletion) =>
+        set((state) => {
+          const updatedPaths = [...(state.completedMapPaths || []), path];
+          if (isAuthenticated()) {
+            updateUserData({ completedMapPaths: updatedPaths });
+          }
+          return { completedMapPaths: updatedPaths };
+        }),
     }),
     {
       name: 'shepherd-user-storage',

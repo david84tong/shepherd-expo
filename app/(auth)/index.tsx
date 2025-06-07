@@ -27,7 +27,8 @@ import {
   withDelay,
 } from 'react-native-reanimated';
 import CustomAnimatedView from '../components/CustomAnimatedView';
-import { IS_ANDROID, IS_IOS } from '../utils/utils';
+import { IS_ANDROID } from '../utils/utils';
+import { useOnboardingStore } from '../stores/onboardingStore';
 
 // We'll use the background directly in the source prop
 
@@ -60,7 +61,7 @@ export default function LoginScreen() {
 
     try {
       // Trigger haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 
       setLoading(true);
 
@@ -68,8 +69,8 @@ export default function LoginScreen() {
       const exitAnimation = () => {
         return new Promise<void>((resolve) => {
           // Animate screen elements out
-          screenOpacity.value = withTiming(0, { duration: 400 });
-          lambScale.value = withTiming(0.8, { duration: 400 });
+          // screenOpacity.value = withTiming(0, { duration: 400 });
+          lambScale.value = withTiming(0.8, { duration: 500 });
           buttonOpacity.value = withTiming(0, { duration: 300 });
           titleOpacity.value = withTiming(0, { duration: 300 });
 
@@ -85,7 +86,7 @@ export default function LoginScreen() {
 
       // Remove the onboarding completed key
       await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
-
+      await AsyncStorage.removeItem('isLoginMode');
       // Navigate to onboarding with a slight delay for smoother transition
       setTimeout(() => {
         router.replace('/onboarding/1');
@@ -253,13 +254,21 @@ export default function LoginScreen() {
           <CustomAnimatedView
             style={lambStyle}
             className="h-[200px] w-full justify-center items-center -mt-24">
-            <Rive
-              resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-              url={IS_IOS ? riveAssets[0].uri! : undefined}
-              artboardName="lamb-reading"
-              autoplay
-              style={{ width: '120%', height: '120%' }}
-            />
+            {IS_ANDROID ? (
+              <Rive
+                resourceName={'home_lamb'}
+                artboardName="lamb-reading"
+                autoplay
+                style={{ width: '120%', height: '120%' }}
+              />
+            ) : (
+              <Rive
+                url={riveAssets[0].localUri!}
+                artboardName="lamb-reading"
+                autoplay
+                style={{ width: '120%', height: '120%' }}
+              />
+            )}
           </CustomAnimatedView>
 
           {/* Button at the bottom */}
@@ -273,8 +282,12 @@ export default function LoginScreen() {
             </CustomAnimatedView>
             <CustomAnimatedView style={linkStyle}>
               <TouchableOpacity
-                onPress={() => {
+                onPress={async () => {
                   analytics.logEvent('WelcomeScreen_Tapped_Login');
+                  // Set login mode and clear navigation state
+                  await AsyncStorage.setItem('isLoginMode', 'true');
+                  await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
+                  useOnboardingStore.getState().clearSavedScreenNavigation();
                   router.push({
                     pathname: '/onboarding/11',
                     params: { isLogin: 'true' },

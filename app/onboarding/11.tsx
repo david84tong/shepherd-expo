@@ -38,6 +38,8 @@ import { UserDoc } from '../models/User';
 import firestore from '@react-native-firebase/firestore';
 import PrimaryButton from '../../components/PrimaryButton';
 import { useRemoteConfig } from '../hooks/useRemoteConfig';
+import { fetchFromFirestore } from '../helper/firebaseHelper';
+import { useHomeStore } from '../stores/homeStore';
 
 // Add this near the top of the file, after imports
 
@@ -56,7 +58,21 @@ const checkPremiumStatus = async () => {
 export default function SaveProgressScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const isLoginMode = params.isLogin === 'true';
+
+  const [isLoginMode, setIsLoginMode] = useState(params.isLogin === 'true');
+
+  // Add effect to persist and restore login mode
+  useEffect(() => {
+    const persistLoginMode = async () => {
+      // If no parameter, try to restore from storage
+      const savedLoginMode = await AsyncStorage.getItem('isLoginMode');
+      if (savedLoginMode === 'true') {
+        setIsLoginMode(true);
+      }
+    };
+
+    persistLoginMode();
+  }, [params.isLogin]);
 
   const [loading, setLoading] = useState(false);
   const {
@@ -166,6 +182,69 @@ export default function SaveProgressScreen() {
       console.log('Error completing onboarding:', error);
     }
   };
+
+  async function syncUser(user: UserDoc) {
+    const { success, data: firestoreData } = await fetchFromFirestore({
+      currentLoggedUser: user,
+    });
+    if (success && firestoreData) {
+      useUserStore.getState().syncFirestoreData(firestoreData);
+      const prayerCompleted = useHomeStore.getState().prayerCompleted;
+      const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
+      const readingCompleted = useHomeStore.getState().readingCompleted;
+      if (firestoreData?.completedPrayers && !prayerCompleted) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const hasPrayedToday = firestoreData.completedPrayers.some((prayer) => {
+          if (!prayer.date || !prayer.date.toDate) {
+            return false;
+          }
+          const prayerDate = prayer.date.toDate();
+          prayerDate.setHours(0, 0, 0, 0);
+          return prayerDate.getTime() === today.getTime();
+        });
+
+        if (hasPrayedToday) {
+          useHomeStore.getState().setPrayerCompleted(true);
+        }
+      }
+      if (firestoreData?.completedReflections && !reflectionCompleted) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const hasReflectedToday = firestoreData.completedReflections.some((prayer) => {
+          if (!prayer.date || !prayer.date.toDate) {
+            return false;
+          }
+          const prayerDate = prayer.date.toDate();
+          prayerDate.setHours(0, 0, 0, 0);
+          return prayerDate.getTime() === today.getTime();
+        });
+
+        if (hasReflectedToday) {
+          useHomeStore.getState().setReflectionCompleted(true);
+        }
+      }
+      if (firestoreData?.completedReadings && !readingCompleted) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const hasReadToday = firestoreData.completedReadings.some((prayer) => {
+          if (!prayer.date || !prayer.date.toDate) {
+            return false;
+          }
+          const prayerDate = prayer.date.toDate();
+          prayerDate.setHours(0, 0, 0, 0);
+          return prayerDate.getTime() === today.getTime();
+        });
+
+        if (hasReadToday) {
+          useHomeStore.getState().setReadingCompleted(true);
+        }
+      }
+    }
+  }
 
   // Create user object from onboarding responses
   const createUserFromResponses = async (uid: string, displayName: string) => {
@@ -294,25 +373,31 @@ export default function SaveProgressScreen() {
           // User exists and data has been fetched in the auth hook
           // Just mark onboarding as completed and navigate to tabs
           await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+          await syncUser(user);
 
           // Animate out all components before navigation using Reanimated
           headerOpacity.value = withTiming(0, { duration: 400 });
           benefitsOpacity.value = withTiming(0, { duration: 400 });
           buttonsOpacity.value = withTiming(0, { duration: 400 });
-
-          // Navigate after animation duration
-          setTimeout(() => {
-            router.replace('/(tabs)');
-          }, 400);
+          // Check if user is pro before navigating
+          const isProMember = useUserStore.getState().getProStatus() === 'pro';
+          if (!isProMember) {
+            setTimeout(() => {
+              router.replace('/PricingScreen?fromLoading=true&animateFromBottom=true');
+            }, 1000);
+          } else {
+            setTimeout(() => {
+              router.replace('/(tabs)');
+            }, 1000);
+          }
         } else {
           // In onboarding mode, create new user from responses
           console.log('Creating user...');
           await createUserFromResponses(user.uid, user.displayName || 'Anonymous User');
+          console.log('User created from responses');
           await completeOnboarding();
+          console.log('Onboarding completed');
         }
-      } else {
-        console.log('Apple sign in returned no user');
-        throw new Error('No user data returned from Apple');
       }
     } catch (error: any) {
       console.log('Apple sign in error:', error);
@@ -320,7 +405,22 @@ export default function SaveProgressScreen() {
       // Provide more specific feedback based on the error
       let errorMessage = 'There was a problem signing in with Apple.';
 
-      if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
+      if (error.message?.includes('Would you like to login instead?')) {
+        Alert.alert('Account Exists', 'An account with this Apple ID already exists.', [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Login',
+            onPress: () => {
+              setIsLoginMode(true);
+              AsyncStorage.setItem('isLoginMode', 'true');
+            },
+          },
+        ]);
+        return;
+      } else if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
         errorMessage = 'Sign in was canceled. Please try again.';
       } else if (error.message?.includes('network')) {
         errorMessage = 'Network error. Please check your internet connection and try again.';
@@ -333,7 +433,6 @@ export default function SaveProgressScreen() {
       } else if (error.message?.includes('No account found')) {
         errorMessage =
           "We couldn't find an account with this Apple ID. Please create a new account instead.";
-        setShowNoAccountToast(true);
       } else if (error.message?.includes('Failed to fetch your account data')) {
         errorMessage = "We couldn't retrieve your account data. Please try again.";
       }
@@ -345,11 +444,13 @@ export default function SaveProgressScreen() {
         error: error.message,
       });
 
-      Alert.alert(
-        'Sign In Failed',
-        `${errorMessage} ${isLoginMode ? '' : 'You can try again or use the anonymous option to continue.'}`,
-        [{ text: 'OK' }]
-      );
+      if (!error.message?.includes('Would you like to login instead?')) {
+        Alert.alert(
+          'Sign In Failed',
+          `${errorMessage} ${isLoginMode ? '' : 'You can try again or use the anonymous option to continue.'}`,
+          [{ text: 'OK' }]
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -381,8 +482,18 @@ export default function SaveProgressScreen() {
           // User exists and data has been fetched in the auth hook
           // Just mark onboarding as completed and navigate to tabs
           await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
-          // Navigate directly to the main app tabs
-          router.replace('/(tabs)');
+          await syncUser(user);
+          // Check if user is pro before navigating
+          const isProMember = useUserStore.getState().getProStatus() === 'pro';
+          if (!isProMember) {
+            setTimeout(() => {
+              router.replace('/PricingScreen?fromLoading=true&animateFromBottom=true');
+            }, 1000);
+          } else {
+            setTimeout(() => {
+              router.replace('/(tabs)');
+            }, 1000);
+          }
         } else {
           // In onboarding mode, create new user from responses
           console.log('Creating user...');
@@ -391,9 +502,6 @@ export default function SaveProgressScreen() {
           await completeOnboarding();
           console.log('Onboarding completed');
         }
-      } else {
-        console.log('Google sign in returned no user');
-        throw new Error('No user data returned from Google');
       }
     } catch (error: any) {
       console.log('Google sign in error:', error);
@@ -401,7 +509,22 @@ export default function SaveProgressScreen() {
       // Provide more specific feedback based on the error
       let errorMessage = 'There was a problem signing in with Google.';
 
-      if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
+      if (error.message?.includes('Would you like to login instead?')) {
+        Alert.alert('Account Exists', 'An account with this Google account already exists.', [
+          {
+            text: 'Cancel',
+            style: 'cancel',
+          },
+          {
+            text: 'Login',
+            onPress: () => {
+              setIsLoginMode(true);
+              AsyncStorage.setItem('isLoginMode', 'true');
+            },
+          },
+        ]);
+        return;
+      } else if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
         errorMessage = 'Sign in was canceled. Please try again.';
       } else if (error.message?.includes('network')) {
         errorMessage = 'Network error. Please check your internet connection and try again.';
@@ -421,11 +544,13 @@ export default function SaveProgressScreen() {
         error: error.message,
       });
 
-      Alert.alert(
-        'Sign In Failed',
-        `${errorMessage} ${isLoginMode ? '' : 'You can try again or use the anonymous option to continue.'}`,
-        [{ text: 'OK' }]
-      );
+      if (!error.message?.includes('Would you like to login instead?')) {
+        Alert.alert(
+          'Sign In Failed',
+          `${errorMessage} ${isLoginMode ? '' : 'You can try again or use the anonymous option to continue.'}`,
+          [{ text: 'OK' }]
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -464,6 +589,8 @@ export default function SaveProgressScreen() {
         try {
           user = await signInWithEmailPassword(email, password, true);
           analytics.logEvent('Login_Success_Email');
+          await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+          await syncUser(user);
 
           // After successful login
           await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
@@ -513,8 +640,21 @@ export default function SaveProgressScreen() {
           console.log('Signup error:', signupError.message);
           let errorMessage = 'Unable to create account. Please try again.';
 
-          if (signupError.code === 'auth/email-already-in-use') {
-            errorMessage = 'An account already exists with this email. Please sign in instead.';
+          if (signupError.message?.includes('Would you like to login instead?')) {
+            Alert.alert('Account Exists', 'An account with this email already exists.', [
+              {
+                text: 'Cancel',
+                style: 'cancel',
+              },
+              {
+                text: 'Login',
+                onPress: () => {
+                  setIsLoginMode(true);
+                  AsyncStorage.setItem('isLoginMode', 'true');
+                },
+              },
+            ]);
+            return;
           } else if (signupError.code === 'auth/invalid-email') {
             errorMessage = 'Please enter a valid email address.';
           } else if (signupError.code === 'auth/operation-not-allowed') {
@@ -552,8 +692,6 @@ export default function SaveProgressScreen() {
       setLoading(false);
     }
   };
-
-  console.log('isSmaleAge ==>', isSmaleAge);
 
   // Handle anonymous sign in - only available in onboarding mode
   const handleSkip = async (showConfirmation = true) => {
@@ -625,15 +763,27 @@ export default function SaveProgressScreen() {
             {/* Icon */}
             <View className="mb-8 overflow-hidden w-64 h-64 items-center justify-center">
               {riveAssets && riveAssets[0]?.uri && (
-                <Rive
-                  url={IS_IOS ? riveAssets[0].uri! : undefined}
-                  resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-                  artboardName={'lamb-workout'}
-                  autoplay={true}
-                  fit={Fit.Contain}
-                  alignment={Alignment.Center}
-                  style={{ width: 240, height: 240 }}
-                />
+                <>
+                  {IS_ANDROID ? (
+                    <Rive
+                      resourceName={'home_lamb'}
+                      artboardName={'lamb-workout'}
+                      autoplay={true}
+                      fit={Fit.Contain}
+                      alignment={Alignment.Center}
+                      style={{ width: 240, height: 240 }}
+                    />
+                  ) : (
+                    <Rive
+                      url={riveAssets[0].uri!}
+                      artboardName={'lamb-workout'}
+                      autoplay={true}
+                      fit={Fit.Contain}
+                      alignment={Alignment.Center}
+                      style={{ width: 240, height: 240 }}
+                    />
+                  )}
+                </>
               )}
             </View>
           </Animated.View>
@@ -724,7 +874,7 @@ export default function SaveProgressScreen() {
                       });
                       setShowNoAccountToast(false);
                     }
-                    router.back();
+                    router.replace('/(auth)');
                   }}
                   className="items-center mt-3"
                   disabled={loading}>
@@ -834,7 +984,7 @@ export default function SaveProgressScreen() {
                         });
                         setShowNoAccountToast(false);
                       }
-                      router.back();
+                      router.replace('/(auth)');
                     }}
                     className="items-center"
                     disabled={loading}>

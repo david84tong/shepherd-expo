@@ -26,12 +26,6 @@ import Reanimated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  interpolate,
-  runOnJS,
-  FadeIn,
-  FadeOut,
-  withSequence,
-  withDelay,
   Easing,
   Layout,
 } from 'react-native-reanimated';
@@ -49,7 +43,6 @@ import analytics from '../utils/analytics';
 import {
   Swipeable,
   GestureHandlerRootView,
-  PanGestureHandler,
   State,
   LongPressGestureHandler,
 } from 'react-native-gesture-handler';
@@ -547,7 +540,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           // Update internal tracking of current book and chapter
           setCurrentBookId(bookId);
           setCurrentChapter(chapter);
-          console.log(`📖 [NewBibleReader] Updated internal state - bookId: ${bookId}, chapter: ${chapter}`);
+          console.log(
+            `📖 [NewBibleReader] Updated internal state - bookId: ${bookId}, chapter: ${chapter}`
+          );
           setLoading(false);
           return true;
         }
@@ -566,14 +561,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     // Store current chapter info for back button
-    setPreviousChapterInfo({ bookId, chapter });
+    setPreviousChapterInfo({ bookId: currentBookId, chapter: currentChapter });
     setShowBackButton(true);
 
-    const chaptersInCurrentBook = BIBLE_CHAPTER_COUNTS[bookId];
+    const chaptersInCurrentBook = BIBLE_CHAPTER_COUNTS[currentBookId];
 
-    if (chapter >= chaptersInCurrentBook) {
+    if (currentChapter >= chaptersInCurrentBook) {
       // At the last chapter of current book, go to next book
-      const nextBookId = bookId + 1;
+      const nextBookId = currentBookId + 1;
 
       if (nextBookId <= 66) {
         // 66 books in the Bible
@@ -591,9 +586,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       }
     } else {
       // Go to next chapter in current book
-      loadChapter(bookId, chapter + 1);
+      loadChapter(currentBookId, currentChapter + 1);
     }
-  }, [bookId, chapter, chapterData, loadChapter]);
+  }, [currentBookId, currentChapter, chapterData, loadChapter]);
 
   // Function to navigate back to the previous chapter
   const navigateToPreviousChapter = useCallback(() => {
@@ -679,6 +674,19 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     // mark unit complete
     markUnitAsCompleted(currentPath.unitId);
 
+    // Add completed map path to Firestore
+    const addCompletedMapPath = useUserStore.getState().addCompletedMapPath;
+    addCompletedMapPath({
+      date: now,
+      pathId: currentPath.pathId,
+      pathTitle: currentPath.pathTitle,
+      unitId: currentPath.unitId,
+      unitTitle: currentPath.unitTitle,
+      bookId: currentPath.bookId,
+      startChapter: currentPath.startChapter,
+      endChapter: currentPath.endChapter,
+    });
+
     // next unit preview similar to default reader
     let nextUnit: any = null;
     const pathIdx = BIBLE_PATHS.findIndex((p) => p.id === currentPath.pathId);
@@ -724,6 +732,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     setLastReadingDate,
     getVersesReadTotal,
     getChaptersReadTotal,
+    setVersesReadTotal,
+    setChaptersReadTotal,
     markUnitAsCompleted,
     setNextUnitPreview,
     setPathInProgress,
@@ -896,15 +906,34 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Handler for opening the selector
   const handleOpenSelector = useCallback(() => {
-    console.log(`📖 [NewBibleReader] Opening selector with currentBookId: ${currentBookId}, currentChapter: ${currentChapter}`);
+    console.log(
+      `📖 [NewBibleReader] Opening selector with currentBookId: ${currentBookId}, currentChapter: ${currentChapter}`
+    );
     console.log(`📖 [NewBibleReader] Props bookId: ${bookId}, chapter: ${chapter}`);
-    console.log(`📖 [NewBibleReader] chapterData:`, chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'null');
+    console.log(
+      `📖 [NewBibleReader] chapterData:`,
+      chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'null'
+    );
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    showBookChapterSelector(currentBookId, currentChapter, (newBookId: number, newChapter: number) => {
-      console.log(`📖 [NewBibleReader] Selector callback - newBookId: ${newBookId}, newChapter: ${newChapter}`);
-      loadChapter(newBookId, newChapter);
-    });
-  }, [currentBookId, currentChapter, bookId, chapter, showBookChapterSelector, loadChapter, chapterData]);
+    showBookChapterSelector(
+      currentBookId,
+      currentChapter,
+      (newBookId: number, newChapter: number) => {
+        console.log(
+          `📖 [NewBibleReader] Selector callback - newBookId: ${newBookId}, newChapter: ${newChapter}`
+        );
+        loadChapter(newBookId, newChapter);
+      }
+    );
+  }, [
+    currentBookId,
+    currentChapter,
+    bookId,
+    chapter,
+    showBookChapterSelector,
+    loadChapter,
+    chapterData,
+  ]);
 
   useEffect(() => {
     if (
@@ -967,45 +996,48 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   }, [fadeOpacity, menuScaleAnim, menuOpacityAnim, progressValue]);
 
   // Update handleSwipeVerseToChat
-  const handleSwipeVerseToChat = useCallback((verse: Verse) => {
-    if (isFadingToChat) return;
+  const handleSwipeVerseToChat = useCallback(
+    (verse: Verse) => {
+      if (isFadingToChat) return;
 
-    if (showSwipeGuidance) {
-      setShowSwipeGuidance(false);
-      AsyncStorage.setItem(SWIPE_GUIDANCE_KEY, 'true').catch((e) =>
-        console.error('Failed to save swipe guidance setting', e)
-      );
-    }
-
-    setIsFadingToChat(true);
-    setSelectedVerse(verse);
-
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-
-    // Reset animation value before starting new animation
-    fadeOpacity.value = 1;
-    fadeOpacity.value = withTiming(0, {
-      duration: FADE_DURATION,
-      easing: Easing.out(Easing.cubic),
-    });
-
-    setTimeout(() => {
-      setShowChatView(true);
-    }, FADE_DURATION);
-
-    setTimeout(() => {
-      const swipeableRef = swipeableRefs.current.get(verse.verse);
-      if (swipeableRef) {
-        swipeableRef.close();
+      if (showSwipeGuidance) {
+        setShowSwipeGuidance(false);
+        AsyncStorage.setItem(SWIPE_GUIDANCE_KEY, 'true').catch((e) =>
+          console.error('Failed to save swipe guidance setting', e)
+        );
       }
-    }, 50);
 
-    analytics.logEvent('CardBibleReader_Swiped_VerseToChat', {
-      book: chapterData?.book,
-      chapter: chapterData?.chapter,
-      verse: verse.verse,
-    });
-  }, [isFadingToChat, showSwipeGuidance, fadeOpacity, chapterData]);
+      setIsFadingToChat(true);
+      setSelectedVerse(verse);
+
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+      // Reset animation value before starting new animation
+      fadeOpacity.value = 1;
+      fadeOpacity.value = withTiming(0, {
+        duration: FADE_DURATION,
+        easing: Easing.out(Easing.cubic),
+      });
+
+      setTimeout(() => {
+        setShowChatView(true);
+      }, FADE_DURATION);
+
+      setTimeout(() => {
+        const swipeableRef = swipeableRefs.current.get(verse.verse);
+        if (swipeableRef) {
+          swipeableRef.close();
+        }
+      }, 50);
+
+      analytics.logEvent('CardBibleReader_Swiped_VerseToChat', {
+        book: chapterData?.book,
+        chapter: chapterData?.chapter,
+        verse: verse.verse,
+      });
+    },
+    [isFadingToChat, showSwipeGuidance, fadeOpacity, chapterData]
+  );
 
   // Update handleCloseChatView
   const handleCloseChatView = useCallback(() => {
@@ -1022,35 +1054,38 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   }, [fadeOpacity]);
 
   // Update handleLongPress
-  const handleLongPress = useCallback((event: any, verse: Verse) => {
-    if (isFadingToChat) return;
+  const handleLongPress = useCallback(
+    (event: any, verse: Verse) => {
+      if (isFadingToChat) return;
 
-    const { absoluteX, absoluteY } = event.nativeEvent;
+      const { absoluteX, absoluteY } = event.nativeEvent;
 
-    const menuX = Math.min(absoluteX, SCREEN_WIDTH - 240);
-    const menuY = Math.min(absoluteY - 50, SCREEN_HEIGHT - 130);
+      const menuX = Math.min(absoluteX, SCREEN_WIDTH - 240);
+      const menuY = Math.min(absoluteY - 50, SCREEN_HEIGHT - 130);
 
-    setFloatingMenu({
-      isVisible: true,
-      verse: verse,
-      position: { x: menuX, y: menuY },
-    });
+      setFloatingMenu({
+        isVisible: true,
+        verse: verse,
+        position: { x: menuX, y: menuY },
+      });
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // Reset animation values before starting new animations
-    menuScaleAnim.value = 0;
-    menuOpacityAnim.value = 0;
+      // Reset animation values before starting new animations
+      menuScaleAnim.value = 0;
+      menuOpacityAnim.value = 0;
 
-    menuScaleAnim.value = withTiming(1, {
-      duration: 200,
-      easing: Easing.out(Easing.back(1.5)),
-    });
+      menuScaleAnim.value = withTiming(1, {
+        duration: 200,
+        easing: Easing.out(Easing.back(1.5)),
+      });
 
-    menuOpacityAnim.value = withTiming(1, {
-      duration: 150,
-    });
-  }, [isFadingToChat, menuScaleAnim, menuOpacityAnim]);
+      menuOpacityAnim.value = withTiming(1, {
+        duration: 150,
+      });
+    },
+    [isFadingToChat, menuScaleAnim, menuOpacityAnim]
+  );
 
   // Update handleCloseFloatingMenu
   const handleCloseFloatingMenu = useCallback(() => {
@@ -1595,21 +1630,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   return (
     <>
-      <StatusBar
-        translucent
-        backgroundColor="transparent"
-        barStyle={'dark-content'}
-      />
+      <StatusBar translucent backgroundColor="transparent" barStyle={'dark-content'} />
       <Animated.View className="flex-1" style={{ opacity: 1 }}>
-        <Animated.View
-          style={[
-            { position: 'absolute', width: '100%', height: '100%', },
-
-          ]}>
+        <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%' }]}>
           <ImageBackground
             source={require('../assets/backgrounds/mainBackground2.png')}
-            style={{ width: '100%', height: '100%' }}
-          >
+            style={{ width: '100%', height: '100%' }}>
             <Image
               source={require('../assets/backgrounds/mainBackground2.png')}
               style={{ width: '100%', height: '100%' }}
@@ -1620,37 +1646,29 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
           <View
             className="bg-surfaceCream rounded-t-card "
-            style={{ width: "100%", height: "90%", position: 'absolute', bottom: 0, }}>
-
-
+            style={{ width: '100%', height: '90%', position: 'absolute', bottom: 0 }}>
             <Text
               className="font-feather-bold text-white"
               style={{
                 fontSize: responsiveFontSize(3),
-                fontWeight: "400",
+                fontWeight: '400',
                 position: 'absolute',
                 left: 20,
-                top: -50
-              }}
-            >
+                top: -50,
+              }}>
               Reading
             </Text>
 
-            <View style={[{ position: "absolute", right: 10, top: -50 }]}>
-              <TouchableOpacity onPress={handlePresentSettingsModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
-                <MaterialIcons
-                  name="settings"
-                  size={22}
-                  color="#795323"
-                  style={{ opacity: 0.4 }}
-                />
+            <View style={[{ position: 'absolute', right: 10, top: -50 }]}>
+              <TouchableOpacity
+                onPress={handlePresentSettingsModal}
+                className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+                <MaterialIcons name="settings" size={22} color="#795323" style={{ opacity: 0.4 }} />
               </TouchableOpacity>
             </View>
 
             {/* Absolute background to cover outer safe areas */}
             <View style={{ ...StyleSheet.absoluteFillObject }} pointerEvents="none" />
-
-
 
             <Reanimated.View
               style={[
@@ -1671,19 +1689,17 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                 </View>
 
                 <View style={{ width: '100%', justifyContent: 'center', alignItems: 'center' }}>
-                  <TouchableOpacity onPress={handleOpenSelector} >
+                  <TouchableOpacity onPress={handleOpenSelector}>
                     <Text
                       className="font-feather-bold text-textPrimary/30 text-center"
                       style={{
                         fontSize: responsiveFontSize(2),
-                        fontWeight: "600",
-                      }}
-                    >
+                        fontWeight: '600',
+                      }}>
                       {chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'Loading...'}
                     </Text>
                   </TouchableOpacity>
                 </View>
-
               </View>
               {/* Add progress bar at the top */}
               <View
@@ -1693,7 +1709,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                   marginBottom: 8,
                   overflow: 'hidden',
                 }}
-                className='bg-brown/5'>
+                className="bg-brown/5">
                 <Reanimated.View
                   style={[
                     {
@@ -1792,7 +1808,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                                       {
                                         backgroundColor: highlightColor
                                           ? `${highlightColor}80`
-                                          : "#fff1c9",
+                                          : '#fff1c9',
                                       },
                                     ]}>
                                     <View
@@ -1801,25 +1817,18 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                                       }}>
                                       {index === currentIndex ? (
                                         <TypingText
-                                          className='text-brown/90 text-[17px] leading-[25px]'
+                                          className="text-brown/90 text-[17px] leading-[25px]"
                                           text={`${v.verse}. ${v.text}`}
                                           speed={20}
                                           skipAnimation={skipTyping}
                                           onComplete={handleTypingComplete}
                                         />
                                       ) : (
-                                        <Text
-                                          className='text-brown/90 text-[17px]'
-                                        >
+                                        <Text className="text-brown/90 text-[17px]">
                                           {`${v.verse}. ${v.text}`}
                                         </Text>
                                       )}
                                     </View>
-
-
-
-
-
                                   </View>
                                 </Reanimated.View>
                               </Swipeable>
@@ -1860,7 +1869,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                             if (isFadingToChat) return;
                             // If daily reading is completed and not in path mode, go to next chapter
                             if (readingCompleted && !isInPathMode) {
-                              console.log('📖 [NewBibleReader] Next Chapter tapped - daily reading completed');
+                              console.log(
+                                '📖 [NewBibleReader] Next Chapter tapped - daily reading completed'
+                              );
                               navigateToNextChapter();
                             } else {
                               console.log('📖 [NewBibleReader] Finish tapped');
@@ -1883,7 +1894,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                                 fontFamily: 'Feather Bold',
                                 fontSize: 16,
                               }}>
-                              {readingCompleted && !isInPathMode ? 'Next Chapter →' : 'Finish Reading 🎉'}
+                              {readingCompleted && !isInPathMode
+                                ? 'Next Chapter →'
+                                : 'Finish Reading 🎉'}
                             </Text>
                           </View>
                         </TouchableOpacity>
@@ -1953,7 +1966,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                           />
                         </View>
 
-                        <Text style={[styles.modalSectionTitle, { color: theme.text }]}>Font Size</Text>
+                        <Text style={[styles.modalSectionTitle, { color: theme.text }]}>
+                          Font Size
+                        </Text>
                         <View style={styles.sliderContainer}>
                           <Text style={[styles.sliderLabel, { color: theme.text }]}>A</Text>
                           <Slider
@@ -1969,41 +1984,47 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                           <Text style={[styles.sliderLabelLarge, { color: theme.text }]}>A</Text>
                         </View>
 
-                        <Text style={[styles.modalSectionTitle, { color: theme.text, marginTop: 16 }]}>
+                        <Text
+                          style={[styles.modalSectionTitle, { color: theme.text, marginTop: 16 }]}>
                           Line Spacing
                         </Text>
                         <View style={styles.lineHeightButtons}>
-                          {(Object.keys(LINE_HEIGHT_PRESETS) as LineHeightPreset[]).map((preset) => (
-                            <TouchableOpacity
-                              key={preset}
-                              style={[
-                                styles.lineHeightButton,
-                                {
-                                  borderColor: theme.border,
-                                  backgroundColor:
-                                    lineHeightPreset === preset ? theme.progressBarFill : 'transparent',
-                                },
-                              ]}
-                              onPress={() => handleLineHeightChange(preset)}>
-                              <Text
+                          {(Object.keys(LINE_HEIGHT_PRESETS) as LineHeightPreset[]).map(
+                            (preset) => (
+                              <TouchableOpacity
+                                key={preset}
                                 style={[
-                                  styles.lineHeightButtonText,
+                                  styles.lineHeightButton,
                                   {
-                                    color:
+                                    borderColor: theme.border,
+                                    backgroundColor:
                                       lineHeightPreset === preset
-                                        ? currentTheme === 'dark'
-                                          ? theme.modalBackground
-                                          : theme.bubbleBackground
-                                        : theme.text,
+                                        ? theme.progressBarFill
+                                        : 'transparent',
                                   },
-                                ]}>
-                                {preset.charAt(0).toUpperCase() + preset.slice(1).toLowerCase()}
-                              </Text>
-                            </TouchableOpacity>
-                          ))}
+                                ]}
+                                onPress={() => handleLineHeightChange(preset)}>
+                                <Text
+                                  style={[
+                                    styles.lineHeightButtonText,
+                                    {
+                                      color:
+                                        lineHeightPreset === preset
+                                          ? currentTheme === 'dark'
+                                            ? theme.modalBackground
+                                            : theme.bubbleBackground
+                                          : theme.text,
+                                    },
+                                  ]}>
+                                  {preset.charAt(0).toUpperCase() + preset.slice(1).toLowerCase()}
+                                </Text>
+                              </TouchableOpacity>
+                            )
+                          )}
                         </View>
 
-                        <Text style={[styles.modalSectionTitle, { color: theme.text, marginTop: 24 }]}>
+                        <Text
+                          style={[styles.modalSectionTitle, { color: theme.text, marginTop: 24 }]}>
                           Theme
                         </Text>
                         <View style={styles.themeButtonsContainer}>
@@ -2075,7 +2096,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             {verseToHighlight && (
               <HighlightColorPicker
                 isVisible={isHighlightPickerVisible}
-                initialColor={getHighlight(currentBookId, currentChapter, verseToHighlight.verse)?.colorKey || null}
+                initialColor={
+                  getHighlight(currentBookId, currentChapter, verseToHighlight.verse)?.colorKey ||
+                  null
+                }
                 onClose={handleCloseHighlightPicker}
                 onSelectColor={handleApplyHighlight}
                 versePreview={verseToHighlight.text}

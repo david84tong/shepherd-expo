@@ -87,7 +87,7 @@ export default function ProfileScreen() {
   const userId = user?.id || null;
 
   const [showDiscordCard, setShowDiscordCard] = useState(true);
-  const { signInWithApple, signInWithGoogle } = useAuth();
+  const { signInWithApple, signInWithGoogle, upgradeAnonymousToApple } = useAuth();
   const [signInLoading, setSignInLoading] = useState(false);
   const [signInError, setSignInError] = useState<string | null>(null);
 
@@ -299,22 +299,36 @@ export default function ProfileScreen() {
 
   // Handle sign in based on platform
   const handleSignIn = async () => {
+    console.log('[Profile] Starting sign in process...');
     setSignInError(null);
     setSignInLoading(true);
     try {
       if (Platform.OS === 'ios') {
-        await signInWithApple(false); // Not login mode, upgrade anonymous
+        const currentUser = auth().currentUser;
+        if (currentUser?.isAnonymous) {
+          // Use the new upgrade function for anonymous users
+          console.log('[Profile] Current user is anonymous, using upgrade flow');
+          await upgradeAnonymousToApple();
+        } else {
+          // Use regular sign in for non-anonymous users
+          await signInWithApple(false);
+        }
       } else {
-        await signInWithGoogle(false); // Not login mode, upgrade anonymous
+        await signInWithGoogle(false);
       }
-      // On success, user store will update and card will disappear
     } catch (error: any) {
+      console.log('[Profile] Sign in error:', error);
       let errorMessage =
         Platform.OS === 'ios'
           ? 'There was a problem signing in with Apple.'
           : 'There was a problem signing in with Google.';
 
-      if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
+      if (error.code === 'auth/credential-already-in-use') {
+        // This should be handled automatically now
+        console.log('[Profile] Credential already in use - should be handled automatically');
+      } else if (error.message?.includes('already linked')) {
+        errorMessage = error.message;
+      } else if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
         errorMessage = 'Sign in was canceled. Please try again.';
       } else if (error.message?.includes('network')) {
         errorMessage = 'Network error. Please check your internet connection and try again.';
@@ -322,15 +336,10 @@ export default function ProfileScreen() {
         errorMessage = 'Authentication configuration error. Please try another method.';
       } else if (error.message?.includes('incomplete')) {
         errorMessage = 'Sign in process was interrupted. Please try again.';
-      } else if (error.message?.includes("operation couldn't be completed")) {
-        errorMessage = 'Sign in process could not be completed. Please try again.';
-      } else if (error.message?.includes('No account found')) {
-        errorMessage =
-          Platform.OS === 'ios'
-            ? "We couldn't find an account with this Apple ID. Please create a new account instead."
-            : "We couldn't find an account with this Google account. Please create a new account instead.";
-      } else if (error.message?.includes('Failed to fetch your account data')) {
-        errorMessage = "We couldn't retrieve your account data. Please try again.";
+      } else if (error.message?.includes('not anonymous')) {
+        // Don't show this error to the user, just log it
+        console.log('[Profile] User is not anonymous, using regular sign in flow');
+        return;
       }
       setSignInError(errorMessage);
     } finally {

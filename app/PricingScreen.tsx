@@ -9,7 +9,7 @@ import {
   Switch,
   Image,
   Platform,
-  StatusBar
+  StatusBar,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -30,6 +30,7 @@ import useSubscriptionStore from './stores/subscriptionStore';
 import analytics from '../utils/analytics';
 import { isSignedIn } from './hooks/authHook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { IS_ANDROID } from './utils/utils';
 
 // Key for tracking daily first load
 const DAILY_FIRST_LOAD_KEY = 'daily_first_load_';
@@ -101,8 +102,6 @@ const PricingScreen = () => {
     setDailyFirstLoad();
   }, []);
 
-
-
   // Screen container just fades in quickly
   const screenOpacity = useSharedValue(0);
 
@@ -152,15 +151,11 @@ const PricingScreen = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     analytics.logEvent('PricingScreen_BackButton_Tapped');
 
-    if (fromLoading) {
-      // If we came from loading screen, try to go back, but fallback to home if no screen to go back to
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/(tabs)');
-      }
-    } else if (isSignedIn()) {
-      // If user is signed in, go to tabs
+    // Always navigate to tabs when closing pricing screen for logged in users
+    if (isSignedIn()) {
+      router.replace('/(tabs)');
+    } else if (fromLoading) {
+      // If we came from loading screen and not signed in, try to go back
       if (router.canGoBack()) {
         router.back();
       } else {
@@ -171,7 +166,6 @@ const PricingScreen = () => {
       router.replace('/onboarding/11');
     }
   };
-
 
   const showPaywall = async () => {
     try {
@@ -272,7 +266,11 @@ const PricingScreen = () => {
               <Text className="font-feather text-h2 text-textPrimary mb-2 text-center">
                 Draw closer to God
               </Text>
-              <Image source={require('../assets/onboarding/reviews.png')} className="w-96 h-20" resizeMode='contain' />
+              <Image
+                source={require('../assets/onboarding/reviews.png')}
+                className="w-96 h-20"
+                resizeMode="contain"
+              />
               <Text className="font-din text-heading text-description text-center">
                 Join 10,000+ other super users
               </Text>
@@ -282,7 +280,9 @@ const PricingScreen = () => {
           {/* How Trial Works Section */}
           <AnimatedItem index={2.5} animateItemFromBottom={animateScreenFromBottom}>
             <View className="mb-10">
-              <Text className="font-feather text-h2 text-textPrimary mb-6">How the trial works</Text>
+              <Text className="font-feather text-h2 text-textPrimary mb-6">
+                How the trial works
+              </Text>
 
               <View className="bg-white rounded-2xl shadow-card p-5">
                 {/* Today */}
@@ -292,7 +292,9 @@ const PricingScreen = () => {
                   </View>
                   <View className="flex-1">
                     <Text className="font-feather text-lg text-textPrimary mb-0.5">Today</Text>
-                    <Text className="font-din text-body text-description leading-snug">Unlock premium access to all content for free. No payment needed to start.</Text>
+                    <Text className="font-din text-body text-description leading-snug">
+                      Unlock premium access to all content for free. No payment needed to start.
+                    </Text>
                   </View>
                 </View>
 
@@ -303,7 +305,9 @@ const PricingScreen = () => {
                   </View>
                   <View className="flex-1">
                     <Text className="font-feather text-lg text-textPrimary mb-0.5">Day 5</Text>
-                    <Text className="font-din text-body text-description leading-snug">We&apos;ll send a reminder before your free trial ends.</Text>
+                    <Text className="font-din text-body text-description leading-snug">
+                      We&apos;ll send a reminder before your free trial ends.
+                    </Text>
                   </View>
                 </View>
 
@@ -314,18 +318,21 @@ const PricingScreen = () => {
                   </View>
                   <View className="flex-1">
                     <Text className="font-feather text-lg text-textPrimary mb-0.5">Day 7</Text>
-                    <Text className="font-din text-body text-description leading-snug">Your subscription begins. Cancel anytime before if you change your mind.</Text>
+                    <Text className="font-din text-body text-description leading-snug">
+                      Your subscription begins. Cancel anytime before if you change your mind.
+                    </Text>
                   </View>
                 </View>
               </View>
             </View>
           </AnimatedItem>
 
-
           {/* Unlock Trial Toggle */}
           <AnimatedItem index={2.8} animateItemFromBottom={animateScreenFromBottom}>
             <View className="bg-white rounded-2xl shadow-card p-5 mb-8 flex-row justify-between items-center">
-              <Text className="font-feather text-lg text-textPrimary">Unlock 7-day trial & reminder</Text>
+              <Text className="font-feather text-lg text-textPrimary">
+                Unlock 7-day trial & reminder
+              </Text>
               <Switch
                 trackColor={{ false: '#E9E2C7', true: '#A8F093' }}
                 thumbColor={trialEnabled ? '#24CA17' : '#FFF4D9'}
@@ -411,16 +418,28 @@ const PricingScreen = () => {
 
             <Animated.View className="bg-surfaceCream rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
               <Text className="font-feather text-heading text-center mx-12">
-                Unlock the <Text className="text-accentGold">annoited skin</Text> (limited time) if you upgrade!
+                Unlock the <Text className="text-accentGold">annoited skin</Text> (limited time) if
+                you upgrade!
               </Text>
 
               {riveAssets && (
-                <Rive
-                  url={riveAssets[0].localUri!}
-                  style={{ width: 256, height: 256, marginBottom: 16 }}
-                  artboardName="lamb-idle"
-                  autoplay={true}
-                />
+                <>
+                  {IS_ANDROID ? (
+                    <Rive
+                      resourceName={'gold_lamb'}
+                      style={{ width: 256, height: 256, marginBottom: 16 }}
+                      artboardName="lamb-idle"
+                      autoplay={true}
+                    />
+                  ) : (
+                    <Rive
+                      url={riveAssets[0].localUri!}
+                      style={{ width: 256, height: 256, marginBottom: 16 }}
+                      artboardName="lamb-idle"
+                      autoplay={true}
+                    />
+                  )}
+                </>
               )}
             </Animated.View>
           </AnimatedItem>

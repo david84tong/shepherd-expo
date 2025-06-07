@@ -2,7 +2,7 @@
   "expo": {
     "name": "Shepherd",
     "slug": "shepherd",
-    "version": "1.3.5",
+    "version": "1.3.9",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "io.bytehouse",
@@ -42,6 +42,8 @@
       }
     ],
     "ios": {
+      "enableRiveRuntime": true,
+      "enableJSEngine": false,
       "bundleIdentifier": "second.round.shepherd",
       "buildNumber": "41",
       "googleServicesFile": "./GoogleService-Info.plist",
@@ -59,7 +61,7 @@
       },
       "entitlements": {
         "com.apple.security.application-groups": [
-          "group.shepherd.widget.streak"
+          "group.shepherd.widget.streak1"
         ]
       },
       "associatedDomains": [],
@@ -69,13 +71,14 @@
           "bundleIdentifier": "second.round.shepherd.widget",
           "entitlements": {
             "com.apple.security.application-groups": [
-              "group.shepherd.widget.streak"
+              "group.shepherd.widget.streak1"
             ]
           }
         }
       ]
     },
     "android": {
+      "enableRiveRuntime": true,
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"

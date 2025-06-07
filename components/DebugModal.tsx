@@ -2,15 +2,7 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import firestore from '@react-native-firebase/firestore';
 import { useRouter, usePathname } from 'expo-router';
 import React, { useState, useRef, useMemo, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  SafeAreaView,
-  ScrollView,
-  Alert,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert } from 'react-native';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
@@ -23,6 +15,7 @@ import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAni
 import { HalfModalType } from '../app/halfModal';
 import { calculateExpForLevel } from '../utils/levelUtils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
+import WidgetHowToSheet from './WidgetHowToSheet';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -79,6 +72,7 @@ export function DebugButton() {
   const pathname = usePathname();
   const [modalVisible, setModalVisible] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [showWidgetSheet, setShowWidgetSheet] = useState(false);
   const { signOut } = useAuth();
 
   // Reference to the success bottom sheet modal
@@ -762,7 +756,9 @@ export function DebugButton() {
 
               {/* Devotional Testing */}
               <View className="mb-4">
-                <Text className="font-feather text-lg text-textPrimary mb-3">Devotional Testing</Text>
+                <Text className="font-feather text-lg text-textPrimary mb-3">
+                  Devotional Testing
+                </Text>
 
                 {/* Fetch Today's Devotional Button */}
                 <TouchableOpacity
@@ -896,6 +892,9 @@ export function DebugButton() {
 
       {/* Register custom toast config */}
       <Toast config={toastConfig} />
+
+      {/* Widget How-To Sheet */}
+      <WidgetHowToSheet visible={showWidgetSheet} onClose={() => setShowWidgetSheet(false)} />
     </>
   );
 }

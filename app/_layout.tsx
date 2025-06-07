@@ -480,18 +480,31 @@ export default function RootLayout() {
   if (showRiveAnimation && riveAssets?.[0]?.uri) {
     return (
       <View style={[styles.riveContainer, { backgroundColor: '#FFF4D9' }]}>
-        <Rive
-          url={IS_IOS ? riveAssets[0].uri! : undefined}
-          resourceName={IS_ANDROID ? 'shepherd_splash_screen' : undefined}
-          style={styles.riveAnimation}
-          autoplay={true}
-          onPause={() => {
-            setShowRiveAnimation(false);
-          }}
-          onStop={() => {
-            setShowRiveAnimation(false);
-          }}
-        />
+        {IS_ANDROID ? (
+          <Rive
+            resourceName={'shepherd_splash_screen'}
+            style={styles.riveAnimation}
+            autoplay={true}
+            onPause={() => {
+              setShowRiveAnimation(false);
+            }}
+            onStop={() => {
+              setShowRiveAnimation(false);
+            }}
+          />
+        ) : (
+          <Rive
+            url={riveAssets[0].uri!}
+            style={styles.riveAnimation}
+            autoplay={true}
+            onPause={() => {
+              setShowRiveAnimation(false);
+            }}
+            onStop={() => {
+              setShowRiveAnimation(false);
+            }}
+          />
+        )}
       </View>
     );
   }

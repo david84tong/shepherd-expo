@@ -259,6 +259,14 @@ export default function OnboardingWelcomeScreen() {
       return () => clearInterval(typingInterval);
     }
   }, [textPhase, secondStageActive]);
+  useEffect(() => {
+    return () => {
+      // Cleanup Rive resources
+      if (riveRef.current?.reset) {
+        riveRef.current.reset();
+      }
+    };
+  }, []);
 
   // Handle tapping the lamb in the second stage
   const handleLambTap = () => {
@@ -459,21 +467,37 @@ export default function OnboardingWelcomeScreen() {
               {/* Lamb Animation */}
               <View className="flex-1 items-center justify-center mt-72">
                 <View className="w-[225px] h-[225px] w-full justify-center items-center relative">
-                  <Rive
-                    ref={riveRef}
-                    // resourceName={assets[0].uri}
-                    onError={(error) => {
-                      console.log('------>', error);
-                    }}
-                    resourceName={IS_ANDROID ? 'make_lamb' : undefined}
-                    url={IS_IOS ? assets[0].uri! : undefined} // Use url prop with localUri
-                    // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
-                    stateMachineName="State Machine 1"
-                    artboardName={'lamb-wakingup-click'}
-                    fit={Fit.Contain}
-                    alignment={Alignment.Center}
-                    style={{ width: '100%', height: '100%' }}
-                  />
+                  {IS_ANDROID ? (
+                    <Rive
+                      ref={riveRef}
+                      // resourceName={assets[0].uri}
+                      onError={(error) => {
+                        console.log('------>', error);
+                      }}
+                      resourceName={'make_lamb'}
+                      // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
+                      stateMachineName="State Machine 1"
+                      artboardName={'lamb-wakingup-click'}
+                      fit={Fit.Contain}
+                      alignment={Alignment.Center}
+                      style={{ width: '100%', height: '100%' }}
+                    />
+                  ) : (
+                    <Rive
+                      ref={riveRef}
+                      // resourceName={assets[0].uri}
+                      onError={(error) => {
+                        console.log('------>', error);
+                      }}
+                      url={assets[0].uri!} // Use url prop with localUri
+                      // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
+                      stateMachineName="State Machine 1"
+                      artboardName={'lamb-wakingup-click'}
+                      fit={Fit.Contain}
+                      alignment={Alignment.Center}
+                      style={{ width: '100%', height: '100%' }}
+                    />
+                  )}
                   {/* <Rive
                     ref={riveRef}
                     onError={(error) => {
