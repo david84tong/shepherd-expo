@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ActivityIndicator,
   SafeAreaView,
   ScrollView,
   Dimensions,
@@ -82,14 +81,15 @@ interface DevotionalReaderProps {
 }
 
 const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onClose }) => {
-  const { currentDevotional, isLoading, fetchTodaysDevotional } = useDevotionalStore();
+  const { currentDevotional, isLoading } = useDevotionalStore();
+  const devotionalError = useDevotionalStore().error;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [skipTyping, setSkipTyping] = useState(false);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [showTapGuidance, setShowTapGuidance] = useState(true);
   const [tapCount, setTapCount] = useState(0);
   const [contextSentences, setContextSentences] = useState<string[]>([]);
-  const [showContent, setShowContent] = useState(false);
+  const [fontSize, setFontSize] = useState(16);
 
   // Animation values
   const progressValue = useSharedValue(0);
@@ -97,33 +97,62 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
 
   // Split context into sentences when devotional loads
   useEffect(() => {
-    if (currentDevotional?.context && typeof currentDevotional.context === 'string') {
-      // Split by periods followed by space or end of string, keeping the period
-      const sentences = currentDevotional.context
-        .split(/(?<=[.!?])\s+/)
-        .filter(s => s.trim().length > 0);
-      setContextSentences(sentences);
+    console.log('🔄 Processing context for devotional:', currentDevotional?.id);
+    console.log('🔄 Context value:', currentDevotional?.context);
+    console.log('🔄 Context type:', typeof currentDevotional?.context);
+    
+    if (currentDevotional?.context) {
+      let contextText = '';
+      
+      // Handle different context formats from Firestore
+      if (typeof currentDevotional.context === 'string') {
+        contextText = currentDevotional.context;
+      } else if (Array.isArray(currentDevotional.context)) {
+        // If context is an array, join the elements
+        contextText = (currentDevotional.context as string[]).join(' ');
+      } else if (typeof currentDevotional.context === 'object' && currentDevotional.context !== null) {
+        // If context is an object, try to extract text content
+        const contextObj = currentDevotional.context as any;
+        if (contextObj.text) {
+          contextText = contextObj.text;
+        } else if (contextObj.en) {
+          // Extract English text from multi-language object
+          contextText = contextObj.en;
+        } else {
+          // Convert object to string as fallback
+          contextText = JSON.stringify(currentDevotional.context);
+        }
+      }
+      
+      console.log('🔄 Processed context text:', contextText);
+      
+      if (contextText.trim().length > 0) {
+        // Split by periods followed by space or end of string, keeping the period
+        const sentences = contextText
+          .split(/(?<=[.!?])\s+/)
+          .filter(s => s.trim().length > 0);
+        console.log('🔄 Split into sentences:', sentences);
+        setContextSentences(sentences);
+      } else {
+        console.log('🔄 No valid context text, setting empty array');
+        setContextSentences([]);
+      }
     } else {
-      // If no context or context is not a string, set empty array
+      console.log('🔄 No context available, setting empty array');
       setContextSentences([]);
     }
   }, [currentDevotional]);
 
-  // Load devotional on mount and show content after animation starts
-  useEffect(() => {
-    console.log('🙏 DevotionalReader: Fetching today\'s devotional');
-    fetchTodaysDevotional();
-    
-    // Delay showing content to let slide animation start
-    const timer = setTimeout(() => {
-      setShowContent(true);
-    }, 100); // Short delay to let slide animation begin
-    
-    return () => clearTimeout(timer);
-  }, [fetchTodaysDevotional]);
+  // Remove the devotional fetch - it's already loaded in parent component
 
   // Debug log when devotional changes
   useEffect(() => {
+    console.log('🙏 DevotionalReader: Store state changed:', {
+      currentDevotional: !!currentDevotional,
+      isLoading: isLoading,
+      error: devotionalError,
+    });
+    
     if (currentDevotional) {
       console.log('🙏 DevotionalReader: Current devotional:', {
         id: currentDevotional.id,
@@ -133,7 +162,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
         bibleReference: currentDevotional.bibleReference,
       });
     }
-  }, [currentDevotional]);
+  }, [currentDevotional, isLoading, devotionalError]);
 
   // Calculate total cards (1 for verse + context sentences)
   // Always have at least 1 card for the verse, even if no context
@@ -193,16 +222,9 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
     return { width: `${progressValue.value * 100}%` };
   });
 
-  if (isLoading && showContent) {
-    return (
-      <SafeAreaView className="flex-1 bg-surfaceCream items-center justify-center">
-        <ActivityIndicator size="large" color="#DCB280" />
-        <Text className="text-brown/70 mt-4 font-din">Loading today&apos;s devotional...</Text>
-      </SafeAreaView>
-    );
-  }
+  // Get store state for debugging
 
-  if (!currentDevotional && showContent) {
+  if (!currentDevotional) {
     return (
       <SafeAreaView className="flex-1 bg-surfaceCream items-center justify-center px-6">
         <Text className="text-brown/90 text-lg font-feather-bold mb-2">No Devotional Available</Text>
@@ -221,6 +243,15 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
   // Prepare cards to show (up to current index)
   const cardsToShow = [];
   
+  console.log('📋 Preparing cards to show. Current index:', currentIndex);
+  console.log('📋 Total context sentences:', contextSentences.length);
+  console.log('📋 Context sentences:', contextSentences);
+  console.log('📋 Devotional to use:', {
+    hasVerse: !!currentDevotional?.verse,
+    verse: currentDevotional?.verse,
+    reference: currentDevotional?.bibleReference
+  });
+  
   // First card is always the Bible verse
   if (currentIndex >= 0) {
     cardsToShow.push({
@@ -238,182 +269,176 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
       reference: '',
     });
   }
+  
+  console.log('📋 Cards to show:', cardsToShow.length, cardsToShow);
 
   if (!visible) return null;
 
-  // Don't show content until parent animation starts
-  if (!showContent) {
-    return (
-      <View className="flex-1">
-        <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }} />
-      </View>
-    );
-  }
-
   return (
-    <View style={{ flex: 1, marginTop: 65 }}>
+    <View style={{ flex: 1 }}>
       {/* Header */}
-      <Text
-        className="font-feather-bold text-white"
-        style={{
-          fontSize: responsiveFontSize(3),
-          fontWeight: "400",
-          position: 'absolute',
-          left: 20,
-          top: -50,
-          zIndex: 10
-        }}
-      >
-        Daily Devotional
-      </Text>
-
-      {/* Close button */}
-      {onClose && (
-        <View style={{ position: "absolute", right: 10, top: -50, zIndex: 10 }}>
-          <TouchableOpacity onPress={onClose} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
-            <Feather name="x" size={22} color="#795323" style={{ opacity: 0.4 }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 0, marginBottom: 16 }}>
+        <Text
+          className="font-feather-bold text-textPrimary"
+          style={{
+            fontSize: responsiveFontSize(2.5),
+            fontWeight: "400",
+          }}
+        >
+          Daily Devotional
+        </Text>
+        
+        {/* Close button */}
+        {onClose && (
+          <TouchableOpacity onPress={onClose} className="bg-brown/10 w-8 h-8 rounded-full items-center justify-center">
+            <Feather name="x" size={18} color="#795323" />
           </TouchableOpacity>
-        </View>
-      )}
+        )}
+      </View>
 
-      <View style={{ flex: 1, paddingBottom: 0, paddingTop: 8 }}>
-              {/* Date Header */}
-              <View className="flex-row items-center justify-center mb-3 px-[4px] py-[10px]">
-                <Text className="font-feather-bold text-textPrimary/30 text-center" style={{ fontSize: responsiveFontSize(2), fontWeight: "600" }}>
-                  {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-                </Text>
-              </View>
+      {/* Date Header */}
+      <View className="flex-row items-center justify-center mb-2">
+        <Text className="font-din text-textPrimary/40 text-center text-sm">
+          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+        </Text>
+      </View>
 
-              {/* Progress bar */}
-              <View style={{ height: 12, borderRadius: 12, marginBottom: 8, overflow: 'hidden' }} className='bg-brown/5'>
-                <Reanimated.View
-                  style={[
-                    {
-                      height: '100%',
-                      backgroundColor: '#DCB280',
-                      borderRadius: 2,
-                    },
-                    animatedProgressStyle,
-                  ]}
-                />
-              </View>
+      {/* Progress bar */}
+      <View style={{ height: 8, borderRadius: 4, marginBottom: 12, overflow: 'hidden' }} className='bg-brown/10'>
+        <Reanimated.View
+          style={[
+            {
+              height: '100%',
+              backgroundColor: '#DCB280',
+              borderRadius: 4,
+            },
+            animatedProgressStyle,
+          ]}
+        />
+      </View>
 
-              {/* Cards ScrollView */}
-              <ScrollView
-                ref={scrollViewRef}
-                className="flex-1"
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 80, paddingTop: 10, paddingHorizontal: 16 }}
-                scrollEventThrottle={16}>
-                <TouchableWithoutFeedback onPress={handleNextCard}>
-                  <View style={{ minHeight: '100%' }}>
-                    {cardsToShow.map((card, index) => (
-                      <Reanimated.View
-                        key={index}
-                        entering={FadeInUp.duration(300).delay(index * 60)}
-                        layout={Layout.springify()}
-                        style={{ marginBottom: 16 }}>
-                        <View className="bg-surfaceCreamLight" style={{
-                          padding: 16,
-                          borderRadius: 16,
-                          shadowColor: '#000',
-                          shadowOffset: { width: 0, height: 1 },
-                          shadowOpacity: 0.05,
-                          shadowRadius: 2,
-                          elevation: 1,
-                          backgroundColor: card.type === 'verse' ? "#fff1c9" : "#ffe8b3",
-                        }}>
-                          {/* Bible reference for verse card */}
-                          {card.type === 'verse' && card.reference && (
-                            <Text className="text-brown/50 text-sm font-feather-bold mb-2">
-                              {card.reference}
-                            </Text>
-                          )}
-                          
-                          {/* Card content with typing animation */}
-                          <View>
-                            {index === cardsToShow.length - 1 ? (
-                              <TypingText
-                                text={card.content}
-                                className='text-brown/90 text-[17px] leading-[25px]'
-                                baseTextStyle={{ color: '#795323', fontSize: 17, lineHeight: 25 }}
-                                speed={20}
-                                skipAnimation={skipTyping}
-                                onComplete={handleTypingComplete}
-                              />
-                            ) : (
-                              <Text className='text-brown/90 text-[17px] leading-[25px]'>
-                                {card.content}
-                              </Text>
-                            )}
-                          </View>
-                        </View>
-                      </Reanimated.View>
-                    ))}
-
-                    {/* Tap guidance or finish button */}
-                    {currentIndex < totalCards - 1 ? (
-                      <View style={{ alignItems: 'center', marginTop: 16 }}>
-                        {showTapGuidance && (
-                          <Text style={{
-                            color: '#B89B4C',
-                            fontFamily: 'DIN Next Rounded LT W01 Regular',
-                            fontSize: 16,
-                            opacity: 0.7,
-                          }}>
-                            {isTypingComplete ? 'Tap for next →' : 'Tap to show full text'}
+      {/* Cards ScrollView */}
+      <ScrollView
+        ref={scrollViewRef}
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 160 }}
+        scrollEventThrottle={16}>
+        <TouchableWithoutFeedback onPress={handleNextCard}>
+          <View style={{ minHeight: 200 }}>
+            {cardsToShow.length === 0 ? (
+              <Text className="text-brown text-center">No cards to display</Text>
+            ) : (
+              <>
+                {cardsToShow.map((card, index) => {
+                  console.log('🎨 Rendering card:', index, card.type, card.content.substring(0, 50));
+                  return (
+                    <Reanimated.View
+                      key={index}
+                      entering={FadeInUp.duration(300).delay(index * 60)}
+                      layout={Layout.springify()}
+                      style={{ marginBottom: 12 }}>
+                      <View className="bg-surfaceCreamLight" style={{
+                        padding: 14,
+                        borderRadius: 12,
+                        backgroundColor: card.type === 'verse' ? "#fff1c9" : "#ffe8b3",
+                      }}>
+                        {/* Bible reference for verse card */}
+                        {card.type === 'verse' && card.reference && (
+                          <Text 
+                            className="text-brown/50 font-feather-bold mb-2"
+                            style={{ fontSize: Math.max(fontSize * 0.75, 8) }}
+                          >
+                            {card.reference}
                           </Text>
                         )}
-                      </View>
-                    ) : (
-                      <TouchableOpacity
-                        onPress={() => {
-                          // Mark reading as completed
-                          const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
-                          setReadingCompleted(true);
-                          
-                          // Show tab bar again
-                          const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
-                          setDevotionalReaderVisible(false);
-                          
-                          // Log completion analytics
-                          analytics.logEvent('DevotionalReader_Completed', {
-                            bibleReference: currentDevotional?.bibleReference,
-                            hasContext: !!currentDevotional?.context,
-                            totalCards: totalCards,
-                          });
-                          
-                          // Close the reader
-                          if (onClose) {
-                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                            onClose();
-                          }
-                        }}
-                        activeOpacity={0.8}>
-                        <View style={{
-                          backgroundColor: 'rgba(220, 178, 128, 0.2)',
-                          paddingVertical: 12,
-                          alignItems: 'center',
-                          marginTop: 24,
-                          borderRadius: 12,
-                        }}>
-                          <Text style={{
-                            color: '#B89B4C',
-                            fontFamily: 'Feather Bold',
-                            fontSize: 16,
-                          }}>
-                            Finish Reading 🙏
-                          </Text>
+                        
+                        {/* Card content with typing animation */}
+                        <View>
+                          {index === cardsToShow.length - 1 ? (
+                            <TypingText
+                              text={card.content}
+                              className='text-brown/90'
+                              baseTextStyle={{ color: '#795323', fontSize: fontSize, lineHeight: fontSize * 1.5, fontFamily: 'DIN Next Rounded LT W01 Regular' }}
+                              speed={20}
+                              skipAnimation={skipTyping}
+                              onComplete={handleTypingComplete}
+                            />
+                          ) : (
+                            <Text 
+                              className='text-brown/90 font-din'
+                              style={{ fontSize: fontSize, lineHeight: fontSize * 1.5 }}
+                            >
+                              {card.content}
+                            </Text>
+                          )}
                         </View>
-                      </TouchableOpacity>
-                    )}
+                      </View>
+                    </Reanimated.View>
+                  );
+                })}
+              </>
+            )}
 
-                    {/* Invisible spacer */}
-                    <View style={{ height: 20 }} />
-                  </View>
-                </TouchableWithoutFeedback>
-              </ScrollView>
-            </View>
+            {/* Tap guidance or finish button */}
+            {currentIndex < totalCards - 1 ? (
+              <View style={{ alignItems: 'center', marginTop: 12 }}>
+                {showTapGuidance && (
+                  <Text style={{
+                    color: '#B89B4C',
+                    fontFamily: 'DIN Next Rounded LT W01 Regular',
+                    fontSize: 14,
+                    opacity: 0.7,
+                  }}>
+                    {isTypingComplete ? 'Tap for next →' : 'Tap to show full text'}
+                  </Text>
+                )}
+              </View>
+            ) : (
+              <TouchableOpacity
+                onPress={() => {
+                  // Mark reading as completed
+                  const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
+                  setReadingCompleted(true);
+                  
+                  // Show tab bar again
+                  const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
+                  setDevotionalReaderVisible(false);
+                  
+                  // Log completion analytics
+                  analytics.logEvent('DevotionalReader_Completed', {
+                    bibleReference: currentDevotional?.bibleReference,
+                    hasContext: !!currentDevotional?.context,
+                    totalCards: totalCards,
+                  });
+                  
+                  // Close the reader
+                  if (onClose) {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    onClose();
+                  }
+                }}
+                activeOpacity={0.8}>
+                <View style={{
+                  backgroundColor: '#DCB280',
+                  paddingVertical: 12,
+                  alignItems: 'center',
+                  marginTop: 16,
+                  borderRadius: 12,
+                }}>
+                  <Text style={{
+                    color: 'white',
+                    fontFamily: 'Feather Bold',
+                    fontSize: 16,
+                  }}>
+                    Finish Reading 🙏
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            )}
+          </View>
+        </TouchableWithoutFeedback>
+      </ScrollView>
     </View>
   );
 };
