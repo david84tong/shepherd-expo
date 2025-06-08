@@ -212,7 +212,7 @@ export default function OnboardingLambNameScreen() {
           ) : (
             <Rive
               url={riveAssets?.[0]?.uri}
-              resourceName={IS_ANDROID ? 'home_lamb' : undefined}
+              artboardName="lamb-idle"
               autoplay
               style={{ width: '80%', height: '80%' }}
               onError={(error) => {

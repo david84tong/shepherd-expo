@@ -596,12 +596,14 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     const usedReferralCodes = userData?.usedReferralCodes || [];
     const hasUsedWeekly = usedReferralCodes.includes('WEEKLY');
     const hasUsedMonthly = usedReferralCodes.includes('MONTHL');
+    const hasUsedYearly = usedReferralCodes.includes('YEARLY');
     const hasUsedCreator = usedReferralCodes.includes('CREATE');
     const hasUsedPermanent = usedReferralCodes.includes('WXES4S');
 
     // Prepare variables that might be needed in switch cases
     let monthExpiry: Date;
     let weekExpiry: Date;
+    let yearExpiry: Date;
     analytics.logEvent('handleReferralCode', {
       code: code,
     });
@@ -647,6 +649,22 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           isProWithReferral: true,
         });
         break;
+
+      case 'YEARLY':
+        if (hasUsedYearly) {
+          throw new Error('You have already used a yearly subscription code');
+        }
+        // One year pro access
+        yearExpiry = new Date();
+        yearExpiry.setFullYear(yearExpiry.getFullYear() + 1);
+
+        await userRef.update({
+          userProExpiryDate: yearExpiry,
+          usedReferralCodes: firestore.FieldValue.arrayUnion(code),
+          isProWithReferral: true,
+        });
+        break;
+
       case 'CREATE':
         if (hasUsedCreator) {
           throw new Error('You have already used a creator subscription code');
