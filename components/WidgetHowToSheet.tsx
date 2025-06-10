@@ -32,6 +32,7 @@ const steps = [
     image: STEP2_IMAGE,
   },
   {
+    resize: 3,
     instruction: 'Find Shepherd in the widget gallery.',
     image: STEP3_IMAGE,
   },
@@ -189,7 +190,7 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
                 <Image
                   source={steps[step].image}
                   style={styles.image}
-                  resizeMode="cover"
+                  resizeMode={steps[step].resize ? "cover" : "contain"}
 
                 />
               </View>
@@ -259,8 +260,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   imageContainer: {
-    width: 240,
-    height: Dimensions.get('window').width * 0.8,
+    width: Dimensions.get('screen').width * 0.65,
+    height: Dimensions.get('screen').width * 0.9,
     marginTop: 24,
     alignItems: 'center',
     justifyContent: 'center',

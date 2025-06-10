@@ -12,6 +12,7 @@ import {
   Pressable,
   ActivityIndicator,
   StatusBar,
+  Platform,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useOnboardingStore } from '../stores/onboardingStore';
@@ -465,7 +466,7 @@ export default function OnboardingWelcomeScreen() {
             {/* Inner container */}
             <View className="flex-1">
               {/* Lamb Animation */}
-              <View className="flex-1 items-center justify-center mt-72">
+              <View className={`flex-1 items-center justify-center ${Platform.OS === 'ios' && Platform.isPad ? 'mt-[500px]' : 'mt-72'}`}>
                 <View className="w-[225px] h-[225px] w-full justify-center items-center relative">
                   {IS_ANDROID ? (
                     <Rive

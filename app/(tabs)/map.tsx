@@ -11,6 +11,7 @@ import {
   View,
   ViewToken,
   StatusBar,
+  Platform,
 } from 'react-native';
 
 import PathNode, { NodeStatus } from '../../components/MapComponents/PathNode';
@@ -167,6 +168,7 @@ const ITEM_HEIGHT = 180; // adjust if needed
 
 export default function MapScreen() {
   const router = useRouter();
+  const isIpad = Platform.OS === 'ios' && Platform.isPad;
 
   // Get user reading time preference
   const frequencyGoal = useUserStore((state) => state.frequencyGoal);
@@ -578,35 +580,39 @@ export default function MapScreen() {
   return (
     <SafeAreaView className="flex-1 bg-surfaceCream">
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      <SectionList<Unit, BibleSection>
-        ref={sectionListRef}
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        renderSectionHeader={renderSectionHeader}
-        SectionSeparatorComponent={null}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: heightScreen * 0.1 }}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        scrollEventThrottle={16}
-        stickySectionHeadersEnabled={false}
-        // Performance optimizations
-        initialNumToRender={5}
-        maxToRenderPerBatch={5}
-        windowSize={10}
-        removeClippedSubviews={true}
-        getItemLayout={(_data, index) => ({
-          length: ITEM_HEIGHT,
-          offset: ITEM_HEIGHT * index,
-          index,
-        })}
-        updateCellsBatchingPeriod={50}
-        maintainVisibleContentPosition={{
-          minIndexForVisible: 0,
-          autoscrollToTopThreshold: 10,
-        }}
-      />
+      <View style={{ width: "100%", height: "100%", justifyContent: 'center', alignItems: 'center' }}>
+        <SectionList<Unit, BibleSection>
+          ref={sectionListRef}
+          sections={sections}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          style={{ width: isIpad ? 500 : '100%' }}
+
+          renderSectionHeader={renderSectionHeader}
+          SectionSeparatorComponent={null}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: heightScreen * 0.1, }}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          scrollEventThrottle={16}
+          stickySectionHeadersEnabled={false}
+          // Performance optimizations
+          initialNumToRender={5}
+          maxToRenderPerBatch={5}
+          windowSize={10}
+          removeClippedSubviews={true}
+          getItemLayout={(_data, index) => ({
+            length: ITEM_HEIGHT,
+            offset: ITEM_HEIGHT * index,
+            index,
+          })}
+          updateCellsBatchingPeriod={50}
+          maintainVisibleContentPosition={{
+            minIndexForVisible: 0,
+            autoscrollToTopThreshold: 10,
+          }}
+        />
+      </View>
     </SafeAreaView>
   );
 }
