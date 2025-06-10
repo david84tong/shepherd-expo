@@ -881,9 +881,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                 ],
               ]}>
               <Text
-                style={[verseTextStyle, { color: THEME_COLORS[currentTheme].text }]}
+                style={[verseTextStyle, { color: "#634012" }]}
+                // className='text-brown'
                 selectable={true}>
-                <Text style={[verseNumberStyle, { color: '#DCB280' }]}>{verse.verse} </Text>
+                <Text style={[verseNumberStyle, { color: '#9c755a' }]}>{`${verse.verse}.`} </Text>
                 {verse.text}
               </Text>
             </Pressable>
@@ -1068,11 +1069,11 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       setChapterData(data);
       setLoading(false); // Ensure loading is false when we have data
       setError(null);
-      
+
       // Update internal state to match the handoff data
       setCurrentBook(data.book);
       setCurrentChapter(data.chapter);
-      
+
       // Note: bookId might not be in the ChapterResponse, so we keep currentBookId as is
       // unless we can derive it from the data
     }
@@ -1669,8 +1670,8 @@ const styles = StyleSheet.create<BibleReaderStyles>({
   },
   verseNumber: {
     color: '#DCB280',
-    fontFamily: 'Inter-Bold',
-    fontWeight: 'bold',
+    // fontFamily: 'Inter-Bold',
+    // fontWeight: 'bold',
   },
   floatingNavContainer: {
     position: 'absolute',

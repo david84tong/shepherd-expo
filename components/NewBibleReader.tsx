@@ -20,7 +20,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slider from '@react-native-community/slider';
 import { fetchChapter, Verse, ChapterResponse } from '~/app/api/bible';
 import { usePathStore } from '~/app/stores/pathStore';
-import { Feather, MaterialIcons } from '@expo/vector-icons';
+import { Feather, FontAwesome6, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Reanimated, {
   FadeInUp,
   useAnimatedStyle,
@@ -1261,7 +1261,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
               ],
             },
           ]}>
-          <Feather name="message-circle" size={18} color="#B89B4C" />
+          <Ionicons name="chatbubble-ellipses" size={30} color="#634012" style={{ opacity: 0.5 }} />
         </RNAnimated.View>
       </RNAnimated.View>
     );
@@ -1313,7 +1313,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
               ],
             },
           ]}>
-          <Feather name="more-horizontal" size={18} color="#B89B4C" />
+          {/* <Feather name="more-horizontal" size={18} color="#B89B4C" /> */}
+          <FontAwesome6 name="book" size={25} color="#634012" style={{ opacity: 0.5 }} />
         </RNAnimated.View>
       </RNAnimated.View>
     );
@@ -2218,10 +2219,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   swipeActionContent: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 249, 230, 0.9)',
+    width: 50,
+    height: 50,
+    borderRadius: 50,
+    backgroundColor: 'rgba(181, 125, 0, 0.15)',
+    opacity: 0.2,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',

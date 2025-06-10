@@ -14,8 +14,8 @@ export default function BibleTab() {
   }, []);
 
   return (
-    <SafeAreaView className="flex-1 bg-surfaceCream">
-      <BibleReader initialBookId={savedBookId} initialChapter={savedChapter} />
-    </SafeAreaView>
+
+    <BibleReader initialBookId={savedBookId} initialChapter={savedChapter} />
+
   );
 }
