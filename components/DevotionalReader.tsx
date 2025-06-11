@@ -13,6 +13,7 @@ import {
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { useHomeStore } from '~/app/stores/homeStore';
 import { Feather, FontAwesome } from '@expo/vector-icons';
+import firestore from '@react-native-firebase/firestore';
 import Reanimated, {
   FadeInUp,
   useAnimatedStyle,
@@ -447,6 +448,24 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
           <Animated.View style={{ opacity: animatedGoldOpacity, width: '100%' }}>
             <TouchableOpacity
               onPress={() => {
+
+                console.log('🔴 Finish Reading button pressed');
+
+                // Update lastActivityDate to prevent completion states from being reset
+                const now = firestore.Timestamp.now();
+                const setLastActivityDate = useUserStore.getState().setLastActivityDate;
+                const setLastReadingDate = useUserStore.getState().setLastReadingDate;
+                console.log('🔴 Updating lastActivityDate and lastReadingDate to:', now.toDate());
+                setLastActivityDate(now);
+                setLastReadingDate(now);
+
+                // Mark reading as completed
+                const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
+                console.log('🔴 Before setting readingCompleted:', useHomeStore.getState().readingCompleted);
+                setReadingCompleted(true);
+                console.log('🔴 After setting readingCompleted:', useHomeStore.getState().readingCompleted);
+
+
                 setShowSuccess(false);
                 setIsRewarding(false);
                 if (onClose) {
