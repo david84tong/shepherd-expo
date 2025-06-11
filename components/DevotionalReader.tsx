@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,10 +7,12 @@ import {
   ScrollView,
   Dimensions,
   TouchableWithoutFeedback,
+  Image,
+  Animated,
 } from 'react-native';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { useHomeStore } from '~/app/stores/homeStore';
-import { Feather } from '@expo/vector-icons';
+import { Feather, FontAwesome } from '@expo/vector-icons';
 import Reanimated, {
   FadeInUp,
   useAnimatedStyle,
@@ -21,6 +23,10 @@ import Reanimated, {
 import * as Haptics from 'expo-haptics';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import analytics from '../utils/analytics';
+import SuccessAnimation from './SuccessAnimation';
+import { useUserStore } from '~/app/stores/userStore';
+import { getLevelData } from '~/utils/levelUtils';
+import PrimaryButton from './PrimaryButton';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -78,9 +84,10 @@ const TypingText: React.FC<TypingTextProps> = ({
 interface DevotionalReaderProps {
   visible?: boolean;
   onClose?: () => void;
+  setFinishReading: (a: boolean) => void;
 }
 
-const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onClose }) => {
+const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onClose, setFinishReading }) => {
   const { currentDevotional, isLoading } = useDevotionalStore();
   const devotionalError = useDevotionalStore().error;
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -90,20 +97,115 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
   const [tapCount, setTapCount] = useState(0);
   const [contextSentences, setContextSentences] = useState<string[]>([]);
   const [fontSize, setFontSize] = useState(16);
+  const [isRewarding, setIsRewarding] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [buttonsEnabled, setButtonsEnabled] = useState(false);
+  const [blueButtonOpacity, setBlueButtonOpacity] = useState(0.3);
+  const [goldButtonOpacity, setGoldButtonOpacity] = useState(0.4);
+  const progressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const animatedXP = useRef(new Animated.Value(0)).current;
+  const animatedHearts = useRef(new Animated.Value(0)).current;
+  const animatedTextOpacity = useRef(new Animated.Value(0.4)).current;
+
+  const lambHearts = useUserStore((state) => state?.getLambHearts?.());
+  const lamb = useUserStore((state) => state.getLamb?.());
+
+  const MAX_HEARTS = 100;
 
   // Animation values
   const progressValue = useSharedValue(0);
   const scrollViewRef = useRef<ScrollView>(null);
 
+  const levelInfo = useMemo(() => {
+    if (!lamb || lamb.xp === undefined)
+      return {
+        level: 1,
+        xp: 0,
+        xpForCurrentLevel: 0,
+        xpForNextLevel: 90,
+        xpProgress: 0,
+        xpNeeded: 90,
+        progress: 0,
+      };
+
+    return getLevelData(lamb.xp);
+  }, [lamb?.xp]);
+
+  const animatedBlueOpacity = useRef(new Animated.Value(0.3)).current;
+  const animatedGoldOpacity = useRef(new Animated.Value(0.4)).current;
+
+  // Delayed progress animation for success view
+  useEffect(() => {
+    if (showSuccess) {
+      animatedXP.setValue(0);
+      animatedHearts.setValue(0);
+      animatedTextOpacity.setValue(0.4);
+      if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
+      progressTimeoutRef.current = setTimeout(() => {
+        Animated.timing(animatedXP, {
+          toValue: levelInfo.progress,
+          duration: 1200,
+          useNativeDriver: false,
+        }).start();
+        Animated.timing(animatedHearts, {
+          toValue: lambHearts,
+          duration: 1200,
+          useNativeDriver: false,
+        }).start();
+        setTimeout(() => {
+          Animated.timing(animatedTextOpacity, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: false,
+          }).start();
+          setTimeout(() => {
+            // Animate the opacity changes
+            Animated.timing(animatedBlueOpacity, {
+              toValue: 1,
+              duration: 500,
+              useNativeDriver: true,
+            }).start();
+
+            Animated.timing(animatedGoldOpacity, {
+              toValue: 1,
+              duration: 500,
+              useNativeDriver: true,
+            }).start();
+
+            // Still update the state for disabled/enabled logic
+            setButtonsEnabled(true);
+            setBlueButtonOpacity(1);
+            setGoldButtonOpacity(1);
+          }, 1000);
+        }, 1200);
+      }, 500);
+    } else {
+      animatedXP.setValue(0);
+      animatedHearts.setValue(0);
+      animatedTextOpacity.setValue(0.4);
+      // Reset to default opacity values
+      animatedBlueOpacity.setValue(0.3);
+      animatedGoldOpacity.setValue(0.4);
+      setButtonsEnabled(false);
+      setBlueButtonOpacity(0.3);
+      setGoldButtonOpacity(0.4);
+      if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
+    }
+    // Cleanup on unmount
+    return () => {
+      if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
+    };
+  }, [showSuccess, levelInfo.progress, lambHearts]);
+
   // Split context into sentences when devotional loads
   useEffect(() => {
-    console.log('🔄 Processing context for devotional:', currentDevotional?.id);
+    console.log(' Processing context for devotional:', currentDevotional?.id);
     console.log('🔄 Context value:', currentDevotional?.context);
     console.log('🔄 Context type:', typeof currentDevotional?.context);
-    
+
     if (currentDevotional?.context) {
       let contextText = '';
-      
+
       // Handle different context formats from Firestore
       if (typeof currentDevotional.context === 'string') {
         contextText = currentDevotional.context;
@@ -123,9 +225,9 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
           contextText = JSON.stringify(currentDevotional.context);
         }
       }
-      
+
       console.log('🔄 Processed context text:', contextText);
-      
+
       if (contextText.trim().length > 0) {
         // Split by periods followed by space or end of string, keeping the period
         const sentences = contextText
@@ -152,7 +254,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
       isLoading: isLoading,
       error: devotionalError,
     });
-    
+
     if (currentDevotional) {
       console.log('🙏 DevotionalReader: Current devotional:', {
         id: currentDevotional.id,
@@ -242,7 +344,6 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
 
   // Prepare cards to show (up to current index)
   const cardsToShow = [];
-  
   console.log('📋 Preparing cards to show. Current index:', currentIndex);
   console.log('📋 Total context sentences:', contextSentences.length);
   console.log('📋 Context sentences:', contextSentences);
@@ -251,7 +352,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
     verse: currentDevotional?.verse,
     reference: currentDevotional?.bibleReference
   });
-  
+
   // First card is always the Bible verse
   if (currentIndex >= 0) {
     cardsToShow.push({
@@ -269,176 +370,265 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
       reference: '',
     });
   }
-  
+
   console.log('📋 Cards to show:', cardsToShow.length, cardsToShow);
 
   if (!visible) return null;
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Header */}
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 0, marginBottom: 16 }}>
-        <Text
-          className="font-feather-bold text-textPrimary"
-          style={{
-            fontSize: responsiveFontSize(2.5),
-            fontWeight: "400",
-          }}
-        >
-          Daily Devotional
-        </Text>
-        
-        {/* Close button */}
-        {onClose && (
-          <TouchableOpacity onPress={onClose} className="bg-brown/10 w-8 h-8 rounded-full items-center justify-center">
-            <Feather name="x" size={18} color="#795323" />
-          </TouchableOpacity>
-        )}
-      </View>
+      {showSuccess ? (
+        <View className="flex-1 items-center ">
+          <View className="mb-0 mt-6">
+            <Image source={require("../assets/icons/rocket.png")} style={{ width: 65, height: 65 }} />
+          </View>
+          <Text className="font-feather-bold text-[28px] text-center mb-6 text-orange">
+            {`Level UP ${levelInfo.level}!`}
+          </Text>
+          <Animated.Text
+            className="font-feather-bold text-[26px] text-center mb-1 text-brown/90"
+            style={{ opacity: animatedTextOpacity }}
+          >
+            Reading Complete!
+          </Animated.Text>
+          <Text className="font-din text-[17px]  text-brown/90 text-center mb-4" >
+            Hurray! You finished today's bible reading & fed your lamb.
+          </Text>
+          <Text className="font-din text-[13px] text-center mb-6 tracking-wider uppercase text-brown/80">
+            READING REWARDS
+          </Text>
 
-      {/* Date Header */}
-      <View className="flex-row items-center justify-center mb-2">
-        <Text className="font-din text-textPrimary/40 text-center text-sm">
-          {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
-        </Text>
-      </View>
-
-      {/* Progress bar */}
-      <View style={{ height: 8, borderRadius: 4, marginBottom: 12, overflow: 'hidden' }} className='bg-brown/10'>
-        <Reanimated.View
-          style={[
-            {
-              height: '100%',
-              backgroundColor: '#DCB280',
-              borderRadius: 4,
-            },
-            animatedProgressStyle,
-          ]}
-        />
-      </View>
-
-      {/* Cards ScrollView */}
-      <ScrollView
-        ref={scrollViewRef}
-        className="flex-1"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 160 }}
-        scrollEventThrottle={16}>
-        <TouchableWithoutFeedback onPress={handleNextCard}>
-          <View style={{ minHeight: 200 }}>
-            {cardsToShow.length === 0 ? (
-              <Text className="text-brown text-center">No cards to display</Text>
-            ) : (
-              <>
-                {cardsToShow.map((card, index) => {
-                  console.log('🎨 Rendering card:', index, card.type, card.content.substring(0, 50));
-                  return (
-                    <Reanimated.View
-                      key={index}
-                      entering={FadeInUp.duration(300).delay(index * 60)}
-                      layout={Layout.springify()}
-                      style={{ marginBottom: 12 }}>
-                      <View className="bg-surfaceCreamLight" style={{
-                        padding: 14,
-                        borderRadius: 12,
-                        backgroundColor: card.type === 'verse' ? "#fff1c9" : "#ffe8b3",
-                      }}>
-                        {/* Bible reference for verse card */}
-                        {card.type === 'verse' && card.reference && (
-                          <Text 
-                            className="text-brown/50 font-feather-bold mb-2"
-                            style={{ fontSize: Math.max(fontSize * 0.75, 8) }}
-                          >
-                            {card.reference}
-                          </Text>
-                        )}
-                        
-                        {/* Card content with typing animation */}
-                        <View>
-                          {index === cardsToShow.length - 1 ? (
-                            <TypingText
-                              text={card.content}
-                              className='text-brown/90'
-                              baseTextStyle={{ color: '#795323', fontSize: fontSize, lineHeight: fontSize * 1.5, fontFamily: 'DIN Next Rounded LT W01 Regular' }}
-                              speed={20}
-                              skipAnimation={skipTyping}
-                              onComplete={handleTypingComplete}
-                            />
-                          ) : (
-                            <Text 
-                              className='text-brown/90 font-din'
-                              style={{ fontSize: fontSize, lineHeight: fontSize * 1.5 }}
-                            >
-                              {card.content}
-                            </Text>
-                          )}
-                        </View>
-                      </View>
-                    </Reanimated.View>
-                  );
-                })}
-              </>
-            )}
-
-            {/* Tap guidance or finish button */}
-            {currentIndex < totalCards - 1 ? (
-              <View style={{ alignItems: 'center', marginTop: 12 }}>
-                {showTapGuidance && (
-                  <Text style={{
-                    color: '#B89B4C',
-                    fontFamily: 'DIN Next Rounded LT W01 Regular',
-                    fontSize: 14,
-                    opacity: 0.7,
-                  }}>
-                    {isTypingComplete ? 'Tap for next →' : 'Tap to show full text'}
-                  </Text>
-                )}
+          <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Image source={require('../assets/icons/heartIcon.png')} className="w-7 h-7" />
+            <View style={{ width: '92%' }}>
+              <View className="h-2 bg-red/25 rounded-md overflow-hidden">
+                <Animated.View
+                  className="h-full bg-red rounded-full"
+                  style={{
+                    width: animatedHearts.interpolate({
+                      inputRange: [0, MAX_HEARTS],
+                      outputRange: ['1%', '100%'],
+                      extrapolate: 'clamp',
+                    }),
+                  }}
+                />
               </View>
-            ) : (
-              <TouchableOpacity
-                onPress={() => {
-                  // Mark reading as completed
-                  const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
-                  setReadingCompleted(true);
-                  
+            </View>
+          </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', }}>
+            <Image source={require('../assets/icons/starIcon.png')} tintColor={'#FF8800'} className="w-7 h-7" />
+            <View style={{ width: '92%' }}>
+              <View className="h-2 bg-orange/25 rounded-full overflow-hidden " >
+                <Animated.View
+                  className="h-full bg-orange rounded-full"
+                  style={{
+                    width: animatedXP.interpolate({
+                      inputRange: [0, 100],
+                      outputRange: ['1%', '100%'],
+                      extrapolate: 'clamp',
+                    }),
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+          <Animated.View style={{ opacity: animatedBlueOpacity, width: '100%', }}>
+            <PrimaryButton
+              title="Pray about this verse"
+              onPress={() => { }}
+              buttonType="blue"
+              icon={require('../assets/icons/starIcon.png')}
+              reward={"+25"}
+              disabled={!buttonsEnabled}
+            />
+          </Animated.View>
+
+          <Animated.View style={{ opacity: animatedGoldOpacity, width: '100%' }}>
+            <TouchableOpacity
+              onPress={() => {
+                setShowSuccess(false);
+                setIsRewarding(false);
+                if (onClose) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  setFinishReading(false)
                   // Show tab bar again
                   const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
                   setDevotionalReaderVisible(false);
-                  
-                  // Log completion analytics
-                  analytics.logEvent('DevotionalReader_Completed', {
-                    bibleReference: currentDevotional?.bibleReference,
-                    hasContext: !!currentDevotional?.context,
-                    totalCards: totalCards,
-                  });
-                  
-                  // Close the reader
-                  if (onClose) {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    onClose();
-                  }
-                }}
-                activeOpacity={0.8}>
-                <View style={{
-                  backgroundColor: '#DCB280',
-                  paddingVertical: 12,
-                  alignItems: 'center',
-                  marginTop: 16,
-                  borderRadius: 12,
-                }}>
-                  <Text style={{
-                    color: 'white',
-                    fontFamily: 'Feather Bold',
-                    fontSize: 16,
-                  }}>
-                    Finish Reading 🙏
-                  </Text>
-                </View>
+                  onClose();
+                }
+              }}
+              className="w-full h-[52px] self-center bg-gold rounded-full mt-2 items-center justify-center"
+              disabled={!buttonsEnabled}
+            >
+              <Text className="font-feather-bold text-brown/80 text-xl text-center">Go Home</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View>
+      ) : (
+        <View style={{ flex: 1 }}>
+          {/* Header */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 0, marginBottom: 16 }}>
+            <Text
+              className="font-feather-bold text-textPrimary"
+              style={{
+                fontSize: responsiveFontSize(2.5),
+                fontWeight: "400",
+              }}
+            >
+              Daily Devotional
+            </Text>
+
+            {/* Close button */}
+            {onClose && (
+              <TouchableOpacity onPress={onClose} className="bg-brown/10 w-8 h-8 rounded-full items-center justify-center">
+                <Feather name="x" size={18} color="#795323" />
               </TouchableOpacity>
             )}
           </View>
-        </TouchableWithoutFeedback>
-      </ScrollView>
+
+          {/* Date Header */}
+          <View className="flex-row items-center justify-center mb-2">
+            <Text className="font-din text-textPrimary/40 text-center text-sm">
+              {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+            </Text>
+          </View>
+
+          {/* Progress bar */}
+          <View style={{ height: 8, borderRadius: 4, marginBottom: 12, overflow: 'hidden' }} className='bg-brown/10'>
+            <Reanimated.View
+              style={[
+                {
+                  height: '100%',
+                  backgroundColor: '#DCB280',
+                  borderRadius: 4,
+                },
+                animatedProgressStyle,
+              ]}
+            />
+          </View>
+
+          {/* Cards ScrollView */}
+          <ScrollView
+            ref={scrollViewRef}
+            className="flex-1"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 160 }}
+            scrollEventThrottle={16}>
+            <TouchableWithoutFeedback onPress={handleNextCard}>
+              <View style={{ minHeight: 200 }}>
+                {cardsToShow.length === 0 ? (
+                  <Text className="text-brown text-center">No cards to display</Text>
+                ) : (
+                  <>
+                    {cardsToShow.map((card, index) => {
+                      console.log('🎨 Rendering card:', index, card.type, card.content.substring(0, 50));
+                      return (
+                        <Reanimated.View
+                          key={index}
+                          entering={FadeInUp.duration(300).delay(index * 60)}
+                          layout={Layout.springify()}
+                          style={{ marginBottom: 12 }}>
+                          <View className="bg-surfaceCreamLight" style={{
+                            padding: 14,
+                            borderRadius: 12,
+                            backgroundColor: card.type === 'verse' ? "#fff1c9" : "#ffe8b3",
+                          }}>
+                            {/* Bible reference for verse card */}
+                            {card.type === 'verse' && card.reference && (
+                              <Text
+                                className="text-brown/50 font-feather-bold mb-2"
+                                style={{ fontSize: Math.max(fontSize * 0.75, 8) }}
+                              >
+                                {card.reference}
+                              </Text>
+                            )}
+
+                            {/* Card content with typing animation */}
+                            <View>
+                              {index === cardsToShow.length - 1 ? (
+                                <TypingText
+                                  text={card.content}
+                                  className='text-brown/90'
+                                  baseTextStyle={{ color: '#795323', fontSize: fontSize, lineHeight: fontSize * 1.5, fontFamily: 'DIN Next Rounded LT W01 Regular' }}
+                                  speed={20}
+                                  skipAnimation={skipTyping}
+                                  onComplete={handleTypingComplete}
+                                />
+                              ) : (
+                                <Text
+                                  className='text-brown/90 font-din'
+                                  style={{ fontSize: fontSize, lineHeight: fontSize * 1.5 }}
+                                >
+                                  {card.content}
+                                </Text>
+                              )}
+                            </View>
+                          </View>
+                        </Reanimated.View>
+                      );
+                    })}
+                  </>
+                )}
+
+                {/* Tap guidance or finish button */}
+                {currentIndex < totalCards - 1 ? (
+                  <View style={{ alignItems: 'center', marginTop: 12 }}>
+                    {showTapGuidance && (
+                      <Text style={{
+                        color: '#B89B4C',
+                        fontFamily: 'DIN Next Rounded LT W01 Regular',
+                        fontSize: 14,
+                        opacity: 0.7,
+                      }}>
+                        {isTypingComplete ? 'Tap for next →' : 'Tap to show full text'}
+                      </Text>
+                    )}
+                  </View>
+                ) : (
+                  <TouchableOpacity
+                    onPress={isRewarding ? undefined : () => {
+                      setIsRewarding(true);
+                      setShowSuccess(true);
+                      setFinishReading(true)
+                      // Mark reading as completed
+                      const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
+                      setReadingCompleted(true);
+
+                      // Log completion analytics
+                      analytics.logEvent('DevotionalReader_Completed', {
+                        bibleReference: currentDevotional?.bibleReference,
+                        hasContext: !!currentDevotional?.context,
+                        totalCards: totalCards,
+                      });
+
+                    }}
+                    activeOpacity={isRewarding ? 1 : 0.8}
+                    disabled={isRewarding}
+                  >
+                    <View style={{
+                      backgroundColor: isRewarding ? '#E5E5E5' : '#DCB280',
+                      paddingVertical: 12,
+                      alignItems: 'center',
+                      marginTop: 16,
+                      borderRadius: 12,
+                    }}>
+                      <Text style={{
+                        color: 'white',
+                        fontFamily: 'Feather Bold',
+                        fontSize: 16,
+                        opacity: isRewarding ? 0.5 : 1,
+                      }}>
+                        Finish Reading 🙏
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                )}
+              </View>
+            </TouchableWithoutFeedback>
+          </ScrollView>
+        </View>
+      )}
     </View>
   );
 };

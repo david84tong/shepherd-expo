@@ -13,6 +13,9 @@ import {
   View,
   ScrollView,
   StatusBar,
+  Pressable,
+  Modal,
+  PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
@@ -20,6 +23,7 @@ import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import DevotionalReader from '../../components/DevotionalReader';
 import ProgressPill from '../../components/ProgressPill';
 import SecondaryButton from '../../components/SecondaryButton';
+import PrimaryButton from '../../components/PrimaryButton';
 import HeartsExplainerModal from '../../components/HeartsExplainerModal';
 import ExplainerModal from '../../components/ExplainerModal';
 import { HomeMode, useHomeStore } from '../stores/homeStore'; // Import Zustand store
@@ -31,13 +35,16 @@ import { useAssets } from 'expo-asset';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
-
+import * as Sharing from 'expo-sharing';
 import analytics from '~/utils/analytics';
 import WidgetHowToSheet from '../../components/WidgetHowToSheet';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import { getLevelData } from '../../utils/levelUtils';
 import { useDevotionalStore } from '../stores/devotionalStore'; // Import devotional store
 import bibleIcon from '../../assets/icons/bibleIcon.png';
+import FullScreenShareCard from '../../components/FullScreenShareCard';
+import SpotlightOverlay from '../../components/SpotlightOverlay';
+
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
 const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;
@@ -193,6 +200,7 @@ export default function HomeScreen() {
   const isLoadingDevotional = useDevotionalStore((state) => state.isLoading);
   const devotionalError = useDevotionalStore((state) => state.error);
   const fetchTodaysDevotional = useDevotionalStore((state) => state.fetchTodaysDevotional);
+  const [finishReading, setFinishReading] = useState(false)
 
   // State to manage the Rive resource name
   const [artboardName, setArtboardName] = useState('lamb-idle'); // Default artboard
@@ -256,10 +264,12 @@ export default function HomeScreen() {
   const devotionalCardHeightAnim = useRef(new Animated.Value(1)).current; // 1 = normal height
   const devotionalCardTranslateYAnim = useRef(new Animated.Value(0)).current; // 0 = normal position
   const devotionalCardOpacityAnim = useRef(new Animated.Value(1)).current; // 1 = visible
-  
+
   // Devotional reader animation values
   const devotionalHeaderOpacityAnim = useRef(new Animated.Value(0)).current; // 0 = hidden, 1 = visible
   const devotionalBgOpacityAnim = useRef(new Animated.Value(0)).current; // 0 = no overlay, 0.7 = black overlay
+  const finishReadingOpacityAnim = useRef(new Animated.Value(0)).current; // New animation value for finish reading overlay
+  const devotionaleRadingOpacityAnim = useRef(new Animated.Value(0)).current; // New animation value for finish reading overlay
 
   // --- Derived Animated Values (memoized to avoid recreating nodes each render) ---
 
@@ -417,7 +427,7 @@ export default function HomeScreen() {
       console.log('Current mood:', currentMood);
       const targetArtboard = (currentMood && moodToArtboard[currentMood]) ? moodToArtboard[currentMood] : 'lamb-idle';
       changeArtboardWithFade(targetArtboard);
-      
+
       modeAnim = Animated.timing(previewAnim, {
         toValue: 1,
         duration,
@@ -526,7 +536,7 @@ export default function HomeScreen() {
   // --- useEffect to handle devotional reader visibility animations ---
   useEffect(() => {
     const duration = 400; // Match the card animation duration
-    
+
     if (devotionalReaderVisible) {
       // Animate in
       Animated.parallel([
@@ -580,6 +590,26 @@ export default function HomeScreen() {
     }
   }, [devotionalReaderVisible]);
 
+  // Add effect to animate finish reading overlay
+  useEffect(() => {
+    if (finishReading) {
+      Animated.timing(finishReadingOpacityAnim, {
+        toValue: 1,
+        duration: 1000, // 2 seconds fade-in for slow opacity increase
+        delay: 2500, // 2 seconds delay before starting the fade-in
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(finishReadingOpacityAnim, {
+        toValue: 0,
+        duration: 300,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [finishReading]);
+
   // --- useEffect to react to external mode changes ---
   useEffect(() => {
     console.log(isPro, 'what is pro');
@@ -598,7 +628,7 @@ export default function HomeScreen() {
       const currentMood = useUserStore.getState()?.getLambMood?.();
       console.log('Current mood:', currentMood);
       const targetArtboard = (currentMood && moodToArtboard[currentMood]) ? moodToArtboard[currentMood] : 'lamb-idle';
-      
+
       // Smooth fade transition for artboard change - faster
       Animated.timing(riveArtboardOpacityAnim, {
         toValue: 0,
@@ -692,7 +722,7 @@ export default function HomeScreen() {
       // Show DevotionalReader state immediately
       setShowDevotionalReader(true);
       setDevotionalReaderVisible(true); // Hide tab bar
-      
+
       // Synchronize lamb fade with card content fade
       Animated.timing(riveArtboardOpacityAnim, {
         toValue: 0,
@@ -1081,6 +1111,25 @@ export default function HomeScreen() {
   // Add this with other animation values at the top
   const androidBgOpacityAnim = useRef(new Animated.Value(0)).current;
 
+  useEffect(() => {
+    if (showDevotionalContent) {
+      Animated.timing(devotionaleRadingOpacityAnim, {
+        toValue: 1,
+        duration: 1000, // 2 seconds fade-in for slow opacity increase
+        delay: 2500, // 2 seconds delay before starting the fade-in
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(devotionaleRadingOpacityAnim, {
+        toValue: 0,
+        duration: 300,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [showDevotionalContent]);
+
   // Add this effect to handle Android background animation
   useEffect(() => {
     if (IS_ANDROID && mode === 'PRAYER') {
@@ -1132,10 +1181,69 @@ export default function HomeScreen() {
     }
   };
 
+  // Add state for share card modal
+  const [showShareCard, setShowShareCard] = useState(false);
+  const pan = useRef(new Animated.ValueXY()).current;
+  const translateY = useRef(new Animated.Value(0)).current;
+
+  // Create pan responder for swipe gesture
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => true,
+      onMoveShouldSetPanResponder: () => true,
+      onPanResponderMove: (_, gestureState) => {
+        if (gestureState.dy > 0) { // Only allow downward swipe
+          pan.y.setValue(gestureState.dy);
+        }
+      },
+      onPanResponderRelease: (_, gestureState) => {
+        if (gestureState.dy > 100) { // If swiped down more than 100 units
+          Animated.timing(pan.y, {
+            toValue: Dimensions.get('window').height,
+            duration: 300,
+            useNativeDriver: true,
+          }).start(() => {
+            setShowShareCard(false);
+            pan.y.setValue(0);
+          });
+        } else {
+          // Reset position if not swiped enough
+          Animated.spring(pan.y, {
+            toValue: 0,
+            useNativeDriver: true,
+          }).start();
+        }
+      },
+    })
+  ).current;
+
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
 
   const isDarkContant = new Date().getHours() >= 19;
+
+  const handleShare = async () => {
+    try {
+      const isAvailable = await Sharing.isAvailableAsync();
+
+      if (!isAvailable) {
+        alert("Sharing isn't available on your platform");
+        return;
+      }
+
+      // Share the image
+      await Sharing.shareAsync('https://example.com/your-image-url.jpg', {
+        mimeType: 'image/jpeg',
+        dialogTitle: 'Share your achievement',
+        UTI: 'public.jpeg'
+      });
+
+    } catch (error) {
+      console.error('Error sharing:', error);
+      alert('Error sharing image');
+    }
+  };
+
 
   // HEADER
   return (
@@ -1152,7 +1260,7 @@ export default function HomeScreen() {
         <Animated.View
           style={[
             { position: 'absolute', width: '100%', height: '100%' },
-            { opacity: 0.4 },
+            { opacity: showDevotionalContent ? 1 : 0.4 },
           ]}>
           <ImageBackground
             source={require('../../assets/backgrounds/mainBackground2.png')}
@@ -1195,20 +1303,48 @@ export default function HomeScreen() {
             />
           </ImageBackground>
         </Animated.View>
-        
+
         {/* Black overlay for devotional mode */}
-        <Animated.View
+        {/* {!finishReading && <Animated.View
           style={[
-            { 
-              position: 'absolute', 
-              width: '100%', 
+            {
+              position: 'absolute',
+              width: '100%',
               height: '100%',
               backgroundColor: 'black',
             },
             { opacity: devotionalBgOpacityAnim },
           ]}
           pointerEvents="none"
-        />
+        />} */}
+
+        {finishReading && (
+          <Animated.View
+            style={{
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              opacity: finishReadingOpacityAnim,
+            }}
+            pointerEvents="none"
+          >
+            <SpotlightOverlay visible={true} radius={150} centerY={SCREEN_HEIGHT * 0.25} />
+          </Animated.View>
+        )}
+
+        {showDevotionalContent && !finishReading && (
+          <Animated.View
+            style={{
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              opacity: devotionaleRadingOpacityAnim,
+            }}
+            pointerEvents="none"
+          >
+            <SpotlightOverlay visible={true} radius={150} centerY={SCREEN_HEIGHT * 0.25} />
+          </Animated.View>
+        )}
 
         <Animated.View
           style={[
@@ -1406,7 +1542,7 @@ export default function HomeScreen() {
                 </View>
               </View>
             </Animated.View>
-            
+
             {/* Devotional Header - animated visibility */}
             <Animated.View
               className="absolute inset-0 flex-row items-center justify-center px-8 w-full"
@@ -1550,292 +1686,346 @@ export default function HomeScreen() {
               opacity: bottomCardOpacity,
               marginBottom: -120,
             }}>
-                          <Animated.View
-                className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2"
-                style={{
-                  ...Platform.select({
-                    ios: {
-                      shadowColor: 'rgba(0,0,0,0.08)',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowRadius: 4,
-                      shadowOpacity: 1,
-                    },
-                    android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
-                  }),
-                }}>
-                <View
-                  className="w-[50px] h-[5] bg-textPrimary/15 rounded-full"
-                  style={{ position: 'absolute', top: 10, alignSelf: 'center' }}
-                />
-                {/* Animated content wrapper - only this fades */}
-                <Animated.View style={{ flex: 1, opacity: devotionalCardOpacityAnim }}>
-                  {/* Conditionally show DevotionalReader or normal content */}
-                  {showDevotionalContent ? (
-                <DevotionalReader
-                  visible={showDevotionalContent}
-                  onClose={() => {
-                    // Immediately mark devotional reader as hidden so overlay/header animations start in sync
-                    setDevotionalReaderVisible(false);
-                    
-                    // Start fade out
-                    Animated.parallel([
-                      // Card content fade out
-                      Animated.timing(devotionalCardOpacityAnim, {
-                        toValue: 0,
-                        duration: 500,
-                        easing: Easing.inOut(Easing.ease),
-                        useNativeDriver: true,
-                      }),
-                      // Lamb fade out at the same time
-                      Animated.timing(riveArtboardOpacityAnim, {
-                        toValue: 0,
-                        duration: 500,
-                        easing: Easing.inOut(Easing.ease),
-                        useNativeDriver: true,
-                      })
-                    ]).start();
-                    
-                    // Switch content and artboard immediately after a short delay
-                    setTimeout(() => {
-                      // Hide devotional content and reset lamb artboard
-                      setShowDevotionalContent(false);
-                      const currentMood = useUserStore.getState()?.getLambMood?.();
-                      const targetArtboard = moodToArtboard[currentMood] || 'lamb-idle';
-                      setArtboardName(targetArtboard);
-                      
-                      // Start fade in immediately after content switch
+            <Animated.View
+              className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2"
+              style={{
+                ...Platform.select({
+                  ios: {
+                    shadowColor: 'rgba(0,0,0,0.08)',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowRadius: 4,
+                    shadowOpacity: 1,
+                  },
+                  android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
+                }),
+              }}>
+              <View
+                className="w-[50px] h-[5] bg-textPrimary/15 rounded-full"
+                style={{ position: 'absolute', top: 10, alignSelf: 'center' }}
+              />
+              {/* Animated content wrapper - only this fades */}
+              <Animated.View style={{ flex: 1, opacity: devotionalCardOpacityAnim }}>
+                {/* Conditionally show DevotionalReader or normal content */}
+                {showDevotionalContent ? (
+                  <DevotionalReader
+                    visible={showDevotionalContent}
+                    setFinishReading={setFinishReading}
+                    onClose={() => {
+                      // Immediately mark devotional reader as hidden so overlay/header animations start in sync
+                      setDevotionalReaderVisible(false);
+                      // Start fade out
                       Animated.parallel([
-                        // Card content fade in
+                        // Card content fade out
                         Animated.timing(devotionalCardOpacityAnim, {
-                          toValue: 1,
+                          toValue: 0,
                           duration: 500,
                           easing: Easing.inOut(Easing.ease),
                           useNativeDriver: true,
                         }),
-                        // Lamb fade in at the same time
+                        // Lamb fade out at the same time
                         Animated.timing(riveArtboardOpacityAnim, {
-                          toValue: 1,
+                          toValue: 0,
                           duration: 500,
                           easing: Easing.inOut(Easing.ease),
                           useNativeDriver: true,
                         })
-                      ]).start(() => {
-                        // Reset reader state after animations complete
-                        setShowDevotionalReader(false);
-                      });
-                    }, 250); // Switch content halfway through fade out
-                  }}
-                />
-              ) : (
-                <ScrollView
-                  showsVerticalScrollIndicator={false}
-                  contentContainerStyle={{ paddingBottom: 120 }}>
-                  <View
-                    className="flex-row items-center justify-between "
-                    style={{ marginTop: responsiveHeight(2) }}>
-                    {/* Circle/checkmark indicator for Daily Bread */}
-                    <View
-                      style={{
-                        width: 22,
-                        marginRight: 10,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}>
-                      {readingCompleted ? (
-                        <Image
-                          source={require('../../assets/icons/checkMini.png')}
-                          style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                        />
-                      ) : (
-                        <View
-                          className="bg-textPrimary/15"
-                          style={{ width: 20, height: 20, borderRadius: 12 }}
-                        />
-                      )}
-                    </View>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <SecondaryButton
-                        icon={breadIcon}
-                        title="Daily Bread – Read"
-                        subtitle="Feed your soul with scripture"
-                        points={25}
-                        onPress={handleReadPress}
-                        completed={readingCompleted}
-                      />
-                    </View>
-                  </View>
-                  <View
-                    className="flex-row items-center "
-                    style={{ marginTop: responsiveHeight(2) }}>
-                    {/* Circle/checkmark indicator for Living Water */}
-                    <View
-                      style={{
-                        width: 22,
-                        marginRight: 10,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      }}>
-                      {prayerCompleted ? (
-                        <Image
-                          source={require('../../assets/icons/checkMini.png')}
-                          style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                        />
-                      ) : (
-                        <View
-                          className="bg-textPrimary/15"
-                          style={{ width: 20, height: 20, borderRadius: 12 }}
-                        />
-                      )}
-                    </View>
-                    <View style={{ flex: 1, minWidth: 0 }}>
-                      <SecondaryButton
-                        icon={dropIcon}
-                        title="Living Water – Pray"
-                        subtitle="Feed your soul with scripture"
-                        points={25}
-                        onPress={handlePrayerPress}
-                        completed={prayerCompleted}
-                        disabled={!readingCompleted}
-                      />
-                    </View>
-                  </View>
-                  <View
-                    className="flex-row items-center"
-                    style={{ marginTop: responsiveHeight(2) }}>
-                    {/* Circle/checkmark indicator for Quiet Time */}
-                    <View
-                      style={{
-                        width: 22,
-                        marginRight: 10,
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}>
-                      {reflectionCompleted ? (
-                        <Image
-                          source={require('../../assets/icons/checkMini.png')}
-                          style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                        />
-                      ) : (
-                        <View
-                          className="bg-textPrimary/15"
-                          style={{ width: 20, height: 20, borderRadius: 12 }}
-                        />
-                      )}
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <SecondaryButton
-                        icon={bibleIcon}
-                        title="Quiet Time – Reflect"
-                        subtitle="Feed your soul with scripture"
-                        points={25}
-                        onPress={handleReflectionPress}
-                        completed={reflectionCompleted}
-                        disabled={!readingCompleted}
-                      />
-                    </View>
-                  </View>
+                      ]).start();
 
-                  {/* Daily Verse Card */}
-                  {currentDevotional?.verse && (
-                    <TouchableOpacity
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        analytics.logEvent('HomeScreen_Tapped_DailyVerse', {
-                          bibleReference: currentDevotional.bibleReference,
+                      // Switch content and artboard immediately after a short delay
+                      setTimeout(() => {
+                        // Hide devotional content and reset lamb artboard
+                        setShowDevotionalContent(false);
+                        const currentMood = useUserStore.getState()?.getLambMood?.();
+                        const targetArtboard = moodToArtboard[currentMood] || 'lamb-idle';
+                        setArtboardName(targetArtboard);
+
+                        // Start fade in immediately after content switch
+                        Animated.parallel([
+                          // Card content fade in
+                          Animated.timing(devotionalCardOpacityAnim, {
+                            toValue: 1,
+                            duration: 500,
+                            easing: Easing.inOut(Easing.ease),
+                            useNativeDriver: true,
+                          }),
+                          // Lamb fade in at the same time
+                          Animated.timing(riveArtboardOpacityAnim, {
+                            toValue: 1,
+                            duration: 500,
+                            easing: Easing.inOut(Easing.ease),
+                            useNativeDriver: true,
+                          })
+                        ]).start(() => {
+                          // Reset reader state after animations complete
+                          setShowDevotionalReader(false);
                         });
-                        // TODO: Navigate to full devotional or reader in future
-                      }}
-                      activeOpacity={0.9}
-                      className="rounded-2xl overflow-hidden mb-4">
-                      {currentDevotional.imageURL ? (
-                        <>
-                          <ExpoImage
-                            source={{ uri: currentDevotional.imageURL }}
-                            style={{ width: '100%', height: 180 }}
-                            contentFit="cover"
-                          />
+                      }, 250); // Switch content halfway through fade out
+                    }}
+                  />
+                ) : (
+                  <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: 120 }}>
+                    {prayerCompleted && readingCompleted && reflectionCompleted ? (
+                      // Share Card
+                      <Pressable
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          setShowShareCard(true);
+                        }}
+                        className="bg-surfaceCream rounded-3xl overflow-hidden mb-4 border border-buttonBorder shadow-card">
+                        <ImageBackground
+                          source={require('../../assets/backgrounds/nightSky.png')}
+                          style={{ width: '100%', }}
+                          resizeMode="cover">
                           {/* Dark overlay for readability */}
                           <View className="absolute inset-0 bg-black/30" />
 
-                          {/* Star icon */}
-                          <View className="absolute items-center w-full" style={{ top: 4 }}>
-                            <Ionicons name="star" size={28} color="#FFD629" />
-                          </View>
-
-                          {/* Text content */}
-                          <View className="absolute inset-0 p-4 justify-end">
-                            <Text className="font-feather text-white text-heading mb-1">
-                              {currentDevotional.bibleReference}
-                            </Text>
-                            <Text className="font-feather text-white/90 text-caption mb-1">
-                              Verse of the Day
-                            </Text>
-                            <Text
-                              className="font-din text-white text-body leading-[20px]"
-                              numberOfLines={3}>
-                              {currentDevotional.verse}
-                            </Text>
-                          </View>
-                        </>
-                      ) : (
-                        /* Fallback cream card if no image */
-                        <View className="bg-surfaceCream px-5 py-4 border border-buttonBorder shadow-card">
-                          <View className="flex-row items-center mb-3">
-                            <View className="w-7 h-7 bg-lightGreen rounded-lg items-center justify-center mr-3">
-                              <Text className="text-darkGreen text-[18px]">📖</Text>
+                          {/* Content */}
+                          <View className="p-6 h-full justify-between">
+                            <View>
+                              <Text className="font-feather text-white text-heading mb-1">
+                                John 3:16
+                              </Text>
+                              <Text className="font-din text-white/90 text-heading leading-[26px] mb-7 ">
+                                Verse of the day
+                              </Text>
+                              <Text className="font-din text-white/90 text-heading leading-[22px]">
+                                All things were made by him; and without him was not anything made that was made.
+                              </Text>
                             </View>
-                            <Text className="font-feather text-heading text-textPrimary">
-                              Daily Verse
+
+                            {/* Share Button */}
+                            <View className="mt-10 w-full">
+                              <TouchableOpacity
+                                onPress={() => {
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  analytics.logEvent('HomeScreen_Tapped_ShareAchievement');
+                                  handleShare()
+                                }}
+                                className="flex-row items-center justify-center px-5 h-[50px] w-full rounded-full border-[3px] bg-[#4FB8FE] border-[#06B6FE]">
+                                <Text className="font-feather text-white text-heading text-center w-full">
+                                  Share
+                                </Text>
+                              </TouchableOpacity>
+                            </View>
+                          </View>
+                        </ImageBackground>
+                      </Pressable>
+                    ) : (
+                      <>
+                        <View
+                          className="flex-row items-center justify-between "
+                          style={{ marginTop: responsiveHeight(2) }}>
+                          {/* Circle/checkmark indicator for Daily Bread */}
+                          <View
+                            style={{
+                              width: 22,
+                              marginRight: 10,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}>
+                            {readingCompleted ? (
+                              <Image
+                                source={require('../../assets/icons/checkMini.png')}
+                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                              />
+                            ) : (
+                              <View
+                                className="bg-textPrimary/15"
+                                style={{ width: 20, height: 20, borderRadius: 12 }}
+                              />
+                            )}
+                          </View>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <SecondaryButton
+                              icon={breadIcon}
+                              title="Daily Bread – Read"
+                              subtitle="Feed your soul with scripture"
+                              points={25}
+                              onPress={handleReadPress}
+                              completed={readingCompleted}
+                            />
+                          </View>
+                        </View>
+                        <View
+                          className="flex-row items-center "
+                          style={{ marginTop: responsiveHeight(2) }}>
+                          {/* Circle/checkmark indicator for Living Water */}
+                          <View
+                            style={{
+                              width: 22,
+                              marginRight: 10,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                            }}>
+                            {prayerCompleted ? (
+                              <Image
+                                source={require('../../assets/icons/checkMini.png')}
+                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                              />
+                            ) : (
+                              <View
+                                className="bg-textPrimary/15"
+                                style={{ width: 20, height: 20, borderRadius: 12 }}
+                              />
+                            )}
+                          </View>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <SecondaryButton
+                              icon={dropIcon}
+                              title="Living Water – Pray"
+                              subtitle="Feed your soul with scripture"
+                              points={25}
+                              onPress={handlePrayerPress}
+                              completed={prayerCompleted}
+                              disabled={!readingCompleted}
+                            />
+                          </View>
+                        </View>
+                        <View
+                          className="flex-row items-center"
+                          style={{ marginTop: responsiveHeight(2) }}>
+                          {/* Circle/checkmark indicator for Quiet Time */}
+                          <View
+                            style={{
+                              width: 22,
+                              marginRight: 10,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}>
+                            {reflectionCompleted ? (
+                              <Image
+                                source={require('../../assets/icons/checkMini.png')}
+                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                              />
+                            ) : (
+                              <View
+                                className="bg-textPrimary/15"
+                                style={{ width: 20, height: 20, borderRadius: 12 }}
+                              />
+                            )}
+                          </View>
+                          <View style={{ flex: 1 }}>
+                            <SecondaryButton
+                              icon={bibleIcon}
+                              title="Quiet Time – Reflect"
+                              subtitle="Feed your soul with scripture"
+                              points={25}
+                              onPress={handleReflectionPress}
+                              completed={reflectionCompleted}
+                              disabled={!readingCompleted}
+                            />
+                          </View>
+                        </View>
+
+                        {/* Daily Verse Card */}
+                        {currentDevotional?.verse && (
+                          <TouchableOpacity
+                            onPress={() => {
+                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                              analytics.logEvent('HomeScreen_Tapped_DailyVerse', {
+                                bibleReference: currentDevotional.bibleReference,
+                              });
+                              // TODO: Navigate to full devotional or reader in future
+                            }}
+                            activeOpacity={0.9}
+                            className="rounded-2xl overflow-hidden mb-4">
+                            {currentDevotional.imageURL ? (
+                              <>
+                                <ExpoImage
+                                  source={{ uri: currentDevotional.imageURL }}
+                                  style={{ width: '100%', height: 180 }}
+                                  contentFit="cover"
+                                />
+                                {/* Dark overlay for readability */}
+                                <View className="absolute inset-0 bg-black/30" />
+
+                                {/* Star icon */}
+                                <View className="absolute items-center w-full" style={{ top: 4 }}>
+                                  <Ionicons name="star" size={28} color="#FFD629" />
+                                </View>
+
+                                {/* Text content */}
+                                <View className="absolute inset-0 p-4 justify-end">
+                                  <Text className="font-feather text-white text-heading mb-1">
+                                    {currentDevotional.bibleReference}
+                                  </Text>
+                                  <Text className="font-feather text-white/90 text-caption mb-1">
+                                    Verse of the Day
+                                  </Text>
+                                  <Text
+                                    className="font-din text-white text-body leading-[20px]"
+                                    numberOfLines={3}>
+                                    {currentDevotional.verse}
+                                  </Text>
+                                </View>
+                              </>
+                            ) : (
+                              /* Fallback cream card if no image */
+                              <View className="bg-surfaceCream px-5 py-4 border border-buttonBorder shadow-card">
+                                <View className="flex-row items-center mb-3">
+                                  <View className="w-7 h-7 bg-lightGreen rounded-lg items-center justify-center mr-3">
+                                    <Text className="text-darkGreen text-[18px]">📖</Text>
+                                  </View>
+                                  <Text className="font-feather text-heading text-textPrimary">
+                                    Daily Verse
+                                  </Text>
+                                </View>
+                                <Text className="font-din text-body text-textPrimary/90 leading-[22px] italic mb-3">
+                                  “{currentDevotional.verse}”
+                                </Text>
+                                <Text className="font-feather text-sm text-description text-right">
+                                  — {currentDevotional.bibleReference}
+                                </Text>
+                              </View>
+                            )}
+                          </TouchableOpacity>
+                        )}
+
+                        {/* Loading state for devotional */}
+                        {isLoadingDevotional && (
+                          <View className="bg-white/60 rounded-xl p-4 mb-4 border border-lightGreen/20">
+                            <View className="flex-row items-center mb-2">
+                              <View className="w-6 h-6 bg-lightGreen rounded-full items-center justify-center mr-2">
+                                <Text className="text-darkGreen text-xs font-feather">📖</Text>
+                              </View>
+                              <Text className="font-feather text-base text-description">
+                                Loading daily verse...
+                              </Text>
+                            </View>
+                          </View>
+                        )}
+
+                        {/* Error state for devotional */}
+                        {devotionalError && !currentDevotional && (
+                          <View className="bg-red/10 rounded-xl p-4 mb-4 border border-red/20">
+                            <View className="flex-row items-center mb-2">
+                              <View className="w-6 h-6 bg-red rounded-full items-center justify-center mr-2">
+                                <Text className="text-white text-xs font-feather">⚠️</Text>
+                              </View>
+                              <Text className="font-feather text-base text-red">
+                                Daily verse unavailable
+                              </Text>
+                            </View>
+                            <Text className="font-din text-sm text-description">
+                              Check your connection and try again later.
                             </Text>
                           </View>
-                          <Text className="font-din text-body text-textPrimary/90 leading-[22px] italic mb-3">
-                            “{currentDevotional.verse}”
-                          </Text>
-                          <Text className="font-feather text-sm text-description text-right">
-                            — {currentDevotional.bibleReference}
-                          </Text>
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  )}
+                        )}
 
-                  {/* Loading state for devotional */}
-                  {isLoadingDevotional && (
-                    <View className="bg-white/60 rounded-xl p-4 mb-4 border border-lightGreen/20">
-                      <View className="flex-row items-center mb-2">
-                        <View className="w-6 h-6 bg-lightGreen rounded-full items-center justify-center mr-2">
-                          <Text className="text-darkGreen text-xs font-feather">📖</Text>
-                        </View>
-                        <Text className="font-feather text-base text-description">
-                          Loading daily verse...
-                        </Text>
-                      </View>
-                    </View>
-                  )}
 
-                  {/* Error state for devotional */}
-                  {devotionalError && !currentDevotional && (
-                    <View className="bg-red/10 rounded-xl p-4 mb-4 border border-red/20">
-                      <View className="flex-row items-center mb-2">
-                        <View className="w-6 h-6 bg-red rounded-full items-center justify-center mr-2">
-                          <Text className="text-white text-xs font-feather">⚠️</Text>
-                        </View>
-                        <Text className="font-feather text-base text-red">
-                          Daily verse unavailable
-                        </Text>
-                      </View>
-                      <Text className="font-din text-sm text-description">
-                        Check your connection and try again later.
-                      </Text>
-                    </View>
-                  )}
-                </ScrollView>
-              )}
-                </Animated.View>
+                      </>
+
+
+                    )}
+                  </ScrollView>
+                )}
               </Animated.View>
             </Animated.View>
+          </Animated.View>
 
           {/* Widget and Explainer Modals - Keep these inside SafeAreaView */}
           <WidgetHowToSheet visible={showWidgetSheet} onClose={handleWidgetSheetClose} />
@@ -1849,6 +2039,10 @@ export default function HomeScreen() {
           />
         </SafeAreaView>
       </Animated.View>
+
+      <FullScreenShareCard visible={showShareCard} onClose={() => setShowShareCard(false)} onShare={handleShare} />
+
+
       <Toast config={toastConfig} />
     </>
   );

@@ -1,6 +1,6 @@
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
-import { Text, View, Pressable, Platform, ActivityIndicator } from 'react-native';
+import { Text, View, Pressable, Platform, ActivityIndicator, Image } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import analytics from '../utils/analytics';
 import { useSoundStore } from '../app/stores/soundStore';
@@ -17,6 +17,9 @@ interface PrimaryButtonProps {
   buttonType?: 'default' | 'blue' | 'gold';
   buttonHeight?: number;
   loading?: boolean;
+  icon?: any; // image source
+  reward?: string | number;
+  opacity?: number;
 }
 
 const PrimaryButton: React.FC<PrimaryButtonProps> = ({
@@ -31,6 +34,9 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   buttonType = 'default',
   buttonHeight,
   loading = false,
+  icon,
+  reward,
+  opacity = 1,
 }) => {
   // Simple state to track pressed state
   const [isPressed, setIsPressed] = useState(false);
@@ -94,26 +100,33 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   const shadowStyles =
     !isPressed && isActive && !disabled
       ? {
-          ...Platform.select({
-            ios: {
-              shadowColor: shadowColor,
-              shadowOffset: { width: 0, height: 5.716 },
-              shadowOpacity: 1,
-              shadowRadius: 0,
-            },
-            android: {
-              elevation: 6,
-            },
-          }),
-        }
+        ...Platform.select({
+          ios: {
+            shadowColor: shadowColor,
+            shadowOffset: { width: 0, height: 5.716 },
+            shadowOpacity: 1,
+            shadowRadius: 0,
+          },
+          android: {
+            elevation: 6,
+          },
+        }),
+      }
       : {};
 
   return (
-    <View className={`mt-4 w-full ${style || ''}`} style={{ height: buttonContainerHeight }}>
+    <View className={`mt-4 w-full ${style || ''}`} style={{ height: buttonContainerHeight, opacity }}>
       <Pressable
         className={
-          `flex-row items-center justify-center px-5 h-full w-full rounded-[20px] border-[3px] ` +
-          `${disabled || !isActive ? 'bg-[#E5E5E5] border-[#D0D0D0]' : `${bgColor} ${borderColor}`} ` +
+          `flex-row items-center justify-center px-5 h-16 w-full rounded-full border-[3px] ` +
+          `${disabled || !isActive
+            ? (buttonType === 'blue'
+              ? 'bg-[#B6E6F7] border-[#B6E6F7]'
+              : buttonType === 'gold'
+                ? 'bg-[#F5E3C3] border-[#F5E3C3]'
+                : 'bg-[#E5E5E5] border-[#D0D0D0]')
+            : `${bgColor} ${borderColor}`
+          } ` +
           `transform ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
         }
         style={shadowStyles}
@@ -123,10 +136,34 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
         {loading ? (
           <ActivityIndicator size="small" color="#FCD34D" />
         ) : (
-          <Text
-            className={`font-feather ${disabled || !isActive ? 'text-gray-400' : txtColor} text-heading text-center w-full`}>
-            {title}
-          </Text>
+          <>
+            <Text
+              className={`font-feather-bold text-heading text-center ${disabled || !isActive
+                ? buttonType === 'blue'
+                  ? 'text-[#E0F6FF]'
+                  : buttonType === 'gold'
+                    ? 'text-[#C2A97A]'
+                    : 'text-gray-400'
+                : txtColor
+                }`}
+              style={{ flexShrink: 1 }}
+            >
+              {title}
+            </Text>
+            {icon && (
+              <Image source={icon} className={`w-6 h-6 ml-2 ${disabled || !isActive ? 'opacity-50' : ''}`} resizeMode="contain" />
+            )}
+            {reward && (
+              <Text className={`font-feather-bold text-heading ml-1 ${disabled || !isActive
+                ? buttonType === 'blue'
+                  ? 'text-[#E0F6FF]'
+                  : buttonType === 'gold'
+                    ? 'text-[#C2A97A]'
+                    : 'text-gray-400'
+                : txtColor
+                }`}>{reward}</Text>
+            )}
+          </>
         )}
       </Pressable>
     </View>

@@ -26,6 +26,7 @@ module.exports = {
         textPrimary: '#795323', // All primary text
         orange: '#FF8800', // All primary text
         brown: '#634012', // All primary text
+        gold: '#FBCA71', // All primary text
         shadowColor: 'rgba(0,0,0,0.08)', // Shadow color separate for RN
         pillBorder: '#E9E2C7', // Border for metric pills
         description: '#B89B4C',
