@@ -183,9 +183,8 @@ export default function HomeScreen() {
   const streakCount = useUserStore((state) => state?.getStreakCount?.());
   const gens = useUserStore((state) => state?.getGens?.());
   const lambMood = useUserStore((state) => state?.getLambMood?.());
-  const lambName = useUserStore((state) => state?.getLambName?.()); // Get the lamb's name from userStore
-
-  const lamb = useUserStore((state) => state.getLamb?.()); // Get the complete lamb object
+  const lamb = useUserStore((state) => state.lamb); // Direct access to lamb object
+  const lambName = useUserStore((state) => (state?.lamb?.name || 'My Lamb') as string); // Direct access to name with type assertion
 
   console.log('lambHearts streakCount======>', lambHearts, streakCount, gens, lambMood, lambName);
   // State to manage the Rive resource name
@@ -1430,7 +1429,7 @@ export default function HomeScreen() {
       <BiblePreviewComponent visible={mode === 'PREVIEW'} onClose={handleCloseOverlay} />
       <PrayerComponent visible={mode === 'PRAYER'} onClose={handleCloseOverlay} />
       <JournalComponent visible={mode === 'REFLECTION'} onClose={handleCloseOverlay} />
-      
+
       <Toast config={toastConfig} />
     </>
   );
