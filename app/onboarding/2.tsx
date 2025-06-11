@@ -144,7 +144,9 @@ export default function OnboardingLambNameScreen() {
   const handleInputChange = (text: string) => {
     setInputLambName(text);
     const validation = validateName(text);
-    setError(validation.error);
+    if (!validation?.isValid || error) {
+      setError(validation.error);
+    }
   };
 
   const handleContinue = async () => {

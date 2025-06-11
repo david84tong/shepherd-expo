@@ -167,7 +167,6 @@ export default function RootLayout() {
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
   const settingsSnapPoints = useMemo(() => ['95%'], []);
-  const prayerSnapPoints = useMemo(() => ['60%', '85%'], []);
 
   // HalfModal params
   const [halfModalParams, setHalfModalParams] = useState<{
@@ -557,7 +556,6 @@ export default function RootLayout() {
             {/* Global Prayer Sheet (available from anywhere in the app) */}
             <GlobalPrayerSheet
               prayerSheetRef={prayerSheetRef}
-              snapPoints={prayerSnapPoints}
               onPrayerGenerated={useUIStore.getState().prayerGeneratedCallback || undefined}
             />
 
