@@ -65,6 +65,7 @@ const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
 
 import { responsiveHeight } from 'react-native-responsive-dimensions';
+import JournalComponent from '~/components/JournalComponent';
 
 // Custom toast config with explicit styling
 const toastConfig: ToastConfig = {
@@ -177,6 +178,7 @@ export default function HomeScreen() {
   const setMode = useHomeStore((state) => state.setMode);
   const setDevotionalReaderVisible = useHomeStore((state) => state.setDevotionalReaderVisible);
   const devotionalReaderVisible = useHomeStore((state) => state.devotionalReaderVisible);
+  const setReflectionCompleted = useHomeStore((state) => state.setReflectionCompleted);
 
   // Get completion states from the store
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
@@ -264,6 +266,7 @@ export default function HomeScreen() {
   const devotionalCardHeightAnim = useRef(new Animated.Value(1)).current; // 1 = normal height
   const devotionalCardTranslateYAnim = useRef(new Animated.Value(0)).current; // 0 = normal position
   const devotionalCardOpacityAnim = useRef(new Animated.Value(1)).current; // 1 = visible
+  const journalCardOpacityAnim = useRef(new Animated.Value(1)).current; // 1 = visible
 
   // Devotional reader animation values
   const devotionalHeaderOpacityAnim = useRef(new Animated.Value(0)).current; // 0 = hidden, 1 = visible
@@ -770,39 +773,49 @@ export default function HomeScreen() {
 
   const handleReflectionPress = () => {
     if (!isPro && reflectionCompleted) {
-      setFromScreen('home-reflection');
+      setFromScreen('home-read');
       handleSubscriptionPress();
     } else {
       console.log('Reflection button pressed');
 
-      // Don't proceed if reading is not completed
-      if (!readingCompleted) {
-        console.log('Reflection button disabled: Reading not completed');
-        return;
-      }
-
-      // Remove heavy haptic feedback
-
-      // Update the mode in the store
-      setMode('REFLECTION');
-
-      // Animate to reflection state
-      animateToState(0.5, journalOpacityAnim, 800, 'REFLECTION');
-
-      // Rotate the lamb slightly when transitioning to reflection
-      Animated.timing(riveRotateAnim, {
-        toValue: 0.05, // Slightly rotated
-        duration: 500,
+      // Simple fade animation for content transition - longer duration
+      Animated.timing(journalCardOpacityAnim, {
+        toValue: 0,
+        duration: 400,
+        easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }).start(() => {
-        // Return to normal rotation after a delay
-        Animated.timing(riveRotateAnim, {
-          toValue: 0,
-          duration: 500,
-          delay: 500,
+        // Show JournalReader content after fade out
+        setShowJournalContent(true);
+        // Fade back in
+        Animated.timing(journalCardOpacityAnim, {
+          toValue: 1,
+          duration: 600,
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }).start();
       });
+
+      // Show JournalReader state immediately
+      setShowJournalReader(true);
+
+      // Synchronize lamb fade with card content fade
+      Animated.timing(riveArtboardOpacityAnim, {
+        toValue: 0,
+        duration: 400, // Same as card fade out
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start(() => {
+        setArtboardName('lamb-reading');
+        Animated.timing(riveArtboardOpacityAnim, {
+          toValue: 1,
+          duration: 600, // Same as card fade in
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }).start();
+      });
+
+
     }
   };
 
@@ -1087,6 +1100,8 @@ export default function HomeScreen() {
   // Add devotional reader state
   const [showDevotionalReader, setShowDevotionalReader] = useState(false);
   const [showDevotionalContent, setShowDevotionalContent] = useState(false);
+  const [showJournalReader, setShowJournalReader] = useState(false);
+  const [showJournalContent, setShowJournalContent] = useState(false);
   const levelPillWidthAnim = useRef(new Animated.Value(0)).current;
   const levelPillOpacityAnim = useRef(new Animated.Value(0)).current;
   // Pre-calculate the expanded width for the pill (use a reasonable fixed width instead of screen-based)
@@ -1292,13 +1307,17 @@ export default function HomeScreen() {
         <Animated.View
           style={[
             { position: 'absolute', width: '100%', height: '100%' },
-            { opacity: 0.4 },
+            { opacity: showJournalContent ? 1 : 0.4 },
           ]}>
           <ImageBackground
-            source={require('../../assets/backgrounds/mainBackground2.png')}
+            source={showJournalContent ?
+              require('../../assets/backgrounds/Forest Clearing Background Apr 18 2025.png') :
+              require('../../assets/backgrounds/mainBackground2.png')}
             style={{ width: '100%', height: '100%' }}>
             <Image
-              source={require('../../assets/backgrounds/mainBackground2.png')}
+              source={showJournalContent ?
+                require('../../assets/backgrounds/Forest Clearing Background Apr 18 2025.png') :
+                require('../../assets/backgrounds/mainBackground2.png')}
               style={{ width: '100%', height: '100%' }}
             />
           </ImageBackground>
@@ -1730,7 +1749,6 @@ export default function HomeScreen() {
                           useNativeDriver: true,
                         })
                       ]).start();
-
                       // Switch content and artboard immediately after a short delay
                       setTimeout(() => {
                         // Hide devotional content and reset lamb artboard
@@ -1760,6 +1778,61 @@ export default function HomeScreen() {
                           setShowDevotionalReader(false);
                         });
                       }, 250); // Switch content halfway through fade out
+                    }}
+                  />
+
+                ) : showJournalContent ? (
+                  <JournalComponent
+                    visible={showJournalContent}
+                    onClose={() => {
+                      setReflectionCompleted(false);
+                      // Start fade out
+                      Animated.parallel([
+                        // Card content fade out
+                        Animated.timing(journalCardOpacityAnim, {
+                          toValue: 0,
+                          duration: 500,
+                          easing: Easing.inOut(Easing.ease),
+                          useNativeDriver: true,
+                        }),
+                        // Lamb fade out at the same time
+                        Animated.timing(riveArtboardOpacityAnim, {
+                          toValue: 0,
+                          duration: 500,
+                          easing: Easing.inOut(Easing.ease),
+                          useNativeDriver: true,
+                        })
+                      ]).start();
+                      // Switch content and artboard immediately after a short delay
+                      setTimeout(() => {
+                        // Hide devotional content and reset lamb artboard
+                        setShowJournalContent(false);
+                        const currentMood = useUserStore.getState()?.getLambMood?.();
+                        const targetArtboard = moodToArtboard[currentMood] || 'lamb-idle';
+                        setArtboardName(targetArtboard);
+
+                        // Start fade in immediately after content switch
+                        Animated.parallel([
+                          // Card content fade in
+                          Animated.timing(journalCardOpacityAnim, {
+                            toValue: 1,
+                            duration: 500,
+                            easing: Easing.inOut(Easing.ease),
+                            useNativeDriver: true,
+                          }),
+                          // Lamb fade in at the same time
+                          Animated.timing(riveArtboardOpacityAnim, {
+                            toValue: 1,
+                            duration: 500,
+                            easing: Easing.inOut(Easing.ease),
+                            useNativeDriver: true,
+                          })
+                        ]).start(() => {
+                          // Reset reader state after animations complete
+                          setShowJournalReader(false);
+                        });
+                      }, 250); // Switch content halfway through fade out
+
                     }}
                   />
                 ) : (

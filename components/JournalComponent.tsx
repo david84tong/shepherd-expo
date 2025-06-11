@@ -12,17 +12,14 @@ import {
   Animated,
   ActivityIndicator,
 } from 'react-native';
-import Rive from 'rive-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
-import BackButton from './BackButton';
 import PrimaryButton from './PrimaryButton';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '../app/stores/userStore';
 import { BIBLE_BOOK_IDS } from '../app/models/Path';
 import analytics from '~/utils/analytics';
-import { IS_ANDROID, IS_IOS } from '~/app/utils/utils';
+import CircleButton from './Shared/CircleButton';
 
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
@@ -334,13 +331,44 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
 
   return (
     <Animated.View
-      className="absolute flex w-full"
+      className="flex w-full items-center px-2"
       style={{ opacity: containerOpacity }}
       pointerEvents="box-none">
-      {/* Header Row: Back + (Save on small devices) */}
-      <View className="flex-row items-center justify-between px-4 mt-0">
-        <BackButton
-          onPress={() => {
+
+      <Text className="text-[20px]  text-brown/40 mb-4 mt-4 text-center leading-tight font-semibold">
+        Time to reflect
+      </Text>
+
+      <Text className="text-[20px] font-feather text-brown/90 mb-6 text-center leading-tight">
+        What practical step can deepen your daily delight in Scripture?
+      </Text>
+
+      {/* Animated Card with TextInput */}
+      <View className="w-full min-h-[230px] bg-[#FFF4D9] border-[3px] border-gold/70  p-5  mb-2" style={{ borderRadius: 20 }}>
+        <TextInput
+          ref={inputRef}
+          className="w-full bg-transparent text-brown/95 text-[18px] font-nunito-medium  min-h-[150px] text-left"
+          placeholder={getPlaceholderText()}
+          placeholderTextColor="#B89B4C"
+          multiline
+          textAlignVertical="top"
+          scrollEnabled={true}
+          style={{ flex: 1, padding: 0 }}
+          value={reflectionContent}
+          onChangeText={setReflectionContent}
+          maxLength={300}
+        />
+      </View>
+
+      <Text className="text-[14px]  text-brown/40 mb-4 mt-1 text-center leading-tight font-semibold">
+        {`${300 - charCount} characters left`}
+      </Text>
+
+      {/* Animated Bottom Content (Rive + Button) */}
+      <Animated.View
+        className=" flex-row items-center justify-between" style={{ width: '100%' }}>
+        <Animated.View style={{ width: '10%', }}>
+          <CircleButton icon='chevron-left' size={53} onPress={() => {
             setPathInProgress(false);
             analytics.logEvent('Journal_Tapped_Cancel', {
               prompt: currentPath?.reflection,
@@ -348,98 +376,24 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
             useHomeStore.getState().setTappedReflectAboutVerse(false);
             console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
             onClose();
-          }}
-        />
-        {isSmallDevice && (
-          <View style={{ zIndex: 30, marginLeft: 64, marginTop: 24 }}>
-            <PrimaryButton
-              title="Save Thought"
-              onPress={() => {
-                console.log('Small device Save button pressed');
-                handleSave();
-              }}
-              disabled={!isButtonEnabled}
-              style="w-36"
-            />
-          </View>
-        )}
-      </View>
+          }} />
+        </Animated.View>
 
-      {/* Animated Card with TextInput */}
-      <Animated.View
-        className={`w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto ${isSmallDevice ? 'mt-[20px]' : 'mt-[120px]'} border-4 border-border pb-4`}
-        style={cardStyle}>
-        <Text className="text-body font-feather text-textPrimary mb-2 text-center leading-tight">
-          {tappedReflectAboutVerse ? (currentPath?.reflection ?? 'Reflection') : 'Reflection'}
-        </Text>
-
-        {tappedReflectAboutVerse && currentPath && currentPath.bookId && (
-          <Text className="text-body font-din text-description mb-2 text-center">
-            {currentPath?.bookId && typeof currentPath?.startChapter === 'number'
-              ? `${getBookNameFromId(currentPath?.bookId)} ${currentPath?.startChapter}${currentPath?.endChapter > currentPath?.startChapter ? `-${currentPath?.endChapter}` : ''}`
-              : 'Scripture Reading'}
-          </Text>
-        )}
-
-        {/* Text input area with character counter */}
-        <View className="w-full relative flex-1">
-          <TextInput
-            ref={inputRef}
-            className="w-full bg-surfaceCream/50 rounded-[18px] p-4 border border-border text-body font-din text-textPrimary"
-            placeholder={getPlaceholderText()}
-            placeholderTextColor="#B89B4C"
-            multiline
-            textAlignVertical="top"
-            scrollEnabled={true}
-            style={{ flex: 1 }}
-            value={reflectionContent}
-            onChangeText={setReflectionContent}
+        <Animated.View style={{ width: '82%', }}>
+          <PrimaryButton
+            title="Save Thoughts"
+            onPress={() => {
+              console.log('Small device Save button pressed');
+              handleSave()
+            }}
+            buttonType="blue"
+            icon={require('../assets/icons/starIcon.png')}
+            reward={"+25"}
+            disabled={!isButtonEnabled}
           />
-
-          {/* Character count bubble */}
-          <View className="absolute -top-3 -right-2 bg-white rounded-full py-1 px-3  border border-[#FFE4A8]">
-            <Text className="font-feather text-sm text-textPrimary">{charCount}</Text>
-          </View>
-        </View>
-
-        {/* Character count instruction (only show when under minimum) */}
-        {charCount < MIN_CHARS_REQUIRED && (
-          <Text className="font-din text-sm text-description mt-2 text-right self-end">
-            Please write at least {MIN_CHARS_REQUIRED} characters
-          </Text>
-        )}
+        </Animated.View>
       </Animated.View>
 
-      {/* Animated Bottom Content (Rive + Button) */}
-      <Animated.View
-        className="absolute left-0 right-0 flex-row items-center px-5 z-10"
-        style={bottomContentStyle}>
-        {/* Rive Animation */}
-        <View className="w-[100px] h-[100px] -ml-5 -mb-2">
-          {IS_ANDROID ? (
-            <Rive
-              resourceName={'home_lamb'}
-              artboardName="lamb-writing"
-              autoplay
-              style={{ width: '130%', height: '130%' }}
-            />
-          ) : (
-            <Rive
-              url={riveAssets[0].uri!}
-              artboardName="lamb-writing"
-              autoplay
-              style={{ width: '130%', height: '130%' }}
-            />
-          )}
-        </View>
-
-        {/* Save Button (hidden on small devices since it's in header) */}
-        {!isSmallDevice && (
-          <View className="flex-1 items-end w-[280px] ml-8 mt-4">
-            <PrimaryButton title="Save Thought" onPress={handleSave} disabled={!isButtonEnabled} />
-          </View>
-        )}
-      </Animated.View>
     </Animated.View>
   );
 };
