@@ -15,6 +15,9 @@ module.exports = {
         // 'secondary-button-bg': '#F9F3E5',
 
         // New Tokens
+        blue: '#00B0F7',
+        darkBlue: '#119AD1',
+        lightBrown: '#FBCA71',
         brightYellow: '#FFD629',
         lightGreen: '#D2FFC6',
         darkGreen: '#24CA17',
@@ -30,7 +33,6 @@ module.exports = {
         pillBorder: '#E9E2C7', // Border for metric pills
         description: '#B89B4C',
         buttonBorder: '#FFE4A8',
-        blue: '#06B6FE', // Shadow color for secondary button
         red: '#DF4533',
 
         // Path colors from Path.ts (Adjusted to be lighter backgrounds)
@@ -132,6 +134,8 @@ module.exports = {
         darkScarlet: '0px 5px 0px 0px #D72618',
         gray: '0px 5px 0px 0px #808080',
         darkApple: '0px 5px 0px 0px #171717',
+        brownShadow: '0px 5px 0px 0px #CFA860',
+        darkBlueShadow: '0px 5px 0px 0px #119AD1',
       },
       secondaryButtonShadow: {
         secondary: '', // Match spec

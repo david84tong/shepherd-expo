@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import DevotionalReader from '../../components/DevotionalReader';
+import PrayerView from '../../components/PrayerView';
 import ProgressPill from '../../components/ProgressPill';
 import SecondaryButton from '../../components/SecondaryButton';
 import HeartsExplainerModal from '../../components/HeartsExplainerModal';
@@ -26,6 +27,7 @@ import { HomeMode, useHomeStore } from '../stores/homeStore'; // Import Zustand 
 import { usePathStore } from '../stores/pathStore'; // Import path store
 import { useUIStore } from '../stores/uiStore'; // Import UI store
 import { useUserStore } from '../stores/userStore'; // Import user store
+import { usePrayerStore } from '../stores/prayerStore'; // Import prayer store
 import { useAssetsStore, imageAssets } from '../stores/assetsStore';
 import { useAssets } from 'expo-asset';
 import * as Haptics from 'expo-haptics';
@@ -170,6 +172,8 @@ export default function HomeScreen() {
   const setMode = useHomeStore((state) => state.setMode);
   const setDevotionalReaderVisible = useHomeStore((state) => state.setDevotionalReaderVisible);
   const devotionalReaderVisible = useHomeStore((state) => state.devotionalReaderVisible);
+  const setPrayerViewVisible = useHomeStore((state) => state.setPrayerViewVisible);
+  const prayerViewVisible = useHomeStore((state) => state.prayerViewVisible);
 
   // Get completion states from the store
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
@@ -193,6 +197,9 @@ export default function HomeScreen() {
   const isLoadingDevotional = useDevotionalStore((state) => state.isLoading);
   const devotionalError = useDevotionalStore((state) => state.error);
   const fetchTodaysDevotional = useDevotionalStore((state) => state.fetchTodaysDevotional);
+
+  // Get prayer data from prayerStore
+  const { recentPrayers } = usePrayerStore();
 
   // State to manage the Rive resource name
   const [artboardName, setArtboardName] = useState('lamb-idle'); // Default artboard
@@ -580,6 +587,49 @@ export default function HomeScreen() {
     }
   }, [devotionalReaderVisible]);
 
+  // --- useEffect to handle prayer view visibility animations ---
+  useEffect(() => {
+    const duration = 400; // Match the card animation duration
+    
+    if (prayerViewVisible) {
+      // Animate in
+      Animated.parallel([
+        // Fade out default header
+        Animated.timing(headerDefaultOpacityAnim, {
+          toValue: 0,
+          duration,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        // Fade in black overlay
+        Animated.timing(devotionalBgOpacityAnim, {
+          toValue: 0.3,
+          duration,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    } else {
+      // Animate out
+      Animated.parallel([
+        // Fade in default header
+        Animated.timing(headerDefaultOpacityAnim, {
+          toValue: 1,
+          duration,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        // Fade out black overlay
+        Animated.timing(devotionalBgOpacityAnim, {
+          toValue: 0,
+          duration,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [prayerViewVisible]);
+
   // --- useEffect to react to external mode changes ---
   useEffect(() => {
     console.log(isPro, 'what is pro');
@@ -729,11 +779,49 @@ export default function HomeScreen() {
         return;
       }
 
-      // Remove rigid haptic feedback
+      console.log('Prayer button pressed - showing prayer view');
 
-      // Show the global prayer sheet and set mode to PRAYER when prayer is generated
-      showPrayerSheet(() => {
-        setMode('PRAYER');
+      // Simple fade animation for content transition - longer duration
+      Animated.timing(devotionalCardOpacityAnim, {
+        toValue: 0,
+        duration: 400,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start(() => {
+        // Show prayer content after fade out
+        setShowPrayerContent(true);
+        // Fade back in
+        Animated.timing(devotionalCardOpacityAnim, {
+          toValue: 1,
+          duration: 600,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }).start();
+      });
+
+      // Show PrayerView state immediately
+      setShowPrayerView(true);
+      setPrayerViewVisible(true); // Hide tab bar
+      
+      // Synchronize lamb fade with card content fade
+      Animated.timing(riveArtboardOpacityAnim, {
+        toValue: 0,
+        duration: 400, // Same as card fade out
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start(() => {
+        setArtboardName('lamb-drinking');
+        Animated.timing(riveArtboardOpacityAnim, {
+          toValue: 1,
+          duration: 600, // Same as card fade in
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }).start();
+      });
+
+      // Log analytics
+      analytics.logEvent('HomeScreen_Tapped_Prayer', {
+        prayerTopic: recentPrayers[0] || 'general',
       });
     }
   };
@@ -1057,6 +1145,9 @@ export default function HomeScreen() {
   // Add devotional reader state
   const [showDevotionalReader, setShowDevotionalReader] = useState(false);
   const [showDevotionalContent, setShowDevotionalContent] = useState(false);
+  // Add prayer view state
+  const [showPrayerView, setShowPrayerView] = useState(false);
+  const [showPrayerContent, setShowPrayerContent] = useState(false);
   const levelPillWidthAnim = useRef(new Animated.Value(0)).current;
   const levelPillOpacityAnim = useRef(new Animated.Value(0)).current;
   // Pre-calculate the expanded width for the pill (use a reasonable fixed width instead of screen-based)
@@ -1549,6 +1640,7 @@ export default function HomeScreen() {
               marginTop: showDevotionalContent ? -124 : -124,
               opacity: bottomCardOpacity,
               marginBottom: -120,
+              padding: 0,
             }}>
                           <Animated.View
                 className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2"
@@ -1569,7 +1661,7 @@ export default function HomeScreen() {
                 />
                 {/* Animated content wrapper - only this fades */}
                 <Animated.View style={{ flex: 1, opacity: devotionalCardOpacityAnim }}>
-                  {/* Conditionally show DevotionalReader or normal content */}
+                  {/* Conditionally show DevotionalReader, PrayerView, or normal content */}
                   {showDevotionalContent ? (
                 <DevotionalReader
                   visible={showDevotionalContent}
@@ -1622,6 +1714,62 @@ export default function HomeScreen() {
                       ]).start(() => {
                         // Reset reader state after animations complete
                         setShowDevotionalReader(false);
+                      });
+                    }, 250); // Switch content halfway through fade out
+                  }}
+                />
+              ) : showPrayerContent ? (
+                <PrayerView
+                  visible={showPrayerContent}
+                  onClose={() => {
+                    // Immediately mark prayer view as hidden so overlay/header animations start in sync
+                    setPrayerViewVisible(false);
+                    
+                    // Start fade out
+                    Animated.parallel([
+                      // Card content fade out
+                      Animated.timing(devotionalCardOpacityAnim, {
+                        toValue: 0,
+                        duration: 500,
+                        easing: Easing.inOut(Easing.ease),
+                        useNativeDriver: true,
+                      }),
+                      // Lamb fade out at the same time
+                      Animated.timing(riveArtboardOpacityAnim, {
+                        toValue: 0,
+                        duration: 500,
+                        easing: Easing.inOut(Easing.ease),
+                        useNativeDriver: true,
+                      })
+                    ]).start();
+                    
+                    // Switch content and artboard immediately after a short delay
+                    setTimeout(() => {
+                      // Hide prayer content and reset lamb artboard
+                      setShowPrayerContent(false);
+                      const currentMood = useUserStore.getState()?.getLambMood?.();
+                      const targetArtboard = moodToArtboard[currentMood] || 'lamb-idle';
+                      setArtboardName(targetArtboard);
+                      
+                      // Start fade in immediately after content switch
+                      Animated.parallel([
+                        // Card content fade in
+                        Animated.timing(devotionalCardOpacityAnim, {
+                          toValue: 1,
+                          duration: 500,
+                          easing: Easing.inOut(Easing.ease),
+                          useNativeDriver: true,
+                        }),
+                        // Lamb fade in at the same time
+                        Animated.timing(riveArtboardOpacityAnim, {
+                          toValue: 1,
+                          duration: 500,
+                          easing: Easing.inOut(Easing.ease),
+                          useNativeDriver: true,
+                        })
+                      ]).start(() => {
+                        // Reset prayer view state after animations complete
+                        setShowPrayerView(false);
                       });
                     }, 250); // Switch content halfway through fade out
                   }}
@@ -1696,7 +1844,7 @@ export default function HomeScreen() {
                         points={25}
                         onPress={handlePrayerPress}
                         completed={prayerCompleted}
-                        disabled={!readingCompleted}
+                        // disabled={!readingCompleted}
                       />
                     </View>
                   </View>
