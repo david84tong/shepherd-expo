@@ -678,7 +678,7 @@ export default function HomeScreen() {
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }).start(() => {
-          setArtboardName('lamb-drinking');
+          setArtboardName('lamb-idle');
           Animated.timing(riveArtboardOpacityAnim, {
             toValue: 1,
             duration: 150,
@@ -810,7 +810,7 @@ export default function HomeScreen() {
         easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }).start(() => {
-        setArtboardName('lamb-drinking');
+        setArtboardName('lamb-idle');
         Animated.timing(riveArtboardOpacityAnim, {
           toValue: 1,
           duration: 600, // Same as card fade in
@@ -1640,7 +1640,6 @@ export default function HomeScreen() {
               marginTop: showDevotionalContent ? -124 : -124,
               opacity: bottomCardOpacity,
               marginBottom: -120,
-              padding: 0,
             }}>
                           <Animated.View
                 className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2"

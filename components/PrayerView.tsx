@@ -163,6 +163,7 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
     <View style={{ alignItems: 'center', justifyContent: 'center', marginVertical: 40 }}>
       {/* Yellow glow background */}
       <Reanimated.View 
+        pointerEvents="none"
         style={[
           {
             position: 'absolute',
@@ -187,6 +188,7 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
       
       {/* Center circle with yellow glow */}
       <Reanimated.View style={[
+        { pointerEvents: 'none' },
         {
           width: circleSize,
           height: circleSize,
@@ -200,7 +202,7 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
       
       {/* Breathing instruction text */}
       <Reanimated.View style={[
-        { position: 'absolute' },
+        { position: 'absolute', pointerEvents: 'none' },
         breathingTextStyle
       ]}>
         {guidedPrayerEnabled ? (
@@ -393,6 +395,11 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose }) => {
     };
   }, []);
 
+  // Debug modal visibility changes
+  useEffect(() => {
+    console.log('🔍 showSettingsModal changed to:', showSettingsModal);
+  }, [showSettingsModal]);
+
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
@@ -443,7 +450,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose }) => {
         clearTimeout(hideTimeoutRef.current);
         hideTimeoutRef.current = null;
       }
-      if (showControlRow) {
+      if (showControlRow && showBreathingAnimation) { // Only auto-hide if still in breathing animation
         hideTimeoutRef.current = setTimeout(() => {
           controlRowOpacity.value = withTiming(0, { duration: 800 }, (finished) => {
             if (finished) {
@@ -453,7 +460,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose }) => {
         }, 3000);
       }
     }
-  }, [showSettingsModal, controlRowOpacity, showControlRow]);
+  }, [showSettingsModal, controlRowOpacity, showControlRow, showBreathingAnimation]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -550,6 +557,8 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose }) => {
 
   // Function to show control row with auto-hide
   const toggleControlRow = useCallback(() => {
+    console.log('🎯 toggleControlRow called! showControlRow:', showControlRow);
+    
     // Haptic feedback for every tap
     if (hapticsEnabled) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -607,7 +616,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose }) => {
   
   console.log('📋 Prayer cards to show:', cardsToShow.length, cardsToShow);
 
-  // Settings Modal Component
+  // Settings Modal Component - Memoized to prevent re-renders
   const SettingsModal = () => (
     <Modal
       visible={showSettingsModal}
@@ -692,7 +701,10 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose }) => {
 
           {/* Close Button */}
           <TouchableOpacity
-            onPress={() => setShowSettingsModal(false)}
+            onPress={() => {
+              console.log('✅ Done button pressed, closing modal');
+              setShowSettingsModal(false);
+            }}
             style={{
               backgroundColor: '#FF8800',
               paddingVertical: 12,
@@ -756,7 +768,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose }) => {
       {/* Breathing Animation - Show initially */}
       {showBreathingAnimation && (
         <TouchableWithoutFeedback onPress={toggleControlRow}>
-          <View pointerEvents="box-none" style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -180 }}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -180 }}>
             <BreathingAnimation isActive={showBreathingAnimation} breathingProgress={breathingProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} />
           
           {/* Control Row - appears on tap */}
@@ -808,6 +820,12 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose }) => {
                   size={50}
                   hapticsEnabled={hapticsEnabled}
                   onPress={() => {
+                    console.log('⚙️ Settings button pressed');
+                    // Clear any hide timers when opening settings
+                    if (hideTimeoutRef.current) {
+                      clearTimeout(hideTimeoutRef.current);
+                      hideTimeoutRef.current = null;
+                    }
                     setShowSettingsModal(true);
                   }}
                 />
