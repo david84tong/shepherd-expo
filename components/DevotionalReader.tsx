@@ -24,10 +24,10 @@ import Reanimated, {
 import * as Haptics from 'expo-haptics';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import analytics from '../utils/analytics';
-import SuccessAnimation from './SuccessAnimation';
 import { useUserStore } from '~/app/stores/userStore';
 import { getLevelData } from '~/utils/levelUtils';
 import PrimaryButton from './PrimaryButton';
+import { RPH } from '~/app/helper/helper';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -532,8 +532,16 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
             ref={scrollViewRef}
             className="flex-1"
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 160 }}
-            scrollEventThrottle={16}>
+            contentContainerStyle={{ 
+              paddingBottom: RPH(35),
+              flexGrow: 1,
+              justifyContent: 'flex-start',
+              minHeight: '100%'
+            }}
+            scrollEventThrottle={16}
+            bounces={true}
+            alwaysBounceVertical={true}
+            automaticallyAdjustContentInsets={true}>
             <TouchableWithoutFeedback onPress={handleNextCard}>
               <View style={{ minHeight: 200 }}>
                 {cardsToShow.length === 0 ? (
