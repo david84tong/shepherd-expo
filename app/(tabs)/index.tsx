@@ -42,6 +42,7 @@ import { useDevotionalStore } from '../stores/devotionalStore'; // Import devoti
 import bibleIcon from '../../assets/icons/bibleIcon.png';
 import FullScreenShareCard from '../../components/FullScreenShareCard';
 import SpotlightOverlay from '../../components/SpotlightOverlay';
+import { usePrayerStore } from '../stores/prayerStore'; // Import prayer store
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
@@ -201,6 +202,10 @@ export default function HomeScreen() {
   const devotionalError = useDevotionalStore((state) => state.error);
   const fetchTodaysDevotional = useDevotionalStore((state) => state.fetchTodaysDevotional);
   const [finishReading, setFinishReading] = useState(false)
+
+  // PrayerView local UI states
+  const [showPrayerView, setShowPrayerView] = useState(false);
+  const [showPrayerContent, setShowPrayerContent] = useState(false);
 
   // State to manage the Rive resource name
   const [artboardName, setArtboardName] = useState('lamb-idle'); // Default artboard
@@ -370,6 +375,10 @@ export default function HomeScreen() {
   // Get UI store functions
   const showPrayerSheet = useUIStore((state) => state.showPrayerSheet);
   const showWidgetPrompt = useUIStore((state) => state.showWidgetPrompt);
+
+  // Get prayer data and store setter for visibility
+  const { recentPrayers } = usePrayerStore();
+  const setPrayerViewVisible = useHomeStore((state) => state.setPrayerViewVisible);
 
   const handleRiveError = (error: RNRiveError) => {
     console.log('Rive Error:', error.message, error.type);
@@ -700,17 +709,19 @@ export default function HomeScreen() {
     } else {
       console.log('Read the word button pressed');
 
-      // Set Rive Action-Number to 2 (Eat)
-      if (riveRef.current && riveRef.current.setInputState) {
-        try {
-          riveRef.current.setInputState('State Machine 1', 'Action-Number', 2);
-          console.log('Set Rive Action-Number: 2 (Eat)');
-        } catch (e) {
-          console.log('Error setting Rive Action-Number to Eat:', e);
+      // Set Rive Action-Number to 2 (Eat) after 1 second delay
+      setTimeout(() => {
+        if (riveRef.current && riveRef.current.setInputState) {
+          try {
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 2);
+            console.log('Set Rive Action-Number: 2 (Eat)');
+          } catch (e) {
+            console.log('Error setting Rive Action-Number to Eat:', e);
+          }
+        } else {
+          console.log('Rive ref not ready for Action-Number Eat');
         }
-      } else {
-        console.log('Rive ref not ready for Action-Number Eat');
-      }
+      }, 500);
 
       // Simple fade animation for content transition - longer duration
       Animated.timing(devotionalCardOpacityAnim, {
@@ -770,6 +781,28 @@ export default function HomeScreen() {
         return;
       }
 
+      console.log('Prayer button pressed - transitioning to PrayerView');
+
+      // Fade out current card content
+      Animated.timing(devotionalCardOpacityAnim, {
+        toValue: 0,
+        duration: 400,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start(() => {
+        setShowPrayerContent(true);
+        Animated.timing(devotionalCardOpacityAnim, {
+          toValue: 1,
+          duration: 600,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }).start();
+      });
+
+      // Show PrayerView state
+      setShowPrayerView(true);
+      setPrayerViewVisible(true);
+
       // Set Rive Action-Number to 1 (Raising Hand)
       if (riveRef.current && riveRef.current.setInputState) {
         try {
@@ -778,15 +811,14 @@ export default function HomeScreen() {
         } catch (e) {
           console.log('Error setting Rive Action-Number to Raising Hand:', e);
         }
-      } else {
-        console.log('Rive ref not ready for Action-Number Raising Hand');
       }
 
-      // Remove rigid haptic feedback
+      // Update mode to PRAYER for animations
+      setMode('PRAYER');
 
-      // Show the global prayer sheet and set mode to PRAYER when prayer is generated
-      showPrayerSheet(() => {
-        setMode('PRAYER');
+      // Log analytics
+      analytics.logEvent('HomeScreen_Tapped_Prayer', {
+        prayerTopic: recentPrayers[0] || 'general',
       });
     }
   };
@@ -988,38 +1020,9 @@ export default function HomeScreen() {
   const riveComponent = useMemo(() => {
     if (!riveAssets || !riveReady) return null;
 
-    // Calculate lamb scale based on level (grows with level)
-    // Level 1: 55% size, Level 10+: 110% size (10% larger overall)
-    const lambLevel = lamb?.level || 1;
-    const minScale = 0.55; // 55% size at level 1 (was 50%)
-    const scaleFactor = Math.min(minScale + (lambLevel - 1) * 0.055, 1.1); // Max is now 110%
-
-    console.log(`Lamb level: ${lambLevel}, Scale factor: ${scaleFactor}`);
-
     // Use the appropriate Rive asset based on pro status and level
     const lambAssetIndex = 0;
     const useArtboardName = '[Main] Shpeherd';
-
-    // Calculate position adjustment to keep lamb centered
-    // As the lamb gets smaller, we need to adjust its position to stay centered
-    const positionAdjustment = (1 - scaleFactor) * 50; // % adjustment for centering
-
-    // Calculate shadow scale and color for levels 10+
-    const shouldShowRedShadow = lambLevel >= 10 && lambLevel < 24;
-    const shouldShowYellowShadow = lambLevel >= 24;
-    let shadowScale = 0;
-
-    if (shouldShowRedShadow) {
-      // Red shadow from level 10-23: scale from 0.5 to 1.2
-      const levelProgress = Math.min((lambLevel - 10) / (23 - 10), 1); // 0 to 1
-      shadowScale = 0.55 + levelProgress * 0.7; // 0.5 to 1.2
-      console.log(`Red shadow debug - Level: ${lambLevel}, Scale: ${shadowScale}`);
-    } else if (shouldShowYellowShadow) {
-      // Yellow shadow from level 24-33: scale from 0.6 to 1.5 (fresh growth)
-      const levelProgress = Math.min((lambLevel - 24) / (33 - 24), 1); // 0 to 1
-      shadowScale = 0.35 + levelProgress * 0.9; // 0.6 to 1.5
-      console.log(`Yellow shadow debug - Level: ${lambLevel}, Scale: ${shadowScale}`);
-    }
 
     return (
       <View
@@ -1029,33 +1032,6 @@ export default function HomeScreen() {
           alignItems: 'center',
           justifyContent: 'center',
         }}>
-        {/* Red shadow behind lamb for level 10+ */}
-        {shouldShowRedShadow && (
-          <Image
-            source={require('../../assets/redShadow.png')}
-            style={{
-              position: 'absolute',
-              width: 300 * shadowScale,
-              height: 300 * shadowScale,
-              zIndex: -10,
-              borderRadius: 300,
-            }}
-            resizeMode="cover"
-          />
-        )}
-        {shouldShowYellowShadow && (
-          <Image
-            source={require('../../assets/yellowShadow.png')}
-            style={{
-              position: 'absolute',
-              width: 300 * shadowScale,
-              height: 300 * shadowScale,
-              zIndex: -10,
-              borderRadius: 300,
-            }}
-            resizeMode="cover"
-          />
-        )}
         <TouchableOpacity
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -1075,12 +1051,10 @@ export default function HomeScreen() {
         </TouchableOpacity>
         <View
           style={{
-            width: `${scaleFactor * 100}%`,
-            height: `${scaleFactor * 100}%`,
+            width: '100%',
+            height: '100%',
             alignItems: 'center',
             justifyContent: 'center',
-            // Add overflow hidden to prevent any rendering issues with larger size
-            overflow: 'hidden',
             zIndex: 10,
           }}>
           {IS_ANDROID ? (
@@ -1117,7 +1091,7 @@ export default function HomeScreen() {
         </View>
       </View>
     );
-  }, [riveAssets, artboardName, riveKey, riveReady, isPro, lamb?.level]);
+  }, [riveAssets, artboardName, riveKey, riveReady, isPro]);
 
   const [showWidgetSheet, setShowWidgetSheet] = useState(false);
   // Add level pill animation states
@@ -1288,7 +1262,6 @@ export default function HomeScreen() {
     }
   };
 
-
   // HEADER
   return (
     <>
@@ -1303,8 +1276,8 @@ export default function HomeScreen() {
         {/* Background Layers - Use expo-image for better performance */}
         <Animated.View
           style={[
-            { position: 'absolute', width: '100%', height: '100%' },
-            { opacity: showDevotionalContent ? 1 : 0.4 },
+            { position: 'absolute', width: '100%', height: '100%', top: -100 },
+            { opacity: showDevotionalContent ? 1 : 1 },
           ]}>
           <ImageBackground
             source={require('../../assets/backgrounds/mainBackground2.png')}
@@ -1316,41 +1289,9 @@ export default function HomeScreen() {
           </ImageBackground>
         </Animated.View>
 
-        <Animated.View
-          style={[
-            { position: 'absolute', width: '100%', height: '100%' },
-            { opacity: pathOpacityAnim },
-          ]}>
-          <Image source={pathBg} style={{ width: '100%', height: '100%' }} />
-        </Animated.View>
 
-        <Animated.View
-          style={[
-            { position: 'absolute', width: '100%', height: '100%' },
-            { opacity: journalOpacityAnim },
-          ]}>
-          <Image source={journalBg} style={{ width: '100%', height: '100%' }} />
-        </Animated.View>
 
-        {/* Prayer background Rive animation */}
-        <Animated.View
-          style={[
-            { position: 'absolute', width: '100%', height: '100%' },
-            { opacity: showJournalContent ? 1 : 0.4 },
-          ]}>
-          <ImageBackground
-            source={showJournalContent ?
-              require('../../assets/backgrounds/Forest Clearing Background Apr 18 2025.png') :
-              require('../../assets/backgrounds/mainBackground2.png')}
-            style={{ width: '100%', height: '100%' }}>
-            <Image
-              source={showJournalContent ?
-                require('../../assets/backgrounds/Forest Clearing Background Apr 18 2025.png') :
-                require('../../assets/backgrounds/mainBackground2.png')}
-              style={{ width: '100%', height: '100%' }}
-            />
-          </ImageBackground>
-        </Animated.View>
+
 
         {/* Black overlay for devotional mode */}
         {/* {!finishReading && <Animated.View
@@ -1730,7 +1671,7 @@ export default function HomeScreen() {
           <Animated.View
             style={{
               flex: 1,
-              marginTop: showDevotionalContent ? -124 : -124,
+              marginTop: showDevotionalContent ? -64 : -64,
               opacity: bottomCardOpacity,
               marginBottom: -120,
             }}>
@@ -1983,7 +1924,7 @@ export default function HomeScreen() {
                               points={25}
                               onPress={handlePrayerPress}
                               completed={prayerCompleted}
-                              disabled={!readingCompleted}
+                              disabled={!__DEV__ && !readingCompleted}
                             />
                           </View>
                         </View>
@@ -2025,7 +1966,7 @@ export default function HomeScreen() {
                         </View>
 
                         {/* Daily Verse Card */}
-                        {currentDevotional?.verse && (
+                        {false && currentDevotional?.verse && (
                           <TouchableOpacity
                             onPress={() => {
                               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

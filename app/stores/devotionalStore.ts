@@ -36,20 +36,22 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Get today's date in UTC format (YYYY-MM-DD)
-      const todayUTC = new Date().toISOString().split('T')[0]; // "2025-06-03"
+      // Get yesterday's date in UTC format (YYYY-MM-DD)
+    const date = new Date();
+      date.setUTCDate(date.getUTCDate() - 1);
+      const yesterdayUTC = date.toISOString().split('T')[0]; // e.g. "2025-06-02"
       
-      console.log('Fetching devotional for UTC date:', todayUTC);
+      console.log('Fetching devotional for UTC date (yesterday):', yesterdayUTC);
       
-      // Query for document where the "id" field equals todayUTC
+      // Query for document where the "id" field equals yesterdayUTC
       const devotionalsRef = firestore().collection('dailyDevotionals');
       const snapshot = await devotionalsRef
-        .where('id', '==', todayUTC)
+        .where('id', '==', yesterdayUTC)
         .limit(1)
         .get();
       
       if (snapshot.empty) {
-        console.log('No devotional found for date:', todayUTC);
+        console.log('No devotional found for date:', yesterdayUTC);
         set({ 
           currentDevotional: null, 
           isLoading: false,
