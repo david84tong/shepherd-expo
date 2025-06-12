@@ -92,7 +92,7 @@ const TypingText: React.FC<TypingTextProps> = ({
 // Breathing Animation Component
 const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reanimated.SharedValue<number>; hapticsEnabled: boolean; guidedPrayerEnabled: boolean }> = ({ isActive, breathingProgress, hapticsEnabled, guidedPrayerEnabled }) => {
   const circleSize = SCREEN_WIDTH * 0.4; // 50% of screen width
-  
+
   // Haptic feedback function - stabilize with empty dependency array
   const triggerHaptic = useCallback(() => {
     if (hapticsEnabled) {
@@ -109,15 +109,15 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
       // Start breathing animation - only start once
       breathingProgress.value = withRepeat(
         withSequence(
-          withTiming(1, { 
-            duration: 4000, 
-            easing: Easing.inOut(Easing.ease) 
+          withTiming(1, {
+            duration: 4000,
+            easing: Easing.inOut(Easing.ease)
           }, () => {
             runOnJS(triggerHaptic)();
           }),
-          withTiming(0, { 
-            duration: 4000, 
-            easing: Easing.inOut(Easing.ease) 
+          withTiming(0, {
+            duration: 4000,
+            easing: Easing.inOut(Easing.ease)
           }, () => {
             runOnJS(triggerHaptic)();
           })
@@ -138,7 +138,7 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
     const scale = interpolate(progress, [0, 1], [0.4, 1]);
     const glowRadius = interpolate(progress, [0, 1], [20, 60]);
     const glowOpacity = interpolate(progress, [0, 1], [0.3, 0.8]);
-    
+
     return {
       transform: [{ scale }],
       shadowColor: '#FFD700',
@@ -153,7 +153,7 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
   const breathingTextStyle = useAnimatedStyle(() => {
     const progress = breathingProgress.value;
     const opacity = interpolate(progress, [0, 0.5, 1], [0.8, 1, 0.8]);
-    
+
     return {
       opacity,
     };
@@ -162,7 +162,7 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', marginVertical: 40 }}>
       {/* Yellow glow background */}
-      <Reanimated.View 
+      <Reanimated.View
         pointerEvents="none"
         style={[
           {
@@ -183,9 +183,9 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
               opacity,
             };
           })
-        ]} 
+        ]}
       />
-      
+
       {/* Center circle with yellow glow */}
       <Reanimated.View style={[
         { pointerEvents: 'none' },
@@ -199,27 +199,27 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
         },
         centerCircleStyle
       ]} />
-      
+
       {/* Breathing instruction text */}
       <Reanimated.View style={[
         { position: 'absolute', pointerEvents: 'none' },
         breathingTextStyle
       ]}>
         {guidedPrayerEnabled ? (
-        <TypingText
-          text="Dear God, I come before you today with a grateful heart. Please guide me through this day and help me grow in faith. Amen."
-          className="text-yellow-700 font-feather text-xl m-12 text-center"
-          baseTextStyle={{ 
-            color: '#B45309', 
-            fontSize: 20, 
-            fontFamily: 'Nunito-Black',
-            textAlign: 'center',
-            lineHeight: 28,
-            margin: 48
-          }}
-          speed={50}
-          skipAnimation={false}
-        />
+          <TypingText
+            text="Dear God, I come before you today with a grateful heart. Please guide me through this day and help me grow in faith. Amen."
+            className="text-yellow-700 font-feather text-xl m-12 text-center"
+            baseTextStyle={{
+              color: '#B45309',
+              fontSize: 20,
+              fontFamily: 'Nunito-Black',
+              textAlign: 'center',
+              lineHeight: 28,
+              margin: 48
+            }}
+            speed={50}
+            skipAnimation={false}
+          />
         ) : (
           <Text className="text-yellow-700 font-feather text-xl m-12 text-center">
             {/* Breathe deeply */}
@@ -231,9 +231,9 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
 };
 
 // Prayer Card Component
-const PrayerCard: React.FC<{ 
-  card: { type: string; content: string }; 
-  index: number; 
+const PrayerCard: React.FC<{
+  card: { type: string; content: string };
+  index: number;
   isLast: boolean;
   breathingProgress: Reanimated.SharedValue<number>;
   fontSize: number;
@@ -257,8 +257,8 @@ const PrayerCard: React.FC<{
       entering={FadeInUp.duration(300).delay(index * 60)}
       layout={Layout.springify()}
       style={{ marginBottom: 12 }}>
-      <Reanimated.View 
-        className="bg-surfaceCreamLight" 
+      <Reanimated.View
+        className="bg-surfaceCreamLight"
         style={[{
           padding: 14,
           borderRadius: 12,
@@ -275,7 +275,7 @@ const PrayerCard: React.FC<{
               onComplete={onTypingComplete}
             />
           ) : (
-            <Text 
+            <Text
               className='text-blue/90 font-din'
               style={{ fontSize: fontSize, lineHeight: fontSize * 1.5 }}
             >
@@ -324,7 +324,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
     if (!latestPrayer) {
       return "Dear God, I come before you today with a grateful heart. Please guide me through this day and help me grow in faith. Amen.";
     }
-    
+
     return `Dear God, I come before you today with a humble heart. Please help me with ${latestPrayer.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
   }, [recentPrayers]);
 
@@ -334,31 +334,31 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
       try {
         const savedHaptics = await AsyncStorage.getItem(PRAYER_HAPTICS_KEY);
         const savedGuidedMode = await AsyncStorage.getItem(PRAYER_GUIDED_MODE_KEY);
-        
+
         if (savedHaptics !== null) {
           setHapticsEnabled(savedHaptics === 'true');
         }
-        
+
         if (savedGuidedMode !== null) {
           setGuidedPrayerEnabled(savedGuidedMode === 'true');
         }
-        
+
         console.log('🙏 Loaded prayer settings from AsyncStorage');
       } catch (error) {
         console.error('🙏 Error loading prayer settings:', error);
       }
     };
-    
+
     loadSettings();
   }, []);
 
   // Split prayer into sentences when component loads
   useEffect(() => {
     console.log('🙏 Processing prayer content');
-    
+
     const prayerText = generatePrayerContent();
     console.log('🙏 Generated prayer text:', prayerText);
-    
+
     if (prayerText.trim().length > 0) {
       // Split by periods followed by space or end of string, keeping the period
       const sentences = prayerText
@@ -418,7 +418,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
     if (showBreathingAnimation) {
       // Set initial opacity to 1 when component loads
       controlRowOpacity.value = withTiming(1, { duration: 300 });
-      
+
       // Only start auto-hide timer if settings modal is not visible
       if (!showSettingsModal) {
         hideTimeoutRef.current = setTimeout(() => {
@@ -543,7 +543,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
     const r = interpolate(progress, [0, 1], [254, 255]); // #FEEDC0 -> #FFE38E
     const g = interpolate(progress, [0, 1], [237, 227]); // #FEEDC0 -> #FFE38E  
     const b = interpolate(progress, [0, 1], [192, 142]); // #FEEDC0 -> #FFE38E
-    
+
     return {
       backgroundColor: `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`,
     };
@@ -560,7 +560,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
   // Function to show control row with auto-hide
   const toggleControlRow = useCallback(() => {
     console.log('🎯 toggleControlRow called! showControlRow:', showControlRow);
-    
+
     // Haptic feedback for every tap
     if (hapticsEnabled) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -603,7 +603,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
 
   // Prepare cards to show (up to current index)
   const cardsToShow = [];
-  
+
   console.log('📋 Preparing prayer cards to show. Current index:', currentIndex);
   console.log('📋 Total prayer sentences:', prayerSentences.length);
   console.log('📋 Prayer sentences:', prayerSentences);
@@ -615,7 +615,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
       content: prayerSentences[i],
     });
   }
-  
+
   console.log('📋 Prayer cards to show:', cardsToShow.length, cardsToShow);
 
   // Settings Modal Component - Memoized to prevent re-renders
@@ -624,7 +624,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
       visible={showSettingsModal}
       transparent={true}
       animationType="fade"
-      onRequestClose={() => {}} // Prevent hardware back button from closing
+      onRequestClose={() => { }} // Prevent hardware back button from closing
     >
       <View style={{
         flex: 1,
@@ -729,7 +729,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
   );
 
   return (
-    <Reanimated.View style={[{ flex: 1, margin: -24, borderRadius: 24 }, animatedBackgroundStyle]}>
+    <Reanimated.View style={[{ flex: 1, borderRadius: 24 }, animatedBackgroundStyle]}>
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 16, marginTop: 24 }}>
         <Text
@@ -741,9 +741,9 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
         >
           {/* Prayer Time */}
         </Text>
-        
+
         {/* Close button */}
-    
+
       </View>
 
       {/* Date Header */}
@@ -770,29 +770,29 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
       {/* Breathing Animation - Show initially */}
       {showBreathingAnimation && (
         <TouchableWithoutFeedback onPress={toggleControlRow}>
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -180 }}>
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -280 }}>
             <BreathingAnimation isActive={showBreathingAnimation} breathingProgress={breathingProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} />
-          
-          {/* Control Row - appears on tap */}
-          {showControlRow && (
-            <Reanimated.View 
-              style={[
-                {
-                  position: 'absolute',
-                  top: SCREEN_WIDTH * 1.45,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  width: '100%',
-                  alignSelf: 'center',
-                  paddingHorizontal: 32,
-                  zIndex: 10,
 
-                },
-                controlRowAnimatedStyle
-              ]}
-              onLayout={() => console.log('🔍 Control row is being rendered!')}
-            >
+            {/* Control Row - appears on tap */}
+            {showControlRow && (
+              <Reanimated.View
+                style={[
+                  {
+                    position: 'absolute',
+                    top: SCREEN_WIDTH * 1.45,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    width: '100%',
+                    alignSelf: 'center',
+                    paddingHorizontal: 32,
+                    zIndex: 10,
+
+                  },
+                  controlRowAnimatedStyle
+                ]}
+                onLayout={() => console.log('🔍 Control row is being rendered!')}
+              >
                 {/* Back/Left Button */}
                 <CircleButton
                   icon="chevron-left"
@@ -805,7 +805,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
                 />
 
                 {/* Complete Prayer Button */}
-                <BluePrimaryButton 
+                <BluePrimaryButton
                   title="Complete Prayer"
                   width="60%"
                   onPress={() => {
@@ -850,21 +850,21 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
                 <Text className="text-brown text-center">No prayer content to display</Text>
               ) : (
                 <>
-                                  {cardsToShow.map((card, index) => {
-                  console.log('🎨 Rendering prayer card:', index, card.type, card.content.substring(0, 50));
-                  return (
-                    <PrayerCard
-                      key={index}
-                      card={card}
-                      index={index}
-                      isLast={index === cardsToShow.length - 1}
-                      breathingProgress={breathingProgress}
-                      fontSize={fontSize}
-                      skipTyping={skipTyping}
-                      onTypingComplete={handleTypingComplete}
-                    />
-                  );
-                })}
+                  {cardsToShow.map((card, index) => {
+                    console.log('🎨 Rendering prayer card:', index, card.type, card.content.substring(0, 50));
+                    return (
+                      <PrayerCard
+                        key={index}
+                        card={card}
+                        index={index}
+                        isLast={index === cardsToShow.length - 1}
+                        breathingProgress={breathingProgress}
+                        fontSize={fontSize}
+                        skipTyping={skipTyping}
+                        onTypingComplete={handleTypingComplete}
+                      />
+                    );
+                  })}
                 </>
               )}
 
@@ -891,21 +891,21 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
                     const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
                     setLastActivityDate(now);
                     setLastPrayerDate(now);
-                    
+
                     // Mark prayer as completed
                     const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
                     setPrayerCompleted(true);
-                    
+
                     // Show tab bar again
                     const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
                     setPrayerViewVisible(false);
-                    
+
                     // Log completion analytics
                     analytics.logEvent('PrayerView_Completed', {
                       prayerTopic: recentPrayers[0] || 'general',
                       totalCards: totalCards,
                     });
-                    
+
                     // Close the prayer view
                     if (onSetIdle) onSetIdle();
                     if (onClose) {
