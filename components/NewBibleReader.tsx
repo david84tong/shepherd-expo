@@ -389,7 +389,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   onOpenSettings,
 }) => {
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showTapGuidance, setShowTapGuidance] = useState(true);
   const [showSwipeGuidance, setShowSwipeGuidance] = useState(true);
@@ -400,6 +400,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     bookId: number;
     chapter: number;
   } | null>(null);
+
+  // Add initial render ref
+  const isInitialRender = useRef(true);
 
   // Add timer ref for auto-rendering
   const autoRenderTimer = useRef<NodeJS.Timeout | null>(null);
@@ -527,19 +530,13 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Helper function to load a chapter
   const loadChapter = useCallback(
     async (bookId: number, chapter: number) => {
-      setLoading(true);
-      // Set initial index to 0 since we don't have chapterData yet
-      setCurrentIndex(0);
-      progressValue.value = withTiming(0, { duration: 0 });
-
+      // Remove the transition state since we don't want any visual effect
       try {
         const res = await fetchChapter(translation, bookId, chapter);
         if ('error' in res) {
           console.error(res.message);
-          setLoading(false);
           return false;
         } else {
-          setChapterData(res);
           // Update internal tracking of current book and chapter
           setCurrentBookId(bookId);
           setCurrentChapter(chapter);
@@ -548,16 +545,17 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           console.log(
             `📖 [NewBibleReader] Updated internal state - bookId: ${bookId}, chapter: ${chapter}`
           );
-          setLoading(false);
+
+          // Update chapter data immediately without transition
+          setChapterData(res);
           return true;
         }
       } catch (error) {
         console.error('Error loading chapter:', error);
-        setLoading(false);
         return false;
       }
     },
-    [translation, progressValue]
+    [translation]
   );
 
   // Function to navigate to the next chapter
@@ -623,8 +621,21 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     setPreviousChapterInfo(null);
 
     // Initial chapter load
-    loadChapter(bookId, chapter);
-  }, [bookId, chapter, loadChapter]);
+    if (isInitialRender.current) {
+      // Pre-fetch the chapter data before rendering
+      fetchChapter(translation, bookId, chapter).then((res) => {
+        if (!('error' in res)) {
+          setChapterData(res);
+          setCurrentBookId(bookId);
+          setCurrentChapter(chapter);
+          setCurrentIndex(res.verses.length - 1);
+        }
+        isInitialRender.current = false;
+      });
+    } else {
+      loadChapter(bookId, chapter);
+    }
+  }, [bookId, chapter, loadChapter, translation]);
 
   useEffect(() => {
     if (chapterData?.verses?.length) {
@@ -1589,12 +1600,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     },
   ];
 
-  if (loading || !chapterData) {
+  if (!chapterData) {
     return (
       <SafeAreaView
-        style={{ backgroundColor: theme.background, flex: 1 }}
-        className="items-center justify-center">
-        <ActivityIndicator size="large" color={theme.progressBarFill} />
+        style={{ backgroundColor: '#FFF9E6' }} // Match the background color
+        className="flex-1">
+        <View style={{ flex: 1, backgroundColor: '#FFF9E6' }} />
       </SafeAreaView>
     );
   }
@@ -1616,7 +1627,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   return (
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle={'dark-content'} />
-      <Animated.View className="flex-1" style={{ opacity: 1 }}>
+      <Animated.View
+        className="flex-1"
+        style={{ opacity: 1 }}>
         <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%' }]}>
           <ImageBackground
             source={require('../assets/backgrounds/mainBackground2.png')}
