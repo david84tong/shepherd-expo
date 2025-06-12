@@ -377,7 +377,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
   if (!visible) return null;
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, margin: 12, marginHorizontal: 24 }}>
       {showSuccess ? (
         <View className="flex-1 items-center ">
           <View className="mb-0 mt-6">

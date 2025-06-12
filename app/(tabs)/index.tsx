@@ -1,5 +1,5 @@
 import { useNavigation } from '@react-navigation/native';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   Animated,
   Dimensions,
@@ -16,6 +16,7 @@ import {
   Pressable,
   PanResponder,
 } from 'react-native';
+import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
@@ -274,6 +275,18 @@ export default function HomeScreen() {
   const devotionalBgOpacityAnim = useRef(new Animated.Value(0)).current; // 0 = no overlay, 0.7 = black overlay
   const finishReadingOpacityAnim = useRef(new Animated.Value(0)).current; // New animation value for finish reading overlay
   const devotionaleRadingOpacityAnim = useRef(new Animated.Value(0)).current; // New animation value for finish reading overlay
+
+  // Bottom sheet ref and snap points
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ['60%', "65%", "70%", "75%", "80%", '85%', '90%'], []);
+  
+  // Bottom sheet change handler
+  const handleSheetChanges = useCallback((index: number) => {
+    // Haptic feedback when snapping
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  }, []);
+
+
 
   // --- Derived Animated Values (memoized to avoid recreating nodes each render) ---
 
@@ -1544,7 +1557,7 @@ export default function HomeScreen() {
                   textShadowOffset: { width: 0, height: 1 },
                   textShadowRadius: 2,
                 }}>
-                Daily Devotional
+                {/* Daily Devotional */}
               </Text>
             </Animated.View>
           </View>
@@ -1668,30 +1681,36 @@ export default function HomeScreen() {
           )}
 
           {/* Bottom Section - Action Buttons Card or DevotionalReader */}
-          <Animated.View
-            style={{
-              flex: 1,
-              marginTop: showDevotionalContent ? -64 : -64,
-              opacity: bottomCardOpacity,
-              marginBottom: -120,
-            }}>
-            <Animated.View
-              className="bg-surfaceCream rounded-t-card px-6 py-6 flex-1 justify-start gap-2"
-              style={{
-                ...Platform.select({
-                  ios: {
-                    shadowColor: 'rgba(0,0,0,0.08)',
-                    shadowOffset: { width: 0, height: 2 },
-                    shadowRadius: 4,
-                    shadowOpacity: 1,
-                  },
-                  android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
-                }),
-              }}>
-              <View
-                className="w-[50px] h-[5] bg-textPrimary/15 rounded-full"
-                style={{ position: 'absolute', top: 10, alignSelf: 'center' }}
-              />
+          <BottomSheet
+            ref={bottomSheetRef}
+            index={0} // Start closed
+            snapPoints={snapPoints}
+            enablePanDownToClose={false} // Never dismissable
+            animateOnMount={true} // Disable initial animation
+            enableDynamicSizing={false} // Prevent dynamic snap points
+            bottomInset={0} // No bottom inset
+            detached={false} // Not detached from bottom
+            handleIndicatorStyle={{
+              backgroundColor: '#634012',
+              opacity: 0.15,
+              width: 50,
+              height: 5,
+            }}
+            backgroundStyle={{
+              backgroundColor: '#FDEBB8',
+              borderTopLeftRadius: 32,
+              borderTopRightRadius: 32,
+              ...Platform.select({
+                ios: {
+                  shadowColor: 'rgba(0,0,0,0.08)',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowRadius: 4,
+                  shadowOpacity: 1,
+                },
+                android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
+              }),
+            }}
+            onChange={handleSheetChanges}>
               {/* Animated content wrapper - only this fades */}
               <Animated.View style={{ flex: 1, opacity: devotionalCardOpacityAnim }}>
                 {/* Conditionally show DevotionalReader or normal content */}
@@ -1807,9 +1826,9 @@ export default function HomeScreen() {
                     }}
                   />
                 ) : (
-                  <ScrollView
+                  <BottomSheetScrollView
                     showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: 120 }}>
+                    contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 24 }}>
                     {prayerCompleted && readingCompleted && reflectionCompleted ? (
                       // Share Card
                       <Pressable
@@ -1966,110 +1985,16 @@ export default function HomeScreen() {
                         </View>
 
                         {/* Daily Verse Card */}
-                        {false && currentDevotional?.verse && (
-                          <TouchableOpacity
-                            onPress={() => {
-                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                              analytics.logEvent('HomeScreen_Tapped_DailyVerse', {
-                                bibleReference: currentDevotional.bibleReference,
-                              });
-                              // TODO: Navigate to full devotional or reader in future
-                            }}
-                            activeOpacity={0.9}
-                            className="rounded-2xl overflow-hidden mb-4">
-                            {currentDevotional.imageURL ? (
-                              <>
-                                <ExpoImage
-                                  source={{ uri: currentDevotional.imageURL }}
-                                  style={{ width: '100%', height: 180 }}
-                                  contentFit="cover"
-                                />
-                                {/* Dark overlay for readability */}
-                                <View className="absolute inset-0 bg-black/30" />
-
-                                {/* Star icon */}
-                                <View className="absolute items-center w-full" style={{ top: 4 }}>
-                                  <Ionicons name="star" size={28} color="#FFD629" />
-                                </View>
-
-                                {/* Text content */}
-                                <View className="absolute inset-0 p-4 justify-end">
-                                  <Text className="font-feather text-white text-heading mb-1">
-                                    {currentDevotional.bibleReference}
-                                  </Text>
-                                  <Text className="font-feather text-white/90 text-caption mb-1">
-                                    Verse of the Day
-                                  </Text>
-                                  <Text
-                                    className="font-din text-white text-body leading-[20px]"
-                                    numberOfLines={3}>
-                                    {currentDevotional.verse}
-                                  </Text>
-                                </View>
-                              </>
-                            ) : (
-                              /* Fallback cream card if no image */
-                              <View className="bg-surfaceCream px-5 py-4 border border-buttonBorder shadow-card">
-                                <View className="flex-row items-center mb-3">
-                                  <View className="w-7 h-7 bg-lightGreen rounded-lg items-center justify-center mr-3">
-                                    <Text className="text-darkGreen text-[18px]">📖</Text>
-                                  </View>
-                                  <Text className="font-feather text-heading text-textPrimary">
-                                    Daily Verse
-                                  </Text>
-                                </View>
-                                <Text className="font-din text-body text-textPrimary/90 leading-[22px] italic mb-3">
-                                  &quot;{currentDevotional.verse}&quot;
-                                </Text>
-                                <Text className="font-feather text-sm text-description text-right">
-                                  — {currentDevotional.bibleReference}
-                                </Text>
-                              </View>
-                            )}
-                          </TouchableOpacity>
-                        )}
-
-                        {/* Loading state for devotional */}
-                        {isLoadingDevotional && (
-                          <View className="bg-white/60 rounded-xl p-4 mb-4 border border-lightGreen/20">
-                            <View className="flex-row items-center mb-2">
-                              <View className="w-6 h-6 bg-lightGreen rounded-full items-center justify-center mr-2">
-                                <Text className="text-darkGreen text-xs font-feather">📖</Text>
-                              </View>
-                              <Text className="font-feather text-base text-description">
-                                Loading daily verse...
-                              </Text>
-                            </View>
-                          </View>
-                        )}
-
-                        {/* Error state for devotional */}
-                        {devotionalError && !currentDevotional && (
-                          <View className="bg-red/10 rounded-xl p-4 mb-4 border border-red/20">
-                            <View className="flex-row items-center mb-2">
-                              <View className="w-6 h-6 bg-red rounded-full items-center justify-center mr-2">
-                                <Text className="text-white text-xs font-feather">⚠️</Text>
-                              </View>
-                              <Text className="font-feather text-base text-red">
-                                Daily verse unavailable
-                              </Text>
-                            </View>
-                            <Text className="font-din text-sm text-description">
-                              Check your connection and try again later.
-                            </Text>
-                          </View>
-                        )}
-
+                      
 
                       </>
 
 
                     )}
-                  </ScrollView>
+                  </BottomSheetScrollView>
                 )}
               </Animated.View>
-            </Animated.View>
-          </Animated.View>
+          </BottomSheet>
 
           {/* Widget and Explainer Modals - Keep these inside SafeAreaView */}
           <WidgetHowToSheet visible={showWidgetSheet} onClose={handleWidgetSheetClose} />
