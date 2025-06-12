@@ -11,7 +11,6 @@ import {
   Text,
   TouchableOpacity,
   View,
-  ScrollView,
   StatusBar,
   Pressable,
   PanResponder,
@@ -208,8 +207,8 @@ export default function HomeScreen() {
   const [showPrayerView, setShowPrayerView] = useState(false);
   const [showPrayerContent, setShowPrayerContent] = useState(false);
 
-  // State to manage the Rive resource name
-  const [artboardName, setArtboardName] = useState('lamb-idle'); // Default artboard
+  // State to manage the current Rive state
+  const [currentStateInput, setCurrentStateInput] = useState(0); // Default to idle (0)
   // State to control background Rive animation
   const [showBgRive, setShowBgRive] = useState(false);
   // Lamb size animation
@@ -374,15 +373,16 @@ export default function HomeScreen() {
   // --- Conditional Glow Style ---
   const showGlow = lambHearts > 80;
 
-  // --- Mood to Artboard Mapping ---
-  const moodToArtboard: Record<string, string> = {
-    'lamb-idle': 'lamb-idle',
-    'lamb-sleepy': 'lamb-sleepy',
-    'lamb-angry': 'lamb-angry',
-    'lamb-chubby dying': 'lamb-chubby dying',
-    'lamb-skinny dying': 'lamb-skinny dying',
-    smoking: 'lamb-dead',
-    'lamb-full': 'lamb-full',
+  // --- Mood to State Machine Input Mapping ---
+  // Based on Rive state machine: 0 Idle, 1 Raising Hand, 2 Eating, 3 Full, 4 Sleepy, 5 Angry, 6 Dying Chubby, 7 Dying Skinny, 8 Dead, 9 Reading, 12 Writing
+  const moodToStateInput: Record<string, number> = {
+    'lamb-idle': 0,           // >= 50 hearts - Idle
+    'lamb-sleepy': 4,         // < 50 hearts - Sleepy  
+    'lamb-angry': 5,          // < 30 hearts - Angry
+    'lamb-chubby dying': 6,   // < 20 hearts - Dying Chubby
+    'lamb-skinny dying': 7,   // < 10 hearts - Dying Skinny
+    'smoking': 8,             // < 1 hearts - Dead
+    'lamb-full': 3,           // After eating - Full
   };
 
   // Get UI store functions
@@ -423,15 +423,23 @@ export default function HomeScreen() {
     let modeAnim: Animated.CompositeAnimation;
     let lambOpacityTarget = 1; // Default to visible
 
-    // Smooth artboard change with fade animation - faster
-    const changeArtboardWithFade = (newArtboard: string) => {
+    // Set Rive state machine input with fade animation
+    const setRiveStateWithFade = (stateNumber: number) => {
       Animated.timing(riveArtboardOpacityAnim, {
         toValue: 0,
         duration: 100,
         easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }).start(() => {
-        setArtboardName(newArtboard);
+        if (riveRef.current && riveRef.current.setInputState) {
+          try {
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', stateNumber);
+            setCurrentStateInput(stateNumber);
+            console.log(`Set Rive Action-Number: ${stateNumber}`);
+          } catch (e) {
+            console.log('Error setting Rive state:', e);
+          }
+        }
         // Fade back in
         Animated.timing(riveArtboardOpacityAnim, {
           toValue: 1,
@@ -443,11 +451,11 @@ export default function HomeScreen() {
     };
 
     if (mode === 'PREVIEW') {
-      // Update artboard based on lamb mood from userStore
+      // Update state based on lamb mood from userStore
       const currentMood = useUserStore.getState()?.getLambMood?.();
       console.log('Current mood:', currentMood);
-      const targetArtboard = (currentMood && moodToArtboard[currentMood]) ? moodToArtboard[currentMood] : 'lamb-idle';
-      changeArtboardWithFade(targetArtboard);
+      const targetState = (currentMood && moodToStateInput[currentMood] !== undefined) ? moodToStateInput[currentMood] : 0;
+      setRiveStateWithFade(targetState);
 
       modeAnim = Animated.timing(previewAnim, {
         toValue: 1,
@@ -456,7 +464,7 @@ export default function HomeScreen() {
         useNativeDriver: true,
       });
     } else if (mode === 'PRAYER') {
-      changeArtboardWithFade('lamb-drinking');
+      // Prayer doesn't have a specific state in the list, keep current state
       modeAnim = Animated.timing(prayerAnim, {
         toValue: 1,
         duration,
@@ -464,7 +472,7 @@ export default function HomeScreen() {
         useNativeDriver: true,
       });
     } else if (mode === 'REFLECTION') {
-      changeArtboardWithFade('lamb-writing');
+      setRiveStateWithFade(12); // Writing state
       modeAnim = Animated.timing(reflectionAnim, {
         toValue: 1,
         duration,
@@ -645,19 +653,27 @@ export default function HomeScreen() {
 
     if (mode === 'DEFAULT') {
       animateToDefault();
-      // Update artboard based on lamb mood from userStore with smooth fade
+      // Update state based on lamb mood from userStore with smooth fade
       const currentMood = useUserStore.getState()?.getLambMood?.();
       console.log('Current mood:', currentMood);
-      const targetArtboard = (currentMood && moodToArtboard[currentMood]) ? moodToArtboard[currentMood] : 'lamb-idle';
+      const targetState = (currentMood && moodToStateInput[currentMood] !== undefined) ? moodToStateInput[currentMood] : 0;
 
-      // Smooth fade transition for artboard change - faster
+      // Smooth fade transition for state change - faster
       Animated.timing(riveArtboardOpacityAnim, {
         toValue: 0,
         duration: 100,
         easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }).start(() => {
-        setArtboardName(targetArtboard);
+        if (riveRef.current && riveRef.current.setInputState) {
+          try {
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', targetState);
+            setCurrentStateInput(targetState);
+            console.log(`Set Rive Action-Number: ${targetState}`);
+          } catch (e) {
+            console.log('Error setting Rive state:', e);
+          }
+        }
         Animated.timing(riveArtboardOpacityAnim, {
           toValue: 1,
           duration: 150,
@@ -670,24 +686,7 @@ export default function HomeScreen() {
       console.log('Activating Prayer mode from external navigation');
       setShowBgRive(true);
 
-      // Only set the artboard name if it's not already set to lamb-drinking
-      if (artboardName !== 'lamb-drinking') {
-        // Smooth fade transition - faster
-        Animated.timing(riveArtboardOpacityAnim, {
-          toValue: 0,
-          duration: 100,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }).start(() => {
-          setArtboardName('lamb-drinking');
-          Animated.timing(riveArtboardOpacityAnim, {
-            toValue: 1,
-            duration: 150,
-            easing: Easing.inOut(Easing.ease),
-            useNativeDriver: true,
-          }).start();
-        });
-      }
+      // Prayer state is already set in handlePrayerPress (Raising Hand - 1)
 
       // Animate lamb size
       Animated.timing(lambSizeAnim, {
@@ -765,7 +764,11 @@ export default function HomeScreen() {
         easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }).start(() => {
-        setArtboardName('lamb-reading');
+        // Set to Reading state (9)
+        setCurrentStateInput(9);
+        if (riveRef.current?.setInputState) {
+          riveRef.current.setInputState('State Machine 1', 'Number 1', 9);
+        }
         Animated.timing(riveArtboardOpacityAnim, {
           toValue: 1,
           duration: 600, // Same as card fade in
@@ -885,7 +888,11 @@ export default function HomeScreen() {
         easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }).start(() => {
-        setArtboardName('lamb-reading');
+        // Set to Reading state (9)
+        setCurrentStateInput(9);
+        if (riveRef.current?.setInputState) {
+          riveRef.current.setInputState('State Machine 1', 'Number 1', 9);
+        }
         Animated.timing(riveArtboardOpacityAnim, {
           toValue: 1,
           duration: 600, // Same as card fade in
@@ -960,16 +967,19 @@ export default function HomeScreen() {
     });
 
     if (mode === 'DEFAULT') {
-      // Always set artboard based on lamb mood in DEFAULT mode with smooth fade
-      const targetArtboard = moodToArtboard[lambMood] || 'lamb-idle';
-      if (artboardName !== targetArtboard) {
+      // Always set state input based on lamb mood in DEFAULT mode with smooth fade
+      const targetStateInput = moodToStateInput[lambMood] || 0;
+      if (currentStateInput !== targetStateInput) {
         Animated.timing(riveArtboardOpacityAnim, {
           toValue: 0,
           duration: 100,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
         }).start(() => {
-          setArtboardName(targetArtboard);
+          setCurrentStateInput(targetStateInput);
+          if (riveRef.current?.setInputState) {
+            riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
+          }
           Animated.timing(riveArtboardOpacityAnim, {
             toValue: 1,
             duration: 150,
@@ -980,6 +990,17 @@ export default function HomeScreen() {
       }
     }
   }, [mode, lambMood]);
+
+  // Debug useEffect to track heart and mood changes
+  useEffect(() => {
+    console.log('🐑 LAMB STATE DEBUG:', {
+      lambHearts,
+      lambMood,
+      currentStateInput,
+      mode,
+      expectedStateInput: moodToStateInput[lambMood] || 0,
+    });
+  }, [lambHearts, lambMood, currentStateInput, mode]);
 
   // Add this near the top of the component, after other useRef declarations
   const riveKey = useRef('lamb-animation').current;
@@ -1104,7 +1125,7 @@ export default function HomeScreen() {
         </View>
       </View>
     );
-  }, [riveAssets, artboardName, riveKey, riveReady, isPro]);
+  }, [riveAssets, currentStateInput, riveKey, riveReady, isPro]);
 
   const [showWidgetSheet, setShowWidgetSheet] = useState(false);
   // Add level pill animation states
@@ -1611,7 +1632,7 @@ export default function HomeScreen() {
                       {riveComponent}
                     </Animated.View>
                   </Animated.View>
-                  {artboardName === 'lamb-dead' && <View style={{ height: 36 }} />}
+                  {currentStateInput === 8 && <View style={{ height: 36 }} />}
                 </>
               )}
             </Animated.View>
@@ -1741,11 +1762,14 @@ export default function HomeScreen() {
                       ]).start();
                       // Switch content and artboard immediately after a short delay
                       setTimeout(() => {
-                        // Hide devotional content and reset lamb artboard
+                        // Hide devotional content and reset lamb state
                         setShowDevotionalContent(false);
                         const currentMood = useUserStore.getState()?.getLambMood?.();
-                        const targetArtboard = moodToArtboard[currentMood] || 'lamb-idle';
-                        setArtboardName(targetArtboard);
+                        const targetStateInput = moodToStateInput[currentMood] || 0;
+                        setCurrentStateInput(targetStateInput);
+                        if (riveRef.current?.setInputState) {
+                          riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
+                        }
 
                         // Start fade in immediately after content switch
                         Animated.parallel([
@@ -1795,11 +1819,14 @@ export default function HomeScreen() {
                       ]).start();
                       // Switch content and artboard immediately after a short delay
                       setTimeout(() => {
-                        // Hide devotional content and reset lamb artboard
+                        // Hide devotional content and reset lamb state
                         setShowJournalContent(false);
                         const currentMood = useUserStore.getState()?.getLambMood?.();
-                        const targetArtboard = moodToArtboard[currentMood] || 'lamb-idle';
-                        setArtboardName(targetArtboard);
+                        const targetStateInput = moodToStateInput[currentMood] || 0;
+                        setCurrentStateInput(targetStateInput);
+                        if (riveRef.current?.setInputState) {
+                          riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
+                        }
 
                         // Start fade in immediately after content switch
                         Animated.parallel([
@@ -1985,6 +2012,99 @@ export default function HomeScreen() {
                         </View>
 
                         {/* Daily Verse Card */}
+                  {currentDevotional?.verse && (
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        analytics.logEvent('HomeScreen_Tapped_DailyVerse', {
+                          bibleReference: currentDevotional.bibleReference,
+                        });
+                        // TODO: Navigate to full devotional or reader in future
+                      }}
+                      activeOpacity={0.9}
+                      className="rounded-2xl overflow-hidden mb-4">
+                      {currentDevotional.imageURL ? (
+                        <>
+                          <ExpoImage
+                            source={{ uri: currentDevotional.imageURL }}
+                            style={{ width: '100%', height: 180 }}
+                            contentFit="cover"
+                          />
+                          {/* Dark overlay for readability */}
+                          <View className="absolute inset-0 bg-black/30" />
+
+                          {/* Star icon */}
+                          <View className="absolute items-center w-full" style={{ top: 4 }}>
+                            <Ionicons name="star" size={28} color="#FFD629" />
+                          </View>
+
+                          {/* Text content */}
+                          <View className="absolute inset-0 p-4 justify-end">
+                            <Text className="font-feather text-white text-heading mb-1">
+                              {currentDevotional.bibleReference}
+                            </Text>
+                            <Text className="font-feather text-white/90 text-caption mb-1">
+                              Verse of the Day
+                            </Text>
+                            <Text
+                              className="font-din text-white text-body leading-[20px]"
+                              numberOfLines={3}>
+                              {currentDevotional.verse}
+                            </Text>
+                          </View>
+                        </>
+                      ) : (
+                        /* Fallback cream card if no image */
+                        <View className="bg-surfaceCream px-5 py-4 border border-buttonBorder shadow-card">
+                          <View className="flex-row items-center mb-3">
+                            <View className="w-7 h-7 bg-lightGreen rounded-lg items-center justify-center mr-3">
+                              <Text className="text-darkGreen text-[18px]">📖</Text>
+                            </View>
+                            <Text className="font-feather text-heading text-textPrimary">
+                              Daily Verse
+                            </Text>
+                          </View>
+                          <Text className="font-din text-body text-textPrimary/90 leading-[22px] italic mb-3">
+                            “{currentDevotional.verse}”
+                          </Text>
+                          <Text className="font-feather text-sm text-description text-right">
+                            — {currentDevotional.bibleReference}
+                          </Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  )}
+
+                  {/* Loading state for devotional */}
+                  {isLoadingDevotional && (
+                    <View className="bg-white/60 rounded-xl p-4 mb-4 border border-lightGreen/20">
+                      <View className="flex-row items-center mb-2">
+                        <View className="w-6 h-6 bg-lightGreen rounded-full items-center justify-center mr-2">
+                          <Text className="text-darkGreen text-xs font-feather">📖</Text>
+                        </View>
+                        <Text className="font-feather text-base text-description">
+                          Loading daily verse...
+                        </Text>
+                      </View>
+                    </View>
+                  )}
+
+                  {/* Error state for devotional */}
+                  {devotionalError && !currentDevotional && (
+                    <View className="bg-red/10 rounded-xl p-4 mb-4 border border-red/20">
+                      <View className="flex-row items-center mb-2">
+                        <View className="w-6 h-6 bg-red rounded-full items-center justify-center mr-2">
+                          <Text className="text-white text-xs font-feather">⚠️</Text>
+                        </View>
+                        <Text className="font-feather text-base text-red">
+                          Daily verse unavailable
+                        </Text>
+                      </View>
+                      <Text className="font-din text-sm text-description">
+                        Check your connection and try again later.
+                      </Text>
+                    </View>
+                  )}
                       
 
                       </>
