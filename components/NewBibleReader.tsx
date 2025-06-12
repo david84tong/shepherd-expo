@@ -528,8 +528,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const loadChapter = useCallback(
     async (bookId: number, chapter: number) => {
       setLoading(true);
-      // Set initial index to 6 to show 7 cards (0-6 inclusive)
-      setCurrentIndex(6);
+      // Set initial index to 0 since we don't have chapterData yet
+      setCurrentIndex(0);
       progressValue.value = withTiming(0, { duration: 0 });
 
       try {
@@ -543,6 +543,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           // Update internal tracking of current book and chapter
           setCurrentBookId(bookId);
           setCurrentChapter(chapter);
+          // Set index to show all verses after data is loaded
+          setCurrentIndex(res.verses.length - 1);
           console.log(
             `📖 [NewBibleReader] Updated internal state - bookId: ${bookId}, chapter: ${chapter}`
           );
