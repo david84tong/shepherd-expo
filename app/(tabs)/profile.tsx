@@ -3,7 +3,7 @@ import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import dayjs from 'dayjs';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo, useEffect, useState } from 'react';
+import { useCallback, useMemo, useEffect, useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -21,12 +21,14 @@ import {
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Rive, { RiveRef } from 'rive-react-native';
 import analytics from '../../utils/analytics';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useAuth } from '../hooks/authHook';
 import { getLevelData } from '../../utils/levelUtils';
 import { isSignedInWithGoogle, isSignedInWithApple } from '../helper/helper';
 import auth from '@react-native-firebase/auth';
+import { useAssets } from 'expo-asset';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
@@ -352,6 +354,60 @@ export default function ProfileScreen() {
   // Check if onboarding is completed - defaulting to true if not found
   const onboardingCompleted = (user as any)?.onboarding_completed ?? true;
 
+  // Rive component state
+  const [riveSkin, setRiveSkin] = useState<'pink' | 'gold'>('pink');
+  const [riveAction, setRiveAction] = useState<'idle' | 'eat'>('idle');
+  const riveRef = useRef<RiveRef>(null);
+  const [riveError, setRiveError] = useState<string | null>(null);
+  const [riveLoaded, setRiveLoaded] = useState(false);
+
+  // Load Rive assets
+  const [riveAssets] = useAssets([
+    require('../../assets/riveAnimations/new_shepherd.riv'),
+  ]);
+
+  // Rive constants
+  const STATE_MACHINE = 'State Machine 1';
+  const INPUTS = {
+    pink: '1 Pink Skin',
+    gold: '99 Gold Skin',
+    idle: '0 Idle',
+    eat: '2 Eating',
+  };
+
+  // Map skins and actions to numbers
+  const SKIN_MAP = { pink: 1, gold: 99 } as const;
+  const ACTION_MAP = { idle: 0, eat: 2 } as const;
+
+  // Update skin number input
+  useEffect(() => {
+    if (!riveRef.current || !riveLoaded) return;
+    const skinValue = SKIN_MAP[riveSkin];
+    console.log('Setting Skin-Number to', skinValue);
+    riveRef.current?.setInputState(STATE_MACHINE, 'Skin-Number', skinValue);
+  }, [riveSkin, riveLoaded]);
+
+  // Update action number input
+  useEffect(() => {
+    if (!riveRef.current || !riveLoaded) return;
+    const actionValue = ACTION_MAP[riveAction];
+    console.log('Setting Action-Number to', actionValue);
+    riveRef.current?.setInputState(STATE_MACHINE, 'Action-Number', actionValue);
+  }, [riveAction, riveLoaded]);
+
+  // Debug Rive assets loading
+  useEffect(() => {
+    console.log('Rive assets loaded:', riveAssets);
+    if (riveAssets && riveAssets[0]) {
+      console.log('Rive asset URI:', riveAssets[0].uri);
+      // Set riveLoaded after a short delay as fallback
+      setTimeout(() => {
+        setRiveLoaded(true);
+        console.log('Rive loaded via timeout');
+      }, 500);
+    }
+  }, [riveAssets]);
+
   // Handler for updating path selection
   const handlePathSelected = (pathObj: any) => {
     if (!pathObj) return;
@@ -543,6 +599,112 @@ export default function ProfileScreen() {
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
             <Text className="font-feather text-heading text-textPrimary mb-2">Journey Started</Text>
             <Text className="font-din text-description">{joinDate}</Text>
+          </View>
+
+          {/* Rive Lamb Test Card */}
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+            <Text className="font-feather text-heading text-textPrimary mb-4">Rive Lamb Test</Text>
+            
+            {/* Lamb Container */}
+            <View className="bg-surfaceCream rounded-xl p-4 mb-4" style={{ width: '100%', height: 200 }}>
+              {riveError ? (
+                <View className="flex-1 items-center justify-center">
+                  <Text className="text-red-500 text-center">Error loading animation: {riveError}</Text>
+                </View>
+              ) : riveAssets ? (
+                Platform.OS === 'android' ? (
+                  <Rive
+                    ref={riveRef}
+                    resourceName="new_shepherd"
+                    artboardName="[Main] Shpeherd"
+                    stateMachineName={STATE_MACHINE}
+                    autoplay
+                    onError={(error) => {
+                      console.log('Rive Error Android:', error);
+                      setRiveError(error.message);
+                    }}
+                    onPlay={() => {
+                      console.log('Rive playing on Android');
+                      setRiveLoaded(true);
+                    }}
+                    style={{ flex: 1, width: '100%', height: '100%' }}
+                  />
+                ) : (
+                  <Rive
+                    ref={riveRef}
+                    url={riveAssets[0].uri!}
+                    artboardName="[Main] Shpeherd"
+                    stateMachineName={STATE_MACHINE}
+                    autoplay
+                    onError={(error) => {
+                      console.log('Rive Error:', error);
+                      setRiveError(error.message);
+                    }}
+                    onPlay={() => {
+                      console.log('Rive playing');
+                      setRiveLoaded(true);
+                    }}
+                    onStateChanged={(stateName) => console.log('State changed:', stateName)}
+                    style={{ flex: 1, width: '100%', height: '100%' }}
+                  />
+                )
+              ) : (
+                <View className="flex-1 items-center justify-center">
+                  <Text className="font-din text-description">Loading...</Text>
+                </View>
+              )}
+            </View>
+
+            {/* Test Controls */}
+            <View className="space-y-3">
+              <View className="flex-row justify-between">
+                <Text className="font-feather text-body text-textPrimary">Skin:</Text>
+                <View className="flex-row space-x-2">
+                  <TouchableOpacity 
+                    className={`px-3 py-1 rounded-lg ${riveSkin === 'pink' ? 'bg-pink-300' : 'bg-pink-200'}`}
+                    onPress={() => {
+                      console.log('Pink button pressed');
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setRiveSkin('pink');
+                    }}>
+                    <Text className="font-din text-sm">Pink</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    className={`px-3 py-1 rounded-lg ${riveSkin === 'gold' ? 'bg-yellow-400' : 'bg-accentGold'}`}
+                    onPress={() => {
+                      console.log('Gold button pressed');
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setRiveSkin('gold');
+                    }}>
+                    <Text className="font-din text-sm">Gold</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+              
+              <View className="flex-row justify-between">
+                <Text className="font-feather text-body text-textPrimary">Action:</Text>
+                <View className="flex-row space-x-2">
+                  <TouchableOpacity 
+                    className={`px-3 py-1 rounded-lg border border-border ${riveAction === 'idle' ? 'bg-lightYellow' : 'bg-surfaceCream'}`}
+                    onPress={() => {
+                      console.log('Idle button pressed');
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setRiveAction('idle');
+                    }}>
+                    <Text className="font-din text-sm">Idle</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    className={`px-3 py-1 rounded-lg border border-border ${riveAction === 'eat' ? 'bg-lightYellow' : 'bg-surfaceCream'}`}
+                    onPress={() => {
+                      console.log('Eat button pressed');
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setRiveAction('eat');
+                    }}>
+                    <Text className="font-din text-sm">Eat</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
           </View>
 
           {/* Selected Path Card */}
