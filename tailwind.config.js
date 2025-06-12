@@ -13,7 +13,7 @@ module.exports = {
         // accent: '#DCB280',
         // text: '#3C584A',
         // 'secondary-button-bg': '#F9F3E5',
-
+        brownBorder: '#eed39d',
         // New Tokens
         blue: '#00B0F7',
         darkBlue: '#119AD1',

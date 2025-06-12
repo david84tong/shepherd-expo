@@ -474,7 +474,7 @@ export default function ProfileScreen() {
             !isSignedInWithGoogle() &&
             !isSignedInWithApple() &&
             !isSignedInWithEmail && (
-              <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+              <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
                 <Text className="font-feather text-xl text-accentGold mb-2 text-center">
                   Sign in to save your progress
                 </Text>
@@ -520,7 +520,7 @@ export default function ProfileScreen() {
 
           {/* Discord Card */}
           {showDiscordCard && (
-            <View className="mx-6 mt-4 bg-lightPurple rounded-[20px] p-6 shadow-card relative">
+            <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder relative">
               <TouchableOpacity
                 onPress={handleDismissDiscordCard}
                 className="absolute top-3 right-3 p-1 z-10 bg-darkPurple/10 rounded-full">
@@ -552,7 +552,7 @@ export default function ProfileScreen() {
             </View>
           )}
           {/* Lamb Stats Card */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
             <View className="flex-row justify-between items-center mb-6">
               <View className="bg-lightYellow px-4 py-1 rounded-lg opacity-80">
                 <Text className="font-feather text-heading text-primary">
@@ -596,13 +596,13 @@ export default function ProfileScreen() {
           </View>
 
           {/* Join Date Card */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
             <Text className="font-feather text-heading text-textPrimary mb-2">Journey Started</Text>
             <Text className="font-din text-description">{joinDate}</Text>
           </View>
 
           {/* Rive Lamb Test Card */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
             <Text className="font-feather text-heading text-textPrimary mb-4">Rive Lamb Test</Text>
             
             {/* Lamb Container */}
@@ -708,7 +708,7 @@ export default function ProfileScreen() {
           </View>
 
           {/* Selected Path Card */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
             <Text className="font-feather text-heading text-textPrimary mb-2">Selected Path</Text>
             <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
               <Text className="font-din text-description underline text-accentGold">
@@ -755,7 +755,7 @@ export default function ProfileScreen() {
           </Modal>
 
           {/* Subscription Management Section */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
             <View className="flex-row justify-between items-center mb-2">
               <Text className="font-feather text-heading text-textPrimary">
                 Manage Subscription
@@ -786,7 +786,7 @@ export default function ProfileScreen() {
           </View>
 
           {/* Store Section */}
-          <View className="mx-6 mt-4 mb-8 bg-white/50 rounded-[20px] p-6 shadow-card">
+          <View className="mx-6 mt-4 mb-8 bg-surfaceCreamLight/50 rounded-[20px] p-6 shadow-card border border-brownBorder">
             <View className="flex-row justify-between items-center">
               <Text className="font-feather text-heading text-textPrimary">Store</Text>
               <View className="bg-lightYellow px-4 py-1 rounded-full">
@@ -798,7 +798,7 @@ export default function ProfileScreen() {
             </Text>
           </View>
           {/* Activity History Timeline Card */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
             <Text className="font-feather text-heading text-textPrimary mb-4">Your Journey</Text>
 
             {allActivities.length === 0 ? (

@@ -291,9 +291,10 @@ const PrayerCard: React.FC<{
 interface PrayerViewProps {
   visible?: boolean;
   onClose?: () => void;
+  onSetIdle?: () => void;
 }
 
-const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose }) => {
+const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetIdle }) => {
   const { recentPrayers } = usePrayerStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [skipTyping, setSkipTyping] = useState(false);
@@ -495,6 +496,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose }) => {
       setTimeout(scrollToBottom, 150);
     } else {
       // Reached the end - close the prayer view
+      if (onSetIdle) onSetIdle();
       if (onClose) {
         if (hapticsEnabled) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -502,7 +504,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose }) => {
         onClose();
       }
     }
-  }, [currentIndex, totalCards, isTypingComplete, scrollToBottom, showTapGuidance, tapCount, onClose, hapticsEnabled]);
+  }, [currentIndex, totalCards, isTypingComplete, scrollToBottom, showTapGuidance, tapCount, onSetIdle, onClose, hapticsEnabled]);
 
   const handleTypingComplete = useCallback(() => {
     setIsTypingComplete(true);
@@ -797,9 +799,8 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose }) => {
                   size={50}
                   hapticsEnabled={hapticsEnabled}
                   onPress={() => {
-                    if (onClose) {
-                      onClose();
-                    }
+                    if (onSetIdle) onSetIdle();
+                    if (onClose) onClose();
                   }}
                 />
 
@@ -883,36 +884,37 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose }) => {
                 </View>
               ) : (
                 <TouchableOpacity
-                                  onPress={() => {
-                  // Update lastActivityDate to prevent completion states from being reset
-                  const now = firestore.Timestamp.now();
-                  const setLastActivityDate = useUserStore.getState().setLastActivityDate;
-                  const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
-                  setLastActivityDate(now);
-                  setLastPrayerDate(now);
-                  
-                  // Mark prayer as completed
-                  const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
-                  setPrayerCompleted(true);
-                  
-                  // Show tab bar again
-                  const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
-                  setPrayerViewVisible(false);
-                  
-                  // Log completion analytics
-                  analytics.logEvent('PrayerView_Completed', {
-                    prayerTopic: recentPrayers[0] || 'general',
-                    totalCards: totalCards,
-                  });
-                  
-                  // Close the prayer view
-                  if (onClose) {
-                    if (hapticsEnabled) {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  onPress={() => {
+                    // Update lastActivityDate to prevent completion states from being reset
+                    const now = firestore.Timestamp.now();
+                    const setLastActivityDate = useUserStore.getState().setLastActivityDate;
+                    const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
+                    setLastActivityDate(now);
+                    setLastPrayerDate(now);
+                    
+                    // Mark prayer as completed
+                    const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
+                    setPrayerCompleted(true);
+                    
+                    // Show tab bar again
+                    const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
+                    setPrayerViewVisible(false);
+                    
+                    // Log completion analytics
+                    analytics.logEvent('PrayerView_Completed', {
+                      prayerTopic: recentPrayers[0] || 'general',
+                      totalCards: totalCards,
+                    });
+                    
+                    // Close the prayer view
+                    if (onSetIdle) onSetIdle();
+                    if (onClose) {
+                      if (hapticsEnabled) {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                      }
+                      onClose();
                     }
-                    onClose();
-                  }
-                }}
+                  }}
                   activeOpacity={0.8}>
                   <View style={{
                     backgroundColor: '#06B6FE',

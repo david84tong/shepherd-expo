@@ -530,7 +530,7 @@ export default function StatsScreen() {
             ))}
           </View>
         ) : (
-          <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center">
+          <View className="bg-surfaceCreamLight/70 rounded-xl p-5 flex items-center justify-center">
             <Feather
               name="edit-2"
               size={48}
@@ -581,7 +581,7 @@ export default function StatsScreen() {
             ))}
           </View>
         ) : (
-          <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center">
+          <View className="bg-surfaceCreamLight/70 rounded-xl p-5 flex items-center justify-center">
             <Feather
               name="edit-3"
               size={48}
@@ -634,7 +634,7 @@ export default function StatsScreen() {
             ))}
           </View>
         ) : (
-          <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center">
+          <View className="bg-surfaceCreamLight/70 rounded-xl p-5 flex items-center justify-center">
             <Image source={journalIcon} className="w-24 h-24 opacity-50 mb-3" />
             <Text className="font-feather text-heading text-textPrimary/70 text-center">
               No recent reflections
@@ -660,9 +660,9 @@ export default function StatsScreen() {
           </View>
 
           {/* Heatmap Card */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card shadow-lg  border border-brownBorder">
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="font-feather text-heading text-textPrimary">Monthly Activity</Text>
+              <Text className="font-feather text-heading text-textPrimary ">Monthly Activity</Text>
               <TouchableOpacity
                 className="bg-lightYellow px-4 py-1 rounded-full"
                 onPress={handleMonthPress}
@@ -726,14 +726,14 @@ export default function StatsScreen() {
           </View>
 
           {/* Activity Summary Card - Moved to bottom */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-cardx mt-8">
-            <Text className="font-feather text-heading text-textPrimary mb-4">
+          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-cardx mt-8 border border-brownBorder">
+            <Text className="font-feather text-heading text-textPrimary mb-4 ">
               Activity Summary
             </Text>
 
             <View className="flex-row justify-between">
               <TouchableOpacity
-                className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1"
+                className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1 border border-brownBorder"
                 activeOpacity={0.8}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -743,7 +743,7 @@ export default function StatsScreen() {
                 <Text className="font-din text-description text-center">Readings</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1"
+                className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1 border border-brownBorder"
                 activeOpacity={0.8}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -753,7 +753,7 @@ export default function StatsScreen() {
                 <Text className="font-din text-description text-center">Prayers</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1"
+                className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1 border border-brownBorder"
                 activeOpacity={0.8}
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -766,9 +766,9 @@ export default function StatsScreen() {
           </View>
 
           {/* Recent reflections */}
-          <View className="mx-6 mt-8 bg-white rounded-[20px] p-6 shadow-card mb-24">
+          <View className="mx-6 mt-8 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card mb-24 border border-brownBorder">
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="font-feather text-heading text-textPrimary">Recent Activity</Text>
+              <Text className="font-feather text-heading text-textPrimary ">Recent Activity</Text>
 
               {/* Dropdown for content type selection */}
               <View className="relative">
@@ -803,7 +803,7 @@ export default function StatsScreen() {
         <TouchableWithoutFeedback onPress={() => setIsDropdownOpen(false)}>
           <View className="flex-1">
             <View
-              className="absolute bg-white rounded-xl shadow-card border border-border min-w-[140px]"
+              className="absolute bg-surfaceCreamLight rounded-xl shadow-card border border-border min-w-[140px]"
               style={{
                 top: dropdownPosition.top,
                 right: dropdownPosition.right,
@@ -838,7 +838,7 @@ export default function StatsScreen() {
         animationType="slide"
         onRequestClose={handleCloseVerseModal}>
         <View className="flex-1 justify-center items-center p-6">
-          <View className="bg-white rounded-[20px] p-6 w-full max-w-sm shadow-card">
+          <View className="bg-surfaceCreamLight rounded-[20px] p-6 w-full max-w-sm shadow-card">
             {/* Header */}
             <View className="flex-row justify-between items-center mb-4">
               <Text className="font-feather text-heading text-textPrimary">

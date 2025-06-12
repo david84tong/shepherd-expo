@@ -14,7 +14,6 @@ import {
   ScrollView,
   StatusBar,
   Pressable,
-  Modal,
   PanResponder,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,7 +22,6 @@ import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import DevotionalReader from '../../components/DevotionalReader';
 import ProgressPill from '../../components/ProgressPill';
 import SecondaryButton from '../../components/SecondaryButton';
-import PrimaryButton from '../../components/PrimaryButton';
 import HeartsExplainerModal from '../../components/HeartsExplainerModal';
 import ExplainerModal from '../../components/ExplainerModal';
 import { HomeMode, useHomeStore } from '../stores/homeStore'; // Import Zustand store
@@ -225,10 +223,8 @@ export default function HomeScreen() {
 
   // Load Rive assets
   const [riveAssets] = useAssets([
-    require('../../assets/riveAnimations/homeLamb.riv'),
-    require('../../assets/riveAnimations/bg-green.riv'),
-    require('../../assets/riveAnimations/goldLamb.riv'), // Add goldLamb to preloaded assets
-    require('../../assets/riveAnimations/lamb-wings-idle.riv'), // Add goldLamb to preloaded assets
+    require('../../assets/riveAnimations/new_shepherd.riv'), // 0 – main lamb
+    require('../../assets/riveAnimations/bg-green.riv'),     // 1 – prayer background
   ]);
 
   // Add state for asset loading
@@ -704,6 +700,18 @@ export default function HomeScreen() {
     } else {
       console.log('Read the word button pressed');
 
+      // Set Rive Action-Number to 2 (Eat)
+      if (riveRef.current && riveRef.current.setInputState) {
+        try {
+          riveRef.current.setInputState('State Machine 1', 'Action-Number', 2);
+          console.log('Set Rive Action-Number: 2 (Eat)');
+        } catch (e) {
+          console.log('Error setting Rive Action-Number to Eat:', e);
+        }
+      } else {
+        console.log('Rive ref not ready for Action-Number Eat');
+      }
+
       // Simple fade animation for content transition - longer duration
       Animated.timing(devotionalCardOpacityAnim, {
         toValue: 0,
@@ -756,10 +764,22 @@ export default function HomeScreen() {
       setFromScreen('home-prayer');
       handleSubscriptionPress();
     } else {
-      // Don't proceed if reading is not completed
-      if (!readingCompleted) {
+      // In dev mode, never disable prayer
+      if (!__DEV__ && !readingCompleted) {
         console.log('Prayer button disabled: Reading not completed');
         return;
+      }
+
+      // Set Rive Action-Number to 1 (Raising Hand)
+      if (riveRef.current && riveRef.current.setInputState) {
+        try {
+          riveRef.current.setInputState('State Machine 1', 'Action-Number', 1);
+          console.log('Set Rive Action-Number: 1 (Raising Hand)');
+        } catch (e) {
+          console.log('Error setting Rive Action-Number to Raising Hand:', e);
+        }
+      } else {
+        console.log('Rive ref not ready for Action-Number Raising Hand');
       }
 
       // Remove rigid haptic feedback
@@ -768,6 +788,20 @@ export default function HomeScreen() {
       showPrayerSheet(() => {
         setMode('PRAYER');
       });
+    }
+  };
+
+  // Helper to set Rive to Idle
+  const setRiveIdle = () => {
+    if (riveRef.current && riveRef.current.setInputState) {
+      try {
+        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
+        console.log('Set Rive Action-Number: 0 (Idle)');
+      } catch (e) {
+        console.log('Error setting Rive Action-Number to Idle:', e);
+      }
+    } else {
+      console.log('Rive ref not ready for Action-Number Idle');
     }
   };
 
@@ -963,17 +997,8 @@ export default function HomeScreen() {
     console.log(`Lamb level: ${lambLevel}, Scale factor: ${scaleFactor}`);
 
     // Use the appropriate Rive asset based on pro status and level
-    let lambAssetIndex;
-    let useArtboardName: string | undefined = artboardName;
-
-    if (lambLevel >= 33) {
-      // Level 33: Use lamb-wings-idle.riv with no artboard name
-      lambAssetIndex = 3; // lamb-wings-idle.riv
-      useArtboardName = undefined; // No artboard name for wings animation
-    } else {
-      // Levels 1-32: Use normal or pro lamb based on pro status
-      lambAssetIndex = isPro ? 2 : 0; // Index 2 for goldLamb, 0 for homeLamb
-    }
+    const lambAssetIndex = 0;
+    const useArtboardName = '[Main] Shpeherd';
 
     // Calculate position adjustment to keep lamb centered
     // As the lamb gets smaller, we need to adjust its position to stay centered
@@ -1062,8 +1087,10 @@ export default function HomeScreen() {
             <Rive
               key={riveKey}
               ref={riveRef}
-              resourceName={lambAssetIndex === 2 ? 'gold_lamb' : 'home_lamb'}
-              artboardName={artboardName}
+              resourceName="new_shepherd"
+              artboardName="[Main] Shpeherd"
+              stateMachineName="State Machine 1"
+              autoplay
               onError={handleRiveError}
               style={{
                 width: '100%',
@@ -1075,8 +1102,10 @@ export default function HomeScreen() {
             <Rive
               key={riveKey}
               ref={riveRef}
-              url={riveAssets[lambAssetIndex].uri!}
-              artboardName={artboardName}
+              url={riveAssets[0].uri!}
+              artboardName="[Main] Shpeherd"
+              stateMachineName="State Machine 1"
+              autoplay
               onError={handleRiveError}
               style={{
                 width: '100%',
@@ -1730,6 +1759,7 @@ export default function HomeScreen() {
                     visible={showDevotionalContent}
                     setFinishReading={setFinishReading}
                     onClose={() => {
+                      setRiveIdle(); // Set to idle on close
                       // Immediately mark devotional reader as hidden so overlay/header animations start in sync
                       setDevotionalReaderVisible(false);
                       // Start fade out
@@ -2048,7 +2078,7 @@ export default function HomeScreen() {
                                   </Text>
                                 </View>
                                 <Text className="font-din text-body text-textPrimary/90 leading-[22px] italic mb-3">
-                                  “{currentDevotional.verse}”
+                                  &quot;{currentDevotional.verse}&quot;
                                 </Text>
                                 <Text className="font-feather text-sm text-description text-right">
                                   — {currentDevotional.bibleReference}
