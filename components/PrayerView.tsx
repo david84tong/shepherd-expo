@@ -673,7 +673,10 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
             </Text>
             <Switch
               value={hapticsEnabled}
-              onValueChange={saveHapticsEnabled}
+              onValueChange={(enabled) => {
+                saveHapticsEnabled(enabled)
+                setShowSettingsModal(false);
+              }}
               trackColor={{ false: '#E9E2C7', true: '#FF8800' }}
               thumbColor={hapticsEnabled ? '#FFFFFF' : '#FFFFFF'}
             />
@@ -695,7 +698,11 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
             </Text>
             <Switch
               value={guidedPrayerEnabled}
-              onValueChange={saveGuidedPrayerEnabled}
+              onValueChange={(enabled) => {
+
+                saveGuidedPrayerEnabled(enabled);
+                setShowSettingsModal(false);
+              }}
               trackColor={{ false: '#E9E2C7', true: '#FF8800' }}
               thumbColor={guidedPrayerEnabled ? '#FFFFFF' : '#FFFFFF'}
             />
