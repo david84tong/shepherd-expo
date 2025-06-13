@@ -11,6 +11,8 @@ import {
   Dimensions,
   Animated,
   ActivityIndicator,
+  TouchableOpacity,
+  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PrimaryButton from './PrimaryButton';
@@ -20,6 +22,7 @@ import { useUserStore } from '../app/stores/userStore';
 import { BIBLE_BOOK_IDS } from '../app/models/Path';
 import analytics from '~/utils/analytics';
 import CircleButton from './Shared/CircleButton';
+import { getLevelData } from '~/utils/levelUtils';
 
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
@@ -53,6 +56,8 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
   const [reflectionContent, setReflectionContent] = useState('');
+  const [buttonsEnabled, setButtonsEnabled] = useState(false);
+
 
   // Get the current path from pathStore
   const currentPath = usePathStore((state) => state.currentPath);
@@ -72,7 +77,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
-
+  const [success, setSuccess] = useState(false)
   // Get userStore functions for saving reflection
   const addCompletedReflection = useUserStore((state) => state.addCompletedReflection);
   const setLastReflectionDate = useUserStore((state) => state.setLastReflectionDate);
@@ -85,6 +90,37 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
   const buttonOpacity = useRef(new Animated.Value(0)).current;
   const bottomContentAnimY = useRef(new Animated.Value(100)).current;
   const bottomContentOpacity = useRef(new Animated.Value(0)).current;
+
+
+  const progressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const animatedXP = useRef(new Animated.Value(0)).current;
+  const animatedHearts = useRef(new Animated.Value(0)).current;
+  const animatedTextOpacity = useRef(new Animated.Value(0.4)).current;
+
+  const lambHearts = useUserStore((state) => state?.getLambHearts?.());
+  const lamb = useUserStore((state) => state.getLamb?.());
+
+  const animatedBlueOpacity = useRef(new Animated.Value(0.3)).current;
+  const animatedGoldOpacity = useRef(new Animated.Value(0.4)).current;
+
+
+  const MAX_HEARTS = 100;
+
+  const levelInfo = useMemo(() => {
+    if (!lamb || lamb.xp === undefined)
+      return {
+        level: 1,
+        xp: 0,
+        xpForCurrentLevel: 0,
+        xpForNextLevel: 90,
+        xpProgress: 0,
+        xpNeeded: 90,
+        progress: 0,
+      };
+
+    return getLevelData(lamb.xp);
+  }, [lamb?.xp]);
+
 
   // Load Rive assets
   const [riveAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
@@ -248,6 +284,70 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     tappedReflectAboutVerse,
   ]);
 
+    // Delayed progress animation for success view
+    useEffect(() => {
+      if (success) {
+        animatedXP.setValue(0);
+        animatedHearts.setValue(0);
+        animatedTextOpacity.setValue(0.4);
+        if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
+        progressTimeoutRef.current = setTimeout(() => {
+          Animated.timing(animatedXP, {
+            toValue: levelInfo.progress,
+            duration: 1200,
+            useNativeDriver: false,
+          }).start();
+          Animated.timing(animatedHearts, {
+            toValue: lambHearts,
+            duration: 1200,
+            useNativeDriver: false,
+          }).start();
+          setTimeout(() => {
+            Animated.timing(animatedTextOpacity, {
+              toValue: 1,
+              duration: 400,
+              useNativeDriver: false,
+            }).start();
+            setTimeout(() => {
+              // Animate the opacity changes
+              Animated.timing(animatedBlueOpacity, {
+                toValue: 1,
+                duration: 500,
+                useNativeDriver: true,
+              }).start();
+  
+              Animated.timing(animatedGoldOpacity, {
+                toValue: 1,
+                duration: 500,
+                useNativeDriver: true,
+              }).start();
+  
+              // Still update the state for disabled/enabled logic
+              setButtonsEnabled(true);
+              // setBlueButtonOpacity(1);
+              // setGoldButtonOpacity(1);
+            }, 1000);
+          }, 1200);
+        }, 500);
+      } else {
+        animatedXP.setValue(0);
+        animatedHearts.setValue(0);
+        animatedTextOpacity.setValue(0.4);
+        // Reset to default opacity values
+        animatedBlueOpacity.setValue(0.3);
+        animatedGoldOpacity.setValue(0.4);
+        setButtonsEnabled(false);
+        // setBlueButtonOpacity(0.3);
+        // setGoldButtonOpacity(0.4);
+        if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
+      }
+      // Cleanup on unmount
+      return () => {
+        if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
+      };
+    }, [success, levelInfo.progress, lambHearts]);
+
+
   // Pre-compute memoized values outside and before any conditional returns
   const cardStyle = useMemo(() => {
     return {
@@ -318,24 +418,87 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     } catch (error) {
       console.log('Error saving reflection data:', error);
     }
+    setSuccess(true);
 
-    if (readingCompleted && prayerCompleted && !sawDailyBonus) {
-      setSuccessType(SuccessAnimationType.BONUS);
-    } else {
-      setSuccessType(SuccessAnimationType.REFLECTION);
-    }
-
-    // Navigate to success screen
-    router.push('/success');
   };
 
-  return (
+  return success ? (<View style={{ paddingHorizontal: 24 }} className="flex-1 items-center ">
+        
+    <Animated.Text
+      className="font-feather-bold mt-20 text-[26px] text-center mb-1 text-brown/90"
+      style={{ opacity: animatedTextOpacity }}
+    >
+      Reflection Complete!
+    </Animated.Text>
+    <Text className="font-din text-[17px]  text-brown/90 text-center mb-4" >
+      Hurray! You finished today&apos;s bible reading & fed your lamb
+    </Text>
+    <Text className="font-din mt-6 text-[13px] text-center mb-6 tracking-wider uppercase text-brown/80">
+      PRAYER REWARDS
+    </Text>
+
+    <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+      <Image source={require('../assets/icons/heartIcon.png')} className="w-7 h-7" />
+      <View style={{ width: '92%' }}>
+        <View className="h-2 bg-red/25 rounded-md overflow-hidden">
+          <Animated.View
+            className="h-full bg-red rounded-full"
+            style={{
+              width: animatedHearts.interpolate({
+                inputRange: [0, MAX_HEARTS],
+                outputRange: ['1%', '100%'],
+                extrapolate: 'clamp',
+              }),
+            }}
+          />
+        </View>
+      </View>
+    </View>
+
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', }}>
+      <Image source={require('../assets/icons/starIcon.png')} tintColor={'#FF8800'} className="w-7 h-7" />
+      <View style={{ width: '92%' }}>
+        <View className="h-2 bg-orange/25 rounded-full overflow-hidden " >
+          <Animated.View
+            className="h-full bg-orange rounded-full"
+            style={{
+              width: animatedXP.interpolate({
+                inputRange: [0, 100],
+                outputRange: ['1%', '100%'],
+                extrapolate: 'clamp',
+              }),
+            }}
+          />
+        </View>
+      </View>
+    </View>
+
+
+    <Animated.View style={{ opacity: animatedGoldOpacity, width: '100%' }}>
+      <TouchableOpacity
+        onPress={() => {
+
+if (readingCompleted && prayerCompleted && !sawDailyBonus) {
+  setSuccessType(SuccessAnimationType.BONUS);
+} else {
+  setSuccessType(SuccessAnimationType.REFLECTION);
+}
+
+// // Navigate to success screen
+router.push('/success');
+       }}
+        className="w-full h-[52px] self-center bg-gold rounded-full mt-2 items-center justify-center"
+        disabled={!buttonsEnabled}
+      >
+        <Text className="font-feather-bold text-brown/80 text-xl text-center">Collect Bonus</Text>
+      </TouchableOpacity>
+    </Animated.View>
+  </View> ): (
     <Animated.View
       className="flex w-full items-center px-2"
       style={{ opacity: containerOpacity }}
       pointerEvents="box-none">
-
-      <Text className="text-[20px]  text-brown/40 mb-4 mt-4 text-center leading-tight font-semibold">
+<Text className="text-[20px]  text-brown/40 mb-4 mt-4 text-center leading-tight font-semibold">
         Time to reflect
       </Text>
 
@@ -395,6 +558,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
       </Animated.View>
 
     </Animated.View>
+
   );
 };
 

@@ -778,6 +778,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   },
                 ]
               );
+            }finally{
+              useUserStore.getState().resetUserStore();
+              useHomeStore.getState().resetCompletionStates();
             }
           },
         },

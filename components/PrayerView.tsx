@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,8 @@ import {
   Dimensions,
   Modal,
   Switch,
+  Animated,
+  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePrayerStore } from '~/app/stores/prayerStore';
@@ -31,6 +33,8 @@ import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import analytics from '../utils/analytics';
 import CircleButton from './Shared/CircleButton';
 import BluePrimaryButton from './Shared/BluePrimaryButton';
+import { getLevelData } from '~/utils/levelUtils';
+import PrimaryButton from './PrimaryButton';
 
 // AsyncStorage keys for prayer settings
 const PRAYER_HAPTICS_KEY = 'prayer_haptics_enabled';
@@ -304,11 +308,14 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
   const [prayerSentences, setPrayerSentences] = useState<string[]>([]);
   const [fontSize, setFontSize] = useState(16);
   const [showBreathingAnimation, setShowBreathingAnimation] = useState(true);
-  const [showControlRow, setShowControlRow] = useState(true); // Show controls immediately on load
+  const [showControlRow, setShowControlRow] = useState(true);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [guidedPrayerEnabled, setGuidedPrayerEnabled] = useState(true);
   const [completePrayerDisabled, setCompletePrayerDisabled] = useState(true);
+  const [buttonsEnabled, setButtonsEnabled] = useState(false);
+
 
   // Animation values
   const progressValue = useSharedValue(0);
@@ -317,6 +324,39 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
   const scrollViewRef = useRef<ScrollView>(null);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const completePrayerTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+
+  const progressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const animatedXP = useRef(new Animated.Value(0)).current;
+  const animatedHearts = useRef(new Animated.Value(0)).current;
+  const animatedTextOpacity = useRef(new Animated.Value(0.4)).current;
+
+  const lambHearts = useUserStore((state) => state?.getLambHearts?.());
+  const lamb = useUserStore((state) => state.getLamb?.());
+
+  const animatedBlueOpacity = useRef(new Animated.Value(0.3)).current;
+  const animatedGoldOpacity = useRef(new Animated.Value(0.4)).current;
+
+
+  const MAX_HEARTS = 100;
+
+  const levelInfo = useMemo(() => {
+    if (!lamb || lamb.xp === undefined)
+      return {
+        level: 1,
+        xp: 0,
+        xpForCurrentLevel: 0,
+        xpForNextLevel: 90,
+        xpProgress: 0,
+        xpNeeded: 90,
+        progress: 0,
+      };
+
+    return getLevelData(lamb.xp);
+  }, [lamb?.xp]);
+
+
+  
 
   // Generate prayer content based on recent prayers
   const generatePrayerContent = useCallback(() => {
@@ -431,6 +471,69 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
       }
     }
   }, [showBreathingAnimation, controlRowOpacity, showSettingsModal]);
+
+  // Delayed progress animation for success view
+  useEffect(() => {
+    if (showSuccess) {
+      animatedXP.setValue(0);
+      animatedHearts.setValue(0);
+      animatedTextOpacity.setValue(0.4);
+      if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
+      progressTimeoutRef.current = setTimeout(() => {
+        Animated.timing(animatedXP, {
+          toValue: levelInfo.progress,
+          duration: 1200,
+          useNativeDriver: false,
+        }).start();
+        Animated.timing(animatedHearts, {
+          toValue: lambHearts,
+          duration: 1200,
+          useNativeDriver: false,
+        }).start();
+        setTimeout(() => {
+          Animated.timing(animatedTextOpacity, {
+            toValue: 1,
+            duration: 400,
+            useNativeDriver: false,
+          }).start();
+          setTimeout(() => {
+            // Animate the opacity changes
+            Animated.timing(animatedBlueOpacity, {
+              toValue: 1,
+              duration: 500,
+              useNativeDriver: true,
+            }).start();
+
+            Animated.timing(animatedGoldOpacity, {
+              toValue: 1,
+              duration: 500,
+              useNativeDriver: true,
+            }).start();
+
+            // Still update the state for disabled/enabled logic
+            setButtonsEnabled(true);
+            // setBlueButtonOpacity(1);
+            // setGoldButtonOpacity(1);
+          }, 1000);
+        }, 1200);
+      }, 500);
+    } else {
+      animatedXP.setValue(0);
+      animatedHearts.setValue(0);
+      animatedTextOpacity.setValue(0.4);
+      // Reset to default opacity values
+      animatedBlueOpacity.setValue(0.3);
+      animatedGoldOpacity.setValue(0.4);
+      setButtonsEnabled(false);
+      // setBlueButtonOpacity(0.3);
+      // setGoldButtonOpacity(0.4);
+      if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
+    }
+    // Cleanup on unmount
+    return () => {
+      if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
+    };
+  }, [showSuccess, levelInfo.progress, lambHearts]);
 
   // Handle settings modal state changes
   useEffect(() => {
@@ -735,8 +838,110 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
     </Modal>
   );
 
+
   return (
     <Reanimated.View style={[{ flex: 1, borderRadius: 24 }, animatedBackgroundStyle]}>
+   { showSuccess ?    <View style={{ paddingHorizontal: 24 }} className="flex-1 items-center ">
+        
+          <Animated.Text
+            className="font-feather-bold mt-20 text-[26px] text-center mb-1 text-brown/90"
+            style={{ opacity: animatedTextOpacity }}
+          >
+            Prayer Complete!
+          </Animated.Text>
+          <Text className="font-din text-[17px]  text-brown/90 text-center mb-4" >
+          Hurray! You finished today's bible reading & fed your lamb
+          </Text>
+          <Text className="font-din mt-6 text-[13px] text-center mb-6 tracking-wider uppercase text-brown/80">
+            PRAYER REWARDS
+          </Text>
+
+          <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Image source={require('../assets/icons/heartIcon.png')} className="w-7 h-7" />
+            <View style={{ width: '92%' }}>
+              <View className="h-2 bg-red/25 rounded-md overflow-hidden">
+                <Animated.View
+                  className="h-full bg-red rounded-full"
+                  style={{
+                    width: animatedHearts.interpolate({
+                      inputRange: [0, MAX_HEARTS],
+                      outputRange: ['1%', '100%'],
+                      extrapolate: 'clamp',
+                    }),
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', }}>
+            <Image source={require('../assets/icons/starIcon.png')} tintColor={'#FF8800'} className="w-7 h-7" />
+            <View style={{ width: '92%' }}>
+              <View className="h-2 bg-orange/25 rounded-full overflow-hidden " >
+                <Animated.View
+                  className="h-full bg-orange rounded-full"
+                  style={{
+                    width: animatedXP.interpolate({
+                      inputRange: [0, 100],
+                      outputRange: ['1%', '100%'],
+                      extrapolate: 'clamp',
+                    }),
+                  }}
+                />
+              </View>
+            </View>
+          </View>
+          <Animated.View style={{ opacity: animatedBlueOpacity, width: '100%', }}>
+            <PrimaryButton
+              title="Reflect on this verse"
+              onPress={() => { }}
+              buttonType="blue"
+              icon={require('../assets/icons/starIcon.png')}
+              reward={"+25"}
+              disabled={!buttonsEnabled}
+            />
+          </Animated.View>
+
+          <Animated.View style={{ opacity: animatedGoldOpacity, width: '100%' }}>
+            <TouchableOpacity
+              onPress={() => {
+  // Update lastActivityDate to prevent completion states from being reset
+  const now = firestore.Timestamp.now();
+  const setLastActivityDate = useUserStore.getState().setLastActivityDate;
+  const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
+  setLastActivityDate(now);
+  setLastPrayerDate(now);
+
+  // Mark prayer as completed
+  const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
+  setPrayerCompleted(true);
+
+  // Show tab bar again
+  const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
+  setPrayerViewVisible(false);
+
+  // Log completion analytics
+  analytics.logEvent('PrayerView_Completed', {
+    prayerTopic: recentPrayers[0] || 'general',
+    totalCards: totalCards,
+  });
+
+  // Close the prayer view
+  if (onSetIdle) onSetIdle();
+  if (onClose) {
+    if (hapticsEnabled) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    }
+    onClose();
+  }
+              }}
+              className="w-full h-[52px] self-center bg-gold rounded-full mt-2 items-center justify-center"
+              disabled={!buttonsEnabled}
+            >
+              <Text className="font-feather-bold text-brown/80 text-xl text-center">Go Home</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        </View> : <>
       {/* Header */}
       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 16, marginTop: 24 }}>
         <Text
@@ -851,32 +1056,32 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
           showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 160 }}
           scrollEventThrottle={16}>
-          <TouchableWithoutFeedback onPress={handleNextCard}>
-            <View style={{ minHeight: 200 }}>
-              {cardsToShow.length === 0 ? (
-                <Text className="text-brown text-center">No prayer content to display</Text>
-              ) : (
-                <>
-                  {cardsToShow.map((card, index) => {
-                    console.log('🎨 Rendering prayer card:', index, card.type, card.content.substring(0, 50));
-                    return (
-                      <PrayerCard
-                        key={index}
-                        card={card}
-                        index={index}
-                        isLast={index === cardsToShow.length - 1}
-                        breathingProgress={breathingProgress}
-                        fontSize={fontSize}
-                        skipTyping={skipTyping}
-                        onTypingComplete={handleTypingComplete}
-                      />
-                    );
-                  })}
-                </>
-              )}
+          {currentIndex < totalCards - 1 ? (
+            <TouchableWithoutFeedback onPress={handleNextCard}>
+              <View style={{ minHeight: 200 }}>
+                {cardsToShow.length === 0 ? (
+                  <Text className="text-brown text-center">No prayer content to display</Text>
+                ) : (
+                  <>
+                    {cardsToShow.map((card, index) => {
+                      console.log('🎨 Rendering prayer card:', index, card.type, card.content.substring(0, 50));
+                      return (
+                        <PrayerCard
+                          key={index}
+                          card={card}
+                          index={index}
+                          isLast={index === cardsToShow.length - 1}
+                          breathingProgress={breathingProgress}
+                          fontSize={fontSize}
+                          skipTyping={skipTyping}
+                          onTypingComplete={handleTypingComplete}
+                        />
+                      );
+                    })}
+                  </>
+                )}
 
-              {/* Tap guidance or finish button */}
-              {currentIndex < totalCards - 1 ? (
+                {/* Tap guidance or finish button */}
                 <View style={{ alignItems: 'center', marginTop: 12 }}>
                   {showTapGuidance && (
                     <Text style={{
@@ -889,64 +1094,53 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
                     </Text>
                   )}
                 </View>
-              ) : (
-                <TouchableOpacity
-                  onPress={() => {
-                    // Update lastActivityDate to prevent completion states from being reset
-                    const now = firestore.Timestamp.now();
-                    const setLastActivityDate = useUserStore.getState().setLastActivityDate;
-                    const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
-                    setLastActivityDate(now);
-                    setLastPrayerDate(now);
-
-                    // Mark prayer as completed
-                    const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
-                    setPrayerCompleted(true);
-
-                    // Show tab bar again
-                    const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
-                    setPrayerViewVisible(false);
-
-                    // Log completion analytics
-                    analytics.logEvent('PrayerView_Completed', {
-                      prayerTopic: recentPrayers[0] || 'general',
-                      totalCards: totalCards,
-                    });
-
-                    // Close the prayer view
-                    if (onSetIdle) onSetIdle();
-                    if (onClose) {
-                      if (hapticsEnabled) {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                      }
-                      onClose();
-                    }
-                  }}
-                  activeOpacity={0.8}>
-                  <View style={{
-                    backgroundColor: '#06B6FE',
-                    paddingVertical: 12,
-                    alignItems: 'center',
-                    marginTop: 16,
-                    borderRadius: 12,
+              </View>
+            </TouchableWithoutFeedback>
+          ) : (
+            <View style={{ minHeight: 200 }}>
+              {cardsToShow.map((card, index) => (
+                <PrayerCard
+                  key={index}
+                  card={card}
+                  index={index}
+                  isLast={index === cardsToShow.length - 1}
+                  breathingProgress={breathingProgress}
+                  fontSize={fontSize}
+                  skipTyping={skipTyping}
+                  onTypingComplete={handleTypingComplete}
+                />
+              ))}
+              <TouchableOpacity
+                onPress={() => {
+                  setShowSuccess(true);
+                }}
+                activeOpacity={0.8}>
+                <View style={{
+                  backgroundColor: '#06B6FE',
+                  paddingVertical: 12,
+                  alignItems: 'center',
+                  marginTop: 16,
+                  borderRadius: 12,
+                }}>
+                  <Text style={{
+                    color: 'white',
+                    fontFamily: 'Feather Bold',
+                    fontSize: 16,
                   }}>
-                    <Text style={{
-                      color: 'white',
-                      fontFamily: 'Feather Bold',
-                      fontSize: 16,
-                    }}>
-                      Amen 🙏
-                    </Text>
-                  </View>
-                </TouchableOpacity>
-              )}
+                    Amen 🙏
+                  </Text>
+                </View>
+              </TouchableOpacity>
             </View>
-          </TouchableWithoutFeedback>
+          )}
         </ScrollView>
       )}
+    </>}
 
       {/* Settings Modal */}
       <SettingsModal />
+      
+      {/* Completion Modal */}
     </Reanimated.View>
   );
 };
