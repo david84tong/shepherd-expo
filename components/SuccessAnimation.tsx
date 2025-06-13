@@ -641,7 +641,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Determine the action for the button press
   const handlePress = propOnClose || handleGoHome;
-  const buttonText = propOnClose ? 'Close' : 'Return Home';
+  const buttonText = propOnClose ? 'Close' : 'Continue';
 
   // Handler for prayer button
   const handleGoToPrayer = () => {
@@ -960,7 +960,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                 opacity: homeButtonOpacity,
                 transform: [{ translateY: homeButtonTranslateY }],
               }}>
-              <PrimaryButton title={buttonText} onPress={handlePress} style="mt-4" />
+              <PrimaryButton buttonType="blue" title={buttonText} onPress={handlePress} style="mt-4" />
             </Animated.View>
           )
         )}

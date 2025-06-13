@@ -504,7 +504,7 @@ export const StreakScreen = () => {
 
       {/* Continue button */}
       <Animated.View style={buttonStyle} className="px-6 pb-10 mt-8">
-        <PrimaryButton title="Continue" onPress={handleContinue} />
+        <PrimaryButton buttonType="blue" title="Go home" onPress={handleContinue} />
       </Animated.View>
 
       {/* Development debug info */}

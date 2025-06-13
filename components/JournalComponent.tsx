@@ -38,6 +38,7 @@ const getBookNameFromId = (bookId: number): string => {
 interface JournalProps {
   visible: boolean;
   onClose: () => void;
+  setFinishReading: (finishReading: boolean) => void;
 }
 
 // Get screen dimensions
@@ -50,7 +51,7 @@ const MIN_CHARS_REQUIRED = 10;
  * Component for the Daily Reflection/Journaling feature.
  * Includes an auto-focusing TextInput and handles keyboard appearance.
  */
-const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
+const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishReading }) => {
   const inputRef = useRef<TextInput>(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -284,68 +285,68 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     tappedReflectAboutVerse,
   ]);
 
-    // Delayed progress animation for success view
-    useEffect(() => {
-      if (success) {
-        animatedXP.setValue(0);
-        animatedHearts.setValue(0);
-        animatedTextOpacity.setValue(0.4);
-        if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
-        progressTimeoutRef.current = setTimeout(() => {
-          Animated.timing(animatedXP, {
-            toValue: levelInfo.progress,
-            duration: 1200,
-            useNativeDriver: false,
-          }).start();
-          Animated.timing(animatedHearts, {
-            toValue: lambHearts,
-            duration: 1200,
+  // Delayed progress animation for success view
+  useEffect(() => {
+    if (success) {
+      animatedXP.setValue(0);
+      animatedHearts.setValue(0);
+      animatedTextOpacity.setValue(0.4);
+      if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
+      progressTimeoutRef.current = setTimeout(() => {
+        Animated.timing(animatedXP, {
+          toValue: levelInfo.progress,
+          duration: 1200,
+          useNativeDriver: false,
+        }).start();
+        Animated.timing(animatedHearts, {
+          toValue: lambHearts,
+          duration: 1200,
+          useNativeDriver: false,
+        }).start();
+        setTimeout(() => {
+          Animated.timing(animatedTextOpacity, {
+            toValue: 1,
+            duration: 400,
             useNativeDriver: false,
           }).start();
           setTimeout(() => {
-            Animated.timing(animatedTextOpacity, {
+            // Animate the opacity changes
+            Animated.timing(animatedBlueOpacity, {
               toValue: 1,
-              duration: 400,
-              useNativeDriver: false,
+              duration: 500,
+              useNativeDriver: true,
             }).start();
-            setTimeout(() => {
-              // Animate the opacity changes
-              Animated.timing(animatedBlueOpacity, {
-                toValue: 1,
-                duration: 500,
-                useNativeDriver: true,
-              }).start();
-  
-              Animated.timing(animatedGoldOpacity, {
-                toValue: 1,
-                duration: 500,
-                useNativeDriver: true,
-              }).start();
-  
-              // Still update the state for disabled/enabled logic
-              setButtonsEnabled(true);
-              // setBlueButtonOpacity(1);
-              // setGoldButtonOpacity(1);
-            }, 1000);
-          }, 1200);
-        }, 500);
-      } else {
-        animatedXP.setValue(0);
-        animatedHearts.setValue(0);
-        animatedTextOpacity.setValue(0.4);
-        // Reset to default opacity values
-        animatedBlueOpacity.setValue(0.3);
-        animatedGoldOpacity.setValue(0.4);
-        setButtonsEnabled(false);
-        // setBlueButtonOpacity(0.3);
-        // setGoldButtonOpacity(0.4);
-        if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
-      }
-      // Cleanup on unmount
-      return () => {
-        if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
-      };
-    }, [success, levelInfo.progress, lambHearts]);
+
+            Animated.timing(animatedGoldOpacity, {
+              toValue: 1,
+              duration: 500,
+              useNativeDriver: true,
+            }).start();
+
+            // Still update the state for disabled/enabled logic
+            setButtonsEnabled(true);
+            // setBlueButtonOpacity(1);
+            // setGoldButtonOpacity(1);
+          }, 1000);
+        }, 1200);
+      }, 500);
+    } else {
+      animatedXP.setValue(0);
+      animatedHearts.setValue(0);
+      animatedTextOpacity.setValue(0.4);
+      // Reset to default opacity values
+      animatedBlueOpacity.setValue(0.3);
+      animatedGoldOpacity.setValue(0.4);
+      setButtonsEnabled(false);
+      // setBlueButtonOpacity(0.3);
+      // setGoldButtonOpacity(0.4);
+      if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
+    }
+    // Cleanup on unmount
+    return () => {
+      if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
+    };
+  }, [success, levelInfo.progress, lambHearts]);
 
 
   // Pre-compute memoized values outside and before any conditional returns
@@ -390,6 +391,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
     });
     Keyboard.dismiss();
     setPathInProgress(false);
+    setFinishReading(true)
     setReflectionCompleted(true); // Set reflection as completed
 
     // Reset tappedReflectAboutVerse flag
@@ -422,83 +424,94 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
 
   };
 
-  return success ? (<View style={{ paddingHorizontal: 24 }} className="flex-1 items-center ">
-        
-    <Animated.Text
-      className="font-feather-bold mt-20 text-[26px] text-center mb-1 text-brown/90"
-      style={{ opacity: animatedTextOpacity }}
-    >
-      Reflection Complete!
-    </Animated.Text>
-    <Text className="font-din text-[17px]  text-brown/90 text-center mb-4" >
-      Hurray! You finished today&apos;s bible reading & fed your lamb
-    </Text>
-    <Text className="font-din mt-6 text-[13px] text-center mb-6 tracking-wider uppercase text-brown/80">
-      PRAYER REWARDS
-    </Text>
+  return success ? (
+    <Animated.View
+      className="flex w-full items-center px-6"
+      style={{ opacity: containerOpacity }}
+      pointerEvents="box-none">
 
-    <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-      <Image source={require('../assets/icons/heartIcon.png')} className="w-7 h-7" />
-      <View style={{ width: '92%' }}>
-        <View className="h-2 bg-red/25 rounded-md overflow-hidden">
-          <Animated.View
-            className="h-full bg-red rounded-full"
-            style={{
-              width: animatedHearts.interpolate({
-                inputRange: [0, MAX_HEARTS],
-                outputRange: ['1%', '100%'],
-                extrapolate: 'clamp',
-              }),
-            }}
-          />
-        </View>
-      </View>
-    </View>
-
-    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', }}>
-      <Image source={require('../assets/icons/starIcon.png')} tintColor={'#FF8800'} className="w-7 h-7" />
-      <View style={{ width: '92%' }}>
-        <View className="h-2 bg-orange/25 rounded-full overflow-hidden " >
-          <Animated.View
-            className="h-full bg-orange rounded-full"
-            style={{
-              width: animatedXP.interpolate({
-                inputRange: [0, 100],
-                outputRange: ['1%', '100%'],
-                extrapolate: 'clamp',
-              }),
-            }}
-          />
-        </View>
-      </View>
-    </View>
-
-
-    <Animated.View style={{ opacity: animatedGoldOpacity, width: '100%' }}>
-      <TouchableOpacity
-        onPress={() => {
-
-if (readingCompleted && prayerCompleted && !sawDailyBonus) {
-  setSuccessType(SuccessAnimationType.BONUS);
-} else {
-  setSuccessType(SuccessAnimationType.REFLECTION);
-}
-
-// // Navigate to success screen
-router.push('/success');
-       }}
-        className="w-full h-[52px] self-center bg-gold rounded-full mt-2 items-center justify-center"
-        disabled={!buttonsEnabled}
+      <Animated.Text
+        className="font-feather-bold mt-16 text-[26px] text-center mb-1 text-brown/90"
+        style={{ opacity: animatedTextOpacity }}
       >
-        <Text className="font-feather-bold text-brown/80 text-xl text-center">Collect Bonus</Text>
-      </TouchableOpacity>
-    </Animated.View>
-  </View> ): (
+        Reflection Complete!
+      </Animated.Text>
+      <Text className="font-din text-[17px]  text-brown/90 text-center mb-4" >
+        Hurray! You finished today&apos;s bible reading & fed your lamb
+      </Text>
+      <Text className="font-nunito-black mt-10 text-[13px] text-center mb-2 tracking-wider uppercase text-brown/50">
+        REFLECTION REWARDS
+      </Text>
+
+      <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text className="font-nunito-black mr-2   text-[15px] text-center   text-brown/50">
+          +3 Heards
+        </Text>
+        <Image source={require('../assets/icons/heartIcon.png')} className="w-7 h-7" />
+        <View style={{ width: '70%' }}>
+          <View className="h-2 bg-red/25 rounded-md overflow-hidden">
+            <Animated.View
+              className="h-full bg-red rounded-full"
+              style={{
+                width: animatedHearts.interpolate({
+                  inputRange: [0, MAX_HEARTS],
+                  outputRange: ['1%', '100%'],
+                  extrapolate: 'clamp',
+                }),
+              }}
+            />
+          </View>
+        </View>
+      </View>
+
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: 60 }}>
+        <Text className="font-nunito-black mr-3  text-[15px] text-center    text-brown/50">
+          +3 Points
+        </Text>
+        <Image source={require('../assets/icons/starIcon.png')} tintColor={'#FF8800'} className="w-7 h-7" />
+        <View style={{ width: '70%' }}>
+          <View className="h-2 bg-orange/25 rounded-full overflow-hidden " >
+            <Animated.View
+              className="h-full bg-orange rounded-full"
+              style={{
+                width: animatedXP.interpolate({
+                  inputRange: [0, 100],
+                  outputRange: ['1%', '100%'],
+                  extrapolate: 'clamp',
+                }),
+              }}
+            />
+          </View>
+        </View>
+      </View>
+
+
+      <Animated.View style={{ opacity: animatedGoldOpacity, width: '100%' }}>
+        <TouchableOpacity
+          onPress={() => {
+            setFinishReading(false)
+
+            if (readingCompleted && prayerCompleted && !sawDailyBonus) {
+              setSuccessType(SuccessAnimationType.BONUS);
+            } else {
+              setSuccessType(SuccessAnimationType.REFLECTION);
+            }
+
+            // // Navigate to success screen
+            router.push('/success');
+          }}
+          className="w-full h-[52px] self-center bg-gold rounded-full mt-2 items-center justify-center"
+          disabled={!buttonsEnabled}
+        >
+          <Text className="font-feather-bold text-brown/80 text-xl text-center">Collect Bonus</Text>
+        </TouchableOpacity>
+      </Animated.View>
+    </Animated.View>) : (
     <Animated.View
       className="flex w-full items-center px-2"
       style={{ opacity: containerOpacity }}
       pointerEvents="box-none">
-<Text className="text-[20px]  text-brown/40 mb-4 mt-4 text-center leading-tight font-semibold">
+      <Text className="text-[20px]  text-brown/40 mb-4 mt-4 text-center leading-tight font-semibold">
         Time to reflect
       </Text>
 

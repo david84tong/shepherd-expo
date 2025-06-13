@@ -1832,6 +1832,7 @@ export default function HomeScreen() {
               ) : showJournalContent ? (
                 <JournalComponent
                   visible={showJournalContent}
+                  setFinishReading={setFinishReading}
                   onClose={() => {
                     setReflectionCompleted(false);
                     // Start fade out
@@ -1889,6 +1890,7 @@ export default function HomeScreen() {
               ) : showPrayerContent ?
                 <PrayerView
                   visible={showPrayerContent}
+                  setFinishReading={setFinishReading}
                   onClose={() => {
                     // Immediately mark prayer view as hidden so overlay/header animations start in sync
                     setPrayerViewVisible(false);
@@ -1956,8 +1958,9 @@ export default function HomeScreen() {
                 : (
                   <BottomSheetScrollView
                     showsVerticalScrollIndicator={false}
+                    // prayerCompleted && readingCompleted && reflectionCompleted
                     contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 24 }}>
-                    {prayerCompleted && readingCompleted && reflectionCompleted ? (
+                    {false ? (
                       // Share Card
                       <Pressable
                         onPress={() => {
