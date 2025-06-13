@@ -14,6 +14,7 @@ import {
   StatusBar,
   Pressable,
   PanResponder,
+  Share,
 } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { Ionicons } from '@expo/vector-icons';
@@ -66,6 +67,7 @@ const starIcon = imageAssets[10];
 import { responsiveHeight } from 'react-native-responsive-dimensions';
 import JournalComponent from '~/components/JournalComponent';
 import PrayerView from '~/components/PrayerView';
+import { Devotional } from '../models/Devotional';
 
 // Custom toast config with explicit styling
 const toastConfig: ToastConfig = {
@@ -214,6 +216,8 @@ export default function HomeScreen() {
   const [showBgRive, setShowBgRive] = useState(false);
   // Lamb size animation
   const lambSizeAnim = useRef(new Animated.Value(256)).current; // Start with full size (256px)
+
+  const [devotionalData, setDevotionalData] = useState<Devotional | null>(null);
 
   // Get subscription state and actions from the store
   const { setFromScreen, presentHalfOffPaywall } = useSubscriptionStore();
@@ -1066,7 +1070,12 @@ export default function HomeScreen() {
 
     // Fetch today's devotional when component mounts
     console.log('📖 About to call fetchTodaysDevotional');
-    fetchTodaysDevotional();
+    fetchTodaysDevotional().then(() => {
+      // Get the current devotional data from the store
+      const devotionalStore = useDevotionalStore.getState();
+      const data = devotionalStore.currentDevotional
+      setDevotionalData(data)
+    });
     console.log('📖 fetchTodaysDevotional call completed');
   }, []);
 
@@ -1303,11 +1312,16 @@ export default function HomeScreen() {
         return;
       }
 
-      // Share the image
-      await Sharing.shareAsync('https://example.com/your-image-url.jpg', {
-        mimeType: 'image/jpeg',
-        dialogTitle: 'Share your achievement',
-        UTI: 'public.jpeg'
+      if (!devotionalData?.imageURL) {
+        alert("No image available to share");
+        return;
+      }
+
+      // Share both the devotional image and verse text
+      await Share.share({
+        url: devotionalData.imageURL,
+        message: devotionalData.verse || 'Check out this daily verse!',
+        title: 'Share your daily verse'
       });
 
     } catch (error) {
@@ -1962,13 +1976,13 @@ export default function HomeScreen() {
                           <View className="p-6 h-full justify-between">
                             <View>
                               <Text className="font-feather text-white text-heading mb-1">
-                                John 3:16
+                                {devotionalData?.bibleReference}
                               </Text>
                               <Text className="font-din text-white/90 text-heading leading-[26px] mb-7 ">
                                 Verse of the day
                               </Text>
                               <Text className="font-din text-white/90 text-heading leading-[22px]">
-                                All things were made by him; and without him was not anything made that was made.
+                                {devotionalData?.verse}
                               </Text>
                             </View>
 
@@ -2152,7 +2166,7 @@ export default function HomeScreen() {
                                   </Text>
                                 </View>
                                 <Text className="font-din text-body text-textPrimary/90 leading-[22px] italic mb-3">
-                                  “{currentDevotional.verse}”
+                                  "{currentDevotional.verse}"
                                 </Text>
                                 <Text className="font-feather text-sm text-description text-right">
                                   — {currentDevotional.bibleReference}
@@ -2216,7 +2230,7 @@ export default function HomeScreen() {
         </SafeAreaView>
       </Animated.View>
 
-      <FullScreenShareCard visible={showShareCard} onClose={() => setShowShareCard(false)} onShare={handleShare} />
+      <FullScreenShareCard visible={showShareCard} devotionalData={devotionalData} onClose={() => setShowShareCard(false)} onShare={handleShare} />
 
 
       <Toast config={toastConfig} />

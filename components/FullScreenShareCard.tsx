@@ -12,17 +12,20 @@ import {
 } from 'react-native';
 import { FontAwesome, Ionicons } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
+import { Devotional } from '~/app/models/Devotional';
 
 interface FullScreenShareCardProps {
     visible: boolean;
     onClose: () => void;
     onShare: () => void;
+    devotionalData: Devotional | null;
 }
 
 const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
     visible,
     onClose,
     onShare,
+    devotionalData,
 }) => {
     const pan = useRef(new Animated.ValueXY()).current;
     const contentScale = useRef(new Animated.Value(0.8)).current;
@@ -137,13 +140,13 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                 }}
                             >
                                 <Text className="font-feather text-white text-[22px] mb-2 font-bold">
-                                    John 3:16
+                                    {devotionalData?.bibleReference}
                                 </Text>
                                 <Text className="font-din text-white text-[18px]  mb-7">
                                     Verse of the day
                                 </Text>
                                 <Text className="font-din text-white text-[18px]  mb-10">
-                                    All things were made by him; and without him was not anything made that was made.
+                                    {devotionalData?.verse}
                                 </Text>
                                 {/* Share Button */}
                                 <View className="w-full items-center ">
