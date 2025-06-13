@@ -1262,7 +1262,7 @@ export default function HomeScreen() {
   const androidBgOpacityAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (showDevotionalContent) {
+    if (showDevotionalContent || showPrayerContent || showJournalContent) {
       Animated.timing(devotionaleRadingOpacityAnim, {
         toValue: 1,
         duration: 1000, // 2 seconds fade-in for slow opacity increase
@@ -1278,7 +1278,7 @@ export default function HomeScreen() {
         useNativeDriver: true,
       }).start();
     }
-  }, [showDevotionalContent]);
+  }, [showDevotionalContent,showPrayerContent,showJournalContent]);
 
   // Add this effect to handle Android background animation
   useEffect(() => {
@@ -1458,7 +1458,7 @@ export default function HomeScreen() {
           </Animated.View>
         )}
 
-        {showDevotionalContent && !finishReading && (
+        {(showDevotionalContent || showPrayerContent || showJournalContent) && !finishReading && (
           <Animated.View
             style={{
               position: 'absolute',
@@ -2033,7 +2033,7 @@ export default function HomeScreen() {
                   <BottomSheetScrollView
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 24 }}>
-                    {prayerCompleted && readingCompleted && reflectionCompleted ? (
+                    {prayerCompleted && readingCompleted && reflectionCompleted && false ? (
                       // Share Card
                       <Pressable
                         onPress={() => {
