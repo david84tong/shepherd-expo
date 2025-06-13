@@ -7,7 +7,6 @@ import {
   ScrollView,
   Dimensions,
   TouchableWithoutFeedback,
-  Image,
   Animated,
 } from 'react-native';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
@@ -27,8 +26,8 @@ import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import analytics from '../utils/analytics';
 import { useUserStore } from '~/app/stores/userStore';
 import { getLevelData } from '~/utils/levelUtils';
-import PrimaryButton from './PrimaryButton';
 import { RPH } from '~/app/helper/helper';
+import SuccessMessage from './SuccessMessage';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -92,6 +91,14 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
       transform: [{ scale: successViewScale.value }],
     };
   });
+
+  // Track previous level to detect level up
+  const prevLevelRef = useRef(levelInfo.level);
+  const didLevelUp = useMemo(() => {
+    const did = levelInfo.level > prevLevelRef.current;
+    prevLevelRef.current = levelInfo.level;
+    return did;
+  }, [levelInfo.level]);
 
   // Cleaner success view animation
   useEffect(() => {
@@ -339,114 +346,32 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
   return (
     <View style={{ flex: 1, margin: 12, marginHorizontal: 24 }}>
       {showSuccess ? (
-        <Reanimated.View 
-          className="flex-1 items-center" 
-          style={successViewAnimatedStyle}
-        >
-          <View className="mb-0 mt-6">
-            <Image source={require("../assets/icons/rocket.png")} style={{ width: 65, height: 65 }} />
-          </View>
-          <Text className="font-feather-bold text-[28px] text-center mb-6 text-orange">
-            {`Level UP ${levelInfo.level}!`}
-          </Text>
-          <Animated.Text
-            className="font-feather-bold text-[26px] text-center mb-1 text-brown/90"
-            style={{ opacity: animatedTextOpacity }}
-          >
-            Reading Complete!
-          </Animated.Text>
-          <Text className="font-din text-[17px]  text-brown/90 text-center mb-4" >
-            Hurray! You finished today&apos;s bible reading & fed your lamb.
-          </Text>
-          <Text className="font-din text-[13px] text-center mb-6 tracking-wider uppercase text-brown/80">
-            READING REWARDS
-          </Text>
-
-          <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <Image source={require('../assets/icons/heartIcon.png')} className="w-7 h-7" />
-            <View style={{ width: '92%' }}>
-              <View className="h-2 bg-red/25 rounded-md overflow-hidden">
-                <Animated.View
-                  className="h-full bg-red rounded-full"
-                  style={{
-                    width: animatedHearts.interpolate({
-                      inputRange: [0, MAX_HEARTS],
-                      outputRange: ['1%', '100%'],
-                      extrapolate: 'clamp',
-                    }),
-                  }}
-                />
-              </View>
-            </View>
-          </View>
-
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', }}>
-            <Image source={require('../assets/icons/starIcon.png')} tintColor={'#FF8800'} className="w-7 h-7" />
-            <View style={{ width: '92%' }}>
-              <View className="h-2 bg-orange/25 rounded-full overflow-hidden " >
-                <Animated.View
-                  className="h-full bg-orange rounded-full"
-                  style={{
-                    width: animatedXP.interpolate({
-                      inputRange: [0, 100],
-                      outputRange: ['1%', '100%'],
-                      extrapolate: 'clamp',
-                    }),
-                  }}
-                />
-              </View>
-            </View>
-          </View>
-          <Animated.View style={{ opacity: animatedBlueOpacity, width: '100%', }}>
-            <PrimaryButton
-              title="Pray about this verse"
-              onPress={() => { }}
-              buttonType="blue"
-              icon={require('../assets/icons/starIcon.png')}
-              reward={"+25"}
-              disabled={!buttonsEnabled}
-            />
-          </Animated.View>
-
-          <Animated.View style={{ opacity: animatedGoldOpacity, width: '100%' }}>
-            <TouchableOpacity
-              onPress={() => {
-
-                console.log('🔴 Finish Reading button pressed');
-
-                // Update lastActivityDate to prevent completion states from being reset
-                const now = firestore.Timestamp.now();
-                const setLastActivityDate = useUserStore.getState().setLastActivityDate;
-                const setLastReadingDate = useUserStore.getState().setLastReadingDate;
-                console.log('🔴 Updating lastActivityDate and lastReadingDate to:', now.toDate());
-                setLastActivityDate(now);
-                setLastReadingDate(now);
-
-                // Mark reading as completed
-                const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
-                console.log('🔴 Before setting readingCompleted:', useHomeStore.getState().readingCompleted);
-                setReadingCompleted(true);
-                console.log('🔴 After setting readingCompleted:', useHomeStore.getState().readingCompleted);
-
-
-                setShowSuccess(false);
-                setIsRewarding(false);
-                if (onClose) {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                  setFinishReading(false)
-                  // Show tab bar again
-                  const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
-                  setDevotionalReaderVisible(false);
-                  onClose();
-                }
-              }}
-              className="w-full h-[52px] self-center bg-gold rounded-full mt-2 items-center justify-center"
-              disabled={!buttonsEnabled}
-            >
-              <Text className="font-feather-bold text-brown/80 text-xl text-center">Go Home</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </Reanimated.View>
+        <SuccessMessage
+          key={`success-${levelInfo.level}-${prevLevelRef.current}`}
+          title="Reading Complete!"
+          level={levelInfo.level}
+          prevLevel={prevLevelRef.current}
+          buttonsEnabled={buttonsEnabled}
+          onGoHome={() => {
+            const now = firestore.Timestamp.now();
+            const setLastActivityDate = useUserStore.getState().setLastActivityDate;
+            const setLastReadingDate = useUserStore.getState().setLastReadingDate;
+            setLastActivityDate(now);
+            setLastReadingDate(now);
+            const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
+            setReadingCompleted(true);
+            setShowSuccess(false);
+            setIsRewarding(false);
+            if (onClose) {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setFinishReading(false)
+              const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
+              setDevotionalReaderVisible(false);
+              onClose();
+            }
+          }}
+          onPray={() => { /* handle pray action here */ }}
+        />
       ) : (
         <View style={{ flex: 1 }}>
           {/* Header */}

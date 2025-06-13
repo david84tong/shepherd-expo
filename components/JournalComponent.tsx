@@ -11,8 +11,6 @@ import {
   Dimensions,
   Animated,
   ActivityIndicator,
-  TouchableOpacity,
-  Image,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PrimaryButton from './PrimaryButton';
@@ -23,6 +21,7 @@ import { BIBLE_BOOK_IDS } from '../app/models/Path';
 import analytics from '~/utils/analytics';
 import CircleButton from './Shared/CircleButton';
 import { getLevelData } from '~/utils/levelUtils';
+import SuccessMessage from './SuccessMessage';
 
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
@@ -426,69 +425,15 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishR
 
   return success ? (
     <Animated.View
-      className="flex w-full items-center px-6"
-      style={{ opacity: containerOpacity }}
+      className="flex-1 w-full"
+      style={{ opacity: containerOpacity,paddingHorizontal: 24 }}
       pointerEvents="box-none">
-
-      <Animated.Text
-        className="font-feather-bold mt-16 text-[26px] text-center mb-1 text-brown/90"
-        style={{ opacity: animatedTextOpacity }}
-      >
-        Reflection Complete!
-      </Animated.Text>
-      <Text className="font-din text-[17px]  text-brown/90 text-center mb-4" >
-        Hurray! You finished today&apos;s bible reading & fed your lamb
-      </Text>
-      <Text className="font-nunito-black mt-10 text-[13px] text-center mb-2 tracking-wider uppercase text-brown/50">
-        REFLECTION REWARDS
-      </Text>
-
-      <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text className="font-nunito-black mr-2   text-[15px] text-center   text-brown/50">
-          +3 Heards
-        </Text>
-        <Image source={require('../assets/icons/heartIcon.png')} className="w-7 h-7" />
-        <View style={{ width: '70%' }}>
-          <View className="h-2 bg-red/25 rounded-md overflow-hidden">
-            <Animated.View
-              className="h-full bg-red rounded-full"
-              style={{
-                width: animatedHearts.interpolate({
-                  inputRange: [0, MAX_HEARTS],
-                  outputRange: ['1%', '100%'],
-                  extrapolate: 'clamp',
-                }),
-              }}
-            />
-          </View>
-        </View>
-      </View>
-
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: 60 }}>
-        <Text className="font-nunito-black mr-3  text-[15px] text-center    text-brown/50">
-          +3 Points
-        </Text>
-        <Image source={require('../assets/icons/starIcon.png')} tintColor={'#FF8800'} className="w-7 h-7" />
-        <View style={{ width: '70%' }}>
-          <View className="h-2 bg-orange/25 rounded-full overflow-hidden " >
-            <Animated.View
-              className="h-full bg-orange rounded-full"
-              style={{
-                width: animatedXP.interpolate({
-                  inputRange: [0, 100],
-                  outputRange: ['1%', '100%'],
-                  extrapolate: 'clamp',
-                }),
-              }}
-            />
-          </View>
-        </View>
-      </View>
-
-
-      <Animated.View style={{ opacity: animatedGoldOpacity, width: '100%' }}>
-        <TouchableOpacity
-          onPress={() => {
+        <SuccessMessage
+          title="Reflection Complete!"
+          level={levelInfo.level}
+          prevLevel={levelInfo.level}
+          buttonsEnabled={buttonsEnabled}
+          onGoHome={() => {
             setFinishReading(false)
 
             if (readingCompleted && prayerCompleted && !sawDailyBonus) {
@@ -497,81 +442,88 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishR
               setSuccessType(SuccessAnimationType.REFLECTION);
             }
 
-            // // Navigate to success screen
+            // Navigate to success screen
             router.push('/success');
           }}
-          className="w-full h-[52px] self-center bg-gold rounded-full mt-2 items-center justify-center"
-          disabled={!buttonsEnabled}
-        >
-          <Text className="font-feather-bold text-brown/80 text-xl text-center">Collect Bonus</Text>
-        </TouchableOpacity>
-      </Animated.View>
-    </Animated.View>) : (
-    <Animated.View
-      className="flex w-full items-center px-2"
-      style={{ opacity: containerOpacity }}
-      pointerEvents="box-none">
-      <Text className="text-[20px]  text-brown/40 mb-4 mt-4 text-center leading-tight font-semibold">
-        Time to reflect
-      </Text>
-
-      <Text className="text-[20px] font-feather text-brown/90 mb-6 text-center leading-tight">
-        What practical step can deepen your daily delight in Scripture?
-      </Text>
-
-      {/* Animated Card with TextInput */}
-      <View className="w-full min-h-[230px] bg-[#FFF4D9] border-[3px] border-gold/70  p-5  mb-2" style={{ borderRadius: 20 }}>
-        <TextInput
-          ref={inputRef}
-          className="w-full bg-transparent text-brown/95 text-[18px] font-nunito-medium  min-h-[150px] text-left"
-          placeholder={getPlaceholderText()}
-          placeholderTextColor="#B89B4C"
-          multiline
-          textAlignVertical="top"
-          scrollEnabled={true}
-          style={{ flex: 1, padding: 0 }}
-          value={reflectionContent}
-          onChangeText={setReflectionContent}
-          maxLength={300}
+          onPray={() => {}}
+          prayButtonTitle=""
+          hidePrayButton
+          homeButtonTitle="Collect Bonus"
+          rewardsTitle="REFLECTION REWARDS"
         />
-      </View>
-
-      <Text className="text-[14px]  text-brown/40 mb-4 mt-1 text-center leading-tight font-semibold">
-        {`${300 - charCount} characters left`}
-      </Text>
-
-      {/* Animated Bottom Content (Rive + Button) */}
-      <Animated.View
-        className=" flex-row items-center justify-between" style={{ width: '100%' }}>
-        <Animated.View style={{ width: '10%', }}>
-          <CircleButton icon='chevron-left' size={53} onPress={() => {
-            setPathInProgress(false);
-            analytics.logEvent('Journal_Tapped_Cancel', {
-              prompt: currentPath?.reflection,
-            });
-            useHomeStore.getState().setTappedReflectAboutVerse(false);
-            console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
-            onClose();
-          }} />
-        </Animated.View>
-
-        <Animated.View style={{ width: '82%', }}>
-          <PrimaryButton
-            title="Save Thoughts"
-            onPress={() => {
-              console.log('Small device Save button pressed');
-              handleSave()
-            }}
-            buttonType="blue"
-            icon={require('../assets/icons/starIcon.png')}
-            reward={"+25"}
-            disabled={!isButtonEnabled}
-          />
-        </Animated.View>
-      </Animated.View>
 
     </Animated.View>
+  ) : (
+    <Animated.View
+      className="flex-1 w-full"
+      style={{ opacity: containerOpacity }}
+      pointerEvents="box-none">
+      <View className="flex-1 px-6">
+        <Text className="text-[20px] text-brown/40 mb-4 mt-4 text-center leading-tight font-semibold">
+          Time to reflect
+        </Text>
 
+        <Text className="text-[20px] font-feather text-brown/90 mb-6 text-center leading-tight">
+          What practical step can deepen your daily delight in Scripture?
+        </Text>
+
+        {/* Animated Card with TextInput */}
+        <View className="w-full min-h-[230px] bg-[#FFF4D9] border-[3px] border-gold/70 p-5 mb-2" style={{ borderRadius: 20 }}>
+          <TextInput
+            ref={inputRef}
+            className="w-full bg-transparent text-brown/95 text-[18px] font-nunito-medium min-h-[150px] text-left"
+            placeholder={getPlaceholderText()}
+            placeholderTextColor="#B89B4C"
+            multiline
+            textAlignVertical="top"
+            scrollEnabled={true}
+            style={{ flex: 1, padding: 0 }}
+            value={reflectionContent}
+            onChangeText={setReflectionContent}
+            maxLength={300}
+          />
+        </View>
+
+        <Text className="text-[14px] text-brown/40 mb-4 mt-1 text-center leading-tight font-semibold">
+          {`${300 - charCount} characters left`}
+        </Text>
+
+        {/* Animated Bottom Content (Rive + Button) */}
+        <Animated.View
+          className="flex-row items-center justify-between w-full"
+          style={bottomContentStyle}>
+          <Animated.View style={{ width: '10%' }}>
+            <CircleButton 
+              icon='chevron-left' 
+              size={53} 
+              onPress={() => {
+                setPathInProgress(false);
+                analytics.logEvent('Journal_Tapped_Cancel', {
+                  prompt: currentPath?.reflection,
+                });
+                useHomeStore.getState().setTappedReflectAboutVerse(false);
+                console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
+                onClose();
+              }} 
+            />
+          </Animated.View>
+
+          <Animated.View style={{ width: '82%' }}>
+            <PrimaryButton
+              title="Save Thoughts"
+              onPress={() => {
+                console.log('Small device Save button pressed');
+                handleSave()
+              }}
+              buttonType="blue"
+              icon={require('../assets/icons/starIcon.png')}
+              reward={"+25"}
+              disabled={!isButtonEnabled}
+            />
+          </Animated.View>
+        </Animated.View>
+      </View>
+    </Animated.View>
   );
 };
 

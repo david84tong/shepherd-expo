@@ -9,7 +9,6 @@ import {
   Modal,
   Switch,
   Animated,
-  Image,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePrayerStore } from '~/app/stores/prayerStore';
@@ -34,7 +33,7 @@ import analytics from '../utils/analytics';
 import CircleButton from './Shared/CircleButton';
 import BluePrimaryButton from './Shared/BluePrimaryButton';
 import { getLevelData } from '~/utils/levelUtils';
-import PrimaryButton from './PrimaryButton';
+import SuccessMessage from './SuccessMessage';
 
 // AsyncStorage keys for prayer settings
 const PRAYER_HAPTICS_KEY = 'prayer_haptics_enabled';
@@ -842,315 +841,233 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
 
   return (
     <Reanimated.View style={[{ flex: 1, borderRadius: 24 }, animatedBackgroundStyle]}>
-   { showSuccess ?    <View style={{ paddingHorizontal: 24 }} className="flex-1 items-center ">
+      {showSuccess ? (
+       <View style={{marginHorizontal: 24,flex:1}}>
+         <SuccessMessage
+          title="Prayer Complete!"
+          level={levelInfo.level}
+          prevLevel={levelInfo.level}
+          buttonsEnabled={buttonsEnabled}
+          onGoHome={() => {
+            // Update lastActivityDate to prevent completion states from being reset
+            setFinishReading(false)
+            const now = firestore.Timestamp.now();
+            const setLastActivityDate = useUserStore.getState().setLastActivityDate;
+            const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
+            setLastActivityDate(now);
+            setLastPrayerDate(now);
 
+            // Mark prayer as completed
+            const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
+            setPrayerCompleted(true);
 
-        <Animated.Text
-          className="font-feather-bold mt-10 text-[26px] text-center mb-1 text-brown/90"
-          style={{ opacity: animatedTextOpacity }}
-        >
-          Prayer Complete!
-        </Animated.Text>
-        <Text className="font-din text-[18px]  text-brown/90 text-center mb-4" >
-          Hurray! You finished today's bible reading & fed your lamb
-        </Text>
-        <Text className=" font-nunito-black mt-10 text-[13px] text-center mb-2 tracking-wider uppercase text-brown/50">
-          READING REWARDS
-        </Text>
+            // Show tab bar again
+            const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
+            setPrayerViewVisible(false);
 
-        <View style={{ width: '100%', flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <Text className="font-nunito-black mr-2   text-[15px] text-center   text-brown/50">
-            +3 Heards
-          </Text>
-          <Image source={require('../assets/icons/heartIcon.png')} className="w-7 h-7" />
-          <View style={{ width: '70%' }}>
-            <View className="h-2 bg-red/25 rounded-md overflow-hidden">
-              <Animated.View
-                className="h-full bg-red rounded-full"
-                style={{
-                  width: animatedHearts.interpolate({
-                    inputRange: [0, MAX_HEARTS],
-                    outputRange: ['1%', '100%'],
-                    extrapolate: 'clamp',
-                  }),
-                }}
-              />
-            </View>
-          </View>
-        </View>
+            // Log completion analytics
+            analytics.logEvent('PrayerView_Completed', {
+              prayerTopic: recentPrayers[0] || 'general',
+              totalCards: totalCards,
+            });
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', marginBottom: 30 }}>
-          <Text className="font-nunito-black mr-3  text-[15px] text-center    text-brown/50">
-            +3 Points
-          </Text>
-          <Image source={require('../assets/icons/starIcon.png')} tintColor={'#FF8800'} className="w-7 h-7" />
-          <View style={{ width: '70%' }}>
-            <View className="h-2 bg-orange/25 rounded-full overflow-hidden " >
-              <Animated.View
-                className="h-full bg-orange rounded-full"
-                style={{
-                  width: animatedXP.interpolate({
-                    inputRange: [0, 100],
-                    outputRange: ['1%', '100%'],
-                    extrapolate: 'clamp',
-                  }),
-                }}
-              />
-            </View>
-          </View>
-        </View>
-        <Animated.View style={{ opacity: animatedBlueOpacity, width: '100%', }}>
-          <PrimaryButton
-            title="Pray about this verse"
-            onPress={() => { }}
-            buttonType="blue"
-            icon={require('../assets/icons/starIcon.png')}
-            reward={"+25"}
-            disabled={!buttonsEnabled}
-          />
-        </Animated.View>
-
-        <Animated.View style={{ opacity: animatedGoldOpacity, width: '100%' }}>
-          <TouchableOpacity
-            onPress={() => {
-              // Update lastActivityDate to prevent completion states from being reset
-              setFinishReading(false)
-              const now = firestore.Timestamp.now();
-              const setLastActivityDate = useUserStore.getState().setLastActivityDate;
-              const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
-              setLastActivityDate(now);
-              setLastPrayerDate(now);
-
-              // Mark prayer as completed
-              const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
-              setPrayerCompleted(true);
-
-              // Show tab bar again
-              const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
-              setPrayerViewVisible(false);
-
-              // Log completion analytics
-              analytics.logEvent('PrayerView_Completed', {
-                prayerTopic: recentPrayers[0] || 'general',
-                totalCards: totalCards,
-              });
-
-              // Close the prayer view
-              if (onSetIdle) onSetIdle();
-              if (onClose) {
-                if (hapticsEnabled) {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                }
-                onClose();
+            // Close the prayer view
+            if (onSetIdle) onSetIdle();
+            if (onClose) {
+              if (hapticsEnabled) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               }
-            }}
-            className="w-full h-[52px] self-center bg-gold rounded-full mt-2 items-center justify-center"
-            disabled={!buttonsEnabled}
-          >
-            <Text className="font-feather-bold text-brown/80 text-xl text-center">Go Home</Text>
-          </TouchableOpacity>
-        </Animated.View>
-      </View> : <>
-        {/* Header */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 16, marginTop: 24 }}>
-          <Text
-            className="font-feather-bold text-textPrimary"
-            style={{
-              fontSize: responsiveFontSize(2.5),
-              fontWeight: "400",
-            }}
-          >
-            {/* Prayer Time */}
-          </Text>
-
-          {/* Close button */}
-
-        </View>
-
-        {/* Date Header */}
-        <View className="flex-row items-center justify-center mb-2">
-          <Text className="font-din text-textPrimary/40 text-center text-xl">
-            John 14:6
-          </Text>
-        </View>
-
-        {/* Progress bar */}
-        {/* <View style={{ height: 8, borderRadius: 4, marginBottom: 12, overflow: 'hidden' }} className='bg-brown/10'>
-        <Reanimated.View
-          style={[
-            {
-              height: '100%',
-              backgroundColor: '#06B6FE',
-              borderRadius: 4,
-            },
-            animatedProgressStyle,
-          ]}
+              onClose();
+            }
+          }}
+          onPray={() => {}}
+          prayButtonTitle="Reflect on this verse"
+          rewardsTitle="PRAYER REWARDS"
         />
-      </View> */}
+       </View>
+      ) : (
+        <>
+          {/* Header */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 16, marginTop: 24 }}>
+            <Text
+              className="font-feather-bold text-textPrimary"
+              style={{
+                fontSize: responsiveFontSize(2.5),
+                fontWeight: "400",
+              }}
+            >
+              {/* Prayer Time */}
+            </Text>
+          </View>
 
-        {/* Breathing Animation - Show initially */}
-        {showBreathingAnimation && (
-          <TouchableWithoutFeedback onPress={toggleControlRow}>
-            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -280 }}>
-              <BreathingAnimation isActive={showBreathingAnimation} breathingProgress={breathingProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} />
+          {/* Date Header */}
+          <View className="flex-row items-center justify-center mb-2">
+            <Text className="font-din text-textPrimary/40 text-center text-xl">
+              John 14:6
+            </Text>
+          </View>
 
-              {/* Control Row - appears on tap */}
-              {showControlRow && (
-                <Reanimated.View
-                  style={[
-                    {
-                      position: 'absolute',
-                      top: SCREEN_WIDTH * 1.45,
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      width: '100%',
-                      alignSelf: 'center',
-                      paddingHorizontal: 32,
-                      zIndex: 10,
+          {/* Breathing Animation - Show initially */}
+          {showBreathingAnimation && (
+            <TouchableWithoutFeedback onPress={toggleControlRow}>
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -280 }}>
+                <BreathingAnimation isActive={showBreathingAnimation} breathingProgress={breathingProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} />
 
-                    },
-                    controlRowAnimatedStyle
-                  ]}
-                  onLayout={() => console.log('🔍 Control row is being rendered!')}
-                >
-                  {/* Back/Left Button */}
-                  <CircleButton
-                    icon="chevron-left"
-                    size={50}
-                    hapticsEnabled={hapticsEnabled}
-                    onPress={() => {
-                      if (onSetIdle) onSetIdle();
-                      if (onClose) onClose();
-                    }}
-                  />
+                {/* Control Row - appears on tap */}
+                {showControlRow && (
+                  <Reanimated.View
+                    style={[
+                      {
+                        position: 'absolute',
+                        top: SCREEN_WIDTH * 1.45,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        alignSelf: 'center',
+                        paddingHorizontal: 32,
+                        zIndex: 10,
+                      },
+                      controlRowAnimatedStyle
+                    ]}
+                    onLayout={() => console.log('🔍 Control row is being rendered!')}
+                  >
+                    {/* Back/Left Button */}
+                    <CircleButton
+                      icon="chevron-left"
+                      size={50}
+                      hapticsEnabled={hapticsEnabled}
+                      onPress={() => {
+                        if (onSetIdle) onSetIdle();
+                        if (onClose) onClose();
+                      }}
+                    />
 
-                  {/* Complete Prayer Button */}
-                  <BluePrimaryButton
-                    title="Complete Prayer"
-                    width="60%"
-                    onPress={() => {
-                      setShowBreathingAnimation(false);
-                    }}
-                    hapticsEnabled={hapticsEnabled}
-                    disabled={completePrayerDisabled}
-                  />
+                    {/* Complete Prayer Button */}
+                    <BluePrimaryButton
+                      title="Complete Prayer"
+                      width="60%"
+                      onPress={() => {
+                        setShowBreathingAnimation(false);
+                      }}
+                      hapticsEnabled={hapticsEnabled}
+                      disabled={completePrayerDisabled}
+                    />
 
-                  {/* Settings/Gear Button */}
-                  <CircleButton
-                    icon="settings"
-                    size={50}
-                    hapticsEnabled={hapticsEnabled}
-                    onPress={() => {
-                      console.log('⚙️ Settings button pressed');
-                      // Clear any hide timers when opening settings
-                      if (hideTimeoutRef.current) {
-                        clearTimeout(hideTimeoutRef.current);
-                        hideTimeoutRef.current = null;
-                      }
-                      setShowSettingsModal(true);
-                    }}
-                  />
-                </Reanimated.View>
-              )}
-            </View>
-          </TouchableWithoutFeedback>
-        )}
-
-        {/* Cards ScrollView - Show after breathing animation */}
-        {!showBreathingAnimation && (
-          <ScrollView
-            ref={scrollViewRef}
-            className="flex-1"
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: 160 }}
-            scrollEventThrottle={16}>
-            {currentIndex < totalCards - 1 ? (
-              <TouchableWithoutFeedback onPress={handleNextCard}>
-                <View style={{ minHeight: 200 }}>
-                  {cardsToShow.length === 0 ? (
-                    <Text className="text-brown text-center">No prayer content to display</Text>
-                  ) : (
-                    <>
-                      {cardsToShow.map((card, index) => {
-                        console.log('🎨 Rendering prayer card:', index, card.type, card.content.substring(0, 50));
-                        return (
-                          <PrayerCard
-                            key={index}
-                            card={card}
-                            index={index}
-                            isLast={index === cardsToShow.length - 1}
-                            breathingProgress={breathingProgress}
-                            fontSize={fontSize}
-                            skipTyping={skipTyping}
-                            onTypingComplete={handleTypingComplete}
-                          />
-                        );
-                      })}
-                    </>
-                  )}
-
-                  {/* Tap guidance or finish button */}
-                  <View style={{ alignItems: 'center', marginTop: 12 }}>
-                    {showTapGuidance && (
-                      <Text style={{
-                        color: '#0369a1',
-                        fontFamily: 'DIN Next Rounded LT W01 Regular',
-                        fontSize: 14,
-                        opacity: 0.7,
-                      }}>
-                        {isTypingComplete ? 'Tap for next →' : 'Tap to show full text'}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-              </TouchableWithoutFeedback>
-            ) : (
-              <View style={{ minHeight: 200 }}>
-                {cardsToShow.map((card, index) => (
-                  <PrayerCard
-                    key={index}
-                    card={card}
-                    index={index}
-                    isLast={index === cardsToShow.length - 1}
-                    breathingProgress={breathingProgress}
-                    fontSize={fontSize}
-                    skipTyping={skipTyping}
-                    onTypingComplete={handleTypingComplete}
-                  />
-                ))}
-                <TouchableOpacity
-                  onPress={() => {
-                    setFinishReading(true)
-                    setShowSuccess(true);
-                  }}
-                  activeOpacity={0.8}>
-                  <View style={{
-                    backgroundColor: '#06B6FE',
-                    paddingVertical: 12,
-                    alignItems: 'center',
-                    marginTop: 16,
-                    borderRadius: 12,
-                  }}>
-                    <Text style={{
-                      color: 'white',
-                      fontFamily: 'Feather Bold',
-                      fontSize: 16,
-                    }}>
-                      Amen 🙏
-                    </Text>
-                  </View>
-                </TouchableOpacity>
+                    {/* Settings/Gear Button */}
+                    <CircleButton
+                      icon="settings"
+                      size={50}
+                      hapticsEnabled={hapticsEnabled}
+                      onPress={() => {
+                        console.log('⚙️ Settings button pressed');
+                        // Clear any hide timers when opening settings
+                        if (hideTimeoutRef.current) {
+                          clearTimeout(hideTimeoutRef.current);
+                          hideTimeoutRef.current = null;
+                        }
+                        setShowSettingsModal(true);
+                      }}
+                    />
+                  </Reanimated.View>
+                )}
               </View>
-            )}
-          </ScrollView>
-        )}
-      </>}
+            </TouchableWithoutFeedback>
+          )}
+
+          {/* Cards ScrollView - Show after breathing animation */}
+          {!showBreathingAnimation && (
+            <ScrollView
+              ref={scrollViewRef}
+              className="flex-1"
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 160 }}
+              scrollEventThrottle={16}>
+              {currentIndex < totalCards - 1 ? (
+                <TouchableWithoutFeedback onPress={handleNextCard}>
+                  <View style={{ minHeight: 200 }}>
+                    {cardsToShow.length === 0 ? (
+                      <Text className="text-brown text-center">No prayer content to display</Text>
+                    ) : (
+                      <>
+                        {cardsToShow.map((card, index) => {
+                          console.log('🎨 Rendering prayer card:', index, card.type, card.content.substring(0, 50));
+                          return (
+                            <PrayerCard
+                              key={index}
+                              card={card}
+                              index={index}
+                              isLast={index === cardsToShow.length - 1}
+                              breathingProgress={breathingProgress}
+                              fontSize={fontSize}
+                              skipTyping={skipTyping}
+                              onTypingComplete={handleTypingComplete}
+                            />
+                          );
+                        })}
+                      </>
+                    )}
+
+                    {/* Tap guidance or finish button */}
+                    <View style={{ alignItems: 'center', marginTop: 12 }}>
+                      {showTapGuidance && (
+                        <Text style={{
+                          color: '#0369a1',
+                          fontFamily: 'DIN Next Rounded LT W01 Regular',
+                          fontSize: 14,
+                          opacity: 0.7,
+                        }}>
+                          {isTypingComplete ? 'Tap for next →' : 'Tap to show full text'}
+                        </Text>
+                      )}
+                    </View>
+                  </View>
+                </TouchableWithoutFeedback>
+              ) : (
+                <View style={{ minHeight: 200 }}>
+                  {cardsToShow.map((card, index) => (
+                    <PrayerCard
+                      key={index}
+                      card={card}
+                      index={index}
+                      isLast={index === cardsToShow.length - 1}
+                      breathingProgress={breathingProgress}
+                      fontSize={fontSize}
+                      skipTyping={skipTyping}
+                      onTypingComplete={handleTypingComplete}
+                    />
+                  ))}
+                  <TouchableOpacity
+                    onPress={() => {
+                      setFinishReading(true)
+                      setShowSuccess(true);
+                    }}
+                    activeOpacity={0.8}>
+                    <View style={{
+                      backgroundColor: '#06B6FE',
+                      paddingVertical: 12,
+                      alignItems: 'center',
+                      marginTop: 16,
+                      borderRadius: 12,
+                    }}>
+                      <Text style={{
+                        color: 'white',
+                        fontFamily: 'Feather Bold',
+                        fontSize: 16,
+                      }}>
+                        Amen 🙏
+                      </Text>
+                    </View>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </ScrollView>
+          )}
+        </>
+      )}
 
       {/* Settings Modal */}
       <SettingsModal />
-
-      {/* Completion Modal */}
     </Reanimated.View>
   );
 };
