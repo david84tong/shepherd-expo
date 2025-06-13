@@ -15,7 +15,8 @@ import { useHomeStore } from '~/app/stores/homeStore';
 import { Feather, FontAwesome } from '@expo/vector-icons';
 import firestore from '@react-native-firebase/firestore';
 import Reanimated, {
-  FadeInUp,
+  FadeIn,
+  SlideInDown,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -31,57 +32,6 @@ import { RPH } from '~/app/helper/helper';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
-interface TypingTextProps {
-  text: string;
-  className?: string;
-  baseTextStyle: object;
-  speed?: number;
-  onComplete?: () => void;
-  skipAnimation?: boolean;
-}
-
-const TypingText: React.FC<TypingTextProps> = ({
-  text,
-  className,
-  baseTextStyle,
-  speed = 30,
-  onComplete,
-  skipAnimation = false,
-}) => {
-  const [displayedText, setDisplayedText] = useState('');
-  const indexRef = useRef(0);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    if (skipAnimation) {
-      setDisplayedText(text);
-      onComplete && onComplete();
-      return;
-    }
-    setDisplayedText('');
-    indexRef.current = 0;
-    const typeNextChar = () => {
-      if (indexRef.current < text.length) {
-        indexRef.current++;
-        setDisplayedText(text.substring(0, indexRef.current));
-        timerRef.current = setTimeout(typeNextChar, speed);
-      } else {
-        onComplete && onComplete();
-      }
-    };
-    timerRef.current = setTimeout(typeNextChar, 0);
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, [text, speed, skipAnimation, onComplete]);
-
-  return (
-    <Text style={baseTextStyle} className={className}>
-      {displayedText}
-    </Text>
-  );
-};
-
 interface DevotionalReaderProps {
   visible?: boolean;
   onClose?: () => void;
@@ -92,8 +42,6 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
   const { currentDevotional, isLoading } = useDevotionalStore();
   const devotionalError = useDevotionalStore().error;
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [skipTyping, setSkipTyping] = useState(false);
-  const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [showTapGuidance, setShowTapGuidance] = useState(true);
   const [tapCount, setTapCount] = useState(0);
   const [contextSentences, setContextSentences] = useState<string[]>([]);
@@ -298,15 +246,8 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
       }
     }
 
-    if (!isTypingComplete) {
-      setSkipTyping(true);
-      return;
-    }
-
     if (currentIndex < totalCards - 1) {
       setCurrentIndex(i => i + 1);
-      setSkipTyping(false);
-      setIsTypingComplete(false);
       setTimeout(scrollToBottom, 150);
     } else {
       // Reached the end - close the reader
@@ -315,11 +256,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
         onClose();
       }
     }
-  }, [currentIndex, totalCards, isTypingComplete, scrollToBottom, showTapGuidance, tapCount, onClose]);
-
-  const handleTypingComplete = useCallback(() => {
-    setIsTypingComplete(true);
-  }, []);
+  }, [currentIndex, totalCards, scrollToBottom, showTapGuidance, tapCount, onClose]);
 
   const animatedProgressStyle = useAnimatedStyle(() => {
     return { width: `${progressValue.value * 100}%` };
@@ -532,7 +469,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
             ref={scrollViewRef}
             className="flex-1"
             showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ 
+            contentContainerStyle={{
               paddingBottom: RPH(35),
               flexGrow: 1,
               justifyContent: 'flex-start',
@@ -553,13 +490,19 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
                       return (
                         <Reanimated.View
                           key={index}
-                          entering={FadeInUp.duration(300).delay(index * 60)}
+                          entering={SlideInDown.duration(1000).delay(index * 60).withInitialValues({ opacity: 0 })}
                           layout={Layout.springify()}
                           style={{ marginBottom: 12 }}>
                           <View className="bg-surfaceCreamLight" style={{
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 1 },
+                            shadowOpacity: 0.05,
+                            shadowRadius: 2,
+                            elevation: 1,
                             padding: 14,
-                            borderRadius: 12,
-                            backgroundColor: card.type === 'verse' ? "#fff1c9" : "#ffe8b3",
+                            borderRadius: 20,
+                            borderWidth: 2,
+                            borderColor: 'rgba(121, 83, 35, 0.1)',
                           }}>
                             {/* Bible reference for verse card */}
                             {card.type === 'verse' && card.reference && (
@@ -571,26 +514,11 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
                               </Text>
                             )}
 
-                            {/* Card content with typing animation */}
-                            <View>
-                              {index === cardsToShow.length - 1 ? (
-                                <TypingText
-                                  text={card.content}
-                                  className='text-brown/90'
-                                  baseTextStyle={{ color: '#795323', fontSize: fontSize, lineHeight: fontSize * 1.5, fontFamily: 'DIN Next Rounded LT W01 Regular' }}
-                                  speed={20}
-                                  skipAnimation={skipTyping}
-                                  onComplete={handleTypingComplete}
-                                />
-                              ) : (
-                                <Text
-                                  className='text-brown/90 font-din'
-                                  style={{ fontSize: fontSize, lineHeight: fontSize * 1.5 }}
-                                >
-                                  {card.content}
-                                </Text>
-                              )}
-                            </View>
+                            {/* Card content */}
+                            <Text className="text-[18px] leading-[25px] font-nunito-bold " >
+                              <Text className="text-brown/40">{index + 1}.</Text>
+                              <Text className="text-brown/70">  {card.content}</Text>
+                            </Text>
                           </View>
                         </Reanimated.View>
                       );
@@ -608,7 +536,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
                         fontSize: 14,
                         opacity: 0.7,
                       }}>
-                        {isTypingComplete ? 'Tap for next →' : 'Tap to show full text'}
+                        Tap for next →
                       </Text>
                     )}
                   </View>
