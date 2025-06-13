@@ -12,15 +12,15 @@ import {
 } from 'react-native';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { useHomeStore } from '~/app/stores/homeStore';
-import { Feather, FontAwesome } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import firestore from '@react-native-firebase/firestore';
 import Reanimated, {
-  FadeIn,
   SlideInDown,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
   Layout,
+  withSpring,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
@@ -63,6 +63,8 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
 
   // Animation values
   const progressValue = useSharedValue(0);
+  const successViewOpacity = useSharedValue(0);
+  const successViewScale = useSharedValue(0.8);
   const scrollViewRef = useRef<ScrollView>(null);
 
   const levelInfo = useMemo(() => {
@@ -83,56 +85,76 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
   const animatedBlueOpacity = useRef(new Animated.Value(0.3)).current;
   const animatedGoldOpacity = useRef(new Animated.Value(0.4)).current;
 
-  // Delayed progress animation for success view
+  // Success view animated style
+  const successViewAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: successViewOpacity.value,
+      transform: [{ scale: successViewScale.value }],
+    };
+  });
+
+  // Cleaner success view animation
   useEffect(() => {
     if (showSuccess) {
+      // Animate success view in with spring effect (slower)
+      successViewOpacity.value = withTiming(1, { duration: 900 });
+      successViewScale.value = withSpring(1, { damping: 20, stiffness: 80 });
+      
+      // Reset and animate progress bars
       animatedXP.setValue(0);
       animatedHearts.setValue(0);
       animatedTextOpacity.setValue(0.4);
+      
       if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
-      progressTimeoutRef.current = setTimeout(() => {
-        Animated.timing(animatedXP, {
-          toValue: levelInfo.progress,
-          duration: 1200,
-          useNativeDriver: false,
-        }).start();
-        Animated.timing(animatedHearts, {
-          toValue: lambHearts,
-          duration: 1200,
-          useNativeDriver: false,
-        }).start();
-        setTimeout(() => {
-          Animated.timing(animatedTextOpacity, {
-            toValue: 1,
-            duration: 400,
-            useNativeDriver: false,
-          }).start();
-          setTimeout(() => {
-            // Animate the opacity changes
-            Animated.timing(animatedBlueOpacity, {
+              progressTimeoutRef.current = setTimeout(() => {
+          // Animate progress bars (slower)
+          Animated.parallel([
+            Animated.timing(animatedXP, {
+              toValue: levelInfo.progress,
+              duration: 1400,
+              useNativeDriver: false,
+            }),
+            Animated.timing(animatedHearts, {
+              toValue: lambHearts,
+              duration: 1400,
+              useNativeDriver: false,
+            }),
+            Animated.timing(animatedTextOpacity, {
               toValue: 1,
-              duration: 500,
-              useNativeDriver: true,
-            }).start();
-
-            Animated.timing(animatedGoldOpacity, {
-              toValue: 1,
-              duration: 500,
-              useNativeDriver: true,
-            }).start();
-
-            // Still update the state for disabled/enabled logic
-            setButtonsEnabled(true);
-            setBlueButtonOpacity(1);
-            setGoldButtonOpacity(1);
-          }, 1000);
-        }, 1200);
-      }, 500);
+              duration: 800,
+              useNativeDriver: false,
+            }),
+          ]).start(() => {
+            // Enable buttons after progress animation
+            setTimeout(() => {
+              Animated.parallel([
+                Animated.timing(animatedBlueOpacity, {
+                  toValue: 1,
+                  duration: 600,
+                  useNativeDriver: true,
+                }),
+                Animated.timing(animatedGoldOpacity, {
+                  toValue: 1,
+                  duration: 600,
+                  useNativeDriver: true,
+                }),
+              ]).start();
+              
+              setButtonsEnabled(true);
+              setBlueButtonOpacity(1);
+              setGoldButtonOpacity(1);
+            }, 300);
+          });
+        }, 500);
     } else {
+      // Animate success view out
+      successViewOpacity.value = withTiming(0, { duration: 300 });
+      successViewScale.value = withTiming(0.8, { duration: 300 });
+      
+      // Reset values
       animatedXP.setValue(0);
       animatedHearts.setValue(0);
       animatedTextOpacity.setValue(0.4);
-      // Reset to default opacity values
       animatedBlueOpacity.setValue(0.3);
       animatedGoldOpacity.setValue(0.4);
       setButtonsEnabled(false);
@@ -140,6 +162,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
       setGoldButtonOpacity(0.4);
       if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
     }
+    
     // Cleanup on unmount
     return () => {
       if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
@@ -316,7 +339,10 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
   return (
     <View style={{ flex: 1, margin: 12, marginHorizontal: 24 }}>
       {showSuccess ? (
-        <View className="flex-1 items-center ">
+        <Reanimated.View 
+          className="flex-1 items-center" 
+          style={successViewAnimatedStyle}
+        >
           <View className="mb-0 mt-6">
             <Image source={require("../assets/icons/rocket.png")} style={{ width: 65, height: 65 }} />
           </View>
@@ -330,7 +356,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
             Reading Complete!
           </Animated.Text>
           <Text className="font-din text-[17px]  text-brown/90 text-center mb-4" >
-            Hurray! You finished today's bible reading & fed your lamb.
+            Hurray! You finished today&apos;s bible reading & fed your lamb.
           </Text>
           <Text className="font-din text-[13px] text-center mb-6 tracking-wider uppercase text-brown/80">
             READING REWARDS
@@ -420,7 +446,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
               <Text className="font-feather-bold text-brown/80 text-xl text-center">Go Home</Text>
             </TouchableOpacity>
           </Animated.View>
-        </View>
+        </Reanimated.View>
       ) : (
         <View style={{ flex: 1 }}>
           {/* Header */}

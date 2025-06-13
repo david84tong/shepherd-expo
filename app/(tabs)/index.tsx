@@ -187,6 +187,37 @@ export default function HomeScreen() {
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
 
+  // DEBUG: Track completion state changes
+  console.log('🔍 COMPLETION STATES DEBUG:', {
+    readingCompleted,
+    prayerCompleted,
+    reflectionCompleted,
+    timestamp: new Date().toLocaleTimeString()
+  });
+
+  // DEBUG: Specific tracking for reflectionCompleted changes
+  useEffect(() => {
+    console.log('🔍 REFLECTION COMPLETED CHANGED:', {
+      reflectionCompleted,
+      previousValue: useHomeStore.getState().reflectionCompleted,
+      whoSetIt: new Error().stack?.split('\n')[2] || 'unknown',
+      timestamp: new Date().toLocaleTimeString()
+    });
+  }, [reflectionCompleted]);
+
+  // DEBUG: Track render cycles and homeStore persistence loading
+  useEffect(() => {
+    console.log('🔍 COMPONENT RENDER CYCLE - HomeStore state:', {
+      fullHomeStore: useHomeStore.getState(),
+      completionStates: {
+        readingCompleted: useHomeStore.getState().readingCompleted,
+        prayerCompleted: useHomeStore.getState().prayerCompleted, 
+        reflectionCompleted: useHomeStore.getState().reflectionCompleted,
+      },
+      timestamp: new Date().toLocaleTimeString()
+    });
+  });
+
   // Get current path state from pathStore
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
 
@@ -648,12 +679,18 @@ export default function HomeScreen() {
   useEffect(() => {
     console.log(isPro, 'what is pro');
     console.log('HomeScreen: Mode changed to', mode);
-    console.log('DEBUG - Current completion status:', {
+    console.log('🔍 MODE CHANGE - Current completion status:', {
       readingCompleted,
       prayerCompleted,
       reflectionCompleted,
       allCompleted: readingCompleted && prayerCompleted && reflectionCompleted,
       mode,
+      homeStoreSnapshot: {
+        readingCompleted: useHomeStore.getState().readingCompleted,
+        prayerCompleted: useHomeStore.getState().prayerCompleted,
+        reflectionCompleted: useHomeStore.getState().reflectionCompleted,
+      },
+      timestamp: new Date().toLocaleTimeString()
     });
 
     if (mode === 'DEFAULT') {
@@ -878,11 +915,20 @@ export default function HomeScreen() {
   };
 
   const handleReflectionPress = () => {
+    console.log('🔍 REFLECTION PRESS - Button pressed with states:', {
+      reflectionCompleted,
+      isPro,
+      readingCompleted,
+      homeStoreSnapshot: useHomeStore.getState(),
+      timestamp: new Date().toLocaleTimeString()
+    });
+    
     if (!isPro && reflectionCompleted) {
+      console.log('🔍 REFLECTION PRESS - Redirecting to subscription (already completed)');
       setFromScreen('home-read');
       handleSubscriptionPress();
     } else {
-      console.log('Reflection button pressed');
+      console.log('🔍 REFLECTION PRESS - Proceeding with reflection flow');
 
       // Simple fade animation for content transition - longer duration
       Animated.timing(devotionalCardOpacityAnim, {
@@ -938,11 +984,13 @@ export default function HomeScreen() {
   // --- Handlers for Closing Overlays ---
   const handleCloseOverlay = () => {
     console.log('Closing Overlay, triggering return to default');
-    console.log('DEBUG - Current completion status when closing overlay:', {
+    console.log('🔍 CLOSE OVERLAY - Current completion status when closing overlay:', {
       readingCompleted,
       prayerCompleted,
       reflectionCompleted,
       allCompleted: readingCompleted && prayerCompleted && reflectionCompleted,
+      homeStoreSnapshot: useHomeStore.getState(),
+      timestamp: new Date().toLocaleTimeString()
     });
 
     // Animate the Rive view for closing
@@ -983,11 +1031,17 @@ export default function HomeScreen() {
   // Additional useEffect to update Rive animation when completion status changes
   useEffect(() => {
     // Only update when in DEFAULT mode, as other modes have their own animations
-    console.log('DEBUG - Completion status changed:', {
+    console.log('🔍 COMPLETION STATUS CHANGED:', {
       readingCompleted,
       prayerCompleted,
       reflectionCompleted,
       mode,
+      homeStoreValues: {
+        readingCompleted: useHomeStore.getState().readingCompleted,
+        prayerCompleted: useHomeStore.getState().prayerCompleted,
+        reflectionCompleted: useHomeStore.getState().reflectionCompleted,
+      },
+      timestamp: new Date().toLocaleTimeString()
     });
 
     if (mode === 'DEFAULT') {
@@ -1024,7 +1078,12 @@ export default function HomeScreen() {
       mode,
       expectedStateInput: moodToStateInput[lambMood] || 0,
     });
-  }, [lambHearts, lambMood, currentStateInput, mode]);
+    console.log('📊 DISPLAY VALUES DEBUG:', {
+      heartsDisplay: lambHearts?.toString?.(),
+      gemsDisplay: gens?.toString?.(),
+      streakDisplay: streakCount?.toString?.(),
+    });
+  }, [lambHearts, lambMood, currentStateInput, mode, gens, streakCount]);
 
   // Add this near the top of the component, after other useRef declarations
   const riveKey = useRef('lamb-animation').current;
@@ -1065,6 +1124,16 @@ export default function HomeScreen() {
   // Add screen view analytics tracking
   useEffect(() => {
     console.log('🏠 Home screen useEffect called');
+    
+    // DEBUG: Log initial completion states when component mounts
+    console.log('🔍 INITIAL COMPLETION STATES ON MOUNT:', {
+      readingCompleted,
+      prayerCompleted,
+      reflectionCompleted,
+      homeStoreRaw: useHomeStore.getState(),
+      timestamp: new Date().toLocaleTimeString()
+    });
+    
     // Log screen view when component mounts
     analytics.logEvent('HomeScreen_Viewed');
 
@@ -1105,7 +1174,7 @@ export default function HomeScreen() {
             });
           }}
           activeOpacity={0.7}
-          className="bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 -mb-2 px-2">
+          className="bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 top-12 px-2">
           <Text className="font-feather text-textPrimary text-xs">
             {lambName
               ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
@@ -1499,7 +1568,7 @@ export default function HomeScreen() {
                     <View style={{ position: 'relative', zIndex: 2 }}>
                       <ProgressPill
                         value={0}
-                        label={(lambHearts > 0 ? levelInfo.level : '0')?.toString?.()}
+                        label={lambHearts?.toString?.()}
                         icon={heartIcon}
                       />
 
@@ -1584,7 +1653,7 @@ export default function HomeScreen() {
                     <TouchableOpacity
                       onPress={() => {
                         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        analytics.logEvent('HomeScreen_Tapped_Star');
+                        analytics.logEvent('HomeScreen_Tapped_Streak');
                         Toast.show({
                           type: 'info',
                           text1: 'Increase your streak!',
@@ -1593,7 +1662,7 @@ export default function HomeScreen() {
                           visibilityTime: 4000,
                         });
                       }}>
-                      <ProgressPill value={0} label={streakCount?.toString?.()} icon={dropIcon} />
+                      <ProgressPill value={0} label={streakCount?.toString?.()} icon={flameIcon} />
                     </TouchableOpacity>
                   </>
                 </View>
@@ -1834,6 +1903,11 @@ export default function HomeScreen() {
                   visible={showJournalContent}
                   setFinishReading={setFinishReading}
                   onClose={() => {
+                    console.log('🔍 JOURNAL CLOSE - Setting reflectionCompleted to false:', {
+                      previousValue: reflectionCompleted,
+                      homeStoreState: useHomeStore.getState().reflectionCompleted,
+                      timestamp: new Date().toLocaleTimeString()
+                    });
                     setReflectionCompleted(false);
                     // Start fade out
                     Animated.parallel([
@@ -2073,7 +2147,7 @@ export default function HomeScreen() {
                               points={25}
                               onPress={handlePrayerPress}
                               completed={prayerCompleted}
-                              disabled={!__DEV__ && !readingCompleted}
+                              disabled={!readingCompleted}
                             />
                           </View>
                         </View>
@@ -2168,7 +2242,7 @@ export default function HomeScreen() {
                                   </Text>
                                 </View>
                                 <Text className="font-din text-body text-textPrimary/90 leading-[22px] italic mb-3">
-                                  "{currentDevotional.verse}"
+                                  &ldquo;{currentDevotional.verse}&rdquo;
                                 </Text>
                                 <Text className="font-feather text-sm text-description text-right">
                                   — {currentDevotional.bibleReference}

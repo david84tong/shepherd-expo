@@ -65,7 +65,7 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
     <View style={{ width: '100%' }}>
       <Pressable
         className={`
-          flex-row items-center w-full rounded-3xl border border-[#eed39d] bg-surfaceCreamLight
+          flex-row items-center w-full rounded-3xl border border-[#eed39d] bg-surfaceCreamLight ${opacityClass}
          
         `}
         style={{ paddingVertical: responsiveHeight(2.5), paddingHorizontal: responsiveWidth(5), minHeight: responsiveHeight(11), elevation: 2 }}

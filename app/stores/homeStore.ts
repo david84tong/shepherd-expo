@@ -51,7 +51,7 @@ interface HomeState {
  */
 export const useHomeStore = create<HomeState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       // Default UI states
       mode: 'DEFAULT',
       successType: null,
@@ -72,14 +72,32 @@ export const useHomeStore = create<HomeState>()(
       setSuccessType: (type) => set({ successType: type }),
       setDevotionalReaderVisible: (visible) => set({ devotionalReaderVisible: visible }),
       setPrayerViewVisible: (visible) => set({ prayerViewVisible: visible }),
-      setReadingCompleted: (completed) => set({ readingCompleted: completed }),
-      setPrayerCompleted: (completed) => set({ prayerCompleted: completed }),
-      setReflectionCompleted: (completed) => set({ reflectionCompleted: completed }),
+      setReadingCompleted: (completed) => {
+        console.log('🔍 HOMESTORE - setReadingCompleted called:', { completed, timestamp: new Date().toLocaleTimeString() });
+        set({ readingCompleted: completed });
+      },
+      setPrayerCompleted: (completed) => {
+        console.log('🔍 HOMESTORE - setPrayerCompleted called:', { completed, timestamp: new Date().toLocaleTimeString() });
+        set({ prayerCompleted: completed });
+      },
+      setReflectionCompleted: (completed) => {
+        console.log('🔍 HOMESTORE - setReflectionCompleted called:', { completed, timestamp: new Date().toLocaleTimeString() });
+        set({ reflectionCompleted: completed });
+      },
       setSawDailyBonus: (saw) => set({ sawDailyBonus: saw }),
       setTappedPrayAboutVerse: (tapped) => set({ tappedPrayAboutVerse: tapped }),
       setTappedReflectAboutVerse: (tapped) => set({ tappedReflectAboutVerse: tapped }),
       setSawStreakToday: (saw) => set({ sawStreakToday: saw }),
-      resetCompletionStates: () =>
+      resetCompletionStates: () => {
+        console.log('🔍 HOMESTORE - resetCompletionStates called - BEFORE reset:', {
+          currentState: {
+            readingCompleted: useHomeStore.getState().readingCompleted,
+            prayerCompleted: useHomeStore.getState().prayerCompleted,
+            reflectionCompleted: useHomeStore.getState().reflectionCompleted,
+          },
+          timestamp: new Date().toLocaleTimeString()
+        });
+        
         set({
           readingCompleted: false,
           prayerCompleted: false,
@@ -88,7 +106,17 @@ export const useHomeStore = create<HomeState>()(
           tappedPrayAboutVerse: false,
           tappedReflectAboutVerse: false,
           sawStreakToday: false,
-        }),
+        });
+
+        console.log('🔍 HOMESTORE - resetCompletionStates called - AFTER reset:', {
+          newState: {
+            readingCompleted: useHomeStore.getState().readingCompleted,
+            prayerCompleted: useHomeStore.getState().prayerCompleted,
+            reflectionCompleted: useHomeStore.getState().reflectionCompleted,
+          },
+          timestamp: new Date().toLocaleTimeString()
+        });
+      },
     }),
     {
       name: 'shepherd-home-storage',

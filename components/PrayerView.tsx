@@ -842,7 +842,8 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
 
   return (
     <Reanimated.View style={[{ flex: 1, borderRadius: 24 }, animatedBackgroundStyle]}>
-      {showSuccess ? <View style={{ paddingHorizontal: 24 }} className="flex-1 items-center ">
+   { showSuccess ?    <View style={{ paddingHorizontal: 24 }} className="flex-1 items-center ">
+
 
         <Animated.Text
           className="font-feather-bold mt-10 text-[26px] text-center mb-1 text-brown/90"

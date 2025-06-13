@@ -246,9 +246,11 @@ export function DebugButton() {
             homeStore.setMode('DEFAULT');
             homeStore.setSuccessType(null);
 
-            // Clear completedReadings from userStore
+            // Clear completedReadings, completedPrayers, and completedReflections from userStore
             const userStore = useUserStore.getState();
             userStore.setCompletedReadings([] as any);
+            userStore.setCompletedPrayers([] as any);
+            userStore.setCompletedReflections([] as any);
 
             // Reset devotionalStore data
             const devotionalStore = useDevotionalStore.getState();
