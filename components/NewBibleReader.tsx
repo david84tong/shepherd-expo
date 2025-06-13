@@ -1705,25 +1705,73 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           <View
             className="bg-surfaceCream rounded-t-card "
             style={{ width: '100%', height: '90%', position: 'absolute', bottom: 0 }}>
-            <Text
-              className="font-feather-bold text-white"
-              style={{
-                fontSize: responsiveFontSize(3),
-                fontWeight: '400',
-                position: 'absolute',
-                left: 20,
-                top: -50,
-              }}>
-              Reading
-            </Text>
-
-            {isBibleReaderScreen ? null : <View style={[{ position: 'absolute', right: 10, top: -50 }]}>
-              <TouchableOpacity
-                onPress={handlePresentSettingsModal}
-                className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
-                <MaterialIcons name="settings" size={22} color="#795323" style={{ opacity: 0.4 }} />
-              </TouchableOpacity>
-            </View>}
+            {/* Title and Navigation Arrows Row */}
+            {isBibleReaderScreen ? null : (
+              <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <Text
+                  className="font-feather-bold text-white"
+                  style={{
+                    fontSize: responsiveFontSize(3),
+                    fontWeight: '400',
+                  }}>
+                  Reading
+                </Text>
+                
+                {/* Chapter Navigation Arrows */}
+                <View style={{ flexDirection: 'row', gap: 8 }}>
+                  <TouchableOpacity
+                    style={{
+                      alignItems: 'center',
+                      backgroundColor: '#FFE4A8',
+                      borderRadius: 24,
+                      elevation: 4,
+                      height: 40,
+                      justifyContent: 'center',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.2,
+                      shadowRadius: 2,
+                      width: 40,
+                    }}
+                    onPress={navigateToPreviousChapter}
+                    disabled={loading}
+                    activeOpacity={0.7}>
+                    <Text style={{
+                      color: '#3C584A',
+                      fontFamily: 'Inter-Bold',
+                      fontSize: 20,
+                    }}>
+                      ←
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={{
+                      alignItems: 'center',
+                      backgroundColor: '#FFE4A8',
+                      borderRadius: 24,
+                      elevation: 4,
+                      height: 40,
+                      justifyContent: 'center',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.2,
+                      shadowRadius: 2,
+                      width: 40,
+                    }}
+                    onPress={navigateToNextChapter}
+                    disabled={loading}
+                    activeOpacity={0.7}>
+                    <Text style={{
+                      color: '#3C584A',
+                      fontFamily: 'Inter-Bold',
+                      fontSize: 20,
+                    }}>
+                      →
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
 
             {/* Absolute background to cover outer safe areas */}
             <View style={{ ...StyleSheet.absoluteFillObject }} pointerEvents="none" />

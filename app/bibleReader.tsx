@@ -216,10 +216,63 @@ import type { ChapterResponse } from './api/bible';
 import Animated from 'react-native-reanimated';
 import { responsiveFontSize, responsiveHeight } from 'react-native-responsive-dimensions';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Add at the top of the file, after imports
 const chapterCache = new Map<string, any>();
 const LOADING_TIMEOUT = 300; // ms
+
+const TAB_BAR_HEIGHT = 64;
+type BibleVerseActionBarProps = {
+  reference?: string;
+  onSettingPress?: () => void;
+  onVersePress?: () => void;
+};
+
+function BibleVerseActionBar({ reference = 'John 3:16', onSettingPress, onVersePress }: BibleVerseActionBarProps) {
+  const insets = useSafeAreaInsets();
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: insets.bottom + TAB_BAR_HEIGHT - 10,
+        backgroundColor: '#FDEBB8',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 24,
+        paddingVertical: 14,
+        borderTopLeftRadius: 18,
+        borderTopRightRadius: 18,
+        shadowColor: 'rgba(0,0,0,0.04)',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 1,
+        shadowRadius: 8,
+        elevation: 2,
+        zIndex: 100,
+      }}
+    >
+      <TouchableOpacity onPress={onVersePress}>
+        <Text
+          style={{
+            fontFamily: 'Feather-Bold',
+            fontSize: 18,
+            color: '#B89B4C',
+          }}
+        >
+          {reference}
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={onSettingPress}
+        className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+        <MaterialIcons name="settings" size={22} color="#795323" style={{ opacity: 0.4 }} />
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 // Export the component for reuse
 export const BibleReader: React.FC<BibleReaderProps> = ({
@@ -1291,46 +1344,17 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
               className="bg-surfaceCream rounded-t-card "
               style={{ width: "100%", height: "90%", position: 'absolute', bottom: 0, }}>
               <View>
-                <Text
-                  className="font-feather-bold text-white"
-                  style={{
-                    fontSize: responsiveFontSize(3),
-                    fontWeight: "400",
-                    position: 'absolute',
-                    left: 20,
-                    top: -50
-                  }}
-                >
-                  Reading
-                </Text>
-                <View style={styles.headerLeft}>
-                  {pathInProgress && (
-                    <TouchableOpacity onPress={handleBackNavigation} style={styles.backButton}>
-                      <Text style={[styles.backButtonText, { color: THEME_COLORS[currentTheme].text }]}>
-                        ←
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-
-                  <View style={styles.headerButton} >
-                    <TouchableOpacity onPress={handleOpenSelector} >
-                      <Text
-                        className="font-feather-bold text-textPrimary/30 text-center"
-                        style={{
-                          fontSize: responsiveFontSize(2),
-                          fontWeight: "600",
-                        }}
-                      >
-                        {effectiveChapterData
-                          ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}`
-                          : 'Loading...'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-
-                </View>
-
-                <View style={[styles.headerRight, { position: "absolute", right: 10, top: -50 }]}>
+                {/* Title and Settings Row */}
+                <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <Text
+                    className="font-feather-bold text-white"
+                    style={{
+                      fontSize: responsiveFontSize(3),
+                      fontWeight: "400",
+                    }}
+                  >
+                    Reading
+                  </Text>
                   <TouchableOpacity onPress={handlePresentModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
                     <MaterialIcons
                       name="settings"
@@ -1340,53 +1364,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                     />
                   </TouchableOpacity>
                 </View>
-              </View>
 
-              <View
-              >
-                {effectiveChapterData && renderBibleContent(effectiveChapterData)}
-              </View>
-
-              {/* Bottom Navigation Row - Contains Next Chapter/Book and Nav Buttons */}
-              <RNAnimated.View
-                style={[
-                  {
-                    position: 'absolute',
-                    bottom: isEmbedded ? 100 : effectiveParams?.isFromDailyBread ? 50 : 100,
-                    left: 0,
-                    right: 0,
-                    flexDirection: 'row',
-                    justifyContent: 'flex-end',
-                    alignItems: 'center',
-                    paddingHorizontal: 20,
-                    zIndex: 10,
-                  },
-                  buttonsContainerStyle,
-                ]}>
-                {/* Next Chapter/Book Button (in path mode) */}
-                {!isEmbedded && pathInProgress && (
-                  <View style={{ flex: 1, marginRight: -100 }}>
-                    <SideButton
-                      title={
-                        isJustReadMode
-                          ? 'Finish Reading'
-                          : isAtEndChapter
-                            ? 'Complete Unit'
-                            : 'Next Chapter'
-                      }
-                      onPress={
-                        isJustReadMode
-                          ? handleFinishReading
-                          : isAtEndChapter
-                            ? handleFinishReading
-                            : navigateToNextChapter
-                      }
-                      disabled={!hasScrolledToBottom || loading}
-                    />
-                  </View>
-                )}
-                {/* Navigation Buttons */}
-                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
+                {/* Chapter Navigation Arrows */}
+                <View style={{ position: "absolute", right: 10, top: 10, flexDirection: 'row', gap: 8 }}>
                   <TouchableOpacity
                     style={[
                       styles.navButton,
@@ -1420,7 +1400,72 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                     </Text>
                   </TouchableOpacity>
                 </View>
-              </RNAnimated.View>
+
+                <View style={styles.headerLeft}>
+                  {pathInProgress && (
+                    <TouchableOpacity onPress={handleBackNavigation} style={styles.backButton}>
+                      <Text style={[styles.backButtonText, { color: THEME_COLORS[currentTheme].text }]}>
+                        ←
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+
+                  <View style={styles.headerButton} >
+                    <TouchableOpacity onPress={handleOpenSelector} >
+                      <Text
+                        className="font-feather-bold text-textPrimary/30 text-center"
+                        style={{
+                          fontSize: responsiveFontSize(2),
+                          fontWeight: "600",
+                        }}
+                      >
+                        {effectiveChapterData
+                          ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}`
+                          : 'Loading...'}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                </View>
+              </View>
+
+              <View
+              >
+                {effectiveChapterData && renderBibleContent(effectiveChapterData)}
+              </View>
+
+              {/* Path Mode Button (when in path mode) */}
+              {!isEmbedded && pathInProgress && (
+                <RNAnimated.View
+                  style={[
+                    {
+                      position: 'absolute',
+                      bottom: isEmbedded ? 170 : effectiveParams?.isFromDailyBread ? 120 : 170,
+                      left: 20,
+                      right: 20,
+                      zIndex: 10,
+                    },
+                    buttonsContainerStyle,
+                  ]}>
+                  <SideButton
+                    title={
+                      isJustReadMode
+                        ? 'Finish Reading'
+                        : isAtEndChapter
+                          ? 'Complete Unit'
+                          : 'Next Chapter'
+                    }
+                    onPress={
+                      isJustReadMode
+                        ? handleFinishReading
+                        : isAtEndChapter
+                          ? handleFinishReading
+                          : navigateToNextChapter
+                    }
+                    disabled={!hasScrolledToBottom || loading}
+                  />
+                </RNAnimated.View>
+              )}
 
               {/* Settings Modal for DEFAULT reader branch!!! */}
               <Modal
@@ -1545,6 +1590,15 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
 
           </SafeAreaView>
+
+          {/* Add BibleVerseActionBar */}
+          <BibleVerseActionBar
+            reference={effectiveChapterData
+              ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}`
+              : 'Loading...'}
+            onSettingPress={handlePresentModal}
+            onVersePress={handleOpenSelector}
+          />
         </Animated.View >
       </>
     );

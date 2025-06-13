@@ -32,6 +32,7 @@ import { useAuth } from '../app/hooks/authHook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useSubscriptionStore from '../app/stores/subscriptionStore';
 import analytics from '../utils/analytics';
+import { getBibleVerseAIResponse } from '../app/api/ai';
 
 interface Message {
   id: string;
@@ -392,45 +393,17 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           throw new Error('Authentication failed');
         }
         
-        const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-3.5-turbo', {
-          method: 'POST',
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${idToken}`
-          },
-          body: JSON.stringify({
-            "messages": [
-              {
-                "role": "system",
-                "content": `You are a Bible study assistant helping with ${bookName} ${chapter}:${verse.verse}: "${verse.text}"`
-              },
-              {
-                "role": "user",
-                "content": userQuestion
-              }
-            ]
-          })
-        });
-
-        const data = await response.json();
-
-        // Update to handle the new response format
-        if (!data || !data.role || typeof data.content !== 'string') {
-          console.error('Invalid API response structure:', data);
-          
-          // Track API response error
-          analytics.logEvent("Bible_Chat_AIResponseError", {
-            book: bookName,
+        // Use the refactored AI API function
+        const aiMessage = await getBibleVerseAIResponse(
+          userQuestion,
+          {
+            bookName,
             chapter,
             verse: verse.verse,
-            error: "invalid_response_format",
-            responseData: JSON.stringify(data)
-          });
-          
-          throw new Error('Invalid API response format');
-        }
-
-        const aiMessage = data.content;
+            verseText: verse.text
+          },
+          idToken
+        );
         
         // Track successful AI response
         analytics.logEvent("Bible_Chat_AIResponseReceived", {
@@ -466,15 +439,26 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       } catch (error) {
         console.error('Error calling AI API:', error);
         
-        // Track API error
-        analytics.logEvent("Bible_Chat_APIError", {
-          book: bookName,
-          chapter,
-          verse: verse.verse,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          isProMember,
-          globalMessageCount: globalMessageCount + 1
-        });
+        // Track API error with different event names based on error type
+        if (error instanceof Error && error.message === 'Invalid API response format') {
+          analytics.logEvent("Bible_Chat_AIResponseError", {
+            book: bookName,
+            chapter,
+            verse: verse.verse,
+            error: "invalid_response_format",
+            isProMember,
+            globalMessageCount: globalMessageCount + 1
+          });
+        } else {
+          analytics.logEvent("Bible_Chat_APIError", {
+            book: bookName,
+            chapter,
+            verse: verse.verse,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            isProMember,
+            globalMessageCount: globalMessageCount + 1
+          });
+        }
         
         // Remove loading state
         setIsAiLoading(false);
