@@ -1958,9 +1958,8 @@ export default function HomeScreen() {
                 : (
                   <BottomSheetScrollView
                     showsVerticalScrollIndicator={false}
-                    // prayerCompleted && readingCompleted && reflectionCompleted
                     contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 24 }}>
-                    {false ? (
+                    {prayerCompleted && readingCompleted && reflectionCompleted ? (
                       // Share Card
                       <Pressable
                         onPress={() => {
