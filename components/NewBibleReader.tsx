@@ -1113,10 +1113,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     (event: any, verse: Verse) => {
       if (isFadingToChat) return;
 
-      const { absoluteX, absoluteY } = event.nativeEvent;
-
-      const menuX = Math.min(absoluteX, SCREEN_WIDTH - 240);
-      const menuY = Math.min(absoluteY - 50, SCREEN_HEIGHT - 130);
+      // Center the menu on screen
+      const MENU_WIDTH = 180; // Width of the menu
+      const menuX = (SCREEN_WIDTH - MENU_WIDTH) / 2;
+      const menuY = (SCREEN_HEIGHT - 350) / 2; // 160 is approximate menu height
 
       setFloatingMenu({
         isVisible: true,
