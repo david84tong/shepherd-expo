@@ -10,6 +10,7 @@ interface CircleButtonProps {
   disabled?: boolean;
   hapticsEnabled?: boolean;
   iconComponent?: React.ReactNode;
+  isSmall?: boolean;
 }
 
 const CircleButton: React.FC<CircleButtonProps> = ({
@@ -19,8 +20,12 @@ const CircleButton: React.FC<CircleButtonProps> = ({
   disabled = false,
   hapticsEnabled = true,
   iconComponent,
+  isSmall = false,
 }) => {
   const [isPressed, setIsPressed] = useState(false);
+
+  // Calculate actual size based on isSmall prop
+  const actualSize = isSmall ? size * 0.7 : size;
 
   // Handle press with haptic feedback
   const handlePress = () => {
@@ -63,9 +68,9 @@ const CircleButton: React.FC<CircleButtonProps> = ({
       onPressOut={() => setIsPressed(false)}
       style={[
         {
-          width: size,
-          height: size,
-          borderRadius: size / 2,
+          width: actualSize,
+          height: actualSize,
+          borderRadius: actualSize / 2,
           backgroundColor: disabled ? '#E5E5E5' : '#FBCA71',
           alignItems: 'center',
           justifyContent: 'center',
@@ -82,7 +87,7 @@ const CircleButton: React.FC<CircleButtonProps> = ({
       ) : (
         <Feather 
           name={icon} 
-          size={size * 0.4} 
+          size={actualSize * 0.4} 
           color={disabled ? '#999999' : '#634012'}
         />
       )}

@@ -526,9 +526,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       } catch (e) {
         console.error('Failed to load settings from AsyncStorage', e);
       }
-    };
-    loadSettings();
-  }, []);
+          };
+      loadSettings();
+    }, []);
 
   // Helper function to load a chapter
   const loadChapter = useCallback(
@@ -551,6 +551,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
           // Update chapter data immediately without transition
           setChapterData(res);
+          
+          // Save to the store for persistence (same as regular BibleReader)
+          setSavedReading(res.book, bookId, res.chapter);
+          
           return true;
         }
       } catch (error) {
@@ -558,7 +562,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         return false;
       }
     },
-    [translation]
+    [translation, setSavedReading]
   );
 
   // Function to navigate to the next chapter
@@ -1663,7 +1667,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
           <View
             className="bg-surfaceCream rounded-t-card "
-            style={{ width: '100%', height: '90%', position: 'absolute', bottom: 0 }}>
+            style={{ width: '100%', height: '95%', position: 'absolute', bottom: 0 }}>
             {/* Title and Navigation Arrows Row */}
            
               <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1673,62 +1677,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                     fontSize: responsiveFontSize(3),
                     fontWeight: '400',
                   }}>
-                  Reading
+                  The Bible
                 </Text>
                 
-                {/* Chapter Navigation Arrows */}
-                {/* <View style={{ flexDirection: 'row', gap: 8 }}>
-                  <TouchableOpacity
-                    style={{
-                      alignItems: 'center',
-                      backgroundColor: '#FFE4A8',
-                      borderRadius: 24,
-                      elevation: 4,
-                      height: 40,
-                      justifyContent: 'center',
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.2,
-                      shadowRadius: 2,
-                      width: 40,
-                    }}
-                    onPress={navigateToPreviousChapter}
-                    disabled={loading}
-                    activeOpacity={0.7}>
-                    <Text style={{
-                      color: '#3C584A',
-                      fontFamily: 'Inter-Bold',
-                      fontSize: 20,
-                    }}>
-                      ←
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={{
-                      alignItems: 'center',
-                      backgroundColor: '#FFE4A8',
-                      borderRadius: 24,
-                      elevation: 4,
-                      height: 40,
-                      justifyContent: 'center',
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.2,
-                      shadowRadius: 2,
-                      width: 40,
-                    }}
-                    onPress={navigateToNextChapter}
-                    disabled={loading}
-                    activeOpacity={0.7}>
-                    <Text style={{
-                      color: '#3C584A',
-                      fontFamily: 'Inter-Bold',
-                      fontSize: 20,
-                    }}>
-                      →
-                    </Text>
-                  </TouchableOpacity>
-                </View> */}
+         
                  <TouchableOpacity
         onPress={handlePresentSettingsModal}
         className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
@@ -2179,7 +2131,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       </Animated.View >
       {isBibleReaderScreen ? (
         <BibleVerseActionBar
-          reference={`${chapterData?.book} ${chapterData?.chapter}:${chapterData?.verses[currentIndex]?.verse}`}
+          reference={`${chapterData?.book} ${chapterData?.chapter}`}
           onVersePress={handleOpenSelector}
           onPrev={navigateToPreviousChapter}
           onNext={navigateToNextChapter}

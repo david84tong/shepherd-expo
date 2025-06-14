@@ -69,12 +69,14 @@ export function BibleVerseActionBar({
           size={56}
           onPress={onPrev || (() => {})}
           disabled={disabledPrev}
+          isSmall={true}
         />
         <CircleButton
           iconComponent={rightIconComponent || <AntDesign name="caretright" size={14} color="#795222" />}
           size={56}
           onPress={onNext || (() => {})}
           disabled={disabledNext}
+          isSmall={true}
         />
       </View>
     </View>

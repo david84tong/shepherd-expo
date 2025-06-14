@@ -1274,10 +1274,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         />
         <Animated.View className="flex-1" style={{ opacity: 1 }}>
           <Animated.View
-            style={[
-              { position: 'absolute', width: '100%', height: '100%' },
-
-            ]}>
+            style={
+              { position: 'absolute', width: '100%', height: '100%' }
+            }>
             <ImageBackground
               source={require('../assets/backgrounds/mainBackground2.png')}
               style={{ width: '100%', height: '100%' }}
@@ -1291,7 +1290,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           <SafeAreaView className="flex-1" style={{}}>
             <View
               className="bg-surfaceCream rounded-t-card "
-              style={{ width: "100%", height: "90%", position: 'absolute', bottom: 0, }}>
+              style={{ width: "100%", height: "95%", position: 'absolute', bottom: 0, }}>
               <View>
                 {/* Title and Settings Row */}
                 <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1302,7 +1301,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                       fontWeight: "400",
                     }}
                   >
-                    Reading
+                   The Bible
                   </Text>
                   <TouchableOpacity onPress={handlePresentModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
                     <MaterialIcons
