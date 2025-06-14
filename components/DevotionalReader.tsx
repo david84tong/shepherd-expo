@@ -28,6 +28,7 @@ import { useUserStore } from '~/app/stores/userStore';
 import { getLevelData } from '~/utils/levelUtils';
 import { RPH } from '~/app/helper/helper';
 import SuccessMessage from './SuccessMessage';
+import { router } from 'expo-router';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -281,10 +282,10 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
       setTimeout(scrollToBottom, 150);
     } else {
       // Reached the end - close the reader
-      if (onClose) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-        onClose();
-      }
+      // if (onClose) {
+      //   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      //   onClose({});
+      // }
     }
   }, [currentIndex, totalCards, scrollToBottom, showTapGuidance, tapCount, onClose]);
 
@@ -302,7 +303,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
           We could not load today&apos;s devotional. Please check your connection and try again.
         </Text>
         {onClose && (
-          <TouchableOpacity onPress={onClose} className="bg-brown/20 px-6 py-3 rounded-xl">
+          <TouchableOpacity onPress={() => onClose({})} className="bg-brown/20 px-6 py-3 rounded-xl">
             <Text className="text-brown font-feather-bold">Go Back</Text>
           </TouchableOpacity>
         )}
@@ -367,7 +368,15 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
               setFinishReading(false);
               const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
-              onClose();
+              // Check if we need to show streak screen
+              const sawStreakToday = useHomeStore.getState().sawStreakToday;
+              const isFirstReadingOfDay = !sawStreakToday;
+              if (isFirstReadingOfDay) {
+                const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
+                setSawStreakToday(true);
+                router.push('/streak')
+              }
+              onClose({});
             }
           }}
           onPray={() => {
@@ -385,7 +394,23 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
               setFinishReading(false);
               const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
-              onClose({isPrayPresses:true});
+              // Check if we need to show streak screen
+              const sawStreakToday = useHomeStore.getState().sawStreakToday;
+              const isFirstReadingOfDay = !sawStreakToday;
+              
+              if (isFirstReadingOfDay) {
+                // Set sawStreakToday to true before showing streak screen
+                const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
+                setSawStreakToday(true);
+                
+                router.push({
+                  pathname: '/streak',
+                  params: {
+                    isPrayPresses: 'true'
+                  }
+                });
+              }
+              onClose({isPrayPresses: true});
             }
           }}
         />
@@ -405,7 +430,9 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
 
             {/* Close button */}
             {onClose && (
-              <TouchableOpacity onPress={onClose} className="bg-brown/10 w-8 h-8 rounded-full items-center justify-center">
+              <TouchableOpacity 
+                onPress={() => onClose({isPrayPresses: false})} 
+                className="bg-brown/10 w-8 h-8 rounded-full items-center justify-center">
                 <Feather name="x" size={18} color="#795323" />
               </TouchableOpacity>
             )}

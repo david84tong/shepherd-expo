@@ -970,7 +970,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
                       hapticsEnabled={hapticsEnabled}
                       onPress={() => {
                         if (onSetIdle) onSetIdle();
-                        if (onClose) onClose();
+                        if (onClose) onClose({});
                       }}
                     />
 

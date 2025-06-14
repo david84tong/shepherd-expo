@@ -68,6 +68,7 @@ import { responsiveHeight } from 'react-native-responsive-dimensions';
 import JournalComponent from '~/components/JournalComponent';
 import PrayerView from '~/components/PrayerView';
 import { Devotional } from '../models/Devotional';
+import { useLocalSearchParams } from 'expo-router';
 
 // Custom toast config with explicit styling
 const toastConfig: ToastConfig = {
@@ -171,7 +172,7 @@ export default function HomeScreen() {
   const [riveError, setRiveError] = useState<RNRiveError | null>(null);
   const navigation = useNavigation();
   const router = useRouter();
-
+  const { isPrayPresses } = useLocalSearchParams();
   const currentUser = auth().currentUser;
   console.log('currentUser======>', currentUser);
 
@@ -217,6 +218,13 @@ export default function HomeScreen() {
       timestamp: new Date().toLocaleTimeString()
     });
   });
+
+  useEffect(() => {
+    if (isPrayPresses === 'true') {
+      handlePrayerPress();
+    }
+  }, [isPrayPresses]);
+  
 
   // Get current path state from pathStore
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);

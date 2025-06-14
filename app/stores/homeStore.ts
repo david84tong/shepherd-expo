@@ -20,6 +20,7 @@ interface HomeState {
   successType: SuccessAnimationType | null;
   devotionalReaderVisible: boolean; // Track if devotional reader is showing
   prayerViewVisible: boolean; // Track if prayer view is showing
+  showStreakScreen: boolean; // Track if streak screen should be shown
 
   // Completion tracking states
   readingCompleted: boolean;
@@ -35,6 +36,7 @@ interface HomeState {
   setSuccessType: (type: SuccessAnimationType | null) => void;
   setDevotionalReaderVisible: (visible: boolean) => void;
   setPrayerViewVisible: (visible: boolean) => void;
+  setShowStreakScreen: (show: boolean) => void;
   setReadingCompleted: (completed: boolean) => void;
   setPrayerCompleted: (completed: boolean) => void;
   setReflectionCompleted: (completed: boolean) => void;
@@ -57,6 +59,7 @@ export const useHomeStore = create<HomeState>()(
       successType: null,
       devotionalReaderVisible: false,
       prayerViewVisible: false,
+      showStreakScreen: false,
 
       // Default completion states
       readingCompleted: false,
@@ -72,6 +75,7 @@ export const useHomeStore = create<HomeState>()(
       setSuccessType: (type) => set({ successType: type }),
       setDevotionalReaderVisible: (visible) => set({ devotionalReaderVisible: visible }),
       setPrayerViewVisible: (visible) => set({ prayerViewVisible: visible }),
+      setShowStreakScreen: (show) => set({ showStreakScreen: show }),
       setReadingCompleted: (completed) => {
         console.log('🔍 HOMESTORE - setReadingCompleted called:', { completed, timestamp: new Date().toLocaleTimeString() });
         set({ readingCompleted: completed });

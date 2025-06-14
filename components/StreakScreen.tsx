@@ -92,7 +92,8 @@ const calculateStreakLogic = (
   return currentStreak;
 };
 
-export const StreakScreen = () => {
+export const StreakScreen = ({isPrayPresses}:{isPrayPresses?:string}) => {  
+  
   // Animation states
   const animationsInitialized = useRef(false);
   const screenOpacity = useSharedValue(0);
@@ -401,7 +402,17 @@ export const StreakScreen = () => {
     if (isAvailable) {
       StoreReview.requestReview();
     }
-    router.replace('/(tabs)');
+    // router.replace('/(tabs)', {
+    //   params: {
+    //     isPrayPresses: isPrayPresses
+    //   }
+    // });
+    router.push({
+      pathname: '/(tabs)',
+      params: {
+        isPrayPresses: isPrayPresses
+      }
+    });
   };
 
   // Show loading indicator if assets aren't loaded yet

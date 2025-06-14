@@ -1,9 +1,11 @@
-import { Stack } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import React from 'react';
 
 import { StreakScreen } from '../components/StreakScreen';
 
 export default function StreakRoute() {
+  const { isPrayPresses } = useLocalSearchParams();
+  
   return (
     <>
       <Stack.Screen
@@ -13,7 +15,7 @@ export default function StreakRoute() {
           title: 'Streak',
         }}
       />
-      <StreakScreen />
+      <StreakScreen isPrayPresses={isPrayPresses as string} />
     </>
   );
 }
