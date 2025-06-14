@@ -25,7 +25,9 @@ import Reanimated, {
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  withDelay
+  withDelay,
+  withSequence,
+  withRepeat
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../app/hooks/authHook';
@@ -40,6 +42,8 @@ interface Message {
   isUser: boolean;
   timestamp: Date;
   isLoading?: boolean;
+  isTyping?: boolean;
+  displayText?: string;
 }
 
 interface VerseChatViewProps {
@@ -63,6 +67,37 @@ const TAB_BAR_HEIGHT = 35;
 const CHAT_USED_KEY = 'shepherd_bible_chat_used_global';
 const CHAT_MESSAGE_COUNT_KEY = 'shepherd_bible_chat_message_count_global';
 
+// Add new component for typing animation
+const TypingMessage: React.FC<{ text: string }> = ({ text }) => {
+  const [displayText, setDisplayText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayText(prev => prev + text[currentIndex]);
+        setCurrentIndex(prev => prev + 1);
+      }, 30); // Adjust speed here (lower = faster)
+
+      return () => clearTimeout(timeout);
+    }
+  }, [currentIndex, text]);
+
+  return (
+    <Reanimated.View
+      entering={FadeInUp.duration(300)}
+      style={[styles.messageBubble, styles.aiBubble]}
+    >
+      <Text style={[styles.messageText, styles.aiText]}>
+        {displayText}
+        {currentIndex < text.length && (
+          <Text style={styles.cursor}>|</Text>
+        )}
+      </Text>
+    </Reanimated.View>
+  );
+};
+
 const VerseChatView: React.FC<VerseChatViewProps> = ({ 
   verse, 
   bookName, 
@@ -77,6 +112,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
   const [globalMessageCount, setGlobalMessageCount] = useState(0);
   const [inputMessage, setInputMessage] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [hasMessageBeenSent, setHasMessageBeenSent] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   
   const fadeAnim = useSharedValue(0);
@@ -321,6 +357,9 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     // Add user message to chat
     setMessages(prev => [...prev, newMessage]);
     
+    // Set hasMessageBeenSent to true when first message is sent
+    setHasMessageBeenSent(true);
+    
     // Force scroll to bottom after a short delay
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true });
@@ -392,7 +431,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           console.error('Failed to get Firebase ID token');
           throw new Error('Authentication failed');
         }
-        
+
         // Use the refactored AI API function
         const aiMessage = await getBibleVerseAIResponse(
           userQuestion,
@@ -405,6 +444,15 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           idToken
         );
         
+        // Add message with typing animation
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          text: aiMessage,
+          isUser: false,
+          timestamp: new Date(),
+          isTyping: true
+        }]);
+
         // Track successful AI response
         analytics.logEvent("Bible_Chat_AIResponseReceived", {
           book: bookName,
@@ -418,23 +466,11 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         // Remove loading state
         setIsAiLoading(false);
         
-        const aiResponse = {
-          id: (Date.now() + 1).toString(),
-          text: aiMessage,
-          isUser: false,
-          timestamp: new Date()
-        };
-        
-        // Add AI response and force scroll
-        setMessages(prev => {
-          const updatedMessages = [...prev, aiResponse];
-          // Force scroll after state update
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              flatListRef.current?.scrollToEnd({ animated: false });
-            }, 100);
-          });
-          return updatedMessages;
+        // Force scroll after state update
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: false });
+          }, 100);
         });
       } catch (error) {
         console.error('Error calling AI API:', error);
@@ -523,7 +559,8 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           style={[
             styles.messageBubble,
             styles.aiBubble,
-            styles.upgradePromptBubble
+            styles.upgradePromptBubble,
+          
           ]}
         >
           <Text style={[
@@ -535,7 +572,6 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           <TouchableOpacity
             style={styles.upgradeButton}
             onPress={() => {
-              // Track upgrade button tap
               analytics.logEvent("Bible_Chat_UpgradeButtonTapped", {
                 book: bookName,
                 chapter,
@@ -551,6 +587,11 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           </TouchableOpacity>
         </Reanimated.View>
       );
+    }
+
+    // If this is a typing message, render with typing animation
+    if (!isUser && item.isTyping) {
+      return <TypingMessage text={item.text} />;
     }
     
     return (
@@ -598,7 +639,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       <StatusBar barStyle="dark-content" backgroundColor="#FFF4DC" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+        style={[styles.container,  {marginBottom:Math.max(insets.bottom + TAB_BAR_HEIGHT - 10, 16)}]}
         keyboardVerticalOffset={0}
       >
         <Reanimated.View 
@@ -631,9 +672,11 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           <View style={styles.placeholder} />
         </Reanimated.View>
         
-        <Reanimated.View style={[styles.verseContainer, verseContainerStyle]}>
-          <Text style={styles.verseText}>{verse.text}</Text>
-        </Reanimated.View>
+        {!hasMessageBeenSent && (
+          <Reanimated.View style={[styles.verseContainer, verseContainerStyle]}>
+            <Text style={styles.verseText}>{verse.text}</Text>
+          </Reanimated.View>
+        )}
         
         <View style={styles.chatContainer}>
           <FlatList
@@ -671,7 +714,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         
         <Reanimated.View style={[styles.inputWrapper, inputContainerStyle]}>
           <View style={[styles.inputContainer, { 
-            paddingBottom: Math.max(insets.bottom + TAB_BAR_HEIGHT, 16) 
+            // paddingBottom: Math.max(insets.bottom + TAB_BAR_HEIGHT, 16) 
           }]}>
             <TextInput
               style={styles.input}
@@ -918,6 +961,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontStyle: 'italic',
     lineHeight: 24,
+  },
+  cursor: {
+    opacity: 0.7,
+    fontWeight: 'bold'
   }
 });
 
