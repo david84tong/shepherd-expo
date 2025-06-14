@@ -293,7 +293,7 @@ const PrayerCard: React.FC<{
 
 interface PrayerViewProps {
   visible?: boolean;
-  onClose?: () => void;
+  onClose?: ({isReflectPresses}:{isReflectPresses?:boolean}) => void;
   onSetIdle?: () => void;
   setFinishReading: (finishReading: boolean) => void;
 }
@@ -604,7 +604,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
         if (hapticsEnabled) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
         }
-        onClose();
+        onClose({});
       }
     }
   }, [currentIndex, totalCards, isTypingComplete, scrollToBottom, showTapGuidance, tapCount, onSetIdle, onClose, hapticsEnabled]);
@@ -877,10 +877,41 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
               if (hapticsEnabled) {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               }
-              onClose();
+              onClose({});
             }
           }}
-          onPray={() => {}}
+          onPray={() => {
+            // Update lastActivityDate to prevent completion states from being reset
+            setFinishReading(false)
+            const now = firestore.Timestamp.now();
+            const setLastActivityDate = useUserStore.getState().setLastActivityDate;
+            const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
+            setLastActivityDate(now);
+            setLastPrayerDate(now);
+
+            // Mark prayer as completed
+            const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
+            setPrayerCompleted(true);
+
+            // Show tab bar again
+            const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
+            setPrayerViewVisible(false);
+
+            // Log completion analytics
+            analytics.logEvent('PrayerView_Completed', {
+              prayerTopic: recentPrayers[0] || 'general',
+              totalCards: totalCards,
+            });
+
+            // Close the prayer view
+            if (onSetIdle) onSetIdle();
+            if (onClose) {
+              if (hapticsEnabled) {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              }
+              onClose({isReflectPresses: true});
+            }
+          }}
           prayButtonTitle="Reflect on this verse"
           rewardsTitle="PRAYER REWARDS"
         />

@@ -1842,7 +1842,7 @@ export default function HomeScreen() {
                 <DevotionalReader
                   visible={showDevotionalContent}
                   setFinishReading={setFinishReading}
-                  onClose={() => {
+                  onClose={({isPrayPresses}:{isPrayPresses?:boolean}) => {
                     setRiveIdle(); // Set to idle on close
                     // Immediately mark devotional reader as hidden so overlay/header animations start in sync
                     setDevotionalReaderVisible(false);
@@ -1893,6 +1893,9 @@ export default function HomeScreen() {
                       ]).start(() => {
                         // Reset reader state after animations complete
                         setShowDevotionalReader(false);
+                        if(isPrayPresses){
+                          handlePrayerPress()
+                        }
                       });
                     }, 250); // Switch content halfway through fade out
                   }}
@@ -1965,7 +1968,7 @@ export default function HomeScreen() {
                 <PrayerView
                   visible={showPrayerContent}
                   setFinishReading={setFinishReading}
-                  onClose={() => {
+                  onClose={({isReflectPresses}:{isReflectPresses?:boolean}) => {
                     // Immediately mark prayer view as hidden so overlay/header animations start in sync
                     setPrayerViewVisible(false);
                     // Start fade out
@@ -2025,6 +2028,9 @@ export default function HomeScreen() {
                       ]).start(() => {
                         // Reset prayer view state after animations complete
                         setShowPrayerView(false);
+                        if(isReflectPresses){
+                          handleReflectionPress()
+                        }
                       });
                     }, 250); // Switch content halfway through fade out
                   }}

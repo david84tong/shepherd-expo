@@ -33,7 +33,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface DevotionalReaderProps {
   visible?: boolean;
-  onClose?: () => void;
+  onClose?: ({isPrayPresses}:{isPrayPresses?:boolean}) => void;
   setFinishReading: (a: boolean) => void;
 }
 
@@ -364,13 +364,30 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
             setIsRewarding(false);
             if (onClose) {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              setFinishReading(false)
+              setFinishReading(false);
               const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
               onClose();
             }
           }}
-          onPray={() => { /* handle pray action here */ }}
+          onPray={() => {
+            const now = firestore.Timestamp.now();
+            const setLastActivityDate = useUserStore.getState().setLastActivityDate;
+            const setLastReadingDate = useUserStore.getState().setLastReadingDate;
+            setLastActivityDate(now);
+            setLastReadingDate(now);
+            const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
+            setReadingCompleted(true);
+            setShowSuccess(false);
+            setIsRewarding(false);
+            if (onClose) {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setFinishReading(false);
+              const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
+              setDevotionalReaderVisible(false);
+              onClose({isPrayPresses:true});
+            }
+          }}
         />
       ) : (
         <View style={{ flex: 1 }}>
