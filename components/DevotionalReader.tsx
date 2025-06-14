@@ -8,6 +8,7 @@ import {
   Dimensions,
   TouchableWithoutFeedback,
   Animated,
+  Image,
 } from 'react-native';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { useHomeStore } from '~/app/stores/homeStore';
@@ -23,12 +24,13 @@ import Reanimated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
-import analytics from '../utils/analytics';
 import { useUserStore } from '~/app/stores/userStore';
 import { getLevelData } from '~/utils/levelUtils';
 import { RPH } from '~/app/helper/helper';
 import SuccessMessage from './SuccessMessage';
 import { router } from 'expo-router';
+import PrimaryButton from './PrimaryButton';
+import CircleButton from './Shared/CircleButton';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -268,11 +270,11 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
     // Trigger haptic feedback
     Haptics.selectionAsync();
 
-    // Track tap count and hide guidance after 2 taps
+    // Track tap count and hide guidance after 1 tap
     if (showTapGuidance) {
       const newTapCount = tapCount + 1;
       setTapCount(newTapCount);
-      if (newTapCount >= 2) {
+      if (newTapCount >= 1) {
         setShowTapGuidance(false);
       }
     }
@@ -523,65 +525,56 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
                         </Reanimated.View>
                       );
                     })}
+                    {/* Tap for next guidance */}
+                    {showTapGuidance && (
+                      <Text className="text-[#B89B4C] font-din text-[14px] text-center mt-3 opacity-70">
+                        Tap for next →
+                      </Text>
+                    )}
                   </>
                 )}
 
                 {/* Tap guidance or finish button */}
-                
-                  <View style={{ alignItems: 'center', marginTop: 12 }}>
-                    {showTapGuidance && (
-                      <Text style={{
-                        color: '#B89B4C',
-                        fontFamily: 'DIN Next Rounded LT W01 Regular',
-                        fontSize: 14,
-                        opacity: 0.7,
-                      }}>
-                        Tap for next →
-                      </Text>
-                    )}
+                <View  className="w-full  items-center mt-8">
+                  {/* Bible reference */}
+                <View className='flex-row px-6  items-center w-full justify-between'>
+                {cardsToShow[0]?.reference && (
+                    <Text className="font-feather-bold text-[20px] text-brown/60 mb-2" style={{letterSpacing:0.2}}>
+                      {cardsToShow[0].reference}
+                    </Text>
+                  )}
+                  {/* Top right icons */}
+                  <View className="flex-row gap-3">
+                    <Image source={require('../assets/icons/share.png')} style={{opacity:0.7}} />
+                    <Image source={require('../assets/icons/bookmark.png')} style={{opacity:0.7}} />
                   </View>
-                  <TouchableOpacity
-                
-                    onPress={isRewarding ? undefined : () => {
-                      setIsRewarding(true);
-                      setShowSuccess(true);
-                      setFinishReading(true)
-                      // Mark reading as completed
-                      const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
-                      setReadingCompleted(true);
-
-                      // Log completion analytics
-                      analytics.logEvent('DevotionalReader_Completed', {
-                        bibleReference: currentDevotional?.bibleReference,
-                        hasContext: !!currentDevotional?.context,
-                        totalCards: totalCards,
-                      });
-
-                    }}
-                    activeOpacity={isRewarding ? 1 : 0.8}
-                    disabled={isRewarding || currentIndex < totalCards - 1}
-                    style={{
-                      opacity: currentIndex < totalCards - 1 ? 0.7 : 1,
-                    }}
-                  >
-                    <View style={{
-                      backgroundColor: isRewarding ? '#E5E5E5' : '#DCB280',
-                      paddingVertical: 12,
-                      alignItems: 'center',
-                      marginTop: 16,
-                      borderRadius: 12,
-                    }}>
-                      <Text style={{
-                        color: 'white',
-                        fontFamily: 'Feather Bold',
-                        fontSize: 16,
-                        opacity: isRewarding ? 0.5 : 1,
-                      }}>
-                        Finish Reading 🙏
-                      </Text>
+                </View>
+                  {/* Button row */}
+                  <View className="flex-row items-center w-full justify-center">
+                    {/* Left round button */}
+                    <CircleButton
+                      icon="chevron-left"
+                      size={56}
+                      // onPress={() => setCurrentIndex(Math.max(currentIndex - 1, 0))}
+                      onPress={() => onClose?.({isPrayPresses: false})} 
+                      // disabled={currentIndex === 0}
+                    />
+                    {/* Main blue button */}
+                    <View >
+                      <PrimaryButton
+                        title="Continue"
+                        onPress={isRewarding ? (() => {}) : handleNextCard}
+                        disabled={isRewarding || currentIndex < totalCards - 1}
+                        buttonType="blue"
+                        icon={require('../assets/icons/starIcon.png')}
+                        reward={'+25'}
+                        
+                        style="ml-2"
+                        opacity={currentIndex < totalCards - 1 ? 0.7 : 1}
+                      />
                     </View>
-                  </TouchableOpacity>
-               
+                  </View>
+                </View>
               </View>
             </TouchableWithoutFeedback>
           </ScrollView>
