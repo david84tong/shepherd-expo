@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import {
   View,
   Text,
@@ -296,9 +296,26 @@ interface PrayerViewProps {
   onClose?: ({isReflectPresses}:{isReflectPresses?:boolean}) => void;
   onSetIdle?: () => void;
   setFinishReading: (finishReading: boolean) => void;
+  setShowControlRow: (showControlRow: boolean) => void;
+  showControlRow: boolean;
+  setIsCompletePrayerDisabled: (disabled: boolean) => void;
 }
 
-const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetIdle, setFinishReading }) => {
+export interface PrayerViewRef {
+  handleBack: () => void;
+  handleCompletePrayer: () => void;
+  handleSettings: () => void;
+}
+
+const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({ 
+  visible = true, 
+  onClose, 
+  onSetIdle, 
+  setFinishReading, 
+  setShowControlRow, 
+  showControlRow,
+  setIsCompletePrayerDisabled
+}, ref) => {
   const { recentPrayers } = usePrayerStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [skipTyping, setSkipTyping] = useState(false);
@@ -308,12 +325,10 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
   const [prayerSentences, setPrayerSentences] = useState<string[]>([]);
   const [fontSize, setFontSize] = useState(16);
   const [showBreathingAnimation, setShowBreathingAnimation] = useState(true);
-  const [showControlRow, setShowControlRow] = useState(true);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [guidedPrayerEnabled, setGuidedPrayerEnabled] = useState(true);
-  const [completePrayerDisabled, setCompletePrayerDisabled] = useState(true);
   const [buttonsEnabled, setButtonsEnabled] = useState(false);
 
 
@@ -370,6 +385,9 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
 
   // Load settings from AsyncStorage
   useEffect(() => {
+    const setShowGlobalButtons = useHomeStore.getState().setShowGlobalButtons;
+    setShowGlobalButtons(true);
+  
     const loadSettings = async () => {
       try {
         const savedHaptics = await AsyncStorage.getItem(PRAYER_HAPTICS_KEY);
@@ -390,6 +408,9 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
     };
 
     loadSettings();
+    return () => {
+      setShowGlobalButtons(false);
+    }
   }, []);
 
   // Split prayer into sentences when component loads
@@ -426,7 +447,7 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
   // Enable Complete Prayer button after 5 seconds
   useEffect(() => {
     completePrayerTimerRef.current = setTimeout(() => {
-      setCompletePrayerDisabled(false);
+      setIsCompletePrayerDisabled(false);
     }, 5000);
 
     return () => {
@@ -702,6 +723,28 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
     }
   }, [showControlRow, controlRowOpacity, hapticsEnabled, showSettingsModal]);
 
+  // Expose functions through ref
+  useImperativeHandle(ref, () => ({
+    handleBack: () => {
+      useHomeStore.getState().setShowGlobalButtons(false);
+      if (onSetIdle) onSetIdle();
+      if (onClose) onClose({});
+    },
+    handleCompletePrayer: () => {
+      setShowBreathingAnimation(false);
+      useHomeStore.getState().setShowGlobalButtons(false);
+    },
+    handleSettings: () => {
+      console.log('⚙️ Settings button pressed');
+      // Clear any hide timers when opening settings
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current);
+        hideTimeoutRef.current = null;
+      }
+      setShowSettingsModal(true);
+    }
+  }));
+
   if (!visible) return null;
 
   // Prepare cards to show (up to current index)
@@ -950,64 +993,8 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
               <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -280 }}>
                 <BreathingAnimation isActive={showBreathingAnimation} breathingProgress={breathingProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} />
 
-                {/* Control Row - appears on tap */}
-                {showControlRow && (
-                  <Reanimated.View
-                    style={[
-                      {
-                        position: 'absolute',
-                        top: SCREEN_WIDTH * 1.45,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'space-between',
-                        width: '100%',
-                        alignSelf: 'center',
-                        paddingHorizontal: 32,
-                        zIndex: 10,
-                      },
-                      controlRowAnimatedStyle
-                    ]}
-                    onLayout={() => console.log('🔍 Control row is being rendered!')}
-                  >
-                    {/* Back/Left Button */}
-                    <CircleButton
-                      icon="chevron-left"
-                      size={50}
-                      hapticsEnabled={hapticsEnabled}
-                      onPress={() => {
-                        if (onSetIdle) onSetIdle();
-                        if (onClose) onClose({});
-                      }}
-                    />
-
-                    {/* Complete Prayer Button */}
-                    <BluePrimaryButton
-                      title="Complete Prayer"
-                      width="60%"
-                      onPress={() => {
-                        setShowBreathingAnimation(false);
-                      }}
-                      hapticsEnabled={hapticsEnabled}
-                      disabled={completePrayerDisabled}
-                    />
-
-                    {/* Settings/Gear Button */}
-                    <CircleButton
-                      icon="settings"
-                      size={50}
-                      hapticsEnabled={hapticsEnabled}
-                      onPress={() => {
-                        console.log('⚙️ Settings button pressed');
-                        // Clear any hide timers when opening settings
-                        if (hideTimeoutRef.current) {
-                          clearTimeout(hideTimeoutRef.current);
-                          hideTimeoutRef.current = null;
-                        }
-                        setShowSettingsModal(true);
-                      }}
-                    />
-                  </Reanimated.View>
-                )}
+                
+              
               </View>
             </TouchableWithoutFeedback>
           )}
@@ -1107,6 +1094,8 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
       <SettingsModal />
     </Reanimated.View>
   );
-};
+});
+
+PrayerView.displayName = 'PrayerView';
 
 export default PrayerView;

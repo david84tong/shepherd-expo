@@ -1,7 +1,7 @@
 import firestore from '@react-native-firebase/firestore';
 import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, forwardRef, useImperativeHandle } from 'react';
 import {
   View,
   Text,
@@ -13,13 +13,11 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import PrimaryButton from './PrimaryButton';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '../app/stores/userStore';
 import { BIBLE_BOOK_IDS } from '../app/models/Path';
 import analytics from '~/utils/analytics';
-import CircleButton from './Shared/CircleButton';
 import { getLevelData } from '~/utils/levelUtils';
 import SuccessMessage from './SuccessMessage';
 import { RPH } from '~/app/helper/helper';
@@ -35,10 +33,19 @@ const getBookNameFromId = (bookId: number): string => {
   return 'Scripture'; // Fallback if book ID not found
 };
 
+// Add interface for ref methods
+export interface JournalComponentRef {
+  handleSave: () => void;
+  handleCancel: () => void;
+  setReflectionContent: (content: string) => void;
+  getReflectionContent: () => string;
+}
+
 interface JournalProps {
   visible: boolean;
   onClose: () => void;
   setFinishReading: (finishReading: boolean) => void;
+  setJournalButtonEnabled: (enabled: boolean) => void;
 }
 
 // Get screen dimensions
@@ -51,14 +58,15 @@ const MIN_CHARS_REQUIRED = 10;
  * Component for the Daily Reflection/Journaling feature.
  * Includes an auto-focusing TextInput and handles keyboard appearance.
  */
-const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishReading }) => {
+const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visible, onClose, setFinishReading, setJournalButtonEnabled }, ref) => {
+  // All hooks must be called at the top level, before any conditional returns
   const inputRef = useRef<TextInput>(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
   const [reflectionContent, setReflectionContent] = useState('');
   const [buttonsEnabled, setButtonsEnabled] = useState(false);
-
+  const [success, setSuccess] = useState(false);
 
   // Get the current path from pathStore
   const currentPath = usePathStore((state) => state.currentPath);
@@ -72,14 +80,18 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishR
   // Check if button should be enabled
   const isButtonEnabled = useMemo(() => charCount >= MIN_CHARS_REQUIRED, [charCount]);
 
+  useEffect(() => {
+    if(isButtonEnabled){
+      setJournalButtonEnabled(true);
+    }
+  }, [isButtonEnabled]);
+
   // Get store functions
   const setSuccessType = useHomeStore((state) => state.setSuccessType);
   const setReflectionCompleted = useHomeStore((state) => state.setReflectionCompleted);
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
-  const [success, setSuccess] = useState(false)
-  // Get userStore functions for saving reflection
   const addCompletedReflection = useUserStore((state) => state.addCompletedReflection);
   const setLastReflectionDate = useUserStore((state) => state.setLastReflectionDate);
 
@@ -92,7 +104,6 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishR
   const bottomContentAnimY = useRef(new Animated.Value(100)).current;
   const bottomContentOpacity = useRef(new Animated.Value(0)).current;
 
-
   const progressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const animatedXP = useRef(new Animated.Value(0)).current;
   const animatedHearts = useRef(new Animated.Value(0)).current;
@@ -103,7 +114,6 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishR
 
   const animatedBlueOpacity = useRef(new Animated.Value(0.3)).current;
   const animatedGoldOpacity = useRef(new Animated.Value(0.4)).current;
-
 
   const MAX_HEARTS = 100;
 
@@ -121,7 +131,6 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishR
 
     return getLevelData(lamb.xp);
   }, [lamb?.xp]);
-
 
   // Load Rive assets
   const [riveAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
@@ -149,6 +158,8 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishR
 
   // Keyboard event listeners with height information
   useEffect(() => {
+
+    useHomeStore.getState().setShowGlobalButtons(true);
     const handleKeyboardShow = (event: any) => {
       const keyboardHeight = event.endCoordinates.height;
       setKeyboardHeight(keyboardHeight);
@@ -173,6 +184,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishR
     return () => {
       keyboardDidShowListener.remove();
       keyboardDidHideListener.remove();
+      useHomeStore.getState().setShowGlobalButtons(false);
     };
   }, []);
 
@@ -348,7 +360,6 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishR
     };
   }, [success, levelInfo.progress, lambHearts]);
 
-
   // Pre-compute memoized values outside and before any conditional returns
   const cardStyle = useMemo(() => {
     return {
@@ -367,9 +378,72 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishR
     };
   }, [bottomContentOpacity, bottomContentAnimY, keyboardVisible, keyboardHeight]);
 
+  // Expose methods through ref - must be called before any conditional returns
+  useImperativeHandle(ref, () => ({
+    handleSave: () => {
+      useHomeStore.getState().setShowGlobalButtons(false);
+      console.log('handleSave called');
+      // Don't save if not enough characters
+      if (reflectionContent.length < MIN_CHARS_REQUIRED) return;
+      analytics.logEvent('JournalScreen_SaveReflection', {
+        reflection_length: reflectionContent.length,
+        reflection_content: reflectionContent,
+        prompt: currentPath?.reflection,
+      });
+      Keyboard.dismiss();
+      setPathInProgress(false);
+      setFinishReading(true)
+      setReflectionCompleted(true); // Set reflection as completed
+  
+      // Reset tappedReflectAboutVerse flag
+      useHomeStore.getState().setTappedReflectAboutVerse(false);
+      console.log('Reset tappedReflectAboutVerse flag to false');
+  
+      // Create current timestamp
+      const now = firestore.Timestamp.now();
+  
+      // Save reflection to userStore
+      console.log('Saving reflection data to userStore');
+      try {
+        // Save the reflection content
+        addCompletedReflection({
+          date: now,
+          content:
+            tappedReflectAboutVerse && currentPath && currentPath.bookId
+              ? `[${getBookNameFromId(currentPath.bookId)} ${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}] ${reflectionContent.trim()}`
+              : reflectionContent.trim() || 'Reflected on my spiritual journey today.',
+        });
+  
+        // Update last reflection date
+        setLastReflectionDate(now);
+  
+        console.log('Reflection saved successfully');
+      } catch (error) {
+        console.log('Error saving reflection data:', error);
+      }
+      setSuccess(true);
+    },
+    handleCancel: () => {
+      useHomeStore.getState().setShowGlobalButtons(false);
+      setPathInProgress(false);
+      analytics.logEvent('Journal_Tapped_Cancel', {
+        prompt: currentPath?.reflection,
+      });
+      useHomeStore.getState().setTappedReflectAboutVerse(false);
+      console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
+      onClose();
+    },
+    setReflectionContent: (content: string) => {
+      setReflectionContent(content);
+    },
+    getReflectionContent: () => {
+      return reflectionContent;
+    }
+  }));
+
+  // Render logic
   if (!visible) return null;
 
-  // Show loading indicator if assets aren't loaded yet
   if (!riveAssets) {
     return (
       <View
@@ -380,81 +454,35 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishR
     );
   }
 
-  const handleSave = () => {
-    console.log('handleSave called');
-    // Don't save if not enough characters
-    if (reflectionContent.length < MIN_CHARS_REQUIRED) return;
-    analytics.logEvent('JournalScreen_SaveReflection', {
-      reflection_length: reflectionContent.length,
-      reflection_content: reflectionContent,
-      prompt: currentPath?.reflection,
-    });
-    Keyboard.dismiss();
-    setPathInProgress(false);
-    setFinishReading(true)
-    setReflectionCompleted(true); // Set reflection as completed
-
-    // Reset tappedReflectAboutVerse flag
-    useHomeStore.getState().setTappedReflectAboutVerse(false);
-    console.log('Reset tappedReflectAboutVerse flag to false');
-
-    // Create current timestamp
-    const now = firestore.Timestamp.now();
-
-    // Save reflection to userStore
-    console.log('Saving reflection data to userStore');
-    try {
-      // Save the reflection content
-      addCompletedReflection({
-        date: now,
-        content:
-          tappedReflectAboutVerse && currentPath && currentPath.bookId
-            ? `[${getBookNameFromId(currentPath.bookId)} ${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}] ${reflectionContent.trim()}`
-            : reflectionContent.trim() || 'Reflected on my spiritual journey today.',
-      });
-
-      // Update last reflection date
-      setLastReflectionDate(now);
-
-      console.log('Reflection saved successfully');
-    } catch (error) {
-      console.log('Error saving reflection data:', error);
-    }
-    setSuccess(true);
-
-  };
-
   return success ? (
     <Animated.View
       className="flex-1 w-full"
-      style={{ opacity: containerOpacity,paddingHorizontal: 24 }}
+      style={{ opacity: containerOpacity, paddingHorizontal: 24 }}
       pointerEvents="box-none">
-        <SuccessMessage
-          title="Reflection Complete!"
-          level={levelInfo.level}
-          prevLevel={levelInfo.level}
-          buttonsEnabled={buttonsEnabled}
-          onGoHome={() => {
-            setTimeout(() => {
-              setFinishReading(false)
-            }, 2000);
+      <SuccessMessage
+        title="Reflection Complete!"
+        level={levelInfo.level}
+        prevLevel={levelInfo.level}
+        buttonsEnabled={buttonsEnabled}
+        onGoHome={() => {
+          setTimeout(() => {
+            setFinishReading(false)
+          }, 2000);
 
-            if (readingCompleted && prayerCompleted && !sawDailyBonus) {
-              setSuccessType(SuccessAnimationType.BONUS);
-            } else {
-              setSuccessType(SuccessAnimationType.REFLECTION);
-            }
+          if (readingCompleted && prayerCompleted && !sawDailyBonus) {
+            setSuccessType(SuccessAnimationType.BONUS);
+          } else {
+            setSuccessType(SuccessAnimationType.REFLECTION);
+          }
 
-            // Navigate to success screen
-            router.push('/success');
-          }}
-          onPray={() => {}}
-          prayButtonTitle=""
-          hidePrayButton
-          homeButtonTitle="Collect Bonus"
-          rewardsTitle="REFLECTION REWARDS"
-        />
-
+          router.push('/success');
+        }}
+        onPray={() => {}}
+        prayButtonTitle=""
+        hidePrayButton
+        homeButtonTitle="Collect Bonus"
+        rewardsTitle="REFLECTION REWARDS"
+      />
     </Animated.View>
   ) : (
     <Animated.View
@@ -470,7 +498,6 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishR
           What practical step can deepen your daily delight in Scripture?
         </Text>
 
-        {/* Animated Card with TextInput */}
         <View className="w-full min-h-[230px] bg-[#FFF4D9] border-[3px] border-gold/70 p-5 mb-2" style={{ borderRadius: 20 }}>
           <TextInput
             ref={inputRef}
@@ -490,44 +517,12 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishR
         <Text className="text-[14px] text-brown/40 mb-4 mt-1 text-center leading-tight font-semibold">
           {`${300 - charCount} characters left`}
         </Text>
-
-        {/* Animated Bottom Content (Rive + Button) */}
-        <Animated.View
-          className="flex-row items-center justify-between w-full"
-          style={bottomContentStyle}>
-          <Animated.View style={{ width: '10%' }}>
-            <CircleButton 
-              icon='chevron-left' 
-              size={53} 
-              onPress={() => {
-                setPathInProgress(false);
-                analytics.logEvent('Journal_Tapped_Cancel', {
-                  prompt: currentPath?.reflection,
-                });
-                useHomeStore.getState().setTappedReflectAboutVerse(false);
-                console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
-                onClose();
-              }} 
-            />
-          </Animated.View>
-
-          <Animated.View style={{ width: '82%' }}>
-            <PrimaryButton
-              title="Save Thoughts"
-              onPress={() => {
-                console.log('Small device Save button pressed');
-                handleSave()
-              }}
-              buttonType="blue"
-              icon={require('../assets/icons/starIcon.png')}
-              reward={"+25"}
-              disabled={!isButtonEnabled}
-            />
-          </Animated.View>
-        </Animated.View>
       </View>
     </Animated.View>
   );
-};
+});
+
+// Add display name
+JournalComponent.displayName = 'JournalComponent';
 
 export default JournalComponent;

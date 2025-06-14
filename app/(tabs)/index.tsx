@@ -25,10 +25,10 @@ import ProgressPill from '../../components/ProgressPill';
 import SecondaryButton from '../../components/SecondaryButton';
 import HeartsExplainerModal from '../../components/HeartsExplainerModal';
 import ExplainerModal from '../../components/ExplainerModal';
-import { HomeMode, useHomeStore } from '../stores/homeStore'; // Import Zustand store
-import { usePathStore } from '../stores/pathStore'; // Import path store
-import { useUIStore } from '../stores/uiStore'; // Import UI store
-import { useUserStore } from '../stores/userStore'; // Import user store
+import { HomeMode, useHomeStore } from '../stores/homeStore';
+import { usePathStore } from '../stores/pathStore';
+import { useUIStore } from '../stores/uiStore';
+import { useUserStore } from '../stores/userStore';
 import { useAssetsStore, imageAssets } from '../stores/assetsStore';
 import { useAssets } from 'expo-asset';
 import * as Haptics from 'expo-haptics';
@@ -39,11 +39,13 @@ import analytics from '~/utils/analytics';
 import WidgetHowToSheet from '../../components/WidgetHowToSheet';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import { getLevelData } from '../../utils/levelUtils';
-import { useDevotionalStore } from '../stores/devotionalStore'; // Import devotional store
+import { useDevotionalStore } from '../stores/devotionalStore';
 import bibleIcon from '../../assets/icons/bibleIcon.png';
 import FullScreenShareCard from '../../components/FullScreenShareCard';
 import SpotlightOverlay from '../../components/SpotlightOverlay';
-import { usePrayerStore } from '../stores/prayerStore'; // Import prayer store
+import { usePrayerStore } from '../stores/prayerStore';
+import { DevotionalReaderRef } from '../../components/DevotionalReader';
+import PrayerView, { PrayerViewRef } from '~/components/PrayerView';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
@@ -65,10 +67,13 @@ const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
 
 import { responsiveHeight } from 'react-native-responsive-dimensions';
-import JournalComponent from '~/components/JournalComponent';
-import PrayerView from '~/components/PrayerView';
+import JournalComponent, { JournalComponentRef } from '~/components/JournalComponent';
 import { Devotional } from '../models/Devotional';
 import { useLocalSearchParams } from 'expo-router';
+import CircleButton from '~/components/Shared/CircleButton';
+import PrimaryButton from '~/components/PrimaryButton';
+import { RPH } from '../helper/helper';
+import BluePrimaryButton from '~/components/Shared/BluePrimaryButton';
 
 // Custom toast config with explicit styling
 const toastConfig: ToastConfig = {
@@ -174,6 +179,94 @@ export default function HomeScreen() {
   const router = useRouter();
   const { isPrayPresses } = useLocalSearchParams();
   const currentUser = auth().currentUser;
+  const devotionalReaderRef = useRef<DevotionalReaderRef>(null);
+  const prayerViewRef = useRef<PrayerViewRef>(null);
+  const journalRef = useRef<JournalComponentRef>(null);
+  const [devotionalReadedFully, setDevotionalReadedFully] = useState(false);
+  const [currentVerseReference, setCurrentVerseReference] = useState('');
+  const [isCompletePrayerDisabled, setIsCompletePrayerDisabled] = useState(true);
+  const [journalButtonEnabled, setJournalButtonEnabled] = useState(false)
+  
+  const handleDevotionalFinishPress = useCallback(() => {
+    if (devotionalReaderRef.current) {
+      devotionalReaderRef.current.onFinishPress();
+    }
+  }, []);
+
+  const handleDevotionalClose = useCallback(({isPrayPresses}:{isPrayPresses?:boolean}) => {
+    if (devotionalReaderRef.current) {
+
+      
+    
+        // Clear custom devotional first
+        clearCustomDevotional();
+        setRiveIdle(); // Set to idle on close
+        // Immediately mark devotional reader as hidden so overlay/header animations start in sync
+    
+        // Start fade out
+        if(isPrayPresses){
+          handlePrayerPress()
+          setTimeout(() => {
+            setDevotionalReaderVisible(false);
+          }, 2000);
+        }else{
+          setDevotionalReaderVisible(false);
+        }
+        Animated.parallel([
+          // Card content fade out
+          Animated.timing(devotionalCardOpacityAnim, {
+            toValue: 0,
+            duration: 500,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          // Lamb fade out at the same time
+          Animated.timing(riveArtboardOpacityAnim, {
+            toValue: 0,
+            duration: 500,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          })
+        ]).start();
+        // Switch content and artboard immediately after a short delay
+        setTimeout(() => {
+          // Hide devotional content and reset lamb state
+          setShowDevotionalContent(false);
+          const currentMood = useUserStore.getState()?.getLambMood?.();
+          const targetStateInput = moodToStateInput[currentMood] || 0;
+          setCurrentStateInput(targetStateInput);
+          if (riveRef.current?.setInputState) {
+            riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
+          }
+
+          // Start fade in immediately after content switch
+          Animated.parallel([
+            // Card content fade in
+            Animated.timing(devotionalCardOpacityAnim, {
+              toValue: 1,
+              duration: 500,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            }),
+            // Lamb fade in at the same time
+            Animated.timing(riveArtboardOpacityAnim, {
+              toValue: 1,
+              duration: 500,
+              easing: Easing.inOut(Easing.ease),
+              useNativeDriver: true,
+            })
+          ]).start(() => {
+            // Reset reader state after animations complete
+            setShowDevotionalReader(false);
+            // if(isPrayPresses){
+            //   handlePrayerPress()
+            // }
+          });
+        }, 250); // Switch content halfway through fade out
+      
+    }
+  }, []);
+
   console.log('currentUser======>', currentUser);
 
   // Use Zustand store for mode management
@@ -1108,6 +1201,7 @@ export default function HomeScreen() {
   const [riveReady, setRiveReady] = useState(false);
   const [isFree, setIsFree] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [showControlRow, setShowControlRow] = useState(true);
 
   // Animation for first load after onboarding
   const firstLoadOpacity = useRef(new Animated.Value(0)).current;
@@ -1260,6 +1354,51 @@ export default function HomeScreen() {
   const customDevotional = useDevotionalStore((state) => state.customDevotional);
   const clearCustomDevotional = useDevotionalStore((state) => state.clearCustomDevotional);
   
+
+  const bottomContentOpacity = useRef(new Animated.Value(0)).current;
+  const bottomContentAnimY = useRef(new Animated.Value(100)).current;
+
+  const bottomContentStyle = useMemo(() => {
+    return {
+      opacity: bottomContentOpacity,
+      transform: [{ translateY: bottomContentAnimY }],
+    };
+  }, [bottomContentOpacity, bottomContentAnimY]);
+
+  const showGlobalButtons = useHomeStore((state) => state.showGlobalButtons);
+useEffect(() => {
+  if(showGlobalButtons){
+       // Animate bottom content (Rive + Button)
+       Animated.timing(bottomContentOpacity, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+        delay: 500,
+      }).start();
+      Animated.timing(bottomContentAnimY, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+        delay: 500,
+      }).start();
+
+ 
+}else{
+  bottomContentOpacity.setValue(0);
+  bottomContentAnimY.setValue(100);
+  if(devotionalReadedFully){
+    setDevotionalReadedFully(false);
+  }
+  if(isCompletePrayerDisabled){
+    setIsCompletePrayerDisabled(true);
+  }
+  if(journalButtonEnabled){
+    setJournalButtonEnabled(false);
+  }
+}
+}, [showDevotionalContent,showPrayerContent,showJournalContent,showGlobalButtons])
+
+
   // Automatically open DevotionalReader when a quick devotional is available
   useEffect(() => {
     if (customDevotional && !showDevotionalContent) {
@@ -1432,6 +1571,7 @@ export default function HomeScreen() {
     }
   };
 
+const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Complete Prayer' : 'Save Thoughts';
   // HEADER
   return (
     <>
@@ -1861,79 +2001,17 @@ export default function HomeScreen() {
               {/* Conditionally show DevotionalReader or normal content */}
               {showDevotionalContent ? (
                 <DevotionalReader
+                  ref={devotionalReaderRef}
                   visible={showDevotionalContent}
+                  onClose={handleDevotionalClose}
                   setFinishReading={setFinishReading}
-                  onClose={({isPrayPresses}:{isPrayPresses?:boolean}) => {
-                    // Clear custom devotional first
-                    clearCustomDevotional();
-                    setRiveIdle(); // Set to idle on close
-                    // Immediately mark devotional reader as hidden so overlay/header animations start in sync
-                
-                    // Start fade out
-                    if(isPrayPresses){
-                      handlePrayerPress()
-                      setTimeout(() => {
-                        setDevotionalReaderVisible(false);
-                      }, 2000);
-                    }else{
-                      setDevotionalReaderVisible(false);
-                    }
-                    Animated.parallel([
-                      // Card content fade out
-                      Animated.timing(devotionalCardOpacityAnim, {
-                        toValue: 0,
-                        duration: 500,
-                        easing: Easing.inOut(Easing.ease),
-                        useNativeDriver: true,
-                      }),
-                      // Lamb fade out at the same time
-                      Animated.timing(riveArtboardOpacityAnim, {
-                        toValue: 0,
-                        duration: 500,
-                        easing: Easing.inOut(Easing.ease),
-                        useNativeDriver: true,
-                      })
-                    ]).start();
-                    // Switch content and artboard immediately after a short delay
-                    setTimeout(() => {
-                      // Hide devotional content and reset lamb state
-                      setShowDevotionalContent(false);
-                      const currentMood = useUserStore.getState()?.getLambMood?.();
-                      const targetStateInput = moodToStateInput[currentMood] || 0;
-                      setCurrentStateInput(targetStateInput);
-                      if (riveRef.current?.setInputState) {
-                        riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
-                      }
-
-                      // Start fade in immediately after content switch
-                      Animated.parallel([
-                        // Card content fade in
-                        Animated.timing(devotionalCardOpacityAnim, {
-                          toValue: 1,
-                          duration: 500,
-                          easing: Easing.inOut(Easing.ease),
-                          useNativeDriver: true,
-                        }),
-                        // Lamb fade in at the same time
-                        Animated.timing(riveArtboardOpacityAnim, {
-                          toValue: 1,
-                          duration: 500,
-                          easing: Easing.inOut(Easing.ease),
-                          useNativeDriver: true,
-                        })
-                      ]).start(() => {
-                        // Reset reader state after animations complete
-                        setShowDevotionalReader(false);
-                        // if(isPrayPresses){
-                        //   handlePrayerPress()
-                        // }
-                      });
-                    }, 250); // Switch content halfway through fade out
-                  }}
+                  setDevotionalReadedFully={setDevotionalReadedFully}
+                  setCurrentVerseReference={setCurrentVerseReference}
                 />
-
               ) : showJournalContent ? (
                 <JournalComponent
+                  setJournalButtonEnabled={setJournalButtonEnabled}
+                  ref={journalRef}
                   visible={showJournalContent}
                   setFinishReading={setFinishReading}
                   onClose={() => {
@@ -1997,6 +2075,10 @@ export default function HomeScreen() {
                 />
               ) : showPrayerContent ?
                 <PrayerView
+                setIsCompletePrayerDisabled={setIsCompletePrayerDisabled}
+                  ref={prayerViewRef}
+                  setShowControlRow={setShowControlRow}
+                  showControlRow={showControlRow}
                   visible={showPrayerContent}
                   setFinishReading={setFinishReading}
                   onClose={({isReflectPresses}:{isReflectPresses?:boolean}) => {
@@ -2342,6 +2424,97 @@ export default function HomeScreen() {
             </Animated.View>
           </BottomSheet>
 
+{/* BUTTONS */}
+      {showControlRow ? <Animated.View 
+          style={[bottomContentStyle,{bottom:RPH(3)}]}
+        className='px-10 absolute items-center w-full justify-between'
+         
+          
+          >
+         {showDevotionalContent &&    <View className='flex-row    items-center w-full justify-between'>
+                {/* {cardsToShow[0]?.reference && ( */}
+                    <Text className="font-feather-bold text-[20px] text-brown/60 mb-2" style={{letterSpacing:0.2}}>
+                      {/* {cardsToShow[0].reference} */}
+                      {currentVerseReference}
+                    </Text>
+                  {/* )} */}
+                  {/* Top right icons */}
+                  <View className="flex-row gap-3">
+                    <Image source={require('../../assets/icons/share.png')} style={{opacity:0.7}} />
+                    <Image source={require('../../assets/icons/bookmark.png')} style={{opacity:0.7}} />
+                  </View>
+                </View>}
+                <View  className="flex-row items-center    justify-between w-full">
+
+          <Animated.View style={{ width:  '10%' }}>
+            <CircleButton 
+              icon='chevron-left' 
+              size={53} 
+              onPress={()=>{
+                if(showDevotionalContent){
+                  handleDevotionalClose({})
+                  devotionalReaderRef.current?.handleClose();
+                }
+                if(showPrayerContent){
+                  prayerViewRef.current?.handleBack();
+                }
+                if(showJournalContent){
+                  journalRef.current?.handleCancel();
+                }
+              }} 
+              
+            />
+          </Animated.View>
+
+          <Animated.View style={{ width: showPrayerContent ? '60%' : '82%' }}>
+           {showDevotionalContent ? (
+  <PrimaryButton
+    title={buttonTitle}
+    onPress={handleDevotionalFinishPress}
+    disabled={devotionalReaderRef.current?.isRewarding || !devotionalReadedFully}
+    buttonType="blue"
+    icon={require('../../assets/icons/starIcon.png')}
+    reward={'+25'}
+    opacity={!devotionalReadedFully ? 0.7 : 1}
+  />
+) : showPrayerContent  ? (
+  <BluePrimaryButton
+    title="Complete Prayer"
+    width="100%"
+    disabled={isCompletePrayerDisabled}
+    onPress={() => {
+      prayerViewRef.current?.handleCompletePrayer();
+    }}
+  />
+) : (
+  <PrimaryButton
+    title={buttonTitle}
+    disabled={!journalButtonEnabled}
+    onPress={() => {
+      journalRef.current?.handleSave();
+      // ... existing save thoughts code ...
+    }}
+    buttonType="blue"
+    icon={require('../../assets/icons/starIcon.png')}
+    reward={'+25'}
+  />
+)}
+          </Animated.View> 
+          
+         {showPrayerContent && <Animated.View style={{ width: '10%' }}>
+          <CircleButton
+                      icon="settings"
+                      size={50}
+                      // hapticsEnabled={hapticsEnabled}
+                      onPress={() => {
+                        prayerViewRef.current?.handleSettings();
+                      }}
+                    />
+          </Animated.View>}
+          </View>
+        </Animated.View>
+        : null}
+{/* BUTTONS END */}
           {/* Widget and Explainer Modals - Keep these inside SafeAreaView */}
           <WidgetHowToSheet visible={showWidgetSheet} onClose={handleWidgetSheetClose} />
           <HeartsExplainerModal

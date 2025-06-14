@@ -30,6 +30,7 @@ interface HomeState {
   tappedPrayAboutVerse: boolean;
   tappedReflectAboutVerse: boolean;
   sawStreakToday: boolean; // Track if streak screen was shown today
+  showGlobalButtons: boolean;
 
   // Setter functions
   setMode: (mode: HomeMode) => void;
@@ -45,6 +46,7 @@ interface HomeState {
   setTappedReflectAboutVerse: (tapped: boolean) => void;
   setSawStreakToday: (saw: boolean) => void; // Setter for sawStreakToday
   resetCompletionStates: () => void; // Reset all completion states
+  setShowGlobalButtons: (show: boolean) => void;
 }
 
 /**
@@ -60,7 +62,7 @@ export const useHomeStore = create<HomeState>()(
       devotionalReaderVisible: false,
       prayerViewVisible: false,
       showStreakScreen: false,
-
+      showGlobalButtons: false,
       // Default completion states
       readingCompleted: false,
       prayerCompleted: false,
@@ -92,6 +94,7 @@ export const useHomeStore = create<HomeState>()(
       setTappedPrayAboutVerse: (tapped) => set({ tappedPrayAboutVerse: tapped }),
       setTappedReflectAboutVerse: (tapped) => set({ tappedReflectAboutVerse: tapped }),
       setSawStreakToday: (saw) => set({ sawStreakToday: saw }),
+      setShowGlobalButtons: (show) => set({ showGlobalButtons: show }),
       resetCompletionStates: () => {
         console.log('🔍 HOMESTORE - resetCompletionStates called - BEFORE reset:', {
           currentState: {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,9 @@ import {
   Dimensions,
   TouchableWithoutFeedback,
   Animated,
-  Image,
 } from 'react-native';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { useHomeStore } from '~/app/stores/homeStore';
-import { Feather } from '@expo/vector-icons';
 import firestore from '@react-native-firebase/firestore';
 import Reanimated, {
   SlideInDown,
@@ -23,24 +21,40 @@ import Reanimated, {
   withSpring,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import { useUserStore } from '~/app/stores/userStore';
 import { getLevelData } from '~/utils/levelUtils';
 import { RPH } from '~/app/helper/helper';
 import SuccessMessage from './SuccessMessage';
 import { router } from 'expo-router';
-import PrimaryButton from './PrimaryButton';
-import CircleButton from './Shared/CircleButton';
+import analytics from '~/utils/analytics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+interface DevotionalCard {
+  type: string;
+  content: string;
+  reference?: string;
+}
 
 interface DevotionalReaderProps {
   visible?: boolean;
   onClose?: ({isPrayPresses}:{isPrayPresses?:boolean}) => void;
   setFinishReading: (a: boolean) => void;
+  setDevotionalReadedFully: (value: boolean) => void;
+  setCurrentVerseReference: (reference: string) => void;
 }
 
-const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onClose, setFinishReading }) => {
+export interface DevotionalReaderRef {
+  handleNextCard: () => void;
+  currentIndex: number;
+  totalCards: number;
+  isRewarding: boolean;
+  handleClose: () => void;
+  onFinishPress: () => void;
+  isLastCard: boolean;
+}
+
+const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(({ visible = true, onClose, setFinishReading, setDevotionalReadedFully, setCurrentVerseReference }, ref) => {
   const { currentDevotional, isLoading } = useDevotionalStore();
   const devotionalError = useDevotionalStore().error;
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -259,6 +273,15 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
       progressValue.value = withTiming(newProgress, { duration: 600 });
     }
   }, [currentIndex, totalCards, progressValue]);
+  useEffect(() => {
+    const setShowGlobalButtons = useHomeStore.getState().setShowGlobalButtons;
+    setShowGlobalButtons(true);
+  
+    return () => {
+      setShowGlobalButtons(false);
+    }
+  }, [])
+  
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -282,15 +305,53 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
     if (currentIndex < totalCards - 1) {
       setCurrentIndex(i => i + 1);
       setTimeout(scrollToBottom, 150);
-    } else {
-      // Reached the end - close the reader
-      // if (onClose) {
-      //   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      //   onClose({});
-      // }
     }
-  }, [currentIndex, totalCards, scrollToBottom, showTapGuidance, tapCount, onClose]);
 
+    // Set devotionalReadedFully to true when reaching the last card
+    if (currentIndex === totalCards - 2) { // -2 because we're about to increment to the last card
+      setDevotionalReadedFully(true);
+    }
+  }, [currentIndex, totalCards, scrollToBottom, showTapGuidance, tapCount, setDevotionalReadedFully]);
+
+  const handleClose = useCallback(() => {
+    useHomeStore.getState().setShowGlobalButtons(false);
+    if (onClose) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      onClose({isPrayPresses: false});
+    }
+  }, [onClose]);
+
+  const isLastCard = useMemo(() => {
+    return currentIndex === totalCards - 1;
+  }, [currentIndex, totalCards]);
+
+  useImperativeHandle(ref, () => ({
+    handleNextCard,
+    currentIndex,
+    totalCards,
+    isRewarding,
+    handleClose,
+    isLastCard,
+    onFinishPress
+  }));
+
+  function onFinishPress (){
+    setIsRewarding(true);
+    setShowSuccess(true);
+    setFinishReading(true)
+    // Mark reading as completed
+    const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
+    const setShowGlobalButtons = useHomeStore.getState().setShowGlobalButtons;
+    setReadingCompleted(true);
+    setShowGlobalButtons(false);
+
+    // Log completion analytics
+    analytics.logEvent('DevotionalReader_Completed', {
+      bibleReference: currentDevotional?.bibleReference,
+      hasContext: !!currentDevotional?.context,
+      totalCards: totalCards,
+    });
+  }
   const animatedProgressStyle = useAnimatedStyle(() => {
     return { width: `${progressValue.value * 100}%` };
   });
@@ -305,7 +366,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
           We could not load today&apos;s devotional. Please check your connection and try again.
         </Text>
         {onClose && (
-          <TouchableOpacity onPress={() => onClose({})} className="bg-brown/20 px-6 py-3 rounded-xl">
+          <TouchableOpacity onPress={handleClose} className="bg-brown/20 px-6 py-3 rounded-xl">
             <Text className="text-brown font-feather-bold">Go Back</Text>
           </TouchableOpacity>
         )}
@@ -344,6 +405,13 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
 
   console.log('📋 Cards to show:', cardsToShow.length, cardsToShow);
 
+  // Update verse reference when devotional data changes
+  useEffect(() => {
+    if (cardsToShow[0]?.reference) {
+      setCurrentVerseReference(cardsToShow[0].reference);
+    }
+  }, [cardsToShow, setCurrentVerseReference]);
+
   if (!visible) return null;
 
   return (
@@ -381,7 +449,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
                 setSawStreakToday(true);
                 router.push('/streak')
               }
-              onClose({});
+              onClose({isPrayPresses: false});
             }
           }}
           onPray={() => {
@@ -482,7 +550,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
             alwaysBounceVertical={true}
             automaticallyAdjustContentInsets={true}>
             <TouchableWithoutFeedback onPress={handleNextCard}>
-              <View style={{ minHeight: 200 }}>
+              <View style={{ minHeight: 200, paddingBottom:RPH(12) }}>
                 {cardsToShow.length === 0 ? (
                   <Text className="text-brown text-center">No cards to display</Text>
                 ) : (
@@ -505,6 +573,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
                             borderRadius: 20,
                             borderWidth: 2,
                             borderColor: 'rgba(121, 83, 35, 0.1)',
+                           
                           }}>
                             {/* Bible reference for verse card */}
                             {card.type === 'verse' && card.reference && (
@@ -533,48 +602,6 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
                     )}
                   </>
                 )}
-
-                {/* Tap guidance or finish button */}
-                <View  className="w-full  items-center mt-8">
-                  {/* Bible reference */}
-                <View className='flex-row px-6  items-center w-full justify-between'>
-                {cardsToShow[0]?.reference && (
-                    <Text className="font-feather-bold text-[20px] text-brown/60 mb-2" style={{letterSpacing:0.2}}>
-                      {cardsToShow[0].reference}
-                    </Text>
-                  )}
-                  {/* Top right icons */}
-                  <View className="flex-row gap-3">
-                    <Image source={require('../assets/icons/share.png')} style={{opacity:0.7}} />
-                    <Image source={require('../assets/icons/bookmark.png')} style={{opacity:0.7}} />
-                  </View>
-                </View>
-                  {/* Button row */}
-                  <View className="flex-row items-center w-full justify-center">
-                    {/* Left round button */}
-                    <CircleButton
-                      icon="chevron-left"
-                      size={56}
-                      // onPress={() => setCurrentIndex(Math.max(currentIndex - 1, 0))}
-                      onPress={() => onClose?.({isPrayPresses: false})} 
-                      // disabled={currentIndex === 0}
-                    />
-                    {/* Main blue button */}
-                    <View >
-                      <PrimaryButton
-                        title="Continue"
-                        onPress={isRewarding ? (() => {}) : handleNextCard}
-                        disabled={isRewarding || currentIndex < totalCards - 1}
-                        buttonType="blue"
-                        icon={require('../assets/icons/starIcon.png')}
-                        reward={'+25'}
-                        
-                        style="ml-2"
-                        opacity={currentIndex < totalCards - 1 ? 0.7 : 1}
-                      />
-                    </View>
-                  </View>
-                </View>
               </View>
             </TouchableWithoutFeedback>
           </ScrollView>
@@ -582,6 +609,8 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
       )}
     </View>
   );
-};
+});
+
+DevotionalReader.displayName = 'DevotionalReader';
 
 export default DevotionalReader;
