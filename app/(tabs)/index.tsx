@@ -321,7 +321,15 @@ export default function HomeScreen() {
 
   // Bottom sheet ref and snap points
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const snapPoints = useMemo(() => ['60%', "65%", "70%", "75%", "80%", '85%', '90%'], []);
+  // Remove the old snapPoints declaration here
+  // ...
+  // Keep only the new conditional snapPoints definition
+  const snapPoints = useMemo(() => (
+    showPrayerContent
+      ? ['60%', '65%', '70%', '75%', '80%', '85%', '90%', '100%']
+      : ['60%', '65%', '70%', '75%', '80%', '85%', '90%']
+  ), [showPrayerContent]);
+  // ... existing code ...
 
   // Bottom sheet change handler
   const handleSheetChanges = useCallback((index: number) => {
