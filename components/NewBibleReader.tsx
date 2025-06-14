@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ActivityIndicator,
   Modal,
   TouchableWithoutFeedback,
   SafeAreaView,
@@ -27,10 +26,6 @@ import Reanimated, {
   useSharedValue,
   withTiming,
   Easing,
-  Layout,
-  withSpring,
-  SlideInUp,
-  SlideInDown,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Animated as RNAnimated, Easing as RNEasing } from 'react-native';
@@ -59,8 +54,8 @@ import useNoteStore from '~/app/stores/noteStore';
 import NoteEditor from './NoteEditor';
 import Animated from 'react-native-reanimated';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
+import { BibleVerseActionBar } from './BibleVerseActionBar';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -387,56 +382,6 @@ interface MenuAction {
   action: (verse: Verse) => void;
 }
 const TAB_BAR_HEIGHT = 64;
-type BibleVerseActionBarProps = {
-  reference?: string;
-  onSettingPress?: () => void;
-  onVersePress?: () => void;
-};
-function BibleVerseActionBar({ reference = 'John 3:16', onSettingPress, onVersePress }: BibleVerseActionBarProps) {
-  const insets = useSafeAreaInsets();
-  return (
-    <View
-      style={{
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: insets.bottom + TAB_BAR_HEIGHT - 10,
-        backgroundColor: '#FDEBB8',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 24,
-        paddingVertical: 14,
-        borderTopLeftRadius: 18,
-        borderTopRightRadius: 18,
-        shadowColor: 'rgba(0,0,0,0.04)',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 1,
-        shadowRadius: 8,
-        elevation: 2,
-        zIndex: 100,
-      }}
-    >
-      <TouchableOpacity onPress={onVersePress}>
-        <Text
-          style={{
-            fontFamily: 'Feather-Bold',
-            fontSize: 18,
-            color: '#B89B4C',
-          }}
-        >
-          {reference}
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        onPress={onSettingPress}
-        className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
-        <MaterialIcons name="settings" size={22} color="#795323" style={{ opacity: 0.4 }} />
-      </TouchableOpacity>
-    </View>
-  );
-}
-
 
 const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   bookId,
@@ -456,11 +401,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const [showSwipeGuidance, setShowSwipeGuidance] = useState(true);
   const [tapCount, setTapCount] = useState(0);
   const [useDefaultReader, setUseDefaultReader] = useState(false);
-  const [showBackButton, setShowBackButton] = useState(false);
-  const [previousChapterInfo, setPreviousChapterInfo] = useState<{
-    bookId: number;
-    chapter: number;
-  } | null>(null);
+  const [isFadingToChat, setIsFadingToChat] = useState(false);
 
   // Add initial render ref
   const isInitialRender = useRef(true);
@@ -491,7 +432,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // State for chat view
   const [showChatView, setShowChatView] = useState(false);
   const [selectedVerse, setSelectedVerse] = useState<Verse | null>(null);
-  const [isFadingToChat, setIsFadingToChat] = useState(false);
 
   const pathInProgress = usePathStore((s) => s.pathInProgress);
   const currentPath = usePathStore((s) => s.currentPath);
@@ -626,10 +566,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     // Add haptic feedback for navigation
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // Store current chapter info for back button
-    setPreviousChapterInfo({ bookId: currentBookId, chapter: currentChapter });
-    setShowBackButton(true);
-
     const chaptersInCurrentBook = BIBLE_CHAPTER_COUNTS[currentBookId];
 
     if (currentChapter >= chaptersInCurrentBook) {
@@ -658,31 +594,19 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Function to navigate back to the previous chapter
   const navigateToPreviousChapter = useCallback(() => {
-    if (!previousChapterInfo) return;
-
     // Add haptic feedback for navigation
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    const { bookId: prevBookId, chapter: prevChapter } = previousChapterInfo;
-
-    // Load the previous chapter
-    loadChapter(prevBookId, prevChapter).then((success) => {
-      if (success && chapterData) {
-        // Show all verses at once when returning to previous chapter
-        setTimeout(() => {
-          setCurrentIndex(chapterData.verses.length - 1);
-          setShowBackButton(false);
-          setPreviousChapterInfo(null);
-        }, 300); // Small delay to ensure chapter data is loaded
-      }
-    });
-  }, [previousChapterInfo, loadChapter, chapterData]);
+    if (currentBookId === 1 && currentChapter === 1) return; // Genesis 1:1, can't go back
+    if (currentChapter > 1) {
+      loadChapter(currentBookId, currentChapter - 1);
+    } else if (currentBookId > 1) {
+      const prevBookId = currentBookId - 1;
+      const lastChapter = BIBLE_CHAPTER_COUNTS[prevBookId];
+      loadChapter(prevBookId, lastChapter);
+    }
+  }, [currentBookId, currentChapter, loadChapter]);
 
   useEffect(() => {
-    // Reset back button state when chapter props change directly
-    setShowBackButton(false);
-    setPreviousChapterInfo(null);
-
     // Initial chapter load
     if (isInitialRender.current) {
       // Pre-fetch the chapter data before rendering
@@ -1719,7 +1643,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const versesToShow: Verse[] = chapterData.verses.slice(0, currentIndex + 1);
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <StatusBar translucent backgroundColor="transparent" barStyle={'dark-content'} />
       <Animated.View
         className="flex-1"
@@ -1734,13 +1658,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             />
           </ImageBackground>
         </Animated.View>
+       
 
         <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
           <View
             className="bg-surfaceCream rounded-t-card "
             style={{ width: '100%', height: '90%', position: 'absolute', bottom: 0 }}>
             {/* Title and Navigation Arrows Row */}
-            {isBibleReaderScreen ? null : (
+           
               <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text
                   className="font-feather-bold text-white"
@@ -1752,7 +1677,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                 </Text>
                 
                 {/* Chapter Navigation Arrows */}
-                <View style={{ flexDirection: 'row', gap: 8 }}>
+                {/* <View style={{ flexDirection: 'row', gap: 8 }}>
                   <TouchableOpacity
                     style={{
                       alignItems: 'center',
@@ -1803,9 +1728,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                       →
                     </Text>
                   </TouchableOpacity>
-                </View>
+                </View> */}
+                 <TouchableOpacity
+        onPress={handlePresentSettingsModal}
+        className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+        <MaterialIcons name="settings" size={22} color="#795323" style={{ opacity: 0.4 }} />
+      </TouchableOpacity>
               </View>
-            )}
+        
 
             {/* Absolute background to cover outer safe areas */}
             <View style={{ ...StyleSheet.absoluteFillObject }} pointerEvents="none" />
@@ -1891,7 +1821,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                 }}>
                 {/* Wrap TouchableWithoutFeedback with GestureHandlerRootView for proper functioning of gestures */}
                 <GestureHandlerRootView style={{ flex: 1 }}>
-                  <View style={{ minHeight: '100%' }}>
+                  <View style={{ minHeight: '100%' }} className='pb-12'>
                     {versesToShow.map((v, index) => {
                       // Get highlight color for this verse if it exists
                       const highlightColor = getVerseHighlightColor(v);
@@ -2037,7 +1967,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             </Reanimated.View>
 
             {/* Back button at bottom of screen */}
-            {showBackButton && !isFadingToChat && (
+            {/* {showBackButton && !isFadingToChat && (
               <Reanimated.View
                 entering={FadeIn.duration(300)}
                 style={[styles.backButton, { backgroundColor: theme.progressBarBackground }]}>
@@ -2050,7 +1980,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                   </View>
                 </TouchableOpacity>
               </Reanimated.View>
-            )}
+            )} */}
 
             {/* Render the local settings modal only when no shared handler is
           provided. */}
@@ -2247,18 +2177,21 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           </View>
         </SafeAreaView>
       </Animated.View >
-      {isBibleReaderScreen ? <BibleVerseActionBar
-        reference={`${chapterData?.book} ${chapterData?.chapter}:${chapterData?.verses[currentIndex]?.verse}`}
-        onSettingPress={handlePresentSettingsModal}
-        onVersePress={handleOpenSelector}
-      /> : null}
+      {isBibleReaderScreen ? (
+        <BibleVerseActionBar
+          reference={`${chapterData?.book} ${chapterData?.chapter}:${chapterData?.verses[currentIndex]?.verse}`}
+          onVersePress={handleOpenSelector}
+          onPrev={navigateToPreviousChapter}
+          onNext={navigateToNextChapter}
+        />
+      ) : null}
 
 
 
 
 
 
-    </>
+    </View>
   );
 };
 

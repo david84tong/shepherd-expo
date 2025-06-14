@@ -1,25 +1,32 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import CircleButton from './Shared/CircleButton';
+import { AntDesign } from '@expo/vector-icons';
 
-const TAB_BAR_HEIGHT = 64;
+export const TAB_BAR_HEIGHT = 64;
 
-interface Props {
+export interface BibleVerseActionBarProps {
   reference?: string;
   onPrev?: () => void;
   onNext?: () => void;
   disabledPrev?: boolean;
   disabledNext?: boolean;
+  leftIconComponent?: React.ReactNode;
+  rightIconComponent?: React.ReactNode;
+  onVersePress?: () => void;
 }
 
-const BibleVerseActionBar: React.FC<Props> = ({
-  reference = 'John 3:16',
+export function BibleVerseActionBar({ 
+  reference = 'John 3:16', 
   onPrev,
   onNext,
   disabledPrev = false,
   disabledNext = false,
-}) => {
+  leftIconComponent,
+  rightIconComponent,
+  onVersePress
+}: BibleVerseActionBarProps) {
   const insets = useSafeAreaInsets();
   return (
     <View
@@ -44,47 +51,32 @@ const BibleVerseActionBar: React.FC<Props> = ({
         zIndex: 100,
       }}
     >
+      <TouchableOpacity onPress={onVersePress}>
+
       <Text
         style={{
           fontFamily: 'Feather-Bold',
           fontSize: 18,
           color: '#B89B4C',
         }}
-      >
+        >
         {reference}
       </Text>
-      <View style={{ flexDirection: 'row', gap: 12 }}>
-        <TouchableOpacity
-          onPress={onPrev}
+        </TouchableOpacity>
+      <View className='flex-row gap-4 items-center'>
+        <CircleButton
+          iconComponent={leftIconComponent || <AntDesign name="caretleft" size={14} color="#795222" />}
+          size={56}
+          onPress={onPrev || (() => {})}
           disabled={disabledPrev}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: disabledPrev ? '#E5E5E5' : '#FFE4A8',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <MaterialIcons name="chevron-left" size={24} color="#3C584A" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          onPress={onNext}
+        />
+        <CircleButton
+          iconComponent={rightIconComponent || <AntDesign name="caretright" size={14} color="#795222" />}
+          size={56}
+          onPress={onNext || (() => {})}
           disabled={disabledNext}
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: 20,
-            backgroundColor: disabledNext ? '#E5E5E5' : '#FFE4A8',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          <MaterialIcons name="chevron-right" size={24} color="#3C584A" />
-        </TouchableOpacity>
+        />
       </View>
     </View>
   );
-};
-
-export default BibleVerseActionBar; 
+} 

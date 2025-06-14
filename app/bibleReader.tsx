@@ -61,6 +61,7 @@ import {
   LineHeightPreset,
   ThemeType as StoreThemeType,
 } from './stores/readerSettingsStore';
+import { BibleVerseActionBar } from '~/components/BibleVerseActionBar';
 
 // Constants
 const DEFAULT_LINE_HEIGHT = 24;
@@ -221,58 +222,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 // Add at the top of the file, after imports
 const chapterCache = new Map<string, any>();
 const LOADING_TIMEOUT = 300; // ms
-
-const TAB_BAR_HEIGHT = 64;
-type BibleVerseActionBarProps = {
-  reference?: string;
-  onSettingPress?: () => void;
-  onVersePress?: () => void;
-};
-
-function BibleVerseActionBar({ reference = 'John 3:16', onSettingPress, onVersePress }: BibleVerseActionBarProps) {
-  const insets = useSafeAreaInsets();
-  return (
-    <View
-      style={{
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        bottom: insets.bottom + TAB_BAR_HEIGHT - 10,
-        backgroundColor: '#FDEBB8',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 24,
-        paddingVertical: 14,
-        borderTopLeftRadius: 18,
-        borderTopRightRadius: 18,
-        shadowColor: 'rgba(0,0,0,0.04)',
-        shadowOffset: { width: 0, height: -2 },
-        shadowOpacity: 1,
-        shadowRadius: 8,
-        elevation: 2,
-        zIndex: 100,
-      }}
-    >
-      <TouchableOpacity onPress={onVersePress}>
-        <Text
-          style={{
-            fontFamily: 'Feather-Bold',
-            fontSize: 18,
-            color: '#B89B4C',
-          }}
-        >
-          {reference}
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        onPress={onSettingPress}
-        className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
-        <MaterialIcons name="settings" size={22} color="#795323" style={{ opacity: 0.4 }} />
-      </TouchableOpacity>
-    </View>
-  );
-}
 
 // Export the component for reuse
 export const BibleReader: React.FC<BibleReaderProps> = ({
@@ -1366,7 +1315,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                 </View>
 
                 {/* Chapter Navigation Arrows */}
-                <View style={{ position: "absolute", right: 10, top: 10, flexDirection: 'row', gap: 8 }}>
+                {/* <View style={{ position: "absolute", right: 10, top: 10, flexDirection: 'row', gap: 8 }}>
                   <TouchableOpacity
                     style={[
                       styles.navButton,
@@ -1399,9 +1348,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                       →
                     </Text>
                   </TouchableOpacity>
-                </View>
+                </View> */}
 
-                <View style={styles.headerLeft}>
+                {/* <View style={styles.headerLeft}>
                   {pathInProgress && (
                     <TouchableOpacity onPress={handleBackNavigation} style={styles.backButton}>
                       <Text style={[styles.backButtonText, { color: THEME_COLORS[currentTheme].text }]}>
@@ -1426,10 +1375,11 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                     </TouchableOpacity>
                   </View>
 
-                </View>
+                </View> */}
               </View>
 
               <View
+              className='py-5 pb-12'
               >
                 {effectiveChapterData && renderBibleContent(effectiveChapterData)}
               </View>
@@ -1596,7 +1546,8 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
             reference={effectiveChapterData
               ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}`
               : 'Loading...'}
-            onSettingPress={handlePresentModal}
+              onPrev={navigateToPreviousChapter}
+              onNext={navigateToNextChapter}
             onVersePress={handleOpenSelector}
           />
         </Animated.View >

@@ -9,6 +9,7 @@ interface CircleButtonProps {
   size?: number;
   disabled?: boolean;
   hapticsEnabled?: boolean;
+  iconComponent?: React.ReactNode;
 }
 
 const CircleButton: React.FC<CircleButtonProps> = ({
@@ -17,6 +18,7 @@ const CircleButton: React.FC<CircleButtonProps> = ({
   size = 50,
   disabled = false,
   hapticsEnabled = true,
+  iconComponent,
 }) => {
   const [isPressed, setIsPressed] = useState(false);
 
@@ -75,11 +77,15 @@ const CircleButton: React.FC<CircleButtonProps> = ({
         shadowStyles,
       ]}
     >
-      <Feather 
-        name={icon} 
-        size={size * 0.4} 
-        color={disabled ? '#999999' : '#634012'}
-      />
+      {iconComponent ? (
+        iconComponent
+      ) : (
+        <Feather 
+          name={icon} 
+          size={size * 0.4} 
+          color={disabled ? '#999999' : '#634012'}
+        />
+      )}
     </Pressable>
   );
 };
