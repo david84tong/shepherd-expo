@@ -59,6 +59,7 @@ import useNoteStore from '~/app/stores/noteStore';
 import NoteEditor from './NoteEditor';
 import Animated from 'react-native-reanimated';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -278,6 +279,13 @@ interface NewBibleReaderProps {
   onSwitchToDefaultReader?: () => void; // Notify parent to switch to default reader
   onHandoffChapterData?: (data: ChapterResponse | null) => void; // Handoff chapter data to parent
   onOpenSettings?: () => void; // Open shared settings sheet from parent
+  isBibleReaderScreen?: boolean; // Whether this is the BibleReader screen
+
+
+
+
+
+
 }
 
 interface TypingTextProps {
@@ -377,6 +385,57 @@ interface MenuAction {
   color: string;
   action: (verse: Verse) => void;
 }
+const TAB_BAR_HEIGHT = 64;
+type BibleVerseActionBarProps = {
+  reference?: string;
+  onSettingPress?: () => void;
+  onVersePress?: () => void;
+};
+function BibleVerseActionBar({ reference = 'John 3:16', onSettingPress, onVersePress }: BibleVerseActionBarProps) {
+  const insets = useSafeAreaInsets();
+  return (
+    <View
+      style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: insets.bottom + TAB_BAR_HEIGHT - 10,
+        backgroundColor: '#FDEBB8',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 24,
+        paddingVertical: 14,
+        borderTopLeftRadius: 18,
+        borderTopRightRadius: 18,
+        shadowColor: 'rgba(0,0,0,0.04)',
+        shadowOffset: { width: 0, height: -2 },
+        shadowOpacity: 1,
+        shadowRadius: 8,
+        elevation: 2,
+        zIndex: 100,
+      }}
+    >
+      <TouchableOpacity onPress={onVersePress}>
+        <Text
+          style={{
+            fontFamily: 'Feather-Bold',
+            fontSize: 18,
+            color: '#B89B4C',
+          }}
+        >
+          {reference}
+        </Text>
+      </TouchableOpacity>
+      <TouchableOpacity
+        onPress={onSettingPress}
+        className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+        <MaterialIcons name="settings" size={22} color="#795323" style={{ opacity: 0.4 }} />
+      </TouchableOpacity>
+    </View>
+  );
+}
+
 
 const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   bookId,
@@ -387,6 +446,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   onSwitchToDefaultReader,
   onHandoffChapterData,
   onOpenSettings,
+  isBibleReaderScreen = false,
 }) => {
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1657,13 +1717,13 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
               Reading
             </Text>
 
-            <View style={[{ position: 'absolute', right: 10, top: -50 }]}>
+            {isBibleReaderScreen ? null : <View style={[{ position: 'absolute', right: 10, top: -50 }]}>
               <TouchableOpacity
                 onPress={handlePresentSettingsModal}
                 className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
                 <MaterialIcons name="settings" size={22} color="#795323" style={{ opacity: 0.4 }} />
               </TouchableOpacity>
-            </View>
+            </View>}
 
             {/* Absolute background to cover outer safe areas */}
             <View style={{ ...StyleSheet.absoluteFillObject }} pointerEvents="none" />
@@ -1674,7 +1734,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                 fadeAnimStyle,
               ]}>
               {/* HEADER: Bible Book/Chapter, tap to open selector, styled like bibleReader.tsx */}
-              <View className="flex-row items-center justify-between mb-3  px-[4px] py-[10px]">
+              {isBibleReaderScreen ? null : <View className="flex-row items-center justify-between mb-3  px-[4px] py-[10px]">
                 <View className="flex-row items-center">
                   {isInPathMode && onNavigateBack && (
                     <TouchableOpacity
@@ -1698,9 +1758,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                     </Text>
                   </TouchableOpacity>
                 </View>
-              </View>
+              </View>}
               {/* Add progress bar at the top */}
-              <View
+              {isBibleReaderScreen ? null : <View
                 style={{
                   height: 12,
                   borderRadius: 12,
@@ -1718,7 +1778,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                     animatedProgressStyle,
                   ]}
                 />
-              </View>
+              </View>}
               <ScrollView
                 ref={scrollViewRef}
                 className="flex-1"
@@ -1806,21 +1866,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                                   handleLeftSwipeRelease(1, v);
                                 }
                               }}>
-                              <Reanimated.View
-                                entering={SlideInDown.duration(2000).delay(index * 60).withInitialValues({
-                                  opacity: 0,
-                                  transform: [{ translateY: 800 }]
-                                }).withCallback((finished) => {
-                                  // Optional callback when animation completes
-                                })}
-                                layout={Layout.springify()}
-                                ref={(ref) => {
-                                  if (ref) {
-                                    viewRefs.current.set(v.verse, ref);
-                                  } else {
-                                    viewRefs.current.delete(v.verse);
-                                  }
-                                }}>
+                              <View
+                              >
                                 <View
                                   className={`bg-surfaceCreamLight`}
                                   style={[
@@ -1838,7 +1885,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                                     </Text>
                                   </View>
                                 </View>
-                              </Reanimated.View>
+                              </View>
                             </Swipeable>
                           </View>
                         </LongPressGestureHandler>
@@ -2118,6 +2165,17 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           </View>
         </SafeAreaView>
       </Animated.View >
+      {isBibleReaderScreen ? <BibleVerseActionBar
+        reference={`${chapterData?.book} ${chapterData?.chapter}:${chapterData?.verses[currentIndex]?.verse}`}
+        onSettingPress={handlePresentSettingsModal}
+        onVersePress={handleOpenSelector}
+      /> : null}
+
+
+
+
+
+
     </>
   );
 };

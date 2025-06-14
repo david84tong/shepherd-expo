@@ -1123,6 +1123,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       <>
         <StatusBar translucent backgroundColor="transparent" />
         <NewBibleReader
+          isBibleReaderScreen
           bookId={currentBookId}
           chapter={currentChapter}
           translation={currentVersion}
