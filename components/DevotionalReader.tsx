@@ -421,8 +421,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
         />
       ) : (
         <View style={{ flex: 1 }}>
-          {/* Header */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 0, marginBottom: 16 }}>
+          {/* <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 0, marginBottom: 16 }}>
             <Text
               className="font-feather-bold text-textPrimary"
               style={{
@@ -433,7 +432,6 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
               Daily Devotional
             </Text>
 
-            {/* Close button */}
             {onClose && (
               <TouchableOpacity 
                 onPress={() => onClose({isPrayPresses: false})} 
@@ -441,22 +439,22 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
                 <Feather name="x" size={18} color="#795323" />
               </TouchableOpacity>
             )}
-          </View>
+          </View> */}
 
           {/* Date Header */}
-          <View className="flex-row items-center justify-center mb-2">
+          {/* <View className="flex-row items-center justify-center mb-2">
             <Text className="font-din text-textPrimary/40 text-center text-sm">
               {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
             </Text>
-          </View>
+          </View> */}
 
           {/* Progress bar */}
-          <View style={{ height: 8, borderRadius: 4, marginBottom: 12, overflow: 'hidden' }} className='bg-brown/10'>
+          <View style={{ height: RPH(1.5), borderRadius: 50, marginBottom: 12, overflow: 'hidden' }} className='bg-brown/10'>
             <Reanimated.View
               style={[
                 {
                   height: '100%',
-                  backgroundColor: '#DCB280',
+                  backgroundColor: '#FC8A02',
                   borderRadius: 4,
                 },
                 animatedProgressStyle,
@@ -527,7 +525,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
                 )}
 
                 {/* Tap guidance or finish button */}
-                {currentIndex < totalCards - 1 ? (
+                
                   <View style={{ alignItems: 'center', marginTop: 12 }}>
                     {showTapGuidance && (
                       <Text style={{
@@ -540,8 +538,8 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
                       </Text>
                     )}
                   </View>
-                ) : (
                   <TouchableOpacity
+                
                     onPress={isRewarding ? undefined : () => {
                       setIsRewarding(true);
                       setShowSuccess(true);
@@ -559,7 +557,10 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
 
                     }}
                     activeOpacity={isRewarding ? 1 : 0.8}
-                    disabled={isRewarding}
+                    disabled={isRewarding || currentIndex < totalCards - 1}
+                    style={{
+                      opacity: currentIndex < totalCards - 1 ? 0.7 : 1,
+                    }}
                   >
                     <View style={{
                       backgroundColor: isRewarding ? '#E5E5E5' : '#DCB280',
@@ -578,7 +579,7 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
                       </Text>
                     </View>
                   </TouchableOpacity>
-                )}
+               
               </View>
             </TouchableWithoutFeedback>
           </ScrollView>
