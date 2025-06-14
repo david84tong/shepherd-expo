@@ -1156,6 +1156,8 @@ export default function HomeScreen() {
     console.log('📖 fetchTodaysDevotional call completed');
   }, []);
 
+
+
   // Add the hooks with the other state hooks (right before line 619)
   const riveComponent = useMemo(() => {
     if (!riveAssets || !riveReady) return null;
@@ -1245,6 +1247,21 @@ export default function HomeScreen() {
   const [showDevotionalContent, setShowDevotionalContent] = useState(false);
   const [showJournalReader, setShowJournalReader] = useState(false);
   const [showJournalContent, setShowJournalContent] = useState(false);
+  
+  // Get customDevotional from store
+  const customDevotional = useDevotionalStore((state) => state.customDevotional);
+  const clearCustomDevotional = useDevotionalStore((state) => state.clearCustomDevotional);
+  
+  // Automatically open DevotionalReader when a quick devotional is available
+  useEffect(() => {
+    if (customDevotional && !showDevotionalContent) {
+      console.log('[HomeScreen] Detected quick devotional. Opening DevotionalReader.');
+      setShowDevotionalContent(true);
+      setDevotionalReaderVisible(true);
+      bottomSheetRef.current?.snapToIndex?.(0);
+    }
+  }, [customDevotional, showDevotionalContent]);
+  
   const levelPillWidthAnim = useRef(new Animated.Value(0)).current;
   const levelPillOpacityAnim = useRef(new Animated.Value(0)).current;
   // Pre-calculate the expanded width for the pill (use a reasonable fixed width instead of screen-based)
@@ -1851,6 +1868,8 @@ export default function HomeScreen() {
                   visible={showDevotionalContent}
                   setFinishReading={setFinishReading}
                   onClose={({isPrayPresses}:{isPrayPresses?:boolean}) => {
+                    // Clear custom devotional first
+                    clearCustomDevotional();
                     setRiveIdle(); // Set to idle on close
                     // Immediately mark devotional reader as hidden so overlay/header animations start in sync
                     setDevotionalReaderVisible(false);

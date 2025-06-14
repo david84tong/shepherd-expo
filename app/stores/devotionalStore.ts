@@ -13,6 +13,7 @@ interface DevotionalStore {
   error: string | null;
   bibleVersion: string;
   locale: string;
+  customDevotional: Devotional | null; // Quick devotional from Bible reader swipe
   
   // Actions
   fetchTodaysDevotional: () => Promise<void>;
@@ -21,6 +22,10 @@ interface DevotionalStore {
   setBibleVersion: (version: string) => void;
   clearError: () => void;
   reset: () => void;
+  // NEW ACTION: Quickly create a devotional from a verse the user selected
+  createQuickDevotional: (verseText: string, reference: string) => void;
+  // Clear custom devotional when closing
+  clearCustomDevotional: () => void;
 }
 
 export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
@@ -30,6 +35,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   error: null,
   bibleVersion: 'ESV',
   locale: 'en',
+  customDevotional: null,
 
   fetchTodaysDevotional: async () => {
     console.log('🚀 fetchTodaysDevotional function called!');
@@ -184,7 +190,35 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       isLoading: false,
       error: null,
     });
-  }
+  },
+
+  // QUICK DEVOTIONAL CREATION -----------------------------------------------
+  createQuickDevotional: (verseText: string, reference: string) => {
+    const quickDevotional: Devotional = {
+      id: `quick-${Date.now()}`,
+      title: '',
+      content: '',
+      createdAt: new Date().toISOString(),
+      context: '',
+      bibleReference: reference,
+      prayer: '',
+      reflectionPrompt: '',
+      likes: 0,
+      shares: 0,
+      completed: 0,
+      date: new Date().toISOString(),
+      imageURL: '',
+      verse: verseText,
+    };
+
+    console.log('[DevotionalStore] Created quick devotional from verse:', quickDevotional);
+    set({ customDevotional: quickDevotional, currentDevotional: quickDevotional });
+  },
+
+  clearCustomDevotional: () => {
+    console.log('[DevotionalStore] Clearing custom devotional');
+    set({ customDevotional: null });
+  },
 }));
 
 // Helper function to parse Bible reference like "Jeremiah 29:13" or "1 John 3:16"
