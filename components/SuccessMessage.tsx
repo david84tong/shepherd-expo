@@ -58,6 +58,8 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
   const textOpacity = useSharedValue(0.4);
   const blueOpacity = useSharedValue(0.3);
   const goldOpacity = useSharedValue(0.4);
+  const scale = useSharedValue(0.8);
+  const fadeOpacity = useSharedValue(0.1);
   const [localButtonsEnabled, setLocalButtonsEnabled] = useState(false);
   const hasAnimated = useRef(false);
 
@@ -74,7 +76,13 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
     textOpacity.value = 0.4;
     blueOpacity.value = 0.3;
     goldOpacity.value = 0.4;
+    scale.value = 0.6;
+    fadeOpacity.value = 0;
     setLocalButtonsEnabled(false);
+    
+    // Animate pop out and fade in
+    scale.value = withTiming(1, { duration: 600 });
+    fadeOpacity.value = withTiming(1, { duration: 600 });
     
     // Animate progress bars and text
     setTimeout(() => {
@@ -109,8 +117,8 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
     width: '100%',
   }));
   const successViewAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: 1,
-    transform: [{ scale: 1 }],
+    opacity: fadeOpacity.value,
+    transform: [{ scale: scale.value }],
   }));
 
   return (
