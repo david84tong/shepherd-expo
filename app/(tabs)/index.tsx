@@ -1860,8 +1860,16 @@ export default function HomeScreen() {
                     clearCustomDevotional();
                     setRiveIdle(); // Set to idle on close
                     // Immediately mark devotional reader as hidden so overlay/header animations start in sync
-                    setDevotionalReaderVisible(false);
+                
                     // Start fade out
+                    if(isPrayPresses){
+                      handlePrayerPress()
+                      setTimeout(() => {
+                        setDevotionalReaderVisible(false);
+                      }, 2000);
+                    }else{
+                      setDevotionalReaderVisible(false);
+                    }
                     Animated.parallel([
                       // Card content fade out
                       Animated.timing(devotionalCardOpacityAnim, {
@@ -1908,9 +1916,9 @@ export default function HomeScreen() {
                       ]).start(() => {
                         // Reset reader state after animations complete
                         setShowDevotionalReader(false);
-                        if(isPrayPresses){
-                          handlePrayerPress()
-                        }
+                        // if(isPrayPresses){
+                        //   handlePrayerPress()
+                        // }
                       });
                     }, 250); // Switch content halfway through fade out
                   }}
@@ -1985,7 +1993,16 @@ export default function HomeScreen() {
                   setFinishReading={setFinishReading}
                   onClose={({isReflectPresses}:{isReflectPresses?:boolean}) => {
                     // Immediately mark prayer view as hidden so overlay/header animations start in sync
-                    setPrayerViewVisible(false);
+                    
+                    if(isReflectPresses){
+                      handleReflectionPress()
+                      setTimeout(() => {
+                        setPrayerViewVisible(false);
+                      
+                      }, 2000);
+                    }else{
+                      setPrayerViewVisible(false);
+                    }
                     // Start fade out
                     Animated.parallel([
                       // Card content fade out
@@ -2006,9 +2023,12 @@ export default function HomeScreen() {
                     // Switch content and artboard immediately after a short delay
                     setTimeout(() => {
                       // Hide prayer content and reset lamb state
-                      setShowPrayerContent(false);
                       // Reset to default state
+                      
+
+              
                       setMode('DEFAULT');
+                      setShowPrayerContent(false);
                       // Reset Rive state to default
                       if (riveRef.current?.setInputState) {
                         try {
@@ -2043,9 +2063,9 @@ export default function HomeScreen() {
                       ]).start(() => {
                         // Reset prayer view state after animations complete
                         setShowPrayerView(false);
-                        if(isReflectPresses){
-                          handleReflectionPress()
-                        }
+                        // if(isReflectPresses){
+                        //   handleReflectionPress()
+                        // }
                       });
                     }, 250); // Switch content halfway through fade out
                   }}

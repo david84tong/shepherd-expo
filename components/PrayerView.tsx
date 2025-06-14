@@ -899,7 +899,9 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
 
             // Show tab bar again
             const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
-            setPrayerViewVisible(false);
+            setTimeout(() => {
+              setPrayerViewVisible(false);
+            }, 2000);
 
             // Log completion analytics
             analytics.logEvent('PrayerView_Completed', {

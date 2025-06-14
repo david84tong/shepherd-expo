@@ -390,7 +390,9 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
             setLastReadingDate(now);
             const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
             setReadingCompleted(true);
+           setTimeout(() => {
             setShowSuccess(false);
+           }, 1000);
             setIsRewarding(false);
             if (onClose) {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
