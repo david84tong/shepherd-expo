@@ -22,6 +22,7 @@ import analytics from '~/utils/analytics';
 import CircleButton from './Shared/CircleButton';
 import { getLevelData } from '~/utils/levelUtils';
 import SuccessMessage from './SuccessMessage';
+import { RPH } from '~/app/helper/helper';
 
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
@@ -362,7 +363,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishR
     return {
       opacity: bottomContentOpacity,
       transform: [{ translateY: bottomContentAnimY }],
-      bottom: keyboardVisible ? keyboardHeight + -440 : -100,
+      bottom: keyboardVisible ? keyboardHeight + -440 : -RPH(5),
     };
   }, [bottomContentOpacity, bottomContentAnimY, keyboardVisible, keyboardHeight]);
 
