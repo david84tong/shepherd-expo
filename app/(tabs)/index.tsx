@@ -1274,7 +1274,7 @@ export default function HomeScreen() {
       Animated.timing(devotionaleRadingOpacityAnim, {
         toValue: 1,
         duration: 1000, // 2 seconds fade-in for slow opacity increase
-        delay: 2500, // 2 seconds delay before starting the fade-in
+        delay: 0, // 2 seconds delay before starting the fade-in
         easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }).start();
