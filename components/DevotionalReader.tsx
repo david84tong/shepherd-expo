@@ -365,7 +365,10 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
             setIsRewarding(false);
             if (onClose) {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              setFinishReading(false);
+              setTimeout(() => {
+                
+                setFinishReading(false);
+              }, 2000);
               const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
               // Check if we need to show streak screen
@@ -391,7 +394,9 @@ const DevotionalReader: React.FC<DevotionalReaderProps> = ({ visible = true, onC
             setIsRewarding(false);
             if (onClose) {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              setFinishReading(false);
+              setTimeout(() => {
+                setFinishReading(false);
+              }, 2000);
               const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
               // Check if we need to show streak screen

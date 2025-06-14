@@ -1469,19 +1469,7 @@ export default function HomeScreen() {
           pointerEvents="none"
         />} */}
 
-        {finishReading && (
-          <Animated.View
-            style={{
-              position: 'absolute',
-              width: '100%',
-              height: '100%',
-              opacity: finishReadingOpacityAnim,
-            }}
-            pointerEvents="none"
-          >
-            <SpotlightOverlay visible={true} radius={150} centerY={SCREEN_HEIGHT * 0.25} />
-          </Animated.View>
-        )}
+
 
         {(showDevotionalContent || showPrayerContent || showJournalContent) && !finishReading && (
           <Animated.View

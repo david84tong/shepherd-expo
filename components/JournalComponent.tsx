@@ -434,7 +434,9 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose, setFinishR
           prevLevel={levelInfo.level}
           buttonsEnabled={buttonsEnabled}
           onGoHome={() => {
-            setFinishReading(false)
+            setTimeout(() => {
+              setFinishReading(false)
+            }, 2000);
 
             if (readingCompleted && prayerCompleted && !sawDailyBonus) {
               setSuccessType(SuccessAnimationType.BONUS);

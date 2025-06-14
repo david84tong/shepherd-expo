@@ -850,7 +850,9 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
           buttonsEnabled={buttonsEnabled}
           onGoHome={() => {
             // Update lastActivityDate to prevent completion states from being reset
-            setFinishReading(false)
+            setTimeout(() => {
+              setFinishReading(false)
+            }, 2000);
             const now = firestore.Timestamp.now();
             const setLastActivityDate = useUserStore.getState().setLastActivityDate;
             const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
@@ -882,7 +884,9 @@ const PrayerView: React.FC<PrayerViewProps> = ({ visible = true, onClose, onSetI
           }}
           onPray={() => {
             // Update lastActivityDate to prevent completion states from being reset
-            setFinishReading(false)
+            setTimeout(() => {
+              setFinishReading(false)
+            }, 2000);
             const now = firestore.Timestamp.now();
             const setLastActivityDate = useUserStore.getState().setLastActivityDate;
             const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
