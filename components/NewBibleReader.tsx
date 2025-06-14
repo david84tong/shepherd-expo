@@ -60,6 +60,7 @@ import NoteEditor from './NoteEditor';
 import Animated from 'react-native-reanimated';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useDevotionalStore } from '~/app/stores/devotionalStore';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -543,6 +544,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const getChaptersReadTotal = useUserStore((s) => s.getChaptersReadTotal);
 
   const router = useRouter();
+  // Devotional store action
+  const createQuickDevotional = useDevotionalStore((s) => s.createQuickDevotional);
 
   // Track translation changes in analytics
   useEffect(() => {
@@ -1182,9 +1185,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const handleLeftSwipeRelease = (openRatio: number, verse: Verse) => {
     if (isFadingToChat) return;
 
-    // If opened enough, trigger the menu
     if (openRatio > SWIPE_THRESHOLD && swipeProgress.current.isActive) {
-      handleSwipeVerseToMenu(verse);
+      handleSwipeVerseToDevotional(verse);
     }
     swipeProgress.current.isActive = false;
   };
@@ -1659,6 +1661,38 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       action: handleAddNote,
     },
   ];
+
+  // Handle swipe verse to Devotional
+  const handleSwipeVerseToDevotional = useCallback(
+    (verse: Verse) => {
+      if (isFadingToChat) return;
+
+      // Immediate haptic feedback
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+
+      // Persist the devotional verse so HomeScreen can pick it up
+      if (chapterData) {
+        createQuickDevotional(
+          verse.text,
+          `${chapterData.book} ${chapterData.chapter}:${verse.verse}`
+        );
+      }
+
+      // Close the swipeable if still open
+      const swipeableRef = swipeableRefs.current.get(verse.verse);
+      swipeableRef?.close();
+
+      // Navigate back to the Home tab (index screen)
+      router.replace('/');
+
+      analytics.logEvent('CardBibleReader_Swiped_VerseToDevotional', {
+        book: chapterData?.book,
+        chapter: chapterData?.chapter,
+        verse: verse.verse,
+      });
+    },
+    [isFadingToChat, createQuickDevotional, chapterData, router]
+  );
 
   if (!chapterData) {
     return (
