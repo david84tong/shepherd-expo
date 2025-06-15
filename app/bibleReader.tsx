@@ -306,6 +306,34 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // In the component, add state for selections history
   const [selectionsHistory, setSelectionsHistory] = useState<SelectionsMap>({});
 
+  // Add animation values
+  const fadeAnim = useSharedValue(0);
+  const translateY = useSharedValue(50); // Start from 50px below
+
+  // Add useEffect for animation that triggers when loading completes
+  useEffect(() => {
+    if (!loading && (chapterData || pendingChapterData)) {
+      fadeAnim.value = withTiming(1, {
+        duration: 400,
+        easing: ReanimatedEasing.out(ReanimatedEasing.cubic),
+      });
+      translateY.value = withTiming(0, {
+        duration: 400,
+        easing: ReanimatedEasing.out(ReanimatedEasing.cubic),
+      });
+    }
+  }, [loading, chapterData, pendingChapterData]);
+
+  // Create animated style
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: fadeAnim.value,
+      transform: [
+        { translateY: translateY.value }
+      ],
+    };
+  });
+
   useEffect(() => {
     const loadInitialData = async () => {
       setLoading(true);
@@ -1124,17 +1152,23 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     return (
       <>
         <StatusBar translucent backgroundColor="transparent" />
-        <NewBibleReader
-          isBibleReaderScreen
-          bookId={currentBookId}
-          chapter={currentChapter}
-          translation={currentVersion}
-          isInPathMode={pathInProgress}
-          onNavigateBack={handleBackNavigation}
-          onSwitchToDefaultReader={handleSwitchToDefaultReader}
-          onHandoffChapterData={handleHandoffChapterData}
-          onOpenSettings={handlePresentModal}
-        />
+        <View style={{ flex: 1 }}>
+          {loading ? (
+            <PulsingDotsIndicator />
+          ) : (
+            <NewBibleReader
+              isBibleReaderScreen
+              bookId={currentBookId}
+              chapter={currentChapter}
+              translation={currentVersion}
+              isInPathMode={pathInProgress}
+              onNavigateBack={handleBackNavigation}
+              onSwitchToDefaultReader={handleSwitchToDefaultReader}
+              onHandoffChapterData={handleHandoffChapterData}
+              onOpenSettings={handlePresentModal}
+            />
+          )}
+        </View>
 
         {/* Shared Settings Modal */}
         <Modal
@@ -1272,7 +1306,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           backgroundColor="transparent"
           barStyle={'dark-content'}
         />
-        <Animated.View className="flex-1" style={{ opacity: 1 }}>
+        <View className="flex-1">
           <Animated.View
             style={
               { position: 'absolute', width: '100%', height: '100%' }
@@ -1287,10 +1321,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
               />
             </ImageBackground>
           </Animated.View>
-          <SafeAreaView className="flex-1" style={{}}>
+          <SafeAreaView className="flex-1">
             <View
-              className="bg-surfaceCream rounded-t-card "
-              style={{ width: "100%", height: "95%", position: 'absolute', bottom: 0, }}>
+              className="bg-surfaceCream rounded-t-card"
+              style={{ width: "100%", height: "95%", position: 'absolute', bottom: 0 }}>
               <View>
                 {/* Title and Settings Row */}
                 <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -1312,76 +1346,14 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                     />
                   </TouchableOpacity>
                 </View>
-
-                {/* Chapter Navigation Arrows */}
-                {/* <View style={{ position: "absolute", right: 10, top: 10, flexDirection: 'row', gap: 8 }}>
-                  <TouchableOpacity
-                    style={[
-                      styles.navButton,
-                      (currentChapter <= 1 || loading) && styles.disabledNavButton,
-                    ]}
-                    onPress={navigateToPreviousChapter}
-                    disabled={currentChapter <= 1 || loading}
-                    activeOpacity={0.7}>
-                    <Text
-                      style={[
-                        styles.navButtonText,
-                        (currentChapter <= 1 || loading) && styles.disabledButtonText,
-                      ]}>
-                      ←
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={[
-                      styles.navButton,
-                      (loading || (pathInProgress && isAtEndChapter)) && styles.disabledNavButton,
-                    ]}
-                    onPress={navigateToNextChapter}
-                    disabled={loading || (pathInProgress && isAtEndChapter)}
-                    activeOpacity={0.7}>
-                    <Text
-                      style={[
-                        styles.navButtonText,
-                        (loading || (pathInProgress && isAtEndChapter)) && styles.disabledButtonText,
-                      ]}>
-                      →
-                    </Text>
-                  </TouchableOpacity>
-                </View> */}
-
-                {/* <View style={styles.headerLeft}>
-                  {pathInProgress && (
-                    <TouchableOpacity onPress={handleBackNavigation} style={styles.backButton}>
-                      <Text style={[styles.backButtonText, { color: THEME_COLORS[currentTheme].text }]}>
-                        ←
-                      </Text>
-                    </TouchableOpacity>
-                  )}
-
-                  <View style={styles.headerButton} >
-                    <TouchableOpacity onPress={handleOpenSelector} >
-                      <Text
-                        className="font-feather-bold text-textPrimary/30 text-center"
-                        style={{
-                          fontSize: responsiveFontSize(2),
-                          fontWeight: "600",
-                        }}
-                      >
-                        {effectiveChapterData
-                          ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}`
-                          : 'Loading...'}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-
-                </View> */}
               </View>
 
-              <View
-              className='py-5 pb-12'
+              <Animated.View
+                className='py-5 pb-12'
+                style={animatedStyle}
               >
                 {effectiveChapterData && renderBibleContent(effectiveChapterData)}
-              </View>
+              </Animated.View>
 
               {/* Path Mode Button (when in path mode) */}
               {!isEmbedded && pathInProgress && (
@@ -1529,15 +1501,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                   </View>
                 </TouchableWithoutFeedback>
               </Modal>
-
-
-
             </View>
-
-
-
-
-
           </SafeAreaView>
 
           {/* Add BibleVerseActionBar */}
@@ -1545,11 +1509,11 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
             reference={effectiveChapterData
               ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}`
               : 'Loading...'}
-              onPrev={navigateToPreviousChapter}
-              onNext={navigateToNextChapter}
+            onPrev={navigateToPreviousChapter}
+            onNext={navigateToNextChapter}
             onVersePress={handleOpenSelector}
           />
-        </Animated.View >
+        </View>
       </>
     );
   }
