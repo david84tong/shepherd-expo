@@ -13,7 +13,7 @@ import { Renderer } from 'expo-three';
 import * as THREE from 'three';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 
 const { width, height } = Dimensions.get('window');
@@ -47,11 +47,17 @@ interface LoadingScreenProps {
   reference?: string;
 }
 
-export default function LoadingScreen({ isOnboarding = true, verseText, reference }: LoadingScreenProps) {
+export default function LoadingScreen({ isOnboarding: propIsOnboarding = true, verseText: propVerseText, reference: propReference }: LoadingScreenProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [anim, setAnim] = useState(0);
   const animRef = useRef(0);
   const router = useRouter();
+  const params = useLocalSearchParams();
+
+  // Use route params if available, otherwise fall back to props
+  const isOnboarding = params.isOnboarding ? params.isOnboarding === 'true' : propIsOnboarding;
+  const verseText = (params.verseText as string) || propVerseText;
+  const reference = (params.reference as string) || propReference;
 
   // Devotional store action (only used when !isOnboarding)
   const createQuickDevotional = useDevotionalStore((s) => s.createQuickDevotional);
