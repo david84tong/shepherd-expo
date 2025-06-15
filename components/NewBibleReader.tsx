@@ -1647,12 +1647,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const versesToShow: Verse[] = chapterData.verses.slice(0, currentIndex + 1);
 
   return (
-    <View style={{ flex: 1 }}>
+    <View className="flex-1">
       <StatusBar translucent backgroundColor="transparent" barStyle={'dark-content'} />
-      <Animated.View
-        className="flex-1"
-        style={{ opacity: 1 }}>
-        <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%' }]}>
+      <Animated.View 
+        entering={FadeIn.duration(800)}
+        className="flex-1">
+        <Animated.View style={{ position: 'absolute', width: '100%', height: '100%' }}>
           <ImageBackground
             source={require('../assets/backgrounds/mainBackground2.png')}
             style={{ width: '100%', height: '100%' }}>

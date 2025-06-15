@@ -45,7 +45,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       // Get today's date range for createdAt query
       
       // added it 2 days previous date for testing purpose
-      const startOfToday = new Date(new Date().setDate(new Date().getDate() - 2));
+      const startOfToday = new Date(new Date().setDate(new Date().getDate() - 3));
       startOfToday.setHours(0, 0, 0, 0);
       
       const endOfToday = new Date();
