@@ -31,7 +31,6 @@ import { useAssetsStore, imageAssets } from '../stores/assetsStore';
 import { useAssets } from 'expo-asset';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-
 import * as Sharing from 'expo-sharing';
 import analytics from '~/utils/analytics';
 import WidgetHowToSheet from '../../components/WidgetHowToSheet';
@@ -73,7 +72,6 @@ import PrimaryButton from '~/components/PrimaryButton';
 import { RPH } from '../helper/helper';
 import BluePrimaryButton from '~/components/Shared/BluePrimaryButton';
 import DailyVerseCard from '~/components/Shared/DailyVerseCard';
-
 
 // Custom toast config with explicit styling
 const toastConfig: ToastConfig = {
@@ -2167,162 +2165,157 @@ const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Co
                   <BottomSheetScrollView
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 24 }}>
-                    <>
-                      {/* Share Card - Show when all activities are completed */}
-                      {prayerCompleted && readingCompleted && reflectionCompleted && currentDevotional && (
-                        <DailyVerseCard
-                          devotional={currentDevotional}
-                          share={true}
-                          onPress={() => setShowShareCard(true)}
-                          onShare={handleShare}
-                          onExpand={() => setShowShareCard(true)}
-                          showShareButton={true}
-                          showExpandButton={true}
+                    {/* Share Card - shown when all activities completed */}
+                    {prayerCompleted && readingCompleted && reflectionCompleted && (currentDevotional || devotionalData) && (
+                      <DailyVerseCard
+                        devotional={currentDevotional || devotionalData!}
+                        share={true}
+                        onPress={() => setShowShareCard(true)}
+                        onShare={handleShare}
+                        onExpand={() => setShowShareCard(true)}
+                        showShareButton={true}
+                        showExpandButton={true}
+                      />
+                    )}
+
+
+                    <View
+                      className="flex-row items-center justify-between "
+                      style={{ marginTop: responsiveHeight(2) }}>
+                      {/* Circle/checkmark indicator for Daily Bread */}
+                      <View
+                        style={{
+                          width: 22,
+                          marginRight: 10,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}>
+                        {readingCompleted ? (
+                          <Image
+                            source={require('../../assets/icons/checkMini.png')}
+                            style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                          />
+                        ) : (
+                          <View
+                            className="bg-textPrimary/15"
+                            style={{ width: 20, height: 20, borderRadius: 12 }}
+                          />
+                        )}
+                      </View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <SecondaryButton
+                          icon={breadIcon}
+                          title="Daily Bread – Read"
+                          subtitle="Feed your soul with scripture"
+                          points={25}
+                          onPress={handleReadPress}
+                          completed={readingCompleted}
                         />
-                      )}
-
-                      {/* Secondary Buttons - Always show */}
-                        <View
-                          className="flex-row items-center justify-between "
-                          style={{ marginTop: responsiveHeight(2) }}>
-                          {/* Circle/checkmark indicator for Daily Bread */}
+                      </View>
+                    </View>
+                    <View
+                      className="flex-row items-center "
+                      style={{ marginTop: responsiveHeight(2) }}>
+                      {/* Circle/checkmark indicator for Living Water */}
+                      <View
+                        style={{
+                          width: 22,
+                          marginRight: 10,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}>
+                        {prayerCompleted ? (
+                          <Image
+                            source={require('../../assets/icons/checkMini.png')}
+                            style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                          />
+                        ) : (
                           <View
-                            style={{
-                              width: 22,
-                              marginRight: 10,
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                            }}>
-                            {readingCompleted ? (
-                              <Image
-                                source={require('../../assets/icons/checkMini.png')}
-                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                              />
-                            ) : (
-                              <View
-                                className="bg-textPrimary/15"
-                                style={{ width: 20, height: 20, borderRadius: 12 }}
-                              />
-                            )}
-                          </View>
-                          <View style={{ flex: 1, minWidth: 0 }}>
-                            <SecondaryButton
-                              icon={breadIcon}
-                              title="Daily Bread – Read"
-                              subtitle="Feed your soul with scripture"
-                              points={25}
-                              onPress={handleReadPress}
-                              completed={readingCompleted}
-                            />
-                          </View>
-                        </View>
-                        <View
-                          className="flex-row items-center "
-                          style={{ marginTop: responsiveHeight(2) }}>
-                          {/* Circle/checkmark indicator for Living Water */}
-                          <View
-                            style={{
-                              width: 22,
-                              marginRight: 10,
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                            }}>
-                            {prayerCompleted ? (
-                              <Image
-                                source={require('../../assets/icons/checkMini.png')}
-                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                              />
-                            ) : (
-                              <View
-                                className="bg-textPrimary/15"
-                                style={{ width: 20, height: 20, borderRadius: 12 }}
-                              />
-                            )}
-                          </View>
-                          <View style={{ flex: 1, minWidth: 0 }}>
-                            <SecondaryButton
-                              icon={dropIcon}
-                              title="Living Water – Pray"
-                              subtitle="Feed your soul with scripture"
-                              points={25}
-                              onPress={handlePrayerPress}
-                              completed={prayerCompleted}
-                              disabled={!readingCompleted}
-                            />
-                          </View>
-                        </View>
-                        <View
-                          className="flex-row items-center"
-                          style={{ marginTop: responsiveHeight(2) }}>
-                          {/* Circle/checkmark indicator for Quiet Time */}
-                          <View
-                            style={{
-                              width: 22,
-                              marginRight: 10,
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                            }}>
-                            {reflectionCompleted ? (
-                              <Image
-                                source={require('../../assets/icons/checkMini.png')}
-                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                              />
-                            ) : (
-                              <View
-                                className="bg-textPrimary/15"
-                                style={{ width: 20, height: 20, borderRadius: 12 }}
-                              />
-                            )}
-                          </View>
-                          <View style={{ flex: 1 }}>
-                            <SecondaryButton
-                              icon={bibleIcon}
-                              title="Quiet Time – Reflect"
-                              subtitle="Feed your soul with scripture"
-                              points={25}
-                              onPress={handleReflectionPress}
-                              completed={reflectionCompleted}
-                              disabled={!readingCompleted}
-                            />
-                          </View>
-                                                </View>
-
-
-                        {/* Loading state for devotional */}
-                        {isLoadingDevotional && (
-                          <View className="bg-white/60 rounded-xl p-4 mb-4 border border-lightGreen/20">
-                            <View className="flex-row items-center mb-2">
-                              <View className="w-6 h-6 bg-lightGreen rounded-full items-center justify-center mr-2">
-                                <Text className="text-darkGreen text-xs font-feather">📖</Text>
-                              </View>
-                              <Text className="font-feather text-base text-description">
-                                Loading daily verse...
-                              </Text>
-                            </View>
-                          </View>
+                            className="bg-textPrimary/15"
+                            style={{ width: 20, height: 20, borderRadius: 12 }}
+                          />
                         )}
-
-                        {/* Error state for devotional */}
-                        {devotionalError && !currentDevotional && (
-                          <View className="bg-red/10 rounded-xl p-4 mb-4 border border-red/20">
-                            <View className="flex-row items-center mb-2">
-                              <View className="w-6 h-6 bg-red rounded-full items-center justify-center mr-2">
-                                <Text className="text-white text-xs font-feather">⚠️</Text>
-                              </View>
-                              <Text className="font-feather text-base text-red">
-                                Daily verse unavailable
-                              </Text>
-                            </View>
-                            <Text className="font-din text-sm text-description">
-                              Check your connection and try again later.
-                            </Text>
-                          </View>
+                      </View>
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <SecondaryButton
+                          icon={dropIcon}
+                          title="Living Water – Pray"
+                          subtitle="Feed your soul with scripture"
+                          points={25}
+                          onPress={handlePrayerPress}
+                          completed={prayerCompleted}
+                          disabled={!readingCompleted}
+                        />
+                      </View>
+                    </View>
+                    <View
+                      className="flex-row items-center"
+                      style={{ marginTop: responsiveHeight(2) }}>
+                      {/* Circle/checkmark indicator for Quiet Time */}
+                      <View
+                        style={{
+                          width: 22,
+                          marginRight: 10,
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          flexShrink: 0,
+                        }}>
+                        {reflectionCompleted ? (
+                          <Image
+                            source={require('../../assets/icons/checkMini.png')}
+                            style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                          />
+                        ) : (
+                          <View
+                            className="bg-textPrimary/15"
+                            style={{ width: 20, height: 20, borderRadius: 12 }}
+                          />
                         )}
+                      </View>
+                      <View style={{ flex: 1 }}>
+                        <SecondaryButton
+                          icon={bibleIcon}
+                          title="Quiet Time – Reflect"
+                          subtitle="Feed your soul with scripture"
+                          points={25}
+                          onPress={handleReflectionPress}
+                          completed={reflectionCompleted}
+                          disabled={!readingCompleted}
+                        />
+                      </View>
+                    </View>
 
+                    {/* Loading state for devotional */}
+                    {isLoadingDevotional && (
+                      <View className="bg-white/60 rounded-xl p-4 mb-4 border border-lightGreen/20">
+                        <View className="flex-row items-center mb-2">
+                          <View className="w-6 h-6 bg-lightGreen rounded-full items-center justify-center mr-2">
+                            <Text className="text-darkGreen text-xs font-feather">📖</Text>
+                          </View>
+                          <Text className="font-feather text-base text-description">
+                            Loading daily verse...
+                          </Text>
+                        </View>
+                      </View>
+                    )}
 
-                    </>
+                    {/* Error state for devotional */}
+                    {devotionalError && !currentDevotional && (
+                      <View className="bg-red/10 rounded-xl p-4 mb-4 border border-red/20">
+                        <View className="flex-row items-center mb-2">
+                          <View className="w-6 h-6 bg-red rounded-full items-center justify-center mr-2">
+                            <Text className="text-white text-xs font-feather">⚠️</Text>
+                          </View>
+                          <Text className="font-feather text-base text-red">
+                            Daily verse unavailable
+                          </Text>
+                        </View>
+                        <Text className="font-din text-sm text-description">
+                          Check your connection and try again later.
+                        </Text>
+                      </View>
+                    )}
                   </BottomSheetScrollView>
                 )}
             </Animated.View>

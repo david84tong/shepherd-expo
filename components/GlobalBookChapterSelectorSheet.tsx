@@ -1,6 +1,18 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, StyleSheet, Dimensions, useWindowDimensions } from 'react-native';
-import BottomSheet, { BottomSheetView, BottomSheetBackdrop, BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+  Dimensions,
+  useWindowDimensions,
+} from 'react-native';
+import BottomSheet, {
+  BottomSheetView,
+  BottomSheetBackdrop,
+  BottomSheetBackdropProps,
+} from '@gorhom/bottom-sheet';
 import { BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from '../app/models/Path';
 import { useUIStore } from '../app/stores/uiStore';
 import { usePathStore } from '../app/stores/pathStore';
@@ -17,12 +29,12 @@ const chapterCache = new Map<string, any>();
  */
 const GlobalBookChapterSelectorSheet: React.FC = () => {
   // Access uiStore to control visibility
-  const isBookChapterSelectorVisible = useUIStore(state => state.isBookChapterSelectorVisible);
-  const bookChapterSelectorParams = useUIStore(state => state.bookChapterSelectorParams);
-  const hideBookChapterSelector = useUIStore(state => state.hideBookChapterSelector);
+  const isBookChapterSelectorVisible = useUIStore((state) => state.isBookChapterSelectorVisible);
+  const bookChapterSelectorParams = useUIStore((state) => state.bookChapterSelectorParams);
+  const hideBookChapterSelector = useUIStore((state) => state.hideBookChapterSelector);
 
   // Access pathStore to save selected chapter
-  const setSavedReading = usePathStore(state => state.setSavedReading);
+  const setSavedReading = usePathStore((state) => state.setSavedReading);
 
   // Local state - initialize with defaults but will be updated when sheet opens
   const [selectedBookId, setSelectedBookId] = useState<number>(1);
@@ -44,13 +56,15 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
   }, [WINDOW_WIDTH]);
 
   // Reverse mapping for book names
-  const bookNames = useMemo(() => Object.fromEntries(
-    Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => [id, name])
-  ), []);
+  const bookNames = useMemo(
+    () => Object.fromEntries(Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => [id, name])),
+    []
+  );
 
-  const bookList = useMemo(() =>
-    Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => ({ id: Number(id), name })),
-    []);
+  const bookList = useMemo(
+    () => Object.entries(BIBLE_BOOK_IDS).map(([name, id]) => ({ id: Number(id), name })),
+    []
+  );
 
   // Filter chapter counts based on the selected book
   const availableChapters = useMemo(() => {
@@ -64,51 +78,67 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
       const bookId = bookChapterSelectorParams.initialBookId || 1;
       const chapter = bookChapterSelectorParams.initialChapter || 1;
 
-      console.log(`📖 [GlobalBookChapterSelector] Sheet opened with bookId: ${bookId}, chapter: ${chapter}`);
+      console.log(
+        `📖 [GlobalBookChapterSelector] Sheet opened with bookId: ${bookId}, chapter: ${chapter}`
+      );
 
       setSelectedBookId(bookId);
       setSelectedChapter(chapter);
 
       bottomSheetRef.current?.snapToIndex(0);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     } else {
       bottomSheetRef.current?.close();
     }
-  }, [isBookChapterSelectorVisible, bookChapterSelectorParams.initialBookId, bookChapterSelectorParams.initialChapter]);
+  }, [
+    isBookChapterSelectorVisible,
+    bookChapterSelectorParams.initialBookId,
+    bookChapterSelectorParams.initialChapter,
+  ]);
 
   // Handle select chapter with debouncing and caching
-  const handleSelectChapter = useCallback(async (chapter: number) => {
-    if (isSelecting) return; // Prevent multiple selections
+  const handleSelectChapter = useCallback(
+    async (chapter: number) => {
+      if (isSelecting) return; // Prevent multiple selections
 
-    setIsSelecting(true);
-    console.log(`📖 [GlobalBookChapterSelector] Selected chapter: ${chapter} for book: ${selectedBookId}`);
+      setIsSelecting(true);
+      console.log(
+        `📖 [GlobalBookChapterSelector] Selected chapter: ${chapter} for book: ${selectedBookId}`
+      );
 
-    try {
-      // Save to pathStore as the last read chapter/verse
-      const bookName = bookNames[selectedBookId] || 'Unknown';
-      setSavedReading(bookName, selectedBookId, chapter);
-      console.log(`💾 [GlobalBookChapterSelector] Saved to pathStore: ${bookName} (${selectedBookId}) Chapter ${chapter}`);
+      try {
+        // Save to pathStore as the last read chapter/verse
+        const bookName = bookNames[selectedBookId] || 'Unknown';
+        setSavedReading(bookName, selectedBookId, chapter);
+        console.log(
+          `💾 [GlobalBookChapterSelector] Saved to pathStore: ${bookName} (${selectedBookId}) Chapter ${chapter}`
+        );
 
-      if (bookChapterSelectorParams.onSelect) {
-        await bookChapterSelectorParams.onSelect(selectedBookId, chapter);
+        if (bookChapterSelectorParams.onSelect) {
+          await bookChapterSelectorParams.onSelect(selectedBookId, chapter);
+        }
+
+        bottomSheetRef.current?.close();
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      } finally {
+        setIsSelecting(false);
       }
-
-      bottomSheetRef.current?.close();
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
-    } finally {
-      setIsSelecting(false);
-    }
-  }, [selectedBookId, bookChapterSelectorParams.onSelect, bookNames, setSavedReading]);
+    },
+    [selectedBookId, bookChapterSelectorParams.onSelect, bookNames, setSavedReading]
+  );
 
   // Handle select book with optimization
-  const handleSelectBook = useCallback((bookId: number) => {
-    if (bookId === selectedBookId || isSelecting) return; // Prevent unnecessary updates
+  const handleSelectBook = useCallback(
+    (bookId: number) => {
+      if (bookId === selectedBookId || isSelecting) return; // Prevent unnecessary updates
 
-    console.log(`📖 [GlobalBookChapterSelector] Selected book: ${bookId}`);
-    setSelectedBookId(bookId);
-    setSelectedChapter(1); // Reset to chapter 1 when switching books
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
-  }, [selectedBookId, isSelecting]);
+      console.log(`📖 [GlobalBookChapterSelector] Selected book: ${bookId}`);
+      setSelectedBookId(bookId);
+      setSelectedChapter(1); // Reset to chapter 1 when switching books
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    },
+    [selectedBookId, isSelecting]
+  );
 
   // Close handler
   const handleClose = useCallback(() => {
@@ -118,12 +148,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
   // Custom backdrop renderer
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop
-        {...props}
-        disappearsOnIndex={-1}
-        appearsOnIndex={0}
-        opacity={0.5}
-      />
+      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
     ),
     []
   );
@@ -141,10 +166,10 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
       (x: number) => {
         bookScrollViewRef.current?.scrollTo({
           x: x - WINDOW_WIDTH / 2 + 100, // Center the item, 100 is approximate half item width
-          animated: true
+          animated: true,
         });
       },
-      () => { }, // Error callback - empty
+      () => {} // Error callback - empty
     );
   }, [selectedBookId, WINDOW_WIDTH]);
 
@@ -157,12 +182,14 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
   }, [isBookChapterSelectorVisible, selectedBookId, scrollToSelectedBook]);
 
   // Debug logging
-  console.log(`📖 [GlobalBookChapterSelector] Rendering - selectedBookId: ${selectedBookId}, selectedChapter: ${selectedChapter}`);
+  console.log(
+    `📖 [GlobalBookChapterSelector] Rendering - selectedBookId: ${selectedBookId}, selectedChapter: ${selectedChapter}`
+  );
 
-  return (
+  return isBookChapterSelectorVisible ? (
     <BottomSheet
       ref={bottomSheetRef}
-      index={-1}
+      index={0}
       snapPoints={['70%']}
       enablePanDownToClose={true}
       enableOverDrag={false}
@@ -170,9 +197,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
       backgroundStyle={styles.sheetBackground}
       handleIndicatorStyle={styles.handleIndicator}
       backdropComponent={renderBackdrop}
-      enableContentPanningGesture={false}
-
-    >
+      enableContentPanningGesture={false}>
       <BottomSheetView style={styles.contentContainer}>
         {/* Header */}
         <View style={styles.header}>
@@ -191,44 +216,43 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
               ref={bookScrollViewRef}
               horizontal
               showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ paddingHorizontal: 15 }}
-            >
+              contentContainerStyle={{ paddingHorizontal: 15 }}>
               <View style={styles.bookRowsContainer}>
                 <View style={styles.bookRow}>
-                  {bookList.slice(0, Math.ceil(bookList.length / 2)).map(book => (
+                  {bookList.slice(0, Math.ceil(bookList.length / 2)).map((book) => (
                     <TouchableOpacity
                       key={book.id}
-                      ref={ref => bookItemRefs.current[book.id] = ref}
+                      ref={(ref) => (bookItemRefs.current[book.id] = ref)}
                       style={[
                         styles.bookItem,
-                        selectedBookId === book.id && styles.selectedBookItem
+                        selectedBookId === book.id && styles.selectedBookItem,
                       ]}
-                      onPress={() => handleSelectBook(book.id)}
-                    >
-                      <Text style={[
-                        styles.bookItemText,
-                        selectedBookId === book.id && styles.selectedBookItemText
-                      ]}>
+                      onPress={() => handleSelectBook(book.id)}>
+                      <Text
+                        style={[
+                          styles.bookItemText,
+                          selectedBookId === book.id && styles.selectedBookItemText,
+                        ]}>
                         {book.name}
                       </Text>
                     </TouchableOpacity>
                   ))}
                 </View>
                 <View style={styles.bookRow}>
-                  {bookList.slice(Math.ceil(bookList.length / 2)).map(book => (
+                  {bookList.slice(Math.ceil(bookList.length / 2)).map((book) => (
                     <TouchableOpacity
                       key={book.id}
-                      ref={ref => bookItemRefs.current[book.id] = ref}
+                      ref={(ref) => (bookItemRefs.current[book.id] = ref)}
                       style={[
                         styles.bookItem,
-                        selectedBookId === book.id && styles.selectedBookItem
+                        selectedBookId === book.id && styles.selectedBookItem,
                       ]}
-                      onPress={() => handleSelectBook(book.id)}
-                    >
-                      <Text style={[
-                        styles.bookItemText,
-                        selectedBookId === book.id && styles.selectedBookItemText
-                      ]}>
+                      onPress={() => handleSelectBook(book.id)}>
+                      <Text
+                        style={[
+                          styles.bookItemText,
+                          selectedBookId === book.id && styles.selectedBookItemText,
+                        ]}>
                         {book.name}
                       </Text>
                     </TouchableOpacity>
@@ -244,25 +268,21 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
             <View style={styles.chapterScrollContainer}>
               <ScrollView
                 showsVerticalScrollIndicator={true}
-                contentContainerStyle={[
-                  styles.chapterGrid,
-                  { gap: GRID_SPACING }
-                ]}
-              >
-                {availableChapters.map(chapter => (
+                contentContainerStyle={[styles.chapterGrid, { gap: GRID_SPACING }]}>
+                {availableChapters.map((chapter) => (
                   <TouchableOpacity
                     key={chapter}
                     style={[
                       styles.chapterItem,
                       { width: itemSize, height: itemSize },
-                      chapter === selectedChapter && styles.selectedChapterItem
+                      chapter === selectedChapter && styles.selectedChapterItem,
                     ]}
-                    onPress={() => handleSelectChapter(chapter)}
-                  >
-                    <Text style={[
-                      styles.chapterItemText,
-                      chapter === selectedChapter && styles.selectedChapterItemText
-                    ]}>
+                    onPress={() => handleSelectChapter(chapter)}>
+                    <Text
+                      style={[
+                        styles.chapterItemText,
+                        chapter === selectedChapter && styles.selectedChapterItemText,
+                      ]}>
                       {chapter}
                     </Text>
                   </TouchableOpacity>
@@ -273,12 +293,12 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
         </View>
       </BottomSheetView>
     </BottomSheet>
-  );
+  ) : null;
 };
 
 const styles = StyleSheet.create({
   sheetBackground: {
-    backgroundColor: '#FFF4D9', // surfaceCream 
+    backgroundColor: '#FFF4D9', // surfaceCream
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
   },
@@ -369,7 +389,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 10,
     justifyContent: 'center',
-    paddingBottom: 300
+    paddingBottom: 300,
   },
   chapterItem: {
     aspectRatio: 1,

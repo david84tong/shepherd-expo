@@ -5,7 +5,14 @@ import BottomSheet, {
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
-import React, { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Alert,
   Platform,
@@ -23,10 +30,8 @@ import { useUIStore } from '../app/stores/uiStore';
 import { useHomeStore } from '../app/stores/homeStore';
 import { KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-
 interface PrayerSheetProps {
   prayerSheetRef: React.RefObject<PrayerSheetRef>;
-  snapPoints: string[];
   onPrayerGenerated?: () => void;
 }
 
@@ -37,24 +42,21 @@ export type PrayerSheetRef = {
   expand: () => void;
 };
 
-const PrayerSheet: React.FC<PrayerSheetProps> = ({
-  prayerSheetRef,
-  snapPoints,
-  onPrayerGenerated,
-}) => {
+const PrayerSheet: React.FC<PrayerSheetProps> = ({ prayerSheetRef, onPrayerGenerated }) => {
+  const snapPoints = useMemo(() => ['75%', '85%'], []);
   const [prayerInput, setPrayerInput] = useState('');
   const [isCustomInput, setIsCustomInput] = useState(true);
 
   // Add internal ref for the actual BottomSheet
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const { bottom: bottomPadding } = useSafeAreaInsets()
+  const { bottom: bottomPadding } = useSafeAreaInsets();
 
   // Access prayer store
   const { prayerTopics, recentPrayers, incrementTopicCount, addRecentPrayer, getOrderedTopics } =
     usePrayerStore();
 
   // Access home store
-  const setTappedPrayAboutVerse = useHomeStore(state => state.setTappedPrayAboutVerse);
+  const setTappedPrayAboutVerse = useHomeStore((state) => state.setTappedPrayAboutVerse);
 
   // Get ordered topics
   const [orderedTopics, setOrderedTopics] = useState(getOrderedTopics().map((topic) => topic.name));
@@ -64,9 +66,10 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
     setOrderedTopics(getOrderedTopics().map((topic) => topic.name));
   }, [prayerTopics, getOrderedTopics]);
 
-  // Access UI store
-  const hidePrayerSheet = useUIStore(state => state.hidePrayerSheet);
-  const prayerGeneratedCallback = useUIStore(state => state.prayerGeneratedCallback);
+  // Access UI store for visibility
+  const isPrayerSheetVisible = useUIStore((state) => state.isPrayerSheetVisible);
+  const hidePrayerSheet = useUIStore((state) => state.hidePrayerSheet);
+  const prayerGeneratedCallback = useUIStore((state) => state.prayerGeneratedCallback);
 
   // Handle text input change
   const handleTextInputChange = useCallback((text: string) => {
@@ -75,16 +78,13 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
   }, []);
 
   // Handle prayer topic selection
-  const handlePrayerTopicPress = useCallback(
-    (topic: string, isCustom: boolean = false) => {
-      setPrayerInput(topic);
-      setIsCustomInput(isCustom); // Track if this is a custom or predefined topic
+  const handlePrayerTopicPress = useCallback((topic: string, isCustom: boolean = false) => {
+    setPrayerInput(topic);
+    setIsCustomInput(isCustom); // Track if this is a custom or predefined topic
 
-      // No need to increment count here, we'll only increment when actually generating the prayer
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
-    },
-    []
-  );
+    // No need to increment count here, we'll only increment when actually generating the prayer
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+  }, []);
 
   // Handle prayer generation
   const handlePrayerGenerate = useCallback(() => {
@@ -94,7 +94,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
 
     // Check if this is a predefined topic or a truly custom entry
     const isPredefinedTopic = orderedTopics.some(
-      topic => topic.toLowerCase() === prayerInput.toLowerCase()
+      (topic) => topic.toLowerCase() === prayerInput.toLowerCase()
     );
 
     // Always increment the count regardless of source
@@ -107,7 +107,9 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
     if (!isPredefinedTopic && isCustomInput) {
       console.log(`Added "${prayerInput}" to recent prayers as a custom prayer`);
     } else {
-      console.log(`Added "${prayerInput}" to recent prayers (for functionality) but it's a predefined topic`);
+      console.log(
+        `Added "${prayerInput}" to recent prayers (for functionality) but it's a predefined topic`
+      );
     }
 
     // Set tappedPrayAboutVerse to false when a prayer is generated
@@ -140,23 +142,32 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
       // Clear input state after callback execution
       setPrayerInput('');
     }, 500); // Slightly longer delay to ensure state propagation
-  }, [prayerInput, incrementTopicCount, addRecentPrayer, onPrayerGenerated, prayerGeneratedCallback, isCustomInput, orderedTopics, setTappedPrayAboutVerse]);
+  }, [
+    prayerInput,
+    incrementTopicCount,
+    addRecentPrayer,
+    onPrayerGenerated,
+    prayerGeneratedCallback,
+    isCustomInput,
+    orderedTopics,
+    setTappedPrayAboutVerse,
+  ]);
 
-  // Close the prayer sheet
+  // Handle sheet changes
+  const handleSheetChange = useCallback(
+    (index: number) => {
+      if (index === -1) {
+        hidePrayerSheet();
+      }
+    },
+    [hidePrayerSheet]
+  );
+
+  // Handle close
   const handleClose = useCallback(() => {
+    hidePrayerSheet();
     bottomSheetRef.current?.close();
-  }, []);
-
-  // Handle prayer sheet changes
-  const handlePrayerSheetChange = useCallback((index: number) => {
-    if (index === -1) {
-      // Sheet is closed - reset state after a delay
-      hidePrayerSheet();
-      setTimeout(() => {
-        setPrayerInput('');
-      }, 200);
-    }
-  }, []);
+  }, [hidePrayerSheet]);
 
   // Custom backdrop renderer
   const renderBackdrop = useCallback(
@@ -174,7 +185,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
     setOrderedTopics(getOrderedTopics().map((topic) => topic.name));
 
     bottomSheetRef.current?.expand();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
   }, [getOrderedTopics]);
 
   // Expose methods via ref
@@ -182,128 +193,131 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({
     prayerSheetRef,
     () => ({
       show: showSheet,
-      close: () => bottomSheetRef.current?.close(),
+      close: () => {
+        hidePrayerSheet();
+        bottomSheetRef.current?.close();
+      },
       expand: () => bottomSheetRef.current?.expand(),
     }),
-    [showSheet]
+    [showSheet, hidePrayerSheet]
   );
 
   return (
-    <BottomSheet
-      ref={bottomSheetRef}
-      index={-1}
-      snapPoints={snapPoints}
-      enablePanDownToClose
-      onChange={handlePrayerSheetChange}
-      backgroundStyle={styles.sheetBackground}
-      handleIndicatorStyle={styles.handleIndicator}
-      backdropComponent={renderBackdrop}
-      keyboardBehavior="interactive"
-      keyboardBlurBehavior="restore">
-      <BottomSheetView style={styles.prayerContentContainer}>
-        <KeyboardAvoidingView
-          style={{ flex: 1 }}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-
-        >
-          {/* Header */}
-          <View style={styles.prayerHeader}>
-            <TouchableOpacity onPress={handleClose} style={{ padding: 5 }}>
-              <Ionicons name="close" size={24} color="#3C584A" />
-            </TouchableOpacity>
-            <Text style={styles.prayerTitle}>My Prayers</Text>
-            <TouchableOpacity onPress={handleClose} style={{ padding: 5 }}>
-              <Text style={styles.doneButton}>Done</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView
-            style={styles.prayerContent}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: bottomPadding + 140 }}
-            keyboardShouldPersistTaps="handled" // Ensure taps work inside scrollview when keyboard is up
-          >
-            {/* Prayer hands emoji */}
-            <View style={styles.prayerEmojiContainer}>
-              <Text style={styles.prayerEmoji}>🙏</Text>
-            </View>
-
-            {/* Prayer input */}
-            <View style={styles.prayerInputContainer}>
-              <View style={styles.prayerInputWrapper}>
-                <Text style={styles.prayerInputLabel}>I want to pray for</Text>
-                <TextInput
-                  value={prayerInput}
-                  onChangeText={handleTextInputChange}
-                  placeholder="guidance..."
-                  placeholderTextColor="#B89B4C"
-                  style={styles.prayerInputText}
-                />
+    <>
+      {isPrayerSheetVisible ? (
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={0}
+          snapPoints={snapPoints}
+          enablePanDownToClose={true}
+          onChange={handleSheetChange}
+          backgroundStyle={styles.sheetBackground}
+          handleIndicatorStyle={styles.handleIndicator}
+          backdropComponent={renderBackdrop}>
+          <BottomSheetView style={styles.prayerContentContainer}>
+            <KeyboardAvoidingView
+              style={{ flex: 1 }}
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+              {/* Header */}
+              <View style={styles.prayerHeader}>
+                <TouchableOpacity onPress={handleClose} style={{ padding: 5 }}>
+                  <Ionicons name="close" size={24} color="#3C584A" />
+                </TouchableOpacity>
+                <Text style={styles.prayerTitle}>My Prayers</Text>
+                <TouchableOpacity onPress={handleClose} style={{ padding: 5 }}>
+                  <Text style={styles.doneButton}>Done</Text>
+                </TouchableOpacity>
               </View>
-            </View>
 
-            {/* Recent prayers section - show if there are any TRULY CUSTOM prayers */}
-            {recentPrayers.length > 0 && (
-              <View style={styles.recentPrayersContainer}>
-                <Text style={styles.prayerTopicsLabel}>Custom prayers:</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ paddingRight: 20 }}>
-                  {recentPrayers
-                    .filter(prayer =>
-                      // Only show prayers that are not in the predefined topics list
-                      !orderedTopics.some(topic =>
-                        topic.toLowerCase() === prayer.toLowerCase()
-                      )
-                    )
-                    .slice(0, 5)
-                    .map((prayer, index) => (
+              <ScrollView
+                style={styles.prayerContent}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: bottomPadding + 140 }}
+                keyboardShouldPersistTaps="handled" // Ensure taps work inside scrollview when keyboard is up
+              >
+                {/* Prayer hands emoji */}
+                <View style={styles.prayerEmojiContainer}>
+                  <Text style={styles.prayerEmoji}>🙏</Text>
+                </View>
+
+                {/* Prayer input */}
+                <View style={styles.prayerInputContainer}>
+                  <View style={styles.prayerInputWrapper}>
+                    <Text style={styles.prayerInputLabel}>I want to pray for</Text>
+                    <TextInput
+                      value={prayerInput}
+                      onChangeText={handleTextInputChange}
+                      placeholder="guidance..."
+                      placeholderTextColor="#B89B4C"
+                      style={styles.prayerInputText}
+                    />
+                  </View>
+                </View>
+
+                {/* Recent prayers section - show if there are any TRULY CUSTOM prayers */}
+                {recentPrayers.length > 0 && (
+                  <View style={styles.recentPrayersContainer}>
+                    <Text style={styles.prayerTopicsLabel}>Custom prayers:</Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={{ paddingRight: 20 }}>
+                      {recentPrayers
+                        .filter(
+                          (prayer) =>
+                            // Only show prayers that are not in the predefined topics list
+                            !orderedTopics.some(
+                              (topic) => topic.toLowerCase() === prayer.toLowerCase()
+                            )
+                        )
+                        .slice(0, 5)
+                        .map((prayer, index) => (
+                          <TouchableOpacity
+                            key={index}
+                            onPress={() => handlePrayerTopicPress(prayer, true)}
+                            style={styles.recentPrayerButton}>
+                            <Text style={styles.recentPrayerText} numberOfLines={1}>
+                              {prayer}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                  </View>
+                )}
+
+                {/* Prayer topic options */}
+                <View style={styles.prayerTopicsContainer}>
+                  <Text style={styles.prayerTopicsLabel}>Or pick one of these:</Text>
+                  <View style={styles.prayerTopicsGrid}>
+                    {orderedTopics.slice(0, 8).map((topic) => (
                       <TouchableOpacity
-                        key={index}
-                        onPress={() => handlePrayerTopicPress(prayer, true)}
-                        style={styles.recentPrayerButton}>
-                        <Text style={styles.recentPrayerText} numberOfLines={1}>
-                          {prayer}
-                        </Text>
+                        key={topic}
+                        onPress={() => handlePrayerTopicPress(topic)}
+                        style={styles.prayerTopicButton}>
+                        <Text style={styles.prayerTopicText}>{topic}</Text>
                       </TouchableOpacity>
                     ))}
-                </ScrollView>
-              </View>
-            )}
+                  </View>
+                </View>
 
-            {/* Prayer topic options */}
-            <View style={styles.prayerTopicsContainer}>
-              <Text style={styles.prayerTopicsLabel}>Or pick one of these:</Text>
-              <View style={styles.prayerTopicsGrid}>
-                {orderedTopics
-                  .slice(0, 8)
-                  .map((topic) => (
-                    <TouchableOpacity
-                      key={topic}
-                      onPress={() => handlePrayerTopicPress(topic)}
-                      style={styles.prayerTopicButton}>
-                      <Text style={styles.prayerTopicText}>{topic}</Text>
-                    </TouchableOpacity>
-                  ))}
-              </View>
-            </View>
-
-            {/* Generate button */}
-            <View style={{
-              width: "100%",
-              marginTop: 20
-            }}>
-              <PrimaryButton
-                title="Generate a prayer"
-                onPress={handlePrayerGenerate}
-                disabled={!prayerInput.trim()}
-              />
-            </View>
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </BottomSheetView>
-    </BottomSheet>
+                {/* Generate button */}
+                <View
+                  style={{
+                    width: '100%',
+                    marginTop: 20,
+                  }}>
+                  <PrimaryButton
+                    title="Generate a prayer"
+                    onPress={handlePrayerGenerate}
+                    disabled={!prayerInput.trim()}
+                  />
+                </View>
+              </ScrollView>
+            </KeyboardAvoidingView>
+          </BottomSheetView>
+        </BottomSheet>
+      ) : null}
+    </>
   );
 };
 

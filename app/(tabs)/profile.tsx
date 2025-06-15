@@ -35,6 +35,7 @@ import { useUserStore } from '../stores/userStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import OnboardingPathScreen from '../onboarding/8';
+import EditNameSheet from '../../components/EditNameSheet';
 
 // Import the icons using import statements
 import breadIcon from '../../assets/icons/breadIcon.png';
@@ -452,6 +453,9 @@ export default function ProfileScreen() {
     return providers.includes('password') && !currentUser.isAnonymous;
   }, []);
 
+  // Add ref for edit name sheet
+  const editNameSheetRef = useRef<{ show: () => void; close: () => void }>(null);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
@@ -554,11 +558,14 @@ export default function ProfileScreen() {
           {/* Lamb Stats Card */}
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
             <View className="flex-row justify-between items-center mb-6">
-              <View className="bg-lightYellow px-4 py-1 rounded-lg opacity-80">
+              <TouchableOpacity
+                onPress={() => editNameSheetRef.current?.show()}
+                className="flex-row items-center bg-lightYellow px-4 py-1 rounded-lg opacity-80">
                 <Text className="font-feather text-heading text-primary">
                   {lamb.name ? lamb.name : 'Your Lamb'}
                 </Text>
-              </View>
+                <Feather name="edit-2" size={16} color="#3C584A" className="ml-2" />
+              </TouchableOpacity>
               <Image source={sheepIcon} className="w-12 h-12 rounded-full" />
             </View>
 
@@ -885,6 +892,9 @@ export default function ProfileScreen() {
           </View>
         </ScrollView>
       </SafeAreaView>
+
+      {/* Add EditNameSheet */}
+      <EditNameSheet editNameSheetRef={editNameSheetRef} />
     </GestureHandlerRootView>
   );
 }

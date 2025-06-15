@@ -1679,8 +1679,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       <StatusBar translucent backgroundColor="transparent" barStyle={'dark-content'} />
       <Animated.View 
         entering={FadeIn.duration(800)}
-        className="flex-1"
-        style={{ opacity: 1 }}>
+        className="flex-1">
         <Animated.View style={{ position: 'absolute', width: '100%', height: '100%' }}>
           <ImageBackground
             source={require('../assets/backgrounds/mainBackground2.png')}

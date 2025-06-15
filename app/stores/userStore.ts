@@ -7,7 +7,6 @@ import { updateField, createUserDocument } from '../../utils/firestore';
 import { syncStreakDataToWidget } from '../../utils/widgetSync';
 import { UserDoc, Lamb, UserStore, MapPathCompletion } from '../models/User';
 import { isAuthenticated, updateUserData } from '../helper/firebaseHelper';
-import { zuStandStorage } from './storage';
 
 // Constants
 const USER_FETCH_CACHE_DURATION = 5000; // 5 seconds
@@ -487,7 +486,7 @@ export const useUserStore = create<UserStore>()(
     }),
     {
       name: 'shepherd-user-storage',
-      storage: createJSONStorage(() => zuStandStorage as any),
+      storage: createJSONStorage(() => AsyncStorage as any),
     }
   )
 );
