@@ -1121,6 +1121,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Handle left swipe to show menu
   const handleSwipeVerseToMenu = (verse: Verse) => {
+    
     if (isFadingToChat || floatingMenu.isVisible) return;
 
     // Hide swipe guidance after first use
@@ -1608,6 +1609,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           pathname: '/onboarding/LoadingScreen',
           params: {
             isOnboarding: 'false',
+            fromSwipe: 'true',
             verseText: verse.text,
             reference: `${chapterData.book} ${chapterData.chapter}:${verse.verse}`,
           },

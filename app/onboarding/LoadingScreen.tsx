@@ -47,7 +47,7 @@ interface LoadingScreenProps {
   reference?: string;
 }
 
-export default function LoadingScreen({ isOnboarding: propIsOnboarding = true, verseText: propVerseText, reference: propReference }: LoadingScreenProps) {
+export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseText: propVerseText, reference: propReference }: LoadingScreenProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [anim, setAnim] = useState(0);
   const animRef = useRef(0);
@@ -55,9 +55,15 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding = true, v
   const params = useLocalSearchParams();
 
   // Stabilize critical route-derived values so they don't change mid-loading
-  const [isOnboarding] = useState(() =>
-    params.isOnboarding !== undefined ? params.isOnboarding === 'true' : propIsOnboarding
-  );
+  const [isOnboarding] = useState(() => {
+    // If we're coming from a swipe action, we should not be in onboarding mode
+    if (params.fromSwipe === 'true') {
+      return false;
+    }
+    // Otherwise use the prop or param value
+    return params.isOnboarding !== undefined ? params.isOnboarding === 'true' : propIsOnboarding;
+  });
+
   const [verseText] = useState<string | undefined>(
     (params.verseText as string | undefined) || propVerseText
   );

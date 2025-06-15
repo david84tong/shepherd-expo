@@ -159,7 +159,12 @@ const Rating = () => {
 
   const handleIRatedPress = () => {
     analytics.logEvent('RatingScreen_Tapped_IRated');
-    router.push('/onboarding/LoadingScreen');
+    router.push({
+      pathname: '/onboarding/LoadingScreen',
+      params: {
+        isOnboarding: 'true',
+      },
+    });
   };
 
   // Show loading indicator while assets load

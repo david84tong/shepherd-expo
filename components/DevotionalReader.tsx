@@ -274,11 +274,11 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
       const newProgress = (currentIndex + 1) / totalCards;
 
       if (isFirstProgressRender.current) {
-        // Set immediately on first render to avoid the "fill-down" effect
-        progressValue.value = newProgress;
+        // Set initial progress to 0 on first render
+        progressValue.value = 0;
         isFirstProgressRender.current = false;
       } else {
-        // Animate smoothly on subsequent updates
+        // Animate smoothly from current progress to new progress
         progressValue.value = withTiming(newProgress, { duration: 600 });
       }
     }
@@ -363,7 +363,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
     });
   }
   const animatedProgressStyle = useAnimatedStyle(() => {
-    return { width: `${progressValue.value * 100}%` };
+    return { width: `${progressValue.value ? progressValue.value * 100 : 0}%` };
   });
 
   // Get store state for debugging
