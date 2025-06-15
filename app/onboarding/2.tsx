@@ -144,7 +144,9 @@ export default function OnboardingLambNameScreen() {
   const handleInputChange = (text: string) => {
     setInputLambName(text);
     const validation = validateName(text);
-    setError(validation.error);
+    if (!validation?.isValid || error) {
+      setError(validation.error);
+    }
   };
 
   const handleContinue = async () => {
@@ -212,7 +214,7 @@ export default function OnboardingLambNameScreen() {
           ) : (
             <Rive
               url={riveAssets?.[0]?.uri}
-              resourceName={IS_ANDROID ? 'home_lamb' : undefined}
+              artboardName="lamb-idle"
               autoplay
               style={{ width: '80%', height: '80%' }}
               onError={(error) => {

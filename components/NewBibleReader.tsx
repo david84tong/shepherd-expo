@@ -1598,20 +1598,21 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       // Immediate haptic feedback
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-      // Persist the devotional verse so HomeScreen can pick it up
-      if (chapterData) {
-        createQuickDevotional(
-          verse.text,
-          `${chapterData.book} ${chapterData.chapter}:${verse.verse}`
-        );
-      }
-
       // Close the swipeable if still open
       const swipeableRef = swipeableRefs.current.get(verse.verse);
       swipeableRef?.close();
 
-      // Navigate back to the Home tab (index screen)
-      router.replace('/');
+      // Navigate to LoadingScreen with devotional data
+      if (chapterData) {
+        router.push({
+          pathname: '/onboarding/LoadingScreen',
+          params: {
+            isOnboarding: 'false',
+            verseText: verse.text,
+            reference: `${chapterData.book} ${chapterData.chapter}:${verse.verse}`,
+          },
+        });
+      }
 
       analytics.logEvent('CardBibleReader_Swiped_VerseToDevotional', {
         book: chapterData?.book,
@@ -1619,7 +1620,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         verse: verse.verse,
       });
     },
-    [isFadingToChat, createQuickDevotional, chapterData, router]
+    [isFadingToChat, chapterData, router]
   );
 
   if (!chapterData) {
@@ -1647,12 +1648,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const versesToShow: Verse[] = chapterData.verses.slice(0, currentIndex + 1);
 
   return (
-    <View className="flex-1">
+    <View style={{ flex: 1 }}>
       <StatusBar translucent backgroundColor="transparent" barStyle={'dark-content'} />
-      <Animated.View 
-        entering={FadeIn.duration(800)}
-        className="flex-1">
-        <Animated.View style={{ position: 'absolute', width: '100%', height: '100%' }}>
+      <Animated.View
+        className="flex-1"
+        style={{ opacity: 1 }}>
+        <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%' }]}>
           <ImageBackground
             source={require('../assets/backgrounds/mainBackground2.png')}
             style={{ width: '100%', height: '100%' }}>

@@ -63,3 +63,6 @@ yarn-error.*
 *.tsbuildinfo
 
 # @end expo-cli
+
+# YoYo AI version control directory
+.yoyo/

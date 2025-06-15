@@ -76,6 +76,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   const router = useRouter();
   const [userId, setUserId] = useState<string>('Anonymous user');
   const [isUserSignedIn, setIsUserSignedIn] = useState<boolean>(false);
+  const [isVisible, setIsVisible] = useState<boolean>(false);
   const setIsModalDimActive = useUIStore((state) => state.setIsModalDimActive);
   const [translationModalVisible, setTranslationModalVisible] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
@@ -195,16 +196,65 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Add internal ref for the actual BottomSheet
   const bottomSheetRef = useRef<BottomSheet>(null);
 
+  // Update isVisible when sheet is shown
+  useEffect(() => {
+    if (bottomSheetRef.current) {
+      setIsVisible(true);
+    }
+  }, []);
+
+  // Update this to properly show the sheet
+  const prepareAndShow = useCallback(() => {
+    // Get user ID directly from Firebase or userStore
+    let currentUserId = 'Not authenticated';
+    let isUserSignedIn = false;
+
+    // First try to get the current Firebase user's UID
+    const currentUser = auth().currentUser;
+    if (currentUser?.uid) {
+      currentUserId = currentUser.uid;
+      isUserSignedIn = true;
+    } else {
+      // Fallback to userStore
+      const user = useUserStore.getState().getUser?.();
+      currentUserId = user?.id || 'Not authenticated';
+      isUserSignedIn = !!user?.id;
+    }
+
+    setUserId(currentUserId);
+    setIsUserSignedIn(isUserSignedIn);
+    setIsVisible(true);
+
+    // Show the sheet at the first snap point (60%)
+    bottomSheetRef.current?.snapToIndex(0);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+  }, []);
+
+  // Expose methods via ref
+  useImperativeHandle(
+    settingsSheetRef,
+    () => ({
+      show: prepareAndShow,
+      close: () => {
+        setIsVisible(false);
+        bottomSheetRef.current?.close();
+      },
+      expand: () => bottomSheetRef.current?.expand(),
+    }),
+    [prepareAndShow]
+  );
+
   // Handle sheet changes
   const handleSettingsChange = useCallback((index: number) => {
     if (index === -1) {
-      // When sheet closes, reset any state if needed
+      setIsVisible(false);
     }
   }, []);
 
   // Close the settings sheet
   const handleClose = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setIsVisible(false);
     bottomSheetRef.current?.close();
   }, []);
 
@@ -235,8 +285,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       // Apple sign-out: no explicit revoke needed in Firebase
       // (Apple does not expose logout in same way as Google)
 
-      useUserStore.getState().resetUserStore();
-      useHomeStore.getState().resetCompletionStates();
+      // useUserStore.getState().resetUserStore();
+      // useHomeStore.getState().resetCompletionStates();
       syncStreakDataToWidget(0, dayjs()?.toDate());
       bottomSheetRef.current?.close();
       setIsModalDimActive(false);
@@ -263,7 +313,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       setIsModalDimActive(false);
       router.replace({ pathname: '/(auth)' });
     } finally {
-      useUserStore.getState().resetUserStore();
+      // useUserStore.getState().resetUserStore();
+      AsyncStorage.clear();
     }
   }, [router, setIsModalDimActive, userId]);
 
@@ -280,43 +331,6 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
     ),
     []
-  );
-
-  // Update user ID when the sheet is shown
-  const prepareAndShow = useCallback(() => {
-    // Get user ID directly from Firebase or userStore
-    let currentUserId = 'Not authenticated';
-    let isUserSignedIn = false;
-
-    // First try to get the current Firebase user's UID
-    const currentUser = auth().currentUser;
-    if (currentUser?.uid) {
-      currentUserId = currentUser.uid;
-      isUserSignedIn = true;
-    } else {
-      // Fallback to userStore
-      const user = useUserStore.getState().getUser?.();
-      currentUserId = user?.id || 'Not authenticated';
-      isUserSignedIn = !!user?.id;
-    }
-
-    setUserId(currentUserId);
-    setIsUserSignedIn(isUserSignedIn);
-
-    // Show the sheet at the first snap point (60%)
-    bottomSheetRef.current?.snapToIndex(0);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-  }, []);
-
-  // Expose methods via ref
-  useImperativeHandle(
-    settingsSheetRef,
-    () => ({
-      show: prepareAndShow,
-      close: () => bottomSheetRef.current?.close(),
-      expand: () => bottomSheetRef.current?.expand(),
-    }),
-    [prepareAndShow]
   );
 
   // Handle translation selection
@@ -1197,491 +1211,497 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   return (
     <>
-      <BottomSheet
-        ref={bottomSheetRef}
-        index={-1}
-        snapPoints={snapPoints}
-        enablePanDownToClose={true}
-        onChange={handleSettingsChange}
-        backgroundStyle={styles.sheetBackground}
-        handleIndicatorStyle={styles.handleIndicator}
-        backdropComponent={renderBackdrop}>
-        <BottomSheetScrollView
-          style={styles.settingsContent}
-          showsVerticalScrollIndicator={false}
-          bounces={true}
-          contentContainerStyle={styles.settingsContentContainer}>
-          {/* Header */}
-          <View style={styles.settingsHeader}>
-            <Text style={styles.settingsTitle}>Settings</Text>
-            <TouchableOpacity onPress={handleClose} style={{ padding: 5 }}>
-              <Text style={styles.doneButton}>Done</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Sheet Content */}
-          <View style={styles.settingsContent}>
-            {/* Bible Translation Section */}
-            <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>Bible Translation</Text>
-              <TouchableOpacity
-                style={styles.translationSelector}
-                onPress={() => setTranslationModalVisible(true)}>
-                <Text style={styles.translationText}>
-                  {translations.find((t) => t.id === savedTranslation)?.name ||
-                    'English Standard Version (ESV)'}
-                </Text>
-                <Feather name="chevron-right" size={18} color="#3C584A" />
+      {isVisible ? (
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={0}
+          snapPoints={snapPoints}
+          enablePanDownToClose={true}
+          onChange={handleSettingsChange}
+          backgroundStyle={styles.sheetBackground}
+          handleIndicatorStyle={styles.handleIndicator}
+          backdropComponent={renderBackdrop}>
+          <BottomSheetScrollView
+            style={styles.settingsContent}
+            showsVerticalScrollIndicator={false}
+            bounces={true}
+            contentContainerStyle={styles.settingsContentContainer}>
+            {/* Header */}
+            <View style={styles.settingsHeader}>
+              <Text style={styles.settingsTitle}>Settings</Text>
+              <TouchableOpacity onPress={handleClose} style={{ padding: 5 }}>
+                <Text style={styles.doneButton}>Done</Text>
               </TouchableOpacity>
             </View>
 
-            <View style={styles.divider} />
+            {/* Sheet Content */}
+            <View style={styles.settingsContent}>
+              {/* Bible Translation Section */}
+              <View style={styles.settingsSection}>
+                <Text style={styles.settingsSectionTitle}>Bible Translation</Text>
+                <TouchableOpacity
+                  style={styles.translationSelector}
+                  onPress={() => setTranslationModalVisible(true)}>
+                  <Text style={styles.translationText}>
+                    {translations.find((t) => t.id === savedTranslation)?.name ||
+                      'English Standard Version (ESV)'}
+                  </Text>
+                  <Feather name="chevron-right" size={18} color="#3C584A" />
+                </TouchableOpacity>
+              </View>
 
-            {/* Daily Reading Time Section */}
-            <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>Daily Reading Time</Text>
-              <TouchableOpacity style={styles.translationSelector} onPress={handleEditReadingTime}>
-                <Text style={styles.translationText}>{getReadingTimeDisplay()}</Text>
-                <Feather name="chevron-right" size={18} color="#3C584A" />
-              </TouchableOpacity>
-            </View>
+              <View style={styles.divider} />
 
-            <View style={styles.divider} />
+              {/* Daily Reading Time Section */}
+              <View style={styles.settingsSection}>
+                <Text style={styles.settingsSectionTitle}>Daily Reading Time</Text>
+                <TouchableOpacity
+                  style={styles.translationSelector}
+                  onPress={handleEditReadingTime}>
+                  <Text style={styles.translationText}>{getReadingTimeDisplay()}</Text>
+                  <Feather name="chevron-right" size={18} color="#3C584A" />
+                </TouchableOpacity>
+              </View>
 
-            {/* Notification Time Section */}
-            <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>Notifications</Text>
+              <View style={styles.divider} />
 
-              {/* Toggle for enabling/disabling notifications */}
-              <TouchableOpacity
-                style={styles.translationSelector}
-                onPress={() => animateToggle(!notificationsEnabled)}
-                activeOpacity={0.7}>
-                <Text style={styles.translationText}>
-                  {notificationsEnabled ? 'Notifications enabled' : 'Notifications disabled'}
-                </Text>
-                <View
-                  style={[
-                    styles.toggleButton,
-                    notificationsEnabled ? styles.toggleButtonActive : {},
-                  ]}>
+              {/* Notification Time Section */}
+              <View style={styles.settingsSection}>
+                <Text style={styles.settingsSectionTitle}>Notifications</Text>
+
+                {/* Toggle for enabling/disabling notifications */}
+                <TouchableOpacity
+                  style={styles.translationSelector}
+                  onPress={() => animateToggle(!notificationsEnabled)}
+                  activeOpacity={0.7}>
+                  <Text style={styles.translationText}>
+                    {notificationsEnabled ? 'Notifications enabled' : 'Notifications disabled'}
+                  </Text>
+                  <View
+                    style={[
+                      styles.toggleButton,
+                      notificationsEnabled ? styles.toggleButtonActive : {},
+                    ]}>
+                    <Animated.View
+                      style={[
+                        styles.toggleKnob,
+                        notificationsEnabled ? styles.toggleKnobActive : {},
+                        {
+                          transform: [{ translateX: notificationsEnabled ? 20 : 0 }],
+                        },
+                      ]}
+                    />
+                  </View>
+                </TouchableOpacity>
+
+                {notificationsEnabled && (
+                  <Animated.View style={selectorButtonStyle}>
+                    <TouchableOpacity
+                      style={[styles.timeSelector, showTimePicker && styles.timeSelectorActive]}
+                      onPress={toggleTimePicker}>
+                      <Text style={styles.timeSelectorText}>{getNotificationTimeDisplay()}</Text>
+                      <Feather
+                        name={showTimePicker ? 'chevron-up' : 'clock'}
+                        size={18}
+                        color="#3C584A"
+                      />
+                    </TouchableOpacity>
+                  </Animated.View>
+                )}
+
+                {/* Time Picker Section */}
+                {notificationsEnabled && Platform.OS === 'ios' && (
                   <Animated.View
                     style={[
-                      styles.toggleKnob,
-                      notificationsEnabled ? styles.toggleKnobActive : {},
-                      {
-                        transform: [{ translateX: notificationsEnabled ? 20 : 0 }],
-                      },
-                    ]}
+                      styles.timePickerContainer,
+                      timePickerAnimatedStyle,
+                      showTimePicker ? null : { height: 0, opacity: 0, overflow: 'hidden' },
+                    ]}>
+                    <View style={styles.timePickerWrapper}>
+                      <DateTimePicker
+                        value={selectedTime}
+                        mode="time"
+                        is24Hour={false}
+                        display="spinner"
+                        onChange={(event, date) => date && setSelectedTime(date)}
+                        style={styles.timePicker}
+                        accentColor="#3C584A"
+                        themeVariant="light"
+                      />
+                    </View>
+
+                    <TouchableOpacity style={styles.donePickingButton} onPress={handleTimeConfirm}>
+                      <Text style={styles.donePickingText}>Done</Text>
+                    </TouchableOpacity>
+                  </Animated.View>
+                )}
+
+                {/* Android Time Picker */}
+                {Platform.OS === 'android' && showAndroidPicker && (
+                  <DateTimePicker
+                    value={selectedTime}
+                    mode="time"
+                    is24Hour={false}
+                    display="default"
+                    onChange={(event, date) => {
+                      setShowAndroidPicker(false);
+                      if (event.type !== 'dismissed' && date) {
+                        handleTimeConfirm(event, date);
+                      }
+                    }}
                   />
+                )}
+              </View>
+
+              <View style={styles.divider} />
+
+              {/* Sound Settings Section */}
+              <View style={styles.settingsSection}>
+                <Text style={styles.settingsSectionTitle}>Sound</Text>
+
+                {/* Background Music Toggle */}
+                <TouchableOpacity
+                  style={styles.translationSelector}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                    setBackgroundMusicEnabled(!backgroundMusicEnabled);
+                  }}
+                  activeOpacity={0.7}>
+                  <Text style={styles.translationText}>
+                    {backgroundMusicEnabled
+                      ? 'Background music enabled'
+                      : 'Background music disabled'}
+                  </Text>
+                  <View
+                    style={[
+                      styles.toggleButton,
+                      backgroundMusicEnabled ? styles.toggleButtonActive : {},
+                    ]}>
+                    <Animated.View
+                      style={[
+                        styles.toggleKnob,
+                        backgroundMusicEnabled ? styles.toggleKnobActive : {},
+                        {
+                          transform: [{ translateX: backgroundMusicEnabled ? 20 : 0 }],
+                        },
+                      ]}
+                    />
+                  </View>
+                </TouchableOpacity>
+
+                {/* Sound Effects Toggle */}
+                <TouchableOpacity
+                  style={[styles.translationSelector, { marginTop: 10 }]}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                    setSoundEffectsEnabled(!soundEffectsEnabled);
+                  }}
+                  activeOpacity={0.7}>
+                  <Text style={styles.translationText}>
+                    {soundEffectsEnabled ? 'Sound effects enabled' : 'Sound effects disabled'}
+                  </Text>
+                  <View
+                    style={[
+                      styles.toggleButton,
+                      soundEffectsEnabled ? styles.toggleButtonActive : {},
+                    ]}>
+                    <Animated.View
+                      style={[
+                        styles.toggleKnob,
+                        soundEffectsEnabled ? styles.toggleKnobActive : {},
+                        {
+                          transform: [{ translateX: soundEffectsEnabled ? 20 : 0 }],
+                        },
+                      ]}
+                    />
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.divider} />
+
+              {/* Join Discord */}
+              <View style={styles.settingsSection}>
+                <Text style={styles.settingsSectionTitle}>Community</Text>
+                <TouchableOpacity style={styles.discordButton} onPress={handleOpenDiscord}>
+                  <View style={styles.discordButtonContent}>
+                    <FontAwesome6 name="discord" size={20} color="#5865F2" />
+                    <Text style={styles.discordButtonText}>Join the Shepherd Family!</Text>
+                  </View>
+                  <Feather name="external-link" size={18} color="#3C584A" />
+                </TouchableOpacity>
+
+                <TouchableOpacity style={styles.roadmapButton} onPress={handleOpenRoadmap}>
+                  <View style={styles.roadmapButtonContent}>
+                    <Feather name="map" size={20} color="#22C55E" />
+                    <Text style={styles.roadmapButtonText}>Roadmap & Feature Requests</Text>
+                  </View>
+                  <Feather name="external-link" size={18} color="#3C584A" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.divider} />
+
+              {/* Subscription Section */}
+              <View className="mb-6">
+                <Text className="font-feather text-xl text-[#5D5531] mb-2">Subscription</Text>
+                <View className="bg-white rounded-xl p-4 shadow-sm mb-2">
+                  <View className="flex-row justify-between items-center">
+                    <View className="flex-1 mr-4">
+                      <Text className="font-feather text-base text-textPrimary">
+                        {isProMember ? 'Super Shepherd (Active)' : 'Upgrade to Super Shepherd'}
+                      </Text>
+                      <Text className="font-din text-description mt-1">
+                        {isProMember
+                          ? 'Thank you for supporting our mission!'
+                          : 'Unlock premium features and support our mission'}
+                      </Text>
+                    </View>
+                    {isProMember ? (
+                      <TouchableOpacity
+                        onPress={handleOpenCancellationModal}
+                        className="bg-red/10 px-4 py-2 rounded-lg border border-red">
+                        <Text className="font-feather text-red">Cancel</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <TouchableOpacity
+                        onPress={handleSubscriptionPress}
+                        className="bg-[#FFE07D] px-4 py-2 rounded-lg">
+                        <Text className="font-feather text-textPrimary">Upgrade</Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
                 </View>
+
+                {/* Promo Code Button */}
+
+                {/* Referral Code Button */}
+                <TouchableOpacity
+                  onPress={handleOpenReferralModal}
+                  className="bg-white rounded-xl p-4 mt-2 shadow-sm flex-row justify-between items-center">
+                  <View>
+                    <Text className="font-feather text-base text-textPrimary">Referral Code</Text>
+                    <Text className="font-din text-description mt-1">
+                      Enter a referral code to unlock special features
+                    </Text>
+                  </View>
+                  <Feather name="gift" size={20} color="#B89B4C" />
+                </TouchableOpacity>
+              </View>
+
+              {/* User ID Section - Moved to bottom */}
+              <View style={styles.settingsSection}>
+                <Text style={styles.settingsSectionTitle}>User ID</Text>
+                <TouchableOpacity onPress={handleCopyUserId} style={styles.userIdContainer}>
+                  <Text style={styles.userIdText} numberOfLines={1} ellipsizeMode="tail">
+                    {userId}
+                  </Text>
+                  <View style={styles.copyButton}>
+                    <Feather name="copy" size={16} color="#3C584A" />
+                  </View>
+                </TouchableOpacity>
+              </View>
+
+              {/* Sign Out Button - Only show if user is signed in */}
+              {isUserSignedIn && (
+                <>
+                  <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
+                    <Text style={styles.signOutText}>Sign Out</Text>
+                  </TouchableOpacity>
+
+                  {/* Delete Account Button */}
+                  <TouchableOpacity
+                    onPress={handleDeleteAccount}
+                    style={styles.deleteAccountButton}>
+                    <Text style={styles.deleteAccountText}>Delete Account</Text>
+                  </TouchableOpacity>
+                </>
+              )}
+
+              {/* Developer Panel Toggle */}
+              <TouchableOpacity onPress={toggleDevPanel} style={styles.developerToggleButton}>
+                <Text style={styles.developerToggleText}>
+                  {showDevPanel ? 'Hide Developer Panel' : 'Show Developer Panel'}
+                </Text>
               </TouchableOpacity>
 
-              {notificationsEnabled && (
-                <Animated.View style={selectorButtonStyle}>
+              {/* Developer Panel */}
+              {showDevPanel && (
+                <View style={styles.developerPanel}>
+                  <View style={styles.developerPanelHeader}>
+                    <Text style={styles.developerPanelTitle}>Developer Panel</Text>
+                    {devPanelLoading ? (
+                      <ActivityIndicator size="small" color="#3C584A" />
+                    ) : (
+                      <TouchableOpacity
+                        onPress={refreshStreakData}
+                        style={styles.refreshButton}
+                        disabled={devPanelLoading}>
+                        <Feather name="refresh-cw" size={16} color="#3C584A" />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {/* App Version Info Section */}
+                  <View style={styles.developerPanelSection}>
+                    <Text style={styles.developerPanelSectionTitle}>App Information</Text>
+                    <View style={styles.developerDataRow}>
+                      <Text style={styles.developerDataLabel}>Version:</Text>
+                      <Text style={styles.developerDataValue}>{appVersion}</Text>
+                    </View>
+                    <View style={styles.developerDataRow}>
+                      <Text style={styles.developerDataLabel}>Build:</Text>
+                      <Text style={styles.developerDataValue}>{buildNumber}</Text>
+                    </View>
+                  </View>
+
+                  {/* Basic Data */}
+                  <View style={styles.developerPanelSection}>
+                    <Text style={styles.developerPanelSectionTitle}>Streak Data</Text>
+                    <View style={styles.developerDataRow}>
+                      <Text style={styles.developerDataLabel}>Streak Count:</Text>
+                      <Text style={styles.developerDataValue}>{userData.streakCount}</Text>
+                    </View>
+                    <View style={styles.developerDataRow}>
+                      <Text style={styles.developerDataLabel}>Lamb Hearts:</Text>
+                      <Text style={styles.developerDataValue}>{userData.lambHearts}</Text>
+                    </View>
+                    <View style={styles.developerDataRow}>
+                      <Text style={styles.developerDataLabel}>Lamb Mood:</Text>
+                      <Text style={styles.developerDataValue}>{userData.lambMood}</Text>
+                    </View>
+                  </View>
+
+                  {/* Expandable Details Section */}
                   <TouchableOpacity
-                    style={[styles.timeSelector, showTimePicker && styles.timeSelectorActive]}
-                    onPress={toggleTimePicker}>
-                    <Text style={styles.timeSelectorText}>{getNotificationTimeDisplay()}</Text>
+                    onPress={toggleDevPanelExpanded}
+                    style={styles.developerPanelExpandButton}>
+                    <Text style={styles.developerExpandText}>
+                      {devPanelExpanded ? 'Hide Details' : 'Show Details'}
+                    </Text>
                     <Feather
-                      name={showTimePicker ? 'chevron-up' : 'clock'}
-                      size={18}
+                      name={devPanelExpanded ? 'chevron-up' : 'chevron-down'}
+                      size={16}
                       color="#3C584A"
                     />
                   </TouchableOpacity>
-                </Animated.View>
-              )}
 
-              {/* Time Picker Section */}
-              {notificationsEnabled && Platform.OS === 'ios' && (
-                <Animated.View
-                  style={[
-                    styles.timePickerContainer,
-                    timePickerAnimatedStyle,
-                    showTimePicker ? null : { height: 0, opacity: 0, overflow: 'hidden' },
-                  ]}>
-                  <View style={styles.timePickerWrapper}>
-                    <DateTimePicker
-                      value={selectedTime}
-                      mode="time"
-                      is24Hour={false}
-                      display="spinner"
-                      onChange={(event, date) => date && setSelectedTime(date)}
-                      style={styles.timePicker}
-                      accentColor="#3C584A"
-                      themeVariant="light"
-                    />
-                  </View>
-
-                  <TouchableOpacity style={styles.donePickingButton} onPress={handleTimeConfirm}>
-                    <Text style={styles.donePickingText}>Done</Text>
-                  </TouchableOpacity>
-                </Animated.View>
-              )}
-
-              {/* Android Time Picker */}
-              {Platform.OS === 'android' && showAndroidPicker && (
-                <DateTimePicker
-                  value={selectedTime}
-                  mode="time"
-                  is24Hour={false}
-                  display="default"
-                  onChange={(event, date) => {
-                    setShowAndroidPicker(false);
-                    if (event.type !== 'dismissed' && date) {
-                      handleTimeConfirm(event, date);
-                    }
-                  }}
-                />
-              )}
-            </View>
-
-            <View style={styles.divider} />
-
-            {/* Sound Settings Section */}
-            <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>Sound</Text>
-
-              {/* Background Music Toggle */}
-              <TouchableOpacity
-                style={styles.translationSelector}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                  setBackgroundMusicEnabled(!backgroundMusicEnabled);
-                }}
-                activeOpacity={0.7}>
-                <Text style={styles.translationText}>
-                  {backgroundMusicEnabled
-                    ? 'Background music enabled'
-                    : 'Background music disabled'}
-                </Text>
-                <View
-                  style={[
-                    styles.toggleButton,
-                    backgroundMusicEnabled ? styles.toggleButtonActive : {},
-                  ]}>
-                  <Animated.View
-                    style={[
-                      styles.toggleKnob,
-                      backgroundMusicEnabled ? styles.toggleKnobActive : {},
-                      {
-                        transform: [{ translateX: backgroundMusicEnabled ? 20 : 0 }],
-                      },
-                    ]}
-                  />
-                </View>
-              </TouchableOpacity>
-
-              {/* Sound Effects Toggle */}
-              <TouchableOpacity
-                style={[styles.translationSelector, { marginTop: 10 }]}
-                onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-                  setSoundEffectsEnabled(!soundEffectsEnabled);
-                }}
-                activeOpacity={0.7}>
-                <Text style={styles.translationText}>
-                  {soundEffectsEnabled ? 'Sound effects enabled' : 'Sound effects disabled'}
-                </Text>
-                <View
-                  style={[
-                    styles.toggleButton,
-                    soundEffectsEnabled ? styles.toggleButtonActive : {},
-                  ]}>
-                  <Animated.View
-                    style={[
-                      styles.toggleKnob,
-                      soundEffectsEnabled ? styles.toggleKnobActive : {},
-                      {
-                        transform: [{ translateX: soundEffectsEnabled ? 20 : 0 }],
-                      },
-                    ]}
-                  />
-                </View>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.divider} />
-
-            {/* Join Discord */}
-            <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>Community</Text>
-              <TouchableOpacity style={styles.discordButton} onPress={handleOpenDiscord}>
-                <View style={styles.discordButtonContent}>
-                  <FontAwesome6 name="discord" size={20} color="#5865F2" />
-                  <Text style={styles.discordButtonText}>Join the Shepherd Family!</Text>
-                </View>
-                <Feather name="external-link" size={18} color="#3C584A" />
-              </TouchableOpacity>
-
-              <TouchableOpacity style={styles.roadmapButton} onPress={handleOpenRoadmap}>
-                <View style={styles.roadmapButtonContent}>
-                  <Feather name="map" size={20} color="#22C55E" />
-                  <Text style={styles.roadmapButtonText}>Roadmap & Feature Requests</Text>
-                </View>
-                <Feather name="external-link" size={18} color="#3C584A" />
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.divider} />
-
-            {/* Subscription Section */}
-            <View className="mb-6">
-              <Text className="font-feather text-xl text-[#5D5531] mb-2">Subscription</Text>
-              <View className="bg-white rounded-xl p-4 shadow-sm mb-2">
-                <View className="flex-row justify-between items-center">
-                  <View className="flex-1 mr-4">
-                    <Text className="font-feather text-base text-textPrimary">
-                      {isProMember ? 'Super Shepherd (Active)' : 'Upgrade to Super Shepherd'}
-                    </Text>
-                    <Text className="font-din text-description mt-1">
-                      {isProMember
-                        ? 'Thank you for supporting our mission!'
-                        : 'Unlock premium features and support our mission'}
-                    </Text>
-                  </View>
-                  {isProMember ? (
-                    <TouchableOpacity
-                      onPress={handleOpenCancellationModal}
-                      className="bg-red/10 px-4 py-2 rounded-lg border border-red">
-                      <Text className="font-feather text-red">Cancel</Text>
-                    </TouchableOpacity>
-                  ) : (
-                    <TouchableOpacity
-                      onPress={handleSubscriptionPress}
-                      className="bg-[#FFE07D] px-4 py-2 rounded-lg">
-                      <Text className="font-feather text-textPrimary">Upgrade</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
-
-              {/* Promo Code Button */}
-
-              {/* Referral Code Button */}
-              <TouchableOpacity
-                onPress={handleOpenReferralModal}
-                className="bg-white rounded-xl p-4 mt-2 shadow-sm flex-row justify-between items-center">
-                <View>
-                  <Text className="font-feather text-base text-textPrimary">Referral Code</Text>
-                  <Text className="font-din text-description mt-1">
-                    Enter a referral code to unlock special features
-                  </Text>
-                </View>
-                <Feather name="gift" size={20} color="#B89B4C" />
-              </TouchableOpacity>
-            </View>
-
-            {/* User ID Section - Moved to bottom */}
-            <View style={styles.settingsSection}>
-              <Text style={styles.settingsSectionTitle}>User ID</Text>
-              <TouchableOpacity onPress={handleCopyUserId} style={styles.userIdContainer}>
-                <Text style={styles.userIdText} numberOfLines={1} ellipsizeMode="tail">
-                  {userId}
-                </Text>
-                <View style={styles.copyButton}>
-                  <Feather name="copy" size={16} color="#3C584A" />
-                </View>
-              </TouchableOpacity>
-            </View>
-
-            {/* Sign Out Button - Only show if user is signed in */}
-            {isUserSignedIn && (
-              <>
-                <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
-                  <Text style={styles.signOutText}>Sign Out</Text>
-                </TouchableOpacity>
-
-                {/* Delete Account Button */}
-                <TouchableOpacity onPress={handleDeleteAccount} style={styles.deleteAccountButton}>
-                  <Text style={styles.deleteAccountText}>Delete Account</Text>
-                </TouchableOpacity>
-              </>
-            )}
-
-            {/* Developer Panel Toggle */}
-            <TouchableOpacity onPress={toggleDevPanel} style={styles.developerToggleButton}>
-              <Text style={styles.developerToggleText}>
-                {showDevPanel ? 'Hide Developer Panel' : 'Show Developer Panel'}
-              </Text>
-            </TouchableOpacity>
-
-            {/* Developer Panel */}
-            {showDevPanel && (
-              <View style={styles.developerPanel}>
-                <View style={styles.developerPanelHeader}>
-                  <Text style={styles.developerPanelTitle}>Developer Panel</Text>
-                  {devPanelLoading ? (
-                    <ActivityIndicator size="small" color="#3C584A" />
-                  ) : (
-                    <TouchableOpacity
-                      onPress={refreshStreakData}
-                      style={styles.refreshButton}
-                      disabled={devPanelLoading}>
-                      <Feather name="refresh-cw" size={16} color="#3C584A" />
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {/* App Version Info Section */}
-                <View style={styles.developerPanelSection}>
-                  <Text style={styles.developerPanelSectionTitle}>App Information</Text>
-                  <View style={styles.developerDataRow}>
-                    <Text style={styles.developerDataLabel}>Version:</Text>
-                    <Text style={styles.developerDataValue}>{appVersion}</Text>
-                  </View>
-                  <View style={styles.developerDataRow}>
-                    <Text style={styles.developerDataLabel}>Build:</Text>
-                    <Text style={styles.developerDataValue}>{buildNumber}</Text>
-                  </View>
-                </View>
-
-                {/* Basic Data */}
-                <View style={styles.developerPanelSection}>
-                  <Text style={styles.developerPanelSectionTitle}>Streak Data</Text>
-                  <View style={styles.developerDataRow}>
-                    <Text style={styles.developerDataLabel}>Streak Count:</Text>
-                    <Text style={styles.developerDataValue}>{userData.streakCount}</Text>
-                  </View>
-                  <View style={styles.developerDataRow}>
-                    <Text style={styles.developerDataLabel}>Lamb Hearts:</Text>
-                    <Text style={styles.developerDataValue}>{userData.lambHearts}</Text>
-                  </View>
-                  <View style={styles.developerDataRow}>
-                    <Text style={styles.developerDataLabel}>Lamb Mood:</Text>
-                    <Text style={styles.developerDataValue}>{userData.lambMood}</Text>
-                  </View>
-                </View>
-
-                {/* Expandable Details Section */}
-                <TouchableOpacity
-                  onPress={toggleDevPanelExpanded}
-                  style={styles.developerPanelExpandButton}>
-                  <Text style={styles.developerExpandText}>
-                    {devPanelExpanded ? 'Hide Details' : 'Show Details'}
-                  </Text>
-                  <Feather
-                    name={devPanelExpanded ? 'chevron-up' : 'chevron-down'}
-                    size={16}
-                    color="#3C584A"
-                  />
-                </TouchableOpacity>
-
-                {/* Streak Data Section (Toggle Expanded) */}
-                {devPanelExpanded && (
-                  <>
-                    {/* Last Activity Dates */}
-                    <View style={styles.developerPanelSection}>
-                      <Text style={styles.developerPanelSectionTitle}>Last Activity Dates</Text>
-                      <View style={styles.developerDataRow}>
-                        <Text style={styles.developerDataLabel}>Last Activity:</Text>
-                        <Text style={styles.developerDataValue}>
-                          {formatDate(userData.lastActivityDate)}
-                        </Text>
-                      </View>
-                      <View style={styles.developerDataRow}>
-                        <Text style={styles.developerDataLabel}>Last Reading:</Text>
-                        <Text style={styles.developerDataValue}>
-                          {formatDate(userData.lastReadingDate)}
-                        </Text>
-                      </View>
-                      <View style={styles.developerDataRow}>
-                        <Text style={styles.developerDataLabel}>Last Prayer:</Text>
-                        <Text style={styles.developerDataValue}>
-                          {formatDate(userData.lastPrayerDate)}
-                        </Text>
-                      </View>
-                      <View style={styles.developerDataRow}>
-                        <Text style={styles.developerDataLabel}>Last Reflection:</Text>
-                        <Text style={styles.developerDataValue}>
-                          {formatDate(userData.lastReflectionDate)}
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Last Penalty Dates */}
-                    <View style={styles.developerPanelSection}>
-                      <Text style={styles.developerPanelSectionTitle}>Last Penalty Dates</Text>
-                      <View style={styles.developerDataRow}>
-                        <Text style={styles.developerDataLabel}>Reading Penalty:</Text>
-                        <Text style={styles.developerDataValue}>
-                          {formatDate(userData.lastReadingPenaltyDate)}
-                        </Text>
-                      </View>
-                      <View style={styles.developerDataRow}>
-                        <Text style={styles.developerDataLabel}>Prayer Penalty:</Text>
-                        <Text style={styles.developerDataValue}>
-                          {formatDate(userData.lastPrayerPenaltyDate)}
-                        </Text>
-                      </View>
-                      <View style={styles.developerDataRow}>
-                        <Text style={styles.developerDataLabel}>Reflection Penalty:</Text>
-                        <Text style={styles.developerDataValue}>
-                          {formatDate(userData.lastReflectionPenaltyDate)}
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Streak Check Results */}
-                    {streakData && (
+                  {/* Streak Data Section (Toggle Expanded) */}
+                  {devPanelExpanded && (
+                    <>
+                      {/* Last Activity Dates */}
                       <View style={styles.developerPanelSection}>
-                        <Text style={styles.developerPanelSectionTitle}>
-                          Last Streak Check Results
-                        </Text>
+                        <Text style={styles.developerPanelSectionTitle}>Last Activity Dates</Text>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Streak Broken:</Text>
+                          <Text style={styles.developerDataLabel}>Last Activity:</Text>
                           <Text style={styles.developerDataValue}>
-                            {streakData.streakBroken ? 'Yes' : 'No'}
+                            {formatDate(userData.lastActivityDate)}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Heart Penalty:</Text>
+                          <Text style={styles.developerDataLabel}>Last Reading:</Text>
                           <Text style={styles.developerDataValue}>
-                            {streakData.heartPenalty || 0}
+                            {formatDate(userData.lastReadingDate)}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Days Missed:</Text>
+                          <Text style={styles.developerDataLabel}>Last Prayer:</Text>
                           <Text style={styles.developerDataValue}>
-                            {streakData.daysMissed || 0}
+                            {formatDate(userData.lastPrayerDate)}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>New Day:</Text>
+                          <Text style={styles.developerDataLabel}>Last Reflection:</Text>
                           <Text style={styles.developerDataValue}>
-                            {streakData.newDay ? 'Yes' : 'No'}
+                            {formatDate(userData.lastReflectionDate)}
                           </Text>
                         </View>
-                        {streakData.error && (
+                      </View>
+
+                      {/* Last Penalty Dates */}
+                      <View style={styles.developerPanelSection}>
+                        <Text style={styles.developerPanelSectionTitle}>Last Penalty Dates</Text>
+                        <View style={styles.developerDataRow}>
+                          <Text style={styles.developerDataLabel}>Reading Penalty:</Text>
+                          <Text style={styles.developerDataValue}>
+                            {formatDate(userData.lastReadingPenaltyDate)}
+                          </Text>
+                        </View>
+                        <View style={styles.developerDataRow}>
+                          <Text style={styles.developerDataLabel}>Prayer Penalty:</Text>
+                          <Text style={styles.developerDataValue}>
+                            {formatDate(userData.lastPrayerPenaltyDate)}
+                          </Text>
+                        </View>
+                        <View style={styles.developerDataRow}>
+                          <Text style={styles.developerDataLabel}>Reflection Penalty:</Text>
+                          <Text style={styles.developerDataValue}>
+                            {formatDate(userData.lastReflectionPenaltyDate)}
+                          </Text>
+                        </View>
+                      </View>
+
+                      {/* Streak Check Results */}
+                      {streakData && (
+                        <View style={styles.developerPanelSection}>
+                          <Text style={styles.developerPanelSectionTitle}>
+                            Last Streak Check Results
+                          </Text>
                           <View style={styles.developerDataRow}>
-                            <Text style={styles.developerDataLabel}>Error:</Text>
-                            <Text style={[styles.developerDataValue, { color: 'red' }]}>
-                              {String(streakData.error)}
+                            <Text style={styles.developerDataLabel}>Streak Broken:</Text>
+                            <Text style={styles.developerDataValue}>
+                              {streakData.streakBroken ? 'Yes' : 'No'}
                             </Text>
                           </View>
-                        )}
-                      </View>
-                    )}
-                  </>
-                )}
+                          <View style={styles.developerDataRow}>
+                            <Text style={styles.developerDataLabel}>Heart Penalty:</Text>
+                            <Text style={styles.developerDataValue}>
+                              {streakData.heartPenalty || 0}
+                            </Text>
+                          </View>
+                          <View style={styles.developerDataRow}>
+                            <Text style={styles.developerDataLabel}>Days Missed:</Text>
+                            <Text style={styles.developerDataValue}>
+                              {streakData.daysMissed || 0}
+                            </Text>
+                          </View>
+                          <View style={styles.developerDataRow}>
+                            <Text style={styles.developerDataLabel}>New Day:</Text>
+                            <Text style={styles.developerDataValue}>
+                              {streakData.newDay ? 'Yes' : 'No'}
+                            </Text>
+                          </View>
+                          {streakData.error && (
+                            <View style={styles.developerDataRow}>
+                              <Text style={styles.developerDataLabel}>Error:</Text>
+                              <Text style={[styles.developerDataValue, { color: 'red' }]}>
+                                {String(streakData.error)}
+                              </Text>
+                            </View>
+                          )}
+                        </View>
+                      )}
+                    </>
+                  )}
 
-                {/* Force Streak Check Button */}
-                <TouchableOpacity
-                  onPress={refreshStreakData}
-                  style={styles.forceCheckButton}
-                  disabled={devPanelLoading}>
-                  <Text style={styles.forceCheckButtonText}>
-                    {devPanelLoading ? 'Checking...' : 'Force Streak Check'}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            )}
+                  {/* Force Streak Check Button */}
+                  <TouchableOpacity
+                    onPress={refreshStreakData}
+                    style={styles.forceCheckButton}
+                    disabled={devPanelLoading}>
+                    <Text style={styles.forceCheckButtonText}>
+                      {devPanelLoading ? 'Checking...' : 'Force Streak Check'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              )}
 
-            {/* Extra padding at bottom */}
-            <View style={{ height: 40 }} />
-          </View>
-        </BottomSheetScrollView>
-      </BottomSheet>
+              {/* Extra padding at bottom */}
+              <View style={{ height: 40 }} />
+            </View>
+          </BottomSheetScrollView>
+        </BottomSheet>
+      ) : null}
 
       {/* Translation Selection Modal */}
       <Modal
