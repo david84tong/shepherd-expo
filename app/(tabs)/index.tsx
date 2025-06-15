@@ -12,12 +12,10 @@ import {
   TouchableOpacity,
   View,
   StatusBar,
-  Pressable,
   PanResponder,
   Share,
 } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
-import { Ionicons } from '@expo/vector-icons';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import Rive, { RiveRef, RNRiveError } from 'rive-react-native';
 import DevotionalReader from '../../components/DevotionalReader';
@@ -33,7 +31,7 @@ import { useAssetsStore, imageAssets } from '../stores/assetsStore';
 import { useAssets } from 'expo-asset';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
-import { Image as ExpoImage } from 'expo-image';
+
 import * as Sharing from 'expo-sharing';
 import analytics from '~/utils/analytics';
 import WidgetHowToSheet from '../../components/WidgetHowToSheet';
@@ -74,7 +72,8 @@ import CircleButton from '~/components/Shared/CircleButton';
 import PrimaryButton from '~/components/PrimaryButton';
 import { RPH } from '../helper/helper';
 import BluePrimaryButton from '~/components/Shared/BluePrimaryButton';
-import { LinearGradient } from 'expo-linear-gradient';
+import DailyVerseCard from '~/components/Shared/DailyVerseCard';
+
 
 // Custom toast config with explicit styling
 const toastConfig: ToastConfig = {
@@ -2168,57 +2167,21 @@ const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Co
                   <BottomSheetScrollView
                     showsVerticalScrollIndicator={false}
                     contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 24 }}>
-                    {prayerCompleted && readingCompleted && reflectionCompleted  ? (
-                      // Share Card
-                      <Pressable
-                        
-                        className="bg-surfaceCream rounded-3xl overflow-hidden mb-4 border border-buttonBorder shadow-card">
-                        <ImageBackground
-                          source={{uri:currentDevotional?.imageURL}}
-                          style={{ width: '100%', }}
-                          resizeMode="cover">
-                          {/* Dark overlay for readability */}
-                          <View className="absolute inset-0 bg-black/30" />
+                    <>
+                      {/* Share Card - Show when all activities are completed */}
+                      {prayerCompleted && readingCompleted && reflectionCompleted && currentDevotional && (
+                        <DailyVerseCard
+                          devotional={currentDevotional}
+                          share={true}
+                          onPress={() => setShowShareCard(true)}
+                          onShare={handleShare}
+                          onExpand={() => setShowShareCard(true)}
+                          showShareButton={true}
+                          showExpandButton={true}
+                        />
+                      )}
 
-                          {/* Content */}
-                          <View className="p-6 pb-4 h-full justify-between">
-                            <View>
-                              <Text className="font-feather text-white text-heading mb-1">
-                                {devotionalData?.bibleReference}
-                              </Text>
-                              <Text className="font-din text-white/90 text-heading leading-[26px] mb-7 ">
-                                Verse of the day
-                              </Text>
-                              <Text className="font-din text-white/90 text-heading leading-[22px]">
-                                {devotionalData?.verse}
-                              </Text>
-                            </View>
-
-                            {/* Share Button */}
-                            <View className="mt-10 w-full">
-                              <PrimaryButton
-                              title='Share'
-                                onPress={() => {
-                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                  analytics.logEvent('HomeScreen_Tapped_ShareAchievement');
-                                  handleShare()
-                                }}
-                                buttonType='orange'
-                              />
-                            </View>
-                          </View>
-                          <TouchableOpacity
-                                className='absolute top-4 right-4'
-                                onPress={()=>{
-                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                  setShowShareCard(true);
-                                }}>
-                                  <Ionicons name="expand" size={24} color="white" />
-                                  </TouchableOpacity>
-                        </ImageBackground>
-                      </Pressable>
-                    ) : (
-                      <>
+                      {/* Secondary Buttons - Always show */}
                         <View
                           className="flex-row items-center justify-between "
                           style={{ marginTop: responsiveHeight(2) }}>
@@ -2324,93 +2287,8 @@ const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Co
                               disabled={!readingCompleted}
                             />
                           </View>
-                        </View>
+                                                </View>
 
-                        {/* Daily Verse Card */}
-                        {currentDevotional?.verse && (
-                          <TouchableOpacity
-                            onPress={() => {
-                              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                              analytics.logEvent('HomeScreen_Tapped_DailyVerse', {
-                                bibleReference: currentDevotional.bibleReference,
-                              });
-                              // TODO: Navigate to full devotional or reader in future
-                            }}
-                            activeOpacity={0.9}
-                            className="rounded-2xl overflow-hidden mb-4">
-                            {currentDevotional.imageURL ? (
-                              <>
-                              <ImageBackground
-                               source={{ uri: currentDevotional.imageURL }}
-                               style={{ width: '100%', height: 220 }}
-                               resizeMode="cover"
-                              >
-
-                               
-                            <LinearGradient   colors={['transparent','rgba(0,0,0,0.5)']} style={{width:'100%',height:'100%',flex:1}}>
-                                  {/* Dark overlay for readability */}
-                                {/* <View className="absolute inset-0 bg-black/30" /> */}
-
-                                {/* Star icon */}
-                                <View className="absolute items-center w-full" style={{ top: 4 }}>
-                                  <Ionicons name="star" size={28} color="#FFD629" />
-                                </View>
-
-                                {/* Text content */}
-                                <View className='p-4'  style={{justifyContent:'space-between',height:'100%'}}>
-                                 <View>
-                                 <Text className="font-feather text-white text-heading mb-1">
-                                    {currentDevotional.bibleReference}
-                                  </Text>
-                                  <Text className="font-feather text-white/90 text-caption mb-1">
-                                    Verse of the Day
-                                  </Text>
-                                  <Text
-                                    className="nunito-medium text-white text-xl leading-[20px]"
-                                    numberOfLines={3}>
-                                    {currentDevotional.verse}
-                                  </Text>
-                                 </View>
-                                 <View className="self-center w-full items-center justify-center"> 
-                                  <PrimaryButton title="Share" onPress={()=>{
-                                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                           analytics.logEvent('HomeScreen_Tapped_ShareAchievement');
-                                           handleShare()
-                                  }}  buttonType='orange'  /></View>
-                                </View>
-                                <TouchableOpacity
-                                className='absolute top-4 right-4'
-                                onPress={()=>{
-                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                  setShowShareCard(true);
-                                }}>
-                                  <Ionicons name="expand" size={24} color="white" />
-                                  </TouchableOpacity>
-                            </LinearGradient>
-                                  </ImageBackground>
-                              </>
-                            ) : (
-                              /* Fallback cream card if no image */
-                              <View className="bg-surfaceCream px-5 py-4 border border-buttonBorder shadow-card">
-                                <View className="flex-row items-center mb-3">
-                                  <View className="w-7 h-7 bg-lightGreen rounded-lg items-center justify-center mr-3">
-                                    <Text className="text-darkGreen text-[18px]">📖</Text>
-                                  </View>
-                                  <Text className="font-feather text-heading text-textPrimary">
-                                    Daily Verse
-                                  </Text>
-                                </View>
-                                <Text className="font-din text-body text-textPrimary/90 leading-[22px] italic mb-3">
-                                  &ldquo;{currentDevotional.verse}&rdquo;
-                                </Text>
-                                <Text className="font-feather text-sm text-description text-right">
-                                  — {currentDevotional.bibleReference}
-                                </Text>
-                              </View>
-                            )}
-                         
-                          </TouchableOpacity>
-                        )}
 
                         {/* Loading state for devotional */}
                         {isLoadingDevotional && (
@@ -2444,10 +2322,7 @@ const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Co
                         )}
 
 
-                      </>
-
-
-                    )}
+                    </>
                   </BottomSheetScrollView>
                 )}
             </Animated.View>

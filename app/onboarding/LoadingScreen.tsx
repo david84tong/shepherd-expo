@@ -5,16 +5,16 @@ import {
   Animated,
   Easing,
   Dimensions,
-  ActivityIndicator,
   StatusBar,
 } from 'react-native';
 import { GLView, ExpoWebGLRenderingContext } from 'expo-gl';
 import { Renderer } from 'expo-three';
-// @ts-ignore: If you get type errors for 'three', install @types/three for type support
+// @ts-expect-error: If you get type errors for 'three', install @types/three for type support
 import * as THREE from 'three';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useDevotionalStore } from '~/app/stores/devotionalStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -32,17 +32,36 @@ const LOADING_POINTS = [
   'Generating your custom bible study plan',
 ];
 
+const DEVOTIONAL_LOADING_POINTS = [
+  'Crafting your custom devotional',
+  'Cross-checking similar verses',
+  'Sprinkling some holy water',
+  'waking up your lamb'
+];
+
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-export default function LoadingScreen() {
+interface LoadingScreenProps {
+  isOnboarding?: boolean;
+  verseText?: string;
+  reference?: string;
+}
+
+export default function LoadingScreen({ isOnboarding = true, verseText, reference }: LoadingScreenProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [anim, setAnim] = useState(0);
   const animRef = useRef(0);
   const router = useRouter();
 
+  // Devotional store action (only used when !isOnboarding)
+  const createQuickDevotional = useDevotionalStore((s) => s.createQuickDevotional);
+
+  // Use appropriate loading points based on isOnboarding
+  const loadingPoints = isOnboarding ? LOADING_POINTS : DEVOTIONAL_LOADING_POINTS;
+
   // Animation values for checklist items
   const animValuesRef = useRef(
-    Array(LOADING_POINTS.length)
+    Array(loadingPoints.length)
       .fill(0)
       .map(() => new Animated.Value(0))
   );
@@ -77,22 +96,27 @@ export default function LoadingScreen() {
 
   // Step-by-step checklist progression
   useEffect(() => {
-    if (currentStep < LOADING_POINTS.length) {
+    if (currentStep < loadingPoints.length) {
       const timer = setTimeout(() => {
         setCurrentStep((step) => step + 1);
-      }, 2000); // Slower: 2 seconds per checklist step
+      }, 1000); // 1 second per checklist step (4 steps = 4 seconds)
       return () => clearTimeout(timer);
     } else {
       // All steps complete, navigate
       setTimeout(() => {
-        router.replace({ pathname: '/PricingScreen', params: { animateFromBottom: 'true' } });
+        if (isOnboarding) {
+          router.replace({ pathname: '/PricingScreen', params: { animateFromBottom: 'true' } });
+        } else {
+          // For devotional loading, go back to home screen
+          router.replace('/');
+        }
       }, 600);
     }
-  }, [currentStep, router]);
+  }, [currentStep, router, isOnboarding, loadingPoints.length]);
 
   // Animate the current checklist item when it appears
   useEffect(() => {
-    if (currentStep < LOADING_POINTS.length) {
+    if (currentStep < loadingPoints.length) {
       Animated.timing(animValuesRef.current[currentStep], {
         toValue: 1,
         duration: 400,
@@ -108,7 +132,7 @@ export default function LoadingScreen() {
 
   useEffect(() => {
     Animated.timing(progressAnim, {
-      toValue: currentStep / LOADING_POINTS.length,
+      toValue: currentStep / loadingPoints.length,
       duration: 700,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false, // SVG props can't use native driver
@@ -116,7 +140,7 @@ export default function LoadingScreen() {
   }, [currentStep]);
 
   // Build checklist state (stepper style)
-  const checklist = LOADING_POINTS.map((label, idx) => {
+  const checklist = loadingPoints.map((label, idx) => {
     if (idx < currentStep) return { label, status: 'done' };
     if (idx === currentStep) return { label, status: 'loading' };
     return { label, status: 'pending' };
@@ -272,6 +296,14 @@ export default function LoadingScreen() {
     };
   }, []);
 
+  // Kick off devotional creation immediately when not onboarding
+  useEffect(() => {
+    if (!isOnboarding && verseText && reference) {
+      createQuickDevotional(verseText, reference);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   return (
     <View
       className="flex-1 items-center justify-center bg-surfaceCream"
@@ -323,16 +355,16 @@ export default function LoadingScreen() {
           <Text
             className="absolute top-0 left-0 w-[120px] h-[120px] text-center text-2xl font-feather text-accentGold flex items-center justify-center"
             style={{ lineHeight: 120, color: ORANGE }}>
-            {Math.round((currentStep / LOADING_POINTS.length) * 100)}%
+            {Math.round((currentStep / loadingPoints.length) * 100)}%
           </Text>
         </View>
 
         {/* Headline and subheadline */}
         <Text className="text-3xl font-feather text-center mb-2" style={{ color: TEXT_PRIMARY }}>
-          Just a moment
+          {isOnboarding ? 'Just a moment' : 'Creating devotional'}
         </Text>
         <Text className="text-lg font-din text-center mb-8" style={{ color: DESCRIPTION }}>
-          Building a personalized plan
+          {isOnboarding ? 'Building a personalized plan' : 'Preparing your spiritual meal'}
         </Text>
 
         {/* Checklist directly below */}

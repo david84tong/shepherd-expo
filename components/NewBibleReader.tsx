@@ -21,7 +21,6 @@ import { fetchChapter, Verse, ChapterResponse } from '~/app/api/bible';
 import { usePathStore } from '~/app/stores/pathStore';
 import { Feather, FontAwesome6, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Reanimated, {
-  FadeIn,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -56,6 +55,7 @@ import Animated from 'react-native-reanimated';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { BibleVerseActionBar } from './BibleVerseActionBar';
+import LoadingScreen from '~/app/onboarding/LoadingScreen';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -402,6 +402,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const [tapCount, setTapCount] = useState(0);
   const [useDefaultReader, setUseDefaultReader] = useState(false);
   const [isFadingToChat, setIsFadingToChat] = useState(false);
+  const [isGeneratingDevotional, setIsGeneratingDevotional] = useState(false);
+  const [swipedVerseNumber, setSwipedVerseNumber] = useState<number | null>(null);
+  const [quickDevData, setQuickDevData] = useState<{ verseText: string; reference: string } | null>(null);
 
   // Add initial render ref
   const isInitialRender = useRef(true);
@@ -418,6 +421,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const menuScaleAnim = useSharedValue(0);
   const menuOpacityAnim = useSharedValue(0);
   const progressValue = useSharedValue(0);
+  const verseCardPulse = useSharedValue(1);
 
   // State for floating menu
   const [floatingMenu, setFloatingMenu] = useState<FloatingMenuState>({
@@ -978,8 +982,11 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       if (menuScaleAnim) menuScaleAnim.value = 0;
       if (menuOpacityAnim) menuOpacityAnim.value = 0;
       if (progressValue) progressValue.value = 0;
+      if (verseCardPulse) verseCardPulse.value = 1;
+      setIsGeneratingDevotional(false);
+      setSwipedVerseNumber(null);
     };
-  }, [fadeOpacity, menuScaleAnim, menuOpacityAnim, progressValue]);
+  }, [fadeOpacity, menuScaleAnim, menuOpacityAnim, progressValue, verseCardPulse]);
 
   // Update handleSwipeVerseToChat
   const handleSwipeVerseToChat = useCallback(
@@ -1312,6 +1319,23 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     };
   });
 
+  // Create animated style for verse card pulse
+  const verseCardPulseStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ scale: verseCardPulse.value }],
+    };
+  });
+
+  // Create animated style for verse card background when swiped
+  const verseCardSwipedStyle = useAnimatedStyle(() => {
+    return {
+      backgroundColor: withTiming(
+        swipedVerseNumber !== null ? '#FFE8CC' : 'transparent',
+        { duration: 300 }
+      ),
+    };
+  });
+
   // Define menu actions
   const handleCopyVerse = (verse: Verse) => {
     if (!chapterData) return;
@@ -1593,33 +1617,37 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Handle swipe verse to Devotional
   const handleSwipeVerseToDevotional = useCallback(
     (verse: Verse) => {
-      if (isFadingToChat) return;
+      if (isFadingToChat || isGeneratingDevotional) return;
 
       // Immediate haptic feedback
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-      // Persist the devotional verse so HomeScreen can pick it up
+      // Prepare data for LoadingScreen
       if (chapterData) {
-        createQuickDevotional(
-          verse.text,
-          `${chapterData.book} ${chapterData.chapter}:${verse.verse}`
-        );
+        setQuickDevData({
+          verseText: verse.text,
+          reference: `${chapterData.book} ${chapterData.chapter}:${verse.verse}`,
+        });
       }
+
+      setIsGeneratingDevotional(true);
+
+      // (No additional animations here – LoadingScreen covers UI immediately)
 
       // Close the swipeable if still open
       const swipeableRef = swipeableRefs.current.get(verse.verse);
       swipeableRef?.close();
 
-      // Navigate back to the Home tab (index screen)
-      router.replace('/');
-
+      // Analytics event
       analytics.logEvent('CardBibleReader_Swiped_VerseToDevotional', {
         book: chapterData?.book,
         chapter: chapterData?.chapter,
         verse: verse.verse,
       });
+
+      // Navigation will occur from LoadingScreen once progress reaches 100%
     },
-    [isFadingToChat, createQuickDevotional, chapterData, router]
+    [isFadingToChat, isGeneratingDevotional, createQuickDevotional, chapterData, router, fadeOpacity, verseCardPulse, setQuickDevData]
   );
 
   if (!chapterData) {
@@ -1652,7 +1680,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       <Animated.View
         className="flex-1"
         style={{ opacity: 1 }}>
-        <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%' }]}>
+        <Animated.View style={{ position: 'absolute', width: '100%', height: '100%' }}>
           <ImageBackground
             source={require('../assets/backgrounds/mainBackground2.png')}
             style={{ width: '100%', height: '100%' }}>
@@ -1832,23 +1860,27 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                               }}>
                               <View
                               >
-                                <View
-                                  className={`bg-surfaceCreamLight`}
-                                  style={[
-                                    styles.verseBubble,
-                                    {
-                                      backgroundColor: highlightColor
-                                        ? `${highlightColor}80`
-                                        : '#fff1c9',
-                                    },
-                                  ]}>
-                                  <View style={{ marginBottom: 12 }}>
-                                    <Text className="text-[18px] leading-[25px] font-nunito-bold " >
-                                      <Text className="text-brown/40">{`${v.verse}. `}</Text>
-                                      <Text className="text-brown/70">{v.text}</Text>
-                                    </Text>
+                                <Reanimated.View
+                                  style={swipedVerseNumber === v.verse ? [verseCardPulseStyle, verseCardSwipedStyle] : undefined}
+                                >
+                                  <View
+                                    className={`bg-surfaceCreamLight`}
+                                    style={[
+                                      styles.verseBubble,
+                                      {
+                                        backgroundColor: highlightColor
+                                          ? `${highlightColor}80`
+                                          : '#fff1c9',
+                                      },
+                                    ]}>
+                                    <View style={{ marginBottom: 12 }}>
+                                      <Text className="text-[18px] leading-[25px] font-nunito-bold " >
+                                        <Text className="text-brown/40">{`${v.verse}. `}</Text>
+                                        <Text className="text-brown/70">{v.text}</Text>
+                                      </Text>
+                                    </View>
                                   </View>
-                                </View>
+                                </Reanimated.View>
                               </View>
                             </Swipeable>
                           </View>
@@ -2128,8 +2160,28 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             )}
           </View>
         </SafeAreaView>
-      </Animated.View >
-      {isBibleReaderScreen ? (
+
+        {/* Devotional Loading Overlay */}
+        {isGeneratingDevotional && quickDevData && (
+          <View
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              zIndex: 9999,
+            }}
+          >
+            <LoadingScreen
+              isOnboarding={false}
+              verseText={quickDevData.verseText}
+              reference={quickDevData.reference}
+            />
+          </View>
+        )}
+      </Animated.View>
+      {isBibleReaderScreen && !isGeneratingDevotional ? (
         <BibleVerseActionBar
           reference={`${chapterData?.book} ${chapterData?.chapter}`}
           onVersePress={handleOpenSelector}
@@ -2234,14 +2286,14 @@ const styles = StyleSheet.create({
   },
   // Updated elegant swipe action styles
   swipeActionContainer: {
-    width: 70,
     height: '100%',
+    width: 70,
     justifyContent: 'center',
     alignItems: 'center',
   },
   swipeActionContent: {
-    width: 50,
     height: 50,
+    width: 50,
     borderRadius: 50,
     backgroundColor: 'rgba(181, 125, 0, 0.15)',
     opacity: 0.2,
@@ -2326,13 +2378,10 @@ const styles = StyleSheet.create({
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     textAlign: 'center',
   } as const,
-  actionIcon: {
-    padding: 2, // Add some padding for easier touch
-  },
   verseBubble: {
+    paddingBottom: 5,
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 5,
     borderRadius: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
