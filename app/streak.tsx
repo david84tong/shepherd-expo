@@ -4,7 +4,7 @@ import React from 'react';
 import { StreakScreen } from '../components/StreakScreen';
 
 export default function StreakRoute() {
-  const { isPrayPresses } = useLocalSearchParams();
+  const { isPrayPresses, isReflectPresses } = useLocalSearchParams();
   
   return (
     <>
@@ -15,7 +15,7 @@ export default function StreakRoute() {
           title: 'Streak',
         }}
       />
-      <StreakScreen isPrayPresses={isPrayPresses as string} />
+      <StreakScreen isPrayPresses={isPrayPresses as string} isReflectPresses={isReflectPresses as string} />
     </>
   );
 }

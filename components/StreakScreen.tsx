@@ -92,7 +92,7 @@ const calculateStreakLogic = (
   return currentStreak;
 };
 
-export const StreakScreen = ({isPrayPresses}:{isPrayPresses?:string}) => {  
+export const StreakScreen = ({isPrayPresses, isReflectPresses}:{isPrayPresses?:string, isReflectPresses?:string}) => {  
   
   // Animation states
   const animationsInitialized = useRef(false);
@@ -410,7 +410,8 @@ export const StreakScreen = ({isPrayPresses}:{isPrayPresses?:string}) => {
     router.push({
       pathname: '/(tabs)',
       params: {
-        isPrayPresses: isPrayPresses
+        isPrayPresses: isPrayPresses,
+        isReflectPresses: isReflectPresses
       }
     });
   };

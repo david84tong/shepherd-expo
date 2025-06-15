@@ -175,7 +175,7 @@ export default function HomeScreen() {
   const [riveError, setRiveError] = useState<RNRiveError | null>(null);
   const navigation = useNavigation();
   const router = useRouter();
-  const { isPrayPresses } = useLocalSearchParams();
+  const { isPrayPresses,isReflectPresses } = useLocalSearchParams();
   const currentUser = auth().currentUser;
   const devotionalReaderRef = useRef<DevotionalReaderRef>(null);
   const prayerViewRef = useRef<PrayerViewRef>(null);
@@ -314,7 +314,10 @@ export default function HomeScreen() {
     if (isPrayPresses === 'true') {
       handlePrayerPress();
     }
-  }, [isPrayPresses]);
+    if (isReflectPresses === 'true') {
+      handleReflectionPress();
+    }
+  }, [isPrayPresses,isReflectPresses]);
   
 
   // Get current path state from pathStore

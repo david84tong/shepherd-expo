@@ -10,7 +10,7 @@ import {
   Animated,
 } from 'react-native';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
-import { useHomeStore } from '~/app/stores/homeStore';
+import { SuccessAnimationType, useHomeStore } from '~/app/stores/homeStore';
 import firestore from '@react-native-firebase/firestore';
 import Reanimated, {
   SlideInDown,
@@ -452,12 +452,11 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
               const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
               // Check if we need to show streak screen
-              const sawStreakToday = useHomeStore.getState().sawStreakToday;
-              const isFirstReadingOfDay = !sawStreakToday;
-              if (isFirstReadingOfDay) {
-                const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
-                setSawStreakToday(true);
-                router.push('/streak')
+              const sawDailyBonus = useHomeStore.getState().sawDailyBonus;              
+              const setSuccessType = useHomeStore.getState().setSuccessType;
+              if(!sawDailyBonus){
+                setSuccessType(SuccessAnimationType.BONUS);
+                router.push('/success');
               }
               onClose({isPrayPresses: false});
             }
@@ -482,16 +481,27 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
               const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
               // Check if we need to show streak screen
-              const sawStreakToday = useHomeStore.getState().sawStreakToday;
-              const isFirstReadingOfDay = !sawStreakToday;
+              // const sawStreakToday = useHomeStore.getState().sawStreakToday;
+              // const isFirstReadingOfDay = !sawStreakToday;
               
-              if (isFirstReadingOfDay) {
-                // Set sawStreakToday to true before showing streak screen
-                const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
-                setSawStreakToday(true);
+              // if (isFirstReadingOfDay) {
+              //   // Set sawStreakToday to true before showing streak screen
+              //   const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
+              //   setSawStreakToday(true);
                 
-                router.push({
-                  pathname: '/streak',
+              //   router.push({
+              //     pathname: '/streak',
+              //     params: {
+              //       isPrayPresses: 'true'
+              //     }
+              //   });
+              // }
+              const sawDailyBonus = useHomeStore.getState().sawDailyBonus;              
+              const setSuccessType = useHomeStore.getState().setSuccessType;
+              if(!sawDailyBonus){
+                setSuccessType(SuccessAnimationType.BONUS);
+                              router.push({
+                  pathname: '/success',
                   params: {
                     isPrayPresses: 'true'
                   }

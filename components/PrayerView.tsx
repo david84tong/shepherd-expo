@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePrayerStore } from '~/app/stores/prayerStore';
-import { useHomeStore } from '~/app/stores/homeStore';
+import { SuccessAnimationType, useHomeStore } from '~/app/stores/homeStore';
 import { useUserStore } from '~/app/stores/userStore';
 import firestore from '@react-native-firebase/firestore';
 import Reanimated, {
@@ -34,6 +34,7 @@ import CircleButton from './Shared/CircleButton';
 import BluePrimaryButton from './Shared/BluePrimaryButton';
 import { getLevelData } from '~/utils/levelUtils';
 import SuccessMessage from './SuccessMessage';
+import { router } from 'expo-router';
 
 // AsyncStorage keys for prayer settings
 const PRAYER_HAPTICS_KEY = 'prayer_haptics_enabled';
@@ -916,6 +917,23 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               totalCards: totalCards,
             });
 
+            const sawStreakToday = useHomeStore.getState().sawStreakToday;
+            const isFirstReadingOfDay = !sawStreakToday;
+            const readingCompleted = useHomeStore.getState().readingCompleted;
+            const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
+            const sawDailyBonus = useHomeStore.getState().sawDailyBonus;
+            const setSuccessType = useHomeStore.getState().setSuccessType;
+            if (readingCompleted && reflectionCompleted && isFirstReadingOfDay) {
+              const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
+              const setSawDailyBonus = useHomeStore.getState().setSawDailyBonus;
+              setSawStreakToday(true);
+              setSawDailyBonus(true);
+              router.push('/streak')
+            }else if(!sawDailyBonus) {
+              setSuccessType(SuccessAnimationType.BONUS);
+              router.push('/success');
+            }
+
             // Close the prayer view
             if (onSetIdle) onSetIdle();
             if (onClose) {
@@ -953,6 +971,33 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
             });
 
             // Close the prayer view
+            const readingCompleted = useHomeStore.getState().readingCompleted;
+            const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
+            const setSuccessType = useHomeStore.getState().setSuccessType;
+            const sawStreakToday = useHomeStore.getState().sawStreakToday;
+            const isFirstReadingOfDay = !sawStreakToday;
+            const sawDailyBonus = useHomeStore.getState().sawDailyBonus;
+            if (readingCompleted && reflectionCompleted && isFirstReadingOfDay) {
+              const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
+              const setSawDailyBonus = useHomeStore.getState().setSawDailyBonus;
+              setSawStreakToday(true);
+              setSawDailyBonus(true);
+              router.push({
+                pathname: '/streak',
+                params: {
+                  isReflectPresses: 'true'
+                }
+              });
+            }else if(!sawDailyBonus) {
+              setSuccessType(SuccessAnimationType.BONUS);
+              router.push({
+                pathname: '/success',
+                params: {
+                  isReflectPresses: 'true'
+                }
+              });
+            }
+
             if (onSetIdle) onSetIdle();
             if (onClose) {
               if (hapticsEnabled) {

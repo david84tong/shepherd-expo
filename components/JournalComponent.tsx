@@ -43,7 +43,7 @@ export interface JournalComponentRef {
 
 interface JournalProps {
   visible: boolean;
-  onClose: () => void;
+  onClose: ({isCompleted}:{isCompleted?:boolean}) => void;
   setFinishReading: (finishReading: boolean) => void;
   setJournalButtonEnabled: (enabled: boolean) => void;
 }
@@ -431,7 +431,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       });
       useHomeStore.getState().setTappedReflectAboutVerse(false);
       console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
-      onClose();
+      onClose({});
     },
     setReflectionContent: (content: string) => {
       setReflectionContent(content);
@@ -469,13 +469,27 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             setFinishReading(false)
           }, 2000);
 
-          if (readingCompleted && prayerCompleted && !sawDailyBonus) {
+          const sawStreakToday = useHomeStore.getState().sawStreakToday;
+          const isFirstReadingOfDay = !sawStreakToday;
+          if (readingCompleted && prayerCompleted && isFirstReadingOfDay) {
+            const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
+            const setSawDailyBonus = useHomeStore.getState().setSawDailyBonus;
+            setSawStreakToday(true);
+            setSawDailyBonus(true);
+            router.push('/streak')
+          }else if(!sawDailyBonus) {
             setSuccessType(SuccessAnimationType.BONUS);
-          } else {
-            setSuccessType(SuccessAnimationType.REFLECTION);
+            router.push('/success');
+          }else{
+            onClose({isCompleted:true});
           }
 
-          router.push('/success');
+          // if (readingCompleted && prayerCompleted && !sawDailyBonus) {
+          //   setSuccessType(SuccessAnimationType.BONUS);
+          // } else {
+          //   setSuccessType(SuccessAnimationType.REFLECTION);
+          // }
+
         }}
         onPray={() => {}}
         prayButtonTitle=""
