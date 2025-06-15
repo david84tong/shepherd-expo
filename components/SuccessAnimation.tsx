@@ -740,7 +740,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   return (
     <ScrollView
-      contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
+      contentContainerStyle={{ flexGrow: 1 }}
       showsVerticalScrollIndicator={false}
       className="bg-surfaceCream"
       style={{ flex: 1, backgroundColor: '#FFF4DC' }}>
