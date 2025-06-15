@@ -54,10 +54,16 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding = true, v
   const router = useRouter();
   const params = useLocalSearchParams();
 
-  // Use route params if available, otherwise fall back to props
-  const isOnboarding = params.isOnboarding ? params.isOnboarding === 'true' : propIsOnboarding;
-  const verseText = (params.verseText as string) || propVerseText;
-  const reference = (params.reference as string) || propReference;
+  // Stabilize critical route-derived values so they don't change mid-loading
+  const [isOnboarding] = useState(() =>
+    params.isOnboarding !== undefined ? params.isOnboarding === 'true' : propIsOnboarding
+  );
+  const [verseText] = useState<string | undefined>(
+    (params.verseText as string | undefined) || propVerseText
+  );
+  const [reference] = useState<string | undefined>(
+    (params.reference as string | undefined) || propReference
+  );
 
   // Devotional store action (only used when !isOnboarding)
   const createQuickDevotional = useDevotionalStore((s) => s.createQuickDevotional);

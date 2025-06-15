@@ -266,11 +266,21 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
   // Always have at least 1 card for the verse, even if no context
   const totalCards = Math.max(contextSentences.length + 1, 1);
 
-  // Update progress bar
+  // Update progress bar – skip animation on the first render so it doesn't animate
+  const isFirstProgressRender = useRef(true);
+
   useEffect(() => {
     if (totalCards > 0) {
       const newProgress = (currentIndex + 1) / totalCards;
-      progressValue.value = withTiming(newProgress, { duration: 600 });
+
+      if (isFirstProgressRender.current) {
+        // Set immediately on first render to avoid the "fill-down" effect
+        progressValue.value = newProgress;
+        isFirstProgressRender.current = false;
+      } else {
+        // Animate smoothly on subsequent updates
+        progressValue.value = withTiming(newProgress, { duration: 600 });
+      }
     }
   }, [currentIndex, totalCards, progressValue]);
   useEffect(() => {
