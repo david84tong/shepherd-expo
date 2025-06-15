@@ -1975,11 +1975,12 @@ const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Co
             enableDynamicSizing={false} // Prevent dynamic snap points
             bottomInset={0} // No bottom inset
             detached={false} // Not detached from bottom
+            handleComponent={showPrayerContent ? ()=>null : undefined}
             handleIndicatorStyle={{
-              backgroundColor: '#634012',
-              opacity: 0.15,
-              width: 50,
-              height: 5,
+              opacity: showPrayerView ? 0 : 0.15,
+              height:5,
+              width:showPrayerView ? 0 : 50,
+              backgroundColor:showPrayerView ? 'transparent' : '#634012',
             }}
             backgroundStyle={{
               backgroundColor: '#FDEBB8',
