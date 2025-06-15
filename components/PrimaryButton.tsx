@@ -14,7 +14,7 @@ interface PrimaryButtonProps {
   primaryColor?: string;
   textColor?: string;
   shadowStyle?: string;
-  buttonType?: 'default' | 'blue' | 'gold';
+  buttonType?: 'default' | 'blue' | 'gold' | 'orange';
   buttonHeight?: number;
   loading?: boolean;
   icon?: any; // image source
@@ -54,6 +54,10 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     bgColor = 'bg-[#4FB8FE]';
     borderColor = 'border-[#06B6FE]';
     shadowColor = '#98E1FE';
+  } else if (buttonType === 'orange') {
+    bgColor = 'bg-[#FF8803]';
+    borderColor = 'border-[#FF8803]';
+    shadowColor = '#B96D15';
   }
 
   // Override with primaryColor if provided
@@ -124,7 +128,9 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
               ? 'bg-[#B6E6F7] border-[#B6E6F7]'
               : buttonType === 'gold'
                 ? 'bg-[#F5E3C3] border-[#F5E3C3]'
-                : 'bg-[#E5E5E5] border-[#D0D0D0]')
+                : buttonType === 'orange'
+                  ? 'bg-[#FFB366] border-[#FFB366]'
+                  : 'bg-[#E5E5E5] border-[#D0D0D0]')
             : `${bgColor} ${borderColor}`
           } ` +
           `transform ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
@@ -139,11 +145,13 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
           <>
             <Text
               className={`font-feather-bold text-heading text-center ${disabled || !isActive
-                ? buttonType === 'blue'
+                ? (buttonType === 'blue'
                   ? 'text-[#E0F6FF]'
                   : buttonType === 'gold'
                     ? 'text-[#C2A97A]'
-                    : 'text-gray-400'
+                    : buttonType === 'orange'
+                      ? 'text-[#FFB366]'
+                      : 'text-gray-400')
                 : txtColor
                 }`}
               style={{ flexShrink: 1 }}
@@ -155,11 +163,13 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
             )}
             {reward && (
               <Text className={`font-feather-bold text-heading ml-1 ${disabled || !isActive
-                ? buttonType === 'blue'
+                ? (buttonType === 'blue'
                   ? 'text-[#E0F6FF]'
                   : buttonType === 'gold'
                     ? 'text-[#C2A97A]'
-                    : 'text-gray-400'
+                    : buttonType === 'orange'
+                      ? 'text-[#FFB366]'
+                      : 'text-gray-400')
                 : txtColor
                 }`}>{reward}</Text>
             )}

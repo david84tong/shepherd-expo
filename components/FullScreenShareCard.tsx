@@ -125,9 +125,9 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                     style={{ transform: [{ translateY: pan.y }] }}
                     {...panResponder.panHandlers}
                 >
-                    <View className="flex-1" style={{ overflow: 'hidden' }}>
+                    <View className="flex-1 bg-[#AAB33D]" style={{ overflow: 'hidden' }}>
                         <ImageBackground
-                            source={require('../assets/backgrounds/nightSky.png')}
+                            source={{uri:devotionalData?.imageURL}}
                             className="flex-1"
                             resizeMode="cover"
                         >

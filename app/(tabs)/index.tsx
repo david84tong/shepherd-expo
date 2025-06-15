@@ -74,6 +74,7 @@ import CircleButton from '~/components/Shared/CircleButton';
 import PrimaryButton from '~/components/PrimaryButton';
 import { RPH } from '../helper/helper';
 import BluePrimaryButton from '~/components/Shared/BluePrimaryButton';
+import { LinearGradient } from 'expo-linear-gradient';
 
 // Custom toast config with explicit styling
 const toastConfig: ToastConfig = {
@@ -333,6 +334,8 @@ export default function HomeScreen() {
 
   // Get devotional data from devotionalStore
   const currentDevotional = useDevotionalStore((state) => state.currentDevotional);
+  console.log("currentDevotional ===>",currentDevotional);
+  
   const isLoadingDevotional = useDevotionalStore((state) => state.isLoading);
   const devotionalError = useDevotionalStore((state) => state.error);
   const fetchTodaysDevotional = useDevotionalStore((state) => state.fetchTodaysDevotional);
@@ -2168,20 +2171,17 @@ const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Co
                     {prayerCompleted && readingCompleted && reflectionCompleted  ? (
                       // Share Card
                       <Pressable
-                        onPress={() => {
-                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          setShowShareCard(true);
-                        }}
+                        
                         className="bg-surfaceCream rounded-3xl overflow-hidden mb-4 border border-buttonBorder shadow-card">
                         <ImageBackground
-                          source={require('../../assets/backgrounds/nightSky.png')}
+                          source={{uri:currentDevotional?.imageURL}}
                           style={{ width: '100%', }}
                           resizeMode="cover">
                           {/* Dark overlay for readability */}
                           <View className="absolute inset-0 bg-black/30" />
 
                           {/* Content */}
-                          <View className="p-6 h-full justify-between">
+                          <View className="p-6 pb-4 h-full justify-between">
                             <View>
                               <Text className="font-feather text-white text-heading mb-1">
                                 {devotionalData?.bibleReference}
@@ -2196,19 +2196,25 @@ const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Co
 
                             {/* Share Button */}
                             <View className="mt-10 w-full">
-                              <TouchableOpacity
+                              <PrimaryButton
+                              title='Share'
                                 onPress={() => {
                                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                                   analytics.logEvent('HomeScreen_Tapped_ShareAchievement');
                                   handleShare()
                                 }}
-                                className="flex-row items-center justify-center px-5 h-[50px] w-full rounded-full border-[3px] bg-[#4FB8FE] border-[#06B6FE]">
-                                <Text className="font-feather text-white text-heading text-center w-full">
-                                  Share
-                                </Text>
-                              </TouchableOpacity>
+                                buttonType='orange'
+                              />
                             </View>
                           </View>
+                          <TouchableOpacity
+                                className='absolute top-4 right-4'
+                                onPress={()=>{
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  setShowShareCard(true);
+                                }}>
+                                  <Ionicons name="expand" size={24} color="white" />
+                                  </TouchableOpacity>
                         </ImageBackground>
                       </Pressable>
                     ) : (
@@ -2334,13 +2340,16 @@ const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Co
                             className="rounded-2xl overflow-hidden mb-4">
                             {currentDevotional.imageURL ? (
                               <>
-                                <ExpoImage
-                                  source={{ uri: currentDevotional.imageURL }}
-                                  style={{ width: '100%', height: 180 }}
-                                  contentFit="cover"
-                                />
-                                {/* Dark overlay for readability */}
-                                <View className="absolute inset-0 bg-black/30" />
+                              <ImageBackground
+                               source={{ uri: currentDevotional.imageURL }}
+                               style={{ width: '100%', height: 220 }}
+                               resizeMode="cover"
+                              >
+
+                               
+                            <LinearGradient   colors={['transparent','rgba(0,0,0,0.5)']} style={{width:'100%',height:'100%',flex:1}}>
+                                  {/* Dark overlay for readability */}
+                                {/* <View className="absolute inset-0 bg-black/30" /> */}
 
                                 {/* Star icon */}
                                 <View className="absolute items-center w-full" style={{ top: 4 }}>
@@ -2348,19 +2357,37 @@ const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Co
                                 </View>
 
                                 {/* Text content */}
-                                <View className="absolute inset-0 p-4 justify-end">
-                                  <Text className="font-feather text-white text-heading mb-1">
+                                <View className='p-4'  style={{justifyContent:'space-between',height:'100%'}}>
+                                 <View>
+                                 <Text className="font-feather text-white text-heading mb-1">
                                     {currentDevotional.bibleReference}
                                   </Text>
                                   <Text className="font-feather text-white/90 text-caption mb-1">
                                     Verse of the Day
                                   </Text>
                                   <Text
-                                    className="font-din text-white text-body leading-[20px]"
+                                    className="nunito-medium text-white text-xl leading-[20px]"
                                     numberOfLines={3}>
                                     {currentDevotional.verse}
                                   </Text>
+                                 </View>
+                                 <View className="self-center w-full items-center justify-center"> 
+                                  <PrimaryButton title="Share" onPress={()=>{
+                                           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                           analytics.logEvent('HomeScreen_Tapped_ShareAchievement');
+                                           handleShare()
+                                  }}  buttonType='orange'  /></View>
                                 </View>
+                                <TouchableOpacity
+                                className='absolute top-4 right-4'
+                                onPress={()=>{
+                                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                  setShowShareCard(true);
+                                }}>
+                                  <Ionicons name="expand" size={24} color="white" />
+                                  </TouchableOpacity>
+                            </LinearGradient>
+                                  </ImageBackground>
                               </>
                             ) : (
                               /* Fallback cream card if no image */
@@ -2381,6 +2408,7 @@ const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Co
                                 </Text>
                               </View>
                             )}
+                         
                           </TouchableOpacity>
                         )}
 
