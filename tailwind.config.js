@@ -105,6 +105,8 @@ module.exports = {
         h1: '28px', // H1
         h2: '24px', // H1
         heading: '20px', // Heading (~17pt)
+        h4: '18', // H1
+
         body: '16px', // Body
         caption: '16px', // Caption
         smallCaption: '14px', // Caption

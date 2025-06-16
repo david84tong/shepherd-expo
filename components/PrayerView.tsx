@@ -204,6 +204,29 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
         },
         centerCircleStyle
       ]} />
+
+      {/* Breathing instruction text */}
+      <Reanimated.View
+        style={[
+          { position: 'absolute', pointerEvents: 'none', zIndex: 2, maxWidth: SCREEN_WIDTH * 0.8 },
+        ]}
+      >
+        {guidedPrayerEnabled ? (
+          <TypingText
+            text="Dear God, I come before you today with a grateful heart. Please guide me through this day and help me grow in faith. Amen."
+            className="text-yellow-700 font-feather text-xl text-center"
+            baseTextStyle={{
+              color: '#B45309',
+              fontSize: 20,
+              fontFamily: 'Nunito-Black',
+              textAlign: 'center',
+              lineHeight: 28,
+            }}
+            speed={50}
+            skipAnimation={false}
+          />
+        ) : null}
+      </Reanimated.View>
     </View>
   );
 };

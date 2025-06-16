@@ -1,9 +1,10 @@
 import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
-import { Text, View, Pressable, Platform, ActivityIndicator, Image } from 'react-native';
+import { Text, View, Pressable, Platform, ActivityIndicator, Image, DimensionValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import analytics from '../utils/analytics';
 import { useSoundStore } from '../app/stores/soundStore';
+import { Feather } from '@expo/vector-icons';
 
 interface PrimaryButtonProps {
   title: string;
@@ -18,8 +19,11 @@ interface PrimaryButtonProps {
   buttonHeight?: number;
   loading?: boolean;
   icon?: any; // image source
+  featherIcon?: keyof typeof Feather.glyphMap;
+  iconText?: string;
   reward?: string | number;
   opacity?: number;
+  width?: DimensionValue;
 }
 
 const PrimaryButton: React.FC<PrimaryButtonProps> = ({
@@ -35,8 +39,11 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   buttonHeight,
   loading = false,
   icon,
+  featherIcon,
+  iconText,
   reward,
   opacity = 1,
+  width,
 }) => {
   // Simple state to track pressed state
   const [isPressed, setIsPressed] = useState(false);
@@ -51,9 +58,9 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   let shadowColor = '#FFE4A8';
 
   if (buttonType === 'blue') {
-    bgColor = 'bg-[#4FB8FE]';
-    borderColor = 'border-[#06B6FE]';
-    shadowColor = '#98E1FE';
+    bgColor = 'bg-[#00B0F7]';
+    borderColor = 'border-[#119AD1]';
+    shadowColor = '#119AD1';
   } else if (buttonType === 'orange') {
     bgColor = 'bg-[#FF8803]';
     borderColor = 'border-[#FF8803]';
@@ -102,27 +109,33 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
 
   // Platform-specific shadow styles
   const shadowStyles =
-    !isPressed && isActive && !disabled
+    !isPressed && isActive 
       ? {
         ...Platform.select({
           ios: {
             shadowColor: shadowColor,
-            shadowOffset: { width: 0, height: 5.716 },
-            shadowOpacity: 1,
+            shadowOffset: { width: 0, height: 5 },
+            shadowOpacity: disabled ? 0.3 : 1,
             shadowRadius: 0,
           },
           android: {
-            elevation: 6,
+            elevation: 5,
           },
         }),
       }
       : {};
 
   return (
-    <View className={`mt-4 w-full ${style || ''}`} style={{ height: buttonContainerHeight, opacity }}>
+    <View className={`${style || ''}`} style={{ 
+      height: buttonHeight || buttonContainerHeight, 
+      opacity,
+      width: width || '100%',
+      marginTop: style?.includes('mt-') ? 0 : 16,
+      marginHorizontal: buttonType === 'blue' ? 0 : 0
+    }}>
       <Pressable
         className={
-          `flex-row items-center justify-center px-5 h-16 w-full rounded-full border-[3px] ` +
+          `flex-row items-center justify-center px-5 rounded-full border-[3px] ` +
           `${disabled || !isActive
             ? (buttonType === 'blue'
               ? 'bg-[#B6E6F7] border-[#B6E6F7]'
@@ -132,10 +145,19 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
                   ? 'bg-[#FFB366] border-[#FFB366]'
                   : 'bg-[#E5E5E5] border-[#D0D0D0]')
             : `${bgColor} ${borderColor}`
-          } ` +
-          `transform ${isPressed ? 'translate-y-[3px]' : 'translate-y-0'}`
+          }`
         }
-        style={shadowStyles}
+        style={[
+          shadowStyles,
+          {
+            height: buttonHeight || 64,
+            width: '100%',
+            transform: [{ translateY: isPressed ? 3 : 0 }],
+            borderRadius: 25,
+            paddingVertical: 16,
+            paddingHorizontal: 24,
+          }
+        ]}
         onPress={handlePress}
         onPressIn={() => setIsPressed(true)}
         onPressOut={() => setIsPressed(false)}>
@@ -143,8 +165,16 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
           <ActivityIndicator size="small" color="#FCD34D" />
         ) : (
           <>
+            {featherIcon && (
+              <Feather 
+                name={featherIcon} 
+                size={20} 
+                color={disabled || !isActive ? "#E0F6FF" : "white"} 
+                style={{ marginRight: 8 }}
+              />
+            )}
             <Text
-              className={`font-feather text-heading text-center ${disabled || !isActive
+              className={`font-feather text-h4 text-center ${disabled || !isActive
                 ? (buttonType === 'blue'
                   ? 'text-[#E0F6FF]'
                   : buttonType === 'gold'
@@ -154,15 +184,28 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
                       : 'text-gray-400')
                 : txtColor
                 }`}
-              style={{ flexShrink: 1 }}
+              style={{ 
+                flexShrink: 1,
+         
+              }}
             >
               {title}
             </Text>
             {icon && (
               <Image source={icon} className={`w-6 h-6 ml-2 ${disabled || !isActive ? 'opacity-50' : ''}`} resizeMode="contain" />
             )}
+            {iconText && (
+              <Text style={{
+                color: disabled || !isActive ? "#E0F6FF" : "white",
+                fontSize: 16,
+                fontWeight: '600',
+                marginLeft: 4,
+              }}>
+                {iconText}
+              </Text>
+            )}
             {reward && (
-              <Text className={`font-feather text-heading ml-1 ${disabled || !isActive
+              <Text className={`font-feather text-h4 ml-1 ${disabled || !isActive
                 ? (buttonType === 'blue'
                   ? 'text-[#E0F6FF]'
                   : buttonType === 'gold'

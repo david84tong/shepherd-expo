@@ -186,6 +186,8 @@ export default function HomeScreen() {
   const [currentVerseReference, setCurrentVerseReference] = useState('');
   const [isCompletePrayerDisabled, setIsCompletePrayerDisabled] = useState(true);
   const [journalButtonEnabled, setJournalButtonEnabled] = useState(false);
+  const [showControlRow, setShowControlRow] = useState(true);
+  const [isControlRowVisible, setIsControlRowVisible] = useState(true);
 
   // Add effect to handle showDevotional parameter
   useEffect(() => {
@@ -299,7 +301,7 @@ export default function HomeScreen() {
           const targetStateInput = moodToStateInput[currentMood] || 0;
           setCurrentStateInput(targetStateInput);
           if (riveRef.current?.setInputState) {
-            riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+            riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
           }
 
           // Start fade in immediately after content switch
@@ -504,8 +506,8 @@ export default function HomeScreen() {
   // Keep only the new conditional snapPoints definition
   const snapPoints = useMemo(() => (
     showPrayerContent
-      ? ['60%', '65%', '70%', '75%', '80%', '85%', '90%',]
-      : ['60%', '65%', '70%', '75%', '80%', '85%', '90%']
+      ? ['60%', '65%', '70%', '75%', '80%', '85%', '88%']
+      : ['60%', '65%', '70%', '75%', '80%', '85%', '88%']
   ), [showPrayerContent]);
   // ... existing code ...
 
@@ -1001,7 +1003,12 @@ export default function HomeScreen() {
       if (riveRef.current?.setInputState) {
         // Primary input used across the app
         riveRef.current.setInputState('State Machine 1', 'Action-Number', 9);
-        // Remove legacy Number 1 input usage
+        // Fallback for older artboards that still expose 'Number 1'
+        try {
+          riveRef.current.setInputState('State Machine 1', 'Number 1', 9);
+        } catch (_) {
+          /* no-op – some artboards may not have this legacy input */
+        }
       }
       Animated.timing(riveArtboardOpacityAnim, {
         toValue: 1,
@@ -1072,7 +1079,12 @@ export default function HomeScreen() {
         if (riveRef.current?.setInputState) {
           // Primary input used across the app
           riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
-          // Remove legacy Number 1 input usage
+          // Fallback for older artboards that still expose 'Number 1'
+          try {
+            riveRef.current.setInputState('State Machine 1', 'Number 1', 12);
+          } catch (_) {
+            /* no-op – some artboards may not have this legacy input */
+          }
         }
         Animated.timing(riveArtboardOpacityAnim, {
           toValue: 1,
@@ -1213,7 +1225,6 @@ export default function HomeScreen() {
   const [riveReady, setRiveReady] = useState(false);
   const [isFree, setIsFree] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
-  const [showControlRow, setShowControlRow] = useState(true);
 
   // Animation for first load after onboarding
   const firstLoadOpacity = useRef(new Animated.Value(0)).current;
@@ -1306,6 +1317,7 @@ export default function HomeScreen() {
 
   const bottomContentOpacity = useRef(new Animated.Value(0)).current;
   const bottomContentAnimY = useRef(new Animated.Value(100)).current;
+  const controlRowOpacity = useRef(new Animated.Value(0)).current; // New animation value for control row
 
   const bottomContentStyle = useMemo(() => {
     return {
@@ -1417,9 +1429,30 @@ useEffect(() => {
   if(journalButtonEnabled){
     setJournalButtonEnabled(false);
   }
+  Animated.timing(controlRowOpacity, {
+    toValue: 1,
+    duration: 400,
+    useNativeDriver: true,
+  }).start();
 }
 }, [showDevotionalContent,showPrayerContent,showJournalContent,showGlobalButtons])
 
+// Add effect for control row fade animation
+useEffect(() => {
+  if (showPrayerContent && showControlRow) {
+    Animated.timing(controlRowOpacity, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start(() => setIsControlRowVisible(true));
+  } else {
+    Animated.timing(controlRowOpacity, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start(() => setIsControlRowVisible(false));
+  }
+}, [showPrayerContent, showControlRow]);
 
   // Removed auto-open DevotionalReader - user must manually tap "Daily Bread" button
   
@@ -1585,7 +1618,7 @@ useEffect(() => {
     }
   };
 
-const buttonTitle = showDevotionalContent ? 'Continue' : 'Complete Prayer';
+const buttonTitle = showDevotionalContent ? 'Continue' : 'Amen';
   // HEADER
   return (
     <>
@@ -2141,7 +2174,7 @@ const buttonTitle = showDevotionalContent ? 'Continue' : 'Complete Prayer';
                             setCurrentStateInput(targetStateInput);
                             setRiveIdle();
                             if (riveRef.current?.setInputState) {
-                              riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+                              riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
                             }
                           } catch (e) {
                             console.log('Error resetting Rive state:', e);
@@ -2332,8 +2365,15 @@ const buttonTitle = showDevotionalContent ? 'Continue' : 'Complete Prayer';
           </BottomSheet>
 
 {/* BUTTONS */}
-      {showControlRow ? <Animated.View 
-          style={[bottomContentStyle,{bottom:RPH(3)}]}
+       <Animated.View 
+          style={[
+            bottomContentStyle,
+            {bottom:RPH(3)},
+            { 
+              opacity: showPrayerContent ? controlRowOpacity : 1,
+              pointerEvents: showPrayerContent ? (isControlRowVisible ? 'auto' : 'none') : 'auto'
+            }
+          ]}
         className='px-10 absolute items-center w-full justify-between'
          
           
@@ -2402,7 +2442,7 @@ const buttonTitle = showDevotionalContent ? 'Continue' : 'Complete Prayer';
           </Animated.View>}
           </View>
         </Animated.View>
-        : null}
+        
 {/* BUTTONS END */}
           {/* Widget and Explainer Modals - Keep these inside SafeAreaView */}
           <WidgetHowToSheet visible={showWidgetSheet} onClose={handleWidgetSheetClose} />

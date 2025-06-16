@@ -77,7 +77,6 @@ const CircleButton: React.FC<CircleButtonProps> = ({
           transform: [{ translateY: isPressed ? 3 : 0 }],
           borderWidth: 1,
           borderColor: '#CFA860',
-          margin: 0
         },
         shadowStyles,
       ]}

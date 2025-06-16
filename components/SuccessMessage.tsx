@@ -112,11 +112,9 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
   }));
   const blueButtonStyle = useAnimatedStyle(() => ({
     opacity: blueOpacity.value,
-    width: '100%',
   }));
   const goldButtonStyle = useAnimatedStyle(() => ({
     opacity: goldOpacity.value,
-    width: '100%',
   }));
   const successViewAnimatedStyle = useAnimatedStyle(() => ({
     opacity: fadeOpacity.value,
@@ -169,9 +167,9 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
           </View>
         </View>
       </View>
-  <View style={{paddingTop:RPH(5)}} className='w-full'>
+  <View style={{paddingTop:RPH(5)}} className='w-full items-center'>
   {!hidePrayButton && (
-      <RNAnimated.View style={blueButtonStyle}>
+      <RNAnimated.View style={blueButtonStyle} className="w-full">
         <PrimaryButton
           title={prayButtonTitle}
           onPress={onPray}
@@ -179,13 +177,14 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
           icon={require('../assets/icons/starIcon.png')}
           reward={"+25"}
           disabled={!localButtonsEnabled || !buttonsEnabled}
+          width="100%"
         />
       </RNAnimated.View>)}
-      <RNAnimated.View style={goldButtonStyle}>
+      <RNAnimated.View style={goldButtonStyle} className="w-full">
         <TouchableOpacity
           onPress={onGoHome}
           disabled={!localButtonsEnabled || !buttonsEnabled}
-          className=" h-[52px] w-full self-center bg-gold rounded-full mt-2 items-center justify-center"
+          className="h-[52px] w-full self-center bg-gold rounded-[16px] mt-4 items-center justify-center"
         >
           <Text className="font-feather text-brown/80 text-xl text-center">{homeButtonTitle}</Text>
         </TouchableOpacity>
