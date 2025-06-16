@@ -1740,7 +1740,7 @@ const buttonTitle = showDevotionalContent ? 'Continue' : 'Amen';
                     textShadowOffset: { width: 0, height: 1 },
                     textShadowRadius: 2,
                   }}>
-                  {showDevotionalContent ? 'Reading' : showPrayerContent ? 'Praying' : showJournalContent ? 'Reflecting' : 'Shepherd'}
+                  {showDevotionalContent ? 'Devotional' : showPrayerContent ? 'Praying' : showJournalContent ? 'Reflecting' : 'Shepherd'}
                 </Text>
                 {!showDevotionalContent && !showPrayerContent && !showJournalContent && (
                   <View className="flex-row gap-2 justify-end ml-2">
