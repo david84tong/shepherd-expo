@@ -5,15 +5,14 @@ import {
     Modal,
     PanResponder,
     View,
-    ImageBackground,
     TouchableOpacity,
     Text,
     StatusBar,
 } from 'react-native';
-import { FontAwesome, Ionicons } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Devotional } from '~/app/models/Devotional';
-
+import { ImageBackground } from 'expo-image';
 interface FullScreenShareCardProps {
     visible: boolean;
     onClose: () => void;
@@ -128,8 +127,9 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                     <View className="flex-1 bg-[#AAB33D]" style={{ overflow: 'hidden' }}>
                         <ImageBackground
                             source={{uri:devotionalData?.imageURL}}
-                            className="flex-1"
-                            resizeMode="cover"
+                            className="h-full w-full"
+                            style={{height:'100%'}}
+                            contentFit="cover"
                         >
                             {/* Content */}
                             <Animated.View

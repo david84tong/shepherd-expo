@@ -4,7 +4,7 @@ import {
   Animated,
   Dimensions,
   Easing,
-  Image,
+  
   ImageBackground,
   Platform,
   SafeAreaView,
@@ -43,7 +43,7 @@ import SpotlightOverlay from '../../components/SpotlightOverlay';
 import { usePrayerStore } from '../stores/prayerStore';
 import { DevotionalReaderRef } from '../../components/DevotionalReader';
 import PrayerView, { PrayerViewRef } from '~/components/PrayerView';
-
+import {Image} from 'expo-image';
 const { height: SCREEN_HEIGHT } = Dimensions.get('window'); // Get screen height
 const LAMB_VIEWPORT_PERCENTAGE = 0.4; // 40%
 const BASE_LAMB_SIZE = SCREEN_HEIGHT * LAMB_VIEWPORT_PERCENTAGE;

@@ -3,7 +3,7 @@ import {
   View,
   Text,
   TouchableOpacity,
-  ImageBackground,
+  
   Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,7 +11,7 @@ import * as Haptics from 'expo-haptics';
 import analytics from '~/utils/analytics';
 import PrimaryButton from '../PrimaryButton';
 import { Devotional } from '~/app/models/Devotional';
-
+import { ImageBackground } from 'expo-image';
 interface DailyVerseCardProps {
   devotional: Devotional;
   onPress?: () => void;
@@ -73,7 +73,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
       className={`bg-surfaceCream rounded-3xl overflow-hidden mb-4 border border-buttonBorder shadow-card ${share && showShareButton ? 'h-80' : 'h-64'}`}>
       <ImageBackground
         source={{ uri: devotional.imageURL }}
-        style={{ width: '100%' }}
+        style={{ width: '100%', backgroundColor:'#AAB33D' }}
         resizeMode="cover">
         {/* Dark overlay for readability */}
         <View className="absolute inset-0 bg-black/30" />
