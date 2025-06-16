@@ -9,8 +9,10 @@ import {
   TouchableWithoutFeedback,
   Animated,
 } from 'react-native';
+import { Feather } from '@expo/vector-icons';
+import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
-import { SuccessAnimationType, useHomeStore } from '~/app/stores/homeStore';
+import { useHomeStore } from '~/app/stores/homeStore';
 import firestore from '@react-native-firebase/firestore';
 import Reanimated, {
   SlideInDown,
@@ -25,7 +27,6 @@ import { useUserStore } from '~/app/stores/userStore';
 import { getLevelData } from '~/utils/levelUtils';
 import { RPH } from '~/app/helper/helper';
 import SuccessMessage from './SuccessMessage';
-import { router } from 'expo-router';
 import analytics from '~/utils/analytics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -266,7 +267,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
   // Always have at least 1 card for the verse, even if no context
   const totalCards = Math.max(contextSentences.length + 1, 1);
 
-  // Update progress bar – skip animation on the first render so it doesn't animate
+  // Update progress bar – skip animation only on the first render
   const isFirstProgressRender = useRef(true);
 
   useEffect(() => {
@@ -279,18 +280,13 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
         isFirstProgressRender.current = false;
       } else {
         // Animate smoothly from current progress to new progress
+        // Animate smoothly on subsequent updates (when changing cards)
         progressValue.value = withTiming(newProgress, { duration: 600 });
       }
     }
   }, [currentIndex, totalCards, progressValue]);
-  useEffect(() => {
-    const setShowGlobalButtons = useHomeStore.getState().setShowGlobalButtons;
-    setShowGlobalButtons(true);
   
-    return () => {
-      setShowGlobalButtons(false);
-    }
-  }, [])
+  // Remove auto-setting of showGlobalButtons - this should be controlled by parent component
   
 
   const scrollToBottom = useCallback(() => {
@@ -349,6 +345,40 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
     setIsRewarding(true);
     setShowSuccess(true);
     setFinishReading(true)
+    
+    // Apply rewards (3 hearts + 25 XP for reading)
+    const heartReward = 3;
+    const xpReward = 25;
+    const MAX_HEARTS = 100;
+    
+    const currentHearts = useUserStore.getState().getLambHearts();
+    const currentXp = useUserStore.getState().getLambXp();
+    const setLambHearts = useUserStore.getState().setLambHearts;
+    const addXp = useUserStore.getState().addXp;
+    const setLambMood = useUserStore.getState().setLambMood;
+    
+    // Calculate actual heart reward (don't exceed MAX_HEARTS)
+    const heartsToAdd = Math.min(heartReward, MAX_HEARTS - currentHearts);
+    
+    // Apply rewards
+    if (heartsToAdd > 0) {
+      setLambHearts(currentHearts + heartsToAdd);
+      // Update mood based on new heart count
+      const newHeartCount = currentHearts + heartsToAdd;
+      if (newHeartCount >= 80) {
+        setLambMood('lamb-idle');
+      } else if (newHeartCount >= 50) {
+        setLambMood('lamb-idle');
+      } else if (newHeartCount >= 30) {
+        setLambMood('lamb-sleepy');
+      } else if (newHeartCount >= 20) {
+        setLambMood('lamb-angry');
+      }
+    }
+    
+    // Always add XP
+    addXp(xpReward);
+    
     // Mark reading as completed
     const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
     const setShowGlobalButtons = useHomeStore.getState().setShowGlobalButtons;
@@ -360,11 +390,56 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
       bibleReference: currentDevotional?.bibleReference,
       hasContext: !!currentDevotional?.context,
       totalCards: totalCards,
+      heartsAwarded: heartsToAdd,
+      xpAwarded: xpReward,
     });
   }
   const animatedProgressStyle = useAnimatedStyle(() => {
     return { width: `${progressValue.value ? progressValue.value * 100 : 0}%` };
   });
+
+  // Prepare cards to show (up to current index) - moved before early return
+  const cardsToShow: DevotionalCard[] = useMemo(() => {
+    if (!currentDevotional) return [];
+    
+    const cards: DevotionalCard[] = [];
+    console.log('📋 Preparing cards to show. Current index:', currentIndex);
+    console.log('📋 Total context sentences:', contextSentences.length);
+    console.log('📋 Context sentences:', contextSentences);
+    console.log('📋 Devotional to use:', {
+      hasVerse: !!currentDevotional?.verse,
+      verse: currentDevotional?.verse,
+      reference: currentDevotional?.bibleReference
+    });
+
+    // First card is always the Bible verse
+    if (currentIndex >= 0) {
+      cards.push({
+        type: 'verse',
+        content: currentDevotional?.verse || 'No verse available for today.',
+        reference: currentDevotional?.bibleReference || '',
+      });
+    }
+
+    // Add context sentences based on current index
+    for (let i = 1; i <= currentIndex && i - 1 < contextSentences.length; i++) {
+      cards.push({
+        type: 'context',
+        content: contextSentences[i - 1],
+        reference: '',
+      });
+    }
+
+    console.log('📋 Cards to show:', cards.length, cards);
+    return cards;
+  }, [currentIndex, contextSentences, currentDevotional]);
+
+  // Update verse reference when devotional data changes
+  useEffect(() => {
+    if (cardsToShow[0]?.reference) {
+      setCurrentVerseReference(cardsToShow[0].reference);
+    }
+  }, [cardsToShow, setCurrentVerseReference]);
 
   // Get store state for debugging
 
@@ -383,44 +458,6 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
       </SafeAreaView>
     );
   }
-
-  // Prepare cards to show (up to current index)
-  const cardsToShow = [];
-  console.log('📋 Preparing cards to show. Current index:', currentIndex);
-  console.log('📋 Total context sentences:', contextSentences.length);
-  console.log('📋 Context sentences:', contextSentences);
-  console.log('📋 Devotional to use:', {
-    hasVerse: !!currentDevotional?.verse,
-    verse: currentDevotional?.verse,
-    reference: currentDevotional?.bibleReference
-  });
-
-  // First card is always the Bible verse
-  if (currentIndex >= 0) {
-    cardsToShow.push({
-      type: 'verse',
-      content: currentDevotional?.verse || 'No verse available for today.',
-      reference: currentDevotional?.bibleReference || '',
-    });
-  }
-
-  // Add context sentences based on current index
-  for (let i = 1; i <= currentIndex && i - 1 < contextSentences.length; i++) {
-    cardsToShow.push({
-      type: 'context',
-      content: contextSentences[i - 1],
-      reference: '',
-    });
-  }
-
-  console.log('📋 Cards to show:', cardsToShow.length, cardsToShow);
-
-  // Update verse reference when devotional data changes
-  useEffect(() => {
-    if (cardsToShow[0]?.reference) {
-      setCurrentVerseReference(cardsToShow[0].reference);
-    }
-  }, [cardsToShow, setCurrentVerseReference]);
 
   if (!visible) return null;
 
@@ -451,13 +488,6 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
               }, 2000);
               const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
-              // Check if we need to show streak screen
-              // const sawDailyBonus = useHomeStore.getState().sawDailyBonus;              
-              // const setSuccessType = useHomeStore.getState().setSuccessType;
-              // if(!sawDailyBonus){
-              //   setSuccessType(SuccessAnimationType.BONUS);
-              //   router.push('/success');
-              // }
               onClose({isPrayPresses: false});
             }
           }}
@@ -478,42 +508,15 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
               setTimeout(() => {
                 setFinishReading(false);
               }, 2000);
-              const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
+                            const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
-              // Check if we need to show streak screen
-              // const sawStreakToday = useHomeStore.getState().sawStreakToday;
-              // const isFirstReadingOfDay = !sawStreakToday;
-              
-              // if (isFirstReadingOfDay) {
-              //   // Set sawStreakToday to true before showing streak screen
-              //   const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
-              //   setSawStreakToday(true);
-                
-              //   router.push({
-              //     pathname: '/streak',
-              //     params: {
-              //       isPrayPresses: 'true'
-              //     }
-              //   });
-              // }
-              // const sawDailyBonus = useHomeStore.getState().sawDailyBonus;              
-              // const setSuccessType = useHomeStore.getState().setSuccessType;
-              // if(!sawDailyBonus){
-              //   setSuccessType(SuccessAnimationType.BONUS);
-              //                 router.push({
-              //     pathname: '/success',
-              //     params: {
-              //       isPrayPresses: 'true'
-              //     }
-              //   });
-              // }
               onClose({isPrayPresses: true});
             }
           }}
         />
       ) : (
         <View style={{ flex: 1 }}>
-          {/* <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 0, marginBottom: 16 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 0, marginBottom: 16 }}>
             <Text
               className="font-feather-bold text-textPrimary"
               style={{
@@ -521,7 +524,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                 fontWeight: "400",
               }}
             >
-              Daily Devotional
+              Reading
             </Text>
 
             {onClose && (
@@ -531,7 +534,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                 <Feather name="x" size={18} color="#795323" />
               </TouchableOpacity>
             )}
-          </View> */}
+          </View>
 
           {/* Date Header */}
           {/* <View className="flex-row items-center justify-center mb-2">

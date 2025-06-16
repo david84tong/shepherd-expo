@@ -14,6 +14,7 @@ import {
   StatusBar,
   PanResponder,
   Share,
+  Keyboard,
 } from 'react-native';
 import BottomSheet, { BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
@@ -203,6 +204,8 @@ export default function HomeScreen() {
     
         // Start fade out
         if(isPrayPresses){
+          // Reset finishReading when transitioning to prayer
+          setFinishReading(false);
           handlePrayerPress()
           setTimeout(() => {
             setDevotionalReaderVisible(false);
@@ -414,6 +417,9 @@ export default function HomeScreen() {
   const devotionalBgOpacityAnim = useRef(new Animated.Value(0)).current; // 0 = no overlay, 0.7 = black overlay
   const finishReadingOpacityAnim = useRef(new Animated.Value(0)).current; // New animation value for finish reading overlay
   const devotionaleRadingOpacityAnim = useRef(new Animated.Value(0)).current; // New animation value for finish reading overlay
+
+  // Track previous `finishReading` value so we can differentiate the first render from toggles
+  const prevFinishReadingRef = useRef(false);
 
   // Bottom sheet ref and snap points
   const bottomSheetRef = useRef<BottomSheet>(null);
@@ -769,175 +775,46 @@ export default function HomeScreen() {
 
   // Add effect to animate finish reading overlay
   useEffect(() => {
+    // Prevent side-effects on the very first render when `finishReading` is still false
+    if (!prevFinishReadingRef.current && !finishReading) {
+      return;
+    }
+
     if (finishReading) {
+      // Show success overlay
       Animated.timing(finishReadingOpacityAnim, {
         toValue: 1,
-        duration: 1000, // 2 seconds fade-in for slow opacity increase
-        delay: 2500, // 2 seconds delay before starting the fade-in
+        duration: 1000,
+        delay: 2500,
         easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }).start();
+
+      // Collapse bottom sheet and dismiss keyboard when success overlay is shown
+      Keyboard.dismiss();
+      bottomSheetRef.current?.snapToIndex(0);
+
+      // Show eating animation for success
+      if (showDevotionalContent && riveRef.current?.setInputState) {
+        try {
+          riveRef.current.setInputState('State Machine 1', 'Action-Number', 2);
+        } catch (_) {/* ignore if input not present */}
+      }
     } else {
-      Animated.timing(finishReadingOpacityAnim, {
-        toValue: 0,
-        duration: 300,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      }).start();
+      // Only run this block if the user just closed the success overlay
+      if (prevFinishReadingRef.current) {
+        Animated.timing(finishReadingOpacityAnim, {
+          toValue: 0,
+          duration: 400,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }).start();
+      }
     }
+
+    // Update ref for next render
+    prevFinishReadingRef.current = finishReading;
   }, [finishReading]);
-
-  // --- useEffect to react to external mode changes ---
-  useEffect(() => {
-    console.log(isPro, 'what is pro');
-    console.log('HomeScreen: Mode changed to', mode);
-    console.log('🔍 MODE CHANGE - Current completion status:', {
-      readingCompleted,
-      prayerCompleted,
-      reflectionCompleted,
-      allCompleted: readingCompleted && prayerCompleted && reflectionCompleted,
-      mode,
-      homeStoreSnapshot: {
-        readingCompleted: useHomeStore.getState().readingCompleted,
-        prayerCompleted: useHomeStore.getState().prayerCompleted,
-        reflectionCompleted: useHomeStore.getState().reflectionCompleted,
-      },
-      timestamp: new Date().toLocaleTimeString()
-    });
-
-    if (mode === 'DEFAULT') {
-      animateToDefault();
-      // Update state based on lamb mood from userStore with smooth fade
-      const currentMood = useUserStore.getState()?.getLambMood?.();
-      console.log('Current mood:', currentMood);
-      const targetState = (currentMood && moodToStateInput[currentMood] !== undefined) ? moodToStateInput[currentMood] : 0;
-
-      // Smooth fade transition for state change - faster
-      Animated.timing(riveArtboardOpacityAnim, {
-        toValue: 0,
-        duration: 100,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      }).start(() => {
-        if (riveRef.current && riveRef.current.setInputState) {
-          try {
-            riveRef.current.setInputState('State Machine 1', 'Action-Number', targetState);
-            setCurrentStateInput(targetState);
-            console.log(`Set Rive Action-Number: ${targetState}`);
-          } catch (e) {
-            console.log('Error setting Rive state:', e);
-          }
-        }
-        Animated.timing(riveArtboardOpacityAnim, {
-          toValue: 1,
-          duration: 150,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }).start();
-      });
-    } else if (mode === 'PRAYER') {
-      // Handle prayer mode activation when coming from other screens
-      console.log('Activating Prayer mode from external navigation');
-      setShowBgRive(true);
-
-      // Prayer state is already set in handlePrayerPress (Raising Hand - 1)
-
-      // Animate lamb size
-      Animated.timing(lambSizeAnim, {
-        toValue: 128,
-        duration: 800,
-        useNativeDriver: false,
-      }).start();
-
-      // Trigger the animation to prayer state
-      animateToState(1, waterOpacityAnim, 800, 'PRAYER');
-    } else if (mode === 'REFLECTION') {
-      // Handle reflection mode activation when coming from other screens
-      console.log('Activating Reflection mode from external navigation');
-
-      // Animate lamb size
-      Animated.timing(lambSizeAnim, {
-        toValue: 128,
-        duration: 800,
-        useNativeDriver: false,
-      }).start();
-
-      // Trigger the animation to reflection state
-      animateToState(1, journalOpacityAnim, 800, 'REFLECTION');
-    }
-  }, [mode, readingCompleted, prayerCompleted, reflectionCompleted, lambMood]);
-
-  // --- Event Handlers ---
-  const handleReadPress = () => {
-    if (!isPro && readingCompleted) {
-      setFromScreen('home-read');
-      handleSubscriptionPress();
-    } else {
-      console.log('Read the word button pressed');
-
-      // Set Rive Action-Number to 2 (Eat) after 1 second delay
-      setTimeout(() => {
-        if (riveRef.current && riveRef.current.setInputState) {
-          try {
-            riveRef.current.setInputState('State Machine 1', 'Action-Number', 2);
-            console.log('Set Rive Action-Number: 2 (Eat)');
-          } catch (e) {
-            console.log('Error setting Rive Action-Number to Eat:', e);
-          }
-        } else {
-          console.log('Rive ref not ready for Action-Number Eat');
-        }
-      }, 500);
-
-      // Simple fade animation for content transition - longer duration
-      Animated.timing(devotionalCardOpacityAnim, {
-        toValue: 0,
-        duration: 400,
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      }).start(() => {
-        // Show devotional content after fade out
-        setShowDevotionalContent(true);
-        // Fade back in
-        Animated.timing(devotionalCardOpacityAnim, {
-          toValue: 1,
-          duration: 600,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }).start();
-      });
-
-      // Show DevotionalReader state immediately
-      setShowDevotionalReader(true);
-      setDevotionalReaderVisible(true); // Hide tab bar
-
-      // Synchronize lamb fade with card content fade
-      Animated.timing(riveArtboardOpacityAnim, {
-        toValue: 0,
-        duration: 400, // Same as card fade out
-        easing: Easing.inOut(Easing.ease),
-        useNativeDriver: true,
-      }).start(() => {
-        // Set to Reading state (9)
-        setCurrentStateInput(9);
-        if (riveRef.current?.setInputState) {
-          riveRef.current.setInputState('State Machine 1', 'Number 1', 9);
-        }
-        Animated.timing(riveArtboardOpacityAnim, {
-          toValue: 1,
-          duration: 600, // Same as card fade in
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }).start();
-      });
-
-      // Log analytics
-      analytics.logEvent('HomeScreen_Tapped_DailyBread', {
-        hasDevotional: !!currentDevotional,
-        bibleReference: currentDevotional?.bibleReference,
-      });
-    }
-  };
 
   const handlePrayerPress = () => {
     console.log('Prayer button pressed');
@@ -951,6 +828,8 @@ export default function HomeScreen() {
         return;
       }
       console.log('Prayer button pressed - transitioning to PrayerView');
+      // Reset finishReading to prevent success animation from showing
+      setFinishReading(false);
       // Simple fade animation for content transition - longer duration
       Animated.timing(devotionalCardOpacityAnim, {
         toValue: 0,
@@ -1026,6 +905,69 @@ export default function HomeScreen() {
     }
   };
 
+  const handleReadPress = () => {
+    console.log('Read the word button pressed');
+    
+    // Set showGlobalButtons to true when starting reading flow
+    const setShowGlobalButtons = useHomeStore.getState().setShowGlobalButtons;
+    setShowGlobalButtons(true);
+    
+    // Simple fade animation for content transition - longer duration
+    Animated.timing(devotionalCardOpacityAnim, {
+      toValue: 0,
+      duration: 400,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true,
+    }).start(() => {
+      // Show devotional content after fade out
+      setShowDevotionalContent(true);
+      // Fade back in
+      Animated.timing(devotionalCardOpacityAnim, {
+        toValue: 1,
+        duration: 600,
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    });
+
+    // Show DevotionalReader state immediately
+    setShowDevotionalReader(true);
+    setDevotionalReaderVisible(true); // Hide tab bar
+
+    // Synchronize lamb fade with card content fade
+    Animated.timing(riveArtboardOpacityAnim, {
+      toValue: 0,
+      duration: 400, // Same as card fade out
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true,
+    }).start(() => {
+      // Set to Reading state (9)
+      setCurrentStateInput(9);
+      if (riveRef.current?.setInputState) {
+        // Primary input used across the app
+        riveRef.current.setInputState('State Machine 1', 'Action-Number', 9);
+        // Fallback for older artboards that still expose 'Number 1'
+        try {
+          riveRef.current.setInputState('State Machine 1', 'Number 1', 9);
+        } catch (_) {
+          /* no-op – some artboards may not have this legacy input */
+        }
+      }
+      Animated.timing(riveArtboardOpacityAnim, {
+        toValue: 1,
+        duration: 600, // Same as card fade in
+        easing: Easing.inOut(Easing.ease),
+        useNativeDriver: true,
+      }).start();
+    });
+
+    // Log analytics
+    analytics.logEvent('HomeScreen_Tapped_DailyBread', {
+      hasDevotional: !!currentDevotional,
+      bibleReference: currentDevotional?.bibleReference,
+    });
+  };
+
   const handleReflectionPress = () => {
     console.log('🔍 REFLECTION PRESS - Button pressed with states:', {
       reflectionCompleted,
@@ -1042,6 +984,9 @@ export default function HomeScreen() {
     } else {
       console.log('🔍 REFLECTION PRESS - Proceeding with reflection flow');
 
+      // Reset finishReading to prevent success animation from showing
+      setFinishReading(false);
+
       // Simple fade animation for content transition - longer duration
       Animated.timing(devotionalCardOpacityAnim, {
         toValue: 0,
@@ -1051,6 +996,8 @@ export default function HomeScreen() {
       }).start(() => {
         // Show JournalReader content after fade out
         setShowJournalContent(true);
+        const setJournalViewVisible = useHomeStore.getState().setJournalViewVisible;
+        setJournalViewVisible(true);
         // Fade back in
         Animated.timing(devotionalCardOpacityAnim, {
           toValue: 1,
@@ -1070,10 +1017,17 @@ export default function HomeScreen() {
         easing: Easing.inOut(Easing.ease),
         useNativeDriver: true,
       }).start(() => {
-        // Set to Reading state (9)
-        setCurrentStateInput(9);
+        // Set to Writing state (12)
+        setCurrentStateInput(12);
         if (riveRef.current?.setInputState) {
-          riveRef.current.setInputState('State Machine 1', 'Number 1', 9);
+          // Primary input used across the app
+          riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
+          // Fallback for older artboards that still expose 'Number 1'
+          try {
+            riveRef.current.setInputState('State Machine 1', 'Number 1', 12);
+          } catch (_) {
+            /* no-op – some artboards may not have this legacy input */
+          }
         }
         Animated.timing(riveArtboardOpacityAnim, {
           toValue: 1,
@@ -1263,82 +1217,7 @@ export default function HomeScreen() {
 
 
 
-  // Add the hooks with the other state hooks (right before line 619)
-  const riveComponent = useMemo(() => {
-    if (!riveAssets || !riveReady) return null;
-
-    // Use the appropriate Rive asset based on pro status and level
-    const lambAssetIndex = 0;
-    const useArtboardName = '[Main] Shpeherd';
-
-    return (
-      <View
-        style={{
-          width: '100%',
-          height: '100%',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
-        <TouchableOpacity
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            analytics.logEvent('HomeScreen_Tapped_LambName', {
-              lambName: lambName,
-              currentlyExpanded: isLevelPillExpanded,
-              action: isLevelPillExpanded ? 'collapse' : 'expand',
-            });
-          }}
-          activeOpacity={0.7}
-          className="bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 top-12 px-2">
-          <Text className="font-feather text-textPrimary text-xs">
-            {lambName
-              ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
-              : ''}
-          </Text>
-        </TouchableOpacity>
-        <View
-          style={{
-            width: '100%',
-            height: '100%',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 10,
-          }}>
-          {IS_ANDROID ? (
-            <Rive
-              key={riveKey}
-              ref={riveRef}
-              resourceName="new_shepherd"
-              artboardName="[Main] Shpeherd"
-              stateMachineName="State Machine 1"
-              autoplay
-              onError={handleRiveError}
-              style={{
-                width: '100%',
-                height: '100%',
-                opacity: new Date().getHours() >= 19 ? 0.85 : 1,
-              }}
-            />
-          ) : (
-            <Rive
-              key={riveKey}
-              ref={riveRef}
-              url={riveAssets[0].uri!}
-              artboardName="[Main] Shpeherd"
-              stateMachineName="State Machine 1"
-              autoplay
-              onError={handleRiveError}
-              style={{
-                width: '100%',
-                height: '100%',
-                opacity: new Date().getHours() >= 19 ? 0.85 : 1,
-              }}
-            />
-          )}
-        </View>
-      </View>
-    );
-  }, [riveAssets, currentStateInput, riveKey, riveReady, isPro]);
+  // riveComponent will be defined after state declarations
 
   const [showWidgetSheet, setShowWidgetSheet] = useState(false);
   // Add level pill animation states
@@ -1367,6 +1246,79 @@ export default function HomeScreen() {
       transform: [{ translateY: bottomContentAnimY }],
     };
   }, [bottomContentOpacity, bottomContentAnimY]);
+
+  // Define riveComponent after state declarations so it can access showJournalContent and showPrayerContent
+  const riveComponent = useMemo(() => {
+    if (!riveAssets || !riveReady) return null;
+
+    // Always use the main lamb asset (index 0)
+    const lambAssetIndex = 0;
+    const useArtboardName = '[Main] Shpeherd';
+
+    return (
+      <View
+        style={{
+          width: '100%',
+          height: '100%',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}>
+        <TouchableOpacity
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            analytics.logEvent('HomeScreen_Tapped_LambName');
+          }}
+          activeOpacity={0.7}
+          className="bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 top-12 px-2">
+          <Text className="font-feather text-textPrimary text-xs">
+            {lambName
+              ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
+              : ''}
+          </Text>
+        </TouchableOpacity>
+        <View
+          style={{
+            width: '100%',
+            height: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 10,
+          }}>
+          {IS_ANDROID ? (
+            <Rive
+              key={riveKey}
+              ref={riveRef}
+              resourceName="new_shepherd"
+              artboardName={useArtboardName}
+              stateMachineName="State Machine 1"
+              autoplay
+              onError={handleRiveError}
+              style={{
+                width: '100%',
+                height: '100%',
+                opacity: new Date().getHours() >= 19 ? 0.85 : 1,
+              }}
+            />
+          ) : (
+            <Rive
+              key={riveKey}
+              ref={riveRef}
+              url={riveAssets[lambAssetIndex].uri!}
+              artboardName={useArtboardName}
+              stateMachineName="State Machine 1"
+              autoplay
+              onError={handleRiveError}
+              style={{
+                width: '100%',
+                height: '100%',
+                opacity: new Date().getHours() >= 19 ? 0.85 : 1,
+              }}
+            />
+          )}
+        </View>
+      </View>
+    );
+  }, [riveAssets, currentStateInput, riveKey, riveReady, isPro, lambName, isLevelPillExpanded]);
 
   const showGlobalButtons = useHomeStore((state) => state.showGlobalButtons);
 useEffect(() => {
@@ -1402,15 +1354,7 @@ useEffect(() => {
 }, [showDevotionalContent,showPrayerContent,showJournalContent,showGlobalButtons])
 
 
-  // Automatically open DevotionalReader when a quick devotional is available
-  useEffect(() => {
-    if (customDevotional && !showDevotionalContent) {
-      console.log('[HomeScreen] Detected quick devotional. Opening DevotionalReader.');
-      setShowDevotionalContent(true);
-      setDevotionalReaderVisible(true);
-      bottomSheetRef.current?.snapToIndex?.(0);
-    }
-  }, [customDevotional, showDevotionalContent]);
+  // Removed auto-open DevotionalReader - user must manually tap "Daily Bread" button
   
   const levelPillWidthAnim = useRef(new Animated.Value(0)).current;
   const levelPillOpacityAnim = useRef(new Animated.Value(0)).current;
@@ -1574,7 +1518,7 @@ useEffect(() => {
     }
   };
 
-const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Complete Prayer' : 'Save Thoughts';
+const buttonTitle = showDevotionalContent ? 'Continue' : 'Complete Prayer';
   // HEADER
   return (
     <>
@@ -2086,82 +2030,75 @@ const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Co
                   visible={showPrayerContent}
                   setFinishReading={setFinishReading}
                   onClose={({isReflectPresses}:{isReflectPresses?:boolean}) => {
-                    // Immediately mark prayer view as hidden so overlay/header animations start in sync
-                    
-                    if(isReflectPresses){
-                      handleReflectionPress()
+                    if (isReflectPresses) {
+                      // Transitioning to reflection view
+                      setFinishReading(false);
+                      handleReflectionPress();
                       setTimeout(() => {
+                        setShowPrayerContent(false);
                         setPrayerViewVisible(false);
-                      
-                      }, 2000);
-                    }else{
+                      }, 500);
+                    } else {
+                      // Closing to go back to home screen
                       setPrayerViewVisible(false);
-                    }
-                    // Start fade out
-                    Animated.parallel([
-                      // Card content fade out
-                      Animated.timing(devotionalCardOpacityAnim, {
-                        toValue: 0,
-                        duration: 500,
-                        easing: Easing.inOut(Easing.ease),
-                        useNativeDriver: true,
-                      }),
-                      // Lamb fade out at the same time
-                      Animated.timing(riveArtboardOpacityAnim, {
-                        toValue: 0,
-                        duration: 500,
-                        easing: Easing.inOut(Easing.ease),
-                        useNativeDriver: true,
-                      })
-                    ]).start();
-                    // Switch content and artboard immediately after a short delay
-                    setTimeout(() => {
-                      // Hide prayer content and reset lamb state
-                      // Reset to default state
-                      
-
-              
-                      setMode('DEFAULT');
-                      setShowPrayerContent(false);
-                      // Reset Rive state to default
-                      if (riveRef.current?.setInputState) {
-                        try {
-                          const currentMood = useUserStore.getState()?.getLambMood?.();
-                          const targetStateInput = moodToStateInput[currentMood] || 0;
-                          setCurrentStateInput(targetStateInput);
-                          setRiveIdle();
-                          if (riveRef.current?.setInputState) {
-                            riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
-                          }
-                          console.log('Reset Rive state to default');
-                        } catch (e) {
-                          console.log('Error resetting Rive state:', e);
-                        }
-                      }
-                      // Start fade in immediately after content switch
+                      // Start fade out
                       Animated.parallel([
-                        // Card content fade in
+                        // Card content fade out
                         Animated.timing(devotionalCardOpacityAnim, {
-                          toValue: 1,
+                          toValue: 0,
                           duration: 500,
                           easing: Easing.inOut(Easing.ease),
                           useNativeDriver: true,
                         }),
-                        // Lamb fade in at the same time
+                        // Lamb fade out at the same time
                         Animated.timing(riveArtboardOpacityAnim, {
-                          toValue: 1,
+                          toValue: 0,
                           duration: 500,
                           easing: Easing.inOut(Easing.ease),
                           useNativeDriver: true,
                         })
-                      ]).start(() => {
-                        // Reset prayer view state after animations complete
-                        setShowPrayerView(false);
-                        // if(isReflectPresses){
-                        //   handleReflectionPress()
-                        // }
-                      });
-                    }, 250); // Switch content halfway through fade out
+                      ]).start();
+                      // Switch content and artboard immediately after a short delay
+                      setTimeout(() => {
+                        // Hide prayer content and reset lamb state
+                        setMode('DEFAULT');
+                        setShowPrayerContent(false);
+                        // Reset Rive state to default
+                        if (riveRef.current?.setInputState) {
+                          try {
+                            const currentMood = useUserStore.getState()?.getLambMood?.();
+                            const targetStateInput = moodToStateInput[currentMood] || 0;
+                            setCurrentStateInput(targetStateInput);
+                            setRiveIdle();
+                            if (riveRef.current?.setInputState) {
+                              riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
+                            }
+                          } catch (e) {
+                            console.log('Error resetting Rive state:', e);
+                          }
+                        }
+                        // Start fade in immediately after content switch
+                        Animated.parallel([
+                          // Card content fade in
+                          Animated.timing(devotionalCardOpacityAnim, {
+                            toValue: 1,
+                            duration: 500,
+                            easing: Easing.inOut(Easing.ease),
+                            useNativeDriver: true,
+                          }),
+                          // Lamb fade in at the same time
+                          Animated.timing(riveArtboardOpacityAnim, {
+                            toValue: 1,
+                            duration: 500,
+                            easing: Easing.inOut(Easing.ease),
+                            useNativeDriver: true,
+                          })
+                        ]).start(() => {
+                          // Reset prayer view state after animations complete
+                          setShowPrayerView(false);
+                        });
+                      }, 250); // Switch content halfway through fade out
+                    }
                   }}
                 />
                 : (
@@ -2346,7 +2283,7 @@ const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Co
                 </View>}
                 <View  className="flex-row items-center    justify-between w-full">
 
-          <Animated.View style={{ width:  '10%' }}>
+          {!showJournalContent && <Animated.View style={{ width:  '10%' }}>
             <CircleButton 
               icon='chevron-left' 
               size={53} 
@@ -2358,15 +2295,12 @@ const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Co
                 if(showPrayerContent){
                   prayerViewRef.current?.handleBack();
                 }
-                if(showJournalContent){
-                  journalRef.current?.handleCancel();
-                }
               }} 
               
             />
-          </Animated.View>
+          </Animated.View>}
 
-          <Animated.View style={{ width: showPrayerContent ? '60%' : '82%' }}>
+          <Animated.View style={{ width: showPrayerContent ? '60%' : showJournalContent ? '100%' : '82%' }}>
            {showDevotionalContent ? (
   <PrimaryButton
     title={buttonTitle}
@@ -2386,19 +2320,7 @@ const buttonTitle = showDevotionalContent ? 'Continue' : showPrayerContent ? 'Co
       prayerViewRef.current?.handleCompletePrayer();
     }}
   />
-) : (
-  <PrimaryButton
-    title={buttonTitle}
-    disabled={!journalButtonEnabled}
-    onPress={() => {
-      journalRef.current?.handleSave();
-      // ... existing save thoughts code ...
-    }}
-    buttonType="blue"
-    icon={require('../../assets/icons/starIcon.png')}
-    reward={'+25'}
-  />
-)}
+) : null}
           </Animated.View> 
           
          {showPrayerContent && <Animated.View style={{ width: '10%' }}>

@@ -12,8 +12,9 @@ import {
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePrayerStore } from '~/app/stores/prayerStore';
-import { SuccessAnimationType, useHomeStore } from '~/app/stores/homeStore';
+import { useHomeStore } from '~/app/stores/homeStore';
 import { useUserStore } from '~/app/stores/userStore';
+import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import firestore from '@react-native-firebase/firestore';
 import Reanimated, {
   FadeInUp,
@@ -30,11 +31,9 @@ import Reanimated, {
 import * as Haptics from 'expo-haptics';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import analytics from '../utils/analytics';
-import CircleButton from './Shared/CircleButton';
-import BluePrimaryButton from './Shared/BluePrimaryButton';
+
 import { getLevelData } from '~/utils/levelUtils';
 import SuccessMessage from './SuccessMessage';
-import { router } from 'expo-router';
 
 // AsyncStorage keys for prayer settings
 const PRAYER_HAPTICS_KEY = 'prayer_haptics_enabled';
@@ -94,7 +93,7 @@ const TypingText: React.FC<TypingTextProps> = ({
 };
 
 // Breathing Animation Component
-const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reanimated.SharedValue<number>; hapticsEnabled: boolean; guidedPrayerEnabled: boolean }> = ({ isActive, breathingProgress, hapticsEnabled, guidedPrayerEnabled }) => {
+const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reanimated.SharedValue<number>; hapticsEnabled: boolean; guidedPrayerEnabled: boolean; currentDevotional: any }> = ({ isActive, breathingProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional }) => {
   const circleSize = SCREEN_WIDTH * 0.4; // 50% of screen width
 
   // Haptic feedback function - stabilize with empty dependency array
@@ -106,42 +105,63 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
 
   // Use ref to track if animation is already running to prevent restarts
   const animationStarted = useRef(false);
+  const startupTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (isActive && !animationStarted.current) {
       animationStarted.current = true;
-      // Start breathing animation - only start once
-      breathingProgress.value = withRepeat(
-        withSequence(
-          withTiming(1, {
-            duration: 4000,
-            easing: Easing.inOut(Easing.ease)
-          }, () => {
-            runOnJS(triggerHaptic)();
-          }),
-          withTiming(0, {
-            duration: 4000,
-            easing: Easing.inOut(Easing.ease)
-          }, () => {
-            runOnJS(triggerHaptic)();
-          })
-        ),
-        -1, // Infinite repeat
-        false // Don't reverse
-      );
+      
+      // Add a small delay to allow component to settle and reduce lag
+      startupTimer.current = setTimeout(() => {
+        // Start breathing animation with a gentle fade-in
+        breathingProgress.value = withTiming(0.3, { duration: 800 }, () => {
+          // Then start the main breathing loop
+          breathingProgress.value = withRepeat(
+            withSequence(
+              withTiming(1, {
+                duration: 4000,
+                easing: Easing.inOut(Easing.ease)
+              }, () => {
+                runOnJS(triggerHaptic)();
+              }),
+              withTiming(0, {
+                duration: 4000,
+                easing: Easing.inOut(Easing.ease)
+              }, () => {
+                runOnJS(triggerHaptic)();
+              })
+            ),
+            -1, // Infinite repeat
+            false // Don't reverse
+          );
+        });
+      }, 300); // 300ms delay to allow smooth transition
     } else if (!isActive && animationStarted.current) {
       animationStarted.current = false;
-      // Stop animation
-      breathingProgress.value = withTiming(0, { duration: 1000 });
+      // Clear startup timer if component becomes inactive
+      if (startupTimer.current) {
+        clearTimeout(startupTimer.current);
+        startupTimer.current = null;
+      }
+      // Stop animation smoothly
+      breathingProgress.value = withTiming(0, { duration: 600 });
     }
+    
+    // Cleanup timer on unmount
+    return () => {
+      if (startupTimer.current) {
+        clearTimeout(startupTimer.current);
+        startupTimer.current = null;
+      }
+    };
   }, [isActive]); // Only depend on isActive to prevent unnecessary restarts
 
-  // Center circle animation with yellow glow
+  // Center circle animation with yellow glow - optimized for performance
   const centerCircleStyle = useAnimatedStyle(() => {
     const progress = breathingProgress.value;
     const scale = interpolate(progress, [0, 1], [0.4, 1]);
-    const glowRadius = interpolate(progress, [0, 1], [20, 60]);
-    const glowOpacity = interpolate(progress, [0, 1], [0.3, 0.8]);
+    const glowRadius = interpolate(progress, [0, 1], [15, 45]); // Reduced glow radius for better performance
+    const glowOpacity = interpolate(progress, [0, 1], [0.2, 0.6]); // Reduced opacity for smoother animation
 
     return {
       transform: [{ scale }],
@@ -149,18 +169,24 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
       shadowOffset: { width: 0, height: 0 },
       shadowOpacity: glowOpacity,
       shadowRadius: glowRadius,
-      elevation: 10,
+      elevation: 8, // Reduced elevation for better performance
     };
   });
 
-  // Breathing text animation
-  const breathingTextStyle = useAnimatedStyle(() => {
+  // Breathing text animation for "BE STILL"
+  const beStillTextStyle = useAnimatedStyle(() => {
     const progress = breathingProgress.value;
-    const opacity = interpolate(progress, [0, 0.5, 1], [0.8, 1, 0.8]);
+    // Show "Be Still" during inhale (0-0.5 of cycle)
+    const opacity = progress < 0.5 ? 1 : 0;
+    return { opacity };
+  });
 
-    return {
-      opacity,
-    };
+  // Breathing text animation for "BREATHE"
+  const breatheTextStyle = useAnimatedStyle(() => {
+    const progress = breathingProgress.value;
+    // Show "Breathe" during exhale (0.5-1 of cycle)
+    const opacity = progress >= 0.5 ? 1 : 0;
+    return { opacity };
   });
 
   return (
@@ -179,9 +205,9 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
           },
           useAnimatedStyle(() => {
             const progress = breathingProgress.value;
-            const scale = interpolate(progress, [0, 1], [0.8, 1.3]);
-            const baseOpacity = guidedPrayerEnabled ? 0.025 : 0.2; // Reduced opacity in guided mode
-            const opacity = interpolate(progress, [0, 1], [baseOpacity * 0.5, baseOpacity * 1.5]);
+            const scale = interpolate(progress, [0, 1], [0.9, 1.2]); // Reduced scale range for smoother animation
+            const baseOpacity = guidedPrayerEnabled ? 0.02 : 0.15; // Further reduced opacity for better performance
+            const opacity = interpolate(progress, [0, 1], [baseOpacity * 0.6, baseOpacity * 1.2]); // Smaller opacity range
             return {
               transform: [{ scale }],
               opacity,
@@ -205,13 +231,19 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
       ]} />
 
       {/* Breathing instruction text */}
-      <Reanimated.View style={[
-        { position: 'absolute', pointerEvents: 'none' },
-        breathingTextStyle
-      ]}>
+      <View style={{ position: 'absolute', pointerEvents: 'none' }}>
         {guidedPrayerEnabled ? (
           <TypingText
-            text="Dear God, I come before you today with a grateful heart. Please guide me through this day and help me grow in faith. Amen."
+            text={(() => {
+              if (currentDevotional?.prayer) {
+                if (typeof currentDevotional.prayer === 'string') {
+                  return currentDevotional.prayer;
+                } else if (typeof currentDevotional.prayer === 'object' && (currentDevotional.prayer as any).en) {
+                  return (currentDevotional.prayer as any).en;
+                }
+              }
+              return "Dear God, I come before you today with a grateful heart. Please guide me through this day and help me grow in faith. Amen.";
+            })()}
             className="text-yellow-700 font-feather text-xl m-12 text-center"
             baseTextStyle={{
               color: '#B45309',
@@ -225,11 +257,41 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
             skipAnimation={false}
           />
         ) : (
-          <Text className="text-yellow-700 font-feather text-xl m-12 text-center">
-            {/* Breathe deeply */}
-          </Text>
+          <>
+            <Reanimated.Text 
+              style={[
+                {
+                  color: '#B45309',
+                  fontSize: 18,
+                  fontFamily: 'Nunito-Black',
+                  textAlign: 'center',
+                  textTransform: 'uppercase',
+                  letterSpacing: 1,
+                },
+                beStillTextStyle
+              ]}>
+              {/* {'BE STILL'} */}
+            </Reanimated.Text>
+            
+            <Reanimated.Text 
+              style={[
+                {
+                  color: '#B45309',
+                  fontSize: 18,
+                  fontFamily: 'Nunito-Black',
+                  textAlign: 'center',
+                  textTransform: 'uppercase',
+                  letterSpacing: 1,
+                  position: 'absolute',
+                  alignSelf: 'center',
+                },
+                breatheTextStyle
+              ]}>
+              {'BREATHE'}
+            </Reanimated.Text>
+          </>
         )}
-      </Reanimated.View>
+      </View>
     </View>
   );
 };
@@ -318,6 +380,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   setIsCompletePrayerDisabled
 }, ref) => {
   const { recentPrayers } = usePrayerStore();
+  const { currentDevotional } = useDevotionalStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [skipTyping, setSkipTyping] = useState(false);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
@@ -337,6 +400,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   const progressValue = useSharedValue(0);
   const breathingProgress = useSharedValue(0);
   const controlRowOpacity = useSharedValue(0);
+  const componentOpacity = useSharedValue(0); // For smooth component fade-in
   const scrollViewRef = useRef<ScrollView>(null);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const completePrayerTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -374,15 +438,39 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
 
 
-  // Generate prayer content based on recent prayers
+  // Generate prayer content based on devotional or recent prayers
   const generatePrayerContent = useCallback(() => {
+    // First try to use the devotional prayer (handle both string and object structures)
+    let devotionalPrayer: string | undefined;
+    if (currentDevotional?.prayer) {
+      if (typeof currentDevotional.prayer === 'string') {
+        devotionalPrayer = currentDevotional.prayer;
+      } else if (typeof currentDevotional.prayer === 'object' && (currentDevotional.prayer as any).en) {
+        devotionalPrayer = (currentDevotional.prayer as any).en;
+      }
+    }
+    
+    if (devotionalPrayer && devotionalPrayer.trim().length > 0) {
+      return devotionalPrayer;
+    }
+
+    // Fallback to recent prayers
     const latestPrayer = recentPrayers[0];
     if (!latestPrayer) {
       return "Dear God, I come before you today with a grateful heart. Please guide me through this day and help me grow in faith. Amen.";
     }
 
     return `Dear God, I come before you today with a humble heart. Please help me with ${latestPrayer.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
-  }, [recentPrayers]);
+  }, [currentDevotional?.prayer, recentPrayers]);
+
+  // Smooth component fade-in on mount
+  useEffect(() => {
+    if (visible) {
+      componentOpacity.value = withTiming(1, { duration: 400 });
+    } else {
+      componentOpacity.value = 0;
+    }
+  }, [visible]);
 
   // Load settings from AsyncStorage
   useEffect(() => {
@@ -417,6 +505,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   // Split prayer into sentences when component loads
   useEffect(() => {
     console.log('🙏 Processing prayer content');
+    console.log('🙏 Current devotional:', currentDevotional?.id, currentDevotional?.bibleReference);
+    console.log('🙏 Devotional prayer available:', !!currentDevotional?.prayer);
+    console.log('🙏 Prayer structure:', typeof currentDevotional?.prayer, currentDevotional?.prayer);
 
     const prayerText = generatePrayerContent();
     console.log('🙏 Generated prayer text:', prayerText);
@@ -682,6 +773,13 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     };
   });
 
+  // Component fade-in animation style
+  const componentAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: componentOpacity.value,
+    };
+  });
+
   // Function to show control row with auto-hide
   const toggleControlRow = useCallback(() => {
     console.log('🎯 toggleControlRow called! showControlRow:', showControlRow);
@@ -734,6 +832,51 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     handleCompletePrayer: () => {
       setShowBreathingAnimation(false);
       useHomeStore.getState().setShowGlobalButtons(false);
+      setFinishReading(true);
+      setShowSuccess(true);
+      
+      // Apply rewards (2 hearts + 25 XP for prayer)
+      const heartReward = 2;
+      const xpReward = 25;
+      const MAX_HEARTS = 100;
+      
+      const currentHearts = useUserStore.getState().getLambHearts();
+      const setLambHearts = useUserStore.getState().setLambHearts;
+      const addXp = useUserStore.getState().addXp;
+      const setLambMood = useUserStore.getState().setLambMood;
+      
+      // Calculate actual heart reward (don't exceed MAX_HEARTS)
+      const heartsToAdd = Math.min(heartReward, MAX_HEARTS - currentHearts);
+      
+      // Apply rewards
+      if (heartsToAdd > 0) {
+        setLambHearts(currentHearts + heartsToAdd);
+        // Update mood based on new heart count
+        const newHeartCount = currentHearts + heartsToAdd;
+        if (newHeartCount >= 80) {
+          setLambMood('lamb-idle');
+        } else if (newHeartCount >= 50) {
+          setLambMood('lamb-idle');
+        } else if (newHeartCount >= 30) {
+          setLambMood('lamb-sleepy');
+        } else if (newHeartCount >= 20) {
+          setLambMood('lamb-angry');
+        }
+      }
+      
+      // Always add XP
+      addXp(xpReward);
+      
+      // Mark prayer as completed
+      const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
+      setPrayerCompleted(true);
+      
+      // Update timestamps
+      const now = firestore.Timestamp.now();
+      const setLastActivityDate = useUserStore.getState().setLastActivityDate;
+      const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
+      setLastActivityDate(now);
+      setLastPrayerDate(now);
     },
     handleSettings: () => {
       console.log('⚙️ Settings button pressed');
@@ -884,9 +1027,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
 
   return (
-    <Reanimated.View style={[{ flex: 1, borderRadius: 24 }, animatedBackgroundStyle]}>
+    <Reanimated.View style={[{ flex: 1, borderRadius: 24 }, animatedBackgroundStyle, componentAnimatedStyle]}>
       {showSuccess ? (
-       <View style={{marginHorizontal: 24,flex:1}}>
+       <View style={{marginHorizontal: 24,flex:1, marginTop: 24}}>
          <SuccessMessage
           title="Prayer Complete!"
           level={levelInfo.level}
@@ -915,30 +1058,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
             analytics.logEvent('PrayerView_Completed', {
               prayerTopic: recentPrayers[0] || 'general',
               totalCards: totalCards,
+              devotionalId: currentDevotional?.id || null,
+              bibleReference: currentDevotional?.bibleReference || null,
             });
-
-            const sawStreakToday = useHomeStore.getState().sawStreakToday;
-            const isFirstReadingOfDay = !sawStreakToday;
-            const readingCompleted = useHomeStore.getState().readingCompleted;
-            const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
-            const sawDailyBonus = useHomeStore.getState().sawDailyBonus;
-            const setSuccessType = useHomeStore.getState().setSuccessType;
-            if (readingCompleted && reflectionCompleted && sawDailyBonus) {
-              const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
-              const setSawDailyBonus = useHomeStore.getState().setSawDailyBonus;
-              setSawStreakToday(true);
-              setSawDailyBonus(true);
-              router.push({
-                pathname: '/success',
-                params: {
-                  showStreakScreen: 'true'
-                }
-              })
-            }
-            // else if(!sawDailyBonus) {
-            //   setSuccessType(SuccessAnimationType.BONUS);
-            //   router.push('/success');
-            // }
 
             // Close the prayer view
             if (onSetIdle) onSetIdle();
@@ -974,37 +1096,11 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
             analytics.logEvent('PrayerView_Completed', {
               prayerTopic: recentPrayers[0] || 'general',
               totalCards: totalCards,
+              devotionalId: currentDevotional?.id || null,
+              bibleReference: currentDevotional?.bibleReference || null,
             });
 
             // Close the prayer view
-            const readingCompleted = useHomeStore.getState().readingCompleted;
-            const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
-            const setSuccessType = useHomeStore.getState().setSuccessType;
-            const sawStreakToday = useHomeStore.getState().sawStreakToday;
-            const isFirstReadingOfDay = !sawStreakToday;
-            const sawDailyBonus = useHomeStore.getState().sawDailyBonus;
-            if (readingCompleted && reflectionCompleted && isFirstReadingOfDay) {
-              const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
-              const setSawDailyBonus = useHomeStore.getState().setSawDailyBonus;
-              setSawStreakToday(true);
-              setSawDailyBonus(true);
-              router.push({
-                pathname: '/streak',
-                params: {
-                  isReflectPresses: 'true'
-                }
-              });
-            }
-            // else if(!sawDailyBonus) {
-            //   setSuccessType(SuccessAnimationType.BONUS);
-            //   router.push({
-            //     pathname: '/success',
-            //     params: {
-            //       isReflectPresses: 'true'
-            //     }
-            //   });
-            // }
-
             if (onSetIdle) onSetIdle();
             if (onClose) {
               if (hapticsEnabled) {
@@ -1032,21 +1128,18 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
             </Text>
           </View>
 
-          {/* Date Header */}
-          <View className="flex-row items-center justify-center mb-2">
-            <Text className="font-din text-textPrimary/40 text-center text-xl">
-              John 14:6
+          {/* Bible Reference Header */}
+          <View className="flex-row items-center justify-center mb-4">
+            <Text className="font-feather-bold text-textPrimary/80 text-center text-2xl">
+              {currentDevotional?.bibleReference || "John 14:6"}
             </Text>
           </View>
 
           {/* Breathing Animation - Show initially */}
           {showBreathingAnimation && (
             <TouchableWithoutFeedback onPress={toggleControlRow}>
-              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -280 }}>
-                <BreathingAnimation isActive={showBreathingAnimation} breathingProgress={breathingProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} />
-
-                
-              
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -400 }}>
+                <BreathingAnimation isActive={showBreathingAnimation} breathingProgress={breathingProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} currentDevotional={currentDevotional} />
               </View>
             </TouchableWithoutFeedback>
           )}
@@ -1115,8 +1208,52 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                   ))}
                   <TouchableOpacity
                     onPress={() => {
-                      setFinishReading(true)
+                      // Show success UI within the component
+                      setFinishReading(true);
                       setShowSuccess(true);
+                      
+                      // Apply rewards (2 hearts + 25 XP for prayer)
+                      const heartReward = 2;
+                      const xpReward = 25;
+                      const MAX_HEARTS = 100;
+                      
+                      const currentHearts = useUserStore.getState().getLambHearts();
+                      const setLambHearts = useUserStore.getState().setLambHearts;
+                      const addXp = useUserStore.getState().addXp;
+                      const setLambMood = useUserStore.getState().setLambMood;
+                      
+                      // Calculate actual heart reward (don't exceed MAX_HEARTS)
+                      const heartsToAdd = Math.min(heartReward, MAX_HEARTS - currentHearts);
+                      
+                      // Apply rewards
+                      if (heartsToAdd > 0) {
+                        setLambHearts(currentHearts + heartsToAdd);
+                        // Update mood based on new heart count
+                        const newHeartCount = currentHearts + heartsToAdd;
+                        if (newHeartCount >= 80) {
+                          setLambMood('lamb-idle');
+                        } else if (newHeartCount >= 50) {
+                          setLambMood('lamb-idle');
+                        } else if (newHeartCount >= 30) {
+                          setLambMood('lamb-sleepy');
+                        } else if (newHeartCount >= 20) {
+                          setLambMood('lamb-angry');
+                        }
+                      }
+                      
+                      // Always add XP
+                      addXp(xpReward);
+                      
+                      // Mark prayer as completed
+                      const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
+                      setPrayerCompleted(true);
+                      
+                      // Update timestamps
+                      const now = firestore.Timestamp.now();
+                      const setLastActivityDate = useUserStore.getState().setLastActivityDate;
+                      const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
+                      setLastActivityDate(now);
+                      setLastPrayerDate(now);
                     }}
                     activeOpacity={0.8}>
                     <View style={{

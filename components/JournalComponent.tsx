@@ -12,15 +12,29 @@ import {
   Animated,
   ActivityIndicator,
 } from 'react-native';
+import Reanimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withRepeat,
+  withSequence,
+  interpolate,
+  Easing,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '../app/stores/userStore';
+import { useDevotionalStore } from '../app/stores/devotionalStore';
 import { BIBLE_BOOK_IDS } from '../app/models/Path';
 import analytics from '~/utils/analytics';
 import { getLevelData } from '~/utils/levelUtils';
 import SuccessMessage from './SuccessMessage';
 import { RPH } from '~/app/helper/helper';
+import PrimaryButton from './PrimaryButton';
+import CircleButton from './Shared/CircleButton';
+
+const setJournalViewVisible = useHomeStore.getState().setJournalViewVisible;
 
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
@@ -71,6 +85,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   // Get the current path from pathStore
   const currentPath = usePathStore((state) => state.currentPath);
 
+  // Get current devotional from devotional store
+  const { currentDevotional, fetchTodaysDevotional } = useDevotionalStore();
+
   // Check if this reflection was initiated from the verse reading
   const tappedReflectAboutVerse = useHomeStore((state) => state.tappedReflectAboutVerse);
 
@@ -104,6 +121,10 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   const bottomContentAnimY = useRef(new Animated.Value(100)).current;
   const bottomContentOpacity = useRef(new Animated.Value(0)).current;
 
+  // Reanimated values for background glow
+  const backgroundGlow = useSharedValue(0);
+  const componentOpacity = useSharedValue(0);
+
   const progressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const animatedXP = useRef(new Animated.Value(0)).current;
   const animatedHearts = useRef(new Animated.Value(0)).current;
@@ -132,11 +153,66 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     return getLevelData(lamb.xp);
   }, [lamb?.xp]);
 
-  // Load Rive assets
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/homeLamb.riv')]);
+  // Load Rive assets - keeping the same asset for consistency
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/new_shepherd.riv')]);
+
+  // Ensure devotional is fetched when component mounts
+  useEffect(() => {
+    console.log('📝 JournalComponent mounted, checking devotional...');
+    if (!currentDevotional) {
+      console.log('📝 No current devotional, fetching...');
+      fetchTodaysDevotional();
+    } else {
+      console.log('📝 Current devotional exists:', currentDevotional.id);
+    }
+  }, []);
+
+  // Smooth component fade-in and background glow animation
+  useEffect(() => {
+    if (visible) {
+      // Fade in component
+      componentOpacity.value = withTiming(1, { duration: 400 });
+      
+      // Start gentle background glow animation after a delay
+      setTimeout(() => {
+        backgroundGlow.value = withRepeat(
+          withSequence(
+            withTiming(1, { duration: 3000, easing: Easing.inOut(Easing.ease) }),
+            withTiming(0, { duration: 3000, easing: Easing.inOut(Easing.ease) })
+          ),
+          -1, // Infinite repeat
+          false // Don't reverse
+        );
+      }, 500);
+    } else {
+      componentOpacity.value = 0;
+      backgroundGlow.value = 0;
+    }
+  }, [visible]);
 
   const insets = useSafeAreaInsets();
   const isSmallDevice = insets.top < 25 || SCREEN_HEIGHT < 700; // Detect small/non-notch devices like iPhone SE
+
+  // Get reflection prompt from devotional or fallback
+  const getReflectionPrompt = () => {
+
+    
+    // First try to use the devotional reflection prompt (handle both string and object structures)
+    if (currentDevotional?.reflectionPrompt) {
+      if (typeof currentDevotional.reflectionPrompt === 'string') {
+        console.log('📝 Using string reflection prompt:', currentDevotional.reflectionPrompt);
+        return currentDevotional.reflectionPrompt;
+      } else if (typeof currentDevotional.reflectionPrompt === 'object' && (currentDevotional.reflectionPrompt as any).en) {
+        const prompt = (currentDevotional.reflectionPrompt as any).en;
+        console.log('📝 Using object.en reflection prompt:', prompt);
+        return prompt;
+      }
+    }
+    
+    // Fallback to default prompt
+    console.log('📝 Using fallback prompt');
+    return "What practical step can deepen your daily delight in Scripture?";
+  };
 
   // Get appropriate placeholder text based on whether this is verse reflection
   const getPlaceholderText = () => {
@@ -164,11 +240,20 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       const keyboardHeight = event.endCoordinates.height;
       setKeyboardHeight(keyboardHeight);
       setKeyboardVisible(true);
+      
+      // When textinput is focused, update bottomSheet to 90% in index.tsx
+      if (visible && inputRef.current?.isFocused()) {
+        // Access bottomSheetRef from index.tsx
+        useHomeStore.getState().setKeyboardVisible(true);
+      }
     };
 
     const handleKeyboardHide = () => {
       setKeyboardHeight(0);
       setKeyboardVisible(false);
+      
+      // Reset keyboard visibility in homeStore
+      useHomeStore.getState().setKeyboardVisible(false);
     };
 
     const keyboardDidShowListener = Keyboard.addListener(
@@ -211,6 +296,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     if (visible) {
       console.log('JournalComponent: Showing journal component');
       console.log('tappedReflectAboutVerse =', tappedReflectAboutVerse);
+      console.log('📝 Current devotional:', currentDevotional?.id, currentDevotional?.bibleReference);
+      console.log('📝 Devotional reflection prompt available:', !!currentDevotional?.reflectionPrompt);
+      console.log('📝 Using reflection prompt:', getReflectionPrompt());
 
       // Set path in progress when component becomes visible
       setPathInProgress(true);
@@ -378,17 +466,77 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     };
   }, [bottomContentOpacity, bottomContentAnimY, keyboardVisible, keyboardHeight]);
 
+  // Animated background style – transition between `surfaceCream` (#FDEBB8)
+  // and its lighter variant `surfaceCreamLight` (#FFF1C9) for a subtle glow.
+  const animatedBackgroundStyle = useAnimatedStyle(() => {
+    const progress = backgroundGlow.value;
+    // srurfaceCream  -> surfaceCreamLight
+    const r = interpolate(progress, [0, 1], [253, 255]); // 253 -> 255
+    const g = interpolate(progress, [0, 1], [235, 241]); // 235 -> 241
+    const b = interpolate(progress, [0, 1], [184, 201]); // 184 -> 201
+
+    return {
+      backgroundColor: `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`,
+    };
+  });
+
+  // Component fade-in animation style
+  const componentAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: componentOpacity.value,
+    };
+  });
+
   // Expose methods through ref - must be called before any conditional returns
   useImperativeHandle(ref, () => ({
     handleSave: () => {
       useHomeStore.getState().setShowGlobalButtons(false);
+      setJournalViewVisible(false);
       console.log('handleSave called');
       // Don't save if not enough characters
       if (reflectionContent.length < MIN_CHARS_REQUIRED) return;
+      
+      // Apply rewards (1 heart + 25 XP for reflection)
+      const heartReward = 1;
+      const xpReward = 25;
+      const MAX_HEARTS = 100;
+      
+      const currentHearts = useUserStore.getState().getLambHearts();
+      const setLambHearts = useUserStore.getState().setLambHearts;
+      const addXp = useUserStore.getState().addXp;
+      const setLambMood = useUserStore.getState().setLambMood;
+      
+      // Calculate actual heart reward (don't exceed MAX_HEARTS)
+      const heartsToAdd = Math.min(heartReward, MAX_HEARTS - currentHearts);
+      
+      // Apply rewards
+      if (heartsToAdd > 0) {
+        setLambHearts(currentHearts + heartsToAdd);
+        // Update mood based on new heart count
+        const newHeartCount = currentHearts + heartsToAdd;
+        if (newHeartCount >= 80) {
+          setLambMood('lamb-idle');
+        } else if (newHeartCount >= 50) {
+          setLambMood('lamb-idle');
+        } else if (newHeartCount >= 30) {
+          setLambMood('lamb-sleepy');
+        } else if (newHeartCount >= 20) {
+          setLambMood('lamb-angry');
+        }
+      }
+      
+      // Always add XP
+      addXp(xpReward);
+      
       analytics.logEvent('JournalScreen_SaveReflection', {
         reflection_length: reflectionContent.length,
         reflection_content: reflectionContent,
         prompt: currentPath?.reflection,
+        devotionalId: currentDevotional?.id || null,
+        devotionalPrompt: getReflectionPrompt(),
+        bibleReference: currentDevotional?.bibleReference || null,
+        heartsAwarded: heartsToAdd,
+        xpAwarded: xpReward,
       });
       Keyboard.dismiss();
       setPathInProgress(false);
@@ -425,9 +573,13 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     },
     handleCancel: () => {
       useHomeStore.getState().setShowGlobalButtons(false);
+      setJournalViewVisible(false);
       setPathInProgress(false);
       analytics.logEvent('Journal_Tapped_Cancel', {
         prompt: currentPath?.reflection,
+        devotionalId: currentDevotional?.id || null,
+        devotionalPrompt: getReflectionPrompt(),
+        bibleReference: currentDevotional?.bibleReference || null,
       });
       useHomeStore.getState().setTappedReflectAboutVerse(false);
       console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
@@ -455,11 +607,12 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   }
 
   return success ? (
-    <Animated.View
+    <Reanimated.View
       className="flex-1 w-full"
-      style={{ opacity: containerOpacity, paddingHorizontal: 24 }}
+      style={[{ paddingHorizontal: 24 }, animatedBackgroundStyle, componentAnimatedStyle]}
       pointerEvents="box-none">
-      <SuccessMessage
+      <Animated.View style={{ opacity: containerOpacity, flex: 1 }}>
+        <SuccessMessage
         title="Reflection Complete!"
         level={levelInfo.level}
         prevLevel={levelInfo.level}
@@ -468,6 +621,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
           setTimeout(() => {
             setFinishReading(false)
           }, 2000);
+
+          setJournalViewVisible(false);
 
           const sawStreakToday = useHomeStore.getState().sawStreakToday;
           const isFirstReadingOfDay = !sawStreakToday;
@@ -503,22 +658,21 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
         homeButtonTitle="Collect Bonus"
         rewardsTitle="REFLECTION REWARDS"
       />
-    </Animated.View>
+      </Animated.View>
+    </Reanimated.View>
   ) : (
-    <Animated.View
+    <Reanimated.View
       className="flex-1 w-full"
-      style={{ opacity: containerOpacity }}
+      style={[animatedBackgroundStyle, componentAnimatedStyle]}
       pointerEvents="box-none">
+      <Animated.View style={{ opacity: containerOpacity, flex: 1 }}>
       <View className="flex-1 px-6">
-        <Text className="text-[20px] text-brown/40 mb-4 mt-4 text-center leading-tight font-semibold">
-          Time to reflect
+    
+        <Text className="text-[20px] font-feather text-brown/90 mb-2 text-center leading-tight mt-4">
+          {getReflectionPrompt()}
         </Text>
 
-        <Text className="text-[20px] font-feather text-brown/90 mb-6 text-center leading-tight">
-          What practical step can deepen your daily delight in Scripture?
-        </Text>
-
-        <View className="w-full min-h-[230px] bg-[#FFF4D9] border-[3px] border-gold/70 p-5 mb-2" style={{ borderRadius: 20 }}>
+        <View className="w-full min-h-[230px] bg-surfaceCream border-[3px] border-gold/70 p-5 mb-2 shadow-card" style={{ borderRadius: 20 }}>
           <TextInput
             ref={inputRef}
             className="w-full bg-transparent text-brown/95 text-[18px] font-nunito-medium min-h-[150px] text-left"
@@ -534,11 +688,128 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
           />
         </View>
 
-        <Text className="text-[14px] text-brown/40 mb-4 mt-1 text-center leading-tight font-semibold">
+        {/* <Text className="text-[14px] text-brown/40 mt-1 text-center leading-tight font-semibold">
           {`${300 - charCount} characters left`}
-        </Text>
+        </Text> */}
+        
+        <View className="flex-row justify-between items-center mt-2 mb-4 px-2">
+          <CircleButton 
+            icon="x" 
+            size={50} 
+            onPress={() => {
+              // Call the existing cancel handler implementation
+              useHomeStore.getState().setShowGlobalButtons(false);
+              setJournalViewVisible(false);
+              setPathInProgress(false);
+              analytics.logEvent('Journal_Tapped_Cancel', {
+                prompt: currentPath?.reflection,
+                devotionalId: currentDevotional?.id || null,
+                devotionalPrompt: getReflectionPrompt(),
+                bibleReference: currentDevotional?.bibleReference || null,
+              });
+              useHomeStore.getState().setTappedReflectAboutVerse(false);
+              console.log('Reset tappedReflectAboutVerse flag to false (from cancel button)');
+              onClose({});
+            }}
+          />
+          <View style={{ width: '80%' }}>
+            <PrimaryButton
+              title={charCount >= MIN_CHARS_REQUIRED ? "Save Thoughts" : "Write"}
+              disabled={!isButtonEnabled}
+              onPress={() => {
+                if (isButtonEnabled) {
+                  // Directly call the internal method implementation instead of using the ref
+                  useHomeStore.getState().setShowGlobalButtons(false);
+                  setJournalViewVisible(false);
+                  console.log('handleSave called');
+                  // Don't save if not enough characters
+                  if (reflectionContent.length < MIN_CHARS_REQUIRED) return;
+                  
+                  // Apply rewards (1 heart + 25 XP for reflection)
+                  const heartReward = 1;
+                  const xpReward = 25;
+                  const MAX_HEARTS = 100;
+                  
+                  const currentHearts = useUserStore.getState().getLambHearts();
+                  const setLambHearts = useUserStore.getState().setLambHearts;
+                  const addXp = useUserStore.getState().addXp;
+                  const setLambMood = useUserStore.getState().setLambMood;
+                  
+                  // Calculate actual heart reward (don't exceed MAX_HEARTS)
+                  const heartsToAdd = Math.min(heartReward, MAX_HEARTS - currentHearts);
+                  
+                  // Apply rewards
+                  if (heartsToAdd > 0) {
+                    setLambHearts(currentHearts + heartsToAdd);
+                    // Update mood based on new heart count
+                    const newHeartCount = currentHearts + heartsToAdd;
+                    if (newHeartCount >= 80) {
+                      setLambMood('lamb-idle');
+                    } else if (newHeartCount >= 50) {
+                      setLambMood('lamb-idle');
+                    } else if (newHeartCount >= 30) {
+                      setLambMood('lamb-sleepy');
+                    } else if (newHeartCount >= 20) {
+                      setLambMood('lamb-angry');
+                    }
+                  }
+                  
+                  // Always add XP
+                  addXp(xpReward);
+                  
+                  analytics.logEvent('JournalScreen_SaveReflection', {
+                    reflection_length: reflectionContent.length,
+                    reflection_content: reflectionContent,
+                    prompt: currentPath?.reflection,
+                    devotionalId: currentDevotional?.id || null,
+                    devotionalPrompt: getReflectionPrompt(),
+                    bibleReference: currentDevotional?.bibleReference || null,
+                    heartsAwarded: heartsToAdd,
+                    xpAwarded: xpReward,
+                  });
+                  Keyboard.dismiss();
+                  setPathInProgress(false);
+                  setFinishReading(true)
+                  setReflectionCompleted(true); // Set reflection as completed
+              
+                  // Reset tappedReflectAboutVerse flag
+                  useHomeStore.getState().setTappedReflectAboutVerse(false);
+                  console.log('Reset tappedReflectAboutVerse flag to false');
+              
+                  // Create current timestamp
+                  const now = firestore.Timestamp.now();
+              
+                  // Save reflection to userStore
+                  console.log('Saving reflection data to userStore');
+                  try {
+                    // Save the reflection content
+                    addCompletedReflection({
+                      date: now,
+                      content:
+                        tappedReflectAboutVerse && currentPath && currentPath.bookId
+                          ? `[${getBookNameFromId(currentPath.bookId)} ${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}] ${reflectionContent.trim()}`
+                          : reflectionContent.trim() || 'Reflected on my spiritual journey today.',
+                    });
+              
+                    // Update last reflection date
+                    setLastReflectionDate(now);
+              
+                    console.log('Reflection saved successfully');
+                  } catch (error) {
+                    console.log('Error saving reflection data:', error);
+                  }
+                  setSuccess(true);
+                }
+              }}
+              buttonType="blue"
+              icon={require('../assets/icons/starIcon.png')}
+              reward={"+25"}
+            />
+          </View>
+        </View>
       </View>
-    </Animated.View>
+      </Animated.View>
+    </Reanimated.View>
   );
 });
 

@@ -678,12 +678,24 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     setPathInProgress(true); // Make sure path is in progress to show the component
     if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING && !sawStreakToday) {
       triggerStreakScreen();
-    } else {
-      setTimeout(() => {
-        // Navigate back to the home tab - the useEffect in index.tsx will respond to mode change
-        router.replace('/(tabs)');
-      }, 500); // 500ms delay
+      return; // Prevent navigation so StreakScreen can show
     }
+
+    // Ensure DevotionalReader is hidden when jumping to prayer flow
+    useHomeStore.getState().setDevotionalReaderVisible(false);
+
+    // Set unmounting flag first
+    isUnmounting.current = true;
+
+    // Reset states (except successType until after navigation)
+    setPathInProgress(false);
+    setHomeMode('DEFAULT');
+
+    // Navigate back to home with a flag so HomeScreen immediately opens prayer view
+    router.replace({
+      pathname: '/(tabs)',
+      params: { isPrayPresses: 'true' },
+    });
 
     // Add delay to give assets time to load
     console.log('Adding delay before navigation to ensure assets load');

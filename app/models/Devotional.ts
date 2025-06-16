@@ -5,8 +5,8 @@ export interface Devotional {
   createdAt: string;
   context: string;
   bibleReference: string;
-  prayer: string;
-  reflectionPrompt: string;
+  prayer: string | { en: string };
+  reflectionPrompt: string | { en: string };
   likes: number;
   shares: number;
   completed: number;

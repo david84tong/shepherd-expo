@@ -42,27 +42,62 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     set({ isLoading: true, error: null });
     
     try {
-      // Get today's date range for createdAt query
+      // Try to get today's devotional by ID first (format: YYYY-MM-DD)
+      const today = new Date();
+      const todayId = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
       
-      // added it 2 days previous date for testing purpose
-      const startOfToday = new Date(new Date().setDate(new Date().getDate() - 3));
-      startOfToday.setHours(0, 0, 0, 0);
+      console.log('Trying to fetch devotional with ID:', todayId);
       
-      const endOfToday = new Date();
-      endOfToday.setHours(23, 59, 59, 999);
-      
-      console.log('Fetching devotional for createdAt between:', startOfToday.toISOString(), 'and', endOfToday.toISOString());
-      
-      // Query for document where createdAt is today
       const devotionalsRef = firestore().collection('dailyDevotionals');
-      const snapshot = await devotionalsRef
-        .where('createdAt', '>=', firestore.Timestamp.fromDate(startOfToday))
-        .where('createdAt', '<=', firestore.Timestamp.fromDate(endOfToday))
-        .limit(1)
-        .get();
       
-      if (snapshot.empty) {
-        console.log('No devotional found for today\'s date range');
+      // First try to get by document ID
+      let snapshot = await devotionalsRef.doc(todayId).get();
+      
+             if (!snapshot.exists) {
+         console.log('No devotional found with today\'s ID, trying test document ID...');
+         
+         // Try the test document ID from Firestore
+         snapshot = await devotionalsRef.doc('2025-06-11').get();
+         
+         if (!snapshot.exists) {
+           console.log('Test document not found either, trying date range query...');
+           
+           // Fallback to date range query with broader range for testing
+           const startOfToday = new Date(new Date().setDate(new Date().getDate() - 7)); // Look back 7 days
+           startOfToday.setHours(0, 0, 0, 0);
+           
+           const endOfToday = new Date(new Date().setDate(new Date().getDate() + 7)); // Look ahead 7 days
+           endOfToday.setHours(23, 59, 59, 999);
+           
+           console.log('Fetching devotional for createdAt between:', startOfToday.toISOString(), 'and', endOfToday.toISOString());
+           
+           const querySnapshot = await devotionalsRef
+             .where('createdAt', '>=', firestore.Timestamp.fromDate(startOfToday))
+             .where('createdAt', '<=', firestore.Timestamp.fromDate(endOfToday))
+             .limit(1)
+             .get();
+             
+           if (querySnapshot.empty) {
+             console.log('No devotional found in date range either');
+             set({ 
+               currentDevotional: null, 
+               isLoading: false,
+               error: 'No devotional available for today' 
+             });
+             return;
+           }
+           
+           snapshot = querySnapshot.docs[0];
+         } else {
+           console.log('Found test devotional with ID: 2025-06-11');
+         }
+       }
+      
+            // Get the document data
+      const devotionalData = snapshot.data() as Devotional;
+      
+      if (!devotionalData) {
+        console.log('No devotional data found');
         set({ 
           currentDevotional: null, 
           isLoading: false,
@@ -71,12 +106,15 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         return;
       }
       
-      // Get the first (and should be only) document
-      const doc = snapshot.docs[0];
-      const devotionalData = doc.data() as Devotional;
-      
       const devotional: Devotional = {
         ...devotionalData,
+        // Extract 'en' values from nested objects, fallback to original if string
+        prayer: typeof devotionalData.prayer === 'object' && devotionalData.prayer?.en 
+          ? devotionalData.prayer.en 
+          : devotionalData.prayer || '',
+        reflectionPrompt: typeof (devotionalData as any).reflection === 'object' && (devotionalData as any).reflection?.en 
+          ? (devotionalData as any).reflection.en 
+          : devotionalData.reflectionPrompt || '',
         // Keep the original id field from the document data
       };
       
@@ -85,6 +123,9 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         hasVerse: !!devotionalData.verse,
         versePreview: devotionalData.verse?.substring(0, 100),
         bibleReference: devotionalData.bibleReference,
+        prayer: devotionalData.prayer,
+        reflectionPrompt: devotionalData.reflectionPrompt,
+        reflection: (devotionalData as any).reflection,
       });
       
       // Determine the Bible reference to use for fetching
@@ -150,6 +191,10 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         verse: devotional.verse,
         hasVerse: !!devotional.verse,
         verseLength: devotional.verse?.length,
+        reflectionPrompt: devotional.reflectionPrompt,
+        reflectionPromptType: typeof devotional.reflectionPrompt,
+        prayer: devotional.prayer,
+        prayerType: typeof devotional.prayer,
       });
       
       set({ 
