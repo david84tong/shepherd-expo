@@ -134,7 +134,7 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
         </>
       )}
       <RNAnimated.Text
-        className="font-feather-bold text-[26px] text-center mb-1 text-brown/90"
+        className={`font-feather-bold text-[26px] text-center mb-1 text-brown/90 ${!didLevelUp ? '-mt-12' : ''}`}
         style={textOpacityStyle}
       >
         {title}

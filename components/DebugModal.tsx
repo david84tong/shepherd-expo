@@ -233,7 +233,7 @@ export function DebugButton() {
   const handleResetCompletionData = useCallback(() => {
     Alert.alert(
       'Reset Completion Data',
-      'This will reset all completion states and clear reading history. Continue?',
+      'This will reset all completion states, collected bonus, and clear reading history. Continue?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -245,6 +245,7 @@ export function DebugButton() {
             homeStore.resetCompletionStates();
             homeStore.setMode('DEFAULT');
             homeStore.setSuccessType(null);
+            homeStore.setSawDailyBonus(false); // Reset collected bonus state
 
             // Clear completedReadings, completedPrayers, and completedReflections from userStore
             const userStore = useUserStore.getState();
@@ -259,7 +260,7 @@ export function DebugButton() {
             // Sync with Firestore to save changes
             syncWithFirestore();
 
-            Alert.alert('Reset Complete', 'HomeStore data and completed readings have been reset.');
+            Alert.alert('Reset Complete', 'HomeStore data, collected bonus, and completed readings have been reset.');
           },
         },
       ]

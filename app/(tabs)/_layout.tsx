@@ -3,6 +3,7 @@ import { Redirect, Tabs } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, Platform, Pressable, Text, View, ViewStyle } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 
 import { isSignedIn } from '../hooks/authHook';
 import { useHomeStore } from '../stores/homeStore';
@@ -130,7 +131,9 @@ export default function TabsLayout() {
   const mode = useHomeStore((state) => state.mode);
   const devotionalReaderVisible = useHomeStore((state) => state.devotionalReaderVisible);
   const prayerViewVisible = useHomeStore((state) => state.prayerViewVisible);
+  const journalViewVisible = useHomeStore((state) => state.journalViewVisible);
   const pathInProgress = usePathStore((state) => state.pathInProgress);
+  const isTabBarVisible = !devotionalReaderVisible && !prayerViewVisible && !journalViewVisible;
 
   // Ref that drives tab-bar show / hide animation
   const tabBarAnim = useRef(new Animated.Value(1)).current;
@@ -182,6 +185,7 @@ export default function TabsLayout() {
 
   // Using absolute positioning to prevent the "chin" gap
   const animatedTabBarStyle = {
+    display: isTabBarVisible ? 'flex' : 'none',
     position: 'absolute' as const,
     bottom: 0,
     left: 0,
@@ -212,28 +216,35 @@ export default function TabsLayout() {
     }),
     // Ensure a minimum height for the tab bar
     height: Platform.OS === 'ios' ? 90 : 70,
-    paddingHorizontal: 50
+    paddingHorizontal: 50,
   } as ViewStyle; // Cast to ViewStyle for type safety
+
+  // Function to determine if tab bar should be visible for a given route
+  const isRouteAllowed = (routeName: string) => {
+    // Implement the logic to determine if a route is allowed to show the tab bar
+    // This is a placeholder and should be replaced with the actual implementation
+    return true; // Placeholder return, actual implementation needed
+  };
 
   return (
     <Tabs
       initialRouteName='index'
-      screenOptions={{
-        tabBarStyle: animatedTabBarStyle,
+      screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarStyle: animatedTabBarStyle,
         tabBarLabelStyle: {
           marginTop: 2,
           fontSize: 1, // Reset font size to be visible
         },
         // Use the custom button component for all tabs
-        tabBarButton: (props) => <CustomTabBarButton {...props} />,
-      }}>
+        tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
+      })}>
 
       <Tabs.Screen
         name="index"
         options={{
           title: 'sheep',
-          tabBarButton: (props) => <CustomTabBarButton {...props} />,
+          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
               <Image source={focused ? require('../../assets/icons/homeShadow.png') : require('../../assets/icons/today.png')} className="w-7 h-7" />
@@ -247,7 +258,7 @@ export default function TabsLayout() {
         name="stats"
         options={{
           title: 'heart',
-          tabBarButton: (props) => <CustomTabBarButton {...props} />,
+          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
               <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/stats.png')} className="w-7 h-7" />
@@ -261,7 +272,7 @@ export default function TabsLayout() {
         name="bible"
         options={{
           title: 'Bible',
-          tabBarButton: (props) => <CustomTabBarButton {...props} />,
+          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
               <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/bible.png')} className="w-7 h-7" />
@@ -274,7 +285,7 @@ export default function TabsLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarButton: (props) => <CustomTabBarButton {...props} />,
+          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
               <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/profile.png')} className="w-6 h-7" />

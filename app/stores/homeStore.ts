@@ -21,6 +21,8 @@ interface HomeState {
   devotionalReaderVisible: boolean; // Track if devotional reader is showing
   prayerViewVisible: boolean; // Track if prayer view is showing
   showStreakScreen: boolean; // Track if streak screen should be shown
+  keyboardVisible: boolean; // Track if keyboard is visible for journal
+  journalViewVisible: boolean;
 
   // Completion tracking states
   readingCompleted: boolean;
@@ -47,6 +49,8 @@ interface HomeState {
   setSawStreakToday: (saw: boolean) => void; // Setter for sawStreakToday
   resetCompletionStates: () => void; // Reset all completion states
   setShowGlobalButtons: (show: boolean) => void;
+  setKeyboardVisible: (visible: boolean) => void; // Control keyboard visibility state
+  setJournalViewVisible: (visible: boolean) => void;
 }
 
 /**
@@ -63,6 +67,8 @@ export const useHomeStore = create<HomeState>()(
       prayerViewVisible: false,
       showStreakScreen: false,
       showGlobalButtons: false,
+      keyboardVisible: false,
+      journalViewVisible: false,
       // Default completion states
       readingCompleted: false,
       prayerCompleted: false,
@@ -95,6 +101,8 @@ export const useHomeStore = create<HomeState>()(
       setTappedReflectAboutVerse: (tapped) => set({ tappedReflectAboutVerse: tapped }),
       setSawStreakToday: (saw) => set({ sawStreakToday: saw }),
       setShowGlobalButtons: (show) => set({ showGlobalButtons: show }),
+      setKeyboardVisible: (visible) => set({ keyboardVisible: visible }),
+      setJournalViewVisible: (visible) => set({ journalViewVisible: visible }),
       resetCompletionStates: () => {
         console.log('🔍 HOMESTORE - resetCompletionStates called - BEFORE reset:', {
           currentState: {
