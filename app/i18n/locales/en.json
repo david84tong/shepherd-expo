@@ -630,16 +630,18 @@
   },
   "bookChapterSelector": {
     "title": "Select Book & Chapter",
-    "done": "Done",
     "book": "Book",
-    "chapter": "Chapter"
+    "chapter": "Chapter",
+    "done": "Done"
   },
   "highlightColorPicker": {
-    "title": "Choose Highlight Color",
-    "cancel": "Cancel",
-    "apply": "Apply",
-    "remove": "Remove",
-    "removeHighlight": "Remove Highlight"
+    "title": "Choose Highlight Color"
+  },
+  "removeHighlight": "Remove Highlight",
+  "forceUpdate": {
+    "title": "Update Required",
+    "message": "A new version of the app is available. Please update to continue using the app.",
+    "updateNow": "Update Now"
   },
   "successAnimation": {
     "loadingAnimation": "Loading animation...",

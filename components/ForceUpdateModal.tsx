@@ -8,10 +8,13 @@ import {
   Image,
 } from 'react-native';
 import remoteConfig from '@react-native-firebase/remote-config';
+import { useTranslation } from '../app/hooks/useTranslation';
 import sheepIcon from '../assets/icons/sheepIcon.png';
 import PrimaryButton from './PrimaryButton';
 
 const ForceUpdateModal = ({ visible }: { visible: boolean }) => {
+  const { t } = useTranslation();
+  
   return (
     <Modal transparent visible={visible} animationType="fade">
       <View style={styles.overlay}>
@@ -21,11 +24,11 @@ const ForceUpdateModal = ({ visible }: { visible: boolean }) => {
             style={styles.icon}
             resizeMode="contain"
           />
-          <Text style={styles.title}>Update Required</Text>
+          <Text style={styles.title}>{t('forceUpdate.title')}</Text>
           <Text style={styles.message}>
-            A new version of the app is available. Please update to continue using the app.
+            {t('forceUpdate.message')}
           </Text>
-          <PrimaryButton title="Update Now" onPress={() => {
+          <PrimaryButton title={t('forceUpdate.updateNow')} onPress={() => {
             const storeUrl =
               Platform.OS === 'android'
                 ? remoteConfig().getValue('force_update_url_android').asString()

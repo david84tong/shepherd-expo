@@ -566,9 +566,9 @@
   },
   "bookChapterSelector": {
     "title": "Selecionar Livro e Capítulo",
-    "done": "Concluído",
     "book": "Livro",
-    "chapter": "Capítulo"
+    "chapter": "Capítulo",
+    "done": "Concluído"
   },
   "highlightColorPicker": {
     "title": "Escolher Cor de Destaque",
@@ -603,5 +603,10 @@
     "howDoesSpeak": "Como esta passagem fala à sua vida hoje?",
     "thisPassage": "esta passagem",
     "defaultReflection": "Refleti sobre minha jornada espiritual hoje."
+  },
+  "forceUpdate": {
+    "title": "Atualização Necessária",
+    "message": "Uma nova versão do aplicativo está disponível. Atualize para continuar usando o aplicativo.",
+    "updateNow": "Atualizar Agora"
   }
 } 

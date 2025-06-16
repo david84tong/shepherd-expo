@@ -377,15 +377,19 @@
   },
   "bookChapterSelector": {
     "title": "Sélectionner Livre et Chapitre",
-    "done": "Terminé",
     "book": "Livre",
-    "chapter": "Chapitre"
+    "chapter": "Chapitre",
+    "done": "Terminé"
   },
   "highlightColorPicker": {
-    "title": "Choisir la Couleur de Surlignage",
-    "cancel": "Annuler",
-    "apply": "Appliquer",
-    "remove": "Supprimer",
-    "removeHighlight": "Supprimer le Surlignage"
+    "title": "Choisir la Couleur de Surlignage"
+  },
+  "removeHighlight": "Supprimer le Surlignage",
+  "forceUpdate": {
+    "title": "Mise à Jour Requise",
+    "message": "Une nouvelle version de l'application est disponible. Veuillez mettre à jour pour continuer à utiliser l'application.",
+    "updateNow": "Mettre à Jour Maintenant"
+  },
+  "successAnimation": {
   }
 } 

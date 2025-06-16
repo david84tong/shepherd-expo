@@ -566,13 +566,13 @@
     }
   },
   "bookChapterSelector": {
-    "title": "Boek en Hoofdstuk Selecteren",
-    "done": "Klaar",
+    "title": "Selecteer Boek en Hoofdstuk",
     "book": "Boek",
-    "chapter": "Hoofdstuk"
+    "chapter": "Hoofdstuk",
+    "done": "Klaar"
   },
   "highlightColorPicker": {
-    "title": "Markeringskleur Kiezen",
+    "title": "Kies Markeringskleur",
     "cancel": "Annuleren",
     "apply": "Toepassen",
     "remove": "Verwijderen",
@@ -591,7 +591,12 @@
     "prayAboutTodaysVerse": "Bid over het vers van vandaag",
     "close": "Sluiten",
     "returnHome": "Terug naar Home",
-    "goHome": "Ga naar Home"
+    "goHome": "Ga naar Home",
+    "forceUpdate": {
+      "title": "Update Vereist",
+      "message": "Een nieuwe versie van de app is beschikbaar. Werk bij om de app te blijven gebruiken.",
+      "updateNow": "Nu Bijwerken"
+    }
   },
   "journal": {
     "reflection": "Reflectie",

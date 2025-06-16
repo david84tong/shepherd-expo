@@ -10,6 +10,7 @@ import {
   Pressable,
   Dimensions,
 } from 'react-native';
+import { useTranslation } from '../app/hooks/useTranslation';
 
 import { BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from '../app/models/Path';
 
@@ -32,6 +33,7 @@ const BookChapterSelectorSheet: React.FC<BookChapterSelectorSheetProps> = ({
   currentChapter,
   onSelect,
 }) => {
+  const { t } = useTranslation();
   const [selectedBookId, setSelectedBookId] = useState<number>(currentBookId);
   const [selectedChapter, setSelectedChapter] = useState<number>(currentChapter);
   const [isVisible, setIsVisible] = useState<boolean>(visible);
@@ -123,9 +125,9 @@ const BookChapterSelectorSheet: React.FC<BookChapterSelectorSheetProps> = ({
           onStartShouldSetResponder={() => true}>
           {/* Header */}
           <View style={styles.header}>
-            <Text style={styles.headerTitle}>Select Book & Chapter</Text>
+            <Text style={styles.headerTitle}>{t('bookChapterSelector.title')}</Text>
             <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-              <Text style={styles.closeButtonText}>Done</Text>
+              <Text style={styles.closeButtonText}>{t('bookChapterSelector.done')}</Text>
             </TouchableOpacity>
           </View>
 
@@ -133,7 +135,7 @@ const BookChapterSelectorSheet: React.FC<BookChapterSelectorSheetProps> = ({
           <View style={styles.contentContainer}>
             {/* Book List */}
             <View style={styles.listContainer}>
-              <Text style={styles.listTitle}>Book</Text>
+              <Text style={styles.listTitle}>{t('bookChapterSelector.book')}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                 {bookList.map((book) => (
                   <TouchableOpacity
@@ -154,7 +156,7 @@ const BookChapterSelectorSheet: React.FC<BookChapterSelectorSheetProps> = ({
 
             {/* Chapter Grid */}
             <View style={[styles.listContainer, { flex: 1 }]}>
-              <Text style={styles.listTitle}>Chapter</Text>
+              <Text style={styles.listTitle}>{t('bookChapterSelector.chapter')}</Text>
               <ScrollView contentContainerStyle={styles.chapterGrid}>
                 {availableChapters.map((chapter) => (
                   <TouchableOpacity

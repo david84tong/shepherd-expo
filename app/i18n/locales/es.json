@@ -564,16 +564,16 @@
   },
   "bookChapterSelector": {
     "title": "Seleccionar Libro y Capítulo",
-    "done": "Listo",
     "book": "Libro",
-    "chapter": "Capítulo"
+    "chapter": "Capítulo",
+    "done": "Hecho"
   },
   "highlightColorPicker": {
     "title": "Elegir Color de Resaltado",
     "cancel": "Cancelar",
     "apply": "Aplicar",
     "remove": "Quitar",
-    "removeHighlight": "Quitar Resaltado"
+    "removeHighlight": "Eliminar Resaltado"
   },
   "successAnimation": {
     "loadingAnimation": "Cargando animación...",
@@ -601,5 +601,10 @@
     "howDoesSpeak": "¿Cómo te habla este pasaje en tu vida hoy?",
     "thisPassage": "este pasaje",
     "defaultReflection": "Reflexioné sobre mi viaje espiritual hoy."
+  },
+  "forceUpdate": {
+    "title": "Actualización Requerida",
+    "message": "Una nueva versión de la aplicación está disponible. Por favor actualiza para continuar usando la aplicación.",
+    "updateNow": "Actualizar Ahora"
   }
 } 
