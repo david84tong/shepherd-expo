@@ -11,7 +11,6 @@ import {
   Switch,
   Alert,
   Dimensions,
-  ImageBackground,
   Image,
   StatusBar,
 } from 'react-native';
@@ -56,7 +55,8 @@ import Animated from 'react-native-reanimated';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { BibleVerseActionBar } from './BibleVerseActionBar';
-
+import { RPH } from '~/app/helper/helper';
+import { ImageBackground } from 'expo-image';
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
 const MIN_FONT_SIZE = 14;
@@ -342,11 +342,11 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const SWIPE_ACTION_COLOR = 'rgba(220, 178, 128, 0.15)'; // Soft amber color matching app theme
 
 // Define swipe threshold and animation constants for better tuning
-const SWIPE_THRESHOLD = 0.08; // Lower threshold to detect smaller swipes
-const SWIPE_FEEDBACK_THRESHOLD = 0.03; // Provide feedback sooner
-const SWIPE_INDICATOR_SHOW_THRESHOLD = 0.02; // Show indicator earlier
+const SWIPE_THRESHOLD = 0.05; // Lower threshold for more responsive feel
+const SWIPE_FEEDBACK_THRESHOLD = 0.02; // Provide feedback sooner
+const SWIPE_INDICATOR_SHOW_THRESHOLD = 0.01; // Show indicator earlier
 const CHAT_TRANSITION_DELAY = 0; // No delay for immediate response
-const FADE_DURATION = 200; // Even faster fade transition
+const FADE_DURATION = 150; // Faster fade transition
 
 // Define handler state change event type
 interface HandlerStateChangeEvent {
@@ -1091,73 +1091,69 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     }, 100);
   }, [menuScaleAnim, menuOpacityAnim]);
 
-  // Handle swipe state tracking
-  const handleSwipeStart = (verse: Verse) => {
-    if (isFadingToChat) return;
-    swipeProgress.current.isActive = true;
-    swipeProgress.current.verse = verse;
-  };
+  // Handle swipe verse to Devotional
+  const handleSwipeVerseToDevotional = useCallback(
+    (verse: Verse) => {
+      if (isFadingToChat) return;
 
-  const handleSwipeRelease = (openRatio: number, verse: Verse) => {
-    if (isFadingToChat) return;
+      // Immediate haptic feedback
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-    // If opened enough, trigger the chat transition
-    // Lower threshold for more responsive feel
-    if (openRatio > SWIPE_THRESHOLD && swipeProgress.current.isActive) {
-      handleSwipeVerseToChat(verse);
-    }
-    swipeProgress.current.isActive = false;
-  };
+      // Close the swipeable immediately
+      const swipeableRef = swipeableRefs.current.get(verse.verse);
+      swipeableRef?.close();
 
-  // Add left swipe handler for menu
-  const handleLeftSwipeRelease = (openRatio: number, verse: Verse) => {
-    if (isFadingToChat) return;
+      // Navigate to LoadingScreen instantly
+      if (chapterData) {
+        router.push({
+          pathname: '/onboarding/LoadingScreen',
+          params: {
+            isOnboarding: 'false',
+            fromSwipe: 'true',
+            verseText: verse.text,
+            reference: `${chapterData.book} ${chapterData.chapter}:${verse.verse}`,
+          },
+        });
+      }
 
-    if (openRatio > SWIPE_THRESHOLD && swipeProgress.current.isActive) {
-      handleSwipeVerseToDevotional(verse);
-    }
-    swipeProgress.current.isActive = false;
-  };
+      analytics.logEvent('CardBibleReader_Swiped_VerseToDevotional', {
+        book: chapterData?.book,
+        chapter: chapterData?.chapter,
+        verse: verse.verse,
+      });
+    },
+    [isFadingToChat, chapterData, router]
+  );
 
   // Handle left swipe to show menu
-  const handleSwipeVerseToMenu = (verse: Verse) => {
-    
+  const handleSwipeVerseToMenu = useCallback((verse: Verse) => {
     if (isFadingToChat || floatingMenu.isVisible) return;
 
     // Hide swipe guidance after first use
     if (showSwipeGuidance) {
       setShowSwipeGuidance(false);
-      // Save preference to AsyncStorage
       AsyncStorage.setItem(SWIPE_GUIDANCE_KEY, 'true').catch((e) =>
         console.error('Failed to save swipe guidance setting', e)
       );
     }
 
-    // Get the verse widget's position from the view ref (not swipeable ref)
+    // Get the verse widget's position from the view ref
     const viewRef = viewRefs.current.get(verse.verse);
     if (!viewRef) return;
 
-    // Get the verse widget's position
     viewRef.measure(
       (x: number, y: number, width: number, height: number, pageX: number, pageY: number) => {
-        // Position menu at the center of the verse widget
-        const menuX = pageX + width / 2 - 90; // Center horizontally (menu width ~180)
-        const menuY = pageY + height / 2 - 40; // Center vertically (menu height ~80)
+        const menuX = pageX + width / 2 - 90;
+        const menuY = pageY + height / 2 - 40;
 
-        // Set menu visibility and position
         setFloatingMenu({
           isVisible: true,
           verse: verse,
-          position: {
-            x: menuX,
-            y: menuY,
-          },
+          position: { x: menuX, y: menuY },
         });
 
-        // Trigger haptic feedback
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
-        // Animate the menu appearance with spring effect
         menuScaleAnim.value = 0.7;
         menuOpacityAnim.value = 0;
 
@@ -1170,7 +1166,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           duration: 200,
         });
 
-        // Close the swipeable smoothly after a short delay
         setTimeout(() => {
           const swipeableRef = swipeableRefs.current.get(verse.verse);
           if (swipeableRef) {
@@ -1178,7 +1173,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           }
         }, 100);
 
-        // Log the event
         analytics.logEvent('BibleReader_Swiped_VerseToMenu', {
           book: chapterData?.book,
           chapter: chapterData?.chapter,
@@ -1186,42 +1180,58 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         });
       }
     );
-  };
+  }, [isFadingToChat, floatingMenu.isVisible, showSwipeGuidance, menuScaleAnim, menuOpacityAnim, chapterData]);
 
-  const handleSwipeChange = (progress: number) => {
-    // If already transitioning, don't respond to swipe changes
+  // Memoize the swipe handlers with useCallback
+  const handleSwipeStart = useCallback((verse: Verse) => {
     if (isFadingToChat) return;
+    swipeProgress.current.isActive = true;
+    swipeProgress.current.verse = verse;
+  }, [isFadingToChat]);
 
-    // Immediate feedback as soon as progress begins
+  const handleSwipeRelease = useCallback((openRatio: number, verse: Verse) => {
+    if (isFadingToChat) return;
+    if (openRatio > SWIPE_THRESHOLD && swipeProgress.current.isActive) {
+      handleSwipeVerseToChat(verse);
+    }
+    swipeProgress.current.isActive = false;
+  }, [isFadingToChat, handleSwipeVerseToChat]);
+
+  const handleLeftSwipeRelease = useCallback((openRatio: number, verse: Verse) => {
+    if (isFadingToChat) return;
+    if (openRatio > 0.05 && swipeProgress.current.isActive) {
+      handleSwipeVerseToDevotional(verse);
+    }
+    swipeProgress.current.isActive = false;
+  }, [isFadingToChat, handleSwipeVerseToDevotional]);
+
+  const handleSwipeChange = useCallback((progress: number) => {
+    if (isFadingToChat) return;
     if (progress > 0 && swipeProgress.current.isActive) {
-      // Provide subtle haptic feedback at the threshold for a better feel
       if (progress > SWIPE_FEEDBACK_THRESHOLD && progress < SWIPE_FEEDBACK_THRESHOLD + 0.02) {
         Haptics.selectionAsync();
       }
     }
-  };
+  }, [isFadingToChat]);
 
-  // Subtle indicator component for swipe that fades in gradually
-  const renderRightActions = (_progress: any, dragX: any, verse: Verse) => {
+  // Optimize the swipe action renderers with useCallback
+  const renderRightActions = useCallback((_progress: any, dragX: any, verse: Verse) => {
     if (!swipeProgress.current.isActive && !isFadingToChat) {
       handleSwipeStart(verse);
     }
 
-    // Make indicator appear even quicker in response to swipe
     const translateX = dragX.interpolate({
       inputRange: [-70, -20, 0],
       outputRange: [0, 10, 60],
       extrapolate: 'clamp',
     });
 
-    // Track swipe progress for haptic feedback
     const progressValue = _progress.interpolate({
       inputRange: [0, 1],
       outputRange: [0, 1],
       extrapolate: 'clamp',
     });
 
-    // Allow very subtle movement to start seeing the indicator
     progressValue.__getValue && handleSwipeChange(progressValue.__getValue());
 
     return (
@@ -1251,29 +1261,25 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         </RNAnimated.View>
       </RNAnimated.View>
     );
-  };
+  }, [handleSwipeStart, handleSwipeChange, isFadingToChat]);
 
-  // Add left actions for menu
-  const renderLeftActions = (_progress: any, dragX: any, verse: Verse) => {
+  const renderLeftActions = useCallback((_progress: any, dragX: any, verse: Verse) => {
     if (!swipeProgress.current.isActive && !isFadingToChat) {
       handleSwipeStart(verse);
     }
 
-    // Make indicator appear even quicker in response to swipe
     const translateX = dragX.interpolate({
       inputRange: [0, 20, 70],
       outputRange: [-60, -10, 0],
       extrapolate: 'clamp',
     });
 
-    // Track swipe progress for haptic feedback
     const progressValue = _progress.interpolate({
       inputRange: [0, 1],
       outputRange: [0, 1],
       extrapolate: 'clamp',
     });
 
-    // Allow very subtle movement to start seeing the indicator
     progressValue.__getValue && handleSwipeChange(progressValue.__getValue());
 
     return (
@@ -1299,12 +1305,43 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
               ],
             },
           ]}>
-          {/* <Feather name="more-horizontal" size={18} color="#B89B4C" /> */}
           <FontAwesome6 name="book" size={25} color="#634012" style={{ opacity: 0.5 }} />
         </RNAnimated.View>
       </RNAnimated.View>
     );
-  };
+  }, [handleSwipeStart, handleSwipeChange, isFadingToChat]);
+
+  // Optimize the Swipeable component props
+  const swipeableProps = useCallback((verse: Verse) => ({
+    renderRightActions: (progress: any, dragX: any) => renderRightActions(progress, dragX, verse),
+    renderLeftActions: (progress: any, dragX: any) => renderLeftActions(progress, dragX, verse),
+    onSwipeableOpen: (direction: string) => {
+      if (direction === 'right') {
+        handleSwipeVerseToChat(verse);
+      } else if (direction === 'left') {
+        handleSwipeVerseToMenu(verse);
+      }
+    },
+    onSwipeableClose: () => {
+      if (swipeProgress.current.isActive) {
+        swipeProgress.current.isActive = false;
+      }
+    },
+    overshootRight: false,
+    overshootLeft: false,
+    friction: 0.8,
+    rightThreshold: SCREEN_WIDTH * SWIPE_THRESHOLD,
+    leftThreshold: SCREEN_WIDTH * SWIPE_THRESHOLD,
+    enabled: !isFadingToChat && !floatingMenu.isVisible,
+    containerStyle: { marginBottom: 8 },
+    onSwipeableWillOpen: (direction: string) => {
+      if (direction === 'right') {
+        handleSwipeRelease(1, verse);
+      } else if (direction === 'left') {
+        handleLeftSwipeRelease(1, verse);
+      }
+    },
+  }), [renderRightActions, renderLeftActions, handleSwipeVerseToChat, handleSwipeVerseToMenu, handleSwipeRelease, handleLeftSwipeRelease, isFadingToChat, floatingMenu.isVisible]);
 
   // Create animated styles for fading
   const fadeAnimStyle = useAnimatedStyle(() => {
@@ -1591,39 +1628,29 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     },
   ];
 
-  // Handle swipe verse to Devotional
-  const handleSwipeVerseToDevotional = useCallback(
-    (verse: Verse) => {
-      if (isFadingToChat) return;
+  // Add animation values with initial states
+  const fadeAnim = useSharedValue(0);
+  const translateY = useSharedValue(50);
 
-      // Immediate haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  // Add animation effect
+  useEffect(() => {
+    // Ensure initial states are set
+    fadeAnim.value = 0;
+    translateY.value = 50;
 
-      // Close the swipeable if still open
-      const swipeableRef = swipeableRefs.current.get(verse.verse);
-      swipeableRef?.close();
-
-      // Navigate to LoadingScreen with devotional data
-      if (chapterData) {
-        router.push({
-          pathname: '/onboarding/LoadingScreen',
-          params: {
-            isOnboarding: 'false',
-            fromSwipe: 'true',
-            verseText: verse.text,
-            reference: `${chapterData.book} ${chapterData.chapter}:${verse.verse}`,
-          },
-        });
-      }
-
-      analytics.logEvent('CardBibleReader_Swiped_VerseToDevotional', {
-        book: chapterData?.book,
-        chapter: chapterData?.chapter,
-        verse: verse.verse,
+    // Use a small delay to ensure component is mounted
+      // Start animations together
+      fadeAnim.value = withTiming(1, {
+        duration: 2000,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
       });
-    },
-    [isFadingToChat, chapterData, router]
-  );
+      translateY.value = withTiming(0, {
+        duration: 2000,
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+
+
+  }, []);
 
   if (!chapterData) {
     return (
@@ -1697,7 +1724,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
             <Reanimated.View
               style={[
-                { flex: 1, paddingBottom: 24, paddingHorizontal: 16, paddingTop: 16 },
+                { flex: 1, paddingBottom: RPH(10), paddingHorizontal: 16, paddingTop: 16 },
                 fadeAnimStyle,
               ]}>
               {/* HEADER: Bible Book/Chapter, tap to open selector, styled like bibleReader.tsx */}
@@ -1741,6 +1768,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                       height: '100%',
                       backgroundColor: theme.progressBarFill,
                       borderRadius: 2,
+            
                     },
                     animatedProgressStyle,
                   ]}
@@ -1776,67 +1804,37 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                 }}>
                 {/* Wrap TouchableWithoutFeedback with GestureHandlerRootView for proper functioning of gestures */}
                 <GestureHandlerRootView style={{ flex: 1 }}>
-                  <View style={{ minHeight: '100%' }} className='pb-12'>
-                    {versesToShow.map((v, index) => {
-                      // Get highlight color for this verse if it exists
-                      const highlightColor = getVerseHighlightColor(v);
-
-                      return (
-                        <LongPressGestureHandler
-
-                          key={v.verse}
-                          minDurationMs={800}
-                          onHandlerStateChange={(e) => {
-                            if (e.nativeEvent.state === State.ACTIVE) {
-                              handleLongPress(e, v);
-                            }
-                          }}>
-                          <View style={{ flex: 1, }}>
-                            <Swipeable
-
-                              ref={(ref) => {
-                                if (ref) {
-                                  swipeableRefs.current.set(v.verse, ref);
-                                } else {
-                                  swipeableRefs.current.delete(v.verse);
-                                }
-                              }}
-                              renderRightActions={(progress, dragX) =>
-                                renderRightActions(progress, dragX, v)
+                  <Animated.View 
+                    style={{ 
+                      flex: 1,
+                      opacity: fadeAnim,
+                      transform: [{ translateY }],
+                    
+                    }}>
+                    <View style={{ minHeight: '100%' }} className='pb-12'>
+                      {versesToShow.map((verse) => {
+                        const highlightColor = getVerseHighlightColor(verse);
+                        return (
+                          <LongPressGestureHandler
+                            key={verse.verse}
+                            minDurationMs={800}
+                            onHandlerStateChange={(e) => {
+                              if (e.nativeEvent.state === State.ACTIVE) {
+                                handleLongPress(e, verse);
                               }
-                              renderLeftActions={(progress, dragX) =>
-                                renderLeftActions(progress, dragX, v)
-                              }
-                              onSwipeableOpen={(direction) => {
-                                if (direction === 'right') {
-                                  handleSwipeVerseToChat(v);
-                                } else if (direction === 'left') {
-                                  handleSwipeVerseToMenu(v);
-                                }
-                              }}
-                              onSwipeableClose={() => {
-                                if (swipeProgress.current.isActive) {
-                                  swipeProgress.current.isActive = false;
-                                }
-                              }}
-                              overshootRight={false}
-                              overshootLeft={false}
-                              friction={0.8}
-                              rightThreshold={SCREEN_WIDTH * SWIPE_THRESHOLD}
-                              leftThreshold={SCREEN_WIDTH * SWIPE_THRESHOLD}
-                              enabled={!isFadingToChat && !floatingMenu.isVisible}
-                              containerStyle={{ marginBottom: 8, }}
-                              onSwipeableWillOpen={(direction) => {
-                                if (direction === 'right') {
-                                  handleSwipeRelease(1, v);
-                                } else if (direction === 'left') {
-                                  handleLeftSwipeRelease(1, v);
-                                }
-                              }}>
-                              <View
-                              >
+                            }}>
+                            <View style={{ flex: 1 }}>
+                              <Swipeable
+                                ref={(ref) => {
+                                  if (ref) {
+                                    swipeableRefs.current.set(verse.verse, ref);
+                                  } else {
+                                    swipeableRefs.current.delete(verse.verse);
+                                  }
+                                }}
+                                {...swipeableProps(verse)}>
                                 <View
-                                  className={`bg-surfaceCreamLight`}
+                                  className="bg-surfaceCreamLight"
                                   style={[
                                     styles.verseBubble,
                                     {
@@ -1846,77 +1844,19 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                                     },
                                   ]}>
                                   <View style={{ marginBottom: 12 }}>
-                                    <Text className="text-[18px] leading-[25px] font-nunito-bold " >
-                                      <Text className="text-brown/40">{`${v.verse}. `}</Text>
-                                      <Text className="text-brown/70">{v.text}</Text>
+                                    <Text className="text-[18px] leading-[25px] font-nunito-bold">
+                                      <Text className="text-brown/40">{`${verse.verse}. `}</Text>
+                                      <Text className="text-brown/70">{verse.text}</Text>
                                     </Text>
                                   </View>
                                 </View>
-                              </View>
-                            </Swipeable>
-                          </View>
-                        </LongPressGestureHandler>
-                      );
-                    })}
-
-                    {currentIndex < chapterData.verses.length - 1 ? (
-                      <View style={{ alignItems: 'center', marginTop: 16 }}>
-                        {showSwipeGuidance && (
-                          <Text
-                            style={{
-                              color: theme.headerText,
-                              fontFamily: 'DIN Next Rounded LT W01 Regular',
-                              fontSize: 14,
-                              opacity: 0.6,
-                              marginTop: 4,
-                            }}>
-                            ← Swipe left for annotations • Swipe right for chat →
-                          </Text>
-                        )}
-                      </View>
-                    ) : (
-                      <TouchableOpacity
-                        onPress={() => {
-                          if (isFadingToChat) return;
-                          // If daily reading is completed and not in path mode, go to next chapter
-                          if (readingCompleted && !isInPathMode) {
-                            console.log(
-                              '📖 [NewBibleReader] Next Chapter tapped - daily reading completed'
-                            );
-                            navigateToNextChapter();
-                          } else {
-                            console.log('📖 [NewBibleReader] Finish tapped');
-                            handleFinishReading();
-                          }
-                        }}
-                        activeOpacity={0.8}
-                        disabled={isFadingToChat}>
-                        <View
-                          style={{
-                            backgroundColor: theme.progressBarBackground,
-                            paddingVertical: 12,
-                            alignItems: 'center',
-                            marginTop: 24,
-                            borderRadius: 12,
-                            marginBottom: 100
-                          }}>
-                          <Text
-                            style={{
-                              color: theme.headerText,
-                              fontFamily: 'Feather Bold',
-                              fontSize: 16,
-                            }}>
-                            {readingCompleted && !isInPathMode
-                              ? 'Next Chapter →'
-                              : 'Finish Reading 🎉'}
-                          </Text>
-                        </View>
-                      </TouchableOpacity>
-                    )}
-
-                    {/* Add invisible spacer to ensure touchable area extends to bottom padding */}
-                    {/* <View style={{ height: 80 }} /> */}
-                  </View>
+                              </Swipeable>
+                            </View>
+                          </LongPressGestureHandler>
+                        );
+                      })}
+                    </View>
+                  </Animated.View>
                 </GestureHandlerRootView>
               </ScrollView>
             </Reanimated.View>

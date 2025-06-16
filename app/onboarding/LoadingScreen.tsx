@@ -322,6 +322,33 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    // Create quick devotional if we have verse text and reference
+    if (!isOnboarding && verseText && reference) {
+      createQuickDevotional(verseText, reference);
+    }
+
+    // Start the loading animation sequence
+    const interval = setInterval(() => {
+      setCurrentStep((prev) => {
+        if (prev >= loadingPoints.length - 1) {
+          clearInterval(interval);
+          // Navigate to home screen with devotional reader visible
+          router.replace({
+            pathname: '/(tabs)',
+            params: {
+              showDevotional: 'true'
+            }
+          });
+          return prev;
+        }
+        return prev + 1;
+      });
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, [isOnboarding, verseText, reference, createQuickDevotional, router]);
+
   return (
     <View
       className="flex-1 items-center justify-center bg-surfaceCream"

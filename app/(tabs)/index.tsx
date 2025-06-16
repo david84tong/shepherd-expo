@@ -176,7 +176,7 @@ export default function HomeScreen() {
   const [riveError, setRiveError] = useState<RNRiveError | null>(null);
   const navigation = useNavigation();
   const router = useRouter();
-  const { isPrayPresses,isReflectPresses } = useLocalSearchParams();
+  const { isPrayPresses, isReflectPresses, showDevotional } = useLocalSearchParams();
   const currentUser = auth().currentUser;
   const devotionalReaderRef = useRef<DevotionalReaderRef>(null);
   const prayerViewRef = useRef<PrayerViewRef>(null);
@@ -184,8 +184,16 @@ export default function HomeScreen() {
   const [devotionalReadedFully, setDevotionalReadedFully] = useState(false);
   const [currentVerseReference, setCurrentVerseReference] = useState('');
   const [isCompletePrayerDisabled, setIsCompletePrayerDisabled] = useState(true);
-  const [journalButtonEnabled, setJournalButtonEnabled] = useState(false)
-  
+  const [journalButtonEnabled, setJournalButtonEnabled] = useState(false);
+
+  // Add effect to handle showDevotional parameter
+  useEffect(() => {
+    if (showDevotional === 'true') {
+      setShowDevotionalContent(true);
+      setDevotionalReaderVisible(true);
+    }
+  }, [showDevotional]);
+
   const handleDevotionalFinishPress = useCallback(() => {
     if (devotionalReaderRef.current) {
       devotionalReaderRef.current.onFinishPress();
