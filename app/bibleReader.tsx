@@ -1147,17 +1147,16 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       setPathInProgress(false);
     };
   }, [setPathInProgress]);
+console.log("useCardView ==>",useCardView);
 
   // When user enabled Card View preference, render the NewBibleReader component
   if (useCardView) {
-    return (
-      <>
+    return <View className='flex-1 bg-surfaceCream/80'>
         <StatusBar translucent backgroundColor="transparent" />
-        <View className='bg-surfaceCream/80' style={{ flex: 1, }}>
-          {/* {loading ? (
+                  {/* {loading ? (
             <PulsingDotsIndicator />
           ) : ( */}
-            <NewBibleReader
+     <NewBibleReader
               isBibleReaderScreen
               bookId={currentBookId}
               chapter={currentChapter}
@@ -1168,12 +1167,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
               onHandoffChapterData={handleHandoffChapterData}
               onOpenSettings={handlePresentModal}
             />
-          {/* )} */}
-        </View>
-
-        {/* Shared Settings Modal */}
-        <Modal
-          visible={isModalVisible}
+                {/* )} */}
+            {isModalVisible ? <Modal
+          visible={true}
           transparent
           animationType="none"
           onRequestClose={handleCloseModal}>
@@ -1283,9 +1279,8 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
               </TouchableWithoutFeedback>
             </View>
           </TouchableWithoutFeedback>
-        </Modal>
-      </>
-    );
+        </Modal>:null}
+      </View>
   } else {
     // Use pendingChapterData if available
     const effectiveChapterData = pendingChapterData || chapterData;
