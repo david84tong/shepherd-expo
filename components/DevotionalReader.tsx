@@ -271,6 +271,11 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
   const isFirstProgressRender = useRef(true);
 
   useEffect(() => {
+    const showGlobalButtons = useHomeStore.getState().showGlobalButtons;
+    const setShowGlobalButtons = useHomeStore.getState().setShowGlobalButtons;
+    if(!showGlobalButtons){
+      setShowGlobalButtons(true);
+    }
     if (totalCards > 0) {
       const newProgress = (currentIndex + 1) / totalCards;
 
