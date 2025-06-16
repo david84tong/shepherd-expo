@@ -20,7 +20,7 @@ import PrimaryButton from './PrimaryButton';
 import { getStreakSubtext } from '../app/hooks/streakHook';
 import analytics from '../utils/analytics';
 import * as StoreReview from 'expo-store-review';
-import { IS_ANDROID, IS_IOS } from '~/app/utils/utils';
+import { IS_ANDROID } from '~/app/utils/utils';
 /* ─────────────── helper ─────────────── */
 type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE';
 
@@ -239,8 +239,8 @@ export const StreakScreen = ({isPrayPresses, isReflectPresses}:{isPrayPresses?:s
 
   // 3. build the centered grid (today in the middle)
   const weekCells = useMemo(
-    () => buildWeekCells(today, createdDate, completedSet),
-    [today, createdDate, completedSet]
+    () => buildWeekCells(today, createdDate, augmentedCompletedSet),
+    [today, createdDate, augmentedCompletedSet]
   );
 
   // 4. calculate streak (memoized to prevent recalculation)

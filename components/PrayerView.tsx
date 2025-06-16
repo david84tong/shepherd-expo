@@ -304,7 +304,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
-  const [guidedPrayerEnabled, setGuidedPrayerEnabled] = useState(true);
+  const [guidedPrayerEnabled, setGuidedPrayerEnabled] = useState(false);
   const [buttonsEnabled, setButtonsEnabled] = useState(false);
 
 

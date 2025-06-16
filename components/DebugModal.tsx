@@ -74,6 +74,7 @@ export function DebugButton() {
   const [modalVisible, setModalVisible] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [showWidgetSheet, setShowWidgetSheet] = useState(false);
+  const [isDebugButtonVisible, setIsDebugButtonVisible] = useState(true);
   const { signOut } = useAuth();
 
   // Reference to the success bottom sheet modal
@@ -415,6 +416,32 @@ export function DebugButton() {
     ]);
   }, [signOut, router]);
 
+  // Handler to hide debug button
+  const handleHideDebugButton = useCallback(() => {
+    Alert.alert(
+      'Hide Debug Button',
+      'This will hide the debug button from the screen. You can show it again by restarting the app.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Hide',
+          style: 'destructive',
+          onPress: () => {
+            setIsDebugButtonVisible(false);
+            setModalVisible(false);
+            Toast.show({
+              type: 'info',
+              text1: 'Debug button hidden',
+              text2: 'Restart the app to show it again.',
+              position: 'top',
+              visibilityTime: 3000,
+            });
+          },
+        },
+      ]
+    );
+  }, []);
+
   const navigateTo = (item: DebugScreen) => {
     setModalVisible(false);
     router.push(item.route as any);
@@ -423,11 +450,13 @@ export function DebugButton() {
   return (
     <>
       {/* Floating Debug Button */}
-      <TouchableOpacity
-        onPress={() => setModalVisible(true)}
-        className="absolute bottom-6 left-6 bg-forestGreen80/80 rounded-3xl w-12 h-12 justify-center items-center z-50 shadow-md">
-        <Text className="text-white text-2xl">🐛</Text>
-      </TouchableOpacity>
+      {isDebugButtonVisible && (
+        <TouchableOpacity
+          onPress={() => setModalVisible(true)}
+          className="absolute bottom-6 left-6 bg-forestGreen80/80 rounded-3xl w-12 h-12 justify-center items-center z-50 shadow-md">
+          <Text className="text-white text-2xl">🐛</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Debug Navigation Modal */}
       <Modal
@@ -986,6 +1015,18 @@ export function DebugButton() {
                     </View>
                   </View>
                 ))}
+              </View>
+
+              {/* Hide Debug Button */}
+              <View className="mt-6 pt-4 border-t border-buttonBorder">
+                <TouchableOpacity
+                  className="bg-orange-500 p-4 rounded-xl border-l-4 border-l-orange-600"
+                  onPress={handleHideDebugButton}>
+                  <Text className="font-feather text-base text-white text-center">Hide Debug Button</Text>
+                  <Text className="font-din text-sm text-white/80 mt-1 text-center">
+                    Hide the debug button from screen
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               {/* Sign Out Button - Only show if user is signed in */}

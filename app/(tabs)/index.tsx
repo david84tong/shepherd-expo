@@ -1232,6 +1232,18 @@ export default function HomeScreen() {
   useEffect(() => {
     setRiveReady(true);
 
+    // Set default skin to 0 when Rive is ready
+    setTimeout(() => {
+      if (riveRef.current?.setInputState) {
+        try {
+          riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
+          console.log('Set default Rive Skin-Number: 0');
+        } catch (e) {
+          console.log('Error setting default Rive skin:', e);
+        }
+      }
+    }, 100); // Small delay to ensure Rive is fully initialized
+
     // Check if this is the first load after onboarding completion
     if (isFirstLoad) {
       // Start with opacity 0 and animate to 1

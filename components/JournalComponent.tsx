@@ -393,6 +393,12 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   // Delayed progress animation for success view
   useEffect(() => {
     if (success) {
+      // Reset bottom sheet to 60% when success screen is shown
+      const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
+      if (bottomSheetRef?.current) {
+        bottomSheetRef.current.snapToIndex(0); // Index 0 is 60% in snapPoints array
+      }
+      
       animatedXP.setValue(0);
       animatedHearts.setValue(0);
       animatedTextOpacity.setValue(0.4);
