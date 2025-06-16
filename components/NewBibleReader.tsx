@@ -2172,7 +2172,7 @@ const styles = StyleSheet.create({
   swipeActionContent: {
     width: 50,
     height: 50,
-    borderRadius: 50,
+    borderRadius: 100,
     backgroundColor: 'rgba(181, 125, 0, 0.15)',
     opacity: 0.2,
     alignItems: 'center',
@@ -2184,7 +2184,6 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.05,
     shadowRadius: 2,
-    elevation: 1,
     borderWidth: 1,
     borderColor: 'rgba(247, 181, 0, 0.2)',
   },
