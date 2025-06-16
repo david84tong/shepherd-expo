@@ -45,6 +45,7 @@ import * as Application from 'expo-application';
 import { useOnboardingStore } from '../app/stores/onboardingStore';
 import { saveFeedback } from '../utils/firestore';
 import { useSoundStore } from '../app/stores/soundStore';
+import { useTranslation } from '../app/hooks/useTranslation';
 
 import Animated, {
   useAnimatedStyle,
@@ -79,6 +80,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   const [isVisible, setIsVisible] = useState<boolean>(false);
   const setIsModalDimActive = useUIStore((state) => state.setIsModalDimActive);
   const [translationModalVisible, setTranslationModalVisible] = useState(false);
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showAndroidPicker, setShowAndroidPicker] = useState(false);
 
@@ -293,7 +295,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
       router.replace({ pathname: '/(auth)' });
     } catch (error) {
-      const msg = error?.message ?? '';
+      const msg = (error as any)?.message ?? '';
 
       const isExpectedLogoutError =
         msg.includes('[auth/no-current-user]') ||
@@ -1206,6 +1208,41 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     initializeNotificationState();
   }, []);
 
+  // Get translation functions
+  const { t, getCurrentLanguage, getSupportedLanguages, changeLanguage } = useTranslation();
+
+  // Handle language selection
+  const handleLanguageChange = useCallback(
+    async (languageCode: string) => {
+      try {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        await changeLanguage(languageCode);
+        setLanguageModalVisible(false);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        analytics.logEvent('Settings_Tapped_LanguageChange', {
+          language: languageCode,
+        });
+      } catch (error) {
+        console.error('Error changing language:', error);
+      }
+    },
+    [changeLanguage]
+  );
+
+  // Handle closing language modal
+  const handleCancelLanguageChange = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setLanguageModalVisible(false);
+  }, []);
+
+  // Get current language display name
+  const getCurrentLanguageDisplayName = useCallback(() => {
+    const currentLang = getCurrentLanguage();
+    const supportedLanguages = getSupportedLanguages();
+    const language = supportedLanguages.find((lang) => lang.code === currentLang);
+    return language?.nativeName || 'English';
+  }, [getCurrentLanguage, getSupportedLanguages]);
+
   return (
     <>
       {isVisible ? (
@@ -1235,7 +1272,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             <View style={styles.settingsContent}>
               {/* Bible Translation Section */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>Bible Translation</Text>
+                <Text style={styles.settingsSectionTitle}>{t('settings.bibleTranslation')}</Text>
                 <TouchableOpacity
                   style={styles.translationSelector}
                   onPress={() => setTranslationModalVisible(true)}>
@@ -1249,9 +1286,24 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
               <View style={styles.divider} />
 
+              {/* Language Section */}
+              <View style={styles.settingsSection}>
+                <Text style={styles.settingsSectionTitle}>{t('settings.language')}</Text>
+                <TouchableOpacity
+                  style={styles.translationSelector}
+                  onPress={() => setLanguageModalVisible(true)}>
+                  <Text style={styles.translationText}>
+                    {getCurrentLanguageDisplayName()}
+                  </Text>
+                  <Feather name="chevron-right" size={18} color="#3C584A" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.divider} />
+
               {/* Daily Reading Time Section */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>Daily Reading Time</Text>
+                <Text style={styles.settingsSectionTitle}>{t('settings.dailyReadingTime')}</Text>
                 <TouchableOpacity
                   style={styles.translationSelector}
                   onPress={handleEditReadingTime}>
@@ -1264,7 +1316,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
               {/* Notification Time Section */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>Notifications</Text>
+                <Text style={styles.settingsSectionTitle}>{t('settings.notificationTime')}</Text>
 
                 {/* Toggle for enabling/disabling notifications */}
                 <TouchableOpacity
@@ -1272,7 +1324,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   onPress={() => animateToggle(!notificationsEnabled)}
                   activeOpacity={0.7}>
                   <Text style={styles.translationText}>
-                    {notificationsEnabled ? 'Notifications enabled' : 'Notifications disabled'}
+                    {notificationsEnabled ? t('settings.notificationsEnabled') : t('settings.notificationsDisabled')}
                   </Text>
                   <View
                     style={[
@@ -1328,7 +1380,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                     </View>
 
                     <TouchableOpacity style={styles.donePickingButton} onPress={handleTimeConfirm}>
-                      <Text style={styles.donePickingText}>Done</Text>
+                      <Text style={styles.donePickingText}>{t('settings.donePickingTime')}</Text>
                     </TouchableOpacity>
                   </Animated.View>
                 )}
@@ -1419,11 +1471,11 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
               {/* Join Discord */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>Community</Text>
+                <Text style={styles.settingsSectionTitle}>{t('settings.community')}</Text>
                 <TouchableOpacity style={styles.discordButton} onPress={handleOpenDiscord}>
                   <View style={styles.discordButtonContent}>
                     <FontAwesome6 name="discord" size={20} color="#5865F2" />
-                    <Text style={styles.discordButtonText}>Join the Shepherd Family!</Text>
+                    <Text style={styles.discordButtonText}>{t('settings.joinShepherdFamily')}</Text>
                   </View>
                   <Feather name="external-link" size={18} color="#3C584A" />
                 </TouchableOpacity>
@@ -1431,40 +1483,38 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 <TouchableOpacity style={styles.roadmapButton} onPress={handleOpenRoadmap}>
                   <View style={styles.roadmapButtonContent}>
                     <Feather name="map" size={20} color="#22C55E" />
-                    <Text style={styles.roadmapButtonText}>Roadmap & Feature Requests</Text>
+                    <Text style={styles.roadmapButtonText}>{t('settings.roadmapFeatureRequests')}</Text>
                   </View>
                   <Feather name="external-link" size={18} color="#3C584A" />
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.divider} />
-
               {/* Subscription Section */}
               <View className="mb-6">
-                <Text className="font-feather text-xl text-[#5D5531] mb-2">Subscription</Text>
+                <Text className="font-feather text-xl text-[#5D5531] mb-2">{t('settings.subscription')}</Text>
                 <View className="bg-white rounded-xl p-4 shadow-sm mb-2">
                   <View className="flex-row justify-between items-center">
                     <View className="flex-1 mr-4">
                       <Text className="font-feather text-base text-textPrimary">
-                        {isProMember ? 'Super Shepherd (Active)' : 'Upgrade to Super Shepherd'}
+                        {isProMember ? t('settings.superShepherdActive') : t('settings.upgradeToSuperShepherd')}
                       </Text>
                       <Text className="font-din text-description mt-1">
                         {isProMember
-                          ? 'Thank you for supporting our mission!'
-                          : 'Unlock premium features and support our mission'}
+                          ? t('settings.thankYouSupporting')
+                          : t('settings.unlockPremiumFeatures')}
                       </Text>
                     </View>
                     {isProMember ? (
                       <TouchableOpacity
                         onPress={handleOpenCancellationModal}
                         className="bg-red/10 px-4 py-2 rounded-lg border border-red">
-                        <Text className="font-feather text-red">Cancel</Text>
+                        <Text className="font-feather text-red">{t('settings.cancel')}</Text>
                       </TouchableOpacity>
                     ) : (
                       <TouchableOpacity
                         onPress={handleSubscriptionPress}
                         className="bg-[#FFE07D] px-4 py-2 rounded-lg">
-                        <Text className="font-feather text-textPrimary">Upgrade</Text>
+                        <Text className="font-feather text-textPrimary">{t('settings.upgrade')}</Text>
                       </TouchableOpacity>
                     )}
                   </View>
@@ -1477,9 +1527,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   onPress={handleOpenReferralModal}
                   className="bg-white rounded-xl p-4 mt-2 shadow-sm flex-row justify-between items-center">
                   <View>
-                    <Text className="font-feather text-base text-textPrimary">Referral Code</Text>
+                    <Text className="font-feather text-base text-textPrimary">{t('settings.referralCode')}</Text>
                     <Text className="font-din text-description mt-1">
-                      Enter a referral code to unlock special features
+                      {t('settings.referralCodeDescription')}
                     </Text>
                   </View>
                   <Feather name="gift" size={20} color="#B89B4C" />
@@ -1488,7 +1538,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
               {/* User ID Section - Moved to bottom */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>User ID</Text>
+                <Text style={styles.settingsSectionTitle}>{t('settings.userId')}</Text>
                 <TouchableOpacity onPress={handleCopyUserId} style={styles.userIdContainer}>
                   <Text style={styles.userIdText} numberOfLines={1} ellipsizeMode="tail">
                     {userId}
@@ -1503,14 +1553,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               {isUserSignedIn && (
                 <>
                   <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
-                    <Text style={styles.signOutText}>Sign Out</Text>
+                    <Text style={styles.signOutText}>{t('settings.signOut')}</Text>
                   </TouchableOpacity>
 
                   {/* Delete Account Button */}
                   <TouchableOpacity
                     onPress={handleDeleteAccount}
                     style={styles.deleteAccountButton}>
-                    <Text style={styles.deleteAccountText}>Delete Account</Text>
+                    <Text style={styles.deleteAccountText}>{t('settings.deleteAccount')}</Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -1913,6 +1963,56 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               onPress={() => setCancellationModalVisible(false)}
               className="bg-textPrimary/10 rounded-xl p-4">
               <Text className="font-din text-textPrimary text-center">Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Language Selection Modal */}
+      <Modal
+        visible={languageModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={handleCancelLanguageChange}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{t('settings.language')}</Text>
+
+            <ScrollView style={styles.translationScrollView} showsVerticalScrollIndicator={false}>
+              {getSupportedLanguages().map((language) => (
+                <TouchableOpacity
+                  key={language.code}
+                  style={[
+                    styles.translationOption,
+                    getCurrentLanguage() === language.code && styles.selectedTranslation,
+                  ]}
+                  onPress={() => handleLanguageChange(language.code)}>
+                  <View style={{ flex: 1 }}>
+                    <Text
+                      style={[
+                        styles.translationOptionText,
+                        getCurrentLanguage() === language.code && styles.selectedTranslationText,
+                      ]}>
+                      {language.nativeName}
+                    </Text>
+                    <Text
+                      style={[
+                        styles.translationOptionText,
+                        { fontSize: 14, opacity: 0.7, marginTop: 2 },
+                        getCurrentLanguage() === language.code && styles.selectedTranslationText,
+                      ]}>
+                      {language.name}
+                    </Text>
+                  </View>
+                  {getCurrentLanguage() === language.code && (
+                    <Feather name="check" size={18} color="#F7B500" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <TouchableOpacity style={styles.cancelButton} onPress={handleCancelLanguageChange}>
+              <Text style={styles.cancelButtonText}>{t('common.cancel')}</Text>
             </TouchableOpacity>
           </View>
         </View>

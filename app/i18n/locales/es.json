@@ -205,6 +205,16 @@
     }
   },
   "home": {
+    "shepherd": "Pastor",
+    "level": "Nivel",
+    "increaseStreak": "¡Aumenta tu racha!",
+    "completeDailyBreadReading": "Completa tu lectura del pan diario para construir tu racha.",
+    "unlockSkins": "¡Desbloquea skins en nivel 10!",
+    "customizeLamb": "Personaliza tu cordero con skins especiales de la tienda.",
+    "errorLoadingAnimation": "Error cargando animación:",
+    "feedYourSoul": "Alimenta tu alma con las escrituras",
+    "refreshYourSpirit": "Refresca tu espíritu con oración",
+    "pauseAndMeet": "Pausa y encuéntrate con Dios",
     "dailyBread": "Pan Diario – Leer",
     "dailyBreadSubtitle": "Alimenta tu alma con las escrituras",
     "livingWater": "Agua Viva – Orar",
@@ -214,10 +224,16 @@
     "prayer": "Oración",
     "reflect": "Reflexionar",
     "finishReading": "Terminar Lectura",
-    "level": "Nivel",
     "hearts": "Corazones",
     "xp": "XP",
-    "howToAddWidget": "Cómo Agregar Widget"
+    "howToAddWidget": "Cómo Añadir Widget",
+    "goodMorning": "Buenos días",
+    "goodAfternoon": "Buenas tardes",
+    "goodEvening": "Buenas noches",
+    "streakDays": "días seguidos",
+    "welcomeBack": "¡Bienvenido de vuelta!",
+    "timeToRead": "Hora de leer",
+    "continueReading": "Continuar leyendo"
   },
   "stats": {
     "title": "Estadísticas",

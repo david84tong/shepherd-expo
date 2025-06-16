@@ -31,6 +31,7 @@ import { useAssetsStore, imageAssets } from '../stores/assetsStore';
 import { useAssets } from 'expo-asset';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
+import { useTranslation } from '../hooks/useTranslation';
 
 import analytics from '~/utils/analytics';
 import WidgetHowToSheet from '../../components/WidgetHowToSheet';
@@ -158,6 +159,7 @@ const toastConfig: ToastConfig = {
 };
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const riveRef = useRef<RiveRef>(null);
   const [riveError, setRiveError] = useState<RNRiveError | null>(null);
   const navigation = useNavigation();
@@ -1085,7 +1087,7 @@ export default function HomeScreen() {
                       textShadowOffset: { width: 0, height: 1 },
                       textShadowRadius: 2,
                     }}>
-                    {'Shepherd'}
+                    {t('home.shepherd')}
                   </Text>
                 )}
                 <View className="flex-row gap-2 justify-end ml-2">
@@ -1123,7 +1125,7 @@ export default function HomeScreen() {
                       {!isLevelPillExpanded ? (
                         <ProgressPill
                           value={0}
-                          label={(lambHearts > 0 ? levelInfo.level : '0')?.toString?.()}
+                          label={(lambHearts > 0 ? levelInfo.level : 0).toString()}
                           icon={starIcon}
                         />
                       ) : (
@@ -1154,7 +1156,7 @@ export default function HomeScreen() {
                             style={{ opacity: levelPillOpacityAnim }}>
                             <View className="flex-row items-center justify-between">
                               <Text className="font-feather text-body text-description">
-                                Level {levelInfo.level}
+                                {t('home.level')} {levelInfo.level}
                               </Text>
                               <Text className="font-din text-xs text-description mt-0.5 mr-2">
                                 {/* Show actual XP values: current XP / XP needed for next level */}
@@ -1195,15 +1197,15 @@ export default function HomeScreen() {
                           analytics.logEvent('HomeScreen_Tapped_Star');
                           Toast.show({
                             type: 'info',
-                            text1: 'Increase your streak!',
-                            text2: 'Complete your daily bread reading to build your streak.',
+                            text1: t('home.increaseStreak'),
+                            text2: t('home.completeDailyBreadReading'),
                             position: 'top',
                             visibilityTime: 4000,
                           });
                         }}>
                         <ProgressPill
                           value={0}
-                          label={streakCount?.toString?.()}
+                          label={streakCount?.toString?.() || '0'}
                           icon={flameIcon}
                         />
                       </TouchableOpacity>
@@ -1214,13 +1216,13 @@ export default function HomeScreen() {
                           // Show toast message using Toast component
                           Toast.show({
                             type: 'info',
-                            text1: 'Unlock skins at lvl 10!',
-                            text2: 'Customize your lamb with special skins from the shop.',
+                            text1: t('home.unlockSkins'),
+                            text2: t('home.customizeLamb'),
                             position: 'top',
                             visibilityTime: 4000,
                           });
                         }}>
-                        <ProgressPill value={0} label={gens?.toString?.()} icon={gemIcon} />
+                        <ProgressPill value={0} label={gens?.toString?.() || '0'} icon={gemIcon} />
                       </TouchableOpacity>
                     </>
                   )}
@@ -1246,7 +1248,7 @@ export default function HomeScreen() {
             <Animated.View className="items-center justify-center" style={{}}>
               {riveError ? (
                 <Text className="text-red-500 p-4 text-center">
-                  Error loading animation: {riveError.message} ({riveError.type})
+                  {t('home.errorLoadingAnimation')} {riveError.message} ({riveError.type})
                 </Text>
               ) : (
                 <>
@@ -1378,23 +1380,23 @@ export default function HomeScreen() {
                 <View className="flex-1 h-4 bg-pillBorder rounded-full overflow-hidden">
                   <View
                     className="h-full bg-red rounded-full"
-                    style={{ width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%` }}
+                    style={{ width: `${Math.min(100, ((lambHearts || 0) / MAX_HEARTS) * 100)}%` }}
                   />
                 </View>
               </View>
 
               <SecondaryButton
                 icon={breadIcon}
-                title="Daily Bread – Read"
-                subtitle="Feed your soul with scripture"
+                title={t('home.dailyBread')}
+                subtitle={t('home.feedYourSoul')}
                 points={25}
                 onPress={handleReadPress}
                 completed={readingCompleted}
               />
               <SecondaryButton
                 icon={dropIcon}
-                title="Living Water – Pray"
-                subtitle="Refresh your spirit with prayer"
+                title={t('home.livingWater')}
+                subtitle={t('home.refreshYourSpirit')}
                 points={25}
                 onPress={handlePrayerPress}
                 completed={prayerCompleted}
@@ -1402,8 +1404,8 @@ export default function HomeScreen() {
               />
               <SecondaryButton
                 icon={quillIcon}
-                title="Quiet Time – Reflect"
-                subtitle="Pause and meet with God"
+                title={t('home.quietTime')}
+                subtitle={t('home.pauseAndMeet')}
                 points={25}
                 onPress={handleReflectionPress}
                 completed={reflectionCompleted}
