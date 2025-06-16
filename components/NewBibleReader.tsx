@@ -57,6 +57,7 @@ import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { BibleVerseActionBar } from './BibleVerseActionBar';
 import { RPH } from '~/app/helper/helper';
 import { ImageBackground } from 'expo-image';
+import { IS_ANDROID } from '~/app/utils/utils';
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
 const MIN_FONT_SIZE = 14;
@@ -1661,28 +1662,22 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       </SafeAreaView>
     );
   }
-
   // Render chat view if active
   if (showChatView && selectedVerse && chapterData) {
     return (
       <VerseChatView
-        verse={selectedVerse}
-        bookName={chapterData.book}
-        chapter={chapterData.chapter}
-        onClose={handleCloseChatView}
+      verse={selectedVerse}
+      bookName={chapterData.book}
+      chapter={chapterData.chapter}
+      onClose={handleCloseChatView}
       />
     );
   }
-
+  
   const versesToShow: Verse[] = chapterData.verses.slice(0, currentIndex + 1);
-
   return (
-    <View style={{ flex: 1 }}>
-      <StatusBar translucent backgroundColor="transparent" barStyle={'dark-content'} />
-      <Animated.View
-        className="flex-1"
-        style={{ opacity: 1 }}>
-        <Animated.View style={[{ position: 'absolute', width: '100%', height: '100%' }]}>
+ <View className='flex-1'>
+      <Animated.View style={{ position: 'absolute', width: '100%', height: '100%' }}>
           <ImageBackground
             source={require('../assets/backgrounds/mainBackground2.png')}
             style={{ width: '100%', height: '100%' }}>
@@ -1692,12 +1687,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             />
           </ImageBackground>
         </Animated.View>
-       
-
         <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
           <View
             className="bg-surfaceCream rounded-t-card "
-            style={{ width: '100%', height: '95%', position: 'absolute', bottom: 0 }}>
+            style={{ width: '100%', height: IS_ANDROID ? '85%' : '95%', position: 'absolute', bottom: 0 }}>
             {/* Title and Navigation Arrows Row */}
            
               <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -2071,8 +2064,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             )}
           </View>
         </SafeAreaView>
-      </Animated.View >
-      {isBibleReaderScreen ? (
+        {isBibleReaderScreen ? (
         <BibleVerseActionBar
           reference={`${chapterData?.book} ${chapterData?.chapter}`}
           onVersePress={handleOpenSelector}
@@ -2081,13 +2073,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         />
       ) : null}
 
-
-
-
-
-
-    </View>
-  );
+ </View> 
+)
 };
 
 const styles = StyleSheet.create({

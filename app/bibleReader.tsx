@@ -218,6 +218,7 @@ import Animated from 'react-native-reanimated';
 import { responsiveFontSize, responsiveHeight } from 'react-native-responsive-dimensions';
 import { Feather, MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IS_ANDROID } from './utils/utils';
 
 // Add at the top of the file, after imports
 const chapterCache = new Map<string, any>();
@@ -1152,7 +1153,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     return (
       <>
         <StatusBar translucent backgroundColor="transparent" />
-        <View style={{ flex: 1 }}>
+        <View className='bg-surfaceCream/80' style={{ flex: 1, }}>
           {loading ? (
             <PulsingDotsIndicator />
           ) : (
@@ -1324,7 +1325,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           <SafeAreaView className="flex-1">
             <View
               className="bg-surfaceCream rounded-t-card"
-              style={{ width: "100%", height: "95%", position: 'absolute', bottom: 0 }}>
+              style={{ width: "100%", height:IS_ANDROID ? '85%' : "95%", position: 'absolute', bottom: 0 }}>
               <View>
                 {/* Title and Settings Row */}
                 <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
