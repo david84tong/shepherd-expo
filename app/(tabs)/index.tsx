@@ -431,6 +431,12 @@ export default function HomeScreen() {
 
   // Bottom sheet ref and snap points
   const bottomSheetRef = useRef<BottomSheet>(null);
+  
+  // Store the bottomSheetRef and riveRef in homeStore for access from other components
+  useEffect(() => {
+    useHomeStore.getState().setBottomSheetRef(bottomSheetRef);
+    useHomeStore.getState().setRiveRef(riveRef);
+  }, []);
   // Remove the old snapPoints declaration here
   // ...
   // Keep only the new conditional snapPoints definition
@@ -1648,140 +1654,142 @@ const buttonTitle = showDevotionalContent ? 'Continue' : 'Complete Prayer';
                     textShadowOffset: { width: 0, height: 1 },
                     textShadowRadius: 2,
                   }}>
-                  {'Shepherd'}
+                  {showDevotionalContent ? 'Reading' : showPrayerContent ? 'Praying' : showJournalContent ? 'Reflecting' : 'Shepherd'}
                 </Text>
-                <View className="flex-row gap-2 justify-end ml-2">
-                  <TouchableOpacity
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      analytics.logEvent('HomeScreen_Tapped_Level');
-                      // Add detailed analytics for XP progress tap
-                      analytics.logEvent('HomeScreen_Tapped_XpProgress', {
-                        level: levelInfo.level,
-                        currentXp: levelInfo.xp,
-                        nextLevelXp: levelInfo.xpForNextLevel,
-                        progress: Math.round(levelInfo.progress),
-                      });
-                      // Toggle expanded state
-                      setIsLevelPillExpanded(!isLevelPillExpanded);
+                {!showDevotionalContent && !showPrayerContent && !showJournalContent && (
+                  <View className="flex-row gap-2 justify-end ml-2">
+                    <TouchableOpacity
+                      onPress={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        analytics.logEvent('HomeScreen_Tapped_Level');
+                        // Add detailed analytics for XP progress tap
+                        analytics.logEvent('HomeScreen_Tapped_XpProgress', {
+                          level: levelInfo.level,
+                          currentXp: levelInfo.xp,
+                          nextLevelXp: levelInfo.xpForNextLevel,
+                          progress: Math.round(levelInfo.progress),
+                        });
+                        // Toggle expanded state
+                        setIsLevelPillExpanded(!isLevelPillExpanded);
 
-                      // Animate width and opacity
-                      Animated.parallel([
-                        Animated.timing(levelPillWidthAnim, {
-                          toValue: isLevelPillExpanded ? 0 : 1,
-                          duration: 500,
-                          easing: Easing.out(Easing.exp),
-                          useNativeDriver: false,
-                        }),
-                        Animated.timing(levelPillOpacityAnim, {
-                          toValue: isLevelPillExpanded ? 0 : 1,
-                          duration: 500,
-                          easing: Easing.out(Easing.exp),
-                          useNativeDriver: false,
-                        }),
-                      ]).start();
-                    }}>
-                    <View style={{ position: 'relative', zIndex: 2 }}>
-                      <ProgressPill
-                        value={0}
-                        label={lambHearts?.toString?.()}
-                        icon={heartIcon}
-                      />
+                        // Animate width and opacity
+                        Animated.parallel([
+                          Animated.timing(levelPillWidthAnim, {
+                            toValue: isLevelPillExpanded ? 0 : 1,
+                            duration: 500,
+                            easing: Easing.out(Easing.exp),
+                            useNativeDriver: false,
+                          }),
+                          Animated.timing(levelPillOpacityAnim, {
+                            toValue: isLevelPillExpanded ? 0 : 1,
+                            duration: 500,
+                            easing: Easing.out(Easing.exp),
+                            useNativeDriver: false,
+                          }),
+                        ]).start();
+                      }}>
+                      <View style={{ position: 'relative', zIndex: 2 }}>
+                        <ProgressPill
+                          value={0}
+                          label={lambHearts?.toString?.()}
+                          icon={heartIcon}
+                        />
 
-                      {isLevelPillExpanded && (
-                        <Animated.View
-                          className="bg-surfaceCreamLight rounded-xl overflow-hidden flex-row items-center p-2"
-                          style={{
-                            position: 'absolute',
-                            top: 40,
-                            left: '50%',
-                            transform: [
-                              {
-                                translateX: levelPillWidthAnim.interpolate({
-                                  inputRange: [0, 1],
-                                  outputRange: [0, -pillExpandedWidth / 2],
-                                }),
-                              },
-                            ],
-                            width: levelPillWidthAnim.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [40, pillExpandedWidth],
-                            }),
-                          }}
-                          onLayout={() => {
-                            // Debug log to verify the XP calculation
-                            console.log(
-                              `Level Pill Debug - Level: ${levelInfo.level}, Total XP: ${levelInfo.xp}`
-                            );
-                            console.log(
-                              `XP to next level: ${levelInfo.xpProgress}/${levelInfo.xpNeeded} (${Math.round(levelInfo.progress)}%)`
-                            );
-                          }}>
-                          <View
+                        {isLevelPillExpanded && (
+                          <Animated.View
+                            className="bg-surfaceCreamLight rounded-xl overflow-hidden flex-row items-center p-2"
                             style={{
-                              flexDirection: 'row',
-                              alignItems: 'center',
-                              paddingRight: 10,
+                              position: 'absolute',
+                              top: 40,
+                              left: '50%',
+                              transform: [
+                                {
+                                  translateX: levelPillWidthAnim.interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: [0, -pillExpandedWidth / 2],
+                                  }),
+                                },
+                              ],
+                              width: levelPillWidthAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [40, pillExpandedWidth],
+                              }),
+                            }}
+                            onLayout={() => {
+                              // Debug log to verify the XP calculation
+                              console.log(
+                                `Level Pill Debug - Level: ${levelInfo.level}, Total XP: ${levelInfo.xp}`
+                              );
+                              console.log(
+                                `XP to next level: ${levelInfo.xpProgress}/${levelInfo.xpNeeded} (${Math.round(levelInfo.progress)}%)`
+                              );
                             }}>
-                            <Image source={heartIcon} className="w-7 h-7" />
-                            <Image source={starIcon} tintColor={'#FF8800'} className="w-7 h-7" />
-                          </View>
-
-                          <View style={{ width: '80%' }}>
-                            <View className="h-2 bg-red/25 rounded-md overflow-hidden">
-                              <View
-                                className="h-full bg-red rounded-full"
-                                style={{
-                                  width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%`,
-                                }}
-                              />
+                            <View
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                paddingRight: 10,
+                              }}>
+                              <Image source={heartIcon} className="w-7 h-7" />
+                              <Image source={starIcon} tintColor={'#FF8800'} className="w-7 h-7" />
                             </View>
 
-                            <View className="h-2 bg-orange/25 rounded-full overflow-hidden mt-1 ">
-                              <View
-                                className="h-full bg-orange rounded-full"
-                                style={{
-                                  width: `${Math.max(Math.min(levelInfo.progress, 100), 1)}%`,
-                                }}
-                              />
+                            <View style={{ width: '80%' }}>
+                              <View className="h-2 bg-red/25 rounded-md overflow-hidden">
+                                <View
+                                  className="h-full bg-red rounded-full"
+                                  style={{
+                                    width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%`,
+                                  }}
+                                />
+                              </View>
+
+                              <View className="h-2 bg-orange/25 rounded-full overflow-hidden mt-1 ">
+                                <View
+                                  className="h-full bg-orange rounded-full"
+                                  style={{
+                                    width: `${Math.max(Math.min(levelInfo.progress, 100), 1)}%`,
+                                  }}
+                                />
+                              </View>
                             </View>
-                          </View>
-                        </Animated.View>
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                  <>
-                    <TouchableOpacity
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        analytics.logEvent('HomeScreen_Tapped_Gems');
-                        // Show toast message using Toast component
-                        Toast.show({
-                          type: 'info',
-                          text1: 'Unlock skins at lvl 10!',
-                          text2: 'Customize your lamb with special skins from the shop.',
-                          position: 'top',
-                          visibilityTime: 4000,
-                        });
-                      }}>
-                      <ProgressPill value={0} label={gens?.toString?.()} icon={gemIcon} />
+                          </Animated.View>
+                        )}
+                      </View>
                     </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                        analytics.logEvent('HomeScreen_Tapped_Streak');
-                        Toast.show({
-                          type: 'info',
-                          text1: 'Increase your streak!',
-                          text2: 'Complete your daily bread reading to build your streak.',
-                          position: 'top',
-                          visibilityTime: 4000,
-                        });
-                      }}>
-                      <ProgressPill value={0} label={streakCount?.toString?.()} icon={flameIcon} />
-                    </TouchableOpacity>
-                  </>
-                </View>
+                    <>
+                      <TouchableOpacity
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          analytics.logEvent('HomeScreen_Tapped_Gems');
+                          // Show toast message using Toast component
+                          Toast.show({
+                            type: 'info',
+                            text1: 'Unlock skins at lvl 10!',
+                            text2: 'Customize your lamb with special skins from the shop.',
+                            position: 'top',
+                            visibilityTime: 4000,
+                          });
+                        }}>
+                        <ProgressPill value={0} label={gens?.toString?.()} icon={gemIcon} />
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        onPress={() => {
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                          analytics.logEvent('HomeScreen_Tapped_Streak');
+                          Toast.show({
+                            type: 'info',
+                            text1: 'Increase your streak!',
+                            text2: 'Complete your daily bread reading to build your streak.',
+                            position: 'top',
+                            visibilityTime: 4000,
+                          });
+                        }}>
+                        <ProgressPill value={0} label={streakCount?.toString?.()} icon={flameIcon} />
+                      </TouchableOpacity>
+                    </>
+                  </View>
+                )}
               </View>
             </Animated.View>
 
@@ -2278,10 +2286,7 @@ const buttonTitle = showDevotionalContent ? 'Continue' : 'Complete Prayer';
           >
          {showDevotionalContent &&    <View className='flex-row    items-center w-full justify-between'>
                 {/* {cardsToShow[0]?.reference && ( */}
-                    <Text className="font-feather-bold text-[20px] text-brown/60 mb-2" style={{letterSpacing:0.2}}>
-                      {/* {cardsToShow[0].reference} */}
-                      {currentVerseReference}
-                    </Text>
+             
                   {/* )} */}
                   {/* Top right icons */}
                   <View className="flex-row gap-3">

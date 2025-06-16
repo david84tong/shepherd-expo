@@ -524,7 +524,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                 fontWeight: "400",
               }}
             >
-              Reading
+              {currentDevotional?.bibleReference || "Reading"}
             </Text>
 
             {onClose && (
