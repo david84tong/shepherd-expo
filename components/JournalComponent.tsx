@@ -243,8 +243,13 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       
       // When textinput is focused, update bottomSheet to 90% in index.tsx
       if (visible && inputRef.current?.isFocused()) {
-        // Access bottomSheetRef from index.tsx
+        // Access bottomSheetRef from index.tsx and snap to 90%
         useHomeStore.getState().setKeyboardVisible(true);
+        // Get the bottomSheetRef from homeStore and snap to higher position (90%)
+        const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
+        if (bottomSheetRef?.current) {
+          bottomSheetRef.current.snapToIndex(6); // Index 6 is 90% in snapPoints array
+        }
       }
     };
 
@@ -252,8 +257,13 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       setKeyboardHeight(0);
       setKeyboardVisible(false);
       
-      // Reset keyboard visibility in homeStore
+      // Reset keyboard visibility in homeStore and snap back to original position
       useHomeStore.getState().setKeyboardVisible(false);
+      // Get the bottomSheetRef from homeStore and snap back to default position (80%)
+      const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
+      if (bottomSheetRef?.current) {
+        bottomSheetRef.current.snapToIndex(4); // Index 4 is 80% in snapPoints array
+      }
     };
 
     const keyboardDidShowListener = Keyboard.addListener(
@@ -355,12 +365,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
         delay: 500,
       }).start();
 
-      // Focus the input after animations complete
-      const timer = setTimeout(() => {
-        inputRef.current?.focus();
-      }, 600);
-
-      return () => clearTimeout(timer);
+      // Don't auto-focus the input - let user tap to focus manually
     } else {
       // Reset animations when hiding
       containerOpacity.setValue(0);
@@ -466,14 +471,13 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     };
   }, [bottomContentOpacity, bottomContentAnimY, keyboardVisible, keyboardHeight]);
 
-  // Animated background style – transition between `surfaceCream` (#FDEBB8)
-  // and its lighter variant `surfaceCreamLight` (#FFF1C9) for a subtle glow.
+  // Animated background style – using surfaceCream (#FDEBB8) as the base color
   const animatedBackgroundStyle = useAnimatedStyle(() => {
     const progress = backgroundGlow.value;
-    // srurfaceCream  -> surfaceCreamLight
-    const r = interpolate(progress, [0, 1], [253, 255]); // 253 -> 255
-    const g = interpolate(progress, [0, 1], [235, 241]); // 235 -> 241
-    const b = interpolate(progress, [0, 1], [184, 201]); // 184 -> 201
+    // Use #FDEBB8 as base color with subtle glow animation
+    const r = interpolate(progress, [0, 1], [253, 255]); // 253 (FD) -> slightly lighter
+    const g = interpolate(progress, [0, 1], [235, 241]); // 235 (EB) -> slightly lighter
+    const b = interpolate(progress, [0, 1], [184, 190]); // 184 (B8) -> slightly lighter
 
     return {
       backgroundColor: `rgb(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)})`,
@@ -575,6 +579,25 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       useHomeStore.getState().setShowGlobalButtons(false);
       setJournalViewVisible(false);
       setPathInProgress(false);
+      
+      // Reset Rive animation to idle state
+      const homeStore = useHomeStore.getState();
+      const riveRef = homeStore.riveRef;
+      if (riveRef?.current?.setInputState) {
+        try {
+          riveRef.current.setInputState('State Machine 1', 'Action-Number', 0); // 0 = Idle
+          console.log('Reset Rive animation to idle state');
+        } catch (error) {
+          console.log('Could not reset Rive state:', error);
+        }
+      }
+      
+      // Reset bottom sheet to original position
+      const bottomSheetRef = homeStore.bottomSheetRef;
+      if (bottomSheetRef?.current) {
+        bottomSheetRef.current.snapToIndex(0); // Return to original closed position
+      }
+      
       analytics.logEvent('Journal_Tapped_Cancel', {
         prompt: currentPath?.reflection,
         devotionalId: currentDevotional?.id || null,
@@ -662,8 +685,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     </Reanimated.View>
   ) : (
     <Reanimated.View
-      className="flex-1 w-full"
-      style={[animatedBackgroundStyle, componentAnimatedStyle]}
+      className="flex-1 w-full mt-2 bg-surfaceCream"
       pointerEvents="box-none">
       <Animated.View style={{ opacity: containerOpacity, flex: 1 }}>
       <View className="flex-1 px-6">
@@ -701,6 +723,25 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
               useHomeStore.getState().setShowGlobalButtons(false);
               setJournalViewVisible(false);
               setPathInProgress(false);
+              
+              // Reset Rive animation to idle state
+              const homeStore = useHomeStore.getState();
+              const riveRef = homeStore.riveRef;
+              if (riveRef?.current?.setInputState) {
+                try {
+                  riveRef.current.setInputState('State Machine 1', 'Action-Number', 0); // 0 = Idle
+                  console.log('Reset Rive animation to idle state');
+                } catch (error) {
+                  console.log('Could not reset Rive state:', error);
+                }
+              }
+              
+              // Reset bottom sheet to original position
+              const bottomSheetRef = homeStore.bottomSheetRef;
+              if (bottomSheetRef?.current) {
+                bottomSheetRef.current.snapToIndex(0); // Return to original closed position
+              }
+              
               analytics.logEvent('Journal_Tapped_Cancel', {
                 prompt: currentPath?.reflection,
                 devotionalId: currentDevotional?.id || null,

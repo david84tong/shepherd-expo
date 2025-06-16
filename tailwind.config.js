@@ -20,6 +20,7 @@ module.exports = {
         lightBrown: '#FBCA71',
         brightYellow: '#FFD629',
         lightGreen: '#D2FFC6',
+        
         darkGreen: '#24CA17',
         accentGold: '#FCD34D', // Buttons, progress, XP fill
         surfaceCream: '#FDEBB8', // Card backgrounds, pills

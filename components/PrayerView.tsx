@@ -10,6 +10,8 @@ import {
   Switch,
   Animated,
 } from 'react-native';
+
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePrayerStore } from '~/app/stores/prayerStore';
 import { useHomeStore } from '~/app/stores/homeStore';
@@ -22,7 +24,6 @@ import Reanimated, {
   useSharedValue,
   withTiming,
   withRepeat,
-  withSequence,
   Layout,
   Easing,
   interpolate,
@@ -113,28 +114,18 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
       
       // Add a small delay to allow component to settle and reduce lag
       startupTimer.current = setTimeout(() => {
-        // Start breathing animation with a gentle fade-in
-        breathingProgress.value = withTiming(0.3, { duration: 800 }, () => {
-          // Then start the main breathing loop
-          breathingProgress.value = withRepeat(
-            withSequence(
-              withTiming(1, {
-                duration: 4000,
-                easing: Easing.inOut(Easing.ease)
-              }, () => {
-                runOnJS(triggerHaptic)();
-              }),
-              withTiming(0, {
-                duration: 4000,
-                easing: Easing.inOut(Easing.ease)
-              }, () => {
-                runOnJS(triggerHaptic)();
-              })
-            ),
-            -1, // Infinite repeat
-            false // Don't reverse
-          );
-        });
+        // Begin a smooth inhale ↔ exhale cycle (autoreverse produces a natural loop)
+        breathingProgress.value = withRepeat(
+          withTiming(1, {
+            duration: 4000,
+            easing: Easing.inOut(Easing.ease),
+          }, () => {
+            // Haptic feedback at the peak of each inhale / exhale
+            runOnJS(triggerHaptic)();
+          }),
+          -1,   // infinite
+          true  // autoreverse (1 → 0 uses the same curve)
+        );
       }, 300); // 300ms delay to allow smooth transition
     } else if (!isActive && animationStarted.current) {
       animationStarted.current = false;
@@ -171,22 +162,6 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
       shadowRadius: glowRadius,
       elevation: 8, // Reduced elevation for better performance
     };
-  });
-
-  // Breathing text animation for "BE STILL"
-  const beStillTextStyle = useAnimatedStyle(() => {
-    const progress = breathingProgress.value;
-    // Show "Be Still" during inhale (0-0.5 of cycle)
-    const opacity = progress < 0.5 ? 1 : 0;
-    return { opacity };
-  });
-
-  // Breathing text animation for "BREATHE"
-  const breatheTextStyle = useAnimatedStyle(() => {
-    const progress = breathingProgress.value;
-    // Show "Breathe" during exhale (0.5-1 of cycle)
-    const opacity = progress >= 0.5 ? 1 : 0;
-    return { opacity };
   });
 
   return (
@@ -229,69 +204,6 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
         },
         centerCircleStyle
       ]} />
-
-      {/* Breathing instruction text */}
-      <View style={{ position: 'absolute', pointerEvents: 'none' }}>
-        {guidedPrayerEnabled ? (
-          <TypingText
-            text={(() => {
-              if (currentDevotional?.prayer) {
-                if (typeof currentDevotional.prayer === 'string') {
-                  return currentDevotional.prayer;
-                } else if (typeof currentDevotional.prayer === 'object' && (currentDevotional.prayer as any).en) {
-                  return (currentDevotional.prayer as any).en;
-                }
-              }
-              return "Dear God, I come before you today with a grateful heart. Please guide me through this day and help me grow in faith. Amen.";
-            })()}
-            className="text-yellow-700 font-feather text-xl m-12 text-center"
-            baseTextStyle={{
-              color: '#B45309',
-              fontSize: 20,
-              fontFamily: 'Nunito-Black',
-              textAlign: 'center',
-              lineHeight: 28,
-              margin: 48
-            }}
-            speed={50}
-            skipAnimation={false}
-          />
-        ) : (
-          <>
-            <Reanimated.Text 
-              style={[
-                {
-                  color: '#B45309',
-                  fontSize: 18,
-                  fontFamily: 'Nunito-Black',
-                  textAlign: 'center',
-                  textTransform: 'uppercase',
-                  letterSpacing: 1,
-                },
-                beStillTextStyle
-              ]}>
-              {/* {'BE STILL'} */}
-            </Reanimated.Text>
-            
-            <Reanimated.Text 
-              style={[
-                {
-                  color: '#B45309',
-                  fontSize: 18,
-                  fontFamily: 'Nunito-Black',
-                  textAlign: 'center',
-                  textTransform: 'uppercase',
-                  letterSpacing: 1,
-                  position: 'absolute',
-                  alignSelf: 'center',
-                },
-                breatheTextStyle
-              ]}>
-              {'BREATHE'}
-            </Reanimated.Text>
-          </>
-        )}
-      </View>
     </View>
   );
 };
@@ -1129,16 +1041,16 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
           </View>
 
           {/* Bible Reference Header */}
-          <View className="flex-row items-center justify-center mb-4">
+          {/* <View className="flex-row items-center justify-center mb-4">
             <Text className="font-feather-bold text-textPrimary/80 text-center text-2xl">
               {currentDevotional?.bibleReference || "John 14:6"}
             </Text>
-          </View>
+          </View> */}
 
           {/* Breathing Animation - Show initially */}
           {showBreathingAnimation && (
             <TouchableWithoutFeedback onPress={toggleControlRow}>
-              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -400 }}>
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -SCREEN_HEIGHT * 0.5 }}>
                 <BreathingAnimation isActive={showBreathingAnimation} breathingProgress={breathingProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} currentDevotional={currentDevotional} />
               </View>
             </TouchableWithoutFeedback>

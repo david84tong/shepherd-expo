@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import React from 'react';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -23,6 +24,8 @@ interface HomeState {
   showStreakScreen: boolean; // Track if streak screen should be shown
   keyboardVisible: boolean; // Track if keyboard is visible for journal
   journalViewVisible: boolean;
+  bottomSheetRef: React.RefObject<any> | null;
+  riveRef: React.RefObject<any> | null;
 
   // Completion tracking states
   readingCompleted: boolean;
@@ -51,6 +54,8 @@ interface HomeState {
   setShowGlobalButtons: (show: boolean) => void;
   setKeyboardVisible: (visible: boolean) => void; // Control keyboard visibility state
   setJournalViewVisible: (visible: boolean) => void;
+  setBottomSheetRef: (ref: React.RefObject<any> | null) => void;
+  setRiveRef: (ref: React.RefObject<any> | null) => void;
 }
 
 /**
@@ -69,6 +74,8 @@ export const useHomeStore = create<HomeState>()(
       showGlobalButtons: false,
       keyboardVisible: false,
       journalViewVisible: false,
+      bottomSheetRef: null,
+      riveRef: null,
       // Default completion states
       readingCompleted: false,
       prayerCompleted: false,
@@ -103,6 +110,8 @@ export const useHomeStore = create<HomeState>()(
       setShowGlobalButtons: (show) => set({ showGlobalButtons: show }),
       setKeyboardVisible: (visible) => set({ keyboardVisible: visible }),
       setJournalViewVisible: (visible) => set({ journalViewVisible: visible }),
+      setBottomSheetRef: (ref) => set({ bottomSheetRef: ref }),
+      setRiveRef: (ref) => set({ riveRef: ref }),
       resetCompletionStates: () => {
         console.log('🔍 HOMESTORE - resetCompletionStates called - BEFORE reset:', {
           currentState: {
