@@ -530,6 +530,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           };
       loadSettings();
     }, []);
+console.log("loading=========>",loading);
 
   // Helper function to load a chapter
   const loadChapter = useCallback(
@@ -630,10 +631,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         }
         isInitialRender.current = false;
       });
-    } else {
-      loadChapter(bookId, chapter);
     }
-  }, [bookId, chapter, loadChapter, translation]);
+    // Remove the else block that was causing the issue
+  }, [bookId, chapter, translation]);
 
   useEffect(() => {
     if (chapterData?.verses?.length) {
