@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#3C584A',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito',
     fontSize: 18, // textPrimary
   },
   listContainer: {
