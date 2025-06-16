@@ -540,7 +540,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         const res = await fetchChapter(translation, bookId, chapter);
         if ('error' in res) {
           console.error(res.message);
-        
+          setLoading(false);
           return false;
         } else {
           // Update internal tracking of current book and chapter
@@ -558,17 +558,15 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           // Save to the store for persistence (same as regular BibleReader)
           setSavedReading(res.book, bookId, res.chapter);
           
-        
           return true;
         }
       } catch (error) {
         console.error('Error loading chapter:', error);
-       
-        return false;
-      }finally{
-     
         setLoading(false);
-     
+        return false;
+      } finally {
+        // Ensure loading is set to false in all cases
+        setLoading(false);
       }
     },
     [translation, setSavedReading]
