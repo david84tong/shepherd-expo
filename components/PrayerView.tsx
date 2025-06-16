@@ -923,16 +923,22 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
             const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
             const sawDailyBonus = useHomeStore.getState().sawDailyBonus;
             const setSuccessType = useHomeStore.getState().setSuccessType;
-            if (readingCompleted && reflectionCompleted && isFirstReadingOfDay) {
+            if (readingCompleted && reflectionCompleted && sawDailyBonus) {
               const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
               const setSawDailyBonus = useHomeStore.getState().setSawDailyBonus;
               setSawStreakToday(true);
               setSawDailyBonus(true);
-              router.push('/streak')
-            }else if(!sawDailyBonus) {
-              setSuccessType(SuccessAnimationType.BONUS);
-              router.push('/success');
+              router.push({
+                pathname: '/success',
+                params: {
+                  showStreakScreen: 'true'
+                }
+              })
             }
+            // else if(!sawDailyBonus) {
+            //   setSuccessType(SuccessAnimationType.BONUS);
+            //   router.push('/success');
+            // }
 
             // Close the prayer view
             if (onSetIdle) onSetIdle();
@@ -988,15 +994,16 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                   isReflectPresses: 'true'
                 }
               });
-            }else if(!sawDailyBonus) {
-              setSuccessType(SuccessAnimationType.BONUS);
-              router.push({
-                pathname: '/success',
-                params: {
-                  isReflectPresses: 'true'
-                }
-              });
             }
+            // else if(!sawDailyBonus) {
+            //   setSuccessType(SuccessAnimationType.BONUS);
+            //   router.push({
+            //     pathname: '/success',
+            //     params: {
+            //       isReflectPresses: 'true'
+            //     }
+            //   });
+            // }
 
             if (onSetIdle) onSetIdle();
             if (onClose) {

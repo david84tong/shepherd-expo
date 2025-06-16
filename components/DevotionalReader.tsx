@@ -452,12 +452,12 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
               const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
               // Check if we need to show streak screen
-              const sawDailyBonus = useHomeStore.getState().sawDailyBonus;              
-              const setSuccessType = useHomeStore.getState().setSuccessType;
-              if(!sawDailyBonus){
-                setSuccessType(SuccessAnimationType.BONUS);
-                router.push('/success');
-              }
+              // const sawDailyBonus = useHomeStore.getState().sawDailyBonus;              
+              // const setSuccessType = useHomeStore.getState().setSuccessType;
+              // if(!sawDailyBonus){
+              //   setSuccessType(SuccessAnimationType.BONUS);
+              //   router.push('/success');
+              // }
               onClose({isPrayPresses: false});
             }
           }}
@@ -496,17 +496,17 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
               //     }
               //   });
               // }
-              const sawDailyBonus = useHomeStore.getState().sawDailyBonus;              
-              const setSuccessType = useHomeStore.getState().setSuccessType;
-              if(!sawDailyBonus){
-                setSuccessType(SuccessAnimationType.BONUS);
-                              router.push({
-                  pathname: '/success',
-                  params: {
-                    isPrayPresses: 'true'
-                  }
-                });
-              }
+              // const sawDailyBonus = useHomeStore.getState().sawDailyBonus;              
+              // const setSuccessType = useHomeStore.getState().setSuccessType;
+              // if(!sawDailyBonus){
+              //   setSuccessType(SuccessAnimationType.BONUS);
+              //                 router.push({
+              //     pathname: '/success',
+              //     params: {
+              //       isPrayPresses: 'true'
+              //     }
+              //   });
+              // }
               onClose({isPrayPresses: true});
             }
           }}

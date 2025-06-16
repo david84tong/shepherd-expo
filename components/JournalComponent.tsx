@@ -469,17 +469,23 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             setFinishReading(false)
           }, 2000);
 
-          const sawStreakToday = useHomeStore.getState().sawStreakToday;
-          const isFirstReadingOfDay = !sawStreakToday;
-          if (readingCompleted && prayerCompleted && isFirstReadingOfDay) {
-            const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
-            const setSawDailyBonus = useHomeStore.getState().setSawDailyBonus;
-            setSawStreakToday(true);
-            setSawDailyBonus(true);
-            router.push('/streak')
-          }else if(!sawDailyBonus) {
+          // const sawStreakToday = useHomeStore.getState().sawStreakToday;
+          // const isFirstReadingOfDay = !sawStreakToday;
+          // if (readingCompleted && prayerCompleted && isFirstReadingOfDay) {
+          //   const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
+          //   const setSawDailyBonus = useHomeStore.getState().setSawDailyBonus;
+          //   setSawStreakToday(true);
+          //   setSawDailyBonus(true);
+          //   router.push('/streak')
+          // }else 
+          if(!sawDailyBonus) {
             setSuccessType(SuccessAnimationType.BONUS);
-            router.push('/success');
+            router.push({
+              pathname: '/success',
+              params: {
+                showStreakScreen: 'true'
+              }
+            });
           }else{
             onClose({isCompleted:true});
           }

@@ -41,6 +41,7 @@ interface SuccessAnimationProps {
   subMessage?: string;
   onClose?: () => void;
   isPrayPresses?: boolean;
+  showStreakScreen?: boolean;
 }
 
 // Max hearts constant
@@ -53,7 +54,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   message: propMessage,
   subMessage: propSubMessage,
   onClose: propOnClose,
-  isPrayPresses
+  isPrayPresses,
+  showStreakScreen:showStreakScreenParam
 }) => {
   const riveRef = useRef<RiveRef>(null);
   const setHomeMode = useHomeStore((state) => state.setMode);
@@ -604,12 +606,17 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     setHomeMode('DEFAULT');
 
     // Navigate without changing the successType - it will be reset in the cleanup effect
-    router.replace({
+    if(showStreakScreenParam){
+      router.push({
+        pathname: '/streak',
+      });
+    }else
+   { router.replace({
       pathname: '/(tabs)',
       params: {
         isPrayPresses: isPrayPresses
       },
-    });
+    });}
   };
 
   const triggerStreakScreen = () => {

@@ -6,7 +6,7 @@ import SuccessAnimation from '../components/SuccessAnimation';
 export default function SuccessScreen() {
   // Get the message and subMessage from the URL params
   const params = useLocalSearchParams();
-  const {isPrayPresses} = params;
+  const {isPrayPresses,showStreakScreen} = params;
   const message = (params.message as string) || 'Great job!';
   const subMessage = (params.subMessage as string) || 'You completed your reading for today.';
 
@@ -18,7 +18,7 @@ export default function SuccessScreen() {
           animation: 'slide_from_right'
         }}
       />
-      <SuccessAnimation message={message} isPrayPresses={isPrayPresses} subMessage={subMessage} />
+      <SuccessAnimation message={message} isPrayPresses={isPrayPresses} showStreakScreen={showStreakScreen} subMessage={subMessage} />
     </>
   );
 }
