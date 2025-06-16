@@ -16,11 +16,13 @@ import { OnboardingResponses } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
+import { useTranslation } from '../hooks/useTranslation';
 
 export default function OnboardingAgeRangeScreen() {
   const router = useRouter();
   const { setResponse } = useOnboardingStore();
   const { setUser } = useUserStore();
+  const { t } = useTranslation();
   const [selectedOption, setSelectedOption] = useState<OnboardingResponses['ageRange']>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -134,35 +136,35 @@ export default function OnboardingAgeRangeScreen() {
   const options = [
     {
       id: 'parent',
-      title: "I'm a parent/guardian",
+      title: t('onboarding.ageRange.parent'),
     },
     {
       id: 'under-12',
-      title: '12 or under',
+      title: t('onboarding.ageRange.under12'),
     },
     {
       id: '13-17',
-      title: '13-17',
+      title: t('onboarding.ageRange.13to17'),
     },
     {
       id: '18-24',
-      title: '18-24',
+      title: t('onboarding.ageRange.18to24'),
     },
     {
       id: '25-34',
-      title: '25-34',
+      title: t('onboarding.ageRange.25to34'),
     },
     {
       id: '35-44',
-      title: '35-44',
+      title: t('onboarding.ageRange.35to44'),
     },
     {
       id: '45-54',
-      title: '45-54',
+      title: t('onboarding.ageRange.45to54'),
     },
     {
       id: '55-64+',
-      title: '55-64+',
+      title: t('onboarding.ageRange.55plus'),
     },
   ] as const;
 
@@ -173,41 +175,11 @@ export default function OnboardingAgeRangeScreen() {
         {/* Question Text */}
         <Animated.View style={titleStyle}>
           <Text className="font-feather text-h2 text-center text-textPrimary mb-4">
-            What is your age range?
+            {t('onboarding.ageRange.title')}
           </Text>
         </Animated.View>
 
         {/* Options Container */}
-        {/* {Platform.OS === 'android' ? (
-          <Animated.View style={optionsStyle} className="space-y-4 mt-0">
-            <PrimaryButton
-              title="Select Your Birth Date"
-              onPress={() =>
-                setShowDatePicker(true)}
-              isActive
-              primaryColor={selectedOption ? 'bg-surfaceCream' : 'bg-white'}
-              textColor={selectedOption ? 'text-accentGold' : 'text-textPrimary'}
-            />
-
-            {showDatePicker && (
-              <DateTimePicker
-                value={selectedDate}
-                mode="date"
-                display="default"
-                onChange={(event, date) => {
-                  setShowDatePicker(false);
-                  if (event.type === "set" && date) {
-                    setSelectedDate(date);
-                    const ageRange = calculateAgeRange(date);
-                    handleSelection(ageRange);
-                  }
-                }}
-                minimumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 100))}
-                maximumDate={new Date(new Date().setFullYear(new Date().getFullYear() - 6))}
-              />
-            )}
-          </Animated.View>
-        ) : ( */}
         <Animated.View style={optionsStyle} className="space-y-4 mt-0">
           <ScrollView
             contentContainerStyle={{ paddingBottom: 130 }}
@@ -234,7 +206,6 @@ export default function OnboardingAgeRangeScreen() {
             </View>
           </ScrollView>
         </Animated.View>
-        {/* )} */}
         {showDatePicker && (
           <DateTimePicker
             value={selectedDate}

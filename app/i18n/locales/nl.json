@@ -1,0 +1,599 @@
+{
+  "common": {
+    "cancel": "Annuleren",
+    "done": "Klaar",
+    "continue": "Doorgaan",
+    "skip": "Overslaan",
+    "next": "Volgende",
+    "back": "Terug",
+    "save": "Opslaan",
+    "delete": "Verwijderen",
+    "edit": "Bewerken",
+    "loading": "Laden...",
+    "error": "Fout",
+    "success": "Succes",
+    "yes": "Ja",
+    "no": "Nee",
+    "ok": "OK"
+  },
+  "navigation": {
+    "map": "Kaart",
+    "bible": "Bijbel",
+    "home": "Home",
+    "stats": "Statistieken",
+    "profile": "Profiel"
+  },
+  "onboarding": {
+    "welcome": {
+      "firstText": "Elke herder begint met één verloren lam...",
+      "secondText": "Deze is van jou.",
+      "tapPrompt": "Tik om het wakker te maken",
+      "claimLamb": "Verloren Lam Claimen",
+      "beginJourney": "Reis Beginnen"
+    },
+    "subtitle": "Jouw dagelijkse spirituele metgezel",
+    "getStarted": "Beginnen",
+    "chooseTopics": "Kies je onderwerpen",
+    "selectInterests": "Selecteer waar je het meest in geïnteresseerd bent:",
+    "faith": "Geloof",
+    "prayer": "Gebed",
+    "wisdom": "Wijsheid",
+    "love": "Liefde",
+    "hope": "Hoop",
+    "peace": "Vrede",
+    "strength": "Kracht",
+    "forgiveness": "Vergeving",
+    "guidance": "Begeleiding",
+    "gratitude": "Dankbaarheid",
+    "setupComplete": "Installatie voltooid!",
+    "readyToStart": "Je bent klaar om je spirituele reis te beginnen.",
+    "letsGo": "Laten we gaan!",
+    "lambName": {
+      "title": "Hoe moeten we jouw lam noemen?",
+      "placeholder": "Voer een naam in",
+      "continue": "Doorgaan",
+      "loading": "Laden..."
+    },
+    "username": {
+      "title": "Hoe moeten we jou noemen?",
+      "placeholder": "Voer je naam in",
+      "continue": "Doorgaan"
+    },
+    "intentions": {
+      "title": "Wat brengt je hier vandaag?",
+      "subtitle": "Selecteer alle die van toepassing zijn",
+      "options": {
+        "readBible": {
+          "title": "De Bijbel lezen",
+          "description": "Begin je reis door de Schrift"
+        },
+        "talkToGod": {
+          "title": "Met God praten",
+          "description": "Leer bidden met vertrouwen"
+        },
+        "reflection": {
+          "title": "Reflectie & Stille Tijd",
+          "description": "Dagelijkse momenten van vrede met God"
+        },
+        "exploring": {
+          "title": "Gewoon aan het verkennen",
+          "description": "Ontdek op je eigen tempo"
+        },
+        "deeperFaith": {
+          "title": "Mijn geloof verdiepen",
+          "description": "Dichter bij God komen door dagelijkse praktijk"
+        },
+        "readBibleMore": {
+          "title": "Meer Bijbel lezen",
+          "description": "Een consistente leesgewoonte opbouwen"
+        },
+        "prayer": {
+          "title": "Mijn gebedsleven verbeteren",
+          "description": "Leren bidden met intentie en focus"
+        },
+        "community": {
+          "title": "Verbinden met de gemeenschap",
+          "description": "Gemeenschap en spirituele ondersteuning vinden"
+        },
+        "questions": {
+          "title": "Vragen over geloof verkennen",
+          "description": "Antwoorden en begrip zoeken"
+        },
+        "peace": {
+          "title": "Vrede en troost vinden",
+          "description": "Gods aanwezigheid ontdekken in moeilijke tijden"
+        }
+      }
+    },
+    "beliefs": {
+      "title": "Wat beschrijft je overtuigingen het beste?",
+      "options": {
+        "christian": "Ik ben een christen",
+        "exploring": "Ik verken het christendom",
+        "curious": "Ik ben nieuwsgierig naar geloof",
+        "other": "Anders/Zeg ik liever niet"
+      }
+    },
+    "familiarity": {
+      "title": "Hoe bekend ben je met de Bijbel?",
+      "options": {
+        "veryFamiliar": "Zeer bekend - Ik heb het meeste ervan gelezen",
+        "somewhatFamiliar": "Enigszins bekend - Ik ken enkele verhalen",
+        "notVeryFamiliar": "Niet erg bekend - Ik heb enkele dingen gehoord",
+        "notFamiliar": "Helemaal niet bekend"
+      }
+    },
+    "readingTime": {
+      "title": "Hoeveel tijd kun je besteden aan dagelijks lezen?",
+      "subtitle": "Dit helpt ons je ervaring aan te passen",
+      "options": {
+        "1-5": "1-5 minuten",
+        "6-10": "6-10 minuten",
+        "11-15": "11-15 minuten",
+        "16-25": "16-25 minuten",
+        "25plus": "25+ minuten"
+      }
+    },
+    "age": {
+      "title": "Wat is je leeftijd?",
+      "subtitle": "Dit helpt ons leeftijdsgeschikte content te bieden",
+      "selectBirthDate": "Selecteer je geboortedatum",
+      "parentGuardian": "Ik ben een ouder/voogd"
+    },
+    "religousAffiliation": {
+      "title": "Wat is je religieuze achtergrond?",
+      "subtitle": "Dit helpt ons je ervaring te personaliseren",
+      "options": {
+        "protestant": "Protestants/Evangelisch",
+        "catholic": "Katholiek",
+        "orthodox": "Orthodox",
+        "nonDenominational": "Niet-denominationeel",
+        "exploring": "Christendom verkennen",
+        "other": "Anders/Geen"
+      }
+    },
+    "notifications": {
+      "title": "Blijf op koers met dagelijkse herinneringen",
+      "subtitle": "Ontvang zachte aanmoedigingen om je lees-streak vol te houden",
+      "permissionTitle": "\"Shepherd\" wil je notificaties sturen",
+      "permissionDescription": "Notificaties kunnen waarschuwingen, geluiden en app-badges bevatten. Deze kunnen worden geconfigureerd in Instellingen.",
+      "mockNotification": {
+        "from": "Van Shepherd",
+        "time": "nu",
+        "message": "Je streak gaat kapot!"
+      },
+      "dontAllow": "Niet toestaan",
+      "allow": "Toestaan",
+      "remindMe": "Herinner me!",
+      "alreadyEnabled": "Notificaties zijn al ingeschakeld!",
+      "enabledSuccess": "Geweldig! Je krijgt dagelijkse herinneringen om je streak levend te houden.",
+      "deniedMessage": "Geen probleem! Je kunt notificaties altijd later inschakelen in je apparaatinstellingen als je van gedachten verandert.",
+      "openSettings": "Instellingen openen"
+    },
+    "hearts": {
+      "title": "Hartjes introduceren",
+      "subtitle": "Hartjes vertegenwoordigen je spirituele energie en motivatie om dichter bij God te komen",
+      "description": "Begin elke dag met 3 hartjes. Lezen, bidden en reflecteren helpt ze te behouden. Maak je geen zorgen - je verliest nooit vooruitgang, hartjes moedigen alleen consistente spirituele groei aan!",
+      "heartsLabel": "3 ❤️"
+    },
+    "loading": {
+      "messages": {
+        "saving": "Je antwoorden opslaan",
+        "encrypting": "Je gegevens versleutelen",
+        "blessing": "Wat wijwater sprenkelen",
+        "generating": "Je aangepaste bijbelstudie plan genereren"
+      }
+    },
+    "rating": {
+      "title": "Hoe doen we het?",
+      "subtitle": "Je feedback helpt ons Shepherd voor iedereen te verbeteren",
+      "leaveRating": "Een beoordeling achterlaten",
+      "alreadyRated": "Ik heb de app al beoordeeld"
+    },
+    "explainer": {
+      "title": "Welkom bij je spirituele reis!",
+      "subtitle": "Zo werkt Shepherd",
+      "features": {
+        "reading": {
+          "title": "Dagelijks Lezen",
+          "description": "Lees elke dag kleine stukjes van de Bijbel"
+        },
+        "prayer": {
+          "title": "Gebedstijd",
+          "description": "Leer bidden met begeleide aanwijzingen en sjablonen"
+        },
+        "reflection": {
+          "title": "Stille Reflectie",
+          "description": "Neem tijd om te verwerken wat je hebt geleerd"
+        }
+      }
+    },
+    "saveProgress": {
+      "title": "Sla je voortgang op",
+      "subtitle": "Maak een account om je lees-streak te behouden en alle functies te ontgrendelen",
+      "skipForNow": "Voor nu overslaan",
+      "backToHome": "Terug naar Home",
+      "pleaseWait": "Even geduld...",
+      "noAccountToast": "Ga door de onboarding."
+    }
+  },
+  "home": {
+    "dailyBread": "Dagelijks Brood – Lezen",
+    "dailyBreadSubtitle": "Voed je ziel met de Schrift",
+    "livingWater": "Levend Water – Bidden",
+    "livingWaterSubtitle": "Verfris je geest met gebed",
+    "quietTime": "Stille Tijd – Reflecteren",
+    "quietTimeSubtitle": "Pauzeer en ontmoet God",
+    "prayer": "Gebed",
+    "reflect": "Reflecteren",
+    "finishReading": "Lezen Voltooien",
+    "level": "Niveau",
+    "hearts": "Harten",
+    "xp": "XP",
+    "howToAddWidget": "Widget Toevoegen",
+    "goodMorning": "Goedemorgen",
+    "goodAfternoon": "Goedemiddag",
+    "goodEvening": "Goedenavond",
+    "streakDays": "dagen op rij",
+    "welcomeBack": "Welkom terug!",
+    "timeToRead": "Tijd om te lezen",
+    "continueReading": "Doorgaan met lezen"
+  },
+  "bible": {
+    "selectBook": "Selecteer een boek",
+    "selectChapter": "Selecteer een hoofdstuk",
+    "verse": "Vers",
+    "chapter": "Hoofdstuk",
+    "loading": "Bijbel laden...",
+    "errorLoading": "Fout bij laden",
+    "books": {
+      "genesis": "Genesis",
+      "exodus": "Exodus",
+      "leviticus": "Leviticus",
+      "numbers": "Numeri",
+      "deuteronomy": "Deuteronomium",
+      "joshua": "Jozua",
+      "judges": "Richteren",
+      "ruth": "Ruth",
+      "1samuel": "1 Samuël",
+      "2samuel": "2 Samuël",
+      "1kings": "1 Koningen",
+      "2kings": "2 Koningen",
+      "1chronicles": "1 Kronieken",
+      "2chronicles": "2 Kronieken",
+      "ezra": "Ezra",
+      "nehemiah": "Nehemia",
+      "esther": "Esther",
+      "job": "Job",
+      "psalms": "Psalmen",
+      "proverbs": "Spreuken",
+      "ecclesiastes": "Prediker",
+      "songofsolomon": "Hooglied",
+      "isaiah": "Jesaja",
+      "jeremiah": "Jeremia",
+      "lamentations": "Klaagliederen",
+      "ezekiel": "Ezechiël",
+      "daniel": "Daniël",
+      "hosea": "Hosea",
+      "joel": "Joël",
+      "amos": "Amos",
+      "obadiah": "Obadja",
+      "jonah": "Jona",
+      "micah": "Micha",
+      "nahum": "Nahum",
+      "habakkuk": "Habakuk",
+      "zephaniah": "Sefanja",
+      "haggai": "Haggaï",
+      "zechariah": "Zacharia",
+      "malachi": "Maleachi",
+      "matthew": "Matteüs",
+      "mark": "Marcus",
+      "luke": "Lucas",
+      "john": "Johannes",
+      "acts": "Handelingen",
+      "romans": "Romeinen",
+      "1corinthians": "1 Korintiërs",
+      "2corinthians": "2 Korintiërs",
+      "galatians": "Galaten",
+      "ephesians": "Efeziërs",
+      "philippians": "Filippenzen",
+      "colossians": "Kolossenzen",
+      "1thessalonians": "1 Tessalonicenzen",
+      "2thessalonians": "2 Tessalonicenzen",
+      "1timothy": "1 Timotheüs",
+      "2timothy": "2 Timotheüs",
+      "titus": "Titus",
+      "philemon": "Filemon",
+      "hebrews": "Hebreeën",
+      "james": "Jakobus",
+      "1peter": "1 Petrus",
+      "2peter": "2 Petrus",
+      "1john": "1 Johannes",
+      "2john": "2 Johannes",
+      "3john": "3 Johannes",
+      "jude": "Judas",
+      "revelation": "Openbaring"
+    }
+  },
+  "prayer": {
+    "title": "Gebedstijd",
+    "subtitle": "Neem een moment om met God te praten",
+    "adoration": "Aanbidding",
+    "confession": "Belijdenis",
+    "thanksgiving": "Dankzegging",
+    "supplication": "Smeekbede",
+    "amen": "Amen",
+    "prayerComplete": "Gebed voltooid",
+    "speakYourHeart": "Spreek vanuit je hart",
+    "typeYourPrayer": "Typ hier je gebed...",
+    "myPrayers": "Mijn Gebeden",
+    "done": "Klaar",
+    "wantToPrayFor": "Ik wil bidden voor",
+    "guidancePlaceholder": "begeleiding...",
+    "customPrayers": "Aangepaste gebeden:",
+    "orPickOne": "Of kies een van deze:",
+    "generatePrayer": "Een gebed genereren",
+    "prayerGenerated": "Gebed Gegenereerd",
+    "yourPrayerGenerated": "Je gebed voor",
+    "hasBeenGenerated": "is gegenereerd.",
+    "topics": {
+      "health": "Gezondheid",
+      "repentance": "Berouw",
+      "patience": "Geduld",
+      "family": "Familie",
+      "peace": "Vrede",
+      "forgiveness": "Vergeving",
+      "strength": "Kracht",
+      "wisdom": "Wijsheid"
+    }
+  },
+  "settings": {
+    "title": "Instellingen",
+    "done": "Klaar",
+    "bibleTranslation": "Bijbelvertaling",
+    "language": "Taal",
+    "dailyReadingTime": "Dagelijkse Leestijd",
+    "readingTimeOptions": {
+      "1-5": "1-5 min (1 hoofdstuk)",
+      "6-10": "6-10 min (3-4 hoofdstukken)",
+      "11-15": "11-15 min (6-8 hoofdstukken)",
+      "15-25": "11-15 min (6-8 hoofdstukken)",
+      "default": "5-10 min",
+      "short": "1-5 min (1 hoofdstuk)",
+      "medium": "6-10 min (3-4 hoofdstukken)",
+      "long": "15-25 min (6-8 hoofdstukken)"
+    },
+    "notificationTime": "Notificatietijd",
+    "notificationsEnabled": "Notificaties ingeschakeld",
+    "notificationsDisabled": "Notificaties uitgeschakeld",
+    "donePickingTime": "Klaar",
+    "community": "Gemeenschap",
+    "joinShepherdFamily": "Word lid van de Shepherd Familie!",
+    "roadmapFeatureRequests": "Roadmap & Feature Verzoeken",
+    "subscription": "Abonnement",
+    "superShepherdActive": "Super Shepherd (Actief)",
+    "upgradeToSuperShepherd": "Upgrade naar Super Shepherd",
+    "thankYouSupporting": "Bedankt voor het ondersteunen van onze missie!",
+    "unlockPremiumFeatures": "Ontgrendel premium functies en ondersteun onze missie",
+    "cancel": "Annuleren",
+    "upgrade": "Upgraden",
+    "referralCode": "Verwijzingscode",
+    "referralCodeDescription": "Voer een verwijzingscode in om bonusbeloningen te krijgen",
+    "userId": "Gebruikers-ID",
+    "signOut": "Uitloggen",
+    "deleteAccount": "Account Verwijderen",
+    "showDeveloperPanel": "Ontwikkelaarspaneel Tonen",
+    "hideDeveloperPanel": "Ontwikkelaarspaneel Verbergen",
+    "developerPanel": "Ontwikkelaarspaneel",
+    "appInformation": "App Informatie",
+    "version": "Versie",
+    "build": "Build",
+    "streakData": "Streak Gegevens",
+    "streakCount": "Streak Teller",
+    "lambHearts": "Lam Harten",
+    "lambMood": "Lam Stemming",
+    "showDetails": "Details Tonen",
+    "hideDetails": "Details Verbergen"
+  },
+  "auth": {
+    "signIn": "Inloggen",
+    "signUp": "Registreren",
+    "signInWithGoogle": "Inloggen met Google",
+    "signInWithApple": "Inloggen met Apple",
+    "continueAsGuest": "Doorgaan als gast",
+    "welcome": "Welkom",
+    "createAccount": "Account aanmaken",
+    "alreadyHaveAccount": "Heb je al een account?",
+    "dontHaveAccount": "Heb je geen account?"
+  },
+  "errors": {
+    "networkError": "Netwerkfout. Controleer je verbinding.",
+    "authError": "Authenticatiefout. Probeer opnieuw.",
+    "loadingError": "Fout bij laden. Probeer opnieuw.",
+    "unknownError": "Er is een onbekende fout opgetreden."
+  },
+  "stats": {
+    "title": "Statistieken",
+    "activitySummary": "Activiteitsoverzicht",
+    "recentActivity": "Recente Activiteit",
+    "readings": "Lezingen",
+    "prayers": "Gebeden",
+    "reflections": "Reflecties",
+    "highlights": "Markeringen",
+    "notes": "Notities",
+    "justNow": "zojuist",
+    "minutesAgo": "{{count}}m geleden",
+    "hoursAgo": "{{count}}u geleden",
+    "daysAgo": "{{count}}d geleden",
+    "monthsAgo": "{{count}}ma geleden",
+    "yearsAgo": "{{count}}j geleden",
+    "highlightedVerse": "Gemarkeerd vers",
+    "quietTime": "Stille Tijd",
+    "noHighlightsYet": "Nog geen markeringen",
+    "highlightInstruction": "Markeer verzen tijdens het lezen om ze hier op te slaan",
+    "noNotesYet": "Nog geen notities",
+    "notesInstruction": "Voeg notities toe aan verzen tijdens je studie om ze hier op te slaan",
+    "noRecentReflections": "Geen recente reflecties",
+    "reflectionsInstruction": "Neem een moment om na te denken over je reis met God",
+    "days": {
+      "su": "Zo",
+      "mo": "Ma",
+      "tu": "Di",
+      "we": "Wo",
+      "th": "Do",
+      "fr": "Vr",
+      "sa": "Za"
+    }
+  },
+  "map": {
+    "loadingMap": "Kaart laden...",
+    "defaultTitle": "Kaart",
+    "unknownBook": "Boek {{bookId}}",
+    "section": "SECTIE {{number}}"
+  },
+  "profile": {
+    "title": "Profiel",
+    "signInToSave": "Meld je aan om je voortgang op te slaan",
+    "signInDescription": "Maak een gratis account om je streak, XP en lam te synchroniseren op al je apparaten. Je kunt altijd later inloggen!",
+    "signingIn": "Inloggen...",
+    "signInWithApple": "Inloggen met Apple",
+    "signInWithGoogle": "Inloggen met Google",
+    "joinOurFamily": "Word lid van onze Shepherd familie!",
+    "discordDescription": "Verbind, deel inzichten en groei samen op onze Discord server.",
+    "joinTheHerd": "Sluit je aan bij de kudde",
+    "yourLamb": "Jouw lam",
+    "level": "Niveau",
+    "dayStreak": "Dagen streak",
+    "hearts": "Harten",
+    "journeyStarted": "Reis begonnen",
+    "selectedPath": "Geselecteerd pad",
+    "noPathSelected": "Geen pad geselecteerd",
+    "manageSubscription": "Abonnement beheren",
+    "pro": "Pro",
+    "proDescription": "Je hebt toegang tot alle premium functies!",
+    "upgradeDescription": "Ontgrendel premium functies en verbeter je spirituele reis",
+    "upgradeToPro": "Upgrade naar Pro",
+    "store": "Winkel",
+    "unlocksAtLevel10": "Ontgrendelt op niveau 10",
+    "storeDescription": "Pas je lam aan en ontgrendel speciale items!",
+    "yourJourney": "Jouw reis",
+    "noActivitiesYet": "Nog geen activiteiten. Begin vandaag je reis!",
+    "today": "Vandaag",
+    "yesterday": "Gisteren",
+    "justNow": "zojuist",
+    "minutesAgo": "{{count}}m geleden",
+    "hoursAgo": "{{count}}u geleden",
+    "daysAgo": "{{count}}d geleden",
+    "monthsAgo": "{{count}}ma geleden",
+    "yearsAgo": "{{count}}j geleden",
+    "topic": "Onderwerp",
+    "version": "Versie",
+    "build": "Build",
+    "readActivity": "Gelezen {{book}} {{chapters}}",
+    "prayedFor": "Gebeden voor {{topic}}",
+    "dailyPrayer": "Dagelijks gebed",
+    "quietTimeActivity": "Stille tijd",
+    "errorMessages": {
+      "signInCanceled": "Inloggen werd geannuleerd. Probeer het opnieuw.",
+      "networkError": "Netwerkfout. Controleer je internetverbinding en probeer het opnieuw.",
+      "configurationError": "Authenticatie configuratiefout. Probeer een andere methode.",
+      "incompleteError": "Het inlogproces werd onderbroken. Probeer het opnieuw.",
+      "operationError": "Het inlogproces kon niet worden voltooid. Probeer het opnieuw.",
+      "noAccountApple": "We konden geen account vinden met dit Apple ID. Maak een nieuw account aan.",
+      "noAccountGoogle": "We konden geen account vinden met dit Google account. Maak een nieuw account aan.",
+      "fetchDataError": "We konden je accountgegevens niet ophalen. Probeer het opnieuw.",
+      "defaultAppleError": "Er was een probleem bij het inloggen met Apple.",
+      "defaultGoogleError": "Er was een probleem bij het inloggen met Google."
+    }
+  },
+  "paths": {
+    "titles": {
+      "genesis-beginnings": "Genesis: Begin",
+      "exodus-deliverance-law": "Exodus: Bevrijding en Wet",
+      "wilderness-testing-provision": "Woestijn: Beproeving en Voorziening",
+      "kingdoms-prophets": "Koninkrijken en Profeten",
+      "psalms-wisdom": "Psalmen: Wijsheid en Inzicht",
+      "major-prophets": "Grote Profeten",
+      "minor-prophets": "Kleine Profeten",
+      "gospels-life-of-christ": "Evangeliën: Leven van Christus",
+      "acts-early-church": "Handelingen: Vroege Kerk",
+      "pauline-epistles": "Paulusbrieven",
+      "general-epistles": "Algemene Brieven",
+      "revelation-end-new": "Openbaring: Einde en Nieuw"
+    }
+  },
+  "biblePreview": {
+    "defaultTitle": "De Goede Herder",
+    "todaysReading": "Vandaag's Lezing",
+    "next": "Volgende",
+    "summary": "SAMENVATTING",
+    "startReading": "Begin met Lezen",
+    "justReadBible": "Gewoon Bijbel Lezen",
+    "defaultDescription": "Jezus beschrijft zichzelf als de Goede Herder die zijn leven geeft voor de schapen.",
+    "nicodemusDescription": "Jezus leert Nicodemus over wedergeboorte en Gods liefde voor de wereld."
+  },
+  "bibleReader": {
+    "loading": "Laden...",
+    "cardView": "Kaartweergave",
+    "fontSize": "Lettergrootte",
+    "lineSpacing": "Regelafstand",
+    "theme": "Thema",
+    "compact": "Compact",
+    "regular": "Normaal",
+    "relaxed": "Ontspannen",
+    "lastChapterMessage": "Je hebt Openbaring 22 bereikt, het laatste hoofdstuk van de Bijbel.",
+    "goBackAccessibility": "Ga terug naar vorig hoofdstuk",
+    "swipeGuidance": "← Veeg links voor annotaties • Veeg rechts voor chat →",
+    "finishReading": "Lezen voltooien 🎉",
+    "tapForNextVerse": "Tik voor volgende vers →",
+    "tapToShowFullVerse": "Tik om volledig vers te tonen",
+    "readingComplete": "Lezing Voltooid!",
+    "greatProgress": "Geweldige vooruitgang!",
+    "menuActions": {
+      "copy": "Kopiëren",
+      "explain": "Uitleggen",
+      "highlight": "Markeren",
+      "addNote": "Notitie toevoegen"
+    }
+  },
+  "bookChapterSelector": {
+    "title": "Boek en Hoofdstuk Selecteren",
+    "done": "Klaar",
+    "book": "Boek",
+    "chapter": "Hoofdstuk"
+  },
+  "highlightColorPicker": {
+    "title": "Markeringskleur Kiezen",
+    "cancel": "Annuleren",
+    "apply": "Toepassen",
+    "remove": "Verwijderen",
+    "removeHighlight": "Markering Verwijderen"
+  },
+  "successAnimation": {
+    "loadingAnimation": "Animatie laden...",
+    "rewardsTitle": "BELONINGEN",
+    "bonusGems": "+9 Edelstenen",
+    "hearts": "Harten",
+    "soulPoints": "Zielpunten",
+    "levelUp": "LEVEL UP!",
+    "lambGrew": "Je lam groeide naar level",
+    "prayAboutVerse": "Bid over dit vers",
+    "reflectOnVerse": "Reflecteer over dit vers",
+    "prayAboutTodaysVerse": "Bid over het vers van vandaag",
+    "close": "Sluiten",
+    "returnHome": "Terug naar Home",
+    "goHome": "Ga naar Home"
+  },
+  "journal": {
+    "reflection": "Reflectie",
+    "scriptureReading": "Schriftlezing",
+    "saveThought": "Gedachte opslaan",
+    "pleaseWriteMinimum": "Schrijf alsjeblieft minimaal",
+    "characters": "tekens",
+    "whatsOnMind": "Wat houdt je vandaag bezig?",
+    "whatStandsOut": "Wat valt je op in",
+    "howDoesSpeak": "Hoe spreekt deze passage tot je leven vandaag?",
+    "thisPassage": "deze passage",
+    "defaultReflection": "Ik heb vandaag gereflecteerd op mijn spirituele reis."
+  }
+} 

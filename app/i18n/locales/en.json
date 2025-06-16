@@ -1,0 +1,662 @@
+{
+  "common": {
+    "continue": "Continue",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "back": "Back",
+    "done": "Done",
+    "skip": "Skip",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "yes": "Yes",
+    "no": "No",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "close": "Close",
+    "next": "Next",
+    "previous": "Previous",
+    "home": "Home",
+    "settings": "Settings"
+  },
+  "navigation": {
+    "map": "Map",
+    "bible": "Bible", 
+    "home": "Home",
+    "stats": "Stats",
+    "profile": "Profile"
+  },
+  "onboarding": {
+    "welcome": {
+      "firstText": "Every Shepherd starts with one lost lamb...",
+      "secondText": "This one's yours.",
+      "tapPrompt": "Tap to wake it up",
+      "claimLamb": "Claim Lost Lamb",
+      "beginJourney": "Begin Journey"
+    },
+    "lambName": {
+      "title": "What should we call your lamb?",
+      "placeholder": "Enter name",
+      "continue": "Continue",
+      "loading": "Loading..."
+    },
+    "username": {
+      "title": "What should we call you?",
+      "placeholder": "Enter your name",
+      "continue": "Continue"
+    },
+    "intentions": {
+      "title": "What brings you here today?",
+      "subtitle": "Select all that apply",
+      "options": {
+        "readBible": {
+          "title": "Read the Bible",
+          "description": "Start your journey through scripture"
+        },
+        "talkToGod": {
+          "title": "Talk to God",
+          "description": "Learn to pray with confidence"
+        },
+        "reflection": {
+          "title": "Reflection & Quiet Time",
+          "description": "Daily moments of peace with God"
+        },
+        "exploring": {
+          "title": "Just Exploring",
+          "description": "Discover at your own pace"
+        },
+        "deeperFaith": {
+          "title": "Deepen my faith",
+          "description": "Grow closer to God through daily practice"
+        },
+        "readBibleMore": {
+          "title": "Read the Bible more",
+          "description": "Build a consistent reading habit"
+        },
+        "prayer": {
+          "title": "Improve my prayer life",
+          "description": "Learn to pray with intention and focus"
+        },
+        "community": {
+          "title": "Connect with community",
+          "description": "Find fellowship and spiritual support"
+        },
+        "questions": {
+          "title": "Explore questions about faith",
+          "description": "Seek answers and understanding"
+        },
+        "peace": {
+          "title": "Find peace and comfort",
+          "description": "Discover God's presence in difficult times"
+        }
+      }
+    },
+    "beliefs": {
+      "title": "Which best describes your beliefs?",
+      "options": {
+        "christian": "I'm a Christian",
+        "exploring": "I'm exploring Christianity",
+        "curious": "I'm curious about faith",
+        "other": "Other/Prefer not to say"
+      }
+    },
+    "familiarity": {
+      "title": "How familiar are you with the Bible?",
+      "options": {
+        "veryFamiliar": "Very familiar - I've read most of it",
+        "somewhatFamiliar": "Somewhat familiar - I know some stories",
+        "notVeryFamiliar": "Not very familiar - I've heard some things",
+        "notFamiliar": "Not familiar at all"
+      }
+    },
+    "readingTime": {
+      "title": "How much time can you dedicate to daily reading?",
+      "subtitle": "This helps us tailor your experience",
+      "options": {
+        "1-5": "1-5 minutes",
+        "6-10": "6-10 minutes", 
+        "11-15": "11-15 minutes",
+        "16-25": "16-25 minutes",
+        "25plus": "25+ minutes"
+      }
+    },
+    "age": {
+      "title": "What's your age?",
+      "subtitle": "This helps us provide age-appropriate content",
+      "selectBirthDate": "Select Your Birth Date",
+      "parentGuardian": "I'm a parent/guardian"
+    },
+    "religousAffiliation": {
+      "title": "What's your religious background?",
+      "subtitle": "This helps us personalize your experience",
+      "options": {
+        "protestant": "Protestant/Evangelical",
+        "catholic": "Catholic",
+        "orthodox": "Orthodox",
+        "nonDenominational": "Non-denominational",
+        "exploring": "Exploring Christianity",
+        "other": "Other/None"
+      }
+    },
+    "notifications": {
+      "title": "Stay on track with daily reminders",
+      "subtitle": "Get gentle nudges to maintain your reading streak",
+      "permissionTitle": "\"Shepherd\" would like to send you notifications",
+      "permissionDescription": "Notifications may include alerts, sounds, and icon badges. These can be configured in Settings.",
+      "mockNotification": {
+        "from": "From Shepherd",
+        "time": "now",
+        "message": "Your streak is gonna be broken!"
+      },
+      "dontAllow": "Don't Allow",
+      "allow": "Allow",
+      "remindMe": "Remind Me!",
+      "alreadyEnabled": "Notifications are already enabled!",
+      "enabledSuccess": "Great! You'll get daily reminders to keep your streak alive.",
+      "deniedMessage": "No worries! You can always enable notifications later in your device settings if you change your mind.",
+      "openSettings": "Open Settings"
+    },
+    "hearts": {
+      "title": "Introducing Hearts",
+      "subtitle": "Hearts represent your spiritual energy and motivation to grow closer to God",
+      "description": "Start each day with 3 hearts. Reading, praying, and reflecting helps maintain them. Don't worry - you'll never lose progress, hearts just encourage consistent spiritual growth!",
+      "heartsLabel": "3 ❤️"
+    },
+    "loading": {
+      "messages": {
+        "saving": "Saving your responses",
+        "encrypting": "Encrypting your data", 
+        "blessing": "Sprinkling some holy water",
+        "generating": "Generating your custom bible study plan"
+      }
+    },
+    "rating": {
+      "title": "How are we doing?",
+      "subtitle": "Your feedback helps us improve Shepherd for everyone",
+      "leaveRating": "Leave a rating",
+      "alreadyRated": "I already rated the app"
+    },
+    "explainer": {
+      "title": "Welcome to your spiritual journey!",
+      "subtitle": "Here's how Shepherd works",
+      "features": {
+        "reading": {
+          "title": "Daily Reading",
+          "description": "Read bite-sized portions of the Bible each day"
+        },
+        "prayer": {
+          "title": "Prayer Time", 
+          "description": "Learn to pray with guided prompts and templates"
+        },
+        "reflection": {
+          "title": "Quiet Reflection",
+          "description": "Take time to process what you've learned"
+        }
+      }
+    },
+    "saveProgress": {
+      "title": "Save Your Progress",
+      "subtitle": "Create an account to keep your reading streak and unlock all features",
+      "skipForNow": "Skip for now",
+      "backToHome": "Back to Home",
+      "pleaseWait": "Please wait...",
+      "noAccountToast": "Please go through onboarding."
+    }
+  },
+  "home": {
+    "dailyBread": "Daily Bread – Read",
+    "dailyBreadSubtitle": "Feed your soul with scripture",
+    "livingWater": "Living Water – Pray",
+    "livingWaterSubtitle": "Refresh your spirit with prayer",
+    "quietTime": "Quiet Time – Reflect",
+    "quietTimeSubtitle": "Pause and meet with God",
+    "prayer": "Prayer",
+    "reflect": "Reflect",
+    "finishReading": "Finish Reading",
+    "level": "Level",
+    "hearts": "Hearts",
+    "xp": "XP",
+    "howToAddWidget": "How to Add Widget",
+    "xpProgress": "{{current}}/{{total}} XP"
+  },
+  "stats": {
+    "title": "Stats",
+    "activitySummary": "Activity Summary",
+    "recentActivity": "Recent Activity",
+    "readings": "Readings",
+    "prayers": "Prayers",
+    "reflections": "Reflections",
+    "highlights": "Highlights",
+    "notes": "Notes",
+    "justNow": "just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago",
+    "monthsAgo": "{{count}}mo ago",
+    "yearsAgo": "{{count}}y ago",
+    "highlightedVerse": "Highlighted verse",
+    "quietTime": "Quiet Time",
+    "noHighlightsYet": "No highlights yet",
+    "highlightInstruction": "Highlight verses as you read to save them here",
+    "noNotesYet": "No notes yet",
+    "notesInstruction": "Add notes to verses as you study to save them here",
+    "noRecentReflections": "No recent reflections",
+    "reflectionsInstruction": "Take a moment to reflect on your journey with God",
+    "days": {
+      "su": "Su",
+      "mo": "Mo",
+      "tu": "Tu",
+      "we": "We",
+      "th": "Th",
+      "fr": "Fr",
+      "sa": "Sa"
+    }
+  },
+  "bible": {
+    "finishReading": "Finish Reading",
+    "fontSettings": "Aa",
+    "lineSpacing": "Line Spacing",
+    "compact": "Compact",
+    "regular": "Regular", 
+    "relaxed": "Relaxed",
+    "errorLoading": "Error loading chapter: {{error}}",
+    "books": {
+      "genesis": "Genesis",
+      "exodus": "Exodus",
+      "leviticus": "Leviticus",
+      "numbers": "Numbers",
+      "deuteronomy": "Deuteronomy",
+      "joshua": "Joshua",
+      "judges": "Judges",
+      "ruth": "Ruth",
+      "1samuel": "1 Samuel",
+      "2samuel": "2 Samuel",
+      "1kings": "1 Kings",
+      "2kings": "2 Kings",
+      "1chronicles": "1 Chronicles",
+      "2chronicles": "2 Chronicles",
+      "ezra": "Ezra",
+      "nehemiah": "Nehemiah",
+      "esther": "Esther",
+      "job": "Job",
+      "psalms": "Psalms",
+      "proverbs": "Proverbs",
+      "ecclesiastes": "Ecclesiastes",
+      "songofsolomon": "Song of Solomon",
+      "isaiah": "Isaiah",
+      "jeremiah": "Jeremiah",
+      "lamentations": "Lamentations",
+      "ezekiel": "Ezekiel",
+      "daniel": "Daniel",
+      "hosea": "Hosea",
+      "joel": "Joel",
+      "amos": "Amos",
+      "obadiah": "Obadiah",
+      "jonah": "Jonah",
+      "micah": "Micah",
+      "nahum": "Nahum",
+      "habakkuk": "Habakkuk",
+      "zephaniah": "Zephaniah",
+      "haggai": "Haggai",
+      "zechariah": "Zechariah",
+      "malachi": "Malachi",
+      "matthew": "Matthew",
+      "mark": "Mark",
+      "luke": "Luke",
+      "john": "John",
+      "acts": "Acts",
+      "romans": "Romans",
+      "1corinthians": "1 Corinthians",
+      "2corinthians": "2 Corinthians",
+      "galatians": "Galatians",
+      "ephesians": "Ephesians",
+      "philippians": "Philippians",
+      "colossians": "Colossians",
+      "1thessalonians": "1 Thessalonians",
+      "2thessalonians": "2 Thessalonians",
+      "1timothy": "1 Timothy",
+      "2timothy": "2 Timothy",
+      "titus": "Titus",
+      "philemon": "Philemon",
+      "hebrews": "Hebrews",
+      "james": "James",
+      "1peter": "1 Peter",
+      "2peter": "2 Peter",
+      "1john": "1 John",
+      "2john": "2 John",
+      "3john": "3 John",
+      "jude": "Jude",
+      "revelation": "Revelation"
+    }
+  },
+  "prayer": {
+    "title": "Prayer",
+    "prayAboutVerse": "Pray about today's verse",
+    "defaultTemplate": "Dear God, I come before you today with a heart full of gratitude. Please help me find inner peace and wisdom in all that I do. Amen.",
+    "myPrayers": "My Prayers",
+    "done": "Done",
+    "wantToPrayFor": "I want to pray for",
+    "guidancePlaceholder": "guidance...",
+    "customPrayers": "Custom prayers:",
+    "orPickOne": "Or pick one of these:",
+    "generatePrayer": "Generate a prayer",
+    "prayerGenerated": "Prayer Generated",
+    "yourPrayerGenerated": "Your prayer for",
+    "hasBeenGenerated": "has been generated.",
+    "amen": "Amen",
+    "topics": {
+      "health": "Health",
+      "repentance": "Repentance",
+      "patience": "Patience",
+      "family": "Family",
+      "peace": "Peace",
+      "forgiveness": "Forgiveness",
+      "strength": "Strength",
+      "wisdom": "Wisdom"
+    }
+  },
+  "settings": {
+    "title": "Settings",
+    "done": "Done",
+    "bibleTranslation": "Bible Translation",
+    "language": "Language",
+    "dailyReadingTime": "Daily Reading Time",
+    "readingTimeOptions": {
+      "1-5": "1-5 mins (1 chapter)",
+      "6-10": "6-10 mins (3-4 chapters)",
+      "11-15": "11-15 mins (6-8 chapters)",
+      "15-25": "11-15 mins (6-8 chapters)",
+      "default": "5-10 mins",
+      "short": "1-5 mins (1 chapter)",
+      "medium": "6-10 mins (3-4 chapters)",
+      "long": "15-25 mins (6-8 chapters)"
+    },
+    "notificationTime": "Notification Time",
+    "notificationsEnabled": "Notifications enabled",
+    "notificationsDisabled": "Notifications disabled",
+    "donePickingTime": "Done",
+    "community": "Community",
+    "joinShepherdFamily": "Join the Shepherd Family!",
+    "roadmapFeatureRequests": "Roadmap & Feature Requests",
+    "subscription": "Subscription",
+    "superShepherdActive": "Super Shepherd (Active)",
+    "upgradeToSuperShepherd": "Upgrade to Super Shepherd",
+    "thankYouSupporting": "Thank you for supporting our mission!",
+    "unlockPremiumFeatures": "Unlock premium features and support our mission",
+    "cancel": "Cancel",
+    "upgrade": "Upgrade",
+    "referralCode": "Referral Code",
+    "referralCodeDescription": "Enter a referral code to get bonus rewards",
+    "userId": "User ID",
+    "signOut": "Sign Out",
+    "deleteAccount": "Delete Account",
+    "showDeveloperPanel": "Show Developer Panel",
+    "hideDeveloperPanel": "Hide Developer Panel",
+    "developerPanel": "Developer Panel",
+    "appInformation": "App Information",
+    "version": "Version",
+    "build": "Build",
+    "streakData": "Streak Data",
+    "streakCount": "Streak Count",
+    "lambHearts": "Lamb Hearts",
+    "lambMood": "Lamb Mood",
+    "showDetails": "Show Details",
+    "hideDetails": "Hide Details"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?"
+  },
+  "success": {
+    "goHome": "Go Home",
+    "returnHome": "Return Home",
+    "amen": "Amen"
+  },
+  "debug": {
+    "title": "Debug Options",
+    "syncActivityDates": "Sync Activity & Penalty Dates",
+    "syncDescription": "Set activity dates = penalty dates",
+    "uiTesting": "UI Testing",
+    "dataManagement": "Data Management",
+    "resetCompletionData": "Reset Completion Data",
+    "resetDescription": "Reset HomeStore and clear completed readings",
+    "deleteAllData": "Delete All Data",
+    "deleteWarning": "WARNING: Permanently delete all user data and reset app"
+  },
+  "errors": {
+    "missingTranslation": "Missing Translation",
+    "networkError": "Network error occurred",
+    "unknownError": "An unknown error occurred"
+  },
+  "map": {
+    "loadingMap": "Loading Map...",
+    "defaultTitle": "Map",
+    "unknownBook": "Book {{bookId}}",
+    "section": "SECTION {{number}}"
+  },
+  "profile": {
+    "title": "Profile",
+    "signInToSave": "Sign in to save your progress",
+    "signInDescription": "Create a free account to sync your streak, XP, and lamb across devices. You can always sign in later!",
+    "signingIn": "Signing in...",
+    "signInWithApple": "Sign in with Apple",
+    "signInWithGoogle": "Sign in with Google",
+    "joinOurFamily": "Join our Shepherd Family!",
+    "discordDescription": "Connect, share insights, and grow together on our Discord server.",
+    "joinTheHerd": "Join the Herd",
+    "yourLamb": "Your Lamb",
+    "level": "Level",
+    "dayStreak": "Day Streak",
+    "hearts": "Hearts",
+    "journeyStarted": "Journey Started",
+    "selectedPath": "Selected Path",
+    "noPathSelected": "No path selected",
+    "manageSubscription": "Manage Subscription",
+    "pro": "Pro",
+    "proDescription": "You have access to all premium features!",
+    "upgradeDescription": "Unlock premium features and enhance your spiritual journey",
+    "upgradeToPro": "Upgrade to Pro",
+    "store": "Store",
+    "unlocksAtLevel10": "Unlocks at Level 10",
+    "storeDescription": "Customize your lamb and unlock special items!",
+    "yourJourney": "Your Journey",
+    "noActivitiesYet": "No activities yet. Begin your journey today!",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "justNow": "just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago",
+    "monthsAgo": "{{count}}mo ago",
+    "yearsAgo": "{{count}}y ago",
+    "topic": "Topic",
+    "version": "Version",
+    "build": "Build",
+    "readActivity": "Read {{book}} {{chapters}}",
+    "prayedFor": "Prayed for {{topic}}",
+    "dailyPrayer": "Daily Prayer",
+    "quietTimeActivity": "Quiet Time",
+    "errorMessages": {
+      "signInCanceled": "Sign in was canceled. Please try again.",
+      "networkError": "Network error. Please check your internet connection and try again.",
+      "configurationError": "Authentication configuration error. Please try another method.",
+      "incompleteError": "Sign in process was interrupted. Please try again.",
+      "operationError": "Sign in process could not be completed. Please try again.",
+      "noAccountApple": "We couldn't find an account with this Apple ID. Please create a new account instead.",
+      "noAccountGoogle": "We couldn't find an account with this Google account. Please create a new account instead.",
+      "fetchDataError": "We couldn't retrieve your account data. Please try again.",
+      "defaultAppleError": "There was a problem signing in with Apple.",
+      "defaultGoogleError": "There was a problem signing in with Google."
+    }
+  },
+  "paths": {
+    "titles": {
+      "genesis-beginnings": "Genesis: Beginnings",
+      "exodus-deliverance-law": "Exodus: Deliverance & Law", 
+      "wilderness-testing-provision": "Wilderness: Testing & Provision",
+      "kingdoms-prophets": "Kingdoms & Prophets",
+      "psalms-wisdom": "Psalms: Wisdom & Insight",
+      "major-prophets": "Major Prophets",
+      "minor-prophets": "Minor Prophets",
+      "gospels-life-of-christ": "Gospels: Life of Christ",
+      "acts-early-church": "Acts: Early Church",
+      "pauline-epistles": "Pauline Epistles",
+      "general-epistles": "General Epistles",
+      "revelation-end-new": "Revelation: End & New"
+    },
+    "genesis": {
+      "title": "Genesis: Beginnings",
+      "description": "Travel from the dawn of creation to the death of Joseph. These origin stories lay the foundation for every major theme that follows in Scripture.",
+      "units": {
+        "creation": {
+          "title": "Creation & Choice",
+          "description": "God speaks the cosmos into being and crowns it with image‑bearing humans. In Eden they are invited to trust the Creator's wisdom or define good and evil for themselves."
+        },
+        "cainAbel": {
+          "title": "Cain, Abel",
+          "description": "Jealousy drives the first murder and violence multiplies across the earth. Even in judgment, God marks Cain with mercy and preserves a faithful remnant."
+        },
+        "noahFlood": {
+          "title": "Noah & the Flood",
+          "description": "Waters of judgment cleanse a corrupt world, yet grace carries Noah's family to a new start. A rainbow covenant promises that God's long‑range plan is redemption, not destruction."
+        },
+        "babel": {
+          "title": "Nations & Babel",
+          "description": "Humanity scatters into distinct peoples after a prideful tower‑project. Out of the confusion God calls one man, Abram, to become a blessing to all nations."
+        },
+        "abrahamCall": {
+          "title": "Abraham's Call",
+          "description": "God establishes a binding promise of land, descendants, and global blessing. Abraham's faith is tested repeatedly yet ultimately credited as righteousness."
+        },
+        "isaacFamily": {
+          "title": "Isaac's Family",
+          "description": "A miraculous son carries the covenant line forward. His marriage to Rebekah ensures the promise continues despite human weakness."
+        },
+        "jacobEsau": {
+          "title": "Jacob & Esau",
+          "description": "Twin brothers struggle for birthright and blessing, revealing God's sovereign choice. Jacob experiences both deception and divine encounter on his way out of Canaan."
+        },
+        "jacobReturn": {
+          "title": "Jacob's Sojourn & Return",
+          "description": "Years of exile, marriage, and family drama refine Jacob's character. A mysterious night‑wrestling match prepares him to face Esau and reclaim his new name—Israel."
+        },
+        "josephDreams": {
+          "title": "Joseph: Dreams to Dungeon",
+          "description": "Joseph's coat, dreams, and betrayal plunge him into slavery and prison. Yet every setback becomes a setup for God's providential rise to Egyptian power."
+        },
+        "josephForgiveness": {
+          "title": "Joseph: Famine & Forgiveness",
+          "description": "Global famine reunites Joseph with the brothers who wronged him. Tears of reconciliation show how God turns evil intentions into saving purposes."
+        },
+        "jacobBlesses": {
+          "title": "Jacob Blesses & Joseph Dies",
+          "description": "A dying patriarch blesses twelve sons and foretells their futures. Joseph's final act of faith is requesting his bones be carried to the promised land."
+        }
+      }
+    },
+    "exodus": {
+      "title": "Exodus: Deliverance & Law",
+      "description": "Witness God break Israel's chains and forge a nation by covenant at Sinai. Liberation is not merely freedom from Pharaoh but freedom for worship and holy living.",
+      "units": {
+        "bondage": {
+          "title": "Bondage & Moses' Birth",
+          "description": "A new pharaoh enslaves Israel and orders infant sons killed. God preserves baby Moses and appears in a burning bush to recruit him as deliverer."
+        },
+        "plagues": {
+          "title": "Nine Plagues & Final Warning",
+          "description": "Nine escalating plagues expose Egypt's gods as powerless. Pharaoh's last refusal after the plague‑warning of chapter 11 hardens his heart for the climactic judgment to come."
+        },
+        "passover": {
+          "title": "Passover Night",
+          "description": "Blood on door‑frames turns judgment into deliverance. The Passover lamb establishes a perpetual memorial of redemption and foreshadows a greater rescue still to come."
+        },
+        "redSea": {
+          "title": "Red Sea & Victory Song",
+          "description": "A pillar of cloud leads the march; walls of water open and then close over pursuing armies. Miriam's tambourine rings as the people sing, \"The LORD is my strength and my song.\""
+        }
+      }
+    }
+  },
+  "biblePreview": {
+    "defaultTitle": "The Good Shepherd",
+    "todaysReading": "Today's Reading",
+    "next": "Next",
+    "summary": "SUMMARY",
+    "startReading": "Start Reading",
+    "justReadBible": "Just Read Bible",
+    "defaultDescription": "Jesus describes Himself as the Good Shepherd who lays down His life for the sheep.",
+    "nicodemusDescription": "Jesus teaches Nicodemus about being born again and God's love for the world."
+  },
+  "bibleReader": {
+    "loading": "Loading...",
+    "cardView": "Card View",
+    "fontSize": "Font Size",
+    "lineSpacing": "Line Spacing",
+    "theme": "Theme",
+    "compact": "Compact",
+    "regular": "Regular",
+    "relaxed": "Relaxed",
+    "lastChapterMessage": "You've reached Revelation 22, the last chapter of the Bible.",
+    "goBackAccessibility": "Go back to previous chapter",
+    "swipeGuidance": "← Swipe left for annotations • Swipe right for chat →",
+    "finishReading": "Finish Reading 🎉",
+    "tapForNextVerse": "Tap for next verse →",
+    "tapToShowFullVerse": "Tap to show full verse",
+    "readingComplete": "Reading Complete!",
+    "greatProgress": "Great progress!",
+    "menuActions": {
+      "copy": "Copy",
+      "explain": "Explain",
+      "highlight": "Highlight",
+      "addNote": "Add Note"
+    }
+  },
+  "bookChapterSelector": {
+    "title": "Select Book & Chapter",
+    "done": "Done",
+    "book": "Book",
+    "chapter": "Chapter"
+  },
+  "highlightColorPicker": {
+    "title": "Choose Highlight Color",
+    "cancel": "Cancel",
+    "apply": "Apply",
+    "remove": "Remove",
+    "removeHighlight": "Remove Highlight"
+  },
+  "successAnimation": {
+    "loadingAnimation": "Loading animation...",
+    "rewardsTitle": "REWARDS",
+    "bonusGems": "+9 Gems",
+    "hearts": "Hearts",
+    "soulPoints": "Soul Points",
+    "levelUp": "LEVEL UP!",
+    "lambGrew": "Your lamb grew to level",
+    "prayAboutVerse": "Pray about this verse",
+    "reflectOnVerse": "Reflect on this verse",
+    "prayAboutTodaysVerse": "Pray about today's verse",
+    "close": "Close",
+    "returnHome": "Return Home",
+    "goHome": "Go Home"
+  },
+  "journal": {
+    "reflection": "Reflection",
+    "scriptureReading": "Scripture Reading",
+    "saveThought": "Save Thought",
+    "pleaseWriteMinimum": "Please write at least",
+    "characters": "characters",
+    "whatsOnMind": "What's on your mind today?",
+    "whatStandsOut": "What stands out to you in",
+    "howDoesSpeak": "How does this passage speak to your life today?",
+    "thisPassage": "this passage",
+    "defaultReflection": "Reflected on my spiritual journey today."
+  }
+} 

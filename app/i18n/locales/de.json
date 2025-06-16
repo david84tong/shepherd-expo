@@ -1,0 +1,599 @@
+{
+  "common": {
+    "cancel": "Abbrechen",
+    "done": "Fertig",
+    "continue": "Weiter",
+    "skip": "Überspringen",
+    "next": "Weiter",
+    "back": "Zurück",
+    "save": "Speichern",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "loading": "Laden...",
+    "error": "Fehler",
+    "success": "Erfolg",
+    "yes": "Ja",
+    "no": "Nein",
+    "ok": "OK"
+  },
+  "navigation": {
+    "map": "Karte",
+    "bible": "Bibel",
+    "home": "Startseite",
+    "stats": "Statistiken",
+    "profile": "Profil"
+  },
+  "onboarding": {
+    "welcome": {
+      "firstText": "Jeder Hirte beginnt mit einem verlorenen Lamm...",
+      "secondText": "Dieses gehört dir.",
+      "tapPrompt": "Tippen, um es aufzuwecken",
+      "claimLamb": "Verlorenes Lamm beanspruchen",
+      "beginJourney": "Reise beginnen"
+    },
+    "subtitle": "Dein täglicher spiritueller Begleiter",
+    "getStarted": "Loslegen",
+    "chooseTopics": "Wähle deine Themen",
+    "selectInterests": "Wähle aus, was dich am meisten interessiert:",
+    "faith": "Glaube",
+    "prayer": "Gebet",
+    "wisdom": "Weisheit",
+    "love": "Liebe",
+    "hope": "Hoffnung",
+    "peace": "Frieden",
+    "strength": "Stärke",
+    "forgiveness": "Vergebung",
+    "guidance": "Führung",
+    "gratitude": "Dankbarkeit",
+    "setupComplete": "Einrichtung abgeschlossen!",
+    "readyToStart": "Du bist bereit, deine spirituelle Reise zu beginnen.",
+    "letsGo": "Los geht's!",
+    "lambName": {
+      "title": "Wie sollen wir dein Lamm nennen?",
+      "placeholder": "Namen eingeben",
+      "continue": "Weiter",
+      "loading": "Laden..."
+    },
+    "username": {
+      "title": "Wie sollen wir dich nennen?",
+      "placeholder": "Deinen Namen eingeben",
+      "continue": "Weiter"
+    },
+    "intentions": {
+      "title": "Was bringt dich heute hierher?",
+      "subtitle": "Wähle alle zutreffenden aus",
+      "options": {
+        "readBible": {
+          "title": "Die Bibel lesen",
+          "description": "Beginne deine Reise durch die Schrift"
+        },
+        "talkToGod": {
+          "title": "Mit Gott sprechen",
+          "description": "Lerne mit Vertrauen zu beten"
+        },
+        "reflection": {
+          "title": "Besinnung & Stille Zeit",
+          "description": "Tägliche Momente der Ruhe mit Gott"
+        },
+        "exploring": {
+          "title": "Nur am Erkunden",
+          "description": "Entdecke in deinem eigenen Tempo"
+        },
+        "deeperFaith": {
+          "title": "Meinen Glauben vertiefen",
+          "description": "Gott durch tägliche Praxis näher kommen"
+        },
+        "readBibleMore": {
+          "title": "Mehr Bibel lesen",
+          "description": "Eine beständige Lesegewohnheit aufbauen"
+        },
+        "prayer": {
+          "title": "Mein Gebetsleben verbessern",
+          "description": "Lernen mit Absicht und Fokus zu beten"
+        },
+        "community": {
+          "title": "Mit der Gemeinschaft verbinden",
+          "description": "Gemeinschaft und spirituelle Unterstützung finden"
+        },
+        "questions": {
+          "title": "Fragen über den Glauben erkunden",
+          "description": "Antworten und Verständnis suchen"
+        },
+        "peace": {
+          "title": "Frieden und Trost finden",
+          "description": "Gottes Gegenwart in schweren Zeiten entdecken"
+        }
+      }
+    },
+    "beliefs": {
+      "title": "Was beschreibt deine Überzeugungen am besten?",
+      "options": {
+        "christian": "Ich bin ein Christ",
+        "exploring": "Ich erkunde das Christentum",
+        "curious": "Ich bin neugierig auf den Glauben",
+        "other": "Anderes/Möchte nicht sagen"
+      }
+    },
+    "familiarity": {
+      "title": "Wie vertraut bist du mit der Bibel?",
+      "options": {
+        "veryFamiliar": "Sehr vertraut - Ich habe das meiste davon gelesen",
+        "somewhatFamiliar": "Einigermaßen vertraut - Ich kenne einige Geschichten",
+        "notVeryFamiliar": "Nicht sehr vertraut - Ich habe einige Dinge gehört",
+        "notFamiliar": "Überhaupt nicht vertraut"
+      }
+    },
+    "readingTime": {
+      "title": "Wie viel Zeit kannst du dem täglichen Lesen widmen?",
+      "subtitle": "Das hilft uns, deine Erfahrung anzupassen",
+      "options": {
+        "1-5": "1-5 Minuten",
+        "6-10": "6-10 Minuten",
+        "11-15": "11-15 Minuten",
+        "16-25": "16-25 Minuten",
+        "25plus": "25+ Minuten"
+      }
+    },
+    "age": {
+      "title": "Wie alt bist du?",
+      "subtitle": "Das hilft uns, altersgerechte Inhalte anzubieten",
+      "selectBirthDate": "Wähle dein Geburtsdatum",
+      "parentGuardian": "Ich bin ein Elternteil/Vormund"
+    },
+    "religousAffiliation": {
+      "title": "Was ist dein religiöser Hintergrund?",
+      "subtitle": "Das hilft uns, deine Erfahrung zu personalisieren",
+      "options": {
+        "protestant": "Protestantisch/Evangelisch",
+        "catholic": "Katholisch",
+        "orthodox": "Orthodox",
+        "nonDenominational": "Nicht-konfessionell",
+        "exploring": "Christentum erkunden",
+        "other": "Anderes/Keines"
+      }
+    },
+    "notifications": {
+      "title": "Bleib mit täglichen Erinnerungen auf Kurs",
+      "subtitle": "Erhalte sanfte Hinweise, um deine Leseserie aufrechtzuerhalten",
+      "permissionTitle": "\"Shepherd\" möchte dir Mitteilungen senden",
+      "permissionDescription": "Mitteilungen können Benachrichtigungen, Töne und Symbol-Badges enthalten. Diese können in den Einstellungen konfiguriert werden.",
+      "mockNotification": {
+        "from": "Von Shepherd",
+        "time": "jetzt",
+        "message": "Deine Serie wird unterbrochen!"
+      },
+      "dontAllow": "Nicht erlauben",
+      "allow": "Erlauben",
+      "remindMe": "Erinnere mich!",
+      "alreadyEnabled": "Benachrichtigungen sind bereits aktiviert!",
+      "enabledSuccess": "Großartig! Du erhältst täglich Erinnerungen, um deine Serie am Leben zu halten.",
+      "deniedMessage": "Kein Problem! Du kannst Benachrichtigungen jederzeit später in deinen Geräteeinstellungen aktivieren, wenn du deine Meinung änderst.",
+      "openSettings": "Einstellungen öffnen"
+    },
+    "hearts": {
+      "title": "Herzen vorstellen",
+      "subtitle": "Herzen repräsentieren deine spirituelle Energie und Motivation, Gott näher zu kommen",
+      "description": "Beginne jeden Tag mit 3 Herzen. Lesen, Beten und Reflektieren hilft, sie zu erhalten. Keine Sorge - du verlierst nie Fortschritt, Herzen ermutigen nur zu beständigem spirituellem Wachstum!",
+      "heartsLabel": "3 ❤️"
+    },
+    "loading": {
+      "messages": {
+        "saving": "Deine Antworten speichern",
+        "encrypting": "Deine Daten verschlüsseln",
+        "blessing": "Etwas Weihwasser versprühen",
+        "generating": "Deinen benutzerdefinierten Bibelstudienplan erstellen"
+      }
+    },
+    "rating": {
+      "title": "Wie machen wir uns?",
+      "subtitle": "Dein Feedback hilft uns, Shepherd für alle zu verbessern",
+      "leaveRating": "Eine Bewertung hinterlassen",
+      "alreadyRated": "Ich habe die App bereits bewertet"
+    },
+    "explainer": {
+      "title": "Willkommen zu deiner spirituellen Reise!",
+      "subtitle": "So funktioniert Shepherd",
+      "features": {
+        "reading": {
+          "title": "Tägliches Lesen",
+          "description": "Lies täglich kleine Abschnitte der Bibel"
+        },
+        "prayer": {
+          "title": "Gebetszeit",
+          "description": "Lerne mit geführten Hinweisen und Vorlagen zu beten"
+        },
+        "reflection": {
+          "title": "Stille Besinnung",
+          "description": "Nimm dir Zeit, um zu verarbeiten, was du gelernt hast"
+        }
+      }
+    },
+    "saveProgress": {
+      "title": "Speichere deinen Fortschritt",
+      "subtitle": "Erstelle ein Konto, um deine Leseserie zu behalten und alle Funktionen freizuschalten",
+      "skipForNow": "Vorerst überspringen",
+      "backToHome": "Zurück zur Startseite",
+      "pleaseWait": "Bitte warten...",
+      "noAccountToast": "Bitte durchlaufe das Onboarding."
+    }
+  },
+  "home": {
+    "dailyBread": "Tägliches Brot – Lesen",
+    "dailyBreadSubtitle": "Nähre deine Seele mit der Schrift",
+    "livingWater": "Lebendiges Wasser – Beten",
+    "livingWaterSubtitle": "Erfrische deinen Geist mit Gebet",
+    "quietTime": "Stille Zeit – Nachdenken",
+    "quietTimeSubtitle": "Halte inne und begegne Gott",
+    "prayer": "Gebet",
+    "reflect": "Reflektieren",
+    "finishReading": "Lesen Beenden",
+    "level": "Level",
+    "hearts": "Herzen",
+    "xp": "XP",
+    "howToAddWidget": "Widget Hinzufügen",
+    "goodMorning": "Guten Morgen",
+    "goodAfternoon": "Guten Tag",
+    "goodEvening": "Guten Abend",
+    "streakDays": "Tage in Folge",
+    "welcomeBack": "Willkommen zurück!",
+    "timeToRead": "Zeit zu lesen",
+    "continueReading": "Weiterlesen"
+  },
+  "bible": {
+    "selectBook": "Buch auswählen",
+    "selectChapter": "Kapitel auswählen",
+    "verse": "Vers",
+    "chapter": "Kapitel",
+    "loading": "Bibel wird geladen...",
+    "errorLoading": "Fehler beim Laden",
+    "books": {
+      "genesis": "1. Mose",
+      "exodus": "2. Mose",
+      "leviticus": "3. Mose",
+      "numbers": "4. Mose",
+      "deuteronomy": "5. Mose",
+      "joshua": "Josua",
+      "judges": "Richter",
+      "ruth": "Ruth",
+      "1samuel": "1. Samuel",
+      "2samuel": "2. Samuel",
+      "1kings": "1. Könige",
+      "2kings": "2. Könige",
+      "1chronicles": "1. Chronik",
+      "2chronicles": "2. Chronik",
+      "ezra": "Esra",
+      "nehemiah": "Nehemia",
+      "esther": "Esther",
+      "job": "Hiob",
+      "psalms": "Psalmen",
+      "proverbs": "Sprüche",
+      "ecclesiastes": "Prediger",
+      "songofsolomon": "Hohelied",
+      "isaiah": "Jesaja",
+      "jeremiah": "Jeremia",
+      "lamentations": "Klagelieder",
+      "ezekiel": "Hesekiel",
+      "daniel": "Daniel",
+      "hosea": "Hosea",
+      "joel": "Joel",
+      "amos": "Amos",
+      "obadiah": "Obadja",
+      "jonah": "Jona",
+      "micah": "Micha",
+      "nahum": "Nahum",
+      "habakkuk": "Habakuk",
+      "zephaniah": "Zefanja",
+      "haggai": "Haggai",
+      "zechariah": "Sacharja",
+      "malachi": "Maleachi",
+      "matthew": "Matthäus",
+      "mark": "Markus",
+      "luke": "Lukas",
+      "john": "Johannes",
+      "acts": "Apostelgeschichte",
+      "romans": "Römer",
+      "1corinthians": "1. Korinther",
+      "2corinthians": "2. Korinther",
+      "galatians": "Galater",
+      "ephesians": "Epheser",
+      "philippians": "Philipper",
+      "colossians": "Kolosser",
+      "1thessalonians": "1. Thessalonicher",
+      "2thessalonians": "2. Thessalonicher",
+      "1timothy": "1. Timotheus",
+      "2timothy": "2. Timotheus",
+      "titus": "Titus",
+      "philemon": "Philemon",
+      "hebrews": "Hebräer",
+      "james": "Jakobus",
+      "1peter": "1. Petrus",
+      "2peter": "2. Petrus",
+      "1john": "1. Johannes",
+      "2john": "2. Johannes",
+      "3john": "3. Johannes",
+      "jude": "Judas",
+      "revelation": "Offenbarung"
+    }
+  },
+  "prayer": {
+    "title": "Gebetszeit",
+    "subtitle": "Nimm dir einen Moment, um mit Gott zu sprechen",
+    "adoration": "Anbetung",
+    "confession": "Bekenntnis",
+    "thanksgiving": "Dankbarkeit",
+    "supplication": "Bitte",
+    "amen": "Amen",
+    "prayerComplete": "Gebet beendet",
+    "speakYourHeart": "Sprich aus deinem Herzen",
+    "typeYourPrayer": "Gib hier dein Gebet ein...",
+    "myPrayers": "Meine Gebete",
+    "done": "Fertig",
+    "wantToPrayFor": "Ich möchte beten für",
+    "guidancePlaceholder": "Führung...",
+    "customPrayers": "Benutzerdefinierte Gebete:",
+    "orPickOne": "Oder wähle eines davon:",
+    "generatePrayer": "Ein Gebet generieren",
+    "prayerGenerated": "Gebet Generiert",
+    "yourPrayerGenerated": "Dein Gebet für",
+    "hasBeenGenerated": "wurde generiert.",
+    "topics": {
+      "health": "Gesundheit",
+      "repentance": "Buße",
+      "patience": "Geduld",
+      "family": "Familie",
+      "peace": "Frieden",
+      "forgiveness": "Vergebung",
+      "strength": "Stärke",
+      "wisdom": "Weisheit"
+    }
+  },
+  "settings": {
+    "title": "Einstellungen",
+    "done": "Fertig",
+    "bibleTranslation": "Bibelübersetzung",
+    "language": "Sprache",
+    "dailyReadingTime": "Tägliche Lesezeit",
+    "readingTimeOptions": {
+      "1-5": "1-5 Min (1 Kapitel)",
+      "6-10": "6-10 Min (3-4 Kapitel)",
+      "11-15": "11-15 Min (6-8 Kapitel)",
+      "15-25": "11-15 Min (6-8 Kapitel)",
+      "default": "5-10 Min",
+      "short": "1-5 Min (1 Kapitel)",
+      "medium": "6-10 Min (3-4 Kapitel)",
+      "long": "15-25 Min (6-8 Kapitel)"
+    },
+    "notificationTime": "Benachrichtigungszeit",
+    "notificationsEnabled": "Benachrichtigungen aktiviert",
+    "notificationsDisabled": "Benachrichtigungen deaktiviert",
+    "donePickingTime": "Fertig",
+    "community": "Gemeinschaft",
+    "joinShepherdFamily": "Tritt der Shepherd Familie bei!",
+    "roadmapFeatureRequests": "Roadmap & Feature-Anfragen",
+    "subscription": "Abonnement",
+    "superShepherdActive": "Super Shepherd (Aktiv)",
+    "upgradeToSuperShepherd": "Auf Super Shepherd upgraden",
+    "thankYouSupporting": "Danke, dass du unsere Mission unterstützt!",
+    "unlockPremiumFeatures": "Schalte Premium-Features frei und unterstütze unsere Mission",
+    "cancel": "Abbrechen",
+    "upgrade": "Upgraden",
+    "referralCode": "Empfehlungscode",
+    "referralCodeDescription": "Gib einen Empfehlungscode ein, um Bonus-Belohnungen zu erhalten",
+    "userId": "Benutzer-ID",
+    "signOut": "Abmelden",
+    "deleteAccount": "Konto löschen",
+    "showDeveloperPanel": "Entwickler-Panel anzeigen",
+    "hideDeveloperPanel": "Entwickler-Panel ausblenden",
+    "developerPanel": "Entwickler-Panel",
+    "appInformation": "App-Informationen",
+    "version": "Version",
+    "build": "Build",
+    "streakData": "Streak-Daten",
+    "streakCount": "Streak-Zähler",
+    "lambHearts": "Lamm-Herzen",
+    "lambMood": "Lamm-Stimmung",
+    "showDetails": "Details anzeigen",
+    "hideDetails": "Details ausblenden"
+  },
+  "auth": {
+    "signIn": "Anmelden",
+    "signUp": "Registrieren",
+    "signInWithGoogle": "Mit Google anmelden",
+    "signInWithApple": "Mit Apple anmelden",
+    "continueAsGuest": "Als Gast fortfahren",
+    "welcome": "Willkommen",
+    "createAccount": "Konto erstellen",
+    "alreadyHaveAccount": "Hast du bereits ein Konto?",
+    "dontHaveAccount": "Hast du noch kein Konto?"
+  },
+  "errors": {
+    "networkError": "Netzwerkfehler. Bitte überprüfe deine Verbindung.",
+    "authError": "Authentifizierungsfehler. Bitte versuche es erneut.",
+    "loadingError": "Fehler beim Laden. Bitte versuche es erneut.",
+    "unknownError": "Ein unbekannter Fehler ist aufgetreten."
+  },
+  "stats": {
+    "title": "Statistiken",
+    "activitySummary": "Aktivitätsübersicht",
+    "recentActivity": "Letzte Aktivität",
+    "readings": "Lesungen",
+    "prayers": "Gebete",
+    "reflections": "Reflexionen",
+    "highlights": "Markierungen",
+    "notes": "Notizen",
+    "justNow": "gerade eben",
+    "minutesAgo": "vor {{count}}m",
+    "hoursAgo": "vor {{count}}h",
+    "daysAgo": "vor {{count}}T",
+    "monthsAgo": "vor {{count}}Mo",
+    "yearsAgo": "vor {{count}}J",
+    "highlightedVerse": "Markierter Vers",
+    "quietTime": "Stille Zeit",
+    "noHighlightsYet": "Noch keine Markierungen",
+    "highlightInstruction": "Markiere Verse beim Lesen, um sie hier zu speichern",
+    "noNotesYet": "Noch keine Notizen",
+    "notesInstruction": "Füge Notizen zu Versen hinzu, während du studierst, um sie hier zu speichern",
+    "noRecentReflections": "Keine aktuellen Reflexionen",
+    "reflectionsInstruction": "Nimm dir einen Moment, um über deine Reise mit Gott nachzudenken",
+    "days": {
+      "su": "So",
+      "mo": "Mo",
+      "tu": "Di",
+      "we": "Mi",
+      "th": "Do",
+      "fr": "Fr",
+      "sa": "Sa"
+    }
+  },
+  "map": {
+    "loadingMap": "Karte wird geladen...",
+    "defaultTitle": "Karte",
+    "unknownBook": "Buch {{bookId}}",
+    "section": "ABSCHNITT {{number}}"
+  },
+  "profile": {
+    "title": "Profil",
+    "signInToSave": "Melden Sie sich an, um Ihren Fortschritt zu speichern",
+    "signInDescription": "Erstellen Sie ein kostenloses Konto, um Ihre Serie, XP und Ihr Lamm auf allen Geräten zu synchronisieren. Sie können sich jederzeit später anmelden!",
+    "signingIn": "Anmeldung läuft...",
+    "signInWithApple": "Mit Apple anmelden",
+    "signInWithGoogle": "Mit Google anmelden",
+    "joinOurFamily": "Treten Sie unserer Shepherd-Familie bei!",
+    "discordDescription": "Verbinden Sie sich, teilen Sie Erkenntnisse und wachsen Sie gemeinsam auf unserem Discord-Server.",
+    "joinTheHerd": "Der Herde beitreten",
+    "yourLamb": "Ihr Lamm",
+    "level": "Level",
+    "dayStreak": "Tage-Serie",
+    "hearts": "Herzen",
+    "journeyStarted": "Reise begonnen",
+    "selectedPath": "Ausgewählter Pfad",
+    "noPathSelected": "Kein Pfad ausgewählt",
+    "manageSubscription": "Abonnement verwalten",
+    "pro": "Pro",
+    "proDescription": "Sie haben Zugang zu allen Premium-Funktionen!",
+    "upgradeDescription": "Schalten Sie Premium-Funktionen frei und verbessern Sie Ihre spirituelle Reise",
+    "upgradeToPro": "Auf Pro upgraden",
+    "store": "Shop",
+    "unlocksAtLevel10": "Wird auf Level 10 freigeschaltet",
+    "storeDescription": "Passen Sie Ihr Lamm an und schalten Sie besondere Gegenstände frei!",
+    "yourJourney": "Ihre Reise",
+    "noActivitiesYet": "Noch keine Aktivitäten. Beginnen Sie heute Ihre Reise!",
+    "today": "Heute",
+    "yesterday": "Gestern",
+    "justNow": "gerade eben",
+    "minutesAgo": "vor {{count}}m",
+    "hoursAgo": "vor {{count}}h",
+    "daysAgo": "vor {{count}}T",
+    "monthsAgo": "vor {{count}}Mo",
+    "yearsAgo": "vor {{count}}J",
+    "topic": "Thema",
+    "version": "Version",
+    "build": "Build",
+    "readActivity": "Gelesen {{book}} {{chapters}}",
+    "prayedFor": "Gebetet für {{topic}}",
+    "dailyPrayer": "Tägliches Gebet",
+    "quietTimeActivity": "Stille Zeit",
+    "errorMessages": {
+      "signInCanceled": "Die Anmeldung wurde abgebrochen. Bitte versuchen Sie es erneut.",
+      "networkError": "Netzwerkfehler. Bitte überprüfen Sie Ihre Internetverbindung und versuchen Sie es erneut.",
+      "configurationError": "Authentifizierungskonfigurationsfehler. Bitte versuchen Sie eine andere Methode.",
+      "incompleteError": "Der Anmeldevorgang wurde unterbrochen. Bitte versuchen Sie es erneut.",
+      "operationError": "Der Anmeldevorgang konnte nicht abgeschlossen werden. Bitte versuchen Sie es erneut.",
+      "noAccountApple": "Wir konnten kein Konto mit dieser Apple ID finden. Bitte erstellen Sie ein neues Konto.",
+      "noAccountGoogle": "Wir konnten kein Konto mit diesem Google-Konto finden. Bitte erstellen Sie ein neues Konto.",
+      "fetchDataError": "Wir konnten Ihre Kontodaten nicht abrufen. Bitte versuchen Sie es erneut.",
+      "defaultAppleError": "Es gab ein Problem bei der Anmeldung mit Apple.",
+      "defaultGoogleError": "Es gab ein Problem bei der Anmeldung mit Google."
+    }
+  },
+  "paths": {
+    "titles": {
+      "genesis-beginnings": "Genesis: Anfänge",
+      "exodus-deliverance-law": "Exodus: Befreiung und Gesetz",
+      "wilderness-testing-provision": "Wüste: Prüfung und Versorgung",
+      "kingdoms-prophets": "Königreiche und Propheten",
+      "psalms-wisdom": "Psalmen: Weisheit und Einsicht",
+      "major-prophets": "Große Propheten",
+      "minor-prophets": "Kleine Propheten",
+      "gospels-life-of-christ": "Evangelien: Leben Christi",
+      "acts-early-church": "Apostelgeschichte: Frühe Kirche",
+      "pauline-epistles": "Paulusbriefe",
+      "general-epistles": "Allgemeine Briefe",
+      "revelation-end-new": "Offenbarung: Ende und Neues"
+    }
+  },
+  "biblePreview": {
+    "defaultTitle": "Der Gute Hirte",
+    "todaysReading": "Heutige Lesung",
+    "next": "Nächste",
+    "summary": "ZUSAMMENFASSUNG",
+    "startReading": "Lesen Beginnen",
+    "justReadBible": "Einfach Bibel Lesen",
+    "defaultDescription": "Jesus beschreibt sich selbst als den Guten Hirten, der sein Leben für die Schafe hingibt.",
+    "nicodemusDescription": "Jesus lehrt Nikodemus über die Wiedergeburt und Gottes Liebe zur Welt."
+  },
+  "bibleReader": {
+    "loading": "Laden...",
+    "cardView": "Kartenansicht",
+    "fontSize": "Schriftgröße",
+    "lineSpacing": "Zeilenabstand",
+    "theme": "Design",
+    "compact": "Kompakt",
+    "regular": "Normal",
+    "relaxed": "Entspannt",
+    "lastChapterMessage": "Du hast Offenbarung 22 erreicht, das letzte Kapitel der Bibel.",
+    "goBackAccessibility": "Zurück zum vorherigen Kapitel",
+    "swipeGuidance": "← Nach links wischen für Anmerkungen • Nach rechts wischen für Chat →",
+    "finishReading": "Lesen beenden 🎉",
+    "tapForNextVerse": "Tippen für nächsten Vers →",
+    "tapToShowFullVerse": "Tippen um vollständigen Vers zu zeigen",
+    "readingComplete": "Lesen abgeschlossen!",
+    "greatProgress": "Großer Fortschritt!",
+    "menuActions": {
+      "copy": "Kopieren",
+      "explain": "Erklären",
+      "highlight": "Hervorheben",
+      "addNote": "Notiz hinzufügen"
+    }
+  },
+  "bookChapterSelector": {
+    "title": "Buch und Kapitel Auswählen",
+    "done": "Fertig",
+    "book": "Buch",
+    "chapter": "Kapitel"
+  },
+  "highlightColorPicker": {
+    "title": "Markierungsfarbe Wählen",
+    "cancel": "Abbrechen",
+    "apply": "Anwenden",
+    "remove": "Entfernen",
+    "removeHighlight": "Markierung Entfernen"
+  },
+  "successAnimation": {
+    "loadingAnimation": "Animation wird geladen...",
+    "rewardsTitle": "BELOHNUNGEN",
+    "bonusGems": "+9 Edelsteine",
+    "hearts": "Herzen",
+    "soulPoints": "Seelenpunkte",
+    "levelUp": "LEVEL UP!",
+    "lambGrew": "Dein Lamm ist auf Level gewachsen",
+    "prayAboutVerse": "Über diesen Vers beten",
+    "reflectOnVerse": "Über diesen Vers nachdenken",
+    "prayAboutTodaysVerse": "Über den heutigen Vers beten",
+    "close": "Schließen",
+    "returnHome": "Zurück zur Startseite",
+    "goHome": "Zur Startseite"
+  },
+  "journal": {
+    "reflection": "Reflexion",
+    "scriptureReading": "Schriftlesung",
+    "saveThought": "Gedanken speichern",
+    "pleaseWriteMinimum": "Bitte schreibe mindestens",
+    "characters": "Zeichen",
+    "whatsOnMind": "Was beschäftigt dich heute?",
+    "whatStandsOut": "Was fällt dir auf in",
+    "howDoesSpeak": "Wie spricht diese Passage zu deinem Leben heute?",
+    "thisPassage": "dieser Passage",
+    "defaultReflection": "Ich habe heute über meine spirituelle Reise nachgedacht."
+  }
+} 

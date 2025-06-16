@@ -1,0 +1,598 @@
+{
+  "common": {
+    "cancel": "Cancelar",
+    "done": "Concluído",
+    "continue": "Continuar",
+    "skip": "Pular",
+    "next": "Próximo",
+    "back": "Voltar",
+    "save": "Salvar",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "loading": "Carregando...",
+    "error": "Erro",
+    "success": "Sucesso",
+    "yes": "Sim",
+    "no": "Não",
+    "ok": "OK"
+  },
+  "navigation": {
+    "map": "Mapa",
+    "bible": "Bíblia",
+    "home": "Início",
+    "stats": "Estatísticas",
+    "profile": "Perfil"
+  },
+  "onboarding": {
+    "welcome": {
+      "firstText": "Todo Pastor começa com uma ovelha perdida...",
+      "secondText": "Esta é sua.",
+      "tapPrompt": "Toque para acordá-la",
+      "claimLamb": "Reclamar Cordeiro Perdido",
+      "beginJourney": "Começar Jornada"
+    },
+    "subtitle": "Seu companheiro espiritual diário",
+    "getStarted": "Começar",
+    "chooseTopics": "Escolha seus tópicos",
+    "selectInterests": "Selecione o que mais te interessa:",
+    "faith": "Fé",
+    "prayer": "Oração",
+    "wisdom": "Sabedoria",
+    "love": "Amor",
+    "hope": "Esperança",
+    "peace": "Paz",
+    "strength": "Força",
+    "forgiveness": "Perdão",
+    "guidance": "Orientação",
+    "gratitude": "Gratidão",
+    "setupComplete": "Configuração concluída!",
+    "readyToStart": "Você está pronto para começar sua jornada espiritual.",
+    "letsGo": "Vamos lá!",
+    "lambName": {
+      "title": "Como devemos chamar seu cordeiro?",
+      "placeholder": "Digite um nome",
+      "continue": "Continuar",
+      "loading": "Carregando..."
+    },
+    "username": {
+      "title": "Como devemos chamá-lo?",
+      "placeholder": "Digite seu nome",
+      "continue": "Continuar"
+    },
+    "intentions": {
+      "title": "O que te traz aqui hoje?",
+      "subtitle": "Selecione todas que se aplicam",
+      "options": {
+        "readBible": {
+          "title": "Ler a Bíblia",
+          "description": "Comece sua jornada através das escrituras"
+        },
+        "talkToGod": {
+          "title": "Falar com Deus",
+          "description": "Aprenda a orar com confiança"
+        },
+        "reflection": {
+          "title": "Reflexão e Tempo Silencioso",
+          "description": "Momentos diários de paz com Deus"
+        },
+        "exploring": {
+          "title": "Apenas Explorando",
+          "description": "Descubra no seu próprio ritmo"
+        },
+        "deeperFaith": {
+          "title": "Aprofundar minha fé",
+          "description": "Crescer mais próximo a Deus através da prática diária"
+        },
+        "readBibleMore": {
+          "title": "Ler mais a Bíblia",
+          "description": "Construir um hábito de leitura consistente"
+        },
+        "prayer": {
+          "title": "Melhorar minha vida de oração",
+          "description": "Aprender a orar com intenção e foco"
+        },
+        "community": {
+          "title": "Conectar com a comunidade",
+          "description": "Encontrar companheirismo e apoio espiritual"
+        },
+        "questions": {
+          "title": "Explorar questões sobre a fé",
+          "description": "Buscar respostas e compreensão"
+        },
+        "peace": {
+          "title": "Encontrar paz e conforto",
+          "description": "Descobrir a presença de Deus em tempos difíceis"
+        }
+      }
+    },
+    "beliefs": {
+      "title": "Qual melhor descreve suas crenças?",
+      "options": {
+        "christian": "Sou cristão",
+        "exploring": "Estou explorando o cristianismo",
+        "curious": "Tenho curiosidade sobre a fé",
+        "other": "Outro/Prefiro não dizer"
+      }
+    },
+    "familiarity": {
+      "title": "Quão familiarizado você está com a Bíblia?",
+      "options": {
+        "veryFamiliar": "Muito familiarizado - Li a maior parte dela",
+        "somewhatFamiliar": "Algo familiarizado - Conheço algumas histórias",
+        "notVeryFamiliar": "Não muito familiarizado - Ouvi algumas coisas",
+        "notFamiliar": "Não familiarizado de forma alguma"
+      }
+    },
+    "readingTime": {
+      "title": "Quanto tempo você pode dedicar à leitura diária?",
+      "subtitle": "Isso nos ajuda a personalizar sua experiência",
+      "options": {
+        "1-5": "1-5 minutos",
+        "6-10": "6-10 minutos",
+        "11-15": "11-15 minutos",
+        "16-25": "16-25 minutos",
+        "25plus": "25+ minutos"
+      }
+    },
+    "age": {
+      "title": "Qual é sua idade?",
+      "subtitle": "Isso nos ajuda a fornecer conteúdo apropriado para a idade",
+      "selectBirthDate": "Selecione Sua Data de Nascimento",
+      "parentGuardian": "Sou pai/responsável"
+    },
+    "religousAffiliation": {
+      "title": "Qual é sua formação religiosa?",
+      "subtitle": "Isso nos ajuda a personalizar sua experiência",
+      "options": {
+        "protestant": "Protestante/Evangélico",
+        "catholic": "Católico",
+        "orthodox": "Ortodoxo",
+        "nonDenominational": "Não-denominacional",
+        "exploring": "Explorando o cristianismo",
+        "other": "Outro/Nenhum"
+      }
+    },
+    "notifications": {
+      "title": "Mantenha-se no caminho com lembretes diários",
+      "subtitle": "Receba lembretes gentis para manter sua sequência de leitura",
+      "permissionTitle": "\"Shepherd\" gostaria de enviar notificações",
+      "permissionDescription": "Notificações podem incluir alertas, sons e ícones de badges. Estas podem ser configuradas nas Configurações.",
+      "mockNotification": {
+        "from": "Do Shepherd",
+        "time": "agora",
+        "message": "Sua sequência vai ser quebrada!"
+      },
+      "dontAllow": "Não Permitir",
+      "allow": "Permitir",
+      "remindMe": "Me Lembre!",
+      "alreadyEnabled": "Notificações já estão habilitadas!",
+      "enabledSuccess": "Ótimo! Você receberá lembretes diários para manter sua sequência viva.",
+      "deniedMessage": "Sem problemas! Você sempre pode habilitar notificações mais tarde nas configurações do seu dispositivo se mudar de ideia.",
+      "openSettings": "Abrir Configurações"
+    },
+    "hearts": {
+      "title": "Apresentando Corações",
+      "subtitle": "Corações representam sua energia espiritual e motivação para crescer mais próximo a Deus",
+      "description": "Comece cada dia com 3 corações. Ler, orar e refletir ajuda a mantê-los. Não se preocupe - você nunca perderá progresso, corações apenas encorajam crescimento espiritual consistente!",
+      "heartsLabel": "3 ❤️"
+    },
+    "loading": {
+      "messages": {
+        "saving": "Salvando suas respostas",
+        "encrypting": "Criptografando seus dados",
+        "blessing": "Borrifando um pouco de água benta",
+        "generating": "Gerando seu plano de estudo bíblico personalizado"
+      }
+    },
+    "rating": {
+      "title": "Como estamos indo?",
+      "subtitle": "Seu feedback nos ajuda a melhorar o Shepherd para todos",
+      "leaveRating": "Deixar uma avaliação",
+      "alreadyRated": "Já avaliei o aplicativo"
+    },
+    "explainer": {
+      "title": "Bem-vindo à sua jornada espiritual!",
+      "subtitle": "Veja como o Shepherd funciona",
+      "features": {
+        "reading": {
+          "title": "Leitura Diária",
+          "description": "Leia pequenas porções da Bíblia a cada dia"
+        },
+        "prayer": {
+          "title": "Tempo de Oração",
+          "description": "Aprenda a orar com prompts guiados e modelos"
+        },
+        "reflection": {
+          "title": "Reflexão Silenciosa",
+          "description": "Reserve tempo para processar o que você aprendeu"
+        }
+      }
+    },
+    "saveProgress": {
+      "title": "Salve Seu Progresso",
+      "subtitle": "Crie uma conta para manter sua sequência de leitura e desbloquear todas as funcionalidades",
+      "skipForNow": "Pular por enquanto",
+      "backToHome": "Voltar ao Início",
+      "pleaseWait": "Por favor aguarde...",
+      "noAccountToast": "Por favor complete a introdução."
+    }
+  },
+  "home": {
+    "dailyBread": "Pão Diário – Ler",
+    "dailyBreadSubtitle": "Alimente sua alma com as escrituras",
+    "livingWater": "Água Viva – Orar",
+    "livingWaterSubtitle": "Refresque seu espírito com oração",
+    "quietTime": "Tempo Silencioso – Refletir",
+    "quietTimeSubtitle": "Pause e encontre-se com Deus",
+    "prayer": "Oração",
+    "reflect": "Refletir",
+    "finishReading": "Terminar Leitura",
+    "level": "Nível",
+    "hearts": "Corações",
+    "xp": "XP",
+    "howToAddWidget": "Como Adicionar Widget",
+    "goodMorning": "Bom dia",
+    "goodAfternoon": "Boa tarde",
+    "goodEvening": "Boa noite",
+    "streakDays": "dias seguidos",
+    "welcomeBack": "Bem-vindo de volta!",
+    "timeToRead": "Hora de ler",
+    "continueReading": "Continuar lendo"
+  },
+  "bible": {
+    "selectBook": "Selecionar livro",
+    "selectChapter": "Selecionar capítulo",
+    "verse": "Versículo",
+    "chapter": "Capítulo",
+    "loading": "Carregando Bíblia...",
+    "errorLoading": "Erro ao carregar",
+    "books": {
+      "genesis": "Gênesis",
+      "exodus": "Êxodo",
+      "leviticus": "Levítico",
+      "numbers": "Números",
+      "deuteronomy": "Deuteronômio",
+      "joshua": "Josué",
+      "judges": "Juízes",
+      "ruth": "Rute",
+      "1samuel": "1 Samuel",
+      "2samuel": "2 Samuel",
+      "1kings": "1 Reis",
+      "2kings": "2 Reis",
+      "1chronicles": "1 Crônicas",
+      "2chronicles": "2 Crônicas",
+      "ezra": "Esdras",
+      "nehemiah": "Neemias",
+      "esther": "Ester",
+      "job": "Jó",
+      "psalms": "Salmos",
+      "proverbs": "Provérbios",
+      "ecclesiastes": "Eclesiastes",
+      "songofsolomon": "Cânticos",
+      "isaiah": "Isaías",
+      "jeremiah": "Jeremias",
+      "lamentations": "Lamentações",
+      "ezekiel": "Ezequiel",
+      "daniel": "Daniel",
+      "hosea": "Oséias",
+      "joel": "Joel",
+      "amos": "Amós",
+      "obadiah": "Obadias",
+      "jonah": "Jonas",
+      "micah": "Miquéias",
+      "nahum": "Naum",
+      "habakkuk": "Habacuque",
+      "zephaniah": "Sofonias",
+      "haggai": "Ageu",
+      "zechariah": "Zacarias",
+      "malachi": "Malaquias",
+      "matthew": "Mateus",
+      "mark": "Marcos",
+      "luke": "Lucas",
+      "john": "João",
+      "acts": "Atos",
+      "romans": "Romanos",
+      "1corinthians": "1 Coríntios",
+      "2corinthians": "2 Coríntios",
+      "galatians": "Gálatas",
+      "ephesians": "Efésios",
+      "philippians": "Filipenses",
+      "colossians": "Colossenses",
+      "1thessalonians": "1 Tessalonicenses",
+      "2thessalonians": "2 Tessalonicenses",
+      "1timothy": "1 Timóteo",
+      "2timothy": "2 Timóteo",
+      "titus": "Tito",
+      "philemon": "Filemom",
+      "hebrews": "Hebreus",
+      "james": "Tiago",
+      "1peter": "1 Pedro",
+      "2peter": "2 Pedro",
+      "1john": "1 João",
+      "2john": "2 João",
+      "3john": "3 João",
+      "jude": "Judas",
+      "revelation": "Apocalipse"
+    }
+  },
+  "prayer": {
+    "title": "Tempo de oração",
+    "subtitle": "Reserve um momento para falar com Deus",
+    "adoration": "Adoração",
+    "confession": "Confissão",
+    "thanksgiving": "Ação de graças",
+    "supplication": "Súplica",
+    "amen": "Amém",
+    "prayerComplete": "Oração concluída",
+    "speakYourHeart": "Fale do seu coração",
+    "typeYourPrayer": "Digite sua oração aqui...",
+    "myPrayers": "Minhas Orações",
+    "wantToPrayFor": "Quero orar por",
+    "guidancePlaceholder": "orientação...",
+    "customPrayers": "Orações personalizadas:",
+    "orPickOne": "Ou escolha uma destas:",
+    "generatePrayer": "Gerar uma oração",
+    "prayerGenerated": "Oração Gerada",
+    "yourPrayerGenerated": "Sua oração por",
+    "hasBeenGenerated": "foi gerada.",
+    "topics": {
+      "health": "Saúde",
+      "repentance": "Arrependimento",
+      "patience": "Paciência",
+      "family": "Família",
+      "peace": "Paz",
+      "forgiveness": "Perdão",
+      "strength": "Força",
+      "wisdom": "Sabedoria"
+    }
+  },
+  "settings": {
+    "title": "Configurações",
+    "done": "Concluído",
+    "bibleTranslation": "Tradução Bíblica",
+    "language": "Idioma",
+    "dailyReadingTime": "Tempo de Leitura Diária",
+    "readingTimeOptions": {
+      "1-5": "1-5 min (1 capítulo)",
+      "6-10": "6-10 min (3-4 capítulos)",
+      "11-15": "11-15 min (6-8 capítulos)",
+      "15-25": "11-15 min (6-8 capítulos)",
+      "default": "5-10 min",
+      "short": "1-5 min (1 capítulo)",
+      "medium": "6-10 min (3-4 capítulos)",
+      "long": "15-25 min (6-8 capítulos)"
+    },
+    "notificationTime": "Hora de Notificação",
+    "notificationsEnabled": "Notificações habilitadas",
+    "notificationsDisabled": "Notificações desabilitadas",
+    "donePickingTime": "Concluído",
+    "community": "Comunidade",
+    "joinShepherdFamily": "Junte-se à Família Shepherd!",
+    "roadmapFeatureRequests": "Roteiro e Solicitações de Recursos",
+    "subscription": "Assinatura",
+    "superShepherdActive": "Super Shepherd (Ativo)",
+    "upgradeToSuperShepherd": "Atualizar para Super Shepherd",
+    "thankYouSupporting": "Obrigado por apoiar nossa missão!",
+    "unlockPremiumFeatures": "Desbloqueie recursos premium e apoie nossa missão",
+    "cancel": "Cancelar",
+    "upgrade": "Atualizar",
+    "referralCode": "Código de Indicação",
+    "referralCodeDescription": "Digite um código de indicação para obter recompensas extras",
+    "userId": "ID do Usuário",
+    "signOut": "Sair",
+    "deleteAccount": "Excluir Conta",
+    "showDeveloperPanel": "Mostrar Painel do Desenvolvedor",
+    "hideDeveloperPanel": "Ocultar Painel do Desenvolvedor",
+    "developerPanel": "Painel do Desenvolvedor",
+    "appInformation": "Informações do Aplicativo",
+    "version": "Versão",
+    "build": "Build",
+    "streakData": "Dados da Sequência",
+    "streakCount": "Contador de Sequência",
+    "lambHearts": "Corações do Cordeiro",
+    "lambMood": "Humor do Cordeiro",
+    "showDetails": "Mostrar Detalhes",
+    "hideDetails": "Ocultar Detalhes"
+  },
+  "auth": {
+    "signIn": "Entrar",
+    "signUp": "Cadastrar",
+    "signInWithGoogle": "Entrar com Google",
+    "signInWithApple": "Entrar com Apple",
+    "continueAsGuest": "Continuar como convidado",
+    "welcome": "Bem-vindo",
+    "createAccount": "Criar conta",
+    "alreadyHaveAccount": "Já tem uma conta?",
+    "dontHaveAccount": "Não tem uma conta?"
+  },
+  "errors": {
+    "networkError": "Erro de rede. Verifique sua conexão.",
+    "authError": "Erro de autenticação. Tente novamente.",
+    "loadingError": "Erro ao carregar. Tente novamente.",
+    "unknownError": "Ocorreu um erro desconhecido."
+  },
+  "stats": {
+    "title": "Estatísticas",
+    "activitySummary": "Resumo de Atividade",
+    "recentActivity": "Atividade Recente",
+    "readings": "Leituras",
+    "prayers": "Orações",
+    "reflections": "Reflexões",
+    "highlights": "Destaques",
+    "notes": "Notas",
+    "justNow": "agora mesmo",
+    "minutesAgo": "{{count}}m atrás",
+    "hoursAgo": "{{count}}h atrás",
+    "daysAgo": "{{count}}d atrás",
+    "monthsAgo": "{{count}}mo atrás",
+    "yearsAgo": "{{count}}a atrás",
+    "highlightedVerse": "Versículo destacado",
+    "quietTime": "Tempo Silencioso",
+    "noHighlightsYet": "Ainda não há destaques",
+    "highlightInstruction": "Destaque versículos enquanto lê para salvá-los aqui",
+    "noNotesYet": "Ainda não há notas",
+    "notesInstruction": "Adicione notas aos versículos enquanto estuda para salvá-las aqui",
+    "noRecentReflections": "Nenhuma reflexão recente",
+    "reflectionsInstruction": "Reserve um momento para refletir sobre sua jornada com Deus",
+    "days": {
+      "su": "Do",
+      "mo": "Se",
+      "tu": "Te",
+      "we": "Qu",
+      "th": "Qu",
+      "fr": "Se",
+      "sa": "Sa"
+    }
+  },
+  "map": {
+    "loadingMap": "Carregando Mapa...",
+    "defaultTitle": "Mapa",
+    "unknownBook": "Livro {{bookId}}",
+    "section": "SEÇÃO {{number}}"
+  },
+  "profile": {
+    "title": "Perfil",
+    "signInToSave": "Faça login para salvar seu progresso",
+    "signInDescription": "Crie uma conta gratuita para sincronizar sua sequência, XP e cordeiro em todos os seus dispositivos. Você sempre pode fazer login mais tarde!",
+    "signingIn": "Fazendo login...",
+    "signInWithApple": "Entrar com Apple",
+    "signInWithGoogle": "Entrar com Google",
+    "joinOurFamily": "Junte-se à nossa família Shepherd!",
+    "discordDescription": "Conecte-se, compartilhe insights e cresça juntos em nosso servidor Discord.",
+    "joinTheHerd": "Junte-se ao Rebanho",
+    "yourLamb": "Seu Cordeiro",
+    "level": "Nível",
+    "dayStreak": "Sequência de Dias",
+    "hearts": "Corações",
+    "journeyStarted": "Jornada Iniciada",
+    "selectedPath": "Caminho Selecionado",
+    "noPathSelected": "Nenhum caminho selecionado",
+    "manageSubscription": "Gerenciar Assinatura",
+    "pro": "Pro",
+    "proDescription": "Você tem acesso a todos os recursos premium!",
+    "upgradeDescription": "Desbloqueie recursos premium e aprimore sua jornada espiritual",
+    "upgradeToPro": "Atualizar para Pro",
+    "store": "Loja",
+    "unlocksAtLevel10": "Desbloqueia no Nível 10",
+    "storeDescription": "Personalize seu cordeiro e desbloqueie itens especiais!",
+    "yourJourney": "Sua Jornada",
+    "noActivitiesYet": "Ainda não há atividades. Comece sua jornada hoje!",
+    "today": "Hoje",
+    "yesterday": "Ontem",
+    "justNow": "agora mesmo",
+    "minutesAgo": "{{count}}m atrás",
+    "hoursAgo": "{{count}}h atrás",
+    "daysAgo": "{{count}}d atrás",
+    "monthsAgo": "{{count}}m atrás",
+    "yearsAgo": "{{count}}a atrás",
+    "topic": "Tópico",
+    "version": "Versão",
+    "build": "Build",
+    "readActivity": "Leu {{book}} {{chapters}}",
+    "prayedFor": "Orou por {{topic}}",
+    "dailyPrayer": "Oração Diária",
+    "quietTimeActivity": "Tempo Silencioso",
+    "errorMessages": {
+      "signInCanceled": "O login foi cancelado. Por favor, tente novamente.",
+      "networkError": "Erro de rede. Por favor, verifique sua conexão com a internet e tente novamente.",
+      "configurationError": "Erro de configuração de autenticação. Por favor, tente um método diferente.",
+      "incompleteError": "O processo de login foi interrompido. Por favor, tente novamente.",
+      "operationError": "Não foi possível completar o processo de login. Por favor, tente novamente.",
+      "noAccountApple": "Não conseguimos encontrar uma conta com este Apple ID. Por favor, crie uma nova conta.",
+      "noAccountGoogle": "Não conseguimos encontrar uma conta com esta conta do Google. Por favor, crie uma nova conta.",
+      "fetchDataError": "Não conseguimos buscar os dados da sua conta. Por favor, tente novamente.",
+      "defaultAppleError": "Houve um problema ao fazer login com a Apple.",
+      "defaultGoogleError": "Houve um problema ao fazer login com o Google."
+    }
+  },
+  "paths": {
+    "titles": {
+      "genesis-beginnings": "Gênesis: Começos",
+      "exodus-deliverance-law": "Êxodo: Libertação e Lei",
+      "wilderness-testing-provision": "Deserto: Teste e Provisão",
+      "kingdoms-prophets": "Reinos e Profetas",
+      "psalms-wisdom": "Salmos: Sabedoria e Perspicácia",
+      "major-prophets": "Profetas Maiores",
+      "minor-prophets": "Profetas Menores",
+      "gospels-life-of-christ": "Evangelhos: Vida de Cristo",
+      "acts-early-church": "Atos: Igreja Primitiva",
+      "pauline-epistles": "Epístolas Paulinas",
+      "general-epistles": "Epístolas Gerais",
+      "revelation-end-new": "Apocalipse: Fim e Novo"
+    }
+  },
+  "biblePreview": {
+    "defaultTitle": "O Bom Pastor",
+    "todaysReading": "Leitura de Hoje",
+    "next": "Próximo",
+    "summary": "RESUMO",
+    "startReading": "Começar Leitura",
+    "justReadBible": "Apenas Ler a Bíblia",
+    "defaultDescription": "Jesus se descreve como o Bom Pastor que dá sua vida pelas ovelhas.",
+    "nicodemusDescription": "Jesus ensina Nicodemos sobre nascer de novo e o amor de Deus pelo mundo."
+  },
+  "bibleReader": {
+    "loading": "Carregando...",
+    "cardView": "Visualização de Cartão",
+    "fontSize": "Tamanho da Fonte",
+    "lineSpacing": "Espaçamento de Linha",
+    "theme": "Tema",
+    "compact": "Compacto",
+    "regular": "Regular",
+    "relaxed": "Relaxado",
+    "lastChapterMessage": "Você chegou ao Apocalipse 22, o último capítulo da Bíblia.",
+    "goBackAccessibility": "Voltar ao capítulo anterior",
+    "swipeGuidance": "← Deslize à esquerda para anotações • Deslize à direita para chat →",
+    "finishReading": "Terminar Leitura 🎉",
+    "tapForNextVerse": "Toque para o próximo versículo →",
+    "tapToShowFullVerse": "Toque para mostrar o versículo completo",
+    "readingComplete": "Leitura Completa!",
+    "greatProgress": "Ótimo progresso!",
+    "menuActions": {
+      "copy": "Copiar",
+      "explain": "Explicar",
+      "highlight": "Destacar",
+      "addNote": "Adicionar Nota"
+    }
+  },
+  "bookChapterSelector": {
+    "title": "Selecionar Livro e Capítulo",
+    "done": "Concluído",
+    "book": "Livro",
+    "chapter": "Capítulo"
+  },
+  "highlightColorPicker": {
+    "title": "Escolher Cor de Destaque",
+    "cancel": "Cancelar",
+    "apply": "Aplicar",
+    "remove": "Remover",
+    "removeHighlight": "Remover Destaque"
+  },
+  "successAnimation": {
+    "loadingAnimation": "Carregando animação...",
+    "rewardsTitle": "RECOMPENSAS",
+    "bonusGems": "+9 Gemas",
+    "hearts": "Corações",
+    "soulPoints": "Pontos da Alma",
+    "levelUp": "SUBIU DE NÍVEL!",
+    "lambGrew": "Seu cordeiro cresceu para o nível",
+    "prayAboutVerse": "Orar sobre este versículo",
+    "reflectOnVerse": "Refletir sobre este versículo",
+    "prayAboutTodaysVerse": "Orar sobre o versículo de hoje",
+    "close": "Fechar",
+    "returnHome": "Voltar ao Início",
+    "goHome": "Ir para o Início"
+  },
+  "journal": {
+    "reflection": "Reflexão",
+    "scriptureReading": "Leitura das Escrituras",
+    "saveThought": "Salvar Pensamento",
+    "pleaseWriteMinimum": "Por favor escreva pelo menos",
+    "characters": "caracteres",
+    "whatsOnMind": "O que está em sua mente hoje?",
+    "whatStandsOut": "O que se destaca para você em",
+    "howDoesSpeak": "Como esta passagem fala à sua vida hoje?",
+    "thisPassage": "esta passagem",
+    "defaultReflection": "Refleti sobre minha jornada espiritual hoje."
+  }
+} 
