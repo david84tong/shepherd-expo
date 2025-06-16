@@ -394,10 +394,13 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   onHandoffChapterData,
   onOpenSettings,
   isBibleReaderScreen = false,
-}) => {
-  const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+}): JSX.Element => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
+  const [currentBookId, setCurrentBookId] = useState(bookId);
+  const [currentChapter, setCurrentChapter] = useState(chapter);
+  const scrollViewRef = useRef<ScrollView>(null);
+  const autoRenderTimer = useRef<NodeJS.Timeout | null>(null);
   const [showTapGuidance, setShowTapGuidance] = useState(true);
   const [showSwipeGuidance, setShowSwipeGuidance] = useState(true);
   const [tapCount, setTapCount] = useState(0);
@@ -406,13 +409,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Add initial render ref
   const isInitialRender = useRef(true);
-
-  // Add timer ref for auto-rendering
-  const autoRenderTimer = useRef<NodeJS.Timeout | null>(null);
-
-  // Track current book and chapter internally (separate from props)
-  const [currentBookId, setCurrentBookId] = useState(bookId);
-  const [currentChapter, setCurrentChapter] = useState(chapter);
 
   // Animation values
   const fadeOpacity = useSharedValue(1);
@@ -437,7 +433,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const pathInProgress = usePathStore((s) => s.pathInProgress);
   const currentPath = usePathStore((s) => s.currentPath);
   const setSavedReading = usePathStore((s) => s.setSavedReading);
-  const scrollViewRef = useRef<ScrollView>(null);
 
   // Reference for the header container
   const headerContainerRef = useRef<View>(null);
@@ -530,20 +525,17 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           };
       loadSettings();
     }, []);
-console.log("loading=========>",loading);
 
   // Helper function to load a chapter
   const loadChapter = useCallback(
     async (bookId: number, chapter: number) => {
-      // Set loading to true when starting to load
-      setLoading(true);
       try {
+        console.log(
+          `📖 [NewBibleReader] Loading chapter - bookId: ${bookId}, chapter: ${chapter}, translation: ${translation}`
+        );
+
         const res = await fetchChapter(translation, bookId, chapter);
-        if ('error' in res) {
-          console.error(res.message);
-          setLoading(false);
-          return false;
-        } else {
+        if (res && !('error' in res)) {
           // Update internal tracking of current book and chapter
           setCurrentBookId(bookId);
           setCurrentChapter(chapter);
@@ -561,17 +553,31 @@ console.log("loading=========>",loading);
           
           return true;
         }
+        return false;
       } catch (error) {
         console.error('Error loading chapter:', error);
-        setLoading(false);
         return false;
-      } finally {
-        // Ensure loading is set to false in all cases
-        setLoading(false);
       }
     },
     [translation, setSavedReading]
   );
+
+  useEffect(() => {
+    const updateUIState = async () => {
+      if (chapterData) {
+        // Update internal tracking of current book and chapter
+        setCurrentBookId(bookId);
+        setCurrentChapter(chapter);
+        // Set index to show all verses after data is loaded
+        setCurrentIndex(chapterData.verses.length - 1);
+        console.log(
+          `📖 [NewBibleReader] Updated internal state - bookId: ${bookId}, chapter: ${chapter}`
+        );
+      }
+    };
+
+    updateUIState();
+  }, [bookId, chapter, chapterData, setSavedReading]);
 
   // Function to navigate to the next chapter
   const navigateToNextChapter = useCallback(() => {
@@ -948,24 +954,6 @@ console.log("loading=========>",loading);
       hasFilteredRef.current = true;
     }
   }, [chapterData, isInPathMode, currentPath, bookId, chapter]);
-
-  // Add this useEffect to sync chapter changes
-  useEffect(() => {
-    if (bookId && chapter) {
-      // This ensures the UI state in the selector modal stays in sync
-      const updateUIState = async () => {
-        // Allow the chapter data to load first
-        if (!loading && chapterData) {
-          console.log(
-            `📚 [NewBibleReader] Syncing UI state for book ${bookId}, chapter ${chapter}`
-          );
-          setSavedReading(chapterData.book, bookId, chapter);
-        }
-      };
-
-      updateUIState();
-    }
-  }, [bookId, chapter, chapterData, loading, setSavedReading]);
 
   // Track swipe progress
   const swipeProgress = useRef({
@@ -1658,23 +1646,8 @@ console.log("loading=========>",loading);
 
 
   }, []);
-  if (loading || !chapterData) {
-    return (
-      <SafeAreaView
-        
-        className="flex-1 bg-surfaceCream/80">
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <View className="items-center justify-center">
-            <View className="flex-row space-x-2 mb-4">
-              <View className="w-3 h-3 bg-accentGold rounded-full opacity-30" />
-              <View className="w-3 h-3 bg-accentGold rounded-full opacity-60" />
-              <View className="w-3 h-3 bg-accentGold rounded-full" />
-            </View>
-            <Text className="font-feather text-description text-base">Loading Chapter...</Text>
-          </View>
-        </View>
-      </SafeAreaView>
-    );
+  if (!chapterData) {
+    return <View/>
   }
   // Render chat view if active
   if (showChatView && selectedVerse && chapterData) {

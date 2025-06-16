@@ -1154,6 +1154,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       <>
         <StatusBar translucent backgroundColor="transparent" />
         <View className='bg-surfaceCream/80' style={{ flex: 1, }}>
+          {/* {loading ? (
+            <PulsingDotsIndicator />
+          ) : ( */}
             <NewBibleReader
               isBibleReaderScreen
               bookId={currentBookId}
@@ -1165,6 +1168,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
               onHandoffChapterData={handleHandoffChapterData}
               onOpenSettings={handlePresentModal}
             />
+          {/* )} */}
         </View>
 
         {/* Shared Settings Modal */}
