@@ -51,6 +51,7 @@ import useHighlightStore, {
 import HighlightColorPicker from './HighlightColorPicker';
 import useNoteStore from '~/app/stores/noteStore';
 import NoteEditor from './NoteEditor';
+import { useTranslation } from 'react-i18next';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -380,6 +381,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   onHandoffChapterData,
   onOpenSettings,
 }) => {
+  const { t } = useTranslation();
+  
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -575,15 +578,15 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         console.log('Reached the end of the Bible');
         Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
         Alert.alert(
-          'End of the Bible',
-          "You've reached Revelation 22, the last chapter of the Bible."
+          t('bibleReader.endOfBible'),
+          t('bibleReader.lastChapterMessage')
         );
       }
     } else {
       // Go to next chapter in current book
       loadChapter(currentBookId, currentChapter + 1);
     }
-  }, [currentBookId, currentChapter, chapterData, loadChapter]);
+  }, [currentBookId, currentChapter, chapterData, loadChapter, t]);
 
   // Function to navigate back to the previous chapter
   const navigateToPreviousChapter = useCallback(() => {
@@ -738,6 +741,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     prayerCompleted,
     reflectionCompleted,
     setSuccessType,
+    t
   ]);
 
   // -----------------------------
@@ -1321,7 +1325,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     };
   });
 
-  // Define menu actions
+  // Define menu actions - copy verse function
   const handleCopyVerse = (verse: Verse) => {
     if (!chapterData) return;
 
@@ -1330,7 +1334,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     );
     Toast.show({
       type: 'success',
-      text1: 'Verse copied to clipboard',
+      text1: t('bibleReader.verseCopied'),
       position: 'top',
       visibilityTime: 2000,
     });
@@ -1370,7 +1374,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Add a reset highlights function
   const resetAndLoadHighlights = useCallback(() => {
-    // Make a new request to load highlights whenever currentBookId/currentChapter changes
     console.log(`Resetting and loading highlights for ${currentBookId}:${currentChapter}`);
     loadHighlights();
   }, [currentBookId, currentChapter, loadHighlights]);
@@ -1389,17 +1392,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Modified highlight handler
   const handleHighlightVerse = (verse: Verse) => {
-    // Set verse to highlight and show picker
     setVerseToHighlight(verse);
-
-    // Check if the verse is already highlighted
     const existingHighlight = getHighlight(currentBookId, currentChapter, verse.verse);
-    const initialColor = existingHighlight?.colorKey || null;
-
-    // Show highlight picker with the verse preview
     setIsHighlightPickerVisible(true);
 
-    // Analytics
     analytics.logEvent('BibleReader_Opened_HighlightPicker', {
       book: chapterData?.book,
       chapter: chapterData?.chapter,
@@ -1407,7 +1403,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       isExistingHighlight: !!existingHighlight,
     });
 
-    // Close floating menu
     handleCloseFloatingMenu();
   };
 
@@ -1415,48 +1410,26 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const handleApplyHighlight = (colorKey: HighlightColorKey | null) => {
     if (!verseToHighlight || !chapterData) return;
 
-    // If colorKey is null, remove the highlight
     if (colorKey === null) {
       removeHighlight(currentBookId, currentChapter, verseToHighlight.verse);
-
-      // Show removal confirmation
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       Toast.show({
         type: 'success',
-        text1: 'Highlight removed',
+        text1: t('bibleReader.highlightRemoved'),
         position: 'top',
         visibilityTime: 2000,
-      });
-
-      // Log the event
-      analytics.logEvent('BibleReader_Removed_Highlight', {
-        book: chapterData.book,
-        chapter: chapterData.chapter,
-        verse: verseToHighlight.verse,
       });
     } else {
-      // Add highlight to store
       addHighlight(currentBookId, currentChapter, verseToHighlight.verse, colorKey);
-
-      // Show confirmation
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       Toast.show({
         type: 'success',
-        text1: 'Verse highlighted',
+        text1: t('bibleReader.verseHighlighted'),
         position: 'top',
         visibilityTime: 2000,
-      });
-
-      // Log the event
-      analytics.logEvent('BibleReader_Applied_Highlight', {
-        book: chapterData.book,
-        chapter: chapterData.chapter,
-        verse: verseToHighlight.verse,
-        color: colorKey,
       });
     }
 
-    // Close picker
     setIsHighlightPickerVisible(false);
     setVerseToHighlight(null);
   };
@@ -1465,27 +1438,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const handleCloseHighlightPicker = () => {
     setIsHighlightPickerVisible(false);
     setVerseToHighlight(null);
-  };
-
-  // Function to remove highlight
-  const handleRemoveHighlight = (verse: Verse) => {
-    removeHighlight(currentBookId, currentChapter, verse.verse);
-
-    // Show confirmation
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Toast.show({
-      type: 'success',
-      text1: 'Highlight removed',
-      position: 'top',
-      visibilityTime: 2000,
-    });
-
-    // Log the event
-    analytics.logEvent('BibleReader_Removed_Highlight', {
-      book: chapterData?.book,
-      chapter: chapterData?.chapter,
-      verse: verse.verse,
-    });
   };
 
   // Add state for managing note editor
@@ -1497,7 +1449,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const loadNotes = useNoteStore((state) => state.loadNotes);
   const syncNotes = useNoteStore((state) => state.syncNotes);
 
-  // Remove the memoized getVerseHighlightColor function and replace with direct function
+  // Get verse highlight color function
   const getVerseHighlightColor = (verse: Verse): string | null => {
     if (!verse) return null;
     const highlight = getHighlight(currentBookId, currentChapter, verse.verse);
@@ -1515,9 +1467,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Load notes when component mounts
   const notesLoadedRef = useRef(false);
   useEffect(() => {
-    // We avoid any initialization before the component mounts
-    // by putting this inside useEffect
-    // Only load notes if they haven't been loaded yet
     if (!notesLoadedRef.current) {
       loadNotes();
       notesLoadedRef.current = true;
@@ -1539,13 +1488,11 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     };
   }, []);
 
-  // Update handleAddNote function
+  // Add note function
   const handleAddNote = (verse: Verse) => {
-    // Set the verse for the note and show the editor
     setVerseForNote(verse);
     setIsNoteEditorVisible(true);
 
-    // Log the event
     analytics.logEvent('BibleReader_Opened_NoteEditor', {
       book: chapterData?.book,
       chapter: chapterData?.chapter,
@@ -1567,33 +1514,32 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     transform: [{ scale: menuScaleAnim.value }],
   }));
 
-  // Update menu actions to use the new highlight functionality
   const menuActions: MenuAction[] = [
     {
       id: 'copy',
       icon: 'copy',
-      label: 'Copy',
+      label: t('bibleReader.menuActions.copy'),
       color: theme.iconColor,
       action: handleCopyVerse,
     },
     {
       id: 'explain',
       icon: 'book-open',
-      label: 'Explain',
+      label: t('bibleReader.menuActions.explain'),
       color: theme.headerText,
       action: handleExplainVerse,
     },
     {
       id: 'highlight',
       icon: 'edit-2',
-      label: 'Highlight',
+      label: t('bibleReader.menuActions.highlight'),
       color: theme.progressBarFill,
       action: handleHighlightVerse,
     },
     {
       id: 'note',
       icon: 'edit-3',
-      label: 'Add Note',
+      label: t('bibleReader.menuActions.addNote'),
       color: theme.text,
       action: handleAddNote,
     },
@@ -1650,7 +1596,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
               className="bg-[#DCB28033] rounded-[15px] py-[5px] px-[12px] mr-2"
               disabled={isFadingToChat}>
               <Text className="font-feather text-[14px] text-[#3C584A]">
-                {chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'Loading...'}
+                {chapterData ? `${chapterData.book} ${chapterData.chapter}` : t('common.loading')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1854,7 +1800,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                                       );
                                       Toast.show({
                                         type: 'success',
-                                        text1: 'Verse copied to clipboard',
+                                        text1: t('bibleReader.verseCopied'),
                                         position: 'top',
                                         visibilityTime: 2000,
                                       });
@@ -1883,7 +1829,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                           fontSize: 16,
                           opacity: 0.7,
                         }}>
-                        {isTypingComplete ? 'Tap for next verse →' : 'Tap to show full verse'}
+                        {isTypingComplete ? t('bibleReader.tapForNextVerse') : t('bibleReader.tapToShowFullVerse')}
                       </Text>
                     )}
                     {showSwipeGuidance && (
@@ -1895,7 +1841,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                           opacity: 0.6,
                           marginTop: 4,
                         }}>
-                        ← Swipe left for annotations • Swipe right for chat →
+                        {t('bibleReader.swipeGuidance')}
                       </Text>
                     )}
                   </View>
@@ -1930,7 +1876,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                           fontFamily: 'Feather Bold',
                           fontSize: 16,
                         }}>
-                        {readingCompleted && !isInPathMode ? 'Next Chapter →' : 'Finish Reading 🎉'}
+                        {readingCompleted && !isInPathMode ? t('bibleReader.nextChapter') : t('bibleReader.finishReading')}
                       </Text>
                     </View>
                   </TouchableOpacity>
@@ -1990,7 +1936,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
                   {/* Default Reader Toggle */}
                   <View style={styles.toggleContainer}>
-                    <Text style={[styles.toggleLabel, { color: theme.text }]}>Card View</Text>
+                    <Text style={[styles.toggleLabel, { color: theme.text }]}>{t('bibleReader.cardView')}</Text>
                     <Switch
                       trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
                       thumbColor={!useDefaultReader ? '#FFFFFF' : '#FFFFFF'}
@@ -2000,7 +1946,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                     />
                   </View>
 
-                  <Text style={[styles.modalSectionTitle, { color: theme.text }]}>Font Size</Text>
+                  <Text style={[styles.modalSectionTitle, { color: theme.text }]}>{t('bibleReader.fontSize')}</Text>
                   <View style={styles.sliderContainer}>
                     <Text style={[styles.sliderLabel, { color: theme.text }]}>A</Text>
                     <Slider
@@ -2017,7 +1963,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                   </View>
 
                   <Text style={[styles.modalSectionTitle, { color: theme.text, marginTop: 16 }]}>
-                    Line Spacing
+                    {t('bibleReader.lineSpacing')}
                   </Text>
                   <View style={styles.lineHeightButtons}>
                     {(Object.keys(LINE_HEIGHT_PRESETS) as LineHeightPreset[]).map((preset) => (
@@ -2044,14 +1990,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                                   : theme.text,
                             },
                           ]}>
-                          {preset.charAt(0).toUpperCase() + preset.slice(1).toLowerCase()}
+                          {t(`bibleReader.${preset.toLowerCase()}`)}
                         </Text>
                       </TouchableOpacity>
                     ))}
                   </View>
 
                   <Text style={[styles.modalSectionTitle, { color: theme.text, marginTop: 24 }]}>
-                    Theme
+                    {t('bibleReader.theme')}
                   </Text>
                   <View style={styles.themeButtonsContainer}>
                     {(Object.keys(THEME_COLORS) as ThemeType[]).map((themeKey) => (

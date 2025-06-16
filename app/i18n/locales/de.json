@@ -402,7 +402,12 @@
     "lambHearts": "Lamm-Herzen",
     "lambMood": "Lamm-Stimmung",
     "showDetails": "Details anzeigen",
-    "hideDetails": "Details ausblenden"
+    "hideDetails": "Details Ausblenden",
+    "sound": "Ton",
+    "backgroundMusicEnabled": "Hintergrundmusik aktiviert",
+    "backgroundMusicDisabled": "Hintergrundmusik deaktiviert",
+    "soundEffectsEnabled": "Soundeffekte aktiviert",
+    "soundEffectsDisabled": "Soundeffekte deaktiviert"
   },
   "auth": {
     "signIn": "Anmelden",
@@ -415,7 +420,19 @@
     "alreadyHaveAccount": "Hast du bereits ein Konto?",
     "dontHaveAccount": "Hast du noch kein Konto?"
   },
+  "debug": {
+    "title": "Debug Optionen",
+    "syncActivityDates": "Aktivitäts- & Strafdaten Synchronisieren",
+    "syncDescription": "Aktivitätsdaten = Strafdaten setzen",
+    "uiTesting": "UI Testen",
+    "dataManagement": "Datenverwaltung",
+    "resetCompletionData": "Abschlussdaten Zurücksetzen",
+    "resetDescription": "HomeStore zurücksetzen und abgeschlossene Lesungen löschen",
+    "deleteAllData": "Alle Daten Löschen",
+    "deleteWarning": "WARNUNG: Alle Benutzerdaten dauerhaft löschen und App zurücksetzen"
+  },
   "errors": {
+    "missingTranslation": "Fehlende Übersetzung",
     "networkError": "Netzwerkfehler. Bitte überprüfe deine Verbindung.",
     "authError": "Authentifizierungsfehler. Bitte versuche es erneut.",
     "loadingError": "Fehler beim Laden. Bitte versuche es erneut.",
@@ -550,14 +567,19 @@
     "compact": "Kompakt",
     "regular": "Normal",
     "relaxed": "Entspannt",
+    "endOfBible": "Ende der Bibel",
     "lastChapterMessage": "Du hast Offenbarung 22 erreicht, das letzte Kapitel der Bibel.",
     "goBackAccessibility": "Zurück zum vorherigen Kapitel",
     "swipeGuidance": "← Nach links wischen für Anmerkungen • Nach rechts wischen für Chat →",
     "finishReading": "Lesen beenden 🎉",
+    "nextChapter": "Nächstes Kapitel →",
     "tapForNextVerse": "Tippen für nächsten Vers →",
     "tapToShowFullVerse": "Tippen um vollständigen Vers zu zeigen",
     "readingComplete": "Lesen abgeschlossen!",
     "greatProgress": "Großer Fortschritt!",
+    "verseCopied": "Vers in die Zwischenablage kopiert",
+    "verseHighlighted": "Vers hervorgehoben",
+    "highlightRemoved": "Hervorhebung entfernt",
     "menuActions": {
       "copy": "Kopieren",
       "explain": "Erklären",
@@ -596,18 +618,28 @@
   "journal": {
     "reflection": "Reflexion",
     "scriptureReading": "Schriftlesung",
-    "saveThought": "Gedanken speichern",
-    "pleaseWriteMinimum": "Bitte schreibe mindestens",
+    "saveThought": "Gedanken Speichern",
+    "pleaseWriteMinimum": "Bitte schreiben Sie mindestens",
     "characters": "Zeichen",
-    "whatsOnMind": "Was beschäftigt dich heute?",
-    "whatStandsOut": "Was fällt dir auf in",
-    "howDoesSpeak": "Wie spricht diese Passage zu deinem Leben heute?",
+    "whatsOnMind": "Was beschäftigt Sie heute?",
+    "whatStandsOut": "Was fällt Ihnen auf in",
+    "howDoesSpeak": "Wie spricht diese Passage heute zu Ihrem Leben?",
     "thisPassage": "dieser Passage",
-    "defaultReflection": "Ich habe heute über meine spirituelle Reise nachgedacht."
+    "defaultReflection": "Ich habe heute über meine spirituelle Reise reflektiert.",
+    "pleaseWriteAtLeast": "Bitte schreiben Sie mindestens {{count}} Zeichen"
   },
   "forceUpdate": {
     "title": "Update Erforderlich",
     "message": "Eine neue Version der App ist verfügbar. Bitte aktualisieren Sie, um die App weiter zu verwenden.",
     "updateNow": "Jetzt Aktualisieren"
+  },
+  "verseChatView": {
+    "welcomeMessage": "Willkommen! Ich bin hier, um Ihnen beim Studium von {{bookName}} {{chapter}}:{{verse}} zu helfen. Was möchten Sie über diesen Vers wissen?",
+    "upgradeMessage": "Sie haben Ihre kostenlosen Nachrichten für die gesamte App verwendet. Upgraden Sie auf Shepherd Super, um unbegrenzte Bibelgespräche über alle Verse freizuschalten!",
+    "systemMessage": "Sie sind ein Bibelstudie-Assistent, der bei {{bookName}} {{chapter}}:{{verse}} hilft: \"{{verseText}}\". Bitte antworten Sie in der gleichen Sprache wie die Frage des Benutzers.",
+    "errorMessage": "Es tut mir leid, ich konnte Ihre Anfrage im Moment nicht bearbeiten. Bitte versuchen Sie es später erneut.",
+    "upgradeNow": "Jetzt Upgraden",
+    "upgradeToChat": "Upgraden Sie, um weiter zu chatten...",
+    "askAboutVerse": "Fragen Sie über diesen Vers..."
   }
 } 

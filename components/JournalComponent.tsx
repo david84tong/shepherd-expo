@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import Rive from 'rive-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from '../app/hooks/useTranslation';
 
 import BackButton from './BackButton';
 import PrimaryButton from './PrimaryButton';
@@ -51,6 +52,7 @@ const MIN_CHARS_REQUIRED = 10;
  * Includes an auto-focusing TextInput and handles keyboard appearance.
  */
 const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
+  const { t } = useTranslation();
   const inputRef = useRef<TextInput>(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -353,7 +355,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         {isSmallDevice && (
           <View style={{ zIndex: 30, marginLeft: 64, marginTop: 24 }}>
             <PrimaryButton
-              title="Save Thought"
+              title={t('journal.saveThought')}
               onPress={() => {
                 console.log('Small device Save button pressed');
                 handleSave();
@@ -370,14 +372,14 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         className={`w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center z-10 mx-auto my-auto ${isSmallDevice ? 'mt-[20px]' : 'mt-[120px]'} border-4 border-border pb-4`}
         style={cardStyle}>
         <Text className="text-body font-feather text-textPrimary mb-2 text-center leading-tight">
-          {tappedReflectAboutVerse ? (currentPath?.reflection ?? 'Reflection') : 'Reflection'}
+          {tappedReflectAboutVerse ? (currentPath?.reflection ?? t('journal.reflection')) : t('journal.reflection')}
         </Text>
 
         {tappedReflectAboutVerse && currentPath && currentPath.bookId && (
           <Text className="text-body font-din text-description mb-2 text-center">
             {currentPath?.bookId && typeof currentPath?.startChapter === 'number'
               ? `${getBookNameFromId(currentPath?.bookId)} ${currentPath?.startChapter}${currentPath?.endChapter > currentPath?.startChapter ? `-${currentPath?.endChapter}` : ''}`
-              : 'Scripture Reading'}
+              : t('journal.scriptureReading')}
           </Text>
         )}
 
@@ -405,7 +407,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         {/* Character count instruction (only show when under minimum) */}
         {charCount < MIN_CHARS_REQUIRED && (
           <Text className="font-din text-sm text-description mt-2 text-right self-end">
-            Please write at least {MIN_CHARS_REQUIRED} characters
+            {t('journal.pleaseWriteAtLeast', { count: MIN_CHARS_REQUIRED })}
           </Text>
         )}
       </Animated.View>
@@ -436,7 +438,7 @@ const JournalComponent: React.FC<JournalProps> = ({ visible, onClose }) => {
         {/* Save Button (hidden on small devices since it's in header) */}
         {!isSmallDevice && (
           <View className="flex-1 items-end w-[280px] ml-8 mt-4">
-            <PrimaryButton title="Save Thought" onPress={handleSave} disabled={!isButtonEnabled} />
+            <PrimaryButton title={t('journal.saveThought')} onPress={handleSave} disabled={!isButtonEnabled} />
           </View>
         )}
       </Animated.View>

@@ -401,7 +401,12 @@
     "lambHearts": "Corações do Cordeiro",
     "lambMood": "Humor do Cordeiro",
     "showDetails": "Mostrar Detalhes",
-    "hideDetails": "Ocultar Detalhes"
+    "hideDetails": "Ocultar Detalhes",
+    "sound": "Som",
+    "backgroundMusicEnabled": "Música de fundo ativada",
+    "backgroundMusicDisabled": "Música de fundo desativada",
+    "soundEffectsEnabled": "Efeitos sonoros ativados",
+    "soundEffectsDisabled": "Efeitos sonoros desativados"
   },
   "auth": {
     "signIn": "Entrar",
@@ -414,7 +419,19 @@
     "alreadyHaveAccount": "Já tem uma conta?",
     "dontHaveAccount": "Não tem uma conta?"
   },
+  "debug": {
+    "title": "Opções de Debug",
+    "syncActivityDates": "Sincronizar Datas de Atividade e Penalidade",
+    "syncDescription": "Definir datas de atividade = datas de penalidade",
+    "uiTesting": "Teste de Interface",
+    "dataManagement": "Gestão de Dados",
+    "resetCompletionData": "Resetar Dados de Conclusão",
+    "resetDescription": "Resetar HomeStore e limpar leituras concluídas",
+    "deleteAllData": "Excluir Todos os Dados",
+    "deleteWarning": "AVISO: Excluir permanentemente todos os dados do usuário e resetar app"
+  },
   "errors": {
+    "missingTranslation": "Tradução Ausente",
     "networkError": "Erro de rede. Verifique sua conexão.",
     "authError": "Erro de autenticação. Tente novamente.",
     "loadingError": "Erro ao carregar. Tente novamente.",
@@ -549,14 +566,19 @@
     "compact": "Compacto",
     "regular": "Regular",
     "relaxed": "Relaxado",
+    "endOfBible": "Fim da Bíblia",
     "lastChapterMessage": "Você chegou ao Apocalipse 22, o último capítulo da Bíblia.",
     "goBackAccessibility": "Voltar ao capítulo anterior",
     "swipeGuidance": "← Deslize à esquerda para anotações • Deslize à direita para chat →",
     "finishReading": "Terminar Leitura 🎉",
+    "nextChapter": "Próximo Capítulo →",
     "tapForNextVerse": "Toque para o próximo versículo →",
     "tapToShowFullVerse": "Toque para mostrar o versículo completo",
     "readingComplete": "Leitura Completa!",
     "greatProgress": "Ótimo progresso!",
+    "verseCopied": "Versículo copiado para a área de transferência",
+    "verseHighlighted": "Versículo destacado",
+    "highlightRemoved": "Destaque removido",
     "menuActions": {
       "copy": "Copiar",
       "explain": "Explicar",
@@ -596,17 +618,27 @@
     "reflection": "Reflexão",
     "scriptureReading": "Leitura das Escrituras",
     "saveThought": "Salvar Pensamento",
-    "pleaseWriteMinimum": "Por favor escreva pelo menos",
+    "pleaseWriteMinimum": "Por favor, escreva pelo menos",
     "characters": "caracteres",
     "whatsOnMind": "O que está em sua mente hoje?",
     "whatStandsOut": "O que se destaca para você em",
     "howDoesSpeak": "Como esta passagem fala à sua vida hoje?",
     "thisPassage": "esta passagem",
-    "defaultReflection": "Refleti sobre minha jornada espiritual hoje."
+    "defaultReflection": "Refleti sobre minha jornada espiritual hoje.",
+    "pleaseWriteAtLeast": "Por favor, escreva pelo menos {{count}} caracteres"
   },
   "forceUpdate": {
     "title": "Atualização Necessária",
     "message": "Uma nova versão do aplicativo está disponível. Atualize para continuar usando o aplicativo.",
     "updateNow": "Atualizar Agora"
+  },
+  "verseChatView": {
+    "welcomeMessage": "Bem-vindo! Estou aqui para ajudá-lo a estudar {{bookName}} {{chapter}}:{{verse}}. O que você gostaria de saber sobre este versículo?",
+    "upgradeMessage": "Você usou suas mensagens gratuitas para todo o aplicativo. Atualize para Shepherd Super para desbloquear conversas bíblicas ilimitadas em todos os versículos!",
+    "systemMessage": "Você é um assistente de estudo bíblico ajudando com {{bookName}} {{chapter}}:{{verse}}: \"{{verseText}}\". Por favor, responda no mesmo idioma da pergunta do usuário.",
+    "errorMessage": "Desculpe, não consegui processar sua solicitação no momento. Tente novamente mais tarde.",
+    "upgradeNow": "Atualizar Agora",
+    "upgradeToChat": "Atualize para continuar conversando...",
+    "askAboutVerse": "Pergunte sobre este versículo..."
   }
 } 

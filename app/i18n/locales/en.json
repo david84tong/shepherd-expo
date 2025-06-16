@@ -260,7 +260,10 @@
       "th": "Th",
       "fr": "Fr",
       "sa": "Sa"
-    }
+    },
+    "heartPosture": "Heart Posture",
+    "monthlyActivity": "Monthly Activity",
+    "noDataAvailable": "No data available"
   },
   "bible": {
     "finishReading": "Finish Reading",
@@ -363,93 +366,13 @@
       "forgiveness": "Forgiveness",
       "strength": "Strength",
       "wisdom": "Wisdom"
-    }
-  },
-  "settings": {
-    "title": "Settings",
-    "done": "Done",
-    "bibleTranslation": "Bible Translation",
-    "language": "Language",
-    "dailyReadingTime": "Daily Reading Time",
-    "readingTimeOptions": {
-      "1-5": "1-5 mins (1 chapter)",
-      "6-10": "6-10 mins (3-4 chapters)",
-      "11-15": "11-15 mins (6-8 chapters)",
-      "15-25": "11-15 mins (6-8 chapters)",
-      "default": "5-10 mins",
-      "short": "1-5 mins (1 chapter)",
-      "medium": "6-10 mins (3-4 chapters)",
-      "long": "15-25 mins (6-8 chapters)"
     },
-    "notificationTime": "Notification Time",
-    "notificationsEnabled": "Notifications enabled",
-    "notificationsDisabled": "Notifications disabled",
-    "donePickingTime": "Done",
-    "community": "Community",
-    "joinShepherdFamily": "Join the Shepherd Family!",
-    "roadmapFeatureRequests": "Roadmap & Feature Requests",
-    "subscription": "Subscription",
-    "superShepherdActive": "Super Shepherd (Active)",
-    "upgradeToSuperShepherd": "Upgrade to Super Shepherd",
-    "thankYouSupporting": "Thank you for supporting our mission!",
-    "unlockPremiumFeatures": "Unlock premium features and support our mission",
-    "cancel": "Cancel",
-    "upgrade": "Upgrade",
-    "referralCode": "Referral Code",
-    "referralCodeDescription": "Enter a referral code to get bonus rewards",
-    "userId": "User ID",
-    "signOut": "Sign Out",
-    "deleteAccount": "Delete Account",
-    "showDeveloperPanel": "Show Developer Panel",
-    "hideDeveloperPanel": "Hide Developer Panel",
-    "developerPanel": "Developer Panel",
-    "appInformation": "App Information",
-    "version": "Version",
-    "build": "Build",
-    "streakData": "Streak Data",
-    "streakCount": "Streak Count",
-    "lambHearts": "Lamb Hearts",
-    "lambMood": "Lamb Mood",
-    "showDetails": "Show Details",
-    "hideDetails": "Hide Details"
-  },
-  "auth": {
-    "signIn": "Sign In",
-    "signOut": "Sign Out",
-    "signUp": "Sign Up",
-    "email": "Email",
-    "password": "Password",
-    "forgotPassword": "Forgot Password?",
-    "createAccount": "Create Account",
-    "alreadyHaveAccount": "Already have an account?",
-    "dontHaveAccount": "Don't have an account?"
-  },
-  "success": {
-    "goHome": "Go Home",
-    "returnHome": "Return Home",
-    "amen": "Amen"
-  },
-  "debug": {
-    "title": "Debug Options",
-    "syncActivityDates": "Sync Activity & Penalty Dates",
-    "syncDescription": "Set activity dates = penalty dates",
-    "uiTesting": "UI Testing",
-    "dataManagement": "Data Management",
-    "resetCompletionData": "Reset Completion Data",
-    "resetDescription": "Reset HomeStore and clear completed readings",
-    "deleteAllData": "Delete All Data",
-    "deleteWarning": "WARNING: Permanently delete all user data and reset app"
-  },
-  "errors": {
-    "missingTranslation": "Missing Translation",
-    "networkError": "Network error occurred",
-    "unknownError": "An unknown error occurred"
-  },
-  "map": {
-    "loadingMap": "Loading Map...",
-    "defaultTitle": "Map",
-    "unknownBook": "Book {{bookId}}",
-    "section": "SECTION {{number}}"
+    "journal": {
+      "reflection": "Reflection",
+      "saveThought": "Save Thought",
+      "scriptureReading": "Scripture Reading",
+      "pleaseWriteAtLeast": "Please write at least {{count}} characters"
+    }
   },
   "profile": {
     "title": "Profile",
@@ -505,6 +428,97 @@
       "defaultAppleError": "There was a problem signing in with Apple.",
       "defaultGoogleError": "There was a problem signing in with Google."
     }
+  },
+  "settings": {
+    "title": "Settings",
+    "done": "Done",
+    "bibleTranslation": "Bible Translation",
+    "language": "Language",
+    "dailyReadingTime": "Daily Reading Time",
+    "readingTimeOptions": {
+      "1-5": "1-5 mins (1 chapter)",
+      "6-10": "6-10 mins (3-4 chapters)",
+      "11-15": "11-15 mins (6-8 chapters)",
+      "15-25": "11-15 mins (6-8 chapters)",
+      "default": "5-10 mins",
+      "short": "1-5 mins (1 chapter)",
+      "medium": "6-10 mins (3-4 chapters)",
+      "long": "15-25 mins (6-8 chapters)"
+    },
+    "notificationTime": "Notification Time",
+    "notificationsEnabled": "Notifications enabled",
+    "notificationsDisabled": "Notifications disabled",
+    "donePickingTime": "Done",
+    "community": "Community",
+    "joinShepherdFamily": "Join the Shepherd Family!",
+    "roadmapFeatureRequests": "Roadmap & Feature Requests",
+    "subscription": "Subscription",
+    "superShepherdActive": "Super Shepherd (Active)",
+    "upgradeToSuperShepherd": "Upgrade to Super Shepherd",
+    "thankYouSupporting": "Thank you for supporting our mission!",
+    "unlockPremiumFeatures": "Unlock premium features and support our mission",
+    "cancel": "Cancel",
+    "upgrade": "Upgrade",
+    "referralCode": "Referral Code",
+    "referralCodeDescription": "Enter a referral code to get bonus rewards",
+    "userId": "User ID",
+    "signOut": "Sign Out",
+    "deleteAccount": "Delete Account",
+    "showDeveloperPanel": "Show Developer Panel",
+    "hideDeveloperPanel": "Hide Developer Panel",
+    "developerPanel": "Developer Panel",
+    "appInformation": "App Information",
+    "version": "Version",
+    "build": "Build",
+    "streakData": "Streak Data",
+    "streakCount": "Streak Count",
+    "lambHearts": "Lamb Hearts",
+    "lambMood": "Lamb Mood",
+    "showDetails": "Show Details",
+    "hideDetails": "Hide Details",
+    "sound": "Sound",
+    "backgroundMusicEnabled": "Background music enabled",
+    "backgroundMusicDisabled": "Background music disabled",
+    "soundEffectsEnabled": "Sound effects enabled",
+    "soundEffectsDisabled": "Sound effects disabled"
+  },
+  "auth": {
+    "signIn": "Sign In",
+    "signOut": "Sign Out",
+    "signUp": "Sign Up",
+    "email": "Email",
+    "password": "Password",
+    "forgotPassword": "Forgot Password?",
+    "createAccount": "Create Account",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?"
+  },
+  "success": {
+    "goHome": "Go Home",
+    "returnHome": "Return Home",
+    "amen": "Amen"
+  },
+  "debug": {
+    "title": "Debug Options",
+    "syncActivityDates": "Sync Activity & Penalty Dates",
+    "syncDescription": "Set activity dates = penalty dates",
+    "uiTesting": "UI Testing",
+    "dataManagement": "Data Management",
+    "resetCompletionData": "Reset Completion Data",
+    "resetDescription": "Reset HomeStore and clear completed readings",
+    "deleteAllData": "Delete All Data",
+    "deleteWarning": "WARNING: Permanently delete all user data and reset app"
+  },
+  "errors": {
+    "missingTranslation": "Missing Translation",
+    "networkError": "Network error occurred",
+    "unknownError": "An unknown error occurred"
+  },
+  "map": {
+    "loadingMap": "Loading Map...",
+    "defaultTitle": "Map",
+    "unknownBook": "Book {{bookId}}",
+    "section": "SECTION {{number}}"
   },
   "paths": {
     "titles": {
@@ -613,14 +627,19 @@
     "compact": "Compact",
     "regular": "Regular",
     "relaxed": "Relaxed",
+    "endOfBible": "End of the Bible",
     "lastChapterMessage": "You've reached Revelation 22, the last chapter of the Bible.",
     "goBackAccessibility": "Go back to previous chapter",
     "swipeGuidance": "← Swipe left for annotations • Swipe right for chat →",
     "finishReading": "Finish Reading 🎉",
+    "nextChapter": "Next Chapter →",
     "tapForNextVerse": "Tap for next verse →",
     "tapToShowFullVerse": "Tap to show full verse",
     "readingComplete": "Reading Complete!",
     "greatProgress": "Great progress!",
+    "verseCopied": "Verse copied to clipboard",
+    "verseHighlighted": "Verse highlighted",
+    "highlightRemoved": "Highlight removed",
     "menuActions": {
       "copy": "Copy",
       "explain": "Explain",
@@ -669,5 +688,14 @@
     "howDoesSpeak": "How does this passage speak to your life today?",
     "thisPassage": "this passage",
     "defaultReflection": "Reflected on my spiritual journey today."
+  },
+  "verseChatView": {
+    "welcomeMessage": "Welcome! I'm here to help you study {{bookName}} {{chapter}}:{{verse}}. What would you like to know about this verse?",
+    "upgradeMessage": "You've used your free messages for the entire app. Upgrade to Shepherd Super to unlock unlimited Bible conversations across all verses!",
+    "systemMessage": "You are a Bible study assistant helping with {{bookName}} {{chapter}}:{{verse}}: \"{{verseText}}\". Please respond in the same language as the user's question.",
+    "errorMessage": "I'm sorry, I couldn't process your request at the moment. Please try again later.",
+    "upgradeNow": "Upgrade Now",
+    "upgradeToChat": "Upgrade to continue chatting...",
+    "askAboutVerse": "Ask about this verse..."
   }
 } 

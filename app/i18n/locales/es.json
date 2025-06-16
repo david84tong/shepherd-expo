@@ -417,7 +417,12 @@
     "lambHearts": "Corazones de Cordero",
     "lambMood": "Estado de Ánimo del Cordero",
     "showDetails": "Mostrar Detalles",
-    "hideDetails": "Ocultar Detalles"
+    "hideDetails": "Ocultar Detalles",
+    "sound": "Sonido",
+    "backgroundMusicEnabled": "Música de fondo habilitada",
+    "backgroundMusicDisabled": "Música de fondo deshabilitada",
+    "soundEffectsEnabled": "Efectos de sonido habilitados",
+    "soundEffectsDisabled": "Efectos de sonido deshabilitados"
   },
   "auth": {
     "signIn": "Iniciar Sesión",
@@ -547,14 +552,19 @@
     "compact": "Compacto",
     "regular": "Regular",
     "relaxed": "Relajado",
+    "endOfBible": "Fin de la Biblia",
     "lastChapterMessage": "Has llegado a Apocalipsis 22, el último capítulo de la Biblia.",
     "goBackAccessibility": "Volver al capítulo anterior",
     "swipeGuidance": "← Desliza izquierda para anotaciones • Desliza derecha para chat →",
     "finishReading": "Terminar Lectura 🎉",
+    "nextChapter": "Siguiente Capítulo →",
     "tapForNextVerse": "Toca para el siguiente versículo →",
     "tapToShowFullVerse": "Toca para mostrar el versículo completo",
     "readingComplete": "¡Lectura Completa!",
     "greatProgress": "¡Gran progreso!",
+    "verseCopied": "Versículo copiado al portapapeles",
+    "verseHighlighted": "Versículo resaltado",
+    "highlightRemoved": "Resaltado eliminado",
     "menuActions": {
       "copy": "Copiar",
       "explain": "Explicar",
@@ -600,11 +610,21 @@
     "whatStandsOut": "¿Qué te llama la atención en",
     "howDoesSpeak": "¿Cómo te habla este pasaje en tu vida hoy?",
     "thisPassage": "este pasaje",
-    "defaultReflection": "Reflexioné sobre mi viaje espiritual hoy."
+    "defaultReflection": "Reflexioné sobre mi viaje espiritual hoy.",
+    "pleaseWriteAtLeast": "Por favor escribe al menos {{count}} caracteres"
   },
   "forceUpdate": {
     "title": "Actualización Requerida",
     "message": "Una nueva versión de la aplicación está disponible. Por favor actualiza para continuar usando la aplicación.",
     "updateNow": "Actualizar Ahora"
+  },
+  "verseChatView": {
+    "welcomeMessage": "¡Bienvenido! Estoy aquí para ayudarte a estudiar {{bookName}} {{chapter}}:{{verse}}. ¿Qué te gustaría saber sobre este versículo?",
+    "upgradeMessage": "Has usado tus mensajes gratuitos para toda la aplicación. ¡Actualiza a Shepherd Super para desbloquear conversaciones bíblicas ilimitadas en todos los versículos!",
+    "systemMessage": "Eres un asistente de estudio bíblico ayudando con {{bookName}} {{chapter}}:{{verse}}: \"{{verseText}}\". Por favor responde en el mismo idioma que la pregunta del usuario.",
+    "errorMessage": "Lo siento, no pude procesar tu solicitud en este momento. Por favor intenta de nuevo más tarde.",
+    "upgradeNow": "Actualizar Ahora",
+    "upgradeToChat": "Actualiza para continuar chateando...",
+    "askAboutVerse": "Pregunta sobre este versículo..."
   }
 } 

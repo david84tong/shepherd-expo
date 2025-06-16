@@ -218,7 +218,13 @@
     "selectReadingTime": "Sélectionner le Temps de Lecture",
     "additionalFeedback": "Commentaires supplémentaires (optionnel) :",
     "feedbackPlaceholder": "Vos commentaires nous aident à améliorer...",
-    "submitFeedback": "Soumettre les Commentaires"
+    "submitFeedback": "Soumettre les Commentaires",
+    "hideDetails": "Masquer Détails",
+    "sound": "Son",
+    "backgroundMusicEnabled": "Musique de fond activée",
+    "backgroundMusicDisabled": "Musique de fond désactivée",
+    "soundEffectsEnabled": "Effets sonores activés",
+    "soundEffectsDisabled": "Effets sonores désactivés"
   },
   "auth": {
     "signIn": "Se connecter",
@@ -231,7 +237,19 @@
     "alreadyHaveAccount": "Vous avez déjà un compte ?",
     "dontHaveAccount": "Vous n'avez pas de compte ?"
   },
+  "debug": {
+    "title": "Options de Débogage",
+    "syncActivityDates": "Synchroniser les Dates d'Activité et de Pénalité",
+    "syncDescription": "Définir dates d'activité = dates de pénalité",
+    "uiTesting": "Test de l'Interface",
+    "dataManagement": "Gestion des Données",
+    "resetCompletionData": "Réinitialiser les Données de Completion",
+    "resetDescription": "Réinitialiser HomeStore et effacer les lectures terminées",
+    "deleteAllData": "Supprimer Toutes les Données",
+    "deleteWarning": "ATTENTION : Supprimer définitivement toutes les données utilisateur et réinitialiser l'app"
+  },
   "errors": {
+    "missingTranslation": "Traduction Manquante",
     "networkError": "Erreur de réseau. Veuillez vérifier votre connexion.",
     "authError": "Erreur d'authentification. Veuillez réessayer.",
     "loadingError": "Erreur lors du chargement. Veuillez réessayer.",
@@ -366,8 +384,19 @@
     "compact": "Compact",
     "regular": "Régulier",
     "relaxed": "Détendu",
+    "endOfBible": "Fin de la Bible",
     "lastChapterMessage": "Vous avez atteint Apocalypse 22, le dernier chapitre de la Bible.",
     "goBackAccessibility": "Retourner au chapitre précédent",
+    "swipeGuidance": "← Glissez à gauche pour les annotations • Glissez à droite pour le chat →",
+    "finishReading": "Terminer la Lecture 🎉",
+    "nextChapter": "Chapitre Suivant →",
+    "tapForNextVerse": "Tapez pour le verset suivant →",
+    "tapToShowFullVerse": "Tapez pour afficher le verset complet",
+    "readingComplete": "Lecture Terminée !",
+    "greatProgress": "Excellent progrès !",
+    "verseCopied": "Verset copié dans le presse-papiers",
+    "verseHighlighted": "Verset surligné",
+    "highlightRemoved": "Surlignage supprimé",
     "menuActions": {
       "copy": "Copier",
       "explain": "Expliquer",
@@ -382,7 +411,11 @@
     "done": "Terminé"
   },
   "highlightColorPicker": {
-    "title": "Choisir la Couleur de Surlignage"
+    "title": "Choisir la Couleur de Surlignage",
+    "cancel": "Annuler",
+    "apply": "Appliquer",
+    "remove": "Supprimer",
+    "removeHighlight": "Supprimer le Surlignage"
   },
   "removeHighlight": "Supprimer le Surlignage",
   "forceUpdate": {
@@ -391,5 +424,40 @@
     "updateNow": "Mettre à Jour Maintenant"
   },
   "successAnimation": {
+    "loadingAnimation": "Chargement de l'animation...",
+    "rewardsTitle": "RÉCOMPENSES",
+    "bonusGems": "+9 Gemmes",
+    "hearts": "Cœurs",
+    "soulPoints": "Points d'Âme",
+    "levelUp": "NIVEAU SUPÉRIEUR !",
+    "lambGrew": "Votre agneau a grandi au niveau",
+    "prayAboutVerse": "Prier sur ce verset",
+    "reflectOnVerse": "Réfléchir sur ce verset",
+    "prayAboutTodaysVerse": "Prier sur le verset d'aujourd'hui",
+    "close": "Fermer",
+    "returnHome": "Retourner à l'Accueil",
+    "goHome": "Aller à l'Accueil"
+  },
+  "journal": {
+    "reflection": "Réflexion",
+    "scriptureReading": "Lecture des Écritures",
+    "saveThought": "Sauvegarder la Pensée",
+    "pleaseWriteMinimum": "Veuillez écrire au moins",
+    "characters": "caractères",
+    "whatsOnMind": "Qu'avez-vous à l'esprit aujourd'hui ?",
+    "whatStandsOut": "Qu'est-ce qui vous frappe dans",
+    "howDoesSpeak": "Comment ce passage vous parle-t-il dans votre vie aujourd'hui ?",
+    "thisPassage": "ce passage",
+    "defaultReflection": "J'ai réfléchi sur mon voyage spirituel aujourd'hui.",
+    "pleaseWriteAtLeast": "Veuillez écrire au moins {{count}} caractères"
+  },
+  "verseChatView": {
+    "welcomeMessage": "Bienvenue ! Je suis là pour vous aider à étudier {{bookName}} {{chapter}}:{{verse}}. Que souhaitez-vous savoir sur ce verset ?",
+    "upgradeMessage": "Vous avez utilisé vos messages gratuits pour toute l'application. Passez à Shepherd Super pour débloquer des conversations bibliques illimitées sur tous les versets !",
+    "systemMessage": "Vous êtes un assistant d'étude biblique aidant avec {{bookName}} {{chapter}}:{{verse}} : \"{{verseText}}\". Veuillez répondre dans la même langue que la question de l'utilisateur.",
+    "errorMessage": "Je suis désolé, je n'ai pas pu traiter votre demande pour le moment. Veuillez réessayer plus tard.",
+    "upgradeNow": "Mettre à Niveau Maintenant",
+    "upgradeToChat": "Mettez à niveau pour continuer à discuter...",
+    "askAboutVerse": "Posez une question sur ce verset..."
   }
 } 

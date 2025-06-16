@@ -10,6 +10,9 @@ import { fetchChapter } from '../api/bible';
 
 import * as Haptics from 'expo-haptics';
 import { Prayer, Reading, Reflection } from '../models/User';
+import analytics from '../../utils/analytics';
+import { useTranslation } from '../hooks/useTranslation';
+import { useRouter } from 'expo-router';
 
 // Bible book names mapping
 const BIBLE_BOOK_NAMES: { [bookId: number]: string } = {
@@ -217,6 +220,8 @@ const triggerHaptic = () => {
 };
 
 export default function StatsScreen() {
+  const { t } = useTranslation();
+  const router = useRouter();
   const readings = useUserStore(s => s.getCompletedReadings());
   const prayers = useUserStore(s => s.getCompletedPrayers());
   const reflections = useUserStore(s => s.getCompletedReflections());
@@ -577,72 +582,91 @@ export default function StatsScreen() {
         <ScrollView className="flex-1 bg-surfaceCream" contentContainerStyle={{ paddingBottom: 40 }}>
           {/* Header */}
           <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
-            <Text className="font-feather text-h2 text-textPrimary">Heart Posture</Text>
+            <Text className="font-feather text-h2 text-textPrimary">{t('stats.heartPosture')}</Text>
           </View>
 
-          {/* Heatmap Card */}
+          {/* Heart Posture Card - Shows Monthly Activity */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-            <View className="flex-row justify-between items-center mb-4">
-              <Text className="font-feather text-heading text-textPrimary">Monthly Activity</Text>
-              <TouchableOpacity
+            {/* Header with pro indicator */}
+            <View className="flex-row justify-between items-center mb-6">
+              <Text className="font-feather text-heading text-textPrimary">{t('stats.monthlyActivity')}</Text>
+              <View
                 className="bg-lightYellow px-4 py-1 rounded-full"
-                onPress={handleMonthPress}
-                activeOpacity={0.7}
-              >
-                <Text className="font-feather text-accentGold">{now.format('MMMM YYYY')}</Text>
-              </TouchableOpacity>
+                style={{
+                  shadowColor: '#B89B4C',
+                  shadowOffset: { width: 0, height: 2 },
+                  shadowOpacity: 0.1,
+                  shadowRadius: 4,
+                  elevation: 2,
+                }}>
+                <Text className="font-feather text-accentGold">Pro</Text>
+              </View>
             </View>
 
-            {/* Day headers with proper spacing */}
-            <View className="flex-row justify-between mb-2">
-              {DAYS.map((d) => (
-                <Text key={d} className="text-caption font-din text-description w-8 text-center">
-                  {d}
-                </Text>
+            {/* Heatmap Card */}
+            <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+              <View className="flex-row justify-between items-center mb-4">
+                <Text className="font-feather text-heading text-textPrimary">Monthly Activity</Text>
+                <TouchableOpacity
+                  className="bg-lightYellow px-4 py-1 rounded-full"
+                  onPress={handleMonthPress}
+                  activeOpacity={0.7}
+                >
+                  <Text className="font-feather text-accentGold">{now.format('MMMM YYYY')}</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Day headers with proper spacing */}
+              <View className="flex-row justify-between mb-2">
+                {DAYS.map((d) => (
+                  <Text key={d} className="text-caption font-din text-description w-8 text-center">
+                    {d}
+                  </Text>
+                ))}
+              </View>
+
+              {/* Month grid */}
+              {monthGrid.map((week, weekIdx) => (
+                <View key={weekIdx} className="flex-row justify-between mt-2">
+                  {week.map((day, dayIdx) => {
+                    if (!day)
+                      return <View key={dayIdx} className="w-8 h-8 rounded-md bg-transparent" />;
+                    const count = [day.reading, day.prayer, day.reflection].filter(Boolean).length;
+                    return (
+                      <TouchableOpacity
+                        key={day.date}
+                        className={`w-8 h-8 rounded-md ${COLORS[count]}`}
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          // Provide light haptic feedback
+                          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+
+                          // In the future, this could show detail for the specific day
+                          console.log('Day pressed:', day.date);
+                        }}
+                      />
+                    );
+                  })}
+                </View>
               ))}
-            </View>
 
-            {/* Month grid */}
-            {monthGrid.map((week, weekIdx) => (
-              <View key={weekIdx} className="flex-row justify-between mt-2">
-                {week.map((day, dayIdx) => {
-                  if (!day)
-                    return <View key={dayIdx} className="w-8 h-8 rounded-md bg-transparent" />;
-                  const count = [day.reading, day.prayer, day.reflection].filter(Boolean).length;
-                  return (
-                    <TouchableOpacity
-                      key={day.date}
-                      className={`w-8 h-8 rounded-md ${COLORS[count]}`}
-                      activeOpacity={0.8}
-                      onPress={() => {
-                        // Provide light haptic feedback
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
-
-                        // In the future, this could show detail for the specific day
-                        console.log('Day pressed:', day.date);
-                      }}
-                    />
-                  );
-                })}
-              </View>
-            ))}
-
-            <View className="flex-row justify-end mt-4">
-              <View className="flex-row items-center mr-3">
-                <View className="w-3 h-3 rounded-sm bg-pillBorder mr-1" />
-                <Text className="font-din text-description text-xs">0</Text>
-              </View>
-              <View className="flex-row items-center mr-3">
-                <View className="w-3 h-3 rounded-sm bg-accentGold/60 mr-1" />
-                <Text className="font-din text-description text-xs">1</Text>
-              </View>
-              <View className="flex-row items-center mr-3">
-                <View className="w-3 h-3 rounded-sm bg-accentGold/80 mr-1" />
-                <Text className="font-din text-description text-xs">2</Text>
-              </View>
-              <View className="flex-row items-center">
-                <View className="w-3 h-3 rounded-sm bg-accentGold mr-1" />
-                <Text className="font-din text-description text-xs">3</Text>
+              <View className="flex-row justify-end mt-4">
+                <View className="flex-row items-center mr-3">
+                  <View className="w-3 h-3 rounded-sm bg-pillBorder mr-1" />
+                  <Text className="font-din text-description text-xs">0</Text>
+                </View>
+                <View className="flex-row items-center mr-3">
+                  <View className="w-3 h-3 rounded-sm bg-accentGold/60 mr-1" />
+                  <Text className="font-din text-description text-xs">1</Text>
+                </View>
+                <View className="flex-row items-center mr-3">
+                  <View className="w-3 h-3 rounded-sm bg-accentGold/80 mr-1" />
+                  <Text className="font-din text-description text-xs">2</Text>
+                </View>
+                <View className="flex-row items-center">
+                  <View className="w-3 h-3 rounded-sm bg-accentGold mr-1" />
+                  <Text className="font-din text-description text-xs">3</Text>
+                </View>
               </View>
             </View>
           </View>

@@ -22,6 +22,7 @@ import { heightScreen } from '~/utils/dimensions';
 import * as Haptics from 'expo-haptics';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import { useHomeStore } from '../stores/homeStore';
+import { useTranslation } from 'react-i18next';
 
 // Define our custom section type
 type BibleSection = {
@@ -166,6 +167,7 @@ const useUnitStatus = (sections: BibleSection[]) => {
 const ITEM_HEIGHT = 180; // adjust if needed
 
 export default function MapScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
 
   // Get user reading time preference
@@ -207,7 +209,7 @@ export default function MapScreen() {
     }));
   }, [selectedPath, frequencyGoal]); // Added frequencyGoal as dependency
 
-  const [currentSectionTitle, setCurrentSectionTitle] = useState(sections[0]?.title || 'Map');
+  const [currentSectionTitle, setCurrentSectionTitle] = useState(sections[0]?.title || t('map.defaultTitle'));
   const [currentSectionIcon, setCurrentSectionIcon] = useState(sections[0]?.icon || 'book');
   const [currentSectionColor, setCurrentSectionColor] = useState(sections[0]?.color || 'green');
   const [currentSectionDescription, setCurrentSectionDescription] = useState(
@@ -570,7 +572,7 @@ export default function MapScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-surfaceCream">
         <ActivityIndicator size="large" color="#3C584A" />
-        <Text className="font-feather text-textPrimary mt-4">Loading Map...</Text>
+        <Text className="font-feather text-textPrimary mt-4">{t('map.loadingMap')}</Text>
       </View>
     );
   }

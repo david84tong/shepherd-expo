@@ -32,6 +32,7 @@ import { useAuth } from '../app/hooks/authHook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useSubscriptionStore from '../app/stores/subscriptionStore';
 import analytics from '../utils/analytics';
+import { useTranslation } from 'react-i18next';
 
 interface Message {
   id: string;
@@ -69,6 +70,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
   onClose,
   onMessageSent
 }) => {
+  const { t, i18n } = useTranslation();
   const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([])
   const [isAiLoading, setIsAiLoading] = useState(false);
@@ -167,7 +169,11 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       // Pro members always get the normal welcome message
       if (isProMember) {
         console.log("[VerseChatView] Setting up welcome message for pro member");
-        const initialMessage = `Welcome! I'm here to help you study ${bookName} ${chapter}:${verse.verse}. What would you like to know about this verse?`;
+        const initialMessage = t('verseChatView.welcomeMessage', { 
+          bookName, 
+          chapter, 
+          verse: verse.verse 
+        });
         
         setMessages([{
           id: Date.now().toString(),
@@ -180,7 +186,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         console.log("[VerseChatView] Setting up upgrade message for user who has used all messages");
         const upgradeMessage = {
           id: Date.now().toString(),
-          text: "You've used your free messages for the entire app. Upgrade to Shepherd Super to unlock unlimited Bible conversations across all verses!",
+          text: t('verseChatView.upgradeMessage'),
           isUser: false,
           timestamp: new Date()
         };
@@ -188,7 +194,11 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       } else {
         // Non-pro users with remaining messages get normal welcome
         console.log("[VerseChatView] Setting up welcome message for non-pro user with remaining messages");
-        const initialMessage = `Welcome! I'm here to help you study ${bookName} ${chapter}:${verse.verse}. What would you like to know about this verse?`;
+        const initialMessage = t('verseChatView.welcomeMessage', { 
+          bookName, 
+          chapter, 
+          verse: verse.verse 
+        });
         
         setMessages([{
           id: Date.now().toString(),
@@ -268,7 +278,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       setTimeout(() => {
         const upgradeMessage = {
           id: (Date.now() + 1).toString(),
-          text: "You've used your free messages for the entire app. Upgrade to Shepherd Super to unlock unlimited Bible conversations across all verses!",
+          text: t('verseChatView.upgradeMessage'),
           isUser: false,
           timestamp: new Date()
         };
@@ -392,7 +402,23 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           throw new Error('Authentication failed');
         }
         
-        const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-3.5-turbo', {
+        // Get current language and determine the appropriate system message
+        const currentLanguage = i18n.language || 'en';
+        const systemMessage = t('verseChatView.systemMessage', {
+          bookName,
+          chapter,
+          verse: verse.verse,
+          verseText: verse.text
+        });
+        
+        // Determine the model based on language
+        let model = 'gpt-3.5-turbo';
+        if (currentLanguage !== 'en') {
+          // Use the same model but indicate the language in the system prompt
+          model = 'gpt-3.5-turbo';
+        }
+        
+        const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=' + model, {
           method: 'POST',
           headers: {
             "Content-Type": "application/json",
@@ -402,7 +428,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
             "messages": [
               {
                 "role": "system",
-                "content": `You are a Bible study assistant helping with ${bookName} ${chapter}:${verse.verse}: "${verse.text}"`
+                "content": systemMessage
               },
               {
                 "role": "user",
@@ -482,7 +508,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         // Fallback message in case of API error
         const errorResponse = {
           id: (Date.now() + 1).toString(),
-          text: "I'm sorry, I couldn't process your request at the moment. Please try again later.",
+          text: t('verseChatView.errorMessage'),
           isUser: false,
           timestamp: new Date()
         };
@@ -532,7 +558,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     const isUser = item.isUser;
     
     // If this is an upgrade prompt, render a special message with an upgrade button
-    if (!isUser && (item.text.includes("Upgrade to Shepherd Super") || item.text.includes("You've used your free message"))) {
+    if (!isUser && (item.text.includes(t('verseChatView.upgradeMessage')) || item.text.includes("You've used your free message"))) {
       return (
         <Reanimated.View
           entering={FadeInUp.duration(300).delay(200)}
@@ -563,7 +589,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
               showPaywall();
             }}
           >
-            <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
+            <Text style={styles.upgradeButtonText}>{t('verseChatView.upgradeNow')}</Text>
           </TouchableOpacity>
         </Reanimated.View>
       );
@@ -639,7 +665,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
             activeOpacity={0.7}
           >
             <Feather name="chevron-left" size={22} color="#3C584A" />
-            <Text style={styles.backButtonText}>Back</Text>
+            <Text style={styles.backButtonText}>{t('common.back')}</Text>
           </TouchableOpacity>
           <Text style={styles.headerText}>
             {bookName} {chapter}:{verse.verse}
@@ -692,8 +718,8 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
             <TextInput
               style={styles.input}
               placeholder={!isProMember && globalMessageCount >= 3
-                ? "Upgrade to continue chatting..." 
-                : "Ask about this verse..."}
+                ? t('verseChatView.upgradeToChat')
+                : t('verseChatView.askAboutVerse')}
               placeholderTextColor="#B89B4C"
               value={inputMessage}
               onChangeText={setInputMessage}

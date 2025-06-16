@@ -1406,7 +1406,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
               {/* Sound Settings Section */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>Sound</Text>
+                <Text style={styles.settingsSectionTitle}>{t('settings.sound')}</Text>
 
                 {/* Background Music Toggle */}
                 <TouchableOpacity
@@ -1418,8 +1418,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   activeOpacity={0.7}>
                   <Text style={styles.translationText}>
                     {backgroundMusicEnabled
-                      ? 'Background music enabled'
-                      : 'Background music disabled'}
+                      ? t('settings.backgroundMusicEnabled')
+                      : t('settings.backgroundMusicDisabled')}
                   </Text>
                   <View
                     style={[
@@ -1447,7 +1447,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   }}
                   activeOpacity={0.7}>
                   <Text style={styles.translationText}>
-                    {soundEffectsEnabled ? 'Sound effects enabled' : 'Sound effects disabled'}
+                    {soundEffectsEnabled ? t('settings.soundEffectsEnabled') : t('settings.soundEffectsDisabled')}
                   </Text>
                   <View
                     style={[

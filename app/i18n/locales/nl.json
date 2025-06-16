@@ -402,7 +402,12 @@
     "lambHearts": "Lam Harten",
     "lambMood": "Lam Stemming",
     "showDetails": "Details Tonen",
-    "hideDetails": "Details Verbergen"
+    "hideDetails": "Details Verbergen",
+    "sound": "Geluid",
+    "backgroundMusicEnabled": "Achtergrondmuziek ingeschakeld",
+    "backgroundMusicDisabled": "Achtergrondmuziek uitgeschakeld",
+    "soundEffectsEnabled": "Geluidseffecten ingeschakeld",
+    "soundEffectsDisabled": "Geluidseffecten uitgeschakeld"
   },
   "auth": {
     "signIn": "Inloggen",
@@ -415,7 +420,19 @@
     "alreadyHaveAccount": "Heb je al een account?",
     "dontHaveAccount": "Heb je geen account?"
   },
+  "debug": {
+    "title": "Debug Opties",
+    "syncActivityDates": "Activiteit & Penalty Datums Synchroniseren",
+    "syncDescription": "Stel activiteitsdatums = penaltydatums in",
+    "uiTesting": "UI Testen",
+    "dataManagement": "Gegevensbeheer",
+    "resetCompletionData": "Voltooiingsgegevens Resetten",
+    "resetDescription": "HomeStore resetten en voltooide lezingen wissen",
+    "deleteAllData": "Alle Gegevens Verwijderen",
+    "deleteWarning": "WAARSCHUWING: Alle gebruikersgegevens permanent verwijderen en app resetten"
+  },
   "errors": {
+    "missingTranslation": "Ontbrekende Vertaling",
     "networkError": "Netwerkfout. Controleer je verbinding.",
     "authError": "Authenticatiefout. Probeer opnieuw.",
     "loadingError": "Fout bij laden. Probeer opnieuw.",
@@ -550,14 +567,19 @@
     "compact": "Compact",
     "regular": "Normaal",
     "relaxed": "Ontspannen",
+    "endOfBible": "Einde van de Bijbel",
     "lastChapterMessage": "Je hebt Openbaring 22 bereikt, het laatste hoofdstuk van de Bijbel.",
     "goBackAccessibility": "Ga terug naar vorig hoofdstuk",
     "swipeGuidance": "← Veeg links voor annotaties • Veeg rechts voor chat →",
     "finishReading": "Lezen voltooien 🎉",
+    "nextChapter": "Volgend Hoofdstuk →",
     "tapForNextVerse": "Tik voor volgende vers →",
     "tapToShowFullVerse": "Tik om volledig vers te tonen",
     "readingComplete": "Lezing Voltooid!",
     "greatProgress": "Geweldige vooruitgang!",
+    "verseCopied": "Vers gekopieerd naar klembord",
+    "verseHighlighted": "Vers gemarkeerd",
+    "highlightRemoved": "Markering verwijderd",
     "menuActions": {
       "copy": "Kopiëren",
       "explain": "Uitleggen",
@@ -601,13 +623,23 @@
   "journal": {
     "reflection": "Reflectie",
     "scriptureReading": "Schriftlezing",
-    "saveThought": "Gedachte opslaan",
-    "pleaseWriteMinimum": "Schrijf alsjeblieft minimaal",
-    "characters": "tekens",
-    "whatsOnMind": "Wat houdt je vandaag bezig?",
+    "saveThought": "Gedachte Opslaan",
+    "pleaseWriteMinimum": "Schrijf alstublieft minstens",
+    "characters": "karakters",
+    "whatsOnMind": "Wat heb je vandaag op je hart?",
     "whatStandsOut": "Wat valt je op in",
     "howDoesSpeak": "Hoe spreekt deze passage tot je leven vandaag?",
     "thisPassage": "deze passage",
-    "defaultReflection": "Ik heb vandaag gereflecteerd op mijn spirituele reis."
+    "defaultReflection": "Ik heb vandaag gereflecteerd op mijn spirituele reis.",
+    "pleaseWriteAtLeast": "Schrijf alstublieft minstens {{count}} karakters"
+  },
+  "verseChatView": {
+    "welcomeMessage": "Welkom! Ik ben hier om je te helpen {{bookName}} {{chapter}}:{{verse}} te bestuderen. Wat zou je willen weten over deze tekst?",
+    "upgradeMessage": "Je hebt je gratis berichten voor de hele app gebruikt. Upgrade naar Shepherd Super om onbeperkte bijbelgesprekken over alle verzen te ontgrendelen!",
+    "systemMessage": "Je bent een bijbelstudie-assistent die helpt met {{bookName}} {{chapter}}:{{verse}}: \"{{verseText}}\". Gelieve te antwoorden in dezelfde taal als de vraag van de gebruiker.",
+    "errorMessage": "Het spijt me, ik kon je verzoek op dit moment niet verwerken. Probeer het later opnieuw.",
+    "upgradeNow": "Nu Upgraden",
+    "upgradeToChat": "Upgrade om door te gaan met chatten...",
+    "askAboutVerse": "Vraag over deze tekst..."
   }
 } 

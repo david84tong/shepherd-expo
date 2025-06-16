@@ -34,6 +34,9 @@ import useSubscriptionStore from '../stores/subscriptionStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import OnboardingPathScreen from '../onboarding/8';
 import EditNameSheet from '../../components/EditNameSheet';
+import { useLambStore } from '../stores/lambStore';
+import { useStreakManager } from '../hooks/useStreakManager';
+import { useTranslation } from '../hooks/useTranslation';
 
 // Import the icons using import statements
 import breadIcon from '../../assets/icons/breadIcon.png';
@@ -64,6 +67,7 @@ function toDateSafe(ts: any): Date {
 const DISCORD_CARD_DISMISSED_KEY = 'shepherd_discord_card_dismissed_v1';
 
 export default function ProfileScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const {
     getLamb,
@@ -409,7 +413,7 @@ export default function ProfileScreen() {
           contentContainerStyle={{ paddingBottom: 50 }}>
           {/* Header */}
           <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
-            <Text className="font-feather text-h2 text-textPrimary">Profile</Text>
+            <Text className="font-feather text-h2 text-textPrimary">{t('profile')}</Text>
             <TouchableOpacity
               onPress={handleShowSettings}
               className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center">
@@ -424,45 +428,25 @@ export default function ProfileScreen() {
             !isSignedInWithEmail && (
               <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
                 <Text className="font-feather text-xl text-accentGold mb-2 text-center">
-                  Sign in to save your progress
+                  {t('profile.signInToSave')}
                 </Text>
                 <Text className="font-din text-body text-textPrimary mb-4 text-center">
-                  Create a free account to sync your streak, XP, and lamb across devices. You can
-                  always sign in later!
+                  {t('profile.signInDescription')}
                 </Text>
 
-                <View className="items-center mb-4">
-                  <TouchableOpacity
-                    className={`flex-row items-center justify-center ${Platform.OS === 'ios' ? 'bg-black' : 'bg-white border border-gray-300'} w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow`}
-                    onPress={handleSignIn}
-                    disabled={signInLoading}>
-                    {signInLoading ? (
-                      <ActivityIndicator
-                        color={Platform.OS === 'ios' ? 'white' : '#4285F4'}
-                        size="small"
-                        style={{ marginRight: 10 }}
-                      />
-                    ) : (
-                      <AntDesign
-                        name={Platform.OS === 'ios' ? 'apple1' : 'google'}
-                        size={24}
-                        color={Platform.OS === 'ios' ? 'white' : '#4285F4'}
-                        style={{ marginRight: 10 }}
-                      />
-                    )}
-                    <Text
-                      className={`font-din ${Platform.OS === 'ios' ? 'text-white' : 'text-[#4285F4]'} text-[18px] font-bold`}>
-                      {signInLoading
-                        ? 'Signing in...'
-                        : Platform.OS === 'ios'
-                          ? 'Sign in with Apple'
-                          : 'Sign in with Google'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
                 {signInError && (
-                  <Text className="font-din text-red-500 text-center mt-2">{signInError}</Text>
+                  <Text className="text-red-500 text-center mb-4">{signInError}</Text>
                 )}
+
+                <PrimaryButton
+                  title={signInLoading ? t('profile.signingIn') : t('profile.signInWithApple')}
+                  onPress={handleSignIn}
+                  disabled={signInLoading}
+                  size="small"
+                  leftIcon={
+                    signInLoading ? <ActivityIndicator size="small" color="white" /> : undefined
+                  }
+                />
               </View>
             )}
 
@@ -472,83 +456,70 @@ export default function ProfileScreen() {
               <TouchableOpacity
                 onPress={handleDismissDiscordCard}
                 className="absolute top-3 right-3 p-1 z-10 bg-darkPurple/10 rounded-full">
-                <Feather name="x" size={20} color="#3C584A" />
+                <AntDesign name="close" size={16} color="#4C1D95" />
               </TouchableOpacity>
-
-              <View className="flex-row items-center mb-4">
+              <View className="flex-row items-center">
                 <View className="bg-white p-3 rounded-full mr-4 shadow-md">
                   <FontAwesome6 name="discord" size={20} color="#5865F2" />
                 </View>
                 <View className="flex-1">
                   <Text className="font-feather text-xl text-darkPurple">
-                    Join our Shepherd Family!
+                    {t('profile.joinOurFamily')}
                   </Text>
                   <Text className="font-din text-body text-darkPurple opacity-80 mt-1 leading-tight">
-                    Connect, share insights, and grow together on our Discord server.
+                    {t('profile.discordDescription')}
                   </Text>
                 </View>
               </View>
-
               <PrimaryButton
-                title="Join the Herd"
+                title={t('profile.joinTheHerd')}
                 onPress={handleJoinDiscord}
                 primaryColor="bg-darkPurple"
                 textColor="text-white"
                 shadowStyle="shadow-darkPurple" // Assuming you have this in tailwind.config.js
-                style="mt-2"
+                size="small"
               />
             </View>
           )}
           {/* Lamb Stats Card */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-            <View className="flex-row justify-between items-center mb-6">
-              <TouchableOpacity
-                onPress={() => editNameSheetRef.current?.show()}
-                className="flex-row items-center bg-lightYellow px-4 py-1 rounded-lg opacity-80">
+            <View className="flex-row items-center justify-between mb-4">
+              <View className="flex-row items-center">
+                <Image source={sheepIcon} className="w-8 h-8 mr-2" />
                 <Text className="font-feather text-heading text-primary">
-                  {lamb.name ? lamb.name : 'Your Lamb'}
+                  {t('profile.yourLamb')}: {lamb?.name}
                 </Text>
-                <Feather name="edit-2" size={16} color="#3C584A" className="ml-2" />
-              </TouchableOpacity>
-              <Image source={sheepIcon} className="w-12 h-12 rounded-full" />
+              </View>
             </View>
 
-            {/* Stats Grid */}
-            <View className="flex-row justify-between space-x-8">
-              <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3 ">
+            <View className="flex-row justify-between">
+              <View className="items-center flex-1">
                 <Text className="font-feather text-h2 text-textPrimary">{levelData.level}</Text>
-                <Text className="font-din text-description">Level</Text>
+                <Text className="font-din text-description">{t('profile.level')}</Text>
               </View>
-              <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3 mx-4">
+              <View className="items-center flex-1">
                 <Text className="font-feather text-h2 text-textPrimary">{streak}</Text>
-                <Text className="font-din text-description">Day Streak</Text>
+                <Text className="font-din text-description">{t('profile.dayStreak')}</Text>
               </View>
-
-              <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3">
+              <View className="items-center flex-1">
                 <Text className="font-feather text-h2 text-textPrimary">{lamb.hearts}</Text>
-                <Text className="font-din text-description">Hearts</Text>
+                <Text className="font-din text-description">{t('profile.hearts')}</Text>
               </View>
             </View>
-            {/* XP Bar */}
-            <View className="mt-6 mx-2">
-              <View className="flex-row justify-between mb-2">
-                <Text className="font-din text-description">Level {levelData.level}</Text>
-                <Text className="font-din text-description">
-                  {levelData.xpCurrent}/{levelData.xpForNextLevel} XP
-                </Text>
-              </View>
-              <View className="h-4 bg-lightYellow rounded-full overflow-hidden">
-                <View
-                  className="h-full bg-accentGold rounded-full"
-                  style={{ width: `${levelData.progress}%` }}
-                />
-              </View>
+
+            <View className="mt-4 pt-4 border-t border-gray-200">
+              <Text className="font-din text-description">{t('profile.level')} {levelData.level}</Text>
+              <Text className="font-din text-description">
+                {levelData.totalXp}/{levelData.xpForNextLevel} XP
+              </Text>
             </View>
           </View>
 
           {/* Join Date Card */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-            <Text className="font-feather text-heading text-textPrimary mb-2">Journey Started</Text>
+            <Text className="font-feather text-heading text-textPrimary">
+              {t('profile.journeyStarted')}
+            </Text>
             <Text className="font-din text-description">{joinDate}</Text>
           </View>
 
