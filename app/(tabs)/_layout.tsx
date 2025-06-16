@@ -247,8 +247,8 @@ export default function TabsLayout() {
           tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
-              <Image source={focused ? require('../../assets/icons/homeShadow.png') : require('../../assets/icons/today.png')} className="w-7 h-7" />
-              <Text className={`mt-1 text-[12px] font-bold text-brown/70`} style={{ fontFamily: 'din' }}>Today</Text>
+              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/today.png')} className="w-7 h-7" />
+              <Text className={`mt-1 text-[12px] font-bold text-brown/70`} style={{ fontFamily: 'din' }}>Home</Text>
             </View>
           ),
         }}

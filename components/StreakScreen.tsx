@@ -520,7 +520,7 @@ export const StreakScreen = ({isPrayPresses, isReflectPresses}:{isPrayPresses?:s
       </Animated.View>
 
       {/* Development debug info */}
-      {__DEV__ && debugDisplayInfo && (
+      {/* {__DEV__ && debugDisplayInfo && (
         <View
           style={{
             position: 'absolute',
@@ -543,7 +543,7 @@ export const StreakScreen = ({isPrayPresses, isReflectPresses}:{isPrayPresses?:s
             {String(debugDisplayInfo.hasYesterdayCompleted)}
           </Text>
         </View>
-      )}
+      )} */}
     </Animated.View>
   );
 };

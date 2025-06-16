@@ -8,6 +8,7 @@ import { getLevelData } from '~/utils/levelUtils';
 
 interface SuccessMessageProps {
   title?: string;
+  description?: string;
   level: number;
   prevLevel: number;
   buttonsEnabled: boolean;
@@ -23,6 +24,7 @@ const MAX_HEARTS = 100;
 
 const SuccessMessage: React.FC<SuccessMessageProps> = ({
   title = 'Reading Complete!',
+  description = 'Hurray! You finished today\'s bible reading & fed your lamb.',
   level,
   prevLevel,
   buttonsEnabled,
@@ -140,7 +142,7 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
         {title}
       </RNAnimated.Text>
       <Text className="font-din text-[17px]  text-brown/90 text-center mb-4" >
-        Hurray! You finished today&apos;s bible reading & fed your lamb.
+        {description}
       </Text>
       <Text style={{paddingTop:RPH(4)}} className="font-bold text-[13px] text-center mb-6 tracking-wider uppercase text-brown/80">
         {rewardsTitle}

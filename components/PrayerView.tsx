@@ -944,6 +944,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
        <View style={{marginHorizontal: 24,flex:1, marginTop: 24}}>
          <SuccessMessage
           title="Prayer Complete!"
+          description="Wonderful! You spent time in prayer & strengthened your faith."
           level={levelInfo.level}
           prevLevel={levelInfo.level}
           buttonsEnabled={buttonsEnabled}

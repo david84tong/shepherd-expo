@@ -631,12 +631,12 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
   return success ? (
     <Reanimated.View
-      className="flex-1 w-full"
-      style={[{ paddingHorizontal: 24 }, animatedBackgroundStyle, componentAnimatedStyle]}
+      className="flex-1 w-full bg-surfaceCream px-8"
       pointerEvents="box-none">
       <Animated.View style={{ opacity: containerOpacity, flex: 1 }}>
         <SuccessMessage
         title="Reflection Complete!"
+        description="Amazing! You reflected on God's word & grew in wisdom."
         level={levelInfo.level}
         prevLevel={levelInfo.level}
         buttonsEnabled={buttonsEnabled}
@@ -649,6 +649,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
           const sawStreakToday = useHomeStore.getState().sawStreakToday;
           const isFirstReadingOfDay = !sawStreakToday;
+          const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
+          
           // if (readingCompleted && prayerCompleted && isFirstReadingOfDay) {
           //   const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
           //   const setSawDailyBonus = useHomeStore.getState().setSawDailyBonus;
@@ -656,7 +658,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
           //   setSawDailyBonus(true);
           //   router.push('/streak')
           // }else 
-          if(readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus) {
+          if(isBonusAvailable) {
             setSuccessType(SuccessAnimationType.BONUS);
             router.push({
               pathname: '/success',
@@ -678,7 +680,12 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
         onPray={() => {}}
         prayButtonTitle=""
         hidePrayButton
-        homeButtonTitle="Collect Bonus"
+        homeButtonTitle={(() => {
+          const sawStreakToday = useHomeStore.getState().sawStreakToday;
+          const isFirstReadingOfDay = !sawStreakToday;
+          const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
+          return isBonusAvailable ? "Collect Bonus" : "Go Home";
+        })()}
         rewardsTitle="REFLECTION REWARDS"
       />
       </Animated.View>
@@ -690,7 +697,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       <Animated.View style={{ opacity: containerOpacity, flex: 1 }}>
       <View className="flex-1 px-6">
     
-        <Text className="text-[20px] font-feather text-brown/90 mb-2 text-center leading-tight mt-4">
+        <Text className="text-[20px] font-feather text-brown/90 mb-2 text-center leading-tight mt-0 mb-4">
           {getReflectionPrompt()}
         </Text>
 
