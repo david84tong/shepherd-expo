@@ -94,7 +94,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
 
           {/* Share Button - only show when share=true AND showShareButton is true */}
           {share && showShareButton && (
-            <View className="mt-10 w-full -top-4">
+            <View className="mt-10 w-full -top-8">
               <PrimaryButton
                 title="Share"
                 onPress={handleSharePress}
