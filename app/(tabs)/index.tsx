@@ -299,7 +299,7 @@ export default function HomeScreen() {
           const targetStateInput = moodToStateInput[currentMood] || 0;
           setCurrentStateInput(targetStateInput);
           if (riveRef.current?.setInputState) {
-            riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
           }
 
           // Start fade in immediately after content switch
@@ -1001,12 +1001,7 @@ export default function HomeScreen() {
       if (riveRef.current?.setInputState) {
         // Primary input used across the app
         riveRef.current.setInputState('State Machine 1', 'Action-Number', 9);
-        // Fallback for older artboards that still expose 'Number 1'
-        try {
-          riveRef.current.setInputState('State Machine 1', 'Number 1', 9);
-        } catch (_) {
-          /* no-op – some artboards may not have this legacy input */
-        }
+        // Remove legacy Number 1 input usage
       }
       Animated.timing(riveArtboardOpacityAnim, {
         toValue: 1,
@@ -1077,12 +1072,7 @@ export default function HomeScreen() {
         if (riveRef.current?.setInputState) {
           // Primary input used across the app
           riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
-          // Fallback for older artboards that still expose 'Number 1'
-          try {
-            riveRef.current.setInputState('State Machine 1', 'Number 1', 12);
-          } catch (_) {
-            /* no-op – some artboards may not have this legacy input */
-          }
+          // Remove legacy Number 1 input usage
         }
         Animated.timing(riveArtboardOpacityAnim, {
           toValue: 1,
@@ -2151,7 +2141,7 @@ const buttonTitle = showDevotionalContent ? 'Continue' : 'Complete Prayer';
                             setCurrentStateInput(targetStateInput);
                             setRiveIdle();
                             if (riveRef.current?.setInputState) {
-                              riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
+                              riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
                             }
                           } catch (e) {
                             console.log('Error resetting Rive state:', e);
