@@ -396,7 +396,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   isBibleReaderScreen = false,
 }) => {
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showTapGuidance, setShowTapGuidance] = useState(true);
   const [showSwipeGuidance, setShowSwipeGuidance] = useState(true);
@@ -540,7 +540,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         const res = await fetchChapter(translation, bookId, chapter);
         if ('error' in res) {
           console.error(res.message);
-          setLoading(false);
+        
           return false;
         } else {
           // Update internal tracking of current book and chapter
@@ -558,13 +558,17 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           // Save to the store for persistence (same as regular BibleReader)
           setSavedReading(res.book, bookId, res.chapter);
           
-          setLoading(false);
+        
           return true;
         }
       } catch (error) {
         console.error('Error loading chapter:', error);
-        setLoading(false);
+       
         return false;
+      }finally{
+     
+        setLoading(false);
+     
       }
     },
     [translation, setSavedReading]
@@ -1656,13 +1660,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
 
   }, []);
-
   if (loading || !chapterData) {
     return (
       <SafeAreaView
-        style={{ backgroundColor: '#FFF9E6' }} // Match the background color
-        className="flex-1">
-        <View style={{ flex: 1, backgroundColor: '#FFF9E6', justifyContent: 'center', alignItems: 'center' }}>
+        
+        className="flex-1 bg-surfaceCream/80">
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
           <View className="items-center justify-center">
             <View className="flex-row space-x-2 mb-4">
               <View className="w-3 h-3 bg-accentGold rounded-full opacity-30" />
@@ -1687,7 +1690,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     );
   }
   
-  const versesToShow: Verse[] = chapterData.verses.slice(0, currentIndex + 1);
+  const versesToShow: Verse[] = chapterData?.verses?.slice(0, currentIndex + 1) || [];
   return (
  <View className='flex-1'>
       <Animated.View style={{ position: 'absolute', width: '100%', height: '100%' }}>
@@ -1795,7 +1798,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                 scrollEnabled={!isFadingToChat}
                 onTouchEnd={() => {
                   // Only render next card if we're not at the end and not currently scrolling
-                  if (!isScrolling && currentIndex < chapterData.verses.length - 1) {
+                  if (!isScrolling && currentIndex < (chapterData?.verses?.length || 0) - 1) {
                     setCurrentIndex((prevIndex) => prevIndex + 1);
                     // Add haptic feedback when new card appears
                     Haptics.selectionAsync();
@@ -1818,49 +1821,51 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                     
                     }}>
                     <View style={{ minHeight: '100%' }} className='pb-12'>
-                      {versesToShow.map((verse) => {
-                        const highlightColor = getVerseHighlightColor(verse);
-                        return (
-                          <LongPressGestureHandler
-                            key={verse.verse}
-                            minDurationMs={800}
-                            onHandlerStateChange={(e) => {
-                              if (e.nativeEvent.state === State.ACTIVE) {
-                                handleLongPress(e, verse);
-                              }
-                            }}>
-                            <View style={{ flex: 1 }}>
-                              <Swipeable
-                                ref={(ref) => {
-                                  if (ref) {
-                                    swipeableRefs.current.set(verse.verse, ref);
-                                  } else {
-                                    swipeableRefs.current.delete(verse.verse);
-                                  }
-                                }}
-                                {...swipeableProps(verse)}>
-                                <View
-                                  className="bg-surfaceCreamLight"
-                                  style={[
-                                    styles.verseBubble,
-                                    {
-                                      backgroundColor: highlightColor
-                                        ? `${highlightColor}80`
-                                        : '#fff1c9',
-                                    },
-                                  ]}>
-                                  <View style={{ marginBottom: 12 }}>
-                                    <Text className="text-[18px] leading-[25px] font-nunito-bold">
-                                      <Text className="text-brown/40">{`${verse.verse}. `}</Text>
-                                      <Text className="text-brown/70">{verse.text}</Text>
-                                    </Text>
+                      {
+                        versesToShow.map((verse) => {
+                          const highlightColor = getVerseHighlightColor(verse);
+                          return (
+                            <LongPressGestureHandler
+                              key={verse.verse}
+                              minDurationMs={800}
+                              onHandlerStateChange={(e) => {
+                                if (e.nativeEvent.state === State.ACTIVE) {
+                                  handleLongPress(e, verse);
+                                }
+                              }}>
+                              <View style={{ flex: 1 }}>
+                                <Swipeable
+                                  ref={(ref) => {
+                                    if (ref) {
+                                      swipeableRefs.current.set(verse.verse, ref);
+                                    } else {
+                                      swipeableRefs.current.delete(verse.verse);
+                                    }
+                                  }}
+                                  {...swipeableProps(verse)}>
+                                  <View
+                                    className="bg-surfaceCreamLight"
+                                    style={[
+                                      styles.verseBubble,
+                                      {
+                                        backgroundColor: highlightColor
+                                          ? `${highlightColor}80`
+                                          : '#fff1c9',
+                                      },
+                                    ]}>
+                                    <View style={{ marginBottom: 12 }}>
+                                      <Text className="text-[18px] leading-[25px] font-nunito-bold">
+                                        <Text className="text-brown/40">{`${verse.verse}. `}</Text>
+                                        <Text className="text-brown/70">{verse.text}</Text>
+                                      </Text>
+                                    </View>
                                   </View>
-                                </View>
-                              </Swipeable>
-                            </View>
-                          </LongPressGestureHandler>
-                        );
-                      })}
+                                </Swipeable>
+                              </View>
+                            </LongPressGestureHandler>
+                          );
+                        }
+                      )}
                     </View>
                   </Animated.View>
                 </GestureHandlerRootView>
