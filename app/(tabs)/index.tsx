@@ -73,6 +73,7 @@ import PrimaryButton from '~/components/PrimaryButton';
 import { RPH } from '../helper/helper';
 import BluePrimaryButton from '~/components/Shared/BluePrimaryButton';
 import DailyVerseCard from '~/components/Shared/DailyVerseCard';
+import { getLambMoodByHearts } from '../hooks/streakHook';
 
 // Custom toast config with explicit styling
 const toastConfig: ToastConfig = {
@@ -202,25 +203,78 @@ export default function HomeScreen() {
 
   const handleDevotionalClose = useCallback(({isPrayPresses}:{isPrayPresses?:boolean}) => {
     if (devotionalReaderRef.current) {
-
+      // Clear custom devotional first
+      clearCustomDevotional();
       
-    
-        // Clear custom devotional first
-        clearCustomDevotional();
-        setRiveIdle(); // Set to idle on close
-        // Immediately mark devotional reader as hidden so overlay/header animations start in sync
-    
-        // Start fade out
-        if(isPrayPresses){
-          // Reset finishReading when transitioning to prayer
-          setFinishReading(false);
-          handlePrayerPress()
-          setTimeout(() => {
-            setDevotionalReaderVisible(false);
-          }, 2000);
-        }else{
+      if(isPrayPresses){
+        // Don't set to idle when transitioning to prayer - go directly from eating to praying
+        // Reset finishReading when transitioning to prayer
+        setFinishReading(false);
+        
+        // Start fade out with same timing as PrayerView to JournalComponent transition
+        Animated.parallel([
+          // Card content fade out
+          Animated.timing(devotionalCardOpacityAnim, {
+            toValue: 0,
+            duration: 400,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          }),
+          // Lamb fade out at the same time
+          Animated.timing(riveArtboardOpacityAnim, {
+            toValue: 0,
+            duration: 400,
+            easing: Easing.inOut(Easing.ease),
+            useNativeDriver: true,
+          })
+        ]).start(() => {
+          // Show prayer content after fade out
+          setShowPrayerContent(true);
+          setShowDevotionalContent(false);
+          
+          // Set Rive Action-Number to 1 (Raising Hand) for prayer
+          if (riveRef.current && riveRef.current.setInputState) {
+            try {
+              riveRef.current.setInputState('State Machine 1', 'Action-Number', 1);
+              console.log('Set Rive Action-Number: 1 (Raising Hand)');
+            } catch (e) {
+              console.log('Error setting Rive Action-Number to Raising Hand:', e);
+            }
+          }
+          
+                     // Fade back in with prayer content
+           Animated.parallel([
+             // Card content fade in
+             Animated.timing(devotionalCardOpacityAnim, {
+               toValue: 1,
+               duration: 600,
+               easing: Easing.inOut(Easing.ease),
+               useNativeDriver: true,
+             }),
+             // Lamb fade in at the same time
+             Animated.timing(riveArtboardOpacityAnim, {
+               toValue: 1,
+               duration: 600,
+               easing: Easing.inOut(Easing.ease),
+               useNativeDriver: true,
+             })
+           ]).start(() => {
+             // Reset reader state after animations complete
+             setShowDevotionalReader(false);
+             // Hide devotional reader visibility only after the full transition is complete
+             setDevotionalReaderVisible(false);
+           });
+        });
+        
+        // Show PrayerView state immediately
+        setShowPrayerView(true);
+        setPrayerViewVisible(true); // Hide tab bar
+        // Don't hide devotional reader visibility until after the transition completes
+        // This keeps the header showing "Reading" during the fade out
+              }else{
+          // Normal close to home screen - only set to idle when going back to home
+          setRiveIdle();
           setDevotionalReaderVisible(false);
-        }
         Animated.parallel([
           // Card content fade out
           Animated.timing(devotionalCardOpacityAnim, {
@@ -267,12 +321,9 @@ export default function HomeScreen() {
           ]).start(() => {
             // Reset reader state after animations complete
             setShowDevotionalReader(false);
-            // if(isPrayPresses){
-            //   handlePrayerPress()
-            // }
           });
         }, 250); // Switch content halfway through fade out
-      
+      }
     }
   }, []);
 
@@ -338,7 +389,18 @@ export default function HomeScreen() {
   const lambHearts = useUserStore((state) => state?.getLambHearts?.());
   const streakCount = useUserStore((state) => state?.getStreakCount?.());
   const gens = useUserStore((state) => state?.getGens?.());
-  const lambMood = useUserStore((state) => state?.getLambMood?.());
+  const lambMood = useUserStore((state) => state?.getLambMood?.()); // Get the lamb's name from userStore
+
+  // Sync lamb mood with hearts whenever hearts change
+  useEffect(() => {
+    const setLambMood = useUserStore.getState().setLambMood;
+    if (!setLambMood) return;
+    const desiredMood = getLambMoodByHearts(lambHearts);
+    if (desiredMood !== lambMood) {
+      setLambMood(desiredMood);
+    }
+  }, [lambHearts, lambMood]);
+
   const lambName = useUserStore((state) => state?.getLambName?.()); // Get the lamb's name from userStore
 
   const lamb = useUserStore((state) => state.getLamb?.()); // Get the complete lamb object
@@ -735,22 +797,9 @@ export default function HomeScreen() {
     const duration = 400; // Match the card animation duration
 
     if (devotionalReaderVisible) {
-      // Animate in
+      // Animate in - keep default header visible to show "Reading" text
       Animated.parallel([
-        // Fade out default header
-        Animated.timing(headerDefaultOpacityAnim, {
-          toValue: 0,
-          duration,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        // Fade in devotional header
-        Animated.timing(devotionalHeaderOpacityAnim, {
-          toValue: 1,
-          duration,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
+        // Keep default header visible (don't fade it out)
         // Fade in black overlay
         Animated.timing(devotionalBgOpacityAnim, {
           toValue: 0.3,
@@ -762,16 +811,9 @@ export default function HomeScreen() {
     } else {
       // Animate out
       Animated.parallel([
-        // Fade in default header
+        // Ensure default header is visible
         Animated.timing(headerDefaultOpacityAnim, {
           toValue: 1,
-          duration,
-          easing: Easing.inOut(Easing.ease),
-          useNativeDriver: true,
-        }),
-        // Fade out devotional header
-        Animated.timing(devotionalHeaderOpacityAnim, {
-          toValue: 0,
           duration,
           easing: Easing.inOut(Easing.ease),
           useNativeDriver: true,
@@ -926,6 +968,11 @@ export default function HomeScreen() {
     const setShowGlobalButtons = useHomeStore.getState().setShowGlobalButtons;
     setShowGlobalButtons(true);
     
+    // Show DevotionalReader state immediately so header shows "Reading"
+    setShowDevotionalReader(true);
+    setDevotionalReaderVisible(true); // Hide tab bar
+    setShowDevotionalContent(true); // Set this immediately so header shows "Reading"
+    
     // Simple fade animation for content transition - longer duration
     Animated.timing(devotionalCardOpacityAnim, {
       toValue: 0,
@@ -933,9 +980,7 @@ export default function HomeScreen() {
       easing: Easing.inOut(Easing.ease),
       useNativeDriver: true,
     }).start(() => {
-      // Show devotional content after fade out
-      setShowDevotionalContent(true);
-      // Fade back in
+      // Content is already set to devotional, just fade back in
       Animated.timing(devotionalCardOpacityAnim, {
         toValue: 1,
         duration: 600,
@@ -943,10 +988,6 @@ export default function HomeScreen() {
         useNativeDriver: true,
       }).start();
     });
-
-    // Show DevotionalReader state immediately
-    setShowDevotionalReader(true);
-    setDevotionalReaderVisible(true); // Hide tab bar
 
     // Synchronize lamb fade with card content fade
     Animated.timing(riveArtboardOpacityAnim, {
@@ -1136,7 +1177,17 @@ export default function HomeScreen() {
         }).start(() => {
           setCurrentStateInput(targetStateInput);
           if (riveRef.current?.setInputState) {
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+          }
+          try {
             riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
+          } catch (_) {
+            // ignore if Action-Number input not present (older artboard)
+          }
+          try {
+            riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
+          } catch (_) {
+            // ignore if legacy Number 1 input missing
           }
           Animated.timing(riveArtboardOpacityAnim, {
             toValue: 1,
@@ -1180,6 +1231,18 @@ export default function HomeScreen() {
   // Run once on mount to defer heavy work
   useEffect(() => {
     setRiveReady(true);
+
+    // Set default skin to 0 when Rive is ready
+    setTimeout(() => {
+      if (riveRef.current?.setInputState) {
+        try {
+          riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
+          console.log('Set default Rive Skin-Number: 0');
+        } catch (e) {
+          console.log('Error setting default Rive skin:', e);
+        }
+      }
+    }, 100); // Small delay to ensure Rive is fully initialized
 
     // Check if this is the first load after onboarding completion
     if (isFirstLoad) {
@@ -1940,10 +2003,11 @@ const buttonTitle = showDevotionalContent ? 'Continue' : 'Complete Prayer';
             detached={false} // Not detached from bottom
             handleComponent={showPrayerContent ? ()=>null : undefined}
             handleIndicatorStyle={{
-              opacity: showPrayerView ? 0 : 0.15,
-              height:5,
-              width:showPrayerView ? 0 : 50,
-              backgroundColor:showPrayerView ? 'transparent' : '#634012',
+              opacity: showPrayerContent || showDevotionalContent || showJournalContent ? 0 : 0.3,
+              height: 4,
+              width: showPrayerContent || showDevotionalContent || showJournalContent ? 0 : 40,
+              backgroundColor: '#634012',
+              borderRadius: 2,
             }}
             backgroundStyle={{
               backgroundColor: '#FDEBB8',

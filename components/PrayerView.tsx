@@ -304,7 +304,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
-  const [guidedPrayerEnabled, setGuidedPrayerEnabled] = useState(true);
+  const [guidedPrayerEnabled, setGuidedPrayerEnabled] = useState(false);
   const [buttonsEnabled, setButtonsEnabled] = useState(false);
 
 
@@ -944,6 +944,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
        <View style={{marginHorizontal: 24,flex:1, marginTop: 24}}>
          <SuccessMessage
           title="Prayer Complete!"
+          description="Wonderful! You spent time in prayer & strengthened your faith."
           level={levelInfo.level}
           prevLevel={levelInfo.level}
           buttonsEnabled={buttonsEnabled}

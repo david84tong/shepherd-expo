@@ -16,6 +16,7 @@ import { HalfModalType } from '../app/halfModal';
 import { calculateExpForLevel } from '../utils/levelUtils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 import WidgetHowToSheet from './WidgetHowToSheet';
+import Rive, { RiveRef } from 'rive-react-native';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -73,10 +74,14 @@ export function DebugButton() {
   const [modalVisible, setModalVisible] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [showWidgetSheet, setShowWidgetSheet] = useState(false);
+  const [isDebugButtonVisible, setIsDebugButtonVisible] = useState(true);
   const { signOut } = useAuth();
 
   // Reference to the success bottom sheet modal
   const successSheetRef = useRef<BottomSheetModal>(null);
+  
+  // Reference to the Rive animation from homeStore
+  const riveRef = useHomeStore(state => state.riveRef);
 
   // Snap points for success animation
   const successSnapPoints = useMemo(() => ['90%'], []);
@@ -411,6 +416,32 @@ export function DebugButton() {
     ]);
   }, [signOut, router]);
 
+  // Handler to hide debug button
+  const handleHideDebugButton = useCallback(() => {
+    Alert.alert(
+      'Hide Debug Button',
+      'This will hide the debug button from the screen. You can show it again by restarting the app.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Hide',
+          style: 'destructive',
+          onPress: () => {
+            setIsDebugButtonVisible(false);
+            setModalVisible(false);
+            Toast.show({
+              type: 'info',
+              text1: 'Debug button hidden',
+              text2: 'Restart the app to show it again.',
+              position: 'top',
+              visibilityTime: 3000,
+            });
+          },
+        },
+      ]
+    );
+  }, []);
+
   const navigateTo = (item: DebugScreen) => {
     setModalVisible(false);
     router.push(item.route as any);
@@ -419,11 +450,13 @@ export function DebugButton() {
   return (
     <>
       {/* Floating Debug Button */}
-      <TouchableOpacity
-        onPress={() => setModalVisible(true)}
-        className="absolute bottom-6 left-6 bg-forestGreen80/80 rounded-3xl w-12 h-12 justify-center items-center z-50 shadow-md">
-        <Text className="text-white text-2xl">🐛</Text>
-      </TouchableOpacity>
+      {isDebugButtonVisible && (
+        <TouchableOpacity
+          onPress={() => setModalVisible(true)}
+          className="absolute bottom-6 left-6 bg-forestGreen80/80 rounded-3xl w-12 h-12 justify-center items-center z-50 shadow-md">
+          <Text className="text-white text-2xl">🐛</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Debug Navigation Modal */}
       <Modal
@@ -797,6 +830,143 @@ export function DebugButton() {
                 </TouchableOpacity>
               </View>
 
+              {/* Skin Change Section */}
+              <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">
+                  Change Lamb Skin
+                </Text>
+                <View className="flex-row flex-wrap gap-2">
+                  <TouchableOpacity
+                    className="bg-[#E0F7FF] px-3 py-2 rounded-lg border border-[#4FB8FE] mb-1"
+                    onPress={() => {
+                      if (riveRef.current?.setInputState) {
+                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
+                      }
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">0 Idle</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-[#F7B500] mb-1"
+                    onPress={() => {
+                      if (riveRef.current?.setInputState) {
+                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 1);
+                      }
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">1 Raising Hand</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#E8F3E0] px-3 py-2 rounded-lg border border-[#A0D468] mb-1"
+                    onPress={() => {
+                      if (riveRef.current?.setInputState) {
+                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
+                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
+                      }
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">0 Normal Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#FFEDED] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
+                    onPress={() => {
+                      if (riveRef.current?.setInputState) {
+                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
+                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 99);
+                      }
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">99 Gold Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#E0F7FF] px-3 py-2 rounded-lg border border-[#4FB8FE] mb-1"
+                    onPress={() => {
+                      if (riveRef.current?.setInputState) {
+                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
+                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 1);
+                      }
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">1 Pink Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#F0E6FF] px-3 py-2 rounded-lg border border-[#9B7FFE] mb-1"
+                    onPress={() => {
+                      if (riveRef.current?.setInputState) {
+                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
+                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 2);
+                      }
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">2 Noah Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-[#F7B500] mb-1"
+                    onPress={() => {
+                      if (riveRef.current?.setInputState) {
+                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
+                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 3);
+                      }
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">3 Cloak Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#E8F3E0] px-3 py-2 rounded-lg border border-[#A0D468] mb-1"
+                    onPress={() => {
+                      if (riveRef.current?.setInputState) {
+                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
+                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 4);
+                      }
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">4 Banana Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#FFEDED] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
+                    onPress={() => {
+                      if (riveRef.current?.setInputState) {
+                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
+                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 5);
+                      }
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">5 10 Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#E0F7FF] px-3 py-2 rounded-lg border border-[#4FB8FE] mb-1"
+                    onPress={() => {
+                      if (riveRef.current?.setInputState) {
+                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
+                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 6);
+                      }
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">6 Apple Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#F0E6FF] px-3 py-2 rounded-lg border border-[#9B7FFE] mb-1"
+                    onPress={() => {
+                      if (riveRef.current?.setInputState) {
+                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
+                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 7);
+                      }
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">7 Lion Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-[#F7B500] mb-1"
+                    onPress={() => {
+                      if (riveRef.current?.setInputState) {
+                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
+                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 8);
+                      }
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">8 Whale Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#E8F3E0] px-3 py-2 rounded-lg border border-[#A0D468] mb-1"
+                    onPress={() => {
+                      if (riveRef.current?.setInputState) {
+                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
+                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 9);
+                      }
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">9 Armor Skin</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
               {/* Onboarding Navigation */}
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">
@@ -845,6 +1015,18 @@ export function DebugButton() {
                     </View>
                   </View>
                 ))}
+              </View>
+
+              {/* Hide Debug Button */}
+              <View className="mt-6 pt-4 border-t border-buttonBorder">
+                <TouchableOpacity
+                  className="bg-orange-500 p-4 rounded-xl border-l-4 border-l-orange-600"
+                  onPress={handleHideDebugButton}>
+                  <Text className="font-feather text-base text-white text-center">Hide Debug Button</Text>
+                  <Text className="font-din text-sm text-white/80 mt-1 text-center">
+                    Hide the debug button from screen
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               {/* Sign Out Button - Only show if user is signed in */}

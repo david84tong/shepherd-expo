@@ -467,6 +467,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
         <SuccessMessage
           key={`success-${levelInfo.level}-${prevLevelRef.current}`}
           title="Reading Complete!"
+          description="Hurray! You finished today's bible reading & fed your lamb."
           level={levelInfo.level}
           prevLevel={prevLevelRef.current}
           buttonsEnabled={buttonsEnabled}
