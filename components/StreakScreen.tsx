@@ -461,12 +461,12 @@ export const StreakScreen = ({isPrayPresses, isReflectPresses}:{isPrayPresses?:s
         <View className="flex flex-col justify-center items-center -mt-20">
           <Animated.Text
             style={streakNumberStyle}
-            className="absolute text-[96px] font-feather-bold text-textPrimary mb-12 -top-16">
+            className="absolute text-[96px] font-feather text-textPrimary mb-12 -top-16">
             {streak}
           </Animated.Text>
           <Animated.Text
             style={streakTextStyle}
-            className="text-textPrimary text-2xl font-feather-bold mb-1 tracking-wide mt-12">
+            className="text-textPrimary text-2xl font-feather mb-1 tracking-wide mt-12">
             day streak!
           </Animated.Text>
         </View>
@@ -481,7 +481,7 @@ export const StreakScreen = ({isPrayPresses, isReflectPresses}:{isPrayPresses?:s
             <View key={cell.dateKey} className="items-center mx-1">
               <Text
                 className={`font-feather text-md mb-1
-                ${cell.isToday ? 'text-accentGold font-feather-bold' : 'text-description'}`}>
+                ${cell.isToday ? 'text-accentGold font-feather' : 'text-description'}`}>
                 {cell.label}
               </Text>
 

@@ -446,13 +446,13 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
   if (!currentDevotional) {
     return (
       <SafeAreaView className="flex-1 bg-surfaceCream items-center justify-center px-6">
-        <Text className="text-brown/90 text-lg font-feather-bold mb-2">No Devotional Available</Text>
+        <Text className="text-brown/90 text-lg font-feather mb-2">No Devotional Available</Text>
         <Text className="text-brown/70 text-center font-din mb-4">
           We could not load today&apos;s devotional. Please check your connection and try again.
         </Text>
         {onClose && (
           <TouchableOpacity onPress={handleClose} className="bg-brown/20 px-6 py-3 rounded-xl">
-            <Text className="text-brown font-feather-bold">Go Back</Text>
+            <Text className="text-brown font-feather">Go Back</Text>
           </TouchableOpacity>
         )}
       </SafeAreaView>
@@ -519,7 +519,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 0, marginBottom: 16 }}>
             <Text
-              className="font-feather-bold text-textPrimary"
+              className="font-feather text-textPrimary"
               style={{
                 fontSize: responsiveFontSize(2.5),
                 fontWeight: "400",
@@ -602,7 +602,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                             {/* Bible reference for verse card */}
                             {card.type === 'verse' && card.reference && (
                               <Text
-                                className="text-brown/50 font-feather-bold mb-2"
+                                className="text-brown/50 font-feather mb-2"
                                 style={{ fontSize: Math.max(fontSize * 0.75, 8) }}
                               >
                                 {card.reference}

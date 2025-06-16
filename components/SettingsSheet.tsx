@@ -2020,7 +2020,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     color: '#3C584A',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 18,
     marginBottom: 16,
     textAlign: 'center',

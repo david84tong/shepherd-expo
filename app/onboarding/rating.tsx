@@ -188,10 +188,10 @@ const Rating = () => {
           <View className="flex-1 px-6 pt-6 items-center">
             {/* Title at the top */}
             <Animated.View style={titleStyle}>
-              <Text className="font-feather-bold text-3xl text-center text-textPrimary mb-4 mt-12">
+              <Text className="font-feather text-3xl text-center text-textPrimary mb-4 mt-12">
                 Support our small team!
               </Text>
-              <Text className="font-feather-bold text-xl text-center text-description ">
+              <Text className="font-feather text-xl text-center text-description ">
                 Help spread the word
               </Text>
             </Animated.View>

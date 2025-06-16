@@ -814,7 +814,7 @@ const styles = StyleSheet.create({
   },
   headerText: {
     color: '#3C584A',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 18,
     position: 'absolute',
     left: 0,
@@ -925,7 +925,7 @@ const styles = StyleSheet.create({
   },
   upgradeButtonText: {
     color: '#FFFFFF',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 14,
   },
   upgradePromptBubble: {

@@ -125,7 +125,6 @@ export default function RootLayout() {
   const segments = useSegments();
   const { visibleForceUpdate } = useForceUpdateCheck();
   const [fontsLoaded, fontError] = useFonts({
-    'Feather Bold': require('../assets/fonts/Feather Bold.ttf'),
     'DIN Next Rounded LT W01 Regular': require('../assets/fonts/DIN Next Rounded LT W01 Regular.ttf'),
     'Nunito-Bold': require('../assets/fonts/Nunito-Bold.ttf'),
     'Nunito-Black': require('../assets/fonts/Nunito-Black.ttf'),
@@ -579,7 +578,7 @@ export default function RootLayout() {
             )}
 
             {/* Debug button (visible only in development or for creators) */}
-            {(__DEV__ || isCreator) && <DebugButton />}
+            {<DebugButton />}
           </>
         )}
       </BottomSheetModalProvider>

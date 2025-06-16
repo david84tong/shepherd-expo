@@ -1031,7 +1031,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
           {/* Header */}
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 24, marginBottom: 16, marginTop: 24 }}>
             <Text
-              className="font-feather-bold text-textPrimary"
+              className="font-feather text-textPrimary"
               style={{
                 fontSize: responsiveFontSize(2.5),
                 fontWeight: "400",
@@ -1178,7 +1178,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                     }}>
                       <Text style={{
                         color: 'white',
-                        fontFamily: 'Feather Bold',
+                        fontFamily: 'Nunito-Black',
                         fontSize: 16,
                       }}>
                         Amen 🙏

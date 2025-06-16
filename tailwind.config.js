@@ -91,7 +91,6 @@ module.exports = {
         // Updated font mappings to match actual font files
         feather: ['Nunito-Black'], // for headers
         din: ['DIN Next Rounded LT W01 Regular'], // for body
-        'feather-bold': ['Nunito-Black'], // Was Nunito-Black
         'nunito-italic': ['Nunito-BlackItalic'], // Added for backward compatibility
         'nunito-bold': ['Nunito-Bold'], // Added for backward compatibility
         'nunito-black': ['Nunito-Black'], // Added for backward compatibility

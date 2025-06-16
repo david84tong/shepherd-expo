@@ -130,13 +130,13 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
           <View className="mb-0 mt-6">
             <Image source={require("../assets/icons/rocket.png")} style={{ width: 65, height: 65 }} />
           </View>
-          <Text className="font-feather-bold text-[28px] text-center mb-6 text-orange">
+          <Text className="font-feather text-[28px] text-center mb-6 text-orange">
             {`Level UP ${level}!`}
           </Text>
         </>
       )}
       <RNAnimated.Text
-        className={`font-feather-bold text-[26px] text-center mb-1 text-brown/90 ${!didLevelUp ? '-mt-12' : ''}`}
+        className={`font-feather text-[26px] text-center mb-1 text-brown/90 ${!didLevelUp ? '-mt-12' : ''}`}
         style={textOpacityStyle}
       >
         {title}
@@ -187,7 +187,7 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
           disabled={!localButtonsEnabled || !buttonsEnabled}
           className=" h-[52px] w-full self-center bg-gold rounded-full mt-2 items-center justify-center"
         >
-          <Text className="font-feather-bold text-brown/80 text-xl text-center">{homeButtonTitle}</Text>
+          <Text className="font-feather text-brown/80 text-xl text-center">{homeButtonTitle}</Text>
         </TouchableOpacity>
       </RNAnimated.View>
   </View>

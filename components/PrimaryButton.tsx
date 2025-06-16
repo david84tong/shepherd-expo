@@ -144,7 +144,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
         ) : (
           <>
             <Text
-              className={`font-feather-bold text-heading text-center ${disabled || !isActive
+              className={`font-feather text-heading text-center ${disabled || !isActive
                 ? (buttonType === 'blue'
                   ? 'text-[#E0F6FF]'
                   : buttonType === 'gold'
@@ -162,7 +162,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
               <Image source={icon} className={`w-6 h-6 ml-2 ${disabled || !isActive ? 'opacity-50' : ''}`} resizeMode="contain" />
             )}
             {reward && (
-              <Text className={`font-feather-bold text-heading ml-1 ${disabled || !isActive
+              <Text className={`font-feather text-heading ml-1 ${disabled || !isActive
                 ? (buttonType === 'blue'
                   ? 'text-[#E0F6FF]'
                   : buttonType === 'gold'

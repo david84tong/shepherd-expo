@@ -256,12 +256,12 @@ const styles = StyleSheet.create({
   },
   saveButtonText: {
     color: 'white',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 16,
   },
   title: {
     color: '#3C584A',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 18,
     textAlign: 'center',
   },
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
   },
   verseReference: {
     color: '#B89B4C',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 14,
     marginBottom: 4,
   },

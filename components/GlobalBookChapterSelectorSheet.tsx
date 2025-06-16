@@ -321,7 +321,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     color: '#3C584A', // textPrimary
   },
   closeButton: {

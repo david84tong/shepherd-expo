@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   },
   confirmText: {
     color: 'white',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 16,
   },
   disabledButton: {
@@ -369,7 +369,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#3C584A',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 18,
   },
 });

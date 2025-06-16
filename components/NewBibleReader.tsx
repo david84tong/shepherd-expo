@@ -395,7 +395,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   isBibleReaderScreen = false,
 }) => {
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showTapGuidance, setShowTapGuidance] = useState(true);
   const [showSwipeGuidance, setShowSwipeGuidance] = useState(true);
@@ -533,11 +533,13 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Helper function to load a chapter
   const loadChapter = useCallback(
     async (bookId: number, chapter: number) => {
-      // Remove the transition state since we don't want any visual effect
+      // Set loading to true when starting to load
+      setLoading(true);
       try {
         const res = await fetchChapter(translation, bookId, chapter);
         if ('error' in res) {
           console.error(res.message);
+          setLoading(false);
           return false;
         } else {
           // Update internal tracking of current book and chapter
@@ -555,10 +557,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           // Save to the store for persistence (same as regular BibleReader)
           setSavedReading(res.book, bookId, res.chapter);
           
+          setLoading(false);
           return true;
         }
       } catch (error) {
         console.error('Error loading chapter:', error);
+        setLoading(false);
         return false;
       }
     },
@@ -1652,12 +1656,21 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   }, []);
 
-  if (!chapterData) {
+  if (loading || !chapterData) {
     return (
       <SafeAreaView
         style={{ backgroundColor: '#FFF9E6' }} // Match the background color
         className="flex-1">
-        <View style={{ flex: 1, backgroundColor: '#FFF9E6' }} />
+        <View style={{ flex: 1, backgroundColor: '#FFF9E6', justifyContent: 'center', alignItems: 'center' }}>
+          <View className="items-center justify-center">
+            <View className="flex-row space-x-2 mb-4">
+              <View className="w-3 h-3 bg-accentGold rounded-full opacity-30" />
+              <View className="w-3 h-3 bg-accentGold rounded-full opacity-60" />
+              <View className="w-3 h-3 bg-accentGold rounded-full" />
+            </View>
+            <Text className="font-feather text-description text-base">Loading Chapter...</Text>
+          </View>
+        </View>
       </SafeAreaView>
     );
   }
@@ -1702,7 +1715,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
            
               <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text
-                  className="font-feather-bold text-white"
+                  className="font-feather text-white"
                   style={{
                     fontSize: responsiveFontSize(3),
                     fontWeight: '400',
@@ -1743,7 +1756,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                 <View style={{ width: '100%', justifyContent: 'center', alignItems: 'center' }}>
                   <TouchableOpacity onPress={handleOpenSelector}>
                     <Text
-                      className="font-feather-bold text-textPrimary/30 text-center"
+                      className="font-feather text-textPrimary/30 text-center"
                       style={{
                         fontSize: responsiveFontSize(2),
                         fontWeight: '600',
@@ -2144,7 +2157,7 @@ const styles = StyleSheet.create({
   },
   modalSectionTitle: {
     alignSelf: 'flex-start',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 16,
     marginBottom: 12,
   },
@@ -2226,7 +2239,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   toggleLabel: {
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 16,
   },
   // Floating menu styles with theme-compatible design

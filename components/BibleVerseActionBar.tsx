@@ -54,8 +54,8 @@ export function BibleVerseActionBar({
       <TouchableOpacity onPress={onVersePress}>
 
       <Text
+        className='font-feather'
         style={{
-          fontFamily: 'Feather-Bold',
           fontSize: 18,
           color: '#B89B4C',
         }}

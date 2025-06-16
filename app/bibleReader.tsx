@@ -1153,21 +1153,17 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       <>
         <StatusBar translucent backgroundColor="transparent" />
         <View style={{ flex: 1 }}>
-          {loading ? (
-            <PulsingDotsIndicator />
-          ) : (
-            <NewBibleReader
-              isBibleReaderScreen
-              bookId={currentBookId}
-              chapter={currentChapter}
-              translation={currentVersion}
-              isInPathMode={pathInProgress}
-              onNavigateBack={handleBackNavigation}
-              onSwitchToDefaultReader={handleSwitchToDefaultReader}
-              onHandoffChapterData={handleHandoffChapterData}
-              onOpenSettings={handlePresentModal}
-            />
-          )}
+          <NewBibleReader
+            isBibleReaderScreen
+            bookId={currentBookId}
+            chapter={currentChapter}
+            translation={currentVersion}
+            isInPathMode={pathInProgress}
+            onNavigateBack={handleBackNavigation}
+            onSwitchToDefaultReader={handleSwitchToDefaultReader}
+            onHandoffChapterData={handleHandoffChapterData}
+            onOpenSettings={handlePresentModal}
+          />
         </View>
 
         {/* Shared Settings Modal */}
@@ -1329,7 +1325,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                 {/* Title and Settings Row */}
                 <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Text
-                    className="font-feather-bold text-white"
+                    className="font-feather text-white"
                     style={{
                       fontSize: responsiveFontSize(3),
                       fontWeight: "400",
@@ -1788,7 +1784,7 @@ const styles = StyleSheet.create<BibleReaderStyles>({
     width: '100%',
   },
   toggleLabel: {
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 16,
   },
 });
