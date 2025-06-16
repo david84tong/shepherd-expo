@@ -13,6 +13,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { Devotional } from '~/app/models/Devotional';
 import { ImageBackground } from 'expo-image';
+import PrimaryButton from './PrimaryButton';
 interface FullScreenShareCardProps {
     visible: boolean;
     onClose: () => void;
@@ -149,20 +150,14 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                     {devotionalData?.verse}
                                 </Text>
                                 {/* Share Button */}
-                                <View className="w-full items-center ">
-                                    <TouchableOpacity
-                                        onPress={() => {
-                                            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                            onShare();
-                                        }}
-                                        className="w-full rounded-full bg-[#4FB8FE] border-[#06B6FE] border-[3px] items-center justify-center"
-                                        style={{ height: 56 }}
-                                    >
-                                        <Text className="font-feather text-white text-[20px] font-bold text-center">
-                                            Share
-                                        </Text>
-                                    </TouchableOpacity>
-                                </View>
+                                <PrimaryButton
+                title="Share"
+                onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onShare();
+                }}
+                buttonType="orange"
+              />
                             </Animated.View>
 
                             {/* Bottom Close Area */}
