@@ -546,6 +546,78 @@
       "pauline-epistles": "Paulusbriefe",
       "general-epistles": "Allgemeine Briefe",
       "revelation-end-new": "Offenbarung: Ende und Neues"
+    },
+    "genesis": {
+      "title": "Genesis: Anfänge",
+      "description": "Reisen Sie von der Morgendämmerung der Schöpfung bis zum Tod Josephs. Diese Ursprungsgeschichten legen das Fundament für jedes wichtige Thema, das in der Schrift folgt.",
+      "units": {
+        "creation": {
+          "title": "Schöpfung und Wahl",
+          "description": "Gott spricht den Kosmos ins Dasein und krönt ihn mit bildtragenden Menschen. In Eden sind sie eingeladen, der Weisheit des Schöpfers zu vertrauen oder Gut und Böse für sich selbst zu definieren."
+        },
+        "cainAbel": {
+          "title": "Kain, Abel",
+          "description": "Eifersucht treibt zum ersten Mord an und Gewalt vervielfältigt sich über die Erde. Selbst im Gericht markiert Gott Kain mit Barmherzigkeit und bewahrt einen treuen Überrest."
+        },
+        "noahFlood": {
+          "title": "Noah und die Sintflut",
+          "description": "Wasser des Gerichts reinigen eine korrupte Welt, doch Gnade trägt Noahs Familie zu einem neuen Anfang. Ein Regenbogenbund verspricht, dass Gottes langfristiger Plan Erlösung ist, nicht Zerstörung."
+        },
+        "babel": {
+          "title": "Nationen und Babel",
+          "description": "Die Menschheit zerstreut sich in verschiedene Völker nach einem stolzen Turmprojekt. Aus der Verwirrung ruft Gott einen Mann, Abram, um ein Segen für alle Nationen zu werden."
+        },
+        "abrahamCall": {
+          "title": "Abrahams Berufung",
+          "description": "Gott stellt eine bindende Verheißung von Land, Nachkommen und globalem Segen auf. Abrahams Glaube wird wiederholt geprüft, aber letztendlich als Gerechtigkeit angerechnet."
+        },
+        "isaacFamily": {
+          "title": "Isaaks Familie",
+          "description": "Ein wundersamer Sohn trägt die Bundeslinie vorwärts. Seine Ehe mit Rebekka stellt sicher, dass die Verheißung trotz menschlicher Schwäche fortbesteht."
+        },
+        "jacobEsau": {
+          "title": "Jakob und Esau",
+          "description": "Zwillingsbrüder kämpfen um Erstgeburtsrecht und Segen und offenbaren Gottes souveräne Wahl. Jakob erlebt sowohl Täuschung als auch göttliche Begegnung auf seinem Weg aus Kanaan."
+        },
+        "jacobReturn": {
+          "title": "Jakobs Aufenthalt und Rückkehr",
+          "description": "Jahre des Exils, der Ehe und des Familiendramas verfeinern Jakobs Charakter. Ein geheimnisvoller nächtlicher Kampf bereitet ihn darauf vor, Esau zu begegnen und seinen neuen Namen—Israel—zu beanspruchen."
+        },
+        "josephDreams": {
+          "title": "Joseph: Träume zum Kerker",
+          "description": "Josephs Mantel, Träume und Verrat stürzen ihn in Sklaverei und Gefängnis. Doch jeder Rückschlag wird zu einer Vorbereitung für Gottes vorsehungsvolle Erhebung zur ägyptischen Macht."
+        },
+        "josephForgiveness": {
+          "title": "Joseph: Hungersnot und Vergebung",
+          "description": "Globale Hungersnot vereint Joseph mit den Brüdern, die ihm Unrecht getan haben. Tränen der Versöhnung zeigen, wie Gott böse Absichten in rettende Zwecke verwandelt."
+        },
+        "jacobBlesses": {
+          "title": "Jakob segnet und Joseph stirbt",
+          "description": "Ein sterbender Patriarch segnet zwölf Söhne und sagt ihre Zukunft voraus. Josephs letzter Glaubensakt ist die Bitte, dass seine Gebeine ins gelobte Land getragen werden."
+        }
+      }
+    },
+    "exodus": {
+      "title": "Exodus: Befreiung und Gesetz",
+      "description": "Erleben Sie, wie Gott Israels Ketten bricht und eine Nation durch Bund am Sinai schmiedet. Befreiung ist nicht nur Freiheit vom Pharao, sondern Freiheit für Anbetung und heiliges Leben.",
+      "units": {
+        "bondage": {
+          "title": "Knechtschaft und Moses' Geburt",
+          "description": "Ein neuer Pharao versklavt Israel und befiehlt, männliche Säuglinge zu töten. Gott bewahrt das Baby Moses und erscheint in einem brennenden Busch, um ihn als Befreier zu rekrutieren."
+        },
+        "plagues": {
+          "title": "Neun Plagen und letzte Warnung",
+          "description": "Neun eskalierende Plagen entlarven Ägyptens Götter als machtlos. Pharaos letzte Weigerung nach der Plagenwarnung von Kapitel 11 verhärtet sein Herz für das klimaktische Gericht, das kommen wird."
+        },
+        "passover": {
+          "title": "Passah-Nacht",
+          "description": "Blut an Türrahmen verwandelt Gericht in Befreiung. Das Passah-Lamm stellt ein ewiges Denkmal der Erlösung auf und weist auf eine noch größere Rettung hin."
+        },
+        "redSea": {
+          "title": "Rotes Meer und Siegeslied",
+          "description": "Eine Wolkensäule führt den Marsch; Wasserwände öffnen sich und schließen sich dann über verfolgende Heere. Mirjams Tamburin erklingt, während das Volk singt: 'Der HERR ist meine Stärke und mein Lied.'"
+        }
+      }
     }
   },
   "biblePreview": {

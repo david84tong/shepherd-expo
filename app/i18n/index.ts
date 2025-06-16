@@ -85,4 +85,23 @@ i18n
     },
   });
 
-export default i18n; 
+export default i18n;
+
+// Export supported languages for use in components
+export const supportedLanguages = [
+  { code: 'en', name: 'English', nativeName: 'English' },
+  { code: 'es', name: 'Spanish', nativeName: 'Español' },
+  { code: 'fr', name: 'French', nativeName: 'Français' },
+  { code: 'nl', name: 'Dutch', nativeName: 'Nederlands' },
+  { code: 'de', name: 'German', nativeName: 'Deutsch' },
+  { code: 'pt', name: 'Portuguese', nativeName: 'Português' },
+];
+
+// Export change language function
+export const changeLanguage = async (language: string) => {
+  try {
+    await i18n.changeLanguage(language);
+  } catch (error) {
+    console.log('Error changing language:', error);
+  }
+}; 

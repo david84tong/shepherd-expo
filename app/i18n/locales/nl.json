@@ -546,6 +546,78 @@
       "pauline-epistles": "Paulusbrieven",
       "general-epistles": "Algemene Brieven",
       "revelation-end-new": "Openbaring: Einde en Nieuw"
+    },
+    "genesis": {
+      "title": "Genesis: Begin",
+      "description": "Reis van de dageraad van de schepping tot de dood van Jozef. Deze oorsprongsverhalen leggen de fundering voor elk hoofdthema dat volgt in de Schrift.",
+      "units": {
+        "creation": {
+          "title": "Schepping en Keuze",
+          "description": "God spreekt de kosmos tot bestaan en kroont het met beelddragers. In Eden worden zij uitgenodigd om de wijsheid van de Schepper te vertrouwen of goed en kwaad voor zichzelf te definiëren."
+        },
+        "cainAbel": {
+          "title": "Kaïn, Abel",
+          "description": "Jaloezie drijft tot de eerste moord aan en geweld vermenigvuldigt zich over de aarde. Zelfs in het oordeel markeert God Kaïn met barmhartigheid en behoudt een getrouw overblijfsel."
+        },
+        "noahFlood": {
+          "title": "Noach en de Zondvloed",
+          "description": "Wateren van oordeel reinigen een corrupte wereld, maar genade draagt Noachs familie naar een nieuwe start. Een regenboogverbond belooft dat Gods langetermijnplan verlossing is, niet vernietiging."
+        },
+        "babel": {
+          "title": "Naties en Babel",
+          "description": "De mensheid verstrooit zich in verschillende volken na een hoogmoedig torenproject. Uit de verwarring roept God één man, Abram, om een zegen te worden voor alle naties."
+        },
+        "abrahamCall": {
+          "title": "Abrahams Roeping",
+          "description": "God vestigt een bindende belofte van land, nakomelingen en wereldwijde zegen. Abrahams geloof wordt herhaaldelijk getest maar uiteindelijk gecrediteerd als gerechtigheid."
+        },
+        "isaacFamily": {
+          "title": "Izaks Familie",
+          "description": "Een wonderbaarlijke zoon draagt de verbondslijn voorwaarts. Zijn huwelijk met Rebekka verzekert dat de belofte voortduurt ondanks menselijke zwakheid."
+        },
+        "jacobEsau": {
+          "title": "Jakob en Ezau",
+          "description": "Tweelingbroers worstelen om eerstgeboorterecht en zegen, wat Gods soevereine keuze onthult. Jakob ervaart zowel bedrog als goddelijke ontmoeting op zijn weg uit Kanaän."
+        },
+        "jacobReturn": {
+          "title": "Jakobs Verblijf en Terugkeer",
+          "description": "Jaren van ballingschap, huwelijk en familiedrama verfijnen Jakobs karakter. Een mysterieus nachtelijk worstelen bereidt hem voor om Ezau te ontmoeten en zijn nieuwe naam—Israël—op te eisen."
+        },
+        "josephDreams": {
+          "title": "Jozef: Dromen naar de Kerker",
+          "description": "Jozefs jas, dromen en verraad storten hem in slavernij en gevangenis. Toch wordt elke tegenslag een voorbereiding voor Gods voorzienigheid opgang naar Egyptische macht."
+        },
+        "josephForgiveness": {
+          "title": "Jozef: Hongersnood en Vergeving",
+          "description": "Wereldwijde hongersnood herenigt Jozef met de broers die hem kwaad hebben gedaan. Tranen van verzoening tonen hoe God kwaadaardige bedoelingen tot reddende doeleinden keert."
+        },
+        "jacobBlesses": {
+          "title": "Jakob Zegent en Jozef Sterft",
+          "description": "Een stervende patriarch zegent twaalf zonen en voorspelt hun toekomst. Jozefs laatste geloofshandeling is het verzoeken dat zijn beenderen naar het beloofde land worden gedragen."
+        }
+      }
+    },
+    "exodus": {
+      "title": "Exodus: Bevrijding en Wet",
+      "description": "Aanschouw hoe God Israëls ketenen breekt en een natie vormt door verbond op de Sinaï. Bevrijding is niet alleen vrijheid van Farao maar vrijheid voor aanbidding en heilig leven.",
+      "units": {
+        "bondage": {
+          "title": "Slavernij en Mozes' Geboorte",
+          "description": "Een nieuwe farao maakt Israël tot slaven en beveelt om baby jongens te doden. God behoudt baby Mozes en verschijnt in een brandende struik om hem te rekruteren als bevrijder."
+        },
+        "plagues": {
+          "title": "Negen Plagen en Laatste Waarschuwing",
+          "description": "Negen escalerende plagen onthullen Egyptes goden als machteloos. Farao's laatste weigering na de plaagwaarschuwing van hoofdstuk 11 verhardt zijn hart voor het klimatische oordeel dat komt."
+        },
+        "passover": {
+          "title": "Pascha Nacht",
+          "description": "Bloed op deurkozijnen keert oordeel om in bevrijding. Het paaslam vestigt een eeuwigdurende gedachtenis van verlossing en kondigt een nog grotere redding aan die komt."
+        },
+        "redSea": {
+          "title": "Rode Zee en Overwinningslied",
+          "description": "Een wolkkolom leidt de mars; muren van water openen zich en sluiten zich dan over achtervolgende legers. Mirjams tamboerijn klinkt terwijl het volk zingt: 'De HEER is mijn kracht en mijn lied.'"
+        }
+      }
     }
   },
   "biblePreview": {

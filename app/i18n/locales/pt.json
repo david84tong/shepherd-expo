@@ -545,6 +545,78 @@
       "pauline-epistles": "Epístolas Paulinas",
       "general-epistles": "Epístolas Gerais",
       "revelation-end-new": "Apocalipse: Fim e Novo"
+    },
+    "genesis": {
+      "title": "Gênesis: Começos",
+      "description": "Viaje desde o alvorecer da criação até a morte de José. Essas histórias de origem estabelecem a fundação para cada tema principal que segue nas Escrituras.",
+      "units": {
+        "creation": {
+          "title": "Criação e Escolha",
+          "description": "Deus fala o cosmos à existência e o coroa com humanos portadores de imagem. No Éden, eles são convidados a confiar na sabedoria do Criador ou definir o bem e o mal por si mesmos."
+        },
+        "cainAbel": {
+          "title": "Caim, Abel",
+          "description": "O ciúme leva ao primeiro assassinato e a violência se multiplica por toda a terra. Mesmo no julgamento, Deus marca Caim com misericórdia e preserva um remanescente fiel."
+        },
+        "noahFlood": {
+          "title": "Noé e o Dilúvio",
+          "description": "Águas de julgamento limpam um mundo corrupto, mas a graça carrega a família de Noé para um novo começo. Uma aliança do arco-íris promete que o plano de longo prazo de Deus é redenção, não destruição."
+        },
+        "babel": {
+          "title": "Nações e Babel",
+          "description": "A humanidade se espalha em povos distintos após um projeto de torre orgulhoso. Da confusão, Deus chama um homem, Abrão, para se tornar uma bênção para todas as nações."
+        },
+        "abrahamCall": {
+          "title": "O Chamado de Abraão",
+          "description": "Deus estabelece uma promessa vinculante de terra, descendentes e bênção global. A fé de Abraão é testada repetidamente, mas finalmente creditada como justiça."
+        },
+        "isaacFamily": {
+          "title": "A Família de Isaque",
+          "description": "Um filho milagroso carrega a linhagem da aliança adiante. Seu casamento com Rebeca garante que a promessa continue apesar da fraqueza humana."
+        },
+        "jacobEsau": {
+          "title": "Jacó e Esaú",
+          "description": "Irmãos gêmeos lutam pela primogenitura e bênção, revelando a escolha soberana de Deus. Jacó experimenta tanto engano quanto encontro divino em seu caminho para fora de Canaã."
+        },
+        "jacobReturn": {
+          "title": "A Estadia e Retorno de Jacó",
+          "description": "Anos de exílio, casamento e drama familiar refinam o caráter de Jacó. Uma misteriosa luta noturna o prepara para enfrentar Esaú e reivindicar seu novo nome—Israel."
+        },
+        "josephDreams": {
+          "title": "José: Sonhos à Masmorra",
+          "description": "A túnica, sonhos e traição de José o mergulham na escravidão e prisão. Contudo, cada revés se torna uma preparação para a ascensão providencial de Deus ao poder egípcio."
+        },
+        "josephForgiveness": {
+          "title": "José: Fome e Perdão",
+          "description": "A fome global reúne José com os irmãos que o prejudicaram. Lágrimas de reconciliação mostram como Deus transforma intenções más em propósitos salvadores."
+        },
+        "jacobBlesses": {
+          "title": "Jacó Abençoa e José Morre",
+          "description": "Um patriarca moribundo abençoa doze filhos e prediz seus futuros. O ato final de fé de José é solicitar que seus ossos sejam levados à terra prometida."
+        }
+      }
+    },
+    "exodus": {
+      "title": "Êxodo: Libertação e Lei",
+      "description": "Testemunhe Deus quebrar as correntes de Israel e forjar uma nação por aliança no Sinai. A libertação não é meramente liberdade do Faraó, mas liberdade para adoração e vida santa.",
+      "units": {
+        "bondage": {
+          "title": "Escravidão e Nascimento de Moisés",
+          "description": "Um novo faraó escraviza Israel e ordena que filhos recém-nascidos sejam mortos. Deus preserva o bebê Moisés e aparece em uma sarça ardente para recrutá-lo como libertador."
+        },
+        "plagues": {
+          "title": "Nove Pragas e Aviso Final",
+          "description": "Nove pragas escalantes expõem os deuses do Egito como impotentes. A última recusa do Faraó após o aviso de praga do capítulo 11 endurece seu coração para o julgamento climático que virá."
+        },
+        "passover": {
+          "title": "Noite da Páscoa",
+          "description": "Sangue nos batentes das portas transforma julgamento em libertação. O cordeiro da Páscoa estabelece um memorial perpétuo de redenção e prefigura um resgate ainda maior por vir."
+        },
+        "redSea": {
+          "title": "Mar Vermelho e Canto de Vitória",
+          "description": "Uma coluna de nuvem guia a marcha; muros de água se abrem e depois se fecham sobre exércitos perseguidores. O pandeiro de Miriam toca enquanto o povo canta: 'O SENHOR é minha força e meu cântico.'"
+        }
+      }
     }
   },
   "biblePreview": {

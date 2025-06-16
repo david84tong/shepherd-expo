@@ -363,6 +363,78 @@
       "pauline-epistles": "Épîtres Pauliniennes",
       "general-epistles": "Épîtres Générales",
       "revelation-end-new": "Apocalypse : Fin et Nouveau"
+    },
+    "genesis": {
+      "title": "Genèse : Commencements",
+      "description": "Voyagez de l'aube de la création à la mort de Joseph. Ces histoires d'origine posent les fondements de chaque thème majeur qui suit dans l'Écriture.",
+      "units": {
+        "creation": {
+          "title": "Création et Choix",
+          "description": "Dieu parle le cosmos à l'existence et le couronne d'humains porteurs de son image. En Éden, ils sont invités à faire confiance à la sagesse du Créateur ou à définir le bien et le mal par eux-mêmes."
+        },
+        "cainAbel": {
+          "title": "Caïn, Abel",
+          "description": "La jalousie pousse au premier meurtre et la violence se multiplie sur toute la terre. Même dans le jugement, Dieu marque Caïn de miséricorde et préserve un reste fidèle."
+        },
+        "noahFlood": {
+          "title": "Noé et le Déluge",
+          "description": "Les eaux du jugement nettoient un monde corrompu, mais la grâce porte la famille de Noé vers un nouveau départ. Une alliance arc-en-ciel promet que le plan à long terme de Dieu est la rédemption, non la destruction."
+        },
+        "babel": {
+          "title": "Nations et Babel",
+          "description": "L'humanité se disperse en peuples distincts après un projet de tour orgueilleux. De la confusion, Dieu appelle un homme, Abram, pour devenir une bénédiction pour toutes les nations."
+        },
+        "abrahamCall": {
+          "title": "L'Appel d'Abraham",
+          "description": "Dieu établit une promesse contraignante de terre, de descendants et de bénédiction mondiale. La foi d'Abraham est testée à plusieurs reprises mais finalement créditée comme justice."
+        },
+        "isaacFamily": {
+          "title": "La Famille d'Isaac",
+          "description": "Un fils miraculeux porte la lignée de l'alliance vers l'avant. Son mariage avec Rebecca assure que la promesse continue malgré la faiblesse humaine."
+        },
+        "jacobEsau": {
+          "title": "Jacob et Ésaü",
+          "description": "Les frères jumeaux luttent pour le droit d'aînesse et la bénédiction, révélant le choix souverain de Dieu. Jacob fait l'expérience de la tromperie et de la rencontre divine sur son chemin hors de Canaan."
+        },
+        "jacobReturn": {
+          "title": "Le Séjour et Retour de Jacob",
+          "description": "Des années d'exil, de mariage et de drame familial raffinent le caractère de Jacob. Un mystérieux combat nocturne le prépare à affronter Ésaü et à revendiquer son nouveau nom—Israël."
+        },
+        "josephDreams": {
+          "title": "Joseph : Rêves au Donjon",
+          "description": "La tunique, les rêves et la trahison de Joseph le plongent dans l'esclavage et la prison. Pourtant, chaque revers devient une préparation pour l'ascension providentielle de Dieu au pouvoir égyptien."
+        },
+        "josephForgiveness": {
+          "title": "Joseph : Famine et Pardon",
+          "description": "La famine mondiale réunit Joseph avec les frères qui l'ont fait du mal. Des larmes de réconciliation montrent comment Dieu transforme les mauvaises intentions en desseins salvateurs."
+        },
+        "jacobBlesses": {
+          "title": "Jacob Bénit et Joseph Meurt",
+          "description": "Un patriarche mourant bénit douze fils et prédit leurs avenirs. L'acte final de foi de Joseph est de demander que ses os soient portés vers la terre promise."
+        }
+      }
+    },
+    "exodus": {
+      "title": "Exode : Délivrance et Loi",
+      "description": "Témoin de comment Dieu brise les chaînes d'Israël et forge une nation par alliance au Sinaï. La libération n'est pas seulement la liberté de Pharaon mais la liberté pour l'adoration et la vie sainte.",
+      "units": {
+        "bondage": {
+          "title": "Esclavage et Naissance de Moïse",
+          "description": "Un nouveau pharaon asservit Israël et ordonne de tuer les fils nouveau-nés. Dieu préserve le bébé Moïse et apparaît dans un buisson ardent pour le recruter comme libérateur."
+        },
+        "plagues": {
+          "title": "Neuf Plaies et Avertissement Final",
+          "description": "Neuf plaies escaladant exposent les dieux d'Égypte comme impuissants. Le dernier refus de Pharaon après l'avertissement de plaie du chapitre 11 durcit son cœur pour le jugement climatique à venir."
+        },
+        "passover": {
+          "title": "Nuit de Pâque",
+          "description": "Le sang sur les cadres de porte transforme le jugement en délivrance. L'agneau de Pâque établit un mémorial perpétuel de rédemption et préfigure un plus grand sauvetage encore à venir."
+        },
+        "redSea": {
+          "title": "Mer Rouge et Chant de Victoire",
+          "description": "Une colonne de nuée guide la marche ; des murs d'eau s'ouvrent puis se referment sur les armées poursuivantes. Le tambourin de Miriam résonne tandis que le peuple chante : 'L'Éternel est ma force et mon chant.'"
+        }
+      }
     }
   },
   "biblePreview": {
