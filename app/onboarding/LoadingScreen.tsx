@@ -15,6 +15,7 @@ import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
+import i18n from '~/app/utils/i18n';
 
 const { width, height } = Dimensions.get('window');
 
@@ -26,17 +27,17 @@ const GRAY_400 = '#9ca3af';
 const GRAY_500 = '#6b7280';
 
 const LOADING_POINTS = [
-  'Saving your responses',
-  'Encrypting your data',
-  'Sprinkling some holy water',
-  'Generating your custom bible study plan',
+  i18n.t('loading_saving_responses'),
+  i18n.t('loading_encrypting_data'),
+  i18n.t('loading_sprinkling_holy_water'),
+  i18n.t('loading_generating_study_plan'),
 ];
 
 const DEVOTIONAL_LOADING_POINTS = [
-  'Crafting your custom devotional',
-  'Cross-checking similar verses',
-  'Sprinkling some holy water',
-  'waking up your lamb'
+  i18n.t('loading_crafting_devotional'),
+  i18n.t('loading_cross_checking_verses'),
+  i18n.t('loading_sprinkling_holy_water'),
+  i18n.t('loading_waking_lamb'),
 ];
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
@@ -429,10 +430,10 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
         {/* Headline and subheadline */}
         <Text className="text-3xl font-feather text-center mb-2" style={{ color: TEXT_PRIMARY }}>
-          {isOnboarding ? 'Just a moment' : devotionalError ? 'Something went wrong' : 'Creating devotional'}
+          {isOnboarding ? i18n.t('loading_just_a_moment') : devotionalError ? i18n.t('loading_something_wrong') : i18n.t('loading_creating_devotional')}
         </Text>
         <Text className="text-lg font-din text-center mb-8" style={{ color: DESCRIPTION }}>
-          {isOnboarding ? 'Building a personalized plan' : devotionalError ? 'Redirecting you back...' : 'Preparing your spiritual meal'}
+          {isOnboarding ? i18n.t('loading_building_plan') : devotionalError ? i18n.t('loading_redirecting_back') : i18n.t('loading_preparing_meal')}
         </Text>
 
         {/* Checklist directly below */}

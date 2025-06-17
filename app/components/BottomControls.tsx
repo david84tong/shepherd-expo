@@ -2,6 +2,7 @@ import { View, Image, Animated } from 'react-native';
 import CircleButton from '~/components/Shared/CircleButton';
 import PrimaryButton from '~/components/PrimaryButton';
 import BluePrimaryButton from '~/components/Shared/BluePrimaryButton';
+import i18n from '../utils/i18n';
 
 interface BottomControlsProps {
   bottomContentOpacity: Animated.Value;
@@ -89,7 +90,7 @@ export default function BottomControls({
             />
           ) : showPrayerContent ? (
             <BluePrimaryButton
-              title="Amen"
+              title={i18n.t('amen_button')}
               width="100%"
               disabled={isCompletePrayerDisabled}
               onPress={() => {

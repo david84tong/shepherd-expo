@@ -33,6 +33,7 @@ import SuccessMessage from './SuccessMessage';
 import { RPH } from '~/app/helper/helper';
 import PrimaryButton from './PrimaryButton';
 import CircleButton from './Shared/CircleButton';
+import i18n from '../app/utils/i18n';
 
 const setJournalViewVisible = useHomeStore.getState().setJournalViewVisible;
 
@@ -211,7 +212,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     
     // Fallback to default prompt
     console.log('📝 Using fallback prompt');
-    return "What practical step can deepen your daily delight in Scripture?";
+    return i18n.t('reflection_prompt_fallback');
   };
 
   // Get appropriate placeholder text based on whether this is verse reflection
@@ -227,9 +228,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       // Create readable reference
       const reference = chapterText ? `${bookName} ${chapterText}` : bookName;
 
-      return `What stands out to you in ${reference}? How does this passage speak to your life today?`;
+      return i18n.t('journal_placeholder', { reference });
     }
-    return "What's on your mind today?";
+    return i18n.t('journal_placeholder');
   };
 
   // Keyboard event listeners with height information
@@ -643,8 +644,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       pointerEvents="box-none">
       <Animated.View style={{ opacity: containerOpacity, flex: 1 }}>
         <SuccessMessage
-        title="Reflection Complete!"
-        description="Amazing! You reflected on God's word & grew in wisdom."
+        title={i18n.t('reflection_complete')}
+        description={i18n.t('reflection_complete_desc')}
         level={levelInfo.level}
         prevLevel={levelInfo.level}
         buttonsEnabled={buttonsEnabled}
@@ -748,7 +749,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
           const sawStreakToday = useHomeStore.getState().sawStreakToday;
           const isFirstReadingOfDay = !sawStreakToday;
           const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
-          return isBonusAvailable ? "Collect Bonus" : "Go Home";
+          return isBonusAvailable ? i18n.t('collect_bonus') : i18n.t('go_home');
         })()}
         rewardsTitle="REFLECTION REWARDS"
       />
@@ -828,7 +829,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
           />
           <View style={{ width: '80%' }}>
             <PrimaryButton
-              title={charCount >= MIN_CHARS_REQUIRED ? "Save Thoughts" : "Write"}
+              title={charCount >= MIN_CHARS_REQUIRED ? i18n.t('save_thoughts') : i18n.t('write_button')}
               disabled={!isButtonEnabled}
               onPress={() => {
                 if (isButtonEnabled) {

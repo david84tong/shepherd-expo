@@ -15,6 +15,7 @@ import Animated, {
 import { useNotificationStore } from '../stores/notificationStore';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
+import i18n from '../utils/i18n';
 
 export default function NotificationPermissionScreen() {
   const router = useRouter();
@@ -161,18 +162,18 @@ export default function NotificationPermissionScreen() {
 
         // Show alert offering to open system settings
         Alert.alert(
-          'Enable Notifications',
-          'To receive daily reminders and streak notifications, please enable notifications in your device settings.',
+          i18n.t('onboarding_notification_enable_title'),
+          i18n.t('onboarding_notification_enable_desc'),
           [
             {
-              text: 'Open Settings',
+              text: i18n.t('onboarding_notification_open_settings'),
               onPress: () => {
                 analytics.logEvent("Onboarding_Opened_SystemSettings_Notifications");
                 Linking.openSettings();
               }
             },
             {
-              text: 'Continue Anyway',
+              text: i18n.t('onboarding_notification_continue_anyway'),
               style: 'cancel'
             }
           ]
@@ -227,7 +228,7 @@ export default function NotificationPermissionScreen() {
       <View className="flex-1 bg-surfaceCream items-center px-5">
         <Animated.View style={titleStyle}>
           <Text className="font-feather text-h1 text-center text-textPrimary mb-12 mt-32 mx-12">
-            Get Support from Shepherd
+            {i18n.t('onboarding_notification_question')}
           </Text>
         </Animated.View>
 
@@ -251,12 +252,11 @@ export default function NotificationPermissionScreen() {
           <View className="absolute top-[42%] left-0 right-0 flex items-center justify-center z-10 opacity-90 mt-28">
             <View className="bg-white rounded-[14px] w-[280px] overflow-hidden shadow-lg">
               <View className="p-4">
-                <Text className="text-black text-[17px] font-feather text-center mb-2 mt-2">
-                  &ldquo;Shepherd&rdquo; Would Like to Send You Notifications
+                <Text className="font-feather text-center text-[17px] font-feather mb-2 mt-2">
+                  {i18n.t('onboarding_notification_dialog_title')}
                 </Text>
                 <Text className="text-[#666666] text-[15px] font-din text-center px-6 mb-2">
-                  Notifications may include alerts, sounds, and icon badges. These can be configured
-                  in Settings.
+                  {i18n.t('onboarding_notification_dialog_desc')}
                 </Text>
               </View>
 
@@ -264,11 +264,11 @@ export default function NotificationPermissionScreen() {
                 <TouchableOpacity
                   className="flex-1 py-[12px] border-r border-gray-200"
                   onPress={handleDontAllow}>
-                  <Text className="text-[#007AFF] text-[17px] text-center font-din">Don&apos;t Allow</Text>
+                  <Text className="text-[#007AFF] text-[17px] text-center font-din">{i18n.t('onboarding_notification_dont_allow')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity className="flex-1 py-[12px]" onPress={handleAllow}>
-                  <Text className="text-accentGold text-[17px] text-center font-bold">Allow</Text>
+                  <Text className="text-accentGold text-[17px] text-center font-bold">{i18n.t('onboarding_notification_allow')}</Text>
                 </TouchableOpacity>
               </View>
             </View>

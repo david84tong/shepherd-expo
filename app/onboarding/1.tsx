@@ -20,11 +20,9 @@ import PrimaryButton from '../../components/PrimaryButton';
 import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
 
 import analytics from '../../utils/analytics';
-import { IS_ANDROID, IS_IOS } from '../utils/utils';
+import { IS_ANDROID } from '../utils/utils';
+import i18n from '../utils/i18n';
 
-const FIRST_WELCOME_TEXT = 'Every Shepherd starts with one lost lamb...';
-const SECOND_WELCOME_TEXT = "This one's yours.";
-const SECOND_STAGE_PROMPT = 'Tap to wake it up';
 const TYPING_SPEED = 75; // Speed for all typing effects
 const ZOOM_DURATION = 3000; // Slow zoom effect (3 seconds)
 const TRANSITION_DURATION = 350; // Faster transition animation duration
@@ -49,6 +47,11 @@ export default function OnboardingWelcomeScreen() {
 
   // Initialize analytics
   const { logScreenView, logButtonPress, logEvent, AnalyticsEvent, EventCategory } = useAnalytics();
+
+  // Get translated text
+  const FIRST_WELCOME_TEXT = i18n.t('onboarding_first_welcome');
+  const SECOND_WELCOME_TEXT = i18n.t('onboarding_second_welcome');
+  const SECOND_STAGE_PROMPT = i18n.t('onboarding_second_stage_prompt');
 
   // Log screen view when component mounts
   useEffect(() => {
@@ -542,7 +545,7 @@ export default function OnboardingWelcomeScreen() {
             ],
           }}>
           <PrimaryButton
-            title={textPhase === 2 ? 'Begin Journey' : 'Claim Lost Lamb'}
+            title={textPhase === 2 ? i18n.t('onboarding_begin_journey') : i18n.t('onboarding_claim_lost_lamb')}
             onPress={handleButtonPress}
             // Only disable in specific conditions
             disabled={(secondStageActive && !isLambTapped) || isAnimating || isTransitioning}

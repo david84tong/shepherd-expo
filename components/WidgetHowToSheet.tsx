@@ -12,6 +12,7 @@ import {
 import EmptyModal from './EmptyModal';
 import { Feather } from '@expo/vector-icons';
 import { analytics } from '~/utils/analytics';
+import i18n from '~/app/utils/i18n';
 
 // Image references
 const PREVIEW_IMAGE = require('../assets/images/widgetPreviewStep.png');
@@ -24,19 +25,19 @@ const STEP4_IMAGE = require('../assets/images/widgetStep4.png');
 // Simplified steps with concise instructions
 const steps = [
   {
-    instruction: 'Press and hold on any empty area of your home screen until the apps start to jiggle.',
+    instruction: i18n.t('widget_step1_instruction'),
     image: STEP1_IMAGE,
   },
   {
-    instruction: 'Tap the Edit button in the top-left corner of your screen.',
+    instruction: i18n.t('widget_step2_instruction'),
     image: STEP2_IMAGE,
   },
   {
-    instruction: 'Find Shepherd in the widget gallery.',
+    instruction: i18n.t('widget_step3_instruction'),
     image: STEP3_IMAGE,
   },
   {
-    instruction: 'Tap "Add Widget" and position it on your home screen.',
+    instruction: i18n.t('widget_step4_instruction'),
     image: STEP4_IMAGE,
   },
 ];
@@ -122,7 +123,7 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <Feather name="x" size={24} color="#3C584A" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Shepherd Widget</Text>
+          <Text style={styles.headerTitle}>{i18n.t('widget_howto_header')}</Text>
           <View style={{ width: 40 }} />
         </View>
         {/* Landing screen or instructions */}
@@ -131,7 +132,7 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
             contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}
             showsVerticalScrollIndicator={false}
           >
-            <Text className="text-2xl font-feather font-bold text-center text-[#3C584A] mb-8 ">Add Shepherd to your home screen with the widget!</Text>
+            <Text className="text-2xl font-feather font-bold text-center text-[#3C584A] mb-8 ">{i18n.t('widget_howto_landing_title')}</Text>
             <View style={styles.imageContainerPreview}>
               <Image
                 source={PREVIEW_IMAGE}
@@ -144,13 +145,13 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
               onPress={onAddWidgetPressed}
               style={{ backgroundColor: '#FCD34D' }}
             >
-              <Text className="text-lg font-feather font-bold text-[#3C584A] text-center">Add widget</Text>
+              <Text className="text-lg font-feather font-bold text-[#3C584A] text-center">{i18n.t('widget_howto_add_widget')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               className="w-full rounded-full py-4"
               onPress={onNoThanksPressed}
             >
-              <Text className="text-lg font-feather text-[#3C584A] text-center">No thanks</Text>
+              <Text className="text-lg font-feather text-[#3C584A] text-center">{i18n.t('widget_howto_no_thanks')}</Text>
             </TouchableOpacity>
           </ScrollView>
         ) : (
@@ -203,7 +204,7 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
                 onPress={handleNextStep}
               >
                 <Text style={styles.buttonText}>
-                  {step < steps.length - 1 ? 'Next' : 'Done'}
+                  {step < steps.length - 1 ? i18n.t('next') : i18n.t('done')}
                 </Text>
               </TouchableOpacity>
             </View>

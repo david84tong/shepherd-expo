@@ -12,6 +12,7 @@ import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import { RPW } from '../helper/helper';
+import i18n from '../utils/i18n';
 
 // Key for tracking first app launch
 const FIRST_APP_LAUNCH_KEY = 'first_app_launch_completed';
@@ -248,7 +249,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
               <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/today.png')} className="w-7 h-7" />
-              <Text className={`mt-1 text-[12px] font-bold text-brown/70`} style={{ fontFamily: 'din' }}>Home</Text>
+              <Text className={`mt-1 text-[12px] font-bold text-brown/70`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_home_title')}</Text>
             </View>
           ),
         }}
@@ -262,7 +263,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
               <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/stats.png')} className="w-7 h-7" />
-              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>Stats</Text>
+              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_stats_title')}</Text>
             </View>
           ),
         }}
@@ -276,7 +277,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
               <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/bible.png')} className="w-7 h-7" />
-              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>Bible</Text>
+              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_bible_title')}</Text>
             </View>
           ),
         }}
@@ -289,7 +290,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
               <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/profile.png')} className="w-6 h-7" />
-              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>Profile</Text>
+              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_profile_title')}</Text>
             </View>
           ),
         }}

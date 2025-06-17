@@ -21,6 +21,8 @@ import { fetchChapter } from '../api/bible';
 
 import * as Haptics from 'expo-haptics';
 import { Prayer, Reading, Reflection } from '../models/User';
+import i18n from '../utils/i18n';
+import journalIcon from '../../assets/icons/journalIcon.png';
 
 // Bible book names mapping
 const BIBLE_BOOK_NAMES: { [bookId: number]: string } = {
@@ -269,10 +271,6 @@ function getMonthGrid(
   return grid;
 }
 
-const breadIcon = require('../../assets/icons/breadIcon.png');
-const journalIcon = require('../../assets/icons/journalIcon.png');
-const dropIcon = require('../../assets/icons/waterIcon.png');
-
 // Function to handle haptic feedback
 const triggerHaptic = () => {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -495,9 +493,10 @@ export default function StatsScreen() {
 
   // Render content based on selected type
   const renderSelectedContent = () => {
+    let recentHighlights = [], recentNotes = [];
     switch (selectedContentType) {
       case 'highlights':
-        const recentHighlights = getRecentHighlights();
+        recentHighlights = getRecentHighlights();
         return recentHighlights.length > 0 ? (
           <View className="space-y-4">
             {recentHighlights.map((highlight, i) => (
@@ -518,7 +517,7 @@ export default function StatsScreen() {
                         {BIBLE_BOOK_NAMES[highlight.bookId]} {highlight.chapter}:{highlight.verse}
                       </Text>
                       <Text className="font-din text-sm text-description mt-1">
-                        Highlighted verse
+                        {i18n.t('highlighted_verse')}
                       </Text>
                     </View>
                     <Text className="font-din text-description text-sm ml-2">
@@ -538,16 +537,16 @@ export default function StatsScreen() {
               style={{ opacity: 0.5, marginBottom: 12 }}
             />
             <Text className="font-feather text-heading text-textPrimary/70 text-center">
-              No highlights yet
+              {i18n.t('no_highlights_yet')}
             </Text>
             <Text className="font-din text-body text-description text-center mt-1">
-              Highlight verses as you read to save them here
+              {i18n.t('highlight_verses_hint')}
             </Text>
           </View>
         );
 
       case 'notes':
-        const recentNotes = getRecentNotes();
+        recentNotes = getRecentNotes();
         return recentNotes.length > 0 ? (
           <View className="space-y-4">
             {recentNotes.map((note, i) => (
@@ -589,10 +588,10 @@ export default function StatsScreen() {
               style={{ opacity: 0.5, marginBottom: 12 }}
             />
             <Text className="font-feather text-heading text-textPrimary/70 text-center">
-              No notes yet
+              {i18n.t('no_notes_yet')}
             </Text>
             <Text className="font-din text-body text-description text-center mt-1">
-              Add notes to verses as you study to save them here
+              {i18n.t('add_notes_hint')}
             </Text>
           </View>
         );
@@ -614,7 +613,7 @@ export default function StatsScreen() {
                   <View className="flex-1 flex-row justify-between items-center">
                     <View className="flex-1 mr-2">
                       <Text className="font-feather text-body text-textPrimary" numberOfLines={1}>
-                        Quiet Time
+                        {i18n.t('quiet_time')}
                       </Text>
                       {rf.content && (
                         <Text
@@ -637,10 +636,10 @@ export default function StatsScreen() {
           <View className="bg-surfaceCreamLight/70 rounded-xl p-5 flex items-center justify-center">
             <Image source={journalIcon} className="w-24 h-24 opacity-50 mb-3" />
             <Text className="font-feather text-heading text-textPrimary/70 text-center">
-              No recent reflections
+              {i18n.t('no_recent_reflections')}
             </Text>
             <Text className="font-din text-body text-description text-center mt-1">
-              Take a moment to reflect on your journey with God
+              {i18n.t('reflect_hint')}
             </Text>
           </View>
         );
@@ -656,13 +655,13 @@ export default function StatsScreen() {
           contentContainerStyle={{ paddingBottom: 40 }}>
           {/* Header */}
           <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
-            <Text className="font-feather text-h2 text-textPrimary">Heart Posture</Text>
+            <Text className="font-feather text-h2 text-textPrimary">{i18n.t('stats_title')}</Text>
           </View>
 
           {/* Heatmap Card */}
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card shadow-lg  border border-brownBorder">
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="font-feather text-heading text-textPrimary ">Monthly Activity</Text>
+              <Text className="font-feather text-heading text-textPrimary ">{i18n.t('monthly_activity')}</Text>
               <TouchableOpacity
                 className="bg-lightYellow px-4 py-1 rounded-full"
                 onPress={handleMonthPress}
@@ -728,7 +727,7 @@ export default function StatsScreen() {
           {/* Activity Summary Card - Moved to bottom */}
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-cardx mt-8 border border-brownBorder">
             <Text className="font-feather text-heading text-textPrimary mb-4 ">
-              Activity Summary
+              {i18n.t('activity_summary')}
             </Text>
 
             <View className="flex-row justify-between">
@@ -740,7 +739,7 @@ export default function StatsScreen() {
                   console.log('Readings summary pressed');
                 }}>
                 <Text className="font-feather text-h2 text-textPrimary">{totalBibleReadings}</Text>
-                <Text className="font-din text-description text-center">Readings</Text>
+                <Text className="font-din text-description text-center">{i18n.t('readings')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1 border border-brownBorder"
@@ -750,7 +749,7 @@ export default function StatsScreen() {
                   console.log('Prayers summary pressed');
                 }}>
                 <Text className="font-feather text-h2 text-textPrimary">{totalPrayerSessions}</Text>
-                <Text className="font-din text-description text-center">Prayers</Text>
+                <Text className="font-din text-description text-center">{i18n.t('prayers')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1 border border-brownBorder"
@@ -760,7 +759,7 @@ export default function StatsScreen() {
                   console.log('Reflections summary pressed');
                 }}>
                 <Text className="font-feather text-h2 text-textPrimary">{totalReflections}</Text>
-                <Text className="font-din text-description text-center">Reflections</Text>
+                <Text className="font-din text-description text-center">{i18n.t('reflections')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -768,7 +767,7 @@ export default function StatsScreen() {
           {/* Recent reflections */}
           <View className="mx-6 mt-8 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card mb-24 border border-brownBorder">
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="font-feather text-heading text-textPrimary ">Recent Activity</Text>
+              <Text className="font-feather text-heading text-textPrimary ">{i18n.t('recent_activity')}</Text>
 
               {/* Dropdown for content type selection */}
               <View className="relative">
@@ -812,19 +811,19 @@ export default function StatsScreen() {
                 className="px-4 py-3 border-b border-border"
                 onPress={() => handleContentTypeSelect('reflections')}
                 activeOpacity={0.7}>
-                <Text className="font-din text-textPrimary">Reflections</Text>
+                <Text className="font-din text-textPrimary">{i18n.t('reflections')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="px-4 py-3 border-b border-border"
                 onPress={() => handleContentTypeSelect('highlights')}
                 activeOpacity={0.7}>
-                <Text className="font-din text-textPrimary">Highlights</Text>
+                <Text className="font-din text-textPrimary">{i18n.t('highlights')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="px-4 py-3"
                 onPress={() => handleContentTypeSelect('notes')}
                 activeOpacity={0.7}>
-                <Text className="font-din text-textPrimary">Notes</Text>
+                <Text className="font-din text-textPrimary">{i18n.t('notes')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -856,7 +855,7 @@ export default function StatsScreen() {
             <View className="mb-6">
               {loadingVerse ? (
                 <View className="py-4 items-center">
-                  <Text className="font-din text-description">Loading verse...</Text>
+                  <Text className="font-din text-description">{i18n.t('loading_verse')}</Text>
                 </View>
               ) : (
                 <View
@@ -884,7 +883,7 @@ export default function StatsScreen() {
                     className="w-4 h-4 rounded-full mr-2"
                     style={{ backgroundColor: HIGHLIGHT_COLORS[selectedVerse.highlight.colorKey] }}
                   />
-                  <Text className="font-feather text-body text-textPrimary">Highlighted</Text>
+                  <Text className="font-feather text-body text-textPrimary">{i18n.t('highlighted')}</Text>
                 </View>
                 <Text className="font-din text-description text-sm">
                   {formatTimestamp(selectedVerse.highlight.timestamp)}
@@ -896,7 +895,7 @@ export default function StatsScreen() {
               <View className="mb-4">
                 <View className="flex-row items-center mb-2">
                   <Feather name="edit-3" size={16} color="#3C584A" style={{ marginRight: 8 }} />
-                  <Text className="font-feather text-body text-textPrimary">Note</Text>
+                  <Text className="font-feather text-body text-textPrimary">{i18n.t('note')}</Text>
                 </View>
                 <View className="bg-surfaceCream rounded-xl p-3 mb-2">
                   <Text className="font-din text-textPrimary text-body leading-5">
@@ -914,7 +913,7 @@ export default function StatsScreen() {
               onPress={handleCloseVerseModal}
               className="bg-accentGold rounded-xl py-3 items-center"
               activeOpacity={0.8}>
-              <Text className="font-feather text-white text-body">Close</Text>
+              <Text className="font-feather text-white text-body">{i18n.t('close')}</Text>
             </TouchableOpacity>
           </View>
         </View>

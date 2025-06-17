@@ -28,6 +28,7 @@ import { getLevelData } from '~/utils/levelUtils';
 import { RPH } from '~/app/helper/helper';
 import SuccessMessage from './SuccessMessage';
 import analytics from '~/utils/analytics';
+import i18n from '../app/utils/i18n';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -454,13 +455,13 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
   if (!activeDevotional) {
     return (
       <SafeAreaView className="flex-1 bg-surfaceCream items-center justify-center px-6">
-        <Text className="text-brown/90 text-lg font-feather mb-2">No Devotional Available</Text>
+        <Text className="text-brown/90 text-lg font-feather mb-2">{i18n.t('no_devotional_available')}</Text>
         <Text className="text-brown/70 text-center font-din mb-4">
-          We could not load today&apos;s devotional. Please check your connection and try again.
+          {i18n.t('devotional_load_error')}
         </Text>
         {onClose && (
           <TouchableOpacity onPress={handleClose} className="bg-brown/20 px-6 py-3 rounded-xl">
-            <Text className="text-brown font-feather">Go Back</Text>
+            <Text className="text-brown font-feather">{i18n.t('go_back')}</Text>
           </TouchableOpacity>
         )}
       </SafeAreaView>
@@ -474,8 +475,8 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
       {showSuccess ? (
         <SuccessMessage
           key={`success-${levelInfo.level}-${prevLevelRef.current}`}
-          title="Reading Complete!"
-          description="Hurray! You finished today's bible reading & fed your lamb."
+          title={i18n.t('reading_complete')}
+          description={i18n.t('reading_complete_desc')}
           level={levelInfo.level}
           prevLevel={prevLevelRef.current}
           buttonsEnabled={buttonsEnabled}
@@ -584,7 +585,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
             <TouchableWithoutFeedback onPress={handleNextCard}>
               <View style={{ minHeight: 200, paddingBottom:RPH(12) }}>
                 {cardsToShow.length === 0 ? (
-                  <Text className="text-brown text-center">No cards to display</Text>
+                  <Text className="text-brown text-center">{i18n.t('no_cards_to_display')}</Text>
                 ) : (
                   <>
                     {cardsToShow.map((card, index) => {
@@ -628,9 +629,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                     })}
                     {/* Tap for next guidance */}
                     {showTapGuidance && (
-                      <Text className="text-[#B89B4C] font-din text-[14px] text-center mt-3 opacity-70">
-                        Tap for next →
-                      </Text>
+                      <Text className="text-[#B89B4C] font-din text-[14px] text-center mt-3 opacity-70">{i18n.t('tap_for_next')}</Text>
                     )}
                   </>
                 )}

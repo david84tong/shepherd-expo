@@ -24,6 +24,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import analytics from '../../utils/analytics';
+import i18n from '../utils/i18n';
 
 
 export default function OnboardingReligiousAffiliationScreen() {
@@ -109,37 +110,36 @@ export default function OnboardingReligiousAffiliationScreen() {
   const options = [
     {
       id: 'protestant',
-      title: 'Protestant',
+      title: i18n.t('onboarding_affiliation_protestant'),
     },
     {
       id: 'catholic',
-      title: 'Catholic',
+      title: i18n.t('onboarding_affiliation_catholic'),
     },
     {
       id: 'orthodox',
-      title: 'Eastern / Oriental Orthodox',
+      title: i18n.t('onboarding_affiliation_orthodox'),
     },
     {
       id: 'evangelical',
-      title: 'Non-Denominational',
+      title: i18n.t('onboarding_affiliation_evangelical'),
     },
     {
       id: 'jewish',
-      title: 'Jewish',
+      title: i18n.t('onboarding_affiliation_jewish'),
     },
     {
       id: 'agnostic',
-      title: 'Agnostic',
+      title: i18n.t('onboarding_affiliation_agnostic'),
     },
     {
       id: 'spiritual',
-      title: 'Spiritual but not religious',
+      title: i18n.t('onboarding_affiliation_spiritual'),
     },
     {
       id: 'other',
-      title: 'Other',
+      title: i18n.t('onboarding_affiliation_other'),
     },
-
   ];
 
   return (
@@ -149,7 +149,7 @@ export default function OnboardingReligiousAffiliationScreen() {
         {/* Question Text */}
         <Animated.View style={titleStyle}>
           <Text className="font-feather text-h2 text-center text-textPrimary mb-4">
-            Which best describes your beliefs?
+            {i18n.t('onboarding_religious_affiliation_question')}
           </Text>
         </Animated.View>
 

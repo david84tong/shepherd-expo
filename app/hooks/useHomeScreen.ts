@@ -31,6 +31,7 @@ import { IS_ANDROID } from '../utils/utils';
 import { Devotional } from '../models/Devotional';
 import { useRiveAnimation } from './useRiveAnimation';
 import Toast from 'react-native-toast-message';
+import i18n from '../utils/i18n';
 
 // Constants
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -212,7 +213,7 @@ export const useHomeScreen = () => {
     return getLevelData(lamb.xp);
   }, [lamb?.xp]);
 
-  const buttonTitle = useMemo(() => showDevotionalContent ? 'Continue' : 'Amen', [showDevotionalContent]);
+  const buttonTitle = useMemo(() => showDevotionalContent ? i18n.t('continue_button') : i18n.t('amen_button'), [showDevotionalContent]);
   const isDarkContant = useMemo(() => new Date().getHours() >= 19, []);
 
   // Effects
@@ -814,14 +815,14 @@ export const useHomeScreen = () => {
 
   function onStreakPress() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                          analytics.logEvent('HomeScreen_Tapped_Streak');
-                          Toast.show({
-                            type: 'info',
-                            text1: 'Increase your streak!',
-                            text2: 'Complete your daily bread reading to build your streak.',
-                            position: 'top',
-                            visibilityTime: 4000,
-                          }); 
+    analytics.logEvent('HomeScreen_Tapped_Streak');
+    Toast.show({
+      type: 'info',
+      text1: i18n.t('streak_toast_title'),
+      text2: i18n.t('streak_toast_message'),
+      position: 'top',
+      visibilityTime: 4000,
+    });
   }
 
     // Additional effect to ensure the lamb skin is always set to normal (0)

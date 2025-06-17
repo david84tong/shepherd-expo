@@ -5,6 +5,7 @@ import PrimaryButton from './PrimaryButton';
 import { RPH } from '~/app/helper/helper';
 import { useUserStore } from '~/app/stores/userStore';
 import { getLevelData } from '~/utils/levelUtils';
+import i18n from '../app/utils/i18n';
 
 interface SuccessMessageProps {
   title?: string;
@@ -23,17 +24,17 @@ interface SuccessMessageProps {
 const MAX_HEARTS = 100;
 
 const SuccessMessage: React.FC<SuccessMessageProps> = ({
-  title = 'Reading Complete!',
-  description = 'Hurray! You finished today\'s bible reading & fed your lamb.',
+  title = i18n.t('reading_complete'),
+  description = i18n.t('reading_complete_desc'),
   level,
   prevLevel,
   buttonsEnabled,
   onGoHome,
   onPray,
-  prayButtonTitle = 'Pray about this verse',
+  prayButtonTitle = i18n.t('pray_about_this_verse'),
   hidePrayButton = false,
-  homeButtonTitle = 'Go Home',
-  rewardsTitle = 'READING REWARDS',
+  homeButtonTitle = i18n.t('go_home'),
+  rewardsTitle = i18n.t('reading_rewards'),
 }) => {
   const didLevelUp = useMemo(() => level > prevLevel, [level, prevLevel]);
 
@@ -129,7 +130,7 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
             <Image source={require("../assets/icons/rocket.png")} style={{ width: 65, height: 65 }} />
           </View>
           <Text className="font-feather text-[28px] text-center mb-6 text-orange">
-            {`Level UP ${level}!`}
+            {i18n.t('level_up', { level })}
           </Text>
         </>
       )}

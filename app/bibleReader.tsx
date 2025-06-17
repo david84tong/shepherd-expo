@@ -1,10 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   View,
   Text,
   ScrollView,
-  ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
@@ -20,7 +18,6 @@ import {
   TouchableWithoutFeedback,
   Switch,
   Platform,
-  ToastAndroid,
   StatusBar,
   ImageBackground,
   Image,
@@ -51,17 +48,14 @@ import Clipboard from '@react-native-clipboard/clipboard';
 import { debounce } from 'lodash';
 import {
   useReaderSettingsStore,
-  LINE_HEIGHT_KEY,
-  THEME_COLOR_KEY,
-  READER_PREFERENCE_KEY,
-  DEFAULT_FONT_SIZE,
   MIN_FONT_SIZE,
   MAX_FONT_SIZE,
   LINE_HEIGHT_PRESETS,
   LineHeightPreset,
-  ThemeType as StoreThemeType,
 } from './stores/readerSettingsStore';
 import { BibleVerseActionBar } from '~/components/BibleVerseActionBar';
+import i18n from './utils/i18n';
+import { useLanguageStore } from './stores/languageStore';
 
 // Constants
 const DEFAULT_LINE_HEIGHT = 24;
@@ -155,7 +149,7 @@ const PulsingDotsIndicator = () => {
         <Reanimated.View className="w-3 h-3 bg-accentGold rounded-full" style={animatedStyle2} />
         <Reanimated.View className="w-3 h-3 bg-accentGold rounded-full" style={animatedStyle3} />
       </View>
-      <Text className="font-feather text-description text-base">Loading Chapter...</Text>
+      <Text className="font-feather text-description text-base">{i18n.t('loading_chapter')}</Text>
     </View>
   );
 };
@@ -215,9 +209,8 @@ type SelectionsMap = {
 // Handoff type for chapter data
 import type { ChapterResponse } from './api/bible';
 import Animated from 'react-native-reanimated';
-import { responsiveFontSize, responsiveHeight } from 'react-native-responsive-dimensions';
-import { Feather, MaterialIcons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { responsiveFontSize } from 'react-native-responsive-dimensions';
+import { MaterialIcons } from '@expo/vector-icons';
 import { IS_ANDROID } from './utils/utils';
 
 // Add at the top of the file, after imports
@@ -859,11 +852,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // Add this function near the top of the component to handle toast messages
   const showToast = (message: string) => {
     if (Platform.OS === 'android') {
-      ToastAndroid.show(message, ToastAndroid.SHORT);
+      // For Android, you might want to implement a custom toast for Android
     } else {
       // For iOS, we'll use a custom toast implementation
       Alert.alert(message);
-      // In a real app, you might want to implement a custom toast for iOS
     }
   };
 
@@ -877,7 +869,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       Clipboard.setString(verseText);
 
       // Show toast notification
-      showToast('Verse copied to clipboard');
+      showToast(i18n.t('verse_copied'));
 
       // Add haptic feedback
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
@@ -1201,7 +1193,7 @@ console.log("useCardView ==>",useCardView);
                   {/* Card View Toggle */}
                   <View style={styles.toggleContainer}>
                     <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>
-                      Card View
+                      {i18n.t('card_view')}
                     </Text>
                     <Switch
                       trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
@@ -1215,7 +1207,7 @@ console.log("useCardView ==>",useCardView);
                   {/* Font Size Controls */}
                   <View style={styles.sliderContainer}>
                     <Text style={[styles.sliderLabel, { color: THEME_COLORS[currentTheme].text }]}>
-                      A
+                      {i18n.t('font_size_a')}
                     </Text>
                     <Slider
                       style={styles.slider}
@@ -1229,7 +1221,7 @@ console.log("useCardView ==>",useCardView);
                     />
                     <Text
                       style={[styles.sliderLabelLarge, { color: THEME_COLORS[currentTheme].text }]}>
-                      A
+                      {i18n.t('font_size_a')}
                     </Text>
                   </View>
 
@@ -1290,7 +1282,7 @@ console.log("useCardView ==>",useCardView);
     if (error && !effectiveChapterData) {
       return (
         <Text className="text-red-500 mt-10 text-center font-feather px-4">
-          Error loading chapter: {error}
+          {i18n.t('error_loading_chapter')}: {error}
         </Text>
       );
     }
@@ -1331,7 +1323,7 @@ console.log("useCardView ==>",useCardView);
                       fontWeight: "400",
                     }}
                   >
-                   The Bible
+                   {i18n.t('bible_title')}
                   </Text>
                   <TouchableOpacity onPress={handlePresentModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
                     <MaterialIcons
@@ -1418,7 +1410,7 @@ console.log("useCardView ==>",useCardView);
                         {/* Card View Toggle */}
                         <View style={styles.toggleContainer}>
                           <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>
-                            Card View
+                            {i18n.t('card_view')}
                           </Text>
                           <Switch
                             trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
@@ -1432,7 +1424,7 @@ console.log("useCardView ==>",useCardView);
                         {/* Font Size Controls */}
                         <View style={styles.sliderContainer}>
                           <Text style={[styles.sliderLabel, { color: THEME_COLORS[currentTheme].text }]}>
-                            A
+                            {i18n.t('font_size_a')}
                           </Text>
                           <Slider
                             style={styles.slider}
@@ -1446,7 +1438,7 @@ console.log("useCardView ==>",useCardView);
                           />
                           <Text
                             style={[styles.sliderLabelLarge, { color: THEME_COLORS[currentTheme].text }]}>
-                            A
+                            {i18n.t('font_size_a')}
                           </Text>
                         </View>
 
@@ -1504,7 +1496,7 @@ console.log("useCardView ==>",useCardView);
           <BibleVerseActionBar
             reference={effectiveChapterData
               ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}`
-              : 'Loading...'}
+              : i18n.t('loading')}
             onPrev={navigateToPreviousChapter}
             onNext={navigateToNextChapter}
             onVersePress={handleOpenSelector}
@@ -1513,6 +1505,9 @@ console.log("useCardView ==>",useCardView);
       </>
     );
   }
+
+  // Move useLanguageStore((state) => state.language); to the top level of the component, before any conditional returns.
+  useLanguageStore((state) => state.language);
 };
 
 // Standalone screen that uses the component
