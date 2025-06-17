@@ -380,5 +380,9 @@
     "bottom_home_title": "Start",
     "bottom_stats_title": "Statistiken",
     "bottom_bible_title": "Bibel",
-    "bottom_profile_title": "Profil"
+    "bottom_profile_title": "Profil",
+    "chat": "Chat",
+    "chat_with_verse": "Mit Vers chatten",
+    "create_devotional": "Andacht erstellen",
+    "chat_with_verse_placeholder": "Stellen Sie eine Frage zu diesem Vers..."
 }

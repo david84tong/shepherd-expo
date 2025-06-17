@@ -17,10 +17,10 @@ import {
   Modal,
   TouchableWithoutFeedback,
   Switch,
-  Platform,
   StatusBar,
   ImageBackground,
   Image,
+  Dimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchChapter, Verse } from './api/bible';
@@ -56,6 +56,12 @@ import {
 import { BibleVerseActionBar } from '~/components/BibleVerseActionBar';
 import i18n from './utils/i18n';
 import { useLanguageStore } from './stores/languageStore';
+import { useHighlightStore, HighlightColorKey, HIGHLIGHT_COLORS } from './stores/highlightStore';
+import { useDevotionalStore } from './stores/devotionalStore';
+import Toast from 'react-native-toast-message';
+import HighlightColorPicker from '~/components/HighlightColorPicker';
+import { Feather } from '@expo/vector-icons';
+import VerseChatView from '~/components/VerseChatView';
 
 // Constants
 const DEFAULT_LINE_HEIGHT = 24;
@@ -110,6 +116,16 @@ interface BibleReaderProps {
   initialBookName?: string; // Initial book name
   initialChapter?: number; // Initial chapter to display
   onNavigateBack?: () => void; // Optional callback for custom back navigation
+}
+
+// Add FloatingMenuState interface
+interface FloatingMenuState {
+  isVisible: boolean;
+  verse: Verse | null;
+  position: {
+    x: number;
+    y: number;
+  };
 }
 
 // Custom Loading Indicator Component (using Reanimated)
@@ -199,6 +215,12 @@ type BibleReaderStyles = {
   lineHeightButtonTextSelected: TextStyle;
   toggleContainer: ViewStyle;
   toggleLabel: TextStyle;
+  floatingMenu: ViewStyle;
+  menuItem: ViewStyle;
+  menuItemText: TextStyle;
+  menuOverlay: ViewStyle;
+  menuIconContainer: ViewStyle;
+  menuText: TextStyle;
 };
 
 // Add type for storing selections by chapter
@@ -225,6 +247,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   initialChapter,
   onNavigateBack,
 }) => {
+  // Always call hooks unconditionally, even if we don't use the results
+  useLanguageStore((state) => state.language);
+
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -840,48 +865,161 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     });
   };
 
-  // Add handler for long press
-  const handleVerseLongPress = (verseNumber: number) => {
-    // Add haptic feedback for long press
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  // Add floating menu state
+  const [floatingMenu, setFloatingMenu] = useState<FloatingMenuState>({
+    isVisible: false,
+    verse: null,
+    position: {
+      x: 0,
+      y: 0,
+    },
+  });
 
-    setIsSelectionMode(true);
-    setSelectedVerses(new Set([verseNumber]));
+  // Add highlight store methods
+  const { addHighlight, removeHighlight, getHighlight } = useHighlightStore();
+  const { createAIDevotional } = useDevotionalStore();
+
+  const handleCopyVerse = (verse: Verse) => {
+    if (!chapterData) return;
+
+    Clipboard.setString(
+      `${chapterData.book} ${chapterData.chapter}:${verse.verse} - ${verse.text}`
+    );
+    Toast.show({
+      type: 'success',
+      text1: i18n.t('verse_copied'),
+      position: 'top',
+      visibilityTime: 2000,
+    });
+
+    handleCloseFloatingMenu();
   };
 
-  // Add this function near the top of the component to handle toast messages
-  const showToast = (message: string) => {
-    if (Platform.OS === 'android') {
-      // For Android, you might want to implement a custom toast for Android
-    } else {
-      // For iOS, we'll use a custom toast implementation
-      Alert.alert(message);
+  const handleHighlightVerse = (verse: Verse) => {
+    setVerseToHighlight(verse);
+    setIsHighlightPickerVisible(true);
+    handleCloseFloatingMenu();
+  };
+
+  const handleCreateDevotional = async (verse: Verse) => {
+    if (!chapterData) return;
+
+    const reference = `${chapterData.book} ${chapterData.chapter}:${verse.verse}`;
+    
+    // Navigate to LoadingScreen
+    router.push({
+      pathname: '/onboarding/LoadingScreen',
+      params: {
+        isOnboarding: 'false',
+        fromSwipe: 'true',
+        verseText: verse.text,
+        reference: reference,
+      },
+    });
+
+    // Start AI devotional creation in the background
+    try {
+      await createAIDevotional(
+        verse.text,
+        reference,
+        chapterData.book,
+        chapterData.chapter,
+        verse.verse
+      );
+    } catch (error) {
+      console.error('Failed to create AI devotional:', error);
     }
+
+    handleCloseFloatingMenu();
+  };
+
+  const handleCloseFloatingMenu = () => {
+    setFloatingMenu({
+      isVisible: false,
+      verse: null,
+      position: { x: 0, y: 0 },
+    });
+  };
+
+  // Update handleVerseLongPress
+  const handleVerseLongPress = (verseNumber: number) => {
+    if (!chapterData) return;
+
+    const verse = chapterData.verses.find(v => v.verse === verseNumber);
+    if (!verse) return;
+
+    // Center the menu on screen
+    const MENU_WIDTH = 180;
+    const menuX = (Dimensions.get('window').width - MENU_WIDTH) / 2;
+    const menuY = (Dimensions.get('window').height - 350) / 2;
+
+    setFloatingMenu({
+      isVisible: true,
+      verse: verse,
+      position: { x: menuX, y: menuY },
+    });
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  // Add highlight picker state
+  const [isHighlightPickerVisible, setIsHighlightPickerVisible] = useState(false);
+  const [verseToHighlight, setVerseToHighlight] = useState<Verse | null>(null);
+
+  const handleApplyHighlight = (colorKey: HighlightColorKey | null) => {
+    if (!verseToHighlight || !chapterData) return;
+
+    if (colorKey === null) {
+      removeHighlight(currentBookId, currentChapter, verseToHighlight.verse);
+      Toast.show({
+        type: 'success',
+        text1: i18n.t('highlight_removed'),
+        position: 'top',
+        visibilityTime: 2000,
+      });
+    } else {
+      addHighlight(currentBookId, currentChapter, verseToHighlight.verse, colorKey);
+      Toast.show({
+        type: 'success',
+        text1: i18n.t('verse_highlighted'),
+        position: 'top',
+        visibilityTime: 2000,
+      });
+    }
+
+    setIsHighlightPickerVisible(false);
+    setVerseToHighlight(null);
+  };
+
+  const handleCloseHighlightPicker = () => {
+    setIsHighlightPickerVisible(false);
+    setVerseToHighlight(null);
+  };
+
+  // Add getVerseHighlightColor function
+  const getVerseHighlightColor = (verse: Verse): string | null => {
+    if (!verse) return null;
+    const highlight = getHighlight(currentBookId, currentChapter, verse.verse);
+    return highlight ? HIGHLIGHT_COLORS[highlight.colorKey] : null;
+  };
+
+  const [showChatView, setShowChatView] = useState(false);
+  const [selectedVerse, setSelectedVerse] = useState<Verse | null>(null);
+
+  const handleChatWithVerse = (verse: Verse) => {
+    if (!chapterData) return;
+
+    setSelectedVerse(verse);
+    setShowChatView(true);
+    handleCloseFloatingMenu();
+  };
+
+  const handleCloseChatView = () => {
+    setShowChatView(false);
+    setSelectedVerse(null);
   };
 
   const renderBibleContent = (chapterData: ChapterResponse) => {
-    // Add copy function
-    const handleCopyVerse = (verse: Verse) => {
-      // Construct verse text with reference
-      const verseText = `${chapterData.book} ${chapterData.chapter}:${verse.verse} - ${verse.text}`;
-
-      // Copy to clipboard
-      Clipboard.setString(verseText);
-
-      // Show toast notification
-      showToast(i18n.t('verse_copied'));
-
-      // Add haptic feedback
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      // Log analytics
-      analytics.logEvent('BibleReader_CopiedVerse', {
-        book: chapterData.book,
-        chapter: chapterData.chapter,
-        verse: verse.verse,
-      });
-    };
-    // DEFAULT BIBLE READER
     return (
       <>
         <ScrollView
@@ -891,27 +1029,30 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           scrollEventThrottle={16}
           onContentSizeChange={(_, height) => setContentHeight(height)}
           onLayout={(e) => setContainerHeight(e.nativeEvent.layout.height)}>
-          {chapterData.verses.map((verse: Verse) => (
-            <Pressable
-              key={verse.verse}
-              onPress={() => handleVersePress(verse.verse)}
-              onLongPress={() => handleVerseLongPress(verse.verse)}
-              style={[
-                styles.verseContainer,
-                selectedVerses.has(verse.verse) && [
-                  styles.selectedVerse,
-                  { backgroundColor: THEME_COLORS[currentTheme].verseHighlight },
-                ],
-              ]}>
-              <Text
-                style={[verseTextStyle, { color: "#634012" }]}
-                // className='text-brown'
-                selectable={true}>
-                <Text style={[verseNumberStyle, { color: '#9c755a' }]}>{`${verse.verse}.`} </Text>
-                {verse.text}
-              </Text>
-            </Pressable>
-          ))}
+          {chapterData.verses.map((verse: Verse) => {
+            const highlightColor = getVerseHighlightColor(verse);
+            return (
+              <Pressable
+                key={verse.verse}
+                onPress={() => handleVersePress(verse.verse)}
+                onLongPress={() => handleVerseLongPress(verse.verse)}
+                style={[
+                  styles.verseContainer,
+                  selectedVerses.has(verse.verse) && [
+                    styles.selectedVerse,
+                    { backgroundColor: THEME_COLORS[currentTheme].verseHighlight },
+                  ],
+                  highlightColor && { backgroundColor: `${highlightColor}80` },
+                ]}>
+                <Text
+                  style={[verseTextStyle, { color: "#634012" }]}
+                  selectable={true}>
+                  <Text style={[verseNumberStyle, { color: '#9c755a' }]}>{`${verse.verse}.`} </Text>
+                  {verse.text}
+                </Text>
+              </Pressable>
+            );
+          })}
         </ScrollView>
       </>
     );
@@ -1139,140 +1280,167 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       setPathInProgress(false);
     };
   }, [setPathInProgress]);
-console.log("useCardView ==>",useCardView);
+
+  // Move menuActions here, before any return statement or JSX that uses it
+  const menuActions = [
+    {
+      id: 'copy',
+      icon: 'copy' as const,
+      label: i18n.t('copy'),
+      color: '#3C584A',
+      action: handleCopyVerse,
+    },
+    {
+      id: 'highlight',
+      icon: 'edit-2' as const,
+      label: i18n.t('highlight'),
+      color: '#F7B500',
+      action: handleHighlightVerse,
+    },
+    {
+      id: 'chat',
+      icon: 'message-circle' as const,
+      label: i18n.t('chat_with_verse'),
+      color: '#795323',
+      action: handleChatWithVerse,
+    },
+    {
+      id: 'devotional',
+      icon: 'book-open' as const,
+      label: i18n.t('create_devotional'),
+      color: '#795323',
+      action: handleCreateDevotional,
+    },
+  ];
 
   // When user enabled Card View preference, render the NewBibleReader component
   if (useCardView) {
     return <View className='flex-1 bg-surfaceCream/80'>
-        <StatusBar translucent backgroundColor="transparent" />
-                  {/* {loading ? (
-            <PulsingDotsIndicator />
-          ) : ( */}
-     <NewBibleReader
-              isBibleReaderScreen
-              bookId={currentBookId}
-              chapter={currentChapter}
-              translation={currentVersion}
-              isInPathMode={pathInProgress}
-              onNavigateBack={handleBackNavigation}
-              onSwitchToDefaultReader={handleSwitchToDefaultReader}
-              onHandoffChapterData={handleHandoffChapterData}
-              onOpenSettings={handlePresentModal}
-            />
-                {/* )} */}
-            {isModalVisible ? <Modal
-          visible={true}
-          transparent
-          animationType="none"
-          onRequestClose={handleCloseModal}>
-          <TouchableWithoutFeedback onPress={handleCloseModal}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback>
-                <RNAnimated.View
+      <StatusBar translucent backgroundColor="transparent" />
+      <NewBibleReader
+        isBibleReaderScreen
+        bookId={currentBookId}
+        chapter={currentChapter}
+        translation={currentVersion}
+        isInPathMode={pathInProgress}
+        onNavigateBack={handleBackNavigation}
+        onSwitchToDefaultReader={handleSwitchToDefaultReader}
+        onHandoffChapterData={handleHandoffChapterData}
+        onOpenSettings={handlePresentModal}
+      />
+      {isModalVisible ? <Modal
+        visible={true}
+        transparent
+        animationType="none"
+        onRequestClose={handleCloseModal}>
+        <TouchableWithoutFeedback onPress={handleCloseModal}>
+          <View style={styles.modalOverlay}>
+            <TouchableWithoutFeedback>
+              <RNAnimated.View
+                style={[
+                  styles.modalContent,
+                  {
+                    backgroundColor: THEME_COLORS[currentTheme].modalBackground,
+                    transform: [
+                      {
+                        translateY: slideAnim.interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [300, 0],
+                        }),
+                      },
+                    ],
+                  },
+                ]}>
+                <View
                   style={[
-                    styles.modalContent,
-                    {
-                      backgroundColor: THEME_COLORS[currentTheme].modalBackground,
-                      transform: [
-                        {
-                          translateY: slideAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [300, 0],
-                          }),
-                        },
-                      ],
-                    },
-                  ]}>
-                  <View
-                    style={[
-                      styles.modalHandle,
-                      { backgroundColor: THEME_COLORS[currentTheme].border },
-                    ]}
+                    styles.modalHandle,
+                    { backgroundColor: THEME_COLORS[currentTheme].border },
+                  ]}
+                />
+
+                {/* Card View Toggle */}
+                <View style={styles.toggleContainer}>
+                  <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>
+                    {i18n.t('card_view')}
+                  </Text>
+                  <Switch
+                    trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
+                    thumbColor={useCardView ? '#FFFFFF' : '#FFFFFF'}
+                    ios_backgroundColor="#E0E0E0"
+                    onValueChange={handleCardViewToggle}
+                    value={useCardView}
                   />
+                </View>
 
-                  {/* Card View Toggle */}
-                  <View style={styles.toggleContainer}>
-                    <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>
-                      {i18n.t('card_view')}
-                    </Text>
-                    <Switch
-                      trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
-                      thumbColor={useCardView ? '#FFFFFF' : '#FFFFFF'}
-                      ios_backgroundColor="#E0E0E0"
-                      onValueChange={handleCardViewToggle}
-                      value={useCardView}
-                    />
-                  </View>
+                {/* Font Size Controls */}
+                <View style={styles.sliderContainer}>
+                  <Text style={[styles.sliderLabel, { color: THEME_COLORS[currentTheme].text }]}>
+                    {i18n.t('font_size_a')}
+                  </Text>
+                  <Slider
+                    style={styles.slider}
+                    minimumValue={MIN_FONT_SIZE}
+                    maximumValue={MAX_FONT_SIZE}
+                    value={fontSize}
+                    onValueChange={handleFontSizeChange}
+                    minimumTrackTintColor="#DCB280"
+                    maximumTrackTintColor={THEME_COLORS[currentTheme].sliderTrack}
+                    thumbTintColor="#DCB280"
+                  />
+                  <Text
+                    style={[styles.sliderLabelLarge, { color: THEME_COLORS[currentTheme].text }]}>
+                    {i18n.t('font_size_a')}
+                  </Text>
+                </View>
 
-                  {/* Font Size Controls */}
-                  <View style={styles.sliderContainer}>
-                    <Text style={[styles.sliderLabel, { color: THEME_COLORS[currentTheme].text }]}>
-                      {i18n.t('font_size_a')}
-                    </Text>
-                    <Slider
-                      style={styles.slider}
-                      minimumValue={MIN_FONT_SIZE}
-                      maximumValue={MAX_FONT_SIZE}
-                      value={fontSize}
-                      onValueChange={handleFontSizeChange}
-                      minimumTrackTintColor="#DCB280"
-                      maximumTrackTintColor={THEME_COLORS[currentTheme].sliderTrack}
-                      thumbTintColor="#DCB280"
-                    />
-                    <Text
-                      style={[styles.sliderLabelLarge, { color: THEME_COLORS[currentTheme].text }]}>
-                      {i18n.t('font_size_a')}
-                    </Text>
-                  </View>
-
-                  {/* Line Height Controls */}
-                  <View style={styles.lineHeightContainer}>
-                    <View style={styles.lineHeightButtons}>
-                      {(['COMPACT', 'REGULAR', 'RELAXED'] as const).map((p) => (
-                        <TouchableOpacity
-                          key={p}
-                          style={[
-                            styles.lineHeightButton,
-                            lineHeightPreset === p && styles.lineHeightButtonSelected,
-                            { borderColor: THEME_COLORS[currentTheme].border },
-                          ]}
-                          onPress={() => handleLineHeightChange(p)}>
-                          <Text
-                            style={[
-                              styles.lineHeightButtonText,
-                              { color: THEME_COLORS[currentTheme].text },
-                              lineHeightPreset === p && styles.lineHeightButtonTextSelected,
-                            ]}>
-                            {p.charAt(0) + p.slice(1).toLowerCase()}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  </View>
-
-                  {/* Theme Buttons */}
-                  <View style={styles.themeButtonsContainer}>
-                    {(Object.keys(THEME_COLORS) as ThemeType[]).map((k) => (
+                {/* Line Height Controls */}
+                <View style={styles.lineHeightContainer}>
+                  <View style={styles.lineHeightButtons}>
+                    {(['COMPACT', 'REGULAR', 'RELAXED'] as const).map((p) => (
                       <TouchableOpacity
-                        key={k}
+                        key={p}
                         style={[
-                          styles.themeButton,
-                          { backgroundColor: THEME_COLORS[k].background },
-                          currentTheme === k && [
-                            styles.selectedThemeButton,
-                            { borderColor: THEME_COLORS[k].border },
-                          ],
+                          styles.lineHeightButton,
+                          lineHeightPreset === p && styles.lineHeightButtonSelected,
+                          { borderColor: THEME_COLORS[currentTheme].border },
                         ]}
-                        onPress={() => handleThemeChange(k)}
-                      />
+                        onPress={() => handleLineHeightChange(p)}>
+                        <Text
+                          style={[
+                            styles.lineHeightButtonText,
+                            { color: THEME_COLORS[currentTheme].text },
+                            lineHeightPreset === p && styles.lineHeightButtonTextSelected,
+                          ]}>
+                          {p.charAt(0) + p.slice(1).toLowerCase()}
+                        </Text>
+                      </TouchableOpacity>
                     ))}
                   </View>
-                </RNAnimated.View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </Modal>:null}
-      </View>
+                </View>
+
+                {/* Theme Buttons */}
+                <View style={styles.themeButtonsContainer}>
+                  {(Object.keys(THEME_COLORS) as ThemeType[]).map((k) => (
+                    <TouchableOpacity
+                      key={k}
+                      style={[
+                        styles.themeButton,
+                        { backgroundColor: THEME_COLORS[k].background },
+                        currentTheme === k && [
+                          styles.selectedThemeButton,
+                          { borderColor: THEME_COLORS[k].border },
+                        ],
+                      ]}
+                      onPress={() => handleThemeChange(k)}
+                    />
+                  ))}
+                </View>
+              </RNAnimated.View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
+      </Modal>:null}
+    </View>
   } else {
     // Use pendingChapterData if available
     const effectiveChapterData = pendingChapterData || chapterData;
@@ -1284,6 +1452,20 @@ console.log("useCardView ==>",useCardView);
         <Text className="text-red-500 mt-10 text-center font-feather px-4">
           {i18n.t('error_loading_chapter')}: {error}
         </Text>
+      );
+    }
+
+    // Render chat view if active
+    if (showChatView && selectedVerse && effectiveChapterData) {
+      return (
+        <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4DC' }}>
+          <VerseChatView
+            verse={selectedVerse}
+            bookName={effectiveChapterData.book}
+            chapter={effectiveChapterData.chapter}
+            onClose={handleCloseChatView}
+          />
+        </SafeAreaView>
       );
     }
 
@@ -1501,13 +1683,60 @@ console.log("useCardView ==>",useCardView);
             onNext={navigateToNextChapter}
             onVersePress={handleOpenSelector}
           />
+
+          {/* Add Floating Menu */}
+          {floatingMenu.isVisible && floatingMenu.verse && (
+            <TouchableWithoutFeedback onPress={handleCloseFloatingMenu}>
+              <View style={styles.menuOverlay}>
+                <View
+                  style={[
+                    styles.floatingMenu,
+                    {
+                      position: 'absolute',
+                      left: floatingMenu.position.x,
+                      top: floatingMenu.position.y,
+                    },
+                  ]}>
+                  {menuActions.map((action) => (
+                    <TouchableOpacity
+                      key={action.id}
+                      style={styles.menuItem}
+                      onPress={() => action.action(floatingMenu.verse!)}
+                      activeOpacity={0.7}>
+                      <View
+                        style={[
+                          styles.menuIconContainer,
+                          {
+                            backgroundColor: `${action.color}22`,
+                          },
+                        ]}>
+                        <Feather name={action.icon} size={18} color={action.color} />
+                      </View>
+                      <Text style={styles.menuText}>{action.label}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+          )}
+
+          {/* Add Highlight Color Picker */}
+          {verseToHighlight && (
+            <HighlightColorPicker
+              isVisible={isHighlightPickerVisible}
+              initialColor={
+                getHighlight(currentBookId, currentChapter, verseToHighlight.verse)?.colorKey ||
+                null
+              }
+              onClose={handleCloseHighlightPicker}
+              onSelectColor={handleApplyHighlight}
+              versePreview={verseToHighlight.text}
+            />
+          )}
         </View>
       </>
     );
   }
-
-  // Move useLanguageStore((state) => state.language); to the top level of the component, before any conditional returns.
-  useLanguageStore((state) => state.language);
 };
 
 // Standalone screen that uses the component
@@ -1693,9 +1922,13 @@ const styles = StyleSheet.create<BibleReaderStyles>({
     textAlign: 'center',
   },
   modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.4)',
-    justifyContent: 'flex-end',
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    zIndex: 1000,
   },
   modalContent: {
     backgroundColor: '#FFF4D9',
@@ -1781,5 +2014,54 @@ const styles = StyleSheet.create<BibleReaderStyles>({
   toggleLabel: {
     fontFamily: 'Nunito-Black',
     fontSize: 16,
+  },
+  menuOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.07)',
+    zIndex: 1000,
+  },
+  floatingMenu: {
+    position: 'absolute',
+    borderRadius: 16,
+    padding: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: 180,
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: 'rgba(121, 83, 35, 0.1)',
+  },
+  menuItem: {
+    alignItems: 'center',
+    width: '50%',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+  },
+  menuIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  menuText: {
+    fontSize: 12,
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    textAlign: 'center',
+    color: '#3C584A',
+  },
+  menuItemText: {
+    fontSize: 12,
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    textAlign: 'center',
+    color: '#3C584A',
   },
 });

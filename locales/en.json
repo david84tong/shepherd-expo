@@ -382,5 +382,9 @@
     "bottom_home_title": "Home",
     "bottom_stats_title": "Stats",
     "bottom_bible_title": "Bible",
-    "bottom_profile_title": "Profile"
+    "bottom_profile_title": "Profile",
+    "create_devotional": "Create Devotional",
+    "chat": "Chat",
+    "chat_with_verse": "Chat with verse",
+    "chat_with_verse_placeholder": "Ask a question about this verse..."
 }

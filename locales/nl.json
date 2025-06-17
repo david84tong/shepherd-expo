@@ -380,5 +380,9 @@
     "bottom_home_title": "Home",
     "bottom_stats_title": "Statistieken",
     "bottom_bible_title": "Bijbel",
-    "bottom_profile_title": "Profiel"
+    "bottom_profile_title": "Profiel",
+    "chat": "Chat",
+    "chat_with_verse": "Chat met vers",
+    "create_devotional": "Maak een overdenking",
+    "chat_with_verse_placeholder": "Stel een vraag over dit vers..."
 }
