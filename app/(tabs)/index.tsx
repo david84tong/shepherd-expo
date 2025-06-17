@@ -26,9 +26,6 @@ import FullScreenShareCard from '../../components/FullScreenShareCard';
 import SpotlightOverlay from '../../components/SpotlightOverlay';
 import PrayerView from '~/components/PrayerView';
 import JournalComponent from '~/components/JournalComponent';
-import CircleButton from '~/components/Shared/CircleButton';
-import PrimaryButton from '~/components/PrimaryButton';
-import BluePrimaryButton from '~/components/Shared/BluePrimaryButton';
 import DailyVerseCard from '~/components/Shared/DailyVerseCard';
 import CustomToast from '../components/Shared/CustomToast';
 import { imageAssets, useAssetsStore } from '../stores/assetsStore';
@@ -39,6 +36,7 @@ import * as Haptics from 'expo-haptics';
 import { responsiveHeight } from 'react-native-responsive-dimensions';
 import { RPH } from '../helper/helper';
 import analytics from '~/utils/analytics';
+import BottomControls from '../components/BottomControls';
 
 // Custom toast config with explicit styling
 const toastConfig = CustomToast;
@@ -727,80 +725,24 @@ export default function HomeScreen() {
           </BottomSheet>
 
           {/* BUTTONS */}
-          <Animated.View 
-            style={[
-              { opacity: bottomContentOpacity, transform: [{ translateY: bottomContentAnimY }] },
-              {bottom: RPH(3)},
-              { 
-                opacity: showPrayerContent ? controlRowOpacity : 1,
-                pointerEvents: showPrayerContent ? (isControlRowVisible ? 'auto' : 'none') : 'auto'
-              }
-            ]}
-            className='px-10 absolute items-center w-full justify-between'>
-            {showDevotionalContent && (
-              <View className='flex-row items-center w-full justify-between mr-12'>
-                <View className="flex-row gap-3">
-                  <Image source={require('../../assets/icons/share.png')} style={{opacity:0.7}} />
-                  <Image source={require('../../assets/icons/bookmark.png')} style={{opacity:0.7}} />
-                </View>
-              </View>
-            )}
-            <View className="flex-row items-center justify-between w-full">
-              {!showJournalContent && (
-                <Animated.View style={{ width: '10%' }}>
-                  <CircleButton 
-                    icon='chevron-left' 
-                    size={53} 
-                    onPress={()=>{
-                      if(showDevotionalContent){
-                        handleDevotionalClose({})
-                        devotionalReaderRef.current?.handleClose();
-                      }
-                      if(showPrayerContent){
-                        prayerViewRef.current?.handleBack();
-                      }
-                    }} 
-                  />
-                </Animated.View>
-              )}
+          <BottomControls 
+            bottomContentOpacity={bottomContentOpacity}
+            bottomContentAnimY={bottomContentAnimY}
+            showPrayerContent={showPrayerContent}
+            controlRowOpacity={controlRowOpacity}
+            isControlRowVisible={isControlRowVisible}
+            showDevotionalContent={showDevotionalContent}
+            showJournalContent={showJournalContent}
+            RPH={RPH}
+            handleDevotionalClose={handleDevotionalClose}
+            devotionalReaderRef={devotionalReaderRef}
+            prayerViewRef={prayerViewRef}
+            buttonTitle={buttonTitle}
+            handleDevotionalFinishPress={handleDevotionalFinishPress}
+            devotionalReadedFully={devotionalReadedFully}
+            isCompletePrayerDisabled={isCompletePrayerDisabled}
+          />
 
-              <Animated.View style={{ width: showPrayerContent ? '60%' : showJournalContent ? '100%' : '82%' }}>
-                {showDevotionalContent ? (
-                  <PrimaryButton
-                    title={buttonTitle}
-                    onPress={handleDevotionalFinishPress}
-                    disabled={devotionalReaderRef.current?.isRewarding || !devotionalReadedFully}
-                    buttonType="blue"
-                    icon={require('../../assets/icons/starIcon.png')}
-                    reward={'+25'}
-                    opacity={!devotionalReadedFully ? 0.7 : 1}
-                  />
-                ) : showPrayerContent ? (
-                  <BluePrimaryButton
-                    title="Amen"
-                    width="100%"
-                    disabled={isCompletePrayerDisabled}
-                    onPress={() => {
-                      prayerViewRef.current?.handleCompletePrayer();
-                    }}
-                  />
-                ) : null}
-              </Animated.View> 
-              
-              {showPrayerContent && (
-                <Animated.View style={{ width: '10%' }}>
-                  <CircleButton
-                    icon="settings"
-                    size={50}
-                    onPress={() => {
-                      prayerViewRef.current?.handleSettings();
-                    }}
-                  />
-                </Animated.View>
-              )}
-            </View>
-          </Animated.View>
-          
           <WidgetHowToSheet visible={showWidgetSheet} onClose={handleWidgetSheetClose} />
           <HeartsExplainerModal
             visible={showHeartsModal}
