@@ -37,6 +37,9 @@ import { responsiveHeight } from 'react-native-responsive-dimensions';
 import { RPH } from '../helper/helper';
 import analytics from '~/utils/analytics';
 import BottomControls from '../components/BottomControls';
+import i18n from '../utils/i18n';
+import { useLanguageStore } from '../stores/languageStore';
+import { useEffect } from 'react';
 
 // Custom toast config with explicit styling
 const toastConfig = CustomToast;
@@ -166,6 +169,12 @@ export default function HomeScreen() {
   // Add state for asset loading
   const assetsLoaded = useAssetsStore((s) => s.loaded);
   const assets = useAssetsStore((s) => s.assets);
+
+  // Subscribe to language changes
+  const currentLanguage = useLanguageStore((state) => state.language);
+  useEffect(() => {
+    i18n.locale = currentLanguage;
+  }, [currentLanguage]);
 
   // Define riveComponent after state declarations so it can access showJournalContent and showPrayerContent
   const riveComponent = useMemo(() => {
@@ -344,7 +353,13 @@ export default function HomeScreen() {
                     textShadowOffset: { width: 0, height: 1 },
                     textShadowRadius: 2,
                   }}>
-                  {showDevotionalContent ? 'Devotional' : showPrayerContent ? 'Praying' : showJournalContent ? 'Reflecting' : 'Shepherd'}
+                  {showDevotionalContent 
+                    ? i18n.t('devotional_title') 
+                    : showPrayerContent 
+                    ? i18n.t('praying_title') 
+                    : showJournalContent 
+                    ? i18n.t('reflecting_title') 
+                    : i18n.t('home_title')}
                 </Text>
                 {!showDevotionalContent && !showPrayerContent && !showJournalContent && (
                   <View className="flex-row gap-2 justify-end ml-2">
@@ -458,7 +473,7 @@ export default function HomeScreen() {
             <Animated.View className="items-center justify-center" style={{}}>
               {riveError ? (
                 <Text className="text-red-500 p-4 text-center">
-                  Error loading animation: {riveError.message} ({riveError.type})
+                  {i18n.t('error_loading_animation')} {riveError.message} ({riveError.type})
                 </Text>
               ) : (
                 <>
@@ -613,8 +628,8 @@ export default function HomeScreen() {
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <SecondaryButton
                           icon={breadIcon}
-                          title="Daily Bread – Read"
-                          subtitle="Feed your soul with scripture"
+                          title={i18n.t('daily_bread')}
+                          subtitle={i18n.t('feed_soul')}
                           points={25}
                           onPress={handleReadPress}
                           completed={readingCompleted}
@@ -646,8 +661,8 @@ export default function HomeScreen() {
                       <View style={{ flex: 1, minWidth: 0 }}>
                         <SecondaryButton
                           icon={dropIcon}
-                          title="Living Water – Pray"
-                          subtitle="Feed your soul with scripture"
+                          title={i18n.t('living_water')}
+                          subtitle={i18n.t('feed_soul')}
                           points={25}
                           onPress={handlePrayerPress}
                           completed={prayerCompleted}
@@ -681,8 +696,8 @@ export default function HomeScreen() {
                       <View style={{ flex: 1 }}>
                         <SecondaryButton
                           icon={bibleIcon}
-                          title="Quiet Time – Reflect"
-                          subtitle="Feed your soul with scripture"
+                          title={i18n.t('quiet_time')}
+                          subtitle={i18n.t('feed_soul')}
                           points={25}
                           onPress={handleReflectionPress}
                           completed={reflectionCompleted}
@@ -698,7 +713,7 @@ export default function HomeScreen() {
                             <Text className="text-darkGreen text-xs font-feather">📖</Text>
                           </View>
                           <Text className="font-feather text-base text-description">
-                            Loading daily verse...
+                            {i18n.t('loading_daily_verse')}
                           </Text>
                         </View>
                       </View>
@@ -711,11 +726,11 @@ export default function HomeScreen() {
                             <Text className="text-white text-xs font-feather">⚠️</Text>
                           </View>
                           <Text className="font-feather text-base text-red">
-                            Daily verse unavailable
+                            {i18n.t('daily_verse_unavailable')}
                           </Text>
                         </View>
                         <Text className="font-din text-sm text-description">
-                          Check your connection and try again later.
+                          {i18n.t('check_connection')}
                         </Text>
                       </View>
                     )}

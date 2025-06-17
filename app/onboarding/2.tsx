@@ -1,7 +1,7 @@
 import { useAssets } from 'expo-asset';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { View, Text, TextInput, Keyboard, ActivityIndicator, Image, StatusBar } from 'react-native';
+import { View, Text, TextInput, Keyboard, ActivityIndicator, StatusBar } from 'react-native';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
@@ -18,6 +18,7 @@ import { toBool } from '../utils/toBool';
 import { validateName } from '../../utils/validation';
 import CustomAnimatedView from '../components/CustomAnimatedView';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
+import i18n from '../utils/i18n';
 
 export default function OnboardingLambNameScreen() {
   const router = useRouter();
@@ -180,7 +181,7 @@ export default function OnboardingLambNameScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-[#FFF4D9] px-6">
         <ActivityIndicator size="large" color="#3C584A" />
-        <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
+        <Text className="font-feather text-textPrimary mt-4">{i18n.t('loading')}</Text>
       </View>
     );
   }
@@ -192,7 +193,7 @@ export default function OnboardingLambNameScreen() {
         {/* Question Text */}
         <CustomAnimatedView style={titleStyle}>
           <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-0">
-            What should we call your lamb?
+            {i18n.t('onboarding_lamb_name_question')}
           </Text>
         </CustomAnimatedView>
 
@@ -200,28 +201,30 @@ export default function OnboardingLambNameScreen() {
         <CustomAnimatedView
           style={lambStyle}
           className="h-[160px] w-full justify-center items-center my-4">
-          {IS_ANDROID ? (
-            <Rive
-              resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-              artboardName="lamb-idle"
-              autoplay
-              style={{ width: '80%', height: '80%' }}
-              onError={(error) => {
-                console.warn('Rive animation error:', error);
-                // setRiveError(true);
-              }}
-            />
-          ) : (
-            <Rive
-              url={riveAssets?.[0]?.uri}
-              artboardName="lamb-idle"
-              autoplay
-              style={{ width: '80%', height: '80%' }}
-              onError={(error) => {
-                console.warn('Rive animation error:', error);
-                // setRiveError(true);
-              }}
-            />
+          {riveAssets && (
+            IS_ANDROID ? (
+              <Rive
+                resourceName="home_lamb"
+                artboardName="lamb-idle"
+                autoplay
+                style={{ width: '80%', height: '80%' }}
+                onError={(error) => {
+                  console.warn('Rive animation error:', error);
+                }}
+              />
+            ) : (
+              riveAssets[0]?.uri && (
+                <Rive
+                  url={riveAssets[0].uri}
+                  artboardName="lamb-idle"
+                  autoplay
+                  style={{ width: '80%', height: '80%' }}
+                  onError={(error) => {
+                    console.warn('Rive animation error:', error);
+                  }}
+                />
+              )
+            )
           )}
         </CustomAnimatedView>
 
@@ -230,7 +233,7 @@ export default function OnboardingLambNameScreen() {
           <TextInput
             ref={inputRef}
             className="font-feather text-3xl text-center text-textPrimary bg-white p-6 rounded-2xl border-4 border-border"
-            placeholder="Enter name"
+            placeholder={i18n.t('onboarding_lamb_name_placeholder')}
             placeholderTextColor="#B89B4C"
             maxLength={16}
             value={inputLambName}
@@ -239,13 +242,13 @@ export default function OnboardingLambNameScreen() {
             autoCapitalize="none"
             spellCheck={false}
           />
-          {error && <Text className="font-din text-sm text-red-500 mt-2 text-center">{error}</Text>}
+          {error && <Text className="font-din text-sm text-red-500 mt-2 text-center">{i18n.t(error)}</Text>}
         </CustomAnimatedView>
 
         {/* Continue Button */}
         <CustomAnimatedView style={buttonStyle} className="mt-0">
           <PrimaryButton
-            title="Continue"
+            title={i18n.t('continue_button')}
             onPress={handleContinue}
             disabled={!inputLambName.trim() || !!error}
             isActive={!!inputLambName.trim() && !error}

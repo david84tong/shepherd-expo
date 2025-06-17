@@ -59,6 +59,8 @@ import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 import { useHomeStore } from '~/app/stores/homeStore';
 import { syncStreakDataToWidget } from '~/utils/widgetSync';
 import dayjs from 'dayjs';
+import i18n from '~/app/utils/i18n';
+import { useLanguageStore } from '~/app/stores/languageStore';
 
 interface SettingsSheetProps {
   settingsSheetRef: React.RefObject<SettingsSheetRef>;
@@ -81,6 +83,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   const [translationModalVisible, setTranslationModalVisible] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showAndroidPicker, setShowAndroidPicker] = useState(false);
+  const selectedLanguage = useLanguageStore((state) => state.language);
+  const setLanguage = useLanguageStore((state) => state.setLanguage);
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
 
   // Get user store data
   const notificationTime = useUserStore((state) => state.notificationTime);
@@ -293,7 +298,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
       router.replace({ pathname: '/(auth)' });
     } catch (error) {
-      const msg = error?.message ?? '';
+      const msg = (typeof error === 'object' && error && 'message' in error) ? (error as any).message : '';
 
       const isExpectedLogoutError =
         msg.includes('[auth/no-current-user]') ||
@@ -1209,6 +1214,11 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     initializeNotificationState();
   }, []);
 
+  const handleLanguageChange = (lang: string) => {
+    setLanguage(lang);
+    setLanguageModalVisible(false);
+  };
+
   return (
     <>
       {isVisible ? (
@@ -1228,9 +1238,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             contentContainerStyle={styles.settingsContentContainer}>
             {/* Header */}
             <View style={styles.settingsHeader}>
-              <Text style={styles.settingsTitle}>Settings</Text>
+              <Text style={styles.settingsTitle}>{i18n.t('settings_title')}</Text>
               <TouchableOpacity onPress={handleClose} style={{ padding: 5 }}>
-                <Text style={styles.doneButton}>Done</Text>
+                <Text style={styles.doneButton}>{i18n.t('done_button')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -1238,7 +1248,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             <View style={styles.settingsContent}>
               {/* Bible Translation Section */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>Bible Translation</Text>
+                <Text style={styles.settingsSectionTitle}>{i18n.t('bible_translation_title')}</Text>
                 <TouchableOpacity
                   style={styles.translationSelector}
                   onPress={() => setTranslationModalVisible(true)}>
@@ -1250,11 +1260,34 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 </TouchableOpacity>
               </View>
 
+              {/* Language Section */}
+              <View style={styles.settingsSection}>
+                <Text style={styles.settingsSectionTitle}>{i18n.t('language_title')}</Text>
+                <TouchableOpacity
+                  style={styles.translationSelector}
+                  onPress={() => setLanguageModalVisible(true)}>
+                  <Text style={styles.translationText}>
+                    {(() => {
+                      switch (selectedLanguage) {
+                        case 'en': return 'English';
+                        case 'es': return 'Español';
+                        case 'pt': return 'Português';
+                        case 'nl': return 'Nederlands';
+                        case 'fr': return 'Français';
+                        case 'de': return 'Deutsch';
+                        default: return 'English';
+                      }
+                    })()}
+                  </Text>
+                  <Feather name="chevron-right" size={18} color="#3C584A" />
+                </TouchableOpacity>
+              </View>
+
               <View style={styles.divider} />
 
               {/* Daily Reading Time Section */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>Daily Reading Time</Text>
+                <Text style={styles.settingsSectionTitle}>{i18n.t('daily_reading_time_title')}</Text>
                 <TouchableOpacity
                   style={styles.translationSelector}
                   onPress={handleEditReadingTime}>
@@ -1267,7 +1300,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
               {/* Notification Time Section */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>Notifications</Text>
+                <Text style={styles.settingsSectionTitle}>{i18n.t('notifications_title')}</Text>
 
                 {/* Toggle for enabling/disabling notifications */}
                 <TouchableOpacity
@@ -1275,7 +1308,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   onPress={() => animateToggle(!notificationsEnabled)}
                   activeOpacity={0.7}>
                   <Text style={styles.translationText}>
-                    {notificationsEnabled ? 'Notifications enabled' : 'Notifications disabled'}
+                    {notificationsEnabled ? i18n.t('notifications_enabled') : i18n.t('notifications_disabled')}
                   </Text>
                   <View
                     style={[
@@ -1357,7 +1390,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
               {/* Sound Settings Section */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>Sound</Text>
+                <Text style={styles.settingsSectionTitle}>{i18n.t('sound_title')}</Text>
 
                 {/* Background Music Toggle */}
                 <TouchableOpacity
@@ -1369,8 +1402,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   activeOpacity={0.7}>
                   <Text style={styles.translationText}>
                     {backgroundMusicEnabled
-                      ? 'Background music enabled'
-                      : 'Background music disabled'}
+                      ? i18n.t('background_music_enabled')
+                      : i18n.t('background_music_disabled')}
                   </Text>
                   <View
                     style={[
@@ -1398,7 +1431,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   }}
                   activeOpacity={0.7}>
                   <Text style={styles.translationText}>
-                    {soundEffectsEnabled ? 'Sound effects enabled' : 'Sound effects disabled'}
+                    {soundEffectsEnabled ? i18n.t('sound_effects_enabled') : i18n.t('sound_effects_disabled')}
                   </Text>
                   <View
                     style={[
@@ -1422,11 +1455,11 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
               {/* Join Discord */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>Community</Text>
+                <Text style={styles.settingsSectionTitle}>{i18n.t('community_title')}</Text>
                 <TouchableOpacity style={styles.discordButton} onPress={handleOpenDiscord}>
                   <View style={styles.discordButtonContent}>
                     <FontAwesome6 name="discord" size={20} color="#5865F2" />
-                    <Text style={styles.discordButtonText}>Join the Shepherd Family!</Text>
+                    <Text style={styles.discordButtonText}>{i18n.t('join_discord')}</Text>
                   </View>
                   <Feather name="external-link" size={18} color="#3C584A" />
                 </TouchableOpacity>
@@ -1434,7 +1467,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 <TouchableOpacity style={styles.roadmapButton} onPress={handleOpenRoadmap}>
                   <View style={styles.roadmapButtonContent}>
                     <Feather name="map" size={20} color="#22C55E" />
-                    <Text style={styles.roadmapButtonText}>Roadmap & Feature Requests</Text>
+                    <Text style={styles.roadmapButtonText}>{i18n.t('roadmap_feature_requests')}</Text>
                   </View>
                   <Feather name="external-link" size={18} color="#3C584A" />
                 </TouchableOpacity>
@@ -1444,17 +1477,17 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
               {/* Subscription Section */}
               <View className="mb-6">
-                <Text className="font-feather text-xl text-[#5D5531] mb-2">Subscription</Text>
+                <Text className="font-feather text-xl text-[#5D5531] mb-2">{i18n.t('subscription_title')}</Text>
                 <View className="bg-white rounded-xl p-4 shadow-sm mb-2">
                   <View className="flex-row justify-between items-center">
                     <View className="flex-1 mr-4">
                       <Text className="font-feather text-base text-textPrimary">
-                        {isProMember ? 'Super Shepherd (Active)' : 'Upgrade to Super Shepherd'}
+                        {isProMember ? i18n.t('super_shepherd_active') : i18n.t('upgrade_super_shepherd')}
                       </Text>
                       <Text className="font-din text-description mt-1">
                         {isProMember
-                          ? 'Thank you for supporting our mission!'
-                          : 'Unlock premium features and support our mission'}
+                          ? i18n.t('thank_you_support')
+                          : i18n.t('unlock_premium')}
                       </Text>
                     </View>
                     {isProMember ? (
@@ -1480,10 +1513,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   onPress={handleOpenReferralModal}
                   className="bg-white rounded-xl p-4 mt-2 shadow-sm flex-row justify-between items-center">
                   <View>
-                    <Text className="font-feather text-base text-textPrimary">Referral Code</Text>
-                    <Text className="font-din text-description mt-1">
-                      Enter a referral code to unlock special features
-                    </Text>
+                    <Text className="font-feather text-base text-textPrimary">{i18n.t('referral_code_title')}</Text>
+                    <Text className="font-din text-description mt-1">{i18n.t('referral_code_description')}</Text>
                   </View>
                   <Feather name="gift" size={20} color="#B89B4C" />
                 </TouchableOpacity>
@@ -1491,7 +1522,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
               {/* User ID Section - Moved to bottom */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>User ID</Text>
+                <Text style={styles.settingsSectionTitle}>{i18n.t('user_id_title')}</Text>
                 <TouchableOpacity onPress={handleCopyUserId} style={styles.userIdContainer}>
                   <Text style={styles.userIdText} numberOfLines={1} ellipsizeMode="tail">
                     {userId}
@@ -1506,14 +1537,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               {isUserSignedIn && (
                 <>
                   <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
-                    <Text style={styles.signOutText}>Sign Out</Text>
+                    <Text style={styles.signOutText}>{i18n.t('sign_out_button')}</Text>
                   </TouchableOpacity>
 
                   {/* Delete Account Button */}
                   <TouchableOpacity
                     onPress={handleDeleteAccount}
                     style={styles.deleteAccountButton}>
-                    <Text style={styles.deleteAccountText}>Delete Account</Text>
+                    <Text style={styles.deleteAccountText}>{i18n.t('delete_account_button')}</Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -1521,7 +1552,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               {/* Developer Panel Toggle */}
               <TouchableOpacity onPress={toggleDevPanel} style={styles.developerToggleButton}>
                 <Text style={styles.developerToggleText}>
-                  {showDevPanel ? 'Hide Developer Panel' : 'Show Developer Panel'}
+                  {showDevPanel ? i18n.t('hide_developer_panel') : i18n.t('show_developer_panel')}
                 </Text>
               </TouchableOpacity>
 
@@ -1529,7 +1560,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               {showDevPanel && (
                 <View style={styles.developerPanel}>
                   <View style={styles.developerPanelHeader}>
-                    <Text style={styles.developerPanelTitle}>Developer Panel</Text>
+                    <Text style={styles.developerPanelTitle}>{i18n.t('developer_panel_title')}</Text>
                     {devPanelLoading ? (
                       <ActivityIndicator size="small" color="#3C584A" />
                     ) : (
@@ -1544,30 +1575,30 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
                   {/* App Version Info Section */}
                   <View style={styles.developerPanelSection}>
-                    <Text style={styles.developerPanelSectionTitle}>App Information</Text>
+                    <Text style={styles.developerPanelSectionTitle}>{i18n.t('app_information_title')}</Text>
                     <View style={styles.developerDataRow}>
-                      <Text style={styles.developerDataLabel}>Version:</Text>
+                      <Text style={styles.developerDataLabel}>{i18n.t('version')}:</Text>
                       <Text style={styles.developerDataValue}>{appVersion}</Text>
                     </View>
                     <View style={styles.developerDataRow}>
-                      <Text style={styles.developerDataLabel}>Build:</Text>
+                      <Text style={styles.developerDataLabel}>{i18n.t('build')}:</Text>
                       <Text style={styles.developerDataValue}>{buildNumber}</Text>
                     </View>
                   </View>
 
                   {/* Basic Data */}
                   <View style={styles.developerPanelSection}>
-                    <Text style={styles.developerPanelSectionTitle}>Streak Data</Text>
+                    <Text style={styles.developerPanelSectionTitle}>{i18n.t('streak_data_title')}</Text>
                     <View style={styles.developerDataRow}>
-                      <Text style={styles.developerDataLabel}>Streak Count:</Text>
+                      <Text style={styles.developerDataLabel}>{i18n.t('streak_count')}:</Text>
                       <Text style={styles.developerDataValue}>{userData.streakCount}</Text>
                     </View>
                     <View style={styles.developerDataRow}>
-                      <Text style={styles.developerDataLabel}>Lamb Hearts:</Text>
+                      <Text style={styles.developerDataLabel}>{i18n.t('lamb_hearts')}:</Text>
                       <Text style={styles.developerDataValue}>{userData.lambHearts}</Text>
                     </View>
                     <View style={styles.developerDataRow}>
-                      <Text style={styles.developerDataLabel}>Lamb Mood:</Text>
+                      <Text style={styles.developerDataLabel}>{i18n.t('lamb_mood')}:</Text>
                       <Text style={styles.developerDataValue}>{userData.lambMood}</Text>
                     </View>
                   </View>
@@ -1591,27 +1622,27 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                     <>
                       {/* Last Activity Dates */}
                       <View style={styles.developerPanelSection}>
-                        <Text style={styles.developerPanelSectionTitle}>Last Activity Dates</Text>
+                        <Text style={styles.developerPanelSectionTitle}>{i18n.t('last_activity_dates_title')}</Text>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Last Activity:</Text>
+                          <Text style={styles.developerDataLabel}>{i18n.t('last_activity')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {formatDate(userData.lastActivityDate)}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Last Reading:</Text>
+                          <Text style={styles.developerDataLabel}>{i18n.t('last_reading')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {formatDate(userData.lastReadingDate)}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Last Prayer:</Text>
+                          <Text style={styles.developerDataLabel}>{i18n.t('last_prayer')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {formatDate(userData.lastPrayerDate)}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Last Reflection:</Text>
+                          <Text style={styles.developerDataLabel}>{i18n.t('last_reflection')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {formatDate(userData.lastReflectionDate)}
                           </Text>
@@ -1620,21 +1651,21 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
                       {/* Last Penalty Dates */}
                       <View style={styles.developerPanelSection}>
-                        <Text style={styles.developerPanelSectionTitle}>Last Penalty Dates</Text>
+                        <Text style={styles.developerPanelSectionTitle}>{i18n.t('last_penalty_dates_title')}</Text>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Reading Penalty:</Text>
+                          <Text style={styles.developerDataLabel}>{i18n.t('reading_penalty')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {formatDate(userData.lastReadingPenaltyDate)}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Prayer Penalty:</Text>
+                          <Text style={styles.developerDataLabel}>{i18n.t('prayer_penalty')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {formatDate(userData.lastPrayerPenaltyDate)}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Reflection Penalty:</Text>
+                          <Text style={styles.developerDataLabel}>{i18n.t('reflection_penalty')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {formatDate(userData.lastReflectionPenaltyDate)}
                           </Text>
@@ -1645,35 +1676,35 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                       {streakData && (
                         <View style={styles.developerPanelSection}>
                           <Text style={styles.developerPanelSectionTitle}>
-                            Last Streak Check Results
+                            {i18n.t('last_streak_check_results_title')}
                           </Text>
                           <View style={styles.developerDataRow}>
-                            <Text style={styles.developerDataLabel}>Streak Broken:</Text>
+                            <Text style={styles.developerDataLabel}>{i18n.t('streak_broken')}:</Text>
                             <Text style={styles.developerDataValue}>
-                              {streakData.streakBroken ? 'Yes' : 'No'}
+                              {streakData.streakBroken ? i18n.t('yes') : i18n.t('no')}
                             </Text>
                           </View>
                           <View style={styles.developerDataRow}>
-                            <Text style={styles.developerDataLabel}>Heart Penalty:</Text>
+                            <Text style={styles.developerDataLabel}>{i18n.t('heart_penalty')}:</Text>
                             <Text style={styles.developerDataValue}>
                               {streakData.heartPenalty || 0}
                             </Text>
                           </View>
                           <View style={styles.developerDataRow}>
-                            <Text style={styles.developerDataLabel}>Days Missed:</Text>
+                            <Text style={styles.developerDataLabel}>{i18n.t('days_missed')}:</Text>
                             <Text style={styles.developerDataValue}>
                               {streakData.daysMissed || 0}
                             </Text>
                           </View>
                           <View style={styles.developerDataRow}>
-                            <Text style={styles.developerDataLabel}>New Day:</Text>
+                            <Text style={styles.developerDataLabel}>{i18n.t('new_day')}:</Text>
                             <Text style={styles.developerDataValue}>
-                              {streakData.newDay ? 'Yes' : 'No'}
+                              {streakData.newDay ? i18n.t('yes') : i18n.t('no')}
                             </Text>
                           </View>
                           {streakData.error && (
                             <View style={styles.developerDataRow}>
-                              <Text style={styles.developerDataLabel}>Error:</Text>
+                              <Text style={styles.developerDataLabel}>{i18n.t('error')}:</Text>
                               <Text style={[styles.developerDataValue, { color: 'red' }]}>
                                 {String(streakData.error)}
                               </Text>
@@ -1690,7 +1721,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                     style={styles.forceCheckButton}
                     disabled={devPanelLoading}>
                     <Text style={styles.forceCheckButtonText}>
-                      {devPanelLoading ? 'Checking...' : 'Force Streak Check'}
+                      {devPanelLoading ? i18n.t('checking') : i18n.t('force_streak_check')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -1711,7 +1742,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         onRequestClose={handleCancelTranslation}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Bible Translation</Text>
+            <Text style={styles.modalTitle}>{i18n.t('select_bible_translation_title')}</Text>
 
             <ScrollView style={styles.translationScrollView} showsVerticalScrollIndicator={false}>
               {translations.map((translation) => (
@@ -1737,7 +1768,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             </ScrollView>
 
             <TouchableOpacity style={styles.cancelButton} onPress={handleCancelTranslation}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>{i18n.t('cancel_button')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1753,14 +1784,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
           <View className="bg-surfaceCream rounded-2xl p-5 w-[85%] max-w-[350px]">
             {/* Title */}
             <Text className="font-feather text-xl text-textPrimary text-center mb-4">
-              Enter Referral Code
+              {i18n.t('enter_referral_code')}
             </Text>
 
             {/* Input Field */}
             <View className="mb-4">
               <TextInput
                 className="bg-white rounded-xl px-4 py-3 text-lg font-din text-textPrimary border border-[#FFE4A8]"
-                placeholder="Enter code here"
+                placeholder={i18n.t('enter_code_here')}
                 placeholderTextColor="#B89B4C"
                 value={referralInput || ''}
                 onChangeText={setReferralInput}
@@ -1776,7 +1807,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               className={`bg-[#FFE07D] rounded-xl p-4 mb-2 ${referralInput.length !== 6 ? 'opacity-50' : ''}`}
               disabled={referralInput.length !== 6 || isSubmittingReferral}>
               <Text className="font-feather text-textPrimary text-center text-lg">
-                {isSubmittingReferral ? 'Submitting...' : 'Confirm'}
+                {isSubmittingReferral ? i18n.t('submitting') : i18n.t('confirm_button')}
               </Text>
             </TouchableOpacity>
 
@@ -1784,7 +1815,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             <TouchableOpacity
               onPress={() => setReferralModalVisible(false)}
               className="bg-textPrimary/10 rounded-xl p-4">
-              <Text className="font-din text-textPrimary text-center">Cancel</Text>
+              <Text className="font-din text-textPrimary text-center">{i18n.t('cancel_button')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1800,15 +1831,15 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
           <View className="bg-surfaceCream rounded-2xl p-5 w-[85%] max-w-[350px]">
             {/* Title */}
             <Text className="font-feather text-xl text-textPrimary text-center mb-4">
-              Daily Reading Time
+              {i18n.t('daily_reading_time_title')}
             </Text>
 
             {/* Options */}
             <View className="mb-4 space-y-3">
               {[
-                { id: '1-5', title: '3-6 mins (1 chapter)' },
-                { id: '6-10', title: '7-10 mins (3-4 chapters)' },
-                { id: '15-25', title: '11-15 mins (6-8 chapters)' },
+                { id: '1-5', title: i18n.t('reading_time_1_5') },
+                { id: '6-10', title: i18n.t('reading_time_6_10') },
+                { id: '15-25', title: i18n.t('reading_time_11_15') },
               ].map((option) => (
                 <TouchableOpacity
                   key={option.id}
@@ -1835,7 +1866,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             <TouchableOpacity
               onPress={() => setReadingTimeModalVisible(false)}
               className="bg-textPrimary/10 rounded-xl p-4">
-              <Text className="font-din text-textPrimary text-center">Cancel</Text>
+              <Text className="font-din text-textPrimary text-center">{i18n.t('cancel_button')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1851,19 +1882,19 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
           <View className="bg-surfaceCream rounded-2xl p-5 w-[85%] max-w-[350px]">
             {/* Title */}
             <Text className="font-feather text-xl text-textPrimary text-center mb-4">
-              Why are you cancelling?
+              {i18n.t('why_are_you_cancelling')}
             </Text>
 
             {/* Options */}
             <View className="mb-4 space-y-3">
               {[
-                'Too expensive',
-                'Technical Issues',
-                'Missing features',
-                'Missing language',
-                'Missing Translation',
-                'Not rewarding enough',
-                'Bible is too boring',
+                i18n.t('too_expensive'),
+                i18n.t('technical_issues'),
+                i18n.t('missing_features'),
+                i18n.t('missing_language'),
+                i18n.t('missing_translation'),
+                i18n.t('not_rewarding_enough'),
+                i18n.t('bible_too_boring'),
               ].map((reason) => (
                 <TouchableOpacity
                   key={reason}
@@ -1886,11 +1917,11 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             {/* Feedback Input */}
             <View className="mb-4">
               <Text className="font-din text-textPrimary mb-2">
-                Please elaborate, we really want to improve 😢
+                {i18n.t('please_elaborate')}
               </Text>
               <TextInput
                 className="bg-white rounded-xl px-4 py-3 text-lg font-din text-textPrimary border border-[#FFE4A8] min-h-[120px]"
-                placeholder="Your feedback helps us improve..."
+                placeholder={i18n.t('your_feedback_helps_us_improve')}
                 placeholderTextColor="#B89B4C"
                 value={cancellationFeedback}
                 onChangeText={setCancellationFeedback}
@@ -1907,7 +1938,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               className={`bg-[#FFE07D] rounded-xl p-4 mb-2 ${cancellationReasons.length === 0 ? 'opacity-50' : ''}`}
               disabled={cancellationReasons.length === 0 || isSubmittingCancellation}>
               <Text className="font-feather text-textPrimary text-center text-lg">
-                {isSubmittingCancellation ? 'Submitting...' : 'Continue'}
+                {isSubmittingCancellation ? i18n.t('submitting') : i18n.t('continue_button')}
               </Text>
             </TouchableOpacity>
 
@@ -1915,7 +1946,52 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             <TouchableOpacity
               onPress={() => setCancellationModalVisible(false)}
               className="bg-textPrimary/10 rounded-xl p-4">
-              <Text className="font-din text-textPrimary text-center">Cancel</Text>
+              <Text className="font-din text-textPrimary text-center">{i18n.t('cancel_button')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Language Selection Modal */}
+      <Modal
+        visible={languageModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLanguageModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{i18n.t('select_language_title')}</Text>
+            <ScrollView style={styles.translationScrollView} showsVerticalScrollIndicator={false}>
+              {[
+                { id: 'en', name: 'English' },
+                { id: 'es', name: 'Español' },
+                { id: 'pt', name: 'Português' },
+                { id: 'nl', name: 'Nederlands' },
+                { id: 'fr', name: 'Français' },
+                { id: 'de', name: 'Deutsch' },
+              ].map((lang) => (
+                <TouchableOpacity
+                  key={lang.id}
+                  style={[
+                    styles.translationOption,
+                    selectedLanguage === lang.id && styles.selectedTranslation,
+                  ]}
+                  onPress={() => handleLanguageChange(lang.id)}>
+                  <Text
+                    style={[
+                      styles.translationOptionText,
+                      selectedLanguage === lang.id && styles.selectedTranslationText,
+                    ]}>
+                    {lang.name}
+                  </Text>
+                  {selectedLanguage === lang.id && (
+                    <Feather name="check" size={18} color="#F7B500" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity style={styles.cancelButton} onPress={() => setLanguageModalVisible(false)}>
+              <Text style={styles.cancelButtonText}>{i18n.t('cancel_button')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1934,14 +2010,14 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingBottom: 40,
   },
+  settingsContent: {
+    flex: 1,
+    padding: 20,
+  },
   sheetBackground: {
     backgroundColor: '#FFF4D9', // surfaceCream
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-  },
-  settingsContent: {
-    flex: 1,
-    padding: 20,
   },
   settingsHeader: {
     alignItems: 'center',

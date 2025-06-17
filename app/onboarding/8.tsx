@@ -17,6 +17,7 @@ import { useOnboardingStore } from '../stores/onboardingStore';
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
+import i18n from '../utils/i18n';
 
 interface OnboardingPathScreenProps {
   onPathSelected?: (pathObj: any) => void;
@@ -138,10 +139,10 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
         {/* Title Section */}
         <Animated.View style={titleStyle}>
           <Text className="font-feather text-h1 text-center text-textPrimary mb-2">
-            Choose Your Path
+            {i18n.t('onboarding_path_question')}
           </Text>
           <Text className="font-din text-body text-center text-description mb-8">
-            How would you like to read the Bible?
+            {i18n.t('onboarding_path_subtitle')}
           </Text>
         </Animated.View>
 
@@ -190,7 +191,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
         {/* Continue Button */}
         {!hideContinueButton && (
           <PrimaryButton
-            title="Continue"
+            title={i18n.t('continue_button')}
             onPress={handleContinue}
             disabled={!selectedPathId}
             style="mt-6 mb-12"

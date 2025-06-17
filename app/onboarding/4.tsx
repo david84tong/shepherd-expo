@@ -15,6 +15,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import analytics from '~/utils/analytics';
+import i18n from '../utils/i18n';
 
 export default function OnboardingBibleFamiliarityScreen() {
   const router = useRouter();
@@ -109,28 +110,28 @@ export default function OnboardingBibleFamiliarityScreen() {
   const options = [
     {
       id: 'never',
-      title: 'Not at all',
-      description: 'Starting fresh on this journey',
+      title: i18n.t('onboarding_bible_familiarity_never'),
+      description: i18n.t('onboarding_bible_familiarity_never_desc'),
     },
     {
       id: 'a-little',
-      title: 'Somewhat',
-      description: 'Starting fresh on this journey',
+      title: i18n.t('onboarding_bible_familiarity_somewhat'),
+      description: i18n.t('onboarding_bible_familiarity_somewhat_desc'),
     },
     {
       id: 'on-off',
-      title: 'Fairly',
-      description: `I've read some of the books`,
+      title: i18n.t('onboarding_bible_familiarity_fairly'),
+      description: i18n.t('onboarding_bible_familiarity_fairly_desc'),
     },
     {
       id: 'consistently',
-      title: 'Very',
-      description: `I've read most of it`,
+      title: i18n.t('onboarding_bible_familiarity_very'),
+      description: i18n.t('onboarding_bible_familiarity_very_desc'),
     },
     {
       id: 'extremely',
-      title: 'Extremely',
-      description: `I've read it all or nearly all`,
+      title: i18n.t('onboarding_bible_familiarity_extremely'),
+      description: i18n.t('onboarding_bible_familiarity_extremely_desc'),
     },
   ] as const;
 
@@ -143,7 +144,7 @@ export default function OnboardingBibleFamiliarityScreen() {
         {/* Question Text */}
         <Animated.View style={titleStyle}>
           <Text className="font-feather text-h2 text-center text-textPrimary mb-0">
-            How familiar are you with the Bible??
+            {i18n.t('onboarding_bible_familiarity_question')}
           </Text>
         </Animated.View>
 

@@ -32,6 +32,7 @@ import Reanimated, {
 import * as Haptics from 'expo-haptics';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import analytics from '../utils/analytics';
+import i18n from '../app/utils/i18n';
 
 import { getLevelData } from '~/utils/levelUtils';
 import SuccessMessage from './SuccessMessage';
@@ -877,7 +878,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
             textAlign: 'center',
             marginBottom: 24,
           }}>
-            Prayer Settings
+            {i18n.t('prayer_settings')}
           </Text>
 
           {/* Haptics Row */}
@@ -894,7 +895,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               fontFamily: 'DIN Next Rounded LT W01 Regular',
               color: '#795323',
             }}>
-              Haptic Feedback
+              {i18n.t('haptic_feedback')}
             </Text>
             <Switch
               value={hapticsEnabled}
@@ -919,7 +920,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               fontFamily: 'DIN Next Rounded LT W01 Regular',
               color: '#795323',
             }}>
-              Guided Prayer Mode
+              {i18n.t('guided_prayer_mode')}
             </Text>
             <Switch
               value={guidedPrayerEnabled}
@@ -952,7 +953,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               fontFamily: 'Nunito-Black',
               textAlign: 'center',
             }}>
-              Done
+              {i18n.t('done_button')}
             </Text>
           </TouchableOpacity>
         </View>
@@ -966,8 +967,8 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       {showSuccess ? (
        <View style={{marginHorizontal: 24,flex:1, marginTop: 24}}>
          <SuccessMessage
-          title="Prayer Complete!"
-          description="Wonderful! You spent time in prayer & strengthened your faith."
+          title={i18n.t('prayer_complete')}
+          description={i18n.t('prayer_complete_desc')}
           level={levelInfo.level}
           prevLevel={levelInfo.level}
           buttonsEnabled={buttonsEnabled}
@@ -1045,8 +1046,8 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               onClose({isReflectPresses: true});
             }
           }}
-          prayButtonTitle="Reflect on this verse"
-          rewardsTitle="PRAYER REWARDS"
+          prayButtonTitle={i18n.t('reflect_on_this_verse')}
+          rewardsTitle={i18n.t('prayer_rewards')}
         />
        </View>
       ) : (
@@ -1092,7 +1093,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                 <TouchableWithoutFeedback onPress={handleNextCard}>
                   <View style={{ minHeight: 200 }}>
                     {cardsToShow.length === 0 ? (
-                      <Text className="text-brown text-center">No prayer content to display</Text>
+                      <Text className="text-brown text-center">{i18n.t('no_prayer_content')}</Text>
                     ) : (
                       <>
                         {cardsToShow.map((card, index) => {
@@ -1122,7 +1123,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                           fontSize: 14,
                           opacity: 0.7,
                         }}>
-                          {isTypingComplete ? 'Tap for next →' : 'Tap to show full text'}
+                          {isTypingComplete ? i18n.t('tap_for_next') : i18n.t('tap_to_show_full_text')}
                         </Text>
                       )}
                     </View>
@@ -1204,7 +1205,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                         fontFamily: 'Nunito-Black',
                         fontSize: 16,
                       }}>
-                        Amen 🙏
+                        {i18n.t('amen_button')}
                       </Text>
                     </View>
                   </TouchableOpacity>

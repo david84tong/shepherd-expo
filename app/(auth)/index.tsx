@@ -29,6 +29,7 @@ import {
 import CustomAnimatedView from '../components/CustomAnimatedView';
 import { IS_ANDROID } from '../utils/utils';
 import { useOnboardingStore } from '../stores/onboardingStore';
+import i18n from '../utils/i18n';
 
 // We'll use the background directly in the source prop
 
@@ -94,7 +95,7 @@ export default function LoginScreen() {
     } catch (error) {
       console.error('Error starting journey:', error);
       setLoading(false);
-      Alert.alert('Error', 'Could not start journey. Please try again.');
+      Alert.alert(i18n.t('error'), i18n.t('onboarding_could_not_start'));
     }
   };
 
@@ -183,7 +184,7 @@ export default function LoginScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-surfaceCream">
         <ActivityIndicator size="large" color="#3C584A" />
-        <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
+        <Text className="font-feather text-textPrimary mt-4">{i18n.t('loading')}</Text>
       </View>
     );
   }
@@ -215,7 +216,7 @@ export default function LoginScreen() {
         <SafeAreaView className="flex-1 justify-between px-6 pt-10 pb-10 relative z-10">
           {/* Title at the top */}
           <Text className="text-accentGold font-feather text-h1 text-center mb-2 -mt-12">
-            Shepherd
+            {i18n.t('home_title')}
           </Text>
           <CustomAnimatedView style={titleStyle} className="items-center -mt-12">
             {/* Shepherd title */}
@@ -229,16 +230,16 @@ export default function LoginScreen() {
               {/* Bible Study text with icons */}
               <View className="flex-col items-center justify-center mt-1">
                 <Text className="text-white font-nunito-bold text-title text-center">
-                  Bible Study
+                  {i18n.t('onboarding_bible_study')}
                 </Text>
 
                 {/* Made Joyful with Bible icons */}
                 <View className="flex-row items-center justify-center mt-1">
-                  <Text className="text-white font-nunito-bold text-title">Made </Text>
+                  <Text className="text-white font-nunito-bold text-title">{i18n.t('onboarding_made')}</Text>
                   <Text
                     className="text-accentGold font-feather text-title"
                     style={{ borderBottomColor: '#F7B500' }}>
-                    Joyful
+                    {i18n.t('onboarding_joyful')}
                   </Text>
                 </View>
               </View>
@@ -277,7 +278,7 @@ export default function LoginScreen() {
               <PrimaryButton
                 onPress={handleBeginJourney}
                 disabled={loading}
-                title="Begin My Journey"
+                title={i18n.t('onboarding_begin_journey')}
               />
             </CustomAnimatedView>
             <CustomAnimatedView style={linkStyle}>
@@ -296,7 +297,7 @@ export default function LoginScreen() {
                 className="mt-4"
                 onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
                 <Text className="font-feather text-body text-center underline mt-4 text-white">
-                  Login
+                  {i18n.t('onboarding_login')}
                 </Text>
               </TouchableOpacity>
             </CustomAnimatedView>

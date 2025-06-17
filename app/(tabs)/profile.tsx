@@ -65,6 +65,9 @@ function toDateSafe(ts: any): Date {
 
 const DISCORD_CARD_DISMISSED_KEY = 'shepherd_discord_card_dismissed_v1';
 
+import i18n from '../utils/i18n';
+import { useLanguageStore } from '../stores/languageStore';
+
 export default function ProfileScreen() {
   const router = useRouter();
   const {
@@ -456,6 +459,15 @@ export default function ProfileScreen() {
   // Add ref for edit name sheet
   const editNameSheetRef = useRef<{ show: () => void; close: () => void }>(null);
 
+  // Subscribe to language changes to trigger re-render
+  const currentLanguage = useLanguageStore((state) => state.language);
+
+  // Force re-render when language changes
+  useEffect(() => {
+    // This effect will run whenever the language changes
+    i18n.locale = currentLanguage;
+  }, [currentLanguage]);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
@@ -465,7 +477,7 @@ export default function ProfileScreen() {
           contentContainerStyle={{ paddingBottom: 50 }}>
           {/* Header */}
           <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
-            <Text className="font-feather text-h2 text-textPrimary">Profile</Text>
+            <Text className="font-feather text-h2 text-textPrimary">{i18n.t('profile_title')}</Text>
             <TouchableOpacity
               onPress={handleShowSettings}
               className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center">
@@ -480,11 +492,10 @@ export default function ProfileScreen() {
             !isSignedInWithEmail && (
               <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
                 <Text className="font-feather text-xl text-accentGold mb-2 text-center">
-                  Sign in to save your progress
+                  {i18n.t('sign_in_save_progress')}
                 </Text>
                 <Text className="font-din text-body text-textPrimary mb-4 text-center">
-                  Create a free account to sync your streak, XP, and lamb across devices. You can
-                  always sign in later!
+                  {i18n.t('sign_in_sync_description')}
                 </Text>
 
                 <View className="items-center mb-4">
@@ -509,10 +520,10 @@ export default function ProfileScreen() {
                     <Text
                       className={`font-din ${Platform.OS === 'ios' ? 'text-white' : 'text-[#4285F4]'} text-[18px] font-bold`}>
                       {signInLoading
-                        ? 'Signing in...'
+                        ? i18n.t('signing_in')
                         : Platform.OS === 'ios'
-                          ? 'Sign in with Apple'
-                          : 'Sign in with Google'}
+                          ? i18n.t('sign_in_with_apple')
+                          : i18n.t('sign_in_with_google')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -537,16 +548,16 @@ export default function ProfileScreen() {
                 </View>
                 <View className="flex-1">
                   <Text className="font-feather text-xl text-darkPurple">
-                    Join our Shepherd Family!
+                    {i18n.t('join_discord')}
                   </Text>
                   <Text className="font-din text-body text-darkPurple opacity-80 mt-1 leading-tight">
-                    Connect, share insights, and grow together on our Discord server.
+                    {i18n.t('discord_card_description')}
                   </Text>
                 </View>
               </View>
 
               <PrimaryButton
-                title="Join the Herd"
+                title={i18n.t('join_herd')}
                 onPress={handleJoinDiscord}
                 primaryColor="bg-darkPurple"
                 textColor="text-white"
@@ -562,7 +573,7 @@ export default function ProfileScreen() {
                 onPress={() => editNameSheetRef.current?.show()}
                 className="flex-row items-center bg-lightYellow px-4 py-1 rounded-lg opacity-80">
                 <Text className="font-feather text-heading text-primary">
-                  {lamb.name ? lamb.name : 'Your Lamb'}
+                  {lamb.name ? lamb.name : i18n.t('your_lamb')}
                 </Text>
                 <Feather name="edit-2" size={16} color="#3C584A" className="ml-2" />
               </TouchableOpacity>
@@ -573,24 +584,24 @@ export default function ProfileScreen() {
             <View className="flex-row justify-between space-x-8">
               <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3 ">
                 <Text className="font-feather text-h2 text-textPrimary">{levelData.level}</Text>
-                <Text className="font-din text-description">Level</Text>
+                <Text className="font-din text-description">{i18n.t('level')}</Text>
               </View>
               <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3 mx-4">
                 <Text className="font-feather text-h2 text-textPrimary">{streak}</Text>
-                <Text className="font-din text-description">Day Streak</Text>
+                <Text className="font-din text-description">{i18n.t('day_streak')}</Text>
               </View>
 
               <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3">
                 <Text className="font-feather text-h2 text-textPrimary">{lamb.hearts}</Text>
-                <Text className="font-din text-description">Hearts</Text>
+                <Text className="font-din text-description">{i18n.t('hearts')}</Text>
               </View>
             </View>
             {/* XP Bar */}
             <View className="mt-6 mx-2">
               <View className="flex-row justify-between mb-2">
-                <Text className="font-din text-description">Level {levelData.level}</Text>
+                <Text className="font-din text-description">{i18n.t('level')} {levelData.level}</Text>
                 <Text className="font-din text-description">
-                  {levelData.xpCurrent}/{levelData.xpForNextLevel} XP
+                  {levelData.xpCurrent}/{levelData.xpForNextLevel} {i18n.t('xp')}
                 </Text>
               </View>
               <View className="h-4 bg-lightYellow rounded-full overflow-hidden">
@@ -604,7 +615,7 @@ export default function ProfileScreen() {
 
           {/* Join Date Card */}
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
-            <Text className="font-feather text-heading text-textPrimary mb-2">Journey Started</Text>
+            <Text className="font-feather text-heading text-textPrimary mb-2">{i18n.t('journey_started')}</Text>
             <Text className="font-din text-description">{joinDate}</Text>
           </View>
 
@@ -613,10 +624,10 @@ export default function ProfileScreen() {
 
           {/* Selected Path Card */}
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
-            <Text className="font-feather text-heading text-textPrimary mb-2">Selected Path</Text>
+            <Text className="font-feather text-heading text-textPrimary mb-2">{i18n.t('selected_path')}</Text>
             <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
               <Text className="font-din text-description underline text-accentGold">
-                {selectedPath?.title || 'No path selected'}
+                {selectedPath?.title || i18n.t('no_path_selected')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -662,23 +673,23 @@ export default function ProfileScreen() {
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
             <View className="flex-row justify-between items-center mb-2">
               <Text className="font-feather text-heading text-textPrimary">
-                Manage Subscription
+                {i18n.t('manage_subscription')}
               </Text>
               {isProMember && (
                 <View className="bg-lightYellow px-4 py-1 rounded-full">
-                  <Text className="font-din text-accentGold">Pro</Text>
+                  <Text className="font-din text-accentGold">{i18n.t('pro')}</Text>
                 </View>
               )}
             </View>
             <Text className="font-din text-description mb-4">
               {isProMember
-                ? 'You have access to all premium features!'
-                : 'Unlock premium features and enhance your spiritual journey'}
+                ? i18n.t('pro_access')
+                : i18n.t('unlock_premium_features')}
             </Text>
             {!isProMember && (
               <>
                 <PrimaryButton
-                  title="Upgrade to Pro"
+                  title={i18n.t('upgrade_to_pro')}
                   onPress={() => {
                     setFromScreen('profile');
                     router.push('/PricingScreen' as any);
@@ -692,22 +703,24 @@ export default function ProfileScreen() {
           {/* Store Section */}
           <View className="mx-6 mt-4 mb-8 bg-surfaceCreamLight/50 rounded-[20px] p-6 shadow-card border border-brownBorder">
             <View className="flex-row justify-between items-center">
-              <Text className="font-feather text-heading text-textPrimary">Store</Text>
+              <Text className="font-feather text-heading text-textPrimary">
+                {i18n.t('store')}
+              </Text>
               <View className="bg-lightYellow px-4 py-1 rounded-full">
-                <Text className="font-feather text-accentGold">Unlocks at Level 10</Text>
+                <Text className="font-feather text-accentGold">{i18n.t('unlocks_at_level_10')}</Text>
               </View>
             </View>
             <Text className="font-din text-description mt-2">
-              Customize your lamb and unlock special items!
+              {i18n.t('customize_lamb')}
             </Text>
           </View>
           {/* Activity History Timeline Card */}
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
-            <Text className="font-feather text-heading text-textPrimary mb-4">Your Journey</Text>
+            <Text className="font-feather text-heading text-textPrimary mb-4">{i18n.t('your_journey')}</Text>
 
             {allActivities.length === 0 ? (
               <Text className="font-din text-description text-center py-6">
-                No activities yet. Begin your journey today!
+                {i18n.t('no_activities_yet')}
               </Text>
             ) : (
               <View className="mt-2">
@@ -758,7 +771,7 @@ export default function ProfileScreen() {
                               activity.data.topic &&
                               activity.title !== `Prayed for ${activity.data.topic}` && (
                                 <Text className="font-din text-sm text-description mt-1">
-                                  Topic: {activity.data.topic}
+                                  {i18n.t('topic')}: {activity.data.topic}
                                 </Text>
                               )}
                             {activity.type === 'reflection' && activity.content && (
@@ -784,7 +797,7 @@ export default function ProfileScreen() {
           {/* Version Info */}
           <View className="mx-6 mt-2 mb-10 items-center">
             <Text className="font-din text-description text-center text-textSecondary opacity-60">
-              Version {appVersion} (Build {buildNumber})
+              {i18n.t('version')} {appVersion} ({i18n.t('build')} {buildNumber})
             </Text>
           </View>
         </ScrollView>

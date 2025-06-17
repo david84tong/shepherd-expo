@@ -6,6 +6,7 @@ import { useUserStore } from '../stores/userStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import { Feather } from '@expo/vector-icons';
+import i18n from '../utils/i18n';
 
 import Animated, {
   useAnimatedStyle,
@@ -149,15 +150,15 @@ export default function OnboardingReadingTimeScreen() {
   const options = [
     {
       id: '1-5',
-      title: '3-6 mins (1 chapter)',
+      title: i18n.t('reading_time_1_5'),
     },
     {
       id: '6-10',
-      title: '7-10 mins (3-4 chapters)',
+      title: i18n.t('reading_time_6_10'),
     },
     {
       id: '15-25',
-      title: '11-15 mins (6-8 chapters)',
+      title: i18n.t('reading_time_11_15'),
     },
   ] as const;
 
@@ -178,7 +179,7 @@ export default function OnboardingReadingTimeScreen() {
         {/* Question Text */}
         <Animated.View style={titleStyle}>
           <Text className="font-feather text-h2 text-center text-textPrimary mb-0">
-            How many minutes per day can you spend with God?
+            {i18n.t('onboarding_reading_time_question')}
           </Text>
         </Animated.View>
 

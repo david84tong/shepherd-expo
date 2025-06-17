@@ -12,6 +12,8 @@ import analytics from '~/utils/analytics';
 import PrimaryButton from '../PrimaryButton';
 import { Devotional } from '~/app/models/Devotional';
 import { ImageBackground } from 'expo-image';
+import i18n from '../../app/utils/i18n';
+
 interface DailyVerseCardProps {
   devotional: Devotional;
   onPress?: () => void;
@@ -85,7 +87,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
               {devotional.bibleReference}
             </Text>
             <Text className="font-din text-white/90 text-heading leading-[26px] mb-7">
-              Verse of the day
+              {i18n.t('verse_of_the_day')}
             </Text>
             <Text className="font-din text-white/90 text-heading leading-[22px]">
               {devotional.verse}
@@ -96,7 +98,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
           {share && showShareButton && (
             <View className="mt-10 w-full -top-8">
               <PrimaryButton
-                title="Share"
+                title={i18n.t('share')}
                 onPress={handleSharePress}
                 buttonType="orange"
               />

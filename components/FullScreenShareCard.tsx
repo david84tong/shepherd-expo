@@ -14,6 +14,8 @@ import * as Haptics from 'expo-haptics';
 import { Devotional } from '~/app/models/Devotional';
 import { ImageBackground } from 'expo-image';
 import PrimaryButton from './PrimaryButton';
+import i18n from '../app/utils/i18n';
+
 interface FullScreenShareCardProps {
     visible: boolean;
     onClose: () => void;
@@ -144,14 +146,14 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                     {devotionalData?.bibleReference}
                                 </Text>
                                 <Text className="font-din text-white text-[18px]  mb-7">
-                                    Verse of the day
+                                    {i18n.t('verse_of_the_day')}
                                 </Text>
                                 <Text className="font-din text-white text-[18px]  mb-10">
                                     {devotionalData?.verse}
                                 </Text>
                                 {/* Share Button */}
                                 <PrimaryButton
-                title="Share"
+                title={i18n.t('share')}
                 onPress={() => {
                     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                     onShare();
@@ -167,7 +169,9 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                 activeOpacity={0.7}
                             >
                                 <FontAwesome name="angle-double-up" size={32} color="white" />
-                                <Text className="font-feather text-white mt-2 text-[18px]">Close</Text>
+                                <Text className="font-feather text-white mt-2 text-[18px]">
+                                    {i18n.t('close')}
+                                </Text>
                             </TouchableOpacity>
                         </ImageBackground>
                     </View>

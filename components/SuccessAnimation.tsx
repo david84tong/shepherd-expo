@@ -16,6 +16,7 @@ import {
   ScrollView,
 } from 'react-native';
 import Rive, { RiveRef } from 'rive-react-native';
+import i18n from '~/app/utils/i18n';
 
 import PrimaryButton from './PrimaryButton';
 import { StreakScreen } from './StreakScreen';
@@ -153,13 +154,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const riveRotateAnim = useRef(new Animated.Value(0.05)).current;
 
   // Determine messages, rewards, and Rive resource based on successType
-  let message = propMessage || 'Great job!';
-  let subMessage = propSubMessage || 'Task completed successfully.';
+  let message = propMessage || i18n.t('success_reading_complete');
+  let subMessage = propSubMessage || i18n.t('success_reading_complete_desc');
   let heartReward = 0;
   let xpReward = 0;
   const riveResource = 'successLamb'; // Default animation
   let riveArtboard: string | undefined = undefined;
-  let rewardTitle = 'REWARDS EARNED';
+  let rewardTitle = i18n.t('reading_rewards');
 
   // State to track if we should show the streak screen
   const [showStreakScreen, setShowStreakScreen] = useState(false);
@@ -655,7 +656,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Determine the action for the button press
   const handlePress = propOnClose || handleGoHome;
-  const buttonText = propOnClose ? 'Close' : 'Continue';
+  const buttonText = propOnClose ? i18n.t('close') : i18n.t('continue_button');
 
   // Handler for prayer button
   const handleGoToPrayer = () => {
@@ -879,7 +880,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             // Special bonus reward display
             <View className="flex-row items-center justify-center mb-2">
               <Image source={gemIcon} className="w-6 h-6 mr-2" />
-              <Text className="font-din text-textPrimary text-xl">+9 Gems</Text>
+              <Text className="font-din text-textPrimary text-xl">{i18n.t('gems_awarded', { count: 9 })}</Text>
             </View>
           ) : (
             // Standard rewards display for other success types
@@ -889,21 +890,21 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                 <View className="flex-row items-center justify-center mb-2">
                   <Image source={heartIcon} className="w-6 h-6 mr-2" />
                   <Text className="font-din text-textPrimary text-xl">
-                    +{actualHeartReward} Hearts
+                    {i18n.t('hearts_awarded', { count: actualHeartReward })}
                   </Text>
                 </View>
               )}
               <View className="flex-row items-center justify-center">
                 <Image source={starIcon} className="w-6 h-6 mr-2" />
-                <Text className="font-din text-textPrimary text-xl">+{xpReward} Soul Points</Text>
+                <Text className="font-din text-textPrimary text-xl">{i18n.t('soul_points_awarded', { count: xpReward })}</Text>
               </View>
 
               {/* Show level up message if user leveled up */}
               {leveledUp && (
                 <View className="mt-4 py-2 bg-lightYellow rounded-xl">
-                  <Text className="font-feather text-xl text-primary text-center">LEVEL UP!</Text>
+                  <Text className="font-feather text-xl text-primary text-center">{i18n.t('level_up')}</Text>
                   <Text className="font-din text-description text-center mt-1">
-                    Your lamb grew to level {newLevel}
+                    {i18n.t('level_up_message', { level: newLevel })}
                   </Text>
                 </View>
               )}
@@ -923,7 +924,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
               {/* Show Pray button only if prayer is not completed */}
               {!prayerCompleted && (
                 <PrimaryButton
-                  title="Pray about this verse"
+                  title={i18n.t('pray_about_this_verse')}
                   onPress={handleGoToPrayer}
                   style={reflectionCompleted ? 'w-full' : 'flex-1 h-32'}
                   buttonType="blue"
@@ -933,7 +934,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
               {/* Show Reflect button only if reflection is not completed */}
               {!reflectionCompleted && (
                 <PrimaryButton
-                  title="Reflect on this verse"
+                  title={i18n.t('reflect_on_this_verse')}
                   onPress={handleGoToReflection}
                   style={
                     prayerCompleted || effectiveType === SuccessAnimationType.PRAYER
@@ -956,7 +957,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
             }}>
             {/* Pray button as primary action */}
             <PrimaryButton
-              title="Pray about today's verse"
+              title={i18n.t('pray_about_this_verse')}
               onPress={handleGoToPrayer}
               buttonType="blue"
             />
@@ -972,7 +973,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                 className="mt-4"
                 onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
                 <Text className="font-feather text-description text-center underline mt-4">
-                  Go Home
+                  {i18n.t('go_home')}
                 </Text>
               </TouchableOpacity>
             </Animated.View>

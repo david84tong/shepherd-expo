@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   Switch,
   Image,
-  Platform,
   StatusBar,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -31,6 +30,7 @@ import analytics from '../utils/analytics';
 import { isSignedIn } from './hooks/authHook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IS_ANDROID } from './utils/utils';
+import i18n from '~/app/utils/i18n';
 
 // Key for tracking daily first load
 const DAILY_FIRST_LOAD_KEY = 'daily_first_load_';
@@ -244,7 +244,7 @@ const PricingScreen = () => {
                     textShadowOffset: { width: 1, height: 1 },
                     textShadowRadius: 3,
                   }}>
-                  SUPER
+                  {i18n.t('pricing_super')}
                 </Text>
               </LinearGradient>
               <Text
@@ -254,7 +254,7 @@ const PricingScreen = () => {
                   textShadowOffset: { width: 1, height: 1 },
                   textShadowRadius: 3,
                 }}>
-                SHEPHERD
+                {i18n.t('pricing_shepherd')}
               </Text>
             </View>
           </AnimatedItem>
@@ -262,7 +262,7 @@ const PricingScreen = () => {
           <AnimatedItem index={2} animateItemFromBottom={animateScreenFromBottom}>
             <View className="bg-white rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
               <Text className="font-feather text-h2 text-textPrimary mb-2 text-center">
-                Draw closer to God
+                {i18n.t('pricing_draw_closer_to_god')}
               </Text>
               <Image
                 source={require('../assets/onboarding/reviews.png')}
@@ -270,7 +270,7 @@ const PricingScreen = () => {
                 resizeMode="contain"
               />
               <Text className="font-din text-heading text-description text-center">
-                Join 10,000+ other super users
+                {i18n.t('pricing_join_10000_super_users')}
               </Text>
             </View>
           </AnimatedItem>
@@ -279,7 +279,7 @@ const PricingScreen = () => {
           <AnimatedItem index={2.5} animateItemFromBottom={animateScreenFromBottom}>
             <View className="mb-10">
               <Text className="font-feather text-h2 text-textPrimary mb-6">
-                How the trial works
+                {i18n.t('pricing_how_trial_works')}
               </Text>
 
               <View className="bg-white rounded-2xl shadow-card p-5">
@@ -291,7 +291,7 @@ const PricingScreen = () => {
                   <View className="flex-1">
                     <Text className="font-feather text-lg text-textPrimary mb-0.5">Today</Text>
                     <Text className="font-din text-body text-description leading-snug">
-                      Unlock premium access to all content for free. No payment needed to start.
+                      {i18n.t('pricing_unlock_premium_access')}
                     </Text>
                   </View>
                 </View>
@@ -304,7 +304,7 @@ const PricingScreen = () => {
                   <View className="flex-1">
                     <Text className="font-feather text-lg text-textPrimary mb-0.5">Day 5</Text>
                     <Text className="font-din text-body text-description leading-snug">
-                      We&apos;ll send a reminder before your free trial ends.
+                      {i18n.t('pricing_reminder')}
                     </Text>
                   </View>
                 </View>
@@ -317,7 +317,7 @@ const PricingScreen = () => {
                   <View className="flex-1">
                     <Text className="font-feather text-lg text-textPrimary mb-0.5">Day 7</Text>
                     <Text className="font-din text-body text-description leading-snug">
-                      Your subscription begins. Cancel anytime before if you change your mind.
+                      {i18n.t('pricing_subscription_begins')}
                     </Text>
                   </View>
                 </View>
@@ -329,7 +329,7 @@ const PricingScreen = () => {
           <AnimatedItem index={2.8} animateItemFromBottom={animateScreenFromBottom}>
             <View className="bg-white rounded-2xl shadow-card p-5 mb-8 flex-row justify-between items-center">
               <Text className="font-feather text-lg text-textPrimary">
-                Unlock 7-day trial & reminder
+                {i18n.t('pricing_unlock_7_day_trial_reminder')}
               </Text>
               <Switch
                 trackColor={{ false: '#E9E2C7', true: '#A8F093' }}
@@ -373,20 +373,20 @@ const PricingScreen = () => {
                         textShadowOffset: { width: 1, height: 1 },
                         textShadowRadius: 3,
                       }}>
-                      SUPER
+                      {i18n.t('pricing_super')}
                     </Text>
                   </LinearGradient>
                 </View>
               </View>
               <View>
                 {[
-                  { name: 'Access to Bible', free: true, pro: true },
-                  { name: 'Unlimited Daily Bread', free: false, pro: true },
-                  { name: 'Unlimited Daily Prayers', free: false, pro: true },
-                  { name: 'Unlimited Daily Reflections', free: false, pro: true },
-                  { name: 'No Ads', free: false, pro: true },
-                  { name: 'Equip Skins', free: false, pro: true },
-                  { name: 'Super Lamb Skin! (Limited Time)', free: false, pro: true },
+                  { name: i18n.t('feature_access_bible'), free: true, pro: true },
+                  { name: i18n.t('feature_unlimited_daily_bread'), free: false, pro: true },
+                  { name: i18n.t('feature_unlimited_daily_prayers'), free: false, pro: true },
+                  { name: i18n.t('feature_unlimited_daily_reflections'), free: false, pro: true },
+                  { name: i18n.t('feature_no_ads'), free: false, pro: true },
+                  { name: i18n.t('feature_equip_skins'), free: false, pro: true },
+                  { name: i18n.t('feature_super_lamb_skin'), free: false, pro: true },
                 ].map((feature, idx) => (
                   <AnimatedItem
                     key={feature.name}
@@ -416,8 +416,7 @@ const PricingScreen = () => {
 
             <Animated.View className="bg-surfaceCream rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
               <Text className="font-feather text-heading text-center mx-12">
-                Unlock the <Text className="text-accentGold">annoited skin</Text> (limited time) if
-                you upgrade!
+                {i18n.t('pricing_unlock_annoited_skin')}
               </Text>
 
               {riveAssets && (
@@ -445,29 +444,29 @@ const PricingScreen = () => {
           <AnimatedItem index={12} animateItemFromBottom={animateScreenFromBottom}>
             <View className="bg-white rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
               <Text className="font-feather text-h2 text-textPrimary mt-2 mb-2 text-center">
-                ❤️ Support the mission
+                {i18n.t('pricing_support_mission')}
               </Text>
-              <Text className="font-din text-heading text-description text-center">{`We're a small team of 2 of christians, completely self-funded. `}</Text>
+              <Text className="font-din text-heading text-description text-center">{i18n.t('pricing_small_team_funded')}</Text>
               <Text className="font-feather text-heading text-textPrimary text-center mt-8">
-                Help fund future features
+                {i18n.t('pricing_help_fund_future_features')}
               </Text>
               <Text className="font-din text-body text-description text-start mt-2">
-                - Social bible study (add friends)
+                - {i18n.t('pricing_social_bible_study')}
               </Text>
               <Text className="font-din text-body text-description text-center mt-2">
-                - translating to other languages
+                - {i18n.t('pricing_translating_languages')}
               </Text>
               <Text className="font-din text-body text-description text-start mt-2">
-                - chat with bible
+                - {i18n.t('pricing_chat_bible')}
               </Text>
               <Text className="font-din text-body text-description text-center mt-2">
-                - prayer requests
+                - {i18n.t('pricing_prayer_requests')}
               </Text>
               <Text className="font-din text-body text-description text-center mt-2">
-                - family/kid study plans
+                - {i18n.t('pricing_family_kid_study_plans')}
               </Text>
               <Text className="font-din text-body text-description text-center mt-2">
-                - more skins / backgrounds
+                - {i18n.t('pricing_more_skins_backgrounds')}
               </Text>
             </View>
           </AnimatedItem>
@@ -476,11 +475,10 @@ const PricingScreen = () => {
             <View className="bg-white rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
               <Feather name="star" size={48} color="#F7B500" />
               <Text className="font-feather text-heading text-textPrimary mt-4 mb-2 text-center">
-                10% of all profits are donated!
+                {i18n.t('pricing_10_percent_donated')}
               </Text>
               <Text className="font-din text-heading text-description text-center">
-                Tithe to help fund mission trips, charities, and purchasing super accounts for those
-                in need.
+                {i18n.t('pricing_tithe_mission')}
               </Text>
             </View>
           </AnimatedItem>
@@ -503,14 +501,14 @@ const PricingScreen = () => {
               <View className="py-3 flex-row justify-center items-center">
                 <ActivityIndicator size="small" color="#F7B500" />
                 <Text className="font-din text-lg text-textPrimary ml-3">
-                  Loading subscription options...
+                  {i18n.t('loading_subscription_options')}
                 </Text>
               </View>
             ) : (
-              <PrimaryButton title="Claim my free week" onPress={handleSubscribe} />
+              <PrimaryButton title={i18n.t('claim_free_week')} onPress={handleSubscribe} />
             )}
             <Text className="font-din text-caption text-description/70 text-center mt-2 px-4 text-xs">
-              By continuing, you agree to our Terms of Service
+              {i18n.t('agree_terms')}
             </Text>
           </View>
         </AnimatedItem>
@@ -547,7 +545,7 @@ const PricingScreen = () => {
               <View className="bg-white p-5 rounded-xl items-center">
                 <ActivityIndicator size="large" color="#F7B500" />
                 <Text className="font-din text-body text-textPrimary mt-3">
-                  Loading subscription options...
+                  {i18n.t('loading_subscription_options')}
                 </Text>
               </View>
             </Animated.View>

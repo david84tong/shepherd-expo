@@ -58,6 +58,8 @@ import { BibleVerseActionBar } from './BibleVerseActionBar';
 import { RPH } from '~/app/helper/helper';
 import { ImageBackground } from 'expo-image';
 import { IS_ANDROID } from '~/app/utils/utils';
+import i18n from '~/app/utils/i18n';
+import { useLanguageStore } from '~/app/stores/languageStore';
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
 const MIN_FONT_SIZE = 14;
@@ -1370,7 +1372,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     );
     Toast.show({
       type: 'success',
-      text1: 'Verse copied to clipboard',
+      text1: i18n.t('verse_copied'),
       position: 'top',
       visibilityTime: 2000,
     });
@@ -1463,7 +1465,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       Toast.show({
         type: 'success',
-        text1: 'Highlight removed',
+        text1: i18n.t('highlight_removed'),
         position: 'top',
         visibilityTime: 2000,
       });
@@ -1482,7 +1484,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
       Toast.show({
         type: 'success',
-        text1: 'Verse highlighted',
+        text1: i18n.t('verse_highlighted'),
         position: 'top',
         visibilityTime: 2000,
       });
@@ -1515,7 +1517,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     Toast.show({
       type: 'success',
-      text1: 'Highlight removed',
+      text1: i18n.t('highlight_removed'),
       position: 'top',
       visibilityTime: 2000,
     });
@@ -1612,28 +1614,28 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     {
       id: 'copy',
       icon: 'copy',
-      label: 'Copy',
+      label: i18n.t('copy'),
       color: theme.iconColor,
       action: handleCopyVerse,
     },
     {
       id: 'explain',
       icon: 'book-open',
-      label: 'Explain',
+      label: i18n.t('explain'),
       color: theme.headerText,
       action: handleExplainVerse,
     },
     {
       id: 'highlight',
       icon: 'edit-2',
-      label: 'Highlight',
+      label: i18n.t('highlight'),
       color: theme.progressBarFill,
       action: handleHighlightVerse,
     },
     {
       id: 'note',
       icon: 'edit-3',
-      label: 'Add Note',
+      label: i18n.t('add_note'),
       color: theme.text,
       action: handleAddNote,
     },
@@ -1662,6 +1664,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
 
   }, []);
+
+  // Subscribe to language changes to trigger re-render
+  useLanguageStore((state) => state.language);
+
   if (!chapterData) {
     return <View/>
   }
@@ -1703,7 +1709,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                     fontSize: responsiveFontSize(3),
                     fontWeight: '400',
                   }}>
-                  The Bible
+                  {i18n.t('bible_title')}
                 </Text>
                 
          
@@ -1744,7 +1750,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                         fontSize: responsiveFontSize(2),
                         fontWeight: '600',
                       }}>
-                      {chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'Loading...'}
+                      {chapterData ? `${chapterData.book} ${chapterData.chapter}` : i18n.t('loading')}
                     </Text>
                   </TouchableOpacity>
                 </View>
