@@ -1046,7 +1046,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                 ]}>
                 <Text
                   style={[verseTextStyle, { color: "#634012" }]}
-                  selectable={true}>
+                  >
                   <Text style={[verseNumberStyle, { color: '#9c755a' }]}>{`${verse.verse}.`} </Text>
                   {verse.text}
                 </Text>
