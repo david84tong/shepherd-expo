@@ -378,5 +378,9 @@
     "onboarding_username_title": "Choose your username",
     "onboarding_username_subtitle": "This is how other shepherds will know you",
     "onboarding_username_placeholder": "@username",
-    "onboarding_continue": "Continue"
+    "onboarding_continue": "Continue",
+    "bottom_home_title": "Home",
+    "bottom_stats_title": "Stats",
+    "bottom_bible_title": "Bible",
+    "bottom_profile_title": "Profile"
 }

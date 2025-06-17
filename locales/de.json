@@ -376,5 +376,9 @@
     "onboarding_username_title": "Wähle deinen Benutzernamen",
     "onboarding_username_subtitle": "So werden dich andere Hirten kennen",
     "onboarding_username_placeholder": "@benutzername",
-    "onboarding_continue": "Weiter"
+    "onboarding_continue": "Weiter",
+    "bottom_home_title": "Start",
+    "bottom_stats_title": "Statistiken",
+    "bottom_bible_title": "Bibel",
+    "bottom_profile_title": "Profil"
 }

@@ -377,5 +377,9 @@
     "onboarding_username_title": "Choisissez votre nom d'utilisateur",
     "onboarding_username_subtitle": "C'est ainsi que les autres bergers vous connaîtront",
     "onboarding_username_placeholder": "@utilisateur",
-    "onboarding_continue": "Continuer"
+    "onboarding_continue": "Continuer",
+    "bottom_home_title": "Accueil",
+    "bottom_stats_title": "Statistiques",
+    "bottom_bible_title": "Bible",
+    "bottom_profile_title": "Profil"
 }

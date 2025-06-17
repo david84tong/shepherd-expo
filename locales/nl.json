@@ -376,5 +376,9 @@
     "onboarding_username_title": "Kies je gebruikersnaam",
     "onboarding_username_subtitle": "Dit is hoe andere herders je zullen kennen",
     "onboarding_username_placeholder": "@gebruikersnaam",
-    "onboarding_continue": "Doorgaan"
+    "onboarding_continue": "Doorgaan",
+    "bottom_home_title": "Home",
+    "bottom_stats_title": "Statistieken",
+    "bottom_bible_title": "Bijbel",
+    "bottom_profile_title": "Profiel"
 }

@@ -375,5 +375,9 @@
     "onboarding_username_title": "Escolha seu nome de usuário",
     "onboarding_username_subtitle": "É assim que outros pastores te conhecerão",
     "onboarding_username_placeholder": "@usuario",
-    "onboarding_continue": "Continuar"
+    "onboarding_continue": "Continuar",
+    "bottom_home_title": "Início",
+    "bottom_stats_title": "Estatísticas",
+    "bottom_bible_title": "Bíblia",
+    "bottom_profile_title": "Perfil"
 }
