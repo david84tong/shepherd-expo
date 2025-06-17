@@ -788,6 +788,10 @@ export const useHomeScreen = () => {
   const onGemsPress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     analytics.logEvent('HomeScreen_Tapped_Gems');
+    
+    // Show the store sheet
+    const showStoreSheet = useUIStore.getState().showStoreSheet;
+    showStoreSheet();
   }, []);
 
   const handleWidgetSheetClose = useCallback(() => {

@@ -36,6 +36,7 @@ import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelec
 import GlobalPrayerSheet, {
   PrayerSheetRef as GlobalPrayerSheetRefInternal,
 } from '../components/GlobalPrayerSheet';
+import GlobalStoreSheet, { StoreSheetRef } from '../components/GlobalStoreSheet';
 import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet';
 import OldReflectionSheet from '../components/OldReflectionSheet';
 import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
@@ -149,6 +150,7 @@ export default function RootLayout() {
   const showPrayerSheet = useUIStore((state) => state.showPrayerSheet);
   const showBookChapterSelector = useUIStore((state) => state.showBookChapterSelector);
   const showOldReflectionSheet = useUIStore((state) => state.showOldReflectionSheet);
+  const showStoreSheet = useUIStore((state) => state.showStoreSheet);
 
   // Widget states from UI store
   const isWidgetPromptVisible = useUIStore((state) => state.isWidgetPromptVisible);
@@ -162,6 +164,7 @@ export default function RootLayout() {
   const halfModalRef = useRef<HalfModalSheetRef>(null);
   const settingsSheetRef = useRef<SettingsSheetRef>(null);
   const prayerSheetRef = useRef<GlobalPrayerSheetRefInternal>(null);
+  const storeSheetRef = useRef<StoreSheetRef>(null);
 
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
@@ -294,8 +297,9 @@ export default function RootLayout() {
       (global as any).showPrayerSheet = showPrayerSheet;
       (global as any).showBookChapterSelector = showBookChapterSelector;
       (global as any).showOldReflectionSheet = showOldReflectionSheet;
+      (global as any).showStoreSheet = showStoreSheet;
     }
-  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet]);
+  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet, showStoreSheet]);
 
   // Effect to watch isPrayerSheetVisible and control the sheet ref
   useEffect(() => {
@@ -557,6 +561,9 @@ export default function RootLayout() {
               prayerSheetRef={prayerSheetRef}
               onPrayerGenerated={useUIStore.getState().prayerGeneratedCallback || undefined}
             />
+
+            {/* Global Store Sheet */}
+            <GlobalStoreSheet storeSheetRef={storeSheetRef} />
 
             {/* Book/Chapter Selector Sheet */}
             {Boolean(showBookChapterSelector) && <GlobalBookChapterSelectorSheet />}
