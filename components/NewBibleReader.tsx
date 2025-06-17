@@ -480,8 +480,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const getChaptersReadTotal = useUserStore((s) => s.getChaptersReadTotal);
 
   const router = useRouter();
-  // Devotional store action
-  const createQuickDevotional = useDevotionalStore((s) => s.createQuickDevotional);
+  // Devotional store actions
+  const createAIDevotional = useDevotionalStore((s) => s.createAIDevotional);
+  const isCreatingDevotional = useDevotionalStore((s) => s.isCreatingDevotional);
 
   // Track translation changes in analytics
   useEffect(() => {
@@ -1088,8 +1089,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Handle swipe verse to Devotional
   const handleSwipeVerseToDevotional = useCallback(
-    (verse: Verse) => {
-      if (isFadingToChat) return;
+    async (verse: Verse) => {
+      if (isFadingToChat || isCreatingDevotional) return;
 
       // Immediate haptic feedback
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -1098,17 +1099,32 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       const swipeableRef = swipeableRefs.current.get(verse.verse);
       swipeableRef?.close();
 
-      // Navigate to LoadingScreen instantly
       if (chapterData) {
+        const reference = `${chapterData.book} ${chapterData.chapter}:${verse.verse}`;
+        
+        // Navigate to LoadingScreen first
         router.push({
           pathname: '/onboarding/LoadingScreen',
           params: {
             isOnboarding: 'false',
             fromSwipe: 'true',
             verseText: verse.text,
-            reference: `${chapterData.book} ${chapterData.chapter}:${verse.verse}`,
+            reference: reference,
           },
         });
+
+        // Start AI devotional creation in the background
+        try {
+          await createAIDevotional(
+            verse.text,
+            reference,
+            chapterData.book,
+            chapterData.chapter,
+            verse.verse
+          );
+        } catch (error) {
+          console.error('Failed to create AI devotional:', error);
+        }
       }
 
       analytics.logEvent('CardBibleReader_Swiped_VerseToDevotional', {
@@ -1117,7 +1133,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         verse: verse.verse,
       });
     },
-    [isFadingToChat, chapterData, router]
+    [isFadingToChat, isCreatingDevotional, chapterData, router, createAIDevotional]
   );
 
   // Handle left swipe to show menu

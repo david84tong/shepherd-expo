@@ -71,8 +71,10 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     (params.reference as string | undefined) || propReference
   );
 
-  // Devotional store action (only used when !isOnboarding)
-  const createQuickDevotional = useDevotionalStore((s) => s.createQuickDevotional);
+  // Devotional store actions (only used when !isOnboarding)
+  const isCreatingDevotional = useDevotionalStore((s) => s.isCreatingDevotional);
+  const devotionalStoreCurrentDevotional = useDevotionalStore((s) => s.currentDevotional);
+  const devotionalError = useDevotionalStore((s) => s.error);
 
   // Use appropriate loading points based on isOnboarding
   const loadingPoints = isOnboarding ? LOADING_POINTS : DEVOTIONAL_LOADING_POINTS;
@@ -114,23 +116,33 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
   // Step-by-step checklist progression
   useEffect(() => {
-    if (currentStep < loadingPoints.length) {
-      const timer = setTimeout(() => {
-        setCurrentStep((step) => step + 1);
-      }, 1000); // 1 second per checklist step (4 steps = 4 seconds)
-      return () => clearTimeout(timer);
-    } else {
-      // All steps complete, navigate
-      setTimeout(() => {
-        if (isOnboarding) {
+    if (isOnboarding) {
+      // Original onboarding flow
+      if (currentStep < loadingPoints.length) {
+        const timer = setTimeout(() => {
+          setCurrentStep((step) => step + 1);
+        }, 1000); // 1 second per checklist step (4 steps = 4 seconds)
+        return () => clearTimeout(timer);
+      } else {
+        // All steps complete, navigate after a delay to avoid render conflicts
+        const navigationTimer = setTimeout(() => {
           router.replace({ pathname: '/PricingScreen', params: { animateFromBottom: 'true' } });
-        } else {
-          // For devotional loading, go back to home screen
-          router.replace('/');
-        }
-      }, 600);
+        }, 600);
+        return () => clearTimeout(navigationTimer);
+      }
+    } else {
+      // Devotional creation flow - progress based on AI creation status
+      if (isCreatingDevotional && currentStep < loadingPoints.length - 1) {
+        const timer = setTimeout(() => {
+          setCurrentStep((step) => step + 1);
+        }, 1500); // Slower progression for AI creation
+        return () => clearTimeout(timer);
+      } else if (!isCreatingDevotional && devotionalStoreCurrentDevotional && currentStep < loadingPoints.length) {
+        // AI creation complete, finish the progress quickly
+        setCurrentStep(loadingPoints.length);
+      }
     }
-  }, [currentStep, router, isOnboarding, loadingPoints.length]);
+  }, [currentStep, router, isOnboarding, loadingPoints.length, isCreatingDevotional, devotionalStoreCurrentDevotional]);
 
   // Animate the current checklist item when it appears
   useEffect(() => {
@@ -314,40 +326,29 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     };
   }, []);
 
-  // Kick off devotional creation immediately when not onboarding
+  // Monitor devotional creation progress when not onboarding
   useEffect(() => {
-    if (!isOnboarding && verseText && reference) {
-      createQuickDevotional(verseText, reference);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    // Create quick devotional if we have verse text and reference
-    if (!isOnboarding && verseText && reference) {
-      createQuickDevotional(verseText, reference);
-    }
-
-    // Start the loading animation sequence
-    const interval = setInterval(() => {
-      setCurrentStep((prev) => {
-        if (prev >= loadingPoints.length - 1) {
-          clearInterval(interval);
-          // Navigate to home screen with devotional reader visible
+    // The AI devotional creation is already started from NewBibleReader
+    // We just need to monitor its progress here
+    if (!isOnboarding && !isCreatingDevotional) {
+      if (devotionalStoreCurrentDevotional) {
+        // Devotional creation is complete, navigate to home with devotional reader
+        setTimeout(() => {
           router.replace({
             pathname: '/(tabs)',
             params: {
               showDevotional: 'true'
             }
           });
-          return prev;
-        }
-        return prev + 1;
-      });
-    }, 1500);
-
-    return () => clearInterval(interval);
-  }, [isOnboarding, verseText, reference, createQuickDevotional, router]);
+        }, 1000); // Small delay to show completion
+      } else if (devotionalError) {
+        // Error occurred during devotional creation
+        setTimeout(() => {
+          router.replace('/'); // Navigate back to home without devotional
+        }, 2000);
+      }
+    }
+  }, [isOnboarding, isCreatingDevotional, devotionalStoreCurrentDevotional, devotionalError, router]);
 
   return (
     <View
@@ -406,10 +407,10 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
         {/* Headline and subheadline */}
         <Text className="text-3xl font-feather text-center mb-2" style={{ color: TEXT_PRIMARY }}>
-          {isOnboarding ? 'Just a moment' : 'Creating devotional'}
+          {isOnboarding ? 'Just a moment' : devotionalError ? 'Something went wrong' : 'Creating devotional'}
         </Text>
         <Text className="text-lg font-din text-center mb-8" style={{ color: DESCRIPTION }}>
-          {isOnboarding ? 'Building a personalized plan' : 'Preparing your spiritual meal'}
+          {isOnboarding ? 'Building a personalized plan' : devotionalError ? 'Redirecting you back...' : 'Preparing your spiritual meal'}
         </Text>
 
         {/* Checklist directly below */}

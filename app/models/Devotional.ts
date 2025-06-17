@@ -3,7 +3,7 @@ export interface Devotional {
   title: string;
   content: string;
   createdAt: string;
-  context: string;
+  context: string; // 4-5 sentences about the bible verse
   bibleReference: string;
   prayer: string | { en: string };
   reflectionPrompt: string | { en: string };

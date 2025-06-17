@@ -56,8 +56,11 @@ export interface DevotionalReaderRef {
 }
 
 const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(({ visible = true, onClose, setFinishReading, setDevotionalReadedFully, setCurrentVerseReference }, ref) => {
-  const { currentDevotional, isLoading } = useDevotionalStore();
+  const { currentDevotional, isLoading, customDevotional } = useDevotionalStore();
   const devotionalError = useDevotionalStore().error;
+  
+  // Use customDevotional if it exists (AI-generated), otherwise use currentDevotional
+  const activeDevotional = customDevotional || currentDevotional;
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showTapGuidance, setShowTapGuidance] = useState(true);
   const [tapCount, setTapCount] = useState(0);
@@ -196,22 +199,22 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
 
   // Split context into sentences when devotional loads
   useEffect(() => {
-    console.log(' Processing context for devotional:', currentDevotional?.id);
-    console.log('🔄 Context value:', currentDevotional?.context);
-    console.log('🔄 Context type:', typeof currentDevotional?.context);
+    console.log(' Processing context for devotional:', activeDevotional?.id);
+    console.log('🔄 Context value:', activeDevotional?.context);
+    console.log('🔄 Context type:', typeof activeDevotional?.context);
 
-    if (currentDevotional?.context) {
+    if (activeDevotional?.context) {
       let contextText = '';
 
       // Handle different context formats from Firestore
-      if (typeof currentDevotional.context === 'string') {
-        contextText = currentDevotional.context;
-      } else if (Array.isArray(currentDevotional.context)) {
+      if (typeof activeDevotional.context === 'string') {
+        contextText = activeDevotional.context;
+      } else if (Array.isArray(activeDevotional.context)) {
         // If context is an array, join the elements
-        contextText = (currentDevotional.context as string[]).join(' ');
-      } else if (typeof currentDevotional.context === 'object' && currentDevotional.context !== null) {
+        contextText = (activeDevotional.context as string[]).join(' ');
+      } else if (typeof activeDevotional.context === 'object' && activeDevotional.context !== null) {
         // If context is an object, try to extract text content
-        const contextObj = currentDevotional.context as any;
+        const contextObj = activeDevotional.context as any;
         if (contextObj.text) {
           contextText = contextObj.text;
         } else if (contextObj.en) {
@@ -219,7 +222,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
           contextText = contextObj.en;
         } else {
           // Convert object to string as fallback
-          contextText = JSON.stringify(currentDevotional.context);
+          contextText = JSON.stringify(activeDevotional.context);
         }
       }
 
@@ -240,28 +243,28 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
       console.log('🔄 No context available, setting empty array');
       setContextSentences([]);
     }
-  }, [currentDevotional]);
+  }, [activeDevotional]);
 
   // Remove the devotional fetch - it's already loaded in parent component
 
   // Debug log when devotional changes
   useEffect(() => {
     console.log('🙏 DevotionalReader: Store state changed:', {
-      currentDevotional: !!currentDevotional,
+      activeDevotional: !!activeDevotional,
       isLoading: isLoading,
       error: devotionalError,
     });
 
-    if (currentDevotional) {
-      console.log('🙏 DevotionalReader: Current devotional:', {
-        id: currentDevotional.id,
-        hasVerse: !!currentDevotional.verse,
-        hasContext: !!currentDevotional.context,
-        contextType: typeof currentDevotional.context,
-        bibleReference: currentDevotional.bibleReference,
+    if (activeDevotional) {
+      console.log('🙏 DevotionalReader: Active devotional:', {
+        id: activeDevotional.id,
+        hasVerse: !!activeDevotional.verse,
+        hasContext: !!activeDevotional.context,
+        contextType: typeof activeDevotional.context,
+        bibleReference: activeDevotional.bibleReference,
       });
     }
-  }, [currentDevotional, isLoading, devotionalError]);
+  }, [activeDevotional, isLoading, devotionalError]);
 
   // Calculate total cards (1 for verse + context sentences)
   // Always have at least 1 card for the verse, even if no context
@@ -391,13 +394,13 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
     setShowGlobalButtons(false);
 
     // Log completion analytics
-    analytics.logEvent('DevotionalReader_Completed', {
-      bibleReference: currentDevotional?.bibleReference,
-      hasContext: !!currentDevotional?.context,
-      totalCards: totalCards,
-      heartsAwarded: heartsToAdd,
-      xpAwarded: xpReward,
-    });
+          analytics.logEvent('DevotionalReader_Completed', {
+        bibleReference: activeDevotional?.bibleReference,
+        hasContext: !!activeDevotional?.context,
+        totalCards: totalCards,
+        heartsAwarded: heartsToAdd,
+        xpAwarded: xpReward,
+      });
   }
   const animatedProgressStyle = useAnimatedStyle(() => {
     return { width: `${progressValue.value ? progressValue.value * 100 : 0}%` };
@@ -405,24 +408,24 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
 
   // Prepare cards to show (up to current index) - moved before early return
   const cardsToShow: DevotionalCard[] = useMemo(() => {
-    if (!currentDevotional) return [];
+    if (!activeDevotional) return [];
     
     const cards: DevotionalCard[] = [];
     console.log('📋 Preparing cards to show. Current index:', currentIndex);
     console.log('📋 Total context sentences:', contextSentences.length);
     console.log('📋 Context sentences:', contextSentences);
     console.log('📋 Devotional to use:', {
-      hasVerse: !!currentDevotional?.verse,
-      verse: currentDevotional?.verse,
-      reference: currentDevotional?.bibleReference
+      hasVerse: !!activeDevotional?.verse,
+      verse: activeDevotional?.verse,
+      reference: activeDevotional?.bibleReference
     });
 
     // First card is always the Bible verse
     if (currentIndex >= 0) {
       cards.push({
         type: 'verse',
-        content: currentDevotional?.verse || 'No verse available for today.',
-        reference: currentDevotional?.bibleReference || '',
+        content: activeDevotional?.verse || 'No verse available for today.',
+        reference: activeDevotional?.bibleReference || '',
       });
     }
 
@@ -437,7 +440,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
 
     console.log('📋 Cards to show:', cards.length, cards);
     return cards;
-  }, [currentIndex, contextSentences, currentDevotional]);
+  }, [currentIndex, contextSentences, activeDevotional]);
 
   // Update verse reference when devotional data changes
   useEffect(() => {
@@ -448,7 +451,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
 
   // Get store state for debugging
 
-  if (!currentDevotional) {
+  if (!activeDevotional) {
     return (
       <SafeAreaView className="flex-1 bg-surfaceCream items-center justify-center px-6">
         <Text className="text-brown/90 text-lg font-feather mb-2">No Devotional Available</Text>
@@ -530,7 +533,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                 fontWeight: "400",
               }}
             >
-              {currentDevotional?.bibleReference || "Reading"}
+              {activeDevotional?.bibleReference || "Reading"}
             </Text>
 
             {onClose && (

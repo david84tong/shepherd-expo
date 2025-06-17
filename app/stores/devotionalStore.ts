@@ -3,17 +3,21 @@ import { Devotional } from '../models/Devotional';
 import firestore from '@react-native-firebase/firestore';
 import { fetchChapter } from '../api/bible';
 import { BIBLE_BOOK_IDS } from '../models/Path';
+import { createDevotionalFromVerse } from '../api/ai';
+import auth from '@react-native-firebase/auth';
 // after we fetch devotional from firestore we need to get the verse from the API
 // 
 
 interface DevotionalStore {
   currentDevotional: Devotional | null;
+  dailyDevotional: Devotional | null; // Daily devotional fetched from Firebase
   devotionals: Devotional[];
   isLoading: boolean;
   error: string | null;
   bibleVersion: string;
   locale: string;
   customDevotional: Devotional | null; // Quick devotional from Bible reader swipe
+  isCreatingDevotional: boolean; // Loading state for AI devotional creation
   
   // Actions
   fetchTodaysDevotional: () => Promise<void>;
@@ -24,18 +28,22 @@ interface DevotionalStore {
   reset: () => void;
   // NEW ACTION: Quickly create a devotional from a verse the user selected
   createQuickDevotional: (verseText: string, reference: string) => void;
+  // NEW ACTION: Create AI-powered devotional from verse
+  createAIDevotional: (verseText: string, reference: string, bookName: string, chapter: number, verse: number) => Promise<void>;
   // Clear custom devotional when closing
   clearCustomDevotional: () => void;
 }
 
 export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   currentDevotional: null,
+  dailyDevotional: null,
   devotionals: [],
   isLoading: false,
   error: null,
   bibleVersion: 'ESV',
   locale: 'en',
   customDevotional: null,
+  isCreatingDevotional: false,
 
   fetchTodaysDevotional: async () => {
     console.log('🚀 fetchTodaysDevotional function called!');
@@ -198,6 +206,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       });
       
       set({ 
+        dailyDevotional: devotional, // Set the daily devotional from Firebase
         currentDevotional: devotional, 
         isLoading: false,
         error: null 
@@ -231,6 +240,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   reset: () => {
     set({
       currentDevotional: null,
+      dailyDevotional: null,
       devotionals: [],
       isLoading: false,
       error: null,
@@ -258,6 +268,65 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
     console.log('[DevotionalStore] Created quick devotional from verse:', quickDevotional);
     set({ customDevotional: quickDevotional, currentDevotional: quickDevotional });
+  },
+
+  // NEW ACTION: Create AI-powered devotional from verse
+  createAIDevotional: async (verseText: string, reference: string, bookName: string, chapter: number, verse: number) => {
+    console.log('[DevotionalStore] Creating AI devotional from verse:', { verseText, reference, bookName, chapter, verse });
+    set({ isCreatingDevotional: true, error: null });
+    
+    try {
+      // Get the current user's ID token for API authentication
+      const currentUser = auth().currentUser;
+      if (!currentUser) {
+        throw new Error('User not authenticated');
+      }
+      
+      const idToken = await currentUser.getIdToken();
+      
+      // Create the verse context for the AI API
+      const verseContext = {
+        bookName,
+        chapter,
+        verse,
+        verseText
+      };
+      
+      // Call the AI API to create devotional content
+      const aiResponse = await createDevotionalFromVerse(verseContext, idToken);
+      
+      // Create a full Devotional object from the AI response
+      const aiDevotional: Devotional = {
+        id: `ai-${Date.now()}`,
+        title: aiResponse.title,
+        content: aiResponse.context,
+        createdAt: new Date().toISOString(),
+        context: aiResponse.context,
+        bibleReference: reference,
+        prayer: aiResponse.prayer,
+        reflectionPrompt: aiResponse.reflectionPrompt,
+        likes: 0,
+        shares: 0,
+        completed: 0,
+        date: new Date().toISOString(),
+        imageURL: '',
+        verse: verseText,
+      };
+      
+      console.log('[DevotionalStore] AI devotional created successfully:', aiDevotional);
+      set({ 
+        currentDevotional: aiDevotional, 
+        customDevotional: aiDevotional,
+        isCreatingDevotional: false,
+        error: null 
+      });
+    } catch (error) {
+      console.error('Error creating AI devotional:', error);
+      set({ 
+        isCreatingDevotional: false, 
+        error: error instanceof Error ? error.message : 'Failed to create AI devotional' 
+      });
+    }
   },
 
   clearCustomDevotional: () => {

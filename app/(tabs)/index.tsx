@@ -1182,12 +1182,16 @@ export default function HomeScreen() {
             riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
           }
           try {
-            riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
+            if (riveRef.current) {
+              riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
+            }
           } catch (_) {
             // ignore if Action-Number input not present (older artboard)
           }
           try {
-            riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
+            if (riveRef.current) {
+              riveRef.current.setInputState('State Machine 1', 'Number 1', targetStateInput);
+            }
           } catch (_) {
             // ignore if legacy Number 1 input missing
           }
@@ -1225,6 +1229,7 @@ export default function HomeScreen() {
   const [riveReady, setRiveReady] = useState(false);
   const [isFree, setIsFree] = useState(false);
   const [isFirstLoad, setIsFirstLoad] = useState(true);
+  const [riveSkinInitialized, setRiveSkinInitialized] = useState(false);
 
   // Animation for first load after onboarding
   const firstLoadOpacity = useRef(new Animated.Value(0)).current;
@@ -1233,17 +1238,13 @@ export default function HomeScreen() {
   useEffect(() => {
     setRiveReady(true);
 
-    // Set default skin to 0 when Rive is ready
-    setTimeout(() => {
-      if (riveRef.current?.setInputState) {
-        try {
-          riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
-          console.log('Set default Rive Skin-Number: 0');
-        } catch (e) {
-          console.log('Error setting default Rive skin:', e);
-        }
+    // Fallback timeout to ensure skin is initialized even if onPlay doesn't fire
+    const fallbackTimeout = setTimeout(() => {
+      if (!riveSkinInitialized) {
+        console.log('Fallback: Setting skin to initialized after timeout');
+        setRiveSkinInitialized(true);
       }
-    }, 100); // Small delay to ensure Rive is fully initialized
+    }, 1000); // 1 second fallback
 
     // Check if this is the first load after onboarding completion
     if (isFirstLoad) {
@@ -1257,14 +1258,13 @@ export default function HomeScreen() {
         setIsFirstLoad(false);
       });
     }
-
+    
+    // Make sure to clean up any references when unmounting
     return () => {
-      // Cleanup Rive resources
-      if (riveRef.current?.reset) {
-        riveRef.current.reset();
-      }
+      console.log('Cleaning up Home component');
+      clearTimeout(fallbackTimeout);
     };
-  }, []);
+  }, [riveSkinInitialized, isFirstLoad]);
 
   // Add screen view analytics tracking
   useEffect(() => {
@@ -1292,6 +1292,23 @@ export default function HomeScreen() {
     });
     console.log('📖 fetchTodaysDevotional call completed');
   }, []);
+  
+  // Additional effect to ensure the lamb skin is always set to normal (0)
+  // This will run on component mount and whenever the riveRef or riveReady changes
+  useEffect(() => {
+    if (!riveRef.current || !riveReady || riveSkinInitialized) return;
+    
+    // Ensure skin is always set to normal (0) - only if not already initialized
+    try {
+      riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
+      console.log('Reapplied normal skin (0) to lamb');
+      setRiveSkinInitialized(true);
+    } catch (e) {
+      console.log('Error setting lamb skin:', e);
+      // Still mark as initialized to prevent blocking
+      setRiveSkinInitialized(true);
+    }
+  }, [riveRef, riveReady, riveSkinInitialized]);
 
 
 
@@ -1334,6 +1351,32 @@ export default function HomeScreen() {
     const lambAssetIndex = 0;
     const useArtboardName = '[Main] Shpeherd';
 
+    // Handler for when Rive starts playing (indicates it's ready)
+    const handleRivePlay = () => {
+      // Only run once to prevent spam
+      if (riveSkinInitialized) return;
+      
+      console.log('Rive component started playing, setting skin to normal');
+      // Use a small timeout to ensure Rive is fully ready
+      setTimeout(() => {
+        if (riveRef.current && riveRef.current.setInputState) {
+          try {
+            // Set skin to normal (0) immediately when Rive starts playing
+            riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
+            console.log('Set Rive Skin-Number: 0 (normal skin) on play');
+            setRiveSkinInitialized(true);
+          } catch (e) {
+            console.log('Error setting Rive skin on play:', e);
+            // Still mark as initialized to prevent blocking
+            setRiveSkinInitialized(true);
+          }
+        } else {
+          // If setInputState is not available, still mark as initialized
+          setRiveSkinInitialized(true);
+        }
+      }, 50); // Small delay to ensure Rive is fully ready
+    };
+
     return (
       <View
         style={{
@@ -1341,6 +1384,7 @@ export default function HomeScreen() {
           height: '100%',
           alignItems: 'center',
           justifyContent: 'center',
+          opacity: riveSkinInitialized ? 1 : 0, // Hide until skin is initialized
         }}>
         <TouchableOpacity
           onPress={() => {
@@ -1372,6 +1416,7 @@ export default function HomeScreen() {
               stateMachineName="State Machine 1"
               autoplay
               onError={handleRiveError}
+              onPlay={handleRivePlay}
               style={{
                 width: '100%',
                 height: '100%',
@@ -1387,6 +1432,7 @@ export default function HomeScreen() {
               stateMachineName="State Machine 1"
               autoplay
               onError={handleRiveError}
+              onPlay={handleRivePlay}
               style={{
                 width: '100%',
                 height: '100%',
@@ -1397,7 +1443,7 @@ export default function HomeScreen() {
         </View>
       </View>
     );
-  }, [riveAssets, currentStateInput, riveKey, riveReady, isPro, lambName, isLevelPillExpanded]);
+  }, [riveAssets, currentStateInput, riveKey, riveReady, isPro, lambName, isLevelPillExpanded, riveSkinInitialized]);
 
   const showGlobalButtons = useHomeStore((state) => state.showGlobalButtons);
 useEffect(() => {
@@ -2065,13 +2111,23 @@ const buttonTitle = showDevotionalContent ? 'Continue' : 'Amen';
                   ref={journalRef}
                   visible={showJournalContent}
                   setFinishReading={setFinishReading}
-                  onClose={() => {
-                    console.log('🔍 JOURNAL CLOSE - Setting reflectionCompleted to false:', {
+                  onClose={({isCompleted}:{isCompleted?:boolean}) => {
+                    console.log('🔍 JOURNAL CLOSE - Handling journal close:', {
+                      isCompleted,
                       previousValue: reflectionCompleted,
                       homeStoreState: useHomeStore.getState().reflectionCompleted,
                       timestamp: new Date().toLocaleTimeString()
                     });
-                    setReflectionCompleted(false);
+                    
+                    // Only reset reflection completion if the user didn't complete it
+                    if (!isCompleted) {
+                      console.log('🔍 JOURNAL CLOSE - Setting reflectionCompleted to false (cancelled)');
+                      setReflectionCompleted(false);
+                    } else {
+                      console.log('🔍 JOURNAL CLOSE - Keeping reflectionCompleted as true (completed)');
+                      // Ensure it stays true
+                      setReflectionCompleted(true);
+                    }
                     // Start fade out
                     Animated.parallel([
                       // Card content fade out
@@ -2378,7 +2434,7 @@ const buttonTitle = showDevotionalContent ? 'Continue' : 'Amen';
          
           
           >
-         {showDevotionalContent &&    <View className='flex-row    items-center w-full justify-between'>
+         {showDevotionalContent &&    <View className='flex-row    items-center w-full justify-between mr-12'>
                 {/* {cardsToShow[0]?.reference && ( */}
              
                   {/* )} */}
@@ -2390,7 +2446,7 @@ const buttonTitle = showDevotionalContent ? 'Continue' : 'Amen';
                 </View>}
                 <View  className="flex-row items-center    justify-between w-full">
 
-          {!showJournalContent && <Animated.View style={{ width:  '10%' }}>
+          {!showJournalContent && <Animated.View style={{ width:  '10%'}}>
             <CircleButton 
               icon='chevron-left' 
               size={53} 
@@ -2420,7 +2476,7 @@ const buttonTitle = showDevotionalContent ? 'Continue' : 'Amen';
   />
 ) : showPrayerContent  ? (
   <BluePrimaryButton
-    title="Complete Prayer"
+    title="Amen"
     width="100%"
     disabled={isCompletePrayerDisabled}
     onPress={() => {
