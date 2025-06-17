@@ -586,19 +586,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       setJournalViewVisible(false);
       setPathInProgress(false);
       
-      // Reset Rive animation to idle state
-      const homeStore = useHomeStore.getState();
-      const riveRef = homeStore.riveRef;
-      if (riveRef?.current?.setInputState) {
-        try {
-          riveRef.current.setInputState('State Machine 1', 'Action-Number', 0); // 0 = Idle
-          console.log('Reset Rive animation to idle state');
-        } catch (error) {
-          console.log('Could not reset Rive state:', error);
-        }
-      }
-      
       // Reset bottom sheet to original position
+      const homeStore = useHomeStore.getState();
       const bottomSheetRef = homeStore.bottomSheetRef;
       if (bottomSheetRef?.current) {
         bottomSheetRef.current.snapToIndex(0); // Return to original closed position
@@ -613,6 +602,19 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       useHomeStore.getState().setTappedReflectAboutVerse(false);
       console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
       onClose({});
+      
+      // Reset Rive animation to idle state with delay after navigation
+      setTimeout(() => {
+        const riveRef = homeStore.riveRef;
+        if (riveRef?.current?.setInputState) {
+          try {
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 0); // 0 = Idle
+            console.log('Reset Rive animation to idle state after cancel delay');
+          } catch (error) {
+            console.log('Could not reset Rive state after cancel:', error);
+          }
+        }
+      }, 800); // Shorter delay for cancel since it's just going back to home
     },
     setReflectionContent: (content: string) => {
       setReflectionContent(content);
@@ -657,30 +659,6 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
           console.log('🔍 JOURNAL SUCCESS - Ensuring reflection completion state is maintained');
           setReflectionCompleted(true);
 
-          // Reset Rive animation to idle state when going home
-          const homeStore = useHomeStore.getState();
-          const riveRef = homeStore.riveRef;
-          if (riveRef?.current?.setInputState) {
-            try {
-              // Get current lamb mood to set appropriate idle state
-              const currentMood = useUserStore.getState()?.getLambMood?.();
-              const moodToStateInput: Record<string, number> = {
-                'lamb-idle': 0,           // >= 50 hearts - Idle
-                'lamb-sleepy': 4,         // < 50 hearts - Sleepy  
-                'lamb-angry': 5,          // < 30 hearts - Angry
-                'lamb-chubby dying': 6,   // < 20 hearts - Dying Chubby
-                'lamb-skinny dying': 7,   // < 10 hearts - Dying Skinny
-                'smoking': 8,             // < 1 hearts - Dead
-                'lamb-full': 3,           // After eating - Full
-              };
-              const targetStateInput = moodToStateInput[currentMood] || 0;
-              riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
-              console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood})`);
-            } catch (error) {
-              console.log('Could not reset Rive state:', error);
-            }
-          }
-
           const sawStreakToday = useHomeStore.getState().sawStreakToday;
           const isFirstReadingOfDay = !sawStreakToday;
           const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
@@ -700,8 +678,60 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                 showStreakScreen: 'true'
               }
             });
+            
+            // Reset Rive animation to appropriate state after navigation with delay
+            setTimeout(() => {
+              const homeStore = useHomeStore.getState();
+              const riveRef = homeStore.riveRef;
+              if (riveRef?.current?.setInputState) {
+                try {
+                  // Get current lamb mood to set appropriate idle state
+                  const currentMood = useUserStore.getState()?.getLambMood?.();
+                  const moodToStateInput: Record<string, number> = {
+                    'lamb-idle': 0,           // >= 50 hearts - Idle
+                    'lamb-sleepy': 4,         // < 50 hearts - Sleepy  
+                    'lamb-angry': 5,          // < 30 hearts - Angry
+                    'lamb-chubby dying': 6,   // < 20 hearts - Dying Chubby
+                    'lamb-skinny dying': 7,   // < 10 hearts - Dying Skinny
+                    'smoking': 8,             // < 1 hearts - Dead
+                    'lamb-full': 3,           // After eating - Full
+                  };
+                  const targetStateInput = moodToStateInput[currentMood] || 0;
+                  riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+                  console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
+                } catch (error) {
+                  console.log('Could not reset Rive state after navigation:', error);
+                }
+              }
+            }, 1000); // 1 second delay after navigation
           }else{
             onClose({isCompleted:true});
+            
+            // Reset Rive animation to appropriate state after navigation with delay
+            setTimeout(() => {
+              const homeStore = useHomeStore.getState();
+              const riveRef = homeStore.riveRef;
+              if (riveRef?.current?.setInputState) {
+                try {
+                  // Get current lamb mood to set appropriate idle state
+                  const currentMood = useUserStore.getState()?.getLambMood?.();
+                  const moodToStateInput: Record<string, number> = {
+                    'lamb-idle': 0,           // >= 50 hearts - Idle
+                    'lamb-sleepy': 4,         // < 50 hearts - Sleepy  
+                    'lamb-angry': 5,          // < 30 hearts - Angry
+                    'lamb-chubby dying': 6,   // < 20 hearts - Dying Chubby
+                    'lamb-skinny dying': 7,   // < 10 hearts - Dying Skinny
+                    'smoking': 8,             // < 1 hearts - Dead
+                    'lamb-full': 3,           // After eating - Full
+                  };
+                  const targetStateInput = moodToStateInput[currentMood] || 0;
+                  riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+                  console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
+                } catch (error) {
+                  console.log('Could not reset Rive state after navigation:', error);
+                }
+              }
+            }, 1000); // 1 second delay after navigation
           }
 
           // if (readingCompleted && prayerCompleted && !sawDailyBonus) {
@@ -765,19 +795,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
               setJournalViewVisible(false);
               setPathInProgress(false);
               
-              // Reset Rive animation to idle state
-              const homeStore = useHomeStore.getState();
-              const riveRef = homeStore.riveRef;
-              if (riveRef?.current?.setInputState) {
-                try {
-                  riveRef.current.setInputState('State Machine 1', 'Action-Number', 0); // 0 = Idle
-                  console.log('Reset Rive animation to idle state');
-                } catch (error) {
-                  console.log('Could not reset Rive state:', error);
-                }
-              }
-              
               // Reset bottom sheet to original position
+              const homeStore = useHomeStore.getState();
               const bottomSheetRef = homeStore.bottomSheetRef;
               if (bottomSheetRef?.current) {
                 bottomSheetRef.current.snapToIndex(0); // Return to original closed position
@@ -792,6 +811,19 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
               useHomeStore.getState().setTappedReflectAboutVerse(false);
               console.log('Reset tappedReflectAboutVerse flag to false (from cancel button)');
               onClose({});
+              
+              // Reset Rive animation to idle state with delay after navigation
+              setTimeout(() => {
+                const riveRef = homeStore.riveRef;
+                if (riveRef?.current?.setInputState) {
+                  try {
+                    riveRef.current.setInputState('State Machine 1', 'Action-Number', 0); // 0 = Idle
+                    console.log('Reset Rive animation to idle state after cancel delay');
+                  } catch (error) {
+                    console.log('Could not reset Rive state after cancel:', error);
+                  }
+                }
+              }, 800); // Shorter delay for cancel since it's just going back to home
             }}
           />
           <View style={{ width: '80%' }}>

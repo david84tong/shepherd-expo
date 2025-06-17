@@ -93,6 +93,80 @@ const TypingText: React.FC<TypingTextProps> = ({
   );
 };
 
+// Breathe Text Component
+const BreatheText: React.FC<{ breathingProgress: Reanimated.SharedValue<number> }> = ({ breathingProgress }) => {
+  const words = ['Breathe', 'Listen', 'Be Still'];
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const lastProgressValue = useRef(0);
+  const hasReachedPeak = useRef(false);
+  const cycleCount = useRef(0);
+  const textOpacity = useSharedValue(1);
+
+  const cycleToNextWord = useCallback(() => {
+    console.log('Cycling to next word');
+    setCurrentWordIndex((prevIndex) => (prevIndex + 1) % words.length);
+  }, [words.length]);
+
+  // Separate effect to handle subtle fade animation when word changes
+  useEffect(() => {
+    // Gentle fade to 0.3 opacity, then back to 1 for a subtle transition
+    textOpacity.value = withTiming(0.3, { 
+      duration: 600,
+      easing: Easing.inOut(Easing.ease)
+    }, () => {
+      textOpacity.value = withTiming(1, { 
+        duration: 600,
+        easing: Easing.inOut(Easing.ease)
+      });
+    });
+  }, [currentWordIndex, textOpacity]);
+
+  const breatheTextStyle = useAnimatedStyle(() => {
+    const progress = breathingProgress.value;
+    const fontSize = interpolate(progress, [0, 1], [24, 36]);
+    const scale = interpolate(progress, [0, 1], [0.8, 1.4]);
+    
+    // Track animation direction and detect full cycles
+    const lastValue = lastProgressValue.current;
+    
+    // Detect when we reach the peak (inhale complete)
+    if (progress > 0.95 && !hasReachedPeak.current) {
+      hasReachedPeak.current = true;
+      console.log('Reached peak - inhale complete');
+    }
+    
+    // Detect when we return to the bottom after reaching peak (full cycle complete)
+    if (hasReachedPeak.current && progress < 0.05 && lastValue > 0.05) {
+      hasReachedPeak.current = false;
+      cycleCount.current += 1;
+      console.log('Full cycle completed, count:', cycleCount.current);
+      runOnJS(cycleToNextWord)();
+    }
+    
+    lastProgressValue.current = progress;
+    
+    return {
+      fontSize: fontSize,
+      opacity: textOpacity.value,
+      transform: [{ scale }],
+    };
+  });
+
+  return (
+    <Reanimated.View style={breatheTextStyle}>
+      <Text
+        style={{
+          fontFamily: 'Nunito-Black',
+          textAlign: 'center',
+          color: '#B45309',
+        }}
+      >
+        {words[currentWordIndex]}
+      </Text>
+    </Reanimated.View>
+  );
+};
+
 // Breathing Animation Component
 const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reanimated.SharedValue<number>; hapticsEnabled: boolean; guidedPrayerEnabled: boolean; currentDevotional: any }> = ({ isActive, breathingProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional }) => {
   const circleSize = SCREEN_WIDTH * 0.4; // 50% of screen width
@@ -207,9 +281,14 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
 
       {/* Breathing instruction text */}
       <Reanimated.View
-        style={[
-          { position: 'absolute', pointerEvents: 'none', zIndex: 2, maxWidth: SCREEN_WIDTH * 0.8 },
-        ]}
+        style={{
+          position: 'absolute', 
+          pointerEvents: 'none', 
+          zIndex: 2, 
+          maxWidth: SCREEN_WIDTH * 0.8,
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
       >
         {guidedPrayerEnabled ? (
           <TypingText
@@ -225,7 +304,9 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
             speed={50}
             skipAnimation={false}
           />
-        ) : null}
+        ) : (
+          <BreatheText breathingProgress={breathingProgress} />
+        )}
       </Reanimated.View>
     </View>
   );
@@ -333,6 +414,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
   // Animation values
   const progressValue = useSharedValue(0);
+  const prayerProgressValue = useSharedValue(0); // New progress bar for 20-second timer
   const breathingProgress = useSharedValue(0);
   const controlRowOpacity = useSharedValue(0);
   const componentOpacity = useSharedValue(0); // For smooth component fade-in
@@ -402,8 +484,12 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   useEffect(() => {
     if (visible) {
       componentOpacity.value = withTiming(1, { duration: 400 });
+      // Start 20-second progress bar animation
+      prayerProgressValue.value = 0;
+      prayerProgressValue.value = withTiming(1, { duration: 20000 }); // 20 seconds
     } else {
       componentOpacity.value = 0;
+      prayerProgressValue.value = 0;
     }
   }, [visible]);
 
@@ -715,6 +801,13 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     };
   });
 
+  // Prayer progress bar animation style
+  const prayerProgressAnimatedStyle = useAnimatedStyle(() => {
+    return { 
+      width: `${prayerProgressValue.value * 100}%` 
+    };
+  });
+
   // Function to show control row with auto-hide
   const toggleControlRow = useCallback(() => {
     console.log('🎯 toggleControlRow called! showControlRow:', showControlRow);
@@ -756,6 +849,14 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       }, 3000);
     }
   }, [showControlRow, controlRowOpacity, hapticsEnabled, showSettingsModal]);
+
+  // Reset progress bar when breathing animation ends
+  useEffect(() => {
+    if (!showBreathingAnimation) {
+      // Reset the prayer progress bar when moving to prayer cards
+      prayerProgressValue.value = 0;
+    }
+  }, [showBreathingAnimation]);
 
   // Expose functions through ref
   useImperativeHandle(ref, () => ({
@@ -1062,6 +1163,28 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
             >
               {/* Prayer Time */}
             </Text>
+          </View>
+
+          {/* Prayer Progress Bar */}
+          <View style={{ 
+            height: 8, 
+            borderRadius: 50, 
+            marginBottom: 56, 
+            marginHorizontal: 24,
+            overflow: 'hidden',
+            marginTop: -32,
+            backgroundColor: 'rgba(255, 215, 0, 0.2)' // Light yellow background
+          }}>
+            <Reanimated.View
+              style={[
+                {
+                  height: '100%',
+                  backgroundColor: '#FFD700', // Yellow color
+                  borderRadius: 4,
+                },
+                prayerProgressAnimatedStyle,
+              ]}
+            />
           </View>
 
           {/* Bible Reference Header */}

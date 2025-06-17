@@ -86,6 +86,21 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       .map(() => new Animated.Value(0))
   );
 
+  // Track which steps have been animated to prevent double animations
+  const animatedStepsRef = useRef(new Set<number>());
+
+  // Reset animated steps tracking when component mounts or loading type changes
+  useEffect(() => {
+    animatedStepsRef.current.clear();
+  }, [isOnboarding]);
+
+  // Reset animated steps tracking when currentStep resets to 0
+  useEffect(() => {
+    if (currentStep === 0) {
+      animatedStepsRef.current.clear();
+    }
+  }, [currentStep]);
+
   // Spinner rotation animation value (only one, for the current loading item)
   const spinnerAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -146,7 +161,14 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
   // Animate the current checklist item when it appears
   useEffect(() => {
-    if (currentStep < loadingPoints.length) {
+    if (currentStep < loadingPoints.length && !animatedStepsRef.current.has(currentStep)) {
+      // Mark this step as animated
+      animatedStepsRef.current.add(currentStep);
+      
+      // Reset the animation value to 0 first to prevent double animations
+      animValuesRef.current[currentStep].setValue(0);
+      
+      // Then animate to 1
       Animated.timing(animValuesRef.current[currentStep], {
         toValue: 1,
         duration: 400,
