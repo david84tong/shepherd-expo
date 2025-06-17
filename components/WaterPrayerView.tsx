@@ -10,9 +10,10 @@ import {
   Switch,
   Animated,
 } from 'react-native';
-import { Canvas, Circle, LinearGradient, vec, Rect, Skia } from '@shopify/react-native-skia';
+// import { Canvas, Circle, LinearGradient, vec, Rect } from '@shopify/react-native-skia';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePrayerStore } from '~/app/stores/prayerStore';
 import { useHomeStore } from '~/app/stores/homeStore';
@@ -95,7 +96,7 @@ const TypingText: React.FC<TypingTextProps> = ({
 
 
 
-// Water Filling Animation Component
+// Water Filling Animation Component - Using Skia for beautiful water effects
 const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanimated.SharedValue<number>; hapticsEnabled: boolean; guidedPrayerEnabled: boolean; currentDevotional: any }> = ({ isActive, waterProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional }) => {
   const containerSize = SCREEN_WIDTH * 0.6; // Container size
   
@@ -145,26 +146,6 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
     };
   }, [isActive]);
 
-  // Create wave path for water surface
-  const createWavePath = (width: number, height: number, waveHeight: number, offset: number) => {
-    const path = Skia.Path.Make();
-    const waveLength = width / 2;
-    
-    path.moveTo(0, height);
-    
-    // Create wave using quadratic curves
-    for (let x = 0; x <= width; x += waveLength / 4) {
-      const y = height + Math.sin((x / waveLength) * Math.PI * 2 + offset) * waveHeight;
-      path.quadTo(x + waveLength / 8, y, x + waveLength / 4, height);
-    }
-    
-    path.lineTo(width, height + 50);
-    path.lineTo(0, height + 50);
-    path.close();
-    
-    return path;
-  };
-
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', marginVertical: 40 }}>
       {/* Water Container */}
@@ -186,7 +167,6 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
                 bottom: 0,
                 left: 0,
                 right: 0,
-                backgroundColor: '#4A90E2',
               },
               useAnimatedStyle(() => {
                 const progress = waterProgress.value;
@@ -194,41 +174,48 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
                 return { height };
               })
             ]}
-          />
-          
-          {/* Water gradient effect */}
-          <Rect
-            x={0}
-            y={0}
-            width={containerSize}
-            height={containerSize}
           >
-            <LinearGradient
-              start={vec(0, 0)}
-              end={vec(0, containerSize)}
-              colors={['rgba(74, 144, 226, 0)', 'rgba(74, 144, 226, 0.8)', 'rgba(30, 144, 255, 1)']}
-            />
-          </Rect>
+            <Canvas style={{ width: '100%', height: '100%' }}>
+              <Rect
+                x={0}
+                y={0}
+                width={containerSize}
+                height={containerSize}
+              >
+                <LinearGradient
+                  start={vec(0, 0)}
+                  end={vec(0, containerSize)}
+                  colors={['rgba(74, 144, 226, 0.8)', 'rgba(30, 144, 255, 1)']}
+                />
+              </Rect>
+            </Canvas>
+          </Reanimated.View>
           
           {/* Animated water surface circles for ripple effect */}
           <Reanimated.View
-            style={useAnimatedStyle(() => {
-              const progress = waterProgress.value;
-              const waterLevel = interpolate(progress, [0, 1], [containerSize, 0]);
-              return {
+            style={[
+              {
                 position: 'absolute',
-                top: waterLevel - 10,
                 left: 0,
                 right: 0,
-              };
-            })}
+                height: 20,
+              },
+              useAnimatedStyle(() => {
+                const progress = waterProgress.value;
+                const waterLevel = interpolate(progress, [0, 1], [containerSize, 10]);
+                return {
+                  top: waterLevel - 10,
+                  opacity: progress > 0.1 ? 0.6 : 0,
+                };
+              })
+            ]}
           >
             <Canvas style={{ width: containerSize, height: 20 }}>
               <Circle
                 cx={containerSize / 2}
                 cy={10}
-                r={containerSize / 2 - 4}
-                color="rgba(135, 206, 250, 0.3)"
+                r={containerSize / 2 - 8}
+                color="rgba(135, 206, 250, 0.4)"
               />
             </Canvas>
           </Reanimated.View>
@@ -236,7 +223,7 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
       </View>
 
       {/* Prayer instruction text */}
-      <Reanimated.View
+      <View
         style={{
           position: 'absolute', 
           pointerEvents: 'none', 
@@ -281,7 +268,7 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
             </Text>
           </View>
         )}
-      </Reanimated.View>
+      </View>
     </View>
   );
 };
