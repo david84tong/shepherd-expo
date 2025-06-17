@@ -3,9 +3,9 @@
 import { 
   View, 
   Text, 
-  ImageBackground, 
-  SafeAreaView, 
-  StatusBar, 
+  ImageBackground,
+  SafeAreaView,
+  StatusBar,
   Platform,
   TouchableOpacity,
   Image,
@@ -24,7 +24,7 @@ import WidgetHowToSheet from '../../components/WidgetHowToSheet';
 import bibleIcon from '../../assets/icons/bibleIcon.png';
 import FullScreenShareCard from '../../components/FullScreenShareCard';
 import SpotlightOverlay from '../../components/SpotlightOverlay';
-import PrayerView from '~/components/PrayerView';
+import PrayerView from '~/components/WaterPrayerView';
 import JournalComponent from '~/components/JournalComponent';
 import DailyVerseCard from '~/components/Shared/DailyVerseCard';
 import CustomToast from '../components/Shared/CustomToast';
@@ -578,7 +578,7 @@ export default function HomeScreen() {
                 />
               ) : showPrayerContent ?
                 <PrayerView
-                  setIsCompletePrayerDisabled={setIsCompletePrayerDisabled}
+                setIsCompletePrayerDisabled={setIsCompletePrayerDisabled}
                   ref={prayerViewRef}
                   setShowControlRow={setShowControlRow}
                   showControlRow={showControlRow}
@@ -739,7 +739,7 @@ export default function HomeScreen() {
             </Animated.View>
           </BottomSheet>
 
-          {/* BUTTONS */}
+{/* BUTTONS */}
           <BottomControls 
             bottomContentOpacity={bottomContentOpacity}
             bottomContentAnimY={bottomContentAnimY}

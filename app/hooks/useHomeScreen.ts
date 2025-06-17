@@ -62,6 +62,7 @@ export const useHomeScreen = () => {
   const bottomSheetRef = useRef<any>(null);
   const prevFinishReadingRef = useRef(false);
   const riveKey = useRef('lamb-animation').current;
+  const lastActionInputRef = useRef<number | null>(null);
 
   // State
   const [devotionalReadedFully, setDevotionalReadedFully] = useState(false);
@@ -274,7 +275,9 @@ export const useHomeScreen = () => {
 
             riveRef.current.setInputState('State Machine 1', 'Action-Number', 2);
           }
-        } catch (_) {}
+        } catch (_) {
+          // Ignore if Action-Number input not present
+        }
       }
     } else if (prevFinishReadingRef.current) {
       Animated.timing(finishReadingOpacityAnim, {
@@ -551,7 +554,9 @@ export const useHomeScreen = () => {
         riveRef.current.setInputState('State Machine 1', 'Action-Number', 9);
         try {
           riveRef.current.setInputState('State Machine 1', 'Action-Number', 9);
-        } catch (_) {}
+        } catch (_) {
+          // Ignore if Action-Number input not present
+        }
       }
       Animated.timing(riveArtboardOpacityAnim, {
         toValue: 1,
@@ -598,7 +603,9 @@ export const useHomeScreen = () => {
           riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
           try {
             riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
-          } catch (_) {}
+          } catch (_) {
+            // Ignore if Action-Number input not present
+          }
         }
         Animated.timing(riveArtboardOpacityAnim, {
           toValue: 1,
@@ -846,28 +853,52 @@ export const useHomeScreen = () => {
 
      // Handler for when Rive starts playing (indicates it's ready)
      const handleRivePlay = () => {
-      // Only run once to prevent spam
-      if (riveSkinInitialized) return;
-      
-      console.log('Rive component started playing, setting skin to normal');
-      // Use a small timeout to ensure Rive is fully ready
+      console.log('Rive component started playing, ensuring correct skin & action state');
+
+      // Use a small timeout to ensure Rive is fully ready before sending inputs
       setTimeout(() => {
-        if (riveRef.current && riveRef.current.setInputState) {
-          try {
-            // Set skin to normal (0) immediately when Rive starts playing
+        if (!riveRef.current || !riveRef.current.setInputState) return;
+
+        try {
+          // Initialise skin once
+          if (!riveSkinInitialized) {
             riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
             console.log('Set Rive Skin-Number: 0 (normal skin) on play');
             setRiveSkinInitialized(true);
-          } catch (e) {
-            console.log('Error setting Rive skin on play:', e);
-            // Still mark as initialized to prevent blocking
-            setRiveSkinInitialized(true);
           }
-        } else {
-          // If setInputState is not available, still mark as initialized
-          setRiveSkinInitialized(true);
+
+          // Determine which action should be active
+          let targetAction = 0;
+          if (showDevotionalContent) {
+            targetAction = 9; // reading
+          } else if (showPrayerContent) {
+            targetAction = 1; // prayer
+          } else if (showJournalContent) {
+            targetAction = 12; // journal
+          } else {
+            const currentMood = useUserStore.getState()?.getLambMood?.();
+            const moodToStateInput: Record<string, number> = {
+              'lamb-idle': 0,
+              'lamb-sleepy': 4,
+              'lamb-angry': 5,
+              'lamb-chubby dying': 6,
+              'lamb-skinny dying': 7,
+              'smoking': 8,
+              'lamb-full': 3,
+            };
+            targetAction = moodToStateInput[currentMood] || 0;
+          }
+
+          // Only update if action changed to prevent spamming
+          if (lastActionInputRef.current !== targetAction) {
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', targetAction);
+            lastActionInputRef.current = targetAction;
+            console.log(`Set Rive Action-Number: ${targetAction} on play (changed)`);
+          }
+        } catch (e) {
+          console.log('Error setting Rive inputs on play:', e);
         }
-      }, 50); // Small delay to ensure Rive is fully ready
+      }, 100); // Delay ensures Rive is ready for state changes
     };
 
 

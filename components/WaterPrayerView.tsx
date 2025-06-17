@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
+// import { Canvas, Circle, LinearGradient, vec, Rect } from '@shopify/react-native-skia'
+
 import {
   View,
   Text,
@@ -10,7 +12,6 @@ import {
   Switch,
   Animated,
 } from 'react-native';
-// import { Canvas, Circle, LinearGradient, vec, Rect } from '@shopify/react-native-skia';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -96,7 +97,7 @@ const TypingText: React.FC<TypingTextProps> = ({
 
 
 
-// Water Filling Animation Component - Using Skia for beautiful water effects
+// Water Filling Animation Component
 const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanimated.SharedValue<number>; hapticsEnabled: boolean; guidedPrayerEnabled: boolean; currentDevotional: any }> = ({ isActive, waterProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional }) => {
   const containerSize = SCREEN_WIDTH * 0.6; // Container size
   
@@ -167,6 +168,7 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
                 bottom: 0,
                 left: 0,
                 right: 0,
+                backgroundColor: '#4A90E2',
               },
               useAnimatedStyle(() => {
                 const progress = waterProgress.value;
@@ -174,48 +176,41 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
                 return { height };
               })
             ]}
+          />
+          
+          {/* Water gradient effect */}
+          <Rect
+            x={0}
+            y={0}
+            width={containerSize}
+            height={containerSize}
           >
-            <Canvas style={{ width: '100%', height: '100%' }}>
-              <Rect
-                x={0}
-                y={0}
-                width={containerSize}
-                height={containerSize}
-              >
-                <LinearGradient
-                  start={vec(0, 0)}
-                  end={vec(0, containerSize)}
-                  colors={['rgba(74, 144, 226, 0.8)', 'rgba(30, 144, 255, 1)']}
-                />
-              </Rect>
-            </Canvas>
-          </Reanimated.View>
+            <LinearGradient
+              start={vec(0, 0)}
+              end={vec(0, containerSize)}
+              colors={['rgba(74, 144, 226, 0)', 'rgba(74, 144, 226, 0.8)', 'rgba(30, 144, 255, 1)']}
+            />
+          </Rect>
           
           {/* Animated water surface circles for ripple effect */}
           <Reanimated.View
-            style={[
-              {
+            style={useAnimatedStyle(() => {
+              const progress = waterProgress.value;
+              const waterLevel = interpolate(progress, [0, 1], [containerSize, 0]);
+              return {
                 position: 'absolute',
+                top: waterLevel - 10,
                 left: 0,
                 right: 0,
-                height: 20,
-              },
-              useAnimatedStyle(() => {
-                const progress = waterProgress.value;
-                const waterLevel = interpolate(progress, [0, 1], [containerSize, 10]);
-                return {
-                  top: waterLevel - 10,
-                  opacity: progress > 0.1 ? 0.6 : 0,
-                };
-              })
-            ]}
+              };
+            })}
           >
             <Canvas style={{ width: containerSize, height: 20 }}>
               <Circle
                 cx={containerSize / 2}
                 cy={10}
-                r={containerSize / 2 - 8}
-                color="rgba(135, 206, 250, 0.4)"
+                r={containerSize / 2 - 4}
+                color="rgba(135, 206, 250, 0.3)"
               />
             </Canvas>
           </Reanimated.View>
@@ -223,7 +218,7 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
       </View>
 
       {/* Prayer instruction text */}
-      <View
+      <Reanimated.View
         style={{
           position: 'absolute', 
           pointerEvents: 'none', 
@@ -268,7 +263,7 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
             </Text>
           </View>
         )}
-      </View>
+      </Reanimated.View>
     </View>
   );
 };

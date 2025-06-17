@@ -2012,7 +2012,7 @@ const styles = StyleSheet.create({
   },
   settingsContent: {
     flex: 1,
-    padding: 20,
+    padding: 12,
   },
   sheetBackground: {
     backgroundColor: '#FFF4D9', // surfaceCream
