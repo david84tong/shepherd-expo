@@ -153,6 +153,10 @@ export const useHomeScreen = () => {
   const pan = useRef(new Animated.ValueXY()).current;
   const translateY = useRef(new Animated.Value(0)).current;
 
+
+
+
+  const MAX_HEARTS = 100;
   // Rive animation hook
   const { riveRef, setRiveIdle, handleRiveError: handleRiveAnimationError, setRiveState } = useRiveAnimation({
     onError: (error) => {
@@ -1000,6 +1004,7 @@ export const useHomeScreen = () => {
     setShowJournalContent,
     setShowPrayerContent,
     handleRivePlay,
-    riveSkinInitialized
+    riveSkinInitialized,
+    MAX_HEARTS
   };
 };

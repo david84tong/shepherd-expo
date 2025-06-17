@@ -155,7 +155,8 @@ export default function HomeScreen() {
     handleRiveAnimationError,
     riveKey,
     riveSkinInitialized,
-    handleRivePlay
+    handleRivePlay,
+    MAX_HEARTS
   } = useHomeScreen();
 
   // Load Rive assets
