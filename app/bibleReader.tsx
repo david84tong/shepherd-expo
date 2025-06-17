@@ -1929,6 +1929,8 @@ const styles = StyleSheet.create<BibleReaderStyles>({
     bottom: 0,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     zIndex: 1000,
+    justifyContent: 'flex-end',
+    alignItems: 'center',
   },
   modalContent: {
     backgroundColor: '#FFF4D9',
