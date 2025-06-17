@@ -653,6 +653,34 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
           setJournalViewVisible(false);
 
+          // Ensure reflection completion state is maintained
+          console.log('🔍 JOURNAL SUCCESS - Ensuring reflection completion state is maintained');
+          setReflectionCompleted(true);
+
+          // Reset Rive animation to idle state when going home
+          const homeStore = useHomeStore.getState();
+          const riveRef = homeStore.riveRef;
+          if (riveRef?.current?.setInputState) {
+            try {
+              // Get current lamb mood to set appropriate idle state
+              const currentMood = useUserStore.getState()?.getLambMood?.();
+              const moodToStateInput: Record<string, number> = {
+                'lamb-idle': 0,           // >= 50 hearts - Idle
+                'lamb-sleepy': 4,         // < 50 hearts - Sleepy  
+                'lamb-angry': 5,          // < 30 hearts - Angry
+                'lamb-chubby dying': 6,   // < 20 hearts - Dying Chubby
+                'lamb-skinny dying': 7,   // < 10 hearts - Dying Skinny
+                'smoking': 8,             // < 1 hearts - Dead
+                'lamb-full': 3,           // After eating - Full
+              };
+              const targetStateInput = moodToStateInput[currentMood] || 0;
+              riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+              console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood})`);
+            } catch (error) {
+              console.log('Could not reset Rive state:', error);
+            }
+          }
+
           const sawStreakToday = useHomeStore.getState().sawStreakToday;
           const isFirstReadingOfDay = !sawStreakToday;
           const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
@@ -703,7 +731,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       <Animated.View style={{ opacity: containerOpacity, flex: 1 }}>
       <View className="flex-1 px-6">
     
-        <Text className="text-[20px] font-feather text-brown/90 mb-2 text-center leading-tight mt-0 mb-4">
+        <Text className="text-body font-feather text-brown/90 mb-2 text-center leading-tight mt-0 mb-4">
           {getReflectionPrompt()}
         </Text>
 

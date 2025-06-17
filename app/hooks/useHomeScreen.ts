@@ -88,6 +88,7 @@ export const useHomeScreen = () => {
   const [showJournalContent, setShowJournalContent] = useState(false);
   const [showShareCard, setShowShareCard] = useState(false);
   const [riveError, setRiveError] = useState<any>(null);
+  const [riveSkinInitialized, setRiveSkinInitialized] = useState(false);
 
   // Store hooks
   const mode = useHomeStore((state) => state.mode);
@@ -264,7 +265,10 @@ export const useHomeScreen = () => {
 
       if (showDevotionalContent && riveRef.current?.setInputState) {
         try {
-          riveRef.current.setInputState('State Machine 1', 'Action-Number', 2);
+          if(riveRef.current){
+
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 2);
+          }
         } catch (_) {}
       }
     } else if (prevFinishReadingRef.current) {
@@ -367,15 +371,14 @@ export const useHomeScreen = () => {
   useEffect(() => {
     setRiveReady(true);
 
-    setTimeout(() => {
-      if (riveRef.current?.setInputState) {
-        try {
-          riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
-        } catch (e) {
-          console.log('Error setting default Rive skin:', e);
-        }
+    const fallbackTimeout = setTimeout(() => {
+      if (!riveSkinInitialized) {
+        console.log('Fallback: Setting skin to initialized after timeout');
+        setRiveSkinInitialized(true);
+
+
       }
-    }, 100);
+    }, 1000); // 1 second fallback
 
     if (isFirstLoad) {
       Animated.timing(firstLoadOpacity, {
@@ -387,9 +390,10 @@ export const useHomeScreen = () => {
     }
 
     return () => {
-      if (riveRef.current?.reset) riveRef.current.reset();
+      console.log('Cleaning up Home component');
+      clearTimeout(fallbackTimeout);
     };
-  }, []);
+  }, [riveSkinInitialized, isFirstLoad]);
 
   useEffect(() => {
     analytics.logEvent('HomeScreen_Viewed');
@@ -655,7 +659,7 @@ export const useHomeScreen = () => {
     }
   }, [devotionalData]);
 
-  const onCloseJournal = useCallback(() => {
+  const onCloseJournal = useCallback(({isCompleted}:{isCompleted?:boolean}) => {
     setReflectionCompleted(false);
     Animated.parallel([
       Animated.timing(devotionalCardOpacityAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
@@ -670,6 +674,17 @@ export const useHomeScreen = () => {
       if (riveRef.current?.setInputState) {
         riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
       }
+
+
+                    // Only reset reflection completion if the user didn't complete it
+                    if (!isCompleted) {
+                      console.log('🔍 JOURNAL CLOSE - Setting reflectionCompleted to false (cancelled)')
+                      setReflectionCompleted(false);
+                    } else {
+                      console.log('🔍 JOURNAL CLOSE - Keeping reflectionCompleted as true (completed)');
+                      // Ensure it stays true
+                      setReflectionCompleted(true);
+                    }
 
       Animated.parallel([
         Animated.timing(devotionalCardOpacityAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
@@ -805,6 +820,52 @@ export const useHomeScreen = () => {
                           }); 
   }
 
+    // Additional effect to ensure the lamb skin is always set to normal (0)
+  // This will run on component mount and whenever the riveRef or riveReady changes
+  useEffect(() => {
+    if (!riveRef.current || !riveReady || riveSkinInitialized) return;
+    
+    // Ensure skin is always set to normal (0) - only if not already initialized
+    try {
+      riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
+      console.log('Reapplied normal skin (0) to lamb');
+      setRiveSkinInitialized(true);
+    } catch (e) {
+      console.log('Error setting lamb skin:', e);
+      // Still mark as initialized to prevent blocking
+      setRiveSkinInitialized(true);
+    }
+  }, [riveRef, riveReady, riveSkinInitialized]);
+
+
+
+     // Handler for when Rive starts playing (indicates it's ready)
+     const handleRivePlay = () => {
+      // Only run once to prevent spam
+      if (riveSkinInitialized) return;
+      
+      console.log('Rive component started playing, setting skin to normal');
+      // Use a small timeout to ensure Rive is fully ready
+      setTimeout(() => {
+        if (riveRef.current && riveRef.current.setInputState) {
+          try {
+            // Set skin to normal (0) immediately when Rive starts playing
+            riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
+            console.log('Set Rive Skin-Number: 0 (normal skin) on play');
+            setRiveSkinInitialized(true);
+          } catch (e) {
+            console.log('Error setting Rive skin on play:', e);
+            // Still mark as initialized to prevent blocking
+            setRiveSkinInitialized(true);
+          }
+        } else {
+          // If setInputState is not available, still mark as initialized
+          setRiveSkinInitialized(true);
+        }
+      }, 50); // Small delay to ensure Rive is fully ready
+    };
+
+
   // Return all values and handlers needed by the component
   return {
     // State
@@ -938,5 +999,7 @@ export const useHomeScreen = () => {
     setShowJournalReader,
     setShowJournalContent,
     setShowPrayerContent,
+    handleRivePlay,
+    riveSkinInitialized
   };
 };

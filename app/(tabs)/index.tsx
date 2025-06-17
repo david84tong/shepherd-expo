@@ -153,7 +153,9 @@ export default function HomeScreen() {
     snapPoints,
     BASE_LAMB_SIZE,
     handleRiveAnimationError,
-    riveKey
+    riveKey,
+    riveSkinInitialized,
+    handleRivePlay
   } = useHomeScreen();
 
   // Load Rive assets
@@ -181,6 +183,7 @@ export default function HomeScreen() {
           height: '100%',
           alignItems: 'center',
           justifyContent: 'center',
+          opacity: riveSkinInitialized ? 1 : 0, // Hide until skin is initialized
         }}>
         <TouchableOpacity
           onPress={() => {
@@ -212,6 +215,7 @@ export default function HomeScreen() {
               stateMachineName="State Machine 1"
               autoplay
               onError={handleRiveAnimationError}
+              onPlay={handleRivePlay}
               style={{
                 width: '100%',
                 height: '100%',
@@ -224,6 +228,7 @@ export default function HomeScreen() {
               ref={riveRef}
               url={riveAssets[lambAssetIndex].uri!}
               artboardName={useArtboardName}
+              onPlay={handleRivePlay}
               stateMachineName="State Machine 1"
               autoplay
               onError={handleRiveAnimationError}
@@ -237,7 +242,7 @@ export default function HomeScreen() {
         </View>
       </View>
     );
-  }, [riveAssets, currentStateInput, riveKey, riveReady, isPro, lambName, isLevelPillExpanded]);
+  }, [riveAssets, currentStateInput, riveKey, riveReady, isPro, lambName, isLevelPillExpanded,riveSkinInitialized]);
 
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
@@ -731,14 +736,14 @@ export default function HomeScreen() {
               }
             ]}
             className='px-10 absolute items-center w-full justify-between'>
-            {/* {showDevotionalContent && (
-              <View className='flex-row items-center w-full justify-between'>
+            {showDevotionalContent && (
+              <View className='flex-row items-center w-full justify-between mr-12'>
                 <View className="flex-row gap-3">
                   <Image source={require('../../assets/icons/share.png')} style={{opacity:0.7}} />
                   <Image source={require('../../assets/icons/bookmark.png')} style={{opacity:0.7}} />
                 </View>
               </View>
-            )} */}
+            )}
             <View className="flex-row items-center justify-between w-full">
               {!showJournalContent && (
                 <Animated.View style={{ width: '10%' }}>
@@ -771,7 +776,7 @@ export default function HomeScreen() {
                   />
                 ) : showPrayerContent ? (
                   <BluePrimaryButton
-                    title="Complete Prayer"
+                    title="Amen"
                     width="100%"
                     disabled={isCompletePrayerDisabled}
                     onPress={() => {
