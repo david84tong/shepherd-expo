@@ -65,6 +65,7 @@ const initialState: UserDoc = {
   isProWithReferral: false,
   proExpiryDate: Timestamp.now(),
   completedMapPaths: [],
+  skins: [],
   setNotificationTime: async (time: string) => {
     // This will be overridden by the actual implementation
     console.warn('setNotificationTime not implemented in initial state');
@@ -249,6 +250,7 @@ export const useUserStore = create<UserStore>()(
       getLambName: () => get().lamb?.name || initialState.lamb.name,
       getLambSkin: () => get().lamb?.skin || initialState.lamb.skin,
       getHasSeenWidgetModal: () => get().hasSeenWidgetModal || false,
+      getSkins: () => get().skins || initialState.skins,
 
       // Setters
       setSpiritualGoal: (spiritualGoal) => set({ spiritualGoal }),
@@ -483,6 +485,28 @@ export const useUserStore = create<UserStore>()(
           }
           return { completedMapPaths: updatedPaths };
         }),
+
+      // Skins methods
+      setSkins: (skins: string[]) => {
+        set({ skins });
+        if (isAuthenticated()) {
+          updateUserData({ skins });
+        }
+      },
+
+      addSkin: (skin: string) => {
+        set((state) => {
+          const currentSkins = state.skins || [];
+          if (!currentSkins.includes(skin)) {
+            const updatedSkins = [...currentSkins, skin];
+            if (isAuthenticated()) {
+              updateUserData({ skins: updatedSkins });
+            }
+            return { skins: updatedSkins };
+          }
+          return state;
+        });
+      },
     }),
     {
       name: 'shepherd-user-storage',

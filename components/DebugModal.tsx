@@ -746,6 +746,34 @@ export function DebugButton() {
                   </View>
                 </View>
 
+                {/* Set Gems Button */}
+                <View className="mb-4">
+                  <Text className="font-feather text-base text-textPrimary mb-2">
+                    Set Gems
+                  </Text>
+                  <TouchableOpacity
+                    className="bg-[#E0FFE0] px-4 py-3 rounded-lg border border-[#4FD675] mb-1 w-32"
+                    onPress={() => {
+                      const userStore = useUserStore.getState();
+                      userStore.setGens(1000);
+                      
+                      // Force sync to Firestore
+                      syncWithFirestore();
+                      
+                      console.log('Debug: Set gems to 1000');
+                      
+                      Toast.show({
+                        type: 'success',
+                        text1: 'Gems Set!',
+                        text2: 'You now have 1000 gems 💎',
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary text-center">{`1000 💎`}</Text>
+                  </TouchableOpacity>
+                </View>
+
                 {/* Set Only Penalty Dates Buttons */}
                 <View className="mb-4">
                   <Text className="font-feather text-base text-textPrimary mb-2">

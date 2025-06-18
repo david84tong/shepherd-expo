@@ -26,6 +26,7 @@ interface HomeState {
   journalViewVisible: boolean;
   bottomSheetRef: React.RefObject<any> | null;
   riveRef: React.RefObject<any> | null;
+  currentSkin: string; // Track the currently equipped skin
 
   // Completion tracking states
   readingCompleted: boolean;
@@ -56,6 +57,7 @@ interface HomeState {
   setJournalViewVisible: (visible: boolean) => void;
   setBottomSheetRef: (ref: React.RefObject<any> | null) => void;
   setRiveRef: (ref: React.RefObject<any> | null) => void;
+  setCurrentSkin: (skin: string) => void;
 }
 
 /**
@@ -76,6 +78,7 @@ export const useHomeStore = create<HomeState>()(
       journalViewVisible: false,
       bottomSheetRef: null,
       riveRef: null,
+      currentSkin: '',
       // Default completion states
       readingCompleted: false,
       prayerCompleted: false,
@@ -112,6 +115,7 @@ export const useHomeStore = create<HomeState>()(
       setJournalViewVisible: (visible) => set({ journalViewVisible: visible }),
       setBottomSheetRef: (ref) => set({ bottomSheetRef: ref }),
       setRiveRef: (ref) => set({ riveRef: ref }),
+      setCurrentSkin: (skin) => set({ currentSkin: skin }),
       resetCompletionStates: () => {
         console.log('🔍 HOMESTORE - resetCompletionStates called - BEFORE reset:', {
           currentState: {
@@ -154,6 +158,7 @@ export const useHomeStore = create<HomeState>()(
         tappedPrayAboutVerse: state.tappedPrayAboutVerse,
         tappedReflectAboutVerse: state.tappedReflectAboutVerse,
         sawStreakToday: state.sawStreakToday,
+        currentSkin: state.currentSkin,
       }),
     }
   )

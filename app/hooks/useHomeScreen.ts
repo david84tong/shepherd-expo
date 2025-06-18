@@ -126,6 +126,7 @@ export const useHomeScreen = () => {
   const hasSeenWidgetModal = useUserStore((state) => state.getHasSeenWidgetModal());
   const setHasSeenWidgetModal = useUserStore((state) => state.setHasSeenWidgetModal);
   const setRiveRef = useHomeStore((state) => state.setRiveRef);
+  const currentSkin = useHomeStore((state) => state.currentSkin);
 
   // Animation refs
   const lambSizeAnim = useRef(new Animated.Value(256)).current;
@@ -247,6 +248,19 @@ export const useHomeScreen = () => {
   useEffect(() => {
     setRiveRef(riveRef);
   }, [riveRef, setRiveRef]);
+
+  // Apply current skin whenever it changes or rive becomes ready
+  useEffect(() => {
+    if (riveRef.current && currentSkin && riveSkinInitialized) {
+      const skinNumber = parseInt(currentSkin, 10);
+      try {
+        riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
+        console.log(`Applied skin change: ${skinNumber} (${currentSkin} skin)`);
+      } catch (error) {
+        console.log('Error applying skin change:', error);
+      }
+    }
+  }, [currentSkin, riveSkinInitialized]);
 
   useEffect(() => {
     if (isPrayPresses === 'true') handlePrayerPress();
@@ -910,18 +924,19 @@ export const useHomeScreen = () => {
          try {
            // Initialise skin once
            if (!riveSkinInitialized) {
-          if(showBgRive){
-           
-              if(riveRef.current){
-                riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
-              }
-      
-          }else{
-            riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
-          }
-             console.log('Set Rive Skin-Number: 0 (normal skin) on play');
+             // Get the current skin number from store, default to 0 if empty
+             const skinNumber = currentSkin ? parseInt(currentSkin, 10) : 0;
+             
+             if(showBgRive){
+               if(riveRef.current){
+                 riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
+               }
+             } else {
+               riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
+             }
+             console.log(`Set Rive Skin-Number: ${skinNumber} (${currentSkin || 'normal'} skin) on play`);
              setRiveSkinInitialized(true);
-            }
+           }
             // if(showDevotional){
             //   riveRef.current.setInputState('State Machine 1', 'Action-Number', 2);
             //   riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
