@@ -240,7 +240,7 @@ export const useHomeScreen = () => {
         } catch (e) {}
         setHasHandledDevotionalParam(false);
       };
-    }, [])
+    }, [showDevotional,hasHandledDevotionalParam])
   );
 
   // Set riveRef in home store so other components can access it
