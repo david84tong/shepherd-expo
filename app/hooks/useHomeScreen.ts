@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
 import auth from '@react-native-firebase/auth';
 import { useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 
 import {  useHomeStore } from '../stores/homeStore';
 import { usePathStore } from '../stores/pathStore';
@@ -53,6 +54,8 @@ export const useHomeScreen = () => {
   const navigation = useNavigation();
   const router = useRouter();
   const { isPrayPresses, isReflectPresses, showDevotional } = useLocalSearchParams();
+  console.log("showDevotional ==>",showDevotional);
+  
   const currentUser = auth().currentUser;
 
   // Refs
@@ -61,7 +64,7 @@ export const useHomeScreen = () => {
   const journalRef = useRef<any>(null);
   const bottomSheetRef = useRef<any>(null);
   const prevFinishReadingRef = useRef(false);
-  const riveKey = useRef('lamb-animation').current;
+  const riveKeyRef = useRef(Date.now());
   const lastActionInputRef = useRef<number | null>(null);
 
   // State
@@ -91,6 +94,7 @@ export const useHomeScreen = () => {
   const [showShareCard, setShowShareCard] = useState(false);
   const [riveError, setRiveError] = useState<any>(null);
   const [riveSkinInitialized, setRiveSkinInitialized] = useState(false);
+  const [hasHandledDevotionalParam, setHasHandledDevotionalParam] = useState(false);
   
   // Store hooks  
   const mode = useHomeStore((state) => state.mode);
@@ -218,14 +222,26 @@ export const useHomeScreen = () => {
   const isDarkContant = useMemo(() => new Date().getHours() >= 19, []);
 
   // Effects
-  useEffect(() => {
-    if (showDevotional === 'true') {
-      setTimeout(() => {
-        setShowDevotionalContent(true);
-        setDevotionalReaderVisible(true);
-      }, 100);
-    }
-  }, [showDevotional]);
+  useFocusEffect(
+    useCallback(() => {
+      if (showDevotional === 'true' && !hasHandledDevotionalParam) {
+        setTimeout(() => {
+          setShowDevotionalContent(true);
+          setDevotionalReaderVisible(true);
+          if(riveRef.current){
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 9);
+          }
+        }, 100);
+        setHasHandledDevotionalParam(true);
+      }
+
+      return () => {
+        // Remove showDevotional param and reset local state when screen loses focus
+        router?.setParams?.({ showDevotional: undefined });
+        setHasHandledDevotionalParam(false);
+      };
+    }, [showDevotional, hasHandledDevotionalParam])
+  );
 
   useEffect(() => {
     if (isPrayPresses === 'true') handlePrayerPress();
@@ -413,6 +429,27 @@ export const useHomeScreen = () => {
       setDevotionalData(data);
     });
   }, []);
+
+  // // Reset Rive and cache on screen unfocus, re-initialize on focus
+  // useFocusEffect(
+  //   useCallback(() => {
+  //     // On focus: re-initialize Rive key
+  //     // riveKeyRef.current = Date.now();
+  //     if(riveRef.current){
+  //       riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
+  //     }
+  //     // setRiveSkinInitialized(false);
+  //     // setRiveReady(false);
+  //     // // Add any additional cache/state reset logic here
+
+  //     // return () => {
+  //     //   // On unfocus: reset any cache/state
+  //     //   setRiveSkinInitialized(false);
+  //     //   setRiveReady(false);
+  //     //   // Add any additional cache/state reset logic here
+  //     // };
+  //   }, [])
+  // );
 
   // Handlers
   const handleDevotionalFinishPress = useCallback(() => {
@@ -866,11 +903,11 @@ console.log("RENDERING &&&&&&&&&&&&***********");
            // Initialise skin once
            if (!riveSkinInitialized) {
           if(showBgRive){
-            setTimeout(() => {
+           
               if(riveRef.current){
                 riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
               }
-            }, 1);
+      
           }else{
             riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
           }
@@ -1033,7 +1070,7 @@ console.log("RENDERING &&&&&&&&&&&&***********");
     snapPoints,
     panResponder,
     BASE_LAMB_SIZE,
-    riveKey,
+    riveKey: riveKeyRef.current,
     handleRiveAnimationError,
     onStreakPress,
     setShowShareCard,

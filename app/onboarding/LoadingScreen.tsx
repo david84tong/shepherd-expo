@@ -247,7 +247,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     if (!isOnboarding && !isCreatingDevotional) {
       if (devotionalStoreCurrentDevotional && currentStep === loadingPoints.length) {
         const timer = setTimeout(() => {
-          router.push({
+          router.navigate({
             pathname: '/(tabs)',
             params: { showDevotional: 'true' }
           });
