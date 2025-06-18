@@ -228,19 +228,16 @@ export const useHomeScreen = () => {
             riveRef.current.setInputState('State Machine 1', 'Action-Number', 9);
           }
         }, 100);
-        setHasHandledDevotionalParam(true);
-      }
-
-      return () => {
-        // Only try to set params if router is available and ready
-        try {
+        setTimeout(() => {
           if (router?.setParams) {
             router.setParams({ showDevotional: undefined });
           }
-        } catch (e) {}
-        setHasHandledDevotionalParam(false);
-      };
-    }, [showDevotional,hasHandledDevotionalParam])
+        }, 1000);
+        // setHasHandledDevotionalParam(true);
+      }
+
+      
+    }, [showDevotional])
   );
 
   // Set riveRef in home store so other components can access it
