@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
-import { Canvas, Circle, LinearGradient, vec, Rect } from '@shopify/react-native-skia'
+// import { Canvas, Circle, LinearGradient, vec, Rect } from '@shopify/react-native-skia'
 
 import {
   View,

@@ -47,9 +47,10 @@ const StoreSheet: React.FC<StoreSheetProps> = ({ storeSheetRef }) => {
 
   // Handle close
   const handleClose = useCallback(() => {
-    hideStoreSheet();
+    // Trigger the bottom sheet close animation first
     bottomSheetRef.current?.close();
-  }, [hideStoreSheet]);
+    // Don't call hideStoreSheet() here - let handleSheetChange do it when animation completes
+  }, []);
 
   // Custom backdrop renderer
   const renderBackdrop = useCallback(
@@ -71,12 +72,13 @@ const StoreSheet: React.FC<StoreSheetProps> = ({ storeSheetRef }) => {
     () => ({
       show: showSheet,
       close: () => {
-        hideStoreSheet();
+        // Trigger the bottom sheet close animation first
         bottomSheetRef.current?.close();
+        // Don't call hideStoreSheet() here - let handleSheetChange do it when animation completes
       },
       expand: () => bottomSheetRef.current?.expand(),
     }),
-    [showSheet, hideStoreSheet]
+    [showSheet]
   );
 
   return (

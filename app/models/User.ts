@@ -46,6 +46,7 @@ export interface UserDoc {
   completedReadings: Reading[];
   isProFromOnboarding: boolean;
   hasSeenWidgetModal: boolean;
+  skins: string[];
   // Progress data
   level: number;
   xp: number;
@@ -93,6 +94,7 @@ export interface UserStore extends UserDoc {
   getCompletedReflections: () => Reflection[];
   getCompletedPrayers: () => Prayer[];
   getCompletedReadings: () => Reading[];
+  getSkins: () => string[];
 
   // Getters for Lamb fields
   getLambLevel: () => number;
@@ -131,6 +133,8 @@ export interface UserStore extends UserDoc {
   addCompletedReflection: (reflection: Reflection) => void;
   addCompletedPrayer: (prayer: Prayer) => void;
   addCompletedReading: (reading: Reading) => void;
+  setSkins: (skins: string[]) => void;
+  addSkin: (skin: string) => void;
   setIsProFromOnboarding: (isProFromOnboarding: boolean) => void;
 
   // Setters for Lamb fields

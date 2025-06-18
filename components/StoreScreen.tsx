@@ -138,7 +138,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         
         <View className="flex-row p-4 h-48 justify-between">
           {/* Lamb Image - Full size, no background, clipped at bottom */}
-          <View className="w-48 h-full absolute left-0 bottom-0">
+          <View className="w-48 h-full absolute left-0 bottom-0 ml-2">
             <Image 
               source={item.image} 
               className="w-48 h-48 absolute bottom-[-20]" 
@@ -154,12 +154,12 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
             </Text>
 
             {/* Description */}
-            <Text className="font-din text-sm text-description -mb-3 h-16" numberOfLines={3}>
+            <Text className="font-din text-sm text-description -mb-2 h-16" numberOfLines={3}>
               {item.description}
             </Text>
 
             {/* Button */}
-            <View style={{marginBottom: 4}}>
+            <View style={{marginBottom: 4, marginTop: -4}}>
               {isLocked ? (
                 <PrimaryButton
                   title={`Unlocks lvl ${item.unlockLevel}`}
@@ -204,17 +204,19 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       
       {/* Header */}
-      <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
+      <View className="flex-row justify-center items-center px-6 pt-8 pb-4 relative">
+        {/* Back button - positioned absolutely on the left */}
         <TouchableOpacity
           onPress={onClose || (() => router.back())}
-          className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center">
-          <Feather name="arrow-left" size={20} color="#B89B4C" />
+          className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center absolute left-6">
+          <Feather name="x" size={20} color="#B89B4C" />
         </TouchableOpacity>
         
+        {/* Store title - centered */}
         <Text className="font-feather text-h2 text-textPrimary">{i18n.t('store')}</Text>
         
-        {/* Gems counter */}
-        <View className="flex-row items-center bg-lightYellow px-3 py-1.5 rounded-full">
+        {/* Gems counter - positioned absolutely on the right */}
+        <View className="flex-row items-center bg-lightYellow px-3 py-1.5 rounded-full absolute right-6">
           <Image source={gemIcon} className="w-5 h-5 mr-1" />
           <Text className="font-feather text-body text-textPrimary">{userGems}</Text>
         </View>
