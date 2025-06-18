@@ -228,15 +228,16 @@ export const useHomeScreen = () => {
             riveRef.current.setInputState('State Machine 1', 'Action-Number', 9);
           }
         }, 100);
-        setHasHandledDevotionalParam(true);
+        setTimeout(() => {
+          if (router?.setParams) {
+            router.setParams({ showDevotional: undefined });
+          }
+        }, 1000);
+        // setHasHandledDevotionalParam(true);
       }
 
-      return () => {
-        // Remove showDevotional param and reset local state when screen loses focus
-        router?.setParams?.({ showDevotional: undefined });
-        setHasHandledDevotionalParam(false);
-      };
-    }, [showDevotional, hasHandledDevotionalParam])
+      
+    }, [showDevotional])
   );
 
   // Set riveRef in home store so other components can access it
