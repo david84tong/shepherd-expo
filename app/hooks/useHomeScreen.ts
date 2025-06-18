@@ -123,6 +123,7 @@ export const useHomeScreen = () => {
   const setPrayerViewVisible = useHomeStore((state) => state.setPrayerViewVisible);
   const hasSeenWidgetModal = useUserStore((state) => state.getHasSeenWidgetModal());
   const setHasSeenWidgetModal = useUserStore((state) => state.setHasSeenWidgetModal);
+  const setRiveRef = useHomeStore((state) => state.setRiveRef);
 
   // Animation refs
   const lambSizeAnim = useRef(new Animated.Value(256)).current;
@@ -154,9 +155,6 @@ export const useHomeScreen = () => {
   const controlRowOpacity = useRef(new Animated.Value(0)).current;
   const pan = useRef(new Animated.ValueXY()).current;
   const translateY = useRef(new Animated.Value(0)).current;
-
-
-
 
   const MAX_HEARTS = 100;
   // Rive animation hook
@@ -224,6 +222,11 @@ export const useHomeScreen = () => {
       setDevotionalReaderVisible(true);
     }
   }, [showDevotional]);
+
+  // Set riveRef in home store so other components can access it
+  useEffect(() => {
+    setRiveRef(riveRef);
+  }, [riveRef, setRiveRef]);
 
   useEffect(() => {
     if (isPrayPresses === 'true') handlePrayerPress();
