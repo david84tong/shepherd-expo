@@ -91,8 +91,8 @@ export const useHomeScreen = () => {
   const [showShareCard, setShowShareCard] = useState(false);
   const [riveError, setRiveError] = useState<any>(null);
   const [riveSkinInitialized, setRiveSkinInitialized] = useState(false);
-
-  // Store hooks
+  
+  // Store hooks  
   const mode = useHomeStore((state) => state.mode);
   const setMode = useHomeStore((state) => state.setMode);
   const setDevotionalReaderVisible = useHomeStore((state) => state.setDevotionalReaderVisible);
@@ -220,8 +220,10 @@ export const useHomeScreen = () => {
   // Effects
   useEffect(() => {
     if (showDevotional === 'true') {
-      setShowDevotionalContent(true);
-      setDevotionalReaderVisible(true);
+      setTimeout(() => {
+        setShowDevotionalContent(true);
+        setDevotionalReaderVisible(true);
+      }, 100);
     }
   }, [showDevotional]);
 
@@ -418,6 +420,7 @@ export const useHomeScreen = () => {
   }, []);
 
   const handleDevotionalClose = useCallback(({ isPrayPresses }: { isPrayPresses?: boolean }) => {
+    
     if (devotionalReaderRef.current) {
       clearCustomDevotional();
       
@@ -450,7 +453,7 @@ export const useHomeScreen = () => {
         setShowPrayerView(true);
         setPrayerViewVisible(true);
       } else {
-        setRiveIdle();
+       
         setDevotionalReaderVisible(false);
         Animated.parallel([
           Animated.timing(devotionalCardOpacityAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
@@ -461,16 +464,15 @@ export const useHomeScreen = () => {
           setShowDevotionalContent(false);
           const currentMood = useUserStore.getState()?.getLambMood?.();
           const targetStateInput = moodToStateInput[currentMood] || 0;
+          setRiveIdle();
           setCurrentStateInput(targetStateInput);
           if (riveRef.current?.setInputState) {
             riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
           }
-
           Animated.parallel([
             Animated.timing(devotionalCardOpacityAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
             Animated.timing(riveArtboardOpacityAnim, { toValue: 1, duration: 500, useNativeDriver: true })
           ]).start(() => {
-            setShowDevotionalReader(false);
           });
         }, 250);
       }
@@ -850,23 +852,38 @@ export const useHomeScreen = () => {
   }, [riveRef, riveReady, riveSkinInitialized]);
 
 
+console.log("RENDERING &&&&&&&&&&&&***********");
 
      // Handler for when Rive starts playing (indicates it's ready)
      const handleRivePlay = () => {
-      console.log('Rive component started playing, ensuring correct skin & action state');
-
-      // Use a small timeout to ensure Rive is fully ready before sending inputs
-      setTimeout(() => {
-        if (!riveRef.current || !riveRef.current.setInputState) return;
-
-        try {
-          // Initialise skin once
-          if (!riveSkinInitialized) {
+       console.log('Rive component started playing, ensuring correct skin & action state');
+       
+       // Use a small timeout to ensure Rive is fully ready before sending inputs
+       setTimeout(() => {
+         if (!riveRef.current || !riveRef.current.setInputState) return;
+         
+         try {
+           // Initialise skin once
+           if (!riveSkinInitialized) {
+          if(showBgRive){
+            setTimeout(() => {
+              if(riveRef.current){
+                riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
+              }
+            }, 1);
+          }else{
             riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
-            console.log('Set Rive Skin-Number: 0 (normal skin) on play');
-            setRiveSkinInitialized(true);
           }
+             console.log('Set Rive Skin-Number: 0 (normal skin) on play');
+             setRiveSkinInitialized(true);
+            }
+            // if(showDevotional){
+            //   riveRef.current.setInputState('State Machine 1', 'Action-Number', 2);
+            //   riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
 
+            // }
+            
+          
           // Determine which action should be active
           let targetAction = 0;
           if (showDevotionalContent) {
@@ -1037,6 +1054,7 @@ export const useHomeScreen = () => {
     setShowPrayerContent,
     handleRivePlay,
     riveSkinInitialized,
-    MAX_HEARTS
+    MAX_HEARTS,
+    showDevotional
   };
 };

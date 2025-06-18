@@ -49,6 +49,11 @@ interface UIState {
   hideWidgetPrompt: () => void;
   showWidgetGuide: () => void;
   hideWidgetGuide: () => void;
+
+  showDevotionalContent: boolean;
+  tabBarVisible: boolean;
+  setShowDevotionalContent: (value: boolean) => void;
+  setTabBarVisible: (visible: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -127,4 +132,9 @@ export const useUIStore = create<UIState>((set) => ({
     console.log('[UIStore] Hiding widget guide');
     set({ isWidgetGuideVisible: false });
   },
+
+  showDevotionalContent: false,
+  tabBarVisible: true,
+  setShowDevotionalContent: (value) => set({ showDevotionalContent: value }),
+  setTabBarVisible: (visible) => set({ tabBarVisible: visible }),
 })); 

@@ -102,7 +102,13 @@ Make sure your response is valid JSON format.`
     // Parse the JSON response from AI
     let devotionalData: DevotionalAIResponse;
     try {
-      devotionalData = JSON.parse(data.content);
+      if (data.content && data.content.startsWith('{') && data.content.endsWith('}')) {
+        devotionalData = JSON.parse(data.content);
+      } else {
+        throw new Error('AI response is not in valid JSON format');
+      }
+
+      
     } catch (parseError) {
       console.error('Failed to parse AI response as JSON:', data.content);
       // Fallback: try to extract content manually or provide defaults

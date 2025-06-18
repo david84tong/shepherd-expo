@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -50,35 +50,39 @@ interface LoadingScreenProps {
 
 export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseText: propVerseText, reference: propReference }: LoadingScreenProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [anim, setAnim] = useState(0);
   const animRef = useRef(0);
   const router = useRouter();
   const params = useLocalSearchParams();
+  const [hasStarted, setHasStarted] = useState(false);
 
-  // Stabilize critical route-derived values so they don't change mid-loading
-  const [isOnboarding] = useState(() => {
-    // If we're coming from a swipe action, we should not be in onboarding mode
+  // Stabilize critical route-derived values
+  const isOnboarding = useMemo(() => {
     if (params.fromSwipe === 'true') {
       return false;
     }
-    // Otherwise use the prop or param value
     return params.isOnboarding !== undefined ? params.isOnboarding === 'true' : propIsOnboarding;
-  });
+  }, [params.fromSwipe, params.isOnboarding, propIsOnboarding]);
 
-  const [verseText] = useState<string | undefined>(
-    (params.verseText as string | undefined) || propVerseText
-  );
-  const [reference] = useState<string | undefined>(
-    (params.reference as string | undefined) || propReference
+  const verseText = useMemo(() => 
+    (params.verseText as string | undefined) || propVerseText,
+    [params.verseText, propVerseText]
   );
 
-  // Devotional store actions (only used when !isOnboarding)
+  const reference = useMemo(() => 
+    (params.reference as string | undefined) || propReference,
+    [params.reference, propReference]
+  );
+
+  // Devotional store actions
   const isCreatingDevotional = useDevotionalStore((s) => s.isCreatingDevotional);
   const devotionalStoreCurrentDevotional = useDevotionalStore((s) => s.currentDevotional);
   const devotionalError = useDevotionalStore((s) => s.error);
 
-  // Use appropriate loading points based on isOnboarding
-  const loadingPoints = isOnboarding ? LOADING_POINTS : DEVOTIONAL_LOADING_POINTS;
+  // Use appropriate loading points
+  const loadingPoints = useMemo(() => 
+    isOnboarding ? LOADING_POINTS : DEVOTIONAL_LOADING_POINTS,
+    [isOnboarding]
+  );
 
   // Animation values for checklist items
   const animValuesRef = useRef(
@@ -87,120 +91,178 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       .map(() => new Animated.Value(0))
   );
 
-  // Track which steps have been animated to prevent double animations
+  // Track which steps have been animated
   const animatedStepsRef = useRef(new Set<number>());
 
-  // Reset animated steps tracking when component mounts or loading type changes
-  useEffect(() => {
-    animatedStepsRef.current.clear();
-  }, [isOnboarding]);
-
-  // Reset animated steps tracking when currentStep resets to 0
-  useEffect(() => {
-    if (currentStep === 0) {
-      animatedStepsRef.current.clear();
-    }
-  }, [currentStep]);
-
-  // Spinner rotation animation value (only one, for the current loading item)
+  // Spinner rotation animation
   const spinnerAnim = useRef(new Animated.Value(0)).current;
+
+  // Progress animation
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const CIRCLE_RADIUS = 52;
+  const CIRCLE_CIRCUM = 2 * Math.PI * CIRCLE_RADIUS;
+
+  // Cleanup function
   useEffect(() => {
-    spinnerAnim.setValue(0); // Reset to 0 on each new step
-    const loop = Animated.loop(
+    return () => {
+      setHasStarted(false);
+      animatedStepsRef.current.clear();
+    };
+  }, []);
+
+  // Start continuous spinner animation
+  useEffect(() => {
+    if (!hasStarted) return;
+
+    const spinnerLoop = Animated.loop(
       Animated.timing(spinnerAnim, {
         toValue: 1,
-        duration: 1200, // Smoother
+        duration: 1200,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     );
-    loop.start();
-    return () => loop.stop();
-  }, [currentStep]);
+    spinnerLoop.start();
+    return () => spinnerLoop.stop();
+  }, [hasStarted, spinnerAnim]);
 
-  // Animate glow
+  // Animate glow effect using requestAnimationFrame
   useEffect(() => {
-    let frame: number;
-    const animate = () => {
-      animRef.current += 0.02;
-      setAnim(animRef.current);
-      frame = requestAnimationFrame(animate);
+    let frameId: number;
+    let lastTime = performance.now();
+    const targetFPS = 60;
+    const frameInterval = 1000 / targetFPS;
+
+    const animate = (currentTime: number) => {
+      const deltaTime = currentTime - lastTime;
+      
+      if (deltaTime >= frameInterval) {
+        animRef.current += 0.02;
+        lastTime = currentTime;
+      }
+      
+      frameId = requestAnimationFrame(animate);
     };
-    animate();
-    return () => cancelAnimationFrame(frame);
+
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
   }, []);
 
-  // Step-by-step checklist progression
+  // Initialize animation sequence
   useEffect(() => {
+    if (!hasStarted) {
+      const startTimer = setTimeout(() => {
+        setHasStarted(true);
+        setCurrentStep(0);
+      }, 100);
+      return () => clearTimeout(startTimer);
+    }
+  }, [hasStarted]);
+
+  // Handle step progression
+  useEffect(() => {
+    if (!hasStarted) return;
+
+    let timer: NodeJS.Timeout;
+
     if (isOnboarding) {
-      // Original onboarding flow
       if (currentStep < loadingPoints.length) {
-        const timer = setTimeout(() => {
-          setCurrentStep((step) => step + 1);
-        }, 1000); // 1 second per checklist step (4 steps = 4 seconds)
-        return () => clearTimeout(timer);
+        timer = setTimeout(() => {
+          setCurrentStep(prev => prev + 1);
+        }, 1000);
       } else {
-        // All steps complete, navigate after a delay to avoid render conflicts
-        const navigationTimer = setTimeout(() => {
+        timer = setTimeout(() => {
           router.replace({ pathname: '/PricingScreen', params: { animateFromBottom: 'true' } });
         }, 600);
-        return () => clearTimeout(navigationTimer);
       }
     } else {
-      // Devotional creation flow - progress based on AI creation status
-      if (isCreatingDevotional && currentStep < loadingPoints.length - 1) {
-        const timer = setTimeout(() => {
-          setCurrentStep((step) => step + 1);
-        }, 1500); // Slower progression for AI creation
-        return () => clearTimeout(timer);
-      } else if (!isCreatingDevotional && devotionalStoreCurrentDevotional && currentStep < loadingPoints.length) {
-        // AI creation complete, finish the progress quickly
-        setCurrentStep(loadingPoints.length);
+      // For devotional creation
+      if (isCreatingDevotional) {
+        // Continue through steps while creating
+        if (currentStep < loadingPoints.length - 1) {
+          timer = setTimeout(() => {
+            setCurrentStep(prev => prev + 1);
+          }, 1500);
+        }
+      } else if (devotionalStoreCurrentDevotional) {
+        // When devotional is created, ensure we complete all steps
+        if (currentStep < loadingPoints.length - 1) {
+          timer = setTimeout(() => {
+            setCurrentStep(prev => prev + 1);
+          }, 1500);
+        } else if (currentStep === loadingPoints.length - 1) {
+          // Complete the final step
+          timer = setTimeout(() => {
+            setCurrentStep(loadingPoints.length);
+          }, 1500);
+        }
       }
     }
-  }, [currentStep, router, isOnboarding, loadingPoints.length, isCreatingDevotional, devotionalStoreCurrentDevotional]);
 
-  // Animate the current checklist item when it appears
+    return () => clearTimeout(timer);
+  }, [currentStep, hasStarted, isOnboarding, isCreatingDevotional, devotionalStoreCurrentDevotional, loadingPoints.length, router]);
+
+  // Animate checklist items
   useEffect(() => {
-    if (currentStep < loadingPoints.length && !animatedStepsRef.current.has(currentStep)) {
-      // Mark this step as animated
+    if (!hasStarted || currentStep >= loadingPoints.length) return;
+
+    if (!animatedStepsRef.current.has(currentStep)) {
       animatedStepsRef.current.add(currentStep);
-      
-      // Reset the animation value to 0 first to prevent double animations
       animValuesRef.current[currentStep].setValue(0);
-      
-      // Then animate to 1
       Animated.timing(animValuesRef.current[currentStep], {
         toValue: 1,
         duration: 400,
         useNativeDriver: true,
       }).start();
     }
-  }, [currentStep]);
+  }, [currentStep, hasStarted, loadingPoints.length]);
 
-  // Animated progress value for smooth circular progress bar
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const CIRCLE_RADIUS = 52;
-  const CIRCLE_CIRCUM = 2 * Math.PI * CIRCLE_RADIUS;
-
+  // Update progress animation
   useEffect(() => {
+    if (!hasStarted) return;
+
+    // Calculate progress based on current step
+    const progress = currentStep / loadingPoints.length;
+    
     Animated.timing(progressAnim, {
-      toValue: currentStep / loadingPoints.length,
+      toValue: progress,
       duration: 700,
       easing: Easing.out(Easing.cubic),
-      useNativeDriver: false, // SVG props can't use native driver
+      useNativeDriver: false,
     }).start();
-  }, [currentStep]);
+  }, [currentStep, hasStarted, loadingPoints.length, progressAnim]);
 
-  // Build checklist state (stepper style)
-  const checklist = loadingPoints.map((label, idx) => {
-    if (idx < currentStep) return { label, status: 'done' };
-    if (idx === currentStep) return { label, status: 'loading' };
-    return { label, status: 'pending' };
-  }).slice(0, currentStep + 1);
+  // Build checklist state
+  const checklist = useMemo(() => 
+    loadingPoints.map((label, idx) => {
+      if (idx < currentStep) return { label, status: 'done' };
+      if (idx === currentStep) return { label, status: 'loading' };
+      return { label, status: 'pending' };
+    }).slice(0, Math.max(1, currentStep + 1)),
+    [loadingPoints, currentStep]
+  );
+
+  // Monitor devotional creation progress
+  useEffect(() => {
+    if (!isOnboarding && !isCreatingDevotional) {
+      if (devotionalStoreCurrentDevotional && currentStep === loadingPoints.length) {
+        const timer = setTimeout(() => {
+          router.push({
+            pathname: '/(tabs)',
+            params: { showDevotional: 'true' }
+          });
+        }, 1000);
+        return () => clearTimeout(timer);
+      } else if (devotionalError) {
+        const timer = setTimeout(() => {
+          router.replace('/');
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isOnboarding, isCreatingDevotional, devotionalStoreCurrentDevotional, devotionalError, router, currentStep, loadingPoints.length]);
 
   // --- GLOWING BORDER EFFECT ---
-  // We'll use a ref to keep track of the animation frame for Three.js
   const glViewRef = useRef<{ stop: () => void } | null>(null);
   const threeFrameRef = useRef<number | null>(null);
 
@@ -237,32 +299,32 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           }
         `,
         fragmentShader: `
-  precision highp float;
-  uniform float u_time;
-  uniform vec2 u_resolution;
-  uniform vec3 u_color;
-  varying vec2 vUv;
-  
-  float noise(vec2 p) {
-    return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453);
-  }
-  
+          precision highp float;
+          uniform float u_time;
+          uniform vec2 u_resolution;
+          uniform vec3 u_color;
+          varying vec2 vUv;
+          
+          float noise(vec2 p) {
+            return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453);
+          }
+          
   // Animated side glow (left & right)
-  float edgeGlow(float x, float y, float time, float edge) {
-    float spotY = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
-    float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
-    float edgeDist = abs(x - edge);
-    float yDist = abs(y - spotY);
-    float spot = exp(-pow(yDist / spotWidth, 2.0) * 6.0);
-    float flicker = 0.6 + 0.4 * noise(vec2(y * 10.0, time * 0.5 + edge * 10.0));
-    return smoothstep(0.12, 0.0, edgeDist) * (0.5 + 0.8 * spot * flicker);
-  }
-  
+          float edgeGlow(float x, float y, float time, float edge) {
+            float spotY = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
+            float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
+            float edgeDist = abs(x - edge);
+            float yDist = abs(y - spotY);
+            float spot = exp(-pow(yDist / spotWidth, 2.0) * 6.0);
+            float flicker = 0.6 + 0.4 * noise(vec2(y * 10.0, time * 0.5 + edge * 10.0));
+            return smoothstep(0.12, 0.0, edgeDist) * (0.5 + 0.8 * spot * flicker);
+          }
+          
   // Static glow for top and bottom
-  float staticGlow(float y, float edge) {
-    float edgeDist = abs(y - edge);
-    return smoothstep(0.06, 0.0, edgeDist);
-  }
+          float staticGlow(float y, float edge) {
+            float edgeDist = abs(y - edge);
+            return smoothstep(0.06, 0.0, edgeDist);
+          }
   
   float verticalEdgeGlow(float x, float y, float time, float edge) {
     float spotX = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
@@ -273,32 +335,32 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     float flicker = 0.6 + 0.4 * noise(vec2(x * 10.0, time * 0.5 + edge * 10.0));
     return smoothstep(0.08, 0.0, edgeDist) * (0.5 + 0.5 * spot * flicker);
   }
-  
-  void main() {
-    float t = u_time;
+          
+          void main() {
+            float t = u_time;
   
     // Center fading glow
-    float edgeDist = min(vUv.x, 1.0 - vUv.x);
-    float n = noise(vUv * 10.0 + t * 0.2);
-    float glow = smoothstep(0.0, 0.25 + 0.08 * sin(t + n * 6.0), edgeDist);
-    float intensity = (1.0 - glow) * (0.7 + 0.3 * sin(t + vUv.x * 10.0));
-    float centerAlpha = pow(1.0 - edgeDist, 2.5) * intensity;
-  
+            float edgeDist = min(vUv.x, 1.0 - vUv.x);
+            float n = noise(vUv * 10.0 + t * 0.2);
+            float glow = smoothstep(0.0, 0.25 + 0.08 * sin(t + n * 6.0), edgeDist);
+            float intensity = (1.0 - glow) * (0.7 + 0.3 * sin(t + vUv.x * 10.0));
+            float centerAlpha = pow(1.0 - edgeDist, 2.5) * intensity;
+            
     // Animated left/right
-    float leftGlow = edgeGlow(vUv.x, vUv.y, t, 0.0);
-    float rightGlow = edgeGlow(vUv.x, vUv.y, t, 1.0);
+            float leftGlow = edgeGlow(vUv.x, vUv.y, t, 0.0);
+            float rightGlow = edgeGlow(vUv.x, vUv.y, t, 1.0);
   
     // Static top/bottom
-    float bottomGlow = staticGlow(vUv.y, 0.0);
-    float topGlow = staticGlow(vUv.y, 1.0);
-  
+            float bottomGlow = staticGlow(vUv.y, 0.0);
+            float topGlow = staticGlow(vUv.y, 1.0);
+            
     // Combine
-    float sideAlpha = leftGlow + rightGlow;
-    float verticalAlpha = bottomGlow + topGlow;
-    float finalAlpha = centerAlpha + sideAlpha + verticalAlpha;
-  
-    gl_FragColor = vec4(u_color, finalAlpha);
-  }
+            float sideAlpha = leftGlow + rightGlow;
+            float verticalAlpha = bottomGlow + topGlow;
+            float finalAlpha = centerAlpha + sideAlpha + verticalAlpha;
+            
+            gl_FragColor = vec4(u_color, finalAlpha);
+          }
   
   
         `,
@@ -329,7 +391,6 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           if (threeFrameRef.current) {
             cancelAnimationFrame(threeFrameRef.current);
           }
-          // Clean up Three.js resources
           if (geometry) geometry.dispose();
           if (material) material.dispose();
           if (plane) scene?.remove(plane);
@@ -348,30 +409,6 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       }
     };
   }, []);
-
-  // Monitor devotional creation progress when not onboarding
-  useEffect(() => {
-    // The AI devotional creation is already started from NewBibleReader
-    // We just need to monitor its progress here
-    if (!isOnboarding && !isCreatingDevotional) {
-      if (devotionalStoreCurrentDevotional) {
-        // Devotional creation is complete, navigate to home with devotional reader
-        setTimeout(() => {
-          router.replace({
-            pathname: '/(tabs)',
-            params: {
-              showDevotional: 'true'
-            }
-          });
-        }, 1000); // Small delay to show completion
-      } else if (devotionalError) {
-        // Error occurred during devotional creation
-        setTimeout(() => {
-          router.replace('/'); // Navigate back to home without devotional
-        }, 2000);
-      }
-    }
-  }, [isOnboarding, isCreatingDevotional, devotionalStoreCurrentDevotional, devotionalError, router]);
 
   return (
     <View
@@ -424,7 +461,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           <Text
             className="absolute top-0 left-0 w-[120px] h-[120px] text-center text-2xl font-feather text-accentGold flex items-center justify-center"
             style={{ lineHeight: 120, color: ORANGE }}>
-            {Math.round((currentStep / loadingPoints.length) * 100)}%
+            {Math.min(Math.round((currentStep / loadingPoints.length) * 100), 100)}%
           </Text>
         </View>
 
@@ -444,13 +481,13 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             <Animated.View
               key={item.label}
               style={{
-                opacity: animValuesRef.current[idx],
+                opacity: hasStarted && idx > 0 ? animValuesRef.current[idx] : 1, // Hide until animation starts
                 transform: [
                   {
-                    translateY: animValuesRef.current[idx].interpolate({
+                    translateY: idx > 0 ? animValuesRef.current[idx].interpolate({
                       inputRange: [0, 1],
                       outputRange: [24, 0],
-                    }),
+                    }) : 0,
                   },
                 ],
               }}
@@ -458,7 +495,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
               {item.status === 'done' && (
                 <Ionicons name="checkmark-circle" size={24} color={ORANGE} className="mr-2" />
               )}
-              {item.status === 'loading' && idx === currentStep && (
+              {item.status === 'loading' && (
                 <Animated.View
                   style={{
                     marginRight: 8,
@@ -480,25 +517,10 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
                       strokeWidth="3"
                       fill="none"
                       strokeDasharray="60"
-                      strokeDashoffset={24}
+                      strokeDashoffset="24"
                     />
                   </Svg>
                 </Animated.View>
-              )}
-              {/* If not the current loading item, show static spinner (no animation) for safety */}
-              {item.status === 'loading' && idx !== currentStep && (
-                <Svg height="24" width="24" style={{ marginRight: 8 }}>
-                  <Circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke={ORANGE}
-                    strokeWidth="3"
-                    fill="none"
-                    strokeDasharray="60"
-                    strokeDashoffset={24}
-                  />
-                </Svg>
               )}
               <Text
                 className={`text-lg font-din ${item.status === 'done' || item.status === 'loading' ? '' : 'text-gray-400'}`}

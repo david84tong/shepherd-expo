@@ -40,6 +40,7 @@ import BottomControls from '../components/BottomControls';
 import i18n from '../utils/i18n';
 import { useLanguageStore } from '../stores/languageStore';
 import { useEffect } from 'react';
+import { useUIStore } from '../stores/uiStore';
 
 // Custom toast config with explicit styling
 const toastConfig = CustomToast;
@@ -73,7 +74,6 @@ export default function HomeScreen() {
     isLevelPillExpanded,
     showHeartsModal,
     showExplainerModal,
-    showDevotionalContent,
     showJournalContent,
     showShareCard,
     isDarkContant,
@@ -125,6 +125,7 @@ export default function HomeScreen() {
     showGlow,
     levelInfo,
     buttonTitle,
+    showDevotionalContent,
 
     // Handlers
     handleDevotionalFinishPress,
@@ -265,7 +266,8 @@ export default function HomeScreen() {
         backgroundColor="transparent"
         barStyle={isDarkContant ? 'light-content' : 'dark-content'}
       />
-      <Animated.View className="flex-1" style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}>
+     <View className='flex-1 bg-[#FDEBB8]'>
+     <Animated.View className="flex-1" style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}>
         {/* Background Layers */}
         <Animated.View
           style={[
@@ -768,7 +770,7 @@ export default function HomeScreen() {
             onClose={() => setShowExplainerModal(false)}
           />
         </SafeAreaView>
-      </Animated.View>
+      </Animated.View></View>
 
       <FullScreenShareCard visible={showShareCard} devotionalData={devotionalData} onClose={() => setShowShareCard(false)} onShare={handleShare} />
 
