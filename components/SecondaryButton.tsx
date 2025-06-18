@@ -48,15 +48,19 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
       },
     }),
   } : {};
-  const handlePress = () => {
+
+  const handlePressIn = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
-
     if (disabled) {
-      useSoundStore.getState()?.playDisabledSound()
-      return
+      useSoundStore.getState()?.playDisabledSound();
+    } else {
+      useSoundStore.getState()?.playButtonSound();
     }
-    useSoundStore.getState()?.playButtonSound()
+    setIsPressed(true);
+  };
 
+  const handlePress = () => {
+    if (disabled) return;
     analytics.logEvent(`${title}_Tapped`);
     if (onPress) onPress();
   };
@@ -70,7 +74,7 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
         `}
         style={{ paddingVertical: responsiveHeight(2.5), paddingHorizontal: responsiveWidth(5), minHeight: responsiveHeight(11), elevation: 2 }}
         onPress={handlePress}
-        onPressIn={() => setIsPressed(true)}
+        onPressIn={handlePressIn}
         onPressOut={() => setIsPressed(false)}
         disabled={disabled}
       >

@@ -94,14 +94,19 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     }
   };
 
-  // Handle press with haptic feedback and sound
-  const handlePress = () => {
-    triggerHaptic();
+  // Play sound instantly on press in
+  const handlePressIn = () => {
     if (disabled) {
       useSoundStore.getState()?.playDisabledSound();
     } else {
       useSoundStore.getState()?.playButtonSound();
     }
+    triggerHaptic();
+    setIsPressed(true);
+  };
+
+  // Handle press for analytics and onPress
+  const handlePress = () => {
     if (disabled) return;
     analytics.logEvent(`${title}_Tapped`);
     onPress();
@@ -159,7 +164,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
           }
         ]}
         onPress={handlePress}
-        onPressIn={() => setIsPressed(true)}
+        onPressIn={handlePressIn}
         onPressOut={() => setIsPressed(false)}>
         {loading ? (
           <ActivityIndicator size="small" color="#FCD34D" />
