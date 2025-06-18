@@ -1,33 +1,28 @@
-import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo, memo } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  Modal,
   TouchableWithoutFeedback,
   SafeAreaView,
   StyleSheet,
   ScrollView,
-  Switch,
   Alert,
   Dimensions,
   Image,
-  StatusBar,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Slider from '@react-native-community/slider';
 import { fetchChapter, Verse, ChapterResponse } from '~/app/api/bible';
 import { usePathStore } from '~/app/stores/pathStore';
 import { AntDesign, Feather, FontAwesome6, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Reanimated, {
-  FadeIn,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
   Easing,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { Animated as RNAnimated, Easing as RNEasing } from 'react-native';
+import { Animated as RNAnimated } from 'react-native';
 import Toast from 'react-native-toast-message';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { useUIStore } from '~/app/stores/uiStore';
@@ -61,6 +56,8 @@ import { ImageBackground } from 'expo-image';
 import { IS_ANDROID } from '~/app/utils/utils';
 import i18n from '~/app/utils/i18n';
 import { useLanguageStore } from '~/app/stores/languageStore';
+import { ReaderSettings } from '~/app/stores/readerSettingsStore';
+
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
 const MIN_FONT_SIZE = 14;
@@ -280,6 +277,8 @@ interface NewBibleReaderProps {
   onHandoffChapterData?: (data: ChapterResponse | null) => void; // Handoff chapter data to parent
   onOpenSettings?: () => void; // Open shared settings sheet from parent
   isBibleReaderScreen?: boolean; // Whether this is the BibleReader screen
+  readerSettings: ReaderSettings;
+  THEME_COLORS: typeof THEME_COLORS;
 
 
 
@@ -393,21 +392,20 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   translation = 'ESV',
   isInPathMode = false,
   onNavigateBack,
-  onSwitchToDefaultReader,
-  onHandoffChapterData,
   onOpenSettings,
   isBibleReaderScreen = false,
+  readerSettings,
+  THEME_COLORS,
 }): JSX.Element => {
+  const { fontSize, theme: currentTheme, lineHeightPreset, useCardView } = readerSettings;
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
   const [currentBookId, setCurrentBookId] = useState(bookId);
   const [currentChapter, setCurrentChapter] = useState(chapter);
   const scrollViewRef = useRef<ScrollView>(null);
   const autoRenderTimer = useRef<NodeJS.Timeout | null>(null);
-  const [showTapGuidance, setShowTapGuidance] = useState(true);
   const [showSwipeGuidance, setShowSwipeGuidance] = useState(true);
-  const [tapCount, setTapCount] = useState(0);
-  const [useDefaultReader, setUseDefaultReader] = useState(false);
   const [isFadingToChat, setIsFadingToChat] = useState(false);
 
   // Add initial render ref
@@ -438,28 +436,22 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const currentPath = usePathStore((s) => s.currentPath);
   const setSavedReading = usePathStore((s) => s.setSavedReading);
 
-  // Reference for the header container
-  const headerContainerRef = useRef<View>(null);
-  const [headerHeight, setHeaderHeight] = useState(0);
-
   // Add state to track scrolling
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
 
-  const [fontSize, setFontSize] = useState<number>(DEFAULT_FONT_SIZE);
-  const [lineHeightPreset, setLineHeightPreset] = useState<LineHeightPreset>('REGULAR');
-  const [currentTheme, setCurrentTheme] = useState<ThemeType>('light');
-  const [isSettingsModalVisible, setIsSettingsModalVisible] = useState(false);
-  const slideAnim = useRef(new RNAnimated.Value(0)).current;
+  // Memoize theme to prevent recalculation on every render
+  const theme = useMemo(() => {
+    return THEME_COLORS[currentTheme as keyof typeof THEME_COLORS];
+  }, [THEME_COLORS, currentTheme]);
 
-  const theme = THEME_COLORS[currentTheme];
-  const verseTextStyle = {
-    fontSize: fontSize,
-    lineHeight: LINE_HEIGHT_PRESETS[lineHeightPreset],
-    color: theme.text,
-  };
+  // Memoize verse text style to prevent recalculation on every render
+  const verseTextStyle = useMemo(() => {
+    const lineHeightMultiplier = LINE_HEIGHT_PRESETS[lineHeightPreset];
+    const calculatedLineHeight = Math.round(fontSize * lineHeightMultiplier / 16);
+    return { fontSize: fontSize, lineHeight: calculatedLineHeight };
+  }, [fontSize, lineHeightPreset]);
 
-  const showBookChapterSelector = useUIStore((state) => state.showBookChapterSelector);
 
   const hasFilteredRef = useRef(false);
 
@@ -496,33 +488,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   useEffect(() => {
     const loadSettings = async () => {
       try {
-        const savedSize = await AsyncStorage.getItem(FONT_SIZE_KEY);
-        if (savedSize !== null) setFontSize(parseInt(savedSize, 10));
-
-        const savedLineHeightValue = await AsyncStorage.getItem(LINE_HEIGHT_KEY);
-        if (savedLineHeightValue !== null) {
-          const preset = Object.keys(LINE_HEIGHT_PRESETS).find(
-            (key) => LINE_HEIGHT_PRESETS[key as LineHeightPreset] === parseInt(savedLineHeightValue)
-          ) as LineHeightPreset | undefined;
-          if (preset) setLineHeightPreset(preset);
-        }
-
-        // Load tap guidance preference
-        const hideTapGuidance = await AsyncStorage.getItem(TAP_GUIDANCE_KEY);
-        if (hideTapGuidance === 'true') {
-          setShowTapGuidance(false);
-        }
-
-        // Load swipe guidance preference
         const hideSwipeGuidance = await AsyncStorage.getItem(SWIPE_GUIDANCE_KEY);
         if (hideSwipeGuidance === 'true') {
           setShowSwipeGuidance(false);
-        }
-
-        // Load reader preference
-        const readerPref = await AsyncStorage.getItem(READER_PREFERENCE_KEY);
-        if (readerPref === 'default') {
-          setUseDefaultReader(true);
         }
       } catch (e) {
         console.error('Failed to load settings from AsyncStorage', e);
@@ -822,6 +790,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     reflectionCompleted,
     setSuccessType,
   ]);
+console.log("RENDERING");
 
   // -----------------------------
 
@@ -829,105 +798,22 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     // This function is now empty since we're using scroll instead of tap
   }, []);
 
-  const animatedProgressStyle = useAnimatedStyle(() => {
-    return { width: `${progressValue.value * 100}%` };
-  });
 
   const handlePresentSettingsModal = useCallback(() => {
     // If a parent-provided settings handler exists, use it to open the
     // shared sheet so both readers reference one source of truth.
-    if (onOpenSettings) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      onOpenSettings();
-      return;
-    }
+      onOpenSettings?.();
 
-    // Fallback to legacy local modal when no parent handler is supplied.
-    setIsSettingsModalVisible(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    RNAnimated.timing(slideAnim, {
-      toValue: 1,
-      duration: 300,
-      useNativeDriver: true,
-      easing: RNEasing.out(RNEasing.cubic),
-    }).start();
-  }, [slideAnim, onOpenSettings]);
 
-  const handleCloseSettingsModal = useCallback(() => {
-    RNAnimated.timing(slideAnim, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true,
-      easing: RNEasing.in(RNEasing.cubic),
-    }).start(() => {
-      setIsSettingsModalVisible(false);
-    });
-  }, [slideAnim]);
+    // If no parent handler is provided, do nothing instead of trying to show a local modal
+    console.warn('No settings handler provided to NewBibleReader');
+  }, [onOpenSettings]);
 
-  const updateFontSize = async (newSize: number) => {
-    if (newSize >= MIN_FONT_SIZE && newSize <= MAX_FONT_SIZE) {
-      setFontSize(newSize);
-      try {
-        await AsyncStorage.setItem(FONT_SIZE_KEY, newSize?.toString());
-      } catch (e) {
-        console.error('Failed to save font size', e);
-      }
-    }
-  };
+ 
 
-  const handleFontSizeChange = useCallback((value: number) => {
-    updateFontSize(Math.round(value));
-  }, []);
 
-  const handleThemeChange = (newTheme: ThemeType) => {
-    setCurrentTheme(newTheme);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-  };
 
-  const handleLineHeightChange = useCallback(async (preset: LineHeightPreset) => {
-    setLineHeightPreset(preset);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    try {
-      await AsyncStorage.setItem(LINE_HEIGHT_KEY, LINE_HEIGHT_PRESETS[preset]?.toString());
-    } catch (e) {
-      console.error('Failed to save line height', e);
-    }
-  }, []);
-
-  const handleDefaultReaderToggle = useCallback(
-    async (value: boolean) => {
-      setUseDefaultReader(value);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      analytics.logEvent('CardBibleReader_Tapped_ToggleDefaultReader', {
-        value: value ? 'default' : 'new',
-      });
-      try {
-        console.log(`Setting reader preference to: ${value ? 'default' : 'new'}`);
-        await AsyncStorage.setItem(READER_PREFERENCE_KEY, value ? 'default' : 'new');
-
-        // If the user toggled ON the default reader (value === true) we must
-        // close this settings modal immediately to avoid leaving the grey
-        // overlay visible after this component unmounts.
-        if (value) {
-          setIsSettingsModalVisible(false);
-          // Handoff chapter data to parent before switching
-          if (onHandoffChapterData) {
-            onHandoffChapterData(chapterData);
-          }
-        }
-
-        // Notify parent to switch back to default reader
-        if (value && onSwitchToDefaultReader) {
-          setTimeout(() => {
-            if (onSwitchToDefaultReader) onSwitchToDefaultReader();
-          }, 50);
-        }
-      } catch (e) {
-        console.error('Failed to save reader preference', e);
-      }
-    },
-    [onSwitchToDefaultReader, onHandoffChapterData, chapterData]
-  );
 
   // Handler for opening the selector
   const handleOpenSelector = useCallback(() => {
@@ -1379,12 +1265,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     },
   }), [renderRightActions, renderLeftActions, handleSwipeVerseToChat, handleSwipeVerseToMenu, handleSwipeRelease, handleLeftSwipeRelease, isFadingToChat, floatingMenu.isVisible]);
 
-  // Create animated styles for fading
-  const fadeAnimStyle = useAnimatedStyle(() => {
-    return {
-      opacity: fadeOpacity.value,
-    };
-  });
 
   // Define menu actions
   const handleCopyVerse = (verse: Verse) => {
@@ -1714,6 +1594,24 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     };
   });
 
+  // Memoize verses to show to prevent recalculation on every render
+  const versesToShow: Verse[] = useMemo(() => {
+    return chapterData?.verses?.slice(0, currentIndex + 1) || [];
+  }, [chapterData?.verses, currentIndex]);
+
+  // Memoize animated styles to prevent recreation on every render
+  const animatedProgressStyle = useAnimatedStyle(() => {
+    return { width: `${progressValue.value * 100}%` };
+  });
+
+  const fadeAnimStyle = useAnimatedStyle(() => {
+    return {
+      opacity: fadeOpacity.value,
+    };
+  });
+
+  const showBookChapterSelector = useUIStore((state) => state.showBookChapterSelector);
+
   if (!chapterData) {
     return <View/>
   }
@@ -1729,7 +1627,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     );
   }
   
-  const versesToShow: Verse[] = chapterData?.verses?.slice(0, currentIndex + 1) || [];
   return (
  <View className='flex-1'>
       <Animated.View style={{ position: 'absolute', width: '100%', height: '100%' }}>
@@ -1910,7 +1807,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                                       },
                                     ]}>
                                     <View style={{ marginBottom: 12 }}>
-                                      <Text className="text-[18px] leading-[25px] font-nunito-bold">
+                                      <Text style={verseTextStyle} className="font-nunito-bold">
                                         <Text className="text-brown/40">{`${verse.verse}. `}</Text>
                                         <Text className="text-brown/70">{verse.text}</Text>
                                       </Text>
@@ -1946,130 +1843,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
             {/* Render the local settings modal only when no shared handler is
           provided. */}
-            {!onOpenSettings && (
-              <Modal
-                visible={isSettingsModalVisible}
-                transparent
-                animationType="none"
-                onRequestClose={handleCloseSettingsModal}>
-                <TouchableWithoutFeedback onPress={handleCloseSettingsModal}>
-                  <View style={styles.modalOverlay}>
-                    <TouchableWithoutFeedback>
-                      <RNAnimated.View
-                        style={[
-                          styles.modalContent,
-                          {
-                            backgroundColor: theme.modalBackground,
-                            transform: [
-                              {
-                                translateY: slideAnim.interpolate({
-                                  inputRange: [0, 1],
-                                  outputRange: [400, 0],
-                                }),
-                              },
-                            ],
-                          },
-                        ]}>
-                        <View style={[styles.modalHandle, { backgroundColor: theme.border }]} />
 
-                        {/* Default Reader Toggle */}
-                        <View style={styles.toggleContainer}>
-                          <Text style={[styles.toggleLabel, { color: theme.text }]}>Card View</Text>
-                          <Switch
-                            trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
-                            thumbColor={!useDefaultReader ? '#FFFFFF' : '#FFFFFF'}
-                            ios_backgroundColor="#E0E0E0"
-                            onValueChange={(value) => handleDefaultReaderToggle(!value)}
-                            value={!useDefaultReader}
-                          />
-                        </View>
-
-                        <Text style={[styles.modalSectionTitle, { color: theme.text }]}>
-                          Font Size
-                        </Text>
-                        <View style={styles.sliderContainer}>
-                          <Text style={[styles.sliderLabel, { color: theme.text }]}>A</Text>
-                          <Slider
-                            style={styles.slider}
-                            minimumValue={MIN_FONT_SIZE}
-                            maximumValue={MAX_FONT_SIZE}
-                            value={fontSize}
-                            onValueChange={handleFontSizeChange}
-                            minimumTrackTintColor={theme.progressBarFill}
-                            maximumTrackTintColor={theme.sliderTrack}
-                            thumbTintColor={theme.progressBarFill}
-                          />
-                          <Text style={[styles.sliderLabelLarge, { color: theme.text }]}>A</Text>
-                        </View>
-
-                        <Text
-                          style={[styles.modalSectionTitle, { color: theme.text, marginTop: 16 }]}>
-                          Line Spacing
-                        </Text>
-                        <View style={styles.lineHeightButtons}>
-                          {(Object.keys(LINE_HEIGHT_PRESETS) as LineHeightPreset[]).map(
-                            (preset) => (
-                              <TouchableOpacity
-                                key={preset}
-                                style={[
-                                  styles.lineHeightButton,
-                                  {
-                                    borderColor: theme.border,
-                                    backgroundColor:
-                                      lineHeightPreset === preset
-                                        ? theme.progressBarFill
-                                        : 'transparent',
-                                  },
-                                ]}
-                                onPress={() => handleLineHeightChange(preset)}>
-                                <Text
-                                  style={[
-                                    styles.lineHeightButtonText,
-                                    {
-                                      color:
-                                        lineHeightPreset === preset
-                                          ? currentTheme === 'dark'
-                                            ? theme.modalBackground
-                                            : theme.bubbleBackground
-                                          : theme.text,
-                                    },
-                                  ]}>
-                                  {preset.charAt(0).toUpperCase() + preset.slice(1).toLowerCase()}
-                                </Text>
-                              </TouchableOpacity>
-                            )
-                          )}
-                        </View>
-
-                        <Text
-                          style={[styles.modalSectionTitle, { color: theme.text, marginTop: 24 }]}>
-                          Theme
-                        </Text>
-                        <View style={styles.themeButtonsContainer}>
-                          {(Object.keys(THEME_COLORS) as ThemeType[]).map((themeKey) => (
-                            <TouchableOpacity
-                              key={themeKey}
-                              style={[
-                                styles.themeButton,
-                                {
-                                  backgroundColor: THEME_COLORS[themeKey].bubbleBackground,
-                                  borderColor: THEME_COLORS[themeKey].bubbleBorder,
-                                },
-                                currentTheme === themeKey && styles.selectedThemeButton,
-                                currentTheme === themeKey && {
-                                  borderColor: THEME_COLORS[themeKey].progressBarFill,
-                                },
-                              ]}
-                              onPress={() => handleThemeChange(themeKey)}
-                            />
-                          ))}
-                        </View>
-                      </RNAnimated.View>
-                    </TouchableWithoutFeedback>
-                  </View>
-                </TouchableWithoutFeedback>
-              </Modal>
-            )}
+            
 
             {/* Floating menu overlay */}
             {floatingMenu.isVisible && floatingMenu.verse && (
@@ -2270,14 +2045,14 @@ const styles = StyleSheet.create({
   },
   // Updated elegant swipe action styles
   swipeActionContainer: {
-    width: 70,
     height: '100%',
+    width: 70,
     justifyContent: 'center',
     alignItems: 'center',
   },
   swipeActionContent: {
-    width: 50,
     height: 50,
+    width: 50,
     borderRadius: 100,
     backgroundColor: 'rgba(181, 125, 0, 0.15)',
     opacity: 0.2,
@@ -2365,9 +2140,9 @@ const styles = StyleSheet.create({
     padding: 2, // Add some padding for easier touch
   },
   verseBubble: {
+    paddingBottom: 5,
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 5,
     borderRadius: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
@@ -2379,4 +2154,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NewBibleReader;
+export default memo(NewBibleReader);

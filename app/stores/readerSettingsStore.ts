@@ -29,7 +29,7 @@ export type LineHeightPreset = keyof typeof LINE_HEIGHT_PRESETS;
 
 export type ThemeType = 'white' | 'light' | 'medium' | 'dark';
 
-interface ReaderSettings {
+export interface ReaderSettings {
   // State
   fontSize: number;
   lineHeightPreset: LineHeightPreset;

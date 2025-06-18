@@ -618,6 +618,12 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     }
   };
 
+  // Create a debounced version of updateFontSize
+  const debouncedUpdateFontSize = useMemo(
+    () => debounce(updateFontSize, 300),
+    [readerSettings]
+  );
+
   const increaseFontSize = () => {
     updateFontSize(fontSize + 1);
   };
@@ -1154,8 +1160,8 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const handleFontSizeChange = useCallback((value: number) => {
     console.log('[BibleReader] Font size slider value:', value);
     const newSize = Math.round(value);
-    updateFontSize(newSize);
-  }, []);
+    debouncedUpdateFontSize(newSize);
+  }, [debouncedUpdateFontSize]);
 
   // Update theme directly through the store
   const handleThemeChange = useCallback(
@@ -1318,8 +1324,11 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     return <View className='flex-1 bg-surfaceCream/80'>
       <StatusBar translucent backgroundColor="transparent" />
       <NewBibleReader
+      
         isBibleReaderScreen
         bookId={currentBookId}
+        readerSettings={readerSettings}
+        THEME_COLORS={THEME_COLORS}
         chapter={currentChapter}
         translation={currentVersion}
         isInPathMode={pathInProgress}
@@ -1358,7 +1367,6 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                   ]}
                 />
 
-                {/* Card View Toggle */}
                 <View style={styles.toggleContainer}>
                   <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>
                     {i18n.t('card_view')}
@@ -1372,7 +1380,6 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                   />
                 </View>
 
-                {/* Font Size Controls */}
                 <View style={styles.sliderContainer}>
                   <Text style={[styles.sliderLabel, { color: THEME_COLORS[currentTheme].text }]}>
                     {i18n.t('font_size_a')}
@@ -1393,7 +1400,6 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                   </Text>
                 </View>
 
-                {/* Line Height Controls */}
                 <View style={styles.lineHeightContainer}>
                   <View style={styles.lineHeightButtons}>
                     {(['COMPACT', 'REGULAR', 'RELAXED'] as const).map((p) => (
@@ -1418,7 +1424,6 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                   </View>
                 </View>
 
-                {/* Theme Buttons */}
                 <View style={styles.themeButtonsContainer}>
                   {(Object.keys(THEME_COLORS) as ThemeType[]).map((k) => (
                     <TouchableOpacity
