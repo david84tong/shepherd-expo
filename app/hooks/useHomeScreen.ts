@@ -232,11 +232,15 @@ export const useHomeScreen = () => {
       }
 
       return () => {
-        // Remove showDevotional param and reset local state when screen loses focus
-        router?.setParams?.({ showDevotional: undefined });
+        // Only try to set params if router is available and ready
+        try {
+          if (router?.setParams) {
+            router.setParams({ showDevotional: undefined });
+          }
+        } catch (e) {}
         setHasHandledDevotionalParam(false);
       };
-    }, [showDevotional, hasHandledDevotionalParam])
+    }, [])
   );
 
   // Set riveRef in home store so other components can access it
