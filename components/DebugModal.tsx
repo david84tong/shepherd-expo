@@ -16,7 +16,6 @@ import { HalfModalType } from '../app/halfModal';
 import { calculateExpForLevel } from '../utils/levelUtils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 import WidgetHowToSheet from './WidgetHowToSheet';
-import Rive, { RiveRef } from 'rive-react-native';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -82,9 +81,105 @@ export function DebugButton() {
   
   // Reference to the Rive animation from homeStore
   const riveRef = useHomeStore(state => state.riveRef);
-
+  
   // Snap points for success animation
   const successSnapPoints = useMemo(() => ['90%'], []);
+
+  // Helper function to safely set Rive skin
+  const setRiveSkin = useCallback((skinNumber: number, actionNumber: number = 0) => {
+    console.log('🔍 Debug setRiveSkin called:', { 
+      skinNumber, 
+      actionNumber, 
+      riveRef: !!riveRef, 
+      riveRefCurrent: !!riveRef?.current,
+      setInputState: !!riveRef?.current?.setInputState
+    });
+    
+    if (riveRef && riveRef.current && riveRef.current.setInputState) {
+      try {
+        console.log('🎯 Setting Rive skin:', skinNumber, 'action:', actionNumber);
+        riveRef.current.setInputState('State Machine 1', 'Action-Number', actionNumber);
+        riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
+        Toast.show({
+          type: 'success',
+          text1: `Skin ${skinNumber} applied!`,
+          text2: 'Rive animation updated successfully',
+          position: 'top',
+          visibilityTime: 2000,
+        });
+      } catch (error) {
+        console.log(`❌ Error setting skin ${skinNumber}:`, error);
+        Toast.show({
+          type: 'error',
+          text1: `Failed to set skin ${skinNumber}`,
+          text2: `Error: ${error}`,
+          position: 'top',
+          visibilityTime: 3000,
+        });
+      }
+    } else {
+      const reasons = [];
+      if (!riveRef) reasons.push('riveRef is null');
+      if (!riveRef?.current) reasons.push('riveRef.current is null');
+      if (!riveRef?.current?.setInputState) reasons.push('setInputState not available');
+      
+      console.log('❌ Rive ref not available:', reasons.join(', '));
+      Toast.show({
+        type: 'info',
+        text1: 'Rive not ready',
+        text2: `Issues: ${reasons.join(', ')}`,
+        position: 'top',
+        visibilityTime: 4000,
+      });
+    }
+  }, [riveRef]);
+
+  // Helper function to safely set Rive action
+  const setRiveAction = useCallback((actionNumber: number) => {
+    console.log('🔍 Debug setRiveAction called:', { 
+      actionNumber, 
+      riveRef: !!riveRef, 
+      riveRefCurrent: !!riveRef?.current,
+      setInputState: !!riveRef?.current?.setInputState
+    });
+    
+    if (riveRef && riveRef.current && riveRef.current.setInputState) {
+      try {
+        console.log('🎯 Setting Rive action:', actionNumber);
+        riveRef.current.setInputState('State Machine 1', 'Action-Number', actionNumber);
+        Toast.show({
+          type: 'success',
+          text1: `Action ${actionNumber} applied!`,
+          text2: 'Rive animation updated successfully',
+          position: 'top',
+          visibilityTime: 2000,
+        });
+      } catch (error) {
+        console.log(`❌ Error setting action ${actionNumber}:`, error);
+        Toast.show({
+          type: 'error',
+          text1: `Failed to set action ${actionNumber}`,
+          text2: `Error: ${error}`,
+          position: 'top',
+          visibilityTime: 3000,
+        });
+      }
+    } else {
+      const reasons = [];
+      if (!riveRef) reasons.push('riveRef is null');
+      if (!riveRef?.current) reasons.push('riveRef.current is null');
+      if (!riveRef?.current?.setInputState) reasons.push('setInputState not available');
+      
+      console.log('❌ Rive ref not available:', reasons.join(', '));
+      Toast.show({
+        type: 'info',
+        text1: 'Rive not ready',
+        text2: `Issues: ${reasons.join(', ')}`,
+        position: 'top',
+        visibilityTime: 4000,
+      });
+    }
+  }, [riveRef]);
 
   // Present the success animation directly (not using bottom sheet)
   const handleShowSuccessSheet = useCallback(() => {
@@ -835,133 +930,97 @@ export function DebugButton() {
                 <Text className="font-feather text-lg text-textPrimary mb-3">
                   Change Lamb Skin
                 </Text>
+                
+                {/* Debug Info Button */}
+                <TouchableOpacity
+                  className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE] mb-3"
+                  onPress={() => {
+                    const debugInfo = {
+                      riveRef: !!riveRef,
+                      riveRefCurrent: !!riveRef?.current,
+                      setInputState: !!riveRef?.current?.setInputState,
+                      riveRefType: typeof riveRef?.current,
+                      riveRefKeys: riveRef?.current ? Object.keys(riveRef.current) : [],
+                    };
+                    console.log('🔍 Complete Rive Debug Info:', debugInfo);
+                    Toast.show({
+                      type: 'info',
+                      text1: 'Debug Info Logged',
+                      text2: 'Check console for detailed Rive state',
+                      position: 'top',
+                      visibilityTime: 3000,
+                    });
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Debug Rive State</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Check console for detailed Rive ref info
+                  </Text>
+                </TouchableOpacity>
+                
                 <View className="flex-row flex-wrap gap-2">
                   <TouchableOpacity
                     className="bg-[#E0F7FF] px-3 py-2 rounded-lg border border-[#4FB8FE] mb-1"
-                    onPress={() => {
-                      if (riveRef.current?.setInputState) {
-                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
-                      }
-                    }}>
+                    onPress={() => setRiveAction(0)}>
                     <Text className="font-din text-sm text-textPrimary">0 Idle</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-[#F7B500] mb-1"
-                    onPress={() => {
-                      if (riveRef.current?.setInputState) {
-                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 1);
-                      }
-                    }}>
+                    onPress={() => setRiveAction(1)}>
                     <Text className="font-din text-sm text-textPrimary">1 Raising Hand</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="bg-[#E8F3E0] px-3 py-2 rounded-lg border border-[#A0D468] mb-1"
-                    onPress={() => {
-                      if (riveRef.current?.setInputState) {
-                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
-                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
-                      }
-                    }}>
+                    onPress={() => setRiveSkin(0, 0)}>
                     <Text className="font-din text-sm text-textPrimary">0 Normal Skin</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="bg-[#FFEDED] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
-                    onPress={() => {
-                      if (riveRef.current?.setInputState) {
-                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
-                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 99);
-                      }
-                    }}>
+                    onPress={() => setRiveSkin(99, 0)}>
                     <Text className="font-din text-sm text-textPrimary">99 Gold Skin</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="bg-[#E0F7FF] px-3 py-2 rounded-lg border border-[#4FB8FE] mb-1"
-                    onPress={() => {
-                      if (riveRef.current?.setInputState) {
-                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
-                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 1);
-                      }
-                    }}>
+                    onPress={() => setRiveSkin(1, 0)}>
                     <Text className="font-din text-sm text-textPrimary">1 Pink Skin</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="bg-[#F0E6FF] px-3 py-2 rounded-lg border border-[#9B7FFE] mb-1"
-                    onPress={() => {
-                      if (riveRef.current?.setInputState) {
-                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
-                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 2);
-                      }
-                    }}>
+                    onPress={() => setRiveSkin(2, 0)}>
                     <Text className="font-din text-sm text-textPrimary">2 Noah Skin</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-[#F7B500] mb-1"
-                    onPress={() => {
-                      if (riveRef.current?.setInputState) {
-                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
-                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 3);
-                      }
-                    }}>
+                    onPress={() => setRiveSkin(3, 0)}>
                     <Text className="font-din text-sm text-textPrimary">3 Cloak Skin</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="bg-[#E8F3E0] px-3 py-2 rounded-lg border border-[#A0D468] mb-1"
-                    onPress={() => {
-                      if (riveRef.current?.setInputState) {
-                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
-                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 4);
-                      }
-                    }}>
+                    onPress={() => setRiveSkin(4, 0)}>
                     <Text className="font-din text-sm text-textPrimary">4 Banana Skin</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="bg-[#FFEDED] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
-                    onPress={() => {
-                      if (riveRef.current?.setInputState) {
-                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
-                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 5);
-                      }
-                    }}>
+                    onPress={() => setRiveSkin(5, 0)}>
                     <Text className="font-din text-sm text-textPrimary">5 10 Skin</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="bg-[#E0F7FF] px-3 py-2 rounded-lg border border-[#4FB8FE] mb-1"
-                    onPress={() => {
-                      if (riveRef.current?.setInputState) {
-                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
-                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 6);
-                      }
-                    }}>
+                    onPress={() => setRiveSkin(6, 0)}>
                     <Text className="font-din text-sm text-textPrimary">6 Apple Skin</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="bg-[#F0E6FF] px-3 py-2 rounded-lg border border-[#9B7FFE] mb-1"
-                    onPress={() => {
-                      if (riveRef.current?.setInputState) {
-                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
-                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 7);
-                      }
-                    }}>
+                    onPress={() => setRiveSkin(7, 0)}>
                     <Text className="font-din text-sm text-textPrimary">7 Lion Skin</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-[#F7B500] mb-1"
-                    onPress={() => {
-                      if (riveRef.current?.setInputState) {
-                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
-                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 8);
-                      }
-                    }}>
+                    onPress={() => setRiveSkin(8, 0)}>
                     <Text className="font-din text-sm text-textPrimary">8 Whale Skin</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="bg-[#E8F3E0] px-3 py-2 rounded-lg border border-[#A0D468] mb-1"
-                    onPress={() => {
-                      if (riveRef.current?.setInputState) {
-                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 0);
-                        riveRef.current.setInputState('State Machine 1', 'Skin-Number', 9);
-                      }
-                    }}>
+                    onPress={() => setRiveSkin(9, 0)}>
                     <Text className="font-din text-sm text-textPrimary">9 Armor Skin</Text>
                   </TouchableOpacity>
                 </View>

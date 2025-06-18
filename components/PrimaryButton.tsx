@@ -154,8 +154,8 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
             width: '100%',
             transform: [{ translateY: isPressed ? 3 : 0 }],
             borderRadius: 25,
-            paddingVertical: 16,
-            paddingHorizontal: 24,
+            paddingVertical: buttonHeight && buttonHeight <= 40 ? 4 : 16,
+            paddingHorizontal: buttonHeight && buttonHeight <= 40 ? 16 : 24,
           }
         ]}
         onPress={handlePress}
@@ -168,13 +168,13 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
             {featherIcon && (
               <Feather 
                 name={featherIcon} 
-                size={20} 
+                size={buttonHeight && buttonHeight <= 40 ? 16 : 20} 
                 color={disabled || !isActive ? "#E0F6FF" : "white"} 
-                style={{ marginRight: 8 }}
+                style={{ marginRight: buttonHeight && buttonHeight <= 40 ? 6 : 8 }}
               />
             )}
             <Text
-              className={`font-feather text-h4 text-center ${disabled || !isActive
+              className={`font-feather ${buttonHeight && buttonHeight <= 40 ? 'text-smallCaption' : 'text-h4'} text-center ${disabled || !isActive
                 ? (buttonType === 'blue'
                   ? 'text-[#E0F6FF]'
                   : buttonType === 'gold'
@@ -192,20 +192,21 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
               {title}
             </Text>
             {icon && (
-              <Image source={icon} className={`w-6 h-6 ml-2 ${disabled || !isActive ? 'opacity-50' : ''}`} resizeMode="contain" />
+              <Image source={icon} className={`${buttonHeight && buttonHeight <= 40 ? 'w-4 h-4' : 'w-6 h-6'} -mt-[2px] ml-2 ${disabled || !isActive ? 'opacity-50' : ''}`} resizeMode="contain" />
             )}
             {iconText && (
               <Text style={{
                 color: disabled || !isActive ? "#E0F6FF" : "white",
-                fontSize: 16,
+                fontSize: 20,
                 fontWeight: '600',
                 marginLeft: 4,
+                marginTop: 2,
               }}>
                 {iconText}
               </Text>
             )}
             {reward && (
-              <Text className={`font-feather text-h4 ml-1 ${disabled || !isActive
+              <Text className={`font-feather ${buttonHeight && buttonHeight <= 40 ? 'text-smallCaption' : 'text-h4'} ml-1 ${disabled || !isActive
                 ? (buttonType === 'blue'
                   ? 'text-[#E0F6FF]'
                   : buttonType === 'gold'

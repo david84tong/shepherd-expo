@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import HalfModalType from '../../components/HalfModalSheet';
 // Define the callback type directly here
 export type BookChapterSelectorCallback = (bookId: number, chapter: number) => void;
 import { Reflection } from '../models/User'; // Import Reflection type
@@ -39,6 +38,13 @@ interface UIState {
   // New actions for OldReflectionSheet
   showOldReflectionSheet: (reflection: Reflection) => void;
   hideOldReflectionSheet: () => void;
+  
+  // Store sheet state
+  isStoreSheetVisible: boolean;
+  
+  // Store sheet actions
+  showStoreSheet: () => void;
+  hideStoreSheet: () => void;
   
   // Widget prompt and guide state
   isWidgetPromptVisible: boolean;
@@ -110,6 +116,17 @@ export const useUIStore = create<UIState>((set) => ({
     set({ isOldReflectionSheetVisible: true, reflectionToShow: reflection }),
   hideOldReflectionSheet: () => 
     set({ isOldReflectionSheetVisible: false, reflectionToShow: null }),
+    
+  // Store sheet state and actions
+  isStoreSheetVisible: false,
+  showStoreSheet: () => {
+    console.log('[UIStore] Showing store sheet');
+    set({ isStoreSheetVisible: true });
+  },
+  hideStoreSheet: () => {
+    console.log('[UIStore] Hiding store sheet');
+    set({ isStoreSheetVisible: false });
+  },
     
   // Widget prompt and guide state
   isWidgetPromptVisible: false,
