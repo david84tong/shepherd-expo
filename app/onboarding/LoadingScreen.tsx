@@ -67,12 +67,12 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     return params.isOnboarding !== undefined ? params.isOnboarding === 'true' : propIsOnboarding;
   }, [params.fromSwipe, params.isOnboarding, propIsOnboarding]);
 
-  const verseText = useMemo(() => 
+  const verseText = useMemo(() =>
     (params.verseText as string | undefined) || propVerseText,
     [params.verseText, propVerseText]
   );
 
-  const reference = useMemo(() => 
+  const reference = useMemo(() =>
     (params.reference as string | undefined) || propReference,
     [params.reference, propReference]
   );
@@ -83,7 +83,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const devotionalError = useDevotionalStore((s) => s.error);
 
   // Use appropriate loading points
-  const loadingPoints = useMemo(() => 
+  const loadingPoints = useMemo(() =>
     isOnboarding ? LOADING_POINTS : DEVOTIONAL_LOADING_POINTS,
     [isOnboarding]
   );
@@ -95,11 +95,15 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       .map(() => new Animated.Value(0))
   );
 
+  // Spinner animation values for each step
+  const spinnerAnimsRef = useRef(
+    Array(loadingPoints.length)
+      .fill(0)
+      .map(() => new Animated.Value(0))
+  );
+
   // Track which steps have been animated
   const animatedStepsRef = useRef(new Set<number>());
-
-  // Spinner rotation animation
-  const spinnerAnim = useRef(new Animated.Value(0)).current;
 
   // Progress animation
   const progressAnim = useRef(new Animated.Value(0)).current;
@@ -114,10 +118,12 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     };
   }, []);
 
-  // Start continuous spinner animation
+  // Start spinner animation for the current step
   useEffect(() => {
-    if (!hasStarted) return;
+    if (!hasStarted || currentStep >= loadingPoints.length) return;
 
+    const spinnerAnim = spinnerAnimsRef.current[currentStep];
+    spinnerAnim.setValue(0);
     const spinnerLoop = Animated.loop(
       Animated.timing(spinnerAnim, {
         toValue: 1,
@@ -128,7 +134,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     );
     spinnerLoop.start();
     return () => spinnerLoop.stop();
-  }, [hasStarted, spinnerAnim]);
+  }, [currentStep, hasStarted, loadingPoints.length]);
 
   // Animate glow effect using requestAnimationFrame
   useEffect(() => {
@@ -139,12 +145,12 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
     const animate = (currentTime: number) => {
       const deltaTime = currentTime - lastTime;
-      
+
       if (deltaTime >= frameInterval) {
         animRef.current += 0.02;
         lastTime = currentTime;
       }
-      
+
       frameId = requestAnimationFrame(animate);
     };
 
@@ -226,7 +232,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     if (!hasStarted) return;
 
     const progress = currentStep / loadingPoints.length;
-    
+
     Animated.timing(progressAnim, {
       toValue: progress,
       duration: 500, // Reduced from 700ms
@@ -236,7 +242,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   }, [currentStep, hasStarted, loadingPoints.length, progressAnim]);
 
   // Build checklist state
-  const checklist = useMemo(() => 
+  const checklist = useMemo(() =>
     loadingPoints.map((label, idx) => {
       if (idx < currentStep) return { label, status: 'done' };
       if (idx === currentStep) return { label, status: 'loading' };
@@ -383,7 +389,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         if (!shouldAnimate) return;
 
         const deltaTime = currentTime - lastFrameTime;
-        
+
         if (deltaTime >= frameInterval) {
           material.uniforms.u_time.value += 0.016;
           renderer.render(scene, camera);
@@ -513,7 +519,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
                     marginRight: 8,
                     transform: [
                       {
-                        rotate: spinnerAnim.interpolate({
+                        rotate: spinnerAnimsRef.current[idx].interpolate({
                           inputRange: [0, 1],
                           outputRange: ['0deg', '360deg'],
                         }),
