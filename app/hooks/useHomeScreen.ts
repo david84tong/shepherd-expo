@@ -51,10 +51,8 @@ const moodToStateInput: Record<string, number> = {
 };
 
 export const useHomeScreen = () => {
-  const navigation = useNavigation();
   const router = useRouter();
   const { isPrayPresses, isReflectPresses, showDevotional } = useLocalSearchParams();
-  console.log("showDevotional ==>",showDevotional);
   
   const currentUser = auth().currentUser;
 
@@ -896,7 +894,6 @@ export const useHomeScreen = () => {
   }, [riveRef, riveReady, riveSkinInitialized]);
 
 
-console.log("RENDERING &&&&&&&&&&&&***********");
 
      // Handler for when Rive starts playing (indicates it's ready)
      const handleRivePlay = () => {

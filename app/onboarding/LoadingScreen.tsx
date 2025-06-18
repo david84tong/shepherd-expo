@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -47,6 +47,10 @@ interface LoadingScreenProps {
   verseText?: string;
   reference?: string;
 }
+
+// Optimize loading points timing
+const STEP_DURATION = 1200; // Reduced from 1500ms
+const FINAL_DELAY = 500; // Reduced from 600ms
 
 export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseText: propVerseText, reference: propReference }: LoadingScreenProps) {
   const [currentStep, setCurrentStep] = useState(0);
@@ -159,7 +163,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     }
   }, [hasStarted]);
 
-  // Handle step progression
+  // Handle step progression with optimized timing
   useEffect(() => {
     if (!hasStarted) return;
 
@@ -169,11 +173,11 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       if (currentStep < loadingPoints.length) {
         timer = setTimeout(() => {
           setCurrentStep(prev => prev + 1);
-        }, 1000);
+        }, STEP_DURATION);
       } else {
         timer = setTimeout(() => {
           router.replace({ pathname: '/PricingScreen', params: { animateFromBottom: 'true' } });
-        }, 600);
+        }, FINAL_DELAY);
       }
     } else {
       // For devotional creation
@@ -182,19 +186,19 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         if (currentStep < loadingPoints.length - 1) {
           timer = setTimeout(() => {
             setCurrentStep(prev => prev + 1);
-          }, 1500);
+          }, STEP_DURATION);
         }
       } else if (devotionalStoreCurrentDevotional) {
         // When devotional is created, ensure we complete all steps
         if (currentStep < loadingPoints.length - 1) {
           timer = setTimeout(() => {
             setCurrentStep(prev => prev + 1);
-          }, 1500);
+          }, STEP_DURATION);
         } else if (currentStep === loadingPoints.length - 1) {
           // Complete the final step
           timer = setTimeout(() => {
             setCurrentStep(loadingPoints.length);
-          }, 1500);
+          }, STEP_DURATION);
         }
       }
     }
@@ -202,7 +206,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     return () => clearTimeout(timer);
   }, [currentStep, hasStarted, isOnboarding, isCreatingDevotional, devotionalStoreCurrentDevotional, loadingPoints.length, router]);
 
-  // Animate checklist items
+  // Optimize checklist animation timing
   useEffect(() => {
     if (!hasStarted || currentStep >= loadingPoints.length) return;
 
@@ -211,22 +215,21 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       animValuesRef.current[currentStep].setValue(0);
       Animated.timing(animValuesRef.current[currentStep], {
         toValue: 1,
-        duration: 400,
+        duration: 300, // Reduced from 400ms
         useNativeDriver: true,
       }).start();
     }
   }, [currentStep, hasStarted, loadingPoints.length]);
 
-  // Update progress animation
+  // Optimize progress animation timing
   useEffect(() => {
     if (!hasStarted) return;
 
-    // Calculate progress based on current step
     const progress = currentStep / loadingPoints.length;
     
     Animated.timing(progressAnim, {
       toValue: progress,
-      duration: 700,
+      duration: 500, // Reduced from 700ms
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
@@ -266,7 +269,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const glViewRef = useRef<{ stop: () => void } | null>(null);
   const threeFrameRef = useRef<number | null>(null);
 
-  // Handler for GLView context creation
+  // Optimize GLView animation
   const handleContextCreate = async (gl: ExpoWebGLRenderingContext) => {
     let scene: THREE.Scene;
     let camera: THREE.Camera;
@@ -274,6 +277,9 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     let material: THREE.ShaderMaterial;
     let plane: THREE.Mesh;
     let shouldAnimate = true;
+    let lastFrameTime = 0;
+    const targetFPS = 30; // Reduced from 60 FPS
+    const frameInterval = 1000 / targetFPS;
 
     try {
       renderer = new Renderer({ gl });
@@ -373,16 +379,22 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       plane = new THREE.Mesh(geometry, material);
       scene.add(plane);
 
-      const animate = () => {
+      const animate = (currentTime: number) => {
         if (!shouldAnimate) return;
 
-        material.uniforms.u_time.value += 0.016;
-        renderer.render(scene, camera);
-        gl.endFrameEXP();
+        const deltaTime = currentTime - lastFrameTime;
+        
+        if (deltaTime >= frameInterval) {
+          material.uniforms.u_time.value += 0.016;
+          renderer.render(scene, camera);
+          gl.endFrameEXP();
+          lastFrameTime = currentTime;
+        }
+
         threeFrameRef.current = requestAnimationFrame(animate);
       };
 
-      animate();
+      animate(0);
 
       // Store cleanup function
       glViewRef.current = {
