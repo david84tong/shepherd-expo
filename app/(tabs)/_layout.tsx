@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, Platform, Pressable, Text, View, ViewStyle } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
+import { FontAwesome } from '@expo/vector-icons';
 
 import { isSignedIn } from '../hooks/authHook';
 import { useHomeStore } from '../stores/homeStore';
@@ -45,7 +46,7 @@ function CustomTabBarButton(props: any) {
     <Pressable
       onPress={handlePress}
       // Apply base flex styling, horizontal margin, and horizontal padding for spacing
-      className="flex-1  items-center justify-center mx-1 ">
+      className="flex-1  items-center justify-center">
       {children}
     </Pressable>
   );
@@ -217,7 +218,8 @@ export default function TabsLayout() {
     }),
     // Ensure a minimum height for the tab bar
     height: Platform.OS === 'ios' ? 90 : 70,
-    paddingHorizontal: 50,
+    paddingHorizontal: 32,
+    gap: 16,
   } as ViewStyle; // Cast to ViewStyle for type safety
 
   // Function to determine if tab bar should be visible for a given route
@@ -240,7 +242,32 @@ export default function TabsLayout() {
         // Use the custom button component for all tabs
         tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
       })}>
-
+      <Tabs.Screen
+        name="map"
+        options={{
+          title: 'Path',
+          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ width: RPW(16) }} className="items-center justify-center  mt-4">
+              <FontAwesome name="map" size={22} color={focused ? "#FC8A02" : "#BA9F6E"} />
+              <Text className={`mt-2 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>Map</Text>
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="stats"
+        options={{
+          title: 'heart',
+          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
+              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/stats.png')} className="w-7 h-7" />
+              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_stats_title')}</Text>
+            </View>
+          ),
+        }}
+      />
       <Tabs.Screen
         name="index"
         options={{
@@ -255,19 +282,7 @@ export default function TabsLayout() {
         }}
       />
 
-      <Tabs.Screen
-        name="stats"
-        options={{
-          title: 'heart',
-          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
-          tabBarIcon: ({ color, focused }) => (
-            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
-              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/stats.png')} className="w-7 h-7" />
-              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_stats_title')}</Text>
-            </View>
-          ),
-        }}
-      />
+
 
       <Tabs.Screen
         name="bible"

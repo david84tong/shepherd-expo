@@ -1498,15 +1498,27 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
               <View>
                 {/* Title and Settings Row */}
                 <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text
-                    className="font-feather text-white"
-                    style={{
-                      fontSize: responsiveFontSize(3),
-                      fontWeight: "400",
-                    }}
-                  >
-                   {i18n.t('bible_title')}
-                  </Text>
+                  {pathInProgress ? (
+                    <TouchableOpacity 
+                      onPress={handleBackNavigation}
+                      className="bg-white/80 flex-row items-center px-4 py-2 rounded-full"
+                    >
+                      <Feather name="arrow-left" size={20} color="#795323" />
+                      <Text className="font-feather text-brown ml-2" style={{ fontSize: 16 }}>
+                        Map
+                      </Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <Text
+                      className="font-feather text-white"
+                      style={{
+                        fontSize: responsiveFontSize(3),
+                        fontWeight: "400",
+                      }}
+                    >
+                     {i18n.t('bible_title')}
+                    </Text>
+                  )}
                   <TouchableOpacity onPress={handlePresentModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
                     <MaterialIcons
                       name="settings"
@@ -1543,7 +1555,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                       isJustReadMode
                         ? 'Finish Reading'
                         : isAtEndChapter
-                          ? 'Complete Unit'
+                          ? 'Finish Reading'
                           : 'Next Chapter'
                     }
                     onPress={
@@ -1680,8 +1692,18 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
               ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}`
               : i18n.t('loading')}
             onPrev={navigateToPreviousChapter}
-            onNext={navigateToNextChapter}
+            onNext={pathInProgress && isAtEndChapter ? handleFinishReading : navigateToNextChapter}
             onVersePress={handleOpenSelector}
+            rightIconComponent={
+              pathInProgress && isAtEndChapter ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <Text style={{ color: '#795323', fontFamily: 'Feather', fontSize: 12, marginRight: 4 }}>
+                    Finish Reading
+                  </Text>
+                  <Feather name="check" size={14} color="#795222" />
+                </View>
+              ) : undefined
+            }
           />
 
           {/* Add Floating Menu */}

@@ -488,17 +488,16 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
             setLastReadingDate(now);
             const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
             setReadingCompleted(true);
-            setShowSuccess(false);
             setIsRewarding(false);
             if (onClose) {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              setTimeout(() => {
-                
-                setFinishReading(false);
-              }, 2000);
               const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
               onClose({isPrayPresses: false});
+              setTimeout(() => {
+                setFinishReading(false);
+                setShowSuccess(false); // Reset success state after dismissal
+              }, 500);
             }
           }}
           onPray={() => {
@@ -509,18 +508,16 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
             setLastReadingDate(now);
             const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
             setReadingCompleted(true);
-           setTimeout(() => {
-            setShowSuccess(false);
-           }, 1000);
             setIsRewarding(false);
             if (onClose) {
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              setTimeout(() => {
-                setFinishReading(false);
-              }, 2000);
-                            const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
+              const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
               onClose({isPrayPresses: true});
+              setTimeout(() => {
+                setFinishReading(false);
+                setShowSuccess(false); // Reset success state after dismissal
+              }, 500);
             }
           }}
         />
@@ -619,9 +616,8 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                             )}
 
                             {/* Card content */}
-                            <Text className="text-[18px] leading-[25px] font-nunito-bold " >
-                              <Text className="text-brown/40">{index + 1}.</Text>
-                              <Text className="text-brown/70">  {card.content}</Text>
+                            <Text className="text-[18px] leading-[25px] font-nunito-bold text-brown/70">
+                              {card.content}
                             </Text>
                           </View>
                         </Reanimated.View>

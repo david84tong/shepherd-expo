@@ -95,20 +95,49 @@ export function DebugButton() {
       setInputState: !!riveRef?.current?.setInputState
     });
     
+    // Special logging for armor skin
+    if (skinNumber === 9) {
+      console.log('🛡️ ARMOR SKIN DEBUG: Attempting to set armor skin (9)');
+    }
+    
+    // Update homeStore currentSkin to prevent handleRivePlay from overriding our debug change
+    const setCurrentSkin = useHomeStore.getState().setCurrentSkin;
+    setCurrentSkin(skinNumber.toString());
+    console.log(`🏠 Updated homeStore currentSkin to: ${skinNumber}`);
+    
     if (riveRef && riveRef.current && riveRef.current.setInputState) {
       try {
         console.log('🎯 Setting Rive skin:', skinNumber, 'action:', actionNumber);
+        
+        // Set action first, then skin
         riveRef.current.setInputState('State Machine 1', 'Action-Number', actionNumber);
         riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
+        
+        // Special logging for armor skin
+        if (skinNumber === 9) {
+          console.log('🛡️ ARMOR SKIN DEBUG: Successfully called setInputState for skin 9');
+          
+          // Try to read back the current state if possible
+          setTimeout(() => {
+            console.log('🛡️ ARMOR SKIN DEBUG: Checking if skin 9 was applied...');
+          }, 500);
+        }
+        
         Toast.show({
           type: 'success',
           text1: `Skin ${skinNumber} applied!`,
-          text2: 'Rive animation updated successfully',
+          text2: skinNumber === 9 ? 'Armor skin should be visible' : 'Rive animation updated successfully',
           position: 'top',
           visibilityTime: 2000,
         });
       } catch (error) {
         console.log(`❌ Error setting skin ${skinNumber}:`, error);
+        
+        // Special error logging for armor skin
+        if (skinNumber === 9) {
+          console.log('🛡️ ARMOR SKIN DEBUG: Failed to set armor skin!', error);
+        }
+        
         Toast.show({
           type: 'error',
           text1: `Failed to set skin ${skinNumber}`,
@@ -124,6 +153,12 @@ export function DebugButton() {
       if (!riveRef?.current?.setInputState) reasons.push('setInputState not available');
       
       console.log('❌ Rive ref not available:', reasons.join(', '));
+      
+      // Special logging for armor skin
+      if (skinNumber === 9) {
+        console.log('🛡️ ARMOR SKIN DEBUG: Cannot set armor skin - Rive not ready!', reasons);
+      }
+      
       Toast.show({
         type: 'info',
         text1: 'Rive not ready',
@@ -1048,8 +1083,30 @@ export function DebugButton() {
                   </TouchableOpacity>
                   <TouchableOpacity
                     className="bg-[#E8F3E0] px-3 py-2 rounded-lg border border-[#A0D468] mb-1"
-                    onPress={() => setRiveSkin(9, 0)}>
+                    onPress={() => {
+                      console.log('🛡️ Attempting to set Armor skin (9)');
+                      setRiveSkin(9, 0);
+                    }}>
                     <Text className="font-din text-sm text-textPrimary">9 Armor Skin</Text>
+                  </TouchableOpacity>
+                  
+                  {/* Additional test buttons for armor skin debugging */}
+                  <TouchableOpacity
+                    className="bg-[#FFE0E8] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
+                    onPress={() => {
+                      console.log('🔟 Testing skin 10');
+                      setRiveSkin(10, 0);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">10 Test</Text>
+                  </TouchableOpacity>
+                  
+                  <TouchableOpacity
+                    className="bg-[#E0FFE0] px-3 py-2 rounded-lg border border-[#4FD675] mb-1"
+                    onPress={() => {
+                      console.log('🛡️ Testing armor with action 1');
+                      setRiveSkin(9, 1);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">9 Armor + Action</Text>
                   </TouchableOpacity>
                 </View>
               </View>

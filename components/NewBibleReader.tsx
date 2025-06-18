@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,7 +18,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Slider from '@react-native-community/slider';
 import { fetchChapter, Verse, ChapterResponse } from '~/app/api/bible';
 import { usePathStore } from '~/app/stores/pathStore';
-import { Feather, FontAwesome6, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { AntDesign, Feather, FontAwesome6, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Reanimated, {
   FadeIn,
   useAnimatedStyle,
@@ -55,6 +55,7 @@ import Animated from 'react-native-reanimated';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { BibleVerseActionBar } from './BibleVerseActionBar';
+import SideButton from './SideButton';
 import { RPH } from '~/app/helper/helper';
 import { ImageBackground } from 'expo-image';
 import { IS_ANDROID } from '~/app/utils/utils';
@@ -431,6 +432,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // State for chat view
   const [showChatView, setShowChatView] = useState(false);
   const [selectedVerse, setSelectedVerse] = useState<Verse | null>(null);
+  const [hasScrolledToBottom, setHasScrolledToBottom] = useState(false);
 
   const pathInProgress = usePathStore((s) => s.pathInProgress);
   const currentPath = usePathStore((s) => s.currentPath);
@@ -582,6 +584,17 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     updateUIState();
   }, [bookId, chapter, chapterData, setSavedReading]);
 
+  // Check if user is at the end chapter of their path
+  const isAtEndChapter = useMemo(() => {
+    if (!currentPath || !chapterData) return false;
+    return currentBookId === currentPath.bookId && currentChapter === currentPath.endChapter;
+  }, [currentPath, currentBookId, currentChapter, chapterData]);
+
+  // Reset hasScrolledToBottom when chapter changes
+  useEffect(() => {
+    setHasScrolledToBottom(false);
+  }, [currentBookId, currentChapter]);
+
   // Function to navigate to the next chapter
   const navigateToNextChapter = useCallback(() => {
     // Add haptic feedback for navigation
@@ -687,6 +700,16 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const handleScroll = useCallback((event: any) => {
     setIsScrolling(true);
 
+    // Check if scrolled to bottom for finish reading button
+    const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    const threshold = 50;
+    const scrolledToBottomThreshold = contentSize.height - threshold;
+    const bottomReached = layoutMeasurement.height + contentOffset.y >= scrolledToBottomThreshold;
+
+    if (bottomReached && !hasScrolledToBottom) {
+      setHasScrolledToBottom(true);
+    }
+
     // Clear any existing timeout
     if (scrollTimeout.current) {
       clearTimeout(scrollTimeout.current);
@@ -696,7 +719,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     scrollTimeout.current = setTimeout(() => {
       setIsScrolling(false);
     }, 300);
-  }, []);
+  }, [hasScrolledToBottom]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -1644,6 +1667,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Add animation values with initial states
   const fadeAnim = useSharedValue(0);
   const translateY = useSharedValue(50);
+  
+  // Animation for finish reading button
+  const buttonOpacity = useSharedValue(0);
+  const buttonTranslateY = useSharedValue(100);
 
   // Add animation effect
   useEffect(() => {
@@ -1665,8 +1692,27 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   }, []);
 
+  // Animation for finish reading button
+  useEffect(() => {
+    if (isInPathMode && isAtEndChapter && hasScrolledToBottom) {
+      buttonOpacity.value = withTiming(1, { duration: 400 });
+      buttonTranslateY.value = withTiming(0, { duration: 400 });
+    } else {
+      buttonOpacity.value = withTiming(0, { duration: 400 });
+      buttonTranslateY.value = withTiming(100, { duration: 400 });
+    }
+  }, [isInPathMode, isAtEndChapter, hasScrolledToBottom]);
+
   // Subscribe to language changes to trigger re-render
   useLanguageStore((state) => state.language);
+
+  // Create animated style for finish reading button
+  const finishButtonAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: buttonOpacity.value,
+      transform: [{ translateY: buttonTranslateY.value }],
+    };
+  });
 
   if (!chapterData) {
     return <View/>
@@ -1703,14 +1749,31 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             {/* Title and Navigation Arrows Row */}
            
               <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Text
-                  className="font-feather text-white"
-                  style={{
-                    fontSize: responsiveFontSize(3),
-                    fontWeight: '400',
-                  }}>
-                  {i18n.t('bible_title')}
-                </Text>
+                {isInPathMode && onNavigateBack ? (
+                  <TouchableOpacity
+                    onPress={onNavigateBack}
+                    className="flex-row items-center"
+                    style={{ flex: 1 }}>
+                    <Feather name="arrow-left" size={24} color="white" />
+                    <Text
+                      className="font-feather text-white ml-2"
+                      style={{
+                        fontSize: responsiveFontSize(3),
+                        fontWeight: '400',
+                      }}>
+                      Map
+                    </Text>
+                  </TouchableOpacity>
+                ) : (
+                  <Text
+                    className="font-feather text-white"
+                    style={{
+                      fontSize: responsiveFontSize(3),
+                      fontWeight: '400',
+                    }}>
+                    {i18n.t('bible_title')}
+                  </Text>
+                )}
                 
          
                  <TouchableOpacity
@@ -2075,12 +2138,44 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             )}
           </View>
         </SafeAreaView>
+
+        {/* Floating Finish Reading Button - only show when NOT in BibleReaderScreen mode */}
+        {!isBibleReaderScreen && isInPathMode && isAtEndChapter && (
+          <Reanimated.View
+            style={[
+              {
+                position: 'absolute',
+                bottom: 120,
+                left: 20,
+                right: 20,
+                zIndex: 10,
+              },
+              finishButtonAnimatedStyle,
+            ]}>
+            <SideButton
+              title="Finish Reading"
+              onPress={handleFinishReading}
+              disabled={!hasScrolledToBottom}
+            />
+          </Reanimated.View>
+        )}
+
         {isBibleReaderScreen ? (
         <BibleVerseActionBar
           reference={`${chapterData?.book} ${chapterData?.chapter}`}
           onVersePress={handleOpenSelector}
           onPrev={navigateToPreviousChapter}
-          onNext={navigateToNextChapter}
+          onNext={isInPathMode && isAtEndChapter ? handleFinishReading : navigateToNextChapter}
+          rightIconComponent={
+            isInPathMode && isAtEndChapter ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Text style={{ color: '#795323', fontFamily: 'Feather', fontSize: 12, marginRight: 4 }}>
+                  Finish Reading
+                </Text>
+                <AntDesign name="check" size={14} color="#795222" />
+              </View>
+            ) : undefined
+          }
         />
       ) : null}
 

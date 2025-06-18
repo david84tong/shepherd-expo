@@ -110,6 +110,7 @@ module.exports = {
         body: '16px', // Body
         caption: '16px', // Caption
         smallCaption: '14px', // Caption
+        mini: '10px'
       },
       boxShadow: {
         // Define the unified shadow - Note: NativeWind shadow support varies

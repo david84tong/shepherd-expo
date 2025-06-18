@@ -27,6 +27,13 @@ import gemIcon from '~/assets/icons/greenGemIcon.png';
 // Import lamb static images
 import pinkLamb from '~/assets/lambStatic/pinkSkin.png';
 import goldLamb from '~/assets/lambStatic/goldSkin.png';
+import normalLamb from '~/assets/lambStatic/normalSkin.png';
+import babyLamb from '~/assets/lambStatic/babySkin.png';
+import noahSkin from '~/assets/lambStatic/noahSkin.png';
+import bananaSkin from '~/assets/lambStatic/bananaSkin.png';
+import tenSkin from '~/assets/lambStatic/10Skin.png';
+import appleSkin from '~/assets/lambStatic/appleSkin.png';
+import lionSkin from '~/assets/lambStatic/lionSkin.png';
 
 // Define store item types
 type StoreCategory = 'skins' | 'powerups' | 'hearts';
@@ -53,7 +60,8 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const router = useRouter();
   const { getLamb, getUser } = useUserStore();
   const { isProMember } = useSubscriptionStore();
-  const { hasSkin, purchaseSkin, equipSkin, equippedSkin } = useShopStore();
+  const { hasSkin, purchaseSkin, equipSkin } = useShopStore();
+  const equippedSkin = useShopStore(state => state.equippedSkin);
   const riveRef = useHomeStore(state => state.riveRef);
   const setCurrentSkin = useHomeStore(state => state.setCurrentSkin);
   
@@ -67,6 +75,17 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   // Store items with static images
   const storeItems: StoreItem[] = useMemo(() => [
     // Skins
+    {
+      id: 'skin_default',
+      category: 'skins',
+      name: "Normal Skin",
+      description: 'The default skin for your lamb',
+      price: 0,
+      currency: 'gems',
+      image: userLevel < 10 ? babyLamb : normalLamb,
+      skinNumber: 0,
+      isOwned: true, // Default skin is always owned
+    },
     {
       id: 'skin_joseph_cloak',
       category: 'skins',
@@ -98,7 +117,59 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       unlockLevel: 20,
       skinNumber: 3,
     },
-  ], []);
+    {
+      id: 'skin_noah',
+      category: 'skins',
+      name: "Noah's Ark",
+      description: 'A faithful servant who built the ark and saved all creatures',
+      price: 150,
+      currency: 'gems',
+      image: noahSkin,
+      skinNumber: 2,
+    },
+    {
+      id: 'skin_banana',
+      category: 'skins',
+      name: "Banana Peel",
+      description: 'A playful yellow skin that brings joy and laughter',
+      price: 75,
+      currency: 'gems',
+      image: bananaSkin,
+      skinNumber: 4,
+    },
+    {
+      id: 'skin_ten_commandments',
+      category: 'skins',
+      name: "Ten Commandments",
+      description: 'Blessed with the divine laws given to Moses',
+      price: 200,
+      currency: 'gems',
+      image: tenSkin,
+      skinNumber: 5,
+      unlockLevel: 15,
+    },
+    {
+      id: 'skin_apple',
+      category: 'skins',
+      name: "Garden Apple",
+      description: 'From the tree of knowledge in the Garden of Eden',
+      price: 120,
+      currency: 'gems',
+      image: appleSkin,
+      skinNumber: 6,
+    },
+    {
+      id: 'skin_lion',
+      category: 'skins',
+      name: "Lion of Judah",
+      description: 'Courageous and mighty like the Lion of Judah',
+      price: 300,
+      currency: 'gems',
+      image: lionSkin,
+      skinNumber: 7,
+      unlockLevel: 25,
+    },
+  ], [userLevel]);
 
   // Filter items by category
   const filteredItems = useMemo(() => 
@@ -231,6 +302,8 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     // Update home store to persist the current skin
     setCurrentSkin(skinId);
     
+    console.log('🔄 Updated equipped skin to:', skinId);
+    
     // Update Rive animation if ref is available
     if (riveRef && riveRef.current && riveRef.current.setInputState) {
       try {
@@ -268,7 +341,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     const isLocked = item.unlockLevel && userLevel < item.unlockLevel;
     const canAfford = item.currency === 'gems' ? userGems >= item.price : true;
     const skinId = item.skinNumber?.toString() || item.id;
-    const isOwned = hasSkin(skinId);
+    const isOwned = item.isOwned || hasSkin(skinId); // Check both item property and shop store
     const isEquipped = equippedSkin === skinId;
     
     return (

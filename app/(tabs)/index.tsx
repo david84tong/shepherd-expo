@@ -267,7 +267,7 @@ export default function HomeScreen() {
         barStyle={isDarkContant ? 'light-content' : 'dark-content'}
       />
      <View className='flex-1 bg-[#FDEBB8]'>
-     <Animated.View className="flex-1" style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}>
+      <Animated.View className="flex-1" style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}>
         {/* Background Layers */}
         <Animated.View
           style={[
@@ -393,17 +393,39 @@ export default function HomeScreen() {
                                 outputRange: [40, pillExpandedWidth],
                               }),
                             }}>
+                          
+                              <View className="items-center flex">
                             <View
                               style={{
                                 flexDirection: 'row',
                                 alignItems: 'center',
-                                paddingRight: 10,
+                                justifyContent: 'center',
                               }}>
-                              <Image source={heartIcon} className="w-7 h-7" />
-                              <Image source={starIcon} tintColor={'#FF8800'} className="w-7 h-7" />
+                                <Image source={heartIcon} className="w-4 h-4 mr-1" />
+                                <Text className="font-feather text-textPrimary text-mini w-12 ">
+                                  {lambHearts?.toString?.()}
+                                </Text>
+                              </View>
+                              
+                              <View
+                              style={{
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+
+                              }}>
+                                <Image source={starIcon} tintColor={'#FF8800'} className="w-4 h-4 mr-1" />
+                                <Text className="font-feather text-textPrimary text-mini w-12">
+                                  LVL {levelInfo.level}
+                                </Text>
+                              </View>
+                        
                             </View>
 
                             <View style={{ width: '80%' }}>
+                              {/* Level Display */}
+                          
+                              
                               <View className="h-2 bg-red/25 rounded-md overflow-hidden">
                                 <View
                                   className="h-full bg-red rounded-full"

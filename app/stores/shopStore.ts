@@ -23,8 +23,8 @@ export const useShopStore = create<ShopState>()(
   persist(
     (set, get) => ({
       // Initial state
-      ownedSkins: ['default'], // User starts with default skin
-      equippedSkin: 'default',
+      ownedSkins: ['0'], // User starts with default skin (skinNumber 0)
+      equippedSkin: '0',
       
       // Purchase a skin
       purchaseSkin: async (skinId: string, price: number) => {
@@ -73,9 +73,17 @@ export const useShopStore = create<ShopState>()(
       equipSkin: (skinId: string) => {
         const ownedSkins = get().ownedSkins;
         
-        if (!ownedSkins.includes(skinId)) {
+        // Default skin (skinId '0') is always owned
+        const isDefaultSkin = skinId === '0';
+        
+        if (!isDefaultSkin && !ownedSkins.includes(skinId)) {
           console.log('❌ Cannot equip skin that is not owned:', skinId);
           return;
+        }
+        
+        // Ensure default skin is in owned skins if not already there
+        if (isDefaultSkin && !ownedSkins.includes('0')) {
+          set({ ownedSkins: [...ownedSkins, '0'] });
         }
         
         // Set equipped skin in shop store
@@ -90,6 +98,8 @@ export const useShopStore = create<ShopState>()(
       
       // Check if user owns a skin
       hasSkin: (skinId: string) => {
+        // Default skin (skinId '0') is always owned
+        if (skinId === '0') return true;
         return get().ownedSkins.includes(skinId);
       },
       
