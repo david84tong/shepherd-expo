@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
-// import { Canvas, Circle, LinearGradient, vec, Rect } from '@shopify/react-native-skia'
+import { Canvas, Circle, LinearGradient, vec, Rect } from '@shopify/react-native-skia'
 
 import {
   View,
@@ -100,7 +100,7 @@ const TypingText: React.FC<TypingTextProps> = ({
 // Water Filling Animation Component
 const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanimated.SharedValue<number>; hapticsEnabled: boolean; guidedPrayerEnabled: boolean; currentDevotional: any }> = ({ isActive, waterProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional }) => {
   const containerSize = SCREEN_WIDTH * 0.6; // Container size
-  
+
   // Haptic feedback function
   const triggerHaptic = useCallback(() => {
     if (hapticsEnabled) {
@@ -115,7 +115,6 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
   useEffect(() => {
     if (isActive && !animationStarted.current) {
       animationStarted.current = true;
-      
       // Add a small delay to allow component to settle
       startupTimer.current = setTimeout(() => {
         // Smooth water filling animation that fills up over 20 seconds
@@ -123,7 +122,6 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
           duration: 20000, // 20 seconds to fill completely
           easing: Easing.inOut(Easing.ease),
         }, () => {
-          // Haptic feedback when filling completes
           runOnJS(triggerHaptic)();
         });
       }, 300);
@@ -137,7 +135,6 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
       // Reset water level
       waterProgress.value = withTiming(0, { duration: 600 });
     }
-    
     // Cleanup timer on unmount
     return () => {
       if (startupTimer.current) {
@@ -146,6 +143,15 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
       }
     };
   }, [isActive]);
+
+  // Helper to get current progress for Skia primitives
+  // This is a workaround for using Reanimated shared value in a React render
+  const [skiaProgress, setSkiaProgress] = useState(0);
+  useEffect(() => {
+    const update = () => setSkiaProgress(waterProgress.value);
+    const id = setInterval(update, 16); // ~60fps
+    return () => clearInterval(id);
+  }, [waterProgress]);
 
   return (
     <View style={{ alignItems: 'center', justifyContent: 'center', marginVertical: 40 }}>
@@ -157,27 +163,18 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
         borderWidth: 4,
         borderColor: '#4A90E2',
         overflow: 'hidden',
-        backgroundColor: 'transparent'
+        backgroundColor: 'transparent',
+        position: 'relative',
       }}>
-        <Canvas style={{ width: '100%', height: '100%' }}>
-          {/* Water fill with animated height */}
-          <Reanimated.View
-            style={[
-              {
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                backgroundColor: '#4A90E2',
-              },
-              useAnimatedStyle(() => {
-                const progress = waterProgress.value;
-                const height = interpolate(progress, [0, 1], [0, containerSize]);
-                return { height };
-              })
-            ]}
+        <Canvas style={{ width: containerSize, height: containerSize }}>
+          {/* Water fill with animated height using Skia primitives */}
+          <Rect
+            x={0}
+            y={containerSize - (skiaProgress * containerSize)}
+            width={containerSize}
+            height={skiaProgress * containerSize}
+            color="#4A90E2"
           />
-          
           {/* Water gradient effect */}
           <Rect
             x={0}
@@ -191,41 +188,28 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
               colors={['rgba(74, 144, 226, 0)', 'rgba(74, 144, 226, 0.8)', 'rgba(30, 144, 255, 1)']}
             />
           </Rect>
-          
-          {/* Animated water surface circles for ripple effect */}
-          <Reanimated.View
-            style={useAnimatedStyle(() => {
-              const progress = waterProgress.value;
-              const waterLevel = interpolate(progress, [0, 1], [containerSize, 0]);
-              return {
-                position: 'absolute',
-                top: waterLevel - 10,
-                left: 0,
-                right: 0,
-              };
-            })}
-          >
-            <Canvas style={{ width: containerSize, height: 20 }}>
-              <Circle
-                cx={containerSize / 2}
-                cy={10}
-                r={containerSize / 2 - 4}
-                color="rgba(135, 206, 250, 0.3)"
-              />
-            </Canvas>
-          </Reanimated.View>
+          {/* Animated water surface circle for ripple effect */}
+          <Circle
+            cx={containerSize / 2}
+            cy={containerSize - (skiaProgress * containerSize)}
+            r={containerSize / 2 - 4}
+            color="rgba(135, 206, 250, 0.3)"
+          />
         </Canvas>
       </View>
-
       {/* Prayer instruction text */}
-      <Reanimated.View
+      <View
         style={{
           position: 'absolute', 
           pointerEvents: 'none', 
           zIndex: 2, 
           maxWidth: SCREEN_WIDTH * 0.8,
           alignItems: 'center',
-          justifyContent: 'center'
+          justifyContent: 'center',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
         }}
       >
         {guidedPrayerEnabled ? (
@@ -263,7 +247,7 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
             </Text>
           </View>
         )}
-      </Reanimated.View>
+      </View>
     </View>
   );
 };

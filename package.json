@@ -34,7 +34,7 @@
     "@react-native-google-signin/google-signin": "^14.0.1",
     "@react-native-masked-view/masked-view": "^0.3.2",
     "@sentry/react-native": "~6.10.0",
-    "@shopify/react-native-skia": "^2.0.5",
+    "@shopify/react-native-skia": "1.5.0",
     "compare-versions": "^6.1.1",
     "dayjs": "^1.11.13",
     "expo": "~52.0.46",
