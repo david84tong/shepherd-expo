@@ -1541,13 +1541,15 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                   {/* Next Chapter/Book Button (in path mode) */}
                   <View style={{ flex: 1, marginRight: -100 }}>
                     <SideButton
+                      // title={
+                      //   isJustReadMode
+                      //     ? 'Finish Reading'
+                      //     : isAtEndChapter
+                      //       ? 'Complete Unit'
+                      //       : 'Next Chapter'
+                      // }
                       title={
-                        isJustReadMode
-                          ? 'Finish Reading'
-                          : isAtEndChapter
-                            ? 'Complete Unit'
-                            : 'Next Chapter'
-                      }
+                        'Finish Reading'}
                       onPress={
                         isJustReadMode
                           ? handleFinishReading
@@ -1555,7 +1557,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                             ? handleFinishReading
                             : navigateToNextChapter
                       }
-                      disabled={!hasScrolledToBottom || loading}
+                      disabled={!hasScrolledToBottom || loading || !isAtEndChapter}
                     />
                   </View>
                   {/* Navigation Buttons */}
