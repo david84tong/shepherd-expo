@@ -10,7 +10,6 @@ import {
   Alert,
   Dimensions,
   Image,
-  ActivityIndicator,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchChapter, Verse, ChapterResponse } from '~/app/api/bible';
@@ -23,7 +22,7 @@ import Reanimated, {
   Easing,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { Animated as RNAnimated } from 'react-native';
+import { Animated as RNAnimated, Easing as RNEasing } from 'react-native';
 import Toast from 'react-native-toast-message';
 import Clipboard from '@react-native-clipboard/clipboard';
 import { useUIStore } from '~/app/stores/uiStore';
@@ -57,8 +56,8 @@ import { IS_ANDROID } from '~/app/utils/utils';
 import i18n from '~/app/utils/i18n';
 import { useLanguageStore } from '~/app/stores/languageStore';
 import { ReaderSettings } from '~/app/stores/readerSettingsStore';
-import PrimaryButton from './PrimaryButton';
 import { THEME_COLORS } from '~/app/constants/theme';
+import SideButton from './SideButton';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -401,6 +400,13 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const currentPath = usePathStore((s) => s.currentPath);
   const setSavedReading = usePathStore((s) => s.setSavedReading);
 
+  // Add logging to see current path state
+  // console.log('📖 [NewBibleReader] Current path state:', {
+  //   pathInProgress,
+  //   currentPath,
+  //   isInPathMode
+  // });
+
   // Add state to track scrolling
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -411,6 +417,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Add ref to throttle scroll progress updates
   const lastScrollUpdate = useRef(0);
   const SCROLL_THROTTLE_MS = 16; // ~60fps
+
+  // Get UI store for the book chapter selector
+  const showBookChapterSelector = useUIStore((state) => state.showBookChapterSelector);
 
   // Memoize theme to prevent recalculation on every render
   const theme = useMemo(() => {
@@ -424,6 +433,21 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     return { fontSize: fontSize, lineHeight: calculatedLineHeight, color: theme?.cardTextColor };
   }, [fontSize, lineHeightPreset, theme?.cardTextColor]);
 
+  // Animation value for button container (using RNAnimated for these)
+  const buttonsAnim = useRef(new RNAnimated.Value(0)).current; // 0: hidden, 1: visible
+
+  // Animated styles for buttons
+  const buttonsContainerStyle = {
+    opacity: buttonsAnim,
+    transform: [
+      {
+        translateY: buttonsAnim.interpolate({
+          inputRange: [0, 1],
+          outputRange: [100, 0], // Slide up from bottom
+        }),
+      },
+    ],
+  };
 
   const hasFilteredRef = useRef(false);
 
@@ -475,6 +499,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Helper function to load a chapter
   const loadChapter = useCallback(
     async (bookId: number, chapter: number) => {
+      console.log(`📖 [NewBibleReader] loadChapter called with bookId: ${bookId}, chapter: ${chapter}`);
       setLoading(true);
       if (isMapMode) {
         // In map mode, set currentIndex based on tap-to-show setting
@@ -495,6 +520,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
         const res = await fetchChapter(translation, bookId, chapter);
         if (res && !('error' in res)) {
+          scrollToTop();
           // Update internal tracking of current book and chapter
           setCurrentBookId(bookId);
           setCurrentChapter(chapter);
@@ -513,10 +539,13 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             setCurrentIndex(res.verses.length - 1);
           }
           
+          
           setLoading(false);
+          console.log(`📖 [NewBibleReader] Chapter loaded successfully: ${res.book} ${res.chapter}`);
           return true;
         }
         setLoading(false);
+        console.log(`📖 [NewBibleReader] Failed to load chapter - error in response`);
         return false;
       } catch (error) {
         console.error('Error loading chapter:', error);
@@ -527,33 +556,25 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     [translation, setSavedReading, progressValue, isMapMode, readerSettings.tapToShowNextCard]
   );
 
-  useEffect(() => {
-    const updateUIState = async () => {
-      if (chapterData) {
-        // Update internal tracking of current book and chapter
-        setCurrentBookId(bookId);
-        setCurrentChapter(chapter);
-        // Set index to show all verses after data is loaded
-        setCurrentIndex(chapterData.verses.length - 1);
-        console.log(
-          `📖 [NewBibleReader] Updated internal state - bookId: ${bookId}, chapter: ${chapter}`
-        );
-      }
-    };
-
-    updateUIState();
-  }, [bookId, chapter, chapterData, setSavedReading]);
-
   // Check if user is at the end chapter of their path
   const isAtEndChapter = useMemo(() => {
     if (!currentPath || !chapterData) return false;
-    return currentBookId === currentPath.bookId && currentChapter === currentPath.endChapter;
+    const result = currentBookId === currentPath.bookId && currentChapter === currentPath.endChapter;
+    console.log('📖 [NewBibleReader] isAtEndChapter calculation:', {
+      currentBookId,
+      currentPathBookId: currentPath.bookId,
+      currentChapter,
+      currentPathEndChapter: currentPath.endChapter,
+      result
+    });
+    return result;
   }, [currentPath, currentBookId, currentChapter, chapterData]);
 
   // Reset hasScrolledToBottom when chapter changes
   useEffect(() => {
     setHasScrolledToBottom(false);
     setScrollProgress(0); // Reset scroll progress when chapter changes
+  
   }, [currentBookId, currentChapter]);
 
   // Reset scroll progress when tap-to-show setting changes
@@ -564,12 +585,36 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     }
   }, [isMapMode, readerSettings.tapToShowNextCard]);
 
+  // Animation effect for navigation buttons
+  useEffect(() => {
+    console.log(
+      `[AnimationEffect] hasScrolledToBottom changed to: ${hasScrolledToBottom}. Animating buttons.`
+    );
+    RNAnimated.timing(buttonsAnim, {
+      toValue: hasScrolledToBottom ? 1 : 0,
+      duration: 400,
+      easing: RNEasing.out(RNEasing.quad),
+      useNativeDriver: true,
+    }).start();
+  }, [hasScrolledToBottom, buttonsAnim]);
+
+  // Function to scroll to top of the list
+  const scrollToTop = useCallback(() => {
+    setTimeout(() => {
+      scrollViewRef.current?.scrollTo({ y: 0, animated: false });
+    }, 100);
+  }, []);
+
   // Function to navigate to the next chapter
   const navigateToNextChapter = useCallback(() => {
+    console.log('📖 [NewBibleReader] navigateToNextChapter called');
+    console.log('📖 [NewBibleReader] Current state - bookId:', currentBookId, 'chapter:', currentChapter);
+    
     // Add haptic feedback for navigation
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
 
     const chaptersInCurrentBook = BIBLE_CHAPTER_COUNTS[currentBookId];
+    console.log('📖 [NewBibleReader] Chapters in current book:', chaptersInCurrentBook);
 
     if (currentChapter >= chaptersInCurrentBook) {
       // At the last chapter of current book, go to next book
@@ -591,10 +636,11 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       }
     } else {
       // Go to next chapter in current book
+      console.log(`📖 [NewBibleReader] Navigating to next chapter: ${currentChapter + 1}`);
       loadChapter(currentBookId, currentChapter + 1);
     }
+    
   }, [currentBookId, currentChapter, chapterData, loadChapter]);
-
   // Function to navigate back to the previous chapter
   const navigateToPreviousChapter = useCallback(() => {
     // Add haptic feedback for navigation
@@ -695,7 +741,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
-      scrollViewRef.current?.scrollToEnd({ animated: true });
+      scrollViewRef.current?.scrollToEnd({ animated: false });
     }, 100);
   }, []);
 
@@ -837,7 +883,7 @@ console.log("RENDERING");
       // Schedule auto-scroll after the next verse is added
       setTimeout(() => {
         if (scrollViewRef.current) {
-          scrollViewRef.current.scrollToEnd({ animated: true });
+          scrollViewRef.current.scrollToEnd({ animated: false });
         }
       }, 150);
     } else {
@@ -1683,8 +1729,6 @@ console.log("RENDERING");
     };
   });
 
-  const showBookChapterSelector = useUIStore((state) => state.showBookChapterSelector);
-
   // --- Add at the top of the component, after other hooks ---
   const cardSlideAnim = useSharedValue(0);
 
@@ -1950,7 +1994,7 @@ console.log("RENDERING");
                 <GestureHandlerRootView style={{ flex: 1 }}>
                   {isMapMode ? (
                     <TouchableWithoutFeedback onPress={handleNextVerse}>
-                      <View style={{ minHeight: '100%' }}>
+                      <View style={{ minHeight: '100%',paddingBottom:!readerSettings.tapToShowNextCard ? 100 : 0 }}>
                         {versesToShow.map((verse, index) => {
                           const highlightColor = getVerseHighlightColor(verse);
                           const isCurrent = index === currentIndex && isMapMode && readerSettings.tapToShowNextCard;
@@ -2058,7 +2102,7 @@ console.log("RENDERING");
                         ) : null}
 
                         {/* Show finish reading button when tap-to-show is disabled and all verses are shown */}
-                        {isMapMode && !readerSettings.tapToShowNextCard && chapterData && (
+                        {/* {isMapMode && !readerSettings.tapToShowNextCard && chapterData && (
                           <View style={{ alignItems: 'center', marginTop: 16 }}>
                             <PrimaryButton
                               title="Finish Reading 🎉"
@@ -2070,7 +2114,7 @@ console.log("RENDERING");
                               style="w-48"
                             />
                           </View>
-                        )}
+                        )} */}
                       </View>
                     </TouchableWithoutFeedback>
                   ) : (
@@ -2217,11 +2261,78 @@ console.log("RENDERING");
                 onClose={handleCloseNoteEditor}
               />
             )}
+
+            {/* Bottom Navigation Row - Only in Map mode when tap-to-next is disabled */}
+            {isMapMode && !readerSettings.tapToShowNextCard && isInPathMode && (
+              <RNAnimated.View
+                style={[
+                  {
+                    position: 'absolute',
+                    bottom: 50,
+                    left: 0,
+                    right: 0,
+                    flexDirection: 'row',
+                    justifyContent: 'flex-end',
+                    alignItems: 'center',
+                    paddingHorizontal: 20,
+                    zIndex: 10,
+                  },
+                  buttonsContainerStyle,
+                ]}>
+                {/* Finish Reading Button (in path mode) */}
+                <View style={{ flex: 1, marginRight: -100 }}>
+                  <SideButton
+                    title="Finish Reading"
+                    onPress={isAtEndChapter ? handleFinishReading : navigateToNextChapter}
+                    disabled={!hasScrolledToBottom || loading || !isAtEndChapter}
+                  />
+                </View>
+                {/* Navigation Buttons */}
+                <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
+                  <TouchableOpacity
+                    style={[
+                      styles.navButton,
+                      (currentChapter <= 1 || loading) && styles.disabledNavButton,
+                    ]}
+                    onPress={navigateToPreviousChapter}
+                    disabled={currentChapter <= 1 || loading}
+                    activeOpacity={0.7}>
+                    <Text
+                      style={[
+                        styles.navButtonText,
+                        (currentChapter <= 1 || loading) && styles.disabledButtonText,
+                      ]}>
+                      ←
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[
+                      styles.navButton,
+                      (loading || (isInPathMode && isAtEndChapter)) && styles.disabledNavButton,
+                    ]}
+                    onPress={() => {
+                      console.log('📖 [NewBibleReader] Next chapter button pressed');
+                      console.log('📖 [NewBibleReader] Button state - loading:', loading, 'isInPathMode:', isInPathMode, 'isAtEndChapter:', isAtEndChapter);
+                      navigateToNextChapter();
+                    }}
+                    disabled={loading || (isInPathMode && isAtEndChapter)}
+                    activeOpacity={0.7}>
+                    <Text
+                      style={[
+                        styles.navButtonText,
+                        (loading || (isInPathMode && isAtEndChapter)) && styles.disabledButtonText,
+                      ]}>
+                      →
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </RNAnimated.View>
+            )}
           </View>
         </SafeAreaView>
 
         {/* Finish Reading Button - only show in Map mode, at bottom of content */}
-        {isMapMode && isInPathMode && isAtEndChapter && chapterData && !loading && (
+        {/* {isMapMode && isInPathMode && isAtEndChapter && chapterData && !loading && (
           <PrimaryButton
             title="Finish Reading 🎉"
             onPress={() => {
@@ -2233,7 +2344,7 @@ console.log("RENDERING");
             buttonType="gold"
             style="mx-5 mb-5"
           />
-        )}
+        )} */}
 
         {isBibleReaderScreen && !isMapMode ? (
         <BibleVerseActionBar
@@ -2451,6 +2562,31 @@ const styles = StyleSheet.create({
     elevation: 1,
     borderWidth: 2,
     borderColor: 'rgba(121, 83, 35, 0.1)', // Light brown border
+  },
+  navButton: {
+    alignItems: 'center',
+    backgroundColor: '#FFE4A8',
+    borderRadius: 24,
+    elevation: 4,
+    height: 48,
+    justifyContent: 'center',
+    marginHorizontal: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 2,
+    width: 48,
+  },
+  navButtonText: {
+    color: '#3C584A',
+    fontFamily: 'Inter-Bold',
+    fontSize: 24,
+  },
+  disabledNavButton: {
+    backgroundColor: 'rgba(220, 178, 128, 0.1)',
+  },
+  disabledButtonText: {
+    color: '#DCB280',
   },
 });
 
