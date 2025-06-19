@@ -57,6 +57,7 @@ import { IS_ANDROID } from '~/app/utils/utils';
 import i18n from '~/app/utils/i18n';
 import { useLanguageStore } from '~/app/stores/languageStore';
 import { ReaderSettings } from '~/app/stores/readerSettingsStore';
+import PrimaryButton from './PrimaryButton';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -399,7 +400,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   readerSettings,
   THEME_COLORS,
 }): JSX.Element => {
-  const { fontSize, theme: currentTheme, lineHeightPreset, useCardView } = readerSettings;
+  const { fontSize, theme: currentTheme, lineHeightPreset, useCardView, tapToShowNextCard } = readerSettings;
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [chapterData, setChapterData] = useState<ChapterResponse | null>(null);
@@ -451,6 +452,13 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Add state to track scrolling
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
+  
+  // Add state to track scroll progress when tap-to-show is disabled
+  const [scrollProgress, setScrollProgress] = useState(0);
+  
+  // Add ref to throttle scroll progress updates
+  const lastScrollUpdate = useRef(0);
+  const SCROLL_THROTTLE_MS = 16; // ~60fps
 
   // Memoize theme to prevent recalculation on every render
   const theme = useMemo(() => {
@@ -517,7 +525,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     async (bookId: number, chapter: number) => {
       setLoading(true);
       if (isMapMode) {
-        setCurrentIndex(0); // Reset to first verse when loading a new chapter for Map mode
+        // In map mode, set currentIndex based on tap-to-show setting
+        if (readerSettings.tapToShowNextCard) {
+          setCurrentIndex(0); // Reset to first verse when tap-to-show is enabled
+        } else {
+          // When tap-to-show is disabled, we'll set currentIndex to show all verses after data loads
+        }
         setIsTypingComplete(false);
         setSkipTyping(false);
         progressValue.value = withTiming(0, { duration: 0 });
@@ -543,6 +556,11 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           // Save to the store for persistence (same as regular BibleReader)
           setSavedReading(res.book, bookId, res.chapter);
           
+          // If tap-to-show is disabled in map mode, set currentIndex to show all verses
+          if (isMapMode && !readerSettings.tapToShowNextCard) {
+            setCurrentIndex(res.verses.length - 1);
+          }
+          
           setLoading(false);
           return true;
         }
@@ -554,7 +572,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         return false;
       }
     },
-    [translation, setSavedReading, progressValue, isMapMode]
+    [translation, setSavedReading, progressValue, isMapMode, readerSettings.tapToShowNextCard]
   );
 
   useEffect(() => {
@@ -583,7 +601,16 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Reset hasScrolledToBottom when chapter changes
   useEffect(() => {
     setHasScrolledToBottom(false);
+    setScrollProgress(0); // Reset scroll progress when chapter changes
   }, [currentBookId, currentChapter]);
+
+  // Reset scroll progress when tap-to-show setting changes
+  useEffect(() => {
+    if (isMapMode) {
+      setScrollProgress(0);
+      lastScrollUpdate.current = 0;
+    }
+  }, [isMapMode, readerSettings.tapToShowNextCard]);
 
   // Function to navigate to the next chapter
   const navigateToNextChapter = useCallback(() => {
@@ -651,20 +678,50 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     // Remove the else block that was causing the issue
   }, [bookId, chapter, translation, isMapMode]);
 
+  // Memoize progress calculation to prevent unnecessary re-renders
+  const calculatedProgress = useMemo(() => {
+    if (!chapterData?.verses?.length) return 0;
+    
+    if (isMapMode && !readerSettings.tapToShowNextCard) {
+      // Use scroll progress when tap-to-show is disabled
+      return scrollProgress;
+    } else {
+      // Use current index progress when tap-to-show is enabled
+      return (currentIndex + 1) / chapterData.verses.length;
+    }
+  }, [chapterData?.verses?.length, currentIndex, isMapMode, readerSettings.tapToShowNextCard, scrollProgress]);
+
   useEffect(() => {
     if (chapterData?.verses?.length) {
-      // Calculate progress based on current index, starting from 1 card
-      const newProgress = (currentIndex + 1) / chapterData.verses.length;
-      progressValue.value = withTiming(newProgress, { duration: 600 });
+      progressValue.value = withTiming(calculatedProgress, { duration: 600 });
     }
-  }, [currentIndex, chapterData, progressValue]);
+  }, [calculatedProgress, chapterData?.verses?.length, progressValue]);
 
   // Remove scroll-based rendering
   const handleScroll = useCallback((event: any) => {
     setIsScrolling(true);
 
-    // Check if scrolled to bottom for finish reading button
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
+    
+    // Calculate scroll progress when tap-to-show is disabled in map mode
+    // Use throttling to prevent performance issues
+    if (isMapMode && !readerSettings.tapToShowNextCard && contentSize.height > layoutMeasurement.height) {
+      const now = Date.now();
+      if (now - lastScrollUpdate.current >= SCROLL_THROTTLE_MS) {
+        const scrollableHeight = contentSize.height - layoutMeasurement.height;
+        const currentScrollPosition = contentOffset.y;
+        const newScrollProgress = Math.min(Math.max(currentScrollPosition / scrollableHeight, 0), 1);
+        
+        // Only update if progress changed significantly (avoid unnecessary re-renders)
+        if (Math.abs(newScrollProgress - scrollProgress) > 0.01) {
+          setScrollProgress(newScrollProgress);
+        }
+        
+        lastScrollUpdate.current = now;
+      }
+    }
+
+    // Check if scrolled to bottom for finish reading button
     const threshold = 50;
     const scrolledToBottomThreshold = contentSize.height - threshold;
     const bottomReached = layoutMeasurement.height + contentOffset.y >= scrolledToBottomThreshold;
@@ -682,7 +739,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     scrollTimeout.current = setTimeout(() => {
       setIsScrolling(false);
     }, 300);
-  }, [hasScrolledToBottom]);
+  }, [hasScrolledToBottom, isMapMode, readerSettings.tapToShowNextCard, scrollProgress]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -792,6 +849,11 @@ console.log("RENDERING");
   const handleNextVerse = useCallback(() => {
     if (!chapterData || isScrolling) return;
 
+    // If tap-to-show-next-card is disabled in map mode, don't advance
+    if (isMapMode && !readerSettings.tapToShowNextCard) {
+      return;
+    }
+
     // Trigger haptic feedback for every tap
     Haptics.selectionAsync();
 
@@ -845,6 +907,7 @@ console.log("RENDERING");
     handleFinishReading,
     isInPathMode,
     isMapMode,
+    readerSettings.tapToShowNextCard,
   ]);
 
   const handleTypingComplete = useCallback(() => {
@@ -1648,14 +1711,14 @@ console.log("RENDERING");
 
   // Memoize verses to show to prevent recalculation on every render
   const versesToShow: Verse[] = useMemo(() => {
-    if (isMapMode) {
-      // Map mode: show only up to currentIndex + 1 (old behavior)
+    if (isMapMode && readerSettings.tapToShowNextCard) {
+      // Map mode with tap-to-show enabled: show only up to currentIndex + 1
       return chapterData?.verses?.slice(0, currentIndex + 1) || [];
     } else {
-      // All other screens: show all verses (original behavior)
+      // All other screens or map mode with tap-to-show disabled: show all verses
       return chapterData?.verses || [];
     }
-  }, [chapterData?.verses, currentIndex, isMapMode]);
+  }, [chapterData?.verses, currentIndex, isMapMode, readerSettings.tapToShowNextCard]);
 
   // Memoize animated styles to prevent recreation on every render
   const animatedProgressStyle = useAnimatedStyle(() => {
@@ -1731,7 +1794,7 @@ console.log("RENDERING");
                             baseTextStyle={{}}
                             className="text-brown/70"
                             speed={20}
-                            skipAnimation={skipTyping}
+                            skipAnimation={skipTyping || (isMapMode && !readerSettings.tapToShowNextCard)}
                             onComplete={handleTypingComplete}
                           />
                         </Text>
@@ -1937,7 +2000,7 @@ console.log("RENDERING");
                       <View style={{ minHeight: '100%' }}>
                         {versesToShow.map((verse, index) => {
                           const highlightColor = getVerseHighlightColor(verse);
-                          const isCurrent = index === currentIndex && isMapMode;
+                          const isCurrent = index === currentIndex && isMapMode && readerSettings.tapToShowNextCard;
 
                           return (
                             <LongPressGestureHandler
@@ -1973,20 +2036,16 @@ console.log("RENDERING");
                                         <View style={{ marginBottom: 12 }}>
                                           <Text style={verseTextStyle} className="font-nunito-bold">
                                             <Text className="text-brown/40">{`${verse.verse}. `}</Text>
-                                            {index === currentIndex ? (
-                                              <Text className="text-brown/70">
-                                                <TypingText
-                                                  text={verse.text}
-                                                  baseTextStyle={{}}
-                                                  className="text-brown/70"
-                                                  speed={20}
-                                                  skipAnimation={skipTyping}
-                                                  onComplete={handleTypingComplete}
-                                                />
-                                              </Text>
-                                            ) : (
-                                              <Text className="text-brown/70">{verse.text}</Text>
-                                            )}
+                                            <Text className="text-brown/70">
+                                              <TypingText
+                                                text={verse.text}
+                                                baseTextStyle={{}}
+                                                className="text-brown/70"
+                                                speed={20}
+                                                skipAnimation={skipTyping || (isMapMode && !readerSettings.tapToShowNextCard)}
+                                                onComplete={handleTypingComplete}
+                                              />
+                                            </Text>
                                           </Text>
                                         </View>
                                       </View>
@@ -2029,7 +2088,7 @@ console.log("RENDERING");
                         })}
 
                         {/* Show tap guidance for Map mode */}
-                        {currentIndex < (chapterData?.verses?.length || 0) - 1 ? (
+                        {isMapMode && readerSettings.tapToShowNextCard && currentIndex < (chapterData?.verses?.length || 0) - 1 ? (
                           <View style={{ alignItems: 'center', marginTop: 16 }}>
                             {showTapGuidance && (
                               <Text
@@ -2044,6 +2103,21 @@ console.log("RENDERING");
                             )}
                           </View>
                         ) : null}
+
+                        {/* Show finish reading button when tap-to-show is disabled and all verses are shown */}
+                        {isMapMode && !readerSettings.tapToShowNextCard && (
+                          <View style={{ alignItems: 'center', marginTop: 16 }}>
+                            <PrimaryButton
+                              title="Finish Reading 🎉"
+                              onPress={() => {
+                                console.log('📖 [NewBibleReader] Finish reading button tapped');
+                                handleFinishReading();
+                              }}
+                              buttonType="gold"
+                              style="w-48"
+                            />
+                          </View>
+                        )}
                       </View>
                     </TouchableWithoutFeedback>
                   ) : (
@@ -2194,35 +2268,18 @@ console.log("RENDERING");
         </SafeAreaView>
 
         {/* Finish Reading Button - only show in Map mode, at bottom of content */}
-        {isMapMode && isInPathMode && isAtEndChapter && (
-          <TouchableOpacity
+        {isMapMode && isInPathMode && isAtEndChapter && chapterData && !loading && (
+          <PrimaryButton
+            title="Finish Reading 🎉"
             onPress={() => {
               if (isFadingToChat) return;
               console.log('📖 [NewBibleReader] Finish tapped');
               handleFinishReading();
             }}
-            activeOpacity={0.8}
-            disabled={isFadingToChat}>
-            <View
-              style={{
-                backgroundColor: theme.progressBarBackground,
-                paddingVertical: 12,
-                alignItems: 'center',
-                marginTop: 24,
-                borderRadius: 12,
-                marginHorizontal: 20,
-                marginBottom: 20,
-              }}>
-              <Text
-                style={{
-                  color: theme.headerText,
-                  fontFamily: 'Feather Bold',
-                  fontSize: 16,
-                }}>
-                Finish Reading 🎉
-              </Text>
-            </View>
-          </TouchableOpacity>
+            disabled={isFadingToChat}
+            buttonType="gold"
+            style="mx-5 mb-5"
+          />
         )}
 
         {isBibleReaderScreen && !isMapMode ? (

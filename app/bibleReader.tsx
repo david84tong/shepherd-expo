@@ -1351,6 +1351,25 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                   />
                 </View>
 
+                {/* Tap to Show Next Card Toggle - Only show in Map mode */}
+                {isMapMode && (
+                  <View style={styles.toggleContainer}>
+                    <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>
+                      {i18n.t('tap_to_show_next_card')}
+                    </Text>
+                    <Switch
+                      trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
+                      thumbColor={readerSettings.tapToShowNextCard ? '#FFFFFF' : '#FFFFFF'}
+                      ios_backgroundColor="#E0E0E0"
+                      onValueChange={(value) => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        readerSettings.setTapToShowNextCard(value);
+                      }}
+                      value={readerSettings.tapToShowNextCard}
+                    />
+                  </View>
+                )}
+
                 <View style={styles.sliderContainer}>
                   <Text style={[styles.sliderLabel, { color: THEME_COLORS[currentTheme].text }]}>
                     {i18n.t('font_size_a')}
@@ -1642,6 +1661,25 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                             value={useCardView}
                           />
                         </View>
+
+                        {/* Tap to Show Next Card Toggle - Only show in Map mode */}
+                        {isMapMode && (
+                          <View style={styles.toggleContainer}>
+                            <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>
+                              {i18n.t('tap_to_show_next_card')}
+                            </Text>
+                            <Switch
+                              trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
+                              thumbColor={readerSettings.tapToShowNextCard ? '#FFFFFF' : '#FFFFFF'}
+                              ios_backgroundColor="#E0E0E0"
+                              onValueChange={(value) => {
+                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                readerSettings.setTapToShowNextCard(value);
+                              }}
+                              value={readerSettings.tapToShowNextCard}
+                            />
+                          </View>
+                        )}
 
                         {/* Font Size Controls */}
                         <View style={styles.sliderContainer}>

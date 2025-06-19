@@ -92,7 +92,7 @@
     "topic": "Tópico",
     "version": "Versão",
     "build": "Build",
-    "card_view": "Visualização em cartões",
+    "card_view": "Visualização de Cartão",
     "font_size": "Tamanho da fonte",
     "line_spacing": "Espaçamento entre linhas",
     "theme": "Tema",
@@ -415,5 +415,6 @@
     "heart_penalty": "Penalidade de Corações",
     "days_missed": "Dias Perdidos",
     "new_day": "Novo Dia",
-    "purchase": "Comprar"
+    "purchase": "Comprar",
+    "tap_to_show_next_card": "Toque para Mostrar Próximo Cartão"
 }
