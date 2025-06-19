@@ -15,6 +15,8 @@ import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ONBOARDING_COMPLETED_KEY } from '~/app/models/Onboarding';
 import i18n from '~/app/utils/i18n';
 
 const { width, height } = Dimensions.get('window');
@@ -58,14 +60,33 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const router = useRouter();
   const params = useLocalSearchParams();
   const [hasStarted, setHasStarted] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+
+  // Check onboarding completion status
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      try {
+        const completed = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+        setOnboardingCompleted(completed === 'true');
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        setOnboardingCompleted(false);
+      }
+    };
+    checkOnboardingStatus();
+  }, []);
 
   // Stabilize critical route-derived values
   const isOnboarding = useMemo(() => {
     if (params.fromSwipe === 'true') {
       return false;
     }
+    // Use onboarding completion status if available, otherwise fall back to params/props
+    if (onboardingCompleted !== null) {
+      return !onboardingCompleted;
+    }
     return params.isOnboarding !== undefined ? params.isOnboarding === 'true' : propIsOnboarding;
-  }, [params.fromSwipe, params.isOnboarding, propIsOnboarding]);
+  }, [params.fromSwipe, params.isOnboarding, propIsOnboarding, onboardingCompleted]);
 
   const verseText = useMemo(() =>
     (params.verseText as string | undefined) || propVerseText,

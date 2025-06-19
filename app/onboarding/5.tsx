@@ -99,11 +99,15 @@ export default function OnboardingReadingTimeScreen() {
       '60+': 90,
     } as const;
 
-    // Set in user store
-    setFrequencyGoal(duration);
+    // Always save "6-10" regardless of user selection
+    const savedDuration = '6-10';
+
+    // Set in user store (always save 6-10)
+    setFrequencyGoal(savedDuration);
 
     analytics.logEvent('OnboardingDurationScreen_Tapped_Option', {
-      value: duration,
+      value: duration, // Log what they selected
+      savedValue: savedDuration, // Log what we actually saved
       fromSettings: fromSettings,
     });
 
@@ -116,17 +120,17 @@ export default function OnboardingReadingTimeScreen() {
       console.log('Haptics not available');
     }
 
-    setSelectedOption(duration);
+    setSelectedOption(duration); // Show their selection in UI
 
-    // Also update in Firestore directly
+    // Also update in Firestore directly (always save 6-10)
     const user = auth().currentUser;
     if (user) {
       try {
         await firestore().collection('users').doc(user.uid).update({
-          frequencyGoal: duration,
+          frequencyGoal: savedDuration, // Always save 6-10
           updatedAt: firestore.FieldValue.serverTimestamp(),
         });
-        console.log('Updated frequency goal in Firestore');
+        console.log('Updated frequency goal in Firestore to 6-10 (regardless of selection)');
       } catch (error) {
         console.log('Error updating frequency goal in Firestore:', error);
       }
@@ -140,9 +144,8 @@ export default function OnboardingReadingTimeScreen() {
         router.back();
       }, 300);
     } else {
-      // Normal onboarding flow
-
-      await setResponse('frequencyGoal', duration);
+      // Normal onboarding flow (always save 6-10)
+      await setResponse('frequencyGoal', savedDuration);
       router.push('/onboarding/6');
     }
   };

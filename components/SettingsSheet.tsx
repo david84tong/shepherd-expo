@@ -1286,7 +1286,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               <View style={styles.divider} />
 
               {/* Daily Reading Time Section */}
-              <View style={styles.settingsSection}>
+              {/* <View style={styles.settingsSection}>
                 <Text style={styles.settingsSectionTitle}>{i18n.t('daily_reading_time_title')}</Text>
                 <TouchableOpacity
                   style={styles.translationSelector}
@@ -1296,7 +1296,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.divider} />
+              <View style={styles.divider} /> */}
 
               {/* Notification Time Section */}
               <View style={styles.settingsSection}>

@@ -58,7 +58,7 @@ export interface JournalComponentRef {
 
 interface JournalProps {
   visible: boolean;
-  onClose: ({isCompleted}:{isCompleted?:boolean}) => void;
+  onClose: ({isCompleted, isReflectPresses}:{isCompleted?:boolean, isReflectPresses?:boolean}) => void;
   setFinishReading: (finishReading: boolean) => void;
   setJournalButtonEnabled: (enabled: boolean) => void;
 }
@@ -394,6 +394,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   // Delayed progress animation for success view
   useEffect(() => {
     if (success) {
+      // Hide global buttons/tab bar during success state
+      useHomeStore.getState().setShowGlobalButtons(false);
+      
       // Reset bottom sheet to 60% when success screen is shown
       const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
       if (bottomSheetRef?.current) {
@@ -443,6 +446,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
         }, 1200);
       }, 500);
     } else {
+      // Show global buttons when not in success state
+      useHomeStore.getState().setShowGlobalButtons(true);
+      
       animatedXP.setValue(0);
       animatedHearts.setValue(0);
       animatedTextOpacity.setValue(0.4);

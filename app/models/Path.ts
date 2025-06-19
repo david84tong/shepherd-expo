@@ -3,7 +3,6 @@
 // revert too this later
 
 import { ImageSourcePropType } from 'react-native';
-import { CHAPTER_BREAKDOWNS } from '../utils/versesByChapter';
 
 // Represents a range of chapters within a specific book
 export interface BibleReference {
@@ -22,11 +21,6 @@ export interface Unit {
   prayer: string; // Prayer for the unit (optional – injected later if omitted)
   reflectionPrompt: string; // Reflection prompt (optional – injected later if omitted)
   // Add other properties like description, xp reward, etc. later
-
-  // New optional properties for verse-level splits
-  isSplit?: boolean; // Indicates this unit is a sub-slice of a larger chapter
-  startVerse?: number;
-  endVerse?: number;
 }
 
 // Represents a complete study path
@@ -2019,14 +2013,12 @@ const splitUnit = (unit: Unit, chaptersPerUnit = 2): Unit[] => {
 
   const { chapters } = unit.reference;
   if (chapters.length <= chaptersPerUnit) {
-
-    // Possibly further split by verses
-    return splitByVerses(unit);
+    return [unit];
   }
 
   const chapterChunks = chunk(chapters, chaptersPerUnit);
   const totalParts = chapterChunks.length;
-  const baseUnits = chapterChunks.map((chapArr, idx) => {
+  return chapterChunks.map((chapArr, idx) => {
     const part = idx + 1;
     return {
       ...unit,
@@ -2037,9 +2029,6 @@ const splitUnit = (unit: Unit, chaptersPerUnit = 2): Unit[] => {
       // Keep same prayer & reflectionPrompt
     } as Unit;
   });
-
-  // Further split each chunk by verses if needed
-  return baseUnits.flatMap(splitByVerses);
 };
 
 /**
@@ -2061,39 +2050,4 @@ export const generateShorterBiblePaths = (
 // Finally, export the shorter reading plan constant (1-2 chapters per unit)
 export const SHORTER_BIBLE_PATHS_2: Path[] = generateShorterBiblePaths(BIBLE_PATHS, 2);
 
-// ---- Verse-level split helpers ----
 
-function splitByVerses(unit: Unit): Unit[] {
-  console.log('splitting by verses', unit);
-  if (Array.isArray(unit.reference)) return [unit]; // Skip multi-book refs for now
-
-  const { bookId, chapters } = unit.reference;
-  if (chapters.length !== 1) return [unit]; // Only split single-chapter units
-
-  // Build camelCase key to lookup in CHAPTER_BREAKDOWNS (e.g. genesis24)
-  const bookNames = Object.entries(BIBLE_BOOK_IDS).reduce<Record<number, string>>(
-    (acc, [name, id]) => {
-      acc[id] = name;
-      return acc;
-    },
-    {} as any
-  );
-
-  const bookTitle = bookNames[bookId] ?? '';
-  const camel = bookTitle.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
-  const chapterKey = `${camel}${chapters[0]}`;
-
-  const ranges = CHAPTER_BREAKDOWNS[chapterKey];
-  if (!ranges) return [unit];
-  console.log('ranges', ranges);
-  console.log('unit splitting by verses', unit);
-  return ranges.map((r, idx) => ({
-    ...unit,
-    id: `${unit.id}-v${idx + 1}`,
-    title: idx === 0 ? unit.title : `${unit.title} (Part ${idx + 1})`,
-    isSplit: true,
-    startVerse: r.start,
-    endVerse: r.end,
-    description: unit.description, // Keep original description
-  }));
-}

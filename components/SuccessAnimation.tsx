@@ -808,7 +808,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
               // Special bonus reward display
               <View className="flex-row items-center justify-center mb-2">
                 <Image source={gemIcon} className="w-6 h-6 mr-2" />
-                <Text className="font-din text-textPrimary text-xl">{i18n.t('gems_awarded', { count: 9 })}</Text>
+                <Text className="font-din text-textPrimary text-xl">{i18n.t('gems_awarded', { count: 100 })}</Text>
               </View>
             ) : (
               // Standard rewards display for other success types
