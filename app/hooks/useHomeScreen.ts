@@ -778,8 +778,8 @@ export const useHomeScreen = () => {
     if (isReflectPresses) {
       setFinishReading(false);
       // Clear prayer state immediately to prevent race condition in handleRivePlay
-      setShowPrayerContent(false);
-      setPrayerViewVisible(false);
+        setShowPrayerContent(false);
+        setPrayerViewVisible(false);
       
       // Close prayer view first with animation
       Animated.timing(riveArtboardOpacityAnim, {

@@ -126,7 +126,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
       prevLevelRef.current = levelInfo.level;
     } else if (levelInfo.level !== prevLevelRef.current) {
       // Level changed but didn't increase (shouldn't happen normally)
-      prevLevelRef.current = levelInfo.level;
+    prevLevelRef.current = levelInfo.level;
       setSavedPrevLevel(levelInfo.level);
     }
   }, [levelInfo.level]);

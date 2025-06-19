@@ -164,10 +164,10 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
         // Animate in the final stats
         finalStatsOpacity.value = withTiming(1, { duration: 600 });
         finalStatsScale.value = withTiming(1, { duration: 600 });
-        setTimeout(() => {
-          blueOpacity.value = withTiming(1, { duration: 600 });
-          goldOpacity.value = withTiming(1, { duration: 600 });
-          setLocalButtonsEnabled(true);
+      setTimeout(() => {
+        blueOpacity.value = withTiming(1, { duration: 600 });
+        goldOpacity.value = withTiming(1, { duration: 600 });
+        setLocalButtonsEnabled(true);
         }, 600); // Wait for final stats animation
       }, 1200); // Wait for progress bars to finish
     }, didLevelUp ? 1000 : 500); // Start later if level up
@@ -308,17 +308,17 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
   ) : (
     // Normal flow with both buttons
     <>
-      {!hidePrayButton && (
-        <RNAnimated.View style={blueButtonStyle} className="w-full">
-          <PrimaryButton
+  {!hidePrayButton && (
+      <RNAnimated.View style={blueButtonStyle} className="w-full">
+        <PrimaryButton
             title={prayButtonTitle || i18n.t('pray_about_this_verse')}
-            onPress={onPray}
-            buttonType="blue"
-            icon={require('../assets/icons/starIcon.png')}
-            reward="+25"
-            disabled={!localButtonsEnabled || !buttonsEnabled}
-            width="100%"
-          />
+          onPress={onPray}
+          buttonType="blue"
+          icon={require('../assets/icons/starIcon.png')}
+            reward="+50"
+          disabled={!localButtonsEnabled || !buttonsEnabled}
+          width="100%"
+        />
         </RNAnimated.View>
       )}
       <RNAnimated.View style={goldButtonStyle} className="w-full">

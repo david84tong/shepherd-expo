@@ -276,7 +276,7 @@ export default function TabsLayout() {
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
               <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/today.png')} className="w-7 h-7" />
-              <Text className={`mt-1 text-[12px] font-bold text-brown/70`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_home_title')}</Text>
+              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_home_title')}</Text>
             </View>
           ),
         }}

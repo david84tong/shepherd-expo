@@ -654,7 +654,7 @@ export default function HomeScreen() {
                           icon={breadIcon}
                           title={i18n.t('daily_bread')}
                           subtitle={i18n.t('feed_soul')}
-                          points={25}
+                          points={50}
                           onPress={handleReadPress}
                           completed={readingCompleted}
                         />
@@ -687,7 +687,7 @@ export default function HomeScreen() {
                           icon={dropIcon}
                           title={i18n.t('living_water')}
                           subtitle={i18n.t('feed_soul')}
-                          points={25}
+                          points={50}
                           onPress={handlePrayerPress}
                           completed={prayerCompleted}
                           disabled={!readingCompleted}
@@ -722,7 +722,7 @@ export default function HomeScreen() {
                           icon={bibleIcon}
                           title={i18n.t('quiet_time')}
                           subtitle={i18n.t('feed_soul')}
-                          points={25}
+                          points={50}
                           onPress={handleReflectionPress}
                           completed={reflectionCompleted}
                           disabled={!readingCompleted}

@@ -8,7 +8,6 @@ import analytics from '../utils/analytics';
 import {
   View,
   Text,
-  TouchableOpacity,
   Dimensions,
   Animated,
   Image,
@@ -30,7 +29,7 @@ import { calculateLevelFromXp } from '../utils/levelUtils';
 import gemIcon from '../assets/icons/greenGemIcon.png';
 import heartIcon from '../assets/icons/heartIcon.png';
 import starIcon from '../assets/icons/starIcon.png';
-import { IS_ANDROID, IS_IOS } from '~/app/utils/utils';
+import { IS_ANDROID } from '~/app/utils/utils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 
 // Get screen dimensions to ensure full screen sizing
@@ -674,103 +673,10 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const handlePress = propOnClose || handleGoHome;
   const buttonText = propOnClose ? i18n.t('close') : i18n.t('continue_button');
 
-  // Handler for prayer button
-  const handleGoToPrayer = () => {
-    // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  // Removed prayer and reflection handlers - only continue button needed
 
-    console.log('Navigating to Prayer from Success screen');
-
-    // Log analytics
-    analytics.logEvent('SuccessAnimation_Tapped_PrayButton', {
-      fromType: successType,
-    });
-
-    // Set tappedPrayAboutVerse regardless of where we're coming from
-    console.log('Setting tappedPrayAboutVerse to true');
-    useHomeStore.getState().setTappedPrayAboutVerse(true);
-
-    // First update the state in the store
-    setHomeMode('PRAYER');
-    setPathInProgress(true); // Make sure path is in progress to show the component
-    if (isFirstReadingOfDay && 
-        effectiveType === SuccessAnimationType.READING && 
-        !sawStreakToday && 
-        !hideStreakInSuccess) {
-      triggerStreakScreen();
-      return; // Prevent navigation so StreakScreen can show
-    }
-
-    // Ensure DevotionalReader is hidden when jumping to prayer flow
-    useHomeStore.getState().setDevotionalReaderVisible(false);
-
-    // Set unmounting flag first
-    isUnmounting.current = true;
-
-    // Reset states (except successType until after navigation)
-    setPathInProgress(false);
-    setHomeMode('DEFAULT');
-
-    // Navigate back to home with a flag so HomeScreen immediately opens prayer view
-    router.replace({
-      pathname: '/(tabs)',
-      params: { isPrayPresses: 'true' },
-    });
-
-    // Add delay to give assets time to load
-    console.log('Adding delay before navigation to ensure assets load');
-  };
-
-  // Handler for reflection button
-  const handleGoToReflection = () => {
-    // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    console.log('Navigating to Reflection from Success screen');
-
-    // Log analytics
-    analytics.logEvent('SuccessAnimation_Tapped_ReflectButton', {
-      fromType: successType,
-    });
-
-    // If this came from a reading or prayer success, set the tappedReflectAboutVerse flag
-    if (
-      effectiveType === SuccessAnimationType.READING ||
-      effectiveType === SuccessAnimationType.PRAYER
-    ) {
-      console.log('Setting tappedReflectAboutVerse to true');
-      useHomeStore.getState().setTappedReflectAboutVerse(true);
-    }
-
-    // First update the state in the store
-    // Make sure path is in progress to show the component
-    setHomeMode('DEFAULT');
-    setPathInProgress(false);
-
-    if (isFirstReadingOfDay && 
-        effectiveType === SuccessAnimationType.READING && 
-        !sawStreakToday && 
-        !hideStreakInSuccess) {
-      triggerStreakScreen();
-    } else {
-      router.replace('/(tabs)');
-    }
-
-    // Add delay to give assets time to load
-    console.log('Adding delay before navigation to ensure assets load');
-    setTimeout(() => {
-      // Navigate back to the home tab - the useEffect in index.tsx will respond to mode change
-      setHomeMode('REFLECTION');
-      setPathInProgress(true);
-    }, 100); // 500ms delay
-  };
-
-  // Determine if we should show next action buttons
-  // Show after reading completion OR after prayer completion (if reflection not done)
-  const showNextButtons =
-    (effectiveType === SuccessAnimationType.READING ||
-      effectiveType === SuccessAnimationType.PRAYER) &&
-    (!prayerCompleted || !reflectionCompleted);
+  // Remove next action buttons - only show continue button
+  const showNextButtons = false;
 
   // If we're showing the streak screen, return it
   if (showStreakScreen) {
@@ -788,258 +694,178 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={{ flexGrow: 1 }}
-      showsVerticalScrollIndicator={false}
-      className="bg-surfaceCream"
-      style={{ flex: 1, backgroundColor: '#FFF4DC' }}>
-      <Animated.View
-        className="flex-1 items-center justify-center pt-4 pb-8 px-5 bg-surfaceCream"
-        style={{ opacity: fadeToStreakAnim }}>
-        {isTransitioning && (
-          <View className="absolute inset-0 items-center justify-center bg-surfaceCream">
-            <ActivityIndicator size="large" color="#F2B705" />
-          </View>
-        )}
+    <View className="flex-1 bg-surfaceCream" style={{ backgroundColor: '#FFF4DC' }}>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        showsVerticalScrollIndicator={false}
+        className="bg-surfaceCream">
+        <Animated.View
+          className="flex-1 items-center justify-center pt-4 px-5 bg-surfaceCream"
+          style={{ opacity: fadeToStreakAnim }}>
+          {isTransitioning && (
+            <View className="absolute inset-0 items-center justify-center bg-surfaceCream">
+              <ActivityIndicator size="large" color="#F2B705" />
+            </View>
+          )}
 
-        {/* Rive animation - centered */}
-        <View className="w-full h-[275px] my-4 items-center justify-center ">
+          {/* Rive animation - centered */}
+          <View className="w-full h-[275px] my-4 items-center justify-center ">
+            <Animated.View
+              style={{
+                width: effectiveType === SuccessAnimationType.BONUS ? '144%' : '120%',
+                height: effectiveType === SuccessAnimationType.BONUS ? '144%' : '120%',
+                marginTop: 10,
+                transform: [
+                  { scale: riveScaleAnim },
+                  {
+                    rotate: riveRotateAnim.interpolate({
+                      inputRange: [-1, 0, 1],
+                      outputRange: ['-15deg', '0deg', '15deg'],
+                    }),
+                  },
+                ],
+              }}>
+              {effectiveType === SuccessAnimationType.SECTION_COMPLETE ? (
+                <>
+                  {IS_ANDROID ? (
+                    <Rive
+                      ref={riveRef}
+                      autoplay={true}
+                      resourceName={'home_lamb'}
+                      artboardName="lamb-milestone"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        maxWidth: 300,
+                        maxHeight: 300,
+                        alignSelf: 'center',
+                      }}
+                    />
+                  ) : (
+                    <Rive
+                      ref={riveRef}
+                      url={(homeLambAssets && homeLambAssets[0] && homeLambAssets[0].uri) || ''}
+                      autoplay={true}
+                      artboardName="lamb-milestone"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        maxWidth: 300,
+                        maxHeight: 300,
+                        alignSelf: 'center',
+                      }}
+                    />
+                  )}
+                </>
+              ) : (
+                <>
+                  {IS_ANDROID ? (
+                    <Rive
+                      ref={riveRef}
+                      resourceName={'success_lamb'}
+                      autoplay={true}
+                      style={{ width: '100%', height: '100%' }}
+                      {...(riveArtboard ? { artboardName: riveArtboard } : {})}
+                    />
+                  ) : (
+                    <Rive
+                      ref={riveRef}
+                      url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
+                      autoplay={true}
+                      style={{ width: '100%', height: '100%' }}
+                      {...(riveArtboard ? { artboardName: riveArtboard } : {})}
+                    />
+                  )}
+                </>
+              )}
+            </Animated.View>
+          </View>
+
+          {/* Success message - enlarged */}
+          <Text className="font-feather text-[32px] text-textPrimary mb-4 text-center -mt-16">
+            {message}
+          </Text>
+          <Text className="font-din text-xl text-secondaryText text-center mb-6 px-6">
+            {subMessage}
+          </Text>
+
+          {/* Rewards Card */}
           <Animated.View
+            className="w-full bg-surfaceCream/50 rounded-[18px] p-4 my-4 border-2 border-border"
             style={{
-              width: effectiveType === SuccessAnimationType.BONUS ? '144%' : '120%',
-              height: effectiveType === SuccessAnimationType.BONUS ? '144%' : '120%',
-              marginTop: 10,
-              transform: [
-                { scale: riveScaleAnim },
-                {
-                  rotate: riveRotateAnim.interpolate({
-                    inputRange: [-1, 0, 1],
-                    outputRange: ['-15deg', '0deg', '15deg'],
-                  }),
-                },
-              ],
+              opacity: cardOpacity,
+              transform: [{ translateY: cardAnim }],
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 3,
             }}>
-            {effectiveType === SuccessAnimationType.SECTION_COMPLETE ? (
-              <>
-                {IS_ANDROID ? (
-                  <Rive
-                    ref={riveRef}
-                    autoplay={true}
-                    resourceName={'home_lamb'}
-                    artboardName="lamb-milestone"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      maxWidth: 300,
-                      maxHeight: 300,
-                      alignSelf: 'center',
-                    }}
-                  />
-                ) : (
-                  <Rive
-                    ref={riveRef}
-                    url={(homeLambAssets && homeLambAssets[0] && homeLambAssets[0].uri) || ''}
-                    autoplay={true}
-                    artboardName="lamb-milestone"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      maxWidth: 300,
-                      maxHeight: 300,
-                      alignSelf: 'center',
-                    }}
-                  />
-                )}
-              </>
+            <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
+              {rewardTitle}
+            </Text>
+
+            {effectiveType === SuccessAnimationType.BONUS ? (
+              // Special bonus reward display
+              <View className="flex-row items-center justify-center mb-2">
+                <Image source={gemIcon} className="w-6 h-6 mr-2" />
+                <Text className="font-din text-textPrimary text-xl">{i18n.t('gems_awarded', { count: 9 })}</Text>
+              </View>
             ) : (
+              // Standard rewards display for other success types
               <>
-                {IS_ANDROID ? (
-                  <Rive
-                    ref={riveRef}
-                    resourceName={'success_lamb'}
-                    autoplay={true}
-                    style={{ width: '100%', height: '100%' }}
-                    {...(riveArtboard ? { artboardName: riveArtboard } : {})}
-                  />
-                ) : (
-                  <Rive
-                    ref={riveRef}
-                    url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
-                    autoplay={true}
-                    style={{ width: '100%', height: '100%' }}
-                    {...(riveArtboard ? { artboardName: riveArtboard } : {})}
-                  />
+                {/* Only show hearts reward if not at max hearts */}
+                {!isAtMaxHearts && actualHeartReward > 0 && (
+                  <View className="flex-row items-center justify-center mb-2">
+                    <Image source={heartIcon} className="w-4 h-6 mr-2" />
+                    <Text className="font-din text-textPrimary text-xl">
+                      {i18n.t('hearts_awarded', { count: actualHeartReward })}
+                    </Text>
+                  </View>
+                )}
+                <View className="flex-row items-center justify-center">
+                  <Image source={starIcon} className="w-6 h-6 mr-2" />
+                  <Text className="font-din text-textPrimary text-xl">{i18n.t('soul_points_awarded', { count: actualXpReward })}</Text>
+                </View>
+
+                {/* Show daily XP limit message if XP was reduced */}
+                {actualXpReward < xpReward && (
+                  <View className="mt-2 py-2 bg-lightYellow rounded-xl">
+                    <Text className="font-din text-description text-center text-sm">
+                      Daily XP limit reached ({getDailyXpRemaining()} remaining)
+                    </Text>
+                  </View>
+                )}
+
+                {/* Show level up message if user leveled up */}
+                {leveledUp && (
+                  <View className="mt-4 py-2 bg-lightYellow rounded-xl">
+                    <Text className="font-feather text-xl text-primary text-center">{i18n.t('level_up')}</Text>
+                    <Text className="font-din text-description text-center mt-1">
+                      {i18n.t('level_up_message')} {newLevel}
+                    </Text>
+                  </View>
                 )}
               </>
             )}
           </Animated.View>
-        </View>
-
-        {/* Success message - enlarged */}
-        <Text className="font-feather text-[32px] text-textPrimary mb-4 text-center -mt-16">
-          {message}
-        </Text>
-        <Text className="font-din text-xl text-secondaryText text-center mb-6 px-6">
-          {subMessage}
-        </Text>
-
-        {/* Rewards Card */}
-        <Animated.View
-          className="w-full bg-surfaceCream/50 rounded-[18px] p-4 my-4 border-2 border-border"
-          style={{
-            opacity: cardOpacity,
-            transform: [{ translateY: cardAnim }],
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 3,
-          }}>
-          <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
-            {rewardTitle}
-          </Text>
-
-          {effectiveType === SuccessAnimationType.BONUS ? (
-            // Special bonus reward display
-            <View className="flex-row items-center justify-center mb-2">
-              <Image source={gemIcon} className="w-6 h-6 mr-2" />
-              <Text className="font-din text-textPrimary text-xl">{i18n.t('gems_awarded', { count: 9 })}</Text>
-            </View>
-          ) : (
-            // Standard rewards display for other success types
-            <>
-              {/* Only show hearts reward if not at max hearts */}
-              {!isAtMaxHearts && actualHeartReward > 0 && (
-                <View className="flex-row items-center justify-center mb-2">
-                  <Image source={heartIcon} className="w-4 h-6 mr-2" />
-                  <Text className="font-din text-textPrimary text-xl">
-                    {i18n.t('hearts_awarded', { count: actualHeartReward })}
-                  </Text>
-                </View>
-              )}
-              <View className="flex-row items-center justify-center">
-                <Image source={starIcon} className="w-6 h-6 mr-2" />
-                <Text className="font-din text-textPrimary text-xl">{i18n.t('soul_points_awarded', { count: actualXpReward })}</Text>
-              </View>
-
-              {/* Show daily XP limit message if XP was reduced */}
-              {actualXpReward < xpReward && (
-                <View className="mt-2 py-2 bg-lightYellow rounded-xl">
-                  <Text className="font-din text-description text-center text-sm">
-                    Daily XP limit reached ({getDailyXpRemaining()} remaining)
-                  </Text>
-                </View>
-              )}
-
-              {/* Show level up message if user leveled up */}
-              {leveledUp && (
-                <View className="mt-4 py-2 bg-lightYellow rounded-xl">
-                  <Text className="font-feather text-xl text-primary text-center">{i18n.t('level_up')}</Text>
-                  <Text className="font-din text-description text-center mt-1">
-                    {i18n.t('level_up_message')} {newLevel}
-                  </Text>
-                </View>
-              )}
-            </>
-          )}
         </Animated.View>
+      </ScrollView>
 
-        {/* Next Action Buttons - only show if needed */}
-        {showNextButtons && (
-          <Animated.View
-            className="w-full mt-4 mb-2"
-            style={{
-              opacity: buttonsOpacity,
-              transform: [{ translateY: buttonsTranslateY }],
-            }}>
-            <View className="flex justify-center space-x-4 h-48">
-              {/* Show Pray button only if prayer is not completed */}
-              {!prayerCompleted && (
-                <PrimaryButton
-                  title={i18n.t('pray_about_this_verse')}
-                  onPress={handleGoToPrayer}
-                  style={reflectionCompleted ? 'w-full' : 'flex-1 h-32'}
-                  buttonType="blue"
-                />
-              )}
-
-              {/* Show Reflect button only if reflection is not completed */}
-              {!reflectionCompleted && (
-                <PrimaryButton
-                  title={i18n.t('reflect_on_this_verse')}
-                  onPress={handleGoToReflection}
-                  style={
-                    prayerCompleted || effectiveType === SuccessAnimationType.PRAYER
-                      ? 'w-full'
-                      : 'flex-1 h-24'
-                  }
-                />
-              )}
-            </View>
-          </Animated.View>
-        )}
-
-        {/* Special case for Reflection success with prayer not completed */}
-        {effectiveType === SuccessAnimationType.REFLECTION && !prayerCompleted ? (
-          <Animated.View
-            className="w-full"
-            style={{
-              opacity: buttonsOpacity,
-              transform: [{ translateY: buttonsTranslateY }],
-            }}>
-            {/* Pray button as primary action */}
-            <PrimaryButton
-              title={i18n.t('pray_about_this_verse')}
-              onPress={handleGoToPrayer}
-              buttonType="blue"
-            />
-
-            {/* Go Home link below the pray button */}
-            <Animated.View
-              style={{
-                opacity: homeButtonOpacity,
-                transform: [{ translateY: homeButtonTranslateY }],
-              }}>
-              <TouchableOpacity
-                onPress={handlePress}
-                className="mt-4"
-                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
-                <Text className="font-feather text-description text-center underline mt-4">
-                  {i18n.t('go_home')}
-                </Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </Animated.View>
-        ) : (
-          /* Regular Return Home button for all other cases, except when showing other action buttons */
-          !showNextButtons && (
-            <Animated.View
-              style={{
-                width: '100%',
-                opacity: homeButtonOpacity,
-                transform: [{ translateY: homeButtonTranslateY }],
-              }}>
-              <PrimaryButton buttonType="blue" title={buttonText} onPress={handlePress} style="mt-4" />
-            </Animated.View>
-          )
-        )}
-
-        {/* Text link version of Return Home for original action button case */}
-        {showNextButtons && (
-          <Animated.View
-            style={{
-              opacity: homeButtonOpacity,
-              transform: [{ translateY: homeButtonTranslateY }],
-            }}>
-            <TouchableOpacity
-              onPress={handlePress}
-              className="mt-4"
-              onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
-              <Text className="font-feather text-description text-center underline">Go Home</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        )}
+      {/* Continue Button - Fixed at bottom */}
+      <Animated.View
+        className="absolute bottom-0 left-0 right-0 bg-surfaceCream px-5 pb-8 pt-4"
+        style={{
+          opacity: homeButtonOpacity,
+          transform: [{ translateY: homeButtonTranslateY }],
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.0,
+          shadowRadius: 4,
+          elevation: 5,
+        }}>
+        <PrimaryButton buttonType="blue" title={buttonText} onPress={handlePress} />
       </Animated.View>
-    </ScrollView>
+    </View>
   );
 };
 
