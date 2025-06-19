@@ -100,9 +100,21 @@ const WaterWaveAnimation: React.FC<{
   guidedPrayerEnabled: boolean;
   currentDevotional: any;
   isHolding: boolean;
-}> = ({ isActive, waterProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional, isHolding }) => {
+  animationTriggered: boolean;
+}> = ({ isActive, waterProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional, isHolding, animationTriggered }) => {
   const [waveOffset, setWaveOffset] = useState(0);
   const [waterLevel, setWaterLevel] = useState(SCREEN_HEIGHT);
+  const textOpacity = useSharedValue(1);
+
+  useEffect(() => {
+    textOpacity.value = withTiming(isHolding ? 0 : 1, { duration: 300 });
+  }, [isHolding]);
+
+  const animatedTextStyle = useAnimatedStyle(() => {
+    return {
+      opacity: textOpacity.value,
+    };
+  });
 
   // Haptic feedback function
   const triggerHaptic = useCallback(() => {
@@ -231,69 +243,66 @@ const WaterWaveAnimation: React.FC<{
       </Canvas>
 
       {/* Prayer instruction text overlay */}
-      {!isHolding && (
-        <View
-          style={{
-            position: 'absolute',
-            pointerEvents: 'none',
-            zIndex: 2,
-            alignItems: 'center',
-            justifyContent: 'center',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            alignSelf: 'center',
-
-          }}
-        >
-          {guidedPrayerEnabled ? (
-            <TypingText
-              text="Dear God, I come before you today with a grateful heart. Please guide me through this day and help me grow in faith. Amen."
-              className="text-blue-700 font-feather text-xl text-center"
-              baseTextStyle={{
-                color: '#1E40AF',
-                fontSize: 20,
-                fontFamily: 'Nunito-Black',
-                textAlign: 'center',
-                lineHeight: 28,
-              }}
-              speed={50}
-              skipAnimation={false}
-            />
-          ) : (
-            <View style={{ alignItems: 'center', alignSelf: 'center' }}>
-              <Text style={{
-                fontFamily: 'Nunito-Black',
-                textAlign: 'center',
-                color: '#1E40AF',
-                fontSize: 24,
-                marginBottom: 8,
-              }}>
-                Pour out your heart
-              </Text>
-              <Text style={{
-                fontFamily: 'DIN Next Rounded LT W01 Regular',
-                textAlign: 'center',
-                color: '#4A90E2',
-                fontSize: 16,
-              }}>
-                Let your prayers fill this vessel
-              </Text>
-              <Text style={{
-                fontFamily: 'DIN Next Rounded LT W01 Regular',
-                textAlign: 'center',
-                color: '#4A90E2',
-                fontSize: 14,
-                marginTop: 8,
-                opacity: 0.8,
-              }}>
-                Hold to begin
-              </Text>
-            </View>
-          )}
-        </View>
-      )}
+      <Reanimated.View
+        style={[{
+          position: 'absolute',
+          pointerEvents: 'none',
+          zIndex: 2,
+          alignItems: 'center',
+          justifyContent: 'center',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          alignSelf: 'center',
+        }, animatedTextStyle]}
+      >
+        {guidedPrayerEnabled ? (
+          <TypingText
+            text="Dear God, I come before you today with a grateful heart. Please guide me through this day and help me grow in faith. Amen."
+            className="text-blue-700 font-feather text-xl text-center"
+            baseTextStyle={{
+              color: '#1E40AF',
+              fontSize: 20,
+              fontFamily: 'Nunito-Black',
+              textAlign: 'center',
+              lineHeight: 28,
+            }}
+            speed={50}
+            skipAnimation={false}
+          />
+        ) : (
+          <View style={{ alignItems: 'center', alignSelf: 'center' }}>
+            <Text style={{
+              fontFamily: 'Nunito-Black',
+              textAlign: 'center',
+              color: '#1E40AF',
+              fontSize: 24,
+              marginBottom: 8,
+            }}>
+              {animationTriggered ? 'Prayer Complete!' : 'Pour out your heart'}
+            </Text>
+            <Text style={{
+              fontFamily: 'DIN Next Rounded LT W01 Regular',
+              textAlign: 'center',
+              color: '#4A90E2',
+              fontSize: 16,
+            }}>
+              {animationTriggered ? 'Your prayer has been heard' : 'Let your prayers fill this vessel'}
+            </Text>
+            <Text style={{
+              fontFamily: 'DIN Next Rounded LT W01 Regular',
+              textAlign: 'center',
+              color: '#4A90E2',
+              fontSize: 14,
+              marginTop: 8,
+              opacity: 0.8,
+            }}>
+              {animationTriggered ? 'Tap to continue' : 'Hold to begin'}
+            </Text>
+          </View>
+        )}
+      </Reanimated.View>
     </View>
   );
 };
@@ -398,6 +407,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   const [buttonsEnabled, setButtonsEnabled] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
   const [animationTriggered, setAnimationTriggered] = useState(false);
+  const [totalHoldTime, setTotalHoldTime] = useState(0);
+  const holdStartTimeRef = useRef<number | null>(null);
+  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Animation values
   const progressValue = useSharedValue(0);
@@ -564,6 +576,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       if (completePrayerTimerRef.current) {
         clearTimeout(completePrayerTimerRef.current);
       }
+      if (holdTimerRef.current) {
+        clearInterval(holdTimerRef.current);
+      }
     };
   }, []);
 
@@ -655,7 +670,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       // Clear any existing timeout when modal opens
       if (hideTimeoutRef.current) {
         clearTimeout(hideTimeoutRef.current);
-        hideTimeoutRef.current = null; // reset ref
+        hideTimeoutRef.current = null;
       }
       // Ensure controls are visible when modal is open
       if (!showControlRow) {
@@ -781,8 +796,6 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     };
   });
 
-
-
   // Function to show control row with auto-hide
   const toggleControlRow = useCallback(() => {
     console.log('🎯 toggleControlRow called! showControlRow:', showControlRow);
@@ -833,6 +846,12 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       // Reset hold state
       setIsHolding(false);
       setAnimationTriggered(false);
+      setTotalHoldTime(0);
+      holdStartTimeRef.current = null;
+      if (holdTimerRef.current) {
+        clearInterval(holdTimerRef.current);
+        holdTimerRef.current = null;
+      }
     }
   }, [showBreathingAnimation]);
 
@@ -841,30 +860,89 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     console.log('🎯 State changed - isHolding:', isHolding, 'animationTriggered:', animationTriggered);
   }, [isHolding, animationTriggered]);
 
+  // Trigger success state when water animation is complete
+  useEffect(() => {
+    if (animationTriggered) {
+      console.log('🎯 Water animation complete, triggering success state');
+      // Trigger the success state after a short delay
+      setTimeout(() => {
+        setShowBreathingAnimation(false);
+        setFinishReading(true);
+        setShowSuccess(true);
+      }, 1000);
+    }
+  }, [animationTriggered]);
+
   // Handle press start for water animation
   const handlePressIn = useCallback(() => {
-    console.log('🎯 handlePressIn called, animationTriggered:', animationTriggered);
-    if (animationTriggered) return; // Don't allow re-triggering
+    console.log('🎯 handlePressIn called');
 
+    const startTime = Date.now();
     setIsHolding(true);
-    setAnimationTriggered(true);
-    console.log('🎯 Started holding, starting water animation immediately');
+    holdStartTimeRef.current = startTime;
+    console.log('🎯 Started holding, water will fill continuously');
 
-    // Trigger haptic feedback
-    if (hapticsEnabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    }
+    // Start continuous water filling
+    const updateWater = () => {
+      if (holdStartTimeRef.current) {
+        const currentHoldTime = Date.now() - holdStartTimeRef.current;
+        const totalTime = totalHoldTime + currentHoldTime;
+        const maxFillTime = 20000; // 20 seconds to fill completely
+        const progress = Math.min(totalTime / maxFillTime, 1);
 
-    // Start the water animation immediately
-    waterProgress.value = 0;
-    waterProgress.value = withTiming(1, { duration: 20000 }); // 20 seconds to fill
-  }, [animationTriggered, waterProgress, hapticsEnabled]);
+        console.log('🎯 Total hold time:', totalTime, 'ms, progress:', progress);
+
+        // Update water progress
+        waterProgress.value = progress;
+
+        // If water reaches 100%, trigger success
+        if (progress >= 1 && !animationTriggered) {
+          console.log('🎯 Water filled completely! Triggering success!');
+          setAnimationTriggered(true);
+
+          // Trigger haptic feedback
+          if (hapticsEnabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
+
+          // Stop the water updates
+          if (holdTimerRef.current) {
+            clearInterval(holdTimerRef.current);
+            holdTimerRef.current = null;
+          }
+        }
+      }
+    };
+
+    // Update water every 50ms while holding
+    holdTimerRef.current = setInterval(updateWater, 50);
+  }, [totalHoldTime, waterProgress, hapticsEnabled, animationTriggered]);
 
   // Handle press end for water animation
   const handlePressOut = useCallback(() => {
     console.log('🎯 handlePressOut called');
     setIsHolding(false);
-  }, []);
+
+    // Calculate total hold time
+    if (holdStartTimeRef.current) {
+      const currentHoldTime = Date.now() - holdStartTimeRef.current;
+      const newTotalHoldTime = totalHoldTime + currentHoldTime;
+      setTotalHoldTime(newTotalHoldTime);
+      console.log('🎯 Total hold time accumulated:', newTotalHoldTime, 'ms');
+    }
+
+    holdStartTimeRef.current = null;
+
+    // Stop the water updates
+    if (holdTimerRef.current) {
+      console.log('🎯 Stopping water updates');
+      clearInterval(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+
+    // Don't reset water - keep it at current level
+    console.log('🎯 Water stays at current level');
+  }, [totalHoldTime, animationTriggered]);
 
   // Expose functions through ref
   useImperativeHandle(ref, () => ({
@@ -1186,9 +1264,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               onPressIn={handlePressIn}
               onPressOut={handlePressOut}
               onPress={toggleControlRow}>
-                          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -SCREEN_HEIGHT * 0.5 }}>
-              <WaterWaveAnimation isActive={showBreathingAnimation} waterProgress={waterProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} currentDevotional={currentDevotional} isHolding={isHolding} />
-            </View>
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -SCREEN_HEIGHT * 0.46 }}>
+                <WaterWaveAnimation isActive={showBreathingAnimation} waterProgress={waterProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} currentDevotional={currentDevotional} isHolding={isHolding} animationTriggered={animationTriggered} />
+              </View>
             </TouchableWithoutFeedback>
           )}
 
@@ -1247,7 +1325,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                       key={index}
                       card={card}
                       index={index}
-                      isLast={index === cardsToShow.length  - 1}
+                      isLast={index === cardsToShow.length - 1}
                       waterProgress={waterProgress}
                       fontSize={fontSize}
                       skipTyping={skipTyping}
