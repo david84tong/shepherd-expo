@@ -2058,7 +2058,7 @@ console.log("RENDERING");
                         ) : null}
 
                         {/* Show finish reading button when tap-to-show is disabled and all verses are shown */}
-                        {isMapMode && !readerSettings.tapToShowNextCard && (
+                        {isMapMode && !readerSettings.tapToShowNextCard && chapterData && (
                           <View style={{ alignItems: 'center', marginTop: 16 }}>
                             <PrimaryButton
                               title="Finish Reading 🎉"
