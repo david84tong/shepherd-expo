@@ -56,7 +56,7 @@ export function BibleVerseActionBar({
     >
       <TouchableOpacity onPress={onVersePress}>
 
-      <Text
+     {reference? <Text
         className='font-feather'
         style={{
           fontSize: 18,
@@ -64,7 +64,7 @@ export function BibleVerseActionBar({
         }}
         >
         {reference}
-      </Text>
+      </Text>:null}
         </TouchableOpacity>
       <View className='flex-row gap-4 items-center'>
         <CircleButton

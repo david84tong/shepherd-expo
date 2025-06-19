@@ -58,6 +58,7 @@ import i18n from '~/app/utils/i18n';
 import { useLanguageStore } from '~/app/stores/languageStore';
 import { ReaderSettings } from '~/app/stores/readerSettingsStore';
 import PrimaryButton from './PrimaryButton';
+import { THEME_COLORS } from '~/app/constants/theme';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -76,56 +77,7 @@ const TAP_GUIDANCE_KEY = 'userHideTapGuidance';
 const SWIPE_GUIDANCE_KEY = 'userHideSwipeGuidance';
 const READER_PREFERENCE_KEY = 'userDefaultReaderPreference';
 
-const THEME_COLORS = {
-  white: {
-    background: '#FFFFFF',
-    modalBackground: '#FFFFFF',
-    text: '#3C584A',
-    border: '#E5E5E5',
-    verseHighlight: 'rgba(220, 178, 128, 0.2)',
-    sliderTrack: '#E5E5E5',
-    bubbleBackground: '#FFFFFF',
-    bubbleBorder: '#E0E0E0',
-    verseNumberText: '#B89B4C',
-    verseNumberBackground: 'rgba(220, 178, 128, 0.15)',
-    iconColor: '#B89B4C',
-    headerText: '#B89B4C',
-    progressBarBackground: 'rgba(220, 178, 128, 0.2)',
-    progressBarFill: '#DCB280',
-  },
-  light: {
-    background: '#FFF9E6',
-    modalBackground: '#FFF4D9',
-    text: '#4A3B25',
-    border: '#FFE4A8',
-    verseHighlight: 'rgba(220, 178, 128, 0.2)',
-    sliderTrack: '#E5E5E5',
-    bubbleBackground: '#FFF4D9',
-    bubbleBorder: '#F7B500',
-    verseNumberText: '#000000',
-    verseNumberBackground: 'rgba(247, 181, 0, 0.15)',
-    iconColor: '#D4A04C',
-    headerText: '#F7B500',
-    progressBarBackground: 'rgba(247, 181, 0, 0.2)',
-    progressBarFill: '#F7B500',
-  },
-  dark: {
-    background: '#2C2C2C',
-    modalBackground: '#3C3C3C',
-    text: '#E0E0E0',
-    border: '#4A4A4A',
-    verseHighlight: 'rgba(107, 107, 107, 0.34)',
-    sliderTrack: '#5A5A5A',
-    bubbleBackground: '#3A3A3A',
-    bubbleBorder: '#5A5A5A',
-    verseNumberText: '#B0B0B0',
-    verseNumberBackground: 'rgba(107, 107, 107, 0.2)',
-    iconColor: '#A0A0AF',
-    headerText: '#B0B0B0',
-    progressBarBackground: 'rgba(107, 107, 107, 0.2)',
-    progressBarFill: '#8A8A8A',
-  },
-} as const;
+
 type ThemeType = keyof typeof THEME_COLORS;
 
 // For Bible navigation - Add bible book counts
@@ -469,8 +421,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const verseTextStyle = useMemo(() => {
     const lineHeightMultiplier = LINE_HEIGHT_PRESETS[lineHeightPreset];
     const calculatedLineHeight = Math.round(fontSize * lineHeightMultiplier / 16);
-    return { fontSize: fontSize, lineHeight: calculatedLineHeight };
-  }, [fontSize, lineHeightPreset]);
+    return { fontSize: fontSize, lineHeight: calculatedLineHeight, color: theme?.cardTextColor };
+  }, [fontSize, lineHeightPreset, theme?.cardTextColor]);
 
 
   const hasFilteredRef = useRef(false);
@@ -1786,13 +1738,13 @@ console.log("RENDERING");
                   ]}>
                   <View style={{ marginBottom: 12 }}>
                     <Text style={verseTextStyle} className="font-nunito-bold">
-                      <Text className="text-brown/40">{`${verse.verse}. `}</Text>
+                      <Text>{`${verse.verse}. `}</Text>
                       {index === currentIndex ? (
-                        <Text className="text-brown/70">
+                        <Text>
                           <TypingText
                             text={verse.text}
                             baseTextStyle={{}}
-                            className="text-brown/70"
+                         
                             speed={20}
                             skipAnimation={skipTyping || (isMapMode && !readerSettings.tapToShowNextCard)}
                             onComplete={handleTypingComplete}
@@ -1818,19 +1770,19 @@ console.log("RENDERING");
                 }}
                 {...swipeableProps(verse)}>
                 <View
-                  className="bg-surfaceCreamLight"
+                
                   style={[
                     styles.verseBubble,
                     {
                       backgroundColor: highlightColor
                         ? `${highlightColor}80`
-                        : '#fff1c9',
+                        : theme?.cardColor
                     },
                   ]}>
                   <View style={{ marginBottom: 12 }}>
                     <Text style={verseTextStyle} className="font-nunito-bold">
-                      <Text className="text-brown/40">{`${verse.verse}. `}</Text>
-                      <Text className="text-brown/70">{verse.text}</Text>
+                      <Text >{`${verse.verse}. `}</Text>
+                      <Text >{verse.text}</Text>
                     </Text>
                   </View>
                 </View>
@@ -1856,6 +1808,7 @@ console.log("RENDERING");
 
   // Render chat view if active
   if (showChatView && selectedVerse && chapterData) {
+    
     return (
       <VerseChatView
         verse={selectedVerse}
@@ -1880,8 +1833,8 @@ console.log("RENDERING");
         </Animated.View>
         <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
           <View
-            className="bg-surfaceCream rounded-t-card "
-            style={{ width: '100%', height: IS_ANDROID ? '85%' : '95%', position: 'absolute', bottom: 0 }}>
+            className="rounded-t-card "
+            style={{ width: '100%', height: IS_ANDROID ? '85%' : '95%', position: 'absolute', bottom: 0,backgroundColor:theme?.background }}>
             {/* Title and Navigation Arrows Row */}
            
               <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -2024,23 +1977,23 @@ console.log("RENDERING");
                                       }}
                                       {...swipeableProps(verse)}>
                                       <View
-                                        className="bg-surfaceCreamLight"
+                                        // className="bg-surfaceCreamLight"
                                         style={[
                                           styles.verseBubble,
                                           {
                                             backgroundColor: highlightColor
                                               ? `${highlightColor}80`
-                                              : '#fff1c9',
+                                              : theme?.cardColor,
                                           },
                                         ]}>
                                         <View style={{ marginBottom: 12 }}>
                                           <Text style={verseTextStyle} className="font-nunito-bold">
-                                            <Text className="text-brown/40">{`${verse.verse}. `}</Text>
-                                            <Text className="text-brown/70">
+                                            <Text >{`${verse.verse}. `}</Text>
+                                            <Text >
                                               <TypingText
                                                 text={verse.text}
                                                 baseTextStyle={{}}
-                                                className="text-brown/70"
+                                               
                                                 speed={20}
                                                 skipAnimation={skipTyping || (isMapMode && !readerSettings.tapToShowNextCard)}
                                                 onComplete={handleTypingComplete}
@@ -2063,19 +2016,19 @@ console.log("RENDERING");
                                       }}
                                       {...swipeableProps(verse)}>
                                       <View
-                                        className="bg-surfaceCreamLight"
+                                        // className="bg-surfaceCreamLight"
                                         style={[
                                           styles.verseBubble,
                                           {
                                             backgroundColor: highlightColor
                                               ? `${highlightColor}80`
-                                              : '#fff1c9',
+                                              : theme?.cardColor,
                                           },
                                         ]}>
                                         <View style={{ marginBottom: 12 }}>
                                           <Text style={verseTextStyle} className="font-nunito-bold">
-                                            <Text className="text-brown/40">{`${verse.verse}. `}</Text>
-                                            <Text className="text-brown/70">{verse.text}</Text>
+                                            <Text >{`${verse.verse}. `}</Text>
+                                            <Text >{verse.text}</Text>
                                           </Text>
                                         </View>
                                       </View>
@@ -2156,13 +2109,13 @@ console.log("RENDERING");
                                       {
                                         backgroundColor: highlightColor
                                           ? `${highlightColor}80`
-                                          : '#fff1c9',
+                                          : theme?.cardColor,
                                       },
                                     ]}>
                                     <View style={{ marginBottom: 12 }}>
                                       <Text style={verseTextStyle} className="font-nunito-bold">
-                                        <Text className="text-brown/40">{`${verse.verse}. `}</Text>
-                                        <Text className="text-brown/70">{verse.text}</Text>
+                                        <Text >{`${verse.verse}. `}</Text>
+                                        <Text >{verse.text}</Text>
                                       </Text>
                                     </View>
                                   </View>

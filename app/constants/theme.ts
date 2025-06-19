@@ -14,6 +14,8 @@ export const THEME_COLORS = {
       headerText: '#B89B4C',
       progressBarBackground: 'rgba(220, 178, 128, 0.2)',
       progressBarFill: '#DCB280',
+      cardColor: '#FFFFFF',
+      cardTextColor: '#3C584A',
     },
     light: {
       background: '#FFF9E6',
@@ -30,6 +32,8 @@ export const THEME_COLORS = {
       headerText: '#F7B500',
       progressBarBackground: 'rgba(247, 181, 0, 0.2)',
       progressBarFill: '#F7B500',
+      cardColor: '#FFF8E7',
+      cardTextColor: '#4A3B25',
     },
     medium: {
       background: '#FDEBB8',
@@ -46,6 +50,8 @@ export const THEME_COLORS = {
       headerText: '#B89B4C',
       progressBarBackground: 'rgba(255, 245, 210, 0.2)',
       progressBarFill: '#FFD280',
+      cardColor: '#fff1c9',
+      cardTextColor: '#795323',
     },
     dark: {
       background: '#2C2C2C',
@@ -62,5 +68,7 @@ export const THEME_COLORS = {
       headerText: '#B0B0B0',
       progressBarBackground: 'rgba(107, 107, 107, 0.2)',
       progressBarFill: '#8A8A8A',
+      cardColor: '#3A3A3A',
+      cardTextColor: '#fff',
     },
   } as const;
