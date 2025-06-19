@@ -162,9 +162,9 @@ const WaterWaveAnimation: React.FC<{
   // Update water level based on progress
   useEffect(() => {
     if (isActive) {
-      // Calculate water level based on progress (0 = bottom, 1 = 90% of screen)
-      const maxWaterLevel = SCREEN_HEIGHT / 2 // 10% from top (90% fill)
-      const minWaterLevel = SCREEN_HEIGHT; // Start from bottom
+      // Calculate water level based on progress (0 = completely hidden, 1 = filled to max level)
+      const maxWaterLevel = SCREEN_HEIGHT / 2.7; // Fill to this level when complete
+      const minWaterLevel = SCREEN_HEIGHT + 13; // Start completely below screen (hidden)
       const newWaterLevel = minWaterLevel - (skiaProgress * (minWaterLevel - maxWaterLevel));
       setWaterLevel(newWaterLevel);
     }
@@ -279,6 +279,16 @@ const WaterWaveAnimation: React.FC<{
             }}>
               Let your prayers fill this vessel
             </Text>
+            <Text style={{
+              fontFamily: 'DIN Next Rounded LT W01 Regular',
+              textAlign: 'center',
+              color: '#4A90E2',
+              fontSize: 14,
+              marginTop: 8,
+              opacity: 0.8,
+            }}>
+              Hold for 10 seconds to begin
+            </Text>
           </View>
         )}
       </View>
@@ -384,6 +394,12 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [guidedPrayerEnabled, setGuidedPrayerEnabled] = useState(false);
   const [buttonsEnabled, setButtonsEnabled] = useState(false);
+  const [isHolding, setIsHolding] = useState(false);
+  const [holdStartTime, setHoldStartTime] = useState<number | null>(null);
+  const [animationTriggered, setAnimationTriggered] = useState(false);
+  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const holdProgressRef = useRef<number>(0);
+  const holdStartTimeRef = useRef<number | null>(null);
 
   // Animation values
   const progressValue = useSharedValue(0);
@@ -452,11 +468,8 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   useEffect(() => {
     if (visible) {
       componentOpacity.value = withTiming(1, { duration: 400 });
-      // Start 20-second progress bar animation
+      // Don't start automatic animation - wait for user hold
       prayerProgressValue.value = 0;
-      prayerProgressValue.value = withTiming(1, { duration: 20000 }); // 20 seconds
-
-      // Water progress will be controlled by prayerProgressValue, not separate timer
       waterProgress.value = 0;
     } else {
       componentOpacity.value = 0;
@@ -464,16 +477,6 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       waterProgress.value = 0;
     }
   }, [visible]);
-
-  // Sync water progress with prayer progress
-  useEffect(() => {
-    const updateWaterProgress = () => {
-      waterProgress.value = prayerProgressValue.value;
-    };
-
-    const id = setInterval(updateWaterProgress, 16); // ~60fps
-    return () => clearInterval(id);
-  }, [prayerProgressValue, waterProgress]);
 
   // Load settings from AsyncStorage
   useEffect(() => {
@@ -566,6 +569,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       if (completePrayerTimerRef.current) {
         clearTimeout(completePrayerTimerRef.current);
       }
+      if (holdTimerRef.current) {
+        clearTimeout(holdTimerRef.current);
+      }
     };
   }, []);
 
@@ -583,7 +589,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               runOnJS(setShowControlRow)(false);
             }
           });
-        }, 3000);
+        }, 10000);
       }
     }
   }, [showBreathingAnimation, controlRowOpacity, showSettingsModal]);
@@ -839,8 +845,95 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       prayerProgressValue.value = 0;
       // Reset water progress as well
       waterProgress.value = 0;
+      // Reset hold state
+      setIsHolding(false);
+      setHoldStartTime(null);
+      holdStartTimeRef.current = null;
+      setAnimationTriggered(false);
+      if (holdTimerRef.current) {
+        clearInterval(holdTimerRef.current);
+        holdTimerRef.current = null;
+      }
     }
   }, [showBreathingAnimation]);
+
+  // Debug state changes
+  useEffect(() => {
+    console.log('🎯 State changed - isHolding:', isHolding, 'animationTriggered:', animationTriggered);
+  }, [isHolding, animationTriggered]);
+
+  // Handle press start for water animation
+  const handlePressIn = useCallback(() => {
+    console.log('🎯 handlePressIn called, animationTriggered:', animationTriggered);
+    if (animationTriggered) return; // Don't allow re-triggering
+
+    const startTime = Date.now();
+    setIsHolding(true);
+    setHoldStartTime(startTime);
+    holdStartTimeRef.current = startTime;
+    holdProgressRef.current = 0;
+    console.log('🎯 Started holding, filling progress bar');
+
+    // Start filling progress bar during hold
+    const updateProgress = () => {
+      if (!animationTriggered && holdStartTimeRef.current) {
+        const holdDuration = Date.now() - holdStartTimeRef.current;
+        const maxHoldTime = 10000; // 10 seconds to fill progress
+        const progress = Math.min(holdDuration / maxHoldTime, 1);
+
+        holdProgressRef.current = progress;
+        console.log('🎯 Hold progress:', progress);
+
+        // Update the prayer progress bar to show hold progress
+        prayerProgressValue.value = progress;
+
+        // If progress is complete, start water animation
+        if (progress >= 1 && !animationTriggered) {
+          console.log('🎯 Progress complete! Starting water animation!');
+          setAnimationTriggered(true);
+
+          // Trigger haptic feedback
+          if (hapticsEnabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
+
+          // Start the water animation
+          waterProgress.value = 0;
+          waterProgress.value = withTiming(1, { duration: 20000 }); // 20 seconds to fill
+
+          // Stop the progress updates
+          if (holdTimerRef.current) {
+            clearInterval(holdTimerRef.current);
+            holdTimerRef.current = null;
+          }
+        }
+      }
+    };
+
+    // Update progress every 50ms while holding
+    holdTimerRef.current = setInterval(updateProgress, 50);
+  }, [animationTriggered, waterProgress, hapticsEnabled, prayerProgressValue]);
+
+  // Handle press end for water animation
+  const handlePressOut = useCallback(() => {
+    console.log('🎯 handlePressOut called');
+    setIsHolding(false);
+    setHoldStartTime(null);
+    holdStartTimeRef.current = null;
+
+    // Clear the hold timer if user releases before progress is complete
+    if (holdTimerRef.current) {
+      console.log('🎯 Clearing hold timer');
+      clearInterval(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+
+    // Reset progress if animation wasn't triggered
+    if (!animationTriggered) {
+      holdProgressRef.current = 0;
+      prayerProgressValue.value = 0;
+    }
+  }, [animationTriggered, prayerProgressValue]);
 
   // Expose functions through ref
   useImperativeHandle(ref, () => ({
@@ -1182,7 +1275,10 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
           {/* Water Wave Animation - Show initially */}
           {showBreathingAnimation && (
-            <TouchableWithoutFeedback onPress={toggleControlRow}>
+            <TouchableWithoutFeedback
+              onPressIn={handlePressIn}
+              onPressOut={handlePressOut}
+              onPress={toggleControlRow}>
               <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -SCREEN_HEIGHT * 0.5 }}>
                 <WaterWaveAnimation isActive={showBreathingAnimation} waterProgress={waterProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} currentDevotional={currentDevotional} />
               </View>
