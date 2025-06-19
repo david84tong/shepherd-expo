@@ -198,6 +198,8 @@
     "bonus_rewards": "BONUS REWARDS",
     "reflection_rewards": "REFLECTION REWARDS",
     "rewards_earned": "REWARDS EARNED",
+    "daily_xp_cap_reached": "Daily XP limit reached (300/300). Come back tomorrow!",
+    "daily_xp_limit_message": "Daily XP limit reached ({{remaining}} remaining)",
     "gems_awarded": "+{{count}} Gems",
     "hearts_awarded": "+{{count}} Hearts",
     "soul_points_awarded": "+{{count}} Soul Points",

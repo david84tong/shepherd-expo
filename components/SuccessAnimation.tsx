@@ -260,7 +260,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Reading Complete!';
     subMessage = "You finished today's Bible reading & fed your lamb.";
     heartReward = 3;
-    xpReward = 25;
+    xpReward = 50;
     riveArtboard = 'lamb-eating';
     rewardTitle = 'READING REWARDS';
   } else if (effectiveType === SuccessAnimationType.BONUS) {
@@ -268,7 +268,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Daily Trifecta Complete!';
     subMessage = "Amazing! You've completed all three spiritual disciplines today.";
     heartReward = 5;
-    xpReward = 25;
+    xpReward = 0;
     riveArtboard = 'chest';
     rewardTitle = 'BONUS REWARDS';
   } else if (effectiveType === SuccessAnimationType.REFLECTION) {
@@ -276,7 +276,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Reflection Complete!';
     subMessage = "You've recorded your thoughts and connected with the Word.";
     heartReward = 1;
-    xpReward = 25;
+    xpReward = 50;
     riveArtboard = 'heart-hold';
     rewardTitle = 'REFLECTION REWARDS';
   } else if (effectiveType === SuccessAnimationType.PRAYER) {
@@ -284,7 +284,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Prayer Complete!';
     subMessage = 'You spent quality time with the Shepherd in prayer.';
     heartReward = 2;
-    xpReward = 25;
+    xpReward = 50;
     rewardTitle = 'PRAYER REWARDS';
     riveArtboard = 'success-heart'; // Show heart animation by default
   } else {
@@ -827,11 +827,23 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                   <Text className="font-din text-textPrimary text-xl">{i18n.t('soul_points_awarded', { count: actualXpReward })}</Text>
                 </View>
 
-                {/* Show daily XP limit message if XP was reduced */}
+                {/* Show daily XP limit message if XP was reduced or at cap */}
                 {actualXpReward < xpReward && (
                   <View className="mt-2 py-2 bg-lightYellow rounded-xl">
                     <Text className="font-din text-description text-center text-sm">
-                      Daily XP limit reached ({getDailyXpRemaining()} remaining)
+                      {getDailyXpRemaining() === 0 
+                        ? i18n.t('daily_xp_cap_reached') 
+                        : i18n.t('daily_xp_limit_message', { remaining: getDailyXpRemaining() })
+                      }
+                    </Text>
+                  </View>
+                )}
+                
+                {/* Show message when at daily XP cap even if no XP was intended */}
+                {actualXpReward === 0 && xpReward > 0 && getDailyXpRemaining() === 0 && (
+                  <View className="mt-2 py-2 bg-lightYellow rounded-xl">
+                    <Text className="font-din text-description text-center text-sm">
+                      {i18n.t('daily_xp_cap_reached')}
                     </Text>
                   </View>
                 )}
