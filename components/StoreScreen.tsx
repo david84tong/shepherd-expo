@@ -25,7 +25,6 @@ import PrimaryButton from './PrimaryButton';
 import gemIcon from '~/assets/icons/greenGemIcon.png';
 
 // Import lamb static images
-import pinkLamb from '~/assets/lambStatic/pinkSkin.png';
 import goldLamb from '~/assets/lambStatic/goldSkin.png';
 import normalLamb from '~/assets/lambStatic/normalSkin.png';
 import babyLamb from '~/assets/lambStatic/babySkin.png';
@@ -34,6 +33,9 @@ import bananaSkin from '~/assets/lambStatic/bananaSkin.png';
 import tenSkin from '~/assets/lambStatic/10Skin.png';
 import appleSkin from '~/assets/lambStatic/appleSkin.png';
 import lionSkin from '~/assets/lambStatic/lionSkin.png';
+import josephsCoat from  '~/assets/lambStatic/JosephsCoat.png';
+import armorOfGod from  '~/assets/lambStatic/armorOfGod.png';
+import whale from  '~/assets/lambStatic/whale.png';
 
 // Define store item types
 type StoreCategory = 'skins' | 'powerups' | 'hearts';
@@ -60,7 +62,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const router = useRouter();
   const { getLamb, getUser } = useUserStore();
   const { isProMember } = useSubscriptionStore();
-  const { hasSkin, purchaseSkin, equipSkin } = useShopStore();
+  const { hasSkin, purchaseSkin, equipSkin, addSkin } = useShopStore();
   const equippedSkin = useShopStore(state => state.equippedSkin);
   const riveRef = useHomeStore(state => state.riveRef);
   const setCurrentSkin = useHomeStore(state => state.setCurrentSkin);
@@ -76,6 +78,18 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const storeItems: StoreItem[] = useMemo(() => [
     // Skins
     {
+      id: 'skin_super',
+      category: 'skins',
+      name: "Annointed Lamb",
+      description: 'For a limited time, all super users unlock this golden skin',
+      price: 109,
+      currency: 'gems',
+      image: goldLamb,
+      skinNumber: 99,
+      isPro: true,
+      isOwned: isProMember, // Pro users automatically own this skin
+    },
+    {
       id: 'skin_default',
       category: 'skins',
       name: "Normal Skin",
@@ -87,66 +101,15 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       isOwned: true, // Default skin is always owned
     },
     {
-      id: 'skin_joseph_cloak',
-      category: 'skins',
-      name: "Joseph's Cloak",
-      description: 'testing one two three has very cool meaning and spazz season',
-      price: 109,
-      currency: 'gems',
-      image: pinkLamb,
-      skinNumber: 3,
-    },
-    {
-      id: 'skin_joseph_cloak_2',
-      category: 'skins',
-      name: "Joseph's Cloak",
-      description: 'testing one two three has very cool meaning and spazz',
-      price: 109,
-      currency: 'gems',
-      image: goldLamb,
-      skinNumber: 99,
-    },
-    {
-      id: 'skin_joseph_cloak_3',
-      category: 'skins',
-      name: "Joseph's Cloak",
-      description: 'testing one two three has very cool meaning and spazz',
-      price: 0,
-      currency: 'gems',
-      image: goldLamb,
-      unlockLevel: 20,
-      skinNumber: 3,
-    },
-    {
-      id: 'skin_noah',
-      category: 'skins',
-      name: "Noah's Ark",
-      description: 'A faithful servant who built the ark and saved all creatures',
-      price: 150,
-      currency: 'gems',
-      image: noahSkin,
-      skinNumber: 2,
-    },
-    {
-      id: 'skin_banana',
-      category: 'skins',
-      name: "Banana Peel",
-      description: 'A playful yellow skin that brings joy and laughter',
-      price: 75,
-      currency: 'gems',
-      image: bananaSkin,
-      skinNumber: 4,
-    },
-    {
       id: 'skin_ten_commandments',
       category: 'skins',
-      name: "Ten Commandments",
+      name: "10 Commandments",
       description: 'Blessed with the divine laws given to Moses',
       price: 200,
       currency: 'gems',
       image: tenSkin,
       skinNumber: 5,
-      unlockLevel: 15,
+      unlockLevel: 14,
     },
     {
       id: 'skin_apple',
@@ -157,6 +120,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       currency: 'gems',
       image: appleSkin,
       skinNumber: 6,
+      unlockLevel: 11,
     },
     {
       id: 'skin_lion',
@@ -167,8 +131,69 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       currency: 'gems',
       image: lionSkin,
       skinNumber: 7,
-      unlockLevel: 25,
+      unlockLevel: 17,
     },
+ 
+
+    {
+      id: 'skin_noah',
+      category: 'skins',
+      name: "Noah's Ark",
+      description: 'A faithful servant who built the ark and saved all creatures',
+      price: 150,
+      currency: 'gems',
+      image: noahSkin,
+      skinNumber: 18,
+      unlockLevel: 19,
+
+    },
+    {
+      id: 'skin_banana',
+      category: 'skins',
+      name: "Banana Peel",
+      description: 'A playful yellow skin that brings joy and laughter',
+      price: 75,
+      currency: 'gems',
+      image: bananaSkin,
+      skinNumber: 20,
+      unlockLevel: 21,
+    },
+    {
+      id: 'skin_joseph_cloak',
+      category: 'skins',
+      name: "Joseph's Coat",
+      description: 'The coat of many colors given by Jacob to his beloved son Joseph',
+      price: 180,
+      currency: 'gems',
+      image: josephsCoat,
+      skinNumber: 3,
+      unlockLevel: 22,
+    },
+  
+    {
+      id: 'skin_armor_of_god',
+      category: 'skins',
+      name: "Armor of God",
+      description: 'Put on the full armor of God to stand against the schemes of the devil',
+      price: 1100,
+      currency: 'gems',
+      image: armorOfGod,
+      skinNumber: 8,
+      unlockLevel: 24,
+    },
+    {
+      id: 'skin_whale',
+      category: 'skins',
+      name: "Jonah's Whale",
+      description: 'From the belly of the great fish that swallowed Jonah',
+      price: 1100,
+      currency: 'gems',
+      image: whale,
+      skinNumber: 9,
+      unlockLevel: 24,
+    },
+
+   
   ], [userLevel]);
 
   // Filter items by category
@@ -336,6 +361,40 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     console.log('✅ Equipped skin:', item.name, 'with skin number:', item.skinNumber);
   }, [equipSkin, setCurrentSkin, riveRef]);
 
+  // Handle upgrade to pro (for Annointed Lamb)
+  const handleUpgradeToProForLamb = useCallback(async () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    
+    // Set from screen for analytics
+    useSubscriptionStore.getState().setFromScreen('store_annointed_lamb');
+    
+    // Present the paywall
+    try {
+      const result = await useSubscriptionStore.getState().presentPaywall();
+      if (result === 'PURCHASED') {
+        // Automatically give the user the Annointed Lamb skin
+        const skinId = '99'; // Annointed Lamb skin number
+        addSkin(skinId);
+        
+        analytics.logEvent('Store_AnointedLamb_Upgraded', { 
+          fromScreen: 'store'
+        });
+        console.log('✅ Successfully upgraded to pro from Annointed Lamb card');
+        
+        // Show success message
+        Toast.show({
+          type: 'success',
+          text1: 'Welcome to Shepherd Super! 🎉',
+          text2: 'The Annointed Lamb skin has been added to your collection',
+          position: 'top',
+          visibilityTime: 4000,
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error presenting paywall from Annointed Lamb:', error);
+    }
+  }, [addSkin]);
+
   // Render store item card
   const renderStoreItem = (item: StoreItem) => {
     const isLocked = item.unlockLevel && userLevel < item.unlockLevel;
@@ -343,15 +402,40 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     const skinId = item.skinNumber?.toString() || item.id;
     const isOwned = item.isOwned || hasSkin(skinId); // Check both item property and shop store
     const isEquipped = equippedSkin === skinId;
+    const isAnointedLamb = item.id === 'skin_super';
     
     return (
       <View
         key={item.id}
-        className="bg-surfaceCreamLight rounded-[24px] mb-4 shadow-card border border-brownBorder overflow-hidden h-48">
+        className={`${isAnointedLamb 
+          ? 'bg-lightYellow border-2 border-accentGold shadow-lg' 
+          : 'bg-surfaceCreamLight border border-brownBorder shadow-card'
+        } rounded-[24px] mb-4 overflow-hidden h-48`}
+        style={isAnointedLamb ? {
+          shadowColor: '#FCD34D',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.3,
+          shadowRadius: 8,
+          elevation: 8,
+        } : {}}>
         
         <View className="flex-row p-4 h-48 justify-between">
           {/* Lamb Image - Full size, no background, clipped at bottom */}
           <View className="w-48 h-full absolute left-0 bottom-0 ml-2">
+            {isAnointedLamb && (
+              <View 
+                className="w-48 h-48 absolute bottom-[-20] rounded-full"
+                style={{
+                  backgroundColor: 'rgba(252, 211, 77, 0.2)',
+                  shadowColor: '#FCD34D',
+                  shadowOffset: { width: 0, height: 0 },
+                  right: 4,
+                  shadowOpacity: 0.6,
+                  shadowRadius: 20,
+                  elevation: 10,
+                }}
+              />
+            )}
             <Image 
               source={item.image} 
               className="w-48 h-48 absolute bottom-[-20]" 
@@ -373,7 +457,42 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
 
             {/* Button */}
             <View style={{marginBottom: 4, marginTop: -4}}>
-              {isLocked ? (
+              {isAnointedLamb ? (
+                // Special handling for Annointed Lamb
+                isProMember ? (
+                  isEquipped ? (
+                    <PrimaryButton
+                      title="Equipped"
+                      onPress={() => {}}
+                      disabled={true}
+                      buttonType="blue"
+                      buttonHeight={40}
+                      width="100%"
+                      featherIcon="check"
+                    />
+                  ) : (
+                    <PrimaryButton
+                      title="Equip"
+                      onPress={() => handleEquip(item)}
+                      disabled={false}
+                      buttonType="blue"
+                      buttonHeight={40}
+                      width="100%"
+                      featherIcon="check"
+                    />
+                  )
+                ) : (
+                  <PrimaryButton
+                    title="Upgrade"
+                    onPress={handleUpgradeToProForLamb}
+                    disabled={false}
+                    buttonType="orange"
+                    buttonHeight={40}
+                    width="100%"
+                    featherIcon="zap"
+                  />
+                )
+              ) : isLocked ? (
                 <PrimaryButton
                   title={`Unlocks lvl ${item.unlockLevel}`}
                   onPress={() => {}}
@@ -453,6 +572,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}>
         {filteredItems.map(renderStoreItem)}
+        <View className="flex h-24 bg-clear" />
       </ScrollView>
     </SafeAreaView>
   );

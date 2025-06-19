@@ -179,7 +179,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
               />
             )}
             <Text
-              className={`font-feather ${buttonHeight && buttonHeight <= 40 ? 'text-smallCaption' : 'text-h4'} text-center ${disabled || !isActive
+              className={`font-feather ${buttonHeight && buttonHeight <= 40 ? 'text-xsCaption' : 'text-h4'} text-center ${disabled || !isActive
                 ? (buttonType === 'blue'
                   ? 'text-[#E0F6FF]'
                   : buttonType === 'gold'

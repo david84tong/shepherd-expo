@@ -726,7 +726,19 @@ export const useHomeScreen = () => {
     }
   }, [devotionalData]);
 
-  const onCloseJournal = useCallback(({isCompleted}:{isCompleted?:boolean}) => {
+  const onCloseJournal = useCallback(({isCompleted, isReflectPresses}:{isCompleted?:boolean, isReflectPresses?:boolean}) => {
+    // If isReflectPresses is true, trigger prayer navigation
+    if (isReflectPresses) {
+      setFinishReading(false);
+      handlePrayerPress(); // Use the existing prayer handler
+      setTimeout(() => {
+        setShowJournalContent(false);
+        const setJournalViewVisible = useHomeStore.getState().setJournalViewVisible;
+        setJournalViewVisible(false);
+      }, 500);
+      return;
+    }
+
     setReflectionCompleted(false);
     Animated.parallel([
       Animated.timing(devotionalCardOpacityAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
@@ -760,16 +772,24 @@ export const useHomeScreen = () => {
         setShowJournalReader(false);
       });
     }, 250);
-  }, []);
+  }, [handlePrayerPress]);
 
   const onClosePrayer = useCallback(({ isReflectPresses }: { isReflectPresses?: boolean }) => {
     if (isReflectPresses) {
       setFinishReading(false);
-      handleReflectionPress();
-      setTimeout(() => {
-        setShowPrayerContent(false);
-        setPrayerViewVisible(false);
-      }, 500);
+      // Clear prayer state immediately to prevent race condition in handleRivePlay
+      setShowPrayerContent(false);
+      setPrayerViewVisible(false);
+      
+      // Close prayer view first with animation
+      Animated.timing(riveArtboardOpacityAnim, {
+        toValue: 0,
+        duration: 400,
+        useNativeDriver: true,
+      }).start(() => {
+        // Then start reflection with proper Rive state
+        handleReflectionPress();
+      });
     } else {
       setPrayerViewVisible(false);
       Animated.parallel([

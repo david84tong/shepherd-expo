@@ -93,6 +93,10 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const setGens = useUserStore((state) => state.setGens);
   const setLambMood = useUserStore((state) => state.setLambMood);
 
+  // Home store hooks for daily XP tracking
+  const addDailyXp = useHomeStore((state) => state.addDailyXp);
+  const getDailyXpRemaining = useHomeStore((state) => state.getDailyXpRemaining);
+
   // Determine which type to use for rendering
   const effectiveType = successType ?? SuccessAnimationType.READING;
 
@@ -108,6 +112,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const [rewardsApplied, setRewardsApplied] = useState(false);
   // Calculate actual heart reward (don't exceed MAX_HEARTS)
   const [actualHeartReward, setActualHeartReward] = useState(0);
+  // Calculate actual XP reward (don't exceed daily limit)
+  const [actualXpReward, setActualXpReward] = useState(0);
   // Flag to check if at max hearts
   const [isAtMaxHearts, setIsAtMaxHearts] = useState(false);
   // State to track if user leveled up
@@ -312,6 +318,10 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       const heartsToAdd = isMax ? 0 : Math.min(heartReward, MAX_HEARTS - lambHearts);
       setActualHeartReward(heartsToAdd);
 
+      // Calculate how much XP to actually add (respecting daily limit)
+      const xpToAdd = addDailyXp(xpReward);
+      setActualXpReward(xpToAdd);
+
       // Update user state with new values
       if (heartsToAdd > 0) {
         setLambHearts(lambHearts + heartsToAdd);
@@ -329,11 +339,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Check current level before adding XP using the level utility function
       const currentLevel = calculateLevelFromXp(lambXp);
 
-      // Always add XP
-      addXp(xpReward);
+      // Only add XP if we got some after daily limit check
+      if (xpToAdd > 0) {
+        addXp(xpToAdd);
+      }
 
       // Calculate new level after XP is added
-      const newXpTotal = lambXp + xpReward;
+      const newXpTotal = lambXp + xpToAdd;
       const newLevelValue = calculateLevelFromXp(newXpTotal);
 
       // Check if level increased
@@ -352,10 +364,12 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         successType: effectiveType,
         heartsAwarded: heartsToAdd,
         intentionalHeartReward: heartReward,
-        xpAwarded: xpReward,
+        xpAwarded: xpToAdd,
+        intentionalXpReward: xpReward,
+        dailyXpRemaining: getDailyXpRemaining(),
         isAtMaxHearts: isMax,
         newLambHearts: lambHearts + heartsToAdd,
-        newLambXp: lambXp + xpReward,
+        newLambXp: lambXp + xpToAdd,
         leveledUp: leveledUp,
         newLevel: leveledUp ? newLevel : undefined,
       };
@@ -374,12 +388,12 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Only add gems if this is truly the first time seeing the bonus (sawDailyBonus was false)
       if (effectiveType === SuccessAnimationType.BONUS && !sawDailyBonus) {
         const currentGems = getGens();
-        setGens(currentGems + 9);
-        console.log(`Applied +9 Gems. Updated value - Gems: ${currentGems + 9}`);
+        setGens(currentGems + 100);
+        console.log(`Applied +9 Gems. Updated value - Gems: ${currentGems + 100}`);
 
         // Add gems data to analytics
-        rewardsData.gemsAwarded = 9;
-        rewardsData.newGemCount = currentGems + 9;
+        rewardsData.gemsAwarded = 100;
+        rewardsData.newGemCount = currentGems + 100;
 
         // Set the flag to indicate user has seen daily bonus
         setSawDailyBonus(true);
@@ -537,33 +551,37 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       case SuccessAnimationType.READING:
         eventName = 'SuccessAnimation_Shown_Reading';
         params = {
-          xpReward: xpReward,
+          xpReward: actualXpReward,
           heartReward: actualHeartReward,
+          dailyXpRemaining: getDailyXpRemaining(),
         };
         break;
 
       case SuccessAnimationType.PRAYER:
         eventName = 'SuccessAnimation_Shown_Prayer';
         params = {
-          xpReward: xpReward,
+          xpReward: actualXpReward,
           heartReward: actualHeartReward,
+          dailyXpRemaining: getDailyXpRemaining(),
         };
         break;
 
       case SuccessAnimationType.REFLECTION:
         eventName = 'SuccessAnimation_Shown_Reflection';
         params = {
-          xpReward: xpReward,
+          xpReward: actualXpReward,
           heartReward: actualHeartReward,
+          dailyXpRemaining: getDailyXpRemaining(),
         };
         break;
 
       case SuccessAnimationType.BONUS:
         eventName = 'SuccessAnimation_Shown_Bonus';
         params = {
-          xpReward: xpReward,
+          xpReward: actualXpReward,
           heartReward: actualHeartReward,
           gemsAwarded: sawDailyBonus ? 0 : 9,
+          dailyXpRemaining: getDailyXpRemaining(),
         };
         break;
     }
@@ -888,7 +906,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
               {/* Only show hearts reward if not at max hearts */}
               {!isAtMaxHearts && actualHeartReward > 0 && (
                 <View className="flex-row items-center justify-center mb-2">
-                  <Image source={heartIcon} className="w-6 h-6 mr-2" />
+                  <Image source={heartIcon} className="w-4 h-6 mr-2" />
                   <Text className="font-din text-textPrimary text-xl">
                     {i18n.t('hearts_awarded', { count: actualHeartReward })}
                   </Text>
@@ -896,8 +914,17 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
               )}
               <View className="flex-row items-center justify-center">
                 <Image source={starIcon} className="w-6 h-6 mr-2" />
-                <Text className="font-din text-textPrimary text-xl">{i18n.t('soul_points_awarded', { count: xpReward })}</Text>
+                <Text className="font-din text-textPrimary text-xl">{i18n.t('soul_points_awarded', { count: actualXpReward })}</Text>
               </View>
+
+              {/* Show daily XP limit message if XP was reduced */}
+              {actualXpReward < xpReward && (
+                <View className="mt-2 py-2 bg-lightYellow rounded-xl">
+                  <Text className="font-din text-description text-center text-sm">
+                    Daily XP limit reached ({getDailyXpRemaining()} remaining)
+                  </Text>
+                </View>
+              )}
 
               {/* Show level up message if user leveled up */}
               {leveledUp && (

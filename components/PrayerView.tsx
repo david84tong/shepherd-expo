@@ -14,9 +14,10 @@ import {
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePrayerStore } from '~/app/stores/prayerStore';
-import { useHomeStore } from '~/app/stores/homeStore';
+import { useHomeStore, SuccessAnimationType } from '~/app/stores/homeStore';
 import { useUserStore } from '~/app/stores/userStore';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
+import { router } from 'expo-router';
 import firestore from '@react-native-firebase/firestore';
 import Reanimated, {
   FadeInUp,
@@ -1124,27 +1125,81 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
             const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
             setPrayerCompleted(true);
 
-            // Show tab bar again
-            const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
-            setTimeout(() => {
-              setPrayerViewVisible(false);
-            }, 2000);
+            // Check if we should show bonus collection
+            const readingCompleted = useHomeStore.getState().readingCompleted;
+            const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
+            const sawDailyBonus = useHomeStore.getState().sawDailyBonus;
+            const sawStreakToday = useHomeStore.getState().sawStreakToday;
+            const isFirstReadingOfDay = !sawStreakToday;
+            const isBonusAvailable = readingCompleted && reflectionCompleted && isFirstReadingOfDay && !sawDailyBonus;
 
-            // Log completion analytics
-            analytics.logEvent('PrayerView_Completed', {
-              prayerTopic: recentPrayers[0] || 'general',
-              totalCards: totalCards,
-              devotionalId: currentDevotional?.id || null,
-              bibleReference: currentDevotional?.bibleReference || null,
-            });
+            if (isBonusAvailable) {
+              // Show bonus collection screen
+              const setSuccessType = useHomeStore.getState().setSuccessType;
+              setSuccessType(SuccessAnimationType.BONUS);
+              
+              // Show tab bar again
+              setTimeout(() => {
+                const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
+                setPrayerViewVisible(false);
+              }, 2000);
+              
+              // Navigate to bonus screen
+              router.push({
+                pathname: '/success',
+                params: {
+                  showStreakScreen: 'true'
+                }
+              });
+              
+              // Reset Rive animation to appropriate state after navigation
+              setTimeout(() => {
+                const homeStore = useHomeStore.getState();
+                const riveRef = homeStore.riveRef;
+                if (riveRef?.current?.setInputState) {
+                  try {
+                    const currentMood = useUserStore.getState()?.getLambMood?.();
+                    const moodToStateInput: Record<string, number> = {
+                      'lamb-idle': 0,
+                      'lamb-sleepy': 4,
+                      'lamb-angry': 5,
+                      'lamb-chubby dying': 6,
+                      'lamb-skinny dying': 7,
+                      'smoking': 8,
+                      'lamb-full': 3,
+                    };
+                    const targetStateInput = moodToStateInput[currentMood] || 0;
+                    riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+                    console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
+                  } catch (error) {
+                    console.log('Could not reset Rive state after navigation:', error);
+                  }
+                }
+              }, 1000);
+            } else {
+              // Normal reflection flow
+              // Show tab bar again
+              const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
+              setTimeout(() => {
+                setPrayerViewVisible(false);
+              }, 2000);
 
-            // Close the prayer view
-            if (onSetIdle) onSetIdle();
-            if (onClose) {
-              if (hapticsEnabled) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              // Log completion analytics
+              analytics.logEvent('PrayerView_Completed', {
+                prayerTopic: recentPrayers[0] || 'general',
+                totalCards: totalCards,
+                devotionalId: currentDevotional?.id || null,
+                bibleReference: currentDevotional?.bibleReference || null,
+              });
+
+              // Close the prayer view
+              if (onSetIdle) onSetIdle();
+              if (onClose) {
+                if (hapticsEnabled) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                onClose({isReflectPresses: true});
               }
-              onClose({isReflectPresses: true});
             }
           }}
           prayButtonTitle={i18n.t('reflect_on_this_verse')}

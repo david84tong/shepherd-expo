@@ -116,11 +116,24 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
 
   // Track previous level to detect level up
   const prevLevelRef = useRef(levelInfo.level);
-  const didLevelUp = useMemo(() => {
-    const did = levelInfo.level > prevLevelRef.current;
-    prevLevelRef.current = levelInfo.level;
-    return did;
+  const [savedPrevLevel, setSavedPrevLevel] = useState(levelInfo.level);
+  
+  // Update previous level tracking when level changes
+  useEffect(() => {
+    if (levelInfo.level > prevLevelRef.current) {
+      // Save the actual previous level before updating the ref
+      setSavedPrevLevel(prevLevelRef.current);
+      prevLevelRef.current = levelInfo.level;
+    } else if (levelInfo.level !== prevLevelRef.current) {
+      // Level changed but didn't increase (shouldn't happen normally)
+      prevLevelRef.current = levelInfo.level;
+      setSavedPrevLevel(levelInfo.level);
+    }
   }, [levelInfo.level]);
+
+  const didLevelUp = useMemo(() => {
+    return levelInfo.level > savedPrevLevel;
+  }, [levelInfo.level, savedPrevLevel]);
 
   // Cleaner success view animation
   useEffect(() => {
@@ -474,11 +487,11 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
     <View style={{ flex: 1, margin: 12, marginHorizontal: 24 }}>
       {showSuccess ? (
         <SuccessMessage
-          key={`success-${levelInfo.level}-${prevLevelRef.current}`}
+          key={`success-${levelInfo.level}-${savedPrevLevel}`}
           title={i18n.t('reading_complete')}
           description={i18n.t('reading_complete_desc')}
           level={levelInfo.level}
-          prevLevel={prevLevelRef.current}
+          prevLevel={savedPrevLevel}
           buttonsEnabled={buttonsEnabled}
           onGoHome={() => {
             const now = firestore.Timestamp.now();
