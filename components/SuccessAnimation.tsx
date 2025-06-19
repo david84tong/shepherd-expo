@@ -904,7 +904,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                 <View className="mt-4 py-2 bg-lightYellow rounded-xl">
                   <Text className="font-feather text-xl text-primary text-center">{i18n.t('level_up')}</Text>
                   <Text className="font-din text-description text-center mt-1">
-                    {i18n.t('level_up_message', { level: newLevel })}
+                    {i18n.t('level_up_message')} {newLevel}
                   </Text>
                 </View>
               )}

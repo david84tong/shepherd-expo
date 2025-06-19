@@ -78,14 +78,30 @@ const THEME_COLORS = {
     border: '#E5E5E5',
     verseHighlight: 'rgba(220, 178, 128, 0.2)',
     sliderTrack: '#E5E5E5',
+    bubbleBackground: '#FFFFFF',
+    bubbleBorder: '#E0E0E0',
+    verseNumberText: '#B89B4C',
+    verseNumberBackground: 'rgba(220, 178, 128, 0.15)',
+    iconColor: '#B89B4C',
+    headerText: '#B89B4C',
+    progressBarBackground: 'rgba(220, 178, 128, 0.2)',
+    progressBarFill: '#DCB280',
   },
   light: {
-    background: '#FFF4D9',
+    background: '#FFF9E6',
     modalBackground: '#FFF4D9',
-    text: '#3C584A',
+    text: '#4A3B25',
     border: '#FFE4A8',
     verseHighlight: 'rgba(220, 178, 128, 0.2)',
     sliderTrack: '#E5E5E5',
+    bubbleBackground: '#FFF4D9',
+    bubbleBorder: '#F7B500',
+    verseNumberText: '#000000',
+    verseNumberBackground: 'rgba(247, 181, 0, 0.15)',
+    iconColor: '#D4A04C',
+    headerText: '#F7B500',
+    progressBarBackground: 'rgba(247, 181, 0, 0.2)',
+    progressBarFill: '#F7B500',
   },
   medium: {
     background: '#FFE4A8',
@@ -94,14 +110,30 @@ const THEME_COLORS = {
     border: '#FFD280',
     verseHighlight: 'rgba(255, 245, 210, 0.6)',
     sliderTrack: '#FFF4D9',
+    bubbleBackground: '#FFE4A8',
+    bubbleBorder: '#FFD280',
+    verseNumberText: '#B89B4C',
+    verseNumberBackground: 'rgba(255, 245, 210, 0.6)',
+    iconColor: '#B89B4C',
+    headerText: '#B89B4C',
+    progressBarBackground: 'rgba(255, 245, 210, 0.6)',
+    progressBarFill: '#FFD280',
   },
   dark: {
     background: '#2C2C2C',
-    modalBackground: '#2C2C2C',
-    text: '#FFFFFF',
-    border: '#3C3C3C',
+    modalBackground: '#3C3C3C',
+    text: '#E0E0E0',
+    border: '#4A4A4A',
     verseHighlight: 'rgba(107, 107, 107, 0.34)',
-    sliderTrack: '#3C3C3C',
+    sliderTrack: '#5A5A5A',
+    bubbleBackground: '#3A3A3A',
+    bubbleBorder: '#5A5A5A',
+    verseNumberText: '#B0B0B0',
+    verseNumberBackground: 'rgba(107, 107, 107, 0.2)',
+    iconColor: '#A0A0AF',
+    headerText: '#B0B0B0',
+    progressBarBackground: 'rgba(107, 107, 107, 0.2)',
+    progressBarFill: '#8A8A8A',
   },
 } as const;
 
@@ -315,6 +347,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // Always call hooks unconditionally, even if we don't use the results
   const params = useLocalSearchParams();
   const effectiveParams = !isEmbedded ? params : null;
+
+  // Detect Map mode (from Map path)
+  const isMapMode =
+    (effectiveParams?.source === 'map' || effectiveParams?.isFromDailyBread === 'true');
 
   // Check if we're in "just read" mode
   const isJustReadMode = !isEmbedded && effectiveParams?.justReadMode === 'true';
@@ -1324,7 +1360,6 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     return <View className='flex-1 bg-surfaceCream/80'>
       <StatusBar translucent backgroundColor="transparent" />
       <NewBibleReader
-      
         isBibleReaderScreen
         bookId={currentBookId}
         readerSettings={readerSettings}
@@ -1332,6 +1367,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         chapter={currentChapter}
         translation={currentVersion}
         isInPathMode={pathInProgress}
+        isMapMode={isMapMode}
         onNavigateBack={handleBackNavigation}
         onSwitchToDefaultReader={handleSwitchToDefaultReader}
         onHandoffChapterData={handleHandoffChapterData}
@@ -1542,36 +1578,78 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                 {effectiveChapterData && renderBibleContent(effectiveChapterData)}
               </Animated.View>
 
-              {/* Path Mode Button (when in path mode) */}
-              {!isEmbedded && pathInProgress && (
+              {/* Bottom Navigation Row - Only in Map mode for simple reader */}
+              {!isEmbedded && pathInProgress && isMapMode && !useCardView && (
                 <RNAnimated.View
                   style={[
                     {
                       position: 'absolute',
-                      bottom: isEmbedded ? 170 : effectiveParams?.isFromDailyBread ? 120 : 170,
-                      left: 20,
-                      right: 20,
+                      bottom: isEmbedded ? 100 : effectiveParams?.isFromDailyBread ? 50 : 100,
+                      left: 0,
+                      right: 0,
+                      flexDirection: 'row',
+                      justifyContent: 'flex-end',
+                      alignItems: 'center',
+                      paddingHorizontal: 20,
                       zIndex: 10,
                     },
                     buttonsContainerStyle,
                   ]}>
-                  <SideButton
-                    title={
-                      isJustReadMode
-                        ? 'Finish Reading'
-                        : isAtEndChapter
+                  {/* Next Chapter/Book Button (in path mode) */}
+                  <View style={{ flex: 1, marginRight: -100 }}>
+                    <SideButton
+                      title={
+                        isJustReadMode
                           ? 'Finish Reading'
-                          : 'Next Chapter'
-                    }
-                    onPress={
-                      isJustReadMode
-                        ? handleFinishReading
-                        : isAtEndChapter
+                          : isAtEndChapter
+                            ? 'Complete Unit'
+                            : 'Next Chapter'
+                      }
+                      onPress={
+                        isJustReadMode
                           ? handleFinishReading
-                          : navigateToNextChapter
-                    }
-                    disabled={!hasScrolledToBottom || loading}
-                  />
+                          : isAtEndChapter
+                            ? handleFinishReading
+                            : navigateToNextChapter
+                      }
+                      disabled={!hasScrolledToBottom || loading}
+                    />
+                  </View>
+                  {/* Navigation Buttons */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
+                    <TouchableOpacity
+                      style={[
+                        styles.navButton,
+                        (currentChapter <= 1 || loading) && styles.disabledNavButton,
+                      ]}
+                      onPress={navigateToPreviousChapter}
+                      disabled={currentChapter <= 1 || loading}
+                      activeOpacity={0.7}>
+                      <Text
+                        style={[
+                          styles.navButtonText,
+                          (currentChapter <= 1 || loading) && styles.disabledButtonText,
+                        ]}>
+                        ←
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.navButton,
+                        (loading || (pathInProgress && isAtEndChapter)) && styles.disabledNavButton,
+                      ]}
+                      onPress={navigateToNextChapter}
+                      disabled={loading || (pathInProgress && isAtEndChapter)}
+                      activeOpacity={0.7}>
+                      <Text
+                        style={[
+                          styles.navButtonText,
+                          (loading || (pathInProgress && isAtEndChapter)) && styles.disabledButtonText,
+                        ]}>
+                        →
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
                 </RNAnimated.View>
               )}
 
@@ -1692,7 +1770,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           </SafeAreaView>
 
           {/* Add BibleVerseActionBar */}
-          <BibleVerseActionBar
+         {!isMapMode ? <BibleVerseActionBar
             reference={effectiveChapterData
               ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}`
               : i18n.t('loading')}
@@ -1709,7 +1787,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                 </View>
               ) : undefined
             }
-          />
+          />:null}
 
           {/* Add Floating Menu */}
           {floatingMenu.isVisible && floatingMenu.verse && (
