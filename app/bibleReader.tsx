@@ -70,72 +70,7 @@ const MAX_LINE_HEIGHT = 40;
 const DEFAULT_THEME = 'light';
 
 // Add theme colors constant
-const THEME_COLORS = {
-  white: {
-    background: '#FFFFFF',
-    modalBackground: '#FFFFFF',
-    text: '#3C584A',
-    border: '#E5E5E5',
-    verseHighlight: 'rgba(220, 178, 128, 0.2)',
-    sliderTrack: '#E5E5E5',
-    bubbleBackground: '#FFFFFF',
-    bubbleBorder: '#E0E0E0',
-    verseNumberText: '#B89B4C',
-    verseNumberBackground: 'rgba(220, 178, 128, 0.15)',
-    iconColor: '#B89B4C',
-    headerText: '#B89B4C',
-    progressBarBackground: 'rgba(220, 178, 128, 0.2)',
-    progressBarFill: '#DCB280',
-  },
-  light: {
-    background: '#FFF9E6',
-    modalBackground: '#FFF4D9',
-    text: '#4A3B25',
-    border: '#FFE4A8',
-    verseHighlight: 'rgba(220, 178, 128, 0.2)',
-    sliderTrack: '#E5E5E5',
-    bubbleBackground: '#FFF4D9',
-    bubbleBorder: '#F7B500',
-    verseNumberText: '#000000',
-    verseNumberBackground: 'rgba(247, 181, 0, 0.15)',
-    iconColor: '#D4A04C',
-    headerText: '#F7B500',
-    progressBarBackground: 'rgba(247, 181, 0, 0.2)',
-    progressBarFill: '#F7B500',
-  },
-  medium: {
-    background: '#FFE4A8',
-    modalBackground: '#FFE4A8',
-    text: '#3C584A',
-    border: '#FFD280',
-    verseHighlight: 'rgba(255, 245, 210, 0.6)',
-    sliderTrack: '#FFF4D9',
-    bubbleBackground: '#FFE4A8',
-    bubbleBorder: '#FFD280',
-    verseNumberText: '#B89B4C',
-    verseNumberBackground: 'rgba(255, 245, 210, 0.6)',
-    iconColor: '#B89B4C',
-    headerText: '#B89B4C',
-    progressBarBackground: 'rgba(255, 245, 210, 0.6)',
-    progressBarFill: '#FFD280',
-  },
-  dark: {
-    background: '#2C2C2C',
-    modalBackground: '#3C3C3C',
-    text: '#E0E0E0',
-    border: '#4A4A4A',
-    verseHighlight: 'rgba(107, 107, 107, 0.34)',
-    sliderTrack: '#5A5A5A',
-    bubbleBackground: '#3A3A3A',
-    bubbleBorder: '#5A5A5A',
-    verseNumberText: '#B0B0B0',
-    verseNumberBackground: 'rgba(107, 107, 107, 0.2)',
-    iconColor: '#A0A0AF',
-    headerText: '#B0B0B0',
-    progressBarBackground: 'rgba(107, 107, 107, 0.2)',
-    progressBarFill: '#8A8A8A',
-  },
-} as const;
+
 
 type ThemeType = keyof typeof THEME_COLORS;
 
@@ -266,6 +201,7 @@ import Animated from 'react-native-reanimated';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import { MaterialIcons } from '@expo/vector-icons';
 import { IS_ANDROID } from './utils/utils';
+import { THEME_COLORS } from './constants/theme';
 
 // Add at the top of the file, after imports
 const chapterCache = new Map<string, any>();
@@ -296,7 +232,6 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // Get settings directly from the store instead of local state
   const readerSettings = useReaderSettingsStore();
   const { fontSize, theme: currentTheme, lineHeightPreset, useCardView } = readerSettings;
-
   // Animation values for button container (using RNAnimated for these)
   const buttonsAnim = useRef(new RNAnimated.Value(0)).current; // 0: hidden, 1: visible
 
@@ -1087,9 +1022,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                   highlightColor && { backgroundColor: `${highlightColor}80` },
                 ]}>
                 <Text
-                  style={[verseTextStyle, { color: "#634012" }]}
+                  style={[verseTextStyle, { color: THEME_COLORS[currentTheme].text }]}
                   >
-                  <Text style={[verseNumberStyle, { color: '#9c755a' }]}>{`${verse.verse}.`} </Text>
+                  <Text style={[verseNumberStyle, { color: THEME_COLORS[currentTheme].verseNumberText }]}>{`${verse.verse}.`} </Text>
                   {verse.text}
                 </Text>
               </Pressable>
@@ -1535,7 +1470,15 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           <SafeAreaView className="flex-1">
             <View
               className="bg-surfaceCream rounded-t-card"
-              style={{ width: "100%", height:IS_ANDROID ? '85%' : "95%", position: 'absolute', bottom: 0 }}>
+              style={{
+                backgroundColor: THEME_COLORS[currentTheme].background,
+                width: "100%",
+                height: IS_ANDROID ? '85%' : "95%",
+                position: 'absolute',
+                bottom: 0,
+                borderTopLeftRadius: 32,
+                borderTopRightRadius: 32,
+              }}>
               <View>
                 {/* Title and Settings Row */}
                 <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
