@@ -2456,19 +2456,20 @@ const styles = StyleSheet.create({
   },
   // Updated elegant swipe action styles
   swipeActionContainer: {
-    height: '100%',
-    width: 70,
-    justifyContent: 'center',
     alignItems: 'center',
+    height: '100%',
+    justifyContent: 'center',
+    width: 70,
   },
   swipeActionContent: {
-    height: 50,
-    width: 50,
-    borderRadius: 100,
-    backgroundColor: 'rgba(181, 125, 0, 0.15)',
-    opacity: 0.2,
     alignItems: 'center',
+    backgroundColor: 'rgba(181, 125, 0, 0.15)',
+    borderColor: 'rgba(247, 181, 0, 0.2)',
+    borderRadius: 100,
+    borderWidth: 1,
+    height: 50,
     justifyContent: 'center',
+    opacity: 0.2,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -2476,8 +2477,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.05,
     shadowRadius: 2,
-    borderWidth: 1,
-    borderColor: 'rgba(247, 181, 0, 0.2)',
+    width: 50,
   },
   themeButton: {
     borderRadius: 25,
@@ -2551,17 +2551,17 @@ const styles = StyleSheet.create({
     padding: 2, // Add some padding for easier touch
   },
   verseBubble: {
+    borderColor: 'rgba(121, 83, 35, 0.1)',
+    borderRadius: 20,
+    borderWidth: 2,
+    elevation: 1,
     paddingBottom: 5,
     paddingHorizontal: 16,
     paddingTop: 12,
-    borderRadius: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-    borderWidth: 2,
-    borderColor: 'rgba(121, 83, 35, 0.1)', // Light brown border
+    shadowRadius: 2, // Light brown border
   },
   navButton: {
     alignItems: 'center',

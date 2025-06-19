@@ -37,7 +37,6 @@ import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import { UserDoc } from '../models/User';
 import firestore from '@react-native-firebase/firestore';
 import PrimaryButton from '../../components/PrimaryButton';
-import { useRemoteConfig } from '../hooks/useRemoteConfig';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { useHomeStore } from '../stores/homeStore';
 import i18n from '../utils/i18n';

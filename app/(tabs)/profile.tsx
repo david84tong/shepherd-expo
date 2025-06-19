@@ -21,7 +21,7 @@ import {
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Rive, { RiveRef } from 'rive-react-native';
+import { RiveRef } from 'rive-react-native';
 import analytics from '../../utils/analytics';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useAuth } from '../hooks/authHook';

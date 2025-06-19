@@ -348,13 +348,13 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   prayerHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
     borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
   prayerInputContainer: {
     marginBottom: 30,
@@ -379,9 +379,9 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   prayerTitle: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Black',
     color: '#3C584A',
+    fontFamily: 'Nunito-Black',
+    fontSize: 18,
   },
   prayerTopicButton: {
     backgroundColor: 'white',

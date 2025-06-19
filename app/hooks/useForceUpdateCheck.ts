@@ -1,7 +1,3 @@
-import { useEffect, useState } from 'react';
-import remoteConfig from '@react-native-firebase/remote-config';
-import { compareVersions } from 'compare-versions';
-import Constants from 'expo-constants';
 
 const useForceUpdateCheck = () => {
   // Temporarily disable force update check

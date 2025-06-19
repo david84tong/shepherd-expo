@@ -1,23 +1,10 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import auth from '@react-native-firebase/auth';
-import { Timestamp } from '@react-native-firebase/firestore';
 import { useEffect, useState } from 'react';
-import * as Sentry from '@sentry/react-native';
 import { useUserStore } from '../stores/userStore';
 import { usePathStore } from '../stores/pathStore';
-import useSubscriptionStore from '../stores/subscriptionStore';
-import { Mixpanel } from 'mixpanel-react-native';
 import { PATH_OPTIONS, PathOption } from '../models/Path';
-import { Platform } from 'react-native';
-import { adapty } from 'react-native-adapty';
-import analytics, { AnalyticsEvent } from '../../utils/analytics';
 import { checkStreakAndApplyPenalties } from './streakHook';
-import { syncUserDocument } from '../../utils/firestore';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
-import { Path } from '../models/Path';
-import { useUserStore as oldUserStore } from '../stores/userStore';
-import { usePathStore as oldPathStore } from '../stores/pathStore';
-import { analytics as oldAnalytics } from '../helper/analyticsHelper';
 import { useHomeStore } from '../stores/homeStore';
 // Key to check if app has been initialized
 const APP_INITIALIZED_KEY = 'app_initialized';

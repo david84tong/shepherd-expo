@@ -1,6 +1,5 @@
 // /Users/mac/Documents/projects/shepherd-expo/app/hooks/useHomeScreen.ts
 
-import { useNavigation } from '@react-navigation/native';
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   Animated,

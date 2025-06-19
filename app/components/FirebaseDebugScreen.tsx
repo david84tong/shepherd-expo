@@ -112,10 +112,22 @@ export const FirebaseDebugScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  button: {
+    alignItems: 'center',
+    backgroundColor: '#007AFF',
+    borderRadius: 4,
+    minWidth: 50,
+    padding: 4,
+  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: 8,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   container: {
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -129,6 +141,11 @@ const styles = StyleSheet.create({
     padding: 8,
   
   },
+  data: {
+    color: '#ccc',
+    fontFamily: 'monospace',
+    fontSize: 10,
+  },
   header: {
     alignItems: 'center',
     backgroundColor: 'rgba(0, 122, 255, 0.8)',
@@ -136,23 +153,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 8,
     height: 40,
     justifyContent: 'center',
-  },
-  title: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  button: {
-    alignItems: 'center',
-    backgroundColor: '#007AFF',
-    borderRadius: 4,
-    minWidth: 50,
-    padding: 4,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
   },
   logContainer: {
     flex: 1,
@@ -162,11 +162,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginBottom: 4,
     padding: 4,
-  },
-  timestamp: {
-    color: '#999',
-    fontSize: 10,
-    marginBottom: 2,
   },
   operation: {
     color: '#007AFF',
@@ -179,9 +174,14 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginBottom: 2,
   },
-  data: {
-    color: '#ccc',
-    fontFamily: 'monospace',
+  timestamp: {
+    color: '#999',
     fontSize: 10,
+    marginBottom: 2,
+  },
+  title: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
 }); 

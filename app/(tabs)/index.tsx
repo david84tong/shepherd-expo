@@ -41,7 +41,6 @@ import BottomControls from '../components/BottomControls';
 import i18n from '../utils/i18n';
 import { useLanguageStore } from '../stores/languageStore';
 import { useEffect } from 'react';
-import { useUIStore } from '../stores/uiStore';
 
 // Custom toast config with explicit styling
 const toastConfig = CustomToast;

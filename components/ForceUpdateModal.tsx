@@ -38,37 +38,37 @@ const ForceUpdateModal = ({ visible }: { visible: boolean }) => {
 };
 
 const styles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   alertBox: {
-    backgroundColor: '#fff',
-    padding: 30,
-    borderRadius: 16,
-    width: '80%',
     alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 16,
     elevation: 10,
+    padding: 30,
+    width: '80%',
   },
   icon: {
-    width: 64,
     height: 64,
     marginBottom: 16,
+    width: 64,
+  },
+  message: {
+    color: '#555',
+    fontSize: 16,
+    marginBottom: 24,
+    textAlign: 'center',
+  },
+  overlay: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    flex: 1,
+    justifyContent: 'center',
   },
   title: {
+    color: '#333',
     fontSize: 22,
     fontWeight: '700',
     marginBottom: 10,
-    color: '#333',
     textAlign: 'center',
-  },
-  message: {
-    fontSize: 16,
-    color: '#555',
-    textAlign: 'center',
-    marginBottom: 24,
   },
 });
 

@@ -216,148 +216,148 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
 }
 
 const styles = StyleSheet.create({
-  modalContent: {
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
+  activeCircle: {
+    backgroundColor: '#FCD34D',
   },
-  handleContainer: {
-    width: '100%',
+  activeLine: {
+    backgroundColor: '#FCD34D',
+  },
+  activeNumber: {
+    color: '#3C584A',
+  },
+  button: {
     alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
-  },
-  handle: {
-    width: 40,
-    height: 4,
+    backgroundColor: '#FCD34D',
     borderRadius: 100,
-    backgroundColor: '#D1D5DB',
+    elevation: 3,
+    paddingVertical: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    marginBottom: 12,
+  buttonText: {
+    color: '#3C584A',
+    fontFamily: 'feather',
+    fontSize: 16,
+    fontWeight: '600',
   },
   closeButton: {
     padding: 8,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontFamily: 'feather',
-    color: '#3C584A',
-    fontWeight: '600',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  imageContainer: {
-    width: 240,
-    height: Dimensions.get('window').width * 0.8,
-    marginTop: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  imageContainerPreview: {
-    width: Dimensions.get('window').width * 0.8,
-    height: Dimensions.get('window').width * 0.8,
-    marginBottom: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  mainInstruction: {
-    fontFamily: 'feather',
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#3C584A',
-    textAlign: 'center',
-  },
   fixedBottomContainer: {
-    width: '100%',
+    backgroundColor: '#FEF3C7',
+    paddingBottom: 20,
     paddingHorizontal: 24,
     paddingTop: 8,
-    paddingBottom: 20,
-    backgroundColor: '#FEF3C7',
+    width: '100%',
+  },
+  handle: {
+    backgroundColor: '#D1D5DB',
+    borderRadius: 100,
+    height: 4,
+    width: 40,
+  },
+  handleContainer: {
+    alignItems: 'center',
+    paddingBottom: 8,
+    paddingTop: 12,
+    width: '100%',
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+  },
+  headerTitle: {
+    color: '#3C584A',
+    fontFamily: 'feather',
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  image: {
+    borderRadius: 16,
+    height: '100%',
+    overflow: 'hidden',
+    width: '100%',
+  },
+  imageContainer: {
+    alignItems: 'center',
+    borderRadius: 16,
+    height: Dimensions.get('window').width * 0.8,
+    justifyContent: 'center',
+    marginTop: 24,
+    overflow: 'hidden',
+    width: 240,
+  },
+  imageContainerPreview: {
+    alignItems: 'center',
+    borderRadius: 16,
+    height: Dimensions.get('window').width * 0.8,
+    justifyContent: 'center',
+    marginBottom: 40,
+    overflow: 'hidden',
+    width: Dimensions.get('window').width * 0.8,
+  },
+  inactiveCircle: {
+    backgroundColor: '#FFF4D9',
+    borderColor: '#E9E2C7',
+    borderWidth: 1,
+  },
+  inactiveLine: {
+    backgroundColor: '#E9E2C7',
+  },
+  inactiveNumber: {
+    color: '#B89B4C',
+  },
+  mainInstruction: {
+    color: '#3C584A',
+    fontFamily: 'feather',
+    fontSize: 20,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  modalContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    width: '100%',
+  },
+  progressCircle: {
+    alignItems: 'center',
+    borderRadius: 16,
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
   },
   progressContainer: {
     marginBottom: 16,
     width: '100%',
   },
-  progressTrack: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  activeCircle: {
-    backgroundColor: '#FCD34D',
-  },
-  inactiveCircle: {
-    backgroundColor: '#FFF4D9',
-    borderWidth: 1,
-    borderColor: '#E9E2C7',
+  progressLine: {
+    flex: 1,
+    height: 2,
+    marginHorizontal: 4,
   },
   progressNumber: {
     fontFamily: 'feather',
     fontSize: 14,
     fontWeight: '600',
   },
-  activeNumber: {
-    color: '#3C584A',
-  },
-  inactiveNumber: {
-    color: '#B89B4C',
-  },
-  progressLine: {
-    height: 2,
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  activeLine: {
-    backgroundColor: '#FCD34D',
-  },
-  inactiveLine: {
-    backgroundColor: '#E9E2C7',
-  },
-  button: {
-    backgroundColor: '#FCD34D',
-    borderRadius: 100,
-    paddingVertical: 16,
+  progressTrack: {
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 3,
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
-  buttonText: {
-    fontFamily: 'feather',
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#3C584A',
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 8,
   },
 });

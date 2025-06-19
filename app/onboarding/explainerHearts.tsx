@@ -15,7 +15,7 @@ import Rive from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import { useOnboardingStore } from '../stores/onboardingStore';
-import { IS_ANDROID, IS_IOS } from '../utils/utils';
+import { IS_ANDROID } from '../utils/utils';
 
 export default function OnboardingExplainerHeartsScreen({
   onContinue,

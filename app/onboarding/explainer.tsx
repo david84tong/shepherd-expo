@@ -15,7 +15,6 @@ import Rive from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import skins from '../../assets/onboarding/skins.png';
-import { IS_IOS } from '../utils/utils';
 import { IS_ANDROID } from '../utils/utils';
 
 export default function OnboardingExplainerScreen({ onContinue }: { onContinue?: () => void }) {
