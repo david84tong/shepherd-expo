@@ -38,6 +38,10 @@ interface HomeState {
   sawStreakToday: boolean; // Track if streak screen was shown today
   showGlobalButtons: boolean;
 
+  // Daily XP tracking
+  dailyXpEarned: number; // Track XP earned today
+  lastXpResetDate: string; // Track when XP was last reset (YYYY-MM-DD format)
+
   // Setter functions
   setMode: (mode: HomeMode) => void;
   setSuccessType: (type: SuccessAnimationType | null) => void;
@@ -58,6 +62,11 @@ interface HomeState {
   setBottomSheetRef: (ref: React.RefObject<any> | null) => void;
   setRiveRef: (ref: React.RefObject<any> | null) => void;
   setCurrentSkin: (skin: string) => void;
+
+  // Daily XP functions
+  addDailyXp: (amount: number) => number; // Returns actual XP added (may be limited)
+  getDailyXpRemaining: () => number; // Returns remaining XP that can be earned today
+  resetDailyXpIfNeeded: () => void; // Reset XP if it's a new day
 }
 
 /**
@@ -87,6 +96,9 @@ export const useHomeStore = create<HomeState>()(
       tappedPrayAboutVerse: false,
       tappedReflectAboutVerse: false,
       sawStreakToday: false,
+      // Default daily XP tracking
+      dailyXpEarned: 0,
+      lastXpResetDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
 
       // Setter functions
       setMode: (mode) => set({ mode }),
@@ -116,6 +128,49 @@ export const useHomeStore = create<HomeState>()(
       setBottomSheetRef: (ref) => set({ bottomSheetRef: ref }),
       setRiveRef: (ref) => set({ riveRef: ref }),
       setCurrentSkin: (skin) => set({ currentSkin: skin }),
+
+      // Daily XP functions
+      resetDailyXpIfNeeded: () => {
+        const today = new Date().toISOString().split('T')[0];
+        const { lastXpResetDate } = get();
+        
+        if (lastXpResetDate !== today) {
+          console.log('🔄 Resetting daily XP for new day:', today);
+          set({ 
+            dailyXpEarned: 0, 
+            lastXpResetDate: today 
+          });
+        }
+      },
+
+      addDailyXp: (amount: number) => {
+        // First check if we need to reset for a new day
+        get().resetDailyXpIfNeeded();
+        
+        const { dailyXpEarned } = get();
+        const MAX_DAILY_XP = 300;
+        const remaining = Math.max(0, MAX_DAILY_XP - dailyXpEarned);
+        const actualXpToAdd = Math.min(amount, remaining);
+        
+        if (actualXpToAdd > 0) {
+          set({ dailyXpEarned: dailyXpEarned + actualXpToAdd });
+          console.log(`📊 Daily XP: +${actualXpToAdd} (${dailyXpEarned + actualXpToAdd}/${MAX_DAILY_XP})`);
+        } else {
+          console.log('🚫 Daily XP limit reached (300/300)');
+        }
+        
+        return actualXpToAdd;
+      },
+
+      getDailyXpRemaining: () => {
+        // First check if we need to reset for a new day
+        get().resetDailyXpIfNeeded();
+        
+        const { dailyXpEarned } = get();
+        const MAX_DAILY_XP = 300;
+        return Math.max(0, MAX_DAILY_XP - dailyXpEarned);
+      },
+
       resetCompletionStates: () => {
         console.log('🔍 HOMESTORE - resetCompletionStates called - BEFORE reset:', {
           currentState: {
@@ -150,7 +205,7 @@ export const useHomeStore = create<HomeState>()(
       name: 'shepherd-home-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
-        // Only persist these fields (completion states)
+        // Only persist these fields (completion states and daily XP tracking)
         readingCompleted: state.readingCompleted,
         prayerCompleted: state.prayerCompleted,
         reflectionCompleted: state.reflectionCompleted,
@@ -159,6 +214,8 @@ export const useHomeStore = create<HomeState>()(
         tappedReflectAboutVerse: state.tappedReflectAboutVerse,
         sawStreakToday: state.sawStreakToday,
         currentSkin: state.currentSkin,
+        dailyXpEarned: state.dailyXpEarned,
+        lastXpResetDate: state.lastXpResetDate,
       }),
     }
   )

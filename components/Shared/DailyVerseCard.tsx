@@ -7,6 +7,7 @@ import {
   Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import analytics from '~/utils/analytics';
 import PrimaryButton from '../PrimaryButton';
@@ -75,10 +76,20 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
       className={`bg-surfaceCream rounded-3xl overflow-hidden mb-4 border border-buttonBorder shadow-card ${share && showShareButton ? 'h-80' : 'h-64'}`}>
       <ImageBackground
         source={{ uri: devotional.imageURL }}
-        style={{ width: '100%', backgroundColor:'#AAB33D' }}
+        style={{ width: '100%'}}
         resizeMode="cover">
-        {/* Dark overlay for readability */}
-        <View className="absolute inset-0 bg-black/30" />
+        {/* Linear gradient overlay for readability - darker at top, lighter at bottom */}
+        <LinearGradient
+          colors={['rgba(0, 0, 0, 0.5)', 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 0.1)']}
+          locations={[0, 0.6, 1]}
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+          }}
+        />
 
         {/* Content */}
         <View className="p-6 pb-4 h-full justify-between">

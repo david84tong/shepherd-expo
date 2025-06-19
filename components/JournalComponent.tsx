@@ -742,15 +742,51 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
           // }
 
         }}
-        onPray={() => {}}
-        prayButtonTitle=""
-        hidePrayButton
-        homeButtonTitle={(() => {
+        onPray={() => {
+          // Handle bonus collection if available
           const sawStreakToday = useHomeStore.getState().sawStreakToday;
           const isFirstReadingOfDay = !sawStreakToday;
           const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
-          return isBonusAvailable ? i18n.t('collect_bonus') : i18n.t('go_home');
-        })()}
+          
+          if (isBonusAvailable) {
+            setSuccessType(SuccessAnimationType.BONUS);
+            router.push({
+              pathname: '/success',
+              params: {
+                showStreakScreen: 'true'
+              }
+            });
+            
+            // Reset Rive animation to appropriate state after navigation with delay
+            setTimeout(() => {
+              const homeStore = useHomeStore.getState();
+              const riveRef = homeStore.riveRef;
+              if (riveRef?.current?.setInputState) {
+                try {
+                  const currentMood = useUserStore.getState()?.getLambMood?.();
+                  const moodToStateInput: Record<string, number> = {
+                    'lamb-idle': 0,
+                    'lamb-sleepy': 4,
+                    'lamb-angry': 5,
+                    'lamb-chubby dying': 6,
+                    'lamb-skinny dying': 7,
+                    'smoking': 8,
+                    'lamb-full': 3,
+                  };
+                  const targetStateInput = moodToStateInput[currentMood] || 0;
+                  riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+                  console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
+                } catch (error) {
+                  console.log('Could not reset Rive state after navigation:', error);
+                }
+              }
+            }, 1000);
+          } else {
+            // Normal prayer flow - close journal and signal to open prayer view
+            setJournalViewVisible(false);
+            onClose({ isReflectPresses: true }); // Pass flag to trigger prayer navigation
+          }
+        }}
         rewardsTitle="REFLECTION REWARDS"
       />
       </Animated.View>

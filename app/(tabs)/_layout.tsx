@@ -233,7 +233,7 @@ export default function TabsLayout() {
     <Tabs
       initialRouteName='index'
       screenOptions={({ route }) => ({
-        headerShown: false,
+        headerShown: false, 
         tabBarStyle: animatedTabBarStyle,
         tabBarLabelStyle: {
           marginTop: 2,

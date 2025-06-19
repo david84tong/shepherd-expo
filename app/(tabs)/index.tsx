@@ -24,7 +24,7 @@ import WidgetHowToSheet from '../../components/WidgetHowToSheet';
 import bibleIcon from '../../assets/icons/bibleIcon.png';
 import FullScreenShareCard from '../../components/FullScreenShareCard';
 import SpotlightOverlay from '../../components/SpotlightOverlay';
-import PrayerView from '~/components/WaterPrayerView';
+import PrayerView from '~/components/PrayerView';
 import JournalComponent from '~/components/JournalComponent';
 import DailyVerseCard from '~/components/Shared/DailyVerseCard';
 import CustomToast from '../components/Shared/CustomToast';
