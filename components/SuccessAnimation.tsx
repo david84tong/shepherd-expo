@@ -43,6 +43,7 @@ interface SuccessAnimationProps {
   onClose?: () => void;
   isPrayPresses?: boolean;
   showStreakScreen?: boolean;
+  hideStreakInSuccess?: boolean;
 }
 
 // Max hearts constant
@@ -56,7 +57,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   subMessage: propSubMessage,
   onClose: propOnClose,
   isPrayPresses,
-  showStreakScreen:showStreakScreenParam
+  showStreakScreen:showStreakScreenParam,
+  hideStreakInSuccess
 }) => {
   const riveRef = useRef<RiveRef>(null);
   const setHomeMode = useHomeStore((state) => state.setMode);
@@ -611,10 +613,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     });
 
     // If this is the first reading of the day, effectiveType is READING, and we haven't shown the streak screen today
-    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING && !sawStreakToday) {
-      triggerStreakScreen();
-      return; // Prevent navigation so StreakScreen can show
-    }
 
     // Set unmounting flag first
     isUnmounting.current = true;
@@ -633,7 +631,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
    { router.replace({
       pathname: '/(tabs)',
       params: {
-        isPrayPresses: isPrayPresses
+        isPrayPresses: isPrayPresses ? 'true' : 'false'
       },
     });}
   };
@@ -695,7 +693,10 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     // First update the state in the store
     setHomeMode('PRAYER');
     setPathInProgress(true); // Make sure path is in progress to show the component
-    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING && !sawStreakToday) {
+    if (isFirstReadingOfDay && 
+        effectiveType === SuccessAnimationType.READING && 
+        !sawStreakToday && 
+        !hideStreakInSuccess) {
       triggerStreakScreen();
       return; // Prevent navigation so StreakScreen can show
     }
@@ -746,7 +747,10 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     setHomeMode('DEFAULT');
     setPathInProgress(false);
 
-    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING && !sawStreakToday) {
+    if (isFirstReadingOfDay && 
+        effectiveType === SuccessAnimationType.READING && 
+        !sawStreakToday && 
+        !hideStreakInSuccess) {
       triggerStreakScreen();
     } else {
       router.replace('/(tabs)');
