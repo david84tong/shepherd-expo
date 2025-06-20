@@ -485,7 +485,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
   if (!visible) return null;
 
   return (
-    <View style={{ flex: 1, margin: 12, marginHorizontal: 24 }}>
+    <View style={{ flex: 1, margin: RPH(1), marginHorizontal: 24 }}>
       {showSuccess ? (
         <SuccessMessage
           key={`success-${levelInfo.level}-${savedPrevLevel}`}

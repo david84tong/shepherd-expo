@@ -820,16 +820,16 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
           {getReflectionPrompt()}
         </Text>
 
-        <View className="w-full min-h-[230px] bg-surfaceCream border-[3px] border-gold/70 p-5 mb-2 shadow-card" style={{ borderRadius: 20 }}>
+        <View style={{minHeight:RPH(25),borderRadius: 20}} className="w-full  bg-surfaceCream border-[3px] border-gold/70 p-5 mb-2 shadow-card" >
           <TextInput
             ref={inputRef}
-            className="w-full bg-transparent text-brown/95 text-[18px] font-nunito-medium min-h-[150px] text-left"
+            className="w-full bg-transparent text-brown/95 text-[18px] font-nunito-medium  text-left"
             placeholder={getPlaceholderText()}
             placeholderTextColor="#B89B4C"
             multiline
             textAlignVertical="top"
             scrollEnabled={true}
-            style={{ flex: 1, padding: 0 }}
+            style={{ flex: 1, padding: 0,minHeight:RPH(30) }}
             value={reflectionContent}
             onChangeText={setReflectionContent}
             onFocus={() => {

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Pressable, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
+import { RPH } from '~/app/helper/helper';
 
 interface CircleButtonProps {
   onPress: () => void;
@@ -16,7 +17,7 @@ interface CircleButtonProps {
 const CircleButton: React.FC<CircleButtonProps> = ({
   onPress,
   icon = 'settings',
-  size = 50,
+  size = RPH(5.5),
   disabled = false,
   hapticsEnabled = true,
   iconComponent,

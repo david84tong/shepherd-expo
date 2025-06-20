@@ -26,7 +26,7 @@ import analytics from '../../utils/analytics';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useAuth } from '../hooks/authHook';
 import { getLevelData } from '../../utils/levelUtils';
-import { isSignedInWithGoogle, isSignedInWithApple } from '../helper/helper';
+import { isSignedInWithGoogle, isSignedInWithApple, RPH } from '../helper/helper';
 import auth from '@react-native-firebase/auth';
 import { useAssets } from 'expo-asset';
 
@@ -67,6 +67,7 @@ const DISCORD_CARD_DISMISSED_KEY = 'shepherd_discord_card_dismissed_v1';
 
 import i18n from '../utils/i18n';
 import { useLanguageStore } from '../stores/languageStore';
+import { AppFonts } from '../constants/appFonts';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -500,8 +501,9 @@ export default function ProfileScreen() {
 
                 <View className="items-center mb-4">
                   <TouchableOpacity
-                    className={`flex-row items-center justify-center ${Platform.OS === 'ios' ? 'bg-black' : 'bg-white border border-gray-300'} w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow`}
+                    className={`flex-row items-center justify-center ${Platform.OS === 'ios' ? 'bg-black' : 'bg-white border border-gray-300'} w-full  px-6 rounded-[16px] mb-4 shadow-appleShadow`}
                     onPress={handleSignIn}
+                    style={{paddingVertical:RPH(1.8)}}
                     disabled={signInLoading}>
                     {signInLoading ? (
                       <ActivityIndicator
@@ -512,13 +514,14 @@ export default function ProfileScreen() {
                     ) : (
                       <AntDesign
                         name={Platform.OS === 'ios' ? 'apple1' : 'google'}
-                        size={24}
+                        size={RPH(2.5)}
                         color={Platform.OS === 'ios' ? 'white' : '#4285F4'}
                         style={{ marginRight: 10 }}
                       />
                     )}
                     <Text
-                      className={`font-din ${Platform.OS === 'ios' ? 'text-white' : 'text-[#4285F4]'} text-[18px] font-bold`}>
+                    style={{fontSize:AppFonts[15]}}
+                      className={`font-din ${Platform.OS === 'ios' ? 'text-white' : 'text-[#4285F4]'} font-bold`}>
                       {signInLoading
                         ? i18n.t('signing_in')
                         : Platform.OS === 'ios'
@@ -547,7 +550,7 @@ export default function ProfileScreen() {
                   <FontAwesome6 name="discord" size={20} color="#5865F2" />
                 </View>
                 <View className="flex-1">
-                  <Text className="font-feather text-xl text-darkPurple">
+                  <Text style={{fontSize:AppFonts[15]}} className="font-feather text-darkPurple">
                     {i18n.t('join_discord')}
                   </Text>
                   <Text className="font-din text-body text-darkPurple opacity-80 mt-1 leading-tight">

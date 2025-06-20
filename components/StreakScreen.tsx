@@ -21,6 +21,9 @@ import { getStreakSubtext } from '../app/hooks/streakHook';
 import analytics from '../utils/analytics';
 import * as StoreReview from 'expo-store-review';
 import { IS_ANDROID } from '~/app/utils/utils';
+import { AppFonts } from '~/app/constants/appFonts';
+import { RPH } from '~/app/helper/helper';
+import { responsiveFontSize } from 'react-native-responsive-dimensions';
 /* ─────────────── helper ─────────────── */
 type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE';
 
@@ -458,10 +461,10 @@ export const StreakScreen = ({isPrayPresses, isReflectPresses}:{isPrayPresses?:s
             )}
           </View>
         </View>
-        <View className="flex flex-col justify-center items-center -mt-20">
+        <View style={{marginTop:-RPH(8)}} className="flex flex-col justify-center items-center">
           <Animated.Text
-            style={streakNumberStyle}
-            className="absolute text-[96px] font-feather text-textPrimary mb-12 -top-16">
+            style={[streakNumberStyle,{fontSize:AppFonts[56] + responsiveFontSize(3.2),marginBottom:RPH(2)}]}
+            className="absolute  font-feather text-textPrimary -top-16"> 
             {streak}
           </Animated.Text>
           <Animated.Text
@@ -508,8 +511,8 @@ export const StreakScreen = ({isPrayPresses, isReflectPresses}:{isPrayPresses?:s
         </View>
         <View className="border-t border-border my-2" />
         <Animated.Text
-          style={subtextStyle}
-          className="text-center text-black text-heading font-din px-8 py-4">
+          style={[subtextStyle,{fontSize:AppFonts[17]}]}
+          className="text-center text-black font-din px-8 py-4">
           {subText}
         </Animated.Text>
       </Animated.View>

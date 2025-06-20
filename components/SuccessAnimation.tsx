@@ -31,6 +31,8 @@ import heartIcon from '../assets/icons/heartIcon.png';
 import starIcon from '../assets/icons/starIcon.png';
 import { IS_ANDROID } from '~/app/utils/utils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
+import { AppFonts } from '~/app/constants/appFonts';
+import { RPH } from '~/app/helper/helper';
 
 // Get screen dimensions to ensure full screen sizing
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -700,7 +702,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   return (
     <View className="flex-1 bg-surfaceCream" style={{ backgroundColor: '#FFF4DC' }}>
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{ flexGrow: 1,paddingBottom:RPH(12) }}
         showsVerticalScrollIndicator={false}
         className="bg-surfaceCream">
         <Animated.View
@@ -786,7 +788,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
           </View>
 
           {/* Success message - enlarged */}
-          <Text className="font-feather text-[32px] text-textPrimary mb-4 text-center -mt-16">
+          <Text style={{fontSize:AppFonts[28]}} className="font-feather  text-textPrimary mb-4 text-center -mt-16">
             {message}
           </Text>
           <Text className="font-din text-xl text-secondaryText text-center mb-6 px-6">

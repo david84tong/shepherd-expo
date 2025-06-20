@@ -8,6 +8,7 @@ import { useHomeStore } from '~/app/stores/homeStore';
 import { getLevelData } from '~/utils/levelUtils';
 import i18n from '../app/utils/i18n';
 import { imageAssets } from '~/app/stores/assetsStore';
+import { AppFonts } from '~/app/constants/appFonts';
 
 interface SuccessMessageProps {
   title?: string;
@@ -222,12 +223,12 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
         </RNAnimated.View>
       )}
       <RNAnimated.Text
-        className={`font-feather text-[26px] text-center mb-1 text-brown/90 ${!didLevelUp ? '-mt-12' : ''}`}
-        style={textOpacityStyle}
+        className={`font-feather  text-center mb-1 text-brown/90 ${!didLevelUp ? '-mt-12' : ''}`}
+        style={[textOpacityStyle,{fontSize:AppFonts[22]}]}
       >
         {title}
       </RNAnimated.Text>
-      <Text className="font-din text-[17px]  text-brown/90 text-center mb-4" >
+      <Text style={{fontSize:AppFonts[15]}} className="font-din   text-brown/90 text-center mb-4" >
         {description}
       </Text>
       {/* <Text style={{paddingTop:RPH(4)}} className="font-bold text-[13px] text-center mb-6 tracking-wider uppercase text-brown/80">

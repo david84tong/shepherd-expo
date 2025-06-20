@@ -14,6 +14,8 @@ import PrimaryButton from '../PrimaryButton';
 import { Devotional } from '~/app/models/Devotional';
 import { ImageBackground } from 'expo-image';
 import i18n from '../../app/utils/i18n';
+import { RPH } from '~/app/helper/helper';
+import { AppFonts } from '~/app/constants/appFonts';
 
 interface DailyVerseCardProps {
   devotional: Devotional;
@@ -73,7 +75,8 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
   return (
     <Pressable
       onPress={handleCardPress}
-      className={`bg-surfaceCream rounded-3xl overflow-hidden mb-4 border border-buttonBorder shadow-card ${share && showShareButton ? 'h-80' : 'h-64'}`}>
+      style={{height:share && showShareButton ? RPH(33) : RPH(23)}}
+      className={`bg-surfaceCream rounded-3xl overflow-hidden mb-4 border border-buttonBorder shadow-card ${share && showShareButton ? 'h-80' : ''}`}>
       <ImageBackground
         source={{ uri: devotional.imageURL }}
         style={{ width: '100%'}}
@@ -92,22 +95,22 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
         />
 
         {/* Content */}
-        <View className="p-6 pb-4 h-full justify-between">
+        <View style={{padding:RPH(2)}} className="pb-4 h-full justify-between">
           <View>
-            <Text className="font-feather text-white text-heading mb-1">
+            <Text style={{fontSize:AppFonts[17],marginBottom:RPH(0.3)}} className="font-feather text-white">
               {devotional.bibleReference}
             </Text>
-            <Text className="font-din text-white text-heading leading-[26px] mb-7">
+            <Text style={{fontSize:AppFonts[17],marginBottom:RPH(2)}} className="font-din text-white  leading-[26px]">
               {i18n.t('verse_of_the_day')}
             </Text>
-            <Text className="font-nunito-italic text-white text-heading leading-[22px]">
+            <Text style={{fontSize:AppFonts[17]}} className="font-nunito-italic text-white  leading-[22px]">
               {devotional.verse}
             </Text>
           </View>
 
           {/* Share Button - only show when share=true AND showShareButton is true */}
           {share && showShareButton && (
-            <View className="mt-10 w-full -top-8">
+            <View style={{marginTop:RPH(6)}} className="w-full -top-8">
               <PrimaryButton
                 title={i18n.t('share')}
                 onPress={handleSharePress}
