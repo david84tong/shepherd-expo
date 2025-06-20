@@ -3,7 +3,7 @@ import {
   View,
   Text,
   TouchableOpacity,
-  
+
   Pressable,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -76,7 +76,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
       className={`bg-surfaceCream rounded-3xl overflow-hidden mb-4 border border-buttonBorder shadow-card ${share && showShareButton ? 'h-80' : 'h-64'}`}>
       <ImageBackground
         source={{ uri: devotional.imageURL }}
-        style={{ width: '100%'}}
+        style={{ width: '100%' }}
         resizeMode="cover">
         {/* Linear gradient overlay for readability - darker at top, lighter at bottom */}
         <LinearGradient
