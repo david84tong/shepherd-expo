@@ -654,9 +654,14 @@ export const useHomeScreen = () => {
       }).start(() => {
         setCurrentStateInput(12);
         if (riveRef.current?.setInputState) {
-          riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
+        
+        setTimeout(() => {
+          if(riveRef.current){
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
+          }
+        }, 500);
           try {
-            riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
           } catch (_) {
             // Ignore if Action-Number input not present
           }
@@ -804,14 +809,17 @@ export const useHomeScreen = () => {
         setShowPrayerContent(false);
         setPrayerViewVisible(false);
         
+        
         if (riveRef.current && riveRef.current.setInputState) {
           try {
-            riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
+
+                riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
+           
+
           } catch (e) {
             console.log('Error setting Rive Action-Number to Raising Hand:', e);
           }
         }
-        
         Animated.parallel([
           Animated.timing(devotionalCardOpacityAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
           Animated.timing(riveArtboardOpacityAnim, { toValue: 1, duration: 600, useNativeDriver: true })
