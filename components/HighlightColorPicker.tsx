@@ -7,7 +7,6 @@ import Reanimated, {
   useSharedValue, 
   useAnimatedStyle, 
   withTiming,
-  withSequence,
   Easing
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
@@ -289,9 +288,9 @@ const styles = StyleSheet.create({
   },
   colorOption: {
     alignItems: 'center',
+    borderColor: 'transparent',
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: 'transparent',
     height: 40,
     justifyContent: 'center',
     marginBottom: 16,

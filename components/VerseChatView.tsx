@@ -11,23 +11,17 @@ import {
   StyleSheet,
   StatusBar,
   Dimensions,
-  Keyboard,
-  ActivityIndicator
+  Keyboard
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import Reanimated, { 
-  FadeIn,
+import Reanimated, {
   FadeInUp, 
   FadeInRight,
-  FadeOutLeft,
-  SlideInUp,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
-  withDelay,
-  withSequence,
-  withRepeat
+  withDelay
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../app/hooks/authHook';
@@ -756,12 +750,12 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
 const styles = StyleSheet.create({
   aiBubble: {
     backgroundColor: '#FFF9E6',
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 20,
     borderBottomLeftRadius: 20,
-    marginRight: 60,
+    borderBottomRightRadius: 20,
     borderColor: '#FFE4A8',
+    borderTopRightRadius: 20,
     borderWidth: 1,
+    marginRight: 60,
   },
   aiText: {
     color: '#3C584A'
@@ -789,13 +783,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF4DC',
     flex: 1,
   },
+  cursor: {
+    fontWeight: 'bold',
+    opacity: 0.7
+  },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
     backgroundColor: '#B89B4C',
+    borderRadius: 4,
+    height: 8,
     marginHorizontal: 2,
     opacity: 0.7,
+    width: 8,
   },
   dotMiddle: {
     opacity: 0.9,
@@ -816,8 +814,8 @@ const styles = StyleSheet.create({
     color: '#3C584A',
     fontFamily: 'Nunito-Black',
     fontSize: 18,
-    position: 'absolute',
     left: 0,
+    position: 'absolute',
     right: 0,
     textAlign: 'center',
     zIndex: -1,
@@ -850,33 +848,33 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   loadingBubble: {
-    paddingVertical: 15,
-    paddingHorizontal: 18,
-    width: 100,
-    marginBottom: 12,
     alignSelf: 'flex-start',
+    marginBottom: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 15,
+    width: 100,
   },
   loadingContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'center',
   },
   messageBubble: {
     borderRadius: 20,
+    elevation: 1,
     marginBottom: 12,
     maxWidth: '80%',
     padding: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 1, 
-    elevation: 1,
+    shadowOpacity: 0.1, 
+    shadowRadius: 1,
   },
   messageList: {
     flexGrow: 1,
+    paddingBottom: 16,
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 16,
   },
   messageText: {
     fontFamily: 'DIN Next Rounded LT W01 Regular',
@@ -896,6 +894,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F7B500',
     borderRadius: 24,
+    elevation: 2,
     height: 48,
     justifyContent: 'center',
     marginLeft: 8,
@@ -906,22 +905,21 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.1,
     shadowRadius: 3,
-    elevation: 2,
     width: 48,
   },
   sendButtonDisabled: {
     backgroundColor: '#E5E5E5',
-    shadowOpacity: 0,
     elevation: 0,
+    shadowOpacity: 0,
   },
   upgradeButton: {
     alignItems: 'center',
+    alignSelf: 'flex-start',
     backgroundColor: '#F7B500',
     borderRadius: 16,
     marginTop: 12,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    alignSelf: 'flex-start',
   },
   upgradeButtonText: {
     color: '#FFFFFF',
@@ -936,15 +934,15 @@ const styles = StyleSheet.create({
   userBubble: {
     alignSelf: 'flex-end',
     backgroundColor: '#FCD34D',
-    borderTopLeftRadius: 20,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
+    borderTopLeftRadius: 20,
+    elevation: 2,
     marginLeft: 60,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 2,
-    elevation: 2,
   },
   userText: {
     color: '#3C584A'
@@ -961,10 +959,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontStyle: 'italic',
     lineHeight: 24,
-  },
-  cursor: {
-    opacity: 0.7,
-    fontWeight: 'bold'
   }
 });
 

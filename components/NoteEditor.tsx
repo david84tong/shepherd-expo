@@ -7,8 +7,7 @@ import {
   StyleSheet, 
   ScrollView,
   KeyboardAvoidingView,
-  Platform,
-  Animated
+  Platform
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
@@ -191,8 +190,8 @@ const styles = StyleSheet.create({
   actionButtons: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    marginTop: 16,
     marginBottom: 16,
+    marginTop: 16,
     width: '100%',
   },
   closeButton: {
@@ -205,10 +204,10 @@ const styles = StyleSheet.create({
     width: 30,
   },
   container: {
-    padding: 20,
-    width: '100%',
     display: 'flex',
     flexDirection: 'column',
+    padding: 20,
+    width: '100%',
   },
   disabledButton: {
     backgroundColor: '#DCB28077',
@@ -235,8 +234,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(220, 178, 128, 0.3)',
     borderRadius: 12,
     borderWidth: 1,
-    marginTop: 16,
     height: 160,
+    marginTop: 16,
     padding: 16,
     width: '100%',
   },

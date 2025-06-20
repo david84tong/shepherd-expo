@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import PrimaryButton from '../../components/PrimaryButton';

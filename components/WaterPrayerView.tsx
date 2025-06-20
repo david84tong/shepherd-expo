@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, forwardRef, useImperativeHandle } from 'react';
-// import { Canvas, Circle, LinearGradient, vec, Rect } from '@shopify/react-native-skia'
+import { Canvas, LinearGradient, vec, Path, Skia } from '@shopify/react-native-skia'
 
 import {
   View,
@@ -13,7 +13,7 @@ import {
   Animated,
 } from 'react-native';
 
-const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePrayerStore } from '~/app/stores/prayerStore';
@@ -27,7 +27,6 @@ import Reanimated, {
   useSharedValue,
   withTiming,
   Layout,
-  Easing,
   interpolate,
   runOnJS,
 } from 'react-native-reanimated';
@@ -41,8 +40,6 @@ import SuccessMessage from './SuccessMessage';
 // AsyncStorage keys for prayer settings
 const PRAYER_HAPTICS_KEY = 'prayer_haptics_enabled';
 const PRAYER_GUIDED_MODE_KEY = 'prayer_guided_mode_enabled';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface TypingTextProps {
   text: string;
@@ -95,11 +92,29 @@ const TypingText: React.FC<TypingTextProps> = ({
   );
 };
 
+// Water Wave Animation Component
+const WaterWaveAnimation: React.FC<{
+  isActive: boolean;
+  waterProgress: Reanimated.SharedValue<number>;
+  hapticsEnabled: boolean;
+  guidedPrayerEnabled: boolean;
+  currentDevotional: any;
+  isHolding: boolean;
+  animationTriggered: boolean;
+}> = ({ isActive, waterProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional, isHolding, animationTriggered }) => {
+  const [waveOffset, setWaveOffset] = useState(0);
+  const [waterLevel, setWaterLevel] = useState(SCREEN_HEIGHT);
+  const textOpacity = useSharedValue(1);
 
+  useEffect(() => {
+    textOpacity.value = withTiming(isHolding ? 0 : 1, { duration: 300 });
+  }, [isHolding]);
 
-// Water Filling Animation Component
-const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanimated.SharedValue<number>; hapticsEnabled: boolean; guidedPrayerEnabled: boolean; currentDevotional: any }> = ({ isActive, waterProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional }) => {
-  const containerSize = SCREEN_WIDTH * 0.6; // Container size
+  const animatedTextStyle = useAnimatedStyle(() => {
+    return {
+      opacity: textOpacity.value,
+    };
+  });
 
   // Haptic feedback function
   const triggerHaptic = useCallback(() => {
@@ -111,19 +126,23 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
   // Use ref to track if animation is already running to prevent restarts
   const animationStarted = useRef(false);
   const startupTimer = useRef<NodeJS.Timeout | null>(null);
+  const waveAnimationRef = useRef<number | null>(null);
+
+  // Helper to get current progress for water level calculation
+  const [skiaProgress, setSkiaProgress] = useState(0);
+  useEffect(() => {
+    const update = () => setSkiaProgress(waterProgress.value);
+    const id = setInterval(update, 16); // ~60fps
+    return () => clearInterval(id);
+  }, [waterProgress]);
 
   useEffect(() => {
     if (isActive && !animationStarted.current) {
       animationStarted.current = true;
       // Add a small delay to allow component to settle
       startupTimer.current = setTimeout(() => {
-        // Smooth water filling animation that fills up over 20 seconds
-        waterProgress.value = withTiming(1, {
-          duration: 20000, // 20 seconds to fill completely
-          easing: Easing.inOut(Easing.ease),
-        }, () => {
-          runOnJS(triggerHaptic)();
-        });
+        // Water level will be controlled by progress value
+        // No need for separate timer animation
       }, 300);
     } else if (!isActive && animationStarted.current) {
       animationStarted.current = false;
@@ -132,8 +151,12 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
         clearTimeout(startupTimer.current);
         startupTimer.current = null;
       }
-      // Reset water level
-      waterProgress.value = withTiming(0, { duration: 600 });
+      if (waveAnimationRef.current) {
+        cancelAnimationFrame(waveAnimationRef.current);
+        waveAnimationRef.current = null;
+      }
+      // Reset water level to bottom
+      setWaterLevel(SCREEN_HEIGHT);
     }
     // Cleanup timer on unmount
     return () => {
@@ -141,76 +164,98 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
         clearTimeout(startupTimer.current);
         startupTimer.current = null;
       }
+      if (waveAnimationRef.current) {
+        cancelAnimationFrame(waveAnimationRef.current);
+        waveAnimationRef.current = null;
+      }
     };
   }, [isActive]);
 
-  // Helper to get current progress for Skia primitives
-  // This is a workaround for using Reanimated shared value in a React render
-  const [skiaProgress, setSkiaProgress] = useState(0);
+  // Update water level based on progress
   useEffect(() => {
-    const update = () => setSkiaProgress(waterProgress.value);
-    const id = setInterval(update, 16); // ~60fps
-    return () => clearInterval(id);
-  }, [waterProgress]);
+    if (isActive) {
+      // Calculate water level based on progress (0 = completely hidden, 1 = filled to max level)
+      const maxWaterLevel = SCREEN_HEIGHT / 2.7; // Fill to this level when complete
+      const minWaterLevel = SCREEN_HEIGHT + 13; // Start completely below screen (hidden)
+      const newWaterLevel = minWaterLevel - (skiaProgress * (minWaterLevel - maxWaterLevel));
+      setWaterLevel(newWaterLevel);
+    }
+  }, [skiaProgress, isActive]);
+
+  // Wave animation effect
+  useEffect(() => {
+    if (isActive) {
+      const animateWave = () => {
+        setWaveOffset(prev => (prev + 0.02) % (Math.PI * 2));
+        waveAnimationRef.current = requestAnimationFrame(animateWave);
+      };
+      waveAnimationRef.current = requestAnimationFrame(animateWave);
+    }
+
+    return () => {
+      if (waveAnimationRef.current) {
+        cancelAnimationFrame(waveAnimationRef.current);
+      }
+    };
+  }, [isActive]);
+
+  const createWavePath = () => {
+    const frequency = 2;
+    const amplitude = 15;
+    const points = [];
+
+    for (let i = 0; i < SCREEN_WIDTH; i++) {
+      const angle = (i / SCREEN_WIDTH) * (Math.PI * frequency) + waveOffset;
+      const y = amplitude * Math.sin(angle) + waterLevel;
+      points.push([i, y]);
+    }
+
+    // Create path string manually
+    let pathString = `M${points[0][0]},${points[0][1]}`;
+    for (let i = 1; i < points.length; i++) {
+      pathString += ` L${points[i][0]},${points[i][1]}`;
+    }
+    // Close the path to bottom
+    pathString += ` L${SCREEN_WIDTH},${SCREEN_HEIGHT} L0,${SCREEN_HEIGHT} Z`;
+    return pathString;
+  };
+
+  const wavePath = createWavePath();
+  const path = Skia.Path.MakeFromSVGString(wavePath) || Skia.Path.Make();
 
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center', marginVertical: 40 }}>
-      {/* Water Container */}
-      <View style={{ 
-        width: containerSize, 
-        height: containerSize, 
-        borderRadius: containerSize / 2,
-        borderWidth: 4,
-        borderColor: '#4A90E2',
-        overflow: 'hidden',
-        backgroundColor: 'transparent',
-        position: 'relative',
-      }}>
-        <Canvas style={{ width: containerSize, height: containerSize }}>
-          {/* Water fill with animated height using Skia primitives */}
-          <Rect
-            x={0}
-            y={containerSize - (skiaProgress * containerSize)}
-            width={containerSize}
-            height={skiaProgress * containerSize}
-            color="#4A90E2"
+    <View style={{
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      zIndex: 1,
+    }}>
+      <Canvas style={{ flex: 1, bottom: -5 }}>
+        <Path path={path} style="fill" color="#4A90E2">
+          <LinearGradient
+            start={vec(0, waterLevel)}
+            end={vec(0, waterLevel + 500)}
+            colors={['cyan', "blue"]}
           />
-          {/* Water gradient effect */}
-          <Rect
-            x={0}
-            y={0}
-            width={containerSize}
-            height={containerSize}
-          >
-            <LinearGradient
-              start={vec(0, 0)}
-              end={vec(0, containerSize)}
-              colors={['rgba(74, 144, 226, 0)', 'rgba(74, 144, 226, 0.8)', 'rgba(30, 144, 255, 1)']}
-            />
-          </Rect>
-          {/* Animated water surface circle for ripple effect */}
-          <Circle
-            cx={containerSize / 2}
-            cy={containerSize - (skiaProgress * containerSize)}
-            r={containerSize / 2 - 4}
-            color="rgba(135, 206, 250, 0.3)"
-          />
-        </Canvas>
-      </View>
-      {/* Prayer instruction text */}
-      <View
-        style={{
-          position: 'absolute', 
-          pointerEvents: 'none', 
-          zIndex: 2, 
-          maxWidth: SCREEN_WIDTH * 0.8,
+        </Path>
+      </Canvas>
+
+      {/* Prayer instruction text overlay */}
+      <Reanimated.View
+        style={[{
+          position: 'absolute',
+          pointerEvents: 'none',
+          zIndex: 2,
           alignItems: 'center',
           justifyContent: 'center',
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
-        }}
+          alignSelf: 'center',
+        }, animatedTextStyle]}
       >
         {guidedPrayerEnabled ? (
           <TypingText
@@ -227,7 +272,7 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
             skipAnimation={false}
           />
         ) : (
-          <View style={{ alignItems: 'center' }}>
+          <View style={{ alignItems: 'center', alignSelf: 'center' }}>
             <Text style={{
               fontFamily: 'Nunito-Black',
               textAlign: 'center',
@@ -235,7 +280,7 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
               fontSize: 24,
               marginBottom: 8,
             }}>
-              Pour out your heart
+              {animationTriggered ? 'Prayer Complete!' : 'Pour out your heart'}
             </Text>
             <Text style={{
               fontFamily: 'DIN Next Rounded LT W01 Regular',
@@ -243,11 +288,21 @@ const WaterFillingAnimation: React.FC<{ isActive: boolean; waterProgress: Reanim
               color: '#4A90E2',
               fontSize: 16,
             }}>
-              Let your prayers fill this vessel
+              {animationTriggered ? 'Your prayer has been heard' : 'Let your prayers fill this vessel'}
+            </Text>
+            <Text style={{
+              fontFamily: 'DIN Next Rounded LT W01 Regular',
+              textAlign: 'center',
+              color: '#4A90E2',
+              fontSize: 14,
+              marginTop: 8,
+              opacity: 0.8,
+            }}>
+              {animationTriggered ? 'Tap to continue' : 'Hold to begin'}
             </Text>
           </View>
         )}
-      </View>
+      </Reanimated.View>
     </View>
   );
 };
@@ -312,7 +367,7 @@ const PrayerCard: React.FC<{
 
 interface PrayerViewProps {
   visible?: boolean;
-  onClose?: ({isReflectPresses}:{isReflectPresses?:boolean}) => void;
+  onClose?: ({ isReflectPresses }: { isReflectPresses?: boolean }) => void;
   onSetIdle?: () => void;
   setFinishReading: (finishReading: boolean) => void;
   setShowControlRow: (showControlRow: boolean) => void;
@@ -326,12 +381,12 @@ export interface PrayerViewRef {
   handleSettings: () => void;
 }
 
-const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({ 
-  visible = true, 
-  onClose, 
-  onSetIdle, 
-  setFinishReading, 
-  setShowControlRow, 
+const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
+  visible = true,
+  onClose,
+  onSetIdle,
+  setFinishReading,
+  setShowControlRow,
   showControlRow,
   setIsCompletePrayerDisabled
 }, ref) => {
@@ -350,18 +405,20 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [guidedPrayerEnabled, setGuidedPrayerEnabled] = useState(false);
   const [buttonsEnabled, setButtonsEnabled] = useState(false);
-
+  const [isHolding, setIsHolding] = useState(false);
+  const [animationTriggered, setAnimationTriggered] = useState(false);
+  const [totalHoldTime, setTotalHoldTime] = useState(0);
+  const holdStartTimeRef = useRef<number | null>(null);
+  const holdTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Animation values
   const progressValue = useSharedValue(0);
-  const prayerProgressValue = useSharedValue(0); // New progress bar for 20-second timer
   const waterProgress = useSharedValue(0); // Water filling progress
   const controlRowOpacity = useSharedValue(0);
   const componentOpacity = useSharedValue(0); // For smooth component fade-in
   const scrollViewRef = useRef<ScrollView>(null);
   const hideTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const completePrayerTimerRef = useRef<NodeJS.Timeout | null>(null);
-
 
   const progressTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const animatedXP = useRef(new Animated.Value(0)).current;
@@ -373,7 +430,6 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
   const animatedBlueOpacity = useRef(new Animated.Value(0.3)).current;
   const animatedGoldOpacity = useRef(new Animated.Value(0.4)).current;
-
 
   const MAX_HEARTS = 100;
 
@@ -392,9 +448,6 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     return getLevelData(lamb.xp);
   }, [lamb?.xp]);
 
-
-
-
   // Generate prayer content based on devotional or recent prayers
   const generatePrayerContent = useCallback(() => {
     // First try to use the devotional prayer (handle both string and object structures)
@@ -406,7 +459,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         devotionalPrayer = (currentDevotional.prayer as any).en;
       }
     }
-    
+
     if (devotionalPrayer && devotionalPrayer.trim().length > 0) {
       return devotionalPrayer;
     }
@@ -424,12 +477,11 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   useEffect(() => {
     if (visible) {
       componentOpacity.value = withTiming(1, { duration: 400 });
-      // Start 20-second progress bar animation
-      prayerProgressValue.value = 0;
-      prayerProgressValue.value = withTiming(1, { duration: 20000 }); // 20 seconds
+      // Don't start automatic animation - wait for user hold
+      waterProgress.value = 0;
     } else {
       componentOpacity.value = 0;
-      prayerProgressValue.value = 0;
+      waterProgress.value = 0;
     }
   }, [visible]);
 
@@ -437,7 +489,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   useEffect(() => {
     const setShowGlobalButtons = useHomeStore.getState().setShowGlobalButtons;
     setShowGlobalButtons(true);
-  
+
     const loadSettings = async () => {
       try {
         const savedHaptics = await AsyncStorage.getItem(PRAYER_HAPTICS_KEY);
@@ -524,6 +576,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       if (completePrayerTimerRef.current) {
         clearTimeout(completePrayerTimerRef.current);
       }
+      if (holdTimerRef.current) {
+        clearInterval(holdTimerRef.current);
+      }
     };
   }, []);
 
@@ -541,7 +596,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               runOnJS(setShowControlRow)(false);
             }
           });
-        }, 3000);
+        }, 10000);
       }
     }
   }, [showBreathingAnimation, controlRowOpacity, showSettingsModal]);
@@ -615,7 +670,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       // Clear any existing timeout when modal opens
       if (hideTimeoutRef.current) {
         clearTimeout(hideTimeoutRef.current);
-        hideTimeoutRef.current = null; // reset ref
+        hideTimeoutRef.current = null;
       }
       // Ensure controls are visible when modal is open
       if (!showControlRow) {
@@ -741,13 +796,6 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     };
   });
 
-  // Prayer progress bar animation style
-  const prayerProgressAnimatedStyle = useAnimatedStyle(() => {
-    return { 
-      width: `${prayerProgressValue.value * 100}%` 
-    };
-  });
-
   // Function to show control row with auto-hide
   const toggleControlRow = useCallback(() => {
     console.log('🎯 toggleControlRow called! showControlRow:', showControlRow);
@@ -793,10 +841,108 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   // Reset progress bar when breathing animation ends
   useEffect(() => {
     if (!showBreathingAnimation) {
-      // Reset the prayer progress bar when moving to prayer cards
-      prayerProgressValue.value = 0;
+      // Reset water progress when moving to prayer cards
+      waterProgress.value = 0;
+      // Reset hold state
+      setIsHolding(false);
+      setAnimationTriggered(false);
+      setTotalHoldTime(0);
+      holdStartTimeRef.current = null;
+      if (holdTimerRef.current) {
+        clearInterval(holdTimerRef.current);
+        holdTimerRef.current = null;
+      }
     }
   }, [showBreathingAnimation]);
+
+  // Debug state changes
+  useEffect(() => {
+    console.log('🎯 State changed - isHolding:', isHolding, 'animationTriggered:', animationTriggered);
+  }, [isHolding, animationTriggered]);
+
+  // Trigger success state when water animation is complete
+  useEffect(() => {
+    if (animationTriggered) {
+      console.log('🎯 Water animation complete, triggering success state');
+      // Trigger the success state after a short delay
+      setTimeout(() => {
+        setShowBreathingAnimation(false);
+        setFinishReading(true);
+        setShowSuccess(true);
+      }, 1000);
+    }
+  }, [animationTriggered]);
+
+  // Handle press start for water animation
+  const handlePressIn = useCallback(() => {
+    console.log('🎯 handlePressIn called');
+
+    const startTime = Date.now();
+    setIsHolding(true);
+    holdStartTimeRef.current = startTime;
+    console.log('🎯 Started holding, water will fill continuously');
+
+    // Start continuous water filling
+    const updateWater = () => {
+      if (holdStartTimeRef.current) {
+        const currentHoldTime = Date.now() - holdStartTimeRef.current;
+        const totalTime = totalHoldTime + currentHoldTime;
+        const maxFillTime = 20000; // 20 seconds to fill completely
+        const progress = Math.min(totalTime / maxFillTime, 1);
+
+        console.log('🎯 Total hold time:', totalTime, 'ms, progress:', progress);
+
+        // Update water progress
+        waterProgress.value = progress;
+
+        // If water reaches 100%, trigger success
+        if (progress >= 1 && !animationTriggered) {
+          console.log('🎯 Water filled completely! Triggering success!');
+          setAnimationTriggered(true);
+
+          // Trigger haptic feedback
+          if (hapticsEnabled) {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          }
+
+          // Stop the water updates
+          if (holdTimerRef.current) {
+            clearInterval(holdTimerRef.current);
+            holdTimerRef.current = null;
+          }
+        }
+      }
+    };
+
+    // Update water every 50ms while holding
+    holdTimerRef.current = setInterval(updateWater, 50);
+  }, [totalHoldTime, waterProgress, hapticsEnabled, animationTriggered]);
+
+  // Handle press end for water animation
+  const handlePressOut = useCallback(() => {
+    console.log('🎯 handlePressOut called');
+    setIsHolding(false);
+
+    // Calculate total hold time
+    if (holdStartTimeRef.current) {
+      const currentHoldTime = Date.now() - holdStartTimeRef.current;
+      const newTotalHoldTime = totalHoldTime + currentHoldTime;
+      setTotalHoldTime(newTotalHoldTime);
+      console.log('🎯 Total hold time accumulated:', newTotalHoldTime, 'ms');
+    }
+
+    holdStartTimeRef.current = null;
+
+    // Stop the water updates
+    if (holdTimerRef.current) {
+      console.log('🎯 Stopping water updates');
+      clearInterval(holdTimerRef.current);
+      holdTimerRef.current = null;
+    }
+
+    // Don't reset water - keep it at current level
+    console.log('🎯 Water stays at current level');
+  }, [totalHoldTime, animationTriggered]);
 
   // Expose functions through ref
   useImperativeHandle(ref, () => ({
@@ -810,20 +956,20 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       useHomeStore.getState().setShowGlobalButtons(false);
       setFinishReading(true);
       setShowSuccess(true);
-      
+
       // Apply rewards (2 hearts + 25 XP for prayer)
       const heartReward = 2;
       const xpReward = 25;
       const MAX_HEARTS = 100;
-      
+
       const currentHearts = useUserStore.getState().getLambHearts();
       const setLambHearts = useUserStore.getState().setLambHearts;
       const addXp = useUserStore.getState().addXp;
       const setLambMood = useUserStore.getState().setLambMood;
-      
+
       // Calculate actual heart reward (don't exceed MAX_HEARTS)
       const heartsToAdd = Math.min(heartReward, MAX_HEARTS - currentHearts);
-      
+
       // Apply rewards
       if (heartsToAdd > 0) {
         setLambHearts(currentHearts + heartsToAdd);
@@ -839,14 +985,14 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
           setLambMood('lamb-angry');
         }
       }
-      
+
       // Always add XP
       addXp(xpReward);
-      
+
       // Mark prayer as completed
       const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
       setPrayerCompleted(true);
-      
+
       // Update timestamps
       const now = firestore.Timestamp.now();
       const setLastActivityDate = useUserStore.getState().setLastActivityDate;
@@ -1003,93 +1149,93 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
 
   return (
-    <Reanimated.View style={[{ flex: 1, borderRadius: 24 }, animatedBackgroundStyle, componentAnimatedStyle]}>
+    <Reanimated.View style={[{ flex: 1, borderRadius: 24 }, animatedBackgroundStyle, componentAnimatedStyle, { overflow: 'hidden' }]}>
       {showSuccess ? (
-       <View style={{marginHorizontal: 24,flex:1, marginTop: 24}}>
-         <SuccessMessage
-          title="Prayer Complete!"
-          description="Wonderful! You spent time in prayer & strengthened your faith."
-          level={levelInfo.level}
-          prevLevel={levelInfo.level}
-          buttonsEnabled={buttonsEnabled}
-          onGoHome={() => {
-            // Update lastActivityDate to prevent completion states from being reset
-            setTimeout(() => {
-              setFinishReading(false)
-            }, 2000);
-            const now = firestore.Timestamp.now();
-            const setLastActivityDate = useUserStore.getState().setLastActivityDate;
-            const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
-            setLastActivityDate(now);
-            setLastPrayerDate(now);
+        <View style={{ marginHorizontal: 24, flex: 1, marginTop: 24 }}>
+          <SuccessMessage
+            title="Prayer Complete!"
+            description="Wonderful! You spent time in prayer & strengthened your faith."
+            level={levelInfo.level}
+            prevLevel={levelInfo.level}
+            buttonsEnabled={buttonsEnabled}
+            onGoHome={() => {
+              // Update lastActivityDate to prevent completion states from being reset
+              setTimeout(() => {
+                setFinishReading(false)
+              }, 2000);
+              const now = firestore.Timestamp.now();
+              const setLastActivityDate = useUserStore.getState().setLastActivityDate;
+              const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
+              setLastActivityDate(now);
+              setLastPrayerDate(now);
 
-            // Mark prayer as completed
-            const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
-            setPrayerCompleted(true);
+              // Mark prayer as completed
+              const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
+              setPrayerCompleted(true);
 
-            // Show tab bar again
-            const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
-            setPrayerViewVisible(false);
-
-            // Log completion analytics
-            analytics.logEvent('PrayerView_Completed', {
-              prayerTopic: recentPrayers[0] || 'general',
-              totalCards: totalCards,
-              devotionalId: currentDevotional?.id || null,
-              bibleReference: currentDevotional?.bibleReference || null,
-            });
-
-            // Close the prayer view
-            if (onSetIdle) onSetIdle();
-            if (onClose) {
-              if (hapticsEnabled) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              }
-              onClose({});
-            }
-          }}
-          onPray={() => {
-            // Update lastActivityDate to prevent completion states from being reset
-            setTimeout(() => {
-              setFinishReading(false)
-            }, 2000);
-            const now = firestore.Timestamp.now();
-            const setLastActivityDate = useUserStore.getState().setLastActivityDate;
-            const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
-            setLastActivityDate(now);
-            setLastPrayerDate(now);
-
-            // Mark prayer as completed
-            const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
-            setPrayerCompleted(true);
-
-            // Show tab bar again
-            const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
-            setTimeout(() => {
+              // Show tab bar again
+              const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
               setPrayerViewVisible(false);
-            }, 2000);
 
-            // Log completion analytics
-            analytics.logEvent('PrayerView_Completed', {
-              prayerTopic: recentPrayers[0] || 'general',
-              totalCards: totalCards,
-              devotionalId: currentDevotional?.id || null,
-              bibleReference: currentDevotional?.bibleReference || null,
-            });
+              // Log completion analytics
+              analytics.logEvent('PrayerView_Completed', {
+                prayerTopic: recentPrayers[0] || 'general',
+                totalCards: totalCards,
+                devotionalId: currentDevotional?.id || null,
+                bibleReference: currentDevotional?.bibleReference || null,
+              });
 
-            // Close the prayer view
-            if (onSetIdle) onSetIdle();
-            if (onClose) {
-              if (hapticsEnabled) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              // Close the prayer view
+              if (onSetIdle) onSetIdle();
+              if (onClose) {
+                if (hapticsEnabled) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                onClose({});
               }
-              onClose({isReflectPresses: true});
-            }
-          }}
-          prayButtonTitle="Reflect on this verse"
-          rewardsTitle="PRAYER REWARDS"
-        />
-       </View>
+            }}
+            onPray={() => {
+              // Update lastActivityDate to prevent completion states from being reset
+              setTimeout(() => {
+                setFinishReading(false)
+              }, 2000);
+              const now = firestore.Timestamp.now();
+              const setLastActivityDate = useUserStore.getState().setLastActivityDate;
+              const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
+              setLastActivityDate(now);
+              setLastPrayerDate(now);
+
+              // Mark prayer as completed
+              const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
+              setPrayerCompleted(true);
+
+              // Show tab bar again
+              const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
+              setTimeout(() => {
+                setPrayerViewVisible(false);
+              }, 2000);
+
+              // Log completion analytics
+              analytics.logEvent('PrayerView_Completed', {
+                prayerTopic: recentPrayers[0] || 'general',
+                totalCards: totalCards,
+                devotionalId: currentDevotional?.id || null,
+                bibleReference: currentDevotional?.bibleReference || null,
+              });
+
+              // Close the prayer view
+              if (onSetIdle) onSetIdle();
+              if (onClose) {
+                if (hapticsEnabled) {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                }
+                onClose({ isReflectPresses: true });
+              }
+            }}
+            prayButtonTitle="Reflect on this verse"
+            rewardsTitle="PRAYER REWARDS"
+          />
+        </View>
       ) : (
         <>
           {/* Header */}
@@ -1105,28 +1251,6 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
             </Text>
           </View>
 
-          {/* Prayer Progress Bar */}
-          <View style={{ 
-            height: 8, 
-            borderRadius: 50, 
-            marginBottom: 56, 
-            marginHorizontal: 24,
-            overflow: 'hidden',
-            marginTop: -32,
-            backgroundColor: 'rgba(255, 215, 0, 0.2)' // Light yellow background
-          }}>
-            <Reanimated.View
-              style={[
-                {
-                  height: '100%',
-                  backgroundColor: '#FFD700', // Yellow color
-                  borderRadius: 4,
-                },
-                prayerProgressAnimatedStyle,
-              ]}
-            />
-          </View>
-
           {/* Bible Reference Header */}
           {/* <View className="flex-row items-center justify-center mb-4">
             <Text className="font-feather-bold text-textPrimary/80 text-center text-2xl">
@@ -1134,11 +1258,14 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
             </Text>
           </View> */}
 
-          {/* Water Filling Animation - Show initially */}
+          {/* Water Wave Animation - Show initially */}
           {showBreathingAnimation && (
-            <TouchableWithoutFeedback onPress={toggleControlRow}>
-              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -SCREEN_HEIGHT * 0.5 }}>
-                <WaterFillingAnimation isActive={showBreathingAnimation} waterProgress={waterProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} currentDevotional={currentDevotional} />
+            <TouchableWithoutFeedback
+              onPressIn={handlePressIn}
+              onPressOut={handlePressOut}
+              onPress={toggleControlRow}>
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -SCREEN_HEIGHT * 0.46 }}>
+                <WaterWaveAnimation isActive={showBreathingAnimation} waterProgress={waterProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} currentDevotional={currentDevotional} isHolding={isHolding} animationTriggered={animationTriggered} />
               </View>
             </TouchableWithoutFeedback>
           )}
@@ -1210,20 +1337,20 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                       // Show success UI within the component
                       setFinishReading(true);
                       setShowSuccess(true);
-                      
+
                       // Apply rewards (2 hearts + 25 XP for prayer)
                       const heartReward = 2;
                       const xpReward = 25;
                       const MAX_HEARTS = 100;
-                      
+
                       const currentHearts = useUserStore.getState().getLambHearts();
                       const setLambHearts = useUserStore.getState().setLambHearts;
                       const addXp = useUserStore.getState().addXp;
                       const setLambMood = useUserStore.getState().setLambMood;
-                      
+
                       // Calculate actual heart reward (don't exceed MAX_HEARTS)
                       const heartsToAdd = Math.min(heartReward, MAX_HEARTS - currentHearts);
-                      
+
                       // Apply rewards
                       if (heartsToAdd > 0) {
                         setLambHearts(currentHearts + heartsToAdd);
@@ -1239,14 +1366,14 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                           setLambMood('lamb-angry');
                         }
                       }
-                      
+
                       // Always add XP
                       addXp(xpReward);
-                      
+
                       // Mark prayer as completed
                       const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
                       setPrayerCompleted(true);
-                      
+
                       // Update timestamps
                       const now = firestore.Timestamp.now();
                       const setLastActivityDate = useUserStore.getState().setLastActivityDate;

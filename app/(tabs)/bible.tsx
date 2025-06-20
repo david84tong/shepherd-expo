@@ -1,5 +1,4 @@
 import React, { useEffect } from 'react';
-import { SafeAreaView } from 'react-native';
 
 import { BibleReader } from '../bibleReader';
 import { usePathStore } from '../stores/pathStore';

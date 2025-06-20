@@ -1,4 +1,4 @@
-import { AccessibilityInfo, Platform } from 'react-native';
+import { AccessibilityInfo } from 'react-native';
 
 let isReduceMotionEnabled = false;
 

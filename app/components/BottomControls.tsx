@@ -1,4 +1,4 @@
-import { View, Image, Animated } from 'react-native';
+import { View, Animated } from 'react-native';
 import CircleButton from '~/components/Shared/CircleButton';
 import PrimaryButton from '~/components/PrimaryButton';
 import BluePrimaryButton from '~/components/Shared/BluePrimaryButton';

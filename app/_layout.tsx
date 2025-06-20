@@ -9,7 +9,6 @@ import {
   View,
   AppState,
   AppStateStatus,
-  Text,
   Alert,
   Linking,
 } from 'react-native';
@@ -45,15 +44,13 @@ import ForceUpdateModal from '~/components/ForceUpdateModal';
 import { disableFontScaling } from './helper/disableFontScaling';
 import { adapty } from 'react-native-adapty';
 import './stores/userStore';
-import { IS_ANDROID, IS_IOS } from './utils/utils';
+import { IS_ANDROID } from './utils/utils';
 
 // Import highlight store setup function
-import { setupHighlightListeners } from './stores/highlightStore';
 import useHighlightStore from './stores/highlightStore';
 import { useSoundStore } from './stores/soundStore';
 import './stores/userStore';
 import './stores/subscriptionStore';
-import SaveProgressScreen from './onboarding/11';
 import { useRemoteConfig } from './hooks/useRemoteConfig';
 // Define missing ref types
 type PrayerSheetRef = {
@@ -597,6 +594,10 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#FFF4D9',
+    flex: 1,
+  },
   riveAnimation: {
     height: '100%',
     width: '100%',
@@ -606,9 +607,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFF4D9',
     justifyContent: 'center',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF4D9',
   },
 });

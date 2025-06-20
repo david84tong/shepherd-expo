@@ -1,8 +1,8 @@
 // /Users/mac/Documents/projects/shepherd-expo/app/(tabs)/index.tsx
 
-import { 
-  View, 
-  Text, 
+import {
+  View,
+  Text,
   ImageBackground,
   SafeAreaView,
   StatusBar,
@@ -24,7 +24,8 @@ import WidgetHowToSheet from '../../components/WidgetHowToSheet';
 import bibleIcon from '../../assets/icons/bibleIcon.png';
 import FullScreenShareCard from '../../components/FullScreenShareCard';
 import SpotlightOverlay from '../../components/SpotlightOverlay';
-import PrayerView from '~/components/PrayerView';
+// import PrayerView from '~/components/PrayerView';
+import PrayerView from '~/components/WaterPrayerView';
 import JournalComponent from '~/components/JournalComponent';
 import DailyVerseCard from '~/components/Shared/DailyVerseCard';
 import CustomToast from '../components/Shared/CustomToast';
@@ -40,7 +41,6 @@ import BottomControls from '../components/BottomControls';
 import i18n from '../utils/i18n';
 import { useLanguageStore } from '../stores/languageStore';
 import { useEffect } from 'react';
-import { useUIStore } from '../stores/uiStore';
 
 // Custom toast config with explicit styling
 const toastConfig = CustomToast;
@@ -251,7 +251,7 @@ export default function HomeScreen() {
         </View>
       </View>
     );
-  }, [riveAssets, currentStateInput, riveKey, riveReady, isPro, lambName, isLevelPillExpanded,riveSkinInitialized]);
+  }, [riveAssets, currentStateInput, riveKey, riveReady, isPro, lambName, isLevelPillExpanded, riveSkinInitialized]);
 
   // Gate of rendering: only render the screen if the assets are ready
   if (!assetsLoaded || !assets) return null;
@@ -266,533 +266,534 @@ export default function HomeScreen() {
         backgroundColor="transparent"
         barStyle={isDarkContant ? 'light-content' : 'dark-content'}
       />
-     <View className='flex-1 bg-[#FDEBB8]'>
-      <Animated.View className="flex-1" style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}>
-        {/* Background Layers */}
-        <Animated.View
-          style={[
-            { position: 'absolute', width: '100%', height: '100%', top: -100 },
-            { opacity: showDevotionalContent ? 1 : 1 },
-          ]}>
-          <ImageBackground
-            source={require('../../assets/backgrounds/mainBackground2.png')}
-            style={{ width: '100%', height: '100%' }}>
-            <Image
-              source={require('../../assets/backgrounds/mainBackground2.png')}
-              style={{ width: '100%', height: '100%' }}
-            />
-          </ImageBackground>
-        </Animated.View>
-
-        {(showDevotionalContent || showPrayerContent || showJournalContent) && !finishReading && (
+      <View className='flex-1 bg-[#FDEBB8]'>
+        <Animated.View className="flex-1" style={{ opacity: isFirstLoad ? firstLoadOpacity : 1 }}>
+          {/* Background Layers */}
           <Animated.View
-            style={{
-              position: 'absolute',
-              width: '100%',
-              height: '100%',
-              opacity: devotionaleRadingOpacityAnim,
-            }}
-            pointerEvents="none"
-          >
-            <SpotlightOverlay visible={true} radius={150} centerY={SCREEN_HEIGHT * 0.25} />
-          </Animated.View>
-        )}
-
-        <Animated.View
-          style={[
-            { position: 'absolute', width: '100%', height: '100%' },
-            { opacity: pathOpacityAnim },
-          ]}>
-          <Image source={pathBg} style={{ width: '100%', height: '100%' }} />
-        </Animated.View>
-
-        <Animated.View
-          style={[
-            { position: 'absolute', width: '100%', height: '100%' },
-            { opacity: journalOpacityAnim },
-          ]}>
-          <Image source={journalBg} style={{ width: '100%', height: '100%' }} />
-        </Animated.View>
-
-        {/* Prayer background Rive animation */}
-        <Animated.View
-          style={[
-            { position: 'absolute', width: '100%', height: '100%', zIndex: 0 },
-            { opacity: IS_IOS ? waterOpacityAnim : androidBgOpacityAnim },
-          ]}>
-          {IS_IOS ? (
-            showBgRive &&
-            riveAssets && (
-              <Rive
-                url={riveAssets[1].uri!}
-                autoplay={true}
-                style={{ width: '160%', height: '160%', top: -300, left: -128 }}
+            style={[
+              { position: 'absolute', width: '100%', height: '100%', top: -100 },
+              { opacity: showDevotionalContent ? 1 : 1 },
+            ]}>
+            <ImageBackground
+              source={require('../../assets/backgrounds/mainBackground2.png')}
+              style={{ width: '100%', height: '100%' }}>
+              <Image
+                source={require('../../assets/backgrounds/mainBackground2.png')}
+                style={{ width: '100%', height: '100%' }}
               />
-            )
-          ) : (
-            <Image
-              source={require('../../assets/backgrounds/Forest Clearing Background Apr 18 2025.png')}
-              style={{ width: '100%', height: '100%' }}
-              resizeMode="cover"
-            />
-          )}
-        </Animated.View>
+            </ImageBackground>
+          </Animated.View>
 
-        <SafeAreaView className="flex-1">
-          {/* Header */}
-          <View
-            className="flex-row justify-between items-center px-4 pt-1.5 pb-2 h-[42px] relative"
-            style={{ zIndex: 9999, marginTop: Platform.OS === 'android' ? 25 : 0 }}>
+          {(showDevotionalContent || showPrayerContent || showJournalContent) && !finishReading && (
             <Animated.View
-              className="absolute inset-0 flex-row items-center justify-between px-8 w-full"
-              style={{ opacity: headerDefaultOpacityAnim }}
-              pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}>
-              <View className="flex-row items-center flex-1 justify-between">
+              style={{
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+                opacity: devotionaleRadingOpacityAnim,
+              }}
+              pointerEvents="none"
+            >
+              <SpotlightOverlay visible={true} radius={150} centerY={SCREEN_HEIGHT * 0.25} />
+            </Animated.View>
+          )}
+
+          <Animated.View
+            style={[
+              { position: 'absolute', width: '100%', height: '100%' },
+              { opacity: pathOpacityAnim },
+            ]}>
+            <Image source={pathBg} style={{ width: '100%', height: '100%' }} />
+          </Animated.View>
+
+          <Animated.View
+            style={[
+              { position: 'absolute', width: '100%', height: '100%' },
+              { opacity: journalOpacityAnim },
+            ]}>
+            <Image source={journalBg} style={{ width: '100%', height: '100%' }} />
+          </Animated.View>
+
+          {/* Prayer background Rive animation */}
+          <Animated.View
+            style={[
+              { position: 'absolute', width: '100%', height: '100%', zIndex: 0 },
+              { opacity: IS_IOS ? waterOpacityAnim : androidBgOpacityAnim },
+            ]}>
+            {IS_IOS ? (
+              showBgRive &&
+              riveAssets && (
+                <Rive
+                  url={riveAssets[1].uri!}
+                  autoplay={true}
+                  style={{ width: '160%', height: '160%', top: -300, left: -128 }}
+                />
+              )
+            ) : (
+              <Image
+                source={require('../../assets/backgrounds/Forest Clearing Background Apr 18 2025.png')}
+                style={{ width: '100%', height: '100%' }}
+                resizeMode="cover"
+              />
+            )}
+          </Animated.View>
+
+          <SafeAreaView className="flex-1">
+            {/* Header */}
+            <View
+              className="flex-row justify-between items-center px-4 pt-1.5 pb-2 h-[42px] relative"
+              style={{ zIndex: 9999, marginTop: Platform.OS === 'android' ? 25 : 0 }}>
+              <Animated.View
+                className="absolute inset-0 flex-row items-center justify-between px-8 w-full"
+                style={{ opacity: headerDefaultOpacityAnim }}
+                pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}>
+                <View className="flex-row items-center flex-1 justify-between">
+                  <Text
+                    className="text-h1 font-feather text-white tracking-wide right-2"
+                    style={{
+                      textShadowColor: 'rgba(0, 0, 0, 0.2)',
+                      textShadowOffset: { width: 0, height: 1 },
+                      textShadowRadius: 2,
+                    }}>
+                    {showDevotionalContent
+                      ? i18n.t('devotional_title')
+                      : showPrayerContent
+                        ? i18n.t('praying_title')
+                        : showJournalContent
+                          ? i18n.t('reflecting_title')
+                          : i18n.t('home_title')}
+                  </Text>
+                  {!showDevotionalContent && !showPrayerContent && !showJournalContent && (
+                    <View className="flex-row gap-2 justify-end ml-2">
+                      <TouchableOpacity onPress={onLevelPress}>
+                        <View style={{ position: 'relative', zIndex: 2 }}>
+                          <ProgressPill
+                            value={0}
+                            label={lambHearts?.toString?.()}
+                            icon={heartIcon}
+                          />
+
+                          {isLevelPillExpanded && (
+                            <Animated.View
+                              className="bg-surfaceCreamLight rounded-xl overflow-hidden flex-row items-center p-2"
+                              style={{
+                                position: 'absolute',
+                                top: 40,
+                                left: '50%',
+                                transform: [
+                                  {
+                                    translateX: levelPillWidthAnim.interpolate({
+                                      inputRange: [0, 1],
+                                      outputRange: [0, -pillExpandedWidth / 2],
+                                    }),
+                                  },
+                                ],
+                                width: levelPillWidthAnim.interpolate({
+                                  inputRange: [0, 1],
+                                  outputRange: [40, pillExpandedWidth],
+                                }),
+                              }}>
+
+                              <View className="items-center flex">
+                                <View
+                                  style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                  }}>
+                                  <Image source={heartIcon} className="w-4 h-4 mr-1" />
+                                  <Text className="font-feather text-textPrimary text-mini w-12 ">
+                                    {lambHearts?.toString?.()}
+                                  </Text>
+                                </View>
+
+                                <View
+                                  style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+
+                                  }}>
+                                  <Image source={starIcon} tintColor={'#FF8800'} className="w-4 h-4 mr-1" />
+                                  <Text className="font-feather text-textPrimary text-mini w-12">
+                                    LVL {levelInfo.level}
+                                  </Text>
+                                </View>
+
+                              </View>
+
+                              <View style={{ width: '80%' }}>
+                                {/* Level Display */}
+
+
+                                <View className="h-2 bg-red/25 rounded-md overflow-hidden">
+                                  <View
+                                    className="h-full bg-red rounded-full"
+                                    style={{
+                                      width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%`,
+                                    }}
+                                  />
+                                </View>
+
+                                <View className="h-2 bg-orange/25 rounded-full overflow-hidden mt-1 ">
+                                  <View
+                                    className="h-full bg-orange rounded-full"
+                                    style={{
+                                      width: `${Math.max(Math.min(levelInfo.progress, 100), 1)}%`,
+                                    }}
+                                  />
+                                </View>
+                              </View>
+                            </Animated.View>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                      <>
+                        <TouchableOpacity onPress={onGemsPress}>
+                          <ProgressPill value={0} label={gens?.toString?.()} icon={gemIcon} />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          onPress={onStreakPress}>
+                          <ProgressPill value={0} label={streakCount?.toString?.()} icon={flameIcon} />
+                        </TouchableOpacity>
+                      </>
+                    </View>
+                  )}
+                </View>
+              </Animated.View>
+
+              <Animated.View
+                className="absolute inset-0 flex-row items-center justify-center px-8 w-full"
+                style={{ opacity: devotionalHeaderOpacityAnim }}
+                pointerEvents={devotionalReaderVisible ? 'auto' : 'none'}>
                 <Text
-                  className="text-h1 font-feather text-white tracking-wide right-2"
+                  className="text-h1 font-feather text-white tracking-wide"
                   style={{
                     textShadowColor: 'rgba(0, 0, 0, 0.2)',
                     textShadowOffset: { width: 0, height: 1 },
                     textShadowRadius: 2,
                   }}>
-                  {showDevotionalContent 
-                    ? i18n.t('devotional_title') 
-                    : showPrayerContent 
-                    ? i18n.t('praying_title') 
-                    : showJournalContent 
-                    ? i18n.t('reflecting_title') 
-                    : i18n.t('home_title')}
+                  {/* Daily Devotional */}
                 </Text>
-                {!showDevotionalContent && !showPrayerContent && !showJournalContent && (
-                  <View className="flex-row gap-2 justify-end ml-2">
-                    <TouchableOpacity onPress={onLevelPress}>
-                      <View style={{ position: 'relative', zIndex: 2 }}>
-                        <ProgressPill
-                          value={0}
-                          label={lambHearts?.toString?.()}
-                          icon={heartIcon}
-                        />
+              </Animated.View>
+            </View>
 
-                        {isLevelPillExpanded && (
-                          <Animated.View
-                            className="bg-surfaceCreamLight rounded-xl overflow-hidden flex-row items-center p-2"
-                            style={{
-                              position: 'absolute',
-                              top: 40,
-                              left: '50%',
-                              transform: [
-                                {
-                                  translateX: levelPillWidthAnim.interpolate({
-                                    inputRange: [0, 1],
-                                    outputRange: [0, -pillExpandedWidth / 2],
-                                  }),
-                                },
-                              ],
-                              width: levelPillWidthAnim.interpolate({
-                                inputRange: [0, 1],
-                                outputRange: [40, pillExpandedWidth],
-                              }),
-                            }}>
-                          
-                              <View className="items-center flex">
-                            <View
-                              style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                              }}>
-                                <Image source={heartIcon} className="w-4 h-4 mr-1" />
-                                <Text className="font-feather text-textPrimary text-mini w-12 ">
-                                  {lambHearts?.toString?.()}
-                                </Text>
-                              </View>
-                              
-                              <View
-                              style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-
-                              }}>
-                                <Image source={starIcon} tintColor={'#FF8800'} className="w-4 h-4 mr-1" />
-                                <Text className="font-feather text-textPrimary text-mini w-12">
-                                  LVL {levelInfo.level}
-                                </Text>
-                              </View>
-                        
-                            </View>
-
-                            <View style={{ width: '80%' }}>
-                              {/* Level Display */}
-                          
-                              
-                              <View className="h-2 bg-red/25 rounded-md overflow-hidden">
-                                <View
-                                  className="h-full bg-red rounded-full"
-                                  style={{
-                                    width: `${Math.min(100, (lambHearts / MAX_HEARTS) * 100)}%`,
-                                  }}
-                                />
-                              </View>
-
-                              <View className="h-2 bg-orange/25 rounded-full overflow-hidden mt-1 ">
-                                <View
-                                  className="h-full bg-orange rounded-full"
-                                  style={{
-                                    width: `${Math.max(Math.min(levelInfo.progress, 100), 1)}%`,
-                                  }}
-                                />
-                              </View>
-                            </View>
-                          </Animated.View>
-                        )}
-                      </View>
-                    </TouchableOpacity>
-                    <>
-                      <TouchableOpacity onPress={onGemsPress}>
-                        <ProgressPill value={0} label={gens?.toString?.()} icon={gemIcon} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        onPress={onStreakPress}>
-                        <ProgressPill value={0} label={streakCount?.toString?.()} icon={flameIcon} />
-                      </TouchableOpacity>
-                    </>
-                  </View>
-                )}
-              </View>
-            </Animated.View>
-
+            {/* Top Section - Lamb Avatar */}
             <Animated.View
-              className="absolute inset-0 flex-row items-center justify-center px-8 w-full"
-              style={{ opacity: devotionalHeaderOpacityAnim }}
-              pointerEvents={devotionalReaderVisible ? 'auto' : 'none'}>
-              <Text
-                className="text-h1 font-feather text-white tracking-wide"
-                style={{
-                  textShadowColor: 'rgba(0, 0, 0, 0.2)',
-                  textShadowOffset: { width: 0, height: 1 },
-                  textShadowRadius: 2,
-                }}>
-                {/* Daily Devotional */}
-              </Text>
-            </Animated.View>
-          </View>
-
-          {/* Top Section - Lamb Avatar */}
-          <Animated.View
-            className="items-center justify-center"
-            style={{
-              opacity: Animated.multiply(
-                Animated.multiply(lambOpacityAnim, lambChangeOpacityAnim),
-                riveArtboardOpacityAnim
-              ),
-              transform: [{ translateX: lambTranslateX }, { translateY: lambTranslateY }],
-              height: BASE_LAMB_SIZE,
-              shadowColor: showGlow ? '#FDE047' : 'transparent',
-              shadowOffset: { width: 0, height: 0 },
-              shadowOpacity: showGlow ? 0.6 : 0,
-              shadowRadius: 15,
-              marginTop: -48,
-            }}>
-            <Animated.View className="items-center justify-center" style={{}}>
-              {riveError ? (
-                <Text className="text-red-500 p-4 text-center">
-                  {i18n.t('error_loading_animation')} {riveError.message} ({riveError.type})
-                </Text>
-              ) : (
-                <>
-                  <Animated.View
-                    onTouchStart={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    }}
-                    style={{
-                      width: lambSizeAnim,
-                      height: lambSizeAnim,
-                    }}>
-                    <Animated.View
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        transform: [
-                          { scale: riveScaleAnim },
-                          {
-                            rotate: riveRotateAnim.interpolate({
-                              inputRange: [-1, 0, 1],
-                              outputRange: ['-60deg', '0deg', '60deg'],
-                            }),
-                          },
-                        ],
-                      }}>
-                      {riveComponent}
-                    </Animated.View>
-                  </Animated.View>
-                  {currentStateInput === 8 && <View style={{ height: 36 }} />}
-                </>
-              )}
-            </Animated.View>
-          </Animated.View>
-
-          {/* SUPER badge for pro users */}
-          {mode === 'DEFAULT' && (
-            <TouchableOpacity
-              onPress={onSuperBadgePress}
-              activeOpacity={0.8}
+              className="items-center justify-center"
               style={{
-                position: 'absolute',
-                left: 24,
-                top: SCREEN_HEIGHT * (Platform.select({ android: 0.28, ios: 0.35 }) || 0.35),
-                paddingHorizontal: 8,
-                paddingVertical: 2,
-                borderRadius: 32,
-                zIndex: 20,
+                opacity: Animated.multiply(
+                  Animated.multiply(lambOpacityAnim, lambChangeOpacityAnim),
+                  riveArtboardOpacityAnim
+                ),
+                transform: [{ translateX: lambTranslateX }, { translateY: lambTranslateY }],
+                height: BASE_LAMB_SIZE,
+                shadowColor: showGlow ? '#FDE047' : 'transparent',
+                shadowOffset: { width: 0, height: 0 },
+                shadowOpacity: showGlow ? 0.6 : 0,
+                shadowRadius: 15,
+                marginTop: -48,
               }}>
-            </TouchableOpacity>
-          )}
-
-          {/* Bottom Section - Action Buttons Card or DevotionalReader */}
-          <BottomSheet
-            ref={bottomSheetRef}
-            index={0}
-            snapPoints={snapPoints}
-            enablePanDownToClose={false}
-            animateOnMount={true}
-            enableDynamicSizing={false}
-            bottomInset={0}
-            detached={false}
-            handleComponent={showPrayerContent ? ()=>null : undefined}
-            handleIndicatorStyle={{
-              opacity: showPrayerContent || showDevotionalContent || showJournalContent ? 0 : 0.3,
-              height: 4,
-              width: showPrayerContent || showDevotionalContent || showJournalContent ? 0 : 40,
-              backgroundColor: '#634012',
-              borderRadius: 2,
-            }}
-            backgroundStyle={{
-              backgroundColor: '#FDEBB8',
-              borderTopLeftRadius: 32,
-              borderTopRightRadius: 32,
-              ...Platform.select({
-                ios: {
-                  shadowColor: 'rgba(0,0,0,0.08)',
-                  shadowOffset: { width: 0, height: 2 },
-                  shadowRadius: 4,
-                  shadowOpacity: 1,
-                },
-                android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
-              }),
-            }}
-            onChange={handleSheetChanges}>
-            <Animated.View style={{ flex: 1, opacity: devotionalCardOpacityAnim }}>
-              {showDevotionalContent ? (
-                <DevotionalReader
-                  ref={devotionalReaderRef}
-                  visible={showDevotionalContent}
-                  onClose={handleDevotionalClose}
-                  setFinishReading={setFinishReading}
-                  setDevotionalReadedFully={setDevotionalReadedFully}
-                  setCurrentVerseReference={setCurrentVerseReference}
-                />
-              ) : showJournalContent ? (
-                <JournalComponent
-                  setJournalButtonEnabled={setJournalButtonEnabled}
-                  ref={journalRef}
-                  visible={showJournalContent}
-                  setFinishReading={setFinishReading}
-                  onClose={onCloseJournal}
-                />
-              ) : showPrayerContent ?
-                <PrayerView
-                setIsCompletePrayerDisabled={setIsCompletePrayerDisabled}
-                  ref={prayerViewRef}
-                  setShowControlRow={setShowControlRow}
-                  showControlRow={showControlRow}
-                  visible={showPrayerContent}
-                  setFinishReading={setFinishReading}
-                  onClose={onClosePrayer}
-                />
-                : (
-                  <BottomSheetScrollView
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 24 }}>
-                    {prayerCompleted && readingCompleted && reflectionCompleted && (currentDevotional || devotionalData) && (
-                      <DailyVerseCard
-                        devotional={currentDevotional || devotionalData!}
-                        share={true}
-                        onPress={() => setShowShareCard(true)}
-                        onShare={handleShare}
-                        onExpand={() => setShowShareCard(true)}
-                        showShareButton={true}
-                        showExpandButton={true}
-                      />
-                    )}
-
-                    <View
-                      className="flex-row items-center justify-between "
-                      style={{ marginTop: responsiveHeight(2) }}>
-                      <View
+              <Animated.View className="items-center justify-center" style={{}}>
+                {riveError ? (
+                  <Text className="text-red-500 p-4 text-center">
+                    {i18n.t('error_loading_animation')} {riveError.message} ({riveError.type})
+                  </Text>
+                ) : (
+                  <>
+                    <Animated.View
+                      onTouchStart={() => {
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      }}
+                      style={{
+                        width: lambSizeAnim,
+                        height: lambSizeAnim,
+                      }}>
+                      <Animated.View
                         style={{
-                          width: 22,
-                          marginRight: 10,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
+                          width: '100%',
+                          height: '100%',
+                          transform: [
+                            { scale: riveScaleAnim },
+                            {
+                              rotate: riveRotateAnim.interpolate({
+                                inputRange: [-1, 0, 1],
+                                outputRange: ['-60deg', '0deg', '60deg'],
+                              }),
+                            },
+                          ],
                         }}>
-                        {readingCompleted ? (
-                          <Image
-                            source={require('../../assets/icons/checkMini.png')}
-                            style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                          />
-                        ) : (
-                          <View
-                            className="bg-textPrimary/15"
-                            style={{ width: 20, height: 20, borderRadius: 12 }}
-                          />
-                        )}
-                      </View>
-                      <View style={{ flex: 1, minWidth: 0 }}>
-                        <SecondaryButton
-                          icon={breadIcon}
-                          title={i18n.t('daily_bread')}
-                          subtitle={i18n.t('feed_soul')}
-                          points={50}
-                          onPress={handleReadPress}
-                          completed={readingCompleted}
-                        />
-                      </View>
-                    </View>
-                    <View
-                      className="flex-row items-center "
-                      style={{ marginTop: responsiveHeight(2) }}>
-                      <View
-                        style={{
-                          width: 22,
-                          marginRight: 10,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                        }}>
-                        {prayerCompleted ? (
-                          <Image
-                            source={require('../../assets/icons/checkMini.png')}
-                            style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                          />
-                        ) : (
-                          <View
-                            className="bg-textPrimary/15"
-                            style={{ width: 20, height: 20, borderRadius: 12 }}
-                          />
-                        )}
-                      </View>
-                      <View style={{ flex: 1, minWidth: 0 }}>
-                        <SecondaryButton
-                          icon={dropIcon}
-                          title={i18n.t('living_water')}
-                          subtitle={i18n.t('feed_soul')}
-                          points={50}
-                          onPress={handlePrayerPress}
-                          completed={prayerCompleted}
-                          disabled={!readingCompleted}
-                        />
-                      </View>
-                    </View>
-                    <View
-                      className="flex-row items-center"
-                      style={{ marginTop: responsiveHeight(2) }}>
-                      <View
-                        style={{
-                          width: 22,
-                          marginRight: 10,
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                        }}>
-                        {reflectionCompleted ? (
-                          <Image
-                            source={require('../../assets/icons/checkMini.png')}
-                            style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                          />
-                        ) : (
-                          <View
-                            className="bg-textPrimary/15"
-                            style={{ width: 20, height: 20, borderRadius: 12 }}
-                          />
-                        )}
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <SecondaryButton
-                          icon={bibleIcon}
-                          title={i18n.t('quiet_time')}
-                          subtitle={i18n.t('feed_soul')}
-                          points={50}
-                          onPress={handleReflectionPress}
-                          completed={reflectionCompleted}
-                          disabled={!readingCompleted}
-                        />
-                      </View>
-                    </View>
-
-                    {isLoadingDevotional && (
-                      <View className="bg-white/60 rounded-xl p-4 mb-4 border border-lightGreen/20">
-                        <View className="flex-row items-center mb-2">
-                          <View className="w-6 h-6 bg-lightGreen rounded-full items-center justify-center mr-2">
-                            <Text className="text-darkGreen text-xs font-feather">📖</Text>
-                          </View>
-                          <Text className="font-feather text-base text-description">
-                            {i18n.t('loading_daily_verse')}
-                          </Text>
-                        </View>
-                      </View>
-                    )}
-
-                    {devotionalError && !currentDevotional && (
-                      <View className="bg-red/10 rounded-xl p-4 mb-4 border border-red/20">
-                        <View className="flex-row items-center mb-2">
-                          <View className="w-6 h-6 bg-red rounded-full items-center justify-center mr-2">
-                            <Text className="text-white text-xs font-feather">⚠️</Text>
-                          </View>
-                          <Text className="font-feather text-base text-red">
-                            {i18n.t('daily_verse_unavailable')}
-                          </Text>
-                        </View>
-                        <Text className="font-din text-sm text-description">
-                          {i18n.t('check_connection')}
-                        </Text>
-                      </View>
-                    )}
-                  </BottomSheetScrollView>
+                        {riveComponent}
+                      </Animated.View>
+                    </Animated.View>
+                    {currentStateInput === 8 && <View style={{ height: 36 }} />}
+                  </>
                 )}
+              </Animated.View>
             </Animated.View>
-          </BottomSheet>
 
-{/* BUTTONS */}
-          <BottomControls 
-            bottomContentOpacity={bottomContentOpacity}
-            bottomContentAnimY={bottomContentAnimY}
-            showPrayerContent={showPrayerContent}
-            controlRowOpacity={controlRowOpacity}
-            isControlRowVisible={isControlRowVisible}
-            showDevotionalContent={showDevotionalContent}
-            showJournalContent={showJournalContent}
-            RPH={RPH}
-            handleDevotionalClose={handleDevotionalClose}
-            devotionalReaderRef={devotionalReaderRef}
-            prayerViewRef={prayerViewRef}
-            buttonTitle={buttonTitle}
-            handleDevotionalFinishPress={handleDevotionalFinishPress}
-            devotionalReadedFully={devotionalReadedFully}
-            isCompletePrayerDisabled={isCompletePrayerDisabled}
-          />
+            {/* SUPER badge for pro users */}
+            {mode === 'DEFAULT' && (
+              <TouchableOpacity
+                onPress={onSuperBadgePress}
+                activeOpacity={0.8}
+                style={{
+                  position: 'absolute',
+                  left: 24,
+                  top: SCREEN_HEIGHT * (Platform.select({ android: 0.28, ios: 0.35 }) || 0.35),
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  borderRadius: 32,
+                  zIndex: 20,
+                }}>
+              </TouchableOpacity>
+            )}
 
-          <WidgetHowToSheet visible={showWidgetSheet} onClose={handleWidgetSheetClose} />
-          <HeartsExplainerModal
-            visible={showHeartsModal}
-            onClose={() => setShowHeartsModal(false)}
-          />
-          <ExplainerModal
-            visible={showExplainerModal}
-            onClose={() => setShowExplainerModal(false)}
-          />
-        </SafeAreaView>
-      </Animated.View></View>
+            {/* Bottom Section - Action Buttons Card or DevotionalReader */}
+            <BottomSheet
+              ref={bottomSheetRef}
+              index={0}
+              snapPoints={snapPoints}
+              enablePanDownToClose={false}
+              animateOnMount={true}
+              enableDynamicSizing={false}
+              bottomInset={0}
+              detached={false}
+              handleComponent={showPrayerContent ? () => null : undefined}
+              handleIndicatorStyle={{
+                opacity: showPrayerContent || showDevotionalContent || showJournalContent ? 0 : 0.3,
+                height: 4,
+                width: showPrayerContent || showDevotionalContent || showJournalContent ? 0 : 40,
+                backgroundColor: '#634012',
+                borderRadius: 2,
+              }}
+              backgroundStyle={{
+                backgroundColor: '#FDEBB8',
+                borderTopLeftRadius: 32,
+                borderTopRightRadius: 32,
+                ...Platform.select({
+                  ios: {
+                    shadowColor: 'rgba(0,0,0,0.08)',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowRadius: 4,
+                    shadowOpacity: 1,
+                  },
+                  android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
+                }),
+              }}
+              onChange={handleSheetChanges}>
+              <Animated.View style={{ flex: 1, opacity: devotionalCardOpacityAnim }}>
+                {showDevotionalContent ? (
+                  <DevotionalReader
+                    ref={devotionalReaderRef}
+                    visible={showDevotionalContent}
+                    onClose={handleDevotionalClose}
+                    setFinishReading={setFinishReading}
+                    setDevotionalReadedFully={setDevotionalReadedFully}
+                    setCurrentVerseReference={setCurrentVerseReference}
+                  />
+                ) : showJournalContent ? (
+                  <JournalComponent
+                    setJournalButtonEnabled={setJournalButtonEnabled}
+                    ref={journalRef}
+                    visible={showJournalContent}
+                    setFinishReading={setFinishReading}
+                    onClose={onCloseJournal}
+                  />
+                ) : showPrayerContent ?
+
+                  <PrayerView
+                    setIsCompletePrayerDisabled={setIsCompletePrayerDisabled}
+                    ref={prayerViewRef}
+                    setShowControlRow={setShowControlRow}
+                    showControlRow={showControlRow}
+                    visible={showPrayerContent}
+                    setFinishReading={setFinishReading}
+                    onClose={onClosePrayer}
+                  />
+                  : (
+                    <BottomSheetScrollView
+                      showsVerticalScrollIndicator={false}
+                      contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 24 }}>
+                      {prayerCompleted && readingCompleted && reflectionCompleted && (currentDevotional || devotionalData) && (
+                        <DailyVerseCard
+                          devotional={currentDevotional || devotionalData!}
+                          share={true}
+                          onPress={() => setShowShareCard(true)}
+                          onShare={handleShare}
+                          onExpand={() => setShowShareCard(true)}
+                          showShareButton={true}
+                          showExpandButton={true}
+                        />
+                      )}
+
+                      <View
+                        className="flex-row items-center justify-between "
+                        style={{ marginTop: responsiveHeight(2) }}>
+                        <View
+                          style={{
+                            width: 22,
+                            marginRight: 10,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}>
+                          {readingCompleted ? (
+                            <Image
+                              source={require('../../assets/icons/checkMini.png')}
+                              style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                            />
+                          ) : (
+                            <View
+                              className="bg-textPrimary/15"
+                              style={{ width: 20, height: 20, borderRadius: 12 }}
+                            />
+                          )}
+                        </View>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <SecondaryButton
+                            icon={breadIcon}
+                            title={i18n.t('daily_bread')}
+                            subtitle={i18n.t('feed_soul')}
+                            points={50}
+                            onPress={handleReadPress}
+                            completed={readingCompleted}
+                          />
+                        </View>
+                      </View>
+                      <View
+                        className="flex-row items-center "
+                        style={{ marginTop: responsiveHeight(2) }}>
+                        <View
+                          style={{
+                            width: 22,
+                            marginRight: 10,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                          }}>
+                          {prayerCompleted ? (
+                            <Image
+                              source={require('../../assets/icons/checkMini.png')}
+                              style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                            />
+                          ) : (
+                            <View
+                              className="bg-textPrimary/15"
+                              style={{ width: 20, height: 20, borderRadius: 12 }}
+                            />
+                          )}
+                        </View>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <SecondaryButton
+                            icon={dropIcon}
+                            title={i18n.t('living_water')}
+                            subtitle={i18n.t('feed_soul')}
+                            points={50}
+                            onPress={handlePrayerPress}
+                            completed={prayerCompleted}
+                            disabled={!readingCompleted}
+                          />
+                        </View>
+                      </View>
+                      <View
+                        className="flex-row items-center"
+                        style={{ marginTop: responsiveHeight(2) }}>
+                        <View
+                          style={{
+                            width: 22,
+                            marginRight: 10,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}>
+                          {reflectionCompleted ? (
+                            <Image
+                              source={require('../../assets/icons/checkMini.png')}
+                              style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                            />
+                          ) : (
+                            <View
+                              className="bg-textPrimary/15"
+                              style={{ width: 20, height: 20, borderRadius: 12 }}
+                            />
+                          )}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <SecondaryButton
+                            icon={bibleIcon}
+                            title={i18n.t('quiet_time')}
+                            subtitle={i18n.t('feed_soul')}
+                            points={50}
+                            onPress={handleReflectionPress}
+                            completed={reflectionCompleted}
+                            disabled={!readingCompleted}
+                          />
+                        </View>
+                      </View>
+
+                      {isLoadingDevotional && (
+                        <View className="bg-white/60 rounded-xl p-4 mb-4 border border-lightGreen/20">
+                          <View className="flex-row items-center mb-2">
+                            <View className="w-6 h-6 bg-lightGreen rounded-full items-center justify-center mr-2">
+                              <Text className="text-darkGreen text-xs font-feather">📖</Text>
+                            </View>
+                            <Text className="font-feather text-base text-description">
+                              {i18n.t('loading_daily_verse')}
+                            </Text>
+                          </View>
+                        </View>
+                      )}
+
+                      {devotionalError && !currentDevotional && (
+                        <View className="bg-red/10 rounded-xl p-4 mb-4 border border-red/20">
+                          <View className="flex-row items-center mb-2">
+                            <View className="w-6 h-6 bg-red rounded-full items-center justify-center mr-2">
+                              <Text className="text-white text-xs font-feather">⚠️</Text>
+                            </View>
+                            <Text className="font-feather text-base text-red">
+                              {i18n.t('daily_verse_unavailable')}
+                            </Text>
+                          </View>
+                          <Text className="font-din text-sm text-description">
+                            {i18n.t('check_connection')}
+                          </Text>
+                        </View>
+                      )}
+                    </BottomSheetScrollView>
+                  )}
+              </Animated.View>
+            </BottomSheet>
+
+            {/* BUTTONS */}
+            <BottomControls
+              bottomContentOpacity={bottomContentOpacity}
+              bottomContentAnimY={bottomContentAnimY}
+              showPrayerContent={showPrayerContent}
+              controlRowOpacity={controlRowOpacity}
+              isControlRowVisible={isControlRowVisible}
+              showDevotionalContent={showDevotionalContent}
+              showJournalContent={showJournalContent}
+              RPH={RPH}
+              handleDevotionalClose={handleDevotionalClose}
+              devotionalReaderRef={devotionalReaderRef}
+              prayerViewRef={prayerViewRef}
+              buttonTitle={buttonTitle}
+              handleDevotionalFinishPress={handleDevotionalFinishPress}
+              devotionalReadedFully={devotionalReadedFully}
+              isCompletePrayerDisabled={isCompletePrayerDisabled}
+            />
+
+            <WidgetHowToSheet visible={showWidgetSheet} onClose={handleWidgetSheetClose} />
+            <HeartsExplainerModal
+              visible={showHeartsModal}
+              onClose={() => setShowHeartsModal(false)}
+            />
+            <ExplainerModal
+              visible={showExplainerModal}
+              onClose={() => setShowExplainerModal(false)}
+            />
+          </SafeAreaView>
+        </Animated.View></View>
 
       <FullScreenShareCard visible={showShareCard} devotionalData={devotionalData} onClose={() => setShowShareCard(false)} onShare={handleShare} />
 

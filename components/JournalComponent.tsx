@@ -366,7 +366,12 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
         delay: 500,
       }).start();
 
-      // Don't auto-focus the input - let user tap to focus manually
+      // Auto-focus the input when coming from "Reflect on this verse"
+      if (tappedReflectAboutVerse) {
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 800); // Delay to allow animations to settle
+      }
     } else {
       // Reset animations when hiding
       containerOpacity.setValue(0);
@@ -820,6 +825,44 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             style={{ flex: 1, padding: 0 }}
             value={reflectionContent}
             onChangeText={setReflectionContent}
+            onFocus={() => {
+              // Set Rive to writing state when input is focused
+              const homeStore = useHomeStore.getState();
+              const riveRef = homeStore.riveRef;
+              if (riveRef?.current?.setInputState) {
+                try {
+                  riveRef.current.setInputState('State Machine 1', 'Action-Number', 12); // 12 = Writing
+                  console.log('Set Rive animation to writing state (12) on input focus');
+                } catch (error) {
+                  console.log('Could not set Rive to writing state on focus:', error);
+                }
+              }
+            }}
+            onBlur={() => {
+              // Reset Rive to idle state when input loses focus (optional)
+              const homeStore = useHomeStore.getState();
+              const riveRef = homeStore.riveRef;
+              if (riveRef?.current?.setInputState) {
+                try {
+                  // Get current lamb mood to set appropriate idle state
+                  const currentMood = useUserStore.getState()?.getLambMood?.();
+                  const moodToStateInput: Record<string, number> = {
+                    'lamb-idle': 0,           // >= 50 hearts - Idle
+                    'lamb-sleepy': 4,         // < 50 hearts - Sleepy  
+                    'lamb-angry': 5,          // < 30 hearts - Angry
+                    'lamb-chubby dying': 6,   // < 20 hearts - Dying Chubby
+                    'lamb-skinny dying': 7,   // < 10 hearts - Dying Skinny
+                    'smoking': 8,             // < 1 hearts - Dead
+                    'lamb-full': 3,           // After eating - Full
+                  };
+                  const targetStateInput = moodToStateInput[currentMood] || 0;
+                  riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+                  console.log(`Set Rive animation back to mood state: ${targetStateInput} (${currentMood}) on input blur`);
+                } catch (error) {
+                  console.log('Could not reset Rive state on blur:', error);
+                }
+              }
+            }}
             maxLength={300}
           />
         </View>

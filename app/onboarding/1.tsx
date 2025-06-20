@@ -290,7 +290,8 @@ export default function OnboardingWelcomeScreen() {
       action: 'Tapped Lamb',
     });
 
-    riveRef.current?.fireState('State Machine 1', 'tap');
+    // Use the same input method as in index.tsx
+    riveRef.current?.setInputState('State Machine 1', 'Action-Number', 1); // 1 = Happy/excited state
     setIsAnimating(false);
     setIsLambTapped(true);
 
@@ -357,8 +358,8 @@ export default function OnboardingWelcomeScreen() {
     }
   };
 
-  // Load the Rive asset - Moved after all other hooks
-  const [assets] = useAssets([require('../../assets/riveAnimations/makeLamb.riv')]);
+  // Load the Rive asset - Using the same lamb as in index.tsx
+  const [assets] = useAssets([require('../../assets/riveAnimations/new_shepherd.riv')]);
 
   // Show loading indicator while assets are loading
   if (!assets) {
@@ -473,14 +474,12 @@ export default function OnboardingWelcomeScreen() {
                   {IS_ANDROID ? (
                     <Rive
                       ref={riveRef}
-                      // resourceName={assets[0].uri}
                       onError={(error) => {
                         console.log('------>', error);
                       }}
-                      resourceName={'make_lamb'}
-                      // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
+                      resourceName={'new_shepherd'}
                       stateMachineName="State Machine 1"
-                      artboardName={'lamb-wakingup-click'}
+                      artboardName={'[Main] Shpeherd'}
                       fit={Fit.Contain}
                       alignment={Alignment.Center}
                       style={{ width: '100%', height: '100%' }}
@@ -488,14 +487,12 @@ export default function OnboardingWelcomeScreen() {
                   ) : (
                     <Rive
                       ref={riveRef}
-                      // resourceName={assets[0].uri}
                       onError={(error) => {
                         console.log('------>', error);
                       }}
-                      url={assets[0].uri!} // Use url prop with localUri
-                      // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
+                      url={assets[0].uri!}
                       stateMachineName="State Machine 1"
-                      artboardName={'lamb-wakingup-click'}
+                      artboardName={'[Main] Shpeherd'}
                       fit={Fit.Contain}
                       alignment={Alignment.Center}
                       style={{ width: '100%', height: '100%' }}

@@ -86,16 +86,16 @@ export default function EmptyModal({ visible, onClose, children }: EmptyModalPro
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    backgroundColor: 'transparent',
-  },
   backdrop: {
+    backgroundColor: '#000',
+    height: '100%',
     position: 'absolute',
     width: '100%',
-    height: '100%',
-    backgroundColor: '#000',
+  },
+  container: {
+    backgroundColor: 'transparent',
+    flex: 1,
+    justifyContent: 'flex-end',
   },
   sheet: {
     backgroundColor: '#FEF3C7',

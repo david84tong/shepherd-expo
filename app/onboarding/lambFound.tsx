@@ -7,7 +7,7 @@ import Rive from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import ProgressBar from './components/ProgressBar';
-import { IS_ANDROID, IS_IOS } from '../utils/utils';
+import { IS_ANDROID } from '../utils/utils';
 
 export default function OnboardingWelcomeScreen() {
   const router = useRouter();
