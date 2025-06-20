@@ -21,9 +21,11 @@ import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
 
 import analytics from '../../utils/analytics';
 import { IS_ANDROID } from '../utils/utils';
-import i18n from '../utils/i18n';
 import { RPH } from '../helper/helper';
 
+const FIRST_WELCOME_TEXT = 'Every Shepherd starts with one lost lamb...';
+const SECOND_WELCOME_TEXT = "This one's yours.";
+const SECOND_STAGE_PROMPT = 'Tap to wake it up';
 const TYPING_SPEED = 75; // Speed for all typing effects
 const ZOOM_DURATION = 3000; // Slow zoom effect (3 seconds)
 const TRANSITION_DURATION = 350; // Faster transition animation duration
@@ -48,11 +50,6 @@ export default function OnboardingWelcomeScreen() {
 
   // Initialize analytics
   const { logScreenView, logButtonPress, logEvent, AnalyticsEvent, EventCategory } = useAnalytics();
-
-  // Get translated text
-  const FIRST_WELCOME_TEXT = i18n.t('onboarding_first_welcome');
-  const SECOND_WELCOME_TEXT = i18n.t('onboarding_second_welcome');
-  const SECOND_STAGE_PROMPT = i18n.t('onboarding_second_stage_prompt');
 
   // Log screen view when component mounts
   useEffect(() => {
@@ -291,8 +288,7 @@ export default function OnboardingWelcomeScreen() {
       action: 'Tapped Lamb',
     });
 
-    // Use the same input method as in index.tsx
-    riveRef.current?.setInputState('State Machine 1', 'Action-Number', 1); // 1 = Happy/excited state
+    riveRef.current?.fireState('State Machine 1', 'tap');
     setIsAnimating(false);
     setIsLambTapped(true);
 
@@ -359,8 +355,8 @@ export default function OnboardingWelcomeScreen() {
     }
   };
 
-  // Load the Rive asset - Using the same lamb as in index.tsx
-  const [assets] = useAssets([require('../../assets/riveAnimations/new_shepherd.riv')]);
+  // Load the Rive asset - Moved after all other hooks
+  const [assets] = useAssets([require('../../assets/riveAnimations/makeLamb.riv')]);
 
   // Show loading indicator while assets are loading
   if (!assets) {
@@ -474,12 +470,14 @@ export default function OnboardingWelcomeScreen() {
                   {IS_ANDROID ? (
                     <Rive
                       ref={riveRef}
+                      // resourceName={assets[0].uri}
                       onError={(error) => {
                         console.log('------>', error);
                       }}
-                      resourceName={'new_shepherd'}
+                      resourceName={'make_lamb'}
+                      // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
                       stateMachineName="State Machine 1"
-                      artboardName={'[Main] Shpeherd'}
+                      artboardName={'lamb-wakingup-click'}
                       fit={Fit.Contain}
                       alignment={Alignment.Center}
                       style={{ width: RPH(23), height: RPH(23) }}
@@ -487,12 +485,14 @@ export default function OnboardingWelcomeScreen() {
                   ) : (
                     <Rive
                       ref={riveRef}
+                      // resourceName={assets[0].uri}
                       onError={(error) => {
                         console.log('------>', error);
                       }}
-                      url={assets[0].uri!}
+                      url={assets[0].uri!} // Use url prop with localUri
+                      // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
                       stateMachineName="State Machine 1"
-                      artboardName={'[Main] Shpeherd'}
+                      artboardName={'lamb-wakingup-click'}
                       fit={Fit.Contain}
                       alignment={Alignment.Center}
                       style={{ width: RPH(23), height: RPH(23) }}
@@ -529,7 +529,7 @@ export default function OnboardingWelcomeScreen() {
             ],
           }}>
           <PrimaryButton
-            title={textPhase === 2 ? i18n.t('onboarding_begin_journey') : i18n.t('onboarding_claim_lost_lamb')}
+            title={textPhase === 2 ? 'Begin Journey' : 'Claim Lost Lamb'}
             onPress={handleButtonPress}
             // Only disable in specific conditions
             disabled={(secondStageActive && !isLambTapped) || isAnimating || isTransitioning}

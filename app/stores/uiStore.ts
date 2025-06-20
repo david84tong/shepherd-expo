@@ -46,6 +46,13 @@ interface UIState {
   showStoreSheet: () => void;
   hideStoreSheet: () => void;
   
+  // Stats sheet state
+  isStatsSheetVisible: boolean;
+  
+  // Stats sheet actions
+  showStatsSheet: () => void;
+  hideStatsSheet: () => void;
+  
   // Widget prompt and guide state
   isWidgetPromptVisible: boolean;
   isWidgetGuideVisible: boolean;
@@ -126,6 +133,17 @@ export const useUIStore = create<UIState>((set) => ({
   hideStoreSheet: () => {
     console.log('[UIStore] Hiding store sheet');
     set({ isStoreSheetVisible: false });
+  },
+  
+  // Stats sheet state and actions
+  isStatsSheetVisible: false,
+  showStatsSheet: () => {
+    console.log('[UIStore] Showing stats sheet');
+    set({ isStatsSheetVisible: true });
+  },
+  hideStatsSheet: () => {
+    console.log('[UIStore] Hiding stats sheet');
+    set({ isStatsSheetVisible: false });
   },
     
   // Widget prompt and guide state

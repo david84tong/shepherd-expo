@@ -822,6 +822,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     holdStartTimeRef.current = startTime;
     console.log('🎯 Started holding, water will fill continuously');
 
+    // Keep track of last haptic time for 1000ms intervals
+    let lastHapticTime = startTime;
+
     // Start continuous water filling
     const updateWater = () => {
       if (holdStartTimeRef.current) {
@@ -834,6 +837,14 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
         // Update water progress
         waterProgress.value = progress;
+
+        // Trigger haptic feedback every 1000ms
+        const currentTime = Date.now();
+        if (hapticsEnabled && currentTime - lastHapticTime >= 1000) {
+          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          lastHapticTime = currentTime;
+          console.log('🎯 Triggered 1000ms interval haptic');
+        }
 
         // Don't auto-trigger success when reaching 100% - wait for user to release
         if (progress >= 1) {

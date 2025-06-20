@@ -1,4 +1,4 @@
-import React, { useState, useRef, useLayoutEffect } from 'react';
+import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,7 +15,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_COMPLETED_KEY } from '../types/onboarding';
 import * as Haptics from 'expo-haptics';
 import { useAssets } from 'expo-asset';
-import Rive from 'rive-react-native';
+import Rive, { RiveRef } from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import { LinearGradient } from 'expo-linear-gradient';
 import analytics from '~/utils/analytics';
@@ -37,9 +37,10 @@ import { RPH } from '../helper/helper';
 export default function LoginScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const riveRef = useRef<RiveRef>(null);
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/new_shepherd.riv')]);
 
   // Track if animations have been initialized
   const animationsInitialized = useRef(false);
@@ -99,6 +100,15 @@ export default function LoginScreen() {
       Alert.alert(i18n.t('error'), i18n.t('onboarding_could_not_start'));
     }
   };
+
+  // Set Rive input to reading state
+  useEffect(() => {
+    if (riveRef.current) {
+      setTimeout(() => {
+        riveRef.current?.setInputState('State Machine 1', 'Action-Number', 9);
+      }, 500);
+    }
+  }, [riveAssets]);
 
   // Run animations
   useLayoutEffect(() => {
@@ -255,18 +265,22 @@ export default function LoginScreen() {
           {/* Rive Animation in the middle */}
           <CustomAnimatedView
             style={lambStyle}
-            className="h-[200px] w-full justify-center items-center -mt-24">
+            className="h-[240px] w-full justify-center items-center -mt-24">
             {IS_ANDROID ? (
               <Rive
-                resourceName={'home_lamb'}
-                artboardName="lamb-reading"
+                ref={riveRef}
+                resourceName={'new_shepherd'}
+                artboardName="[Main] Shpeherd"
+                stateMachineName="State Machine 1"
                 autoplay
                 style={{ width: RPH(25), height: RPH(25) }}
               />
             ) : (
               <Rive
+                ref={riveRef}
                 url={riveAssets[0].localUri!}
-                artboardName="lamb-reading"
+                artboardName="[Main] Shpeherd"
+                stateMachineName="State Machine 1"
                 autoplay
                 style={{ width: RPH(25), height: RPH(25) }}
               />

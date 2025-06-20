@@ -156,6 +156,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const homeButtonOpacity = useRef(new Animated.Value(0)).current;
   const homeButtonTranslateY = useRef(new Animated.Value(15)).current;
 
+  // State to control when to show the home button
+  const [showHomeButton, setShowHomeButton] = useState(false);
+
   // Add Rive animation effects
   const riveScaleAnim = useRef(new Animated.Value(0.9)).current;
   const riveRotateAnim = useRef(new Animated.Value(0.05)).current;
@@ -523,6 +526,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
     // Animate the home button/link
     setTimeout(() => {
+      setShowHomeButton(true); // Show the button first
       Animated.parallel([
         Animated.timing(homeButtonOpacity, {
           toValue: 1,
@@ -864,19 +868,21 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       </ScrollView>
 
       {/* Continue Button - Fixed at bottom */}
-      <Animated.View
-        className="absolute bottom-0 left-0 right-0 bg-surfaceCream px-5 pb-8 pt-4"
-        style={{
-          opacity: homeButtonOpacity,
-          transform: [{ translateY: homeButtonTranslateY }],
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.0,
-          shadowRadius: 4,
-          elevation: 5,
-        }}>
-        <PrimaryButton buttonType="blue" title={buttonText} onPress={handlePress} />
-      </Animated.View>
+      {showHomeButton && (
+        <Animated.View
+          className="absolute bottom-0 left-0 right-0 bg-surfaceCream px-5 pb-8 pt-4"
+          style={{
+            opacity: homeButtonOpacity,
+            transform: [{ translateY: homeButtonTranslateY }],
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.0,
+            shadowRadius: 4,
+            elevation: 5,
+          }}>
+          <PrimaryButton buttonType="blue" title={buttonText} onPress={handlePress} />
+        </Animated.View>
+      )}
     </View>
   );
 };

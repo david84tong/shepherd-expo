@@ -9,7 +9,7 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, FontAwesome } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
@@ -88,7 +88,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     {
       id: 'skin_super',
       category: 'skins',
-      name: "Annointed Lamb",
+      name: "Anointed Lamb",
       description: 'For a limited time, all super users unlock this golden skin',
       price: 109,
       currency: 'gems',
@@ -581,21 +581,24 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       
       {/* Header */}
-      <View className="flex-row justify-center items-center px-6 pt-8 pb-4 relative">
-        {/* Back button - positioned absolutely on the left */}
-        <TouchableOpacity
-          onPress={onClose || (() => router.back())}
-          className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center absolute left-6">
-          <Feather name="x" size={20} color="#B89B4C" />
-        </TouchableOpacity>
-        
-        {/* Store title - centered */}
-        <Text className="font-feather text-h2 text-textPrimary">{i18n.t('store')}</Text>
-        
-        {/* Gems counter - positioned absolutely on the right */}
-        <View className="flex-row items-center bg-lightYellow px-3 py-1.5 rounded-full absolute right-6">
+      <View className="flex-row items-center justify-between px-6 pt-8 pb-4 relative">
+        {/* Gems counter - left */}
+        <View className="w-24 flex-row items-center bg-lightYellow px-3 py-1.5 rounded-full">
           <Image source={gemIcon} className="w-5 h-5 mr-1" />
           <Text className="font-feather text-body text-textPrimary">{userGems}</Text>
+        </View>
+
+        {/* Store title - center */}
+        <Text className="font-feather text-h2 text-textPrimary">{i18n.t('store')}</Text>
+
+        {/* Close button - right */}
+        <View className="w-24 flex justify-end items-end pr-4">
+        <TouchableOpacity
+          className=" w-10 h-10 bg-black/30 rounded-full items-center justify-center z-10"
+          onPress={onClose || (() => router.back())}
+          activeOpacity={0.7}>
+          <FontAwesome name="times" size={20} color="white" />
+        </TouchableOpacity>
         </View>
       </View>
 

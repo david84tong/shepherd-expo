@@ -200,7 +200,7 @@ export default function HomeScreen() {
             analytics.logEvent('HomeScreen_Tapped_LambName');
           }}
           activeOpacity={0.7}
-          className={`bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 px-2 ${levelInfo.level < 10 ? 'top-16' : 'top-16'}`}>
+          className={`bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 px-2 ${levelInfo.level < 10 ? 'top-14' : 'top-14'}`}>
           <Text className="font-feather text-textPrimary text-xs">
             {lambName
               ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
