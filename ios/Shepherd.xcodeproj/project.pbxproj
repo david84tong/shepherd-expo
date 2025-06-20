@@ -22,6 +22,9 @@
 		D77C64732DE55088000F5441 /* ShepherdStreakWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D77C645E2DE55085000F5441 /* ShepherdStreakWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		D77C64B32DE56AAF000F5441 /* WidgetDataSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = D77C64B22DE56AAE000F5441 /* WidgetDataSync.swift */; };
 		D77C64B52DE56AC2000F5441 /* WidgetDataSync.m in Sources */ = {isa = PBXBuildFile; fileRef = D77C64B42DE56AC2000F5441 /* WidgetDataSync.m */; };
+		D79076622E04DABF0003A2E4 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D77C645F2DE55085000F5441 /* WidgetKit.framework */; };
+		D79076632E04DABF0003A2E4 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D77C64612DE55086000F5441 /* SwiftUI.framework */; };
+		D79076742E04DAC10003A2E4 /* DailyVerseWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D79076612E04DABE0003A2E4 /* DailyVerseWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,6 +35,13 @@
 			remoteGlobalIDString = D77C645D2DE55085000F5441;
 			remoteInfo = ShepherdStreakWidgetExtension;
 		};
+		D79076722E04DAC10003A2E4 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 83CBB9F71A601CBA00E9B192 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D79076602E04DABE0003A2E4;
+			remoteInfo = DailyVerseWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -41,6 +51,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
+				D79076742E04DAC10003A2E4 /* DailyVerseWidgetExtension.appex in Embed Foundation Extensions */,
 				D77C64732DE55088000F5441 /* ShepherdStreakWidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
@@ -68,6 +79,7 @@
 		D77C64872DE550C6000F5441 /* ShepherdStreakWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShepherdStreakWidgetExtension.entitlements; sourceTree = "<group>"; };
 		D77C64B22DE56AAE000F5441 /* WidgetDataSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WidgetDataSync.swift; path = Shepherd/WidgetDataSync.swift; sourceTree = "<group>"; };
 		D77C64B42DE56AC2000F5441 /* WidgetDataSync.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = WidgetDataSync.m; path = Shepherd/WidgetDataSync.m; sourceTree = "<group>"; };
+		D79076612E04DABE0003A2E4 /* DailyVerseWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DailyVerseWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		E41EE0604960528E6AFC8F61 /* Pods-Shepherd.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Shepherd.release.xcconfig"; path = "Target Support Files/Pods-Shepherd/Pods-Shepherd.release.xcconfig"; sourceTree = "<group>"; };
 		EAEDFBA39C7EF1B9EA065ADD /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Shepherd/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -82,6 +94,13 @@
 			);
 			target = D77C645D2DE55085000F5441 /* ShepherdStreakWidgetExtension */;
 		};
+		D79076772E04DAC10003A2E4 /* Exceptions for "DailyVerseWidget" folder in "DailyVerseWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D79076602E04DABE0003A2E4 /* DailyVerseWidgetExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -95,6 +114,18 @@
 			explicitFolders = (
 			);
 			path = ShepherdStreakWidget;
+			sourceTree = "<group>";
+		};
+		D79076642E04DABF0003A2E4 /* DailyVerseWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				D79076772E04DAC10003A2E4 /* Exceptions for "DailyVerseWidget" folder in "DailyVerseWidgetExtension" target */,
+			);
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = DailyVerseWidget;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -114,6 +145,15 @@
 			files = (
 				D77C64622DE55086000F5441 /* SwiftUI.framework in Frameworks */,
 				D77C64602DE55085000F5441 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D790765E2E04DABE0003A2E4 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D79076632E04DABF0003A2E4 /* SwiftUI.framework in Frameworks */,
+				D79076622E04DABF0003A2E4 /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -165,6 +205,7 @@
 				13B07FAE1A68108700A75B9A /* Shepherd */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				D77C64632DE55086000F5441 /* ShepherdStreakWidget */,
+				D79076642E04DABF0003A2E4 /* DailyVerseWidget */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
 				D65327D7A22EEC0BE12398D9 /* Pods */,
@@ -180,6 +221,7 @@
 			children = (
 				13B07F961A680F5B00A75B9A /* Shepherd.app */,
 				D77C645E2DE55085000F5441 /* ShepherdStreakWidgetExtension.appex */,
+				D79076612E04DABE0003A2E4 /* DailyVerseWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -240,6 +282,7 @@
 			);
 			dependencies = (
 				D77C64722DE55088000F5441 /* PBXTargetDependency */,
+				D79076732E04DAC10003A2E4 /* PBXTargetDependency */,
 			);
 			name = Shepherd;
 			productName = Shepherd;
@@ -266,6 +309,26 @@
 			productReference = D77C645E2DE55085000F5441 /* ShepherdStreakWidgetExtension.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		D79076602E04DABE0003A2E4 /* DailyVerseWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D79076782E04DAC10003A2E4 /* Build configuration list for PBXNativeTarget "DailyVerseWidgetExtension" */;
+			buildPhases = (
+				D790765D2E04DABE0003A2E4 /* Sources */,
+				D790765E2E04DABE0003A2E4 /* Frameworks */,
+				D790765F2E04DABE0003A2E4 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				D79076642E04DABF0003A2E4 /* DailyVerseWidget */,
+			);
+			name = DailyVerseWidgetExtension;
+			productName = DailyVerseWidgetExtension;
+			productReference = D79076612E04DABE0003A2E4 /* DailyVerseWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -280,6 +343,9 @@
 						LastSwiftMigration = 1250;
 					};
 					D77C645D2DE55085000F5441 = {
+						CreatedOnToolsVersion = 16.1;
+					};
+					D79076602E04DABE0003A2E4 = {
 						CreatedOnToolsVersion = 16.1;
 					};
 				};
@@ -299,6 +365,7 @@
 			targets = (
 				13B07F861A680F5B00A75B9A /* Shepherd */,
 				D77C645D2DE55085000F5441 /* ShepherdStreakWidgetExtension */,
+				D79076602E04DABE0003A2E4 /* DailyVerseWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -317,6 +384,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		D77C645C2DE55085000F5441 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D790765F2E04DABE0003A2E4 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -554,6 +628,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		D790765D2E04DABE0003A2E4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -561,6 +642,11 @@
 			isa = PBXTargetDependency;
 			target = D77C645D2DE55085000F5441 /* ShepherdStreakWidgetExtension */;
 			targetProxy = D77C64712DE55088000F5441 /* PBXContainerItemProxy */;
+		};
+		D79076732E04DAC10003A2E4 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D79076602E04DABE0003A2E4 /* DailyVerseWidgetExtension */;
+			targetProxy = D79076722E04DAC10003A2E4 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -879,6 +965,92 @@
 			};
 			name = Release;
 		};
+		D79076752E04DAC10003A2E4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = MXF26T4NAZ;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DailyVerseWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = DailyVerseWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_DEBUG";
+				PRODUCT_BUNDLE_IDENTIFIER = second.round.shepherd.DailyVerseWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		D79076762E04DAC10003A2E4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = MXF26T4NAZ;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = DailyVerseWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = DailyVerseWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.1;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MARKETING_VERSION = 1.0;
+				MTL_FAST_MATH = YES;
+				OTHER_SWIFT_FLAGS = "$(inherited) -D EXPO_CONFIGURATION_RELEASE";
+				PRODUCT_BUNDLE_IDENTIFIER = second.round.shepherd.DailyVerseWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -905,6 +1077,15 @@
 			buildConfigurations = (
 				D77C64752DE55088000F5441 /* Debug */,
 				D77C64762DE55088000F5441 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D79076782E04DAC10003A2E4 /* Build configuration list for PBXNativeTarget "DailyVerseWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D79076752E04DAC10003A2E4 /* Debug */,
+				D79076762E04DAC10003A2E4 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

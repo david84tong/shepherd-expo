@@ -5,13 +5,17 @@ import firestore from '@react-native-firebase/firestore';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
 import { useState, useEffect } from 'react';
-import { Platform } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import Constants from 'expo-constants';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { syncStreakDataToWidget } from '~/utils/widgetSync';
+import { useDevotionalStore } from '../stores/devotionalStore';
+import { usePrayerStore } from '../stores/prayerStore';
+
+const { WidgetDataSharer } = NativeModules;
 
 // Helper function to check if user is signed in
 export const isSignedIn = () => {
@@ -31,7 +35,7 @@ export const checkUserExists = async (uid: string): Promise<boolean> => {
 };
 
 // useAuth.ts hook
-export function useAuth() {
+export const useAuth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -44,6 +48,9 @@ export function useAuth() {
   useEffect(() => {
     const unsubscribe = auth().onAuthStateChanged((user) => {
       setIsAuthenticated(user !== null);
+      if (user === null) {
+        WidgetDataSharer.updateWidgetStatus('loggedOut');
+      }
     });
 
     return () => unsubscribe();
@@ -154,13 +161,11 @@ export function useAuth() {
       console.log('[Auth] User document updated in Firestore');
 
       // Update local store
-      useUserStore.getState().setUser({
+      updateUser({
         id: uid,
         displayName,
         email: email || undefined,
       });
-      setCreatedAt(firestore.Timestamp.now());
-      setUpdatedAt(firestore.Timestamp.now());
 
       // Wait for auth state to be ready before fetching data
       await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -232,12 +237,11 @@ export function useAuth() {
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
 
       // Update local store
-      useUserStore.getState().setUser({
+      updateUser({
         id: uid,
         displayName: 'Anonymous User',
       });
-      setCreatedAt(firestore.Timestamp.now());
-      setUpdatedAt(firestore.Timestamp.now());
+
       syncStreakDataToWidget(0, firestore.Timestamp.now()?.toDate());
       // Log successful anonymous sign in
       if (analytics.isInitialized) {
@@ -361,13 +365,11 @@ export function useAuth() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Update local store with basic info first
-      useUserStore.getState().setUser({
+      updateUser({
         id: uid,
         displayName: userDoc.displayName,
         email: userDoc.email,
       });
-      setCreatedAt(firestore.Timestamp.now());
-      setUpdatedAt(firestore.Timestamp.now());
 
       // Fetch the complete user data to ensure all fields are synced
       await fetchFromFirestore({ currentLoggedUser: userCredential?.user });
@@ -460,13 +462,11 @@ export function useAuth() {
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
 
       // Update local store
-      useUserStore.getState().setUser({
+      updateUser({
         id: uid,
         displayName,
         email,
       });
-      setCreatedAt(firestore.Timestamp.now());
-      setUpdatedAt(firestore.Timestamp.now());
 
       // Wait for auth state to be ready before fetching data
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -526,7 +526,7 @@ export function useAuth() {
 
       // Update local store
       const { uid, displayName } = userCredential.user;
-      useUserStore.getState().setUser({
+      updateUser({
         id: uid,
         displayName: displayName || 'Email User',
         email,
@@ -633,9 +633,9 @@ export function useAuth() {
 
   return {
     user,
+    isAuthenticated,
     loading,
     error,
-    isAuthenticated,
     signInWithApple,
     signInWithGoogle,
     signInAnonymously,
@@ -646,6 +646,6 @@ export function useAuth() {
     getFirebaseIdToken,
     upgradeAnonymousToApple,
   };
-}
+};
 
 WebBrowser.maybeCompleteAuthSession();

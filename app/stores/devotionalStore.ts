@@ -5,6 +5,8 @@ import { fetchChapter } from '../api/bible';
 import { BIBLE_BOOK_IDS } from '../models/Path';
 import { createDevotionalFromVerse } from '../api/ai';
 import auth from '@react-native-firebase/auth';
+import { NativeModules } from 'react-native';
+const { WidgetDataSharer } = NativeModules;
 // after we fetch devotional from firestore we need to get the verse from the API
 // 
 
@@ -211,9 +213,21 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         isLoading: false,
         error: null 
       });
+
+      // Share the data with the widget extension
+      if (devotional.bibleReference && devotional.verse) {
+        WidgetDataSharer.updateVerseData(
+          devotional.bibleReference,
+          devotional.verse,
+          devotional.imageURL || null
+        );
+      } else {
+        WidgetDataSharer.updateWidgetStatus('noVerseAvailable');
+      }
       
     } catch (error) {
       console.error('Error fetching devotional:', error);
+      WidgetDataSharer.updateWidgetStatus('noVerseAvailable');
       set({ 
         isLoading: false, 
         error: error instanceof Error ? error.message : 'Failed to fetch devotional'
