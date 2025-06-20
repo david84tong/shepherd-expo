@@ -5,8 +5,74 @@ import { fetchChapter } from '../api/bible';
 import { BIBLE_BOOK_IDS } from '../models/Path';
 import { createDevotionalFromVerse } from '../api/ai';
 import auth from '@react-native-firebase/auth';
-import { NativeModules } from 'react-native';
-const { WidgetDataSharer } = NativeModules;
+import { NativeModules, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Safely get WidgetDataSharer with error handling
+const getWidgetDataSharer = () => {
+  try {
+    console.log('📱 Attempting to access WidgetDataSharer from NativeModules...');
+    console.log('📱 Available NativeModules:', Object.keys(NativeModules));
+    
+    const { WidgetDataSharer } = NativeModules;
+    console.log('📱 WidgetDataSharer from destructuring:', WidgetDataSharer);
+    
+    if (!WidgetDataSharer) {
+      console.warn('📱 WidgetDataSharer native module not found');
+      console.log('📱 This might be because:');
+      console.log('📱 1. The native module is not properly linked');
+      console.log('📱 2. The app needs to be rebuilt');
+      console.log('📱 3. The module is not included in the Xcode project');
+      return null;
+    }
+    
+    console.log('📱 WidgetDataSharer found successfully:', {
+      hasUpdateVerseData: typeof WidgetDataSharer.updateVerseData === 'function',
+      hasUpdateWidgetStatus: typeof WidgetDataSharer.updateWidgetStatus === 'function',
+    });
+    
+    return WidgetDataSharer;
+  } catch (error) {
+    console.error('📱 Error accessing WidgetDataSharer:', error);
+    return null;
+  }
+};
+
+// Helper function to safely call widget methods
+const safeWidgetCall = async (method: string, ...args: any[]) => {
+  const widgetModule = getWidgetDataSharer();
+  if (!widgetModule) {
+    console.warn(`📱 Cannot call ${method} - WidgetDataSharer not available, using AsyncStorage fallback`);
+    
+    // Use AsyncStorage fallback
+    if (method === 'updateVerseData' && args.length >= 2) {
+      await saveWidgetDataToAsyncStorage(args[0], args[1], args[2]);
+    } else if (method === 'updateWidgetStatus' && args.length >= 1) {
+      await saveWidgetStatusToAsyncStorage(args[0]);
+    }
+    return;
+  }
+  
+  try {
+    if (method === 'updateVerseData' && widgetModule.updateVerseData) {
+      widgetModule.updateVerseData(...args);
+    } else if (method === 'updateWidgetStatus' && widgetModule.updateWidgetStatus) {
+      widgetModule.updateWidgetStatus(...args);
+    } else {
+      console.warn(`📱 Method ${method} not available on WidgetDataSharer`);
+    }
+  } catch (error) {
+    console.error(`📱 Error calling ${method}:`, error);
+    
+    // Fallback to AsyncStorage on error
+    if (method === 'updateVerseData' && args.length >= 2) {
+      await saveWidgetDataToAsyncStorage(args[0], args[1], args[2]);
+    } else if (method === 'updateWidgetStatus' && args.length >= 1) {
+      await saveWidgetStatusToAsyncStorage(args[0]);
+    }
+  }
+};
+
 // after we fetch devotional from firestore we need to get the verse from the API
 // 
 
@@ -29,11 +95,13 @@ interface DevotionalStore {
   clearError: () => void;
   reset: () => void;
   // NEW ACTION: Quickly create a devotional from a verse the user selected
-  createQuickDevotional: (verseText: string, reference: string) => void;
+  createQuickDevotional: (verseText: string, reference: string) => Promise<void>;
   // NEW ACTION: Create AI-powered devotional from verse
   createAIDevotional: (verseText: string, reference: string, bookName: string, chapter: number, verse: number) => Promise<void>;
   // Clear custom devotional when closing
-  clearCustomDevotional: () => void;
+  clearCustomDevotional: () => Promise<void>;
+  // Refresh widget data with current devotional
+  refreshWidgetData: () => Promise<void>;
 }
 
 export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
@@ -53,6 +121,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     
     try {
       // Try to get today's devotional by ID first (format: YYYY-MM-DD)
+      // const today = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
       const today = new Date();
       const todayId = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
       
@@ -62,6 +131,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       
       // First try to get by document ID
       let snapshot = await devotionalsRef.doc(todayId).get();
+      
       
              if (!snapshot.exists) {
          console.log('No devotional found with today\'s ID, trying test document ID...');
@@ -105,6 +175,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       
             // Get the document data
       const devotionalData = snapshot.data() as Devotional;
+      console.log("devotionalData ====>",devotionalData);
       
       if (!devotionalData) {
         console.log('No devotional data found');
@@ -214,20 +285,26 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         error: null 
       });
 
-      // Share the data with the widget extension
+      // Share the data with the widget
       if (devotional.bibleReference && devotional.verse) {
-        WidgetDataSharer.updateVerseData(
+        console.log('📱 Sharing devotional data with widget:', {
+          bibleReference: devotional.bibleReference,
+          verseLength: devotional.verse.length,
+          imageURL: devotional.imageURL
+        });
+        await safeWidgetCall('updateVerseData',
           devotional.bibleReference,
           devotional.verse,
           devotional.imageURL || null
         );
       } else {
-        WidgetDataSharer.updateWidgetStatus('noVerseAvailable');
+        console.log('📱 No verse data available for widget');
+        await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
       }
       
     } catch (error) {
       console.error('Error fetching devotional:', error);
-      WidgetDataSharer.updateWidgetStatus('noVerseAvailable');
+      await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
       set({ 
         isLoading: false, 
         error: error instanceof Error ? error.message : 'Failed to fetch devotional'
@@ -262,7 +339,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   },
 
   // QUICK DEVOTIONAL CREATION -----------------------------------------------
-  createQuickDevotional: (verseText: string, reference: string) => {
+  createQuickDevotional: async (verseText: string, reference: string) => {
     const quickDevotional: Devotional = {
       id: `quick-${Date.now()}`,
       title: '',
@@ -282,6 +359,19 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
     console.log('[DevotionalStore] Created quick devotional from verse:', quickDevotional);
     set({ customDevotional: quickDevotional, currentDevotional: quickDevotional });
+
+    // Share the quick devotional with the widget
+    if (reference && verseText) {
+      console.log('📱 Sharing quick devotional with widget:', {
+        bibleReference: reference,
+        verseLength: verseText.length
+      });
+      await safeWidgetCall('updateVerseData',
+        reference,
+        verseText,
+        null // No image for quick devotionals
+      );
+    }
   },
 
   // NEW ACTION: Create AI-powered devotional from verse
@@ -334,6 +424,19 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         isCreatingDevotional: false,
         error: null 
       });
+
+      // Share the AI devotional with the widget
+      if (reference && verseText) {
+        console.log('📱 Sharing AI devotional with widget:', {
+          bibleReference: reference,
+          verseLength: verseText.length
+        });
+        await safeWidgetCall('updateVerseData',
+          reference,
+          verseText,
+          null // No image for AI devotionals
+        );
+      }
     } catch (error) {
       console.error('Error creating AI devotional:', error);
       set({ 
@@ -343,9 +446,32 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     }
   },
 
-  clearCustomDevotional: () => {
+  clearCustomDevotional: async () => {
     console.log('[DevotionalStore] Clearing custom devotional');
     set({ customDevotional: null });
+    
+    // Clear widget data when custom devotional is cleared
+    await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
+  },
+
+  // Refresh widget data with current devotional
+  refreshWidgetData: async () => {
+    const { currentDevotional } = get();
+    if (currentDevotional?.bibleReference && currentDevotional?.verse) {
+      console.log('📱 Refreshing widget data with current devotional:', {
+        bibleReference: currentDevotional.bibleReference,
+        verseLength: currentDevotional.verse.length,
+        imageURL: currentDevotional.imageURL
+      });
+      await safeWidgetCall('updateVerseData',
+        currentDevotional.bibleReference,
+        currentDevotional.verse,
+        currentDevotional.imageURL || null
+      );
+    } else {
+      console.log('📱 No current devotional data available for widget refresh');
+      await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
+    }
   },
 }));
 
@@ -365,6 +491,83 @@ const parseBibleReference = (reference: string): { book: string; chapter: number
   } catch (error) {
     console.error('Error parsing Bible reference:', reference, error);
     return null;
+  }
+};
+
+// Utility function to share current devotional with widget
+export const shareCurrentDevotionalWithWidget = async () => {
+  const { currentDevotional } = useDevotionalStore.getState();
+  if (currentDevotional?.bibleReference && currentDevotional?.verse) {
+    console.log('📱 Manually sharing current devotional with widget:', {
+      bibleReference: currentDevotional.bibleReference,
+      verseLength: currentDevotional.verse.length,
+      imageURL: currentDevotional.imageURL
+    });
+    await safeWidgetCall('updateVerseData',
+      currentDevotional.bibleReference,
+      currentDevotional.verse,
+      currentDevotional.imageURL || null
+    );
+  } else {
+    console.log('📱 No current devotional data available for widget');
+    await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
+  }
+};
+
+// Test function to check if native modules are working
+const testNativeModules = () => {
+  console.log('🔍 Testing NativeModules availability...');
+  console.log('📱 Available NativeModules:', Object.keys(NativeModules));
+  
+  // Test if we can access any native module
+  const testModule = NativeModules['AsyncStorage'] || NativeModules['RCTAsyncStorage'];
+  if (testModule) {
+    console.log('✅ Other native modules are working:', testModule);
+  } else {
+    console.log('❌ No native modules found at all');
+  }
+  
+  // Test WidgetDataSharer specifically
+  const { WidgetDataSharer } = NativeModules;
+  console.log('📱 WidgetDataSharer test:', {
+    exists: !!WidgetDataSharer,
+    type: typeof WidgetDataSharer,
+    methods: WidgetDataSharer ? Object.keys(WidgetDataSharer) : 'N/A'
+  });
+};
+
+// Call the test function when the module loads
+testNativeModules();
+
+// Fallback function using AsyncStorage if native module is not available
+const saveWidgetDataToAsyncStorage = async (bibleReference: string, verse: string, imageURL?: string) => {
+  try {
+    const widgetData = {
+      status: 'verseAvailable',
+      bibleReference,
+      verse,
+      imageURL,
+      timestamp: new Date().toISOString()
+    };
+    
+    await AsyncStorage.setItem('widget_daily_verse', JSON.stringify(widgetData));
+    console.log('📱 Saved widget data to AsyncStorage as fallback');
+  } catch (error) {
+    console.error('📱 Error saving widget data to AsyncStorage:', error);
+  }
+};
+
+const saveWidgetStatusToAsyncStorage = async (status: string) => {
+  try {
+    const widgetData = {
+      status,
+      timestamp: new Date().toISOString()
+    };
+    
+    await AsyncStorage.setItem('widget_daily_verse', JSON.stringify(widgetData));
+    console.log('📱 Saved widget status to AsyncStorage as fallback');
+  } catch (error) {
+    console.error('📱 Error saving widget status to AsyncStorage:', error);
   }
 };
 

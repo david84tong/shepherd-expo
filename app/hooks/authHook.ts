@@ -15,7 +15,41 @@ import { syncStreakDataToWidget } from '~/utils/widgetSync';
 import { useDevotionalStore } from '../stores/devotionalStore';
 import { usePrayerStore } from '../stores/prayerStore';
 
-const { WidgetDataSharer } = NativeModules;
+// Safely get WidgetDataSharer with error handling
+const getWidgetDataSharer = () => {
+  try {
+    const { WidgetDataSharer } = NativeModules;
+    if (!WidgetDataSharer) {
+      console.warn('📱 WidgetDataSharer native module not found');
+      return null;
+    }
+    return WidgetDataSharer;
+  } catch (error) {
+    console.error('📱 Error accessing WidgetDataSharer:', error);
+    return null;
+  }
+};
+
+// Helper function to safely call widget methods
+const safeWidgetCall = (method: string, ...args: any[]) => {
+  const widgetModule = getWidgetDataSharer();
+  if (!widgetModule) {
+    console.warn(`📱 Cannot call ${method} - WidgetDataSharer not available`);
+    return;
+  }
+  
+  try {
+    if (method === 'updateVerseData' && widgetModule.updateVerseData) {
+      widgetModule.updateVerseData(...args);
+    } else if (method === 'updateWidgetStatus' && widgetModule.updateWidgetStatus) {
+      widgetModule.updateWidgetStatus(...args);
+    } else {
+      console.warn(`📱 Method ${method} not available on WidgetDataSharer`);
+    }
+  } catch (error) {
+    console.error(`📱 Error calling ${method}:`, error);
+  }
+};
 
 // Helper function to check if user is signed in
 export const isSignedIn = () => {
@@ -49,7 +83,7 @@ export const useAuth = () => {
     const unsubscribe = auth().onAuthStateChanged((user) => {
       setIsAuthenticated(user !== null);
       if (user === null) {
-        WidgetDataSharer.updateWidgetStatus('loggedOut');
+        safeWidgetCall('updateWidgetStatus', 'loggedOut');
       }
     });
 
@@ -410,6 +444,9 @@ export const useAuth = () => {
       if (Platform.OS === 'android' && !isAnonymous) {
         await GoogleSignin.revokeAccess?.();
       }
+
+      // Clear widget data when signing out
+      safeWidgetCall('updateWidgetStatus', 'loggedOut');
 
       // await subscriptionStore.logoutAdaptyUser();
     } catch (error) {

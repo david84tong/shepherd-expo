@@ -6,8 +6,6 @@
 //
 import WidgetKit
 import SwiftUI
-import Firebase
-import FirebaseFirestore
 
 // 1. Data model for the widget's entry
 struct DevotionalEntry: TimelineEntry {
@@ -18,7 +16,7 @@ struct DevotionalEntry: TimelineEntry {
     let image: UIImage?
 }
 
-// 2. Data structure for UserDefaults
+// 2. Data structure for UserDefaults (shared with main app)
 struct SharedDevotional: Codable {
     enum Status: String, Codable {
         case loggedOut
@@ -53,22 +51,11 @@ struct Provider: TimelineProvider {
 
     // The timeline of entries for the widget to display.
     func getTimeline(in context:Context, completion: @escaping (Timeline<DevotionalEntry>) -> ()) {
-        // First try to get data from UserDefaults (shared by main app)
-        let userDefaultsEntry = readEntryFromUserDefaults()
-        
-        // If we have valid data from UserDefaults, use it
-        if userDefaultsEntry.status == .verseAvailable && userDefaultsEntry.bibleReference != nil && userDefaultsEntry.verse != nil {
-            let timeline = Timeline(entries: [userDefaultsEntry], policy: .after(Calendar.current.date(byAdding: .hour, value: 1, to: Date())!))
-            completion(timeline)
-            return
-        }
-        
-        // If no data from UserDefaults, try to fetch from Firestore directly
-        fetchFromFirestore { firestoreEntry in
-            let finalEntry = firestoreEntry ?? userDefaultsEntry
-            let timeline = Timeline(entries: [finalEntry], policy: .after(Calendar.current.date(byAdding: .hour, value: 1, to: Date())!))
-            completion(timeline)
-        }
+        let entry = readEntryFromUserDefaults()
+        // Refresh the widget every hour. The main app is responsible for updating the content.
+        let nextUpdate = Calendar.current.date(byAdding: .hour, value: 1, to: Date())!
+        let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
+        completion(timeline)
     }
 
     // Helper to read data from shared UserDefaults
@@ -90,116 +77,6 @@ struct Provider: TimelineProvider {
             verse: sharedDevotional.verse,
             image: image
         )
-    }
-    
-    // Helper to fetch data directly from Firestore
-    private func fetchFromFirestore(completion: @escaping (DevotionalEntry?) -> Void) {
-        // Configure Firebase if not already configured
-        if FirebaseApp.app() == nil {
-            FirebaseApp.configure()
-        }
-        
-        let db = Firestore.firestore()
-        
-        // Try to get today's devotional by ID first (format: YYYY-MM-DD)
-        let today = Date()
-        let todayString = ISO8601DateFormatter().string(from: today)
-        let todayId = String(todayString.split(separator: "T")[0]) // Format: YYYY-MM-DD
-        
-        print("Widget: Trying to fetch devotional with ID:", todayId)
-        
-        let devotionalsRef = db.collection("dailyDevotionals")
-        
-        // First try to get by document ID
-        devotionalsRef.document(todayId).getDocument { snapshot, error in
-            if let error = error {
-                print("Widget: Error fetching devotional:", error)
-                completion(nil)
-                return
-            }
-            
-            var documentSnapshot = snapshot
-            
-            // If today's document doesn't exist, try test document
-            if !(snapshot?.exists ?? false) {
-                print("Widget: No devotional found with today's ID, trying test document ID...")
-                
-                devotionalsRef.document("2025-06-11").getDocument { testSnapshot, testError in
-                    if let testError = testError {
-                        print("Widget: Error fetching test devotional:", testError)
-                        completion(nil)
-                        return
-                    }
-                    
-                    if testSnapshot?.exists ?? false {
-                        print("Widget: Found test devotional with ID: 2025-06-11")
-                        documentSnapshot = testSnapshot
-                    } else {
-                        print("Widget: Test document not found either")
-                        completion(nil)
-                        return
-                    }
-                    
-                    // Process the document
-                    processDevotionalDocument(documentSnapshot, completion: completion)
-                }
-            } else {
-                // Process the document
-                processDevotionalDocument(documentSnapshot, completion: completion)
-            }
-        }
-    }
-    
-    private func processDevotionalDocument(_ snapshot: DocumentSnapshot?, completion: @escaping (DevotionalEntry?) -> Void) {
-        guard let snapshot = snapshot, snapshot.exists,
-              let data = snapshot.data() else {
-            print("Widget: No devotional data found")
-            completion(nil)
-            return
-        }
-        
-        // Extract devotional data
-        let bibleReference = data["bibleReference"] as? String
-        let verse = data["verse"] as? String
-        let imageURL = data["imageURL"] as? String
-        
-        print("Widget: Fetched devotional data - reference:", bibleReference ?? "nil", "verse length:", verse?.count ?? 0)
-        
-        // If we have valid data, create entry
-        if let reference = bibleReference, let verseText = verse, !reference.isEmpty, !verseText.isEmpty {
-            // Fetch image if available
-            fetchImage(from: imageURL) { image in
-                let entry = DevotionalEntry(
-                    date: Date(),
-                    status: .verseAvailable,
-                    bibleReference: reference,
-                    verse: verseText,
-                    image: image
-                )
-                completion(entry)
-            }
-        } else {
-            print("Widget: Invalid devotional data - missing reference or verse")
-            completion(nil)
-        }
-    }
-    
-    private func fetchImage(from urlString: String?, completion: @escaping (UIImage?) -> Void) {
-        guard let urlString = urlString, let url = URL(string: urlString) else {
-            completion(nil)
-            return
-        }
-        
-        URLSession.shared.dataTask(with: url) { data, _, error in
-            guard let data = data, error == nil else {
-                print("Widget: Error fetching image data:", error?.localizedDescription ?? "Unknown error")
-                completion(nil)
-                return
-            }
-            
-            let image = UIImage(data: data)
-            completion(image)
-        }.resume()
     }
 }
 
@@ -246,17 +123,27 @@ struct DailyVerseWidgetEntryView : View {
                 }
                 .padding()
             case .loggedOut:
-                Text("Login to see your daily verse.")
-                    .font(.system(size: 16))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .padding()
+                VStack {
+                    Text("📖")
+                        .font(.system(size: 24))
+                        .padding(.bottom, 4)
+                    Text("Open Shepherd to see your daily verse")
+                        .font(.system(size: 16))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                }
+                .padding()
             case .noVerseAvailable:
-                Text("No verse data for today.")
-                    .font(.system(size: 16))
-                    .foregroundColor(.white)
-                    .multilineTextAlignment(.center)
-                    .padding()
+                VStack {
+                    Text("📖")
+                        .font(.system(size: 24))
+                        .padding(.bottom, 4)
+                    Text("No verse available today")
+                        .font(.system(size: 16))
+                        .foregroundColor(.white)
+                        .multilineTextAlignment(.center)
+                }
+                .padding()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -78,51 +78,51 @@ export function DebugButton() {
 
   // Reference to the success bottom sheet modal
   const successSheetRef = useRef<BottomSheetModal>(null);
-  
+
   // Reference to the Rive animation from homeStore
   const riveRef = useHomeStore(state => state.riveRef);
-  
+
   // Snap points for success animation
   const successSnapPoints = useMemo(() => ['90%'], []);
 
   // Helper function to safely set Rive skin
   const setRiveSkin = useCallback((skinNumber: number, actionNumber: number = 0) => {
-    console.log('🔍 Debug setRiveSkin called:', { 
-      skinNumber, 
-      actionNumber, 
-      riveRef: !!riveRef, 
+    console.log('🔍 Debug setRiveSkin called:', {
+      skinNumber,
+      actionNumber,
+      riveRef: !!riveRef,
       riveRefCurrent: !!riveRef?.current,
       setInputState: !!riveRef?.current?.setInputState
     });
-    
+
     // Special logging for armor skin
     if (skinNumber === 9) {
       console.log('🛡️ ARMOR SKIN DEBUG: Attempting to set armor skin (9)');
     }
-    
+
     // Update homeStore currentSkin to prevent handleRivePlay from overriding our debug change
     const setCurrentSkin = useHomeStore.getState().setCurrentSkin;
     setCurrentSkin(skinNumber.toString());
     console.log(`🏠 Updated homeStore currentSkin to: ${skinNumber}`);
-    
+
     if (riveRef && riveRef.current && riveRef.current.setInputState) {
       try {
         console.log('🎯 Setting Rive skin:', skinNumber, 'action:', actionNumber);
-        
+
         // Set action first, then skin
         riveRef.current.setInputState('State Machine 1', 'Action-Number', actionNumber);
         riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
-        
+
         // Special logging for armor skin
         if (skinNumber === 9) {
           console.log('🛡️ ARMOR SKIN DEBUG: Successfully called setInputState for skin 9');
-          
+
           // Try to read back the current state if possible
           setTimeout(() => {
             console.log('🛡️ ARMOR SKIN DEBUG: Checking if skin 9 was applied...');
           }, 500);
         }
-        
+
         Toast.show({
           type: 'success',
           text1: `Skin ${skinNumber} applied!`,
@@ -132,12 +132,12 @@ export function DebugButton() {
         });
       } catch (error) {
         console.log(`❌ Error setting skin ${skinNumber}:`, error);
-        
+
         // Special error logging for armor skin
         if (skinNumber === 9) {
           console.log('🛡️ ARMOR SKIN DEBUG: Failed to set armor skin!', error);
         }
-        
+
         Toast.show({
           type: 'error',
           text1: `Failed to set skin ${skinNumber}`,
@@ -151,14 +151,14 @@ export function DebugButton() {
       if (!riveRef) reasons.push('riveRef is null');
       if (!riveRef?.current) reasons.push('riveRef.current is null');
       if (!riveRef?.current?.setInputState) reasons.push('setInputState not available');
-      
+
       console.log('❌ Rive ref not available:', reasons.join(', '));
-      
+
       // Special logging for armor skin
       if (skinNumber === 9) {
         console.log('🛡️ ARMOR SKIN DEBUG: Cannot set armor skin - Rive not ready!', reasons);
       }
-      
+
       Toast.show({
         type: 'info',
         text1: 'Rive not ready',
@@ -171,13 +171,13 @@ export function DebugButton() {
 
   // Helper function to safely set Rive action
   const setRiveAction = useCallback((actionNumber: number) => {
-    console.log('🔍 Debug setRiveAction called:', { 
-      actionNumber, 
-      riveRef: !!riveRef, 
+    console.log('🔍 Debug setRiveAction called:', {
+      actionNumber,
+      riveRef: !!riveRef,
       riveRefCurrent: !!riveRef?.current,
       setInputState: !!riveRef?.current?.setInputState
     });
-    
+
     if (riveRef && riveRef.current && riveRef.current.setInputState) {
       try {
         console.log('🎯 Setting Rive action:', actionNumber);
@@ -204,7 +204,7 @@ export function DebugButton() {
       if (!riveRef) reasons.push('riveRef is null');
       if (!riveRef?.current) reasons.push('riveRef.current is null');
       if (!riveRef?.current?.setInputState) reasons.push('setInputState not available');
-      
+
       console.log('❌ Rive ref not available:', reasons.join(', '));
       Toast.show({
         type: 'info',
@@ -791,12 +791,12 @@ export function DebugButton() {
                     onPress={() => {
                       const userStore = useUserStore.getState();
                       userStore.setGens(1000);
-                      
+
                       // Force sync to Firestore
                       syncWithFirestore();
-                      
+
                       console.log('Debug: Set gems to 1000');
-                      
+
                       Toast.show({
                         type: 'success',
                         text1: 'Gems Set!',
@@ -970,6 +970,99 @@ export function DebugButton() {
                   </Text>
                 </TouchableOpacity>
 
+                {/* Refresh Widget Data Button */}
+                <TouchableOpacity
+                  className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
+                  onPress={() => {
+                    console.log('📱 DEBUG: Manual widget refresh triggered from DebugModal');
+                    const devotionalStore = useDevotionalStore.getState();
+                    devotionalStore.refreshWidgetData();
+                    Toast.show({
+                      type: 'success',
+                      text1: 'Widget Refreshed',
+                      text2: 'Widget data has been updated',
+                      position: 'top',
+                      visibilityTime: 2000,
+                    });
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Refresh Widget Data
+                  </Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Manually refresh the daily verse widget
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Show Widget Guide Button */}
+                <TouchableOpacity
+                  className="bg-[#F0E6FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
+                  onPress={() => {
+                    console.log('📱 DEBUG: Showing widget guide from DebugModal');
+                    setModalVisible(false);
+                    setShowWidgetSheet(true);
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Show Widget Guide
+                  </Text>
+                  <Text className="font-din text-sm text-[#7C6A94] mt-1">
+                    Show how to add the daily verse widget
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Test Widget Native Module Button */}
+                <TouchableOpacity
+                  className="bg-[#FFE0E8] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF80A0]"
+                  onPress={() => {
+                    console.log('📱 DEBUG: Testing WidgetDataSharer native module');
+                    const { NativeModules } = require('react-native');
+                    console.log('📱 Available NativeModules:', Object.keys(NativeModules));
+
+                    try {
+                      const { WidgetDataSharer } = NativeModules;
+                      if (WidgetDataSharer) {
+                        console.log('📱 WidgetDataSharer found:', {
+                          hasUpdateVerseData: typeof WidgetDataSharer.updateVerseData === 'function',
+                          hasUpdateWidgetStatus: typeof WidgetDataSharer.updateWidgetStatus === 'function',
+                        });
+
+                        // Test calling the method
+                        WidgetDataSharer.updateWidgetStatus('noVerseAvailable');
+                        Toast.show({
+                          type: 'success',
+                          text1: 'Native Module Working',
+                          text2: 'WidgetDataSharer is available and functional',
+                          position: 'top',
+                          visibilityTime: 3000,
+                        });
+                      } else {
+                        console.log('📱 WidgetDataSharer not found in NativeModules');
+                        Toast.show({
+                          type: 'error',
+                          text1: 'Native Module Missing',
+                          text2: 'WidgetDataSharer not found - check console',
+                          position: 'top',
+                          visibilityTime: 3000,
+                        });
+                      }
+                    } catch (error) {
+                      console.error('📱 Error testing WidgetDataSharer:', error);
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Native Module Error',
+                        text2: `Error: ${error}`,
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Test Widget Native Module
+                  </Text>
+                  <Text className="font-din text-sm text-[#B86A7C] mt-1">
+                    Check if WidgetDataSharer is properly linked
+                  </Text>
+                </TouchableOpacity>
+
                 {/* Clear Devotional Data Button */}
                 <TouchableOpacity
                   className="bg-[#FFF4D9] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FCD34D]"
@@ -993,7 +1086,7 @@ export function DebugButton() {
                 <Text className="font-feather text-lg text-textPrimary mb-3">
                   Change Lamb Skin
                 </Text>
-                
+
                 {/* Debug Info Button */}
                 <TouchableOpacity
                   className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE] mb-3"
@@ -1019,7 +1112,7 @@ export function DebugButton() {
                     Check console for detailed Rive ref info
                   </Text>
                 </TouchableOpacity>
-                
+
                 <View className="flex-row flex-wrap gap-2">
                   <TouchableOpacity
                     className="bg-[#E0F7FF] px-3 py-2 rounded-lg border border-[#4FB8FE] mb-1"
@@ -1089,7 +1182,7 @@ export function DebugButton() {
                     }}>
                     <Text className="font-din text-sm text-textPrimary">9 Armor Skin</Text>
                   </TouchableOpacity>
-                  
+
                   {/* Additional test buttons for armor skin debugging */}
                   <TouchableOpacity
                     className="bg-[#FFE0E8] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
@@ -1099,7 +1192,7 @@ export function DebugButton() {
                     }}>
                     <Text className="font-din text-sm text-textPrimary">10 Test</Text>
                   </TouchableOpacity>
-                  
+
                   <TouchableOpacity
                     className="bg-[#E0FFE0] px-3 py-2 rounded-lg border border-[#4FD675] mb-1"
                     onPress={() => {
