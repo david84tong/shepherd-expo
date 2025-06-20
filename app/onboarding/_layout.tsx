@@ -20,6 +20,7 @@ const IMPLEMENTED_SCREENS = [
   '5',
   '6',
   '7',
+  'explainerHearts',
   'explainer',
   '9',
   '10', // Ensure 10 is included
