@@ -1,8 +1,8 @@
 import {Platform} from 'react-native';
 import {responsiveFontSize} from 'react-native-responsive-dimensions';
 import DeviceInfo from 'expo-device';
-const isTablet = DeviceInfo.deviceType === DeviceInfo.DeviceType.TABLET;
-// const isTablet = false;
+// const isTablet = DeviceInfo.deviceType === DeviceInfo.DeviceType.TABLET;
+const isTablet = false;
 
 const AppFonts = {
   8:  isTablet ? 8 : responsiveFontSize(1),

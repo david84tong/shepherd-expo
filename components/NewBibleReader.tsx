@@ -2348,7 +2348,7 @@ console.log("RENDERING");
 
         {isBibleReaderScreen && !isMapMode ? (
         <BibleVerseActionBar
-          reference={`${chapterData?.book} ${chapterData?.chapter}`}
+        reference={chapterData ? `${chapterData.book} ${chapterData.chapter}` : ''}
           onVersePress={handleOpenSelector}
           onPrev={navigateToPreviousChapter}
           onNext={isInPathMode && isAtEndChapter ? handleFinishReading : navigateToNextChapter}
