@@ -35,8 +35,6 @@ import PrimaryButton from './PrimaryButton';
 import CircleButton from './Shared/CircleButton';
 import i18n from '../app/utils/i18n';
 
-const setJournalViewVisible = useHomeStore.getState().setJournalViewVisible;
-
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
   // Find the book name by looking through the BIBLE_BOOK_IDS object
@@ -399,8 +397,20 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   // Delayed progress animation for success view
   useEffect(() => {
     if (success) {
+      console.log('🔍 JOURNAL SUCCESS - Setting success state, journalViewVisible should remain true');
       // Hide global buttons/tab bar during success state
       useHomeStore.getState().setShowGlobalButtons(false);
+      
+      // Keep journalViewVisible true during success state to hide tab bar
+      // Don't set journalViewVisible to false here - it will be set to false when success message is dismissed
+      const currentJournalViewVisible = useHomeStore.getState().journalViewVisible;
+      console.log('🔍 JOURNAL SUCCESS - Current journalViewVisible state:', currentJournalViewVisible);
+      
+      // Ensure journalViewVisible is true during success state
+      if (!currentJournalViewVisible) {
+        console.log('🔍 JOURNAL SUCCESS - Setting journalViewVisible to true to hide tab bar');
+        useHomeStore.getState().setJournalViewVisible(true);
+      }
       
       // Reset bottom sheet to 60% when success screen is shown
       const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
@@ -513,7 +523,6 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   useImperativeHandle(ref, () => ({
     handleSave: () => {
       useHomeStore.getState().setShowGlobalButtons(false);
-      setJournalViewVisible(false);
       console.log('handleSave called');
       // Don't save if not enough characters
       if (reflectionContent.length < MIN_CHARS_REQUIRED) return;
@@ -591,11 +600,12 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       } catch (error) {
         console.log('Error saving reflection data:', error);
       }
+      console.log('🔍 JOURNAL SUCCESS - Setting success state to true');
       setSuccess(true);
     },
     handleCancel: () => {
       useHomeStore.getState().setShowGlobalButtons(false);
-      setJournalViewVisible(false);
+      useHomeStore.getState().setJournalViewVisible(false);
       setPathInProgress(false);
       
       // Reset bottom sheet to original position
@@ -661,11 +671,14 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
         prevLevel={levelInfo.level}
         buttonsEnabled={buttonsEnabled}
         onGoHome={() => {
+          console.log('🔍 JOURNAL SUCCESS - onGoHome called, setting journalViewVisible to false');
           setTimeout(() => {
             setFinishReading(false)
           }, 2000);
 
-          setJournalViewVisible(false);
+          // Set journalViewVisible to false to show tab bar again
+          useHomeStore.getState().setJournalViewVisible(false);
+          console.log('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onGoHome');
 
           // Ensure reflection completion state is maintained
           console.log('🔍 JOURNAL SUCCESS - Ensuring reflection completion state is maintained');
@@ -675,13 +688,6 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
           const isFirstReadingOfDay = !sawStreakToday;
           const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
           
-          // if (readingCompleted && prayerCompleted && isFirstReadingOfDay) {
-          //   const setSawStreakToday = useHomeStore.getState().setSawStreakToday;
-          //   const setSawDailyBonus = useHomeStore.getState().setSawDailyBonus;
-          //   setSawStreakToday(true);
-          //   setSawDailyBonus(true);
-          //   router.push('/streak')
-          // }else 
           if(isBonusAvailable) {
             setSuccessType(SuccessAnimationType.BONUS);
             router.push({
@@ -746,21 +752,20 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             }, 1000); // 1 second delay after navigation
           }
 
-          // if (readingCompleted && prayerCompleted && !sawDailyBonus) {
-          //   setSuccessType(SuccessAnimationType.BONUS);
-          // } else {
-          //   setSuccessType(SuccessAnimationType.REFLECTION);
-          // }
-
         }}
         onPray={() => {
+          console.log('🔍 JOURNAL SUCCESS - onPray called');
           // Handle bonus collection if available
           const sawStreakToday = useHomeStore.getState().sawStreakToday;
           const isFirstReadingOfDay = !sawStreakToday;
           const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
           
           if (isBonusAvailable) {
+            console.log('🔍 JOURNAL SUCCESS - Bonus available, setting journalViewVisible to false');
             setSuccessType(SuccessAnimationType.BONUS);
+            // Set journalViewVisible to false to show tab bar again
+            useHomeStore.getState().setJournalViewVisible(false);
+            console.log('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onPray (bonus)');
             router.push({
               pathname: '/success',
               params: {
@@ -793,8 +798,10 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
               }
             }, 1000);
           } else {
+            console.log('🔍 JOURNAL SUCCESS - No bonus available, setting journalViewVisible to false');
             // Normal prayer flow - close journal and signal to open prayer view
-            setJournalViewVisible(false);
+            useHomeStore.getState().setJournalViewVisible(false);
+            console.log('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onPray (no bonus)');
             onClose({ isReflectPresses: true }); // Pass flag to trigger prayer navigation
           }
         }}
@@ -878,7 +885,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             onPress={() => {
               // Call the existing cancel handler implementation
               useHomeStore.getState().setShowGlobalButtons(false);
-              setJournalViewVisible(false);
+              useHomeStore.getState().setJournalViewVisible(false);
               setPathInProgress(false);
               
               // Reset bottom sheet to original position
@@ -920,7 +927,6 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                 if (isButtonEnabled) {
                   // Directly call the internal method implementation instead of using the ref
                   useHomeStore.getState().setShowGlobalButtons(false);
-                  setJournalViewVisible(false);
                   console.log('handleSave called');
                   // Don't save if not enough characters
                   if (reflectionContent.length < MIN_CHARS_REQUIRED) return;
@@ -998,6 +1004,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                   } catch (error) {
                     console.log('Error saving reflection data:', error);
                   }
+                  console.log('🔍 JOURNAL SUCCESS - Setting success state to true');
                   setSuccess(true);
                 }
               }}

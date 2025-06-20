@@ -141,12 +141,14 @@ export default function TabsLayout() {
   const tabBarAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    const shouldShowTabBar = mode === 'DEFAULT' && !pathInProgress && !devotionalReaderVisible && !prayerViewVisible && !journalViewVisible;
+    
     Animated.timing(tabBarAnim, {
-      toValue: mode === 'DEFAULT' && !pathInProgress && !devotionalReaderVisible && !prayerViewVisible ? 1 : 0,
+      toValue: shouldShowTabBar ? 1 : 0,
       duration: 300,
       useNativeDriver: true,
     }).start();
-  }, [mode, pathInProgress, devotionalReaderVisible, prayerViewVisible]);
+  }, [mode, pathInProgress, devotionalReaderVisible, prayerViewVisible, journalViewVisible]);
 
   // Wait for both onboarding status from AsyncStorage and onboardingStore to be initialized
   if (onboardingCompleted === null || !isOnboardingStoreInitialized || isFirstAppLaunch === null || isDailyFirstLoad === null) {
