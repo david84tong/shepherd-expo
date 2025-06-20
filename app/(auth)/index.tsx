@@ -30,6 +30,7 @@ import CustomAnimatedView from '../components/CustomAnimatedView';
 import { IS_ANDROID } from '../utils/utils';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
 
 // We'll use the background directly in the source prop
 
@@ -213,7 +214,7 @@ export default function LoginScreen() {
           }}
         />
 
-        <SafeAreaView className="flex-1 justify-between px-6 pt-10 pb-10 relative z-10">
+        <SafeAreaView className="flex-1 justify-between px-6 pt-12 pb-10 relative z-10">
           {/* Title at the top */}
           <Text className="text-accentGold font-feather text-h1 text-center mb-2 -mt-12">
             {i18n.t('home_title')}
@@ -260,14 +261,14 @@ export default function LoginScreen() {
                 resourceName={'home_lamb'}
                 artboardName="lamb-reading"
                 autoplay
-                style={{ width: '120%', height: '120%' }}
+                style={{ width: RPH(25), height: RPH(25) }}
               />
             ) : (
               <Rive
                 url={riveAssets[0].localUri!}
                 artboardName="lamb-reading"
                 autoplay
-                style={{ width: '120%', height: '120%' }}
+                style={{ width: RPH(25), height: RPH(25) }}
               />
             )}
           </CustomAnimatedView>

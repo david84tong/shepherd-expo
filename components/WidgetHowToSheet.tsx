@@ -13,6 +13,8 @@ import EmptyModal from './EmptyModal';
 import { Feather } from '@expo/vector-icons';
 import { analytics } from '~/utils/analytics';
 import i18n from '~/app/utils/i18n';
+import { RPH } from '~/app/helper/helper';
+import { AppFonts } from '~/app/constants/appFonts';
 
 // Image references
 const PREVIEW_IMAGE = require('../assets/images/widgetPreviewStep.png');
@@ -141,14 +143,16 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
               />
             </View>
             <TouchableOpacity
-              className="w-full rounded-full py-4 mb-4"
+            style={{paddingVertical:RPH(1.9),backgroundColor: '#FCD34D',marginBottom:RPH(1) }}
+              className="w-full rounded-full"
               onPress={onAddWidgetPressed}
-              style={{ backgroundColor: '#FCD34D' }}
+          
             >
               <Text className="text-lg font-feather font-bold text-[#3C584A] text-center">{i18n.t('widget_howto_add_widget')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              className="w-full rounded-full py-4"
+            style={{paddingVertical:RPH(2)}}
+              className="w-full rounded-full"
               onPress={onNoThanksPressed}
             >
               <Text className="text-lg font-feather text-[#3C584A] text-center">{i18n.t('widget_howto_no_thanks')}</Text>
@@ -190,7 +194,7 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
                 <Image
                   source={steps[step].image}
                   style={styles.image}
-                  resizeMode="cover"
+                  resizeMode="contain"
 
                 />
               </View>
@@ -280,25 +284,25 @@ const styles = StyleSheet.create({
   },
   image: {
     borderRadius: 16,
-    height: '100%',
+    height: RPH(35),
     overflow: 'hidden',
     width: '100%',
   },
   imageContainer: {
     alignItems: 'center',
     borderRadius: 16,
-    height: Dimensions.get('window').width * 0.8,
+    // height: Dimensions.get('window').width * 0.8,
     justifyContent: 'center',
-    marginTop: 24,
+    marginTop: RPH(2),
     overflow: 'hidden',
     width: 240,
   },
   imageContainerPreview: {
     alignItems: 'center',
     borderRadius: 16,
-    height: Dimensions.get('window').width * 0.8,
+    height: RPH(35),
     justifyContent: 'center',
-    marginBottom: 40,
+    marginBottom: RPH(4),
     overflow: 'hidden',
     width: Dimensions.get('window').width * 0.8,
   },
@@ -316,7 +320,7 @@ const styles = StyleSheet.create({
   mainInstruction: {
     color: '#3C584A',
     fontFamily: 'feather',
-    fontSize: 20,
+    fontSize: AppFonts[17],
     fontWeight: '600',
     textAlign: 'center',
   },

@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useEffect } from 'react';
-import { View, Text, Image, StatusBar } from 'react-native';
+import { View, Text, Image, StatusBar, ScrollView } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -16,6 +16,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import skins from '../../assets/onboarding/skins.png';
 import { IS_ANDROID } from '../utils/utils';
+import { RPH } from '../helper/helper';
 
 export default function OnboardingExplainerScreen({ onContinue }: { onContinue?: () => void }) {
   const insets = useSafeAreaInsets();
@@ -132,8 +133,9 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
       <View
         className="flex-1 bg-surfaceCream pt-12 w-full items-center"
         style={{ paddingBottom: insets.bottom }}>
-        {/* Title */}
-        <Animated.View style={titleStyle} className="mb-8 px-6">
+    <ScrollView contentContainerStyle={{paddingBottom:RPH(12)}}>
+          {/* Title */}
+          <Animated.View style={titleStyle} className="mb-8 px-6">
           <Text className="font-feather text-2xl text-textPrimary text-center mb-0">
             But if you read, pray and reflect, your lamb grows...
           </Text>
@@ -277,13 +279,14 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
         {/* Skins section */}
         <Animated.View
           style={cardStyles[4]}
-          className="w-[340px] h-[140px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative mb-4">
+          className="w-[340px] self-center h-[140px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative mb-4">
           <Image source={skins} className="w-full h-[120px]" resizeMode="contain" />
           <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
             <Text className="font-feather text-accentGold">Shop for skins at level 10</Text>
           </View>
         </Animated.View>
 
+    </ScrollView>
         {/* Continue Button - fixed at bottom */}
         <View
           className="absolute left-6 right-6"

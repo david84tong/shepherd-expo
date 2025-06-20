@@ -18,6 +18,7 @@ import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
 import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
 
 interface OnboardingPathScreenProps {
   onPathSelected?: (pathObj: any) => void;
@@ -190,12 +191,15 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
 
         {/* Continue Button */}
         {!hideContinueButton && (
+          <View style={{marginBottom:RPH(4)}}>
           <PrimaryButton
             title={i18n.t('continue_button')}
             onPress={handleContinue}
             disabled={!selectedPathId}
-            style="mt-6 mb-12"
-          />
+            
+            
+            />
+            </View>
         )}
       </View>
     </>

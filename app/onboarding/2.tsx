@@ -19,6 +19,7 @@ import { validateName } from '../../utils/validation';
 import CustomAnimatedView from '../components/CustomAnimatedView';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
 
 export default function OnboardingLambNameScreen() {
   const router = useRouter();
@@ -232,7 +233,11 @@ export default function OnboardingLambNameScreen() {
         <CustomAnimatedView style={inputStyle}>
           <TextInput
             ref={inputRef}
-            className="font-feather text-3xl text-center text-textPrimary bg-white p-6 rounded-2xl border-4 border-border"
+            className="font-feather text-3xl text-center text-textPrimary bg-white  rounded-2xl border-4 border-border"
+            style={{
+              paddingVertical: RPH(2),
+              paddingHorizontal: RPH(3),
+            }}
             placeholder={i18n.t('onboarding_lamb_name_placeholder')}
             placeholderTextColor="#B89B4C"
             maxLength={16}
