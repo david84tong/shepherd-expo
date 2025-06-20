@@ -259,7 +259,7 @@ const PricingScreen = () => {
             </View>
           </AnimatedItem>
 
-          <AnimatedItem index={2} animateItemFromBottom={animateScreenFromBottom}>
+          {/* <AnimatedItem index={2} animateItemFromBottom={animateScreenFromBottom}>
             <View className="bg-white rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
               <Text className="font-feather text-h2 text-textPrimary mb-2 text-center">
                 {i18n.t('pricing_draw_closer_to_god')}
@@ -273,7 +273,7 @@ const PricingScreen = () => {
                 {i18n.t('pricing_join_10000_super_users')}
               </Text>
             </View>
-          </AnimatedItem>
+          </AnimatedItem> */}
 
           {/* How Trial Works Section */}
           <AnimatedItem index={2.5} animateItemFromBottom={animateScreenFromBottom}>
@@ -414,31 +414,75 @@ const PricingScreen = () => {
               </View>
             </View>
 
-            <Animated.View className="bg-surfaceCream rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
-              <Text className="font-feather text-heading text-center mx-12">
-                {i18n.t('pricing_unlock_annoited_skin')}
-              </Text>
-
-              {riveAssets && (
-                <>
-                  {IS_ANDROID ? (
-                    <Rive
-                      resourceName={'gold_lamb'}
-                      style={{ width: 256, height: 256, marginBottom: 16 }}
-                      artboardName="lamb-idle"
-                      autoplay={true}
-                    />
-                  ) : (
-                    <Rive
-                      url={riveAssets[0].localUri!}
-                      style={{ width: 256, height: 256, marginBottom: 16 }}
-                      artboardName="lamb-idle"
-                      autoplay={true}
-                    />
+            <View
+              className="bg-lightYellow border-2 border-accentGold shadow-lg rounded-[24px] mb-8 overflow-hidden h-48 mt-4"
+              style={{
+                shadowColor: '#FCD34D',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 8,
+              }}>
+              
+              <View className="flex-row p-4 h-48 justify-between">
+                {/* Lamb Image - Full size, no background, clipped at bottom */}
+                <View className="w-48 h-full absolute left-0 bottom-0 ml-2">
+                  <View 
+                    className="w-48 h-48 absolute bottom-[-20] rounded-full"
+                    style={{
+                      backgroundColor: 'rgba(252, 211, 77, 0.2)',
+                      shadowColor: '#FCD34D',
+                      shadowOffset: { width: 0, height: 0 },
+                      right: 4,
+                      shadowOpacity: 0.6,
+                      shadowRadius: 20,
+                      elevation: 10,
+                    }}
+                  />
+                  {riveAssets && (
+                    <>
+                      {IS_ANDROID ? (
+                        <Rive
+                          resourceName={'gold_lamb'}
+                          style={{ width: 192, height: 192, position: 'absolute', bottom: -20 }}
+                          artboardName="lamb-idle"
+                          autoplay={true}
+                        />
+                      ) : (
+                        <Rive
+                          url={riveAssets[0].localUri!}
+                          style={{ width: 192, height: 192, position: 'absolute', bottom: -20 }}
+                          artboardName="lamb-idle"
+                          autoplay={true}
+                        />
+                      )}
+                    </>
                   )}
-                </>
-              )}
-            </Animated.View>
+                </View>
+
+                {/* Content - Add left padding to account for image */}
+                <View className="flex-1 ml-44 pl-2 mr-2 my-2">
+                  {/* Name */}
+                  <Text className="font-feather text-lg text-textPrimary mb-1">
+                    Anointed Lamb
+                  </Text>
+
+                  {/* Description */}
+                  <Text className="font-din text-sm text-description -mb-2 h-16" numberOfLines={3}>
+                    Anoint your lamb & get access to custom skins and  backgrounds
+                  </Text>
+
+                  {/* Included with Super badge */}
+                  <View className="mt-2">
+                    <View className="bg-accentGold/20 px-3 py-1.5 rounded-full self-start mt-4">
+                      <Text className="font-feather text-xs text-textPrimary">
+                        ✨ Included with Super
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+            </View>
           </AnimatedItem>
 
           <AnimatedItem index={12} animateItemFromBottom={animateScreenFromBottom}>
