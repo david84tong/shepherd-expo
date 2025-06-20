@@ -89,18 +89,19 @@ export default function BottomControls({
               opacity={!devotionalReadedFully ? 0.7 : 1}
             />
           ) : showPrayerContent ? (
-            <BluePrimaryButton
-              title={i18n.t('amen_button')}
-              width="100%"
-              disabled={isCompletePrayerDisabled}
-              onPress={() => {
-                prayerViewRef.current?.handleCompletePrayer();
-              }}
-            />
+            <View/>
+            // <BluePrimaryButton
+            //   title={i18n.t('amen_button')}
+            //   width="100%"
+            //   disabled={isCompletePrayerDisabled}
+            //   onPress={() => {
+            //     prayerViewRef.current?.handleCompletePrayer();
+            //   }}
+            // />
           ) : null}
         </Animated.View> 
         
-        {showPrayerContent && (
+        {/* {showPrayerContent && (
           <Animated.View style={{ width: '10%' }}>
             <CircleButton
               icon="settings"
@@ -110,7 +111,7 @@ export default function BottomControls({
               }}
             />
           </Animated.View>
-        )}
+        )} */}
       </View>
     </Animated.View>
   );

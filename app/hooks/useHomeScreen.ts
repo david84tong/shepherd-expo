@@ -994,6 +994,13 @@ export const useHomeScreen = () => {
                riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
              }
              console.log(`Set Rive Skin-Number: ${skinNumber} (${currentSkin || 'normal'} skin) on play`);
+             
+             // Set Level-Number based on lamb level
+             const currentLevel = levelInfo?.level || 1;
+             const levelNumber = 0
+             riveRef.current.setInputState('State Machine 1', 'Level-Number', levelNumber);
+             console.log(`Set Rive Level-Number: ${levelNumber} (level ${currentLevel})`);
+             
              setRiveSkinInitialized(true);
            }
             // if(showDevotional){

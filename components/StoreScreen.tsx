@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -73,6 +73,14 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const userLevel = lamb?.level || 1;
   
   const [selectedCategory, setSelectedCategory] = useState<StoreCategory>('skins');
+
+  // Ensure Pro users have the Annointed Lamb skin in their shop store
+  useEffect(() => {
+    if (isProMember && !hasSkin('99')) {
+      console.log('🔄 Adding Annointed Lamb skin to Pro user\'s collection');
+      addSkin('99');
+    }
+  }, [isProMember, hasSkin, addSkin]);
 
   // Store items with static images
   const storeItems: StoreItem[] = useMemo(() => [
@@ -405,6 +413,21 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     const isEquipped = equippedSkin === skinId;
     const isAnointedLamb = item.id === 'skin_super';
     
+    // Debug logging for Annointed Lamb
+    if (isAnointedLamb) {
+      console.log('🔍 Annointed Lamb Debug:', {
+        skinId,
+        equippedSkin,
+        isEquipped,
+        skinNumber: item.skinNumber,
+        itemId: item.id,
+        isProMember,
+        isOwned,
+        userLevel,
+        hasSkinResult: hasSkin(skinId)
+      });
+    }
+    
     return (
       <View
         key={item.id}
@@ -461,7 +484,16 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
               {isAnointedLamb ? (
                 // Special handling for Annointed Lamb
                 isProMember ? (
-                  isEquipped ? (
+                  userLevel < 10 ? (
+                    <PrimaryButton
+                      title="Equip at LVL 10"
+                      onPress={() => {}}
+                      disabled={true}
+                      buttonType="blue"
+                      buttonHeight={40}
+                      width="100%"
+                    />
+                  ) : isEquipped ? (
                     <PrimaryButton
                       title="Equipped"
                       onPress={() => {}}

@@ -148,6 +148,15 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                 }}
                             />
 
+                            {/* Top Left Close Button */}
+                            <TouchableOpacity
+                                className="absolute top-20 left-6 w-10 h-10 bg-black/30 rounded-full items-center justify-center z-10"
+                                onPress={onClose}
+                                activeOpacity={0.7}
+                            >
+                                <FontAwesome name="times" size={20} color="white" />
+                            </TouchableOpacity>
+
                             {/* Content */}
                             <Animated.View
                                 className="flex-1 justify-center px-8"
@@ -165,28 +174,19 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                 <Text className="font-din text-white text-[18px]  mb-10">
                                     {devotionalData?.verse}
                                 </Text>
-                                {/* Share Button */}
-                                <PrimaryButton
-                title={i18n.t('share')}
-                onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    onShare();
-                }}
-                buttonType="orange"
-              />
                             </Animated.View>
 
-                            {/* Bottom Close Area */}
-                            <TouchableOpacity
-                                className="items-center mb-8"
-                                onPress={onClose}
-                                activeOpacity={0.7}
-                            >
-                                <FontAwesome name="angle-double-up" size={32} color="white" />
-                                <Text className="font-feather text-white mt-2 text-[18px]">
-                                    {i18n.t('close')}
-                                </Text>
-                            </TouchableOpacity>
+                            {/* Bottom Share Button */}
+                            <View className="px-8 pb-12">
+                                <PrimaryButton
+                                    title={i18n.t('share')}
+                                    onPress={() => {
+                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                        onShare();
+                                    }}
+                                    buttonType="orange"
+                                />
+                            </View>
                         </ImageBackground>
                     </View>
                 </Animated.View>

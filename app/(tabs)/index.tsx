@@ -200,7 +200,7 @@ export default function HomeScreen() {
             analytics.logEvent('HomeScreen_Tapped_LambName');
           }}
           activeOpacity={0.7}
-          className="bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 top-12 px-2">
+          className={`bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 px-2 ${levelInfo.level < 10 ? 'top-16' : 'top-16'}`}>
           <Text className="font-feather text-textPrimary text-xs">
             {lambName
               ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
@@ -731,7 +731,7 @@ export default function HomeScreen() {
                         </View>
                       </View>
 
-                      {isLoadingDevotional && (
+                      {/* {isLoadingDevotional && (
                         <View className="bg-white/60 rounded-xl p-4 mb-4 border border-lightGreen/20">
                           <View className="flex-row items-center mb-2">
                             <View className="w-6 h-6 bg-lightGreen rounded-full items-center justify-center mr-2">
@@ -742,7 +742,8 @@ export default function HomeScreen() {
                             </Text>
                           </View>
                         </View>
-                      )}
+                      )} */}
+                      
 
                       {devotionalError && !currentDevotional && (
                         <View className="bg-red/10 rounded-xl p-4 mb-4 border border-red/20">
