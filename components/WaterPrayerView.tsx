@@ -273,12 +273,10 @@ const WaterWaveAnimation: React.FC<{
           />
         ) : (
           <View style={{ alignItems: 'center', alignSelf: 'center' }}>
-            <Text style={{
-              fontFamily: 'Nunito-Black',
+            <Text className='text-blue font-feather text-center text-3xl' style={{
               textAlign: 'center',
-              color: '#1E40AF',
-              fontSize: 24,
               marginBottom: 8,
+              fontFamily: 'Nunito-Black',
             }}>
               {animationTriggered ? 'Prayer Complete!' : 'Pour out your heart'}
             </Text>
@@ -288,14 +286,13 @@ const WaterWaveAnimation: React.FC<{
               color: '#4A90E2',
               fontSize: 16,
             }}>
-              {animationTriggered ? 'Your prayer has been heard' : 'Let your prayers fill this vessel'}
+              {animationTriggered ? 'Your prayer has been heard' : 'Let your prayers fill your cup'}
             </Text>
-            <Text style={{
-              fontFamily: 'DIN Next Rounded LT W01 Regular',
+            <Text className='font-feather' style={{
               textAlign: 'center',
-              color: '#4A90E2',
+              color: 'white',
               fontSize: 14,
-              marginTop: 8,
+              marginTop: 24,
               opacity: 0.8,
             }}>
               {animationTriggered ? 'Tap to continue' : 'Hold to begin'}

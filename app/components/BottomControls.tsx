@@ -85,7 +85,7 @@ export default function BottomControls({
               disabled={devotionalReaderRef.current?.isRewarding || !devotionalReadedFully}
               buttonType="blue"
               icon={require('../../assets/icons/starIcon.png')}
-              reward={'+25'}
+              reward={'+50'}
               opacity={!devotionalReadedFully ? 0.7 : 1}
             />
           ) : showPrayerContent ? (
