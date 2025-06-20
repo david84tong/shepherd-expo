@@ -806,7 +806,7 @@ export const useHomeScreen = () => {
         
         if (riveRef.current && riveRef.current.setInputState) {
           try {
-            riveRef.current.setInputState('State Machine 1', 'Action-Number', 1);
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
           } catch (e) {
             console.log('Error setting Rive Action-Number to Raising Hand:', e);
           }
