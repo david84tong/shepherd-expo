@@ -52,7 +52,7 @@ export const useReaderSettingsStore = create<ReaderSettings>((set, get) => ({
   // Default settings
   fontSize: DEFAULT_FONT_SIZE,
   lineHeightPreset: 'REGULAR',
-  theme: 'light',
+  theme: 'medium',
   useCardView: true, // Default to card view as requested
   tapToShowNextCard: true,
   initialized: false,
