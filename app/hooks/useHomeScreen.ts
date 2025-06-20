@@ -944,22 +944,23 @@ export const useHomeScreen = () => {
     });
   }
 
-    // Additional effect to ensure the lamb skin is always set to normal (0)
+    // Additional effect to ensure the lamb skin is set from currentSkin store
   // This will run on component mount and whenever the riveRef or riveReady changes
   useEffect(() => {
     if (!riveRef.current || !riveReady || riveSkinInitialized) return;
     
-    // Ensure skin is always set to normal (0) - only if not already initialized
+    // Set skin from currentSkin store, default to 0 if not set
+    const skinNumber = currentSkin ? parseInt(currentSkin, 10) : 0;
     try {
-      riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
-      console.log('Reapplied normal skin (0) to lamb');
+      riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
+      console.log(`Applied skin from store: ${skinNumber} (${currentSkin || 'normal'} skin)`);
       setRiveSkinInitialized(true);
     } catch (e) {
       console.log('Error setting lamb skin:', e);
       // Still mark as initialized to prevent blocking
       setRiveSkinInitialized(true);
     }
-  }, [riveRef, riveReady, riveSkinInitialized]);
+  }, [riveRef, riveReady, riveSkinInitialized, currentSkin]);
 
 
 

@@ -790,7 +790,7 @@ export function DebugButton() {
                     className="bg-[#E0FFE0] px-4 py-3 rounded-lg border border-[#4FD675] mb-1 w-32"
                     onPress={() => {
                       const userStore = useUserStore.getState();
-                      userStore.setGens(1000);
+                      userStore.setGens(10000);
                       
                       // Force sync to Firestore
                       syncWithFirestore();
@@ -805,7 +805,7 @@ export function DebugButton() {
                         visibilityTime: 3000,
                       });
                     }}>
-                    <Text className="font-din text-sm text-textPrimary text-center">{`1000 💎`}</Text>
+                    <Text className="font-din text-sm text-textPrimary text-center">{`10000 💎`}</Text>
                   </TouchableOpacity>
                 </View>
 

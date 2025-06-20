@@ -10,6 +10,7 @@ import {
     StatusBar,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Devotional } from '~/app/models/Devotional';
 import { ImageBackground } from 'expo-image';
@@ -134,6 +135,19 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                             style={{height:'100%'}}
                             contentFit="cover"
                         >
+                            {/* Linear gradient overlay for readability - darker at top, lighter at bottom */}
+                            <LinearGradient
+                                colors={['rgba(0, 0, 0, 0.5)', 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 0.1)']}
+                                locations={[0, 0.6, 1]}
+                                style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    right: 0,
+                                    bottom: 0,
+                                }}
+                            />
+
                             {/* Content */}
                             <Animated.View
                                 className="flex-1 justify-center px-8"

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, Platform, Pressable, Text, View, ViewStyle } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
-import { FontAwesome } from '@expo/vector-icons';
+
 
 import { isSignedIn } from '../hooks/authHook';
 import { useHomeStore } from '../stores/homeStore';
@@ -241,35 +241,12 @@ export default function TabsLayout() {
           marginTop: 2,
           fontSize: 1, // Reset font size to be visible
         },
+        tabBarScrollEnabled: false, // Disable scrolling to prevent arrows
+        tabBarShowLabel: false, // Hide labels since we're using custom icons with text
         // Use the custom button component for all tabs
         tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
       })}>
-      <Tabs.Screen
-        name="map"
-        options={{
-          title: 'Path',
-          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
-          tabBarIcon: ({ color, focused }) => (
-            <View style={{ width: RPW(16) }} className="items-center justify-center  mt-4">
-              <FontAwesome name="map" size={22} color={focused ? "#FC8A02" : "#BA9F6E"} />
-              <Text className={`mt-2 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>Map</Text>
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="stats"
-        options={{
-          title: 'heart',
-          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
-          tabBarIcon: ({ color, focused }) => (
-            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
-              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/stats.png')} className="w-7 h-7" />
-              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_stats_title')}</Text>
-            </View>
-          ),
-        }}
-      />
+
       <Tabs.Screen
         name="index"
         options={{
