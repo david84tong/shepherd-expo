@@ -728,6 +728,7 @@ export const useHomeScreen = () => {
   const onCloseJournal = useCallback(({isCompleted, isReflectPresses}:{isCompleted?:boolean, isReflectPresses?:boolean}) => {
     // If isReflectPresses is true, trigger prayer navigation
     if (isReflectPresses) {
+
       setFinishReading(false);
       handlePrayerPress(); // Use the existing prayer handler
       setTimeout(() => {
@@ -775,20 +776,53 @@ export const useHomeScreen = () => {
 
   const onClosePrayer = useCallback(({ isReflectPresses }: { isReflectPresses?: boolean }) => {
     if (isReflectPresses) {
-      setFinishReading(false);
+      if(finishReading){
+        setFinishReading(false);
+      }
       // Clear prayer state immediately to prevent race condition in handleRivePlay
-        setShowPrayerContent(false);
-        setPrayerViewVisible(false);
       
       // Close prayer view first with animation
-      Animated.timing(riveArtboardOpacityAnim, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-      }).start(() => {
-        // Then start reflection with proper Rive state
-        handleReflectionPress();
+      // Animated.timing(riveArtboardOpacityAnim, {
+      //   toValue: 0,
+      //   duration: 400,
+      //   useNativeDriver: true,
+      // }).start(() => {
+      //   // Then start reflection with proper Rive state
+      //   handleReflectionPress();
+      // });
+
+      // setTimeout(() => {
+        // setShowPrayerContent(false);
+        // setPrayerViewVisible(false);
+      // }, 300);
+
+      Animated.parallel([
+        Animated.timing(devotionalCardOpacityAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+        Animated.timing(riveArtboardOpacityAnim, { toValue: 0, duration: 400, useNativeDriver: true })
+      ]).start(() => {
+        setShowJournalContent(true);
+        setShowPrayerContent(false);
+        setPrayerViewVisible(false);
+        
+        if (riveRef.current && riveRef.current.setInputState) {
+          try {
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 1);
+          } catch (e) {
+            console.log('Error setting Rive Action-Number to Raising Hand:', e);
+          }
+        }
+        
+        Animated.parallel([
+          Animated.timing(devotionalCardOpacityAnim, { toValue: 1, duration: 600, useNativeDriver: true }),
+          Animated.timing(riveArtboardOpacityAnim, { toValue: 1, duration: 600, useNativeDriver: true })
+        ]).start(() => {
+          setShowPrayerContent(false);
+          setPrayerViewVisible(false);
+        });
       });
+      
+      setShowPrayerView(true);
+      setPrayerViewVisible(true);
     } else {
       setPrayerViewVisible(false);
       Animated.parallel([
