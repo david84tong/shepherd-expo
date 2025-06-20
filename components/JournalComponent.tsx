@@ -838,7 +838,6 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
               const riveRef = homeStore.riveRef;
               if (riveRef?.current?.setInputState) {
                 try {
-                  riveRef.current.setInputState('State Machine 1', 'Action-Number', 12); // 12 = Writing
                   console.log('Set Rive animation to writing state (12) on input focus');
                 } catch (error) {
                   console.log('Could not set Rive to writing state on focus:', error);
@@ -1006,11 +1005,22 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                   }
                   console.log('🔍 JOURNAL SUCCESS - Setting success state to true');
                   setSuccess(true);
+                  
+                  // Set Rive to writing state
+                  const homeStore = useHomeStore.getState();
+                  const riveRef = homeStore.riveRef;
+                  if (riveRef?.current?.setInputState) {
+                    try {
+                      riveRef.current.setInputState('State Machine 1', 'Action-Number', 12); // 12 = Writing
+                    } catch (error) {
+                      console.log('Could not set Rive to writing state:', error);
+                    }
+                  }
                 }
               }}
               buttonType="blue"
               icon={require('../assets/icons/starIcon.png')}
-              reward={"+25"}
+              reward={"+50"}
             />
           </View>
         </View>

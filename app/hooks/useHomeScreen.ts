@@ -30,7 +30,6 @@ import { getLambMoodByHearts } from './streakHook';
 import { IS_ANDROID } from '../utils/utils';
 import { Devotional } from '../models/Devotional';
 import { useRiveAnimation } from './useRiveAnimation';
-import Toast from 'react-native-toast-message';
 import i18n from '../utils/i18n';
 
 // Constants
@@ -514,8 +513,19 @@ export const useHomeScreen = () => {
         
         setTimeout(() => {
           setShowDevotionalContent(false);
-          const currentMood = useUserStore.getState()?.getLambMood?.();
-          const targetStateInput = moodToStateInput[currentMood] || 0;
+          
+          // Check if all three actions are completed - if so, set to full (3)
+          const homeStore = useHomeStore.getState();
+          const allActionsCompleted = homeStore.readingCompleted && homeStore.prayerCompleted && homeStore.reflectionCompleted;
+          
+          let targetStateInput;
+          if (allActionsCompleted) {
+            targetStateInput = 3; // lamb-full state
+          } else {
+            const currentMood = useUserStore.getState()?.getLambMood?.();
+            targetStateInput = moodToStateInput[currentMood] || 0;
+          }
+          
           setRiveIdle();
           setCurrentStateInput(targetStateInput);
           if (riveRef.current?.setInputState) {
@@ -752,8 +762,19 @@ export const useHomeScreen = () => {
     
     setTimeout(() => {
       setShowJournalContent(false);
-      const currentMood = useUserStore.getState()?.getLambMood?.();
-      const targetStateInput = moodToStateInput[currentMood] || 0;
+      
+      // Check if all three actions are completed - if so, set to full (3)
+      const homeStore = useHomeStore.getState();
+      const allActionsCompleted = homeStore.readingCompleted && homeStore.prayerCompleted && homeStore.reflectionCompleted;
+      
+      let targetStateInput;
+      if (allActionsCompleted) {
+        targetStateInput = 3; // lamb-full state
+      } else {
+        const currentMood = useUserStore.getState()?.getLambMood?.();
+        targetStateInput = moodToStateInput[currentMood] || 0;
+      }
+      
       setCurrentStateInput(targetStateInput);
       if (riveRef.current?.setInputState) {
         riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
@@ -843,8 +864,18 @@ export const useHomeScreen = () => {
         setShowPrayerContent(false);
         if (riveRef.current?.setInputState) {
           try {
-            const currentMood = useUserStore.getState()?.getLambMood?.();
-            const targetStateInput = moodToStateInput[currentMood] || 0;
+            // Check if all three actions are completed - if so, set to full (3)
+            const homeStore = useHomeStore.getState();
+            const allActionsCompleted = homeStore.readingCompleted && homeStore.prayerCompleted && homeStore.reflectionCompleted;
+            
+            let targetStateInput;
+            if (allActionsCompleted) {
+              targetStateInput = 3; // lamb-full state
+            } else {
+              const currentMood = useUserStore.getState()?.getLambMood?.();
+              targetStateInput = moodToStateInput[currentMood] || 0;
+            }
+            
             setCurrentStateInput(targetStateInput);
             setRiveIdle();
             if (riveRef.current?.setInputState) {
@@ -943,13 +974,8 @@ export const useHomeScreen = () => {
   function onStreakPress() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     analytics.logEvent('HomeScreen_Tapped_Streak');
-    Toast.show({
-      type: 'info',
-      text1: i18n.t('streak_toast_title'),
-      text2: i18n.t('streak_toast_message'),
-      position: 'top',
-      visibilityTime: 4000,
-    });
+    const showStatsSheet = useUIStore.getState().showStatsSheet;
+    showStatsSheet();
   }
 
     // Additional effect to ensure the lamb skin is set from currentSkin store
@@ -1019,17 +1045,25 @@ export const useHomeScreen = () => {
           } else if (showJournalContent) {
             targetAction = 12; // journal
           } else {
-            const currentMood = useUserStore.getState()?.getLambMood?.();
-            const moodToStateInput: Record<string, number> = {
-              'lamb-idle': 0,
-              'lamb-sleepy': 4,
-              'lamb-angry': 5,
-              'lamb-chubby dying': 6,
-              'lamb-skinny dying': 7,
-              'smoking': 8,
-              'lamb-full': 3,
-            };
-            targetAction = moodToStateInput[currentMood] || 0;
+            // Check if all three actions are completed - if so, set to full (3)
+            const homeStore = useHomeStore.getState();
+            const allActionsCompleted = homeStore.readingCompleted && homeStore.prayerCompleted && homeStore.reflectionCompleted;
+            
+            if (allActionsCompleted) {
+              targetAction = 3; // lamb-full state
+            } else {
+              const currentMood = useUserStore.getState()?.getLambMood?.();
+              const moodToStateInput: Record<string, number> = {
+                'lamb-idle': 0,
+                'lamb-sleepy': 4,
+                'lamb-angry': 5,
+                'lamb-chubby dying': 6,
+                'lamb-skinny dying': 7,
+                'smoking': 8,
+                'lamb-full': 3,
+              };
+              targetAction = moodToStateInput[currentMood] || 0;
+            }
           }
 
           // Only update if action changed to prevent spamming

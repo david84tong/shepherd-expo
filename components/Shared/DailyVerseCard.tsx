@@ -97,10 +97,10 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
             <Text className="font-feather text-white text-heading mb-1">
               {devotional.bibleReference}
             </Text>
-            <Text className="font-din text-white/90 text-heading leading-[26px] mb-7">
+            <Text className="font-din text-white text-heading leading-[26px] mb-7">
               {i18n.t('verse_of_the_day')}
             </Text>
-            <Text className="font-din text-white/90 text-heading leading-[22px]">
+            <Text className="font-nunito-italic text-white text-heading leading-[22px]">
               {devotional.verse}
             </Text>
           </View>

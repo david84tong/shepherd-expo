@@ -36,6 +36,7 @@ import GlobalPrayerSheet, {
   PrayerSheetRef as GlobalPrayerSheetRefInternal,
 } from '../components/GlobalPrayerSheet';
 import GlobalStoreSheet, { StoreSheetRef } from '../components/GlobalStoreSheet';
+import GlobalStatsSheet, { StatsSheetRef } from '../components/GlobalStatsSheet';
 import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet';
 import OldReflectionSheet from '../components/OldReflectionSheet';
 import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
@@ -148,6 +149,8 @@ export default function RootLayout() {
   const showBookChapterSelector = useUIStore((state) => state.showBookChapterSelector);
   const showOldReflectionSheet = useUIStore((state) => state.showOldReflectionSheet);
   const showStoreSheet = useUIStore((state) => state.showStoreSheet);
+  const showStatsSheet = useUIStore((state) => state.showStatsSheet);
+  const isStatsSheetVisible = useUIStore((state) => state.isStatsSheetVisible);
 
   // Widget states from UI store
   const isWidgetPromptVisible = useUIStore((state) => state.isWidgetPromptVisible);
@@ -162,6 +165,7 @@ export default function RootLayout() {
   const settingsSheetRef = useRef<SettingsSheetRef>(null);
   const prayerSheetRef = useRef<GlobalPrayerSheetRefInternal>(null);
   const storeSheetRef = useRef<StoreSheetRef>(null);
+  const statsSheetRef = useRef<StatsSheetRef>(null);
 
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
@@ -295,8 +299,9 @@ export default function RootLayout() {
       (global as any).showBookChapterSelector = showBookChapterSelector;
       (global as any).showOldReflectionSheet = showOldReflectionSheet;
       (global as any).showStoreSheet = showStoreSheet;
+      (global as any).showStatsSheet = showStatsSheet;
     }
-  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet, showStoreSheet]);
+  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet, showStoreSheet, showStatsSheet]);
 
   // Effect to watch isPrayerSheetVisible and control the sheet ref
   useEffect(() => {
@@ -305,6 +310,14 @@ export default function RootLayout() {
       prayerSheetRef.current.show();
     }
   }, [isPrayerSheetVisible]);
+
+  // Effect to watch isStatsSheetVisible and control the sheet ref
+  useEffect(() => {
+    if (isStatsSheetVisible && statsSheetRef.current) {
+      console.log('[RootLayout] Opening stats sheet via ref');
+      statsSheetRef.current.show();
+    }
+  }, [isStatsSheetVisible]);
 
   // Add timeout for initialization if it takes too long. That's just a safety net.
   useEffect(() => {
@@ -561,6 +574,9 @@ export default function RootLayout() {
 
             {/* Global Store Sheet */}
             <GlobalStoreSheet storeSheetRef={storeSheetRef} />
+
+            {/* Global Stats Sheet */}
+            <GlobalStatsSheet statsSheetRef={statsSheetRef} />
 
             {/* Book/Chapter Selector Sheet */}
             {Boolean(showBookChapterSelector) && <GlobalBookChapterSelectorSheet />}

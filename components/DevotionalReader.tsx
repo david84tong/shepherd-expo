@@ -27,6 +27,7 @@ import { useUserStore } from '~/app/stores/userStore';
 import { getLevelData } from '~/utils/levelUtils';
 import { RPH } from '~/app/helper/helper';
 import SuccessMessage from './SuccessMessage';
+import DailyVerseCard from './Shared/DailyVerseCard';
 import analytics from '~/utils/analytics';
 import i18n from '../app/utils/i18n';
 
@@ -544,7 +545,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                 fontWeight: "400",
               }}
             >
-              {activeDevotional?.bibleReference || "Reading"}
+              {activeDevotional?.title || "Daily Devotional"}
             </Text>
 
             {onClose && (
@@ -600,6 +601,27 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                   <>
                     {cardsToShow.map((card, index) => {
                       console.log('🎨 Rendering card:', index, card.type, card.content.substring(0, 50));
+                      
+                      // Use DailyVerseCard for the first verse card
+                      if (card.type === 'verse' && index === 0) {
+                        return (
+                          <Reanimated.View
+                            key={index}
+                            entering={SlideInDown.duration(1000).delay(index * 60).withInitialValues({ opacity: 0 })}
+                            layout={Layout.springify()}
+                            style={{ marginBottom: 12 }}>
+                            <DailyVerseCard
+                              devotional={activeDevotional}
+                              showShareButton={false}
+                              showExpandButton={false}
+                              share={false}
+                              onPress={handleNextCard}
+                            />
+                          </Reanimated.View>
+                        );
+                      }
+                      
+                      // Use regular card for context cards
                       return (
                         <Reanimated.View
                           key={index}
@@ -618,18 +640,8 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                             borderColor: 'rgba(121, 83, 35, 0.1)',
                            
                           }}>
-                            {/* Bible reference for verse card */}
-                            {card.type === 'verse' && card.reference && (
-                              <Text
-                                className="text-brown/50 font-feather mb-2"
-                                style={{ fontSize: Math.max(fontSize * 0.75, 8) }}
-                              >
-                                {card.reference}
-                              </Text>
-                            )}
-
                             {/* Card content */}
-                            <Text className="text-[18px] leading-[25px] font-nunito-bold text-brown/70">
+                            <Text className="text-[18px] leading-[25px] font-nunito-bold text-textPrimary">
                               {card.content}
                             </Text>
                           </View>
