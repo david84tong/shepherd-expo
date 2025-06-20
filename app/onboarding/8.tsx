@@ -28,7 +28,8 @@ interface OnboardingPathScreenProps {
 
 export default function OnboardingPathScreen({ onPathSelected, selectedPathId: externalSelectedPathId, hideContinueButton }: OnboardingPathScreenProps) {
   const router = useRouter();
-  const { setResponse, setPathSelection } = useOnboardingStore();
+  // const { setResponse, setPathSelection } = useOnboardingStore();
+  const { setResponse } = useOnboardingStore();
   const { setUser } = useUserStore();
   const { setSelectedPath } = usePathStore();
   const [selectedPathId, setSelectedPathId] = useState(externalSelectedPathId || 'knowing-jesus');
@@ -102,12 +103,12 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
 
     if (selectedPathObj) {
       // Save to onboarding store using enhanced method
-      await setPathSelection({
-        id: selectedPathObj.id,
-        title: selectedPathObj.title,
-        subtitle: selectedPathObj.subtitle,
-        order: selectedPathObj.order
-      });
+      // await setPathSelection({
+      //   id: selectedPathObj.id,
+      //   title: selectedPathObj.title,
+      //   subtitle: selectedPathObj.subtitle,
+      //   order: selectedPathObj.order
+      // });
 
       // For backward compatibility
       await setResponse('selectedPath', pathId);

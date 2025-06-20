@@ -318,8 +318,11 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       setIsModalDimActive(false);
       router.replace({ pathname: '/(auth)' });
     } finally {
-      // useUserStore.getState().resetUserStore();
+    
       AsyncStorage.clear();
+      setTimeout(() => {
+          useUserStore.getState().resetUserStore();
+      }, 2000);
     }
   }, [router, setIsModalDimActive, userId]);
 

@@ -4,14 +4,7 @@ import { create } from 'zustand';
 import { OnboardingResponses, ONBOARDING_STORAGE_KEY } from '../models/Onboarding';
 import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
 
-// Define specific response types for screens 8, 9, and 10
-export interface PathResponse {
-  id: string;
-  title: string;
-  subtitle: string;
-  order: string[];
-}
-
+// Define specific response types for screens 9 and 10
 export interface NotificationResponse {
   enabled: boolean;
   time?: string; // Optional time in format "HH:MM" or preset like "morning"
@@ -24,7 +17,6 @@ export interface AuthResponse {
 
 // Extend OnboardingResponses with our new types
 interface ExtendedOnboardingResponses extends Omit<OnboardingResponses, 'selectedPath'> {
-  pathDetails?: PathResponse;
   selectedPath?: 'walk-in-light' | 'way-of-wisdom' | 'overcoming' | 'knowing-jesus';
   notificationEnabled?: boolean;
   notificationTime?: string | null;
@@ -48,8 +40,7 @@ interface OnboardingState {
   setSavedScreenNavigation: (screen: string) => void;
   clearSavedScreenNavigation: () => void;
   
-  // Specific methods for screens 8, 9, 10
-  setPathSelection: (pathData: PathResponse) => Promise<void>;
+  // Specific methods for screens 9, 10
   setNotificationPreference: (notificationData: NotificationResponse) => Promise<void>;
   setAuthMethod: (authData: AuthResponse) => Promise<void>;
   
@@ -86,45 +77,6 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       console.log(`✅ Saved response for ${String(key)}:`, value);
     } catch (error) {
       console.log('❌ Error saving onboarding response:', error);
-    }
-  },
-  
-  // Specific method for path selection (Screen 8)
-  setPathSelection: async (pathData) => {
-    try {
-      // Track analytics event
-      analytics.logEvent(AnalyticsEvent.USER_PREFERENCE_CHANGE, {
-        preference: 'selected_path',
-        value: pathData.id,
-        screen: 'OnboardingPathScreen',
-        category: EventCategory.ONBOARDING
-      });
-      
-      // Map the pathData.id to the correct enum type
-      const selectedPathValue = pathData.id as 'walk-in-light' | 'way-of-wisdom' | 'overcoming' | 'knowing-jesus';
-      
-      // First update the state with typed data
-      set((state) => {
-        const newResponses: ExtendedOnboardingResponses = {
-          ...state.responses,
-          selectedPath: selectedPathValue,
-          pathDetails: pathData
-        };
-        return { responses: newResponses };
-      });
-      
-      // Then save to AsyncStorage
-      await AsyncStorage.setItem(
-        ONBOARDING_STORAGE_KEY,
-        JSON.stringify({
-          ...get().responses,
-          currentScreen: get().currentScreen,
-        })
-      );
-      
-      console.log('✅ Saved path selection:', pathData.id);
-    } catch (error) {
-      console.log('❌ Error saving path selection:', error);
     }
   },
   

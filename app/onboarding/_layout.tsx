@@ -20,7 +20,6 @@ const IMPLEMENTED_SCREENS = [
   '5',
   '6',
   '7',
-  '8',
   'explainer',
   '9',
   '10', // Ensure 10 is included
@@ -47,7 +46,7 @@ export default function OnboardingLayout() {
   const progressOpacity = useSharedValue(1);
 
   // Initialize app and create user on first open
-  const { isInitialized: appIsInitialized, isLoading } = useAppInitialization();
+  const { isInitialized: appIsInitialized } = useAppInitialization();
 
   // IMPORTANT: All hooks must be declared before any conditional returns
   // Animated style for progress bar
@@ -207,7 +206,7 @@ export default function OnboardingLayout() {
   };
 
   // If still initializing, could show a loading indicator here
-  if (isLoading) {
+  if (!appIsInitialized) {
     // Return a minimal loading component instead of continuing to render
     return <View style={{ flex: 1, backgroundColor: '#FDEBB8' }} />;
   }
