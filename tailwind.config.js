@@ -95,6 +95,7 @@ module.exports = {
         'nunito-bold': ['Nunito-Bold'], // Added for backward compatibility
         'nunito-black': ['Nunito-Black'], // Added for backward compatibility
         'nunito-medium': ['Nunito-Medium'], // Added for backward compatibility
+        'nunito-mediumItalic': ['Nunito-MediumItalic'], // Added for backward compatibility
         'nunito-regular': ['Nunito-Regular'], // Added for backward compatibility
       },
       fontSize: {

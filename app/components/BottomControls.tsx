@@ -1,8 +1,6 @@
 import { View, Animated } from 'react-native';
 import CircleButton from '~/components/Shared/CircleButton';
 import PrimaryButton from '~/components/PrimaryButton';
-import BluePrimaryButton from '~/components/Shared/BluePrimaryButton';
-import i18n from '../utils/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface BottomControlsProps {
@@ -21,6 +19,7 @@ interface BottomControlsProps {
   handleDevotionalFinishPress: () => void;
   devotionalReadedFully: boolean;
   isCompletePrayerDisabled: boolean;
+  showPrayerSuccess?: boolean;
 }
 
 export default function BottomControls({
@@ -39,6 +38,7 @@ export default function BottomControls({
   handleDevotionalFinishPress,
   devotionalReadedFully,
   isCompletePrayerDisabled,
+  showPrayerSuccess = false,
 }: BottomControlsProps) {
   const insets = useSafeAreaInsets();
   return (
@@ -61,7 +61,7 @@ export default function BottomControls({
         </View>
       )} */}
       <View className="flex-row items-center justify-between w-full">
-        {!showJournalContent && (
+        {!showJournalContent && !showPrayerSuccess && (
           <Animated.View style={{ width: '10%' }}>
             <CircleButton 
               icon='chevron-left' 
@@ -79,7 +79,7 @@ export default function BottomControls({
           </Animated.View>
         )}
 
-        <Animated.View style={{ width: showPrayerContent ? '60%' : showJournalContent ? '100%' : '82%' }}>
+        <Animated.View style={{ width: showPrayerContent ? (showPrayerSuccess ? '100%' : '60%') : showJournalContent ? '100%' : '82%' }}>
           {showDevotionalContent ? (
             <PrimaryButton
               title={buttonTitle}

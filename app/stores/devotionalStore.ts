@@ -161,18 +161,40 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
               const chapterData = await fetchChapter(get().bibleVersion || 'ESV', bookId, parsed.chapter);
               
               if ('verses' in chapterData) {
-                // Find the specific verse
-                const verseData = chapterData.verses.find(v => v.verse === parsed.verse);
-                if (verseData) {
-                  devotional.verse = verseData.text;
-                  devotional.bibleReference = referenceToUse; // Set the reference properly
-                  console.log(`✅ Found verse: ${verseData.text.substring(0, 50)}...`);
-                  console.log(`✅ Full verse text:`, verseData.text);
-                  console.log(`✅ Devotional verse field set:`, devotional.verse);
-                  console.log(`✅ Bible reference set:`, devotional.bibleReference);
+                if (parsed.endVerse) {
+                  // Handle verse range (e.g., "Proverbs 3:5-6")
+                  const verses = [];
+                  for (let verseNum = parsed.verse; verseNum <= parsed.endVerse; verseNum++) {
+                    const verseData = chapterData.verses.find(v => v.verse === verseNum);
+                    if (verseData) {
+                      verses.push(verseData.text);
+                    }
+                  }
+                  
+                  if (verses.length > 0) {
+                    devotional.verse = verses.join(' ');
+                    devotional.bibleReference = referenceToUse; // Set the reference properly
+                    console.log(`✅ Found verse range (${parsed.verse}-${parsed.endVerse}): ${devotional.verse.substring(0, 100)}...`);
+                    console.log(`✅ Combined ${verses.length} verses`);
+                    console.log(`✅ Devotional verse field set:`, devotional.verse);
+                    console.log(`✅ Bible reference set:`, devotional.bibleReference);
+                  } else {
+                    console.log(`⚠️ No verses found in range ${parsed.verse}-${parsed.endVerse} for chapter ${parsed.chapter}`);
+                  }
                 } else {
-                  console.log(`⚠️ Verse ${parsed.verse} not found in chapter ${parsed.chapter}`);
-                  console.log(`⚠️ Available verses:`, chapterData.verses.map(v => v.verse));
+                  // Handle single verse
+                  const verseData = chapterData.verses.find(v => v.verse === parsed.verse);
+                  if (verseData) {
+                    devotional.verse = verseData.text;
+                    devotional.bibleReference = referenceToUse; // Set the reference properly
+                    console.log(`✅ Found verse: ${verseData.text.substring(0, 50)}...`);
+                    console.log(`✅ Full verse text:`, verseData.text);
+                    console.log(`✅ Devotional verse field set:`, devotional.verse);
+                    console.log(`✅ Bible reference set:`, devotional.bibleReference);
+                  } else {
+                    console.log(`⚠️ Verse ${parsed.verse} not found in chapter ${parsed.chapter}`);
+                    console.log(`⚠️ Available verses:`, chapterData.verses.map(v => v.verse));
+                  }
                 }
               } else {
                 console.log('❌ Error fetching chapter:', chapterData);
@@ -262,7 +284,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       shares: 0,
       completed: 0,
       date: new Date().toISOString(),
-      imageURL: '',
+      imageURL: 'https://firebasestorage.googleapis.com/v0/b/shepherd-c74ad.firebasestorage.app/o/waterBackground.png?alt=media&token=b0266692-ada8-4ec9-98ce-a1e0a242186d',
       verse: verseText,
     };
 
@@ -309,7 +331,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         shares: 0,
         completed: 0,
         date: new Date().toISOString(),
-        imageURL: '',
+        imageURL: 'https://firebasestorage.googleapis.com/v0/b/shepherd-c74ad.firebasestorage.app/o/waterBackground.png?alt=media&token=b0266692-ada8-4ec9-98ce-a1e0a242186d',
         verse: verseText,
       };
       
@@ -335,19 +357,33 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   },
 }));
 
-// Helper function to parse Bible reference like "Jeremiah 29:13" or "1 John 3:16"
-const parseBibleReference = (reference: string): { book: string; chapter: number; verse: number } | null => {
+// Helper function to parse Bible reference like "Jeremiah 29:13", "1 John 3:16", or "Proverbs 3:5-6"
+const parseBibleReference = (reference: string): { book: string; chapter: number; verse: number; endVerse?: number } | null => {
   try {
-    // Handle references like "1 John 3:16" or "Jeremiah 29:13"
-    const match = reference.match(/^(\d?\s*\w+(?:\s+\w+)*)\s+(\d+):(\d+)$/);
-    if (!match) return null;
+    // Handle verse ranges like "Proverbs 3:5-6"
+    const rangeMatch = reference.match(/^(\d?\s*\w+(?:\s+\w+)*)\s+(\d+):(\d+)-(\d+)$/);
+    if (rangeMatch) {
+      const [, book, chapter, startVerse, endVerse] = rangeMatch;
+      return {
+        book: book.trim(),
+        chapter: parseInt(chapter, 10),
+        verse: parseInt(startVerse, 10),
+        endVerse: parseInt(endVerse, 10)
+      };
+    }
     
-    const [, book, chapter, verse] = match;
-    return {
-      book: book.trim(),
-      chapter: parseInt(chapter, 10),
-      verse: parseInt(verse, 10)
-    };
+    // Handle single verses like "1 John 3:16" or "Jeremiah 29:13"
+    const singleMatch = reference.match(/^(\d?\s*\w+(?:\s+\w+)*)\s+(\d+):(\d+)$/);
+    if (singleMatch) {
+      const [, book, chapter, verse] = singleMatch;
+      return {
+        book: book.trim(),
+        chapter: parseInt(chapter, 10),
+        verse: parseInt(verse, 10)
+      };
+    }
+    
+    return null;
   } catch (error) {
     console.error('Error parsing Bible reference:', reference, error);
     return null;

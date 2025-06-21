@@ -697,9 +697,24 @@ export default function ProfileScreen() {
               <>
                 <PrimaryButton
                   title={i18n.t('upgrade_to_pro')}
-                  onPress={() => {
+                  onPress={async () => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                    
+                    // Set from screen for analytics
                     setFromScreen('profile');
-                    router.push('/PricingScreen' as any);
+                    
+                    // Present the paywall
+                    try {
+                      const result = await presentPaywall();
+                      if (result === 'PURCHASED') {
+                        analytics.logEvent('Profile_Upgrade_Success', { 
+                          fromScreen: 'profile'
+                        });
+                        console.log('✅ Successfully upgraded to pro from profile');
+                      }
+                    } catch (error) {
+                      console.error('❌ Error presenting paywall from profile:', error);
+                    }
                   }}
                   style="mt-0 mb-3"
                 />

@@ -234,7 +234,6 @@ export default function TabsLayout() {
 
   return (
     <Tabs
-      initialRouteName='index'
       screenOptions={({ route }) => ({
         headerShown: false, 
         tabBarStyle: animatedTabBarStyle,
@@ -263,7 +262,8 @@ export default function TabsLayout() {
           ),
         }}
       />
-          <Tabs.Screen
+
+<Tabs.Screen
         name="index"
         options={{
           title: 'sheep',
@@ -276,7 +276,6 @@ export default function TabsLayout() {
           ),
         }}
       />
-
 
       <Tabs.Screen
         name="profile"

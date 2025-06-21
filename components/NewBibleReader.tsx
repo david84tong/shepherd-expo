@@ -59,6 +59,7 @@ import { ReaderSettings } from '~/app/stores/readerSettingsStore';
 import { THEME_COLORS } from '~/app/constants/theme';
 import SideButton from './SideButton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import useSubscriptionStore from '~/app/stores/subscriptionStore';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -1127,7 +1128,7 @@ console.log("RENDERING");
       if (chapterData) {
         const reference = `${chapterData.book} ${chapterData.chapter}:${verse.verse}`;
         
-        // Navigate to LoadingScreen first
+        // Navigate to LoadingScreen first (always redirect regardless of pro status)
         router.push({
           pathname: '/onboarding/LoadingScreen',
           params: {
@@ -1138,17 +1139,20 @@ console.log("RENDERING");
           },
         });
 
-        // Start AI devotional creation in the background
-        try {
-          await createAIDevotional(
-            verse.text,
-            reference,
-            chapterData.book,
-            chapterData.chapter,
-            verse.verse
-          );
-        } catch (error) {
-          console.error('Failed to create AI devotional:', error);
+        // Only start AI devotional creation if user is pro
+        const isProMember = useSubscriptionStore.getState().isProMember;
+        if (isProMember) {
+          try {
+            await createAIDevotional(
+              verse.text,
+              reference,
+              chapterData.book,
+              chapterData.chapter,
+              verse.verse
+            );
+          } catch (error) {
+            console.error('Failed to create AI devotional:', error);
+          }
         }
       }
 
@@ -1156,6 +1160,7 @@ console.log("RENDERING");
         book: chapterData?.book,
         chapter: chapterData?.chapter,
         verse: verse.verse,
+        isProMember: useSubscriptionStore.getState().isProMember,
       });
     },
     [isFadingToChat, isCreatingDevotional, chapterData, router, createAIDevotional]

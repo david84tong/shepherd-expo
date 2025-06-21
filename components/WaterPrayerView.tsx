@@ -280,12 +280,13 @@ const WaterWaveAnimation: React.FC<{
             }}>
               {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : 'Pour out your heart')}
             </Text>
-            <Text className=' text-textPrimary' style={{
+            <Text className=' text-textPrimary ' style={{
               fontFamily: 'DIN Next Rounded LT W01 Regular',
               textAlign: 'center',
               fontSize: 16,
+              color:  `${totalHoldTime > 10000 ? 'white' : "#0369a1"}`,
             }}>
-              {animationTriggered ? '' : (totalHoldTime > 10000 ? '' : 'Let your prayers fill your cup')}
+              {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : 'Let your prayers fill your cup')}
             </Text>
             <Text className='font-feather text-textPrimary' style={{
               textAlign: 'center',
@@ -357,6 +358,7 @@ interface PrayerViewProps {
   setShowControlRow: (showControlRow: boolean) => void;
   showControlRow: boolean;
   setIsCompletePrayerDisabled: (disabled: boolean) => void;
+  setShowPrayerSuccess?: (showSuccess: boolean) => void;
 }
 
 export interface PrayerViewRef {
@@ -372,7 +374,8 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   setFinishReading,
   setShowControlRow,
   showControlRow,
-  setIsCompletePrayerDisabled
+  setIsCompletePrayerDisabled,
+  setShowPrayerSuccess
 }, ref) => {
   const { recentPrayers } = usePrayerStore();
   const { currentDevotional } = useDevotionalStore();
@@ -572,6 +575,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   // Delayed progress animation for success view
   useEffect(() => {
     if (showSuccess) {
+      // Notify parent that success screen is showing
+      setShowPrayerSuccess?.(true);
+      
       animatedXP.setValue(0);
       animatedHearts.setValue(0);
       animatedTextOpacity.setValue(0.4);
@@ -615,6 +621,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         }, 1200);
       }, 500);
     } else {
+      // Notify parent that success screen is hidden
+      setShowPrayerSuccess?.(false);
+      
       animatedXP.setValue(0);
       animatedHearts.setValue(0);
       animatedTextOpacity.setValue(0.4);
@@ -830,7 +839,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       if (holdStartTimeRef.current) {
         const currentHoldTime = Date.now() - holdStartTimeRef.current;
         const totalTime = totalHoldTime + currentHoldTime;
-        const maxFillTime = 10000; // 20 seconds to fill completely
+        const maxFillTime = 20000; // 20 seconds to fill completely
         const progress = Math.min(totalTime / maxFillTime, 1);
 
         console.log('🎯 Total hold time:', totalTime, 'ms, progress:', progress);
@@ -886,7 +895,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     }
 
     // Check if threshold was reached and trigger success on release
-    const maxFillTime = 10000; // 20 seconds to fill completely
+    const maxFillTime = 20000; // 20 seconds to fill completely
     const progress = Math.min(newTotalHoldTime / maxFillTime, 1);
     
     if (progress >= 1 && !animationTriggered) {

@@ -1191,6 +1191,8 @@ PODS:
   - Adapty (3.1.0)
   - AdaptyUI (3.1.0):
     - Adapty (= 3.1.0)
+  - amplitude-react-native (1.4.11):
+    - React-Core
   - AppAuth (1.7.6):
     - AppAuth/Core (= 1.7.6)
     - AppAuth/ExternalUserAgent (= 1.7.6)
@@ -3691,6 +3693,7 @@ PODS:
   - Yoga (0.0.0)
 
 DEPENDENCIES:
+  - "amplitude-react-native (from `../node_modules/@amplitude/analytics-react-native`)"
   - boost (from `../node_modules/react-native/third-party-podspecs/boost.podspec`)
   - DoubleConversion (from `../node_modules/react-native/third-party-podspecs/DoubleConversion.podspec`)
   - EXApplication (from `../node_modules/expo-application/ios`)
@@ -3874,6 +3877,8 @@ SPEC REPOS:
     - SocketRocket
 
 EXTERNAL SOURCES:
+  amplitude-react-native:
+    :path: "../node_modules/@amplitude/analytics-react-native"
   boost:
     :podspec: "../node_modules/react-native/third-party-podspecs/boost.podspec"
   DoubleConversion:
@@ -4134,6 +4139,7 @@ SPEC CHECKSUMS:
   abseil: a05cc83bf02079535e17169a73c5be5ba47f714b
   Adapty: c2245830c811b0156b12b617956904ed06966638
   AdaptyUI: 7ac79ee12f71ca92370f1a8ad3d9dd1748ac6129
+  amplitude-react-native: 9d57e1bcc4175039e36283390aa3daeaea9441a5
   AppAuth: d4f13a8fe0baf391b2108511793e4b479691fb73
   boost: 1dca942403ed9342f98334bf4c3621f011aa7946
   BoringSSL-GRPC: dded2a44897e45f28f08ae87a55ee4bcd19bc508

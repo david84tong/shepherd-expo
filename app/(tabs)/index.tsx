@@ -30,7 +30,7 @@ import JournalComponent from '~/components/JournalComponent';
 import DailyVerseCard from '~/components/Shared/DailyVerseCard';
 import CustomToast from '../components/Shared/CustomToast';
 import { imageAssets, useAssetsStore } from '../stores/assetsStore';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import Rive from 'rive-react-native';
 import * as Haptics from 'expo-haptics';
@@ -57,6 +57,9 @@ const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
 
 export default function HomeScreen() {
+  // Local state for prayer success screen visibility
+  const [showPrayerSuccess, setShowPrayerSuccess] = useState(false);
+
   const {
     // State
     riveError,
@@ -616,6 +619,7 @@ export default function HomeScreen() {
                     visible={showPrayerContent}
                     setFinishReading={setFinishReading}
                     onClose={onClosePrayer}
+                    setShowPrayerSuccess={setShowPrayerSuccess}
                   />
                   : (
                     <BottomSheetScrollView
@@ -664,6 +668,7 @@ export default function HomeScreen() {
                             points={50}
                             onPress={handleReadPress}
                             completed={readingCompleted}
+                            disabled={readingCompleted}
                           />
                         </View>
                       </View>
@@ -697,7 +702,7 @@ export default function HomeScreen() {
                             points={50}
                             onPress={handlePrayerPress}
                             completed={prayerCompleted}
-                            disabled={!readingCompleted}
+                            disabled={!readingCompleted || prayerCompleted}
                           />
                         </View>
                       </View>
@@ -732,7 +737,7 @@ export default function HomeScreen() {
                             points={50}
                             onPress={handleReflectionPress}
                             completed={reflectionCompleted}
-                            disabled={!readingCompleted}
+                            disabled={!readingCompleted || reflectionCompleted}
                           />
                         </View>
                       </View>
@@ -788,6 +793,7 @@ export default function HomeScreen() {
               handleDevotionalFinishPress={handleDevotionalFinishPress}
               devotionalReadedFully={devotionalReadedFully}
               isCompletePrayerDisabled={isCompletePrayerDisabled}
+              showPrayerSuccess={showPrayerSuccess}
             />
 
             <WidgetHowToSheet visible={showWidgetSheet} onClose={handleWidgetSheetClose} />

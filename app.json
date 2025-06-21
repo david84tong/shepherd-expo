@@ -35,6 +35,9 @@
         "asset": "./assets/fonts/Nunito-Medium.ttf"
       },
       {
+        "asset": "./assets/fonts/Nunito-MediumItalic.ttf"
+      },
+      {
         "asset": "./assets/fonts/Nunito-Regular.ttf"
       },
       {

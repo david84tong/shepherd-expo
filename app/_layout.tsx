@@ -128,6 +128,7 @@ export default function RootLayout() {
     'Nunito-Bold': require('../assets/fonts/Nunito-Bold.ttf'),
     'Nunito-Black': require('../assets/fonts/Nunito-Black.ttf'),
     'Nunito-Medium': require('../assets/fonts/Nunito-Medium.ttf'),
+    'Nunito-MediumItalic': require('../assets/fonts/Nunito-MediumItalic.ttf'),
     'Nunito-Regular': require('../assets/fonts/Nunito-Regular.ttf'),
     'Nunito-BlackItalic': require('../assets/fonts/Nunito-BlackItalic.ttf'),
   });
