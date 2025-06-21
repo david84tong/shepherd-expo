@@ -12,45 +12,44 @@ import React, {
 } from 'react';
 
 import { useUIStore } from '../app/stores/uiStore';
-import StoreScreen from './StoreScreen';
+import StatsScreen from '../app/components/stats';
 
-interface StoreSheetProps {
-  storeSheetRef: React.RefObject<StoreSheetRef>;
+interface StatsSheetProps {
+  statsSheetRef: React.RefObject<StatsSheetRef>;
 }
 
 // Define the ref type that includes both BottomSheet methods and our custom show method
-export type StoreSheetRef = {
+export type StatsSheetRef = {
   show: () => void;
   close: () => void;
   expand: () => void;
 };
 
-const StoreSheet: React.FC<StoreSheetProps> = ({ storeSheetRef }) => {
+const StatsSheet: React.FC<StatsSheetProps> = ({ statsSheetRef }) => {
   const snapPoints = useMemo(() => ['95%'], []);
 
   // Add internal ref for the actual BottomSheet
   const bottomSheetRef = useRef<BottomSheet>(null);
 
   // Access UI store for visibility
-  const isStoreSheetVisible = useUIStore((state) => state.isStoreSheetVisible);
-  const showStoreSheet = useUIStore((state) => state.showStoreSheet);
-  const hideStoreSheet = useUIStore((state) => state.hideStoreSheet);
+  const isStatsSheetVisible = useUIStore((state) => state.isStatsSheetVisible);
+  const hideStatsSheet = useUIStore((state) => state.hideStatsSheet);
 
   // Handle sheet changes
   const handleSheetChange = useCallback(
     (index: number) => {
       if (index === -1) {
-        hideStoreSheet();
+        hideStatsSheet();
       }
     },
-    [hideStoreSheet]
+    [hideStatsSheet]
   );
 
   // Handle close
   const handleClose = useCallback(() => {
     // Trigger the bottom sheet close animation first
     bottomSheetRef.current?.close();
-    // Don't call hideStoreSheet() here - let handleSheetChange do it when animation completes
+    // Don't call hideStatsSheet() here - let handleSheetChange do it when animation completes
   }, []);
 
   // Custom backdrop renderer
@@ -61,22 +60,21 @@ const StoreSheet: React.FC<StoreSheetProps> = ({ storeSheetRef }) => {
     []
   );
 
-  // Show the store sheet
+  // Show the stats sheet
   const showSheet = useCallback(() => {
-    showStoreSheet(); // Set visibility state first
     bottomSheetRef.current?.expand();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-  }, [showStoreSheet]);
+  }, []);
 
   // Expose methods via ref
   useImperativeHandle(
-    storeSheetRef,
+    statsSheetRef,
     () => ({
       show: showSheet,
       close: () => {
         // Trigger the bottom sheet close animation first
         bottomSheetRef.current?.close();
-        // Don't call hideStoreSheet() here - let handleSheetChange do it when animation completes
+        // Don't call hideStatsSheet() here - let handleSheetChange do it when animation completes
       },
       expand: () => bottomSheetRef.current?.expand(),
     }),
@@ -85,7 +83,7 @@ const StoreSheet: React.FC<StoreSheetProps> = ({ storeSheetRef }) => {
 
   return (
     <>
-      {isStoreSheetVisible ? (
+      {isStatsSheetVisible ? (
         <BottomSheet
           ref={bottomSheetRef}
           index={0}
@@ -103,7 +101,7 @@ const StoreSheet: React.FC<StoreSheetProps> = ({ storeSheetRef }) => {
           }}
           backdropComponent={renderBackdrop}>
           <BottomSheetView style={{ flex: 1 }}>
-            <StoreScreen onClose={handleClose} />
+            <StatsScreen onClose={handleClose} />
           </BottomSheetView>
         </BottomSheet>
       ) : null}
@@ -111,4 +109,4 @@ const StoreSheet: React.FC<StoreSheetProps> = ({ storeSheetRef }) => {
   );
 };
 
-export default StoreSheet; 
+export default StatsSheet; 

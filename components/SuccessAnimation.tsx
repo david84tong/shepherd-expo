@@ -31,6 +31,8 @@ import heartIcon from '../assets/icons/heartIcon.png';
 import starIcon from '../assets/icons/starIcon.png';
 import { IS_ANDROID } from '~/app/utils/utils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
+import { AppFonts } from '~/app/constants/appFonts';
+import { RPH } from '~/app/helper/helper';
 
 // Get screen dimensions to ensure full screen sizing
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -155,6 +157,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   // Add animation for home button/link
   const homeButtonOpacity = useRef(new Animated.Value(0)).current;
   const homeButtonTranslateY = useRef(new Animated.Value(15)).current;
+
+  // State to control when to show the home button
+  const [showHomeButton, setShowHomeButton] = useState(false);
 
   // Add Rive animation effects
   const riveScaleAnim = useRef(new Animated.Value(0.9)).current;
@@ -523,6 +528,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
     // Animate the home button/link
     setTimeout(() => {
+      setShowHomeButton(true); // Show the button first
       Animated.parallel([
         Animated.timing(homeButtonOpacity, {
           toValue: 1,
@@ -696,7 +702,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   return (
     <View className="flex-1 bg-surfaceCream" style={{ backgroundColor: '#FFF4DC' }}>
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{ flexGrow: 1,paddingBottom:RPH(12) }}
         showsVerticalScrollIndicator={false}
         className="bg-surfaceCream">
         <Animated.View
@@ -782,7 +788,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
           </View>
 
           {/* Success message - enlarged */}
-          <Text className="font-feather text-[32px] text-textPrimary mb-4 text-center -mt-16">
+          <Text style={{fontSize:AppFonts[28]}} className="font-feather  text-textPrimary mb-4 text-center -mt-16">
             {message}
           </Text>
           <Text className="font-din text-xl text-secondaryText text-center mb-6 px-6">
@@ -864,19 +870,21 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       </ScrollView>
 
       {/* Continue Button - Fixed at bottom */}
-      <Animated.View
-        className="absolute bottom-0 left-0 right-0 bg-surfaceCream px-5 pb-8 pt-4"
-        style={{
-          opacity: homeButtonOpacity,
-          transform: [{ translateY: homeButtonTranslateY }],
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: -2 },
-          shadowOpacity: 0.0,
-          shadowRadius: 4,
-          elevation: 5,
-        }}>
-        <PrimaryButton buttonType="blue" title={buttonText} onPress={handlePress} />
-      </Animated.View>
+      {showHomeButton && (
+        <Animated.View
+          className="absolute bottom-0 left-0 right-0 bg-surfaceCream px-5 pb-8 pt-4"
+          style={{
+            opacity: homeButtonOpacity,
+            transform: [{ translateY: homeButtonTranslateY }],
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.0,
+            shadowRadius: 4,
+            elevation: 5,
+          }}>
+          <PrimaryButton buttonType="blue" title={buttonText} onPress={handlePress} />
+        </Animated.View>
+      )}
     </View>
   );
 };

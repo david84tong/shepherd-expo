@@ -63,8 +63,10 @@ async function moveUserToProMode(
   });
   // Check if onboarding is completed
   onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-  // Navigate based on onboarding status
-  setTimeout(handlePostPurchaseNavigation, 100);
+  // Navigate to ShepherdCommunity screen after successful purchase
+  setTimeout(() => {
+    router.push('/onboarding/pricing/ShepherdCommunity');
+  }, 100);
 }
 
 const handleRestoreCompleted = async ({
@@ -176,7 +178,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       analytics.logEvent('presentFreeTrialPaywall', {
         fromScreen: get().fromScreen,
       });
-      const paywall = await adapty.getPaywall('free-trial');
+      const paywall = await adapty.getPaywall('freeTrial-simple');
       console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
       const view = await createPaywallView(paywall);
 
@@ -185,6 +187,17 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       view.registerEventHandlers({
         onCloseButtonPress() {
           result = PAYWALL_RESULT.CANCELLED;
+          // Check if onboarding is completed, if not redirect to onboarding 11
+          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
+            .then((completed) => {
+              if (completed !== 'true') {
+                console.log('Onboarding not completed, redirecting to onboarding/11');
+                router.replace('/onboarding/11');
+              }
+            })
+            .catch(() => {
+              console.log('Could not check onboarding status');
+            });
           return true;
         },
         onPurchaseCompleted() {
@@ -210,9 +223,37 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         onPurchaseCancelled() {
           result = PAYWALL_RESULT.CANCELLED;
           console.log('cancelled');
+          setTimeout(() => {
+            get().presentHalfOffPaywall();
+          }, 500);
+          // Check if onboarding is completed, if not redirect to onboarding 11
+          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
+            .then((completed) => {
+              if (completed !== 'true') {
+                console.log('Onboarding not completed, redirecting to onboarding/11');
+                router.replace('/onboarding/11');
+              }
+            })
+            .catch(() => {
+              console.log('Could not check onboarding status');
+            });
         },
         onPurchaseFailed() {
+          setTimeout(() => {
+            get().presentHalfOffPaywall();
+          }, 500);
           result = PAYWALL_RESULT.ERROR;
+          // Check if onboarding is completed, if not redirect to onboarding 11
+          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
+            .then((completed) => {
+              if (completed !== 'true') {
+                console.log('Onboarding not completed, redirecting to onboarding/11');
+                router.replace('/onboarding/11');
+              }
+            })
+            .catch(() => {
+              console.log('Could not check onboarding status');
+            });
         },
         onRestoreFailed() {
           result = PAYWALL_RESULT.ERROR;
@@ -245,7 +286,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     await get().markHalfOffPaywallAsSeen();
 
     try {
-      const paywall = await adapty.getPaywall('halfoff');
+      const paywall = await adapty.getPaywall('halfoff-simple');
       console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
       const view = await createPaywallView(paywall);
 
@@ -254,18 +295,23 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       view.registerEventHandlers({
         onCloseButtonPress() {
           result = PAYWALL_RESULT.CANCELLED;
-          // Only redirect to subscription management if onboarding is complete
+          // Check if onboarding is completed
           AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
             .then((completed) => {
-            if (completed === 'true') {
-              Linking.openURL('https://apps.apple.com/account/subscriptions').catch(() => {
-                console.log('Could not open subscription management');
-              });
-            }
+              if (completed === 'true') {
+                // Onboarding complete - redirect to subscription management
+                Linking.openURL('https://apps.apple.com/account/subscriptions').catch(() => {
+                  console.log('Could not open subscription management');
+                });
+              } else {
+                // Onboarding not complete - redirect to onboarding 11
+                console.log('Onboarding not completed, redirecting to onboarding/11');
+                router.replace('/onboarding/11');
+              }
             })
             .catch(() => {
-            console.log('Could not check onboarding status');
-          });
+              console.log('Could not check onboarding status');
+            });
           return true;
         },
         onPurchaseCompleted() {
@@ -293,10 +339,32 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
             get().presentFreeTrialPaywall();
           }, 500);
           result = PAYWALL_RESULT.CANCELLED;
+          // Check if onboarding is completed, if not redirect to onboarding 11
+          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
+            .then((completed) => {
+              if (completed !== 'true') {
+                console.log('Onboarding not completed, redirecting to onboarding/11');
+                router.replace('/onboarding/11');
+              }
+            })
+            .catch(() => {
+              console.log('Could not check onboarding status');
+            });
           return true;
         },
         onPurchaseFailed() {
           result = PAYWALL_RESULT.ERROR;
+          // Check if onboarding is completed, if not redirect to onboarding 11
+          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
+            .then((completed) => {
+              if (completed !== 'true') {
+                console.log('Onboarding not completed, redirecting to onboarding/11');
+                router.replace('/onboarding/11');
+              }
+            })
+            .catch(() => {
+              console.log('Could not check onboarding status');
+            });
         },
         onRestoreFailed() {
           result = PAYWALL_RESULT.ERROR;
@@ -326,7 +394,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       fromScreen: get().fromScreen,
     });
     try {
-      const paywall = await adapty.getPaywall('shepherd_paywall'); 
+      const paywall = await adapty.getPaywall('noFreeTrial'); 
       console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
       const view = await createPaywallView(paywall);
 
@@ -335,6 +403,17 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       view.registerEventHandlers({
         onCloseButtonPress() {
           result = PAYWALL_RESULT.CANCELLED;
+          // Check if onboarding is completed, if not redirect to PricingScreen
+          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
+            .then((completed) => {
+              if (completed !== 'true') {
+                console.log('Onboarding not completed, redirecting to PricingScreen');
+                router.replace('/PricingScreen');
+              }
+            })
+            .catch(() => {
+              console.log('Could not check onboarding status');
+            });
           return true;
         },
         onPurchaseCompleted() {
@@ -362,6 +441,17 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
             get().presentHalfOffPaywall();
           }, 500);
           result = PAYWALL_RESULT.CANCELLED;
+          // Check if onboarding is completed, if not redirect to PricingScreen
+          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
+            .then((completed) => {
+              if (completed !== 'true') {
+                console.log('Onboarding not completed, redirecting to PricingScreen');
+                router.replace('/PricingScreen');
+              }
+            })
+            .catch(() => {
+              console.log('Could not check onboarding status');
+            });
           return true;
         },
         onPurchaseFailed() {
@@ -369,6 +459,17 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
             get().presentHalfOffPaywall();
           }, 500);
           result = PAYWALL_RESULT.CANCELLED;
+          // Check if onboarding is completed, if not redirect to PricingScreen
+          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
+            .then((completed) => {
+              if (completed !== 'true') {
+                console.log('Onboarding not completed, redirecting to PricingScreen');
+                router.replace('/PricingScreen');
+              }
+            })
+            .catch(() => {
+              console.log('Could not check onboarding status');
+            });
           return true;
         },
         onRestoreFailed() {
@@ -449,9 +550,11 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       Alert.alert('Success', 'Purchase successful!');
       console.log('[SubscriptionStore] Pro status after purchase:', get().isProMember);
 
-      // Navigate based on onboarding status if user is now a pro member
+      // Navigate to ShepherdCommunity screen if user is now a pro member
       if (isPro) {
-        setTimeout(handlePostPurchaseNavigation, 500);
+        setTimeout(() => {
+          router.push('/onboarding/pricing/ShepherdCommunity');
+        }, 500);
       }
 
       // Call the onSuccess callback if provided

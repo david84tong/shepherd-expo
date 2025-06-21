@@ -202,6 +202,7 @@ import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import { MaterialIcons } from '@expo/vector-icons';
 import { IS_ANDROID } from './utils/utils';
 import { THEME_COLORS } from './constants/theme';
+import { RPH } from './helper/helper';
 
 // Add at the top of the file, after imports
 const chapterCache = new Map<string, any>();
@@ -1492,7 +1493,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
               style={{
                 backgroundColor: THEME_COLORS[currentTheme].background,
                 width: "100%",
-                height: IS_ANDROID ? '85%' : "95%",
+                height: IS_ANDROID ? '85%' : RPH(85),
                 position: 'absolute',
                 bottom: 0,
                 borderTopLeftRadius: 32,

@@ -1,5 +1,5 @@
 import React, { useLayoutEffect, useEffect } from 'react';
-import { View, Text, StatusBar } from 'react-native';
+import { View, Text, StatusBar, ScrollView } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -16,6 +16,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { IS_ANDROID } from '../utils/utils';
+import { RPH } from '../helper/helper';
 
 export default function OnboardingExplainerHeartsScreen({
   onContinue,
@@ -141,16 +142,16 @@ export default function OnboardingExplainerHeartsScreen({
     { hearts: 10, artboard: 'lamb-skinny dying', glow: false },
     { hearts: 0, artboard: 'lamb-dead', glow: false },
   ];
-
   return (
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <View
-        className="flex-1 bg-surfaceCream pt-12 w-full items-center"
+        className="flex-1 bg-surfaceCream w-full items-center"
         style={{ paddingBottom: insets.bottom }}>
-        {/* Title */}
-        <Animated.View style={titleStyle} className="mb-8 px-6">
-          <Text className="font-feather text-2xl text-textPrimary text-center mb-0 mt-16">
+     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom:insets?.bottom + RPH(12)}}>
+         {/* Title */}
+         <Animated.View style={titleStyle} className="mb-8 px-6">
+          <Text style={{paddingTop:insets?.top}} className="font-feather text-2xl text-textPrimary text-center mb-0">
             Everyday you don&apos;t read, {lambName}&apos;s health will suffer...
           </Text>
         </Animated.View>
@@ -195,6 +196,7 @@ export default function OnboardingExplainerHeartsScreen({
           ))}
         </View>
 
+     </ScrollView>
         {/* Continue Button - fixed at bottom */}
         <View
           className="absolute left-6 right-6"

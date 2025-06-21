@@ -5,6 +5,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import analytics from '../utils/analytics';
 import { useSoundStore } from '../app/stores/soundStore';
 import { Feather } from '@expo/vector-icons';
+import { RPH } from '~/app/helper/helper';
 
 interface PrimaryButtonProps {
   title: string;
@@ -140,8 +141,8 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     }}>
       <Pressable
         className={
-          `flex-row items-center justify-center px-5 rounded-full border-[3px] ` +
-          `${disabled || !isActive
+          `flex-row items-center justify-center px-5  border-[3px]` + `
+          ${disabled || !isActive
             ? (buttonType === 'blue'
               ? 'bg-[#B6E6F7] border-[#B6E6F7]'
               : buttonType === 'gold'
@@ -149,18 +150,20 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
                 : buttonType === 'orange'
                   ? 'bg-[#FFB366] border-[#FFB366]'
                   : 'bg-[#E5E5E5] border-[#D0D0D0]')
-            : `${bgColor} ${borderColor}`
-          }`
+            :
+             `${bgColor} ${borderColor}` }
+             `
+          
         }
         style={[
           shadowStyles,
           {
-            height: buttonHeight || 64,
+            height: buttonHeight || RPH(7),
             width: '100%',
             transform: [{ translateY: isPressed ? 3 : 0 }],
-            borderRadius: 25,
-            paddingVertical: buttonHeight && buttonHeight <= 40 ? 4 : 16,
-            paddingHorizontal: buttonHeight && buttonHeight <= 40 ? 16 : 24,
+            borderRadius: RPH(2.5),
+            // paddingVertical: buttonHeight && buttonHeight <= 40 ? 4 : RPH(2),
+            paddingHorizontal: buttonHeight && buttonHeight <= 40 ? RPH(2) : 24,
           }
         ]}
         onPress={handlePress}

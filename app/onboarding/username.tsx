@@ -24,6 +24,7 @@ import Animated, {
 import { toBool } from '../utils/toBool';
 import { validateName } from '../../utils/validation';
 import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
 
 export default function OnboardingUsernameScreen() {
   const router = useRouter();
@@ -235,7 +236,11 @@ export default function OnboardingUsernameScreen() {
         <Animated.View style={inputStyle}>
           <TextInput
             ref={inputRef}
-            className="font-feather text-3xl text-center text-textPrimary bg-white mt-12 p-6 rounded-2xl border-4 border-border"
+            className="font-feather text-3xl text-center text-textPrimary bg-white mt-12 rounded-2xl border-4 border-border"
+            style={{
+              paddingVertical: RPH(2),
+              paddingHorizontal: RPH(3),
+            }}
             placeholder={placeholderText}
             placeholderTextColor="#B89B4C"
             value={inputUsername}

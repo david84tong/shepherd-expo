@@ -41,6 +41,7 @@ import BottomControls from '../components/BottomControls';
 import i18n from '../utils/i18n';
 import { useLanguageStore } from '../stores/languageStore';
 import { useEffect } from 'react';
+import { AppFonts } from '../constants/appFonts';
 
 // Custom toast config with explicit styling
 const toastConfig = CustomToast;
@@ -193,6 +194,7 @@ export default function HomeScreen() {
           alignItems: 'center',
           justifyContent: 'center',
           opacity: riveSkinInitialized ? 1 : 0, // Hide until skin is initialized
+          
         }}>
         <TouchableOpacity
           onPress={() => {
@@ -200,7 +202,10 @@ export default function HomeScreen() {
             analytics.logEvent('HomeScreen_Tapped_LambName');
           }}
           activeOpacity={0.7}
-          className="bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 top-12 px-2">
+          style={{
+            top: RPH(4.5)
+          }}
+          className={`bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 px-2`}>
           <Text className="font-feather text-textPrimary text-xs">
             {lambName
               ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
@@ -210,7 +215,7 @@ export default function HomeScreen() {
         <View
           style={{
             width: '100%',
-            height: '100%',
+            height: RPH(27),
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 10,
@@ -226,8 +231,8 @@ export default function HomeScreen() {
               onError={handleRiveAnimationError}
               onPlay={handleRivePlay}
               style={{
-                width: '100%',
-                height: '100%',
+                width: RPH(27),
+                height: RPH(27),
                 opacity: new Date().getHours() >= 19 ? 0.85 : 1,
               }}
             />
@@ -242,8 +247,8 @@ export default function HomeScreen() {
               autoplay
               onError={handleRiveAnimationError}
               style={{
-                width: '100%',
-                height: '100%',
+                width: RPH(27),
+                height: RPH(27),
                 opacity: new Date().getHours() >= 19 ? 0.85 : 1,
               }}
             />
@@ -344,16 +349,17 @@ export default function HomeScreen() {
               className="flex-row justify-between items-center px-4 pt-1.5 pb-2 h-[42px] relative"
               style={{ zIndex: 9999, marginTop: Platform.OS === 'android' ? 25 : 0 }}>
               <Animated.View
-                className="absolute inset-0 flex-row items-center justify-between px-8 w-full"
+                className="inset-0 flex-row items-center justify-between w-full"
                 style={{ opacity: headerDefaultOpacityAnim }}
                 pointerEvents={mode !== 'DEFAULT' ? 'none' : 'auto'}>
-                <View className="flex-row items-center flex-1 justify-between">
+                <View className="flex-row items-center px-2 w-full flex-1 self-center justify-between">
                   <Text
-                    className="text-h1 font-feather text-white tracking-wide right-2"
+                    className="font-feather text-white tracking-wide right-2"
                     style={{
                       textShadowColor: 'rgba(0, 0, 0, 0.2)',
                       textShadowOffset: { width: 0, height: 1 },
                       textShadowRadius: 2,
+                      fontSize:AppFonts[24]
                     }}>
                     {showDevotionalContent
                       ? i18n.t('devotional_title')
@@ -492,9 +498,9 @@ export default function HomeScreen() {
                 shadowOffset: { width: 0, height: 0 },
                 shadowOpacity: showGlow ? 0.6 : 0,
                 shadowRadius: 15,
-                marginTop: -48,
+                marginTop: -RPH(4.5),
               }}>
-              <Animated.View className="items-center justify-center" style={{}}>
+              <Animated.View className="items-center justify-center" >
                 {riveError ? (
                   <Text className="text-red-500 p-4 text-center">
                     {i18n.t('error_loading_animation')} {riveError.message} ({riveError.type})
@@ -731,7 +737,7 @@ export default function HomeScreen() {
                         </View>
                       </View>
 
-                      {isLoadingDevotional && (
+                      {/* {isLoadingDevotional && (
                         <View className="bg-white/60 rounded-xl p-4 mb-4 border border-lightGreen/20">
                           <View className="flex-row items-center mb-2">
                             <View className="w-6 h-6 bg-lightGreen rounded-full items-center justify-center mr-2">
@@ -742,7 +748,8 @@ export default function HomeScreen() {
                             </Text>
                           </View>
                         </View>
-                      )}
+                      )} */}
+                      
 
                       {devotionalError && !currentDevotional && (
                         <View className="bg-red/10 rounded-xl p-4 mb-4 border border-red/20">

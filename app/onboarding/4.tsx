@@ -15,6 +15,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import analytics from '~/utils/analytics';
 import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
 
 export default function OnboardingBibleFamiliarityScreen() {
   const router = useRouter();
@@ -148,7 +149,7 @@ export default function OnboardingBibleFamiliarityScreen() {
         </Animated.View>
 
         {/* Options Container */}
-        <Animated.View style={optionsStyle} className="space-y-4 mt-4">
+        <Animated.View style={optionsStyle} >
           {options.map((option) => (
             <PrimaryButton
               key={option.id}
@@ -157,6 +158,8 @@ export default function OnboardingBibleFamiliarityScreen() {
               isActive={true}
               primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
               textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
+              buttonHeight={RPH(7)}
+              
             />
           ))}
         </Animated.View>

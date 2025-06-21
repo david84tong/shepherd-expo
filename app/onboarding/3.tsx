@@ -16,6 +16,7 @@ import { useOnboardingStore } from '../stores/onboardingStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import { toBool } from '../utils/toBool';
 import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
 
 export default function OnboardingIntentScreen() {
   const router = useRouter();
@@ -233,14 +234,17 @@ export default function OnboardingIntentScreen() {
                 onPress={() => handleSelection(button.id)}
                 onPressIn={() => setPressedButton(button.id)}
                 onPressOut={() => setPressedButton(null)}
+                style={{
+                  height: RPH(9.5),
+                }}
                 className={`
-                h-[80px] bg-white rounded-card border-[3px] border-border px-4
+                 bg-white rounded-card border-[3px] border-border px-4
                 flex-row items-center shadow-buttonShadow mt-4
                 ${pressedButton === button.id ? 'translate-y-[3px] shadow-none' : 'translate-y-0'}
                 ${selectedIntents.includes(button.id) ? 'border-accentGold bg-surfaceCream' : ''}
               `}>
                 <View className={`${button.bgColor} rounded-xl p-3`}>
-                  <Ionicons name={button.icon as any} size={24} color={button.color} />
+                  <Ionicons name={button.icon as any} size={RPH(2.6)} color={button.color} />
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="font-feather text-lg text-textPrimary">{button.title}</Text>

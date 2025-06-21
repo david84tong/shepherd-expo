@@ -11,7 +11,6 @@ export const ONBOARDING_PAGES = [
   '5',
   '6',
   '7',
-  '8',
   '9',
   '10',
   '11',
@@ -66,7 +65,7 @@ export type OnboardingResponses = {
     | '65-plus'
     | 'prefer-not-to-say';
 
-  /** Screen 8 - "Choose Your Path" */
+  /** Path selection - no longer part of onboarding flow */
   selectedPath?: 'walk-in-light' | 'way-of-wisdom' | 'overcoming' | 'knowing-jesus';
 
   /* ────────── PHASE 2 – Sorting Quiz ────────── */

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, Platform, Pressable, Text, View, ViewStyle } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
-import { FontAwesome } from '@expo/vector-icons';
+
 
 import { isSignedIn } from '../hooks/authHook';
 import { useHomeStore } from '../stores/homeStore';
@@ -12,8 +12,9 @@ import { usePathStore } from '../stores/pathStore';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
-import { RPW } from '../helper/helper';
+import { RPH, RPW } from '../helper/helper';
 import i18n from '../utils/i18n';
+import { AppFonts } from '../constants/appFonts';
 
 // Key for tracking first app launch
 const FIRST_APP_LAUNCH_KEY = 'first_app_launch_completed';
@@ -141,12 +142,14 @@ export default function TabsLayout() {
   const tabBarAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    const shouldShowTabBar = mode === 'DEFAULT' && !pathInProgress && !devotionalReaderVisible && !prayerViewVisible && !journalViewVisible;
+    
     Animated.timing(tabBarAnim, {
-      toValue: mode === 'DEFAULT' && !pathInProgress && !devotionalReaderVisible && !prayerViewVisible ? 1 : 0,
+      toValue: shouldShowTabBar ? 1 : 0,
       duration: 300,
       useNativeDriver: true,
     }).start();
-  }, [mode, pathInProgress, devotionalReaderVisible, prayerViewVisible]);
+  }, [mode, pathInProgress, devotionalReaderVisible, prayerViewVisible, journalViewVisible]);
 
   // Wait for both onboarding status from AsyncStorage and onboardingStore to be initialized
   if (onboardingCompleted === null || !isOnboardingStoreInitialized || isFirstAppLaunch === null || isDailyFirstLoad === null) {
@@ -217,7 +220,7 @@ export default function TabsLayout() {
       },
     }),
     // Ensure a minimum height for the tab bar
-    height: Platform.OS === 'ios' ? 90 : 70,
+    height: Platform.OS === 'ios' ? RPH(9.5) : 70,
     paddingHorizontal: 32,
     gap: 16,
   } as ViewStyle; // Cast to ViewStyle for type safety
@@ -239,50 +242,13 @@ export default function TabsLayout() {
           marginTop: 2,
           fontSize: 1, // Reset font size to be visible
         },
+        tabBarScrollEnabled: false, // Disable scrolling to prevent arrows
+        tabBarShowLabel: false, // Hide labels since we're using custom icons with text
         // Use the custom button component for all tabs
         tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
       })}>
-      <Tabs.Screen
-        name="map"
-        options={{
-          title: 'Path',
-          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
-          tabBarIcon: ({ color, focused }) => (
-            <View style={{ width: RPW(16) }} className="items-center justify-center  mt-4">
-              <FontAwesome name="map" size={22} color={focused ? "#FC8A02" : "#BA9F6E"} />
-              <Text className={`mt-2 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>Map</Text>
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="stats"
-        options={{
-          title: 'heart',
-          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
-          tabBarIcon: ({ color, focused }) => (
-            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
-              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/stats.png')} className="w-7 h-7" />
-              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_stats_title')}</Text>
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'sheep',
-          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
-          tabBarIcon: ({ color, focused }) => (
-            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
-              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/today.png')} className="w-7 h-7" />
-              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_home_title')}</Text>
-            </View>
-          ),
-        }}
-      />
 
-
+  
 
       <Tabs.Screen
         name="bible"
@@ -291,12 +257,27 @@ export default function TabsLayout() {
           tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
-              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/bible.png')} className="w-7 h-7" />
+              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/bible.png')} style={{width:RPH(2.5),height:RPH(2.5)}}/>
               <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_bible_title')}</Text>
             </View>
           ),
         }}
       />
+          <Tabs.Screen
+        name="index"
+        options={{
+          title: 'sheep',
+          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
+              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/today.png')} style={{width:RPH(2.5),height:RPH(2.5)}} />
+              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_home_title')}</Text>
+            </View>
+          ),
+        }}
+      />
+
+
       <Tabs.Screen
         name="profile"
         options={{
@@ -304,8 +285,8 @@ export default function TabsLayout() {
           tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
-              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/profile.png')} className="w-6 h-7" />
-              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_profile_title')}</Text>
+              <Image resizeMode='contain' tintColor={focused ? "orange" : ""} source={require('../../assets/icons/profile.png')} style={{width:RPH(2.5),height:RPH(2.5)}} />
+              <Text className={`mt-1 font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din',fontSize:AppFonts[11] }}>{i18n.t('bottom_profile_title')}</Text>
             </View>
           ),
         }}

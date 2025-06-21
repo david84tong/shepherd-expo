@@ -1,7 +1,7 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import dayjs from 'dayjs';
 import React, { useEffect, useMemo, useState, useRef, useLayoutEffect } from 'react';
-import { View, Text, Image, ActivityIndicator } from 'react-native';
+import { View, Text, Image, ActivityIndicator, ScrollView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle,
@@ -21,6 +21,9 @@ import { getStreakSubtext } from '../app/hooks/streakHook';
 import analytics from '../utils/analytics';
 import * as StoreReview from 'expo-store-review';
 import { IS_ANDROID } from '~/app/utils/utils';
+import { AppFonts } from '~/app/constants/appFonts';
+import { RPH } from '~/app/helper/helper';
+import { responsiveFontSize } from 'react-native-responsive-dimensions';
 /* ─────────────── helper ─────────────── */
 type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE';
 
@@ -92,8 +95,8 @@ const calculateStreakLogic = (
   return currentStreak;
 };
 
-export const StreakScreen = ({isPrayPresses, isReflectPresses}:{isPrayPresses?:string, isReflectPresses?:string}) => {  
-  
+export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresses?: string, isReflectPresses?: string }) => {
+
   // Animation states
   const animationsInitialized = useRef(false);
   const screenOpacity = useSharedValue(0);
@@ -428,99 +431,100 @@ export const StreakScreen = ({isPrayPresses, isReflectPresses}:{isPrayPresses?:s
 
   return (
     <Animated.View style={containerStyle} className="flex-1 bg-surfaceCream justify-between">
-      {/* Large flame with streak number */}
-      <Animated.View style={flameContainerStyle} className="items-center mt-10 mb-2">
-        <View className="relative justify-center items-center mb-1">
-          <View
-            className={`${insets.top > 20 ? 'w-96 h-96' : 'w-56 h-56'} justify-center items-center`}>
-            {IS_ANDROID ? (
-              <Rive
-                resourceName={'success_lamb'}
-                artboardName="streak"
-                autoplay
-                style={{
-                  width: insets.top < 20 ? '100%' : '200%',
-                  height: insets.top < 20 ? '100%' : '200%',
-                }}
-                ref={riveRef}
-              />
-            ) : (
-              <Rive
-                url={riveAssets[0].uri!}
-                artboardName="streak"
-                autoplay
-                style={{
-                  width: insets.top < 20 ? '100%' : '200%',
-                  height: insets.top < 20 ? '100%' : '200%',
-                }}
-                ref={riveRef}
-              />
-            )}
-          </View>
-        </View>
-        <View className="flex flex-col justify-center items-center -mt-20">
-          <Animated.Text
-            style={streakNumberStyle}
-            className="absolute text-[96px] font-feather text-textPrimary mb-12 -top-16">
-            {streak}
-          </Animated.Text>
-          <Animated.Text
-            style={streakTextStyle}
-            className="text-textPrimary text-2xl font-feather mb-1 tracking-wide mt-12">
-            day streak!
-          </Animated.Text>
-        </View>
-      </Animated.View>
-
-      {/* Day tracker card */}
-      <Animated.View
-        style={cardStyle}
-        className="mx-4 rounded-card border-4 border-border bg-white py-4 px-2 py-6">
-        <View className="flex-row justify-between items-center mb-2 px-4">
-          {weekCells.map((cell) => (
-            <View key={cell.dateKey} className="items-center mx-1">
-              <Text
-                className={`font-feather text-md mb-1
-                ${cell.isToday ? 'text-accentGold font-feather' : 'text-description'}`}>
-                {cell.label}
-              </Text>
-
-              {/* icon swap */}
-              {cell.status === 'BEFORE_ACCOUNT' && <View className="w-10 h-10" />}
-              {cell.status === 'FUTURE' && <View className="w-10 h-10 rounded-full bg-[#EAEAEA]" />}
-              {cell.status === 'TODAY_PENDING' && (
-                <View className="w-10 h-10 rounded-full border-2 border-accentGold items-center justify-center">
-                  <Ionicons name="ellipsis-horizontal" size={24} color="#F2B705" />
-                </View>
-              )}
-              {cell.status === 'COMPLETED' && (
-                <View className="w-10 h-10 rounded-full bg-accentGold items-center justify-center">
-                  <Image source={require('../assets/icons/whiteCheck.png')} className="w-12 h-12" />
-                </View>
-              )}
-              {cell.status === 'MISSED' && (
-                <View className="w-10 h-10 rounded-full bg-[#EAEAEA] items-center justify-center">
-                  <Text className="text-[#999] text-xl">✕</Text>
-                </View>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Large flame with streak number */}
+        <Animated.View style={flameContainerStyle} className="items-center mt-10 mb-2">
+          <View className="relative justify-center items-center mb-1">
+            <View
+              className={`${insets.top > 20 ? 'w-96 h-96' : 'w-56 h-56'} justify-center items-center`}>
+              {IS_ANDROID ? (
+                <Rive
+                  resourceName={'success_lamb'}
+                  artboardName="streak"
+                  autoplay
+                  style={{
+                    width: insets.top < 20 ? '100%' : '200%',
+                    height: insets.top < 20 ? '100%' : '200%',
+                  }}
+                  ref={riveRef}
+                />
+              ) : (
+                <Rive
+                  url={riveAssets[0].uri!}
+                  artboardName="streak"
+                  autoplay
+                  style={{
+                    width: insets.top < 20 ? '100%' : '200%',
+                    height: insets.top < 20 ? '100%' : '200%',
+                  }}
+                  ref={riveRef}
+                />
               )}
             </View>
-          ))}
-        </View>
-        <View className="border-t border-border my-2" />
-        <Animated.Text
-          style={subtextStyle}
-          className="text-center text-black text-heading font-din px-8 py-4">
-          {subText}
-        </Animated.Text>
-      </Animated.View>
+          </View>
+          <View style={{ marginTop: -RPH(8) }} className="flex flex-col justify-center items-center">
+            <Animated.Text
+              style={[streakNumberStyle, { fontSize: AppFonts[56] + responsiveFontSize(3.2), marginBottom: RPH(2) }]}
+              className="absolute  font-feather text-textPrimary -top-16">
+              {streak}
+            </Animated.Text>
+            <Animated.Text
+              style={streakTextStyle}
+              className="text-textPrimary text-2xl font-feather mb-1 tracking-wide mt-12">
+              day streak!
+            </Animated.Text>
+          </View>
+        </Animated.View>
 
-      {/* Continue button */}
-      <Animated.View style={buttonStyle} className="px-6 pb-10 mt-8">
-        <PrimaryButton buttonType="blue" title="Go home" onPress={handleContinue} />
-      </Animated.View>
+        {/* Day tracker card */}
+        <Animated.View
+          style={cardStyle}
+          className="mx-4 rounded-card border-4 border-border bg-white py-4 px-2 py-6">
+          <View className="flex-row justify-between items-center mb-2 px-4">
+            {weekCells.map((cell) => (
+              <View key={cell.dateKey} className="items-center mx-1">
+                <Text
+                  className={`font-feather text-md mb-1
+                ${cell.isToday ? 'text-accentGold font-feather' : 'text-description'}`}>
+                  {cell.label}
+                </Text>
 
-      {/* Development debug info */}
-      {/* {__DEV__ && debugDisplayInfo && (
+                {/* icon swap */}
+                {cell.status === 'BEFORE_ACCOUNT' && <View className="w-10 h-10" />}
+                {cell.status === 'FUTURE' && <View className="w-10 h-10 rounded-full bg-[#EAEAEA]" />}
+                {cell.status === 'TODAY_PENDING' && (
+                  <View className="w-10 h-10 rounded-full border-2 border-accentGold items-center justify-center">
+                    <Ionicons name="ellipsis-horizontal" size={24} color="#F2B705" />
+                  </View>
+                )}
+                {cell.status === 'COMPLETED' && (
+                  <View className="w-10 h-10 rounded-full bg-accentGold items-center justify-center">
+                    <Image source={require('../assets/icons/whiteCheck.png')} className="w-12 h-12" />
+                  </View>
+                )}
+                {cell.status === 'MISSED' && (
+                  <View className="w-10 h-10 rounded-full bg-[#EAEAEA] items-center justify-center">
+                    <Text className="text-[#999] text-xl">✕</Text>
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+          <View className="border-t border-border my-2" />
+          <Animated.Text
+            style={[subtextStyle, { fontSize: AppFonts[17] }]}
+            className="text-center text-black font-din px-8 py-4">
+            {subText}
+          </Animated.Text>
+        </Animated.View>
+
+        {/* Continue button */}
+        <Animated.View style={buttonStyle} className="px-6 pb-10 mt-8">
+          <PrimaryButton buttonType="blue" title="Go home" onPress={handleContinue} />
+        </Animated.View>
+
+        {/* Development debug info */}
+        {/* {__DEV__ && debugDisplayInfo && (
         <View
           style={{
             position: 'absolute',
@@ -544,6 +548,7 @@ export const StreakScreen = ({isPrayPresses, isReflectPresses}:{isPrayPresses?:s
           </Text>
         </View>
       )} */}
+      </ScrollView>
     </Animated.View>
   );
 };

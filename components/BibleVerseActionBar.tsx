@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import CircleButton from './Shared/CircleButton';
 import { AntDesign } from '@expo/vector-icons';
 import { IS_ANDROID } from '~/app/utils/utils';
+import { RPH } from '~/app/helper/helper';
 
 export const TAB_BAR_HEIGHT = 64;
 
@@ -18,8 +19,8 @@ export interface BibleVerseActionBarProps {
   onVersePress?: () => void;
 }
 
-export function BibleVerseActionBar({ 
-  reference = 'John 3:16', 
+export function BibleVerseActionBar({
+  reference = 'John 3:16',
   onPrev,
   onNext,
   disabledPrev = false,
@@ -35,7 +36,7 @@ export function BibleVerseActionBar({
         position: 'absolute',
         left: 0,
         right: 0,
-        bottom: insets.bottom + TAB_BAR_HEIGHT - (IS_ANDROID ? 0 : 10),
+        bottom: insets.bottom + TAB_BAR_HEIGHT - (IS_ANDROID ? 0 : RPH(3)),
         backgroundColor: '#FDEBB8',
         flexDirection: 'row',
         alignItems: 'center',
@@ -52,32 +53,33 @@ export function BibleVerseActionBar({
         zIndex: 100,
         borderTopWidth: 1,
         borderTopColor: 'rgba(0,0,0,0.08)',
+        paddingBottom: RPH(3),
       }}
     >
       <TouchableOpacity onPress={onVersePress}>
 
-     {reference? <Text
-        className='font-feather'
-        style={{
-          fontSize: 18,
-          color: '#B89B4C',
-        }}
+        {reference ? <Text
+          className='font-feather'
+          style={{
+            fontSize: 18,
+            color: '#B89B4C',
+          }}
         >
-        {reference}
-      </Text>:null}
-        </TouchableOpacity>
+          {reference}
+        </Text> : null}
+      </TouchableOpacity>
       <View className='flex-row gap-4 items-center'>
         <CircleButton
-          iconComponent={leftIconComponent || <AntDesign name="caretleft" size={14} color="#795222" />}
-          size={56}
-          onPress={onPrev || (() => {})}
+          iconComponent={leftIconComponent || <AntDesign name="caretleft" size={RPH(1.7)} color="#795222" />}
+          size={RPH(7)}
+          onPress={onPrev || (() => { })}
           disabled={disabledPrev}
           isSmall={true}
         />
         <CircleButton
-          iconComponent={rightIconComponent || <AntDesign name="caretright" size={14} color="#795222" />}
-          size={56}
-          onPress={onNext || (() => {})}
+          iconComponent={rightIconComponent || <AntDesign name="caretright" size={RPH(1.7)} color="#795222" />}
+          size={RPH(7)}
+          onPress={onNext || (() => { })}
           disabled={disabledNext}
           isSmall={true}
         />

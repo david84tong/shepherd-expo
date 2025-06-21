@@ -18,6 +18,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import { RPH } from '../helper/helper';
 
 export default function OnboardingReadingTimeScreen() {
   const router = useRouter();
@@ -199,6 +200,7 @@ export default function OnboardingReadingTimeScreen() {
                 isActive={true}
                 primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
                 textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
+                buttonHeight={RPH(7)}
               />
             ))}
           </Animated.View>

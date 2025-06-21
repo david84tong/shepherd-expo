@@ -10,6 +10,7 @@ import { useUserStore } from './userStore';
 export const NOTIFICATION_IDS = {
   STREAK_WARNING: 'streak-warning',
   STREAK_BROKEN: 'streak-broken',
+  MISSED_REMINDER: 'missed-reminder',
   DAILY_REMINDER: 'daily-reminder',
   ADAPTIVE_REMINDER: 'adaptive-reminder',
 };
@@ -84,6 +85,7 @@ export const configureNotifications = async () => {
       handleNotification: async () => ({
         shouldPlaySound: true,
         shouldSetBadge: true,
+        shouldShowAlert: true,
         shouldShowBanner: true,
         shouldShowList: true,
       }),
@@ -309,8 +311,8 @@ export const useNotificationStore = create<NotificationState>()(
           // Schedule daily notification
           await Notifications.scheduleNotificationAsync({
             content: {
-              title: 'Time to talk with the Shepherd',
-              body: 'Take a moment to read scripture and connect with God.',
+              title: 'Your lamb is bleating 🐑',
+              body: 'Lead it to green pastures — tap for today’s Word.',
               sound: true,
               data: { type: 'daily-reminder' },
             },
@@ -428,6 +430,22 @@ export const useNotificationStore = create<NotificationState>()(
               identifier: `${NOTIFICATION_IDS.STREAK_BROKEN}-test`,
             });
 
+            // Schedule missed reminder 1 day after broken streak (for test: 3 minutes)
+            const MISSED_DELAY_SEC = 180; // 3 minutes for test
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: 'Seat saved at the table 🍞 (Test)',
+                body: "Catch yesterday's devotional — no lamb left behind.",
+                data: { type: 'missed-reminder', isTest: true },
+                sound: true,
+              },
+              trigger: {
+                type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+                seconds: MISSED_DELAY_SEC,
+              },
+              identifier: `${NOTIFICATION_IDS.MISSED_REMINDER}-test`,
+            });
+
             console.log(
               '[TEST] Verifying scheduled notifications (after test scheduling has completed)...'
             );
@@ -485,9 +503,9 @@ export const useNotificationStore = create<NotificationState>()(
 
             await Notifications.scheduleNotificationAsync({
               content: {
-                title: 'Your lamb is dying!',
-                body: 'Be a good shepherd and come back.',
-                subtitle: 'Feed your lamb and your soul',
+                title: 'Your lamb is starving!',
+                body: 'Follow the Good Shepherd and feed your soul.',
+                subtitle: 'Just 60 seconds with Jesus is all you need.',
                 data: { type: 'streak-broken', isTest: false },
                 sound: true,
               },
@@ -508,6 +526,34 @@ export const useNotificationStore = create<NotificationState>()(
               `⚠️ Streak Broken scheduled in ${brokenHoursFromNow.toFixed(1)} hours from now`
             );
 
+            // Schedule missed reminder notification 1 day after broken streak
+            const missedReminderTimeProd = new Date(brokenStreakTimeProd);
+            missedReminderTimeProd.setDate(missedReminderTimeProd.getDate() + 1); // 1 day after broken streak
+
+            await Notifications.scheduleNotificationAsync({
+              content: {
+                title: 'Seat saved at the table 🍞',
+                body: "Catch yesterday's devotional — no lamb left behind.",
+                data: { type: 'missed-reminder', isTest: false },
+                sound: true,
+              },
+              trigger: {
+                type: Notifications.SchedulableTriggerInputTypes.DATE,
+                date: missedReminderTimeProd,
+              },
+              identifier: NOTIFICATION_IDS.MISSED_REMINDER,
+            });
+
+            // Calculate and log hours from now for missed reminder
+            const missedHoursFromNow =
+              (missedReminderTimeProd.getTime() - now.getTime()) / (1000 * 60 * 60);
+            console.log(
+              `Scheduled missed reminder notification for ${missedReminderTimeProd.toLocaleString()}`
+            );
+            console.log(
+              `🍞 Missed Reminder scheduled in ${missedHoursFromNow.toFixed(1)} hours from now`
+            );
+
             set({ lastScheduledDate: todayString });
           }
         } catch (error) {
@@ -520,6 +566,7 @@ export const useNotificationStore = create<NotificationState>()(
           // Cancel specific streak notifications by their identifiers
           await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.STREAK_WARNING);
           await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.STREAK_BROKEN);
+          await Notifications.cancelScheduledNotificationAsync(NOTIFICATION_IDS.MISSED_REMINDER);
           console.log('Streak notifications canceled');
         } catch (error) {
           console.error('Failed to cancel streak notifications:', error);
@@ -645,8 +692,8 @@ export const useNotificationStore = create<NotificationState>()(
 
             await Notifications.scheduleNotificationAsync({
               content: {
-                title: "It's your perfect time for reflection",
-                body: 'Take a moment to read scripture and connect with God.',
+                title: "Pause by still waters 🕊️",
+                body: 'Open today’s verse and breathe with God.',
                 sound: true,
                 data: { type: 'adaptive-reminder', dayOffset: i },
               },

@@ -16,7 +16,7 @@ import { useUIStore } from '../stores/uiStore';
 import { useUserStore } from '../stores/userStore';
 import useHighlightStore, { VerseHighlight, HIGHLIGHT_COLORS } from '../stores/highlightStore';
 import useNoteStore, { VerseNote } from '../stores/noteStore';
-import { Feather } from '@expo/vector-icons';
+import { Feather, FontAwesome } from '@expo/vector-icons';
 import { fetchChapter } from '../api/bible';
 
 import * as Haptics from 'expo-haptics';
@@ -276,7 +276,11 @@ const triggerHaptic = () => {
   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
 };
 
-export default function StatsScreen() {
+interface StatsScreenProps {
+  onClose?: () => void;
+}
+
+export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
   const readings = useUserStore((s) => s.getCompletedReadings());
   const prayers = useUserStore((s) => s.getCompletedPrayers());
   const reflections = useUserStore((s) => s.getCompletedReflections());
@@ -652,10 +656,23 @@ export default function StatsScreen() {
       <TouchableWithoutFeedback onPress={() => setIsDropdownOpen(false)}>
         <ScrollView
           className="flex-1 bg-surfaceCream"
+          showsVerticalScrollIndicator={false}
           contentContainerStyle={{ paddingBottom: 40 }}>
           {/* Header */}
-          <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
+          <View className="flex-row items-center justify-between px-6 pt-8 pb-4 relative">
             <Text className="font-feather text-h2 text-textPrimary">{i18n.t('stats_title')}</Text>
+            
+            {/* Close button - right */}
+            {onClose && (
+              <View className="w-24 flex justify-end items-end pr-4">
+                <TouchableOpacity
+                  className="w-10 h-10 bg-black/30 rounded-full items-center justify-center z-10"
+                  onPress={onClose}
+                  activeOpacity={0.7}>
+                  <FontAwesome name="times" size={20} color="white" />
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
 
           {/* Heatmap Card */}

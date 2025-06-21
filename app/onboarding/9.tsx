@@ -16,6 +16,7 @@ import { useNotificationStore } from '../stores/notificationStore';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
 import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
 
 export default function NotificationPermissionScreen() {
   const router = useRouter();
@@ -226,15 +227,15 @@ export default function NotificationPermissionScreen() {
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <View className="flex-1 bg-surfaceCream items-center px-5">
-        <Animated.View style={titleStyle}>
-          <Text className="font-feather text-h1 text-center text-textPrimary mb-12 mt-32 mx-12">
+        <Animated.View style={[titleStyle,{marginTop:RPH(10)}]}>
+          <Text className="font-feather text-h1 text-center text-textPrimary mb-12 mx-12">
             {i18n.t('onboarding_notification_question')}
           </Text>
         </Animated.View>
 
         <Animated.View style={contentStyle} className="items-center">
           {/* iOS-style Notification Example */}
-          <View className="bg-white rounded-xl w-[360px] shadow-sm mb-6 flex-row p-3 items-center mx-12">
+          <View style={{width:'90%'}} className="bg-white rounded-xl shadow-sm mb-6 flex-row p-3 items-center mx-12">
             <Image
               source={require('../../assets/icon.png')}
               className="w-12 h-12 mr-3 rounded-[8px]"

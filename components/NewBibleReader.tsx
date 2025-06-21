@@ -58,6 +58,7 @@ import { useLanguageStore } from '~/app/stores/languageStore';
 import { ReaderSettings } from '~/app/stores/readerSettingsStore';
 import { THEME_COLORS } from '~/app/constants/theme';
 import SideButton from './SideButton';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -1444,7 +1445,7 @@ console.log("RENDERING");
       syncHighlights();
     };
   }, [syncHighlights]);
-
+  const insets = useSafeAreaInsets();
   // Modified highlight handler
   const handleHighlightVerse = (verse: Verse) => {
     // Set verse to highlight and show picker
@@ -1862,7 +1863,7 @@ console.log("RENDERING");
       />
     );
   }
-  
+
   return (
  <View className='flex-1'>
       <Animated.View style={{ position: 'absolute', width: '100%', height: '100%' }}>
@@ -1878,7 +1879,7 @@ console.log("RENDERING");
         <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
           <View
             className="rounded-t-card "
-            style={{ width: '100%', height: IS_ANDROID ? '85%' : '95%', position: 'absolute', bottom: 0,backgroundColor:theme?.background }}>
+            style={{ width: '100%', height: IS_ANDROID ? '85%' : RPH(85) , position: 'absolute', bottom: 0,backgroundColor:theme?.background }}>
             {/* Title and Navigation Arrows Row */}
            
               <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -2348,7 +2349,7 @@ console.log("RENDERING");
 
         {isBibleReaderScreen && !isMapMode ? (
         <BibleVerseActionBar
-          reference={`${chapterData?.book} ${chapterData?.chapter}`}
+        reference={chapterData ? `${chapterData.book} ${chapterData.chapter}` : ''}
           onVersePress={handleOpenSelector}
           onPrev={navigateToPreviousChapter}
           onNext={isInPathMode && isAtEndChapter ? handleFinishReading : navigateToNextChapter}

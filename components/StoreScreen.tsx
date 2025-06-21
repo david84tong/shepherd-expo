@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, FontAwesome } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
@@ -74,13 +74,21 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   
   const [selectedCategory, setSelectedCategory] = useState<StoreCategory>('skins');
 
+  // Ensure Pro users have the Annointed Lamb skin in their shop store
+  useEffect(() => {
+    if (isProMember && !hasSkin('99')) {
+      console.log('🔄 Adding Annointed Lamb skin to Pro user\'s collection');
+      addSkin('99');
+    }
+  }, [isProMember, hasSkin, addSkin]);
+
   // Store items with static images
   const storeItems: StoreItem[] = useMemo(() => [
     // Skins
     {
       id: 'skin_super',
       category: 'skins',
-      name: "Annointed Lamb",
+      name: "Anointed Lamb",
       description: 'For a limited time, all super users unlock this golden skin',
       price: 109,
       currency: 'gems',
@@ -105,7 +113,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       category: 'skins',
       name: "10 Commandments",
       description: 'Blessed with the divine laws given to Moses',
-      price: 200,
+      price: 1600,
       currency: 'gems',
       image: tenSkin,
       skinNumber: 5,
@@ -116,7 +124,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       category: 'skins',
       name: "Garden Apple",
       description: 'From the tree of knowledge in the Garden of Eden',
-      price: 120,
+      price: 1800,
       currency: 'gems',
       image: appleSkin,
       skinNumber: 6,
@@ -125,9 +133,9 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     {
       id: 'skin_lion',
       category: 'skins',
-      name: "Lion of Judah",
-      description: 'Courageous and mighty like the Lion of Judah',
-      price: 300,
+      name: "Den of Lions",
+      description: 'Courageous ',
+      price: 2200,
       currency: 'gems',
       image: lionSkin,
       skinNumber: 7,
@@ -140,10 +148,10 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       category: 'skins',
       name: "Noah's Ark",
       description: 'A faithful servant who built the ark and saved all creatures',
-      price: 150,
+      price: 2700,
       currency: 'gems',
       image: noahSkin,
-      skinNumber: 18,
+      skinNumber: 2,
       unlockLevel: 19,
 
     },
@@ -152,10 +160,10 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       category: 'skins',
       name: "Banana Peel",
       description: 'A playful yellow skin that brings joy and laughter',
-      price: 75,
+      price: 3000,
       currency: 'gems',
       image: bananaSkin,
-      skinNumber: 20,
+      skinNumber: 4,
       unlockLevel: 21,
     },
     {
@@ -163,32 +171,33 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       category: 'skins',
       name: "Joseph's Coat",
       description: 'The coat of many colors given by Jacob to his beloved son Joseph',
-      price: 180,
+      price: 3600,
       currency: 'gems',
       image: josephsCoat,
       skinNumber: 3,
       unlockLevel: 22,
     },
   
-    {
-      id: 'skin_armor_of_god',
-      category: 'skins',
-      name: "Armor of God",
-      description: 'Put on the full armor of God to stand against the schemes of the devil',
-      price: 1100,
-      currency: 'gems',
-      image: armorOfGod,
-      skinNumber: 8,
-      unlockLevel: 24,
-    },
+
     {
       id: 'skin_whale',
       category: 'skins',
       name: "Jonah's Whale",
       description: 'From the belly of the great fish that swallowed Jonah',
-      price: 1100,
+      price: 4200,
       currency: 'gems',
       image: whale,
+      skinNumber: 8,
+      unlockLevel: 24,
+    },
+    {
+      id: 'skin_armor_of_god',
+      category: 'skins',
+      name: "Armor of God",
+      description: 'Put on the full armor of God to stand against the schemes of the devil',
+      price: 4400,
+      currency: 'gems',
+      image: armorOfGod,
       skinNumber: 9,
       unlockLevel: 24,
     },
@@ -404,6 +413,21 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     const isEquipped = equippedSkin === skinId;
     const isAnointedLamb = item.id === 'skin_super';
     
+    // Debug logging for Annointed Lamb
+    if (isAnointedLamb) {
+      console.log('🔍 Annointed Lamb Debug:', {
+        skinId,
+        equippedSkin,
+        isEquipped,
+        skinNumber: item.skinNumber,
+        itemId: item.id,
+        isProMember,
+        isOwned,
+        userLevel,
+        hasSkinResult: hasSkin(skinId)
+      });
+    }
+    
     return (
       <View
         key={item.id}
@@ -460,7 +484,16 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
               {isAnointedLamb ? (
                 // Special handling for Annointed Lamb
                 isProMember ? (
-                  isEquipped ? (
+                  userLevel < 10 ? (
+                    <PrimaryButton
+                      title="Equip at LVL 10"
+                      onPress={() => {}}
+                      disabled={true}
+                      buttonType="blue"
+                      buttonHeight={40}
+                      width="100%"
+                    />
+                  ) : isEquipped ? (
                     <PrimaryButton
                       title="Equipped"
                       onPress={() => {}}
@@ -548,21 +581,24 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       
       {/* Header */}
-      <View className="flex-row justify-center items-center px-6 pt-8 pb-4 relative">
-        {/* Back button - positioned absolutely on the left */}
-        <TouchableOpacity
-          onPress={onClose || (() => router.back())}
-          className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center absolute left-6">
-          <Feather name="x" size={20} color="#B89B4C" />
-        </TouchableOpacity>
-        
-        {/* Store title - centered */}
-        <Text className="font-feather text-h2 text-textPrimary">{i18n.t('store')}</Text>
-        
-        {/* Gems counter - positioned absolutely on the right */}
-        <View className="flex-row items-center bg-lightYellow px-3 py-1.5 rounded-full absolute right-6">
+      <View className="flex-row items-center justify-between px-6 pt-8 pb-4 relative">
+        {/* Gems counter - left */}
+        <View className="w-24 flex-row items-center bg-lightYellow px-3 py-1.5 rounded-full">
           <Image source={gemIcon} className="w-5 h-5 mr-1" />
           <Text className="font-feather text-body text-textPrimary">{userGems}</Text>
+        </View>
+
+        {/* Store title - center */}
+        <Text className="font-feather text-h2 text-textPrimary">{i18n.t('store')}</Text>
+
+        {/* Close button - right */}
+        <View className="w-24 flex justify-end items-end pr-4">
+        <TouchableOpacity
+          className=" w-10 h-10 bg-black/30 rounded-full items-center justify-center z-10"
+          onPress={onClose || (() => router.back())}
+          activeOpacity={0.7}>
+          <FontAwesome name="times" size={20} color="white" />
+        </TouchableOpacity>
         </View>
       </View>
 

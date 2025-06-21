@@ -26,16 +26,18 @@ import analytics from '../../utils/analytics';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useAuth } from '../hooks/authHook';
 import { getLevelData } from '../../utils/levelUtils';
-import { isSignedInWithGoogle, isSignedInWithApple } from '../helper/helper';
+import { isSignedInWithGoogle, isSignedInWithApple, RPH } from '../helper/helper';
 import auth from '@react-native-firebase/auth';
 import { useAssets } from 'expo-asset';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
+import { useUIStore } from '../stores/uiStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import OnboardingPathScreen from '../onboarding/8';
 import EditNameSheet from '../../components/EditNameSheet';
+
 
 // Import the icons using import statements
 import breadIcon from '../../assets/icons/breadIcon.png';
@@ -67,6 +69,7 @@ const DISCORD_CARD_DISMISSED_KEY = 'shepherd_discord_card_dismissed_v1';
 
 import i18n from '../utils/i18n';
 import { useLanguageStore } from '../stores/languageStore';
+import { AppFonts } from '../constants/appFonts';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -458,6 +461,8 @@ export default function ProfileScreen() {
 
   // Add ref for edit name sheet
   const editNameSheetRef = useRef<{ show: () => void; close: () => void }>(null);
+  
+
 
   // Subscribe to language changes to trigger re-render
   const currentLanguage = useLanguageStore((state) => state.language);
@@ -478,11 +483,18 @@ export default function ProfileScreen() {
           {/* Header */}
           <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
             <Text className="font-feather text-h2 text-textPrimary">{i18n.t('profile_title')}</Text>
-            <TouchableOpacity
-              onPress={handleShowSettings}
-              className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center">
-              <Feather name="settings" size={20} color="#B89B4C" />
-            </TouchableOpacity>
+            <View className="flex-row space-x-3">
+              <TouchableOpacity
+                onPress={() => useUIStore.getState().showStoreSheet()}
+                className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center mr-2">
+                <Feather name="shopping-bag" size={20} color="#B89B4C" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleShowSettings}
+                className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center">
+                <Feather name="settings" size={20} color="#B89B4C" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Sign In to Save Progress Card (only for anonymous users and not signed in with any method) */}
@@ -500,8 +512,9 @@ export default function ProfileScreen() {
 
                 <View className="items-center mb-4">
                   <TouchableOpacity
-                    className={`flex-row items-center justify-center ${Platform.OS === 'ios' ? 'bg-black' : 'bg-white border border-gray-300'} w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow`}
+                    className={`flex-row items-center justify-center ${Platform.OS === 'ios' ? 'bg-black' : 'bg-white border border-gray-300'} w-full  px-6 rounded-[16px] mb-4 shadow-appleShadow`}
                     onPress={handleSignIn}
+                    style={{paddingVertical:RPH(1.8)}}
                     disabled={signInLoading}>
                     {signInLoading ? (
                       <ActivityIndicator
@@ -512,13 +525,14 @@ export default function ProfileScreen() {
                     ) : (
                       <AntDesign
                         name={Platform.OS === 'ios' ? 'apple1' : 'google'}
-                        size={24}
+                        size={RPH(2.5)}
                         color={Platform.OS === 'ios' ? 'white' : '#4285F4'}
                         style={{ marginRight: 10 }}
                       />
                     )}
                     <Text
-                      className={`font-din ${Platform.OS === 'ios' ? 'text-white' : 'text-[#4285F4]'} text-[18px] font-bold`}>
+                    style={{fontSize:AppFonts[15]}}
+                      className={`font-din ${Platform.OS === 'ios' ? 'text-white' : 'text-[#4285F4]'} font-bold`}>
                       {signInLoading
                         ? i18n.t('signing_in')
                         : Platform.OS === 'ios'
@@ -547,7 +561,7 @@ export default function ProfileScreen() {
                   <FontAwesome6 name="discord" size={20} color="#5865F2" />
                 </View>
                 <View className="flex-1">
-                  <Text className="font-feather text-xl text-darkPurple">
+                  <Text style={{fontSize:AppFonts[15]}} className="font-feather text-darkPurple">
                     {i18n.t('join_discord')}
                   </Text>
                   <Text className="font-din text-body text-darkPurple opacity-80 mt-1 leading-tight">
@@ -623,14 +637,7 @@ export default function ProfileScreen() {
           
 
           {/* Selected Path Card */}
-          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
-            <Text className="font-feather text-heading text-textPrimary mb-2">{i18n.t('selected_path')}</Text>
-            <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
-              <Text className="font-din text-description underline text-accentGold">
-                {selectedPath?.title || i18n.t('no_path_selected')}
-              </Text>
-            </TouchableOpacity>
-          </View>
+        
 
           {/* Path Selection Modal */}
           <Modal
@@ -701,19 +708,7 @@ export default function ProfileScreen() {
           </View>
 
           {/* Store Section */}
-          <View className="mx-6 mt-4 mb-8 bg-surfaceCreamLight/50 rounded-[20px] p-6 shadow-card border border-brownBorder">
-            <View className="flex-row justify-between items-center">
-              <Text className="font-feather text-heading text-textPrimary">
-                {i18n.t('store')}
-              </Text>
-              <View className="bg-lightYellow px-4 py-1 rounded-full">
-                <Text className="font-feather text-accentGold">{i18n.t('unlocks_at_level_10')}</Text>
-              </View>
-            </View>
-            <Text className="font-din text-description mt-2">
-              {i18n.t('customize_lamb')}
-            </Text>
-          </View>
+       
           {/* Activity History Timeline Card */}
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
             <Text className="font-feather text-heading text-textPrimary mb-4">{i18n.t('your_journey')}</Text>

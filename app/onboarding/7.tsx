@@ -17,6 +17,7 @@ import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
 import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
 
 export default function OnboardingAgeRangeScreen() {
   const router = useRouter();
@@ -123,7 +124,7 @@ export default function OnboardingAgeRangeScreen() {
       });
 
       // Navigate to next screen
-      router.push('/onboarding/8' as any);
+      router.push('/onboarding/explainerHearts' as any);
     } catch (error) {
       console.error('Error processing selection:', error);
     } finally {
@@ -228,6 +229,7 @@ export default function OnboardingAgeRangeScreen() {
                       textColor={
                         selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'
                       }
+                      buttonHeight={RPH(7)}
                     />
                   </View>
                 );

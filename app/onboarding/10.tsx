@@ -15,6 +15,7 @@ import * as Notifications from 'expo-notifications';
 import analytics from '../../utils/analytics';
 import { useNotificationStore, NotificationTimeOption } from '../stores/notificationStore';
 import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
 
 export default function OnboardingReminderTimeScreen() {
   const router = useRouter();
@@ -151,7 +152,7 @@ export default function OnboardingReminderTimeScreen() {
                 text: i18n.t('onboarding_reminder_time_continue_anyway'),
                 style: 'default',
                 onPress: () => {
-                  router.push('/onboarding/rating');
+                  router.push('/onboarding/pricing/selfFundedMission');
                 }
               }
             ]
@@ -193,7 +194,7 @@ export default function OnboardingReminderTimeScreen() {
     }
 
     // Navigate to the next screen
-    router.push('/onboarding/rating');
+    router.push('/onboarding/pricing/selfFundedMission');
   };
 
   const options = [
@@ -268,16 +269,20 @@ export default function OnboardingReminderTimeScreen() {
                   onPress={() => handleSelection(option.id)}
                   onPressIn={() => setPressedButton(option.id)}
                   onPressOut={() => setPressedButton(null)}
+                  style={{
+                    height: RPH(9),
+                    paddingHorizontal:RPH(1.5)
+                  }}
                   className={`
               my-2
-              h-[80px] bg-white rounded-card border-[3px] border-border px-4
+              bg-white rounded-card border-[3px] border-border 
               flex-row items-center shadow-buttonShadow
               ${pressedButton === option.id ? 'translate-y-[3px] shadow-none' : 'translate-y-0'}
               ${selectedOption === option.id ? 'border-accentGold bg-surfaceCream' : ''}
             `}
                 >
                   <View className={`${option.bgColor} rounded-xl p-3`}>
-                    <Ionicons name={option.icon as any} size={24} color={option.color} />
+                    <Ionicons name={option.icon as any} size={RPH(2.6)} color={option.color} />
                   </View>
                   <View className="ml-4 flex-1">
                     <Text className="font-feather text-lg text-textPrimary">{option.title}</Text>

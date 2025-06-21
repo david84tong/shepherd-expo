@@ -25,6 +25,7 @@ import Animated, {
 import * as Haptics from 'expo-haptics';
 import analytics from '../../utils/analytics';
 import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
 
 
 export default function OnboardingReligiousAffiliationScreen() {
@@ -165,6 +166,7 @@ export default function OnboardingReligiousAffiliationScreen() {
                   isActive={true}
                   primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
                   textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
+                  buttonHeight={RPH(7)}
                 />
               ))}
             </View>

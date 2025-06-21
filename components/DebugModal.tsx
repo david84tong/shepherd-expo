@@ -2,7 +2,7 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import firestore from '@react-native-firebase/firestore';
 import { useRouter, usePathname } from 'expo-router';
 import React, { useState, useRef, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert, TextInput } from 'react-native';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
@@ -33,7 +33,6 @@ const ONBOARDING_SCREENS: DebugScreen[] = [
   { name: 'Onboarding 5 - Reading Time', route: '/onboarding/5' },
   { name: 'Onboarding 6 - Custom Plan', route: '/onboarding/6' },
   { name: 'Onboarding 7 - Notifications', route: '/onboarding/7' },
-  { name: 'Onboarding 8 - Path Selection', route: '/onboarding/8' },
   { name: 'Onboarding 9 - Notification Permission', route: '/onboarding/9' },
   { name: 'Onboarding 10 - Reminder Time', route: '/onboarding/10' },
   { name: 'Loading Screen', route: '/onboarding/LoadingScreen' },
@@ -74,6 +73,8 @@ export function DebugButton() {
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [showWidgetSheet, setShowWidgetSheet] = useState(false);
   const [isDebugButtonVisible, setIsDebugButtonVisible] = useState(true);
+  const [devotionalUploadModalVisible, setDevotionalUploadModalVisible] = useState(false);
+  const [devotionalJsonInput, setDevotionalJsonInput] = useState('');
   const { signOut } = useAuth();
 
   // Reference to the success bottom sheet modal
@@ -577,6 +578,104 @@ export function DebugButton() {
     router.push(item.route as any);
   };
 
+  // Function to upload devotionals to Firestore
+  const handleUploadDevotionals = useCallback(async () => {
+    try {
+      // Parse the JSON input
+      let devotionals;
+      try {
+        devotionals = JSON.parse(devotionalJsonInput);
+      } catch (parseError) {
+        Alert.alert('Invalid JSON', 'Please ensure your input is valid JSON format.');
+        return;
+      }
+
+      // Ensure it's an array
+      if (!Array.isArray(devotionals)) {
+        devotionals = [devotionals];
+      }
+
+      // Get reference to dailyDevotionals collection
+      const devotionalsRef = firestore().collection('dailyDevotionals');
+
+      let newCount = 0;
+      let existingCount = 0;
+      let errorCount = 0;
+
+      // Process each devotional
+      for (const devotional of devotionals) {
+        try {
+          // Check if devotional with this ID already exists
+          const docRef = devotionalsRef.doc(devotional.id);
+          const doc = await docRef.get();
+
+          if (doc.exists) {
+            existingCount++;
+            console.log(`Devotional ${devotional.id} already exists, skipping...`);
+            continue;
+          }
+
+          // Format the devotional according to Devotional.ts interface
+          const formattedDevotional = {
+            id: devotional.id,
+            title: devotional.title || '',
+            content: devotional.content || '',
+            createdAt: devotional.createdAt || new Date().toISOString(),
+            context: typeof devotional.context === 'object' ? devotional.context.en : devotional.context || '',
+            bibleReference: devotional.verse || devotional.bibleReference || '',
+            prayer: typeof devotional.prayer === 'object' ? devotional.prayer : { en: devotional.prayer || '' },
+            reflectionPrompt: typeof devotional.reflection === 'object' ? devotional.reflection : { en: devotional.reflection || devotional.reflectionPrompt || '' },
+            likes: devotional.likes || devotional.liked || 0,
+            shares: devotional.shares || devotional.shared || 0,
+            completed: devotional.completed || 0,
+            date: devotional.date || devotional.id || new Date().toISOString().split('T')[0],
+            imageURL: devotional.imageURL || '',
+            verse: devotional.verse || devotional.bibleReference || ''
+          };
+
+          // Upload to Firestore
+          await docRef.set(formattedDevotional);
+          newCount++;
+          console.log(`Successfully uploaded devotional: ${devotional.id}`);
+        } catch (error) {
+          errorCount++;
+          console.error(`Error uploading devotional ${devotional.id}:`, error);
+        }
+      }
+
+      // Show results
+      Alert.alert(
+        'Upload Complete',
+        `Results:\n- New devotionals added: ${newCount}\n- Already existing: ${existingCount}\n- Errors: ${errorCount}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (newCount > 0) {
+                setDevotionalJsonInput('');
+                setDevotionalUploadModalVisible(false);
+              }
+            }
+          }
+        ]
+      );
+
+      // Show toast for quick feedback
+      if (newCount > 0) {
+        Toast.show({
+          type: 'success',
+          text1: 'Devotionals Uploaded!',
+          text2: `Successfully added ${newCount} new devotionals`,
+          position: 'top',
+          visibilityTime: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading devotionals:', error);
+      Alert.alert('Upload Failed', 'An error occurred while uploading devotionals. Check console for details.');
+    }
+  }, [devotionalJsonInput]);
+
   return (
     <>
       {/* Floating Debug Button */}
@@ -709,6 +808,42 @@ export function DebugButton() {
                     }}>
                     <Text className="font-din text-sm text-textPrimary">Kids Bible Reader</Text>
                   </TouchableOpacity>
+
+                  {/* Self Funded Mission Button */}
+                  <TouchableOpacity
+                    className="bg-gradient-to-r from-purple-100 to-yellow-100 px-3 py-2 rounded-lg border border-purple-300 mb-1"
+                    onPress={() => {
+                      setModalVisible(false);
+                      setTimeout(() => {
+                        router.push('/onboarding/pricing/selfFundedMission' as any);
+                      }, 300);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">Self Funded Mission</Text>
+                  </TouchableOpacity>
+
+                  {/* Free Offer Button */}
+                  <TouchableOpacity
+                    className="bg-gradient-to-r from-blue-100 to-blue-200 px-3 py-2 rounded-lg border border-blue-300 mb-1"
+                    onPress={() => {
+                      setModalVisible(false);
+                      setTimeout(() => {
+                        router.push('/onboarding/pricing/FreeOffer' as any);
+                      }, 300);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">Free Offer</Text>
+                  </TouchableOpacity>
+
+                  {/* Shepherd Community Button */}
+                  <TouchableOpacity
+                    className="bg-gradient-to-r from-green-100 to-green-200 px-3 py-2 rounded-lg border border-green-300 mb-1"
+                    onPress={() => {
+                      setModalVisible(false);
+                      setTimeout(() => {
+                        router.push('/onboarding/pricing/ShepherdCommunity' as any);
+                      }, 300);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">Shepherd Community</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
 
@@ -790,7 +925,7 @@ export function DebugButton() {
                     className="bg-[#E0FFE0] px-4 py-3 rounded-lg border border-[#4FD675] mb-1 w-32"
                     onPress={() => {
                       const userStore = useUserStore.getState();
-                      userStore.setGens(1000);
+                      userStore.setGens(10000);
 
                       // Force sync to Firestore
                       syncWithFirestore();
@@ -805,7 +940,7 @@ export function DebugButton() {
                         visibilityTime: 3000,
                       });
                     }}>
-                    <Text className="font-din text-sm text-textPrimary text-center">{`1000 💎`}</Text>
+                    <Text className="font-din text-sm text-textPrimary text-center">{`10000 💎`}</Text>
                   </TouchableOpacity>
                 </View>
 
@@ -953,6 +1088,20 @@ export function DebugButton() {
                 <Text className="font-feather text-lg text-textPrimary mb-3">
                   Devotional Testing
                 </Text>
+
+                {/* Upload Devotionals Button */}
+                <TouchableOpacity
+                  className="bg-[#F0E6FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
+                  onPress={() => {
+                    setDevotionalUploadModalVisible(true);
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Upload Devotionals to Firestore
+                  </Text>
+                  <Text className="font-din text-sm text-[#7C6F94] mt-1">
+                    Bulk upload devotionals from JSON
+                  </Text>
+                </TouchableOpacity>
 
                 {/* Fetch Today's Devotional Button */}
                 <TouchableOpacity
@@ -1317,6 +1466,72 @@ export function DebugButton() {
 
       {/* Widget How-To Sheet */}
       <WidgetHowToSheet visible={showWidgetSheet} onClose={() => setShowWidgetSheet(false)} />
+
+      {/* Devotional Upload Modal */}
+      <Modal
+        animationType="slide"
+        transparent
+        visible={devotionalUploadModalVisible}
+        onRequestClose={() => setDevotionalUploadModalVisible(false)}>
+        <SafeAreaView className="flex-1 bg-black/50">
+          <View className="m-5 mt-[60px] bg-surfaceCream rounded-[20px] flex-1 shadow-lg">
+            <View className="flex-row items-center justify-between border-b border-b-buttonBorder p-4">
+              <Text className="font-feather text-xl text-textPrimary">Upload Devotionals</Text>
+              <TouchableOpacity
+                onPress={() => setDevotionalUploadModalVisible(false)}
+                className="w-8 h-8 rounded-full bg-forestGreen80 items-center justify-center">
+                <Text className="text-white text-base font-bold">✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView className="p-4 flex-1" keyboardShouldPersistTaps="handled">
+              <Text className="font-din text-base text-textPrimary mb-2">
+                Paste your devotionals JSON below. The format should match the Devotional.ts interface.
+              </Text>
+
+              <Text className="font-din text-sm text-description mb-4">
+                Example format: {`[{"id": "2025-01-01", "title": "New Year", "verse": "John 3:16", ...}]`}
+              </Text>
+
+              <TextInput
+                multiline
+                numberOfLines={15}
+                value={devotionalJsonInput}
+                onChangeText={setDevotionalJsonInput}
+                placeholder="Paste your JSON here..."
+                placeholderTextColor="#B89B4C"
+                className="bg-surfaceCreamLight border border-buttonBorder rounded-xl p-4 font-din text-textPrimary mb-4"
+                style={{ minHeight: 300, textAlignVertical: 'top' }}
+              />
+
+              {/* Padding bottom so content doesn't hide behind action area */}
+              <View style={{ height: 120 }} />
+            </ScrollView>
+
+            {/* Fixed action area */}
+            <View className="p-4 border-t border-buttonBorder bg-surfaceCreamLight">
+              <TouchableOpacity
+                className="bg-accentGold p-4 rounded-xl border-l-4 border-l-buttonBorder"
+                onPress={handleUploadDevotionals}>
+                <Text className="font-feather text-base text-white text-center">
+                  Upload Devotionals
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="mt-3 bg-surfaceCream p-4 rounded-xl border border-buttonBorder"
+                onPress={() => {
+                  setDevotionalJsonInput('');
+                  setDevotionalUploadModalVisible(false);
+                }}>
+                <Text className="font-feather text-base text-textPrimary text-center">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </>
   );
 }
