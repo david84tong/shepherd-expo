@@ -101,19 +101,19 @@ struct DailyVerseWidgetEntryView : View {
             // Content
             switch entry.status {
             case .verseAvailable:
-                VStack(alignment: .leading, spacing: 4) {
+                VStack(alignment: .leading, spacing: 2) {
                     if let reference = entry.bibleReference, let verse = entry.verse {
                         Text(reference)
-                            .font(.system(size: 20, weight: .bold))
+                            .font(.custom("Nunito-Black", size: 22))
                             .foregroundColor(.white)
 
                         Text("Verse of the Day")
-                            .font(.system(size: 13))
+                            .font(.custom("Nunito-Regular", size: 14))
                             .foregroundColor(Color.white.opacity(0.8))
-                            .padding(.bottom, 8)
+                            .padding(.bottom, 6)
 
                         Text(verse)
-                            .font(.system(size: 16, weight: .regular))
+                            .font(.custom("Nunito-Regular", size: 16))
                             .foregroundColor(.white)
                             .lineSpacing(4)
                     }
@@ -167,7 +167,7 @@ struct DailyVerseWidget: Widget {
                         LinearGradient(
                             gradient: Gradient(
                                 colors: [
-                                    Color.black.opacity(0.4),
+                                    Color.black.opacity(0.5),
                                     Color.black.opacity(0)
                                 ]
                             ),
