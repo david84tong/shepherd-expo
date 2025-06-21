@@ -417,5 +417,10 @@
     "heart_penalty": "Pénalité de Cœurs",
     "days_missed": "Jours Manqués",
     "new_day": "Nouveau Jour",
-    "purchase": "Acheter"
+    "purchase": "Acheter",
+    "bible_reader_tutorial_title": "Conseils du Lecteur Biblique",
+    "bible_reader_tutorial_step1": "Glissez vers la droite pour créer un dévotionnel, prière ou réflexion personnalisée pour ce verset",
+    "bible_reader_tutorial_step2": "Glissez vers la gauche pour discuter avec le verset et poser des questions",
+    "bible_reader_tutorial_step3": "Maintenez enfoncé pour surligner ou prendre des notes sur le verset",
+    "skip": "Passer"
 }

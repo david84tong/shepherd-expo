@@ -62,6 +62,7 @@ import Toast from 'react-native-toast-message';
 import HighlightColorPicker from '~/components/HighlightColorPicker';
 import { Feather } from '@expo/vector-icons';
 import VerseChatView from '~/components/VerseChatView';
+import BibleReaderTutorialSheet from '~/components/BibleReaderTutorialSheet';
 
 // Constants
 const DEFAULT_LINE_HEIGHT = 24;
@@ -280,6 +281,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const getVersesReadTotal = useUserStore((state) => state.getVersesReadTotal);
   const getChaptersReadTotal = useUserStore((state) => state.getChaptersReadTotal);
 
+  // Tutorial state
+  const hasSeenBibleReaderTutorial = useUserStore((state) => state.hasSeenBibleReaderTutorial);
+
+
   // Always call hooks unconditionally, even if we don't use the results
   const params = useLocalSearchParams();
   const effectiveParams = !isEmbedded ? params : null;
@@ -371,6 +376,8 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
     loadInitialData();
   }, [initialBookId, initialChapter, currentVersion]);
+
+
 
   useEffect(() => {
     console.log(
@@ -883,7 +890,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     if (!chapterData) return;
 
     const reference = `${chapterData.book} ${chapterData.chapter}:${verse.verse}`;
-    
+
     // Navigate to LoadingScreen
     router.push({
       pathname: '/onboarding/LoadingScreen',
@@ -1024,7 +1031,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                 ]}>
                 <Text
                   style={[verseTextStyle, { color: THEME_COLORS[currentTheme].text }]}
-                  >
+                >
                   <Text style={[verseNumberStyle, { color: THEME_COLORS[currentTheme].verseNumberText }]}>{`${verse.verse}.`} </Text>
                   {verse.text}
                 </Text>
@@ -1435,7 +1442,14 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
             </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>
-      </Modal>:null}
+      </Modal> : null}
+      {/* Bible Reader Tutorial Sheet */}
+      <BibleReaderTutorialSheet
+        visible={!hasSeenBibleReaderTutorial}
+        onClose={() => {
+          useUserStore.getState().setHasSeenBibleReaderTutorial(true);
+        }}
+      />
     </View>
   } else {
     // Use pendingChapterData if available
@@ -1503,7 +1517,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                 {/* Title and Settings Row */}
                 <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                   {pathInProgress ? (
-                    <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={handleBackNavigation}
                       className="bg-white/80 flex-row items-center px-4 py-2 rounded-full"
                     >
@@ -1520,7 +1534,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                         fontWeight: "400",
                       }}
                     >
-                     {i18n.t('bible_title')}
+                      {i18n.t('bible_title')}
                     </Text>
                   )}
                   <TouchableOpacity onPress={handlePresentModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
@@ -1754,7 +1768,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           </SafeAreaView>
 
           {/* Add BibleVerseActionBar */}
-         {!isMapMode ? <BibleVerseActionBar
+          {!isMapMode ? <BibleVerseActionBar
             reference={effectiveChapterData
               ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}`
               : i18n.t('loading')}
@@ -1771,7 +1785,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                 </View>
               ) : undefined
             }
-          />:null}
+          /> : null}
 
           {/* Add Floating Menu */}
           {floatingMenu.isVisible && floatingMenu.verse && (
@@ -1822,6 +1836,14 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
               versePreview={verseToHighlight.text}
             />
           )}
+
+          {/* Bible Reader Tutorial Sheet */}
+          <BibleReaderTutorialSheet
+            visible={!hasSeenBibleReaderTutorial}
+            onClose={() => {
+              useUserStore.getState().setHasSeenBibleReaderTutorial(true);
+            }}
+          />
         </View>
       </>
     );

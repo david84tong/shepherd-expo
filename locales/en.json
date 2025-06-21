@@ -291,7 +291,7 @@
     "onboarding_path_question": "Choose Your Path",
     "onboarding_path_subtitle": "How would you like to read the Bible?",
     "onboarding_notification_question": "Get Support from Shepherd",
-    "onboarding_notification_dialog_title": "“Shepherd” Would Like to Send You Notifications",
+    "onboarding_notification_dialog_title": "'Shepherd' Would Like to Send You Notifications",
     "onboarding_notification_dialog_desc": "Notifications may include alerts, sounds, and icon badges. These can be configured in Settings.",
     "onboarding_notification_dont_allow": "Don't Allow",
     "onboarding_notification_allow": "Allow",
@@ -421,5 +421,10 @@
     "heart_penalty": "Heart Penalty",
     "days_missed": "Days Missed",
     "new_day": "New Day",
-    "purchase": "Purchase"
+    "purchase": "Purchase",
+    "bible_reader_tutorial_title": "Bible Reader Tips",
+    "bible_reader_tutorial_step1": "Swipe right to create a custom devotional, prayer, or reflection for that verse",
+    "bible_reader_tutorial_step2": "Swipe left to chat with the verse and ask questions",
+    "bible_reader_tutorial_step3": "Hold down to highlight or take notes on the verse",
+    "skip": "Skip"
 }
