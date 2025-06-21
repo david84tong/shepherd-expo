@@ -667,7 +667,10 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
               <View className="w-24 flex justify-end items-end pr-4">
                 <TouchableOpacity
                   className="w-10 h-10 bg-black/30 rounded-full items-center justify-center z-10"
-                  onPress={onClose}
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    onClose();
+                  }}
                   activeOpacity={0.7}>
                   <FontAwesome name="times" size={20} color="white" />
                 </TouchableOpacity>
@@ -710,7 +713,7 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
                       activeOpacity={0.8}
                       onPress={() => {
                         // Provide light haptic feedback
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
 
                         // In the future, this could show detail for the specific day
                         console.log('Day pressed:', day.date);
@@ -752,7 +755,7 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
                 className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1 border border-brownBorder"
                 activeOpacity={0.8}
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   console.log('Readings summary pressed');
                 }}>
                 <Text className="font-feather text-h2 text-textPrimary">{totalBibleReadings}</Text>
@@ -762,7 +765,7 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
                 className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1 border border-brownBorder"
                 activeOpacity={0.8}
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   console.log('Prayers summary pressed');
                 }}>
                 <Text className="font-feather text-h2 text-textPrimary">{totalPrayerSessions}</Text>
@@ -772,7 +775,7 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
                 className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1 border border-brownBorder"
                 activeOpacity={0.8}
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
                   console.log('Reflections summary pressed');
                 }}>
                 <Text className="font-feather text-h2 text-textPrimary">{totalReflections}</Text>
@@ -824,24 +827,33 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
                 top: dropdownPosition.top,
                 right: dropdownPosition.right,
               }}>
-              <TouchableOpacity
-                className="px-4 py-3 border-b border-border"
-                onPress={() => handleContentTypeSelect('reflections')}
-                activeOpacity={0.7}>
-                <Text className="font-din text-textPrimary">{i18n.t('reflections')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="px-4 py-3 border-b border-border"
-                onPress={() => handleContentTypeSelect('highlights')}
-                activeOpacity={0.7}>
-                <Text className="font-din text-textPrimary">{i18n.t('highlights')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                className="px-4 py-3"
-                onPress={() => handleContentTypeSelect('notes')}
-                activeOpacity={0.7}>
-                <Text className="font-din text-textPrimary">{i18n.t('notes')}</Text>
-              </TouchableOpacity>
+                              <TouchableOpacity
+                  className="px-4 py-3 border-b border-border"
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    handleContentTypeSelect('reflections');
+                  }}
+                  activeOpacity={0.7}>
+                  <Text className="font-din text-textPrimary">{i18n.t('reflections')}</Text>
+                </TouchableOpacity>
+                              <TouchableOpacity
+                  className="px-4 py-3 border-b border-border"
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    handleContentTypeSelect('highlights');
+                  }}
+                  activeOpacity={0.7}>
+                  <Text className="font-din text-textPrimary">{i18n.t('highlights')}</Text>
+                </TouchableOpacity>
+                              <TouchableOpacity
+                  className="px-4 py-3"
+                  onPress={() => {
+                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    handleContentTypeSelect('notes');
+                  }}
+                  activeOpacity={0.7}>
+                  <Text className="font-din text-textPrimary">{i18n.t('notes')}</Text>
+                </TouchableOpacity>
             </View>
           </View>
         </TouchableWithoutFeedback>
@@ -861,7 +873,10 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
                 {selectedVerse?.bookName} {selectedVerse?.chapter}:{selectedVerse?.verse}
               </Text>
               <TouchableOpacity
-                onPress={handleCloseVerseModal}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  handleCloseVerseModal();
+                }}
                 className="w-8 h-8 rounded-full bg-surfaceCream items-center justify-center"
                 activeOpacity={0.7}>
                 <Feather name="x" size={16} color="#3C584A" />
@@ -927,7 +942,10 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
 
             {/* Close Button */}
             <TouchableOpacity
-              onPress={handleCloseVerseModal}
+              onPress={() => {
+                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                handleCloseVerseModal();
+              }}
               className="bg-accentGold rounded-xl py-3 items-center"
               activeOpacity={0.8}>
               <Text className="font-feather text-white text-body">{i18n.t('close')}</Text>

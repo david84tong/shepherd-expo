@@ -38,7 +38,10 @@ export default function SelfFundedMissionScreen() {
 
   useEffect(() => {
     // Analytics for screen view
-    analytics.logEvent('SelfFundedMission_Viewed');
+    analytics.logEvent('SelfFundedMission_ScreenLoad', {
+      timestamp: new Date().toISOString(),
+      source: params.source || 'unknown'
+    });
 
     // Set the from screen for analytics
     setFromScreen('self_funded_mission');
@@ -73,7 +76,10 @@ export default function SelfFundedMissionScreen() {
 
   const handleFundFeatures = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    analytics.logEvent('SelfFundedMission_Tapped_FundFeatures');
+    analytics.logEvent('SelfFundedMission_Button_FundFeatures', {
+      timestamp: new Date().toISOString(),
+      action: 'fund_features_pressed'
+    });
     
     try {
       // Get the weekly product and make direct purchase
@@ -101,16 +107,18 @@ export default function SelfFundedMissionScreen() {
       console.log('Looking for weekly product, found:', weeklyProduct?.vendorProductId);
       
       if (weeklyProduct) {
-        analytics.logEvent('SelfFundedMission_PurchaseStarted', {
-          productId: weeklyProduct.vendorProductId
+        analytics.logEvent('SelfFundedMission_Purchase_Started', {
+          productId: weeklyProduct.vendorProductId,
+          timestamp: new Date().toISOString()
         });
         
         // Make direct purchase
         const result = await adapty.makePurchase(weeklyProduct);
         
         if (result) {
-          analytics.logEvent('SelfFundedMission_PurchaseSuccess', {
-            productId: weeklyProduct.vendorProductId
+          analytics.logEvent('SelfFundedMission_Purchase_Success', {
+            productId: weeklyProduct.vendorProductId,
+            timestamp: new Date().toISOString()
           });
           
           // Update user to pro status
@@ -126,8 +134,9 @@ export default function SelfFundedMissionScreen() {
       }
     } catch (error) {
       console.error('Error making direct purchase:', error);
-      analytics.logEvent('SelfFundedMission_PurchaseError', {
-        error: (error as Error)?.message || 'Unknown error'
+      analytics.logEvent('SelfFundedMission_Purchase_Error', {
+        error: (error as Error)?.message || 'Unknown error',
+        timestamp: new Date().toISOString()
       });
       // Fallback to pricing screen if purchase fails
       router.push('/PricingScreen');
@@ -136,7 +145,10 @@ export default function SelfFundedMissionScreen() {
 
   const handleNotToday = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    analytics.logEvent('SelfFundedMission_Tapped_NotToday');
+    analytics.logEvent('SelfFundedMission_Button_NotToday', {
+      timestamp: new Date().toISOString(),
+      action: 'not_today_pressed'
+    });
     // Redirect to pricing screen
     router.push('/PricingScreen');
   };

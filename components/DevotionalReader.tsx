@@ -379,6 +379,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
     const setLambHearts = useUserStore.getState().setLambHearts;
     const addXp = useUserStore.getState().addXp;
     const setLambMood = useUserStore.getState().setLambMood;
+    const addCompletedReading = useUserStore.getState().addCompletedReading;
     
     // Calculate actual heart reward (don't exceed MAX_HEARTS)
     const heartsToAdd = Math.min(heartReward, MAX_HEARTS - currentHearts);
@@ -401,6 +402,36 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
     
     // Always add XP
     addXp(xpReward);
+    
+    // Save completed reading to userStore
+    const now = firestore.Timestamp.now();
+    const setLastReadingDate = useUserStore.getState().setLastReadingDate;
+    
+    // Extract book and chapter info from bible reference
+    let book = '';
+    let chapters: string[] = [];
+    
+    if (activeDevotional?.bibleReference) {
+      // Parse reference like "John 3:16" or "Matthew 5:1-10"
+      const refParts = activeDevotional.bibleReference.split(' ');
+      if (refParts.length >= 2) {
+        book = refParts[0];
+        const chapterVerse = refParts[1].split(':');
+        if (chapterVerse.length > 0) {
+          chapters = [chapterVerse[0]];
+        }
+      }
+    }
+    
+    addCompletedReading({
+      date: now,
+      book: book || 'Devotional',
+      chapters: chapters.length > 0 ? chapters as [string] : ['1'],
+      isUnit: false,
+    });
+    
+    // Update last reading date
+    setLastReadingDate(now);
     
     // Mark reading as completed
     const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
@@ -550,7 +581,10 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
 
             {onClose && (
               <TouchableOpacity 
-                onPress={() => onClose({isPrayPresses: false})} 
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onClose({isPrayPresses: false});
+                }} 
                 className="bg-brown/10 w-8 h-8 rounded-full items-center justify-center">
                 <Feather name="x" size={18} color="#795323" />
               </TouchableOpacity>

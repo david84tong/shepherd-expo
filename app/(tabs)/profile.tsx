@@ -485,7 +485,10 @@ export default function ProfileScreen() {
             <Text className="font-feather text-h2 text-textPrimary">{i18n.t('profile_title')}</Text>
             <View className="flex-row space-x-3">
               <TouchableOpacity
-                onPress={() => useUIStore.getState().showStoreSheet()}
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  useUIStore.getState().showStoreSheet();
+                }}
                 className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center mr-2">
                 <Feather name="shopping-bag" size={20} color="#B89B4C" />
               </TouchableOpacity>
@@ -550,11 +553,14 @@ export default function ProfileScreen() {
           {/* Discord Card */}
           {showDiscordCard && (
             <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder relative">
-              <TouchableOpacity
-                onPress={handleDismissDiscordCard}
-                className="absolute top-3 right-3 p-1 z-10 bg-darkPurple/10 rounded-full">
-                <Feather name="x" size={20} color="#3C584A" />
-              </TouchableOpacity>
+                                <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      handleDismissDiscordCard();
+                    }}
+                    className="absolute top-3 right-3 p-1 z-10 bg-darkPurple/10 rounded-full">
+                    <Feather name="x" size={20} color="#3C584A" />
+                  </TouchableOpacity>
 
               <View className="flex-row items-center mb-4">
                 <View className="bg-white p-3 rounded-full mr-4 shadow-md">
@@ -583,8 +589,11 @@ export default function ProfileScreen() {
           {/* Lamb Stats Card */}
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
             <View className="flex-row justify-between items-center mb-6">
-              <TouchableOpacity
-                onPress={() => editNameSheetRef.current?.show()}
+                              <TouchableOpacity
+                onPress={() => {
+                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  editNameSheetRef.current?.show();
+                }}
                 className="flex-row items-center bg-lightYellow px-4 py-1 rounded-lg opacity-80">
                 <Text className="font-feather text-heading text-primary">
                   {lamb.name ? lamb.name : i18n.t('your_lamb')}
@@ -648,23 +657,26 @@ export default function ProfileScreen() {
             <View style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
               {/* Show X button if onboarding_completed */}
               {onboardingCompleted && (
-                <TouchableOpacity
-                  onPress={() => setShowPathModal(false)}
-                  style={{
-                    position: 'absolute',
-                    top: 48,
-                    right: 24,
-                    zIndex: 10,
-                    backgroundColor: '#fff',
-                    borderRadius: 20,
-                    padding: 8,
-                    shadowColor: '#000',
-                    shadowOpacity: 0.08,
-                    shadowRadius: 4,
-                  }}
-                  hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
-                  <Feather name="x" size={24} color="#3C584A" />
-                </TouchableOpacity>
+                                  <TouchableOpacity
+                    onPress={() => {
+                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                      setShowPathModal(false);
+                    }}
+                    style={{
+                      position: 'absolute',
+                      top: 48,
+                      right: 24,
+                      zIndex: 10,
+                      backgroundColor: '#fff',
+                      borderRadius: 20,
+                      padding: 8,
+                      shadowColor: '#000',
+                      shadowOpacity: 0.08,
+                      shadowRadius: 4,
+                    }}
+                    hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+                    <Feather name="x" size={24} color="#3C584A" />
+                  </TouchableOpacity>
               )}
               <OnboardingPathScreen
                 // Pass a callback to handle path selection

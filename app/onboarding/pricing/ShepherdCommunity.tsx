@@ -37,7 +37,10 @@ export default function ShepherdCommunityScreen() {
 
   useEffect(() => {
     // Analytics for screen view
-    analytics.logEvent('ShepherdCommunity_Viewed');
+    analytics.logEvent('ShepherdCommunity_ScreenLoad', {
+      timestamp: new Date().toISOString(),
+      showDiscordCard: showDiscordCard
+    });
 
     // Check Discord card dismissal status
     const checkDismissalStatus = async () => {
@@ -106,19 +109,33 @@ export default function ShepherdCommunityScreen() {
     try {
       await AsyncStorage.setItem(DISCORD_CARD_DISMISSED_KEY, 'true');
       setShowDiscordCard(false);
-      analytics.logEvent('ShepherdCommunity_DiscordCard_Dismissed');
+      analytics.logEvent('ShepherdCommunity_Discord_Dismissed', {
+        timestamp: new Date().toISOString(),
+        action: 'discord_card_dismissed'
+      });
     } catch (error) {
       console.error('Failed to save discord card dismissal status', error);
     }
   };
 
   const handleJoinDiscord = async () => {
-    analytics.logEvent('ShepherdCommunity_DiscordCard_Joined');
+    analytics.logEvent('ShepherdCommunity_Button_JoinDiscord', {
+      timestamp: new Date().toISOString(),
+      action: 'join_discord_pressed'
+    });
     await handleDismissDiscordCard();
     try {
       await Linking.openURL('https://discord.gg/W9MZdVaKBs');
+      analytics.logEvent('ShepherdCommunity_Discord_LinkOpened', {
+        timestamp: new Date().toISOString(),
+        success: true
+      });
     } catch (err) {
       console.error('Failed to open Discord link', err);
+      analytics.logEvent('ShepherdCommunity_Discord_LinkError', {
+        timestamp: new Date().toISOString(),
+        error: err instanceof Error ? err.message : 'Unknown error'
+      });
       Alert.alert(
         'Error',
         'Could not open the Discord link. Please ensure Discord is installed or try again later.'
@@ -128,10 +145,16 @@ export default function ShepherdCommunityScreen() {
 
   const handleDone = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    analytics.logEvent('ShepherdCommunity_Tapped_Done');
+    const userSignedIn = isSignedIn();
+    analytics.logEvent('ShepherdCommunity_Button_Done', {
+      timestamp: new Date().toISOString(),
+      action: 'done_pressed',
+      isSignedIn: userSignedIn,
+      nextDestination: userSignedIn ? 'tabs' : 'signin'
+    });
     
     // Check if user is signed in and redirect accordingly
-    if (isSignedIn()) {
+    if (userSignedIn) {
       // User is signed in, go to home/tabs
       router.push('/(tabs)');
     } else {
@@ -190,7 +213,7 @@ export default function ShepherdCommunityScreen() {
                       Join our Discord
                     </Text>
                     <Text className="font-din text-base text-darkPurple opacity-80 mt-1 leading-tight">
-                      We'd love to see you in our community. Get sneak peeks at new features and help weigh in on features!
+                      We&apos;d love to see you in our community. Get sneak peeks at new features and help weigh in on features!
                     </Text>
                   </View>
                 </View>

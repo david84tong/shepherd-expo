@@ -240,14 +240,14 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       setKeyboardHeight(keyboardHeight);
       setKeyboardVisible(true);
       
-      // When textinput is focused, update bottomSheet to 90% in index.tsx
+      // When textinput is focused, update bottomSheet to 88% in index.tsx
       if (visible && inputRef.current?.isFocused()) {
-        // Access bottomSheetRef from index.tsx and snap to 90%
+        // Access bottomSheetRef from index.tsx and snap to 88%
         useHomeStore.getState().setKeyboardVisible(true);
-        // Get the bottomSheetRef from homeStore and snap to higher position (90%)
+        // Get the bottomSheetRef from homeStore and snap to higher position (88%)
         const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
         if (bottomSheetRef?.current) {
-          bottomSheetRef.current.snapToIndex(6); // Index 6 is 90% in snapPoints array
+          bottomSheetRef.current.snapToIndex(5); // Index 5 is 88% in snapPoints array
         }
       }
     };
@@ -838,10 +838,17 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
               const riveRef = homeStore.riveRef;
               if (riveRef?.current?.setInputState) {
                 try {
+                  // riveRef.current.setInputState('State Machine 1', 'Action-Number', 12); // 12 = Writing
                   console.log('Set Rive animation to writing state (12) on input focus');
                 } catch (error) {
                   console.log('Could not set Rive to writing state on focus:', error);
                 }
+              }
+              
+              // Ensure keyboard is shown and bottom sheet snaps to 88%
+              const bottomSheetRef = homeStore.bottomSheetRef;
+              if (bottomSheetRef?.current) {
+                bottomSheetRef.current.snapToIndex(5); // Index 5 is 88% in snapPoints array
               }
             }}
             onBlur={() => {
@@ -1011,7 +1018,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                   const riveRef = homeStore.riveRef;
                   if (riveRef?.current?.setInputState) {
                     try {
-                      riveRef.current.setInputState('State Machine 1', 'Action-Number', 12); // 12 = Writing
+                      riveRef.current.setInputState('State Machine 1', 'Action-Number', 3); // 12 = Writing
                     } catch (error) {
                       console.log('Could not set Rive to writing state:', error);
                     }

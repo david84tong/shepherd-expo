@@ -769,6 +769,12 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     }
 
+    // Don't show controls if animation has been triggered (max time exceeded)
+    if (animationTriggered) {
+      console.log('🎯 Animation triggered - not showing controls');
+      return;
+    }
+
     // If currently visible, hide immediately
     if (showControlRow) {
       if (hideTimeoutRef.current) {
@@ -800,7 +806,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         });
       }, 3000);
     }
-  }, [showControlRow, controlRowOpacity, hapticsEnabled, showSettingsModal]);
+  }, [showControlRow, controlRowOpacity, hapticsEnabled, showSettingsModal, animationTriggered]);
 
 
 
@@ -818,6 +824,17 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         setShowBreathingAnimation(false);
         setFinishReading(true);
         setShowSuccess(true);
+        
+        // Change Rive animation to achievement (action-number 12)
+        const riveRef = useHomeStore.getState().riveRef;
+        if (riveRef?.current?.setInputState) {
+          try {
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
+            console.log('🎯 Set Rive to achievement animation (action-number 12)');
+          } catch (error) {
+            console.log('Error setting Rive achievement animation:', error);
+          }
+        }
       }, 1000);
     }
   }, [animationTriggered]);
@@ -847,7 +864,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         // Update water progress
         waterProgress.value = progress;
 
-        // Trigger haptic feedback every 1000ms
+        // Trigger haptic feedback every 1000ms (continue even after reaching maximum)
         const currentTime = Date.now();
         if (hapticsEnabled && currentTime - lastHapticTime >= 1000) {
           Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -859,10 +876,8 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         if (progress >= 1) {
           console.log('🎯 Water filled completely! Ready for success when user releases.');
           
-          // Trigger haptic feedback to indicate completion
-          if (hapticsEnabled) {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-          }
+          // Note: Haptic feedback will continue every 1000ms even after reaching 100%
+          // This is handled by the interval haptic logic above
         }
       }
     };
@@ -924,6 +939,17 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       setFinishReading(true);
       setShowSuccess(true);
 
+      // Change Rive animation to achievement (action-number 12)
+      const riveRef = useHomeStore.getState().riveRef;
+      if (riveRef?.current?.setInputState) {
+        try {
+          riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
+          console.log('🎯 Set Rive to achievement animation (action-number 12)');
+        } catch (error) {
+          console.log('Error setting Rive achievement animation:', error);
+        }
+      }
+
       // Apply rewards (2 hearts + 25 XP for prayer)
       const heartReward = 2;
       const xpReward = 25;
@@ -964,8 +990,16 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       const now = firestore.Timestamp.now();
       const setLastActivityDate = useUserStore.getState().setLastActivityDate;
       const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
+      const addCompletedPrayer = useUserStore.getState().addCompletedPrayer;
       setLastActivityDate(now);
       setLastPrayerDate(now);
+
+      // Save completed prayer to userStore
+      addCompletedPrayer({
+        date: now,
+        type: 'water_prayer',
+        topic: currentDevotional?.bibleReference || recentPrayers[0] || 'general prayer',
+      });
     },
     handleSettings: () => {
       console.log('⚙️ Settings button pressed');
@@ -1140,6 +1174,14 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
               setPrayerCompleted(true);
 
+              // Save completed prayer to userStore
+              const addCompletedPrayer = useUserStore.getState().addCompletedPrayer;
+              addCompletedPrayer({
+                date: now,
+                type: 'water_prayer',
+                topic: currentDevotional?.bibleReference || recentPrayers[0] || 'general prayer',
+              });
+
               // Show tab bar again
               const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
               setPrayerViewVisible(false);
@@ -1175,6 +1217,14 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               // Mark prayer as completed
               const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
               setPrayerCompleted(true);
+
+              // Save completed prayer to userStore
+              const addCompletedPrayer = useUserStore.getState().addCompletedPrayer;
+              addCompletedPrayer({
+                date: now,
+                type: 'water_prayer',
+                topic: currentDevotional?.bibleReference || recentPrayers[0] || 'general prayer',
+              });
 
               // Show tab bar again
               const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
@@ -1305,6 +1355,17 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                       setFinishReading(true);
                       setShowSuccess(true);
 
+                      // Change Rive animation to achievement (action-number 12)
+                      const riveRef = useHomeStore.getState().riveRef;
+                      if (riveRef?.current?.setInputState) {
+                        try {
+                          riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
+                          console.log('🎯 Set Rive to achievement animation (action-number 12)');
+                        } catch (error) {
+                          console.log('Error setting Rive achievement animation:', error);
+                        }
+                      }
+
                       // Apply rewards (2 hearts + 25 XP for prayer)
                       const heartReward = 2;
                       const xpReward = 25;
@@ -1345,8 +1406,16 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                       const now = firestore.Timestamp.now();
                       const setLastActivityDate = useUserStore.getState().setLastActivityDate;
                       const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
+                      const addCompletedPrayer = useUserStore.getState().addCompletedPrayer;
                       setLastActivityDate(now);
                       setLastPrayerDate(now);
+
+                      // Save completed prayer to userStore
+                      addCompletedPrayer({
+                        date: now,
+                        type: 'water_prayer',
+                        topic: currentDevotional?.bibleReference || recentPrayers[0] || 'general prayer',
+                      });
                     }}
                     activeOpacity={0.8}>
                     <View style={{

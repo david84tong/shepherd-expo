@@ -209,7 +209,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         }, STEP_DURATION);
       } else {
         timer = setTimeout(() => {
-          router.replace({ pathname: '/PricingScreen', params: { animateFromBottom: 'true' } });
+          router.push('/onboarding/pricing/selfFundedMission');
         }, FINAL_DELAY);
       }
     } else {
