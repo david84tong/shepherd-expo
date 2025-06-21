@@ -18,7 +18,6 @@ import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
 import i18n from '../utils/i18n';
-import { RPH } from '../helper/helper';
 
 interface OnboardingPathScreenProps {
   onPathSelected?: (pathObj: any) => void;
@@ -28,8 +27,7 @@ interface OnboardingPathScreenProps {
 
 export default function OnboardingPathScreen({ onPathSelected, selectedPathId: externalSelectedPathId, hideContinueButton }: OnboardingPathScreenProps) {
   const router = useRouter();
-  // const { setResponse, setPathSelection } = useOnboardingStore();
-  const { setResponse } = useOnboardingStore();
+  const { setResponse, setPathSelection } = useOnboardingStore();
   const { setUser } = useUserStore();
   const { setSelectedPath } = usePathStore();
   const [selectedPathId, setSelectedPathId] = useState(externalSelectedPathId || 'knowing-jesus');
@@ -103,12 +101,12 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
 
     if (selectedPathObj) {
       // Save to onboarding store using enhanced method
-      // await setPathSelection({
-      //   id: selectedPathObj.id,
-      //   title: selectedPathObj.title,
-      //   subtitle: selectedPathObj.subtitle,
-      //   order: selectedPathObj.order
-      // });
+      await setPathSelection({
+        id: selectedPathObj.id,
+        title: selectedPathObj.title,
+        subtitle: selectedPathObj.subtitle,
+        order: selectedPathObj.order
+      });
 
       // For backward compatibility
       await setResponse('selectedPath', pathId);
@@ -192,15 +190,12 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
 
         {/* Continue Button */}
         {!hideContinueButton && (
-          <View style={{marginBottom:RPH(4)}}>
           <PrimaryButton
             title={i18n.t('continue_button')}
             onPress={handleContinue}
             disabled={!selectedPathId}
-            
-            
-            />
-            </View>
+            style="mt-6 mb-12"
+          />
         )}
       </View>
     </>

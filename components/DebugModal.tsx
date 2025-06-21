@@ -708,6 +708,30 @@ export function DebugButton() {
                     }}>
                     <Text className="font-din text-sm text-textPrimary">Kids Bible Reader</Text>
                   </TouchableOpacity>
+
+                  {/* Self Funded Mission Button */}
+                  <TouchableOpacity
+                    className="bg-gradient-to-r from-purple-100 to-yellow-100 px-3 py-2 rounded-lg border border-purple-300 mb-1"
+                    onPress={() => {
+                      setModalVisible(false);
+                      setTimeout(() => {
+                        router.push('/onboarding/pricing/selfFundedMission' as any);
+                      }, 300);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">Self Funded Mission</Text>
+                  </TouchableOpacity>
+
+                  {/* Free Offer Button */}
+                  <TouchableOpacity
+                    className="bg-gradient-to-r from-blue-100 to-blue-200 px-3 py-2 rounded-lg border border-blue-300 mb-1"
+                    onPress={() => {
+                      setModalVisible(false);
+                      setTimeout(() => {
+                        router.push('/onboarding/pricing/FreeOffer' as any);
+                      }, 300);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">Free Offer</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
 

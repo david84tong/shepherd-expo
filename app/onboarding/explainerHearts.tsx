@@ -146,7 +146,7 @@ export default function OnboardingExplainerHeartsScreen({
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <View
-        className="flex-1 bg-surfaceCream pt-12 w-full items-center"
+        className="flex-1 bg-surfaceCream w-full items-center"
         style={{ paddingBottom: insets.bottom }}>
      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom:insets?.bottom + RPH(12)}}>
          {/* Title */}

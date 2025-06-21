@@ -273,7 +273,7 @@ export default function LoginScreen() {
                 artboardName="[Main] Shpeherd"
                 stateMachineName="State Machine 1"
                 autoplay
-                style={{ width: RPH(25), height: RPH(25) }}
+                style={{ width: RPH(28), height: RPH(28) }}
               />
             ) : (
               <Rive
@@ -282,7 +282,7 @@ export default function LoginScreen() {
                 artboardName="[Main] Shpeherd"
                 stateMachineName="State Machine 1"
                 autoplay
-                style={{ width: RPH(25), height: RPH(25) }}
+                style={{ width: RPH(32), height: RPH(32) }}
               />
             )}
           </CustomAnimatedView>

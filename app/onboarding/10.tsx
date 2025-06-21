@@ -152,7 +152,7 @@ export default function OnboardingReminderTimeScreen() {
                 text: i18n.t('onboarding_reminder_time_continue_anyway'),
                 style: 'default',
                 onPress: () => {
-                  router.push('/onboarding/rating');
+                  router.push('/onboarding/pricing/selfFundedMission');
                 }
               }
             ]
@@ -194,7 +194,7 @@ export default function OnboardingReminderTimeScreen() {
     }
 
     // Navigate to the next screen
-    router.push('/onboarding/rating');
+    router.push('/onboarding/pricing/selfFundedMission');
   };
 
   const options = [
