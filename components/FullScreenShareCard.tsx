@@ -16,6 +16,7 @@ import { Devotional } from '~/app/models/Devotional';
 import { ImageBackground } from 'expo-image';
 import PrimaryButton from './PrimaryButton';
 import i18n from '../app/utils/i18n';
+import { RPH } from '~/app/helper/helper';
 
 interface FullScreenShareCardProps {
     visible: boolean;
@@ -130,9 +131,9 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                 >
                     <View className="flex-1 bg-[#AAB33D]" style={{ overflow: 'hidden' }}>
                         <ImageBackground
-                            source={{uri:devotionalData?.imageURL}}
+                            source={{ uri: devotionalData?.imageURL }}
                             className="h-full w-full"
-                            style={{height:'100%'}}
+                            style={{ height: '100%' }}
                             contentFit="cover"
                         >
                             {/* Linear gradient overlay for readability - darker at top, lighter at bottom */}
@@ -150,7 +151,10 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
 
                             {/* Top Right Close Button */}
                             <TouchableOpacity
-                                className="absolute top-20 right-6 w-10 h-10 bg-black/30 rounded-full items-center justify-center z-10"
+                                style={{
+                                    top: RPH(3)
+                                }}
+                                className="absolute  right-6 w-10 h-10 bg-black/30 rounded-full items-center justify-center z-10"
                                 onPress={onClose}
                                 activeOpacity={0.7}
                             >
