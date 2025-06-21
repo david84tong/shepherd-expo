@@ -11,7 +11,7 @@ class WidgetDataSharer: NSObject {
   
   private var userDefaults: UserDefaults? {
     // IMPORTANT: Replace "group.com.shepherd.app" with your actual App Group ID.
-    return UserDefaults(suiteName: "group.com.shepherd.app")
+    return UserDefaults(suiteName: "group.shepherd.widget.streak1")
   }
 
   @objc(updateVerseData:withVerse:withImageURL:)
@@ -50,12 +50,16 @@ class WidgetDataSharer: NSObject {
 
   private func saveAndReload(_ data: SharedDevotional, userDefaults: UserDefaults) {
     do {
-        let encodedData = try JSONEncoder().encode(data)
-        userDefaults.set(encodedData, forKey: "dailyVerse")
-        print("Successfully saved data to UserDefaults. Status: \(data.status.rawValue)")
+        // Instead of encoding the whole object, save properties individually
+        userDefaults.set(data.status.rawValue, forKey: "dailyVerseStatus")
+        userDefaults.set(data.bibleReference, forKey: "dailyVerseReference")
+        userDefaults.set(data.verse, forKey: "dailyVerseText")
+        userDefaults.set(data.imageData, forKey: "dailyVerseImageData")
+        
+        print("Successfully saved individual verse data to UserDefaults.")
         WidgetCenter.shared.reloadAllTimelines()
     } catch {
-        print("Error encoding or saving data: \(error.localizedDescription)")
+        print("Error saving individual verse data: \(error.localizedDescription)")
     }
   }
 

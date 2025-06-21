@@ -25,6 +25,8 @@
 		D79076622E04DABF0003A2E4 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D77C645F2DE55085000F5441 /* WidgetKit.framework */; };
 		D79076632E04DABF0003A2E4 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = D77C64612DE55086000F5441 /* SwiftUI.framework */; };
 		D79076742E04DAC10003A2E4 /* DailyVerseWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = D79076612E04DABE0003A2E4 /* DailyVerseWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		D7AECDC82E063C8B008131FC /* WidgetDataSharer.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7AECDC72E063C8B008131FC /* WidgetDataSharer.swift */; };
+		D7AECDC92E063C8B008131FC /* WidgetDataSharer.m in Sources */ = {isa = PBXBuildFile; fileRef = D7AECDC62E063C8B008131FC /* WidgetDataSharer.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -80,6 +82,9 @@
 		D77C64B22DE56AAE000F5441 /* WidgetDataSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WidgetDataSync.swift; path = Shepherd/WidgetDataSync.swift; sourceTree = "<group>"; };
 		D77C64B42DE56AC2000F5441 /* WidgetDataSync.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = WidgetDataSync.m; path = Shepherd/WidgetDataSync.m; sourceTree = "<group>"; };
 		D79076612E04DABE0003A2E4 /* DailyVerseWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = DailyVerseWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		D7AECDC62E063C8B008131FC /* WidgetDataSharer.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; name = WidgetDataSharer.m; path = Shepherd/WidgetDataSharer.m; sourceTree = "<group>"; };
+		D7AECDC72E063C8B008131FC /* WidgetDataSharer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = WidgetDataSharer.swift; path = Shepherd/WidgetDataSharer.swift; sourceTree = "<group>"; };
+		D7AECDCA2E064076008131FC /* DailyVerseWidgetExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DailyVerseWidgetExtension.entitlements; sourceTree = "<group>"; };
 		E41EE0604960528E6AFC8F61 /* Pods-Shepherd.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Shepherd.release.xcconfig"; path = "Target Support Files/Pods-Shepherd/Pods-Shepherd.release.xcconfig"; sourceTree = "<group>"; };
 		EAEDFBA39C7EF1B9EA065ADD /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = Shepherd/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
@@ -94,11 +99,18 @@
 			);
 			target = D77C645D2DE55085000F5441 /* ShepherdStreakWidgetExtension */;
 		};
+		D7AECDC52E0635DB008131FC /* PBXFileSystemSynchronizedBuildFileExceptionSet */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = D79076602E04DABE0003A2E4 /* DailyVerseWidgetExtension */;
+		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		D77C64632DE55086000F5441 /* ShepherdStreakWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (D77C64772DE55088000F5441 /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = ShepherdStreakWidget; sourceTree = "<group>"; };
-		D79076642E04DABF0003A2E4 /* DailyVerseWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = DailyVerseWidget; sourceTree = "<group>"; };
+		D79076642E04DABF0003A2E4 /* DailyVerseWidget */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (D7AECDC52E0635DB008131FC /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = DailyVerseWidget; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -134,6 +146,8 @@
 		13B07FAE1A68108700A75B9A /* Shepherd */ = {
 			isa = PBXGroup;
 			children = (
+				D7AECDC62E063C8B008131FC /* WidgetDataSharer.m */,
+				D7AECDC72E063C8B008131FC /* WidgetDataSharer.swift */,
 				D77C64B42DE56AC2000F5441 /* WidgetDataSync.m */,
 				D77C64B22DE56AAE000F5441 /* WidgetDataSync.swift */,
 				BB2F792B24A3F905000567C9 /* Supporting */,
@@ -172,6 +186,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				D7AECDCA2E064076008131FC /* DailyVerseWidgetExtension.entitlements */,
 				D77C64872DE550C6000F5441 /* ShepherdStreakWidgetExtension.entitlements */,
 				13B07FAE1A68108700A75B9A /* Shepherd */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
@@ -583,6 +598,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D7AECDC82E063C8B008131FC /* WidgetDataSharer.swift in Sources */,
+				D7AECDC92E063C8B008131FC /* WidgetDataSharer.m in Sources */,
 				D77C64B52DE56AC2000F5441 /* WidgetDataSync.m in Sources */,
 				13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */,
 				13B07FC11A68108700A75B9A /* main.m in Sources */,
@@ -942,6 +959,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = DailyVerseWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
@@ -986,6 +1004,7 @@
 				CLANG_ENABLE_OBJC_WEAK = YES;
 				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_ENTITLEMENTS = DailyVerseWidgetExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;

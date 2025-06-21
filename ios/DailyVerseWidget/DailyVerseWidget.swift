@@ -60,21 +60,28 @@ struct Provider: TimelineProvider {
 
     // Helper to read data from shared UserDefaults
     private func readEntryFromUserDefaults() -> DevotionalEntry {
-        // IMPORTANT: Replace "group.com.shepherd.app" with your actual App Group ID.
-        guard let userDefaults = UserDefaults(suiteName: "group.com.shepherd.app"),
-              let savedData = userDefaults.data(forKey: "dailyVerse"),
-              let sharedDevotional = try? JSONDecoder().decode(SharedDevotional.self, from: savedData) else {
-            // If anything fails, return the default logged-out state.
+        guard let userDefaults = UserDefaults(suiteName: "group.shepherd.widget.streak1") else {
             return DevotionalEntry(date: Date(), status: .loggedOut, bibleReference: nil, verse: nil, image: nil)
         }
+
+        let statusString = userDefaults.string(forKey: "dailyVerseStatus") ?? "loggedOut"
+        let status = SharedDevotional.Status(rawValue: statusString) ?? .loggedOut
         
-        let image = sharedDevotional.imageData != nil ? UIImage(data: sharedDevotional.imageData!) : nil
+        let bibleReference = userDefaults.string(forKey: "dailyVerseReference")
+        let verse = userDefaults.string(forKey: "dailyVerseText")
+        let imageData = userDefaults.data(forKey: "dailyVerseImageData")
+        let image = imageData != nil ? UIImage(data: imageData!) : nil
+
+        // If the status is verseAvailable, we must have a reference and verse
+        if status == .verseAvailable && (bibleReference == nil || verse == nil) {
+            return DevotionalEntry(date: Date(), status: .noVerseAvailable, bibleReference: nil, verse: nil, image: nil)
+        }
         
         return DevotionalEntry(
             date: Date(),
-            status: sharedDevotional.status,
-            bibleReference: sharedDevotional.bibleReference,
-            verse: sharedDevotional.verse,
+            status: status,
+            bibleReference: bibleReference,
+            verse: verse,
             image: image
         )
     }
@@ -83,19 +90,9 @@ struct Provider: TimelineProvider {
 // 4. SwiftUI View for the Widget
 struct DailyVerseWidgetEntryView : View {
     var entry: DevotionalEntry
-    let defaultBgColor = Color(hex: "#090E23")
 
     var body: some View {
         ZStack {
-            // Background
-            if let bgImage = entry.image {
-                Image(uiImage: bgImage)
-                    .resizable()
-                    .scaledToFill()
-            } else {
-                defaultBgColor.edgesIgnoringSafeArea(.all)
-            }
-            
             // Decorative stars (only for verse view)
             if entry.status == .verseAvailable {
                 StarsOverlay()
@@ -121,7 +118,7 @@ struct DailyVerseWidgetEntryView : View {
                             .lineSpacing(4)
                     }
                 }
-                .padding()
+                
             case .loggedOut:
                 VStack {
                     Text("📖")
@@ -147,8 +144,6 @@ struct DailyVerseWidgetEntryView : View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .edgesIgnoringSafeArea(.all)
-        .background(Color.clear)
     }
 }
 
@@ -159,7 +154,28 @@ struct DailyVerseWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             DailyVerseWidgetEntryView(entry: entry)
-                .containerBackground(.fill, for: .widget)
+                .containerBackground(for: .widget) {
+                    ZStack {
+                        if let bgImage = entry.image {
+                            Image(uiImage: bgImage)
+                                .resizable()
+                                .scaledToFill()
+                        } else {
+                            Color(hex: "#090E23")
+                        }
+                        
+                        LinearGradient(
+                            gradient: Gradient(
+                                colors: [
+                                    Color.black.opacity(0.4),
+                                    Color.black.opacity(0)
+                                ]
+                            ),
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    }
+                }
         }
         .supportedFamilies([.systemMedium])
         .configurationDisplayName("Daily Verse")
