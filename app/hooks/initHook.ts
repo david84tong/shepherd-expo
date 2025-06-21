@@ -6,6 +6,7 @@ import { PATH_OPTIONS, PathOption } from '../models/Path';
 import { checkStreakAndApplyPenalties } from './streakHook';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { useHomeStore } from '../stores/homeStore';
+import analytics from '../../utils/analytics';
 // Key to check if app has been initialized
 const APP_INITIALIZED_KEY = 'app_initialized';
 // Generate a unique UUID for anonymous users
@@ -27,6 +28,13 @@ const formatTimestamp = (timestamp: any) => {
 // This function can be called after init or when app comes to foreground
 export const onAppForegroundOrInit = async () => {
   console.log('onAppForegroundOrInit=====>', onAppForegroundOrInit);
+  
+  // Initialize analytics if not already initialized
+  if (!analytics.isInitialized) {
+    console.log('🔧 Initializing analytics on app foreground...');
+    await analytics.init();
+  }
+  
   const getUser = useUserStore.getState().getUser;
   const setSelectedPath = usePathStore.getState().setSelectedPath;
   const currentUser = auth().currentUser;
@@ -162,6 +170,14 @@ export const useAppInitialization = () => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
+        // Initialize analytics first
+        console.log('🔧 Initializing analytics...');
+        await analytics.init();
+        
+        // Test analytics integration
+        analytics.testAnalytics();
+        
+        // Restore user state
         await restoreUserState();
         setIsInitialized(true);
       } catch (error) {
@@ -173,3 +189,4 @@ export const useAppInitialization = () => {
   }, []);
   return { isInitialized };
 };
+
