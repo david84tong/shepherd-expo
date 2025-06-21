@@ -15,7 +15,7 @@ import {
 
 import PathNode, { NodeStatus } from '../../components/MapComponents/PathNode';
 import StickyPathHeader from '../../components/MapComponents/StickyPathHeader';
-import { BIBLE_BOOK_IDS, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS, Unit } from '../../app/models/Path';
+import { BIBLE_BOOK_IDS, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS, Unit } from '../models/Path';
 import { PathInfo, usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import { heightScreen } from '~/utils/dimensions';

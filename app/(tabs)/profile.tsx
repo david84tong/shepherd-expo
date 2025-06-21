@@ -32,10 +32,12 @@ import { useAssets } from 'expo-asset';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
+import { useUIStore } from '../stores/uiStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import OnboardingPathScreen from '../onboarding/8';
 import EditNameSheet from '../../components/EditNameSheet';
+
 
 // Import the icons using import statements
 import breadIcon from '../../assets/icons/breadIcon.png';
@@ -459,6 +461,8 @@ export default function ProfileScreen() {
 
   // Add ref for edit name sheet
   const editNameSheetRef = useRef<{ show: () => void; close: () => void }>(null);
+  
+
 
   // Subscribe to language changes to trigger re-render
   const currentLanguage = useLanguageStore((state) => state.language);
@@ -479,11 +483,18 @@ export default function ProfileScreen() {
           {/* Header */}
           <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
             <Text className="font-feather text-h2 text-textPrimary">{i18n.t('profile_title')}</Text>
-            <TouchableOpacity
-              onPress={handleShowSettings}
-              className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center">
-              <Feather name="settings" size={20} color="#B89B4C" />
-            </TouchableOpacity>
+            <View className="flex-row space-x-3">
+              <TouchableOpacity
+                onPress={() => useUIStore.getState().showStoreSheet()}
+                className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center mr-2">
+                <Feather name="shopping-bag" size={20} color="#B89B4C" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleShowSettings}
+                className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center">
+                <Feather name="settings" size={20} color="#B89B4C" />
+              </TouchableOpacity>
+            </View>
           </View>
 
           {/* Sign In to Save Progress Card (only for anonymous users and not signed in with any method) */}
@@ -626,14 +637,7 @@ export default function ProfileScreen() {
           
 
           {/* Selected Path Card */}
-          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
-            <Text className="font-feather text-heading text-textPrimary mb-2">{i18n.t('selected_path')}</Text>
-            <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
-              <Text className="font-din text-description underline text-accentGold">
-                {selectedPath?.title || i18n.t('no_path_selected')}
-              </Text>
-            </TouchableOpacity>
-          </View>
+        
 
           {/* Path Selection Modal */}
           <Modal
@@ -704,19 +708,7 @@ export default function ProfileScreen() {
           </View>
 
           {/* Store Section */}
-          <View className="mx-6 mt-4 mb-8 bg-surfaceCreamLight/50 rounded-[20px] p-6 shadow-card border border-brownBorder">
-            <View className="flex-row justify-between items-center">
-              <Text className="font-feather text-heading text-textPrimary">
-                {i18n.t('store')}
-              </Text>
-              <View className="bg-lightYellow px-4 py-1 rounded-full">
-                <Text className="font-feather text-accentGold">{i18n.t('unlocks_at_level_10')}</Text>
-              </View>
-            </View>
-            <Text className="font-din text-description mt-2">
-              {i18n.t('customize_lamb')}
-            </Text>
-          </View>
+       
           {/* Activity History Timeline Card */}
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
             <Text className="font-feather text-heading text-textPrimary mb-4">{i18n.t('your_journey')}</Text>

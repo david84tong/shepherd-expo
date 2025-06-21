@@ -657,7 +657,6 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
         <ScrollView
           className="flex-1 bg-surfaceCream"
           showsVerticalScrollIndicator={false}
-
           contentContainerStyle={{ paddingBottom: 40 }}>
           {/* Header */}
           <View className="flex-row items-center justify-between px-6 pt-8 pb-4 relative">

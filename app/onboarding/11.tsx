@@ -13,7 +13,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { AntDesign } from '@expo/vector-icons';
+import { AntDesign, FontAwesome6 } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '../hooks/authHook';
 import { useOnboardingStore } from '../stores/onboardingStore';
@@ -795,7 +795,7 @@ export default function SaveProgressScreen() {
             <Animated.View style={benefitsStyle} className="mb-8">
               <View className="flex-row items-center mb-4">
                 <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
-                  <AntDesign name="check" size={18} color="#24CA17" />
+                  <FontAwesome6 name="check" size={18} color="#24CA17" />
                 </View>
                 <Text className="font-din text-body text-textPrimary flex-1">
                   {i18n.t('onboarding_benefit_save_progress')}
@@ -804,7 +804,7 @@ export default function SaveProgressScreen() {
 
               <View className="flex-row items-center mb-4">
                 <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
-                  <AntDesign name="check" size={18} color="#24CA17" />
+                  <FontAwesome6 name="check" size={18} color="#24CA17" />
                 </View>
                 <Text className="font-din text-body text-textPrimary flex-1">
                   {i18n.t('onboarding_benefit_transfer_devices')}
@@ -813,7 +813,7 @@ export default function SaveProgressScreen() {
 
               <View className="flex-row items-center mb-4">
                 <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
-                  <AntDesign name="check" size={18} color="#24CA17" />
+                  <FontAwesome6 name="check" size={18} color="#24CA17" />
                 </View>
                 <Text className="font-din text-body text-textPrimary flex-1">
                   {i18n.t('onboarding_benefit_keep_streak')}

@@ -61,7 +61,8 @@ export default function OnboardingLayout() {
     pathname !== '/onboarding/1' &&
     pathname !== '/onboarding/11' &&
     !pathname.includes('Loading') &&
-    !pathname.includes('/onboarding/auth');
+    !pathname.includes('/onboarding/auth') &&
+    !pathname.includes('/pricing');
 
   console.log(
     `[OnboardingLayout] Path: ${pathname}, Should show progress bar: ${shouldShowProgressBar}`
@@ -254,7 +255,8 @@ export default function OnboardingLayout() {
         !(pathname == '/onboarding/1') &&
         !(pathname == '/onboarding/11') &&
         !pathname.includes('/onboarding/LoadingScreen') &&
-        !pathname.includes('/onboarding/auth') && (
+        !pathname.includes('/onboarding/auth') &&
+        !pathname.includes('/pricing') && (
           <Animated.View
             style={[
               {

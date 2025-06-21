@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import PrimaryButton from '~/components/PrimaryButton';
 import analytics from '~/utils/analytics';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
+import { useUserStore } from '~/app/stores/userStore';
 
 import Animated, {
   useAnimatedStyle,
@@ -17,6 +18,11 @@ import * as Haptics from 'expo-haptics';
 export default function FreeOfferScreen() {
   const router = useRouter();
   const { presentFreeTrialPaywall, setFromScreen } = useSubscriptionStore();
+  const { getLamb } = useUserStore();
+
+  // Get lamb name
+  const lamb = getLamb();
+  const lambName = lamb?.name || 'your lamb';
 
   // Create Reanimated shared values for each component
   const headerOpacity = useSharedValue(0);
@@ -24,6 +30,9 @@ export default function FreeOfferScreen() {
 
   const lambOpacity = useSharedValue(0);
   const lambTranslateY = useSharedValue(40);
+
+  const subtextOpacity = useSharedValue(0);
+  const subtextTranslateY = useSharedValue(40);
 
   const buttonOpacity = useSharedValue(0);
   const buttonTranslateY = useSharedValue(40);
@@ -40,6 +49,8 @@ export default function FreeOfferScreen() {
     headerTranslateY.value = 40;
     lambOpacity.value = 0;
     lambTranslateY.value = 40;
+    subtextOpacity.value = 0;
+    subtextTranslateY.value = 40;
     buttonOpacity.value = 0;
     buttonTranslateY.value = 40;
 
@@ -58,7 +69,8 @@ export default function FreeOfferScreen() {
     // Start animations with delays
     animateComponent(headerOpacity, headerTranslateY, 0);
     animateComponent(lambOpacity, lambTranslateY, 200);
-    animateComponent(buttonOpacity, buttonTranslateY, 400);
+    animateComponent(subtextOpacity, subtextTranslateY, 400);
+    animateComponent(buttonOpacity, buttonTranslateY, 600);
   }, []);
 
   // Create animated styles for each component
@@ -70,6 +82,11 @@ export default function FreeOfferScreen() {
   const lambStyle = useAnimatedStyle(() => ({
     opacity: lambOpacity.value,
     transform: [{ translateY: lambTranslateY.value }],
+  }));
+
+  const subtextStyle = useAnimatedStyle(() => ({
+    opacity: subtextOpacity.value,
+    transform: [{ translateY: subtextTranslateY.value }],
   }));
 
   const buttonStyle = useAnimatedStyle(() => ({
@@ -118,6 +135,13 @@ export default function FreeOfferScreen() {
                 resizeMode="contain"
               />
             </View>
+          </Animated.View>
+
+          {/* Subtext */}
+          <Animated.View style={subtextStyle}>
+            <Text className="font-din text-caption text-description text-center mt-8">
+              Biggest discount ever - just for you & {lambName}!
+            </Text>
           </Animated.View>
 
           {/* CTA Button */}

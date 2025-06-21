@@ -133,8 +133,8 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     {
       id: 'skin_lion',
       category: 'skins',
-      name: "Lion of Judah",
-      description: 'Courageous and mighty like the Lion of Judah',
+      name: "Den of Lions",
+      description: 'Courageous ',
       price: 2200,
       currency: 'gems',
       image: lionSkin,

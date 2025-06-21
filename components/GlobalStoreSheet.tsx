@@ -33,6 +33,7 @@ const StoreSheet: React.FC<StoreSheetProps> = ({ storeSheetRef }) => {
 
   // Access UI store for visibility
   const isStoreSheetVisible = useUIStore((state) => state.isStoreSheetVisible);
+  const showStoreSheet = useUIStore((state) => state.showStoreSheet);
   const hideStoreSheet = useUIStore((state) => state.hideStoreSheet);
 
   // Handle sheet changes
@@ -62,9 +63,10 @@ const StoreSheet: React.FC<StoreSheetProps> = ({ storeSheetRef }) => {
 
   // Show the store sheet
   const showSheet = useCallback(() => {
+    showStoreSheet(); // Set visibility state first
     bottomSheetRef.current?.expand();
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
-  }, []);
+  }, [showStoreSheet]);
 
   // Expose methods via ref
   useImperativeHandle(

@@ -231,7 +231,7 @@ const PricingScreen = () => {
                 We&apos;re giving you super shepherd for free!
               </Text>
               <View
-              className="bg-lightYellow border-2 border-accentGold shadow-lg rounded-[24px] mb-8 overflow-hidden h-48 mt-4"
+              className="bg-lightYellow border-2 border-accentGold shadow-lg rounded-[24px] mb-0 overflow-hidden h-48 mt-4"
               style={{
                 shadowColor: '#FCD34D',
                 shadowOffset: { width: 0, height: 4 },

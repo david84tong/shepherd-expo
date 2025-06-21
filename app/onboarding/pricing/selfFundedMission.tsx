@@ -266,7 +266,7 @@ export default function SelfFundedMissionScreen() {
             <View className="bg-lightYellow/30 rounded-2xl px-6 py-4 mx-4 mb-12 border border-accentGold/20">
               <Text className="font-din text-body text-textPrimary text-center leading-relaxed">
                 <Text className="text-darkYellow font-feather">We donate 10% </Text> to help
-                fund those in need through mission trips, charity, and more.
+                fund those in need through mission trips, churches, and charity.
               </Text>
             </View>
 

@@ -15,13 +15,14 @@ import { analytics } from '~/utils/analytics';
 import i18n from '~/app/utils/i18n';
 import { RPH } from '~/app/helper/helper';
 import { AppFonts } from '~/app/constants/appFonts';
+import PrimaryButton from './PrimaryButton';
 
 // Image references
-const PREVIEW_IMAGE = require('../assets/images/widgetPreviewStep.png');
-const STEP1_IMAGE = require('../assets/images/widgetStep1.png');
-const STEP2_IMAGE = require('../assets/images/widgetStep2.png');
-const STEP3_IMAGE = require('../assets/images/widgetStep3.png');
-const STEP4_IMAGE = require('../assets/images/widgetStep4.png');
+import PREVIEW_IMAGE from '../assets/images/widgetPreviewStep.png';
+import STEP1_IMAGE from '../assets/images/widgetStep1.png';
+import STEP2_IMAGE from '../assets/images/widgetStep2.png';
+import STEP3_IMAGE from '../assets/images/widgetStep3.png';
+import STEP4_IMAGE from '../assets/images/widgetStep4.png';
 
 
 // Simplified steps with concise instructions
@@ -142,20 +143,16 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
                 resizeMode="contain"
               />
             </View>
-            <TouchableOpacity
-            style={{paddingVertical:RPH(1.9),backgroundColor: '#FCD34D',marginBottom:RPH(1) }}
-              className="w-full rounded-full"
+            <PrimaryButton
+              title={i18n.t('widget_howto_add_widget')}
               onPress={onAddWidgetPressed}
-          
-            >
-              <Text className="text-lg font-feather font-bold text-[#3C584A] text-center">{i18n.t('widget_howto_add_widget')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-            style={{paddingVertical:RPH(2)}}
-              className="w-full rounded-full"
-              onPress={onNoThanksPressed}
-            >
-              <Text className="text-lg font-feather text-[#3C584A] text-center">{i18n.t('widget_howto_no_thanks')}</Text>
+              buttonType="gold"
+              style="mb-4"
+            />
+            <TouchableOpacity onPress={onNoThanksPressed}>
+              <Text className="text-lg font-feather text-[#3C584A] text-center underline">
+                {i18n.t('widget_howto_no_thanks')}
+              </Text>
             </TouchableOpacity>
           </ScrollView>
         ) : (
@@ -203,14 +200,11 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
             {/* Fixed Bottom Area */}
             <View style={styles.fixedBottomContainer}>
               {/* Button */}
-              <TouchableOpacity
-                style={styles.button}
+              <PrimaryButton
+                title={step < steps.length - 1 ? i18n.t('next') : i18n.t('done')}
                 onPress={handleNextStep}
-              >
-                <Text style={styles.buttonText}>
-                  {step < steps.length - 1 ? i18n.t('next') : i18n.t('done')}
-                </Text>
-              </TouchableOpacity>
+                buttonType="gold"
+              />
             </View>
           </>
         )}
@@ -229,23 +223,7 @@ const styles = StyleSheet.create({
   activeNumber: {
     color: '#3C584A',
   },
-  button: {
-    alignItems: 'center',
-    backgroundColor: '#FCD34D',
-    borderRadius: 100,
-    elevation: 3,
-    paddingVertical: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  buttonText: {
-    color: '#3C584A',
-    fontFamily: 'feather',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+
   closeButton: {
     padding: 8,
   },
@@ -278,7 +256,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: '#3C584A',
-    fontFamily: 'feather',
+    fontFamily: 'Nunito-Bold',
     fontSize: 20,
     fontWeight: '600',
   },

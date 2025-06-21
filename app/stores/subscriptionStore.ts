@@ -63,8 +63,10 @@ async function moveUserToProMode(
   });
   // Check if onboarding is completed
   onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-  // Navigate based on onboarding status
-  setTimeout(handlePostPurchaseNavigation, 100);
+  // Navigate to ShepherdCommunity screen after successful purchase
+  setTimeout(() => {
+    router.push('/onboarding/pricing/ShepherdCommunity');
+  }, 100);
 }
 
 const handleRestoreCompleted = async ({
@@ -221,6 +223,9 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         onPurchaseCancelled() {
           result = PAYWALL_RESULT.CANCELLED;
           console.log('cancelled');
+          setTimeout(() => {
+            get().presentHalfOffPaywall();
+          }, 500);
           // Check if onboarding is completed, if not redirect to onboarding 11
           AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
             .then((completed) => {
@@ -234,6 +239,9 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
             });
         },
         onPurchaseFailed() {
+          setTimeout(() => {
+            get().presentHalfOffPaywall();
+          }, 500);
           result = PAYWALL_RESULT.ERROR;
           // Check if onboarding is completed, if not redirect to onboarding 11
           AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
@@ -278,7 +286,7 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     await get().markHalfOffPaywallAsSeen();
 
     try {
-      const paywall = await adapty.getPaywall('halfoff');
+      const paywall = await adapty.getPaywall('halfoff-simple');
       console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
       const view = await createPaywallView(paywall);
 
@@ -542,9 +550,11 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       Alert.alert('Success', 'Purchase successful!');
       console.log('[SubscriptionStore] Pro status after purchase:', get().isProMember);
 
-      // Navigate based on onboarding status if user is now a pro member
+      // Navigate to ShepherdCommunity screen if user is now a pro member
       if (isPro) {
-        setTimeout(handlePostPurchaseNavigation, 500);
+        setTimeout(() => {
+          router.push('/onboarding/pricing/ShepherdCommunity');
+        }, 500);
       }
 
       // Call the onSuccess callback if provided
