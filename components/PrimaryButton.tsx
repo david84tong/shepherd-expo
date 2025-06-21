@@ -6,6 +6,7 @@ import analytics from '../utils/analytics';
 import { useSoundStore } from '../app/stores/soundStore';
 import { Feather } from '@expo/vector-icons';
 import { RPH } from '~/app/helper/helper';
+import { IS_IOS } from '~/app/utils/utils';
 
 interface PrimaryButtonProps {
   title: string;
@@ -115,7 +116,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
 
   // Platform-specific shadow styles
   const shadowStyles =
-    !isPressed && isActive 
+    !isPressed && isActive
       ? {
         ...Platform.select({
           ios: {
@@ -132,8 +133,8 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
       : {};
 
   return (
-    <View className={`${style || ''}`} style={{ 
-      height: buttonHeight || buttonContainerHeight, 
+    <View className={`${style || ''}`} style={{
+      height: buttonHeight || buttonContainerHeight,
       opacity,
       width: width || '100%',
       marginTop: style?.includes('mt-') ? 0 : 16,
@@ -151,9 +152,9 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
                   ? 'bg-[#FFB366] border-[#FFB366]'
                   : 'bg-[#E5E5E5] border-[#D0D0D0]')
             :
-             `${bgColor} ${borderColor}` }
+            `${bgColor} ${borderColor}`}
              `
-          
+
         }
         style={[
           shadowStyles,
@@ -174,10 +175,10 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
         ) : (
           <>
             {featherIcon && (
-              <Feather 
-                name={featherIcon} 
-                size={buttonHeight && buttonHeight <= 40 ? 16 : 20} 
-                color={disabled || !isActive ? "#E0F6FF" : "white"} 
+              <Feather
+                name={featherIcon}
+                size={buttonHeight && buttonHeight <= 40 ? 16 : 20}
+                color={disabled || !isActive ? "#E0F6FF" : "white"}
                 style={{ marginRight: buttonHeight && buttonHeight <= 40 ? 6 : 8 }}
               />
             )}
@@ -192,15 +193,15 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
                       : 'text-gray-400')
                 : txtColor
                 }`}
-              style={{ 
+              style={{
                 flexShrink: 1,
-         
+
               }}
             >
               {title}
             </Text>
             {icon && (
-              <Image source={icon} className={`${buttonHeight && buttonHeight <= 40 ? 'w-4 h-4' : 'w-6 h-6'} -mt-[2px] ml-2 ${disabled || !isActive ? 'opacity-50' : ''}`} resizeMode="contain" />
+              <Image source={icon} className={`${buttonHeight && buttonHeight <= 40 ? 'w-4 h-4' : 'w-6 h-6'} -mt-[2px] ml-2 ${(disabled || !isActive) && IS_IOS ? 'opacity-50' : ''}`} resizeMode="contain" />
             )}
             {iconText && (
               <Text style={{
