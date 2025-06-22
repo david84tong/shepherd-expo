@@ -197,7 +197,7 @@ export default function HomeScreen() {
           alignItems: 'center',
           justifyContent: 'center',
           opacity: riveSkinInitialized ? 1 : 0, // Hide until skin is initialized
-          
+
         }}>
         <TouchableOpacity
           onPress={() => {
@@ -362,7 +362,7 @@ export default function HomeScreen() {
                       textShadowColor: 'rgba(0, 0, 0, 0.2)',
                       textShadowOffset: { width: 0, height: 1 },
                       textShadowRadius: 2,
-                      fontSize:AppFonts[24]
+                      fontSize: AppFonts[24]
                     }}>
                     {showDevotionalContent
                       ? i18n.t('devotional_title')
@@ -624,7 +624,7 @@ export default function HomeScreen() {
                   : (
                     <BottomSheetScrollView
                       showsVerticalScrollIndicator={false}
-                      contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 24 }}>
+                      contentContainerStyle={{ paddingBottom: RPH(20), paddingHorizontal: 24 }}>
                       {prayerCompleted && readingCompleted && reflectionCompleted && (currentDevotional || devotionalData) && (
                         <DailyVerseCard
                           devotional={currentDevotional || devotionalData!}
@@ -754,7 +754,7 @@ export default function HomeScreen() {
                           </View>
                         </View>
                       )} */}
-                      
+
 
                       {devotionalError && !currentDevotional && (
                         <View className="bg-red/10 rounded-xl p-4 mb-4 border border-red/20">

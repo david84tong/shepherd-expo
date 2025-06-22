@@ -417,5 +417,10 @@
     "days_missed": "Gemiste Dagen",
     "new_day": "Nieuwe Dag",
     "purchase": "Kopen",
-    "tap_to_show_next_card": "Tik om volgende kaart te tonen"
+    "tap_to_show_next_card": "Tik om volgende kaart te tonen",
+    "bible_reader_tutorial_title": "Bijbel Lezer Tips",
+    "bible_reader_tutorial_step1": "Veeg naar rechts om een persoonlijke devotie, gebed of reflectie voor dat vers te maken",
+    "bible_reader_tutorial_step2": "Veeg naar links om met het vers te chatten en vragen te stellen",
+    "bible_reader_tutorial_step3": "Houd ingedrukt om het vers te markeren of notities te maken",
+    "skip": "Overslaan"
 }

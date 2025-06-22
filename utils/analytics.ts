@@ -228,9 +228,9 @@ class Analytics {
 
       // Track event in Amplitude
       if (this.amplitudeInitialized) {
-      console.log("EVENT TRACK WITH AMPLITUDE");
-      
+        
         amplitudeTrack(eventName?.toString(), eventParams);
+        console.log("EVENT TRACK WITH AMPLITUDE");
       }
     } catch (error) {
       console.log('Failed to log analytics event:', error);

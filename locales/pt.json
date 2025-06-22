@@ -416,5 +416,10 @@
     "days_missed": "Dias Perdidos",
     "new_day": "Novo Dia",
     "purchase": "Comprar",
-    "tap_to_show_next_card": "Toque para Mostrar Próximo Cartão"
+    "tap_to_show_next_card": "Toque para Mostrar Próximo Cartão",
+    "bible_reader_tutorial_title": "Dicas do Leitor Bíblico",
+    "bible_reader_tutorial_step1": "Deslize para a direita para criar um devocional, oração ou reflexão personalizada para esse versículo",
+    "bible_reader_tutorial_step2": "Deslize para a esquerda para conversar com o versículo e fazer perguntas",
+    "bible_reader_tutorial_step3": "Mantenha pressionado para destacar ou fazer anotações no versículo",
+    "skip": "Pular"
 }

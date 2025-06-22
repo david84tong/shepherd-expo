@@ -2,6 +2,7 @@ import { View, Animated } from 'react-native';
 import CircleButton from '~/components/Shared/CircleButton';
 import PrimaryButton from '~/components/PrimaryButton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IS_IOS } from '../utils/utils';
 
 interface BottomControlsProps {
   bottomContentOpacity: Animated.Value;
@@ -42,11 +43,11 @@ export default function BottomControls({
 }: BottomControlsProps) {
   const insets = useSafeAreaInsets();
   return (
-    <Animated.View 
+    <Animated.View
       style={[
         { opacity: bottomContentOpacity, transform: [{ translateY: bottomContentAnimY }] },
-        {bottom: RPH(1) + insets.bottom / 2},
-        { 
+        { bottom: RPH(1) + insets.bottom / 2 },
+        {
           opacity: showPrayerContent ? controlRowOpacity : 1,
           pointerEvents: showPrayerContent ? (isControlRowVisible ? 'auto' : 'none') : 'auto'
         }
@@ -63,18 +64,18 @@ export default function BottomControls({
       <View className="flex-row items-center justify-between w-full">
         {!showJournalContent && !showPrayerSuccess && (
           <Animated.View style={{ width: '10%' }}>
-            <CircleButton 
-              icon='chevron-left' 
+            <CircleButton
+              icon='chevron-left'
               // size={53} 
-              onPress={()=>{
-                if(showDevotionalContent){
+              onPress={() => {
+                if (showDevotionalContent) {
                   handleDevotionalClose({})
                   devotionalReaderRef.current?.handleClose();
                 }
-                if(showPrayerContent){
+                if (showPrayerContent) {
                   prayerViewRef.current?.handleBack();
                 }
-              }} 
+              }}
             />
           </Animated.View>
         )}
@@ -88,10 +89,10 @@ export default function BottomControls({
               buttonType="blue"
               icon={require('../../assets/icons/starIcon.png')}
               reward={'+50'}
-              opacity={!devotionalReadedFully ? 0.7 : 1}
+              opacity={!devotionalReadedFully && IS_IOS ? 0.7 : 1}
             />
           ) : showPrayerContent ? (
-            <View/>
+            <View />
             // <BluePrimaryButton
             //   title={i18n.t('amen_button')}
             //   width="100%"
@@ -101,8 +102,8 @@ export default function BottomControls({
             //   }}
             // />
           ) : null}
-        </Animated.View> 
-        
+        </Animated.View>
+
         {/* {showPrayerContent && (
           <Animated.View style={{ width: '10%' }}>
             <CircleButton
