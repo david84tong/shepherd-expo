@@ -234,7 +234,6 @@ export default function TabsLayout() {
 
   return (
     <Tabs
-      initialRouteName='index'
       screenOptions={({ route }) => ({
         headerShown: false, 
         tabBarStyle: animatedTabBarStyle,
@@ -251,25 +250,12 @@ export default function TabsLayout() {
   
 
       <Tabs.Screen
-        name="bible"
-        options={{
-          title: 'Bible',
-          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
-          tabBarIcon: ({ color, focused }) => (
-            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
-              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/bible.png')} style={{width:RPH(2.5),height:RPH(2.5)}}/>
-              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_bible_title')}</Text>
-            </View>
-          ),
-        }}
-      />
-          <Tabs.Screen
         name="index"
         options={{
           title: 'sheep',
           tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
-            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
+            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-6">
               <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/today.png')} style={{width:RPH(2.5),height:RPH(2.5)}} />
               <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_home_title')}</Text>
             </View>
@@ -277,6 +263,19 @@ export default function TabsLayout() {
         }}
       />
 
+      <Tabs.Screen
+        name="bible"
+        options={{
+          title: 'Bible',
+          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
+          tabBarIcon: ({ color, focused }) => (
+            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-6">
+              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/bible.png')} style={{width:RPH(2.5),height:RPH(2.5)}}/>
+              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_bible_title')}</Text>
+            </View>
+          ),
+        }}
+      />
 
       <Tabs.Screen
         name="profile"
@@ -284,7 +283,7 @@ export default function TabsLayout() {
           title: 'Profile',
           tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
-            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-4">
+            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-6">
               <Image resizeMode='contain' tintColor={focused ? "orange" : ""} source={require('../../assets/icons/profile.png')} style={{width:RPH(2.5),height:RPH(2.5)}} />
               <Text className={`mt-1 font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din',fontSize:AppFonts[11] }}>{i18n.t('bottom_profile_title')}</Text>
             </View>

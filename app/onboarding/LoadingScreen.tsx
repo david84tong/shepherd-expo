@@ -18,6 +18,8 @@ import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_COMPLETED_KEY } from '~/app/models/Onboarding';
 import i18n from '~/app/utils/i18n';
+import useSubscriptionStore from '~/app/stores/subscriptionStore';
+import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 
 const { width, height } = Dimensions.get('window');
 
@@ -102,6 +104,10 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const isCreatingDevotional = useDevotionalStore((s) => s.isCreatingDevotional);
   const devotionalStoreCurrentDevotional = useDevotionalStore((s) => s.currentDevotional);
   const devotionalError = useDevotionalStore((s) => s.error);
+  
+  // Check if user is pro and get paywall function
+  const isProMember = useSubscriptionStore((s) => s.isProMember);
+  const { presentFreeTrialPaywall } = useSubscriptionStore();
 
   // Use appropriate loading points
   const loadingPoints = useMemo(() =>
@@ -203,35 +209,21 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         }, STEP_DURATION);
       } else {
         timer = setTimeout(() => {
-          router.replace({ pathname: '/PricingScreen', params: { animateFromBottom: 'true' } });
+          router.push('/onboarding/pricing/selfFundedMission');
         }, FINAL_DELAY);
       }
     } else {
-      // For devotional creation
-      if (isCreatingDevotional) {
-        // Continue through steps while creating
-        if (currentStep < loadingPoints.length - 1) {
-          timer = setTimeout(() => {
-            setCurrentStep(prev => prev + 1);
-          }, STEP_DURATION);
-        }
-      } else if (devotionalStoreCurrentDevotional) {
-        // When devotional is created, ensure we complete all steps
-        if (currentStep < loadingPoints.length - 1) {
-          timer = setTimeout(() => {
-            setCurrentStep(prev => prev + 1);
-          }, STEP_DURATION);
-        } else if (currentStep === loadingPoints.length - 1) {
-          // Complete the final step
-          timer = setTimeout(() => {
-            setCurrentStep(loadingPoints.length);
-          }, STEP_DURATION);
-        }
+      // For devotional creation - always progress through steps
+      if (currentStep < loadingPoints.length) {
+        timer = setTimeout(() => {
+          setCurrentStep(prev => prev + 1);
+        }, STEP_DURATION);
       }
+      // Note: The actual navigation is handled by the monitoring effect below
     }
 
     return () => clearTimeout(timer);
-  }, [currentStep, hasStarted, isOnboarding, isCreatingDevotional, devotionalStoreCurrentDevotional, loadingPoints.length, router]);
+  }, [currentStep, hasStarted, isOnboarding, loadingPoints.length, router]);
 
   // Optimize checklist animation timing
   useEffect(() => {
@@ -274,8 +266,10 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
   // Monitor devotional creation progress
   useEffect(() => {
-    if (!isOnboarding && !isCreatingDevotional) {
-      if (devotionalStoreCurrentDevotional && currentStep === loadingPoints.length) {
+    if (!isOnboarding && currentStep === loadingPoints.length) {
+      // Loading steps completed, decide where to navigate
+      if (devotionalStoreCurrentDevotional && isProMember) {
+        // Devotional was created successfully (pro user)
         const timer = setTimeout(() => {
           router.navigate({
             pathname: '/(tabs)',
@@ -284,13 +278,43 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         }, 1000);
         return () => clearTimeout(timer);
       } else if (devotionalError) {
+        // Error occurred
         const timer = setTimeout(() => {
           router.replace('/');
         }, 2000);
         return () => clearTimeout(timer);
+      } else if (!isProMember) {
+        console.log('LoadingScreen: User is not pro, showing paywall');
+        // User is not pro - show paywall before dismissing
+        const timer = setTimeout(async () => {
+          try {
+            // Set the fromScreen property for tracking
+            useSubscriptionStore.getState().setFromScreen('CustomDevotional');
+            
+            // Show the paywall
+            const result = await presentFreeTrialPaywall();
+            
+            // Handle paywall result
+            if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+              // User upgraded - navigate to home with devotional
+              router.navigate({
+                pathname: '/(tabs)',
+                params: { showDevotional: 'true' }
+              });
+            } else {
+              // User cancelled or error - go back to Bible tab
+              router.navigate('/(tabs)/bible');
+            }
+          } catch (error) {
+            console.error('Error showing paywall:', error);
+            // Fallback - go to Bible tab
+            router.navigate('/(tabs)/bible');
+          }
+        }, 1000);
+        return () => clearTimeout(timer);
       }
     }
-  }, [isOnboarding, isCreatingDevotional, devotionalStoreCurrentDevotional, devotionalError, router, currentStep, loadingPoints.length]);
+  }, [isOnboarding, devotionalStoreCurrentDevotional, devotionalError, router, currentStep, loadingPoints.length, isProMember, presentFreeTrialPaywall]);
 
   // --- GLOWING BORDER EFFECT ---
   const glViewRef = useRef<{ stop: () => void } | null>(null);

@@ -45,6 +45,7 @@ import * as Application from 'expo-application';
 import { useOnboardingStore } from '../app/stores/onboardingStore';
 import { saveFeedback } from '../utils/firestore';
 import { useSoundStore } from '../app/stores/soundStore';
+import { useDevotionalStore } from '../app/stores/devotionalStore';
 
 import Animated, {
   useAnimatedStyle,
@@ -189,6 +190,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   const savedTranslation = usePathStore((state) => state.savedTranslation);
   const setSavedTranslation = usePathStore((state) => state.setSavedTranslation);
 
+  // Add state for temporary translation selection
+  const [tempSelectedTranslation, setTempSelectedTranslation] = useState<string>(savedTranslation);
+  const [isSavingTranslation, setIsSavingTranslation] = useState(false);
+
   // Available translations
   const translations = [
     { id: 'WEB', name: 'World English Bible (WEB)' },
@@ -196,6 +201,11 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     { id: 'NIV', name: 'New International Version (NIV)' },
     { id: 'ESV', name: 'English Standard Version (ESV)' },
     { id: 'ICB', name: "International Children's Bible (ICB)" },
+    { id: 'BDS', name: '🇫🇷 La Bible du Semeur (BDS)' },
+    { id: 'HTB', name: '🇳🇱 Het Boek (HTB)' },
+    { id: 'LUT', name: '🇩🇪 Lutherbibel 1912 (LUT)' },
+    { id: 'NVI_ES', name: '🇪🇸 NUEVA VERSIÓN INTERNACIONAL (NVI_ES)' },
+    { id: 'NVI_PT', name: '🇵🇹 Bíblia Sagrada, Nova Versão Internacional (NVI_PT)' },
   ];
 
   // Add internal ref for the actual BottomSheet
@@ -338,19 +348,55 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     []
   );
 
-  // Handle translation selection
-  const handleTranslationChange = useCallback(
-    (translation: string) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-      setSavedTranslation(translation);
-      setTranslationModalVisible(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      analytics.logEvent('Settings_Tapped_TranslationChange', {
-        translation: translation,
-      });
+  // Handle temporary translation selection (just for preview)
+  const handleTempTranslationSelect = useCallback((translation: string) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    setTempSelectedTranslation(translation);
+  }, []);
+
+  // Handle saving the translation (apply the changes)
+  const handleSaveTranslation = useCallback(
+    async () => {
+      setIsSavingTranslation(true);
+      
+      try {
+        // Update path store (primary translation setting)
+        setSavedTranslation(tempSelectedTranslation);
+        
+        // Update devotional store bible version
+        const devotionalStore = useDevotionalStore.getState();
+        devotionalStore.setBibleVersion(tempSelectedTranslation);
+        
+        // If there's a current devotional, refetch it with the new translation
+        if (devotionalStore.currentDevotional || devotionalStore.dailyDevotional) {
+          console.log('🔄 Translation changed, refetching devotional with new translation:', tempSelectedTranslation);
+          try {
+            await devotionalStore.fetchTodaysDevotional();
+          } catch (error) {
+            console.error('Error refetching devotional with new translation:', error);
+          }
+        }
+        
+        setTranslationModalVisible(false);
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        analytics.logEvent('Settings_Tapped_TranslationChange', {
+          translation: tempSelectedTranslation,
+        });
+      } catch (error) {
+        console.error('Error saving translation:', error);
+      } finally {
+        setIsSavingTranslation(false);
+      }
     },
-    [setSavedTranslation]
+    [setSavedTranslation, tempSelectedTranslation]
   );
+
+  // Handle opening translation modal
+  const handleOpenTranslationModal = useCallback(() => {
+    // Reset temp selection to current saved translation
+    setTempSelectedTranslation(savedTranslation);
+    setTranslationModalVisible(true);
+  }, [savedTranslation]);
 
   // Function to get display text for notification time
   const getNotificationTimeDisplay = useCallback(() => {
@@ -1251,7 +1297,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 <Text style={styles.settingsSectionTitle}>{i18n.t('bible_translation_title')}</Text>
                 <TouchableOpacity
                   style={styles.translationSelector}
-                  onPress={() => setTranslationModalVisible(true)}>
+                  onPress={handleOpenTranslationModal}>
                   <Text style={styles.translationText}>
                     {translations.find((t) => t.id === savedTranslation)?.name ||
                       'English Standard Version (ESV)'}
@@ -1750,22 +1796,32 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   key={translation.id}
                   style={[
                     styles.translationOption,
-                    savedTranslation === translation.id && styles.selectedTranslation,
+                    tempSelectedTranslation === translation.id && styles.selectedTranslation,
                   ]}
-                  onPress={() => handleTranslationChange(translation.id)}>
+                  onPress={() => handleTempTranslationSelect(translation.id)}>
                   <Text
                     style={[
                       styles.translationOptionText,
-                      savedTranslation === translation.id && styles.selectedTranslationText,
+                      tempSelectedTranslation === translation.id && styles.selectedTranslationText,
                     ]}>
                     {translation.name}
                   </Text>
-                  {savedTranslation === translation.id && (
+                  {tempSelectedTranslation === translation.id && (
                     <Feather name="check" size={18} color="#F7B500" />
                   )}
                 </TouchableOpacity>
               ))}
             </ScrollView>
+
+            {/* Save Button */}
+            <TouchableOpacity 
+              style={[styles.saveButton, tempSelectedTranslation === savedTranslation && styles.saveButtonDisabled]} 
+              onPress={handleSaveTranslation}
+              disabled={isSavingTranslation || tempSelectedTranslation === savedTranslation}>
+              <Text style={[styles.saveButtonText, tempSelectedTranslation === savedTranslation && styles.saveButtonTextDisabled]}>
+                {isSavingTranslation ? "Saving...": "Save"}
+              </Text>
+            </TouchableOpacity>
 
             <TouchableOpacity style={styles.cancelButton} onPress={handleCancelTranslation}>
               <Text style={styles.cancelButtonText}>{i18n.t('cancel_button')}</Text>
@@ -2124,6 +2180,25 @@ const styles = StyleSheet.create({
   selectedTranslationText: {
     color: '#3C584A',
     fontWeight: '600',
+  },
+  saveButton: {
+    alignItems: 'center',
+    backgroundColor: '#F7B500',
+    borderRadius: 8,
+    marginTop: 12,
+    padding: 14,
+  },
+  saveButtonDisabled: {
+    backgroundColor: 'rgba(247, 181, 0, 0.3)',
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveButtonTextDisabled: {
+    color: 'rgba(255, 255, 255, 0.6)',
   },
   cancelButton: {
     alignItems: 'center',

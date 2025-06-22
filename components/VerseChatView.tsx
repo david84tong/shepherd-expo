@@ -71,7 +71,7 @@ const TypingMessage: React.FC<{ text: string }> = ({ text }) => {
       const timeout = setTimeout(() => {
         setDisplayText(prev => prev + text[currentIndex]);
         setCurrentIndex(prev => prev + 1);
-      }, 30); // Adjust speed here (lower = faster)
+      }, 15); // Adjust speed here (lower = faster)
 
       return () => clearTimeout(timeout);
     }
@@ -114,7 +114,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
   const inputSlideAnim = useSharedValue(80);
   
   const { getFirebaseIdToken } = useAuth();
-  const { isProMember, presentPaywall } = useSubscriptionStore();
+  const { isProMember, presentFreeTrialPaywall } = useSubscriptionStore();
   
   // Check if user has already used their free message
   useEffect(() => {
@@ -160,7 +160,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     });
     
     // Try to present the main paywall first, if it fails, show free trial
-    const result = await presentPaywall();
+    const result = await presentFreeTrialPaywall();
     console.log("[VerseChatView] presentPaywall result:", result);
     
     return result;

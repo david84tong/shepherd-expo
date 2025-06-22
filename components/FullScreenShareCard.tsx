@@ -152,7 +152,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                             {/* Top Right Close Button */}
                             <TouchableOpacity
                                 style={{
-                                    top: RPH(3)
+                                    top: RPH(8)
                                 }}
                                 className="absolute  right-6 w-10 h-10 bg-black/30 rounded-full items-center justify-center z-10"
                                 onPress={onClose}
@@ -172,10 +172,10 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                 <Text className="font-feather text-white text-[24px] mb-2 font-bold">
                                     {devotionalData?.bibleReference}
                                 </Text>
-                                <Text className="font-din text-white text-[20px]  mb-7">
+                                <Text className="font-nunito-mediumItalic text-white text-[20px]  mb-7">
                                     {i18n.t('verse_of_the_day')}
                                 </Text>
-                                <Text className="font-nunito-italic text-white text-[24px]  mb-10">
+                                <Text className="font-din text-white text-[24px]  mb-10">
                                     {devotionalData?.verse}
                                 </Text>
                             </Animated.View>

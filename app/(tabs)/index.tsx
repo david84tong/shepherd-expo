@@ -30,7 +30,7 @@ import JournalComponent from '~/components/JournalComponent';
 import DailyVerseCard from '~/components/Shared/DailyVerseCard';
 import CustomToast from '../components/Shared/CustomToast';
 import { imageAssets, useAssetsStore } from '../stores/assetsStore';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import Rive from 'rive-react-native';
 import * as Haptics from 'expo-haptics';
@@ -57,6 +57,9 @@ const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
 
 export default function HomeScreen() {
+  // Local state for prayer success screen visibility
+  const [showPrayerSuccess, setShowPrayerSuccess] = useState(false);
+
   const {
     // State
     riveError,
@@ -194,7 +197,7 @@ export default function HomeScreen() {
           alignItems: 'center',
           justifyContent: 'center',
           opacity: riveSkinInitialized ? 1 : 0, // Hide until skin is initialized
-          
+
         }}>
         <TouchableOpacity
           onPress={() => {
@@ -203,9 +206,9 @@ export default function HomeScreen() {
           }}
           activeOpacity={0.7}
           style={{
-            top: RPH(4.5)
+            top: levelInfo.level < 10 ? RPH(7) : RPH(4.5)
           }}
-          className={`bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 px-2`}>
+          className={`bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 px-2 -mt-2`}>
           <Text className="font-feather text-textPrimary text-xs">
             {lambName
               ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
@@ -231,8 +234,8 @@ export default function HomeScreen() {
               onError={handleRiveAnimationError}
               onPlay={handleRivePlay}
               style={{
-                width: RPH(27),
-                height: RPH(27),
+                width: RPH(30),
+                height: RPH(30),
                 opacity: new Date().getHours() >= 19 ? 0.85 : 1,
               }}
             />
@@ -247,8 +250,8 @@ export default function HomeScreen() {
               autoplay
               onError={handleRiveAnimationError}
               style={{
-                width: RPH(27),
-                height: RPH(27),
+                width: RPH(30),
+                height: RPH(30),
                 opacity: new Date().getHours() >= 19 ? 0.85 : 1,
               }}
             />
@@ -359,7 +362,7 @@ export default function HomeScreen() {
                       textShadowColor: 'rgba(0, 0, 0, 0.2)',
                       textShadowOffset: { width: 0, height: 1 },
                       textShadowRadius: 2,
-                      fontSize:AppFonts[24]
+                      fontSize: AppFonts[24]
                     }}>
                     {showDevotionalContent
                       ? i18n.t('devotional_title')
@@ -616,11 +619,12 @@ export default function HomeScreen() {
                     visible={showPrayerContent}
                     setFinishReading={setFinishReading}
                     onClose={onClosePrayer}
+                    setShowPrayerSuccess={setShowPrayerSuccess}
                   />
                   : (
                     <BottomSheetScrollView
                       showsVerticalScrollIndicator={false}
-                      contentContainerStyle={{ paddingBottom: 120, paddingHorizontal: 24 }}>
+                      contentContainerStyle={{ paddingBottom: RPH(20), paddingHorizontal: 24 }}>
                       {prayerCompleted && readingCompleted && reflectionCompleted && (currentDevotional || devotionalData) && (
                         <DailyVerseCard
                           devotional={currentDevotional || devotionalData!}
@@ -664,6 +668,7 @@ export default function HomeScreen() {
                             points={50}
                             onPress={handleReadPress}
                             completed={readingCompleted}
+                            disabled={readingCompleted}
                           />
                         </View>
                       </View>
@@ -697,7 +702,7 @@ export default function HomeScreen() {
                             points={50}
                             onPress={handlePrayerPress}
                             completed={prayerCompleted}
-                            disabled={!readingCompleted}
+                            disabled={!readingCompleted || prayerCompleted}
                           />
                         </View>
                       </View>
@@ -732,7 +737,7 @@ export default function HomeScreen() {
                             points={50}
                             onPress={handleReflectionPress}
                             completed={reflectionCompleted}
-                            disabled={!readingCompleted}
+                            disabled={!readingCompleted || reflectionCompleted}
                           />
                         </View>
                       </View>
@@ -749,7 +754,7 @@ export default function HomeScreen() {
                           </View>
                         </View>
                       )} */}
-                      
+
 
                       {devotionalError && !currentDevotional && (
                         <View className="bg-red/10 rounded-xl p-4 mb-4 border border-red/20">
@@ -788,6 +793,7 @@ export default function HomeScreen() {
               handleDevotionalFinishPress={handleDevotionalFinishPress}
               devotionalReadedFully={devotionalReadedFully}
               isCompletePrayerDisabled={isCompletePrayerDisabled}
+              showPrayerSuccess={showPrayerSuccess}
             />
 
             <WidgetHowToSheet visible={showWidgetSheet} onClose={handleWidgetSheetClose} />

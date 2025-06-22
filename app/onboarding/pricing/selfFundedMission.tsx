@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, TouchableOpacity, StatusBar, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import PrimaryButton from '~/components/PrimaryButton';
 import analytics from '~/utils/analytics';
@@ -38,7 +38,10 @@ export default function SelfFundedMissionScreen() {
 
   useEffect(() => {
     // Analytics for screen view
-    analytics.logEvent('SelfFundedMission_Viewed');
+    analytics.logEvent('SelfFundedMission_ScreenLoad', {
+      timestamp: new Date().toISOString(),
+      source: params.source || 'unknown'
+    });
 
     // Set the from screen for analytics
     setFromScreen('self_funded_mission');
@@ -46,7 +49,7 @@ export default function SelfFundedMissionScreen() {
     // Start animations
     screenOpacity.value = withTiming(1, { duration: 400 });
     contentTranslateY.value = withTiming(0, { duration: 600 });
-    
+
     // Animate characters with delay
     setTimeout(() => {
       charactersOpacity.value = withTiming(1, { duration: 600 });
@@ -73,49 +76,54 @@ export default function SelfFundedMissionScreen() {
 
   const handleFundFeatures = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    analytics.logEvent('SelfFundedMission_Tapped_FundFeatures');
-    
+    analytics.logEvent('SelfFundedMission_Button_FundFeatures', {
+      timestamp: new Date().toISOString(),
+      action: 'fund_features_pressed'
+    });
+
     try {
       // Get the weekly product and make direct purchase
       const paywall = await adapty.getPaywall('noFreeTrial');
       console.log('Fetched paywall ID:', paywall.placementId);
-      
+
       const products = await adapty.getPaywallProducts(paywall);
       console.log('Available products:', products.map(p => ({
         vendorProductId: p.vendorProductId,
         localizedTitle: p.localizedTitle,
         price: p.price
       })));
-      
+
       // Find the weekly product
       const weeklyProduct = products.find(product => {
         // Check for weekly in the product ID
         const isWeekly = product.vendorProductId.toLowerCase().includes('weekly') ||
-                        product.vendorProductId === 'second.round.shepherd.Weekly' ||
-                        product.vendorProductId === 'second.round.shepherd';
-        
+          product.vendorProductId === 'second.round.shepherd.Weekly' ||
+          product.vendorProductId === 'second.round.shepherd';
+
         console.log(`Checking product ${product.vendorProductId}: isWeekly=${isWeekly}`);
         return isWeekly;
       });
-      
+
       console.log('Looking for weekly product, found:', weeklyProduct?.vendorProductId);
-      
+
       if (weeklyProduct) {
-        analytics.logEvent('SelfFundedMission_PurchaseStarted', {
-          productId: weeklyProduct.vendorProductId
+        analytics.logEvent('SelfFundedMission_Purchase_Started', {
+          productId: weeklyProduct.vendorProductId,
+          timestamp: new Date().toISOString()
         });
-        
+
         // Make direct purchase
         const result = await adapty.makePurchase(weeklyProduct);
-        
+
         if (result) {
-          analytics.logEvent('SelfFundedMission_PurchaseSuccess', {
-            productId: weeklyProduct.vendorProductId
+          analytics.logEvent('SelfFundedMission_Purchase_Success', {
+            productId: weeklyProduct.vendorProductId,
+            timestamp: new Date().toISOString()
           });
-          
+
           // Update user to pro status
           useSubscriptionStore.getState().getCustomerInfo();
-          
+
           // Navigate to tabs or complete onboarding
           router.replace('/(tabs)');
         }
@@ -126,8 +134,9 @@ export default function SelfFundedMissionScreen() {
       }
     } catch (error) {
       console.error('Error making direct purchase:', error);
-      analytics.logEvent('SelfFundedMission_PurchaseError', {
-        error: (error as Error)?.message || 'Unknown error'
+      analytics.logEvent('SelfFundedMission_Purchase_Error', {
+        error: (error as Error)?.message || 'Unknown error',
+        timestamp: new Date().toISOString()
       });
       // Fallback to pricing screen if purchase fails
       router.push('/PricingScreen');
@@ -136,7 +145,10 @@ export default function SelfFundedMissionScreen() {
 
   const handleNotToday = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    analytics.logEvent('SelfFundedMission_Tapped_NotToday');
+    analytics.logEvent('SelfFundedMission_Button_NotToday', {
+      timestamp: new Date().toISOString(),
+      action: 'not_today_pressed'
+    });
     // Redirect to pricing screen
     router.push('/PricingScreen');
   };
@@ -172,128 +184,130 @@ export default function SelfFundedMissionScreen() {
   return (
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      <Animated.View 
-        style={screenStyle} 
-        className="flex-1 bg-gradient-to-b from-purple-100 to-yellow-100 px-6 pt-16">
-        
-  
+      <ScrollView>
+        <Animated.View
+          style={screenStyle}
+          className="flex-1 bg-gradient-to-b from-purple-100 to-yellow-100 px-6 pt-16">
 
-        <View >
-          
-          <Animated.View style={contentStyle} className="items-center">
-            {/* Header - Small caps style */}
-            <Text className="font-din text-smallCaption uppercase tracking-widest text-description text-center mb-3 mt-8">
-              Support the mission
-            </Text>
-            
-            {/* Main headline - Larger and more impactful */}
-            <Text className="font-feather text-2xl text-textPrimary text-center mb-4 leading-tight px-4 mt-4">
-              We are a completely self-funded team of 2 Christians    
 
-            </Text>
-            
-            {/* Subheadline - Supporting text */}
-            <Text className="font-din text-heading text-textPrimary text-center mb-8 leading-relaxed px-8 -mt-4">
-              with the goal of making faithful habits joyful again.
-            </Text>
-       
 
-            {/* Characters section */}
-            <Animated.View style={charactersStyle} className="items-center mb-8">
-              <View className="flex-row items-center justify-center space-x-8 mb-4">
-                {/* First character - Armor of God skin */}
-                <View className="items-center">
-                  <View className="w-40 h-40 items-center justify-center border-lightBrown/30">
-                    {IS_ANDROID ? (
-                      <Rive
-                        ref={armorRiveRef}
-                        resourceName="new_shepherd"
-                        artboardName="[Main] Shpeherd"
-                        stateMachineName="State Machine 1"
-                        autoplay
-                        style={{ width: 200, height: 200 }}
-                      />
-                    ) : (
-                      riveAssets && (
+          <View >
+
+            <Animated.View style={contentStyle} className="items-center">
+              {/* Header - Small caps style */}
+              <Text className="font-din text-smallCaption uppercase tracking-widest text-description text-center mb-3 mt-8">
+                Support the mission
+              </Text>
+
+              {/* Main headline - Larger and more impactful */}
+              <Text className="font-feather text-2xl text-textPrimary text-center mb-4 leading-tight px-4 mt-4">
+                We are a completely self-funded team of 2 Christians
+
+              </Text>
+
+              {/* Subheadline - Supporting text */}
+              <Text className="font-din text-heading text-textPrimary text-center mb-8 leading-relaxed px-8 -mt-4">
+                with the goal of making faithful habits joyful again.
+              </Text>
+
+
+              {/* Characters section */}
+              <Animated.View style={charactersStyle} className="items-center mb-8">
+                <View className="flex-row items-center justify-center space-x-8 mb-4">
+                  {/* First character - Armor of God skin */}
+                  <View className="items-center">
+                    <View className="w-40 h-40 items-center justify-center border-lightBrown/30">
+                      {IS_ANDROID ? (
                         <Rive
                           ref={armorRiveRef}
-                          url={riveAssets[0].uri!}
+                          resourceName="new_shepherd"
                           artboardName="[Main] Shpeherd"
                           stateMachineName="State Machine 1"
                           autoplay
                           style={{ width: 200, height: 200 }}
                         />
-                      )
-                    )}
+                      ) : (
+                        riveAssets && (
+                          <Rive
+                            ref={armorRiveRef}
+                            url={riveAssets[0].uri!}
+                            artboardName="[Main] Shpeherd"
+                            stateMachineName="State Machine 1"
+                            autoplay
+                            style={{ width: 200, height: 200 }}
+                          />
+                        )
+                      )}
+                    </View>
                   </View>
-                </View>
 
-                {/* Second character - Whale skin */}
-                <View className="items-center">
-                  <View className="w-40 h-40 items-center justify-center border-lightBlue/50">
-                    {IS_ANDROID ? (
-                      <Rive
-                        ref={whaleRiveRef}
-                        resourceName="new_shepherd"
-                        artboardName="[Main] Shpeherd"
-                        stateMachineName="State Machine 1"
-                        autoplay
-                        style={{ width: 200, height: 200 }}
-                      />
-                    ) : (
-                      riveAssets && (
+                  {/* Second character - Whale skin */}
+                  <View className="items-center">
+                    <View className="w-40 h-40 items-center justify-center border-lightBlue/50">
+                      {IS_ANDROID ? (
                         <Rive
                           ref={whaleRiveRef}
-                          url={riveAssets[0].uri!}
+                          resourceName="new_shepherd"
                           artboardName="[Main] Shpeherd"
                           stateMachineName="State Machine 1"
                           autoplay
                           style={{ width: 200, height: 200 }}
                         />
-                      )
-                    )}
+                      ) : (
+                        riveAssets && (
+                          <Rive
+                            ref={whaleRiveRef}
+                            url={riveAssets[0].uri!}
+                            artboardName="[Main] Shpeherd"
+                            stateMachineName="State Machine 1"
+                            autoplay
+                            style={{ width: 200, height: 200 }}
+                          />
+                        )
+                      )}
+                    </View>
                   </View>
                 </View>
+
+                {/* Names */}
+                <Text className="font-din text-xl text-textPrimary/50 text-center mt-2">
+                  Daniel & Dante
+                </Text>
+              </Animated.View>
+
+              {/* Donation highlight section */}
+              <View className="bg-lightYellow/30 rounded-2xl px-6 py-4 mx-4 mb-12 border border-accentGold/20">
+                <Text className="font-din text-body text-textPrimary text-center leading-relaxed">
+                  <Text className="text-darkYellow font-feather">We donate 10% </Text> to help
+                  fund those in need through mission trips, churches, and charity.
+                </Text>
               </View>
 
-              {/* Names */}
-              <Text className="font-din text-xl text-textPrimary/50 text-center mt-2">
-                Daniel & Dante
+              {/* Social proof */}
+              <Text className="font-din text-caption text-description text-center mt-8">
+                Join 10,000+ other Super Shepherds
               </Text>
+
+              {/* Fund button */}
+              <View className="w-full mb-4">
+                <PrimaryButton
+                  title="Help fund future features"
+                  onPress={handleFundFeatures}
+                  buttonType="blue"
+                  buttonHeight={RPH(7)}
+                />
+              </View>
+
+              {/* Not today link */}
+              <TouchableOpacity onPress={handleNotToday} className="py-4">
+                <Text className="font-din text-body text-description text-center underline">
+                  Sorry, not today
+                </Text>
+              </TouchableOpacity>
             </Animated.View>
-
-            {/* Donation highlight section */}
-            <View className="bg-lightYellow/30 rounded-2xl px-6 py-4 mx-4 mb-12 border border-accentGold/20">
-              <Text className="font-din text-body text-textPrimary text-center leading-relaxed">
-                <Text className="text-darkYellow font-feather">We donate 10% </Text> to help
-                fund those in need through mission trips, churches, and charity.
-              </Text>
-            </View>
-
-            {/* Social proof */}
-            <Text className="font-din text-caption text-description text-center mt-8">
-              Join 10,000+ other Super Shepherds
-            </Text>
-
-            {/* Fund button */}
-            <View className="w-full mb-4">
-              <PrimaryButton
-                title="Help fund future features"
-                onPress={handleFundFeatures}
-                buttonType="blue"
-                buttonHeight={RPH(7)}
-              />
-            </View>
-
-            {/* Not today link */}
-            <TouchableOpacity onPress={handleNotToday} className="py-4">
-              <Text className="font-din text-body text-description text-center underline">
-                Sorry, not today
-              </Text>
-            </TouchableOpacity>
-          </Animated.View>
-        </View>
-      </Animated.View>
+          </View>
+        </Animated.View>
+      </ScrollView>
     </>
   );
 }

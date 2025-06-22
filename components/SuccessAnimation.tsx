@@ -623,9 +623,15 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     isUnmounting.current = true;
 
     // Reset states (except successType until after navigation)
-    console.log('handleGoHome - Resetting states');
+    console.log('handleGoHome - Resetting states to ensure tab bar is visible');
     setPathInProgress(false);
     setHomeMode('DEFAULT');
+    
+    // Reset all view visibility states to ensure tab bar shows
+    const homeStore = useHomeStore.getState();
+    homeStore.setDevotionalReaderVisible(false);
+    homeStore.setPrayerViewVisible(false);
+    homeStore.setJournalViewVisible(false);
 
     // Navigate without changing the successType - it will be reset in the cleanup effect
     if(showStreakScreenParam){

@@ -408,5 +408,10 @@
     "heart_penalty": "Penalización de Corazones",
     "days_missed": "Días Perdidos",
     "new_day": "Nuevo Día",
-    "purchase": "Comprar"
+    "purchase": "Comprar",
+    "bible_reader_tutorial_title": "Consejos del Lector Bíblico",
+    "bible_reader_tutorial_step1": "Desliza hacia la derecha para crear un devocional, oración o reflexión personalizada para ese verso",
+    "bible_reader_tutorial_step2": "Desliza hacia la izquierda para chatear con el verso y hacer preguntas",
+    "bible_reader_tutorial_step3": "Mantén presionado para resaltar o tomar notas del verso",
+    "skip": "Omitir"
 }

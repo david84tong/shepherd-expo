@@ -3,6 +3,14 @@ import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUserStore } from '../app/stores/userStore';
 import { Mixpanel } from 'mixpanel-react-native';
+import { 
+  init as amplitudeInit, 
+  track as amplitudeTrack, 
+  setUserId as amplitudeSetUserId, 
+  identify as amplitudeIdentify,
+  Identify,
+  reset as amplitudeReset
+} from '@amplitude/analytics-react-native';
 
 // schema for analytics
 // Screenname: Verb
@@ -70,10 +78,15 @@ export enum AnalyticsEvent {
 // Mixpanel token - replace with your project token
 const MIXPANEL_TOKEN = '7178bfcd1e0972001d3e6c066e8fb18b'; // Replace with your actual Mixpanel token
 
+// Amplitude API key - replace with your actual Amplitude API key
+// Get this from: https://app.amplitude.com/login/norastudios?next=%2Fdata%2Fnorastudios%2FONG%2Fhome%2Fmain%2Flatest
+// Go to Settings > Projects > [Your Project] > API Keys
+const AMPLITUDE_API_KEY = 'd8184bec8ecc538cb1575e61b8ad2171'; // Replace with your actual Amplitude API key
+
 /**
  * Analytics wrapper class for tracking user events
  * This provides a consistent interface for tracking events across the app
- * and abstracts the underlying anal  ytics implementation
+ * and abstracts the underlying analytics implementation
  */
 class Analytics {
   private static instance: Analytics;
@@ -83,6 +96,7 @@ class Analytics {
   private userId: string | null = null;
   private isEnabled: boolean = true;
   private mixpanel: Mixpanel | null = null;
+  private amplitudeInitialized: boolean = false;
 
   /**
    * Private constructor to enforce singleton pattern
@@ -113,6 +127,10 @@ class Analytics {
       this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false);
       await this.mixpanel.init();
 
+      // Initialize Amplitude
+      await amplitudeInit(AMPLITUDE_API_KEY);
+      this.amplitudeInitialized = true;
+
       // Get or create session ID
       this.sessionId = await this.getOrCreateSessionId();
 
@@ -138,8 +156,22 @@ class Analytics {
         this.mixpanel?.identify(this.userId);
       }
 
-      // Set super properties for all events
+      // Set user identity in Amplitude
+      if (this.userId && this.userId !== 'anonymous') {
+        amplitudeSetUserId(this.userId);
+      }
+
+      // Set super properties for all events in Mixpanel
       this.mixpanel?.registerSuperProperties(this.defaultParams);
+
+      // Set user properties in Amplitude using Identify
+      if (this.amplitudeInitialized) {
+        const identify = new Identify();
+        Object.entries(this.defaultParams).forEach(([key, value]) => {
+          identify.set(key, value);
+        });
+        amplitudeIdentify(identify);
+      }
 
       // Check if analytics is enabled
       const analyticsEnabled = await AsyncStorage.getItem('shepherd-analytics-enabled');
@@ -148,6 +180,7 @@ class Analytics {
       // Opt out of tracking if disabled
       if (!this.isEnabled) {
         this.mixpanel?.optOutTracking();
+        // Amplitude doesn't have a direct opt-out method, but we can control tracking at the event level
       }
 
       this.isInitialized = true;
@@ -155,7 +188,7 @@ class Analytics {
       // Log app open event
       this.logEvent(AnalyticsEvent.APP_OPEN);
 
-      console.log('✅ Analytics (Mixpanel) initialized successfully');
+      console.log('✅ Analytics (Mixpanel + Amplitude) initialized successfully');
     } catch (error) {
       console.log('❌ Failed to initialize analytics:', error);
     }
@@ -192,6 +225,13 @@ class Analytics {
 
       // Track event in Mixpanel
       this.mixpanel?.track(eventName?.toString(), eventParams);
+
+      // Track event in Amplitude
+      if (this.amplitudeInitialized) {
+        
+        amplitudeTrack(eventName?.toString(), eventParams);
+        console.log("EVENT TRACK WITH AMPLITUDE");
+      }
     } catch (error) {
       console.log('Failed to log analytics event:', error);
     }
@@ -222,6 +262,11 @@ class Analytics {
     if (this.mixpanel && userId !== 'anonymous') {
       this.mixpanel.identify(userId);
     }
+
+    // Update identity in Amplitude
+    if (this.amplitudeInitialized && userId !== 'anonymous') {
+      amplitudeSetUserId(userId);
+    }
   }
 
   /**
@@ -233,6 +278,14 @@ class Analytics {
     try {
       if (this.mixpanel && this.userId) {
         this.mixpanel.getPeople().set(properties);
+      }
+
+      if (this.amplitudeInitialized) {
+        const identify = new Identify();
+        Object.entries(properties).forEach(([key, value]) => {
+          identify.set(key, value);
+        });
+        amplitudeIdentify(identify);
       }
     } catch (error) {
       console.log('Failed to set user properties:', error);
@@ -251,6 +304,11 @@ class Analytics {
     if (this.mixpanel) {
       this.mixpanel.reset();
     }
+
+    // Reset identity in Amplitude
+    if (this.amplitudeInitialized) {
+      amplitudeReset();
+    }
   }
 
   /**
@@ -268,6 +326,9 @@ class Analytics {
         this.mixpanel.optOutTracking();
       }
     }
+
+    // Amplitude doesn't have a direct enable/disable method, but we control it at the event level
+    // The isEnabled flag will prevent events from being sent
   }
 
   /**
@@ -275,6 +336,19 @@ class Analytics {
    */
   public isAnalyticsEnabled(): boolean {
     return this.isEnabled;
+  }
+
+  /**
+   * Test method to verify analytics integration
+   * Call this method to send a test event to both Mixpanel and Amplitude
+   */
+  public testAnalytics(): void {
+    this.logEvent('test_analytics_integration', {
+      testParam: 'test_value',
+      timestamp: new Date().toISOString(),
+      source: 'manual_test',
+    });
+    console.log('🧪 Test analytics event sent to both Mixpanel and Amplitude');
   }
 
   /**

@@ -1,9 +1,8 @@
 import { View, Animated } from 'react-native';
 import CircleButton from '~/components/Shared/CircleButton';
 import PrimaryButton from '~/components/PrimaryButton';
-import BluePrimaryButton from '~/components/Shared/BluePrimaryButton';
-import i18n from '../utils/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { IS_IOS } from '../utils/utils';
 
 interface BottomControlsProps {
   bottomContentOpacity: Animated.Value;
@@ -21,6 +20,7 @@ interface BottomControlsProps {
   handleDevotionalFinishPress: () => void;
   devotionalReadedFully: boolean;
   isCompletePrayerDisabled: boolean;
+  showPrayerSuccess?: boolean;
 }
 
 export default function BottomControls({
@@ -39,14 +39,15 @@ export default function BottomControls({
   handleDevotionalFinishPress,
   devotionalReadedFully,
   isCompletePrayerDisabled,
+  showPrayerSuccess = false,
 }: BottomControlsProps) {
   const insets = useSafeAreaInsets();
   return (
-    <Animated.View 
+    <Animated.View
       style={[
         { opacity: bottomContentOpacity, transform: [{ translateY: bottomContentAnimY }] },
-        {bottom: RPH(1) + insets.bottom / 2},
-        { 
+        { bottom: RPH(1) + insets.bottom / 2 },
+        {
           opacity: showPrayerContent ? controlRowOpacity : 1,
           pointerEvents: showPrayerContent ? (isControlRowVisible ? 'auto' : 'none') : 'auto'
         }
@@ -61,25 +62,25 @@ export default function BottomControls({
         </View>
       )} */}
       <View className="flex-row items-center justify-between w-full">
-        {!showJournalContent && (
+        {!showJournalContent && !showPrayerSuccess && (
           <Animated.View style={{ width: '10%' }}>
-            <CircleButton 
-              icon='chevron-left' 
+            <CircleButton
+              icon='chevron-left'
               // size={53} 
-              onPress={()=>{
-                if(showDevotionalContent){
+              onPress={() => {
+                if (showDevotionalContent) {
                   handleDevotionalClose({})
                   devotionalReaderRef.current?.handleClose();
                 }
-                if(showPrayerContent){
+                if (showPrayerContent) {
                   prayerViewRef.current?.handleBack();
                 }
-              }} 
+              }}
             />
           </Animated.View>
         )}
 
-        <Animated.View style={{ width: showPrayerContent ? '60%' : showJournalContent ? '100%' : '82%' }}>
+        <Animated.View style={{ width: showPrayerContent ? (showPrayerSuccess ? '100%' : '60%') : showJournalContent ? '100%' : '82%' }}>
           {showDevotionalContent ? (
             <PrimaryButton
               title={buttonTitle}
@@ -88,10 +89,10 @@ export default function BottomControls({
               buttonType="blue"
               icon={require('../../assets/icons/starIcon.png')}
               reward={'+50'}
-              opacity={!devotionalReadedFully ? 0.7 : 1}
+              opacity={!devotionalReadedFully && IS_IOS ? 0.7 : 1}
             />
           ) : showPrayerContent ? (
-            <View/>
+            <View />
             // <BluePrimaryButton
             //   title={i18n.t('amen_button')}
             //   width="100%"
@@ -101,8 +102,8 @@ export default function BottomControls({
             //   }}
             // />
           ) : null}
-        </Animated.View> 
-        
+        </Animated.View>
+
         {/* {showPrayerContent && (
           <Animated.View style={{ width: '10%' }}>
             <CircleButton

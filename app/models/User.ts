@@ -46,6 +46,7 @@ export interface UserDoc {
   completedReadings: Reading[];
   isProFromOnboarding: boolean;
   hasSeenWidgetModal: boolean;
+  hasSeenBibleReaderTutorial: boolean;
   skins: string[];
   // Progress data
   level: number;
@@ -155,6 +156,10 @@ export interface UserStore extends UserDoc {
   // Add new getter/setter for widget modal
   getHasSeenWidgetModal: () => boolean;
   setHasSeenWidgetModal: (hasSeen: boolean) => void;
+
+  // Add new getter/setter for Bible Reader tutorial
+  getHasSeenBibleReaderTutorial: () => boolean;
+  setHasSeenBibleReaderTutorial: (hasSeen: boolean) => void;
 
   setCompletedMapPaths: (paths: MapPathCompletion[]) => void;
   addCompletedMapPath: (path: MapPathCompletion) => void;

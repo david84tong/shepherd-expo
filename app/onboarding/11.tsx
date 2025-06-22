@@ -633,7 +633,10 @@ export default function SaveProgressScreen() {
           const allResponses = getAllResponses();
           const displayName = allResponses.username || 'Anonymous User';
 
+          console.log("CALLED API");
           user = await signUpWithEmailPassword(email, password, displayName);
+          console.log("user ====>", user);
+
           analytics.logEvent('OnboardingSignUp_Success_Email');
 
           await createUserFromResponses(user.uid, displayName);
@@ -763,7 +766,7 @@ export default function SaveProgressScreen() {
             </Text>
 
             {/* Icon */}
-            <View style={{width:RPH(27),height:RPH(25)}} className="mb-8 overflow-hidden  items-center justify-center">
+            <View style={{ width: RPH(27), height: RPH(25) }} className="mb-8 overflow-hidden  items-center justify-center">
               {riveAssets && riveAssets[0]?.uri && (
                 <>
                   {IS_ANDROID ? (
@@ -907,7 +910,7 @@ export default function SaveProgressScreen() {
                   <View className="items-center mb-4">
                     {Platform.OS === 'ios' ? (
                       <TouchableOpacity
-                      style={{height:RPH(6)}}
+                        style={{ height: RPH(6) }}
                         className="flex-row items-center justify-center bg-black w-full  px-6 rounded-[16px] mb-4 shadow-appleShadow"
                         onPress={handleAppleSignIn}
                         disabled={loading}>
@@ -925,7 +928,7 @@ export default function SaveProgressScreen() {
                             style={{ marginRight: 10 }}
                           />
                         )}
-                        <Text style={{fontSize:AppFonts[14]}} className="font-din text-white  font-bold">
+                        <Text style={{ fontSize: AppFonts[14] }} className="font-din text-white  font-bold">
                           {loading ? i18n.t('onboarding_signing_in') : i18n.t('onboarding_continue_with_apple')}
                         </Text>
                       </TouchableOpacity>
@@ -948,7 +951,7 @@ export default function SaveProgressScreen() {
                             style={{ marginRight: 10 }}
                           />
                         )}
-                        <Text style={{fontSize:AppFonts[14]}} className="font-din text-[#4285F4]  font-bold">
+                        <Text style={{ fontSize: AppFonts[14] }} className="font-din text-[#4285F4]  font-bold">
                           {loading ? i18n.t('onboarding_signing_in') : i18n.t('onboarding_continue_with_google')}
                         </Text>
                       </TouchableOpacity>

@@ -58,6 +58,7 @@ const initialState: UserDoc = {
   username: '',
   isProFromOnboarding: false,
   hasSeenWidgetModal: false,
+  hasSeenBibleReaderTutorial: false,
   level: 1,
   xp: 0,
   streak: 0,
@@ -250,6 +251,7 @@ export const useUserStore = create<UserStore>()(
       getLambName: () => get().lamb?.name || initialState.lamb.name,
       getLambSkin: () => get().lamb?.skin || initialState.lamb.skin,
       getHasSeenWidgetModal: () => get().hasSeenWidgetModal || false,
+      getHasSeenBibleReaderTutorial: () => get().hasSeenBibleReaderTutorial || false,
       getSkins: () => get().skins || initialState.skins,
 
       // Setters
@@ -467,6 +469,14 @@ export const useUserStore = create<UserStore>()(
         set({ hasSeenWidgetModal: hasSeen });
         if (isAuthenticated()) {
           updateField('hasSeenWidgetModal', hasSeen);
+        }
+      },
+
+      setHasSeenBibleReaderTutorial: (hasSeen: boolean) => {
+        
+        set({ hasSeenBibleReaderTutorial: hasSeen });
+        if (isAuthenticated()) {
+          updateField('hasSeenBibleReaderTutorial', hasSeen);
         }
       },
 

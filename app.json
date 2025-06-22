@@ -2,7 +2,7 @@
   "expo": {
     "name": "Shepherd",
     "slug": "shepherd",
-    "version": "1.3.9",
+    "version": "1.4.2",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "io.bytehouse",
@@ -33,6 +33,9 @@
       },
       {
         "asset": "./assets/fonts/Nunito-Medium.ttf"
+      },
+      {
+        "asset": "./assets/fonts/Nunito-MediumItalic.ttf"
       },
       {
         "asset": "./assets/fonts/Nunito-Regular.ttf"

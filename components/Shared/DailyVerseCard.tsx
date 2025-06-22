@@ -75,11 +75,10 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
   return (
     <Pressable
       onPress={handleCardPress}
-      style={{height:share && showShareButton ? RPH(33) : RPH(23)}}
-      className={`bg-surfaceCream rounded-3xl overflow-hidden mb-4 border border-buttonBorder shadow-card ${share && showShareButton ? 'h-80' : ''}`}>
+      className="bg-surfaceCream rounded-3xl overflow-hidden mb-4 border border-buttonBorder shadow-card">
       <ImageBackground
         source={{ uri: devotional.imageURL }}
-        style={{ width: '100%' }}
+        style={{ width: '100%', minHeight: RPH(23) }}
         resizeMode="cover">
         {/* Linear gradient overlay for readability - darker at top, lighter at bottom */}
         <LinearGradient
@@ -95,22 +94,22 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
         />
 
         {/* Content */}
-        <View style={{padding:RPH(2)}} className="pb-4 h-full justify-between">
+        <View style={{ padding: RPH(2), minHeight: RPH(23) }} className="pb-4 justify-between">
           <View>
-            <Text style={{fontSize:AppFonts[17],marginBottom:RPH(0.3)}} className="font-feather text-white">
+            <Text style={{ fontSize: AppFonts[17], marginBottom: RPH(0.3) }} className="font-feather text-white">
               {devotional.bibleReference}
             </Text>
-            <Text style={{fontSize:AppFonts[17],marginBottom:RPH(2)}} className="font-din text-white  leading-[26px]">
+            <Text style={{ fontSize: AppFonts[17], marginBottom: RPH(2) }} className="font-nunito-mediumItalic text-white shadow-lg  leading-[26px]">
               {i18n.t('verse_of_the_day')}
             </Text>
-            <Text style={{fontSize:AppFonts[17]}} className="font-nunito-italic text-white  leading-[22px]">
+            <Text style={{ fontSize: AppFonts[17] }} className="font-din text-white  leading-[22px]">
               {devotional.verse}
             </Text>
           </View>
 
           {/* Share Button - only show when share=true AND showShareButton is true */}
           {share && showShareButton && (
-            <View style={{marginTop:RPH(6)}} className="w-full -top-8">
+            <View style={{ marginTop: RPH(1) }} className="w-full ">
               <PrimaryButton
                 title={i18n.t('share')}
                 onPress={handleSharePress}
@@ -123,7 +122,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
         {/* Expand button - only show when share=true AND showExpandButton is true */}
         {share && showExpandButton && (
           <TouchableOpacity
-            className="absolute top-4 right-4"
+            className="absolute top-6 right-4"
             onPress={handleExpandPress}>
             <Ionicons name="expand" size={24} color="white" />
           </TouchableOpacity>

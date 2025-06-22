@@ -152,7 +152,7 @@ export default function OnboardingReminderTimeScreen() {
                 text: i18n.t('onboarding_reminder_time_continue_anyway'),
                 style: 'default',
                 onPress: () => {
-                  router.push('/onboarding/pricing/selfFundedMission');
+                  router.push('/onboarding/rating');
                 }
               }
             ]

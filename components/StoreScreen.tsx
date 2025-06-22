@@ -9,7 +9,7 @@ import {
   StatusBar,
   Alert,
 } from 'react-native';
-import { Feather, FontAwesome } from '@expo/vector-icons';
+import { FontAwesome } from '@expo/vector-icons';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
@@ -379,7 +379,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     
     // Present the paywall
     try {
-      const result = await useSubscriptionStore.getState().presentPaywall();
+      const result = await useSubscriptionStore.getState().presentFreeTrialPaywall();
       if (result === 'PURCHASED') {
         // Automatically give the user the Annointed Lamb skin
         const skinId = '99'; // Annointed Lamb skin number
@@ -595,7 +595,10 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         <View className="w-24 flex justify-end items-end pr-4">
         <TouchableOpacity
           className=" w-10 h-10 bg-black/30 rounded-full items-center justify-center z-10"
-          onPress={onClose || (() => router.back())}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            onClose ? onClose() : router.back();
+          }}
           activeOpacity={0.7}>
           <FontAwesome name="times" size={20} color="white" />
         </TouchableOpacity>

@@ -39,7 +39,10 @@ export default function FreeOfferScreen() {
 
   useEffect(() => {
     // Analytics for screen view
-    analytics.logEvent('FreeOffer_Viewed');
+    analytics.logEvent('FreeOffer_ScreenLoad', {
+      lambName: lambName,
+      timestamp: new Date().toISOString()
+    });
 
     // Set the from screen for analytics
     setFromScreen('free_offer');
@@ -96,13 +99,32 @@ export default function FreeOfferScreen() {
 
   const handleSeeOffer = async () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    analytics.logEvent('FreeOffer_Tapped_SeeOffer');
+    analytics.logEvent('FreeOffer_Button_SeeOffer', {
+      lambName: lambName,
+      timestamp: new Date().toISOString(),
+      action: 'see_offer_pressed'
+    });
     
     try {
       // Present the free trial paywall
-      await presentFreeTrialPaywall();
+      const result = await presentFreeTrialPaywall();
+      
+      // Track paywall result
+      analytics.logEvent('FreeOffer_Paywall_Result', {
+        result: result || 'unknown',
+        lambName: lambName,
+        timestamp: new Date().toISOString()
+      });
     } catch (error) {
       console.error('Error presenting free trial paywall:', error);
+      
+      // Track error
+      analytics.logEvent('FreeOffer_Paywall_Error', {
+        error: error instanceof Error ? error.message : 'Unknown error',
+        lambName: lambName,
+        timestamp: new Date().toISOString()
+      });
+      
       // Fallback to pricing screen if paywall fails
       router.push('/PricingScreen');
     }

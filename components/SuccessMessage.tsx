@@ -58,13 +58,13 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
   // OR when completing reflection and prayer has already been done
   const shouldShowCollectBonus = useMemo(() => {
     if (showCollectBonus) return true; // Explicit prop override
-    
+
     // Check if bonus is available - either after prayer with reading+reflection done
     // OR after reflection with reading+prayer done
     const isFirstReadingOfDay = !sawStreakToday;
     const allActivitiesComplete = readingCompleted && reflectionCompleted && useHomeStore.getState().prayerCompleted;
     const isBonusAvailable = allActivitiesComplete && isFirstReadingOfDay && !sawDailyBonus;
-    
+
     return isBonusAvailable;
   }, [showCollectBonus, readingCompleted, reflectionCompleted, sawStreakToday, sawDailyBonus]);
 
@@ -87,7 +87,7 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
 
   // Get daily XP tracking functions
   const getDailyXpRemaining = useHomeStore((state) => state.getDailyXpRemaining);
-  
+
   // Calculate actual XP that would be awarded (respecting daily limit)
   const actualXpGained = useMemo(() => {
     const remaining = getDailyXpRemaining();
@@ -139,11 +139,11 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
     finalStatsOpacity.value = 0;
     finalStatsScale.value = 0.8;
     setLocalButtonsEnabled(false);
-    
+
     // Animate pop out and fade in
     scale.value = withTiming(1, { duration: 600 });
     fadeOpacity.value = withTiming(1, { duration: 600 });
-    
+
     // If level up, animate level up elements first
     if (didLevelUp) {
       setTimeout(() => {
@@ -152,23 +152,23 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
         rocketRotation.value = withTiming(360, { duration: 1000 });
       }, 300);
     }
-    
+
     // Animate progress bars and text
     setTimeout(() => {
       xp.value = withTiming(levelInfo.progress, { duration: 1200 });
       hearts.value = withTiming(lambHearts / MAX_HEARTS, { duration: 1200 });
       textOpacity.value = withTiming(1, { duration: 800 });
-      
+
       // After progress bars finish, switch to final stats
       setTimeout(() => {
         setShowFinalStats(true);
         // Animate in the final stats
         finalStatsOpacity.value = withTiming(1, { duration: 600 });
         finalStatsScale.value = withTiming(1, { duration: 600 });
-      setTimeout(() => {
-        blueOpacity.value = withTiming(1, { duration: 600 });
-        goldOpacity.value = withTiming(1, { duration: 600 });
-        setLocalButtonsEnabled(true);
+        setTimeout(() => {
+          blueOpacity.value = withTiming(1, { duration: 600 });
+          goldOpacity.value = withTiming(1, { duration: 600 });
+          setLocalButtonsEnabled(true);
         }, 600); // Wait for final stats animation
       }, 1200); // Wait for progress bars to finish
     }, didLevelUp ? 1000 : 500); // Start later if level up
@@ -195,16 +195,16 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
     opacity: fadeOpacity.value,
     transform: [{ scale: scale.value }],
   }));
-  
+
   const levelUpAnimatedStyle = useAnimatedStyle(() => ({
     opacity: levelUpOpacity.value,
     transform: [{ scale: levelUpScale.value }],
   }));
-  
+
   const rocketAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ rotate: `${rocketRotation.value}deg` }],
   }));
-  
+
   const finalStatsAnimatedStyle = useAnimatedStyle(() => ({
     opacity: finalStatsOpacity.value,
     transform: [{ scale: finalStatsScale.value }],
@@ -224,11 +224,11 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
       )}
       <RNAnimated.Text
         className={`font-feather  text-center mb-1 text-brown/90 ${!didLevelUp ? '-mt-12' : ''}`}
-        style={[textOpacityStyle,{fontSize:AppFonts[22]}]}
+        style={[textOpacityStyle, { fontSize: AppFonts[22] }]}
       >
         {title}
       </RNAnimated.Text>
-      <Text style={{fontSize:AppFonts[15]}} className="font-din   text-brown/90 text-center mb-4" >
+      <Text style={{ fontSize: AppFonts[15] }} className="font-din   text-brown/90 text-center mb-4" >
         {description}
       </Text>
       {/* <Text style={{paddingTop:RPH(4)}} className="font-bold text-[13px] text-center mb-6 tracking-wider uppercase text-brown/80">
@@ -259,7 +259,7 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
           </View>
         </View>
       </View>
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%',   }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', width: '100%', }}>
         <View style={{ width: 40, alignItems: 'flex-end' }}>
           {!showFinalStats ? (
             <Text className="font-feather text-orange text-sm">+{actualXpGained || 50}</Text>
@@ -289,51 +289,51 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
         </View>
       )}
 
-  <View
-    style={{ paddingTop: RPH(5) }}
-    className={`w-full items-center ${didLevelUp ? '-mt-4' : 'mt-8'}`}
-  >
-  {shouldShowCollectBonus ? (
-    // Show only collect bonus button with gem icon
-    <RNAnimated.View style={blueButtonStyle} className="w-full">
-      <PrimaryButton
-        title={i18n.t('collect_bonus')}
-        onPress={onPray}
-        buttonType="blue"
-        icon={gemIcon}
-        reward="+100"
-        disabled={!localButtonsEnabled || !buttonsEnabled}
-        width="100%"
-      />
-    </RNAnimated.View>
-  ) : (
-    // Normal flow with both buttons
-    <>
-  {!hidePrayButton && (
-      <RNAnimated.View style={blueButtonStyle} className="w-full">
-        <PrimaryButton
-            title={prayButtonTitle || i18n.t('pray_about_this_verse')}
-          onPress={onPray}
-          buttonType="blue"
-          icon={require('../assets/icons/starIcon.png')}
-            reward="+50"
-          disabled={!localButtonsEnabled || !buttonsEnabled}
-          width="100%"
-        />
-        </RNAnimated.View>
-      )}
-      <RNAnimated.View style={goldButtonStyle} className="w-full">
-        <TouchableOpacity
-          onPress={onGoHome}
-          disabled={!localButtonsEnabled || !buttonsEnabled}
-          className="h-[52px] w-full self-center bg-gold rounded-[16px] mt-4 items-center justify-center"
-        >
-          <Text className="font-feather text-brown/80 text-xl text-center">{homeButtonTitle}</Text>
-        </TouchableOpacity>
-      </RNAnimated.View>
-    </>
-  )}
-  </View>
+      <View
+        style={{ paddingTop: RPH(5) }}
+        className={`w-full items-center ${didLevelUp ? '-mt-4' : 'mt-8'}`}
+      >
+        {shouldShowCollectBonus ? (
+          // Show only collect bonus button with gem icon
+          <RNAnimated.View style={blueButtonStyle} className="w-full">
+            <PrimaryButton
+              title={i18n.t('collect_bonus')}
+              onPress={onPray}
+              buttonType="blue"
+              icon={gemIcon}
+              reward="+100"
+              disabled={!localButtonsEnabled || !buttonsEnabled}
+              width="100%"
+            />
+          </RNAnimated.View>
+        ) : (
+          // Normal flow with both buttons
+          <>
+            {!hidePrayButton && (
+              <RNAnimated.View style={blueButtonStyle} className="w-full">
+                <PrimaryButton
+                  title={prayButtonTitle || i18n.t('pray_about_this_verse')}
+                  onPress={onPray}
+                  buttonType="blue"
+                  icon={require('../assets/icons/starIcon.png')}
+                  reward="+50"
+                  disabled={!localButtonsEnabled || !buttonsEnabled}
+                  width="100%"
+                />
+              </RNAnimated.View>
+            )}
+            <RNAnimated.View style={goldButtonStyle} className="w-full">
+              <TouchableOpacity
+                onPress={onGoHome}
+                disabled={!localButtonsEnabled || !buttonsEnabled}
+                className="h-[52px] w-full self-center bg-gold rounded-[16px] mt-4 items-center justify-center"
+              >
+                <Text className="font-feather text-brown/80 text-xl text-center">{homeButtonTitle}</Text>
+              </TouchableOpacity>
+            </RNAnimated.View>
+          </>
+        )}
+      </View>
     </RNAnimated.View>
   );
 };

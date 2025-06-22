@@ -416,5 +416,10 @@
     "heart_penalty": "Herzen-Strafe",
     "days_missed": "Verpasste Tage",
     "new_day": "Neuer Tag",
-    "purchase": "Kaufen"
+    "purchase": "Kaufen",
+    "bible_reader_tutorial_title": "Bibel-Leser Tipps",
+    "bible_reader_tutorial_step1": "Wische nach rechts, um ein personalisiertes Andachtsbuch, Gebet oder Reflexion für diesen Vers zu erstellen",
+    "bible_reader_tutorial_step2": "Wische nach links, um mit dem Vers zu chatten und Fragen zu stellen",
+    "bible_reader_tutorial_step3": "Halte gedrückt, um den Vers zu markieren oder Notizen zu machen",
+    "skip": "Überspringen"
 }

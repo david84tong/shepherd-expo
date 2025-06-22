@@ -461,25 +461,7 @@ export const useAuth = () => {
       setLoading(true);
       setError(null);
 
-      // Check if user already exists by trying to sign in
-      try {
-        await auth().signInWithEmailAndPassword(email, password);
-        // If we get here, the user exists
-        await auth().signOut(); // Sign out immediately
-        throw new Error('EXISTS');
-      } catch (err: any) {
-        // If error code is user-not-found, proceed with signup
-        if (err.code !== 'auth/user-not-found') {
-          if (err.message === 'EXISTS') {
-            throw new Error(
-              'An account with this email already exists. Would you like to login instead?'
-            );
-          }
-          throw err;
-        }
-      }
-
-      // Create user with email and password
+      // Try to create the user directly - Firebase will throw an error if the email already exists
       const userCredential = await auth().createUserWithEmailAndPassword(email, password);
       console.log('[Auth] Email/Password sign-up successful, uid:', userCredential.user.uid);
 
@@ -519,11 +501,27 @@ export const useAuth = () => {
       }
 
       return userCredential.user;
-    } catch (err) {
+    } catch (err: any) {
       const error = err as Error;
+      
+      // Handle specific Firebase auth errors
+      if (err.code === 'auth/email-already-in-use') {
+        error.message = 'An account with this email already exists. Would you like to login instead?';
+      } else if (err.code === 'auth/invalid-email') {
+        error.message = 'Please enter a valid email address.';
+      } else if (err.code === 'auth/weak-password') {
+        error.message = 'Password should be at least 6 characters long.';
+      } else if (err.code === 'auth/operation-not-allowed') {
+        error.message = 'Email/password accounts are not enabled. Please contact support.';
+      } else {
+        // Generic error for other cases
+        error.message = 'Unable to create account. Please try again.';
+      }
+      
       if (analytics.isInitialized) {
         analytics.logError('Authentication error', 'email_signup_failed', {
           error_message: error.message,
+          error_code: err.code,
         });
       }
       setError(error);
