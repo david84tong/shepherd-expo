@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useEffect } from 'react';
+import React, { useLayoutEffect, useEffect, useRef } from 'react';
 import { View, Text, StatusBar, ScrollView } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useAssets } from 'expo-asset';
-import Rive from 'rive-react-native';
+import Rive, { RiveRef } from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import { useOnboardingStore } from '../stores/onboardingStore';
@@ -31,7 +31,10 @@ export default function OnboardingExplainerHeartsScreen({
   const lambName = responses.lambName || 'your lamb';
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/new_shepherd.riv')]);
+  
+  // Create refs for each Rive instance
+  const riveRefs = useRef<(RiveRef | null)[]>(Array(6).fill(null));
 
   // Animation shared values
   const titleOpacity = useSharedValue(0);
@@ -76,6 +79,27 @@ export default function OnboardingExplainerHeartsScreen({
       );
     });
   }, []);
+
+  // Configure Rive input states before animations start
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      lambStates.forEach((state, index) => {
+        const ref = riveRefs.current[index];
+        if (ref?.setInputState) {
+          try {
+            // Set Level-Number to 1 and Action-Number to appropriate state
+            ref.setInputState('State Machine 1', 'Level-Number', 1);
+            ref.setInputState('State Machine 1', 'Action-Number', state.actionNumber);
+            console.log(`Set Level-Number to 1 and Action-Number to ${state.actionNumber} for ${state.hearts} hearts`);
+          } catch (e) {
+            console.log(`Error setting inputs for lamb ${index}:`, e);
+          }
+        }
+      });
+    }, 200); // Earlier timing to set before card animations
+
+    return () => clearTimeout(timer);
+  }, [riveAssets]);
 
   // Handle continue with analytics
   const handleContinue = () => {
@@ -133,14 +157,14 @@ export default function OnboardingExplainerHeartsScreen({
 
   const cardStyles = [cardStyle0, cardStyle1, cardStyle2, cardStyle3, cardStyle4, cardStyle5];
 
-  // Lamb states based on heart levels
+  // Lamb states based on heart levels - now using Action-Number for new_shepherd.riv
   const lambStates = [
-    { hearts: 100, artboard: 'lamb-full', glow: true },
-    { hearts: 60, artboard: 'lamb-idle', glow: false },
-    { hearts: 45, artboard: 'lamb-angry', glow: false },
-    { hearts: 35, artboard: 'lamb-sleepy', glow: false },
-    { hearts: 10, artboard: 'lamb-skinny dying', glow: false },
-    { hearts: 0, artboard: 'lamb-dead', glow: false },
+    { hearts: 100, actionNumber: 3, glow: true }, // lamb-full
+    { hearts: 60, actionNumber: 0, glow: false }, // lamb-idle
+    { hearts: 45, actionNumber: 5, glow: false }, // lamb-angry
+    { hearts: 35, actionNumber: 4, glow: false }, // lamb-sleepy
+    { hearts: 10, actionNumber: 7, glow: false }, // lamb-skinny dying
+    { hearts: 0, actionNumber: 8, glow: false }, // lamb-chubby dying (closest to dead)
   ];
   return (
     <>
@@ -173,17 +197,23 @@ export default function OnboardingExplainerHeartsScreen({
               ]}
               className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-lightRed items-center justify-center relative">
               {riveAssets && (
-                <View className="w-36 h-36">
+                <View className="w-40 h-40">
                   {IS_ANDROID ? (
                     <Rive
-                      resourceName={'home_lamb'}
-                      artboardName={state.artboard}
+                      ref={(ref) => (riveRefs.current[index] = ref)}
+                      resourceName={'new_shepherd'}
+                      artboardName="[Main] Shpeherd"
+                      stateMachineName="State Machine 1"
+                      autoplay
                       style={{ width: '100%', height: '100%' }}
                     />
                   ) : (
                     <Rive
+                      ref={(ref) => (riveRefs.current[index] = ref)}
                       url={riveAssets[0].uri!}
-                      artboardName={state.artboard}
+                      artboardName="[Main] Shpeherd"
+                      stateMachineName="State Machine 1"
+                      autoplay
                       style={{ width: '100%', height: '100%' }}
                     />
                   )}

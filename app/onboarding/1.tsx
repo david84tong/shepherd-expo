@@ -288,7 +288,7 @@ export default function OnboardingWelcomeScreen() {
       action: 'Tapped Lamb',
     });
 
-    riveRef.current?.fireState('State Machine 1', 'tap');
+    riveRef.current?.setInputState('Baby', 'wake up', true);
     setIsAnimating(false);
     setIsLambTapped(true);
 
@@ -466,7 +466,7 @@ export default function OnboardingWelcomeScreen() {
             {/* Inner container */}
             <View className="flex-1">
               <View style={{marginTop:RPH(25)}} className="flex-1 items-center justify-center">
-                <View className="h-[225px] w-full justify-center items-center relative">
+                <View className="h-[245px] w-full justify-center items-center relative">
                   {IS_ANDROID ? (
                     <Rive
                       ref={riveRef}
@@ -476,11 +476,11 @@ export default function OnboardingWelcomeScreen() {
                       }}
                       resourceName={'make_lamb'}
                       // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
-                      stateMachineName="State Machine 1"
-                      artboardName={'lamb-wakingup-click'}
+                      stateMachineName="Baby"
+                      artboardName={'Baby-Spepherd 2'}
                       fit={Fit.Contain}
                       alignment={Alignment.Center}
-                      style={{ width: RPH(23), height: RPH(23) }}
+                      style={{ width: RPH(25), height: RPH(25) }}
                     />
                   ) : (
                     <Rive
@@ -491,11 +491,11 @@ export default function OnboardingWelcomeScreen() {
                       }}
                       url={assets[0].uri!} // Use url prop with localUri
                       // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
-                      stateMachineName="State Machine 1"
-                      artboardName={'lamb-wakingup-click'}
+                      stateMachineName="Baby"
+                      artboardName={'Baby-Spepherd 2'}
                       fit={Fit.Contain}
                       alignment={Alignment.Center}
-                      style={{ width: RPH(23), height: RPH(23) }}
+                      style={{ width: RPH(25), height: RPH(25) }}
                     />
                   )}
                 
