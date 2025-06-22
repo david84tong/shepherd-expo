@@ -406,6 +406,7 @@ const PricingScreen = () => {
                 </Text>
               </View>
             ) : (
+              
               <PrimaryButton title={"See my FREE Offer"} onPress={handleSubscribe} />
             )}
            

@@ -20,6 +20,7 @@ import { ONBOARDING_COMPLETED_KEY } from '~/app/models/Onboarding';
 import i18n from '~/app/utils/i18n';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import * as Haptics from 'expo-haptics';
 
 const { width, height } = Dimensions.get('window');
 
@@ -63,6 +64,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const params = useLocalSearchParams();
   const [hasStarted, setHasStarted] = useState(false);
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+  const lastHapticPercentage = useRef(0);
 
   // Check onboarding completion status
   useEffect(() => {
@@ -245,6 +247,17 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     if (!hasStarted) return;
 
     const progress = currentStep / loadingPoints.length;
+    const currentPercentage = Math.round(progress * 100);
+
+    // Trigger heavy haptic feedback at 25%, 50%, 75%, and 100%
+    const hapticThresholds = [25, 50, 75, 100];
+    for (const threshold of hapticThresholds) {
+      if (currentPercentage >= threshold && lastHapticPercentage.current < threshold) {
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        lastHapticPercentage.current = threshold;
+        break; // Only trigger one haptic per update
+      }
+    }
 
     Animated.timing(progressAnim, {
       toValue: progress,
