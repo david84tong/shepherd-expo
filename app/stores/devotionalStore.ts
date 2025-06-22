@@ -102,6 +102,8 @@ interface DevotionalStore {
   clearCustomDevotional: () => Promise<void>;
   // Refresh widget data with current devotional
   refreshWidgetData: () => Promise<void>;
+  // NEW ACTION: Update widget timeline with 5 days of data
+  updateWidgetTimeline: () => Promise<void>;
 }
 
 export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
@@ -285,23 +287,10 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         error: null 
       });
 
-      // Share the data with the widget
-      if (devotional.bibleReference && devotional.verse) {
-        console.log('📱 Sharing devotional data with widget:', {
-          bibleReference: devotional.bibleReference,
-          verseLength: devotional.verse.length,
-          imageURL: devotional.imageURL
-        });
-        await safeWidgetCall('updateVerseData',
-          devotional.bibleReference,
-          devotional.verse,
-          devotional.imageURL || null
-        );
-      } else {
-        console.log('📱 No verse data available for widget');
-        await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
-      }
-      
+      // The widget timeline is now updated by a separate function
+      // that is called after this one completes.
+      await get().updateWidgetTimeline();
+
     } catch (error) {
       console.error('Error fetching devotional:', error);
       await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
@@ -471,6 +460,96 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     } else {
       console.log('📱 No current devotional data available for widget refresh');
       await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
+    }
+  },
+
+  // NEW ACTION: Update widget timeline with 5 days of data
+  updateWidgetTimeline: async () => {
+    console.log('🚀 Updating widget timeline with 5 days of data...');
+
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Fetch 5 days of devotionals from Firestore
+      const devotionalPromises = Array.from({ length: 5 }).map(async (_, i) => {
+        const date = new Date(today);
+        date.setDate(date.getDate() + i);
+        const dateId = date.toISOString().split('T')[0];
+        const docSnap = await firestore().collection('dailyDevotionals').doc(dateId).get();
+        return docSnap.exists ? (docSnap.data() as Devotional) : null;
+      });
+      
+      const rawDevotionals = await Promise.all(devotionalPromises);
+
+      // Process devotionals (fetch verse text if needed)
+      const processedDevotionals = await Promise.all(
+        rawDevotionals.map(async (devotional) => {
+          if (!devotional) return null;
+          
+          let verseText = devotional.verse;
+          const reference = devotional.bibleReference || devotional.verse;
+
+          if (verseText && verseText.includes(':')) {
+            try {
+              const parsed = parseBibleReference(reference);
+              if (parsed) {
+                const bookId = BIBLE_BOOK_IDS[parsed.book];
+                if (bookId) {
+                  const chapterData = await fetchChapter(get().bibleVersion, bookId, parsed.chapter);
+                  if ('verses' in chapterData) {
+                    const verseData = chapterData.verses.find(v => v.verse === parsed.verse);
+                    if (verseData) verseText = verseData.text;
+                  }
+                }
+              }
+            } catch (e) { console.error(`Failed to fetch verse text for ${reference}`, e); }
+          }
+          return { ...devotional, verse: verseText, bibleReference: reference };
+        })
+      );
+
+      // Create widget timeline entries
+      const widgetEntries = processedDevotionals.map((devotional, i) => {
+        const date = new Date(today);
+        date.setDate(date.getDate() + i);
+        if (devotional) {
+          return {
+            date: date.getTime() / 1000,
+            status: 'verseAvailable',
+            bibleReference: devotional.bibleReference,
+            verse: devotional.verse,
+            imageURL: devotional.imageURL,
+          };
+        }
+        return { 
+          date: date.getTime() / 1000, 
+          status: 'noVerseAvailable' 
+        };
+      });
+      
+      console.log(`📱 Prepared ${widgetEntries.length} entries for widget timeline.`);
+      
+      // Update both the single verse data for today AND the 5-day timeline
+      const todaysData = processedDevotionals?.[0];
+      if(!todaysData){
+        await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
+        return;
+      }
+      if (todaysData && todaysData.bibleReference && todaysData.verse) {
+        await safeWidgetCall('updateVerseData',
+          todaysData.bibleReference,
+          todaysData.verse,
+          todaysData.imageURL || null
+        );
+      } else {
+        await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
+      }
+
+      await safeWidgetCall('updateTimeline', widgetEntries);
+      
+    } catch (error) {
+      console.error('Error updating widget timeline:', error);
     }
   },
 }));

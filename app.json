@@ -74,6 +74,15 @@
               "group.shepherd.widget.streak1"
             ]
           }
+        },
+        {
+          "targetName": "DailyVerseWidget",
+          "bundleIdentifier": "second.round.shepherd.dailyverse",
+          "entitlements": {
+            "com.apple.security.application-groups": [
+              "group.shepherd.widget.streak1"
+            ]
+          }
         }
       ]
     },

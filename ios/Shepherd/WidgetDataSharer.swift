@@ -48,6 +48,47 @@ class WidgetDataSharer: NSObject {
     self.saveAndReload(devotionalData, userDefaults: userDefaults)
   }
 
+  @objc(updateTimeline:)
+  func updateTimeline(entries: [[String: Any]]) {
+    guard let userDefaults = self.userDefaults else {
+      print("Error: Could not access UserDefaults with suite name.")
+      return
+    }
+    
+    let group = DispatchGroup()
+    var processedEntries = [[String: Any]]()
+    let lock = NSLock()
+
+    for var entry in entries {
+      group.enter()
+      if let imageURL = entry["imageURL"] as? String {
+        fetchImageData(from: imageURL) { imageData in
+          entry["imageData"] = imageData?.base64EncodedString()
+          lock.lock()
+          processedEntries.append(entry)
+          lock.unlock()
+          group.leave()
+        }
+      } else {
+        lock.lock()
+        processedEntries.append(entry)
+        lock.unlock()
+        group.leave()
+      }
+    }
+
+    group.notify(queue: .main) {
+      do {
+        let timelineData = try JSONSerialization.data(withJSONObject: processedEntries, options: [])
+        userDefaults.set(timelineData, forKey: "widgetTimeline")
+        print("Successfully saved timeline data with \(processedEntries.count) entries to UserDefaults.")
+        WidgetCenter.shared.reloadAllTimelines()
+      } catch {
+        print("Error saving timeline data: \(error.localizedDescription)")
+      }
+    }
+  }
+
   private func saveAndReload(_ data: SharedDevotional, userDefaults: UserDefaults) {
     do {
         // Instead of encoding the whole object, save properties individually
@@ -65,15 +106,33 @@ class WidgetDataSharer: NSObject {
 
   private func fetchImageData(from urlString: String?, completion: @escaping (Data?) -> Void) {
       guard let urlString = urlString, let url = URL(string: urlString) else {
+          print("📸 [WidgetDataSharer] Invalid URL string: \(urlString ?? "nil")")
           completion(nil)
           return
       }
-      URLSession.shared.dataTask(with: url) { data, _, error in
-          guard let data = data, error == nil else {
-              print("Error fetching image data: \(error?.localizedDescription ?? "Unknown error")")
+      
+      print("📸 [WidgetDataSharer] Starting image download from URL: \(url)")
+      
+      URLSession.shared.dataTask(with: url) { data, response, error in
+          if let error = error {
+              print("📸 [WidgetDataSharer] Error fetching image data: \(error.localizedDescription)")
               completion(nil)
               return
           }
+          
+          guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
+              print("📸 [WidgetDataSharer] Invalid HTTP response: \(response.debugDescription)")
+              completion(nil)
+              return
+          }
+          
+          guard let data = data, !data.isEmpty else {
+              print("📸 [WidgetDataSharer] No data received from image download.")
+              completion(nil)
+              return
+          }
+          
+          print("📸 [WidgetDataSharer] Successfully downloaded \(data.count) bytes of image data.")
           completion(data)
       }.resume()
   }

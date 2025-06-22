@@ -32,6 +32,14 @@ struct SharedDevotional: Codable {
 
 // 3. Timeline Provider
 struct Provider: TimelineProvider {
+    
+    init() {
+        for family in UIFont.familyNames.sorted() {
+            let names = UIFont.fontNames(forFamilyName: family)
+            print("Family: \(family) Font names: \(names)")
+        }
+    }
+
     // A placeholder view for the widget gallery.
     func placeholder(in context: Context) -> DevotionalEntry {
         DevotionalEntry(
@@ -51,10 +59,9 @@ struct Provider: TimelineProvider {
 
     // The timeline of entries for the widget to display.
     func getTimeline(in context:Context, completion: @escaping (Timeline<DevotionalEntry>) -> ()) {
-        let entry = readEntryFromUserDefaults()
-        // Refresh the widget every hour. The main app is responsible for updating the content.
-        let nextUpdate = Calendar.current.date(byAdding: .hour, value: 1, to: Date())!
-        let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
+        let entries = readTimelineFromUserDefaults()
+        // Create a timeline that reloads after the last entry.
+        let timeline = Timeline(entries: entries, policy: .atEnd)
         completion(timeline)
     }
 
@@ -85,6 +92,45 @@ struct Provider: TimelineProvider {
             image: image
         )
     }
+
+    // Helper to read the scheduled timeline from UserDefaults
+    private func readTimelineFromUserDefaults() -> [DevotionalEntry] {
+        guard let userDefaults = UserDefaults(suiteName: "group.shepherd.widget.streak1"),
+              let data = userDefaults.data(forKey: "widgetTimeline"),
+              let serializedEntries = try? JSONSerialization.jsonObject(with: data, options: []) as? [[String: Any]]
+        else {
+            return [readEntryFromUserDefaults()]
+        }
+
+        let entries = serializedEntries.compactMap { dict -> DevotionalEntry? in
+            guard let dateTimestamp = dict["date"] as? TimeInterval,
+                  let statusString = dict["status"] as? String,
+                  let status = SharedDevotional.Status(rawValue: statusString)
+            else {
+                return nil
+            }
+
+            let date = Date(timeIntervalSince1970: dateTimestamp)
+            let bibleReference = dict["bibleReference"] as? String
+            let verse = dict["verse"] as? String
+            var image: UIImage? = nil
+            
+            if let imageDataString = dict["imageData"] as? String,
+               let imageData = Data(base64Encoded: imageDataString) {
+                image = UIImage(data: imageData)
+            }
+
+            return DevotionalEntry(
+                date: date,
+                status: status,
+                bibleReference: bibleReference,
+                verse: verse,
+                image: image
+            )
+        }
+
+        return entries.isEmpty ? [readEntryFromUserDefaults()] : entries
+    }
 }
 
 // 4. SwiftUI View for the Widget
@@ -101,46 +147,69 @@ struct DailyVerseWidgetEntryView : View {
             // Content
             switch entry.status {
             case .verseAvailable:
-                VStack(alignment: .leading, spacing: 2) {
-                    if let reference = entry.bibleReference, let verse = entry.verse {
-                        Text(reference)
-                            .font(.custom("Nunito-Black", size: 22))
-                            .foregroundColor(.white)
+                VStack {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            if let reference = entry.bibleReference, let verse = entry.verse {
+                                Text(reference)
+                                    .font(.custom("Nunito-Black", size: 22))
+                                    .foregroundColor(.white)
 
-                        Text("Verse of the Day")
-                            .font(.custom("Nunito-Regular", size: 14))
-                            .foregroundColor(Color.white.opacity(0.8))
-                            .padding(.bottom, 6)
+                                Text("Verse of the Day")
+                                    .font(.custom("Nunito-Regular", size: 14))
+                                    .foregroundColor(Color.white.opacity(0.8))
+                                    .padding(.bottom, 6)
 
-                        Text(verse)
-                            .font(.custom("Nunito-Regular", size: 16))
-                            .foregroundColor(.white)
-                            .lineSpacing(4)
+                                Text(verse)
+                                    .font(.custom("Nunito-Regular", size: 16))
+                                    .foregroundColor(.white)
+                                    .lineSpacing(4)
+                            }
+                        }
+                        Spacer()
                     }
+                    Spacer()
                 }
-                
+                .padding(5)
+
             case .loggedOut:
                 VStack {
-                    Text("📖")
-                        .font(.system(size: 24))
-                        .padding(.bottom, 4)
-                    Text("Open Shepherd to see your daily verse")
-                        .font(.system(size: 16))
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        VStack {
+                            Text("📖")
+                                .font(.system(size: 24))
+                                .padding(.bottom, 4)
+                            Text("Open Shepherd to see your daily verse")
+                                .font(.system(size: 16))
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding()
+                        Spacer()
+                    }
+                    Spacer()
                 }
-                .padding()
             case .noVerseAvailable:
                 VStack {
-                    Text("📖")
-                        .font(.system(size: 24))
-                        .padding(.bottom, 4)
-                    Text("No verse available today")
-                        .font(.system(size: 16))
-                        .foregroundColor(.white)
-                        .multilineTextAlignment(.center)
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        VStack {
+                            Text("📖")
+                                .font(.system(size: 24))
+                                .padding(.bottom, 4)
+                            Text("No verse available today")
+                                .font(.system(size: 16))
+                                .foregroundColor(.white)
+                                .multilineTextAlignment(.center)
+                        }
+                        .padding()
+                        Spacer()
+                    }
+                    Spacer()
                 }
-                .padding()
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
