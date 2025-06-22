@@ -1819,7 +1819,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               onPress={handleSaveTranslation}
               disabled={isSavingTranslation || tempSelectedTranslation === savedTranslation}>
               <Text style={[styles.saveButtonText, tempSelectedTranslation === savedTranslation && styles.saveButtonTextDisabled]}>
-                {isSavingTranslation ? "Saving...": ""}
+                {isSavingTranslation ? "Saving...": "Save"}
               </Text>
             </TouchableOpacity>
 
