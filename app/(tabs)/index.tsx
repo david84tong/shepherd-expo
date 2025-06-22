@@ -206,9 +206,9 @@ export default function HomeScreen() {
           }}
           activeOpacity={0.7}
           style={{
-            top: RPH(4.5)
+            top: levelInfo.level < 10 ? RPH(7) : RPH(4.5)
           }}
-          className={`bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 px-2`}>
+          className={`bg-surfaceCream/80 rounded-full items-center justify-center flex-row h-6 px-2 -mt-2`}>
           <Text className="font-feather text-textPrimary text-xs">
             {lambName
               ? `${lambName.charAt(0).toUpperCase()}${lambName.slice(1).toLowerCase().slice(0, 8)}${lambName.length > 9 ? '...' : ''}`
@@ -234,8 +234,8 @@ export default function HomeScreen() {
               onError={handleRiveAnimationError}
               onPlay={handleRivePlay}
               style={{
-                width: RPH(27),
-                height: RPH(27),
+                width: RPH(30),
+                height: RPH(30),
                 opacity: new Date().getHours() >= 19 ? 0.85 : 1,
               }}
             />
@@ -250,8 +250,8 @@ export default function HomeScreen() {
               autoplay
               onError={handleRiveAnimationError}
               style={{
-                width: RPH(27),
-                height: RPH(27),
+                width: RPH(30),
+                height: RPH(30),
                 opacity: new Date().getHours() >= 19 ? 0.85 : 1,
               }}
             />

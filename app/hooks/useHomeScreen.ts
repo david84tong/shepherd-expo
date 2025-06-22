@@ -1023,7 +1023,7 @@ export const useHomeScreen = () => {
              
              // Set Level-Number based on lamb level
              const currentLevel = levelInfo?.level || 1;
-             const levelNumber = 0
+             const levelNumber = currentLevel < 10 ? 1 : 0;
              riveRef.current.setInputState('State Machine 1', 'Level-Number', levelNumber);
              console.log(`Set Rive Level-Number: ${levelNumber} (level ${currentLevel})`);
              

@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useEffect } from 'react';
+import React, { useLayoutEffect, useEffect, useRef } from 'react';
 import { View, Text, Image, StatusBar, ScrollView } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -11,7 +11,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useAssets } from 'expo-asset';
-import Rive from 'rive-react-native';
+import Rive, { RiveRef } from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import skins from '../../assets/onboarding/skins.png';
@@ -21,10 +21,16 @@ import { RPH } from '../helper/helper';
 export default function OnboardingExplainerScreen({ onContinue }: { onContinue?: () => void }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  
+  // Create refs for each Rive instance
+  const riveRef1 = useRef<RiveRef>(null);
+  const riveRef10 = useRef<RiveRef>(null);
+  const riveRef20 = useRef<RiveRef>(null);
+  const riveRef33 = useRef<RiveRef>(null);
+  
   // Load Rive assets
   const [riveAssets] = useAssets([
-    require('../../assets/riveAnimations/homeLamb.riv'),
-    require('../../assets/riveAnimations/lamb-wings-idle.riv'),
+    require('../../assets/riveAnimations/new_shepherd.riv'),
   ]);
 
   // Animation shared values
@@ -68,6 +74,50 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
       );
     });
   }, []);
+
+  // Configure Rive input states after components are ready
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      // LVL 1: Set Level-Number to 1
+      if (riveRef1.current?.setInputState) {
+        try {
+          riveRef1.current.setInputState('State Machine 1', 'Level-Number', 1);
+        } catch (e) {
+          console.log('Error setting Level-Number for LVL 1:', e);
+        }
+      }
+
+      // LVL 10: Normal skin (default)
+      if (riveRef10.current?.setInputState) {
+        try {
+          riveRef10.current.setInputState('State Machine 1', 'Level-Number', 0);
+        } catch (e) {
+          console.log('Error setting Level-Number for LVL 10:', e);
+        }
+      }
+
+      // LVL 20: Normal skin (default)
+      if (riveRef20.current?.setInputState) {
+        try {
+          riveRef20.current.setInputState('State Machine 1', 'Level-Number', 0);
+        } catch (e) {
+          console.log('Error setting Level-Number for LVL 20:', e);
+        }
+      }
+
+      // LVL 33: Wings ON (set Wings ON/OFF to 1)
+      if (riveRef33.current?.setInputState) {
+        try {
+          riveRef33.current.setInputState('State Machine 1', 'Level-Number', 0);
+          riveRef33.current.setInputState('State Machine 1', 'Wings ON/OFF', 1);
+        } catch (e) {
+          console.log('Error setting Wings ON/OFF for LVL 33:', e);
+        }
+      }
+    }, 1000); // Wait 1 second for Rive components to be ready
+
+    return () => clearTimeout(timer);
+  }, [riveAssets]);
 
   // Handle continue with analytics
   const handleContinue = () => {
@@ -157,17 +207,21 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
             ]}
             className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
             {riveAssets && (
-              <View className="w-20 h-20">
+              <View className="w-[120px] h-[120px]">
                 {IS_ANDROID ? (
                   <Rive
-                    resourceName={'home_lamb'}
-                    artboardName="lamb-idle"
+                    ref={riveRef1}
+                    resourceName={'new_shepherd'}
+                    artboardName="[Main] Shpeherd"
+                    stateMachineName="State Machine 1"
                     style={{ width: '100%', height: '100%' }}
                   />
                 ) : (
                   <Rive
+                    ref={riveRef1}
                     url={riveAssets[0].uri!}
-                    artboardName="lamb-idle"
+                    artboardName="[Main] Shpeherd"
+                    stateMachineName="State Machine 1"
                     style={{ width: '100%', height: '100%' }}
                   />
                 )}
@@ -190,17 +244,21 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
             ]}
             className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
             {riveAssets && (
-              <View className="w-[110px] h-[110px]">
+              <View className="w-[140px] h-[140px]">
                 {IS_ANDROID ? (
                   <Rive
-                    resourceName={'home_lamb'}
-                    artboardName="lamb-idle"
+                    ref={riveRef10}
+                    resourceName={'new_shepherd'}
+                    artboardName="[Main] Shpeherd"
+                    stateMachineName="State Machine 1"
                     style={{ width: '100%', height: '100%' }}
                   />
                 ) : (
                   <Rive
+                    ref={riveRef10}
                     url={riveAssets[0].uri!}
-                    artboardName="lamb-idle"
+                    artboardName="[Main] Shpeherd"
+                    stateMachineName="State Machine 1"
                     style={{ width: '100%', height: '100%' }}
                   />
                 )}
@@ -229,17 +287,21 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
                   className="absolute w-[200px] h-[200px]"
                 />
 
-                <View className="w-[120px] h-[120px]">
+                <View className="w-[140px] h-[140px]">
                   {IS_ANDROID ? (
                     <Rive
-                      resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-                      artboardName="lamb-idle"
+                      ref={riveRef20}
+                      resourceName={'new_shepherd'}
+                      artboardName="[Main] Shpeherd"
+                      stateMachineName="State Machine 1"
                       style={{ width: '100%', height: '100%' }}
                     />
                   ) : (
                     <Rive
+                      ref={riveRef20}
                       url={riveAssets[0].uri!}
-                      artboardName="lamb-idle"
+                      artboardName="[Main] Shpeherd"
+                      stateMachineName="State Machine 1"
                       style={{ width: '100%', height: '100%' }}
                     />
                   )}
@@ -262,11 +324,20 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
               <View className="w-[140px] h-[140px]">
                 {IS_ANDROID ? (
                   <Rive
-                    resourceName={'lamb_wings_idle'}
+                    ref={riveRef33}
+                    resourceName={'new_shepherd'}
+                    artboardName="[Main] Shpeherd"
+                    stateMachineName="State Machine 1"
                     style={{ width: '100%', height: '100%' }}
                   />
                 ) : (
-                  <Rive url={riveAssets[1].uri!} style={{ width: '100%', height: '100%' }} />
+                  <Rive
+                    ref={riveRef33}
+                    url={riveAssets[0].uri!}
+                    artboardName="[Main] Shpeherd"
+                    stateMachineName="State Machine 1"
+                    style={{ width: '100%', height: '100%' }}
+                  />
                 )}
               </View>
             )}

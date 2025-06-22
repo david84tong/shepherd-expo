@@ -356,7 +356,7 @@ export default function OnboardingWelcomeScreen() {
   };
 
   // Load the Rive asset - Moved after all other hooks
-  const [assets] = useAssets([require('../../assets/riveAnimations/makeLamb.riv')]);
+  const [assets] = useAssets([require('../../assets/riveAnimations/babyLambWaking.riv')]);
 
   // Show loading indicator while assets are loading
   if (!assets) {
