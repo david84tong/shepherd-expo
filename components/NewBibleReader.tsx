@@ -2012,15 +2012,6 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
            <View
              className="rounded-t-card "
              style={{ width: '100%', height: IS_ANDROID ? '85%' : RPH(85) , position: 'absolute', bottom: 0,backgroundColor:theme?.background }}>
-              {
-                loading ? <View className='items-center justify-center flex-1'>
-                <ActivityIndicator size="large" color={theme.text} />
-                <Text style={{ color: theme.text, marginTop: 16, fontSize: 16, fontFamily: 'DIN Next Rounded LT W01 Regular' }}>
-                  Loading chapter...
-                </Text>
-              </View>  : <>
-             {/* Title and Navigation Arrows Row */}
-            
                <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                  {isInPathMode && onNavigateBack ? (
                    <TouchableOpacity
@@ -2055,6 +2046,16 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
          <MaterialIcons name="settings" size={22} color="#795323" style={{ opacity: 0.4 }} />
        </TouchableOpacity>
                </View>
+              {
+                loading ? <View className='items-center justify-center flex-1'>
+                <ActivityIndicator size="large" color={theme.text} />
+                <Text style={{ color: theme.text, marginTop: 16, fontSize: 16, fontFamily: 'DIN Next Rounded LT W01 Regular' }}>
+                  Loading chapter...
+                </Text>
+              </View>  : <>
+             {/* Title and Navigation Arrows Row */}
+            
+              
          
  
              {/* Absolute background to cover outer safe areas */}
