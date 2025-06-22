@@ -268,7 +268,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   useEffect(() => {
     if (!isOnboarding && currentStep === loadingPoints.length) {
       // Loading steps completed, decide where to navigate
-      if (devotionalStoreCurrentDevotional) {
+      if (devotionalStoreCurrentDevotional && isProMember) {
         // Devotional was created successfully (pro user)
         const timer = setTimeout(() => {
           router.navigate({
@@ -284,6 +284,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         }, 2000);
         return () => clearTimeout(timer);
       } else if (!isProMember) {
+        console.log('LoadingScreen: User is not pro, showing paywall');
         // User is not pro - show paywall before dismissing
         const timer = setTimeout(async () => {
           try {

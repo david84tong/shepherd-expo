@@ -414,6 +414,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const pathInProgress = usePathStore((s) => s.pathInProgress);
   const currentPath = usePathStore((s) => s.currentPath);
   const setSavedReading = usePathStore((s) => s.setSavedReading);
+  
+  // Use savedTranslation from pathStore instead of translation prop
+  const savedTranslation = usePathStore((s) => s.savedTranslation);
+  
+  // Use savedTranslation instead of the translation prop
+  const activeTranslation = savedTranslation || translation;
 
   // Add logging to see current path state
   // console.log('📖 [NewBibleReader] Current path state:', {
@@ -494,8 +500,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Track translation changes in analytics
   useEffect(() => {
-    analytics.setUserProperties({ translation });
-  }, [translation]);
+    analytics.setUserProperties({ translation: activeTranslation });
+  }, [activeTranslation]);
 
   useEffect(() => {
     const loadSettings = async () => {
@@ -622,8 +628,16 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         }
       }
     },
-    [translation, setSavedReading, progressValue, isMapMode, readerSettings.tapToShowNextCard]
+    [activeTranslation, setSavedReading, progressValue, isMapMode, readerSettings.tapToShowNextCard]
   );
+
+  // Reload chapter when translation (activeTranslation) changes
+  useEffect(() => {
+    if (chapterData) {
+      console.log(`📖 [NewBibleReader] Detected translation change to ${activeTranslation}, reloading current chapter`);
+      loadChapter(currentBookId, currentChapter);
+    }
+  }, [activeTranslation]);
 
   // Check if user is at the end chapter of their path
   const isAtEndChapter = useMemo(() => {
@@ -1212,32 +1226,39 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       if (chapterData) {
         const reference = `${chapterData.book} ${chapterData.chapter}:${verse.verse}`;
         
-        // Navigate to LoadingScreen first (always redirect regardless of pro status)
-        router.push({
-          pathname: '/onboarding/LoadingScreen',
-          params: {
-            isOnboarding: 'false',
-            fromSwipe: 'true',
-            verseText: verse.text,
-            reference: reference,
-          },
-        });
-
-        // Only start AI devotional creation if user is pro
+        // Check if user is pro first
         const isProMember = useSubscriptionStore.getState().isProMember;
+        
+        // Start AI devotional creation BEFORE navigation if user is pro
         if (isProMember) {
           try {
-            await createAIDevotional(
+            // Start the devotional creation process
+            createAIDevotional(
               verse.text,
               reference,
               chapterData.book,
               chapterData.chapter,
               verse.verse
             );
+            // Don't await - let it run in background while we navigate
           } catch (error) {
-            console.error('Failed to create AI devotional:', error);
+            console.error('Failed to start AI devotional creation:', error);
           }
         }
+        
+        // Small delay to ensure devotional creation has started
+        setTimeout(() => {
+          // Navigate to LoadingScreen after starting creation
+          router.push({
+            pathname: '/onboarding/LoadingScreen',
+            params: {
+              isOnboarding: 'false',
+              fromSwipe: 'true',
+              verseText: verse.text,
+              reference: reference,
+            },
+          });
+        }, 100);
       }
 
       analytics.logEvent('CardBibleReader_Swiped_VerseToDevotional', {

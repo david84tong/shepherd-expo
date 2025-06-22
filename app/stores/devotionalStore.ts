@@ -5,6 +5,7 @@ import { fetchChapter } from '../api/bible';
 import { BIBLE_BOOK_IDS } from '../models/Path';
 import { createDevotionalFromVerse } from '../api/ai';
 import auth from '@react-native-firebase/auth';
+import { usePathStore } from './pathStore';
 // after we fetch devotional from firestore we need to get the verse from the API
 // 
 
@@ -157,8 +158,9 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
             if (bookId) {
               console.log(`🔄 Fetching verse: ${referenceToUse} (Book ID: ${bookId})`);
               
-              // Fetch the chapter
-              const chapterData = await fetchChapter(get().bibleVersion || 'ESV', bookId, parsed.chapter);
+              // Fetch the chapter using user's saved translation from pathStore
+              const userTranslation = usePathStore.getState().savedTranslation || 'ESV';
+              const chapterData = await fetchChapter(userTranslation, bookId, parsed.chapter);
               
               if ('verses' in chapterData) {
                 if (parsed.endVerse) {

@@ -174,12 +174,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     }
   },
   presentFreeTrialPaywall: async () => {
+    console.log('[SubscriptionStore] presentFreeTrialPaywall called');
     try {
       analytics.logEvent('presentFreeTrialPaywall', {
         fromScreen: get().fromScreen,
       });
+      console.log('[SubscriptionStore] About to fetch paywall from Adapty');
       const paywall = await adapty.getPaywall('freeTrial-simple');
       console.log('Fetched paywall:', JSON.stringify(paywall, null, 2));
+      console.log('[SubscriptionStore] About to create paywall view');
       const view = await createPaywallView(paywall);
 
       let result: PAYWALL_RESULT | null = null;
@@ -538,7 +541,13 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
           visibilityTime: 4000,
         });
       }
-
+      analytics.logEvent('subscription_purchase_direct_success', {
+        package_id: pack.identifier,
+        product_id: productIdentifier,
+        is_pro: isPro,
+        currentScreen: get().fromScreen,
+      });
+      
       analytics.logEvent('subscription_purchase_success', {
         package_id: pack.identifier,
         product_id: productIdentifier,

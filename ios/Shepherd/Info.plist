@@ -66,10 +66,10 @@
 	<string>Shepherd needs camera access to create your player card and generate personalized workout plans based on your physique.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Allow $(PRODUCT_NAME) to access your Face ID biometric data.</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>Shepherd needs photo library access to create your player card and assess your fitness level for personalized workout recommendations.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>This app plays background music and requires audio capabilities. Microphone access is not used.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Shepherd needs photo library access to create your player card and assess your fitness level for personalized workout recommendations.</string>
 	<key>NSUserActivityTypes</key>
 	<array>
 		<string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>
@@ -87,14 +87,13 @@
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>
-		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
+		<string>UIInterfaceOrientationPortrait</string>
+		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
 	<key>UIUserInterfaceStyle</key>
 	<string>Automatic</string>
