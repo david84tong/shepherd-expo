@@ -173,7 +173,7 @@ const PricingScreen = () => {
             paddingBottom: 120,
             paddingHorizontal: 20,
           }}>
-            
+
           {/* <AnimatedItem index={1} animateItemFromBottom={animateScreenFromBottom}>
             <View className="items-center mb-4 flex justify-center mt-16">
               <LinearGradient
@@ -228,88 +228,88 @@ const PricingScreen = () => {
           <AnimatedItem index={2.5} animateItemFromBottom={animateScreenFromBottom}>
             <View className="mb-10 mt-12">
               <Text className="font-feather text-h2 text-textPrimary mb-6 text-center">
-                We&apos;re giving you super shepherd for free!
+                {i18n.t('pricing_giving_super_shepherd_free')}
               </Text>
               <View
-              className="bg-lightYellow border-2 border-accentGold shadow-lg rounded-[24px] mb-0 overflow-hidden h-48 mt-4"
-              style={{
-                shadowColor: '#FCD34D',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
-                elevation: 8,
-              }}>
-              
-              <View className="flex-row p-4 h-48 justify-between">
-                {/* Lamb Image - Full size, no background, clipped at bottom */}
-                <View className="w-48 h-full absolute left-0 bottom-0 ml-2">
-                  <View 
-                    className="w-48 h-48 absolute bottom-[-20] rounded-full"
-                    style={{
-                      backgroundColor: 'rgba(252, 211, 77, 0.2)',
-                      shadowColor: '#FCD34D',
-                      shadowOffset: { width: 0, height: 0 },
-                      right: 4,
-                      shadowOpacity: 0.6,
-                      shadowRadius: 20,
-                      elevation: 10,
-                    }}
-                  />
-                  {riveAssets && (
-                    <>
-                      {IS_ANDROID ? (
-                        <Rive
-                          resourceName={'gold_lamb'}
-                          style={{ width: 192, height: 192, position: 'absolute', bottom: -20 }}
-                          artboardName="lamb-idle"
-                          autoplay={true}
-                        />
-                      ) : (
-                        <Rive
-                          url={riveAssets[0].localUri!}
-                          style={{ width: 192, height: 192, position: 'absolute', bottom: -20 }}
-                          artboardName="lamb-idle"
-                          autoplay={true}
-                        />
-                      )}
-                    </>
-                  )}
-                </View>
+                className="bg-lightYellow border-2 border-accentGold shadow-lg rounded-[24px] mb-0 overflow-hidden h-48 mt-4"
+                style={{
+                  shadowColor: '#FCD34D',
+                  shadowOffset: { width: 0, height: 4 },
+                  shadowOpacity: 0.3,
+                  shadowRadius: 8,
+                  elevation: 8,
+                }}>
 
-                {/* Content - Add left padding to account for image */}
-                <View className="flex-1 ml-44 pl-2 mr-2 my-2">
-                  {/* Name */}
-                  <Text className="font-feather text-lg text-textPrimary mb-1">
-                    Anointed Lamb
-                  </Text>
+                <View className="flex-row p-4 h-48 justify-between">
+                  {/* Lamb Image - Full size, no background, clipped at bottom */}
+                  <View className="w-48 h-full absolute left-0 bottom-0 ml-2">
+                    <View
+                      className="w-48 h-48 absolute bottom-[-20] rounded-full"
+                      style={{
+                        backgroundColor: 'rgba(252, 211, 77, 0.2)',
+                        shadowColor: '#FCD34D',
+                        shadowOffset: { width: 0, height: 0 },
+                        right: 4,
+                        shadowOpacity: 0.6,
+                        shadowRadius: 20,
+                        elevation: 10,
+                      }}
+                    />
+                    {riveAssets && (
+                      <>
+                        {IS_ANDROID ? (
+                          <Rive
+                            resourceName={'gold_lamb'}
+                            style={{ width: 192, height: 192, position: 'absolute', bottom: -20 }}
+                            artboardName="lamb-idle"
+                            autoplay={true}
+                          />
+                        ) : (
+                          <Rive
+                            url={riveAssets[0].localUri!}
+                            style={{ width: 192, height: 192, position: 'absolute', bottom: -20 }}
+                            artboardName="lamb-idle"
+                            autoplay={true}
+                          />
+                        )}
+                      </>
+                    )}
+                  </View>
 
-                  {/* Description */}
-                  <Text className="font-din text-sm text-description -mb-2 h-16" numberOfLines={3}>
-                    Anoint your lamb & get access to custom skins and  backgrounds
-                  </Text>
+                  {/* Content - Add left padding to account for image */}
+                  <View className="flex-1 ml-44 pl-2 mr-2 my-2">
+                    {/* Name */}
+                    <Text className="font-feather text-lg text-textPrimary mb-1">
+                      {i18n.t('pricing_anointed_lamb')}
+                    </Text>
 
-                  {/* Included with Super badge */}
-                  <View className="mt-2">
-                    <View className="bg-accentGold/20 px-3 py-1.5 rounded-full self-start mt-4">
-                      <Text className="font-feather text-xs text-textPrimary">
-                        ✨ Included with Super
-                      </Text>
+                    {/* Description */}
+                    <Text className="font-din text-sm text-description -mb-2 h-16" numberOfLines={3}>
+                      {i18n.t('pricing_anointed_lamb_description')}
+                    </Text>
+
+                    {/* Included with Super badge */}
+                    <View className="mt-2">
+                      <View className="bg-accentGold/20 px-3 py-1.5 rounded-full self-start mt-4">
+                        <Text className="font-feather text-xs text-textPrimary">
+                          {i18n.t('pricing_included_with_super')}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 </View>
               </View>
-            </View>
-         
+
             </View>
           </AnimatedItem>
 
-          
+
           <AnimatedItem index={3} animateItemFromBottom={animateScreenFromBottom}>
             <View className="bg-white rounded-2xl shadow-card mb-8 overflow-hidden">
               <View className="flex-row">
                 <View className="flex-1" />
                 <View className="items-center justify-center py-4" style={{ width: '25%' }}>
-                  <Text className="font-din text-md text-textPrimary">FREE</Text>
+                  <Text className="font-din text-md text-textPrimary">{i18n.t('pricing_free')}</Text>
                 </View>
                 <View
                   className="items-center justify-center py-4 bg-accentGold/10"
@@ -344,11 +344,11 @@ const PricingScreen = () => {
               <View>
                 {[
                   { name: i18n.t('feature_access_bible'), free: true, pro: true },
-                  { name: "Custom Devotionals", free: false, pro: true },
-                  { name: "Chat with any bible verse", free: false, pro: true },
+                  { name: i18n.t('pricing_custom_devotionals'), free: false, pro: true },
+                  { name: i18n.t('pricing_chat_with_bible_verse'), free: false, pro: true },
                   { name: i18n.t('feature_unlimited_daily_reflections'), free: false, pro: true },
                   { name: i18n.t('feature_equip_skins'), free: false, pro: true },
-                  { name: "Beta access to social", free: false, pro: true },
+                  { name: i18n.t('pricing_beta_access_social'), free: false, pro: true },
                   { name: i18n.t('feature_super_lamb_skin'), free: false, pro: true },
                 ].map((feature, idx) => (
                   <AnimatedItem
@@ -377,12 +377,12 @@ const PricingScreen = () => {
               </View>
             </View>
 
-       
+
           </AnimatedItem>
 
-       
 
-   
+
+
         </ScrollView>
         <AnimatedItem index={14} animateItemFromBottom={animateScreenFromBottom}>
           <View
@@ -406,9 +406,9 @@ const PricingScreen = () => {
                 </Text>
               </View>
             ) : (
-              <PrimaryButton title={"See my FREE Offer"} onPress={handleSubscribe} />
+              <PrimaryButton title={i18n.t('pricing_see_free_offer')} onPress={handleSubscribe} />
             )}
-           
+
           </View>
         </AnimatedItem>
       </>
