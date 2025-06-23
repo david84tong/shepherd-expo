@@ -33,6 +33,8 @@ interface DevotionalStore {
   createAIDevotional: (verseText: string, reference: string, bookName: string, chapter: number, verse: number) => Promise<void>;
   // Clear custom devotional when closing
   clearCustomDevotional: () => void;
+  updateLikeStatus: (devotionalId: string, liked: boolean) => void;
+  incrementShareCount: (devotionalId: string) => void;
 }
 
 export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
@@ -117,6 +119,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       
       const devotional: Devotional = {
         ...devotionalData,
+        id: snapshot.id,
         // Extract 'en' values from nested objects, fallback to original if string
         prayer: typeof devotionalData.prayer === 'object' && devotionalData.prayer?.en 
           ? devotionalData.prayer.en 
@@ -356,6 +359,47 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   clearCustomDevotional: () => {
     console.log('[DevotionalStore] Clearing custom devotional');
     set({ customDevotional: null });
+  },
+
+  updateLikeStatus: (devotionalId, liked) => {
+    set(state => {
+      const currentUserId = auth().currentUser?.uid;
+      if (!currentUserId) return state;
+
+      const updateDevotional = (devotional: Devotional | null) => {
+        if (devotional && devotional.id === devotionalId) {
+          const newLikes = liked ? (devotional.likes || 0) + 1 : (devotional.likes || 0) - 1;
+          const likedBy = devotional.likedBy || [];
+          const newLikedBy = liked
+            ? [...likedBy, currentUserId]
+            : likedBy.filter(id => id !== currentUserId);
+
+          return { ...devotional, likes: newLikes < 0 ? 0 : newLikes, likedBy: newLikedBy };
+        }
+        return devotional;
+      };
+
+      return {
+        dailyDevotional: updateDevotional(state.dailyDevotional),
+        currentDevotional: updateDevotional(state.currentDevotional),
+      };
+    });
+  },
+
+  incrementShareCount: (devotionalId) => {
+    set(state => {
+      const updateDevotional = (devotional: Devotional | null) => {
+        if (devotional && devotional.id === devotionalId) {
+          return { ...devotional, shares: (devotional.shares || 0) + 1 };
+        }
+        return devotional;
+      };
+
+      return {
+        dailyDevotional: updateDevotional(state.dailyDevotional),
+        currentDevotional: updateDevotional(state.currentDevotional),
+      };
+    });
   },
 }));
 

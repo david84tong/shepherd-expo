@@ -630,7 +630,6 @@ export default function HomeScreen() {
                           devotional={currentDevotional || devotionalData!}
                           share={true}
                           onPress={() => setShowShareCard(true)}
-                          onShare={handleShare}
                           onExpand={() => setShowShareCard(true)}
                           showShareButton={true}
                           showExpandButton={true}
