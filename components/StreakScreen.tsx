@@ -24,6 +24,7 @@ import { IS_ANDROID } from '~/app/utils/utils';
 import { AppFonts } from '~/app/constants/appFonts';
 import { RPH } from '~/app/helper/helper';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
+import { useSoundStore } from '~/app/stores/soundStore';
 /* ─────────────── helper ─────────────── */
 type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE';
 
@@ -111,6 +112,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   const buttonTranslateY = useSharedValue(20);
   const riveRef = useRef<RiveRef>(null);
   const insets = useSafeAreaInsets();
+  const { playFlameSound } = useSoundStore();
 
   // 1. grab data from the store
   const createdAt = useUserStore((s) => s.getCreatedAt?.()); // Firestore Timestamp or Date
@@ -169,6 +171,10 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
     preferredNotificationTime,
     scheduleDailyReminder,
   ]);
+
+  useEffect(() => {
+    playFlameSound();
+  }, [playFlameSound]);
 
   // 2. normalize → dayjs (memoized to prevent recalculation)
   const today = useMemo(() => dayjs().startOf('day'), []);

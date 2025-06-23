@@ -34,6 +34,7 @@ import analytics from '../utils/analytics';
 import { getLevelData } from '~/utils/levelUtils';
 import SuccessMessage from './SuccessMessage';
 import PrayerSettingsModal from './PrayerSettingsModal';
+import { useSoundStore } from '~/app/stores/soundStore';
 
 // AsyncStorage keys for prayer settings
 const PRAYER_HAPTICS_KEY = 'prayer_haptics_enabled';
@@ -285,7 +286,7 @@ const WaterWaveAnimation: React.FC<{
               fontFamily: 'DIN Next Rounded LT W01 Regular',
               textAlign: 'center',
               fontSize: 16,
-              color:  `${totalHoldTime > 10000 ? 'white' : "#0369a1"}`,
+              color: `${totalHoldTime > 10000 ? 'white' : "#0369a1"}`,
             }}>
               {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : 'Let your prayers fill your cup')}
             </Text>
@@ -584,7 +585,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     if (showSuccess) {
       // Notify parent that success screen is showing
       setShowPrayerSuccess?.(true);
-      
+
       animatedXP.setValue(0);
       animatedHearts.setValue(0);
       animatedTextOpacity.setValue(0.4);
@@ -630,7 +631,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     } else {
       // Notify parent that success screen is hidden
       setShowPrayerSuccess?.(false);
-      
+
       animatedXP.setValue(0);
       animatedHearts.setValue(0);
       animatedTextOpacity.setValue(0.4);
@@ -841,7 +842,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         setShowBreathingAnimation(false);
         setFinishReading(true);
         setShowSuccess(true);
-        
+
         // Change Rive animation to achievement (action-number 12)
         const riveRef = useHomeStore.getState().riveRef;
         if (riveRef?.current?.setInputState) {
@@ -892,7 +893,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         // Don't auto-trigger success when reaching 100% - wait for user to release
         if (progress >= 1) {
           console.log('🎯 Water filled completely! Ready for success when user releases.');
-          
+
           // Note: Haptic feedback will continue every 1000ms even after reaching 100%
           // This is handled by the interval haptic logic above
         }
@@ -929,11 +930,11 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     // Check if threshold was reached and trigger success on release
     const maxFillTime = prayerDuration;
     const progress = Math.min(newTotalHoldTime / maxFillTime, 1);
-    
+
     if (progress >= 1 && !animationTriggered) {
       console.log('🎯 User released after reaching threshold! Triggering success!');
       setAnimationTriggered(true);
-      
+
       // Trigger haptic feedback for success
       if (hapticsEnabled) {
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
@@ -1058,6 +1059,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
             level={levelInfo.level}
             prevLevel={levelInfo.level}
             buttonsEnabled={buttonsEnabled}
+            onLoad={() => {
+              useSoundStore.getState().playPrayerSuccessSound();
+            }}
             onGoHome={() => {
               // Update lastActivityDate to prevent completion states from being reset
               setTimeout(() => {
@@ -1173,9 +1177,9 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               onPressIn={handlePressIn}
               onPressOut={handlePressOut}
               onPress={toggleControlRow}>
-                              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -SCREEN_HEIGHT * 0.46 }}>
-                 <WaterWaveAnimation isActive={showBreathingAnimation} waterProgress={waterProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} currentDevotional={currentDevotional} isHolding={isHolding} animationTriggered={animationTriggered} totalHoldTime={totalHoldTime} />
-                </View>
+              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -SCREEN_HEIGHT * 0.46 }}>
+                <WaterWaveAnimation isActive={showBreathingAnimation} waterProgress={waterProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} currentDevotional={currentDevotional} isHolding={isHolding} animationTriggered={animationTriggered} totalHoldTime={totalHoldTime} />
+              </View>
             </TouchableWithoutFeedback>
           )}
 
