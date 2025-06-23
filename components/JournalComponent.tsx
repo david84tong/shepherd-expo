@@ -242,12 +242,11 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       
       // When textinput is focused, update bottomSheet to 88% in index.tsx
       if (visible && inputRef.current?.isFocused()) {
-        // Access bottomSheetRef from index.tsx and snap to 88%
-        useHomeStore.getState().setKeyboardVisible(true);
-        // Get the bottomSheetRef from homeStore and snap to higher position (88%)
-        const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
+        // Access bottomSheetRef from homeStore and snap to 88% position
+        const homeStore = useHomeStore.getState();
+        const bottomSheetRef = homeStore.bottomSheetRef;
         if (bottomSheetRef?.current) {
-          bottomSheetRef.current.snapToIndex(5); // Index 5 is 88% in snapPoints array
+          bottomSheetRef.current.snapToIndex(6); // Index 6 is 88% in snapPoints array
         }
       }
     };
@@ -848,7 +847,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
               // Ensure keyboard is shown and bottom sheet snaps to 88%
               const bottomSheetRef = homeStore.bottomSheetRef;
               if (bottomSheetRef?.current) {
-                bottomSheetRef.current.snapToIndex(5); // Index 5 is 88% in snapPoints array
+                bottomSheetRef.current.snapToIndex(6); // Index 6 is 88% in snapPoints array
               }
             }}
             onBlur={() => {

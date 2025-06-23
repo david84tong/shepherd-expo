@@ -146,6 +146,7 @@
     "pray": "Pray",
     "complete": "Complete",
     "share": "Share",
+    "preparing": "Preparing...",
     "expand": "Expand",
     "error": "Error",
     "success": "Success",
@@ -447,5 +448,9 @@
     "free_offer_biggest_deal_ever": "Our biggest deal ever!",
     "free_offer_one_time_discount": "One-time 43% OFF when you start your free trial now",
     "free_offer_biggest_discount": "Biggest discount ever - just for you & {{lambName}}!",
-    "free_offer_see_one_time_offer": "See one-time FREE offer"
+    "free_offer_see_one_time_offer": "See one-time FREE offer",
+    "validation_name_empty": "Name cannot be empty",
+    "validation_name_too_long": "Name must be 16 characters or less",
+    "validation_name_special_chars": "Name cannot contain special characters",
+    "validation_name_inappropriate": "Name contains inappropriate words"
 }

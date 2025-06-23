@@ -280,7 +280,7 @@ export default function OnboardingLambNameScreen() {
             autoCapitalize="none"
             spellCheck={false}
           />
-          {error && <Text className="font-din text-sm text-red-500 mt-2 text-center">{i18n.t(error)}</Text>}
+          {error && <Text className="font-din text-sm text-red-500 mt-2 text-center">{error}</Text>}
         </CustomAnimatedView>
 
         {/* Continue Button */}

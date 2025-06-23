@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
     Animated,
     Dimensions,
@@ -8,8 +8,9 @@ import {
     TouchableOpacity,
     Text,
     StatusBar,
+    Share,
 } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
+import { FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { Devotional } from '~/app/models/Devotional';
@@ -17,26 +18,67 @@ import { ImageBackground } from 'expo-image';
 import PrimaryButton from './PrimaryButton';
 import i18n from '../app/utils/i18n';
 import { RPH } from '~/app/helper/helper';
+import firestore from '@react-native-firebase/firestore';
+import { useUserStore } from '~/app/stores/userStore';
+import { useDevotionalStore } from '~/app/stores/devotionalStore';
+
+import analytics from '~/utils/analytics';
+import ViewShot from 'react-native-view-shot';
 
 interface FullScreenShareCardProps {
     visible: boolean;
     onClose: () => void;
-    onShare: () => void;
     devotionalData: Devotional | null;
+    startShareFlow: boolean;
+    setStartShareFlow: (value: boolean) => void;
 }
 
 const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
     visible,
     onClose,
-    onShare,
     devotionalData,
+    startShareFlow,
+    setStartShareFlow,
 }) => {
     const pan = useRef(new Animated.ValueXY()).current;
     const contentScale = useRef(new Animated.Value(0.8)).current;
     const contentOpacity = useRef(new Animated.Value(0)).current;
+    const viewShotRef = useRef<ViewShot>(null);
+
+    const currentUser = useUserStore.getState();
+    
+    // Get current devotional from store (for real-time updates)
+    const currentDevotional = useDevotionalStore((state) => state.currentDevotional);
+    const dailyDevotional = useDevotionalStore((state) => state.dailyDevotional);
+    
+    // Use store data if this devotional matches the current or daily devotional
+    const storeDevotional = devotionalData && (
+        currentDevotional?.id === devotionalData.id ? currentDevotional : 
+        dailyDevotional?.id === devotionalData.id ? dailyDevotional : 
+        devotionalData
+    );
+    
+    const [isLiked, setIsLiked] = useState(false);
+    const likeCount = storeDevotional?.likes || 0;
+    const shareCount = storeDevotional?.shares || 0;
+    const [isCapturing, setIsCapturing] = useState(false);
+
+    const isRealDevotional = devotionalData ? !devotionalData.id.startsWith('quick-') && !devotionalData.id.startsWith('ai-') : false;
+    useEffect(() => {
+        if (startShareFlow) {
+            handleSharePress();
+        }
+
+    }, [startShareFlow]);
 
     useEffect(() => {
         if (visible) {
+            if (storeDevotional) {
+                if (currentUser?.id && storeDevotional.likedBy && isRealDevotional) {
+                    setIsLiked(storeDevotional.likedBy.includes(currentUser.id));
+                }
+            }
+
             Animated.parallel([
                 Animated.spring(contentScale, {
                     toValue: 1,
@@ -54,7 +96,82 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
             contentScale.setValue(0.8);
             contentOpacity.setValue(0);
         }
-    }, [visible]);
+    }, [visible, storeDevotional, currentUser, isRealDevotional]);
+
+    const handleLikePress = async () => {
+        if (!isRealDevotional || !currentUser?.id || !devotionalData?.id) return;
+
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        const newLikedState = !isLiked;
+        setIsLiked(newLikedState);
+
+        const devotionalRef = firestore().collection('dailyDevotionals').doc(devotionalData.id);
+
+        try {
+            await devotionalRef.update({
+                likes: firestore.FieldValue.increment(newLikedState ? 1 : -1),
+                likedBy: newLikedState
+                    ? firestore.FieldValue.arrayUnion(currentUser.id)
+                    : firestore.FieldValue.arrayRemove(currentUser.id),
+            });
+            analytics.logEvent('FullScreenShareCard_Like', {
+                bibleReference: devotionalData.bibleReference,
+                liked: newLikedState,
+            });
+            useDevotionalStore.getState().updateLikeStatus(devotionalData.id, newLikedState);
+        } catch (error) {
+            console.error("Error updating likes:", error);
+            setIsLiked(!newLikedState);
+        }
+    };
+
+    const handleSharePress = () => {
+        if (!isRealDevotional || !devotionalData?.id) return;
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        setIsCapturing(true);
+        if (startShareFlow) {
+            setStartShareFlow(false);
+        }
+    };
+
+    useEffect(() => {
+        if (isCapturing) {
+            const captureAndShare = async () => {
+                if (!viewShotRef.current) {
+                    setIsCapturing(false);
+                    return;
+                }
+                try {
+                    const screenshotUri = await viewShotRef.current?.capture?.();
+                    if (screenshotUri && devotionalData) {
+                        const appStoreLink = 'https://apps.apple.com/us/app/shepherd-spiritual-bible-pet/id6745461941';
+                        const message = `"${devotionalData.verse}" - ${devotionalData.bibleReference}\n\nDownload Shepherd: ${appStoreLink}`;
+
+                        const shareOptions = {
+                            title: 'Share Daily Verse',
+                            message: message,
+                            url: screenshotUri,
+                        };
+
+                        await Share.share(shareOptions);
+                        setIsCapturing(false);
+                        const devotionalRef = firestore().collection('dailyDevotionals').doc(devotionalData.id);
+                        await devotionalRef.update({
+                            shares: firestore.FieldValue.increment(1),
+                        });
+                        analytics.logEvent('FullScreenShareCard_Share', {
+                            bibleReference: devotionalData.bibleReference,
+                        });
+                        useDevotionalStore.getState().incrementShareCount(devotionalData.id);
+                    }
+                } catch (error) {
+                    console.error("Error sharing:", error);
+                }
+            };
+
+            setTimeout(captureAndShare, 100);
+        }
+    }, [isCapturing, devotionalData]);
 
     const panResponder = useRef(
         PanResponder.create({
@@ -129,70 +246,82 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                     style={{ transform: [{ translateY: pan.y }] }}
                     {...panResponder.panHandlers}
                 >
-                    <View className="flex-1 bg-[#AAB33D]" style={{ overflow: 'hidden' }}>
-                        <ImageBackground
-                            source={{ uri: devotionalData?.imageURL }}
-                            className="h-full w-full"
-                            style={{ height: '100%' }}
-                            contentFit="cover"
-                        >
-                            {/* Linear gradient overlay for readability - darker at top, lighter at bottom */}
-                            <LinearGradient
-                                colors={['rgba(0, 0, 0, 0.5)', 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 0.1)']}
-                                locations={[0, 0.6, 1]}
-                                style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                }}
-                            />
-
-                            {/* Top Right Close Button */}
-                            <TouchableOpacity
-                                style={{
-                                    top: RPH(8)
-                                }}
-                                className="absolute  right-6 w-10 h-10 bg-black/30 rounded-full items-center justify-center z-10"
-                                onPress={onClose}
-                                activeOpacity={0.7}
+                    <ViewShot ref={viewShotRef} options={{ format: 'jpg', quality: 0.9 }} style={{ flex: 1 }}>
+                        <View className="flex-1 bg-[#AAB33D]" style={{ overflow: 'hidden' }}>
+                            <ImageBackground
+                                source={{ uri: devotionalData?.imageURL }}
+                                className="h-full w-full"
+                                style={{ height: '100%' }}
+                                contentFit="cover"
                             >
-                                <FontAwesome name="times" size={20} color="white" />
-                            </TouchableOpacity>
-
-                            {/* Content */}
-                            <Animated.View
-                                className="flex-1 justify-center px-8"
-                                style={{
-                                    transform: [{ scale: contentScale }],
-                                    opacity: contentOpacity,
-                                }}
-                            >
-                                <Text className="font-feather text-white text-[24px] mb-2 font-bold">
-                                    {devotionalData?.bibleReference}
-                                </Text>
-                                <Text className="font-nunito-mediumItalic text-white text-[20px]  mb-7">
-                                    {i18n.t('verse_of_the_day')}
-                                </Text>
-                                <Text className="font-din text-white text-[24px]  mb-10">
-                                    {devotionalData?.verse}
-                                </Text>
-                            </Animated.View>
-
-                            {/* Bottom Share Button */}
-                            <View className="px-8 pb-12">
-                                <PrimaryButton
-                                    title={i18n.t('share')}
-                                    onPress={() => {
-                                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                                        onShare();
+                                {/* Linear gradient overlay for readability - darker at top, lighter at bottom */}
+                                <LinearGradient
+                                    colors={['rgba(0, 0, 0, 0.5)', 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 0.1)']}
+                                    locations={[0, 0.6, 1]}
+                                    style={{
+                                        position: 'absolute',
+                                        top: 0,
+                                        left: 0,
+                                        right: 0,
+                                        bottom: 0,
                                     }}
-                                    buttonType="orange"
                                 />
-                            </View>
-                        </ImageBackground>
-                    </View>
+
+                                {/* Top Right Close Button */}
+                                <TouchableOpacity
+                                    style={{
+                                        top: RPH(8),
+                                        opacity: isCapturing ? 0 : 1
+                                    }}
+                                    className="absolute right-6 w-10 h-10 bg-black/30 rounded-full items-center justify-center z-10"
+                                    onPress={onClose}
+                                    activeOpacity={0.7}
+                                >
+                                    <FontAwesome name="times" size={20} color="white" />
+                                </TouchableOpacity>
+
+                                {/* Content */}
+                                <Animated.View
+                                    className="flex-1 justify-center px-8"
+                                    style={{
+                                        transform: [{ scale: contentScale }],
+                                        opacity: contentOpacity,
+                                    }}
+                                >
+                                    <Text className="font-feather text-white text-[24px] mb-2 font-bold">
+                                        {devotionalData?.bibleReference}
+                                    </Text>
+                                    <Text className="font-nunito-mediumItalic text-white text-[20px]  mb-7">
+                                        {i18n.t('verse_of_the_day')}
+                                    </Text>
+                                    <Text className="font-din text-white text-[24px]  mb-10">
+                                        {devotionalData?.verse}
+                                    </Text>
+
+                                    <View style={{ opacity: isCapturing ? 0 : 1 }} className="flex-row items-center mt-4">
+                                        <TouchableOpacity onPress={handleLikePress} disabled={!isRealDevotional} className="flex-row items-center mr-4">
+                                            <Ionicons name="heart" size={RPH(2.2)} color={isLiked && isRealDevotional ? "#B36303" : "white"} />
+                                            <Text className="ml-2 text-white font-din text-lg">{likeCount}</Text>
+                                        </TouchableOpacity>
+                                        <TouchableOpacity onPress={handleSharePress} disabled={!isRealDevotional || isCapturing} className="flex-row items-center">
+                                            <FontAwesome5 name="share-alt" size={RPH(1.8)} color="white" />
+                                            <Text className="ml-2 text-white font-din text-lg">{shareCount}</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </Animated.View>
+
+                                {/* Bottom Share Button */}
+                                <View style={{ opacity: isCapturing ? 0 : 1 }} className="px-8 pb-12">
+                                    <PrimaryButton
+                                        title={isCapturing ? i18n.t('preparing') : i18n.t('share')}
+                                        onPress={handleSharePress}
+                                        buttonType="orange"
+                                        disabled={isCapturing}
+                                    />
+                                </View>
+                            </ImageBackground>
+                        </View>
+                    </ViewShot>
                 </Animated.View>
             </Modal>
         </>

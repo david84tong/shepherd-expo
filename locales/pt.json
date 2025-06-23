@@ -142,6 +142,7 @@
     "pray": "Orar",
     "complete": "Completar",
     "share": "Compartilhar",
+    "preparing": "Preparando...",
     "expand": "Expandir",
     "error": "Erro",
     "success": "Sucesso",
@@ -442,5 +443,9 @@
     "free_offer_biggest_deal_ever": "Nossa melhor oferta de todos os tempos!",
     "free_offer_one_time_discount": "43% de desconto único quando você iniciar sua avaliação gratuita agora",
     "free_offer_biggest_discount": "Maior desconto de todos os tempos - apenas para você e {{lambName}}!",
-    "free_offer_see_one_time_offer": "Ver oferta GRÁTIS única"
+    "free_offer_see_one_time_offer": "Ver oferta GRÁTIS única",
+    "validation_name_empty": "O nome não pode estar vazio",
+    "validation_name_too_long": "O nome deve ter 16 caracteres ou menos",
+    "validation_name_special_chars": "O nome não pode conter caracteres especiais",
+    "validation_name_inappropriate": "O nome contém palavras inadequadas"
 }

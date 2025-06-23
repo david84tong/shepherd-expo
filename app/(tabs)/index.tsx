@@ -15,6 +15,7 @@ import BottomSheet, { BottomSheetScrollView, SCREEN_HEIGHT } from '@gorhom/botto
 import Toast from 'react-native-toast-message';
 import { useAssets } from 'expo-asset';
 import { useHomeScreen } from '../hooks/useHomeScreen';
+import { useHomeStore } from '../stores/homeStore';
 import DevotionalReader from '../../components/DevotionalReader';
 import ProgressPill from '../../components/ProgressPill';
 import SecondaryButton from '../../components/SecondaryButton';
@@ -165,6 +166,8 @@ export default function HomeScreen() {
     MAX_HEARTS
   } = useHomeScreen();
 
+  const [startShareFlow, setStartShareFlow] = useState(false);
+
   // Load Rive assets
   const [riveAssets] = useAssets([
     require('../../assets/riveAnimations/new_shepherd.riv'),
@@ -180,6 +183,12 @@ export default function HomeScreen() {
   useEffect(() => {
     i18n.locale = currentLanguage;
   }, [currentLanguage]);
+
+  // Set bottomSheetRef in home store so other components can access it
+  useEffect(() => {
+    const setBottomSheetRef = useHomeStore.getState().setBottomSheetRef;
+    setBottomSheetRef(bottomSheetRef);
+  }, [bottomSheetRef]);
 
   // Define riveComponent after state declarations so it can access showJournalContent and showPrayerContent
   const riveComponent = useMemo(() => {
@@ -266,6 +275,26 @@ export default function HomeScreen() {
 
   // Pre-calculate the expanded width for the pill (use a reasonable fixed width instead of screen-based)
   const pillExpandedWidth = 350;
+
+  const handleDailyVerseShare = () => {
+    setStartShareFlow(true);
+    setShowShareCard(true);
+  };
+
+  const handleDailyVersePress = () => {
+    setStartShareFlow(false); // Ensure share flow is off when opening via card press
+    setShowShareCard(true);
+  };
+
+  const handleDailyVerseExpand = () => {
+    setStartShareFlow(false); // Ensure share flow is off when opening via expand
+    setShowShareCard(true);
+  };
+
+  const handleFullScreenShareClose = () => {
+    setShowShareCard(false);
+    setStartShareFlow(false);
+  };
 
   return (
     <>
@@ -629,9 +658,9 @@ export default function HomeScreen() {
                         <DailyVerseCard
                           devotional={currentDevotional || devotionalData!}
                           share={true}
-                          onPress={() => setShowShareCard(true)}
-                          onShare={handleShare}
-                          onExpand={() => setShowShareCard(true)}
+                          onPress={handleDailyVersePress}
+                          onExpand={handleDailyVerseExpand}
+                          onShare={handleDailyVerseShare}
                           showShareButton={true}
                           showExpandButton={true}
                         />
@@ -808,7 +837,13 @@ export default function HomeScreen() {
           </SafeAreaView>
         </Animated.View></View>
 
-      <FullScreenShareCard visible={showShareCard} devotionalData={devotionalData} onClose={() => setShowShareCard(false)} onShare={handleShare} />
+      <FullScreenShareCard
+        visible={showShareCard}
+        onClose={handleFullScreenShareClose}
+        devotionalData={currentDevotional || devotionalData}
+        startShareFlow={startShareFlow}
+        setStartShareFlow={setStartShareFlow}
+      />
 
       <Toast config={toastConfig} />
     </>

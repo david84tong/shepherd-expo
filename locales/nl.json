@@ -143,6 +143,7 @@
     "pray": "Bidden",
     "complete": "Voltooien",
     "share": "Delen",
+    "preparing": "Voorbereiden...",
     "expand": "Uitbreiden",
     "error": "Fout",
     "success": "Succes",
@@ -443,5 +444,9 @@
     "free_offer_biggest_deal_ever": "Onze beste deal ooit!",
     "free_offer_one_time_discount": "Eenmalige 43% korting wanneer je nu je gratis proefperiode start",
     "free_offer_biggest_discount": "Grootste korting ooit - alleen voor jou & {{lambName}}!",
-    "free_offer_see_one_time_offer": "Zie eenmalig GRATIS aanbod"
+    "free_offer_see_one_time_offer": "Zie eenmalig GRATIS aanbod",
+    "validation_name_empty": "Naam mag niet leeg zijn",
+    "validation_name_too_long": "Naam moet 16 tekens of minder zijn",
+    "validation_name_special_chars": "Naam mag geen speciale tekens bevatten",
+    "validation_name_inappropriate": "Naam bevat ongepaste woorden"
 }

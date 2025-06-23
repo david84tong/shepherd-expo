@@ -143,6 +143,7 @@
     "pray": "Beten",
     "complete": "Abschließen",
     "share": "Teilen",
+    "preparing": "Vorbereitung...",
     "expand": "Erweitern",
     "error": "Fehler",
     "success": "Erfolg",
@@ -442,5 +443,9 @@
     "free_offer_biggest_deal_ever": "Unser größtes Angebot aller Zeiten!",
     "free_offer_one_time_discount": "Einmaliger 43% Rabatt wenn du jetzt deine kostenlose Probezeit startest",
     "free_offer_biggest_discount": "Größter Rabatt aller Zeiten - nur für dich & {{lambName}}!",
-    "free_offer_see_one_time_offer": "Einmaliges KOSTENLOSES Angebot sehen"
+    "free_offer_see_one_time_offer": "Einmaliges KOSTENLOSES Angebot sehen",
+    "validation_name_empty": "Name darf nicht leer sein",
+    "validation_name_too_long": "Name muss 16 Zeichen oder weniger haben",
+    "validation_name_special_chars": "Name darf keine Sonderzeichen enthalten",
+    "validation_name_inappropriate": "Name enthält unangemessene Wörter"
 }
