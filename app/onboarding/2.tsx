@@ -34,7 +34,7 @@ export default function OnboardingLambNameScreen() {
 
   // Load Rive assets
   const [riveAssets] = useAssets([require('../../assets/riveAnimations/new_shepherd.riv')]);
-  
+
   // Create ref for Rive component
   const riveRef = useRef<RiveRef>(null);
 
@@ -280,7 +280,7 @@ export default function OnboardingLambNameScreen() {
             autoCapitalize="none"
             spellCheck={false}
           />
-          {error && <Text className="font-din text-sm text-red-500 mt-2 text-center">{i18n.t(error)}</Text>}
+          {error && <Text className="font-din text-sm text-red-500 mt-2 text-center">{error}</Text>}
         </CustomAnimatedView>
 
         {/* Continue Button */}

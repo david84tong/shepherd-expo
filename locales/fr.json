@@ -443,5 +443,9 @@
     "free_offer_biggest_deal_ever": "Notre meilleure offre de tous les temps !",
     "free_offer_one_time_discount": "43% de réduction unique quand vous commencez votre essai gratuit maintenant",
     "free_offer_biggest_discount": "Plus grande réduction de tous les temps - juste pour vous et {{lambName}} !",
-    "free_offer_see_one_time_offer": "Voir l'offre GRATUITE unique"
+    "free_offer_see_one_time_offer": "Voir l'offre GRATUITE unique",
+    "validation_name_empty": "Le nom ne peut pas être vide",
+    "validation_name_too_long": "Le nom doit contenir 16 caractères ou moins",
+    "validation_name_special_chars": "Le nom ne peut pas contenir de caractères spéciaux",
+    "validation_name_inappropriate": "Le nom contient des mots inappropriés"
 }
