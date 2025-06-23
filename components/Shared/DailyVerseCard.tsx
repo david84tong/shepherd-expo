@@ -19,6 +19,8 @@ import { AppFonts } from '~/app/constants/appFonts';
 import firestore from '@react-native-firebase/firestore';
 import { useUserStore } from '~/app/stores/userStore';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
+import { router } from 'expo-router';
+import { BIBLE_BOOK_IDS } from '~/app/models/Path';
 
 
 interface DailyVerseCardProps {
@@ -157,6 +159,65 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
     }
   };
 
+  const handleReadFullChapter = () => {
+    if (!devotional?.bibleReference) return;
+    
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    
+    // Parse the Bible reference to get book and chapter
+    const parsedRef = parseBibleReference(devotional.bibleReference);
+    if (!parsedRef) {
+      console.error('Could not parse Bible reference:', devotional.bibleReference);
+      return;
+    }
+    
+    // Find the book ID from the parsed reference
+    const bookId = BIBLE_BOOK_IDS[parsedRef.book];
+    if (!bookId) {
+      console.error('Could not find book ID for:', parsedRef.book);
+      return;
+    }
+    
+    // Navigate to Bible tab with the specific chapter
+    router.replace({
+      pathname: '/(tabs)/bible',
+      params: {
+        bookId: bookId.toString(),
+        chapters: parsedRef.chapter.toString(),
+        source: 'daily-verse-card',
+        timestamp: Date.now().toString(),
+      },
+    });
+    
+    // Log analytics
+    analytics.logEvent('DailyVerseCard_ReadFullChapter', {
+      bibleReference: devotional.bibleReference,
+      bookId: bookId,
+      chapter: parsedRef.chapter,
+      isShareCard: share,
+    });
+  };
+
+  // Helper function to parse Bible reference like "Jeremiah 29:13" or "1 John 3:16"
+  const parseBibleReference = (reference: string): { book: string; chapter: number } | null => {
+    try {
+      // Handle references like "Jeremiah 29:13" or "1 John 3:16"
+      const match = reference.match(/^(\d?\s*\w+(?:\s+\w+)*)\s+(\d+):(\d+)$/);
+      if (match) {
+        const [, book, chapter] = match;
+        return {
+          book: book.trim(),
+          chapter: parseInt(chapter, 10)
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error parsing Bible reference:', reference, error);
+      return null;
+    }
+  };
+
   if (!devotional?.verse) {
     return null;
   }
@@ -208,12 +269,12 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
             </View> : null}
           </View>
 
-          {/* Share Button - only show when share=true AND showShareButton is true */}
+          {/* Read Full Chapter Button - only show when share=true AND showShareButton is true */}
           {share && showShareButton && (
             <View style={{ marginTop: RPH(1) }} className="w-full ">
               <PrimaryButton
-                title={i18n.t('share')}
-                onPress={handleSharePress}
+                title={i18n.t('read_full_chapter') || "Read Full Chapter"}
+                onPress={handleReadFullChapter}
                 buttonType="orange"
               />
             </View>

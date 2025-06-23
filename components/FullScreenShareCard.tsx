@@ -21,6 +21,8 @@ import { RPH } from '~/app/helper/helper';
 import firestore from '@react-native-firebase/firestore';
 import { useUserStore } from '~/app/stores/userStore';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
+import { router } from 'expo-router';
+import { BIBLE_BOOK_IDS } from '~/app/models/Path';
 
 import analytics from '~/utils/analytics';
 import ViewShot from 'react-native-view-shot';
@@ -40,6 +42,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
     startShareFlow,
     setStartShareFlow,
 }) => {
+    
     const pan = useRef(new Animated.ValueXY()).current;
     const contentScale = useRef(new Animated.Value(0.8)).current;
     const contentOpacity = useRef(new Animated.Value(0)).current;
@@ -131,6 +134,65 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
         setIsCapturing(true);
         if (startShareFlow) {
             setStartShareFlow(false);
+        }
+    };
+
+    const handleReadFullChapter = () => {
+        if (!devotionalData?.bibleReference) return;
+        
+        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        
+        // Parse the Bible reference to get book and chapter
+        const parsedRef = parseBibleReference(devotionalData.bibleReference);
+        if (!parsedRef) {
+            console.error('Could not parse Bible reference:', devotionalData.bibleReference);
+            return;
+        }
+        
+        // Find the book ID from the parsed reference
+        const bookId = BIBLE_BOOK_IDS[parsedRef.book];
+        if (!bookId) {
+            console.error('Could not find book ID for:', parsedRef.book);
+            return;
+        }
+        
+        // Navigate to Bible tab with the specific chapter
+        router.replace({
+            pathname: '/(tabs)/bible',
+            params: {
+                bookId: bookId.toString(),
+                chapters: parsedRef.chapter.toString(),
+                source: 'daily-verse',
+                timestamp: Date.now().toString(),
+            },
+        });
+        
+        // Close the modal
+        onClose();
+        
+        // Log analytics
+        analytics.logEvent('FullScreenShareCard_ReadFullChapter', {
+            bibleReference: devotionalData.bibleReference,
+            bookId: bookId,
+            chapter: parsedRef.chapter,
+        });
+    };
+
+    // Helper function to parse Bible reference like "Jeremiah 29:13" or "1 John 3:16"
+    const parseBibleReference = (reference: string): { book: string; chapter: number } | null => {
+        try {
+            // Updated regex to correctly capture book and chapter from various formats
+            const match = reference.match(/^(.*?)\s*(\d+):\d+.*$/);
+            if (match) {
+                const book = match[1].trim();
+                const chapter = parseInt(match[2], 10);
+                return { book, chapter };
+            }
+            
+            return null;
+        } catch (error) {
+            console.error('Error parsing Bible reference:', reference, error);
+            return null;
         }
     };
 
@@ -310,11 +372,11 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                     </View>
                                 </Animated.View>
 
-                                {/* Bottom Share Button */}
+                                {/* Bottom Read Full Chapter Button */}
                                 <View style={{ opacity: isCapturing ? 0 : 1 }} className="px-8 pb-12">
                                     <PrimaryButton
-                                        title={isCapturing ? i18n.t('preparing') : i18n.t('share')}
-                                        onPress={handleSharePress}
+                                        title={i18n.t('read_full_chapter') || "Read Full Chapter"}
+                                        onPress={handleReadFullChapter}
                                         buttonType="orange"
                                         disabled={isCapturing}
                                     />
