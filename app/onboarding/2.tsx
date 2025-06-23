@@ -34,7 +34,7 @@ export default function OnboardingLambNameScreen() {
 
   // Load Rive assets
   const [riveAssets] = useAssets([require('../../assets/riveAnimations/new_shepherd.riv')]);
-
+  
   // Create ref for Rive component
   const riveRef = useRef<RiveRef>(null);
 

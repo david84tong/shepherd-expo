@@ -166,6 +166,8 @@ export default function HomeScreen() {
     MAX_HEARTS
   } = useHomeScreen();
 
+  const [startShareFlow, setStartShareFlow] = useState(false);
+
   // Load Rive assets
   const [riveAssets] = useAssets([
     require('../../assets/riveAnimations/new_shepherd.riv'),
@@ -273,6 +275,26 @@ export default function HomeScreen() {
 
   // Pre-calculate the expanded width for the pill (use a reasonable fixed width instead of screen-based)
   const pillExpandedWidth = 350;
+
+  const handleDailyVerseShare = () => {
+    setStartShareFlow(true);
+    setShowShareCard(true);
+  };
+
+  const handleDailyVersePress = () => {
+    setStartShareFlow(false); // Ensure share flow is off when opening via card press
+    setShowShareCard(true);
+  };
+
+  const handleDailyVerseExpand = () => {
+    setStartShareFlow(false); // Ensure share flow is off when opening via expand
+    setShowShareCard(true);
+  };
+
+  const handleFullScreenShareClose = () => {
+    setShowShareCard(false);
+    setStartShareFlow(false);
+  };
 
   return (
     <>
@@ -636,8 +658,9 @@ export default function HomeScreen() {
                         <DailyVerseCard
                           devotional={currentDevotional || devotionalData!}
                           share={true}
-                          onPress={() => setShowShareCard(true)}
-                          onExpand={() => setShowShareCard(true)}
+                          onPress={handleDailyVersePress}
+                          onExpand={handleDailyVerseExpand}
+                          onShare={handleDailyVerseShare}
                           showShareButton={true}
                           showExpandButton={true}
                         />
@@ -814,7 +837,13 @@ export default function HomeScreen() {
           </SafeAreaView>
         </Animated.View></View>
 
-      <FullScreenShareCard visible={showShareCard} devotionalData={devotionalData} onClose={() => setShowShareCard(false)} />
+      <FullScreenShareCard
+        visible={showShareCard}
+        onClose={handleFullScreenShareClose}
+        devotionalData={currentDevotional || devotionalData}
+        startShareFlow={startShareFlow}
+        setStartShareFlow={setStartShareFlow}
+      />
 
       <Toast config={toastConfig} />
     </>
