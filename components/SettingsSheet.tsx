@@ -201,9 +201,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     { id: 'NIV', name: 'New International Version (NIV)' },
     { id: 'ESV', name: 'English Standard Version (ESV)' },
     { id: 'ICB', name: "International Children's Bible (ICB)" },
-    { id: 'BDS', name: '🇫🇷 La Bible du Semeur (BDS)' },
-    { id: 'HTB', name: '🇳🇱 Het Boek (HTB)' },
-    { id: 'LUT', name: '🇩🇪 Lutherbibel 1912 (LUT)' },
+    { id: 'BDS_FR', name: '🇫🇷 La Bible du Semeur (BDS)' },
+    { id: 'HTB_NL', name: '🇳🇱 Het Boek (HTB)' },
+    { id: 'LUT_DE', name: '🇩🇪 Lutherbibel 1912 (LUT)' },
     { id: 'NVI_ES', name: '🇪🇸 NUEVA VERSIÓN INTERNACIONAL (NVI_ES)' },
     { id: 'NVI_PT', name: '🇵🇹 Bíblia Sagrada, Nova Versão Internacional (NVI_PT)' },
   ];

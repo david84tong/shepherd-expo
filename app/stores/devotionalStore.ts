@@ -48,79 +48,54 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   customDevotional: null,
   isCreatingDevotional: false,
 
-  fetchTodaysDevotional: async () => {
+    fetchTodaysDevotional: async () => {
     console.log('🚀 fetchTodaysDevotional function called!');
     set({ isLoading: true, error: null });
     
     try {
       const devotionalsRef = firestore().collection('dailyDevotionals');
-      let snapshot;
       
-      // Strategy 1: Try to get today's devotional by date-based ID (format: YYYY-MM-DD)
+      // Get today's date in user's local timezone in YYYY-MM-DD format
       const today = new Date();
-      const todayId = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
-      console.log('Trying to fetch devotional with date ID:', todayId);
+      const todayIdFormat = today.getFullYear() + '-' + 
+                           String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                           String(today.getDate()).padStart(2, '0');
       
-      snapshot = await devotionalsRef.doc(todayId).get();
+      console.log('Looking for devotional with id property:', todayIdFormat, 'Current time:', today.toLocaleString());
       
-      if (!snapshot.exists) {
-        console.log('No devotional found with date ID, trying to find by date field...');
+      // Query for devotional where the 'id' field matches today's date in YYYY-MM-DD format
+      const idQuerySnapshot = await devotionalsRef
+        .where('id', '==', todayIdFormat)
+        .limit(1)
+        .get();
         
-        // Strategy 2: Query by date field to find devotionals with today's date
-        const todayDateString = todayId; // YYYY-MM-DD format
-        const dateQuerySnapshot = await devotionalsRef
-          .where('date', '==', todayDateString)
-          .limit(1)
-          .get();
-          
-        if (!dateQuerySnapshot.empty) {
-          snapshot = dateQuerySnapshot.docs[0];
-          console.log('Found devotional by date field:', snapshot.id);
-        } else {
-          console.log('No devotional found by date field, trying test documents...');
-          
-          // Strategy 3: Try known test document IDs
-          const testIds = ['proverbs_3_5', '2025-06-11', 'CFo121cim0OuAT1AwZpp'];
-          
-          for (const testId of testIds) {
-            console.log('Trying test document ID:', testId);
-            snapshot = await devotionalsRef.doc(testId).get();
-            if (snapshot.exists) {
-              console.log('Found test devotional with ID:', testId);
-              break;
-            }
+      let snapshot;
+      if (!idQuerySnapshot.empty) {
+        snapshot = idQuerySnapshot.docs[0];
+        console.log('Found devotional by id field:', snapshot.id, 'with id property:', todayIdFormat);
+      } else {
+        console.log('No devotional found with id property:', todayIdFormat, 'trying fallback strategies...');
+        
+        // Fallback: Try known test document IDs for development
+        const testIds = ['proverbs_3_5', '2025-06-11', 'CFo121cim0OuAT1AwZpp'];
+        
+        for (const testId of testIds) {
+          console.log('Trying test document ID:', testId);
+          snapshot = await devotionalsRef.doc(testId).get();
+          if (snapshot.exists) {
+            console.log('Found test devotional with document ID:', testId);
+            break;
           }
-          
-          if (!snapshot?.exists) {
-            console.log('No test documents found, trying date range query...');
-            
-            // Strategy 4: Fallback to date range query
-            const startOfToday = new Date(new Date().setDate(new Date().getDate() - 7)); // Look back 7 days
-            startOfToday.setHours(0, 0, 0, 0);
-            
-            const endOfToday = new Date(new Date().setDate(new Date().getDate() + 7)); // Look ahead 7 days
-            endOfToday.setHours(23, 59, 59, 999);
-            
-            console.log('Fetching devotional for createdAt between:', startOfToday.toISOString(), 'and', endOfToday.toISOString());
-            
-            const querySnapshot = await devotionalsRef
-              .where('createdAt', '>=', firestore.Timestamp.fromDate(startOfToday))
-              .where('createdAt', '<=', firestore.Timestamp.fromDate(endOfToday))
-              .limit(1)
-              .get();
-              
-            if (querySnapshot.empty) {
-              console.log('No devotional found in date range either');
-              set({ 
-                currentDevotional: null, 
-                isLoading: false,
-                error: 'No devotional available for today' 
-              });
-              return;
-            }
-            
-            snapshot = querySnapshot.docs[0];
-          }
+        }
+        
+        if (!snapshot?.exists) {
+          console.log('No devotional found');
+          set({ 
+            currentDevotional: null, 
+            isLoading: false,
+            error: 'No devotional available for today' 
+          });
+          return;
         }
       }
       
