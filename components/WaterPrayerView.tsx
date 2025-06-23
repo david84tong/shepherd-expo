@@ -8,8 +8,6 @@ import {
   ScrollView,
   TouchableWithoutFeedback,
   Dimensions,
-  Modal,
-  Switch,
   Animated,
 } from 'react-native';
 
@@ -35,10 +33,13 @@ import analytics from '../utils/analytics';
 
 import { getLevelData } from '~/utils/levelUtils';
 import SuccessMessage from './SuccessMessage';
+import PrayerSettingsModal from './PrayerSettingsModal';
 
 // AsyncStorage keys for prayer settings
 const PRAYER_HAPTICS_KEY = 'prayer_haptics_enabled';
 const PRAYER_GUIDED_MODE_KEY = 'prayer_guided_mode_enabled';
+const PRAYER_DURATION_KEY = 'prayer_duration';
+
 
 interface TypingTextProps {
   text: string;
@@ -391,6 +392,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   const [showSuccess, setShowSuccess] = useState(false);
   const [hapticsEnabled, setHapticsEnabled] = useState(true);
   const [guidedPrayerEnabled, setGuidedPrayerEnabled] = useState(false);
+  const [prayerDuration, setPrayerDuration] = useState(20000); // Default 20s
   const [buttonsEnabled, setButtonsEnabled] = useState(false);
   const [isHolding, setIsHolding] = useState(false);
   const [animationTriggered, setAnimationTriggered] = useState(false);
@@ -481,6 +483,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       try {
         const savedHaptics = await AsyncStorage.getItem(PRAYER_HAPTICS_KEY);
         const savedGuidedMode = await AsyncStorage.getItem(PRAYER_GUIDED_MODE_KEY);
+        const savedDuration = await AsyncStorage.getItem(PRAYER_DURATION_KEY);
 
         if (savedHaptics !== null) {
           setHapticsEnabled(savedHaptics === 'true');
@@ -488,6 +491,10 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
         if (savedGuidedMode !== null) {
           setGuidedPrayerEnabled(savedGuidedMode === 'true');
+        }
+
+        if (savedDuration !== null) {
+          setPrayerDuration(parseInt(savedDuration, 10));
         }
 
         console.log('🙏 Loaded prayer settings from AsyncStorage');
@@ -730,6 +737,16 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     }
   }, []);
 
+  const savePrayerDuration = useCallback(async (duration: number) => {
+    try {
+      await AsyncStorage.setItem(PRAYER_DURATION_KEY, duration.toString());
+      setPrayerDuration(duration);
+      console.log('🙏 Saved prayer duration setting:', duration);
+    } catch (error) {
+      console.error('🙏 Error saving prayer duration setting:', error);
+    }
+  }, []);
+
   const saveGuidedPrayerEnabled = useCallback(async (enabled: boolean) => {
     try {
       console.log('🙏 Saving guided prayer setting:', enabled, 'Modal should stay open');
@@ -856,7 +873,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       if (holdStartTimeRef.current) {
         const currentHoldTime = Date.now() - holdStartTimeRef.current;
         const totalTime = totalHoldTime + currentHoldTime;
-        const maxFillTime = 20000; // 20 seconds to fill completely
+        const maxFillTime = prayerDuration;
         const progress = Math.min(totalTime / maxFillTime, 1);
 
         console.log('🎯 Total hold time:', totalTime, 'ms, progress:', progress);
@@ -884,7 +901,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
     // Update water every 50ms while holding
     holdTimerRef.current = setInterval(updateWater, 50);
-  }, [totalHoldTime, waterProgress, hapticsEnabled, animationTriggered]);
+  }, [totalHoldTime, waterProgress, hapticsEnabled, animationTriggered, prayerDuration]);
 
   // Handle press end for water animation
   const handlePressOut = useCallback(() => {
@@ -910,7 +927,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     }
 
     // Check if threshold was reached and trigger success on release
-    const maxFillTime = 20000; // 20 seconds to fill completely
+    const maxFillTime = prayerDuration;
     const progress = Math.min(newTotalHoldTime / maxFillTime, 1);
     
     if (progress >= 1 && !animationTriggered) {
@@ -924,7 +941,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     } else {
       console.log('🎯 Water stays at current level, threshold not reached');
     }
-  }, [totalHoldTime, animationTriggered, hapticsEnabled]);
+  }, [totalHoldTime, animationTriggered, hapticsEnabled, prayerDuration]);
 
   // Expose functions through ref
   useImperativeHandle(ref, () => ({
@@ -1030,124 +1047,6 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   }
 
   console.log('📋 Prayer cards to show:', cardsToShow.length, cardsToShow);
-
-  // Settings Modal Component - Memoized to prevent re-renders
-  const SettingsModal = () => (
-    <Modal
-      visible={showSettingsModal}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={() => { }} // Prevent hardware back button from closing
-    >
-      <View style={{
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-      }}>
-        <View style={{
-          backgroundColor: 'white',
-          borderRadius: 16,
-          padding: 24,
-          width: '80%',
-          maxWidth: 320,
-          shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.25,
-          shadowRadius: 8,
-          elevation: 8,
-        }}>
-          {/* Header */}
-          <Text style={{
-            fontSize: 20,
-            fontFamily: 'Nunito-Black',
-            color: '#795323',
-            textAlign: 'center',
-            marginBottom: 24,
-          }}>
-            Prayer Settings
-          </Text>
-
-          {/* Haptics Row */}
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingVertical: 16,
-            borderBottomWidth: 1,
-            borderBottomColor: '#E9E2C7',
-          }}>
-            <Text style={{
-              fontSize: 16,
-              fontFamily: 'DIN Next Rounded LT W01 Regular',
-              color: '#795323',
-            }}>
-              Haptic Feedback
-            </Text>
-            <Switch
-              value={hapticsEnabled}
-              onValueChange={(enabled) => {
-                saveHapticsEnabled(enabled)
-                setShowSettingsModal(false);
-              }}
-              trackColor={{ false: '#E9E2C7', true: '#FF8800' }}
-              thumbColor={hapticsEnabled ? '#FFFFFF' : '#FFFFFF'}
-            />
-          </View>
-
-          {/* Guided Prayer Row */}
-          <View style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            paddingVertical: 16,
-          }}>
-            <Text style={{
-              fontSize: 16,
-              fontFamily: 'DIN Next Rounded LT W01 Regular',
-              color: '#795323',
-            }}>
-              Guided Prayer Mode
-            </Text>
-            <Switch
-              value={guidedPrayerEnabled}
-              onValueChange={(enabled) => {
-
-                saveGuidedPrayerEnabled(enabled);
-                setShowSettingsModal(false);
-              }}
-              trackColor={{ false: '#E9E2C7', true: '#FF8800' }}
-              thumbColor={guidedPrayerEnabled ? '#FFFFFF' : '#FFFFFF'}
-            />
-          </View>
-
-          {/* Close Button */}
-          <TouchableOpacity
-            onPress={() => {
-              console.log('✅ Done button pressed, closing modal');
-              setShowSettingsModal(false);
-            }}
-            style={{
-              backgroundColor: '#FF8800',
-              paddingVertical: 12,
-              borderRadius: 12,
-              marginTop: 20,
-            }}
-          >
-            <Text style={{
-              color: 'white',
-              fontSize: 16,
-              fontFamily: 'Nunito-Black',
-              textAlign: 'center',
-            }}>
-              Done
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </Modal>
-  );
-
 
   return (
     <Reanimated.View style={[{ flex: 1, borderRadius: 24, backgroundColor: '#FDEBB8' }, componentAnimatedStyle, { overflow: 'hidden' }]}>
@@ -1267,13 +1166,6 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               {/* Prayer Time */}
             </Text>
           </View>
-
-          {/* Bible Reference Header */}
-          {/* <View className="flex-row items-center justify-center mb-4">
-            <Text className="font-feather-bold text-textPrimary/80 text-center text-2xl">
-              {currentDevotional?.bibleReference || "John 14:6"}
-            </Text>
-          </View> */}
 
           {/* Water Wave Animation - Show initially */}
           {showBreathingAnimation && (
@@ -1442,7 +1334,16 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       )}
 
       {/* Settings Modal */}
-      <SettingsModal />
+      <PrayerSettingsModal
+        visible={showSettingsModal}
+        onClose={() => setShowSettingsModal(false)}
+        prayerDuration={prayerDuration}
+        savePrayerDuration={savePrayerDuration}
+        hapticsEnabled={hapticsEnabled}
+        saveHapticsEnabled={saveHapticsEnabled}
+        guidedPrayerEnabled={guidedPrayerEnabled}
+        saveGuidedPrayerEnabled={saveGuidedPrayerEnabled}
+      />
     </Reanimated.View>
   );
 });

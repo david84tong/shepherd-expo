@@ -62,11 +62,11 @@ export default function BottomControls({
         </View>
       )} */}
       <View className="flex-row items-center justify-between w-full">
+        <View className='flex-row items-center w-[20%] justify-between'>
         {!showJournalContent && !showPrayerSuccess && (
           <Animated.View style={{ width: '10%' }}>
             <CircleButton
               icon='chevron-left'
-              // size={53} 
               onPress={() => {
                 if (showDevotionalContent) {
                   handleDevotionalClose({})
@@ -79,7 +79,18 @@ export default function BottomControls({
             />
           </Animated.View>
         )}
+         {showPrayerContent && (
+          <Animated.View style={{ width: '10%' }}>
+            <CircleButton
+              icon="settings"
+              onPress={() => {
+                prayerViewRef.current?.handleSettings();
+              }}
+            />
+          </Animated.View>
+        )}
 
+        </View>
         <Animated.View style={{ width: showPrayerContent ? (showPrayerSuccess ? '100%' : '60%') : showJournalContent ? '100%' : '82%' }}>
           {showDevotionalContent ? (
             <PrimaryButton
@@ -104,17 +115,7 @@ export default function BottomControls({
           ) : null}
         </Animated.View>
 
-        {/* {showPrayerContent && (
-          <Animated.View style={{ width: '10%' }}>
-            <CircleButton
-              icon="settings"
-              size={50}
-              onPress={() => {
-                prayerViewRef.current?.handleSettings();
-              }}
-            />
-          </Animated.View>
-        )} */}
+       
       </View>
     </Animated.View>
   );
