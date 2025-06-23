@@ -41,19 +41,29 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
     const contentOpacity = useRef(new Animated.Value(0)).current;
 
     const currentUser = useUserStore.getState();
+    
+    // Get current devotional from store (for real-time updates)
+    const currentDevotional = useDevotionalStore((state) => state.currentDevotional);
+    const dailyDevotional = useDevotionalStore((state) => state.dailyDevotional);
+    
+    // Use store data if this devotional matches the current or daily devotional
+    const storeDevotional = devotionalData && (
+        currentDevotional?.id === devotionalData.id ? currentDevotional : 
+        dailyDevotional?.id === devotionalData.id ? dailyDevotional : 
+        devotionalData
+    );
+    
     const [isLiked, setIsLiked] = useState(false);
-    const [likeCount, setLikeCount] = useState(devotionalData?.likes || 0);
-    const [shareCount, setShareCount] = useState(devotionalData?.shares || 0);
+    const likeCount = storeDevotional?.likes || 0;
+    const shareCount = storeDevotional?.shares || 0;
 
     const isRealDevotional = devotionalData ? !devotionalData.id.startsWith('quick-') && !devotionalData.id.startsWith('ai-') : false;
 
     useEffect(() => {
         if (visible) {
-            if (devotionalData) {
-                setLikeCount(devotionalData.likes || 0);
-                setShareCount(devotionalData.shares || 0);
-                if (currentUser?.id && devotionalData.likedBy && isRealDevotional) {
-                    setIsLiked(devotionalData.likedBy.includes(currentUser.id));
+            if (storeDevotional) {
+                if (currentUser?.id && storeDevotional.likedBy && isRealDevotional) {
+                    setIsLiked(storeDevotional.likedBy.includes(currentUser.id));
                 }
             }
 
@@ -74,7 +84,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
             contentScale.setValue(0.8);
             contentOpacity.setValue(0);
         }
-    }, [visible, devotionalData, currentUser, isRealDevotional]);
+    }, [visible, storeDevotional, currentUser, isRealDevotional]);
 
     const handleLikePress = async () => {
         if (!isRealDevotional || !currentUser?.id || !devotionalData?.id) return;
@@ -82,7 +92,6 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         const newLikedState = !isLiked;
         setIsLiked(newLikedState);
-        setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
 
         const devotionalRef = firestore().collection('dailyDevotionals').doc(devotionalData.id);
 
@@ -101,7 +110,6 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
         } catch (error) {
             console.error("Error updating likes:", error);
             setIsLiked(!newLikedState);
-            setLikeCount(prev => newLikedState ? prev - 1 : prev + 1);
         }
     };
 
@@ -120,7 +128,6 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                 url: localUri,
             });
 
-            setShareCount(prev => prev + 1);
             const devotionalRef = firestore().collection('dailyDevotionals').doc(devotionalData.id);
             await devotionalRef.update({
                 shares: firestore.FieldValue.increment(1),

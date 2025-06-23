@@ -15,6 +15,7 @@ import BottomSheet, { BottomSheetScrollView, SCREEN_HEIGHT } from '@gorhom/botto
 import Toast from 'react-native-toast-message';
 import { useAssets } from 'expo-asset';
 import { useHomeScreen } from '../hooks/useHomeScreen';
+import { useHomeStore } from '../stores/homeStore';
 import DevotionalReader from '../../components/DevotionalReader';
 import ProgressPill from '../../components/ProgressPill';
 import SecondaryButton from '../../components/SecondaryButton';
@@ -180,6 +181,12 @@ export default function HomeScreen() {
   useEffect(() => {
     i18n.locale = currentLanguage;
   }, [currentLanguage]);
+
+  // Set bottomSheetRef in home store so other components can access it
+  useEffect(() => {
+    const setBottomSheetRef = useHomeStore.getState().setBottomSheetRef;
+    setBottomSheetRef(bottomSheetRef);
+  }, [bottomSheetRef]);
 
   // Define riveComponent after state declarations so it can access showJournalContent and showPrayerContent
   const riveComponent = useMemo(() => {
@@ -807,7 +814,7 @@ export default function HomeScreen() {
           </SafeAreaView>
         </Animated.View></View>
 
-      <FullScreenShareCard visible={showShareCard} devotionalData={devotionalData} onClose={() => setShowShareCard(false)} onShare={handleShare} />
+      <FullScreenShareCard visible={showShareCard} devotionalData={devotionalData} onClose={() => setShowShareCard(false)} />
 
       <Toast config={toastConfig} />
     </>

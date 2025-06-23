@@ -17,7 +17,7 @@ import { ImageBackground } from 'expo-image';
 import i18n from '../../app/utils/i18n';
 import { RPH } from '~/app/helper/helper';
 import { AppFonts } from '~/app/constants/appFonts';
-import firestore, { firebase } from '@react-native-firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import { useUserStore } from '~/app/stores/userStore';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import * as FileSystem from 'expo-file-system';
@@ -40,20 +40,28 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
   share = false,
 }) => {
   const currentUser = useUserStore.getState();
+  
+  // Get current devotional from store (for real-time updates)
+  const currentDevotional = useDevotionalStore((state) => state.currentDevotional);
+  const dailyDevotional = useDevotionalStore((state) => state.dailyDevotional);
+  
+  // Use store data if this devotional matches the current or daily devotional
+  const storeDevotional = (currentDevotional?.id === devotional.id ? currentDevotional : 
+                          dailyDevotional?.id === devotional.id ? dailyDevotional : 
+                          devotional);
+  
   const [isLiked, setIsLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(devotional.likes || 0);
-  const [shareCount, setShareCount] = useState(devotional.shares || 0);
+  const likeCount = storeDevotional.likes || 0;
+  const shareCount = storeDevotional.shares || 0;
 
   // A devotional is only "real" (and thus likeable/shareable) if it's not a locally generated one.
   const isRealDevotional = !devotional.id.startsWith('quick-') && !devotional.id.startsWith('ai-');
 
   useEffect(() => {
-    if (currentUser?.id && devotional.likedBy && isRealDevotional) {
-      setIsLiked(devotional.likedBy.includes(currentUser.id));
+    if (currentUser?.id && storeDevotional.likedBy && isRealDevotional) {
+      setIsLiked(storeDevotional.likedBy.includes(currentUser.id));
     }
-    setLikeCount(devotional.likes || 0);
-    setShareCount(devotional.shares || 0);
-  }, [devotional, currentUser, isRealDevotional]);
+  }, [storeDevotional, currentUser, isRealDevotional]);
 
   const handleLikePress = async () => {
     if (!isRealDevotional || !currentUser?.id || !devotional.id) return;
@@ -61,7 +69,6 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     const newLikedState = !isLiked;
     setIsLiked(newLikedState);
-    setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
 
     const devotionalRef = firestore().collection('dailyDevotionals').doc(devotional.id);
 
@@ -81,7 +88,6 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
       console.error("Error updating likes:", error);
       // Revert state on error
       setIsLiked(!newLikedState);
-      setLikeCount(prev => newLikedState ? prev - 1 : prev + 1);
     }
   };
 
@@ -115,7 +121,6 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
 
       // 3. Only increment if the share was successful
 
-      setShareCount(prev => prev + 1);
       const devotionalRef = firestore().collection('dailyDevotionals').doc(devotional.id);
       await devotionalRef.update({
         shares: firestore.FieldValue.increment(1),
