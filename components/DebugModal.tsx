@@ -599,20 +599,51 @@ export function DebugButton() {
       const devotionalsRef = firestore().collection('dailyDevotionals');
       
       let newCount = 0;
-      let existingCount = 0;
+      let overriddenCount = 0;
       let errorCount = 0;
 
       // Process each devotional
       for (const devotional of devotionals) {
         try {
-          // Check if devotional with this ID already exists
-          const docRef = devotionalsRef.doc(devotional.id);
+          // Create document ID from chapter and verse name instead of date
+          const bibleReference = devotional.verse || devotional.bibleReference || '';
+          let documentId = bibleReference;
+          
+          // Clean up the bible reference to make it a valid document ID
+          if (bibleReference) {
+            // Remove spaces, colons, and other special characters, replace with underscores
+            documentId = bibleReference
+              .replace(/[^a-zA-Z0-9]/g, '_')
+              .replace(/_+/g, '_')
+              .replace(/^_|_$/g, '')
+              .toLowerCase();
+          }
+          
+          // Fallback to original ID if no bible reference
+          if (!documentId) {
+            documentId = devotional.id || `devotional_${Date.now()}`;
+          }
+
+          const docRef = devotionalsRef.doc(documentId);
           const doc = await docRef.get();
 
+          // Check if document exists and override if it does
+          let shouldOverride = false;
           if (doc.exists) {
-            existingCount++;
-            console.log(`Devotional ${devotional.id} already exists, skipping...`);
-            continue;
+            const existingData = doc.data();
+            const existingId = existingData?.id;
+            const existingDate = existingData?.date;
+            const newId = devotional.id;
+            const newDate = devotional.date;
+            
+            // Override any existing document with the same bible reference (document ID)
+            shouldOverride = true;
+            overriddenCount++;
+            console.log(`Overriding devotional with document ID: ${documentId}`);
+            console.log(`  Existing: ID=${existingId}, Date=${existingDate}`);
+            console.log(`  New: ID=${newId}, Date=${newDate}`);
+          } else {
+            newCount++;
           }
 
           // Format the devotional according to Devotional.ts interface
@@ -633,10 +664,9 @@ export function DebugButton() {
             verse: devotional.verse || devotional.bibleReference || ''
           };
 
-          // Upload to Firestore
+          // Upload to Firestore (this will override if document exists)
           await docRef.set(formattedDevotional);
-          newCount++;
-          console.log(`Successfully uploaded devotional: ${devotional.id}`);
+          console.log(`Successfully ${shouldOverride ? 'overrode' : 'uploaded'} devotional with document ID: ${documentId} (Original ID: ${devotional.id})`);
         } catch (error) {
           errorCount++;
           console.error(`Error uploading devotional ${devotional.id}:`, error);
@@ -646,12 +676,12 @@ export function DebugButton() {
       // Show results
       Alert.alert(
         'Upload Complete',
-        `Results:\n- New devotionals added: ${newCount}\n- Already existing: ${existingCount}\n- Errors: ${errorCount}`,
+        `Results:\n- New devotionals added: ${newCount}\n- Devotionals overridden: ${overriddenCount}\n- Errors: ${errorCount}`,
         [
           {
             text: 'OK',
             onPress: () => {
-              if (newCount > 0) {
+              if (newCount > 0 || overriddenCount > 0) {
                 setDevotionalJsonInput('');
                 setDevotionalUploadModalVisible(false);
               }
@@ -661,11 +691,11 @@ export function DebugButton() {
       );
 
       // Show toast for quick feedback
-      if (newCount > 0) {
+      if (newCount > 0 || overriddenCount > 0) {
         Toast.show({
           type: 'success',
           text1: 'Devotionals Uploaded!',
-          text2: `Successfully added ${newCount} new devotionals`,
+          text2: `Added ${newCount}, overridden ${overriddenCount}`,
           position: 'top',
           visibilityTime: 3000,
         });

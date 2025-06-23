@@ -599,7 +599,7 @@ export default function RootLayout() {
             )}
 
             {/* Debug button (visible only in development or for creators) */}
-            {<DebugButton />}
+            {(__DEV__ || isCreator) && <DebugButton />}
           </>
         )}
       </BottomSheetModalProvider>
