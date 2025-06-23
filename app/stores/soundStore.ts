@@ -123,8 +123,8 @@ export const useSoundStore = create<SoundState>()(
             require('../../assets/sounds/Bread_Eating.m4a'),
             { 
               isLooping: true,
-              volume: 0.6,
-              androidImplementation: 'MediaPlayer',
+              // volume: 0.6,
+              // androidImplementation: 'MediaPlayer',
             }
           );
           set({ breadEatingSound: sound });
