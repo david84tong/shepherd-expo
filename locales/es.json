@@ -50,6 +50,8 @@
     "yes": "Sí",
     "no": "No",
     "select_language_title": "Seleccionar idioma",
+    "select_chat_language": "Seleccionar idioma del chat",
+    "chat_language_description": "Elige el idioma para las respuestas de IA en el chat bíblico",
     "why_are_you_cancelling": "¿Por qué cancelas?",
     "too_expensive": "Demasiado caro",
     "technical_issues": "Problemas técnicos",

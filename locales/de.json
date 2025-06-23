@@ -51,6 +51,8 @@
     "no": "Nein",
     "select_bible_translation_title": "Bibelübersetzung auswählen",
     "select_language_title": "Sprache auswählen",
+    "select_chat_language": "Chat-Sprache auswählen",
+    "chat_language_description": "Wählen Sie die Sprache für KI-Antworten im Bibel-Chat",
     "why_are_you_cancelling": "Warum kündigen Sie?",
     "too_expensive": "Zu teuer",
     "technical_issues": "Technische Probleme",

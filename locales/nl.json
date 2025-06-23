@@ -51,6 +51,8 @@
     "no": "Nee",
     "select_bible_translation_title": "Bijbelvertaling selecteren",
     "select_language_title": "Taal selecteren",
+    "select_chat_language": "Chat taal selecteren",
+    "chat_language_description": "Kies de taal voor AI-antwoorden in de bijbelchat",
     "why_are_you_cancelling": "Waarom annuleer je?",
     "too_expensive": "Te duur",
     "technical_issues": "Technische problemen",

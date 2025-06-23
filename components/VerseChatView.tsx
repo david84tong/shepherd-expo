@@ -29,6 +29,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import useSubscriptionStore from '../app/stores/subscriptionStore';
 import analytics from '../utils/analytics';
 import { getBibleVerseAIResponse } from '../app/api/ai';
+import { useLanguageStore } from '../app/stores/languageStore';
+import { SupportedLanguage } from '../app/utils/i18n';
+import i18n from '../app/utils/i18n';
+import LanguageSelectionModal from './LanguageSelectionModal';
 
 interface Message {
   id: string;
@@ -60,6 +64,10 @@ const TAB_BAR_HEIGHT = 35;
 // Key to store chat usage in AsyncStorage
 const CHAT_USED_KEY = 'shepherd_bible_chat_used_global';
 const CHAT_MESSAGE_COUNT_KEY = 'shepherd_bible_chat_message_count_global';
+
+// Key to store chat language preference
+const CHAT_LANGUAGE_KEY = 'shepherd_bible_chat_language';
+const CHAT_LANGUAGE_SET_KEY = 'shepherd_bible_chat_language_set';
 
 // Add new component for typing animation
 const TypingMessage: React.FC<{ text: string }> = ({ text }) => {
@@ -107,6 +115,9 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
   const [inputMessage, setInputMessage] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [hasMessageBeenSent, setHasMessageBeenSent] = useState(false);
+  const [chatLanguage, setChatLanguage] = useState<SupportedLanguage>('en');
+  const [hasSetLanguage, setHasSetLanguage] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
   const flatListRef = useRef<FlatList>(null);
   
   const fadeAnim = useSharedValue(0);
@@ -115,6 +126,61 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
   
   const { getFirebaseIdToken } = useAuth();
   const { isProMember, presentFreeTrialPaywall } = useSubscriptionStore();
+  const { language } = useLanguageStore();
+  
+  // Load chat language preference
+  useEffect(() => {
+    const loadChatLanguage = async () => {
+      try {
+        const storedLanguage = await AsyncStorage.getItem(CHAT_LANGUAGE_KEY);
+        const languageSet = await AsyncStorage.getItem(CHAT_LANGUAGE_SET_KEY);
+        
+        if (storedLanguage && languageSet === 'true') {
+          setChatLanguage(storedLanguage as SupportedLanguage);
+          setHasSetLanguage(true);
+        } else {
+          // Use app language as default for chat
+          setChatLanguage(language as SupportedLanguage);
+        }
+      } catch (error) {
+        console.error('Error loading chat language:', error);
+        setChatLanguage(language as SupportedLanguage);
+      }
+    };
+    
+    loadChatLanguage();
+  }, [language]);
+
+  // Handle language selection
+  const handleLanguageSelect = async (selectedLanguage: SupportedLanguage) => {
+    try {
+      setChatLanguage(selectedLanguage);
+      setHasSetLanguage(true);
+      await AsyncStorage.setItem(CHAT_LANGUAGE_KEY, selectedLanguage);
+      await AsyncStorage.setItem(CHAT_LANGUAGE_SET_KEY, 'true');
+      
+      analytics.logEvent("Bible_Chat_LanguageChanged", {
+        book: bookName,
+        chapter,
+        verse: verse.verse,
+        language: selectedLanguage,
+        isProMember
+      });
+    } catch (error) {
+      console.error('Error saving chat language:', error);
+    }
+  };
+
+  // Show language selection on first visit
+  useEffect(() => {
+    if (!hasSetLanguage && !showLanguageModal) {
+      const timer = setTimeout(() => {
+        setShowLanguageModal(true);
+      }, 1000); // Show after 1 second
+      
+      return () => clearTimeout(timer);
+    }
+  }, [hasSetLanguage, showLanguageModal]);
   
   // Check if user has already used their free message
   useEffect(() => {
@@ -435,7 +501,8 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
             verse: verse.verse,
             verseText: verse.text
           },
-          idToken
+          idToken,
+          chatLanguage
         );
         
         // Add message with typing animation
@@ -663,7 +730,13 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           <Text style={styles.headerText}>
             {bookName} {chapter}:{verse.verse}
           </Text>
-          <View style={styles.placeholder} />
+          <TouchableOpacity 
+            onPress={() => setShowLanguageModal(true)}
+            style={styles.settingsButton}
+            activeOpacity={0.7}
+          >
+            <Feather name="settings" size={20} color="#3C584A" />
+          </TouchableOpacity>
         </Reanimated.View>
         
         {!hasMessageBeenSent && (
@@ -743,6 +816,15 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           </View>
         </Reanimated.View>
       </KeyboardAvoidingView>
+      
+      {/* Language Selection Modal */}
+      <LanguageSelectionModal
+        visible={showLanguageModal}
+        onClose={() => setShowLanguageModal(false)}
+        onLanguageSelect={handleLanguageSelect}
+        selectedLanguage={chatLanguage}
+        title={i18n.t('select_chat_language')}
+      />
     </AnimatedSafeAreaView>
   );
 };
@@ -882,10 +964,6 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textTransform: 'none',
   },
-  placeholder: {
-    height: 38,
-    width: 100,
-  },
   safeArea: {
     backgroundColor: '#FFF4DC',
     flex: 1,
@@ -911,6 +989,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#E5E5E5',
     elevation: 0,
     shadowOpacity: 0,
+  },
+  settingsButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(220, 178, 128, 0.2)',
+    borderRadius: 20,
+    height: 38,
+    justifyContent: 'center',
+    width: 38,
   },
   upgradeButton: {
     alignItems: 'center',
@@ -959,7 +1045,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontStyle: 'italic',
     lineHeight: 24,
-  }
+  },
 });
 
 export default VerseChatView;
