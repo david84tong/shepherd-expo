@@ -124,7 +124,7 @@ export const useSoundStore = create<SoundState>()(
             { 
               isLooping: true,
               // volume: 0.6,
-              // androidImplementation: 'MediaPlayer',
+              androidImplementation: 'MediaPlayer',
             }
           );
           set({ breadEatingSound: sound });
