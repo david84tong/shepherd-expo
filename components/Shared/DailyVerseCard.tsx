@@ -26,6 +26,7 @@ interface DailyVerseCardProps {
   devotional: Devotional & { likedBy?: string[] };
   onPress?: () => void;
   onExpand?: () => void;
+  onShare?: () => void;
   showShareButton?: boolean;
   showExpandButton?: boolean;
   share?: boolean; // New prop to determine if this is a share card or regular card
@@ -35,6 +36,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
   devotional,
   onPress,
   onExpand,
+  onShare,
   showShareButton = true,
   showExpandButton = true,
   share = false,
@@ -97,6 +99,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
   };
 
   const handleSharePress = async () => {
+    /*
     if (!isRealDevotional || !devotional.id || !devotional.imageURL) return;
 
     try {
@@ -128,6 +131,15 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
 
     } catch (error) {
       console.error("Error sharing:", error);
+    }
+    */
+    if (onShare) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      analytics.logEvent('DailyVerseCard_Tapped_Share_To_Expand', {
+        isShareCard: share,
+        bibleReference: devotional.bibleReference,
+      });
+      onShare();
     }
   };
 

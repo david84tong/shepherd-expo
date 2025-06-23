@@ -30,12 +30,16 @@ interface FullScreenShareCardProps {
     visible: boolean;
     onClose: () => void;
     devotionalData: Devotional | null;
+    startShareFlow: boolean;
+    setStartShareFlow: (value: boolean) => void;
 }
 
 const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
     visible,
     onClose,
     devotionalData,
+    startShareFlow,
+    setStartShareFlow,
 }) => {
     const pan = useRef(new Animated.ValueXY()).current;
     const contentScale = useRef(new Animated.Value(0.8)).current;
@@ -49,6 +53,12 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
     const [isCapturing, setIsCapturing] = useState(false);
 
     const isRealDevotional = devotionalData ? !devotionalData.id.startsWith('quick-') && !devotionalData.id.startsWith('ai-') : false;
+    useEffect(() => {
+        if (startShareFlow) {
+            handleSharePress();
+        }
+
+    }, [startShareFlow]);
 
     useEffect(() => {
         if (visible) {
@@ -112,6 +122,9 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
         if (!isRealDevotional || !devotionalData?.id) return;
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
         setIsCapturing(true);
+        if (startShareFlow) {
+            setStartShareFlow(false);
+        }
     };
 
     useEffect(() => {
@@ -122,7 +135,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                     return;
                 }
                 try {
-                    const screenshotUri = await viewShotRef.current.capture();
+                    const screenshotUri = await viewShotRef.current?.capture?.();
                     if (screenshotUri && devotionalData) {
                         const appStoreLink = 'https://apps.apple.com/us/app/shepherd-spiritual-bible-pet/id6745461941';
                         const message = `"${devotionalData.verse}" - ${devotionalData.bibleReference}\n\nDownload Shepherd: ${appStoreLink}`;
@@ -134,7 +147,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                         };
 
                         await Share.share(shareOptions);
-
+                        setIsCapturing(false);
                         setShareCount(prev => prev + 1);
                         const devotionalRef = firestore().collection('dailyDevotionals').doc(devotionalData.id);
                         await devotionalRef.update({
@@ -147,8 +160,6 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                     }
                 } catch (error) {
                     console.error("Error sharing:", error);
-                } finally {
-                    setIsCapturing(false);
                 }
             };
 
