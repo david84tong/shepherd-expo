@@ -259,7 +259,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
 
             {showExpandButton ? <View className="flex-row items-center mt-4">
               <TouchableOpacity onPress={handleLikePress} disabled={!isRealDevotional} className="flex-row items-center mr-4">
-                <Ionicons name="heart" size={RPH(2.2)} color={isLiked && isRealDevotional ? "#B36303" : "white"} />
+                <Ionicons name="heart" size={RPH(2.2)} color={isLiked && isRealDevotional ? "#FF8800" : "white"} />
                 <Text className="ml-2 text-white font-din text-lg">{likeCount}</Text>
               </TouchableOpacity>
               <TouchableOpacity onPress={handleSharePress} disabled={!isRealDevotional} className="flex-row items-center">

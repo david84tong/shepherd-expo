@@ -21,6 +21,7 @@ import i18n from '~/app/utils/i18n';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import * as Haptics from 'expo-haptics';
+import analytics from '~/utils/analytics';
 
 const { width, height } = Dimensions.get('window');
 
@@ -211,6 +212,11 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         }, STEP_DURATION);
       } else {
         timer = setTimeout(() => {
+          // Track onboarding loading completion
+          analytics.logEvent('LoadingScreen_Onboarding_Completed', {
+            totalSteps: loadingPoints.length,
+            timeSpent: currentStep * STEP_DURATION + FINAL_DELAY,
+          });
           router.push('/onboarding/pricing/selfFundedMission');
         }, FINAL_DELAY);
       }
@@ -283,6 +289,12 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       // Loading steps completed, decide where to navigate
       if (devotionalStoreCurrentDevotional && isProMember) {
         // Devotional was created successfully (pro user)
+        analytics.logEvent('LoadingScreen_Custom_Devotional_Created', {
+          isProMember: true,
+          verseText: verseText || 'unknown',
+          reference: reference || 'unknown',
+          totalLoadingTime: currentStep * STEP_DURATION,
+        });
         const timer = setTimeout(() => {
           router.navigate({
             pathname: '/(tabs)',
@@ -299,6 +311,12 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       } else if (!isProMember) {
         console.log('LoadingScreen: User is not pro, showing paywall');
         // User is not pro - show paywall before dismissing
+        analytics.logEvent('LoadingScreen_Custom_Devotional_Paywalled', {
+          isProMember: false,
+          verseText: verseText || 'unknown',
+          reference: reference || 'unknown',
+          totalLoadingTime: currentStep * STEP_DURATION,
+        });
         const timer = setTimeout(async () => {
           try {
             // Set the fromScreen property for tracking
@@ -310,16 +328,33 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             // Handle paywall result
             if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
               // User upgraded - navigate to home with devotional
+              analytics.logEvent('LoadingScreen_Custom_Devotional_Created', {
+                isProMember: true,
+                verseText: verseText || 'unknown',
+                reference: reference || 'unknown',
+                totalLoadingTime: currentStep * STEP_DURATION,
+                upgradedFromPaywall: true,
+              });
               router.navigate({
                 pathname: '/(tabs)',
                 params: { showDevotional: 'true' }
               });
             } else {
               // User cancelled or error - go back to Bible tab
+              analytics.logEvent('LoadingScreen_Custom_Devotional_Paywall_Cancelled', {
+                paywallResult: result,
+                verseText: verseText || 'unknown',
+                reference: reference || 'unknown',
+              });
               router.navigate('/(tabs)/bible');
             }
           } catch (error) {
             console.error('Error showing paywall:', error);
+            analytics.logEvent('LoadingScreen_Custom_Devotional_Paywall_Error', {
+              error: error instanceof Error ? error.message : 'unknown',
+              verseText: verseText || 'unknown',
+              reference: reference || 'unknown',
+            });
             // Fallback - go to Bible tab
             router.navigate('/(tabs)/bible');
           }
