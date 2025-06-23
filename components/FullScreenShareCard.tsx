@@ -9,6 +9,7 @@ import {
     Text,
     StatusBar,
     Share,
+    Image,
 } from 'react-native';
 import { FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -42,25 +43,25 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
     startShareFlow,
     setStartShareFlow,
 }) => {
-    
+
     const pan = useRef(new Animated.ValueXY()).current;
     const contentScale = useRef(new Animated.Value(0.8)).current;
     const contentOpacity = useRef(new Animated.Value(0)).current;
     const viewShotRef = useRef<ViewShot>(null);
 
     const currentUser = useUserStore.getState();
-    
+
     // Get current devotional from store (for real-time updates)
     const currentDevotional = useDevotionalStore((state) => state.currentDevotional);
     const dailyDevotional = useDevotionalStore((state) => state.dailyDevotional);
-    
+
     // Use store data if this devotional matches the current or daily devotional
     const storeDevotional = devotionalData && (
-        currentDevotional?.id === devotionalData.id ? currentDevotional : 
-        dailyDevotional?.id === devotionalData.id ? dailyDevotional : 
-        devotionalData
+        currentDevotional?.id === devotionalData.id ? currentDevotional :
+            dailyDevotional?.id === devotionalData.id ? dailyDevotional :
+                devotionalData
     );
-    
+
     const [isLiked, setIsLiked] = useState(false);
     const likeCount = storeDevotional?.likes || 0;
     const shareCount = storeDevotional?.shares || 0;
@@ -139,23 +140,23 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
 
     const handleReadFullChapter = () => {
         if (!devotionalData?.bibleReference) return;
-        
+
         Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-        
+
         // Parse the Bible reference to get book and chapter
         const parsedRef = parseBibleReference(devotionalData.bibleReference);
         if (!parsedRef) {
             console.error('Could not parse Bible reference:', devotionalData.bibleReference);
             return;
         }
-        
+
         // Find the book ID from the parsed reference
         const bookId = BIBLE_BOOK_IDS[parsedRef.book];
         if (!bookId) {
             console.error('Could not find book ID for:', parsedRef.book);
             return;
         }
-        
+
         // Navigate to Bible tab with the specific chapter
         router.replace({
             pathname: '/(tabs)/bible',
@@ -166,10 +167,10 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                 timestamp: Date.now().toString(),
             },
         });
-        
+
         // Close the modal
         onClose();
-        
+
         // Log analytics
         analytics.logEvent('FullScreenShareCard_ReadFullChapter', {
             bibleReference: devotionalData.bibleReference,
@@ -188,13 +189,14 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                 const chapter = parseInt(match[2], 10);
                 return { book, chapter };
             }
-            
+
             return null;
         } catch (error) {
             console.error('Error parsing Bible reference:', reference, error);
             return null;
         }
     };
+
 
     useEffect(() => {
         if (isCapturing) {
@@ -204,6 +206,8 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                     return;
                 }
                 try {
+                    // Wait for 1 second before capturing to ensure animations complete
+                    await new Promise(resolve => setTimeout(resolve, 1000));
                     const screenshotUri = await viewShotRef.current?.capture?.();
                     if (screenshotUri && devotionalData) {
                         const appStoreLink = 'https://apps.apple.com/us/app/shepherd-spiritual-bible-pet/id6745461941';
@@ -381,6 +385,27 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                         disabled={isCapturing}
                                     />
                                 </View>
+
+                                {/* Shepherd Branding - Only visible when capturing */}
+                                {isCapturing && (
+                                    <View className="absolute bottom-0 left-0 right-0">
+
+                                        <View className="flex-row items-center justify-center py-6 px-8">
+                                            <View className="p-2 mr-2">
+                                                <Image
+                                                    source={require('../assets/icon.png')}
+                                                    className="w-8 h-8"
+                                                    resizeMode="contain"
+                                                />
+                                            </View>
+                                            <View>
+                                                <Text className="font-feather text-white text-xl font-bold tracking-wide">
+                                                    Shepherd
+                                                </Text>
+                                            </View>
+                                        </View>
+                                    </View>
+                                )}
                             </ImageBackground>
                         </View>
                     </ViewShot>
