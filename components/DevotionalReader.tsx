@@ -30,6 +30,7 @@ import SuccessMessage from './SuccessMessage';
 import DailyVerseCard from './Shared/DailyVerseCard';
 import analytics from '~/utils/analytics';
 import i18n from '../app/utils/i18n';
+import { useSoundStore } from '~/app/stores/soundStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -41,7 +42,7 @@ interface DevotionalCard {
 
 interface DevotionalReaderProps {
   visible?: boolean;
-  onClose?: ({isPrayPresses}:{isPrayPresses?:boolean}) => void;
+  onClose?: ({ isPrayPresses }: { isPrayPresses?: boolean }) => void;
   setFinishReading: (a: boolean) => void;
   setDevotionalReadedFully: (value: boolean) => void;
   setCurrentVerseReference: (reference: string) => void;
@@ -60,7 +61,7 @@ export interface DevotionalReaderRef {
 const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(({ visible = true, onClose, setFinishReading, setDevotionalReadedFully, setCurrentVerseReference }, ref) => {
   const { currentDevotional, isLoading, customDevotional } = useDevotionalStore();
   const devotionalError = useDevotionalStore().error;
-  
+
   // Use customDevotional if it exists (AI-generated), otherwise use currentDevotional
   const activeDevotional = customDevotional || currentDevotional;
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -118,7 +119,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
   // Track previous level to detect level up
   const prevLevelRef = useRef(levelInfo.level);
   const [savedPrevLevel, setSavedPrevLevel] = useState(levelInfo.level);
-  
+
   // Update previous level tracking when level changes
   useEffect(() => {
     if (levelInfo.level > prevLevelRef.current) {
@@ -127,7 +128,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
       prevLevelRef.current = levelInfo.level;
     } else if (levelInfo.level !== prevLevelRef.current) {
       // Level changed but didn't increase (shouldn't happen normally)
-    prevLevelRef.current = levelInfo.level;
+      prevLevelRef.current = levelInfo.level;
       setSavedPrevLevel(levelInfo.level);
     }
   }, [levelInfo.level]);
@@ -142,58 +143,58 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
       // Animate success view in with spring effect (slower)
       successViewOpacity.value = withTiming(1, { duration: 900 });
       successViewScale.value = withSpring(1, { damping: 20, stiffness: 80 });
-      
+
       // Reset and animate progress bars
       animatedXP.setValue(0);
       animatedHearts.setValue(0);
       animatedTextOpacity.setValue(0.4);
-      
+
       if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
-              progressTimeoutRef.current = setTimeout(() => {
-          // Animate progress bars (slower)
-          Animated.parallel([
-            Animated.timing(animatedXP, {
-              toValue: levelInfo.progress,
-              duration: 1400,
-              useNativeDriver: false,
-            }),
-            Animated.timing(animatedHearts, {
-              toValue: lambHearts,
-              duration: 1400,
-              useNativeDriver: false,
-            }),
-            Animated.timing(animatedTextOpacity, {
-              toValue: 1,
-              duration: 800,
-              useNativeDriver: false,
-            }),
-          ]).start(() => {
-            // Enable buttons after progress animation
-            setTimeout(() => {
-              Animated.parallel([
-                Animated.timing(animatedBlueOpacity, {
-                  toValue: 1,
-                  duration: 600,
-                  useNativeDriver: true,
-                }),
-                Animated.timing(animatedGoldOpacity, {
-                  toValue: 1,
-                  duration: 600,
-                  useNativeDriver: true,
-                }),
-              ]).start();
-              
-              setButtonsEnabled(true);
-              setBlueButtonOpacity(1);
-              setGoldButtonOpacity(1);
-            }, 300);
-          });
-        }, 500);
+      progressTimeoutRef.current = setTimeout(() => {
+        // Animate progress bars (slower)
+        Animated.parallel([
+          Animated.timing(animatedXP, {
+            toValue: levelInfo.progress,
+            duration: 1400,
+            useNativeDriver: false,
+          }),
+          Animated.timing(animatedHearts, {
+            toValue: lambHearts,
+            duration: 1400,
+            useNativeDriver: false,
+          }),
+          Animated.timing(animatedTextOpacity, {
+            toValue: 1,
+            duration: 800,
+            useNativeDriver: false,
+          }),
+        ]).start(() => {
+          // Enable buttons after progress animation
+          setTimeout(() => {
+            Animated.parallel([
+              Animated.timing(animatedBlueOpacity, {
+                toValue: 1,
+                duration: 600,
+                useNativeDriver: true,
+              }),
+              Animated.timing(animatedGoldOpacity, {
+                toValue: 1,
+                duration: 600,
+                useNativeDriver: true,
+              }),
+            ]).start();
+
+            setButtonsEnabled(true);
+            setBlueButtonOpacity(1);
+            setGoldButtonOpacity(1);
+          }, 300);
+        });
+      }, 500);
     } else {
       // Animate success view out
       successViewOpacity.value = withTiming(0, { duration: 300 });
       successViewScale.value = withTiming(0.8, { duration: 300 });
-      
+
       // Reset values
       animatedXP.setValue(0);
       animatedHearts.setValue(0);
@@ -205,7 +206,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
       setGoldButtonOpacity(0.4);
       if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
     }
-    
+
     // Cleanup on unmount
     return () => {
       if (progressTimeoutRef.current) clearTimeout(progressTimeoutRef.current);
@@ -291,7 +292,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
   useEffect(() => {
     const showGlobalButtons = useHomeStore.getState().showGlobalButtons;
     const setShowGlobalButtons = useHomeStore.getState().setShowGlobalButtons;
-    if(!showGlobalButtons){
+    if (!showGlobalButtons) {
       setShowGlobalButtons(true);
     }
     if (totalCards > 0) {
@@ -308,9 +309,9 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
       }
     }
   }, [currentIndex, totalCards, progressValue]);
-  
+
   // Remove auto-setting of showGlobalButtons - this should be controlled by parent component
-  
+
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -346,7 +347,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
     useHomeStore.getState().setShowGlobalButtons(false);
     if (onClose) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-      onClose({isPrayPresses: false});
+      onClose({ isPrayPresses: false });
     }
   }, [onClose]);
 
@@ -364,26 +365,26 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
     onFinishPress
   }));
 
-  function onFinishPress (){
+  function onFinishPress() {
     setIsRewarding(true);
     setShowSuccess(true);
     setFinishReading(true)
-    
+
     // Apply rewards (3 hearts + 25 XP for reading)
     const heartReward = 3;
     const xpReward = 25;
     const MAX_HEARTS = 100;
-    
+
     const currentHearts = useUserStore.getState().getLambHearts();
     const currentXp = useUserStore.getState().getLambXp();
     const setLambHearts = useUserStore.getState().setLambHearts;
     const addXp = useUserStore.getState().addXp;
     const setLambMood = useUserStore.getState().setLambMood;
     const addCompletedReading = useUserStore.getState().addCompletedReading;
-    
+
     // Calculate actual heart reward (don't exceed MAX_HEARTS)
     const heartsToAdd = Math.min(heartReward, MAX_HEARTS - currentHearts);
-    
+
     // Apply rewards
     if (heartsToAdd > 0) {
       setLambHearts(currentHearts + heartsToAdd);
@@ -399,18 +400,18 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
         setLambMood('lamb-angry');
       }
     }
-    
+
     // Always add XP
     addXp(xpReward);
-    
+
     // Save completed reading to userStore
     const now = firestore.Timestamp.now();
     const setLastReadingDate = useUserStore.getState().setLastReadingDate;
-    
+
     // Extract book and chapter info from bible reference
     let book = '';
     let chapters: string[] = [];
-    
+
     if (activeDevotional?.bibleReference) {
       // Parse reference like "John 3:16" or "Matthew 5:1-10"
       const refParts = activeDevotional.bibleReference.split(' ');
@@ -422,17 +423,17 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
         }
       }
     }
-    
+
     addCompletedReading({
       date: now,
       book: book || 'Devotional',
       chapters: chapters.length > 0 ? chapters as [string] : ['1'],
       isUnit: false,
     });
-    
+
     // Update last reading date
     setLastReadingDate(now);
-    
+
     // Mark reading as completed
     const setReadingCompleted = useHomeStore.getState().setReadingCompleted;
     const setShowGlobalButtons = useHomeStore.getState().setShowGlobalButtons;
@@ -440,13 +441,13 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
     setShowGlobalButtons(false);
 
     // Log completion analytics
-          analytics.logEvent('DevotionalReader_Completed', {
-        bibleReference: activeDevotional?.bibleReference,
-        hasContext: !!activeDevotional?.context,
-        totalCards: totalCards,
-        heartsAwarded: heartsToAdd,
-        xpAwarded: xpReward,
-      });
+    analytics.logEvent('DevotionalReader_Completed', {
+      bibleReference: activeDevotional?.bibleReference,
+      hasContext: !!activeDevotional?.context,
+      totalCards: totalCards,
+      heartsAwarded: heartsToAdd,
+      xpAwarded: xpReward,
+    });
   }
   const animatedProgressStyle = useAnimatedStyle(() => {
     return { width: `${progressValue.value ? progressValue.value * 100 : 0}%` };
@@ -455,7 +456,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
   // Prepare cards to show (up to current index) - moved before early return
   const cardsToShow: DevotionalCard[] = useMemo(() => {
     if (!activeDevotional) return [];
-    
+
     const cards: DevotionalCard[] = [];
     console.log('📋 Preparing cards to show. Current index:', currentIndex);
     console.log('📋 Total context sentences:', contextSentences.length);
@@ -495,6 +496,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
     }
   }, [cardsToShow, setCurrentVerseReference]);
 
+
   // Get store state for debugging
 
   if (!activeDevotional) {
@@ -519,6 +521,9 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
     <View style={{ flex: 1, margin: RPH(1), marginHorizontal: 24 }}>
       {showSuccess ? (
         <SuccessMessage
+          onLoad={() => {
+            useSoundStore.getState().playBreadEatingSound();
+          }}
           key={`success-${levelInfo.level}-${savedPrevLevel}`}
           title={i18n.t('reading_complete')}
           description={i18n.t('reading_complete_desc')}
@@ -526,6 +531,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
           prevLevel={savedPrevLevel}
           buttonsEnabled={buttonsEnabled}
           onGoHome={() => {
+            useSoundStore.getState().stopBreadEatingSound();
             const now = firestore.Timestamp.now();
             const setLastActivityDate = useUserStore.getState().setLastActivityDate;
             const setLastReadingDate = useUserStore.getState().setLastReadingDate;
@@ -538,7 +544,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
-              onClose({isPrayPresses: false});
+              onClose({ isPrayPresses: false });
               setTimeout(() => {
                 setFinishReading(false);
                 setShowSuccess(false); // Reset success state after dismissal
@@ -546,6 +552,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
             }
           }}
           onPray={() => {
+            useSoundStore.getState().stopBreadEatingSound();
             const now = firestore.Timestamp.now();
             const setLastActivityDate = useUserStore.getState().setLastActivityDate;
             const setLastReadingDate = useUserStore.getState().setLastReadingDate;
@@ -558,7 +565,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
               Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
               const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
-              onClose({isPrayPresses: true});
+              onClose({ isPrayPresses: true });
               setTimeout(() => {
                 setFinishReading(false);
                 setShowSuccess(false); // Reset success state after dismissal
@@ -580,11 +587,11 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
             </Text>
 
             {onClose && (
-              <TouchableOpacity 
+              <TouchableOpacity
                 onPress={() => {
                   Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                  onClose({isPrayPresses: false});
-                }} 
+                  onClose({ isPrayPresses: false });
+                }}
                 className="bg-brown/10 w-8 h-8 rounded-full items-center justify-center">
                 <Feather name="x" size={18} color="#795323" />
               </TouchableOpacity>
@@ -628,14 +635,14 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
             alwaysBounceVertical={true}
             automaticallyAdjustContentInsets={true}>
             <TouchableWithoutFeedback onPress={handleNextCard}>
-              <View style={{ minHeight: 200, paddingBottom:RPH(12) }}>
+              <View style={{ minHeight: 200, paddingBottom: RPH(12) }}>
                 {cardsToShow.length === 0 ? (
                   <Text className="text-brown text-center">{i18n.t('no_cards_to_display')}</Text>
                 ) : (
                   <>
                     {cardsToShow.map((card, index) => {
                       console.log('🎨 Rendering card:', index, card.type, card.content.substring(0, 50));
-                      
+
                       // Use DailyVerseCard for the first verse card
                       if (card.type === 'verse' && index === 0) {
                         return (
@@ -654,7 +661,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                           </Reanimated.View>
                         );
                       }
-                      
+
                       // Use regular card for context cards
                       return (
                         <Reanimated.View
@@ -672,7 +679,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                             borderRadius: 20,
                             borderWidth: 2,
                             borderColor: 'rgba(121, 83, 35, 0.1)',
-                           
+
                           }}>
                             {/* Card content */}
                             <Text className="text-[18px] leading-[25px] font-nunito-bold text-textPrimary">

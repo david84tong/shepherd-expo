@@ -34,6 +34,7 @@ import { RPH } from '~/app/helper/helper';
 import PrimaryButton from './PrimaryButton';
 import CircleButton from './Shared/CircleButton';
 import i18n from '../app/utils/i18n';
+import { useSoundStore } from '~/app/stores/soundStore';
 
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
@@ -56,7 +57,7 @@ export interface JournalComponentRef {
 
 interface JournalProps {
   visible: boolean;
-  onClose: ({isCompleted, isReflectPresses}:{isCompleted?:boolean, isReflectPresses?:boolean}) => void;
+  onClose: ({ isCompleted, isReflectPresses }: { isCompleted?: boolean, isReflectPresses?: boolean }) => void;
   setFinishReading: (finishReading: boolean) => void;
   setJournalButtonEnabled: (enabled: boolean) => void;
 }
@@ -97,7 +98,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   const isButtonEnabled = useMemo(() => charCount >= MIN_CHARS_REQUIRED, [charCount]);
 
   useEffect(() => {
-    if(isButtonEnabled){
+    if (isButtonEnabled) {
       setJournalButtonEnabled(true);
     }
   }, [isButtonEnabled]);
@@ -171,7 +172,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     if (visible) {
       // Fade in component
       componentOpacity.value = withTiming(1, { duration: 400 });
-      
+
       // Start gentle background glow animation after a delay
       setTimeout(() => {
         backgroundGlow.value = withRepeat(
@@ -195,7 +196,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   // Get reflection prompt from devotional or fallback
   const getReflectionPrompt = () => {
 
-    
+
     // First try to use the devotional reflection prompt (handle both string and object structures)
     if (currentDevotional?.reflectionPrompt) {
       if (typeof currentDevotional.reflectionPrompt === 'string') {
@@ -207,7 +208,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
         return prompt;
       }
     }
-    
+
     // Fallback to default prompt
     console.log('📝 Using fallback prompt');
     return i18n.t('reflection_prompt_fallback');
@@ -239,7 +240,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       const keyboardHeight = event.endCoordinates.height;
       setKeyboardHeight(keyboardHeight);
       setKeyboardVisible(true);
-      
+
       // When textinput is focused, update bottomSheet to 88% in index.tsx
       if (visible && inputRef.current?.isFocused()) {
         // Access bottomSheetRef from homeStore and snap to 88% position
@@ -254,7 +255,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     const handleKeyboardHide = () => {
       setKeyboardHeight(0);
       setKeyboardVisible(false);
-      
+
       // Reset keyboard visibility in homeStore and snap back to original position
       useHomeStore.getState().setKeyboardVisible(false);
       // Get the bottomSheetRef from homeStore and snap back to default position (80%)
@@ -399,24 +400,24 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       console.log('🔍 JOURNAL SUCCESS - Setting success state, journalViewVisible should remain true');
       // Hide global buttons/tab bar during success state
       useHomeStore.getState().setShowGlobalButtons(false);
-      
+
       // Keep journalViewVisible true during success state to hide tab bar
       // Don't set journalViewVisible to false here - it will be set to false when success message is dismissed
       const currentJournalViewVisible = useHomeStore.getState().journalViewVisible;
       console.log('🔍 JOURNAL SUCCESS - Current journalViewVisible state:', currentJournalViewVisible);
-      
+
       // Ensure journalViewVisible is true during success state
       if (!currentJournalViewVisible) {
         console.log('🔍 JOURNAL SUCCESS - Setting journalViewVisible to true to hide tab bar');
         useHomeStore.getState().setJournalViewVisible(true);
       }
-      
+
       // Reset bottom sheet to 60% when success screen is shown
       const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
       if (bottomSheetRef?.current) {
         bottomSheetRef.current.snapToIndex(0); // Index 0 is 60% in snapPoints array
       }
-      
+
       animatedXP.setValue(0);
       animatedHearts.setValue(0);
       animatedTextOpacity.setValue(0.4);
@@ -462,7 +463,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     } else {
       // Show global buttons when not in success state
       useHomeStore.getState().setShowGlobalButtons(true);
-      
+
       animatedXP.setValue(0);
       animatedHearts.setValue(0);
       animatedTextOpacity.setValue(0.4);
@@ -525,20 +526,20 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       console.log('handleSave called');
       // Don't save if not enough characters
       if (reflectionContent.length < MIN_CHARS_REQUIRED) return;
-      
+
       // Apply rewards (1 heart + 25 XP for reflection)
       const heartReward = 1;
       const xpReward = 25;
       const MAX_HEARTS = 100;
-      
+
       const currentHearts = useUserStore.getState().getLambHearts();
       const setLambHearts = useUserStore.getState().setLambHearts;
       const addXp = useUserStore.getState().addXp;
       const setLambMood = useUserStore.getState().setLambMood;
-      
+
       // Calculate actual heart reward (don't exceed MAX_HEARTS)
       const heartsToAdd = Math.min(heartReward, MAX_HEARTS - currentHearts);
-      
+
       // Apply rewards
       if (heartsToAdd > 0) {
         setLambHearts(currentHearts + heartsToAdd);
@@ -554,10 +555,10 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
           setLambMood('lamb-angry');
         }
       }
-      
+
       // Always add XP
       addXp(xpReward);
-      
+
       analytics.logEvent('JournalScreen_SaveReflection', {
         reflection_length: reflectionContent.length,
         reflection_content: reflectionContent,
@@ -572,14 +573,14 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       setPathInProgress(false);
       setFinishReading(true)
       setReflectionCompleted(true); // Set reflection as completed
-  
+
       // Reset tappedReflectAboutVerse flag
       useHomeStore.getState().setTappedReflectAboutVerse(false);
       console.log('Reset tappedReflectAboutVerse flag to false');
-  
+
       // Create current timestamp
       const now = firestore.Timestamp.now();
-  
+
       // Save reflection to userStore
       console.log('Saving reflection data to userStore');
       try {
@@ -591,10 +592,10 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
               ? `[${getBookNameFromId(currentPath.bookId)} ${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}] ${reflectionContent.trim()}`
               : reflectionContent.trim() || 'Reflected on my spiritual journey today.',
         });
-  
+
         // Update last reflection date
         setLastReflectionDate(now);
-  
+
         console.log('Reflection saved successfully');
       } catch (error) {
         console.log('Error saving reflection data:', error);
@@ -606,14 +607,14 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       useHomeStore.getState().setShowGlobalButtons(false);
       useHomeStore.getState().setJournalViewVisible(false);
       setPathInProgress(false);
-      
+
       // Reset bottom sheet to original position
       const homeStore = useHomeStore.getState();
       const bottomSheetRef = homeStore.bottomSheetRef;
       if (bottomSheetRef?.current) {
         bottomSheetRef.current.snapToIndex(0); // Return to original closed position
       }
-      
+
       analytics.logEvent('Journal_Tapped_Cancel', {
         prompt: currentPath?.reflection,
         devotionalId: currentDevotional?.id || null,
@@ -623,7 +624,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       useHomeStore.getState().setTappedReflectAboutVerse(false);
       console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
       onClose({});
-      
+
       // Reset Rive animation to idle state with delay after navigation
       setTimeout(() => {
         const riveRef = homeStore.riveRef;
@@ -664,148 +665,151 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       pointerEvents="box-none">
       <Animated.View style={{ opacity: containerOpacity, flex: 1 }}>
         <SuccessMessage
-        title={i18n.t('reflection_complete')}
-        description={i18n.t('reflection_complete_desc')}
-        level={levelInfo.level}
-        prevLevel={levelInfo.level}
-        buttonsEnabled={buttonsEnabled}
-        onGoHome={() => {
-          console.log('🔍 JOURNAL SUCCESS - onGoHome called, setting journalViewVisible to false');
-          setTimeout(() => {
-            setFinishReading(false)
-          }, 2000);
-
-          // Set journalViewVisible to false to show tab bar again
-          useHomeStore.getState().setJournalViewVisible(false);
-          console.log('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onGoHome');
-
-          // Ensure reflection completion state is maintained
-          console.log('🔍 JOURNAL SUCCESS - Ensuring reflection completion state is maintained');
-          setReflectionCompleted(true);
-
-          const sawStreakToday = useHomeStore.getState().sawStreakToday;
-          const isFirstReadingOfDay = !sawStreakToday;
-          const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
-          
-          if(isBonusAvailable) {
-            setSuccessType(SuccessAnimationType.BONUS);
-            router.push({
-              pathname: '/success',
-              params: {
-                showStreakScreen: 'true'
-              }
-            });
-            
-            // Reset Rive animation to appropriate state after navigation with delay
+          title={i18n.t('reflection_complete')}
+          description={i18n.t('reflection_complete_desc')}
+          level={levelInfo.level}
+          prevLevel={levelInfo.level}
+          buttonsEnabled={buttonsEnabled}
+          onLoad={() => {
+            useSoundStore.getState().playJournalingSuccessSound();
+          }}
+          onGoHome={() => {
+            console.log('🔍 JOURNAL SUCCESS - onGoHome called, setting journalViewVisible to false');
             setTimeout(() => {
-              const homeStore = useHomeStore.getState();
-              const riveRef = homeStore.riveRef;
-              if (riveRef?.current?.setInputState) {
-                try {
-                  // Get current lamb mood to set appropriate idle state
-                  const currentMood = useUserStore.getState()?.getLambMood?.();
-                  const moodToStateInput: Record<string, number> = {
-                    'lamb-idle': 0,           // >= 50 hearts - Idle
-                    'lamb-sleepy': 4,         // < 50 hearts - Sleepy  
-                    'lamb-angry': 5,          // < 30 hearts - Angry
-                    'lamb-chubby dying': 6,   // < 20 hearts - Dying Chubby
-                    'lamb-skinny dying': 7,   // < 10 hearts - Dying Skinny
-                    'smoking': 8,             // < 1 hearts - Dead
-                    'lamb-full': 3,           // After eating - Full
-                  };
-                  const targetStateInput = moodToStateInput[currentMood] || 0;
-                  riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
-                  console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
-                } catch (error) {
-                  console.log('Could not reset Rive state after navigation:', error);
-                }
-              }
-            }, 1000); // 1 second delay after navigation
-          }else{
-            onClose({isCompleted:true});
-            
-            // Reset Rive animation to appropriate state after navigation with delay
-            setTimeout(() => {
-              const homeStore = useHomeStore.getState();
-              const riveRef = homeStore.riveRef;
-              if (riveRef?.current?.setInputState) {
-                try {
-                  // Get current lamb mood to set appropriate idle state
-                  const currentMood = useUserStore.getState()?.getLambMood?.();
-                  const moodToStateInput: Record<string, number> = {
-                    'lamb-idle': 0,           // >= 50 hearts - Idle
-                    'lamb-sleepy': 4,         // < 50 hearts - Sleepy  
-                    'lamb-angry': 5,          // < 30 hearts - Angry
-                    'lamb-chubby dying': 6,   // < 20 hearts - Dying Chubby
-                    'lamb-skinny dying': 7,   // < 10 hearts - Dying Skinny
-                    'smoking': 8,             // < 1 hearts - Dead
-                    'lamb-full': 3,           // After eating - Full
-                  };
-                  const targetStateInput = moodToStateInput[currentMood] || 0;
-                  riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
-                  console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
-                } catch (error) {
-                  console.log('Could not reset Rive state after navigation:', error);
-                }
-              }
-            }, 1000); // 1 second delay after navigation
-          }
+              setFinishReading(false)
+            }, 2000);
 
-        }}
-        onPray={() => {
-          console.log('🔍 JOURNAL SUCCESS - onPray called');
-          // Handle bonus collection if available
-          const sawStreakToday = useHomeStore.getState().sawStreakToday;
-          const isFirstReadingOfDay = !sawStreakToday;
-          const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
-          
-          if (isBonusAvailable) {
-            console.log('🔍 JOURNAL SUCCESS - Bonus available, setting journalViewVisible to false');
-            setSuccessType(SuccessAnimationType.BONUS);
             // Set journalViewVisible to false to show tab bar again
             useHomeStore.getState().setJournalViewVisible(false);
-            console.log('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onPray (bonus)');
-            router.push({
-              pathname: '/success',
-              params: {
-                showStreakScreen: 'true'
-              }
-            });
-            
-            // Reset Rive animation to appropriate state after navigation with delay
-            setTimeout(() => {
-              const homeStore = useHomeStore.getState();
-              const riveRef = homeStore.riveRef;
-              if (riveRef?.current?.setInputState) {
-                try {
-                  const currentMood = useUserStore.getState()?.getLambMood?.();
-                  const moodToStateInput: Record<string, number> = {
-                    'lamb-idle': 0,
-                    'lamb-sleepy': 4,
-                    'lamb-angry': 5,
-                    'lamb-chubby dying': 6,
-                    'lamb-skinny dying': 7,
-                    'smoking': 8,
-                    'lamb-full': 3,
-                  };
-                  const targetStateInput = moodToStateInput[currentMood] || 0;
-                  riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
-                  console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
-                } catch (error) {
-                  console.log('Could not reset Rive state after navigation:', error);
+            console.log('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onGoHome');
+
+            // Ensure reflection completion state is maintained
+            console.log('🔍 JOURNAL SUCCESS - Ensuring reflection completion state is maintained');
+            setReflectionCompleted(true);
+
+            const sawStreakToday = useHomeStore.getState().sawStreakToday;
+            const isFirstReadingOfDay = !sawStreakToday;
+            const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
+
+            if (isBonusAvailable) {
+              setSuccessType(SuccessAnimationType.BONUS);
+              router.push({
+                pathname: '/success',
+                params: {
+                  showStreakScreen: 'true'
                 }
-              }
-            }, 1000);
-          } else {
-            console.log('🔍 JOURNAL SUCCESS - No bonus available, setting journalViewVisible to false');
-            // Normal prayer flow - close journal and signal to open prayer view
-            useHomeStore.getState().setJournalViewVisible(false);
-            console.log('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onPray (no bonus)');
-            onClose({ isReflectPresses: true }); // Pass flag to trigger prayer navigation
-          }
-        }}
-        rewardsTitle="REFLECTION REWARDS"
-      />
+              });
+
+              // Reset Rive animation to appropriate state after navigation with delay
+              setTimeout(() => {
+                const homeStore = useHomeStore.getState();
+                const riveRef = homeStore.riveRef;
+                if (riveRef?.current?.setInputState) {
+                  try {
+                    // Get current lamb mood to set appropriate idle state
+                    const currentMood = useUserStore.getState()?.getLambMood?.();
+                    const moodToStateInput: Record<string, number> = {
+                      'lamb-idle': 0,           // >= 50 hearts - Idle
+                      'lamb-sleepy': 4,         // < 50 hearts - Sleepy  
+                      'lamb-angry': 5,          // < 30 hearts - Angry
+                      'lamb-chubby dying': 6,   // < 20 hearts - Dying Chubby
+                      'lamb-skinny dying': 7,   // < 10 hearts - Dying Skinny
+                      'smoking': 8,             // < 1 hearts - Dead
+                      'lamb-full': 3,           // After eating - Full
+                    };
+                    const targetStateInput = moodToStateInput[currentMood] || 0;
+                    riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+                    console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
+                  } catch (error) {
+                    console.log('Could not reset Rive state after navigation:', error);
+                  }
+                }
+              }, 1000); // 1 second delay after navigation
+            } else {
+              onClose({ isCompleted: true });
+
+              // Reset Rive animation to appropriate state after navigation with delay
+              setTimeout(() => {
+                const homeStore = useHomeStore.getState();
+                const riveRef = homeStore.riveRef;
+                if (riveRef?.current?.setInputState) {
+                  try {
+                    // Get current lamb mood to set appropriate idle state
+                    const currentMood = useUserStore.getState()?.getLambMood?.();
+                    const moodToStateInput: Record<string, number> = {
+                      'lamb-idle': 0,           // >= 50 hearts - Idle
+                      'lamb-sleepy': 4,         // < 50 hearts - Sleepy  
+                      'lamb-angry': 5,          // < 30 hearts - Angry
+                      'lamb-chubby dying': 6,   // < 20 hearts - Dying Chubby
+                      'lamb-skinny dying': 7,   // < 10 hearts - Dying Skinny
+                      'smoking': 8,             // < 1 hearts - Dead
+                      'lamb-full': 3,           // After eating - Full
+                    };
+                    const targetStateInput = moodToStateInput[currentMood] || 0;
+                    riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+                    console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
+                  } catch (error) {
+                    console.log('Could not reset Rive state after navigation:', error);
+                  }
+                }
+              }, 1000); // 1 second delay after navigation
+            }
+
+          }}
+          onPray={() => {
+            console.log('🔍 JOURNAL SUCCESS - onPray called');
+            // Handle bonus collection if available
+            const sawStreakToday = useHomeStore.getState().sawStreakToday;
+            const isFirstReadingOfDay = !sawStreakToday;
+            const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
+
+            if (isBonusAvailable) {
+              console.log('🔍 JOURNAL SUCCESS - Bonus available, setting journalViewVisible to false');
+              setSuccessType(SuccessAnimationType.BONUS);
+              // Set journalViewVisible to false to show tab bar again
+              useHomeStore.getState().setJournalViewVisible(false);
+              console.log('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onPray (bonus)');
+              router.push({
+                pathname: '/success',
+                params: {
+                  showStreakScreen: 'true'
+                }
+              });
+
+              // Reset Rive animation to appropriate state after navigation with delay
+              setTimeout(() => {
+                const homeStore = useHomeStore.getState();
+                const riveRef = homeStore.riveRef;
+                if (riveRef?.current?.setInputState) {
+                  try {
+                    const currentMood = useUserStore.getState()?.getLambMood?.();
+                    const moodToStateInput: Record<string, number> = {
+                      'lamb-idle': 0,
+                      'lamb-sleepy': 4,
+                      'lamb-angry': 5,
+                      'lamb-chubby dying': 6,
+                      'lamb-skinny dying': 7,
+                      'smoking': 8,
+                      'lamb-full': 3,
+                    };
+                    const targetStateInput = moodToStateInput[currentMood] || 0;
+                    riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+                    console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
+                  } catch (error) {
+                    console.log('Could not reset Rive state after navigation:', error);
+                  }
+                }
+              }, 1000);
+            } else {
+              console.log('🔍 JOURNAL SUCCESS - No bonus available, setting journalViewVisible to false');
+              // Normal prayer flow - close journal and signal to open prayer view
+              useHomeStore.getState().setJournalViewVisible(false);
+              console.log('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onPray (no bonus)');
+              onClose({ isReflectPresses: true }); // Pass flag to trigger prayer navigation
+            }
+          }}
+          rewardsTitle="REFLECTION REWARDS"
+        />
       </Animated.View>
     </Reanimated.View>
   ) : (
@@ -813,224 +817,224 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       className="flex-1 w-full mt-2 bg-surfaceCream"
       pointerEvents="box-none">
       <Animated.View style={{ opacity: containerOpacity, flex: 1 }}>
-      <View className="flex-1 px-6">
-    
-        <Text className="text-body font-feather text-brown/90 mb-2 text-center leading-tight mt-0 mb-4">
-          {getReflectionPrompt()}
-        </Text>
+        <View className="flex-1 px-6">
 
-        <View style={{minHeight:RPH(25),borderRadius: 20}} className="w-full  bg-surfaceCream border-[3px] border-gold/70 p-5 mb-2 shadow-card" >
-          <TextInput
-            ref={inputRef}
-            className="w-full bg-transparent text-brown/95 text-[18px] font-nunito-medium  text-left"
-            placeholder={getPlaceholderText()}
-            placeholderTextColor="#B89B4C"
-            multiline
-            textAlignVertical="top"
-            scrollEnabled={true}
-            style={{ flex: 1, padding: 0,minHeight:RPH(30) }}
-            value={reflectionContent}
-            onChangeText={setReflectionContent}
-            onFocus={() => {
-              // Set Rive to writing state when input is focused
-              const homeStore = useHomeStore.getState();
-              const riveRef = homeStore.riveRef;
-              if (riveRef?.current?.setInputState) {
-                try {
-                  // riveRef.current.setInputState('State Machine 1', 'Action-Number', 12); // 12 = Writing
-                  console.log('Set Rive animation to writing state (12) on input focus');
-                } catch (error) {
-                  console.log('Could not set Rive to writing state on focus:', error);
-                }
-              }
-              
-              // Ensure keyboard is shown and bottom sheet snaps to 88%
-              const bottomSheetRef = homeStore.bottomSheetRef;
-              if (bottomSheetRef?.current) {
-                bottomSheetRef.current.snapToIndex(6); // Index 6 is 88% in snapPoints array
-              }
-            }}
-            onBlur={() => {
-              // Reset Rive to idle state when input loses focus (optional)
-              const homeStore = useHomeStore.getState();
-              const riveRef = homeStore.riveRef;
-              if (riveRef?.current?.setInputState) {
-                try {
-                  // Get current lamb mood to set appropriate idle state
-                  const currentMood = useUserStore.getState()?.getLambMood?.();
-                  const moodToStateInput: Record<string, number> = {
-                    'lamb-idle': 0,           // >= 50 hearts - Idle
-                    'lamb-sleepy': 4,         // < 50 hearts - Sleepy  
-                    'lamb-angry': 5,          // < 30 hearts - Angry
-                    'lamb-chubby dying': 6,   // < 20 hearts - Dying Chubby
-                    'lamb-skinny dying': 7,   // < 10 hearts - Dying Skinny
-                    'smoking': 8,             // < 1 hearts - Dead
-                    'lamb-full': 3,           // After eating - Full
-                  };
-                  const targetStateInput = moodToStateInput[currentMood] || 0;
-                  riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
-                  console.log(`Set Rive animation back to mood state: ${targetStateInput} (${currentMood}) on input blur`);
-                } catch (error) {
-                  console.log('Could not reset Rive state on blur:', error);
-                }
-              }
-            }}
-            maxLength={300}
-          />
-        </View>
+          <Text className="text-body font-feather text-brown/90 mb-2 text-center leading-tight mt-0 mb-4">
+            {getReflectionPrompt()}
+          </Text>
 
-        {/* <Text className="text-[14px] text-brown/40 mt-1 text-center leading-tight font-semibold">
-          {`${300 - charCount} characters left`}
-        </Text> */}
-        
-        <View className="flex-row justify-between items-center mt-2 mb-4 px-2">
-          <CircleButton 
-            icon="x" 
-            size={50} 
-            onPress={() => {
-              // Call the existing cancel handler implementation
-              useHomeStore.getState().setShowGlobalButtons(false);
-              useHomeStore.getState().setJournalViewVisible(false);
-              setPathInProgress(false);
-              
-              // Reset bottom sheet to original position
-              const homeStore = useHomeStore.getState();
-              const bottomSheetRef = homeStore.bottomSheetRef;
-              if (bottomSheetRef?.current) {
-                bottomSheetRef.current.snapToIndex(0); // Return to original closed position
-              }
-              
-              analytics.logEvent('Journal_Tapped_Cancel', {
-                prompt: currentPath?.reflection,
-                devotionalId: currentDevotional?.id || null,
-                devotionalPrompt: getReflectionPrompt(),
-                bibleReference: currentDevotional?.bibleReference || null,
-              });
-              useHomeStore.getState().setTappedReflectAboutVerse(false);
-              console.log('Reset tappedReflectAboutVerse flag to false (from cancel button)');
-              onClose({});
-              
-              // Reset Rive animation to idle state with delay after navigation
-              setTimeout(() => {
+          <View style={{ minHeight: RPH(25), borderRadius: 20 }} className="w-full  bg-surfaceCream border-[3px] border-gold/70 p-5 mb-2 shadow-card" >
+            <TextInput
+              ref={inputRef}
+              className="w-full bg-transparent text-brown/95 text-[18px] font-nunito-medium  text-left"
+              placeholder={getPlaceholderText()}
+              placeholderTextColor="#B89B4C"
+              multiline
+              textAlignVertical="top"
+              scrollEnabled={true}
+              style={{ flex: 1, padding: 0, minHeight: RPH(30) }}
+              value={reflectionContent}
+              onChangeText={setReflectionContent}
+              onFocus={() => {
+                // Set Rive to writing state when input is focused
+                const homeStore = useHomeStore.getState();
                 const riveRef = homeStore.riveRef;
                 if (riveRef?.current?.setInputState) {
                   try {
-                    riveRef.current.setInputState('State Machine 1', 'Action-Number', 0); // 0 = Idle
-                    console.log('Reset Rive animation to idle state after cancel delay');
+                    // riveRef.current.setInputState('State Machine 1', 'Action-Number', 12); // 12 = Writing
+                    console.log('Set Rive animation to writing state (12) on input focus');
                   } catch (error) {
-                    console.log('Could not reset Rive state after cancel:', error);
+                    console.log('Could not set Rive to writing state on focus:', error);
                   }
                 }
-              }, 800); // Shorter delay for cancel since it's just going back to home
-            }}
-          />
-          <View style={{ width: '80%' }}>
-            <PrimaryButton
-              title={charCount >= MIN_CHARS_REQUIRED ? i18n.t('save_thoughts') : i18n.t('write_button')}
-              disabled={!isButtonEnabled}
-              onPress={() => {
-                if (isButtonEnabled) {
-                  // Directly call the internal method implementation instead of using the ref
-                  useHomeStore.getState().setShowGlobalButtons(false);
-                  console.log('handleSave called');
-                  // Don't save if not enough characters
-                  if (reflectionContent.length < MIN_CHARS_REQUIRED) return;
-                  
-                  // Apply rewards (1 heart + 25 XP for reflection)
-                  const heartReward = 1;
-                  const xpReward = 25;
-                  const MAX_HEARTS = 100;
-                  
-                  const currentHearts = useUserStore.getState().getLambHearts();
-                  const setLambHearts = useUserStore.getState().setLambHearts;
-                  const addXp = useUserStore.getState().addXp;
-                  const setLambMood = useUserStore.getState().setLambMood;
-                  
-                  // Calculate actual heart reward (don't exceed MAX_HEARTS)
-                  const heartsToAdd = Math.min(heartReward, MAX_HEARTS - currentHearts);
-                  
-                  // Apply rewards
-                  if (heartsToAdd > 0) {
-                    setLambHearts(currentHearts + heartsToAdd);
-                    // Update mood based on new heart count
-                    const newHeartCount = currentHearts + heartsToAdd;
-                    if (newHeartCount >= 80) {
-                      setLambMood('lamb-idle');
-                    } else if (newHeartCount >= 50) {
-                      setLambMood('lamb-idle');
-                    } else if (newHeartCount >= 30) {
-                      setLambMood('lamb-sleepy');
-                    } else if (newHeartCount >= 20) {
-                      setLambMood('lamb-angry');
-                    }
-                  }
-                  
-                  // Always add XP
-                  addXp(xpReward);
-                  
-                  analytics.logEvent('JournalScreen_SaveReflection', {
-                    reflection_length: reflectionContent.length,
-                    reflection_content: reflectionContent,
-                    prompt: currentPath?.reflection,
-                    devotionalId: currentDevotional?.id || null,
-                    devotionalPrompt: getReflectionPrompt(),
-                    bibleReference: currentDevotional?.bibleReference || null,
-                    heartsAwarded: heartsToAdd,
-                    xpAwarded: xpReward,
-                  });
-                  Keyboard.dismiss();
-                  setPathInProgress(false);
-                  setFinishReading(true)
-                  setReflectionCompleted(true); // Set reflection as completed
-              
-                  // Reset tappedReflectAboutVerse flag
-                  useHomeStore.getState().setTappedReflectAboutVerse(false);
-                  console.log('Reset tappedReflectAboutVerse flag to false');
-              
-                  // Create current timestamp
-                  const now = firestore.Timestamp.now();
-              
-                  // Save reflection to userStore
-                  console.log('Saving reflection data to userStore');
+
+                // Ensure keyboard is shown and bottom sheet snaps to 88%
+                const bottomSheetRef = homeStore.bottomSheetRef;
+                if (bottomSheetRef?.current) {
+                  bottomSheetRef.current.snapToIndex(6); // Index 6 is 88% in snapPoints array
+                }
+              }}
+              onBlur={() => {
+                // Reset Rive to idle state when input loses focus (optional)
+                const homeStore = useHomeStore.getState();
+                const riveRef = homeStore.riveRef;
+                if (riveRef?.current?.setInputState) {
                   try {
-                    // Save the reflection content
-                    addCompletedReflection({
-                      date: now,
-                      content:
-                        tappedReflectAboutVerse && currentPath && currentPath.bookId
-                          ? `[${getBookNameFromId(currentPath.bookId)} ${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}] ${reflectionContent.trim()}`
-                          : reflectionContent.trim() || 'Reflected on my spiritual journey today.',
-                    });
-              
-                    // Update last reflection date
-                    setLastReflectionDate(now);
-              
-                    console.log('Reflection saved successfully');
+                    // Get current lamb mood to set appropriate idle state
+                    const currentMood = useUserStore.getState()?.getLambMood?.();
+                    const moodToStateInput: Record<string, number> = {
+                      'lamb-idle': 0,           // >= 50 hearts - Idle
+                      'lamb-sleepy': 4,         // < 50 hearts - Sleepy  
+                      'lamb-angry': 5,          // < 30 hearts - Angry
+                      'lamb-chubby dying': 6,   // < 20 hearts - Dying Chubby
+                      'lamb-skinny dying': 7,   // < 10 hearts - Dying Skinny
+                      'smoking': 8,             // < 1 hearts - Dead
+                      'lamb-full': 3,           // After eating - Full
+                    };
+                    const targetStateInput = moodToStateInput[currentMood] || 0;
+                    riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+                    console.log(`Set Rive animation back to mood state: ${targetStateInput} (${currentMood}) on input blur`);
                   } catch (error) {
-                    console.log('Error saving reflection data:', error);
-                  }
-                  console.log('🔍 JOURNAL SUCCESS - Setting success state to true');
-                  setSuccess(true);
-                  
-                  // Set Rive to writing state
-                  const homeStore = useHomeStore.getState();
-                  const riveRef = homeStore.riveRef;
-                  if (riveRef?.current?.setInputState) {
-                    try {
-                      riveRef.current.setInputState('State Machine 1', 'Action-Number', 3); // 12 = Writing
-                    } catch (error) {
-                      console.log('Could not set Rive to writing state:', error);
-                    }
+                    console.log('Could not reset Rive state on blur:', error);
                   }
                 }
               }}
-              buttonType="blue"
-              icon={require('../assets/icons/starIcon.png')}
-              reward={"+50"}
+              maxLength={300}
             />
           </View>
+
+          {/* <Text className="text-[14px] text-brown/40 mt-1 text-center leading-tight font-semibold">
+          {`${300 - charCount} characters left`}
+        </Text> */}
+
+          <View className="flex-row justify-between items-center mt-2 mb-4 px-2">
+            <CircleButton
+              icon="x"
+              size={50}
+              onPress={() => {
+                // Call the existing cancel handler implementation
+                useHomeStore.getState().setShowGlobalButtons(false);
+                useHomeStore.getState().setJournalViewVisible(false);
+                setPathInProgress(false);
+
+                // Reset bottom sheet to original position
+                const homeStore = useHomeStore.getState();
+                const bottomSheetRef = homeStore.bottomSheetRef;
+                if (bottomSheetRef?.current) {
+                  bottomSheetRef.current.snapToIndex(0); // Return to original closed position
+                }
+
+                analytics.logEvent('Journal_Tapped_Cancel', {
+                  prompt: currentPath?.reflection,
+                  devotionalId: currentDevotional?.id || null,
+                  devotionalPrompt: getReflectionPrompt(),
+                  bibleReference: currentDevotional?.bibleReference || null,
+                });
+                useHomeStore.getState().setTappedReflectAboutVerse(false);
+                console.log('Reset tappedReflectAboutVerse flag to false (from cancel button)');
+                onClose({});
+
+                // Reset Rive animation to idle state with delay after navigation
+                setTimeout(() => {
+                  const riveRef = homeStore.riveRef;
+                  if (riveRef?.current?.setInputState) {
+                    try {
+                      riveRef.current.setInputState('State Machine 1', 'Action-Number', 0); // 0 = Idle
+                      console.log('Reset Rive animation to idle state after cancel delay');
+                    } catch (error) {
+                      console.log('Could not reset Rive state after cancel:', error);
+                    }
+                  }
+                }, 800); // Shorter delay for cancel since it's just going back to home
+              }}
+            />
+            <View style={{ width: '80%' }}>
+              <PrimaryButton
+                title={charCount >= MIN_CHARS_REQUIRED ? i18n.t('save_thoughts') : i18n.t('write_button')}
+                disabled={!isButtonEnabled}
+                onPress={() => {
+                  if (isButtonEnabled) {
+                    // Directly call the internal method implementation instead of using the ref
+                    useHomeStore.getState().setShowGlobalButtons(false);
+                    console.log('handleSave called');
+                    // Don't save if not enough characters
+                    if (reflectionContent.length < MIN_CHARS_REQUIRED) return;
+
+                    // Apply rewards (1 heart + 25 XP for reflection)
+                    const heartReward = 1;
+                    const xpReward = 25;
+                    const MAX_HEARTS = 100;
+
+                    const currentHearts = useUserStore.getState().getLambHearts();
+                    const setLambHearts = useUserStore.getState().setLambHearts;
+                    const addXp = useUserStore.getState().addXp;
+                    const setLambMood = useUserStore.getState().setLambMood;
+
+                    // Calculate actual heart reward (don't exceed MAX_HEARTS)
+                    const heartsToAdd = Math.min(heartReward, MAX_HEARTS - currentHearts);
+
+                    // Apply rewards
+                    if (heartsToAdd > 0) {
+                      setLambHearts(currentHearts + heartsToAdd);
+                      // Update mood based on new heart count
+                      const newHeartCount = currentHearts + heartsToAdd;
+                      if (newHeartCount >= 80) {
+                        setLambMood('lamb-idle');
+                      } else if (newHeartCount >= 50) {
+                        setLambMood('lamb-idle');
+                      } else if (newHeartCount >= 30) {
+                        setLambMood('lamb-sleepy');
+                      } else if (newHeartCount >= 20) {
+                        setLambMood('lamb-angry');
+                      }
+                    }
+
+                    // Always add XP
+                    addXp(xpReward);
+
+                    analytics.logEvent('JournalScreen_SaveReflection', {
+                      reflection_length: reflectionContent.length,
+                      reflection_content: reflectionContent,
+                      prompt: currentPath?.reflection,
+                      devotionalId: currentDevotional?.id || null,
+                      devotionalPrompt: getReflectionPrompt(),
+                      bibleReference: currentDevotional?.bibleReference || null,
+                      heartsAwarded: heartsToAdd,
+                      xpAwarded: xpReward,
+                    });
+                    Keyboard.dismiss();
+                    setPathInProgress(false);
+                    setFinishReading(true)
+                    setReflectionCompleted(true); // Set reflection as completed
+
+                    // Reset tappedReflectAboutVerse flag
+                    useHomeStore.getState().setTappedReflectAboutVerse(false);
+                    console.log('Reset tappedReflectAboutVerse flag to false');
+
+                    // Create current timestamp
+                    const now = firestore.Timestamp.now();
+
+                    // Save reflection to userStore
+                    console.log('Saving reflection data to userStore');
+                    try {
+                      // Save the reflection content
+                      addCompletedReflection({
+                        date: now,
+                        content:
+                          tappedReflectAboutVerse && currentPath && currentPath.bookId
+                            ? `[${getBookNameFromId(currentPath.bookId)} ${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}] ${reflectionContent.trim()}`
+                            : reflectionContent.trim() || 'Reflected on my spiritual journey today.',
+                      });
+
+                      // Update last reflection date
+                      setLastReflectionDate(now);
+
+                      console.log('Reflection saved successfully');
+                    } catch (error) {
+                      console.log('Error saving reflection data:', error);
+                    }
+                    console.log('🔍 JOURNAL SUCCESS - Setting success state to true');
+                    setSuccess(true);
+
+                    // Set Rive to writing state
+                    const homeStore = useHomeStore.getState();
+                    const riveRef = homeStore.riveRef;
+                    if (riveRef?.current?.setInputState) {
+                      try {
+                        riveRef.current.setInputState('State Machine 1', 'Action-Number', 3); // 12 = Writing
+                      } catch (error) {
+                        console.log('Could not set Rive to writing state:', error);
+                      }
+                    }
+                  }
+                }}
+                buttonType="blue"
+                icon={require('../assets/icons/starIcon.png')}
+                reward={"+50"}
+              />
+            </View>
+          </View>
         </View>
-      </View>
       </Animated.View>
     </Reanimated.View>
   );
