@@ -40,6 +40,9 @@ export default function OnboardingLambNameScreen() {
 
   // Track if animations have been initialized
   const animationsInitialized = useRef(false);
+  
+  // Track if Rive has been initialized to prevent repeated Level-Number setting
+  const riveInitialized = useRef(false);
 
   // Create Reanimated shared values for each component
   const screenOpacity = useSharedValue(0);
@@ -218,17 +221,20 @@ export default function OnboardingLambNameScreen() {
                   console.warn('Rive animation error:', error);
                 }}
                 onPlay={() => {
-                  // Set Level-Number to 1 when Rive starts playing
-                  setTimeout(() => {
-                    if (riveRef.current?.setInputState) {
-                      try {
-                        riveRef.current.setInputState('State Machine 1', 'Level-Number', 1);
-                        console.log('Set Rive Level-Number to 1 for onboarding');
-                      } catch (e) {
-                        console.log('Error setting Level-Number:', e);
+                  // Set Level-Number to 1 when Rive starts playing (only once)
+                  if (!riveInitialized.current) {
+                    riveInitialized.current = true;
+                    setTimeout(() => {
+                      if (riveRef.current?.setInputState) {
+                        try {
+                          riveRef.current.setInputState('State Machine 1', 'Level-Number', 1);
+                          console.log('Set Rive Level-Number to 1 for onboarding');
+                        } catch (e) {
+                          console.log('Error setting Level-Number:', e);
+                        }
                       }
-                    }
-                  }, 100);
+                    }, 100);
+                  }
                 }}
               />
             ) : (
@@ -244,17 +250,20 @@ export default function OnboardingLambNameScreen() {
                     console.warn('Rive animation error:', error);
                   }}
                   onPlay={() => {
-                    // Set Level-Number to 1 when Rive starts playing
-                    setTimeout(() => {
-                      if (riveRef.current?.setInputState) {
-                        try {
-                          riveRef.current.setInputState('State Machine 1', 'Level-Number', 1);
-                          console.log('Set Rive Level-Number to 1 for onboarding');
-                        } catch (e) {
-                          console.log('Error setting Level-Number:', e);
+                    // Set Level-Number to 1 when Rive starts playing (only once)
+                    if (!riveInitialized.current) {
+                      riveInitialized.current = true;
+                      setTimeout(() => {
+                        if (riveRef.current?.setInputState) {
+                          try {
+                            riveRef.current.setInputState('State Machine 1', 'Level-Number', 1);
+                            console.log('Set Rive Level-Number to 1 for onboarding');
+                          } catch (e) {
+                            console.log('Error setting Level-Number:', e);
+                          }
                         }
-                      }
-                    }, 100);
+                      }, 100);
+                    }
                   }}
                 />
               )

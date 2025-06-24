@@ -124,7 +124,7 @@ export default function OnboardingAgeRangeScreen() {
       });
 
       // Navigate to next screen
-      router.push('/onboarding/explainerHearts' as any);
+      router.push('/onboarding/8' as any);
     } catch (error) {
       console.error('Error processing selection:', error);
     } finally {

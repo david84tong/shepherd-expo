@@ -64,7 +64,7 @@ export default function TabsLayout() {
   const { savedScreenToNavigateTo, isInitialized: isOnboardingStoreInitialized } = useOnboardingStore();
 
   // Get subscription status
-  const { isProMember, getCustomerInfo } = useSubscriptionStore();
+  const { isProMember, getCustomerInfo, presentFreeTrialPaywall } = useSubscriptionStore();
 
   // Check onboarding status from AsyncStorage
   useEffect(() => {
@@ -130,6 +130,15 @@ export default function TabsLayout() {
     }
   }, [signedIn, getCustomerInfo]);
 
+  // Handle free trial paywall presentation
+  useEffect(() => {
+    if (signedIn && onboardingCompleted && !isProMember && (isFirstAppLaunch || isDailyFirstLoad)) {
+      const reason = isFirstAppLaunch ? "First app launch" : "Daily first load";
+      console.log(`[TabsLayout] ${reason}, user is signed in but not pro. Showing free trial paywall.`);
+      presentFreeTrialPaywall();
+    }
+  }, [signedIn, onboardingCompleted, isProMember, isFirstAppLaunch, isDailyFirstLoad, presentFreeTrialPaywall]);
+
   // Zustand selectors – always call, even if the user ends up being redirected.}
   const mode = useHomeStore((state) => state.mode);
   const devotionalReaderVisible = useHomeStore((state) => state.devotionalReaderVisible);
@@ -174,12 +183,7 @@ export default function TabsLayout() {
   }
 
   // CASE 2: User IS signed in
-  // Check if this is their first app launch OR daily first load and they're not pro - redirect to pricing
-  if ((isFirstAppLaunch || isDailyFirstLoad) && !isProMember && onboardingCompleted) {
-    const reason = isFirstAppLaunch ? "First app launch" : "Daily first load";
-    console.log(`[TabsLayout] Case 2A: ${reason}, user is signed in but not pro. Redirecting to PricingScreen.`);
-    return <Redirect href="/PricingScreen?fromLoading=true&animateFromBottom=true" />;
-  }
+  // Free trial paywall is now handled in useEffect above
 
   // If user is signed in, they should always go to the main app regardless of onboarding completion status
   // Being signed in means they've completed the necessary authentication/setup process

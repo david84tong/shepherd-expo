@@ -211,13 +211,35 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           setCurrentStep(prev => prev + 1);
         }, STEP_DURATION);
       } else {
-        timer = setTimeout(() => {
-          // Track onboarding loading completion
+        timer = setTimeout(async () => {
+          // Get A/B test value to determine which pricing screen to show
+          let abTestValue = 0; // Default value
+          try {
+            const storedAbTest = await AsyncStorage.getItem('abTest');
+            if (storedAbTest !== null) {
+              abTestValue = parseInt(storedAbTest, 10);
+              console.log('[LoadingScreen] Retrieved A/B test value:', abTestValue);
+            } else {
+              console.log('[LoadingScreen] No A/B test value found, using default:', abTestValue);
+            }
+          } catch (abTestError) {
+            console.error('[LoadingScreen] Error retrieving A/B test value:', abTestError);
+          }
+
+          // Track onboarding loading completion with A/B test info
           analytics.logEvent('LoadingScreen_Onboarding_Completed', {
             totalSteps: loadingPoints.length,
             timeSpent: currentStep * STEP_DURATION + FINAL_DELAY,
+            abTestGroup: abTestValue,
+            redirectTo: abTestValue === 0 ? 'PricingScreen' : 'OldPricingScreen',
           });
-          router.push('/onboarding/pricing/selfFundedMission');
+
+          // Navigate based on A/B test value
+          if (abTestValue === 0) {
+            router.push('/PricingScreen');
+          } else {
+            router.push('/onboarding/pricing/OldPricingScreen');
+          }
         }, FINAL_DELAY);
       }
     } else {

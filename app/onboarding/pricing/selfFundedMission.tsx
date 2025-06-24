@@ -38,6 +38,7 @@ export default function SelfFundedMissionScreen() {
   const charactersScale = useSharedValue(0.8);
 
   useEffect(() => {
+    console.log('SelfFundedMissionScreen');
     // Analytics for screen view
     analytics.logEvent('SelfFundedMission_ScreenLoad', {
       timestamp: new Date().toISOString(),

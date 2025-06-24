@@ -874,6 +874,18 @@ export function DebugButton() {
                     }}>
                     <Text className="font-din text-sm text-textPrimary">Shepherd Community</Text>
                   </TouchableOpacity>
+
+                  {/* Old Pricing Screen Button */}
+                  <TouchableOpacity
+                    className="bg-gradient-to-r from-orange-100 to-orange-200 px-3 py-2 rounded-lg border border-orange-300 mb-1"
+                    onPress={() => {
+                      setModalVisible(false);
+                      setTimeout(() => {
+                        router.push('/onboarding/pricing/OldPricingScreen' as any);
+                      }, 300);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">Old Pricing Screen</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
 

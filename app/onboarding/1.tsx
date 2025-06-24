@@ -14,6 +14,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useAnalytics } from '../hooks/useAnalytics';
 import PrimaryButton from '../../components/PrimaryButton';
@@ -29,6 +30,9 @@ const SECOND_STAGE_PROMPT = 'Tap to wake it up';
 const TYPING_SPEED = 75; // Speed for all typing effects
 const ZOOM_DURATION = 3000; // Slow zoom effect (3 seconds)
 const TRANSITION_DURATION = 350; // Faster transition animation duration
+
+// A/B Test key for AsyncStorage
+const AB_TEST_KEY = 'abTest';
 
 // Function to trigger a light haptic feedback
 const triggerTypeHaptic = () => {
@@ -51,8 +55,39 @@ export default function OnboardingWelcomeScreen() {
   // Initialize analytics
   const { logScreenView, logButtonPress, logEvent, AnalyticsEvent, EventCategory } = useAnalytics();
 
+  // A/B Test assignment function
+  const assignABTest = async () => {
+    try {
+      // Check if abTest already exists
+      const existingAbTest = await AsyncStorage.getItem(AB_TEST_KEY);
+      
+      if (existingAbTest === null) {
+        // Generate random integer 0, 1, or 2 (33% chance each)
+        const abTestValue = Math.floor(Math.random() * 3);
+        
+        // Save to AsyncStorage
+        await AsyncStorage.setItem(AB_TEST_KEY, abTestValue.toString());
+        
+        console.log('[OnboardingScreen1] Assigned new A/B test value:', abTestValue);
+        
+        // Log analytics event for A/B test assignment
+        analytics.logEvent('ABTest_Assigned', {
+          abTestGroup: abTestValue,
+          screenName: 'OnboardingWelcomeScreen',
+        });
+      } else {
+        console.log('[OnboardingScreen1] Existing A/B test value found:', existingAbTest);
+      }
+    } catch (error) {
+      console.error('[OnboardingScreen1] Error handling A/B test assignment:', error);
+    }
+  };
+
   // Log screen view when component mounts
   useEffect(() => {
+    // Assign A/B test first
+    assignABTest();
+    
     analytics.logEvent('LambLostScreenViewed', {
       screenName: 'OnboardingWelcomeScreen',
       step: 1,

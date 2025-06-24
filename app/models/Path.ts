@@ -58,6 +58,7 @@ export const BIBLE_BOOK_IDS: { [key: string]: number } = {
   Esther: 17,
   Job: 18,
   Psalms: 19,
+  Psalm: 19,
   Proverbs: 20,
   Ecclesiastes: 21,
   'Song of Songs': 22,

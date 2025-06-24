@@ -42,7 +42,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
   const insets = useSafeAreaInsets();
 
   // Calculate image height dynamically based on insets
-  const imageHeight = insets.top > 20 ? 160 : 112; // Use numeric values instead of tailwind classes
+  const imageHeight = insets.top > 20 ? 140 : 112; // Use numeric values instead of tailwind classes
 
   useEffect(() => {
     // Log screen view when component mounts
@@ -135,7 +135,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
   return (
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      <View className="flex-1 bg-surfaceCream px-6 pt-12">
+      <View className="flex-1 bg-surfaceCream px-6 pt-24">
         {/* Title Section */}
         <Animated.View style={titleStyle}>
           <Text className="font-feather text-h1 text-center text-textPrimary mb-2">

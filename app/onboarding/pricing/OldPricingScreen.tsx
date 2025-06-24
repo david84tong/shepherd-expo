@@ -2,8 +2,12 @@ import React, { useState, useEffect, ReactNode } from 'react';
 import {
   View,
   Text,
+  TouchableOpacity,
   ScrollView,
+  ImageBackground,
   ActivityIndicator,
+  Switch,
+  Image,
   StatusBar,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -11,6 +15,7 @@ import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
+import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import Animated, {
   FadeIn,
   useSharedValue,
@@ -20,15 +25,13 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useAssets } from 'expo-asset';
 import Rive from 'rive-react-native';
-import PrimaryButton from '../components/PrimaryButton';
-import analytics from '../utils/analytics';
-import { isSignedIn } from './hooks/authHook';
+import PrimaryButton from '~/components/PrimaryButton';
+import analytics from '../../../utils/analytics';
+import { isSignedIn } from '../../hooks/authHook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { IS_ANDROID } from './utils/utils';
+import { IS_ANDROID } from '../../utils/utils';
 import i18n from '~/app/utils/i18n';
-import useSubscriptionStore from '~/app/stores/subscriptionStore';
-import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
-
+import { ONBOARDING_COMPLETED_KEY } from '../../models/Onboarding';
 // Key for tracking daily first load
 const DAILY_FIRST_LOAD_KEY = 'daily_first_load_';
 
@@ -65,7 +68,7 @@ const AnimatedItem = ({
   return <Animated.View style={animatedStyle}>{children}</Animated.View>;
 };
 
-const PricingScreen = () => {
+const OldPricingScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const insets = useSafeAreaInsets();
@@ -88,14 +91,14 @@ const PricingScreen = () => {
       try {
         const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
         const fromScreenValue = onboardingCompleted === 'true' 
-          ? 'pricingscreen_onboardingdone' 
-          : 'pricingscreen';
+          ? 'oldpricingscreen_onboardingdone' 
+          : 'oldpricingscreen';
         
         useSubscriptionStore.getState().setFromScreen(fromScreenValue);
       } catch (error) {
         console.error('Error checking onboarding status:', error);
         // Fallback to default value
-        useSubscriptionStore.getState().setFromScreen('pricingscreen');
+        useSubscriptionStore.getState().setFromScreen('oldpricingscreen');
       }
     };
     
@@ -135,46 +138,30 @@ const PricingScreen = () => {
     };
   });
 
+  const { presentFreeTrialPaywall } = useSubscriptionStore();
+
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../assets/riveAnimations/goldLamb.riv')]);
+  const [riveAssets] = useAssets([require('../../../assets/riveAnimations/goldLamb.riv')]);
+
+  const toggleSwitch = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newValue = !trialEnabled;
+    setTrialEnabled(newValue);
+    analytics.logEvent('PricingScreen_TrialToggled', {
+      enabled: newValue,
+    });
+  };
 
   const handleSubscribe = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
-    // Get A/B test value to determine action
-    let abTestValue = 0; // Default value
     try {
-      const storedAbTest = await AsyncStorage.getItem('abTest');
-      if (storedAbTest !== null) {
-        abTestValue = parseInt(storedAbTest, 10);
-        console.log('[PricingScreen] Retrieved A/B test value:', abTestValue);
-      } else {
-        console.log('[PricingScreen] No A/B test value found, using default:', abTestValue);
-      }
-    } catch (abTestError) {
-      console.error('[PricingScreen] Error retrieving A/B test value:', abTestError);
-    }
-
-    analytics.logEvent('PricingScreen_SubscribeButton_Tapped', {
-      trialEnabled: trialEnabled,
-      abTestGroup: abTestValue,
-      action: abTestValue === 1 ? 'presentFreeTrialPaywall' : 'navigateToFreeOffer',
-    });
-
-    if (abTestValue === 1) {
-      // Present free trial paywall for A/B test group 1
-      try {
-        setIsLoading(true);
-        const { presentFreeTrialPaywall } = useSubscriptionStore.getState();
-        await presentFreeTrialPaywall();
-      } catch (error) {
-        console.error('[PricingScreen] Error presenting free trial paywall:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      // Navigate to FreeOffer screen for other groups (0, 2)
-      router.push('/onboarding/pricing/FreeOffer');
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      analytics.logEvent('PricingScreen_SubscribeButton_Tapped', {
+        trialEnabled: trialEnabled,
+      });
+      await showPaywall();
+    } catch (error) {
+      console.log('Error during subscription process:', error);
+      setIsLoading(false);
     }
   };
 
@@ -198,6 +185,39 @@ const PricingScreen = () => {
     }
   };
 
+  const showPaywall = async () => {
+    try {
+      setIsLoading(true);
+      analytics.logEvent('PricingScreen_ShowPaywall_Started', {
+        trialEnabled: trialEnabled,
+      });
+
+      // Commented RevenueCat implementation
+
+      const result = await presentFreeTrialPaywall();
+
+      // if (result === PAYWALL_RESULT.PURCHASED) {
+      //   analytics.logEvent("PricingScreen_Subscription_Purchased");
+      //   router.replace('/(tabs)');
+      // } else if (result === PAYWALL_RESULT.RESTORED) {
+      //   analytics.logEvent("PricingScreen_Subscription_Restored");
+      //   router.replace('/(tabs)');
+      // } else {
+      //   analytics.logEvent("PricingScreen_Paywall_Dismissed", {
+      //     result: result
+      //   });
+      // }
+
+      // Adapty implementation
+    } catch (error) {
+      console.log('Error presenting paywall:', error);
+      analytics.logEvent('PricingScreen_Paywall_Error', {
+        errorMessage: (error as Error)?.message || 'Unknown error',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
   // Conditional rendering of animated items to ensure animations trigger correctly
   const renderAnimatedContent = () => {
     if (!animationReady) return null;
@@ -223,8 +243,7 @@ const PricingScreen = () => {
             paddingBottom: 120,
             paddingHorizontal: 20,
           }}>
-
-          {/* <AnimatedItem index={1} animateItemFromBottom={animateScreenFromBottom}>
+          <AnimatedItem index={1} animateItemFromBottom={animateScreenFromBottom}>
             <View className="items-center mb-4 flex justify-center mt-16">
               <LinearGradient
                 colors={['#F7B500', '#FFF45B']}
@@ -256,15 +275,15 @@ const PricingScreen = () => {
                 {i18n.t('pricing_shepherd')}
               </Text>
             </View>
-          </AnimatedItem> */}
+          </AnimatedItem>
 
-          {/* <AnimatedItem index={2} animateItemFromBottom={animateScreenFromBottom}>
+          <AnimatedItem index={2} animateItemFromBottom={animateScreenFromBottom}>
             <View className="bg-white rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
               <Text className="font-feather text-h2 text-textPrimary mb-2 text-center">
                 {i18n.t('pricing_draw_closer_to_god')}
               </Text>
               <Image
-                source={require('../assets/onboarding/reviews.png')}
+                source={require('../../../assets/onboarding/reviews.png')}
                 className="w-96 h-20"
                 resizeMode="contain"
               />
@@ -272,14 +291,149 @@ const PricingScreen = () => {
                 {i18n.t('pricing_join_10000_super_users')}
               </Text>
             </View>
-          </AnimatedItem> */}
+          </AnimatedItem>
 
           {/* How Trial Works Section */}
           <AnimatedItem index={2.5} animateItemFromBottom={animateScreenFromBottom}>
-            <View className="mb-10 mt-12">
-              <Text className="font-feather text-h2 text-textPrimary mb-6 text-center">
-                {i18n.t('pricing_giving_super_shepherd_free')}
+            <View className="mb-10">
+              <Text className="font-feather text-h2 text-textPrimary mb-6">
+                {i18n.t('pricing_how_trial_works')}
               </Text>
+
+              <View className="bg-white rounded-2xl shadow-card p-5">
+                {/* Today */}
+                <View className="flex-row items-start mb-6">
+                  <View className="w-10 h-10 bg-lightGreen rounded-full items-center justify-center mr-4 shadow-sm">
+                    <Feather name="unlock" size={20} color="#24CA17" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-feather text-lg text-textPrimary mb-0.5">Today</Text>
+                    <Text className="font-din text-body text-description leading-snug">
+                      {i18n.t('pricing_unlock_premium_access')}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Day 5 */}
+                <View className="flex-row items-start mb-6">
+                  <View className="w-10 h-10 bg-lightGreen rounded-full items-center justify-center mr-4 shadow-sm">
+                    <Feather name="bell" size={20} color="#24CA17" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-feather text-lg text-textPrimary mb-0.5">Day 5</Text>
+                    <Text className="font-din text-body text-description leading-snug">
+                      {i18n.t('pricing_reminder')}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Day 7 */}
+                <View className="flex-row items-start">
+                  <View className="w-10 h-10 bg-lightGreen rounded-full items-center justify-center mr-4 shadow-sm">
+                    <Feather name="calendar" size={20} color="#24CA17" />
+                  </View>
+                  <View className="flex-1">
+                    <Text className="font-feather text-lg text-textPrimary mb-0.5">Day 7</Text>
+                    <Text className="font-din text-body text-description leading-snug">
+                      {i18n.t('pricing_subscription_begins')}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+          </AnimatedItem>
+
+          {/* Unlock Trial Toggle */}
+          <AnimatedItem index={2.8} animateItemFromBottom={animateScreenFromBottom}>
+            <View className="bg-white rounded-2xl shadow-card p-5 mb-8 flex-row justify-between items-center">
+              <Text className="font-feather text-lg text-textPrimary">
+                {i18n.t('pricing_unlock_7_day_trial_reminder')}
+              </Text>
+              <Switch
+                trackColor={{ false: '#E9E2C7', true: '#A8F093' }}
+                thumbColor={trialEnabled ? '#24CA17' : '#FFF4D9'}
+                ios_backgroundColor="#E9E2C7"
+                onValueChange={toggleSwitch}
+                value={trialEnabled}
+                style={{ transform: [{ scaleX: 1.1 }, { scaleY: 1.1 }] }}
+              />
+            </View>
+          </AnimatedItem>
+          <AnimatedItem index={3} animateItemFromBottom={animateScreenFromBottom}>
+            <View className="bg-white rounded-2xl shadow-card mb-8 overflow-hidden">
+              <View className="flex-row">
+                <View className="flex-1" />
+                <View className="items-center justify-center py-4" style={{ width: '25%' }}>
+                  <Text className="font-din text-md text-textPrimary">FREE</Text>
+                </View>
+                <View
+                  className="items-center justify-center py-4 bg-accentGold/10"
+                  style={{ width: '25%' }}>
+                  <LinearGradient
+                    colors={['#F7B500', '#FFF45B']}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 0, y: 1 }}
+                    style={{
+                      paddingHorizontal: 4,
+                      paddingVertical: 6,
+                      borderRadius: 32,
+                      width: '80%',
+                      shadowColor: '#000',
+                      shadowOffset: { width: 0, height: 2 },
+                      shadowOpacity: 0.25,
+                      shadowRadius: 3.84,
+                      elevation: 5,
+                    }}>
+                    <Text
+                      className="font-nunito-italic text-md text-white text-center"
+                      style={{
+                        textShadowColor: 'rgba(0,0,0,0.15)',
+                        textShadowOffset: { width: 1, height: 1 },
+                        textShadowRadius: 3,
+                      }}>
+                      {i18n.t('pricing_super')}
+                    </Text>
+                  </LinearGradient>
+                </View>
+              </View>
+              <View>
+                {[
+                  { name: i18n.t('feature_access_bible'), free: true, pro: true },
+                  { name: i18n.t('feature_unlimited_daily_bread'), free: false, pro: true },
+                  { name: i18n.t('feature_unlimited_daily_prayers'), free: false, pro: true },
+                  { name: i18n.t('feature_unlimited_daily_reflections'), free: false, pro: true },
+                  { name: i18n.t('feature_no_ads'), free: false, pro: true },
+                  { name: i18n.t('feature_equip_skins'), free: false, pro: true },
+                  { name: i18n.t('feature_super_lamb_skin'), free: false, pro: true },
+                ].map((feature, idx) => (
+                  <AnimatedItem
+                    key={feature.name}
+                    index={4 + idx * 0.5}
+                    animateItemFromBottom={animateScreenFromBottom}>
+                    <View className="flex-row border-t border-surfaceCream">
+                      <View className="flex-1 py-4 pl-6 pr-2">
+                        <Text className="font-din text-body text-textPrimary">{feature.name}</Text>
+                      </View>
+                      <View className="items-center justify-center" style={{ width: '25%' }}>
+                        {feature.free ? (
+                          <Feather name="check-circle" size={22} color="#24CA17" />
+                        ) : (
+                          <Feather name="circle" size={22} color="#E9E2C7" />
+                        )}
+                      </View>
+                      <View
+                        className="items-center justify-center bg-accentGold/10"
+                        style={{ width: '25%' }}>
+                        <Feather name="check-circle" size={22} color="#24CA17" />
+                      </View>
+                    </View>
+                  </AnimatedItem>
+                ))}
+              </View>
+            </View>
+
+            <View className="mb-10">
+             
               <View
                 className="bg-lightYellow border-2 border-accentGold shadow-lg rounded-[24px] mb-0 overflow-hidden h-48 mt-4"
                 style={{
@@ -349,90 +503,48 @@ const PricingScreen = () => {
                   </View>
                 </View>
               </View>
-
             </View>
           </AnimatedItem>
 
-
-          <AnimatedItem index={3} animateItemFromBottom={animateScreenFromBottom}>
-            <View className="bg-white rounded-2xl shadow-card mb-8 overflow-hidden">
-              <View className="flex-row">
-                <View className="flex-1" />
-                <View className="items-center justify-center py-4" style={{ width: '25%' }}>
-                  <Text className="font-din text-md text-textPrimary">{i18n.t('pricing_free')}</Text>
-                </View>
-                <View
-                  className="items-center justify-center py-4 bg-accentGold/10"
-                  style={{ width: '25%' }}>
-                  <LinearGradient
-                    colors={['#F7B500', '#FFF45B']}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 0, y: 1 }}
-                    style={{
-                      paddingHorizontal: 4,
-                      paddingVertical: 6,
-                      borderRadius: 32,
-                      width: '80%',
-                      shadowColor: '#000',
-                      shadowOffset: { width: 0, height: 2 },
-                      shadowOpacity: 0.25,
-                      shadowRadius: 3.84,
-                      elevation: 5,
-                    }}>
-                    <Text
-                      className="font-nunito-italic text-md text-white text-center"
-                      style={{
-                        textShadowColor: 'rgba(0,0,0,0.15)',
-                        textShadowOffset: { width: 1, height: 1 },
-                        textShadowRadius: 3,
-                      }}>
-                      {i18n.t('pricing_super')}
-                    </Text>
-                  </LinearGradient>
-                </View>
-              </View>
-              <View>
-                {[
-                  { name: i18n.t('feature_access_bible'), free: true, pro: true },
-                  { name: i18n.t('pricing_custom_devotionals'), free: false, pro: true },
-                  { name: i18n.t('pricing_chat_with_bible_verse'), free: false, pro: true },
-                  { name: i18n.t('feature_unlimited_daily_reflections'), free: false, pro: true },
-                  { name: i18n.t('feature_equip_skins'), free: false, pro: true },
-                  { name: i18n.t('pricing_beta_access_social'), free: false, pro: true },
-                  { name: i18n.t('feature_super_lamb_skin'), free: false, pro: true },
-                ].map((feature, idx) => (
-                  <AnimatedItem
-                    key={feature.name}
-                    index={4 + idx * 0.5}
-                    animateItemFromBottom={animateScreenFromBottom}>
-                    <View className="flex-row border-t border-surfaceCream">
-                      <View className="flex-1 py-4 pl-6 pr-2">
-                        <Text className="font-din text-body text-textPrimary">{feature.name}</Text>
-                      </View>
-                      <View className="items-center justify-center" style={{ width: '25%' }}>
-                        {feature.free ? (
-                          <Feather name="check-circle" size={22} color="#24CA17" />
-                        ) : (
-                          <Feather name="circle" size={22} color="#E9E2C7" />
-                        )}
-                      </View>
-                      <View
-                        className="items-center justify-center bg-accentGold/10"
-                        style={{ width: '25%' }}>
-                        <Feather name="check-circle" size={22} color="#24CA17" />
-                      </View>
-                    </View>
-                  </AnimatedItem>
-                ))}
-              </View>
+          <AnimatedItem index={12} animateItemFromBottom={animateScreenFromBottom}>
+            <View className="bg-white rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
+              <Text className="font-feather text-h2 text-textPrimary mt-2 mb-2 text-center">
+                {i18n.t('pricing_support_mission')}
+              </Text>
+              <Text className="font-din text-heading text-description text-center">{i18n.t('pricing_small_team_funded')}</Text>
+              <Text className="font-feather text-heading text-textPrimary text-center mt-8">
+                {i18n.t('pricing_help_fund_future_features')}
+              </Text>
+              <Text className="font-din text-body text-description text-start mt-2">
+                - {i18n.t('pricing_social_bible_study')}
+              </Text>
+              <Text className="font-din text-body text-description text-center mt-2">
+                - {i18n.t('pricing_translating_languages')}
+              </Text>
+           
+              <Text className="font-din text-body text-description text-center mt-2">
+                - {i18n.t('pricing_prayer_requests')}
+              </Text>
+              <Text className="font-din text-body text-description text-center mt-2">
+                - {i18n.t('pricing_family_kid_study_plans')}
+              </Text>
+              <Text className="font-din text-body text-description text-center mt-2">
+                - {i18n.t('pricing_more_skins_backgrounds')}
+              </Text>
             </View>
-
-
           </AnimatedItem>
 
-
-
-
+          <AnimatedItem index={13} animateItemFromBottom={animateScreenFromBottom}>
+            <View className="bg-white rounded-2xl shadow-card p-6 mb-8 items-center mt-4">
+              <Feather name="star" size={48} color="#F7B500" />
+              <Text className="font-feather text-heading text-textPrimary mt-4 mb-2 text-center">
+                {i18n.t('pricing_10_percent_donated')}
+              </Text>
+              <Text className="font-din text-heading text-description text-center">
+                {i18n.t('pricing_tithe_mission')}
+              </Text>
+            </View>
+          </AnimatedItem>
         </ScrollView>
         <AnimatedItem index={14} animateItemFromBottom={animateScreenFromBottom}>
           <View
@@ -449,16 +561,18 @@ const PricingScreen = () => {
               borderRadius: 20,
             }}>
             {isLoading ? (
-              <View className="py-3 flex-row justify-center items-center">
+              <View className="py-2 flex-row justify-center items-center">
                 <ActivityIndicator size="small" color="#F7B500" />
                 <Text className="font-din text-lg text-textPrimary ml-3">
                   {i18n.t('loading_subscription_options')}
                 </Text>
               </View>
             ) : (
-              <PrimaryButton title={i18n.t('pricing_see_free_offer')} onPress={handleSubscribe} />
+              <PrimaryButton title={i18n.t('claim_free_week')} onPress={handleSubscribe} />
             )}
-
+            {/* <Text className="font-din text-caption text-description/70 text-center mt-2 px-4 text-xs">
+              {i18n.t('agree_terms')}
+            </Text> */}
           </View>
         </AnimatedItem>
       </>
@@ -468,9 +582,20 @@ const PricingScreen = () => {
   return (
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      <View className="flex-1 bg-surfaceCream">
+      <ImageBackground
+        source={require('../../../assets/backgrounds/godBackground.png')}
+        className="flex-1"
+        resizeMode="cover">
+        <LinearGradient
+          colors={['rgba(255, 255, 255, 0.15)', 'rgba(255, 255, 255, 0.35)', 'rgba(0,0,0,0)']}
+          locations={[0, 0.5, 1]}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
+          style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0, zIndex: 5 }}
+        />
+
         <Animated.View
-          className="flex-1"
+          className="flex-1 relative z-10"
           style={[screenContainerStyle, { paddingTop: insets.top }]}>
           {renderAnimatedContent()}
 
@@ -489,9 +614,9 @@ const PricingScreen = () => {
             </Animated.View>
           )}
         </Animated.View>
-      </View>
+      </ImageBackground>
     </>
   );
 };
 
-export default PricingScreen;
+export default OldPricingScreen;
