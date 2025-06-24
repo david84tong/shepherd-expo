@@ -1,6 +1,7 @@
 import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
+  BottomSheetScrollView,
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import * as Haptics from 'expo-haptics';
@@ -65,7 +66,7 @@ const StoreSheet: React.FC<StoreSheetProps> = ({ storeSheetRef }) => {
   const showSheet = useCallback(() => {
     showStoreSheet(); // Set visibility state first
     bottomSheetRef.current?.expand();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
   }, [showStoreSheet]);
 
   // Expose methods via ref
@@ -102,9 +103,9 @@ const StoreSheet: React.FC<StoreSheetProps> = ({ storeSheetRef }) => {
             opacity: 0.3,
           }}
           backdropComponent={renderBackdrop}>
-          <BottomSheetView style={{ flex: 1 }}>
+          <BottomSheetScrollView style={{ flex: 1 }}>
             <StoreScreen onClose={handleClose} />
-          </BottomSheetView>
+          </BottomSheetScrollView>
         </BottomSheet>
       ) : null}
     </>

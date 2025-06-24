@@ -10,6 +10,7 @@ import {
     StatusBar,
     Share,
     Image,
+    Platform,
 } from 'react-native';
 import { FontAwesome, FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -299,25 +300,47 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                 translucent
                 backgroundColor="transparent"
                 barStyle={'light-content'}
+                hidden={visible}
             />
 
             <Modal
                 visible={visible}
-                transparent
+                transparent={false}
                 animationType="fade"
                 onRequestClose={onClose}
+                statusBarTranslucent={true}
             >
                 <Animated.View
                     className="flex-1 bg-black/50"
-                    style={{ transform: [{ translateY: pan.y }] }}
+                    style={{
+                        transform: [{ translateY: pan.y }],
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        width: Dimensions.get('window').width,
+                        height: Dimensions.get('window').height,
+                    }}
                     {...panResponder.panHandlers}
                 >
-                    <ViewShot ref={viewShotRef} options={{ format: 'jpg', quality: 0.9 }} style={{ flex: 1 }}>
-                        <View className="flex-1 bg-[#AAB33D]" style={{ overflow: 'hidden' }}>
+                    <ViewShot ref={viewShotRef} options={{ format: 'jpg', quality: 0.9 }} style={{
+                        flex: 1,
+                        width: '100%',
+                        height: '100%',
+                    }}>
+                        <View className="flex-1 bg-[#AAB33D]" style={{
+                            overflow: 'hidden',
+                            width: '100%',
+                            height: '100%',
+                        }}>
                             <ImageBackground
                                 source={{ uri: devotionalData?.imageURL }}
                                 className="h-full w-full"
-                                style={{ height: '100%' }}
+                                style={{
+                                    height: '100%',
+                                    width: '100%',
+                                }}
                                 contentFit="cover"
                             >
                                 {/* Linear gradient overlay for readability - darker at top, lighter at bottom */}
