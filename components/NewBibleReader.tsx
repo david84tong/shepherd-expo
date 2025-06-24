@@ -11,6 +11,7 @@ import {
   Dimensions,
   Image,
   ActivityIndicator,
+  FlatList,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchChapter, Verse, ChapterResponse } from '~/app/api/bible';
@@ -270,10 +271,10 @@ const TypingText: React.FC<TypingTextProps> = ({
       onComplete && onComplete();
       return;
     }
-    
+
     setDisplayedText('');
     indexRef.current = 0;
-    
+
     const typeNextChar = () => {
       if (indexRef.current < text.length) {
         indexRef.current++;
@@ -414,10 +415,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const pathInProgress = usePathStore((s) => s.pathInProgress);
   const currentPath = usePathStore((s) => s.currentPath);
   const setSavedReading = usePathStore((s) => s.setSavedReading);
-  
+
   // Use savedTranslation from pathStore instead of translation prop
   const savedTranslation = usePathStore((s) => s.savedTranslation);
-  
+
   // Use savedTranslation instead of the translation prop
   const activeTranslation = savedTranslation || translation;
 
@@ -431,10 +432,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Add state to track scrolling
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
-  
+
   // Add state to track scroll progress when tap-to-show is disabled
   const [scrollProgress, setScrollProgress] = useState(0);
-  
+
   // Add ref to throttle scroll progress updates
   const lastScrollUpdate = useRef(0);
   const SCROLL_THROTTLE_MS = 16; // ~60fps
@@ -513,15 +514,15 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       } catch (e) {
         console.error('Failed to load settings from AsyncStorage', e);
       }
-          };
-      loadSettings();
-    }, []);
+    };
+    loadSettings();
+  }, []);
 
   // Helper function to load a chapter - OPTIMIZED to match BibleReader
   const loadChapter = useCallback(
     async (bookId: number, chapter: number, isNavigation = false) => {
       console.log(`📖 [NewBibleReader] loadChapter called with bookId: ${bookId}, chapter: ${chapter}, isNavigation: ${isNavigation}`);
-      
+
       // Prevent multiple simultaneous loads (same as BibleReader)
       if (loading) {
         console.log('📖 [NewBibleReader] Already loading, skipping');
@@ -531,7 +532,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       // Only show loading state for navigation, not initial load
       if (isNavigation) {
         setLoading(true);
-        
+
         try {
           console.log(
             `📖 [NewBibleReader] Loading chapter - bookId: ${bookId}, chapter: ${chapter}, translation: ${translation}`
@@ -546,15 +547,15 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             return false;
           } else {
             console.log(`✅ Successfully loaded: ${result.book} ${result.chapter}`);
-            
+
             // Update all state at once (same as BibleReader)
             setChapterData(result);
             setCurrentBookId(bookId);
             setCurrentChapter(result.chapter);
-            
+
             // Save to the store for persistence (same as BibleReader)
             setSavedReading(result.book, bookId, result.chapter);
-            
+
             // Handle map mode specific logic
             if (isMapMode) {
               if (readerSettings.tapToShowNextCard) {
@@ -568,7 +569,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             } else {
               setCurrentIndex(result.verses.length - 1);
             }
-            
+
             console.log(`📖 [NewBibleReader] Chapter loaded successfully: ${result.book} ${result.chapter}`);
             return true;
           }
@@ -595,15 +596,15 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             return false;
           } else {
             console.log(`✅ Successfully loaded initial chapter: ${result.book} ${result.chapter}`);
-            
+
             // Update all state at once (same as BibleReader)
             setChapterData(result);
             setCurrentBookId(bookId);
             setCurrentChapter(result.chapter);
-            
+
             // Save to the store for persistence (same as BibleReader)
             setSavedReading(result.book, bookId, result.chapter);
-            
+
             // Handle map mode specific logic
             if (isMapMode) {
               if (readerSettings.tapToShowNextCard) {
@@ -617,7 +618,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             } else {
               setCurrentIndex(result.verses.length - 1);
             }
-            
+
             console.log(`📖 [NewBibleReader] Initial chapter loaded successfully: ${result.book} ${result.chapter}`);
             return true;
           }
@@ -657,7 +658,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   useEffect(() => {
     setHasScrolledToBottom(false);
     setScrollProgress(0); // Reset scroll progress when chapter changes
-  
+
   }, [currentBookId, currentChapter]);
 
   // Reset scroll progress when tap-to-show setting changes
@@ -709,9 +710,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Optimized navigation functions with minimal dependencies
   const navigateToNextChapter = useCallback(() => {
     const { currentBookId, currentChapter, loading, loadChapter } = navigationRef.current;
-    
+
     if (loading) return;
-    
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     const chaptersInCurrentBook = BIBLE_CHAPTER_COUNTS[currentBookId];
 
@@ -730,12 +731,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   const navigateToPreviousChapter = useCallback(() => {
     const { currentBookId, currentChapter, loading, loadChapter } = navigationRef.current;
-    
+
     if (loading) return;
-    
+
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     if (currentBookId === 1 && currentChapter === 1) return;
-    
+
     if (currentChapter > 1) {
       loadChapter(currentBookId, currentChapter - 1, true); // isNavigation = true
     } else if (currentBookId > 1) {
@@ -779,7 +780,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Memoize progress calculation to prevent unnecessary re-renders
   const calculatedProgress = useMemo(() => {
     if (!chapterData?.verses?.length) return 0;
-    
+
     if (isMapMode && !readerSettings.tapToShowNextCard) {
       // Use scroll progress when tap-to-show is disabled
       return scrollProgress;
@@ -800,7 +801,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     setIsScrolling(true);
 
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
-    
+
     // Calculate scroll progress when tap-to-show is disabled in map mode
     // Use throttling to prevent performance issues
     if (isMapMode && !readerSettings.tapToShowNextCard && contentSize.height > layoutMeasurement.height) {
@@ -809,12 +810,12 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         const scrollableHeight = contentSize.height - layoutMeasurement.height;
         const currentScrollPosition = contentOffset.y;
         const newScrollProgress = Math.min(Math.max(currentScrollPosition / scrollableHeight, 0), 1);
-        
+
         // Only update if progress changed significantly (avoid unnecessary re-renders)
         if (Math.abs(newScrollProgress - scrollProgress) > 0.01) {
           setScrollProgress(newScrollProgress);
         }
-        
+
         lastScrollUpdate.current = now;
       }
     }
@@ -1014,15 +1015,15 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const handlePresentSettingsModal = useCallback(() => {
     // If a parent-provided settings handler exists, use it to open the
     // shared sheet so both readers reference one source of truth.
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-      onOpenSettings?.();
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onOpenSettings?.();
 
 
     // If no parent handler is provided, do nothing instead of trying to show a local modal
     console.warn('No settings handler provided to NewBibleReader');
   }, [onOpenSettings]);
 
- 
+
 
 
 
@@ -1031,7 +1032,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const handleOpenSelector = useCallback(() => {
     // Prevent opening selector while loading
     if (loading) return;
-    
+
     console.log(
       `📖 [NewBibleReader] Opening selector with currentBookId: ${currentBookId}, currentChapter: ${currentChapter}`
     );
@@ -1225,10 +1226,10 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
       if (chapterData) {
         const reference = `${chapterData.book} ${chapterData.chapter}:${verse.verse}`;
-        
+
         // Check if user is pro first
         const isProMember = useSubscriptionStore.getState().isProMember;
-        
+
         // Start AI devotional creation BEFORE navigation if user is pro
         if (isProMember) {
           try {
@@ -1245,7 +1246,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             console.error('Failed to start AI devotional creation:', error);
           }
         }
-        
+
         // Small delay to ensure devotional creation has started
         setTimeout(() => {
           // Navigate to LoadingScreen after starting creation
@@ -1366,46 +1367,46 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       handleSwipeStart(verse);
     }
 
-    const translateX = dragX.interpolate({
-      inputRange: [-70, -20, 0],
-      outputRange: [0, 10, 60],
-      extrapolate: 'clamp',
-    });
+    // const translateX = dragX.interpolate({
+    //   inputRange: [-70, -20, 0],
+    //   outputRange: [0, 10, 60],
+    //   extrapolate: 'clamp',
+    // });
 
-    const progressValue = _progress.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 1],
-      extrapolate: 'clamp',
-    });
+    // const progressValue = _progress.interpolate({
+    //   inputRange: [0, 1],
+    //   outputRange: [0, 1],
+    //   extrapolate: 'clamp',
+    // });
 
-    progressValue.__getValue && handleSwipeChange(progressValue.__getValue());
+    // progressValue.__getValue && handleSwipeChange(progressValue.__getValue());
 
     return (
-      <RNAnimated.View style={styles.swipeActionContainer}>
-        <RNAnimated.View
+      <View style={styles.swipeActionContainer}>
+        <View
           style={[
             styles.swipeActionContent,
-            {
-              opacity: _progress.interpolate({
-                inputRange: [0.03, 0.1, 0.3],
-                outputRange: [0, 0.8, 1],
-                extrapolate: 'clamp',
-              }),
-              transform: [
-                {
-                  scale: _progress.interpolate({
-                    inputRange: [0.03, 0.3],
-                    outputRange: [0.8, 1],
-                    extrapolate: 'clamp',
-                  }),
-                },
-                { translateX },
-              ],
-            },
+            // {
+            //   opacity: _progress.interpolate({
+            //     inputRange: [0.03, 0.1, 0.3],
+            //     outputRange: [0, 0.8, 1],
+            //     extrapolate: 'clamp',
+            //   }),
+            //   transform: [
+            //     {
+            //       scale: _progress.interpolate({
+            //         inputRange: [0.03, 0.3],
+            //         outputRange: [0.8, 1],
+            //         extrapolate: 'clamp',
+            //       }),
+            //     },
+            //     { translateX },
+            //   ],
+            // },
           ]}>
           <Ionicons name="chatbubble-ellipses" size={30} color="#634012" style={{ opacity: 0.5 }} />
-        </RNAnimated.View>
-      </RNAnimated.View>
+        </View>
+      </View>
     );
   }, [handleSwipeStart, handleSwipeChange, isFadingToChat]);
 
@@ -1414,53 +1415,61 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       handleSwipeStart(verse);
     }
 
-    const translateX = dragX.interpolate({
-      inputRange: [0, 20, 70],
-      outputRange: [-60, -10, 0],
-      extrapolate: 'clamp',
-    });
+    // const translateX = dragX.interpolate({
+    //   inputRange: [0, 20, 70],
+    //   outputRange: [-60, -10, 0],
+    //   extrapolate: 'clamp',
+    // });
 
-    const progressValue = _progress.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0, 1],
-      extrapolate: 'clamp',
-    });
+    // const progressValue = _progress.interpolate({
+    //   inputRange: [0, 1],
+    //   outputRange: [0, 1],
+    //   extrapolate: 'clamp',
+    // });
 
-    progressValue.__getValue && handleSwipeChange(progressValue.__getValue());
+    // progressValue.__getValue && handleSwipeChange(progressValue.__getValue());
 
     return (
-      <RNAnimated.View style={styles.swipeActionContainer}>
-        <RNAnimated.View
+      <View style={styles.swipeActionContainer}>
+        <View
           style={[
             styles.swipeActionContent,
-            {
-              opacity: _progress.interpolate({
-                inputRange: [0.03, 0.1, 0.3],
-                outputRange: [0, 0.8, 1],
-                extrapolate: 'clamp',
-              }),
-              transform: [
-                {
-                  scale: _progress.interpolate({
-                    inputRange: [0.03, 0.3],
-                    outputRange: [0.8, 1],
-                    extrapolate: 'clamp',
-                  }),
-                },
-                { translateX },
-              ],
-            },
+            // {
+            //   opacity: _progress.interpolate({
+            //     inputRange: [0.03, 0.1, 0.3],
+            //     outputRange: [0, 0.8, 1],
+            //     extrapolate: 'clamp',
+            //   }),
+            //   transform: [
+            //     {
+            //       scale: _progress.interpolate({
+            //         inputRange: [0.03, 0.3],
+            //         outputRange: [0.8, 1],
+            //         extrapolate: 'clamp',
+            //       }),
+            //     },
+            //     { translateX },
+            //   ],
+            // },
           ]}>
           <FontAwesome6 name="book" size={25} color="#634012" style={{ opacity: 0.5 }} />
-        </RNAnimated.View>
-      </RNAnimated.View>
+        </View>
+      </View>
     );
   }, [handleSwipeStart, handleSwipeChange, isFadingToChat]);
 
+  const createRenderRightActions = useCallback((verse: Verse) => {
+    return (progress: any, dragX: any) => renderRightActions(progress, dragX, verse);
+  }, [renderRightActions]);
+
+  const createRenderLeftActions = useCallback((verse: Verse) => {
+    return (progress: any, dragX: any) => renderLeftActions(progress, dragX, verse);
+  }, [renderLeftActions]);
+
   // Optimize the Swipeable component props
   const swipeableProps = useCallback((verse: Verse) => ({
-    renderRightActions: (progress: any, dragX: any) => renderRightActions(progress, dragX, verse),
-    renderLeftActions: (progress: any, dragX: any) => renderLeftActions(progress, dragX, verse),
+    renderRightActions: createRenderRightActions(verse),
+    renderLeftActions: createRenderLeftActions(verse),
     onSwipeableOpen: (direction: string) => {
       if (direction === 'right') {
         handleSwipeVerseToChat(verse);
@@ -1487,7 +1496,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         handleLeftSwipeRelease(1, verse);
       }
     },
-  }), [renderRightActions, renderLeftActions, handleSwipeVerseToChat, handleSwipeVerseToMenu, handleSwipeRelease, handleLeftSwipeRelease, isFadingToChat, floatingMenu.isVisible]);
+  }), [createRenderRightActions, createRenderLeftActions, handleSwipeVerseToChat, handleSwipeVerseToMenu, handleSwipeRelease, handleLeftSwipeRelease, isFadingToChat, floatingMenu.isVisible]);
 
 
   // Define menu actions
@@ -1771,7 +1780,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Add animation values with initial states
   const fadeAnim = useSharedValue(0);
   const translateY = useSharedValue(50);
-  
+
   // Animation for finish reading button
   const buttonOpacity = useSharedValue(0);
   const buttonTranslateY = useSharedValue(100);
@@ -1785,14 +1794,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     // Use a small delay to ensure component is mounted
     const timer = setTimeout(() => {
       // Start animations together
-    fadeAnim.value = withTiming(1, {
-      duration: 2000, // Reduced from 2000ms
-      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-    });
-    translateY.value = withTiming(0, {
-      duration: 2000, // Reduced from 2000ms
-      easing: Easing.bezier(0.25, 0.1, 0.25, 1),
-    });
+      fadeAnim.value = withTiming(1, {
+        duration: 2000, // Reduced from 2000ms
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
+      translateY.value = withTiming(0, {
+        duration: 2000, // Reduced from 2000ms
+        easing: Easing.bezier(0.25, 0.1, 0.25, 1),
+      });
     }, 0);
 
     return () => clearTimeout(timer);
@@ -1830,7 +1839,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Memoize verses to show to prevent recalculation on every render
   const versesToShow: Verse[] = useMemo(() => {
     if (!chapterData?.verses) return [];
-    
+
     if (isMapMode && readerSettings.tapToShowNextCard) {
       // Map mode with tap-to-show enabled: show only up to currentIndex + 1
       return chapterData.verses.slice(0, currentIndex + 1);
@@ -1868,96 +1877,98 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   }));
 
   // --- In the versesToShow.map render ---
-  {versesToShow.map((verse, index) => {
-    const highlightColor = getVerseHighlightColor(verse);
-    const isCurrent = index === currentIndex && isMapMode;
+  {
+    versesToShow.map((verse, index) => {
+      const highlightColor = getVerseHighlightColor(verse);
+      const isCurrent = index === currentIndex && isMapMode;
 
-    return (
-      <LongPressGestureHandler
-        key={verse.verse}
-        minDurationMs={800}
-        onHandlerStateChange={(e) => {
-          if (e.nativeEvent.state === State.ACTIVE) {
-            handleLongPress(e, verse);
-          }
-        }}>
-        <View style={{ flex: 1 }}>
-          {isCurrent ? (
-            <View>
-              <Swipeable
-                ref={(ref) => {
-                  if (ref) {
-                    swipeableRefs.current.set(verse.verse, ref);
-                  } else {
-                    swipeableRefs.current.delete(verse.verse);
-                  }
-                }}
-                {...swipeableProps(verse)}>
-                <View
-                  className="bg-surfaceCreamLight"
-                  style={[
-                    styles.verseBubble,
-                    {
-                      backgroundColor: highlightColor
-                        ? `${highlightColor}80`
-                        : '#fff1c9',
-                    },
-                  ]}>
-                  <View style={{ marginBottom: 12 }}>
-                    <Text style={verseTextStyle} className="font-nunito-bold">
-                      <Text>{`${verse.verse}. `}</Text>
-                      {index === currentIndex ? (
-                        <Text>
-                          <TypingText
-                            text={verse.text}
-                            baseTextStyle={{}}
-                            speed={20}
-                            skipAnimation={skipTyping || (isMapMode && !readerSettings.tapToShowNextCard)}
-                            onComplete={handleTypingComplete}
-                          />
-                        </Text>
-                      ) : (
-                        <Text className="text-brown/70">{verse.text}</Text>
-                      )}
-                    </Text>
+      return (
+        <LongPressGestureHandler
+          key={verse.verse}
+          minDurationMs={800}
+          onHandlerStateChange={(e) => {
+            if (e.nativeEvent.state === State.ACTIVE) {
+              handleLongPress(e, verse);
+            }
+          }}>
+          <View style={{ flex: 1 }}>
+            {isCurrent ? (
+              <View>
+                <Swipeable
+                  ref={(ref) => {
+                    if (ref) {
+                      swipeableRefs.current.set(verse.verse, ref);
+                    } else {
+                      swipeableRefs.current.delete(verse.verse);
+                    }
+                  }}
+                  {...swipeableProps(verse)}>
+                  <View
+                    className="bg-surfaceCreamLight"
+                    style={[
+                      styles.verseBubble,
+                      {
+                        backgroundColor: highlightColor
+                          ? `${highlightColor}80`
+                          : '#fff1c9',
+                      },
+                    ]}>
+                    <View style={{ marginBottom: 12 }}>
+                      <Text style={verseTextStyle} className="font-nunito-bold">
+                        <Text>{`${verse.verse}. `}</Text>
+                        {index === currentIndex ? (
+                          <Text>
+                            <TypingText
+                              text={verse.text}
+                              baseTextStyle={{}}
+                              speed={20}
+                              skipAnimation={skipTyping || (isMapMode && !readerSettings.tapToShowNextCard)}
+                              onComplete={handleTypingComplete}
+                            />
+                          </Text>
+                        ) : (
+                          <Text className="text-brown/70">{verse.text}</Text>
+                        )}
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              </Swipeable>
-            </View>
-          ) : (
-            <View>
-              <Swipeable
-                ref={(ref) => {
-                  if (ref) {
-                    swipeableRefs.current.set(verse.verse, ref);
-                  } else {
-                    swipeableRefs.current.delete(verse.verse);
-                  }
-                }}
-                {...swipeableProps(verse)}>
-                <View
-                  style={[
-                    styles.verseBubble,
-                    {
-                      backgroundColor: highlightColor
-                        ? `${highlightColor}80`
-                        : theme?.cardColor || '#ffffff'
-                    },
-                  ]}>
-                  <View style={{ marginBottom: 12 }}>
-                    <Text style={verseTextStyle} className="font-nunito-bold">
-                      <Text>{`${verse.verse}. `}</Text>
-                      <Text>{verse.text}</Text>
-                    </Text>
+                </Swipeable>
+              </View>
+            ) : (
+              <View>
+                <Swipeable
+                  ref={(ref) => {
+                    if (ref) {
+                      swipeableRefs.current.set(verse.verse, ref);
+                    } else {
+                      swipeableRefs.current.delete(verse.verse);
+                    }
+                  }}
+                  {...swipeableProps(verse)}>
+                  <View
+                    style={[
+                      styles.verseBubble,
+                      {
+                        backgroundColor: highlightColor
+                          ? `${highlightColor}80`
+                          : theme?.cardColor || '#ffffff'
+                      },
+                    ]}>
+                    <View style={{ marginBottom: 12 }}>
+                      <Text style={verseTextStyle} className="font-nunito-bold">
+                        <Text>{`${verse.verse}. `}</Text>
+                        <Text>{verse.text}</Text>
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              </Swipeable>
-            </View>
-          )}
-        </View>
-      </LongPressGestureHandler>
-    );
-  })}
+                </Swipeable>
+              </View>
+            )}
+          </View>
+        </LongPressGestureHandler>
+      );
+    })
+  }
 
   // Update versesToShow to match old code logic
   // Add loading state handling
@@ -1973,7 +1984,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Render chat view if active
   if (showChatView && selectedVerse && chapterData) {
-    
+
     return (
       <VerseChatView
         verse={selectedVerse}
@@ -1995,255 +2006,255 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // }
 
   return (
- <View className='flex-1'>
-    <Animated.View style={{ position: 'absolute', width: '100%', height: '100%' }}>
-           <ImageBackground
-             source={require('../assets/backgrounds/mainBackground2.png')}
-             style={{ width: '100%', height: '100%' }}>
-             <Image
-               source={require('../assets/backgrounds/mainBackground2.png')}
-               style={{ width: '100%', height: '100%' }}
-             />
-           </ImageBackground>
-         </Animated.View>
+    <View className='flex-1'>
+      <Animated.View style={{ position: 'absolute', width: '100%', height: '100%' }}>
+        <ImageBackground
+          source={require('../assets/backgrounds/mainBackground2.png')}
+          style={{ width: '100%', height: '100%' }}>
+          <Image
+            source={require('../assets/backgrounds/mainBackground2.png')}
+            style={{ width: '100%', height: '100%' }}
+          />
+        </ImageBackground>
+      </Animated.View>
 
-  
-         <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
-           <View
-             className="rounded-t-card "
-             style={{ width: '100%', height: IS_ANDROID ? '85%' : RPH(85) , position: 'absolute', bottom: 0,backgroundColor:theme?.background }}>
-               <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                 {isInPathMode && onNavigateBack ? (
-                   <TouchableOpacity
-                     onPress={onNavigateBack}
-                     className="flex-row items-center"
-                     style={{ flex: 1 }}>
-                     <Feather name="arrow-left" size={24} color="white" />
-                     <Text
-                       className="font-feather text-white ml-2"
-                       style={{
-                         fontSize: responsiveFontSize(3),
-                         fontWeight: '400',
-                       }}>
-                       Map
-                     </Text>
-                   </TouchableOpacity>
-                 ) : (
-                   <Text
-                     className="font-feather text-white"
-                     style={{
-                       fontSize: responsiveFontSize(3),
-                       fontWeight: '400',
-                     }}>
-                     {i18n.t('bible_title')}
-                   </Text>
-                 )}
-                 
-          
-                  <TouchableOpacity
-         onPress={handlePresentSettingsModal}
-         className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
-         <MaterialIcons name="settings" size={22} color="#795323" style={{ opacity: 0.4 }} />
-       </TouchableOpacity>
-               </View>
-              {
-                loading ? <View className='items-center justify-center flex-1'>
-                <ActivityIndicator size="large" color={theme.text} />
-                <Text style={{ color: theme.text, marginTop: 16, fontSize: 16, fontFamily: 'DIN Next Rounded LT W01 Regular' }}>
-                  Loading chapter...
+
+      <SafeAreaView style={{ flex: 1, backgroundColor: 'transparent' }}>
+        <View
+          className="rounded-t-card "
+          style={{ width: '100%', height: IS_ANDROID ? '85%' : RPH(85), position: 'absolute', bottom: 0, backgroundColor: theme?.background }}>
+          <View style={{ position: 'absolute', left: 20, right: 20, top: -50, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            {isInPathMode && onNavigateBack ? (
+              <TouchableOpacity
+                onPress={onNavigateBack}
+                className="flex-row items-center"
+                style={{ flex: 1 }}>
+                <Feather name="arrow-left" size={24} color="white" />
+                <Text
+                  className="font-feather text-white ml-2"
+                  style={{
+                    fontSize: responsiveFontSize(3),
+                    fontWeight: '400',
+                  }}>
+                  Map
                 </Text>
-              </View>  : <>
-             {/* Title and Navigation Arrows Row */}
-            
-              
-         
- 
-             {/* Absolute background to cover outer safe areas */}
-             <View style={{ ...StyleSheet.absoluteFillObject }} pointerEvents="none" />
- 
-             <Reanimated.View
-               style={[
-                 { flex: 1, paddingBottom: !isMapMode ? RPH(10) : 0 , paddingHorizontal: 16, paddingTop: 16 },
-                 fadeAnimStyle,
-               ]}>
-               {/* HEADER: Bible Book/Chapter, tap to open selector, styled like bibleReader.tsx */}
-               {isBibleReaderScreen ? null : <View className="flex-row items-center justify-between mb-3  px-[4px] py-[10px]">
-                 <View className="flex-row items-center">
-                   {isInPathMode && onNavigateBack && (
-                     <TouchableOpacity
-                       onPress={onNavigateBack}
-                       className="mr-2 bg-[#DCB28033] rounded-[22px] p-[6px]"
-                       disabled={isFadingToChat}>
-                       <Feather name="arrow-left" size={20} color={theme.iconColor} />
-                     </TouchableOpacity>
-                   )}
-                 </View>
- 
-                 <View style={{ width: '100%', justifyContent: 'center', alignItems: 'center' }}>
-                   <TouchableOpacity onPress={memoizedHandleOpenSelector}>
-                     <Text
-                       className="font-feather text-textPrimary/30 text-center"
-                       style={{
-                         fontSize: responsiveFontSize(2),
-                         fontWeight: '600',
-                       }}>
-                       {chapterData ? `${chapterData.book} ${chapterData.chapter}` : i18n.t('loading')}
-                     </Text>
-                   </TouchableOpacity>
-                 </View>
-               </View>}
-               {/* Add progress bar at the top */}
-               {!isMapMode ? null : <View
-                   style={{
-                     height: 12,
-                     borderRadius: 12,
-                     marginVertical: 8,
-                     overflow: 'hidden',
-                   }}
-                 className="bg-brown/5">
-                   <Reanimated.View
-                     style={[
-                       {
-                         height: '100%',
-                         backgroundColor: theme.progressBarFill,
-                         borderRadius: 2,
-             
-                       },
-                       animatedProgressStyle,
-                     ]}
-                   />
-               </View>}
-               <ScrollView
-                 ref={scrollViewRef}
-                 className="flex-1"
-                 showsVerticalScrollIndicator={false}
-                 contentContainerStyle={{ paddingTop: 10, paddingBottom: 45 }}
-                 onScroll={handleScroll}
-                 onScrollBeginDrag={() => setIsScrolling(true)}
-                 onScrollEndDrag={handleScroll}
-                 onMomentumScrollBegin={() => setIsScrolling(true)}
-                 onMomentumScrollEnd={handleScroll}
-                 scrollEventThrottle={16}
-                 bounces={!isFadingToChat}
-                 scrollEnabled={!isFadingToChat}
-                 onTouchEnd={() => {
-                   // Only apply tap-to-advance behavior for Map mode
-                   // REMOVED: This was causing duplicate card rendering
-                   // The TouchableWithoutFeedback onPress handles Map mode taps
-                 }}>
-                 {/* Wrap TouchableWithoutFeedback with GestureHandlerRootView for proper functioning of gestures */}
-                 <GestureHandlerRootView style={{ flex: 1 }}>
-                   {isMapMode ? (
-                     <TouchableWithoutFeedback onPress={handleNextVerse}>
-                       <View style={{ minHeight: '100%',paddingBottom:!readerSettings.tapToShowNextCard ? 100 : 0 }}>
-                         {versesToShow.map((verse, index) => {
-                           const highlightColor = getVerseHighlightColor(verse);
-                           const isCurrent = index === currentIndex && isMapMode && readerSettings.tapToShowNextCard;
- 
-                           return (
-                             <LongPressGestureHandler
-                               key={verse.verse}
-                               minDurationMs={800}
-                               onHandlerStateChange={(e) => {
-                                 if (e.nativeEvent.state === State.ACTIVE) {
-                                   handleLongPress(e, verse);
-                                 }
-                               }}>
-                               <View style={{ flex: 1 }}>
-                                 {isCurrent ? (
-                                   <Animated.View style={animatedStyle}>
-                                     <Swipeable
-                                       ref={(ref) => {
-                                         if (ref) {
-                                           swipeableRefs.current.set(verse.verse, ref);
-                                         } else {
-                                           swipeableRefs.current.delete(verse.verse);
-                                         }
-                                       }}
-                                       {...swipeableProps(verse)}>
-                                       <View
-                                         // className="bg-surfaceCreamLight"
-                                         style={[
-                                           styles.verseBubble,
-                                           {
-                                             backgroundColor: highlightColor
-                                               ? `${highlightColor}80`
-                                               : theme?.cardColor || '#ffffff',
-                                           },
-                                         ]}>
-                                         <View style={{ marginBottom: 12 }}>
-                                           <Text style={verseTextStyle} className="font-nunito-bold">
-                                             <Text >{`${verse.verse}. `}</Text>
-                                             <Text >
-                                               <TypingText
-                                                 text={verse.text}
-                                                 baseTextStyle={{}}
-                                                
-                                                 speed={20}
-                                                 skipAnimation={skipTyping || (isMapMode && !readerSettings.tapToShowNextCard)}
-                                                 onComplete={handleTypingComplete}
-                                               />
-                                             </Text>
-                                           </Text>
-                                         </View>
-                                       </View>
-                                     </Swipeable>
-                                   </Animated.View>
-                                 ) : (
-                                   <View>
-                                     <Swipeable
-                                       ref={(ref) => {
-                                         if (ref) {
-                                           swipeableRefs.current.set(verse.verse, ref);
-                                         } else {
-                                           swipeableRefs.current.delete(verse.verse);
-                                         }
-                                       }}
-                                       {...swipeableProps(verse)}>
-                                       <View
-                                         // className="bg-surfaceCreamLight"
-                                         style={[
-                                           styles.verseBubble,
-                                           {
-                                             backgroundColor: highlightColor
-                                               ? `${highlightColor}80`
-                                               : theme?.cardColor || '#ffffff',
-                                           },
-                                         ]}>
-                                         <View style={{ marginBottom: 12 }}>
-                                           <Text style={verseTextStyle} className="font-nunito-bold">
-                                             <Text >{`${verse.verse}. `}</Text>
-                                             <Text >{verse.text}</Text>
-                                           </Text>
-                                         </View>
-                                       </View>
-                                     </Swipeable>
-                                   </View>
-                                 )}
-                               </View>
-                             </LongPressGestureHandler>
-                           );
-                         })}
- 
-                         {/* Show tap guidance for Map mode */}
-                         {isMapMode && readerSettings.tapToShowNextCard && currentIndex < (chapterData?.verses?.length || 0) - 1 ? (
-                           <View style={{ alignItems: 'center', marginTop: 16 }}>
-                             {showTapGuidance && (
-                               <Text
-                                 style={{
-                                   color: theme.headerText,
-                                   fontFamily: 'DIN Next Rounded LT W01 Regular',
-                                   fontSize: 16,
-                                   opacity: 0.7,
-                                 }}>
-                                 {isTypingComplete ? 'Tap for next verse →' : 'Tap to show full verse'}
-                               </Text>
-                             )}
-                           </View>
-                         ) : null}
- 
-                         {/* Show finish reading button when tap-to-show is disabled and all verses are shown */}
-                         {/* {isMapMode && !readerSettings.tapToShowNextCard && chapterData && (
+              </TouchableOpacity>
+            ) : (
+              <Text
+                className="font-feather text-white"
+                style={{
+                  fontSize: responsiveFontSize(3),
+                  fontWeight: '400',
+                }}>
+                {i18n.t('bible_title')}
+              </Text>
+            )}
+
+
+            <TouchableOpacity
+              onPress={handlePresentSettingsModal}
+              className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+              <MaterialIcons name="settings" size={22} color="#795323" style={{ opacity: 0.4 }} />
+            </TouchableOpacity>
+          </View>
+          {
+            false ? <View className='items-center justify-center flex-1'>
+              <ActivityIndicator size="large" color={theme.text} />
+              <Text style={{ color: theme.text, marginTop: 16, fontSize: 16, fontFamily: 'DIN Next Rounded LT W01 Regular' }}>
+                Loading chapter...
+              </Text>
+            </View> : <>
+              {/* Title and Navigation Arrows Row */}
+
+
+
+
+              {/* Absolute background to cover outer safe areas */}
+              <View style={{ ...StyleSheet.absoluteFillObject }} pointerEvents="none" />
+
+              <Reanimated.View
+                style={[
+                  { flex: 1, paddingBottom: !isMapMode ? RPH(10) : 0, paddingHorizontal: 16, paddingTop: 16 },
+                  fadeAnimStyle,
+                ]}>
+                {/* HEADER: Bible Book/Chapter, tap to open selector, styled like bibleReader.tsx */}
+                {isBibleReaderScreen ? null : <View className="flex-row items-center justify-between mb-3  px-[4px] py-[10px]">
+                  <View className="flex-row items-center">
+                    {isInPathMode && onNavigateBack && (
+                      <TouchableOpacity
+                        onPress={onNavigateBack}
+                        className="mr-2 bg-[#DCB28033] rounded-[22px] p-[6px]"
+                        disabled={isFadingToChat}>
+                        <Feather name="arrow-left" size={20} color={theme.iconColor} />
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  <View style={{ width: '100%', justifyContent: 'center', alignItems: 'center' }}>
+                    <TouchableOpacity onPress={memoizedHandleOpenSelector}>
+                      <Text
+                        className="font-feather text-textPrimary/30 text-center"
+                        style={{
+                          fontSize: responsiveFontSize(2),
+                          fontWeight: '600',
+                        }}>
+                        {chapterData ? `${chapterData.book} ${chapterData.chapter}` : i18n.t('loading')}
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>}
+                {/* Add progress bar at the top */}
+                {!isMapMode ? null : <View
+                  style={{
+                    height: 12,
+                    borderRadius: 12,
+                    marginVertical: 8,
+                    overflow: 'hidden',
+                  }}
+                  className="bg-brown/5">
+                  <Reanimated.View
+                    style={[
+                      {
+                        height: '100%',
+                        backgroundColor: theme.progressBarFill,
+                        borderRadius: 2,
+
+                      },
+                      animatedProgressStyle,
+                    ]}
+                  />
+                </View>}
+                <ScrollView
+                  ref={scrollViewRef}
+                  className="flex-1"
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ paddingTop: 10, paddingBottom: 45 }}
+                  onScroll={handleScroll}
+                  onScrollBeginDrag={() => setIsScrolling(true)}
+                  onScrollEndDrag={handleScroll}
+                  onMomentumScrollBegin={() => setIsScrolling(true)}
+                  onMomentumScrollEnd={handleScroll}
+                  scrollEventThrottle={16}
+                  bounces={!isFadingToChat}
+                  scrollEnabled={!isFadingToChat}
+                  onTouchEnd={() => {
+                    // Only apply tap-to-advance behavior for Map mode
+                    // REMOVED: This was causing duplicate card rendering
+                    // The TouchableWithoutFeedback onPress handles Map mode taps
+                  }}>
+                  {/* Wrap TouchableWithoutFeedback with GestureHandlerRootView for proper functioning of gestures */}
+                  <GestureHandlerRootView style={{ flex: 1 }}>
+                    {isMapMode ? (
+                      <TouchableWithoutFeedback onPress={handleNextVerse}>
+                        <View style={{ minHeight: '100%', paddingBottom: !readerSettings.tapToShowNextCard ? 100 : 0 }}>
+                          {versesToShow.map((verse, index) => {
+                            const highlightColor = getVerseHighlightColor(verse);
+                            const isCurrent = index === currentIndex && isMapMode && readerSettings.tapToShowNextCard;
+
+                            return (
+                              <LongPressGestureHandler
+                                key={verse.verse}
+                                minDurationMs={800}
+                                onHandlerStateChange={(e) => {
+                                  if (e.nativeEvent.state === State.ACTIVE) {
+                                    handleLongPress(e, verse);
+                                  }
+                                }}>
+                                <View style={{ flex: 1 }}>
+                                  {isCurrent ? (
+                                    <Animated.View style={animatedStyle}>
+                                      <Swipeable
+                                        ref={(ref) => {
+                                          if (ref) {
+                                            swipeableRefs.current.set(verse.verse, ref);
+                                          } else {
+                                            swipeableRefs.current.delete(verse.verse);
+                                          }
+                                        }}
+                                        {...swipeableProps(verse)}>
+                                        <View
+                                          // className="bg-surfaceCreamLight"
+                                          style={[
+                                            styles.verseBubble,
+                                            {
+                                              backgroundColor: highlightColor
+                                                ? `${highlightColor}80`
+                                                : theme?.cardColor || '#ffffff',
+                                            },
+                                          ]}>
+                                          <View style={{ marginBottom: 12 }}>
+                                            <Text style={verseTextStyle} className="font-nunito-bold">
+                                              <Text >{`${verse.verse}. `}</Text>
+                                              <Text >
+                                                <TypingText
+                                                  text={verse.text}
+                                                  baseTextStyle={{}}
+
+                                                  speed={20}
+                                                  skipAnimation={skipTyping || (isMapMode && !readerSettings.tapToShowNextCard)}
+                                                  onComplete={handleTypingComplete}
+                                                />
+                                              </Text>
+                                            </Text>
+                                          </View>
+                                        </View>
+                                      </Swipeable>
+                                    </Animated.View>
+                                  ) : (
+                                    <View>
+                                      <Swipeable
+                                        ref={(ref) => {
+                                          if (ref) {
+                                            swipeableRefs.current.set(verse.verse, ref);
+                                          } else {
+                                            swipeableRefs.current.delete(verse.verse);
+                                          }
+                                        }}
+                                        {...swipeableProps(verse)}>
+                                        <View
+                                          // className="bg-surfaceCreamLight"
+                                          style={[
+                                            styles.verseBubble,
+                                            {
+                                              backgroundColor: highlightColor
+                                                ? `${highlightColor}80`
+                                                : theme?.cardColor || '#ffffff',
+                                            },
+                                          ]}>
+                                          <View style={{ marginBottom: 12 }}>
+                                            <Text style={verseTextStyle} className="font-nunito-bold">
+                                              <Text >{`${verse.verse}. `}</Text>
+                                              <Text >{verse.text}</Text>
+                                            </Text>
+                                          </View>
+                                        </View>
+                                      </Swipeable>
+                                    </View>
+                                  )}
+                                </View>
+                              </LongPressGestureHandler>
+                            );
+                          })}
+
+                          {/* Show tap guidance for Map mode */}
+                          {isMapMode && readerSettings.tapToShowNextCard && currentIndex < (chapterData?.verses?.length || 0) - 1 ? (
+                            <View style={{ alignItems: 'center', marginTop: 16 }}>
+                              {showTapGuidance && (
+                                <Text
+                                  style={{
+                                    color: theme.headerText,
+                                    fontFamily: 'DIN Next Rounded LT W01 Regular',
+                                    fontSize: 16,
+                                    opacity: 0.7,
+                                  }}>
+                                  {isTypingComplete ? 'Tap for next verse →' : 'Tap to show full verse'}
+                                </Text>
+                              )}
+                            </View>
+                          ) : null}
+
+                          {/* Show finish reading button when tap-to-show is disabled and all verses are shown */}
+                          {/* {isMapMode && !readerSettings.tapToShowNextCard && chapterData && (
                            <View style={{ alignItems: 'center', marginTop: 16 }}>
                              <PrimaryButton
                                title="Finish Reading 🎉"
@@ -2256,68 +2267,82 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                              />
                            </View>
                          )} */}
-                       </View>
-                     </TouchableWithoutFeedback>
-                   ) : (
-                     <Animated.View 
-                       style={{ 
-                         flex: 1,
-                         opacity: fadeAnim,
-                         transform: [{ translateY }],
-                       }}>
-                       <View style={{ minHeight: '100%' }} className='pb-12'>
-                         {versesToShow.map((verse) => {
-                           const highlightColor = getVerseHighlightColor(verse);
-                           return (
-                             <LongPressGestureHandler
-                               key={verse.verse}
-                               minDurationMs={800}
-                               onHandlerStateChange={(e) => {
-                                 if (e.nativeEvent.state === State.ACTIVE) {
-                                   handleLongPress(e, verse);
-                                 }
-                               }}>
-                               <View style={{ flex: 1 }}>
-                                 <Swipeable
-                                   ref={(ref) => {
-                                     if (ref) {
-                                       swipeableRefs.current.set(verse.verse, ref);
-                                     } else {
-                                       swipeableRefs.current.delete(verse.verse);
-                                     }
-                                   }}
-                                   {...swipeableProps(verse)}>
-                                   <View
-                                     className="bg-surfaceCreamLight"
-                                     style={[
-                                       styles.verseBubble,
-                                       {
-                                         backgroundColor: highlightColor
-                                           ? `${highlightColor}80`
-                                           : theme?.cardColor || '#ffffff',
-                                       },
-                                     ]}>
-                                     <View style={{ marginBottom: 12 }}>
-                                       <Text style={verseTextStyle} className="font-nunito-bold">
-                                         <Text >{`${verse.verse}. `}</Text>
-                                         <Text >{verse.text}</Text>
-                                       </Text>
-                                     </View>
-                                   </View>
-                                 </Swipeable>
-                               </View>
-                             </LongPressGestureHandler>
-                           );
-                         })}
-                       </View>
-                     </Animated.View>
-                   )}
-                 </GestureHandlerRootView>
-               </ScrollView>
-             </Reanimated.View>
- 
-             {/* Back button at bottom of screen */}
-             {/* {showBackButton && !isFadingToChat && (
+                        </View>
+                      </TouchableWithoutFeedback>
+                    ) : (
+                      <Animated.View
+                        style={{
+                          flex: 1,
+                          opacity: fadeAnim,
+                          transform: [{ translateY }],
+                        }}>
+                        <View style={{ minHeight: '100%' }} className='pb-12'>
+                          <FlatList
+                            scrollEnabled={false}
+                            data={versesToShow}
+                            keyExtractor={verse => verse.verse.toString()}
+                            renderItem={({ item: verse }) => {
+                              const highlightColor = getVerseHighlightColor(verse);
+                              return (
+                                <LongPressGestureHandler
+                                  key={verse.verse}
+                                  minDurationMs={800}
+                                  onHandlerStateChange={(e) => {
+                                    if (e.nativeEvent.state === State.ACTIVE) {
+                                      handleLongPress(e, verse);
+                                    }
+                                  }}>
+                                  <View style={{ flex: 1 }}>
+                                    <Swipeable
+                                      ref={(ref) => {
+                                        if (ref) {
+                                          swipeableRefs.current.set(verse.verse, ref);
+                                        } else {
+                                          swipeableRefs.current.delete(verse.verse);
+                                        }
+                                      }}
+                                      {...swipeableProps(verse)}>
+                                      <View
+                                        className="bg-surfaceCreamLight"
+                                        style={[
+                                          styles.verseBubble,
+                                          {
+                                            backgroundColor: highlightColor
+                                              ? `${highlightColor}80`
+                                              : theme?.cardColor || '#ffffff',
+                                          },
+                                        ]}>
+                                        <View style={{ marginBottom: 12 }}>
+                                          <Text style={verseTextStyle} className="font-nunito-bold">
+                                            <Text>{`${verse.verse}. `}</Text>
+                                            <Text>{verse.text}</Text>
+                                          </Text>
+                                        </View>
+                                      </View>
+                                    </Swipeable>
+                                  </View>
+                                </LongPressGestureHandler>
+                              );
+                            }}
+                            initialNumToRender={5}
+                            maxToRenderPerBatch={5}
+                            windowSize={5}
+                            removeClippedSubviews={true}
+                            getItemLayout={(data, index) => ({
+                              length: 100, // Estimated height of each item
+                              offset: 100 * index,
+                              index,
+                            })}
+                          />
+                        </View>
+                      </Animated.View>
+                    )}
+                  </GestureHandlerRootView>
+                </ScrollView>
+              </Reanimated.View>
+
+              {/* Back button at bottom of screen */}
+              {/* {showBackButton && !isFadingToChat && (
                <Reanimated.View
                  entering={FadeIn.duration(300)}
                  style={[styles.backButton, { backgroundColor: theme.progressBarBackground }]}>
@@ -2331,152 +2356,152 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                  </TouchableOpacity>
                </Reanimated.View>
              )} */}
- 
-             {/* Render the local settings modal only when no shared handler is
+
+              {/* Render the local settings modal only when no shared handler is
            provided. */}
- 
-             
- 
-             {/* Floating menu overlay */}
-             {floatingMenu.isVisible && floatingMenu.verse && (
-               <TouchableWithoutFeedback onPress={handleCloseFloatingMenu}>
-                 <View style={styles.menuOverlay}>
-                   <Reanimated.View
-                     style={[
-                       styles.floatingMenu,
-                       {
-                         top: floatingMenu.position.y,
-                         left: floatingMenu.position.x,
-                         backgroundColor: theme.bubbleBackground,
-                         borderColor: theme.bubbleBorder,
-                         borderWidth: 1,
-                       },
-                       menuAnimatedStyle,
-                     ]}>
-                     {menuActions.map((action) => (
-                       <TouchableOpacity
-                         key={action.id}
-                         style={styles.menuItem}
-                         onPress={() => action.action(floatingMenu.verse!)}
-                         activeOpacity={0.7}>
-                         <View
-                           style={[
-                             styles.menuIconContainer,
-                             {
-                               backgroundColor: `${action.color}22`, // Add transparency to icon background
-                             },
-                           ]}>
-                           <Feather name={action.icon} size={18} color={action.color} />
-                         </View>
-                         <Text style={[styles.menuText, { color: theme.text }]}>{action.label}</Text>
-                       </TouchableOpacity>
-                     ))}
-                   </Reanimated.View>
-                 </View>
-               </TouchableWithoutFeedback>
-             )}
- 
-             {/* HighlightColorPicker modal */}
-             {verseToHighlight && (
-               <HighlightColorPicker
-                 isVisible={isHighlightPickerVisible}
-                 initialColor={
-                   getHighlight(currentBookId, currentChapter, verseToHighlight.verse)?.colorKey ||
-                   null
-                 }
-                 onClose={handleCloseHighlightPicker}
-                 onSelectColor={handleApplyHighlight}
-                 versePreview={verseToHighlight.text}
-               />
-             )}
- 
-             {/* Note Editor Modal */}
-             {verseForNote && chapterData && (
-               <NoteEditor
-                 isVisible={isNoteEditorVisible}
-                 bookId={currentBookId}
-                 chapter={currentChapter}
-                 verse={verseForNote.verse}
-                 verseText={verseForNote.text}
-                 bookName={chapterData.book}
-                 onClose={handleCloseNoteEditor}
-               />
-             )}
- 
-             {/* Bottom Navigation Row - Only in Map mode when tap-to-next is disabled */}
-             {isMapMode && !readerSettings.tapToShowNextCard && isInPathMode && (
-               <RNAnimated.View
-                 style={[
-                   {
-                     position: 'absolute',
-                     bottom: 50,
-                     left: 0,
-                     right: 0,
-                     flexDirection: 'row',
-                     justifyContent: 'flex-end',
-                     alignItems: 'center',
-                     paddingHorizontal: 20,
-                     zIndex: 10,
-                   },
-                   buttonsContainerStyle,
-                 ]}>
-                 {/* Finish Reading Button (in path mode) */}
-                 <View style={{ flex: 1, marginRight: -100 }}>
-                   <SideButton
-                     title="Finish Reading"
-                     onPress={isAtEndChapter ? handleFinishReading : navigateToNextChapter}
-                     disabled={!hasScrolledToBottom || loading || !isAtEndChapter}
-                   />
-                 </View>
-                 {/* Navigation Buttons */}
-                 <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
-                   <TouchableOpacity
-                     style={[
-                       styles.navButton,
-                       (currentChapter <= 1 || loading) && styles.disabledNavButton,
-                     ]}
-                     onPress={navigateToPreviousChapter}
-                     disabled={currentChapter <= 1 || loading}
-                     activeOpacity={0.7}>
-                     <Text
-                       style={[
-                         styles.navButtonText,
-                         (currentChapter <= 1 || loading) && styles.disabledButtonText,
-                       ]}>
-                       ←
-                     </Text>
-                   </TouchableOpacity>
-                   <TouchableOpacity
-                     style={[
-                       styles.navButton,
-                       (loading || (isInPathMode && isAtEndChapter)) && styles.disabledNavButton,
-                     ]}
-                     onPress={() => {
-                       navigateToNextChapter();
-                     }}
-                     disabled={loading || (isInPathMode && isAtEndChapter)}
-                     activeOpacity={0.7}>
-                     <Text
-                       style={[
-                         styles.navButtonText,
-                         (loading || (isInPathMode && isAtEndChapter)) && styles.disabledButtonText,
-                       ]}>
-                       →
-                     </Text>
-                   </TouchableOpacity>
-                 </View>
-               </RNAnimated.View>
-             )}
-           </>
 
-              }
-             
-           </View>
-         </SafeAreaView>
- 
 
-        {/* Finish Reading Button - only show in Map mode, at bottom of content */}
-        {/* {isMapMode && isInPathMode && isAtEndChapter && chapterData && !loading && (
+
+              {/* Floating menu overlay */}
+              {floatingMenu.isVisible && floatingMenu.verse && (
+                <TouchableWithoutFeedback onPress={handleCloseFloatingMenu}>
+                  <View style={styles.menuOverlay}>
+                    <Reanimated.View
+                      style={[
+                        styles.floatingMenu,
+                        {
+                          top: floatingMenu.position.y,
+                          left: floatingMenu.position.x,
+                          backgroundColor: theme.bubbleBackground,
+                          borderColor: theme.bubbleBorder,
+                          borderWidth: 1,
+                        },
+                        menuAnimatedStyle,
+                      ]}>
+                      {menuActions.map((action) => (
+                        <TouchableOpacity
+                          key={action.id}
+                          style={styles.menuItem}
+                          onPress={() => action.action(floatingMenu.verse!)}
+                          activeOpacity={0.7}>
+                          <View
+                            style={[
+                              styles.menuIconContainer,
+                              {
+                                backgroundColor: `${action.color}22`, // Add transparency to icon background
+                              },
+                            ]}>
+                            <Feather name={action.icon} size={18} color={action.color} />
+                          </View>
+                          <Text style={[styles.menuText, { color: theme.text }]}>{action.label}</Text>
+                        </TouchableOpacity>
+                      ))}
+                    </Reanimated.View>
+                  </View>
+                </TouchableWithoutFeedback>
+              )}
+
+              {/* HighlightColorPicker modal */}
+              {verseToHighlight && (
+                <HighlightColorPicker
+                  isVisible={isHighlightPickerVisible}
+                  initialColor={
+                    getHighlight(currentBookId, currentChapter, verseToHighlight.verse)?.colorKey ||
+                    null
+                  }
+                  onClose={handleCloseHighlightPicker}
+                  onSelectColor={handleApplyHighlight}
+                  versePreview={verseToHighlight.text}
+                />
+              )}
+
+              {/* Note Editor Modal */}
+              {verseForNote && chapterData && (
+                <NoteEditor
+                  isVisible={isNoteEditorVisible}
+                  bookId={currentBookId}
+                  chapter={currentChapter}
+                  verse={verseForNote.verse}
+                  verseText={verseForNote.text}
+                  bookName={chapterData.book}
+                  onClose={handleCloseNoteEditor}
+                />
+              )}
+
+              {/* Bottom Navigation Row - Only in Map mode when tap-to-next is disabled */}
+              {isMapMode && !readerSettings.tapToShowNextCard && isInPathMode && (
+                <RNAnimated.View
+                  style={[
+                    {
+                      position: 'absolute',
+                      bottom: 50,
+                      left: 0,
+                      right: 0,
+                      flexDirection: 'row',
+                      justifyContent: 'flex-end',
+                      alignItems: 'center',
+                      paddingHorizontal: 20,
+                      zIndex: 10,
+                    },
+                    buttonsContainerStyle,
+                  ]}>
+                  {/* Finish Reading Button (in path mode) */}
+                  <View style={{ flex: 1, marginRight: -100 }}>
+                    <SideButton
+                      title="Finish Reading"
+                      onPress={isAtEndChapter ? handleFinishReading : navigateToNextChapter}
+                      disabled={!hasScrolledToBottom || loading || !isAtEndChapter}
+                    />
+                  </View>
+                  {/* Navigation Buttons */}
+                  <View style={{ flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center' }}>
+                    <TouchableOpacity
+                      style={[
+                        styles.navButton,
+                        (currentChapter <= 1 || loading) && styles.disabledNavButton,
+                      ]}
+                      onPress={navigateToPreviousChapter}
+                      disabled={currentChapter <= 1 || loading}
+                      activeOpacity={0.7}>
+                      <Text
+                        style={[
+                          styles.navButtonText,
+                          (currentChapter <= 1 || loading) && styles.disabledButtonText,
+                        ]}>
+                        ←
+                      </Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[
+                        styles.navButton,
+                        (loading || (isInPathMode && isAtEndChapter)) && styles.disabledNavButton,
+                      ]}
+                      onPress={() => {
+                        navigateToNextChapter();
+                      }}
+                      disabled={loading || (isInPathMode && isAtEndChapter)}
+                      activeOpacity={0.7}>
+                      <Text
+                        style={[
+                          styles.navButtonText,
+                          (loading || (isInPathMode && isAtEndChapter)) && styles.disabledButtonText,
+                        ]}>
+                        →
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+                </RNAnimated.View>
+              )}
+            </>
+
+          }
+
+        </View>
+      </SafeAreaView>
+
+
+      {/* Finish Reading Button - only show in Map mode, at bottom of content */}
+      {/* {isMapMode && isInPathMode && isAtEndChapter && chapterData && !loading && (
           <PrimaryButton
             title="Finish Reading 🎉"
             onPress={() => {
@@ -2490,9 +2515,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           />
         )} */}
 
-        {isBibleReaderScreen && !isMapMode ? (
+      {isBibleReaderScreen && !isMapMode ? (
         <BibleVerseActionBar
-        reference={chapterData ? `${chapterData.book} ${chapterData.chapter}` : ''}
+          reference={chapterData ? `${chapterData.book} ${chapterData.chapter}` : ''}
           onVersePress={memoizedHandleOpenSelector}
           onPrev={navigateToPreviousChapter}
           onNext={isInPathMode && isAtEndChapter ? handleFinishReading : navigateToNextChapter}
@@ -2509,8 +2534,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         />
       ) : null}
 
- </View> 
-)
+    </View>
+  )
 };
 
 const styles = StyleSheet.create({
@@ -2594,7 +2619,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     height: 50,
     justifyContent: 'center',
-    opacity: 0.2,
+    opacity: 1,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
