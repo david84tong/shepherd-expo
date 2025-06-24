@@ -823,7 +823,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             {getReflectionPrompt()}
           </Text>
 
-          <View style={{ minHeight: RPH(25), borderRadius: 20 }} className="w-full  bg-surfaceCream border-[3px] border-gold/70 p-5 mb-2 shadow-card" >
+          <View style={{ minHeight: RPH(25), maxHeight: RPH(40), borderRadius: 20 }} className="w-full  bg-surfaceCream border-[3px] border-gold/70 p-5 mb-2 shadow-card" >
             <TextInput
               ref={inputRef}
               className="w-full bg-transparent text-brown/95 text-[18px] font-nunito-medium  text-left"
@@ -832,7 +832,13 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
               multiline
               textAlignVertical="top"
               scrollEnabled={true}
-              style={{ flex: 1, padding: 0, minHeight: RPH(30) }}
+              style={{
+                flex: 1,
+                padding: 0,
+                minHeight: RPH(20),
+                maxHeight: RPH(35),
+                overflow: 'hidden'
+              }}
               value={reflectionContent}
               onChangeText={setReflectionContent}
               onFocus={() => {
