@@ -20,9 +20,22 @@ interface DevotionalAIResponse {
 export async function getBibleVerseAIResponse(
   userQuestion: string,
   verseContext: BibleVerseContext,
-  idToken: string
+  idToken: string,
+  language: string = 'en'
 ): Promise<string> {
   try {
+    // Create language-specific system prompt
+    const languageInstructions = {
+      en: 'Please respond in English.',
+      es: 'Por favor responde en español.',
+      pt: 'Por favor responda em português.',
+      nl: 'Antwoord alstublieft in het Nederlands.',
+      fr: 'Veuillez répondre en français.',
+      de: 'Bitte antworten Sie auf Deutsch.'
+    };
+
+    const languageInstruction = languageInstructions[language as keyof typeof languageInstructions] || languageInstructions.en;
+
     const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-4.1-mini', {
       method: 'POST',
       headers: {
@@ -33,7 +46,7 @@ export async function getBibleVerseAIResponse(
         "messages": [
           {
             "role": "system",
-            "content": `You are a Bible study assistant helping with ${verseContext.bookName} ${verseContext.chapter}:${verseContext.verse}: "${verseContext.verseText}"`
+            "content": `You are a Bible study assistant helping with ${verseContext.bookName} ${verseContext.chapter}:${verseContext.verse}: "${verseContext.verseText}". ${languageInstruction}`
           },
           {
             "role": "user",

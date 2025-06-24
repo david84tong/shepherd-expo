@@ -377,6 +377,26 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     loadInitialData();
   }, [initialBookId, initialChapter, currentVersion]);
 
+  // Add a specific effect to handle prop changes from navigation
+  useEffect(() => {
+    // Only run this effect if we have valid props and they're different from current state
+    if (initialBookId !== undefined && initialChapter !== undefined) {
+      const bookName = Object.keys(BIBLE_BOOK_IDS).find(key => BIBLE_BOOK_IDS[key] === initialBookId);
+      
+      if (bookName && (initialBookId !== currentBookId || initialChapter !== currentChapter)) {
+        console.log(`🔄 BibleReader: Props changed - Loading bookId: ${initialBookId}, chapter: ${initialChapter}`);
+        
+        // Update local state to match props
+        setCurrentBookId(initialBookId);
+        setCurrentChapter(initialChapter);
+        setCurrentBook(bookName);
+        
+        // Load the new chapter
+        loadChapter(currentVersion, bookName, initialBookId, initialChapter, true);
+      }
+    }
+  }, [initialBookId, initialChapter]);
+
 
 
   useEffect(() => {

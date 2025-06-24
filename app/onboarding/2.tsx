@@ -6,7 +6,7 @@ import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
 import PrimaryButton from '../../components/PrimaryButton';
-import Rive from 'rive-react-native';
+import Rive, { RiveRef } from 'rive-react-native';
 import {
   useAnimatedStyle,
   withTiming,
@@ -33,7 +33,10 @@ export default function OnboardingLambNameScreen() {
   const inputRef = useRef<TextInput>(null);
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/new_shepherd.riv')]);
+  
+  // Create ref for Rive component
+  const riveRef = useRef<RiveRef>(null);
 
   // Track if animations have been initialized
   const animationsInitialized = useRef(false);
@@ -201,27 +204,57 @@ export default function OnboardingLambNameScreen() {
         {/* Rive Animation with Fallback */}
         <CustomAnimatedView
           style={lambStyle}
-          className="h-[160px] w-full justify-center items-center my-4">
+          className="h-[200px] w-full justify-center items-center mb-4 -mt-12">
           {riveAssets && (
             IS_ANDROID ? (
               <Rive
-                resourceName="home_lamb"
-                artboardName="lamb-idle"
+                ref={riveRef}
+                resourceName="new_shepherd"
+                artboardName="[Main] Shpeherd"
+                stateMachineName="State Machine 1"
                 autoplay
-                style={{ width: '80%', height: '80%' }}
+                style={{ width: '100%', height: '100%' }}
                 onError={(error) => {
                   console.warn('Rive animation error:', error);
+                }}
+                onPlay={() => {
+                  // Set Level-Number to 1 when Rive starts playing
+                  setTimeout(() => {
+                    if (riveRef.current?.setInputState) {
+                      try {
+                        riveRef.current.setInputState('State Machine 1', 'Level-Number', 1);
+                        console.log('Set Rive Level-Number to 1 for onboarding');
+                      } catch (e) {
+                        console.log('Error setting Level-Number:', e);
+                      }
+                    }
+                  }, 100);
                 }}
               />
             ) : (
               riveAssets[0]?.uri && (
                 <Rive
+                  ref={riveRef}
                   url={riveAssets[0].uri}
-                  artboardName="lamb-idle"
+                  artboardName="[Main] Shpeherd"
+                  stateMachineName="State Machine 1"
                   autoplay
-                  style={{ width: '80%', height: '80%' }}
+                  style={{ width: '100%', height: '100%' }}
                   onError={(error) => {
                     console.warn('Rive animation error:', error);
+                  }}
+                  onPlay={() => {
+                    // Set Level-Number to 1 when Rive starts playing
+                    setTimeout(() => {
+                      if (riveRef.current?.setInputState) {
+                        try {
+                          riveRef.current.setInputState('State Machine 1', 'Level-Number', 1);
+                          console.log('Set Rive Level-Number to 1 for onboarding');
+                        } catch (e) {
+                          console.log('Error setting Level-Number:', e);
+                        }
+                      }
+                    }, 100);
                   }}
                 />
               )
@@ -247,7 +280,7 @@ export default function OnboardingLambNameScreen() {
             autoCapitalize="none"
             spellCheck={false}
           />
-          {error && <Text className="font-din text-sm text-red-500 mt-2 text-center">{i18n.t(error)}</Text>}
+          {error && <Text className="font-din text-sm text-red-500 mt-2 text-center">{error}</Text>}
         </CustomAnimatedView>
 
         {/* Continue Button */}

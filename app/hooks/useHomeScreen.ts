@@ -169,10 +169,10 @@ export const useHomeScreen = () => {
 
   // Memoized values
   const snapPoints = useMemo(() => (
-    showPrayerContent
+    showPrayerContent || showJournalContent
       ? ['60%', '65%', '70%', '75%', '80%', '85%', '88%']
       : ['60%', '65%', '70%', '75%', '80%', '85%', '88%']
-  ), [showPrayerContent]);
+  ), [showPrayerContent, showJournalContent]);
 
   const lambTranslateX = useMemo(
     () =>

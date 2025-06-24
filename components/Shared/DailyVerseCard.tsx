@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
 
   Pressable,
+
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import analytics from '~/utils/analytics';
@@ -16,12 +17,18 @@ import { ImageBackground } from 'expo-image';
 import i18n from '../../app/utils/i18n';
 import { RPH } from '~/app/helper/helper';
 import { AppFonts } from '~/app/constants/appFonts';
+import firestore from '@react-native-firebase/firestore';
+import { useUserStore } from '~/app/stores/userStore';
+import { useDevotionalStore } from '~/app/stores/devotionalStore';
+import { router } from 'expo-router';
+import { BIBLE_BOOK_IDS } from '~/app/models/Path';
+
 
 interface DailyVerseCardProps {
-  devotional: Devotional;
+  devotional: Devotional & { likedBy?: string[] };
   onPress?: () => void;
-  onShare?: () => void;
   onExpand?: () => void;
+  onShare?: () => void;
   showShareButton?: boolean;
   showExpandButton?: boolean;
   share?: boolean; // New prop to determine if this is a share card or regular card
@@ -30,12 +37,64 @@ interface DailyVerseCardProps {
 const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
   devotional,
   onPress,
-  onShare,
   onExpand,
+  onShare,
   showShareButton = true,
   showExpandButton = true,
   share = false,
 }) => {
+  const currentUser = useUserStore.getState();
+
+  // Get current devotional from store (for real-time updates)
+  const currentDevotional = useDevotionalStore((state) => state.currentDevotional);
+  const dailyDevotional = useDevotionalStore((state) => state.dailyDevotional);
+
+  // Use store data if this devotional matches the current or daily devotional
+  const storeDevotional = (currentDevotional?.id === devotional.id ? currentDevotional :
+    dailyDevotional?.id === devotional.id ? dailyDevotional :
+      devotional);
+
+  const [isLiked, setIsLiked] = useState(false);
+  const likeCount = storeDevotional.likes || 0;
+  const shareCount = storeDevotional.shares || 0;
+
+  // A devotional is only "real" (and thus likeable/shareable) if it's not a locally generated one.
+  const isRealDevotional = !devotional.id.startsWith('quick-') && !devotional.id.startsWith('ai-');
+
+  useEffect(() => {
+    if (currentUser?.id && storeDevotional.likedBy && isRealDevotional) {
+      setIsLiked(storeDevotional.likedBy.includes(currentUser.id));
+    }
+  }, [storeDevotional, currentUser, isRealDevotional]);
+
+  const handleLikePress = async () => {
+    if (!isRealDevotional || !currentUser?.id || !devotional.id) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    const newLikedState = !isLiked;
+    setIsLiked(newLikedState);
+
+    const devotionalRef = firestore().collection('dailyDevotionals').doc(devotional.id);
+
+    try {
+      await devotionalRef.update({
+        likes: firestore.FieldValue.increment(newLikedState ? 1 : -1),
+        likedBy: newLikedState
+          ? firestore.FieldValue.arrayUnion(currentUser.id)
+          : firestore.FieldValue.arrayRemove(currentUser.id),
+      });
+      analytics.logEvent('DailyVerseCard_Tapped_Like', {
+        bibleReference: devotional.bibleReference,
+        liked: newLikedState,
+      });
+      useDevotionalStore.getState().updateLikeStatus(devotional.id, newLikedState);
+    } catch (error) {
+      console.error("Error updating likes:", error);
+      // Revert state on error
+      setIsLiked(!newLikedState);
+    }
+  };
+
   const handleCardPress = () => {
     if (onPress) {
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
@@ -47,11 +106,45 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
     }
   };
 
-  const handleSharePress = () => {
-    if (onShare) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+  const handleSharePress = async () => {
+    /*
+    if (!isRealDevotional || !devotional.id || !devotional.imageURL) return;
+
+    try {
+      // 1. Download the image to a temporary local file
+      const localUri = FileSystem.cacheDirectory + 'share_image.jpg';
+      await FileSystem.downloadAsync(devotional.imageURL, localUri);
+
+      const message = `"${devotional.verse}" - ${devotional.bibleReference}`;
+
+      // 2. Use RN's Share API with the local file URI
+      const result = await Share.share({
+        title: 'Share Daily Verse',
+        message: Platform.OS === 'android' ? `${message}\n${localUri}` : message,
+        url: localUri,
+      });
+
+      // 3. Only increment if the share was successful
+
+      const devotionalRef = firestore().collection('dailyDevotionals').doc(devotional.id);
+      await devotionalRef.update({
+        shares: firestore.FieldValue.increment(1),
+      });
       analytics.logEvent('DailyVerseCard_Tapped_Share', {
         isShareCard: share,
+        bibleReference: devotional.bibleReference,
+      });
+      useDevotionalStore.getState().incrementShareCount(devotional.id);
+
+    } catch (error) {
+      console.error("Error sharing:", error);
+    }
+    */
+    if (onShare) {
+      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      analytics.logEvent('DailyVerseCard_Tapped_Share_To_Expand', {
+        isShareCard: share,
+        bibleReference: devotional.bibleReference,
       });
       onShare();
     }
@@ -64,6 +157,65 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
         isShareCard: share,
       });
       onExpand();
+    }
+  };
+
+  const handleReadFullChapter = () => {
+    if (!devotional?.bibleReference) return;
+
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+
+    // Parse the Bible reference to get book and chapter
+    const parsedRef = parseBibleReference(devotional.bibleReference);
+    if (!parsedRef) {
+      console.error('Could not parse Bible reference:', devotional.bibleReference);
+      return;
+    }
+
+    // Find the book ID from the parsed reference
+    const bookId = BIBLE_BOOK_IDS[parsedRef.book];
+    if (!bookId) {
+      console.error('Could not find book ID for:', parsedRef.book);
+      return;
+    }
+
+    // Navigate to Bible tab with the specific chapter
+    router.replace({
+      pathname: '/(tabs)/bible',
+      params: {
+        bookId: bookId.toString(),
+        chapters: parsedRef.chapter.toString(),
+        source: 'daily-verse-card',
+        timestamp: Date.now().toString(),
+      },
+    });
+
+    // Log analytics
+    analytics.logEvent('DailyVerseCard_ReadFullChapter', {
+      bibleReference: devotional.bibleReference,
+      bookId: bookId,
+      chapter: parsedRef.chapter,
+      isShareCard: share,
+    });
+  };
+
+  // Helper function to parse Bible reference like "Jeremiah 29:13" or "1 John 3:16"
+  const parseBibleReference = (reference: string): { book: string; chapter: number } | null => {
+    try {
+      // Handle references like "Jeremiah 29:13" or "1 John 3:16"
+      const match = reference.match(/^(\d?\s*\w+(?:\s+\w+)*)\s+(\d+):(\d+)$/);
+      if (match) {
+        const [, book, chapter] = match;
+        return {
+          book: book.trim(),
+          chapter: parseInt(chapter, 10)
+        };
+      }
+
+      return null;
+    } catch (error) {
+      console.error('Error parsing Bible reference:', reference, error);
+      return null;
     }
   };
 
@@ -105,14 +257,25 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
             <Text style={{ fontSize: AppFonts[17] }} className="font-din text-white  leading-[22px]">
               {devotional.verse}
             </Text>
+
+            {showExpandButton ? <View className="flex-row items-center mt-4">
+              <TouchableOpacity onPress={handleLikePress} disabled={!isRealDevotional} className="flex-row items-center mr-4">
+                <Ionicons name="heart" size={RPH(2.2)} color={isLiked && isRealDevotional ? "#FF8800" : "white"} />
+                <Text className="ml-2 text-white font-din text-lg">{likeCount}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleSharePress} disabled={!isRealDevotional} className="flex-row items-center">
+                <FontAwesome5 name="share-alt" size={RPH(1.8)} color="white" />
+                <Text className="ml-2 text-white font-din text-lg">{shareCount}</Text>
+              </TouchableOpacity>
+            </View> : null}
           </View>
 
-          {/* Share Button - only show when share=true AND showShareButton is true */}
+          {/* Read Full Chapter Button - only show when share=true AND showShareButton is true */}
           {share && showShareButton && (
             <View style={{ marginTop: RPH(1) }} className="w-full ">
               <PrimaryButton
-                title={i18n.t('share')}
-                onPress={handleSharePress}
+                title={i18n.t('read_full_chapter') || "Read Full Chapter"}
+                onPress={handleReadFullChapter}
                 buttonType="orange"
               />
             </View>

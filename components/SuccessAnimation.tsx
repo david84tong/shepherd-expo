@@ -23,6 +23,7 @@ import { getLambMoodByHearts } from '../app/hooks/streakHook';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '../app/stores/userStore';
+import { useSoundStore } from '../app/stores/soundStore';
 import { calculateLevelFromXp } from '../utils/levelUtils';
 
 // Import icons
@@ -58,7 +59,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   subMessage: propSubMessage,
   onClose: propOnClose,
   isPrayPresses,
-  showStreakScreen:showStreakScreenParam,
+  showStreakScreen: showStreakScreenParam,
   hideStreakInSuccess
 }) => {
   const riveRef = useRef<RiveRef>(null);
@@ -99,6 +100,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   // Home store hooks for daily XP tracking
   const addDailyXp = useHomeStore((state) => state.addDailyXp);
   const getDailyXpRemaining = useHomeStore((state) => state.getDailyXpRemaining);
+  const { playTrifectaCompleteSound } = useSoundStore();
 
   // Determine which type to use for rendering
   const effectiveType = successType ?? SuccessAnimationType.READING;
@@ -543,8 +545,12 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       ]).start();
     }, 1400); // Delay to start after action buttons animation
 
+    if (effectiveType === SuccessAnimationType.BONUS) {
+      playTrifectaCompleteSound();
+    }
+
     return () => clearTimeout(timer);
-  }, [effectiveType]); // Keep effectiveType dependency
+  }, [effectiveType, playTrifectaCompleteSound]); // Keep effectiveType dependency
 
   // Log analytics when component mounts or successType changes
   useEffect(() => {
@@ -626,7 +632,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     console.log('handleGoHome - Resetting states to ensure tab bar is visible');
     setPathInProgress(false);
     setHomeMode('DEFAULT');
-    
+
     // Reset all view visibility states to ensure tab bar shows
     const homeStore = useHomeStore.getState();
     homeStore.setDevotionalReaderVisible(false);
@@ -634,17 +640,18 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     homeStore.setJournalViewVisible(false);
 
     // Navigate without changing the successType - it will be reset in the cleanup effect
-    if(showStreakScreenParam){
+    if (showStreakScreenParam) {
       router.push({
         pathname: '/streak',
       });
-    }else
-   { router.replace({
-      pathname: '/(tabs)',
-      params: {
-        isPrayPresses: isPrayPresses ? 'true' : 'false'
-      },
-    });}
+    } else {
+      router.replace({
+        pathname: '/(tabs)',
+        params: {
+          isPrayPresses: isPrayPresses ? 'true' : 'false'
+        },
+      });
+    }
   };
 
   const triggerStreakScreen = () => {
@@ -708,7 +715,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   return (
     <View className="flex-1 bg-surfaceCream" style={{ backgroundColor: '#FFF4DC' }}>
       <ScrollView
-        contentContainerStyle={{ flexGrow: 1,paddingBottom:RPH(12) }}
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: RPH(12) }}
         showsVerticalScrollIndicator={false}
         className="bg-surfaceCream">
         <Animated.View
@@ -794,7 +801,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
           </View>
 
           {/* Success message - enlarged */}
-          <Text style={{fontSize:AppFonts[28]}} className="font-feather  text-textPrimary mb-4 text-center -mt-16">
+          <Text style={{ fontSize: AppFonts[28] }} className="font-feather  text-textPrimary mb-4 text-center -mt-16">
             {message}
           </Text>
           <Text className="font-din text-xl text-secondaryText text-center mb-6 px-6">
@@ -843,14 +850,14 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
                 {actualXpReward < xpReward && (
                   <View className="mt-2 py-2 bg-lightYellow rounded-xl">
                     <Text className="font-din text-description text-center text-sm">
-                      {getDailyXpRemaining() === 0 
-                        ? i18n.t('daily_xp_cap_reached') 
+                      {getDailyXpRemaining() === 0
+                        ? i18n.t('daily_xp_cap_reached')
                         : i18n.t('daily_xp_limit_message', { remaining: getDailyXpRemaining() })
                       }
                     </Text>
                   </View>
                 )}
-                
+
                 {/* Show message when at daily XP cap even if no XP was intended */}
                 {actualXpReward === 0 && xpReward > 0 && getDailyXpRemaining() === 0 && (
                   <View className="mt-2 py-2 bg-lightYellow rounded-xl">

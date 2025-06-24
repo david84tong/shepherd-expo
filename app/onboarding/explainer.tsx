@@ -114,7 +114,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
           console.log('Error setting Wings ON/OFF for LVL 33:', e);
         }
       }
-    }, 1000); // Wait 1 second for Rive components to be ready
+    }, 100); // Wait 1 second for Rive components to be ready
 
     return () => clearTimeout(timer);
   }, [riveAssets]);

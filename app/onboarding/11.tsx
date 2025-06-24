@@ -385,7 +385,7 @@ export default function SaveProgressScreen() {
           const isProMember = useUserStore.getState().getProStatus() === 'pro';
           if (!isProMember) {
             setTimeout(() => {
-              router.replace('/PricingScreen?fromLoading=true&animateFromBottom=true');
+              router.replace('/(tabs)');
             }, 1000);
           } else {
             setTimeout(() => {
@@ -489,8 +489,9 @@ export default function SaveProgressScreen() {
           const isProMember = useUserStore.getState().getProStatus() === 'pro';
           if (!isProMember) {
             setTimeout(() => {
-              router.replace('/PricingScreen?fromLoading=true&animateFromBottom=true');
-            }, 1000);
+              setTimeout(() => {
+                router.replace('/(tabs)');
+              }, 1000);            }, 1000);
           } else {
             setTimeout(() => {
               router.replace('/(tabs)');

@@ -8,6 +8,7 @@ import Rive, { RiveRef } from 'rive-react-native';
 import { IS_ANDROID } from '~/app/utils/utils';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import { adapty } from 'react-native-adapty';
+import i18n from '~/app/utils/i18n';
 
 import Animated, {
   useAnimatedStyle,
@@ -196,18 +197,18 @@ export default function SelfFundedMissionScreen() {
             <Animated.View style={contentStyle} className="items-center">
               {/* Header - Small caps style */}
               <Text className="font-din text-smallCaption uppercase tracking-widest text-description text-center mb-3 mt-8">
-                Support the mission
+                {i18n.t('self_funded_mission_support_mission')}
               </Text>
 
               {/* Main headline - Larger and more impactful */}
               <Text className="font-feather text-2xl text-textPrimary text-center mb-4 leading-tight px-4 mt-4">
-                We are a completely self-funded team of 2 Christians
+                {i18n.t('self_funded_mission_team_headline')}
 
               </Text>
 
               {/* Subheadline - Supporting text */}
               <Text className="font-din text-heading text-textPrimary text-center mb-8 leading-relaxed px-8 -mt-4">
-                with the goal of making faithful habits joyful again.
+                {i18n.t('self_funded_mission_goal_subtitle')}
               </Text>
 
 
@@ -271,27 +272,26 @@ export default function SelfFundedMissionScreen() {
 
                 {/* Names */}
                 <Text className="font-din text-xl text-textPrimary/50 text-center mt-2">
-                  Daniel & Dante
+                  {i18n.t('self_funded_mission_team_names')}
                 </Text>
               </Animated.View>
 
               {/* Donation highlight section */}
               <View className="bg-lightYellow/30 rounded-2xl px-6 py-4 mx-4 mb-12 border border-accentGold/20">
                 <Text className="font-din text-body text-textPrimary text-center leading-relaxed">
-                  <Text className="text-darkYellow font-feather">We donate 10% </Text> to help
-                  fund those in need through mission trips, churches, and charity.
+                  <Text className="text-darkYellow font-feather">{i18n.t('self_funded_mission_donation_highlight')}</Text>
                 </Text>
               </View>
 
               {/* Social proof */}
               <Text className="font-din text-caption text-description text-center mt-8">
-                Join 10,000+ other Super Shepherds
+                {i18n.t('self_funded_mission_social_proof')}
               </Text>
 
               {/* Fund button */}
               <View className="w-full mb-4">
                 <PrimaryButton
-                  title="Help fund future features"
+                  title={i18n.t('self_funded_mission_fund_button')}
                   onPress={handleFundFeatures}
                   buttonType="blue"
                   buttonHeight={RPH(7)}
@@ -301,7 +301,7 @@ export default function SelfFundedMissionScreen() {
               {/* Not today link */}
               <TouchableOpacity onPress={handleNotToday} className="py-4">
                 <Text className="font-din text-body text-description text-center underline">
-                  Sorry, not today
+                  {i18n.t('self_funded_mission_not_today')}
                 </Text>
               </TouchableOpacity>
             </Animated.View>

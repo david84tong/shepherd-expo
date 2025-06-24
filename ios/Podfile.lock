@@ -3186,6 +3186,27 @@ PODS:
     - ReactCommon/turbomodule/bridging
     - ReactCommon/turbomodule/core
     - Yoga
+  - react-native-view-shot (4.0.3):
+    - DoubleConversion
+    - glog
+    - hermes-engine
+    - RCT-Folly (= 2024.10.14.00)
+    - RCTRequired
+    - RCTTypeSafety
+    - React-Core
+    - React-debug
+    - React-Fabric
+    - React-featureflags
+    - React-graphics
+    - React-ImageManager
+    - React-NativeModulesApple
+    - React-RCTFabric
+    - React-rendererdebug
+    - React-utils
+    - ReactCodegen
+    - ReactCommon/turbomodule/bridging
+    - ReactCommon/turbomodule/core
+    - Yoga
   - React-nativeconfig (0.76.9)
   - React-NativeModulesApple (0.76.9):
     - glog
@@ -3776,6 +3797,7 @@ DEPENDENCIES:
   - react-native-safe-area-context (from `../node_modules/react-native-safe-area-context`)
   - "react-native-skia (from `../node_modules/@shopify/react-native-skia`)"
   - "react-native-slider (from `../node_modules/@react-native-community/slider`)"
+  - react-native-view-shot (from `../node_modules/react-native-view-shot`)
   - React-nativeconfig (from `../node_modules/react-native/ReactCommon`)
   - React-NativeModulesApple (from `../node_modules/react-native/ReactCommon/react/nativemodule/core/platform/ios`)
   - React-perflogger (from `../node_modules/react-native/ReactCommon/reactperflogger`)
@@ -4040,6 +4062,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/@shopify/react-native-skia"
   react-native-slider:
     :path: "../node_modules/@react-native-community/slider"
+  react-native-view-shot:
+    :path: "../node_modules/react-native-view-shot"
   React-nativeconfig:
     :path: "../node_modules/react-native/ReactCommon"
   React-NativeModulesApple:
@@ -4237,6 +4261,7 @@ SPEC CHECKSUMS:
   React-FabricComponents: 9542268e7cc59a49f0c2c1906d8ab9729a979b5a
   React-FabricImage: e2f72efe22e23ff3740502553614f1c2d86132c9
   React-featureflags: dc9c91fcd6a75cc95bd7fec184d0be8ad0f26db5
+<<<<<<< HEAD
   React-featureflagsnativemodule: 1c6ca282bd47de71a16420e29e7de28d46e59110
   React-graphics: 85866d95589b775bcb5f02946a96e948f53088f1
   React-hermes: ac0bcba26a5d288ebc99b500e1097da2d0297ddf
@@ -4257,6 +4282,29 @@ SPEC CHECKSUMS:
   react-native-safe-area-context: 8b8404e70b0cbf2a56428a17017c14c1dcc16448
   react-native-skia: f7549559a2a19b4c2dd6e7ad8c93868e9f24dae5
   react-native-slider: 41c65b428b0528186691999424c4b2ffa64a241e
+=======
+  React-featureflagsnativemodule: 1a0c73dca4158da552f074d469066d317c6a0570
+  React-graphics: fa15bab1a7d44a57eeb54e3185117729b141ed4b
+  React-hermes: ec18c10f5a69d49fb9b5e17ae95494e9ea13d4d3
+  React-idlecallbacksnativemodule: 1e13269b40e163fe92cb1774a24bbe607beb0242
+  React-ImageManager: 1a6f5a858f86bc93bf210a88ec5575ff22b69aaa
+  React-jserrorhandler: ea750869c2aa5497b3d9322afe02eb7f756b9696
+  React-jsi: 95f7676103137861b79b0f319467627bcfa629ee
+  React-jsiexecutor: 41e0fe87cda9ea3970ffb872ef10f1ff8dbd1932
+  React-jsinspector: 74c73f2b385b6a7979eddeba055961e9acc3cc42
+  React-jsitracing: 182a6d4af2273f847daa8a3f841fd3ff8212d3f8
+  React-logger: dbca7bdfd4aa5ef69431362bde6b36d49403cb20
+  React-Mapbuffer: 129fa9634f42d88a0c3761d2829db85175b985ee
+  React-microtasksnativemodule: 5aeec323cb452dba293815d82bf08d7076e295d0
+  react-native-adapty-sdk: 7bf88d070fb7b6a2d240894b7e6dd2155d9a637a
+  react-native-adapty-ui: 51d3797d65e8799a94969a8808d889bbc4d0cc70
+  react-native-blur: 89fca766002a2cf738ff37cca82a9776700841e6
+  react-native-mmkv-storage: c65409cc4e0c3c71ca190cbacae069e9fe8b84b6
+  react-native-safe-area-context: 142fade490cbebbe428640b8cbdb09daf17e8191
+  react-native-skia: 0702a47d9ab55aa32084bc36205ae61f4f06991c
+  react-native-slider: 8925e9856a27e84c0ce105b1d4f4ada65defec6c
+  react-native-view-shot: 4d1484f4902d1f60129205c4aae76cf44534c574
+>>>>>>> 0d5c2f1a46d14d06464ae92cf63ed6e3564391b8
   React-nativeconfig: 415626a63057638759bcc75e0a96e2e07771a479
   React-NativeModulesApple: d33b55553c6957ff94835574636838d78121a1c6
   React-perflogger: 72e653eb3aba9122f9e57cf012d22d2486f33358

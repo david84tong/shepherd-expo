@@ -5,7 +5,6 @@ import {
     TouchableOpacity,
     StyleSheet,
     Image,
-    Dimensions,
     ScrollView,
     Animated,
 } from 'react-native';
@@ -58,21 +57,20 @@ export default function BibleReaderTutorialSheet({ visible, onClose }: BibleRead
     }, [visible]);
 
     const handleClose = () => {
-        // Animated.parallel([
-        //     Animated.timing(translateY, {
-        //         toValue: 500,
-        //         duration: 300,
-        //         useNativeDriver: true,
-        //     }),
-        //     Animated.timing(opacity, {
-        //         toValue: 0,
-        //         duration: 300,
-        //         useNativeDriver: true,
-        //     }),
-        // ]).start(() => {
-        //     onClose();
-        // });
-        onClose?.()
+        Animated.parallel([
+            Animated.timing(translateY, {
+                toValue: 500,
+                duration: 300,
+                useNativeDriver: true,
+            }),
+            Animated.timing(opacity, {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: true,
+            }),
+        ]).start(() => {
+            onClose();
+        });
     };
 
     const handleNextStep = () => {
@@ -145,7 +143,7 @@ export default function BibleReaderTutorialSheet({ visible, onClose }: BibleRead
                     </View>
 
                     {/* Main instruction text */}
-                    <Text style={styles.mainInstruction}>
+                    <Text style={styles.mainInstruction} className='text-center font-nunito-bold mt-2'>
                         {steps[step].instruction}
                     </Text>
 
@@ -171,9 +169,7 @@ export default function BibleReaderTutorialSheet({ visible, onClose }: BibleRead
                         onPress={handleNextStep}
                         buttonType="gold"
                     />
-                    <TouchableOpacity onPress={onSkipPressed} className="text-lg font-feather text-[#3C584A] text-center underline self-center mt-5">
-                        <Text style={styles.skipButtonText}>{i18n.t('skip')}</Text>
-                    </TouchableOpacity>
+               
                 </View>
             </Animated.View>
         </EmptyModal>
@@ -222,7 +218,7 @@ const styles = StyleSheet.create({
     },
     headerTitle: {
         color: '#3C584A',
-        fontFamily: 'Nunito-Bold',
+        fontFamily: 'Nunito-Black',
         fontSize: 20,
         fontWeight: '600',
     },
@@ -236,7 +232,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         borderRadius: 16,
         justifyContent: 'center',
-        marginTop: RPH(2),
+        marginTop: RPH(0),
         overflow: 'hidden',
         width: 240,
     },
@@ -253,7 +249,6 @@ const styles = StyleSheet.create({
     },
     mainInstruction: {
         color: '#3C584A',
-        fontFamily: 'feather',
         fontSize: AppFonts[17],
         fontWeight: '600',
         textAlign: 'center',
@@ -297,15 +292,5 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 24,
         paddingVertical: 8,
-    },
-    skipButton: {
-        alignItems: 'center',
-        marginTop: 12,
-    },
-    skipButtonText: {
-        color: '#3C584A',
-        fontFamily: 'feather',
-        fontSize: 16,
-        textDecorationLine: 'underline',
     },
 }); 

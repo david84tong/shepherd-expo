@@ -53,6 +53,7 @@ import { useSoundStore } from './stores/soundStore';
 import './stores/userStore';
 import './stores/subscriptionStore';
 import { useRemoteConfig } from './hooks/useRemoteConfig';
+import { initializeLanguage } from './utils/i18n';
 // Define missing ref types
 type PrayerSheetRef = {
   show: () => void;
@@ -191,6 +192,7 @@ export default function RootLayout() {
 
   // Call onAppForegroundOrInit after initialization
   useEffect(() => {
+   
     if (isInitialized) {
       console.log('bada');
       onAppForegroundOrInit();
@@ -335,6 +337,7 @@ export default function RootLayout() {
 
   // Add error boundary for initialization
   useEffect(() => {
+    initializeLanguage()
     const handleError = (error: Error) => {
       console.log('App initialization error:', error);
       setHasError(true);
@@ -599,7 +602,7 @@ export default function RootLayout() {
             )}
 
             {/* Debug button (visible only in development or for creators) */}
-            {<DebugButton />}
+            {(__DEV__ || isCreator) && <DebugButton />}
           </>
         )}
       </BottomSheetModalProvider>

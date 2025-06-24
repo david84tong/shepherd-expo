@@ -25,6 +25,7 @@ interface SuccessMessageProps {
   heartsGained?: number;
   xpGained?: number;
   showCollectBonus?: boolean;
+  onLoad?: () => void;
 }
 
 const MAX_HEARTS = 100;
@@ -44,8 +45,14 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
   heartsGained = 0,
   xpGained = 0,
   showCollectBonus = false,
+  onLoad,
 }) => {
   const didLevelUp = useMemo(() => level > prevLevel, [level, prevLevel]);
+
+  useEffect(() => {
+    onLoad?.()
+  }, [])
+
 
   // Get completion states from homeStore
   const readingCompleted = useHomeStore((state) => state.readingCompleted);

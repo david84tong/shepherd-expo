@@ -100,11 +100,13 @@ interface DevotionalStore {
   // NEW ACTION: Create AI-powered devotional from verse
   createAIDevotional: (verseText: string, reference: string, bookName: string, chapter: number, verse: number) => Promise<void>;
   // Clear custom devotional when closing
-  clearCustomDevotional: () => Promise<void>;
   // Refresh widget data with current devotional
   refreshWidgetData: () => Promise<void>;
   // NEW ACTION: Update widget timeline with 5 days of data
   updateWidgetTimeline: () => Promise<void>;
+  clearCustomDevotional: () => void;
+  updateLikeStatus: (devotionalId: string, liked: boolean) => void;
+  incrementShareCount: (devotionalId: string) => void;
 }
 
 export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
@@ -118,63 +120,56 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   customDevotional: null,
   isCreatingDevotional: false,
 
-  fetchTodaysDevotional: async () => {
+    fetchTodaysDevotional: async () => {
     console.log('🚀 fetchTodaysDevotional function called!');
     set({ isLoading: true, error: null });
     
     try {
-      // Try to get today's devotional by ID first (format: YYYY-MM-DD)
-      // const today = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
-      const today = new Date();
-      const todayId = today.toISOString().split('T')[0]; // Format: YYYY-MM-DD
-      
-      console.log('Trying to fetch devotional with ID:', todayId);
-      
       const devotionalsRef = firestore().collection('dailyDevotionals');
       
-      // First try to get by document ID
-      let snapshot = await devotionalsRef.doc(todayId).get();
+      // Get today's date in user's local timezone in YYYY-MM-DD format
+      const today = new Date();
+      const todayIdFormat = today.getFullYear() + '-' + 
+                           String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                           String(today.getDate()).padStart(2, '0');
       
+      console.log('Looking for devotional with id property:', todayIdFormat, 'Current time:', today.toLocaleString());
       
-             if (!snapshot.exists) {
-         console.log('No devotional found with today\'s ID, trying test document ID...');
-         
-         // Try the test document ID from Firestore
-         snapshot = await devotionalsRef.doc('2025-06-11').get();
-         
-         if (!snapshot.exists) {
-           console.log('Test document not found either, trying date range query...');
-           
-           // Fallback to date range query with broader range for testing
-           const startOfToday = new Date(new Date().setDate(new Date().getDate() - 7)); // Look back 7 days
-           startOfToday.setHours(0, 0, 0, 0);
-           
-           const endOfToday = new Date(new Date().setDate(new Date().getDate() + 7)); // Look ahead 7 days
-           endOfToday.setHours(23, 59, 59, 999);
-           
-           console.log('Fetching devotional for createdAt between:', startOfToday.toISOString(), 'and', endOfToday.toISOString());
-           
-           const querySnapshot = await devotionalsRef
-             .where('createdAt', '>=', firestore.Timestamp.fromDate(startOfToday))
-             .where('createdAt', '<=', firestore.Timestamp.fromDate(endOfToday))
-             .limit(1)
-             .get();
-             
-           if (querySnapshot.empty) {
-             console.log('No devotional found in date range either');
-             set({ 
-               currentDevotional: null, 
-               isLoading: false,
-               error: 'No devotional available for today' 
-             });
-             return;
-           }
-           
-           snapshot = querySnapshot.docs[0];
-         } else {
-           console.log('Found test devotional with ID: 2025-06-11');
-         }
-       }
+      // Query for devotional where the 'id' field matches today's date in YYYY-MM-DD format
+      const idQuerySnapshot = await devotionalsRef
+        .where('id', '==', todayIdFormat)
+        .limit(1)
+        .get();
+        
+      let snapshot;
+      if (!idQuerySnapshot.empty) {
+        snapshot = idQuerySnapshot.docs[0];
+        console.log('Found devotional by id field:', snapshot.id, 'with id property:', todayIdFormat);
+      } else {
+        console.log('No devotional found with id property:', todayIdFormat, 'trying fallback strategies...');
+        
+        // Fallback: Try known test document IDs for development
+        const testIds = ['proverbs_3_5', '2025-06-11', 'CFo121cim0OuAT1AwZpp'];
+        
+        for (const testId of testIds) {
+          console.log('Trying test document ID:', testId);
+          snapshot = await devotionalsRef.doc(testId).get();
+          if (snapshot.exists) {
+            console.log('Found test devotional with document ID:', testId);
+            break;
+          }
+        }
+        
+        if (!snapshot?.exists) {
+          console.log('No devotional found');
+          set({ 
+            currentDevotional: null, 
+            isLoading: false,
+            error: 'No devotional available for today' 
+          });
+          return;
+        }
+      }
       
             // Get the document data
       const devotionalData = snapshot.data() as Devotional;
@@ -192,6 +187,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       
       const devotional: Devotional = {
         ...devotionalData,
+        id: snapshot.id,
         // Extract 'en' values from nested objects, fallback to original if string
         prayer: typeof devotionalData.prayer === 'object' && devotionalData.prayer?.en 
           ? devotionalData.prayer.en 
@@ -579,6 +575,47 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     } catch (error) {
       console.error('Error updating widget timeline:', error);
     }
+  },
+
+  updateLikeStatus: (devotionalId, liked) => {
+    set(state => {
+      const currentUserId = auth().currentUser?.uid;
+      if (!currentUserId) return state;
+
+      const updateDevotional = (devotional: Devotional | null) => {
+        if (devotional && devotional.id === devotionalId) {
+          const newLikes = liked ? (devotional.likes || 0) + 1 : (devotional.likes || 0) - 1;
+          const likedBy = devotional.likedBy || [];
+          const newLikedBy = liked
+            ? [...likedBy, currentUserId]
+            : likedBy.filter(id => id !== currentUserId);
+
+          return { ...devotional, likes: newLikes < 0 ? 0 : newLikes, likedBy: newLikedBy };
+        }
+        return devotional;
+      };
+
+      return {
+        dailyDevotional: updateDevotional(state.dailyDevotional),
+        currentDevotional: updateDevotional(state.currentDevotional),
+      };
+    });
+  },
+
+  incrementShareCount: (devotionalId) => {
+    set(state => {
+      const updateDevotional = (devotional: Devotional | null) => {
+        if (devotional && devotional.id === devotionalId) {
+          return { ...devotional, shares: (devotional.shares || 0) + 1 };
+        }
+        return devotional;
+      };
+
+      return {
+        dailyDevotional: updateDevotional(state.dailyDevotional),
+        currentDevotional: updateDevotional(state.currentDevotional),
+      };
+    });
   },
 }));
 

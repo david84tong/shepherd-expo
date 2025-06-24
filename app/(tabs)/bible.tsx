@@ -10,6 +10,23 @@ export default function BibleTab() {
   const params = useLocalSearchParams();
   const { presentFreeTrialPaywall } = useSubscriptionStore();
 
+  // Parse URL parameters for navigation from other screens
+  const urlBookId = params.bookId ? parseInt(params.bookId as string, 10) : undefined;
+  const urlChapters = params.chapters
+    ? (params.chapters as string).split(',').map((c) => parseInt(c, 10))
+    : undefined;
+  const initialChapter = urlChapters && urlChapters.length > 0 ? urlChapters[0] : undefined;
+
+  // Use URL parameters if available, otherwise fall back to saved state
+  const bookIdToLoad = urlBookId || savedBookId;
+  const chapterToLoad = initialChapter || savedChapter;
+
+  // Create a unique key that always changes when parameters are present
+  // This ensures the component always re-renders with new parameters
+  const bibleReaderKey = urlBookId && initialChapter 
+    ? `bible-${bookIdToLoad}-${chapterToLoad}-${params.timestamp || Date.now()}`
+    : 'bible-default';
+
   // Ensure tab bar shows by clearing path flag when entering tab
   useEffect(() => {
     setPathInProgress(false);
@@ -27,8 +44,10 @@ export default function BibleTab() {
   }, [params.triggerPaywall, presentFreeTrialPaywall]);
 
   return (
-
-    <BibleReader initialBookId={savedBookId} initialChapter={savedChapter} />
-
+    <BibleReader 
+      key={bibleReaderKey}
+      initialBookId={bookIdToLoad} 
+      initialChapter={chapterToLoad} 
+    />
   );
 }

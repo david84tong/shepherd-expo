@@ -5,6 +5,7 @@ import PrimaryButton from '~/components/PrimaryButton';
 import analytics from '~/utils/analytics';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import { useUserStore } from '~/app/stores/userStore';
+import i18n from '~/app/utils/i18n';
 
 import Animated, {
   useAnimatedStyle,
@@ -104,11 +105,11 @@ export default function FreeOfferScreen() {
       timestamp: new Date().toISOString(),
       action: 'see_offer_pressed'
     });
-    
+
     try {
       // Present the free trial paywall
       const result = await presentFreeTrialPaywall();
-      
+
       // Track paywall result
       analytics.logEvent('FreeOffer_Paywall_Result', {
         result: result || 'unknown',
@@ -117,14 +118,14 @@ export default function FreeOfferScreen() {
       });
     } catch (error) {
       console.error('Error presenting free trial paywall:', error);
-      
+
       // Track error
       analytics.logEvent('FreeOffer_Paywall_Error', {
         error: error instanceof Error ? error.message : 'Unknown error',
         lambName: lambName,
         timestamp: new Date().toISOString()
       });
-      
+
       // Fallback to pricing screen if paywall fails
       router.push('/PricingScreen');
     }
@@ -134,16 +135,16 @@ export default function FreeOfferScreen() {
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <View className="flex-1 bg-surfaceCream px-6 pt-16">
-        
+
         <View className="flex-1 items-center justify-between py-12">
-          
+
           {/* Header Section */}
           <Animated.View style={headerStyle} className="items-center mt-8">
             <Text className="font-din text-xl text-description text-center mb-2">
-              Our biggest deal ever!
+              {i18n.t('free_offer_biggest_deal_ever')}
             </Text>
             <Text className="font-feather text-2xl text-textPrimary text-center mb-1">
-              <Text className="text-blue">One-time 43% OFF</Text> when you start your free trial now
+              <Text className="text-blue">{i18n.t('free_offer_one_time_discount')}</Text>
 
             </Text>
           </Animated.View>
@@ -162,14 +163,14 @@ export default function FreeOfferScreen() {
           {/* Subtext */}
           <Animated.View style={subtextStyle}>
             <Text className="font-din text-caption text-description text-center mt-8">
-              Biggest discount ever - just for you & {lambName}!
+              {i18n.t('free_offer_biggest_discount', { lambName: lambName })}
             </Text>
           </Animated.View>
 
           {/* CTA Button */}
           <Animated.View style={buttonStyle} className="w-full">
             <PrimaryButton
-              title="See one-time FREE offer"
+              title={i18n.t('free_offer_see_one_time_offer')}
               onPress={handleSeeOffer}
               buttonType="blue"
               buttonHeight={56}
