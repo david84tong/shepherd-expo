@@ -161,7 +161,7 @@ struct DailyVerseWidgetEntryView : View {
                                     .padding(.bottom, 6)
 
                                 Text(verse)
-                                    .font(.custom("Nunito-Regular", size: 16))
+                                    .font(.custom("Nunito-SemiBold", size: 16))
                                     .foregroundColor(.white)
                                     .lineSpacing(4)
                             }

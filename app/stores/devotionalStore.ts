@@ -8,6 +8,7 @@ import auth from '@react-native-firebase/auth';
 import { NativeModules, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePathStore } from './pathStore';
+import dayjs from 'dayjs';
 
 // Safely get WidgetDataSharer with error handling
 const getWidgetDataSharer = () => {
@@ -493,13 +494,22 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
       // Fetch 5 days of devotionals from Firestore
    
-      const devotionalPromises = Array.from({ length: 5 }).map(async (_, i) => {
-        
-        const date = new Date(today);
-        date.setDate(date.getDate() + i);
-        const dateId = date.toISOString().split('T')[0];
-        const docSnap = await firestore().collection('dailyDevotionals').where('date', '==', dateId).get();
-        return docSnap.docs?.[0]?.exists ? (docSnap?.docs?.[0]?.data() as Devotional) : null;
+      // Get start and end dates for the 5 day range
+      const startDate = dayjs(today).startOf('day').format('YYYY-MM-DD');
+      const endDate = dayjs(today).startOf('day').add(4, 'days').format('YYYY-MM-DD');
+
+      // Single query to fetch all devotionals in date range
+      const querySnap = await firestore()
+        .collection('dailyDevotionals')
+        .where('date', '>=', startDate)
+        .where('date', '<=', endDate)
+        .get();
+
+      // Map the results into an array of 5 days, filling nulls for missing dates
+      const devotionalPromises = Array.from({ length: 5 }).map((_, i) => {
+        const dateToFind = dayjs(today).startOf('day').add(i, 'days').format('YYYY-MM-DD');
+        const found = querySnap.docs.find(doc => doc.data().date === dateToFind);
+        return found ? found.data() as Devotional : null;
       });
       
       const rawDevotionals = await Promise.all(devotionalPromises);
@@ -555,6 +565,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       
       // Update both the single verse data for today AND the 5-day timeline
       const todaysData = processedDevotionals?.[0];
+      console.log("todaysData ==>",todaysData);
       
       if(!todaysData){
         await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
