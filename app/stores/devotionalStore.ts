@@ -5,7 +5,7 @@ import { fetchChapter } from '../api/bible';
 import { BIBLE_BOOK_IDS } from '../models/Path';
 import { createDevotionalFromVerse } from '../api/ai';
 import auth from '@react-native-firebase/auth';
-import { NativeModules, Platform } from 'react-native';
+import { NativeModules } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePathStore } from './pathStore';
 import dayjs from 'dayjs';
@@ -129,12 +129,15 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       const devotionalsRef = firestore().collection('dailyDevotionals');
       
       // Get today's date in user's local timezone in YYYY-MM-DD format
-      const today = new Date();
-      const todayIdFormat = today.getFullYear() + '-' + 
-                           String(today.getMonth() + 1).padStart(2, '0') + '-' + 
-                           String(today.getDate()).padStart(2, '0');
+      const today = dayjs();
+      const todayIdFormat = today.format('YYYY-MM-DD');
       
-      console.log('Looking for devotional with id property:', todayIdFormat, 'Current time:', today.toLocaleString());
+      console.log(
+        'Looking for devotional with id property:',
+        todayIdFormat,
+        'Current time:',
+        today.format('YYYY-MM-DD HH:mm:ss Z')
+      );
       
       // Query for devotional where the 'id' field matches today's date in YYYY-MM-DD format
       const idQuerySnapshot = await devotionalsRef

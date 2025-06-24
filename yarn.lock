@@ -9336,6 +9336,11 @@ react-native-screens@~4.4.0:
     react-freeze "^1.0.0"
     warn-once "^0.1.0"
 
+react-native-share@^12.1.0:
+  version "12.1.0"
+  resolved "https://registry.yarnpkg.com/react-native-share/-/react-native-share-12.1.0.tgz#19b404b6ce1ba170cc075134629bdb23045f64ea"
+  integrity sha512-9OZrrEx9pZfl8Pw8Uh/k5Tc1o6oBaBfctq3z2wxy6eJBY6O/aRhs7/WPrXAoQmh9dCxc5sIClcKN57ef34iORQ==
+
 react-native-svg@15.8.0:
   version "15.8.0"
   resolved "https://registry.yarnpkg.com/react-native-svg/-/react-native-svg-15.8.0.tgz#9b5fd4f5cf5675197b3f4cbfcc77c215de2b9502"

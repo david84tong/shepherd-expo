@@ -31,6 +31,7 @@ import JournalComponent from '~/components/JournalComponent';
 import DailyVerseCard from '~/components/Shared/DailyVerseCard';
 import CustomToast from '../components/Shared/CustomToast';
 import { imageAssets, useAssetsStore } from '../stores/assetsStore';
+import { useDevotionalStore } from '../stores/devotionalStore';
 import { useMemo, useState } from 'react';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import Rive from 'rive-react-native';
@@ -58,6 +59,26 @@ const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
 
 export default function HomeScreen() {
+  // Test effect to verify component is mounting
+  useEffect(() => {
+    console.log('🎉 HomeScreen component mounted!');
+    // Try fetching devotional immediately when component mounts
+    console.log('🎯 Attempting to fetch devotional on mount...');
+    const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
+    if (fetchDevotional) {
+      console.log('✅ fetchTodaysDevotional function found!');
+      fetchDevotional()
+        .then(() => {
+          console.log('✅ Devotional fetched successfully on mount!');
+        })
+        .catch((error: any) => {
+          console.error('❌ Error fetching devotional on mount:', error);
+        });
+    } else {
+      console.log('❌ fetchTodaysDevotional function not found!');
+    }
+  }, []);
+  
   // Local state for prayer success screen visibility
   const [showPrayerSuccess, setShowPrayerSuccess] = useState(false);
 
@@ -183,6 +204,24 @@ export default function HomeScreen() {
   useEffect(() => {
     i18n.locale = currentLanguage;
   }, [currentLanguage]);
+  
+  // Fetch devotional after assets are loaded
+  useEffect(() => {
+    console.log('📚 Asset check in HomeScreen effect:', { assetsLoaded, hasAssets: !!assets });
+    if (assetsLoaded && assets) {
+      console.log('✅ Assets loaded, now fetching devotional...');
+      const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
+      if (fetchDevotional) {
+        fetchDevotional()
+          .then(() => {
+            console.log('✅ Devotional fetched in index.tsx');
+          })
+          .catch((error) => {
+            console.error('❌ Error fetching devotional in index.tsx:', error);
+          });
+      }
+    }
+  }, [assetsLoaded, assets]);
 
   // Set bottomSheetRef in home store so other components can access it
   useEffect(() => {
@@ -271,7 +310,11 @@ export default function HomeScreen() {
   }, [riveAssets, currentStateInput, riveKey, riveReady, isPro, lambName, isLevelPillExpanded, riveSkinInitialized]);
 
   // Gate of rendering: only render the screen if the assets are ready
-  if (!assetsLoaded || !assets) return null;
+  console.log('🚪 Asset loading check:', { assetsLoaded, hasAssets: !!assets });
+  if (!assetsLoaded || !assets) {
+    console.log('❌ Returning null - assets not ready!');
+    return null;
+  }
 
   // Pre-calculate the expanded width for the pill (use a reasonable fixed width instead of screen-based)
   const pillExpandedWidth = 350;
@@ -766,7 +809,7 @@ export default function HomeScreen() {
                             points={50}
                             onPress={handleReflectionPress}
                             completed={reflectionCompleted}
-                            disabled={!readingCompleted || reflectionCompleted}
+                            disabled={!readingCompleted}
                           />
                         </View>
                       </View>

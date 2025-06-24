@@ -172,16 +172,19 @@ const OldPricingScreen = () => {
     // Always navigate to tabs when closing pricing screen for logged in users
     if (isSignedIn()) {
       router.replace('/(tabs)');
-    } else if (fromLoading) {
-      // If we came from loading screen and not signed in, try to go back
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/(tabs)');
-      }
     } else {
-      // If user is not signed in, send them to onboarding screen 11
-      router.replace('/onboarding/11');
+      // Check onboarding status before navigation
+      try {
+        const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+        if (onboardingCompleted === 'true') {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/onboarding/11');
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        router.replace('/(tabs)');
+    }
     }
   };
 
@@ -224,7 +227,7 @@ const OldPricingScreen = () => {
     return (
       <>
         {/* Header */}
-        {/* <AnimatedItem index={0} animateItemFromBottom={animateScreenFromBottom}>
+        <AnimatedItem index={0} animateItemFromBottom={animateScreenFromBottom}>
           <View className="flex-row items-center justify-between px-5 py-3 mb-3">
               <Animated.View entering={FadeIn.duration(600)}>
                 <TouchableOpacity onPress={handleBack} className="p-2">
@@ -233,7 +236,7 @@ const OldPricingScreen = () => {
               </Animated.View>            
             <View className="w-10" />
           </View>
-        </AnimatedItem> */}
+        </AnimatedItem>
 
         {/* Main content */}
         <ScrollView
