@@ -8,7 +8,6 @@ import {
     TouchableOpacity,
     Text,
     StatusBar,
-    Share,
     Image,
     Platform,
 } from 'react-native';
@@ -28,6 +27,7 @@ import { BIBLE_BOOK_IDS } from '~/app/models/Path';
 
 import analytics from '~/utils/analytics';
 import ViewShot from 'react-native-view-shot';
+import Share from 'react-native-share';
 
 interface FullScreenShareCardProps {
     visible: boolean;
@@ -211,25 +211,39 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                     await new Promise(resolve => setTimeout(resolve, 1000));
                     const screenshotUri = await viewShotRef.current?.capture?.();
                     if (screenshotUri && devotionalData) {
-                        const appStoreLink = 'https://apps.apple.com/us/app/shepherd-spiritual-bible-pet/id6745461941';
+                        const appStoreLink = Platform.OS === 'ios'
+                            ? 'https://apps.apple.com/us/app/shepherd-spiritual-bible-pet/id6745461941'
+                            : 'https://play.google.com/store/apps/details?id=second.round.shepherd';
                         const message = `"${devotionalData.verse}" - ${devotionalData.bibleReference}\n\nDownload Shepherd: ${appStoreLink}`;
 
-                        const shareOptions = {
-                            title: 'Share Daily Verse',
-                            message: message,
-                            url: screenshotUri,
-                        };
+                        try {
+                            const shareOptions = {
+                                title: 'Share Daily Verse',
+                                message: message,
+                                url: screenshotUri,
+                                type: 'image/jpeg',
+                                subject: 'Daily Verse from Shepherd',
+                            };
 
-                        await Share.share(shareOptions);
+                            const shareResult = await Share.open(shareOptions);
+                            console.log('Share successful:', shareResult);
+
+                            // Update share count and analytics
+                            const devotionalRef = firestore().collection('dailyDevotionals').doc(devotionalData.id);
+                            await devotionalRef.update({
+                                shares: firestore.FieldValue.increment(1),
+                            });
+                            analytics.logEvent('FullScreenShareCard_Share', {
+                                bibleReference: devotionalData.bibleReference,
+                                platform: Platform.OS,
+                            });
+                            useDevotionalStore.getState().incrementShareCount(devotionalData.id);
+                        } catch (shareError) {
+                            console.log('Share cancelled or failed:', shareError);
+                            // Don't update share count if user cancelled
+                        }
+
                         setIsCapturing(false);
-                        const devotionalRef = firestore().collection('dailyDevotionals').doc(devotionalData.id);
-                        await devotionalRef.update({
-                            shares: firestore.FieldValue.increment(1),
-                        });
-                        analytics.logEvent('FullScreenShareCard_Share', {
-                            bibleReference: devotionalData.bibleReference,
-                        });
-                        useDevotionalStore.getState().incrementShareCount(devotionalData.id);
                     }
                 } catch (error) {
                     console.error("Error sharing:", error);
@@ -324,11 +338,19 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                     }}
                     {...panResponder.panHandlers}
                 >
-                    <ViewShot ref={viewShotRef} options={{ format: 'jpg', quality: 0.9 }} style={{
-                        flex: 1,
-                        width: '100%',
-                        height: '100%',
-                    }}>
+                    <ViewShot
+                        ref={viewShotRef}
+                        options={{
+                            format: 'jpg',
+                            quality: 0.9,
+                            result: Platform.OS === 'android' ? 'tmpfile' : 'data-uri'
+                        }}
+                        style={{
+                            flex: 1,
+                            width: '100%',
+                            height: '100%',
+                        }}
+                    >
                         <View className="flex-1 bg-[#AAB33D]" style={{
                             overflow: 'hidden',
                             width: '100%',
