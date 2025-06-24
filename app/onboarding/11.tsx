@@ -161,6 +161,11 @@ export default function SaveProgressScreen() {
   const completeOnboarding = async () => {
     try {
       await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+      // Mark first app launch as completed so TabsLayout won't treat this session as first launch
+      await AsyncStorage.setItem('first_app_launch_completed', 'true');
+      // Also mark today's daily first load as completed to avoid an extra redirect right after sign-up
+      const today = new Date().toISOString().split('T')[0];
+      await AsyncStorage.setItem(`daily_first_load_${today}`, 'true');
       await clearResponses(); // Clear onboarding responses after completion
 
       // Animate out all components before navigation using Reanimated
@@ -257,6 +262,20 @@ export default function SaveProgressScreen() {
       const allResponses = getAllResponses();
       console.log('Onboarding responses:', JSON.stringify(allResponses));
 
+      // Get A/B test value from AsyncStorage (set in onboarding screen 1)
+      let abTestValue = 0; // Default value
+      try {
+        const storedAbTest = await AsyncStorage.getItem('abTest');
+        if (storedAbTest !== null) {
+          abTestValue = parseInt(storedAbTest, 10);
+          console.log('[OnboardingScreen11] Retrieved A/B test value:', abTestValue);
+        } else {
+          console.log('[OnboardingScreen11] No A/B test value found, using default:', abTestValue);
+        }
+      } catch (abTestError) {
+        console.error('[OnboardingScreen11] Error retrieving A/B test value:', abTestError);
+      }
+
       const spiritualGoal = allResponses.intent || 'Understand';
       const userData: UserDoc = {
         id: uid,
@@ -304,6 +323,7 @@ export default function SaveProgressScreen() {
         experience_level: userData.experienceLevel,
         denomination: userData.denomination,
         age_range: userData.ageRange,
+        abTest: abTestValue,
         notification_enabled: userData.notificationEnabled,
         notification_time: userData.notificationTime,
         selected_path: userData.selectedPathId,

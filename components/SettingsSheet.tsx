@@ -300,9 +300,21 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       // Apple sign-out: no explicit revoke needed in Firebase
       // (Apple does not expose logout in same way as Google)
 
-      // useUserStore.getState().resetUserStore();
-      // useHomeStore.getState().resetCompletionStates();
+      // Reset all stores and clear AsyncStorage data
+      useUserStore.getState().resetUserStore();
+      useHomeStore.getState().resetCompletionStates();
       syncStreakDataToWidget(0, dayjs()?.toDate());
+      
+      // Clear all AsyncStorage data - this removes all user-specific data including:
+      // - onboarding completion status
+      // - A/B test assignments
+      // - daily first load tracking
+      // - notification preferences
+      // - translation preferences
+      // - and all other cached user data
+      await AsyncStorage.clear();
+      console.log('✅ All AsyncStorage data cleared on sign out');
+      
       bottomSheetRef.current?.close();
       setIsModalDimActive(false);
 
@@ -328,8 +340,16 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       setIsModalDimActive(false);
       router.replace({ pathname: '/(auth)' });
     } finally {
-      // useUserStore.getState().resetUserStore();
-      AsyncStorage.clear();
+      // Ensure AsyncStorage is cleared even if there were errors
+      try {
+        await AsyncStorage.clear();
+        console.log('✅ AsyncStorage cleared in finally block');
+      } catch (clearError) {
+        console.error('❌ Error clearing AsyncStorage:', clearError);
+      }
+      
+      // Reset stores in finally block as well to ensure cleanup
+      useUserStore.getState().resetUserStore();
     }
   }, [router, setIsModalDimActive, userId]);
 
