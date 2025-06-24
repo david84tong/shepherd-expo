@@ -496,12 +496,14 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       today.setHours(0, 0, 0, 0);
 
       // Fetch 5 days of devotionals from Firestore
+   
       const devotionalPromises = Array.from({ length: 5 }).map(async (_, i) => {
+        
         const date = new Date(today);
         date.setDate(date.getDate() + i);
         const dateId = date.toISOString().split('T')[0];
-        const docSnap = await firestore().collection('dailyDevotionals').doc(dateId).get();
-        return docSnap.exists ? (docSnap.data() as Devotional) : null;
+        const docSnap = await firestore().collection('dailyDevotionals').where('date', '==', dateId).get();
+        return docSnap.docs?.[0]?.exists ? (docSnap?.docs?.[0]?.data() as Devotional) : null;
       });
       
       const rawDevotionals = await Promise.all(devotionalPromises);
@@ -512,6 +514,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
           if (!devotional) return null;
           
           let verseText = devotional.verse;
+          
           const reference = devotional.bibleReference || devotional.verse;
 
           if (verseText && verseText.includes(':')) {
@@ -556,6 +559,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       
       // Update both the single verse data for today AND the 5-day timeline
       const todaysData = processedDevotionals?.[0];
+      
       if(!todaysData){
         await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
         return;
