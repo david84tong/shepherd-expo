@@ -4,6 +4,11 @@ import * as Haptics from 'expo-haptics';
 import analytics from '../utils/analytics';
 import { useSoundStore } from '../app/stores/soundStore';
 import { responsiveHeight, responsiveWidth, responsiveFontSize } from 'react-native-responsive-dimensions';
+import { useUserStore } from '~/app/stores/userStore';
+import { useHomeStore } from '~/app/stores/homeStore';
+import i18n from '~/app/utils/i18n';
+import { useRouter } from 'expo-router';
+import useSubscriptionStore from '~/app/stores/subscriptionStore';
 
 interface SecondaryButtonProps {
   icon: ImageSourcePropType;
@@ -28,11 +33,15 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
 }) => {
   // Simple state to track pressed state
   const [isPressed, setIsPressed] = useState(false);
+  const router = useRouter();
+  const isPro = useUserStore((state) => state.proStatus === 'pro');
+  const { readingCompleted, reflectionCompleted } = useHomeStore();
+  const setFromScreen = useSubscriptionStore((state) => state.setFromScreen);
 
   // Determine styles based on completed status
   const bgColor = completed ? 'bg-lightGreen' : 'bg-surfaceCream';
   const borderColor = completed ? 'border-darkGreen' : 'border-border';
-  const opacityClass = disabled ? 'opacity-50' : completed ? 'opacity-70' : '';
+  const opacityClass = disabled ? 'opacity-50' : completed ? 'opacity-60' : '';
 
   // Platform-specific shadow styles
   const shadowStyles = !isPressed && !completed && !disabled ? {
@@ -62,6 +71,15 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   const handlePress = () => {
     if (disabled) return;
     analytics.logEvent(`${title}_Tapped`);
+
+    if (title === i18n.t('quiet_time')) {
+      if (!isPro) {
+        setFromScreen('home-reflection');
+        router.push('/onboarding/pricing/OldPricingScreen');
+        return;
+      }
+    }
+
     if (onPress) onPress();
   };
 

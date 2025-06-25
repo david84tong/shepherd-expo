@@ -50,7 +50,10 @@ const moodToStateInput: Record<string, number> = {
   'lamb-full': 3,
 };
 
+let effectCounter = 0;
+
 export const useHomeScreen = () => {
+  console.log('🎯 useHomeScreen hook called!');
   const router = useRouter();
   const { isPrayPresses, isReflectPresses, showDevotional } = useLocalSearchParams();
   
@@ -115,6 +118,19 @@ export const useHomeScreen = () => {
   const isLoadingDevotional = useDevotionalStore((state) => state.isLoading);
   const devotionalError = useDevotionalStore((state) => state.error);
   const fetchTodaysDevotional = useDevotionalStore((state) => state.fetchTodaysDevotional);
+  
+  // Debug: Log whenever currentDevotional changes
+  useEffect(() => {
+    console.log('📱 CurrentDevotional updated in useHomeScreen:', currentDevotional?.id, currentDevotional?.bibleReference);
+  }, [currentDevotional]);
+  
+  // Add immediate console log to see store state
+  console.log('🔍 Store state at hook init:', {
+    currentDevotional: currentDevotional?.id,
+    isLoadingDevotional,
+    devotionalError,
+    hasFetchFunction: !!fetchTodaysDevotional
+  });
   const customDevotional = useDevotionalStore((state) => state.customDevotional);
   const clearCustomDevotional = useDevotionalStore((state) => state.clearCustomDevotional);
   const { setFromScreen, presentHalfOffPaywall } = useSubscriptionStore();
@@ -469,13 +485,54 @@ export const useHomeScreen = () => {
     };
   }, [riveSkinInitialized, isFirstLoad]);
 
+  // First, add a simple effect to verify effects are running at all
   useEffect(() => {
+    effectCounter++;
+    console.log(`🚨 EFFECT #${effectCounter} REGISTERED - Basic test effect is running!`);
+  });
+  
+  useEffect(() => {
+    console.log('🏠 HomeScreen mounted - checking if fetchTodaysDevotional exists:', !!fetchTodaysDevotional);
     analytics.logEvent('HomeScreen_Viewed');
-    fetchTodaysDevotional().then(() => {
-      const devotionalStore = useDevotionalStore.getState();
-      const data = devotionalStore.currentDevotional;
-      setDevotionalData(data);
-    });
+    console.log('🏠 HomeScreen useEffect - fetching todays devotional');
+    
+    // Small delay to ensure store is initialized
+    const timer = setTimeout(() => {
+      console.log('🏠 Timer fired - checking fetchTodaysDevotional again:', !!fetchTodaysDevotional);
+      
+      if (!fetchTodaysDevotional) {
+        console.error('❌ fetchTodaysDevotional is still not available after delay!');
+        // Try to get it directly from the store
+        const storeFetch = useDevotionalStore.getState().fetchTodaysDevotional;
+        console.log('🏠 Trying direct store access:', !!storeFetch);
+        if (storeFetch) {
+          storeFetch()
+            .then(() => {
+              const devotionalStore = useDevotionalStore.getState();
+              const data = devotionalStore.currentDevotional;
+              console.log('📖 Devotional fetched successfully via direct access:', data?.id, data?.bibleReference);
+              setDevotionalData(data);
+            })
+            .catch((error) => {
+              console.error('❌ Error fetching devotional via direct access:', error);
+            });
+        }
+        return;
+      }
+      
+      fetchTodaysDevotional()
+        .then(() => {
+          const devotionalStore = useDevotionalStore.getState();
+          const data = devotionalStore.currentDevotional;
+          console.log('📖 Devotional fetched successfully:', data?.id, data?.bibleReference);
+          setDevotionalData(data);
+        })
+        .catch((error) => {
+          console.error('❌ Error fetching devotional in HomeScreen:', error);
+        });
+    }, 100);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   // // Reset Rive and cache on screen unfocus, re-initialize on focus
@@ -670,54 +727,55 @@ export const useHomeScreen = () => {
   }, [currentDevotional]);
 
   const handleReflectionPress = useCallback(() => {
-    if (!isPro && reflectionCompleted) {
-      setFromScreen('home-read');
-      handleSubscriptionPress();
-    } else {
-      setFinishReading(false);
+    // Analytics for pro users accessing reflection
+    analytics.logEvent('HomeScreen_Reflection_Accessed', {
+      userType: isPro ? 'pro' : 'free',
+      readingCompleted: readingCompleted,
+      reflectionCompleted: reflectionCompleted,
+      prayerCompleted: prayerCompleted,
+    });
+    setFinishReading(false);
+    Animated.timing(devotionalCardOpacityAnim, {
+      toValue: 0,
+      duration: 400,
+      useNativeDriver: true,
+    }).start(() => {
+      setShowJournalContent(true);
+      const setJournalViewVisible = useHomeStore.getState().setJournalViewVisible;
+      setJournalViewVisible(true);
       Animated.timing(devotionalCardOpacityAnim, {
-        toValue: 0,
-        duration: 400,
+        toValue: 1,
+        duration: 600,
         useNativeDriver: true,
-      }).start(() => {
-        setShowJournalContent(true);
-        const setJournalViewVisible = useHomeStore.getState().setJournalViewVisible;
-        setJournalViewVisible(true);
-        Animated.timing(devotionalCardOpacityAnim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }).start();
-      });
+      }).start();
+    });
 
-      setShowJournalReader(true);
-      Animated.timing(riveArtboardOpacityAnim, {
-        toValue: 0,
-        duration: 400,
-        useNativeDriver: true,
-      }).start(() => {
-        setCurrentStateInput(12);
-        if (riveRef.current?.setInputState) {
-        
+    setShowJournalReader(true);
+    Animated.timing(riveArtboardOpacityAnim, {
+      toValue: 0,
+      duration: 400,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentStateInput(12);
+      if (riveRef.current?.setInputState) {
         setTimeout(() => {
-          if(riveRef.current){
+          if (riveRef.current) {
             riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
           }
         }, 500);
-          try {
-            riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
-          } catch (_) {
-            // Ignore if Action-Number input not present
-          }
+        try {
+          riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
+        } catch (_) {
+          // Ignore if Action-Number input not present
         }
-        Animated.timing(riveArtboardOpacityAnim, {
-          toValue: 1,
-          duration: 600,
-          useNativeDriver: true,
-        }).start();
-      });
-    }
-  }, [isPro, reflectionCompleted]);
+      }
+      Animated.timing(riveArtboardOpacityAnim, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, [isPro, reflectionCompleted, readingCompleted, prayerCompleted]);
 
   const handleWidgetPromptPress = useCallback(() => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
