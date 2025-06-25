@@ -33,6 +33,7 @@ import CustomToast from '../components/Shared/CustomToast';
 import { imageAssets, useAssetsStore } from '../stores/assetsStore';
 import { useDevotionalStore } from '../stores/devotionalStore';
 import { usePathStore } from '../stores/pathStore';
+import { useUserStore } from '../stores/userStore';
 import { useMemo, useState, useEffect } from 'react';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import Rive from 'rive-react-native';
@@ -253,6 +254,29 @@ export default function HomeScreen() {
       reflectionCompleted
     });
   }, [nextUnitPreview, readingCompleted, prayerCompleted, reflectionCompleted]);
+
+  // Check if there are 2 readings from today
+  const getCompletedReadings = useUserStore((state) => state.getCompletedReadings);
+  const todaysReadingsCount = useMemo(() => {
+    const readings = getCompletedReadings();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const todaysReadings = readings.filter(reading => {
+      const readingDate = reading.date.toDate();
+      readingDate.setHours(0, 0, 0, 0);
+      return readingDate.getTime() === today.getTime();
+    });
+    
+    return todaysReadings.length;
+  }, [getCompletedReadings]);
+
+  // Determine if next unit button should be marked as completed
+  const isNextUnitCompleted = todaysReadingsCount >= 2;
+
+  // Determine subtitle text based on total readings count
+  const totalReadingsCount = getCompletedReadings().length;
+  const nextUnitSubtitle = totalReadingsCount >= 4 ? "Continue Reading Plan" : "Start Bible Reading Plan";
 
   // Load Rive assets
   const [riveAssets] = useAssets([
@@ -762,6 +786,7 @@ export default function HomeScreen() {
                         <View
                           className="flex-row items-center justify-between"
                           style={{ marginTop: responsiveHeight(2) }}>
+                            
                           <View
                             style={{
                               width: 22,
@@ -770,19 +795,28 @@ export default function HomeScreen() {
                               justifyContent: 'center',
                               flexShrink: 0,
                             }}>
-                            <View
-                              className="bg-lightBrown/20"
-                              style={{ width: 20, height: 20, borderRadius: 12 }}
-                            />
+                              {isNextUnitCompleted ? (
+                                  <Image
+                                  source={require('../../assets/icons/checkMini.png')}
+                                  style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                                />
+                                
+                              ) : (
+                                <View
+                                className="bg-lightBrown/20"
+                                style={{ width: 20, height: 20, borderRadius: 12 }}
+                              />
+                              )}
+                        
                           </View>
                           <View style={{ flex: 1, minWidth: 0 }}>
                             <SecondaryButton
                               icon={require('../../assets/icons/map.png')}
-                              title={nextUnitPreview.title}
-                              subtitle="Start Bible Reading Plan"
+                              title={"Your Custom Plan"}
+                              subtitle={nextUnitSubtitle}
                               points={0}
                               onPress={handleNextUnitPress}
-                              completed={false}
+                              completed={isNextUnitCompleted}
                               disabled={false}
                             />
                           </View>
@@ -892,6 +926,7 @@ export default function HomeScreen() {
                             disabled={!readingCompleted}
                           />
                         </View>
+                        <View style={{ height: 4 }} />
                       </View>
 
                       {/* {isLoadingDevotional && (

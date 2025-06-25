@@ -588,14 +588,14 @@ export default function MapScreen() {
 
   return (
     <>
-      <SafeAreaView className="flex-1 bg-surfaceCream">
+      <SafeAreaView className="flex-1 bg-surfaceCream mt-4">
         <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
         
         {/* Back button when coming from home screen */}
         {fromHome && (
           <BackButton 
             onPress={() => router.back()} 
-            containerClassName="absolute top-12 left-4 z-50"
+            containerClassName="absolute top-0 left-0 z-50"
           />
         )}
         

@@ -1,7 +1,7 @@
 import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, Animated, ScrollView, AppState } from 'react-native';
+import { View, Text, Animated, ScrollView, AppState } from 'react-native';
 import BackButton from './BackButton';
 import PrimaryButton from './PrimaryButton';
 import { Unit, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS } from '../app/models/Path'; // Import both path constants
@@ -84,7 +84,17 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   const subtitle = useMemo(() => {
     if (nextUnit) {
       const ref = getFirstReference(nextUnit.reference);
-      return `Next: ${ref.bookName} ${ref.chapters[0]}`;
+      const chapters = ref.chapters;
+      
+      // If there's only one chapter, show single chapter format
+      if (chapters.length === 1) {
+        return `Next: ${ref.bookName} ${chapters[0]}`;
+      } else {
+        // Show chapter range for multiple chapters
+        const startChapter = chapters[0];
+        const endChapter = chapters[chapters.length - 1];
+        return `Next: ${ref.bookName} ${startChapter}-${endChapter}`;
+      }
     }
     return `Today's Reading · ${savedBook} ${savedChapter}`;
   }, [nextUnit, savedBook, savedChapter]);

@@ -1,7 +1,7 @@
 import { useAssets } from 'expo-asset';
 import { router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, Animated, ScrollView, ImageBackground, SafeAreaView, StatusBar } from 'react-native';
+import { View, Text, Animated, ScrollView, ImageBackground, SafeAreaView, StatusBar } from 'react-native';
 import BackButton from '../components/BackButton';
 import PrimaryButton from '../components/PrimaryButton';
 import { Unit, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS } from './models/Path';
@@ -78,7 +78,17 @@ export default function BiblePreviewScreen() {
   const subtitle = useMemo(() => {
     if (nextUnit) {
       const ref = getFirstReference(nextUnit.reference);
-      return `Next: ${ref.bookName} ${ref.chapters[0]}`;
+      const chapters = ref.chapters;
+      
+      // If there's only one chapter, show single chapter format
+      if (chapters.length === 1) {
+        return `Next: ${ref.bookName} ${chapters[0]}`;
+      } else {
+        // Show chapter range
+        const startChapter = chapters[0];
+        const endChapter = chapters[chapters.length - 1];
+        return `Next: ${ref.bookName} ${startChapter}-${endChapter}`;
+      }
     }
     return `Today's Reading · ${savedBook} ${savedChapter}`;
   }, [nextUnit, savedBook, savedChapter]);
@@ -240,7 +250,7 @@ export default function BiblePreviewScreen() {
           {/* Back Button - Same position as map.tsx */}
           <BackButton
             onPress={handleBack}
-            containerClassName="absolute top-12 left-4 z-50"
+            containerClassName="absolute -top-12 left-0 z-50"
           />
 
           {/* Content Area */}
@@ -258,7 +268,7 @@ export default function BiblePreviewScreen() {
             
             {/* Animated Card Preview */}
             <Animated.View
-              className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center border-4 border-border mb-6 mt-8"
+              className="w-[90%] bg-surfaceCream rounded-[28px] py-8 px-6 items-center border-4 border-border mb-6 -mt-8"
               style={{ 
                 opacity: cardOpacity, 
                 transform: [{ translateY: cardAnim }],
@@ -295,11 +305,7 @@ export default function BiblePreviewScreen() {
                 handleStart();
               }}
             />
-            <TouchableOpacity onPress={handleJustReadBible} className="mt-4 py-2" activeOpacity={0.7}>
-              <Text className="text-body font-nunito-bold text-textPrimary/70 text-center underline">
-                Just Read Bible
-              </Text>
-            </TouchableOpacity>
+      
           </Animated.View>
         </Animated.View>
       </SafeAreaView>
