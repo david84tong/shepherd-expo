@@ -37,6 +37,7 @@ import josephsCoat from '~/assets/lambStatic/JosephsCoat.png';
 import armorOfGod from '~/assets/lambStatic/armorOfGod.png';
 import whale from '~/assets/lambStatic/whale.png';
 import pinkSkin from '~/assets/lambStatic/pinkSkin.png';
+import { hapticLight } from '~/utils/haptics';
 // Define store item types
 type StoreCategory = 'skins' | 'powerups' | 'hearts';
 
