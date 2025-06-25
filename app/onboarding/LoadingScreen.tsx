@@ -671,3 +671,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     </View>
   );
 }
+
+export const unstable_settings = {
+  safeAreaInsets: { top: 'never', bottom: 'never' }
+};
