@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
 import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
+import { createJSONStorage, persist, PersistStorage } from 'zustand/middleware';
 
 import { updateField, createUserDocument } from '../../utils/firestore';
 import { syncStreakDataToWidget } from '../../utils/widgetSync';
@@ -521,6 +521,98 @@ export const useUserStore = create<UserStore>()(
     {
       name: 'shepherd-user-storage',
       storage: createJSONStorage(() => AsyncStorage as any),
+      // Only persist data fields, exclude all functions
+      partialize: (state) => {
+        const {
+          // Exclude all functions
+          getUser,
+          setUser,
+          createUser,
+          syncFirestoreData,
+          resetUserStore,
+          getSpiritualGoal,
+          getExperienceLevel,
+          getFrequencyGoal,
+          getDenomination,
+          getDisplayName,
+          getSelectedPathId,
+          getLamb,
+          getStreakCount,
+          getLastActivityDate,
+          getVersesReadTotal,
+          getChaptersReadTotal,
+          getBibleVersion,
+          getProStatus,
+          getCreatedAt,
+          getUpdatedAt,
+          getGens,
+          getLastReadingDate,
+          getLastPrayerDate,
+          getLastReflectionDate,
+          getLastReadingPenaltyDate,
+          getLastPrayerPenaltyDate,
+          getLastReflectionPenaltyDate,
+          getCompletedReflections,
+          getCompletedPrayers,
+          getCompletedReadings,
+          getLambLevel,
+          getLambXp,
+          getLambMood,
+          getLambHearts,
+          getLambName,
+          getLambSkin,
+          getHasSeenWidgetModal,
+          getHasSeenBibleReaderTutorial,
+          getSkins,
+          setSpiritualGoal,
+          setExperienceLevel,
+          setFrequencyGoal,
+          setDenomination,
+          setDisplayName,
+          setSelectedPathId,
+          setIsProFromOnboarding,
+          setLamb,
+          setStreakCount,
+          setLastActivityDate,
+          setLastReadingDate,
+          setLastPrayerDate,
+          setLastReflectionDate,
+          setLastReadingPenaltyDate,
+          setLastPrayerPenaltyDate,
+          setLastReflectionPenaltyDate,
+          setVersesReadTotal,
+          setChaptersReadTotal,
+          setBibleVersion,
+          setProStatus,
+          setCreatedAt,
+          setUpdatedAt,
+          setGens,
+          setNotificationTime,
+          setCompletedReflections,
+          setCompletedPrayers,
+          setCompletedReadings,
+          addCompletedReflection,
+          addCompletedPrayer,
+          addCompletedReading,
+          setLambLevel,
+          setLambXp,
+          setLambMood,
+          setLambHearts,
+          setLambName,
+          setLambSkin,
+          incrementStreak,
+          addXp,
+          setHasSeenWidgetModal,
+          setHasSeenBibleReaderTutorial,
+          setCompletedMapPaths,
+          addCompletedMapPath,
+          setSkins,
+          addSkin,
+          // Keep only data fields
+          ...dataOnly
+        } = state;
+        return dataOnly;
+      },
     }
   )
 );
