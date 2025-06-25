@@ -60,6 +60,7 @@ interface JournalProps {
   onClose: ({ isCompleted, isReflectPresses }: { isCompleted?: boolean, isReflectPresses?: boolean }) => void;
   setFinishReading: (finishReading: boolean) => void;
   setJournalButtonEnabled: (enabled: boolean) => void;
+  setShowJournalContent?: (show: boolean) => void;
 }
 
 // Get screen dimensions
@@ -72,7 +73,7 @@ const MIN_CHARS_REQUIRED = 10;
  * Component for the Daily Reflection/Journaling feature.
  * Includes an auto-focusing TextInput and handles keyboard appearance.
  */
-const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visible, onClose, setFinishReading, setJournalButtonEnabled }, ref) => {
+const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visible, onClose, setFinishReading, setJournalButtonEnabled, setShowJournalContent }, ref) => {
   // All hooks must be called at the top level, before any conditional returns
   const inputRef = useRef<TextInput>(null);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
@@ -416,11 +417,20 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
         useHomeStore.getState().setJournalViewVisible(true);
       }
 
-      // Reset bottom sheet to 60% when success screen is shown
-      const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
-      if (bottomSheetRef?.current) {
-        bottomSheetRef.current.snapToIndex(0); // Index 0 is 60% in snapPoints array
+      // Reset showJournalContent to false first to recalculate snapPoints, then reset bottom sheet
+      if (setShowJournalContent) {
+        setShowJournalContent(false);
+        console.log('🔍 JOURNAL SUCCESS - Set showJournalContent to false');
       }
+      
+      // Use a small delay to allow snapPoints to recalculate before snapping
+      setTimeout(() => {
+        const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
+        if (bottomSheetRef?.current) {
+          bottomSheetRef.current.snapToIndex(0); // Index 0 is 60% in snapPoints array
+          console.log('🔍 JOURNAL SUCCESS - Bottom sheet snapped to 60%');
+        }
+      }, 100);
 
       animatedXP.setValue(0);
       animatedHearts.setValue(0);

@@ -39,6 +39,8 @@ type BibleSection = {
   artboardName?: string;
 };
 
+
+
 // Optimize NextNodeIndicator with memo
 // const NextNodeIndicator = React.memo(({ alignment }: { alignment: 'start' | 'center' | 'end' }) => {
 //   // Load Rive assets
@@ -241,13 +243,14 @@ export default function MapScreen() {
 
   // Get pro status from subscription store
   const isProMember = useSubscriptionStore((state) => state.isProMember);
+  const { presentFreeTrialPaywall } = useSubscriptionStore();
   const subscriptionStore = useSubscriptionStore();
 
   // Handle subscription button press using the store action
   const handleSubscriptionPress = async () => {
     hapticMedium();
     subscriptionStore.setFromScreen('map');
-    router.push('/PricingScreen' as any);
+    presentFreeTrialPaywall();
   };
 
   // Track if we need to suppress haptic feedback (e.g., on first render)
@@ -508,7 +511,7 @@ export default function MapScreen() {
         // 1. User is not a pro member (proStatus !== "pro")
         // 2. User has completed their daily reading (readingCompleted is true)
         // 3. They're trying to access a non-first path (section.index > 0)
-        if (!isProMember && readingCompleted && section.index > 0) {
+        if (!isProMember) {
           console.log(
             'Showing pricing screen: user is not pro, has completed reading, and is trying to access a non-first path'
           );

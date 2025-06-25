@@ -87,7 +87,7 @@ export default function ProfileScreen() {
   } = useUserStore();
 
   // Get subscription state and actions from the store
-  const { isProMember, presentFreeTrialPaywall, getCustomerInfo, setFromScreen, presentPaywall } = useSubscriptionStore();
+  const { isProMember, presentFreeTrialPaywall, getCustomerInfo, setFromScreen } = useSubscriptionStore();
 
   const lamb = getLamb();
   const streak = getStreakCount();
@@ -845,7 +845,7 @@ export default function ProfileScreen() {
 
                     // Present the paywall
                     try {
-                      const result = await presentPaywall();
+                      const result = await presentFreeTrialPaywall();
                       if (result === 'PURCHASED') {
                         analytics.logEvent('Profile_Upgrade_Success', {
                           fromScreen: 'profile'

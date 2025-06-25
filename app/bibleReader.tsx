@@ -1320,7 +1320,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   ];
 
   // When user enabled Card View preference, render the NewBibleReader component
-  if (useCardView && !pathInProgress) {
+  if (useCardView ) {
     return <View className='flex-1 bg-surfaceCream/80'>
       <StatusBar translucent backgroundColor="transparent" />
       <NewBibleReader
@@ -1558,13 +1558,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                       {i18n.t('bible_title')}
                     </Text>
                   )}
-                  {pathInProgress ? (
+                  {/* {pathInProgress ? (
                     <View className="bg-white/80 px-4 py-2 rounded-full">
                       <Text className="font-feather text-brown" style={{ fontSize: 16 }}>
                         {effectiveChapterData ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}` : ''}
                       </Text>
                     </View>
-                  ) : (
+                  ) : ( */}
                     <TouchableOpacity onPress={handlePresentModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
                       <MaterialIcons
                         name="settings"
@@ -1573,7 +1573,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                         style={{ opacity: 0.4 }}
                       />
                     </TouchableOpacity>
-                  )}
+                  {/* )} */}
                 </View>
               </View>
 

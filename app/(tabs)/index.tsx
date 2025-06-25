@@ -83,11 +83,11 @@ export default function HomeScreen() {
     const timestamp = new Date().toISOString();
     console.log(`🎉 [${timestamp}] HomeScreen component mounted!`);
     setIsMounted(true);
-
+    
     try {
-      // Initialize next unit preview based on current completion state
-      const initializeNextUnit = usePathStore.getState().initializeNextUnitPreview;
-      initializeNextUnit();
+    // Initialize next unit preview based on current completion state
+    const initializeNextUnit = usePathStore.getState().initializeNextUnitPreview;
+    initializeNextUnit();
     } catch (error) {
       console.error('❌ Error initializing next unit preview:', error);
     }
@@ -108,19 +108,19 @@ export default function HomeScreen() {
     console.log(`🎯 [${timestamp}] Component is mounted, attempting to fetch devotional...`);
     
     try {
-      const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
-      if (fetchDevotional) {
+    const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
+    if (fetchDevotional) {
         console.log(`✅ [${timestamp}] fetchTodaysDevotional function found!`);
-        fetchDevotional()
-          .then(() => {
+      fetchDevotional()
+        .then(() => {
             const devotionalStore = useDevotionalStore.getState();
             const data = devotionalStore.currentDevotional;
             console.log(`📖 [${timestamp}] Devotional fetched successfully:`, data?.id, data?.bibleReference);
-          })
-          .catch((error: any) => {
+        })
+        .catch((error: any) => {
             console.error(`❌ [${timestamp}] Error fetching devotional:`, error);
-          });
-      } else {
+        });
+    } else {
         console.log(`❌ [${timestamp}] fetchTodaysDevotional function not found!`);
       }
     } catch (error) {
@@ -233,6 +233,7 @@ export default function HomeScreen() {
     setShowControlRow,
     setShowHeartsModal,
     setShowExplainerModal,
+    setShowJournalContent,
     // Other values
     snapPoints,
     BASE_LAMB_SIZE,
@@ -285,7 +286,7 @@ export default function HomeScreen() {
 
   // Determine subtitle text based on total readings count
   const totalReadingsCount = getCompletedReadings().length;
-  const nextUnitSubtitle = totalReadingsCount >= 4 ? "Continue Reading Plan" : "Start Bible Reading Plan";
+  const nextUnitSubtitle = totalReadingsCount >= 4 ? i18n.t('continue_reading_plan') : i18n.t('start_bible_reading_plan');
 
   // Handler for path selection
   const handlePathSelected = (pathObj: any) => {
@@ -317,7 +318,7 @@ export default function HomeScreen() {
   useEffect(() => {
     i18n.locale = currentLanguage;
   }, [currentLanguage]);
-
+  
 
   // Set bottomSheetRef in home store so other components can access it
   useEffect(() => {
@@ -758,6 +759,7 @@ export default function HomeScreen() {
                   android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
                 }),
               }}
+              
               onChange={handleSheetChanges}>
               <Animated.View style={{ flex: 1, opacity: devotionalCardOpacityAnim }}>
                 {showDevotionalContent ? (
@@ -776,6 +778,7 @@ export default function HomeScreen() {
                     visible={showJournalContent}
                     setFinishReading={setFinishReading}
                     onClose={onCloseJournal}
+                    setShowJournalContent={setShowJournalContent}
                   />
                 ) : showPrayerContent ?
 
@@ -826,17 +829,17 @@ export default function HomeScreen() {
                               />
 
                             ) : (
-                              <View
-                                className="bg-lightBrown/20"
-                                style={{ width: 20, height: 20, borderRadius: 12 }}
-                              />
+                            <View
+                              className="bg-lightBrown/20"
+                              style={{ width: 20, height: 20, borderRadius: 12 }}
+                            />
                             )}
 
                           </View>
                           <View style={{ flex: 1, minWidth: 0 }}>
                             <SecondaryButton
                               icon={require('../../assets/icons/map.png')}
-                              title={"Your Custom Plan"}
+                              title={i18n.t('your_custom_plan')}
                               subtitle={nextUnitSubtitle}
                               points={0}
                               onPress={() => {
@@ -915,7 +918,7 @@ export default function HomeScreen() {
                           <SecondaryButton
                             icon={dropIcon}
                             title={i18n.t('living_water')}
-                            subtitle={i18n.t('feed_soul')}
+                            subtitle={i18n.t('refresh_spirit_prayer')}
                             points={50}
                             onPress={handlePrayerPress}
                             completed={prayerCompleted}
@@ -950,7 +953,7 @@ export default function HomeScreen() {
                           <SecondaryButton
                             icon={bibleIcon}
                             title={i18n.t('quiet_time')}
-                            subtitle={i18n.t('feed_soul')}
+                            subtitle={i18n.t('pause_meet_god')}
                             points={50}
                             onPress={handleReflectionPress}
                             completed={reflectionCompleted}
