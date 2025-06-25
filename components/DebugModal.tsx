@@ -2,7 +2,7 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import firestore from '@react-native-firebase/firestore';
 import { useRouter, usePathname } from 'expo-router';
 import React, { useState, useRef, useMemo, useCallback } from 'react';
-import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert, TextInput } from 'react-native';
+import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert, TextInput, NativeModules } from 'react-native';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
@@ -1224,7 +1224,6 @@ export function DebugButton() {
                   className="bg-[#FFE0E8] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF80A0]"
                   onPress={() => {
                     console.log('📱 DEBUG: Testing WidgetDataSharer native module');
-                    const { NativeModules } = require('react-native');
                     console.log('📱 Available NativeModules:', Object.keys(NativeModules));
 
                     try {
@@ -1287,6 +1286,57 @@ export function DebugButton() {
                   </Text>
                   <Text className="font-din text-sm text-[#B89B4C] mt-1">
                     Reset devotional store to empty state
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Clear Path Data Button */}
+                <TouchableOpacity
+                  className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
+                  onPress={async () => {
+                    try {
+                      console.log('🔍 DEBUG: Clearing path and nextUnit data from store and AsyncStorage');
+                      const pathStore = usePathStore.getState();
+                      
+                      // Clear path data from store
+                      pathStore.setCurrentPath(null);
+                      pathStore.setSelectedPath(null as any);
+                      pathStore.setPathInProgress(false);
+                      pathStore.setNextUnitPreview(null);
+                      
+                      // Clear path data from AsyncStorage
+                      console.log('🗑️ Clearing AsyncStorage key: shepherd-path-storage');
+                      await AsyncStorage.removeItem('shepherd-path-storage');
+                      
+                      // Also clear any user selectedPathId from userStore
+                      const userStore = useUserStore.getState();
+                      userStore.setSelectedPathId('');
+                      
+                      // Sync with Firestore
+                      syncWithFirestore();
+                      
+                      Toast.show({
+                        type: 'success',
+                        text1: 'Path Data Wiped',
+                        text2: 'All path data cleared from store & AsyncStorage',
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    } catch (error) {
+                      console.error('❌ Error clearing path data:', error);
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Clear Failed',
+                        text2: 'Error clearing path data - check console',
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Clear Path & NextUnit Data
+                  </Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Hard wipe from store & AsyncStorage
                   </Text>
                 </TouchableOpacity>
               </View>

@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
   Image,
   Animated,
+  Modal,
 } from 'react-native';
 import BottomSheet, { BottomSheetScrollView, SCREEN_HEIGHT } from '@gorhom/bottom-sheet';
 import Toast from 'react-native-toast-message';
@@ -47,6 +48,8 @@ import { useLanguageStore } from '../stores/languageStore';
 import { AppFonts } from '../constants/appFonts';
 import React from 'react';
 import { hapticLight } from '~/utils/haptics';
+import OnboardingPathScreen from '../onboarding/8';
+import { Feather } from '@expo/vector-icons';
 
 // Custom toast config with explicit styling
 const toastConfig = CustomToast;
@@ -76,33 +79,35 @@ export default function HomeScreen() {
   console.log('📍 State initialized');
 
   // Test effect to verify component is mounting
-  try {
-    useEffect(() => {
-      const timestamp = new Date().toISOString();
-      console.log(`🎉 [${timestamp}] HomeScreen component mounted!`);
-      setIsMounted(true);
+  useEffect(() => {
+    const timestamp = new Date().toISOString();
+    console.log(`🎉 [${timestamp}] HomeScreen component mounted!`);
+    setIsMounted(true);
 
+    try {
       // Initialize next unit preview based on current completion state
       const initializeNextUnit = usePathStore.getState().initializeNextUnitPreview;
       initializeNextUnit();
+    } catch (error) {
+      console.error('❌ Error initializing next unit preview:', error);
+    }
 
-      return () => {
-        console.log(`👋 [${timestamp}] HomeScreen component unmounting`);
-      };
-    }, []);
-  } catch (error) {
-    console.error('❌ Error registering first useEffect:', error);
-  }
+    return () => {
+      console.log(`👋 [${timestamp}] HomeScreen component unmounting`);
+    };
+  }, []);
 
   console.log('📍 First useEffect registered');
 
   // Separate effect for fetching devotional - runs when component is mounted
-  try {
-    useEffect(() => {
-      if (!isMounted) return;
+  useEffect(() => {
+    console.log("isMounted ==>", isMounted);
+    // if (!isMounted) return;
 
-      const timestamp = new Date().toISOString();
-      console.log(`🎯 [${timestamp}] Component is mounted, attempting to fetch devotional...`);
+    const timestamp = new Date().toISOString();
+    console.log(`🎯 [${timestamp}] Component is mounted, attempting to fetch devotional...`);
+    
+    try {
       const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
       if (fetchDevotional) {
         console.log(`✅ [${timestamp}] fetchTodaysDevotional function found!`);
@@ -118,10 +123,10 @@ export default function HomeScreen() {
       } else {
         console.log(`❌ [${timestamp}] fetchTodaysDevotional function not found!`);
       }
-    }, [isMounted]);
-  } catch (error) {
-    console.error('❌ Error registering second useEffect:', error);
-  }
+    } catch (error) {
+      console.error('❌ Error in devotional useEffect:', error);
+    }
+  }, []);
 
   console.log('📍 Second useEffect registered');
 
@@ -244,6 +249,9 @@ export default function HomeScreen() {
 
   console.log('📍 All local state initialized');
 
+  // Add state for path selection modal
+  const [showPathModal, setShowPathModal] = useState(false);
+
   // Debug effect to track nextUnitPreview changes
   useEffect(() => {
     console.log('🔍 NextUnitPreview debug:', {
@@ -278,6 +286,21 @@ export default function HomeScreen() {
   // Determine subtitle text based on total readings count
   const totalReadingsCount = getCompletedReadings().length;
   const nextUnitSubtitle = totalReadingsCount >= 4 ? "Continue Reading Plan" : "Start Bible Reading Plan";
+
+  // Handler for path selection
+  const handlePathSelected = (pathObj: any) => {
+    if (!pathObj) return;
+    // Update pathStore
+    if (typeof pathObj === 'object' && pathObj.id) {
+      usePathStore.getState().setSelectedPath(pathObj);
+      // Update userStore as well
+      useUserStore.getState().setUser({ selectedPathId: pathObj.id });
+    }
+    setShowPathModal(false);
+  };
+
+  // Get current path from pathStore
+  const currentPath = usePathStore((state) => state.currentPath);
 
   // Load Rive assets
   const [riveAssets] = useAssets([
@@ -816,7 +839,14 @@ export default function HomeScreen() {
                               title={"Your Custom Plan"}
                               subtitle={nextUnitSubtitle}
                               points={0}
-                              onPress={handleNextUnitPress}
+                              onPress={() => {
+                                // Check if both nextUnitPreview and currentPath are null
+                                if (!nextUnitPreview && !currentPath) {
+                                  setShowPathModal(true);
+                                } else {
+                                  handleNextUnitPress();
+                                }
+                              }}
                               completed={isNextUnitCompleted}
                               disabled={false}
                             />
@@ -995,6 +1025,42 @@ export default function HomeScreen() {
             />
           </SafeAreaView>
         </Animated.View></View>
+
+      {/* Path Selection Modal */}
+      <Modal
+        visible={showPathModal}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={() => setShowPathModal(false)}>
+        <View style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
+          {/* Show X button to close modal */}
+          <TouchableOpacity
+            onPress={() => {
+              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+              setShowPathModal(false);
+            }}
+            style={{
+              position: 'absolute',
+              top: 48,
+              right: 24,
+              zIndex: 10,
+              backgroundColor: '#fff',
+              borderRadius: 20,
+              padding: 8,
+              shadowColor: '#000',
+              shadowOpacity: 0.08,
+              shadowRadius: 4,
+            }}
+            hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+            <Feather name="x" size={24} color="#3C584A" />
+          </TouchableOpacity>
+          <OnboardingPathScreen
+            onPathSelected={handlePathSelected}
+            hideContinueButton={false}
+            onModalClose={() => setShowPathModal(false)}
+          />
+        </View>
+      </Modal>
 
       <FullScreenShareCard
         visible={showShareCard}

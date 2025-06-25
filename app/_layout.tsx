@@ -191,9 +191,8 @@ export default function RootLayout() {
 
   // Call onAppForegroundOrInit after initialization
   useEffect(() => {
-
+    console.log('isInitialized ==>', isInitialized);
     if (isInitialized) {
-      console.log('bada');
       onAppForegroundOrInit();
     }
   }, [isInitialized]);
