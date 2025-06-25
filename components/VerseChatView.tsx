@@ -118,6 +118,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
   const [chatLanguage, setChatLanguage] = useState<SupportedLanguage>('en');
   const [hasSetLanguage, setHasSetLanguage] = useState(false);
   const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [hasDismissedLanguageModal, setHasDismissedLanguageModal] = useState(false); // Track if user dismissed modal without selecting
   const flatListRef = useRef<FlatList>(null);
 
   const fadeAnim = useSharedValue(0);
@@ -162,6 +163,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     try {
       setChatLanguage(selectedLanguage);
       setHasSetLanguage(true);
+      setHasDismissedLanguageModal(false); // Reset dismissed state when language is selected
       await AsyncStorage.setItem(CHAT_LANGUAGE_KEY, selectedLanguage);
       await AsyncStorage.setItem(CHAT_LANGUAGE_SET_KEY, 'true');
 
@@ -179,14 +181,14 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
 
   // Show language selection on first visit
   useEffect(() => {
-    if (!hasSetLanguage && !showLanguageModal) {
+    if (!hasSetLanguage && !showLanguageModal && !hasDismissedLanguageModal) {
       const timer = setTimeout(() => {
         setShowLanguageModal(true);
       }, 1000); // Show after 1 second
 
       return () => clearTimeout(timer);
     }
-  }, [hasSetLanguage, showLanguageModal]);
+  }, [hasSetLanguage, showLanguageModal, hasDismissedLanguageModal]);
 
   // Check if user has already used their free message
   useEffect(() => {
@@ -826,7 +828,21 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       {/* Language Selection Modal */}
       <LanguageSelectionModal
         visible={showLanguageModal}
-        onClose={() => setShowLanguageModal(false)}
+        onClose={async () => {
+          setShowLanguageModal(false);
+          setHasDismissedLanguageModal(true);
+          setHasSetLanguage(true); // Mark as set so modal won't show again
+          
+          // Save current app language as chat language if user dismisses without selecting
+          // This ensures the modal won't show again and chat uses the current app language
+          try {
+            await AsyncStorage.setItem(CHAT_LANGUAGE_KEY, language);
+            await AsyncStorage.setItem(CHAT_LANGUAGE_SET_KEY, 'true');
+            console.log(`[VerseChatView] Saved current app language as chat language on dismiss: ${language}`);
+          } catch (error) {
+            console.error('Error saving current language on modal dismiss:', error);
+          }
+        }}
         onLanguageSelect={handleLanguageSelect}
         selectedLanguage={chatLanguage}
         title={i18n.t('select_chat_language')}
