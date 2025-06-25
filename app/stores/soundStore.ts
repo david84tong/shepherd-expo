@@ -49,6 +49,7 @@ export const useSoundStore = create<SoundState>()(
       },
 
       playBackgroundMusic: async () => {
+        console.log("START PLAYING MUSIC ======>")
         try {
           // Configure audio if not already configured
           if (!get().isAudioConfigured) {

@@ -9,6 +9,7 @@ import {
   Keyboard,
   Share as RNShare,
   PanResponder,
+  AppState,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -31,6 +32,7 @@ import { IS_ANDROID } from '../utils/utils';
 import { Devotional } from '../models/Devotional';
 import { useRiveAnimation } from './useRiveAnimation';
 import i18n from '../utils/i18n';
+import { useSoundStore } from '../stores/soundStore';
 
 // Constants
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -238,6 +240,38 @@ export const useHomeScreen = () => {
       
     }, [showDevotional])
   );
+
+    // Move the sound store hooks inside the component
+    const backgroundMusicEnabled = useSoundStore.getState().backgroundMusicEnabled;
+    // Initialize background music
+    useEffect(() => {
+      if (backgroundMusicEnabled) {
+        useSoundStore.getState().playBackgroundMusic();
+      } else {
+        useSoundStore.getState().stopBackgroundMusic();
+      }
+    }, [backgroundMusicEnabled]);
+    const appState = useRef(AppState.currentState);
+    useEffect(() => {
+      const subscription = AppState.addEventListener('change', (nextAppState) => {
+        if (appState.current.match(/active/) && nextAppState.match(/inactive|background/)) {
+          // App has gone to background, stop the music
+          if (backgroundMusicEnabled) {
+            useSoundStore.getState().stopBackgroundMusic();
+          }
+        } else if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+          // App has come to foreground, restart music if it was enabled
+          if (backgroundMusicEnabled) {
+            useSoundStore.getState().playBackgroundMusic();
+          }
+        }
+        appState.current = nextAppState;
+      });
+  
+      return () => {
+        subscription.remove();
+      };
+    }, []);
 
   // Set riveRef in home store so other components can access it
   useEffect(() => {

@@ -49,7 +49,6 @@ import { IS_ANDROID } from './utils/utils';
 
 // Import highlight store setup function
 import useHighlightStore from './stores/highlightStore';
-import { useSoundStore } from './stores/soundStore';
 import './stores/userStore';
 import './stores/subscriptionStore';
 import { useRemoteConfig } from './hooks/useRemoteConfig';
@@ -192,7 +191,7 @@ export default function RootLayout() {
 
   // Call onAppForegroundOrInit after initialization
   useEffect(() => {
-   
+
     if (isInitialized) {
       console.log('bada');
       onAppForegroundOrInit();
@@ -382,7 +381,7 @@ export default function RootLayout() {
         await checkOnboarding();
         await checkStreakStatus();
         await initializeNotifications();
-      } catch (error) {}
+      } catch (error) { }
       // Set Rive ready
       setIsRiveReady(true);
       setShowRiveAnimation(true);
@@ -394,7 +393,7 @@ export default function RootLayout() {
       }, 100);
     } catch (error) {
       console.log('Error during app initialization:', error);
-      Alert.alert('Error during app initialization:', error);
+      Alert.alert('Error during app initialization:', error instanceof Error ? error.message : String(error));
       setHasError(true);
       setAppReady(true);
       SplashScreen.hideAsync();
@@ -481,16 +480,6 @@ export default function RootLayout() {
       subscription.remove();
     };
   }, [router]);
-  // Move the sound store hooks inside the component
-  const backgroundMusicEnabled = useSoundStore.getState().backgroundMusicEnabled;
-  // Initialize background music
-  useEffect(() => {
-    if (backgroundMusicEnabled) {
-      useSoundStore.getState().playBackgroundMusic();
-    } else {
-      useSoundStore.getState().stopBackgroundMusic();
-    }
-  }, [backgroundMusicEnabled]);
 
   // Show Rive animation
   if (showRiveAnimation && riveAssets?.[0]?.uri) {

@@ -9,6 +9,7 @@ import { Platform, NativeModules } from 'react-native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import Constants from 'expo-constants';
 import { useUserStore } from '../stores/userStore';
+import { useSoundStore } from '../stores/soundStore';
 import analytics from '../../utils/analytics';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { syncStreakDataToWidget } from '~/utils/widgetSync';
@@ -441,6 +442,9 @@ export const useAuth = () => {
 
       await auth().signOut();
 
+      // Stop background music when signing out
+      useSoundStore.getState().stopBackgroundMusic();
+
       if (Platform.OS === 'android' && !isAnonymous) {
         await GoogleSignin.revokeAccess?.();
       }
@@ -451,6 +455,10 @@ export const useAuth = () => {
       // await subscriptionStore.logoutAdaptyUser();
     } catch (error) {
       console.log('[Auth] Error during sign out:', error);
+      
+      // Stop background music even if there was an error
+      useSoundStore.getState().stopBackgroundMusic();
+      
       throw error;
     }
   };
