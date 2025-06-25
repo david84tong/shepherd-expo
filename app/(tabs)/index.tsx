@@ -33,7 +33,7 @@ import CustomToast from '../components/Shared/CustomToast';
 import { imageAssets, useAssetsStore } from '../stores/assetsStore';
 import { useDevotionalStore } from '../stores/devotionalStore';
 import { usePathStore } from '../stores/pathStore';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import Rive from 'rive-react-native';
 import * as Haptics from 'expo-haptics';
@@ -43,8 +43,8 @@ import analytics from '~/utils/analytics';
 import BottomControls from '../components/BottomControls';
 import i18n from '../utils/i18n';
 import { useLanguageStore } from '../stores/languageStore';
-import { useEffect } from 'react';
 import { AppFonts } from '../constants/appFonts';
+import React from 'react';
 
 // Custom toast config with explicit styling
 const toastConfig = CustomToast;
@@ -59,34 +59,74 @@ const gemIcon = imageAssets[8];
 const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
 
+console.log('📄 HomeScreen file loaded at:', new Date().toISOString());
+
 export default function HomeScreen() {
-  // Test effect to verify component is mounting
-  useEffect(() => {
-    console.log('🎉 HomeScreen component mounted!');
-    
-    // Initialize next unit preview based on current completion state
-    const initializeNextUnit = usePathStore.getState().initializeNextUnitPreview;
-    initializeNextUnit();
-    
-    // Try fetching devotional immediately when component mounts
-    console.log('🎯 Attempting to fetch devotional on mount...');
-    const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
-    if (fetchDevotional) {
-      console.log('✅ fetchTodaysDevotional function found!');
-      fetchDevotional()
-        .then(() => {
-          console.log('✅ Devotional fetched successfully on mount!');
-        })
-        .catch((error: any) => {
-          console.error('❌ Error fetching devotional on mount:', error);
-        });
-    } else {
-      console.log('❌ fetchTodaysDevotional function not found!');
-    }
+  console.log('🏠 HomeScreen function called at:', new Date().toISOString());
+  
+  // Direct function call to test
+  React.useEffect(() => {
+    console.log('🔥 INLINE EFFECT RUNNING!');
   }, []);
+  
+  // Add a state to ensure component is mounted
+  const [isMounted, setIsMounted] = useState(false);
+  console.log('📍 State initialized');
+  
+  // Test effect to verify component is mounting
+  try {
+    useEffect(() => {
+      const timestamp = new Date().toISOString();
+      console.log(`🎉 [${timestamp}] HomeScreen component mounted!`);
+      setIsMounted(true);
+      
+      // Initialize next unit preview based on current completion state
+      const initializeNextUnit = usePathStore.getState().initializeNextUnitPreview;
+      initializeNextUnit();
+      
+      return () => {
+        console.log(`👋 [${timestamp}] HomeScreen component unmounting`);
+      };
+    }, []);
+  } catch (error) {
+    console.error('❌ Error registering first useEffect:', error);
+  }
+  
+  console.log('📍 First useEffect registered');
+  
+  // Separate effect for fetching devotional - runs when component is mounted
+  try {
+    useEffect(() => {
+      if (!isMounted) return;
+      
+      const timestamp = new Date().toISOString();
+      console.log(`🎯 [${timestamp}] Component is mounted, attempting to fetch devotional...`);
+      const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
+      if (fetchDevotional) {
+        console.log(`✅ [${timestamp}] fetchTodaysDevotional function found!`);
+        fetchDevotional()
+          .then(() => {
+            const devotionalStore = useDevotionalStore.getState();
+            const data = devotionalStore.currentDevotional;
+            console.log(`📖 [${timestamp}] Devotional fetched successfully:`, data?.id, data?.bibleReference);
+          })
+          .catch((error: any) => {
+            console.error(`❌ [${timestamp}] Error fetching devotional:`, error);
+          });
+      } else {
+        console.log(`❌ [${timestamp}] fetchTodaysDevotional function not found!`);
+      }
+    }, [isMounted]);
+  } catch (error) {
+    console.error('❌ Error registering second useEffect:', error);
+  }
+  
+  console.log('📍 Second useEffect registered');
 
   // Local state for prayer success screen visibility
   const [showPrayerSuccess, setShowPrayerSuccess] = useState(false);
+  
+  console.log('📍 About to call useHomeScreen hook');
 
   const {
     // State
@@ -121,6 +161,7 @@ export default function HomeScreen() {
     gens,
     lambName,
     currentDevotional,
+    dailyDevotional,
     isLoadingDevotional,
     devotionalError,
     isPro,
@@ -194,8 +235,12 @@ export default function HomeScreen() {
     handleRivePlay,
     MAX_HEARTS
   } = useHomeScreen();
+  
+  console.log('📍 useHomeScreen hook called successfully');
 
   const [startShareFlow, setStartShareFlow] = useState(false);
+  
+  console.log('📍 All local state initialized');
 
   // Debug effect to track nextUnitPreview changes
   useEffect(() => {
@@ -700,9 +745,9 @@ export default function HomeScreen() {
                     <BottomSheetScrollView
                       showsVerticalScrollIndicator={false}
                       contentContainerStyle={{ paddingBottom: RPH(20), paddingHorizontal: 24 }}>
-                      {prayerCompleted && readingCompleted && reflectionCompleted && (currentDevotional || devotionalData) && (
+                      {prayerCompleted && readingCompleted && reflectionCompleted && dailyDevotional && (
                         <DailyVerseCard
-                          devotional={currentDevotional || devotionalData!}
+                          devotional={dailyDevotional}
                           share={true}
                           onPress={handleDailyVersePress}
                           onExpand={handleDailyVerseExpand}
@@ -918,7 +963,7 @@ export default function HomeScreen() {
       <FullScreenShareCard
         visible={showShareCard}
         onClose={handleFullScreenShareClose}
-        devotionalData={currentDevotional || devotionalData}
+        devotionalData={dailyDevotional || devotionalData}
         startShareFlow={startShareFlow}
         setStartShareFlow={setStartShareFlow}
       />

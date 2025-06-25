@@ -136,7 +136,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         'Looking for devotional with id property:',
         todayIdFormat,
         'Current time:',
-        today.format('YYYY-MM-DD HH:mm:ss Z')
+        today.format('YYYY-MM-DD')
       );
       
       // Query for devotional where the 'id' field matches today's date in YYYY-MM-DD format
@@ -177,7 +177,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       
             // Get the document data
       const devotionalData = snapshot.data() as Devotional;
-      console.log("devotionalData ====>",devotionalData);
+      console.log("FETCHING devotionalData ====>");
       
       if (!devotionalData) {
         console.log('No devotional data found');

@@ -29,6 +29,7 @@ const IMPLEMENTED_SCREENS = [
   'auth',
   'lambFound',
   'pathAffinity',
+  'LoadingScreen',
 ];
 
 export default function OnboardingLayout() {
