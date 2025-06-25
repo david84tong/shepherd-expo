@@ -272,7 +272,11 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       // Pro members always get the normal welcome message
       if (isProMember) {
         console.log("[VerseChatView] Setting up welcome message for pro member");
-        const initialMessage = `Welcome! I'm here to help you study ${bookName} ${chapter}:${verse.verse}. What would you like to know about this verse?`;
+        const initialMessage = i18n.t('bible_chat_welcome', {
+          bookName,
+          chapter,
+          verse: verse.verse
+        });
 
         setMessages([{
           id: Date.now().toString(),
@@ -285,7 +289,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         console.log("[VerseChatView] Setting up upgrade message for user who has used all messages");
         const upgradeMessage = {
           id: Date.now().toString(),
-          text: "You've used your free messages for the entire app. Upgrade to Shepherd Super to unlock unlimited Bible conversations across all verses!",
+          text: i18n.t('bible_chat_upgrade_message'),
           isUser: false,
           timestamp: new Date()
         };
@@ -293,7 +297,11 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       } else {
         // Non-pro users with remaining messages get normal welcome
         console.log("[VerseChatView] Setting up welcome message for non-pro user with remaining messages");
-        const initialMessage = `Welcome! I'm here to help you study ${bookName} ${chapter}:${verse.verse}. What would you like to know about this verse?`;
+        const initialMessage = i18n.t('bible_chat_welcome', {
+          bookName,
+          chapter,
+          verse: verse.verse
+        });
 
         setMessages([{
           id: Date.now().toString(),
@@ -373,7 +381,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       setTimeout(() => {
         const upgradeMessage = {
           id: (Date.now() + 1).toString(),
-          text: "You've used your free messages for the entire app. Upgrade to Shepherd Super to unlock unlimited Bible conversations across all verses!",
+          text: i18n.t('bible_chat_upgrade_message'),
           isUser: false,
           timestamp: new Date()
         };
@@ -571,7 +579,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         // Fallback message in case of API error
         const errorResponse = {
           id: (Date.now() + 1).toString(),
-          text: "I'm sorry, I couldn't process your request at the moment. Please try again later.",
+          text: i18n.t('bible_chat_error_message'),
           isUser: false,
           timestamp: new Date()
         };
@@ -621,7 +629,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     const isUser = item.isUser;
 
     // If this is an upgrade prompt, render a special message with an upgrade button
-    if (!isUser && (item.text.includes("Upgrade to Shepherd Super") || item.text.includes("You've used your free message"))) {
+    if (!isUser && (item.text.includes(i18n.t('bible_chat_upgrade_message')))) {
       return (
         <Reanimated.View
           entering={FadeInUp.duration(300).delay(200)}
@@ -651,8 +659,9 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
               });
               showPaywall();
             }}
+            accessibilityLabel={i18n.t('bible_chat_upgrade_now')}
           >
-            <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
+            <Text style={styles.upgradeButtonText}>{i18n.t('bible_chat_upgrade_now')}</Text>
           </TouchableOpacity>
         </Reanimated.View>
       );
@@ -731,9 +740,10 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
             }}
             style={styles.backButton}
             activeOpacity={0.7}
+            accessibilityLabel={i18n.t('bible_chat_back')}
           >
             <Feather name="chevron-left" size={22} color="#3C584A" />
-            <Text style={styles.backButtonText}>Back</Text>
+            <Text style={styles.backButtonText}>{i18n.t('bible_chat_back')}</Text>
           </TouchableOpacity>
           <Text style={styles.headerText}>
             {bookName} {chapter}:{verse.verse}
@@ -742,6 +752,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
             onPress={() => setShowLanguageModal(true)}
             style={styles.settingsButton}
             activeOpacity={0.7}
+            accessibilityLabel={i18n.t('bible_chat_settings')}
           >
             <Feather name="settings" size={20} color="#3C584A" />
           </TouchableOpacity>
@@ -794,8 +805,8 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
             <TextInput
               style={styles.input}
               placeholder={!isProMember && globalMessageCount >= 3
-                ? "Upgrade to continue chatting..."
-                : "Ask about this verse..."}
+                ? i18n.t('bible_chat_upgrade_placeholder')
+                : i18n.t('bible_chat_ask_verse_placeholder')}
               placeholderTextColor="#B89B4C"
               value={inputMessage}
               onChangeText={setInputMessage}
@@ -814,6 +825,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
               onPress={handleSend}
               disabled={!inputMessage.trim()}
               activeOpacity={0.8}
+              accessibilityLabel={!isProMember && globalMessageCount >= 3 ? i18n.t('bible_chat_unlock') : i18n.t('bible_chat_send')}
             >
               <Feather
                 name={!isProMember && globalMessageCount >= 3 ? "unlock" : "send"}
