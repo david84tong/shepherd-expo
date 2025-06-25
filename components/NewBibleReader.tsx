@@ -14,7 +14,7 @@ import {
   FlatList,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchChapter, Verse, ChapterResponse } from '~/app/api/bible';
+import { fetchChapter, fetchChapterWithCache, Verse, ChapterResponse } from '~/app/api/bible';
 import { usePathStore } from '~/app/stores/pathStore';
 import { AntDesign, Feather, FontAwesome6, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Reanimated, {
@@ -540,7 +540,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           );
 
           // Always fetch fresh data from API - no caching
-          const result = await fetchChapter(translation, bookId, chapter);
+          const result = await fetchChapterWithCache(translation, bookId, chapter);
 
           if ('error' in result) {
             console.error(`❌ Error loading chapter: ${result.message}`);
@@ -589,7 +589,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           );
 
           // Always fetch fresh data from API - no caching
-          const result = await fetchChapter(translation, bookId, chapter);
+          const result = await fetchChapterWithCache(translation, bookId, chapter);
 
           if ('error' in result) {
             console.error(`❌ Error loading chapter: ${result.message}`);
@@ -754,7 +754,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       const loadInitialChapter = async () => {
         try {
           console.log('📖 [NewBibleReader] Loading initial chapter from API');
-          const result = await fetchChapter(translation, bookId, chapter);
+          const result = await fetchChapterWithCache(translation, bookId, chapter);
 
           if (!('error' in result)) {
             setChapterData(result);

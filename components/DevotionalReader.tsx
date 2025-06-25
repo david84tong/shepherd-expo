@@ -65,6 +65,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
 
   // Use customDevotional if it exists (AI-generated), otherwise use currentDevotional
   const activeDevotional = customDevotional || currentDevotional;
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showTapGuidance, setShowTapGuidance] = useState(true);
   const [tapCount, setTapCount] = useState(0);

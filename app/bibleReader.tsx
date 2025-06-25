@@ -23,7 +23,7 @@ import {
   Dimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { fetchChapter, Verse } from './api/bible';
+import { fetchChapter, fetchChapterWithCache, Verse } from './api/bible';
 import SideButton from '~/components/SideButton';
 import { usePathStore } from './stores/pathStore';
 import { useHomeStore, SuccessAnimationType } from './stores/homeStore';
@@ -485,7 +485,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         await new Promise(resolve => setTimeout(resolve, LOADING_TIMEOUT));
 
         // Key line: bookId is now being passed properly to the API
-        result = await fetchChapter(version, bookId, chapter);
+        result = await fetchChapterWithCache(version, bookId, chapter);
 
         // Cache the result
         if (!('error' in result)) {

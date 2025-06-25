@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Devotional } from '../models/Devotional';
 import firestore from '@react-native-firebase/firestore';
-import { fetchChapter } from '../api/bible';
+import { fetchChapter, fetchChaptersBatch, ChapterResponse, FetchError, fetchChapterWithCache, clearChapterCache } from '../api/bible';
 import { BIBLE_BOOK_IDS } from '../models/Path';
 import { createDevotionalFromVerse } from '../api/ai';
 import auth from '@react-native-firebase/auth';
@@ -108,6 +108,8 @@ interface DevotionalStore {
   clearCustomDevotional: () => void;
   updateLikeStatus: (devotionalId: string, liked: boolean) => void;
   incrementShareCount: (devotionalId: string) => void;
+  // Utility function to clear Bible chapter cache
+  clearBibleCache: () => Promise<void>;
 }
 
 export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
@@ -177,7 +179,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       
             // Get the document data
       const devotionalData = snapshot.data() as Devotional;
-      console.log("FETCHING devotionalData ====>");
+      console.log("FETCHING devotionalData ====>",devotionalData);
       
       if (!devotionalData) {
         console.log('No devotional data found');
@@ -235,7 +237,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
               
               // Fetch the chapter using user's saved translation from pathStore
               const userTranslation = usePathStore.getState().savedTranslation || 'ESV';
-              const chapterData = await fetchChapter(userTranslation, bookId, parsed.chapter);
+              const chapterData = await fetchChapterWithCache(userTranslation, bookId, parsed.chapter);
               
               if ('verses' in chapterData) {
                 if (parsed.endVerse) {
@@ -517,13 +519,43 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       
       const rawDevotionals = await Promise.all(devotionalPromises);
 
-      // Process devotionals (fetch verse text if needed)
+      // OPTIMIZED: Collect all unique chapter references for batch fetching
+      const chaptersToFetch: Array<{ bookId: number; chapter: number }> = [];
+      const devotionalChapterMap = new Map<number, { devotional: Devotional; reference: string }>();
+      
+      rawDevotionals.forEach((devotional, index) => {
+        if (!devotional) return;
+        
+        const reference = devotional.bibleReference || devotional.verse;
+        if (reference && reference.includes(':')) {
+          try {
+            const parsed = parseBibleReference(reference);
+            if (parsed) {
+              const bookId = BIBLE_BOOK_IDS[parsed.book];
+              if (bookId) {
+                chaptersToFetch.push({ bookId, chapter: parsed.chapter });
+                devotionalChapterMap.set(index, { devotional, reference });
+              }
+            }
+          } catch (e) {
+            console.error(`Failed to parse reference ${reference}`, e);
+          }
+        }
+      });
+
+      // Batch fetch all needed chapters
+      let chapterResults: Map<string, ChapterResponse | FetchError> = new Map();
+      if (chaptersToFetch.length > 0) {
+        console.log(`📚 Batch fetching ${chaptersToFetch.length} chapters for widget timeline`);
+        chapterResults = await fetchChaptersBatch(get().bibleVersion, chaptersToFetch);
+      }
+
+      // Process devotionals using batch-fetched data
       const processedDevotionals = await Promise.all(
-        rawDevotionals.map(async (devotional) => {
+        rawDevotionals.map(async (devotional, index) => {
           if (!devotional) return null;
           
           let verseText = devotional.verse;
-          
           const reference = devotional.bibleReference || devotional.verse;
 
           if (verseText && verseText.includes(':')) {
@@ -532,14 +564,23 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
               if (parsed) {
                 const bookId = BIBLE_BOOK_IDS[parsed.book];
                 if (bookId) {
-                  const chapterData = await fetchChapter(get().bibleVersion, bookId, parsed.chapter);
-                  if ('verses' in chapterData) {
+                  const chapterKey = `${bookId}:${parsed.chapter}`;
+                  const chapterData = chapterResults.get(chapterKey);
+                  
+                  if (chapterData && !('error' in chapterData)) {
                     const verseData = chapterData.verses.find(v => v.verse === parsed.verse);
-                    if (verseData) verseText = verseData.text;
+                    if (verseData) {
+                      verseText = verseData.text;
+                      console.log(`✅ Found verse text for ${reference}: ${verseText.substring(0, 50)}...`);
+                    }
+                  } else if (chapterData && 'error' in chapterData) {
+                    console.error(`❌ Failed to fetch chapter for ${reference}:`, chapterData.message);
                   }
                 }
               }
-            } catch (e) { console.error(`Failed to fetch verse text for ${reference}`, e); }
+            } catch (e) { 
+              console.error(`Failed to process verse text for ${reference}`, e); 
+            }
           }
           return { ...devotional, verse: verseText, bibleReference: reference };
         })
@@ -550,6 +591,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         const date = new Date(today);
         date.setDate(date.getDate() + i);
         if (devotional) {
+          
           return {
             date: date.getTime() / 1000,
             status: 'verseAvailable',
@@ -630,6 +672,12 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         currentDevotional: updateDevotional(state.currentDevotional),
       };
     });
+  },
+
+  // Utility function to clear Bible chapter cache
+  clearBibleCache: async () => {
+    console.log('🧹 Clearing Bible chapter cache from devotional store...');
+    await clearChapterCache();
   },
 }));
 
@@ -742,4 +790,5 @@ const saveWidgetStatusToAsyncStorage = async (status: string) => {
     console.error('📱 Error saving widget status to AsyncStorage:', error);
   }
 };
+
 

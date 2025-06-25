@@ -16,6 +16,7 @@ import { HalfModalType } from '../app/halfModal';
 import { calculateExpForLevel } from '../utils/levelUtils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 import WidgetHowToSheet from './WidgetHowToSheet';
+import BibleCacheTest from '../app/components/BibleCacheTest';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -608,7 +609,7 @@ export function DebugButton() {
           // Create document ID from chapter and verse name instead of date
           const bibleReference = devotional.verse || devotional.bibleReference || '';
           let documentId = bibleReference;
-          
+
           // Clean up the bible reference to make it a valid document ID
           if (bibleReference) {
             // Remove spaces, colons, and other special characters, replace with underscores
@@ -618,7 +619,7 @@ export function DebugButton() {
               .replace(/^_|_$/g, '')
               .toLowerCase();
           }
-          
+
           // Fallback to original ID if no bible reference
           if (!documentId) {
             documentId = devotional.id || `devotional_${Date.now()}`;
@@ -635,7 +636,7 @@ export function DebugButton() {
             const existingDate = existingData?.date;
             const newId = devotional.id;
             const newDate = devotional.date;
-            
+
             // Override any existing document with the same bible reference (document ID)
             shouldOverride = true;
             overriddenCount++;
@@ -889,6 +890,7 @@ export function DebugButton() {
                 </View>
               </View>
 
+              {/* Heart & Penalty System */}
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">
                   Heart & Penalty System
@@ -1130,6 +1132,23 @@ export function DebugButton() {
                 <Text className="font-feather text-lg text-textPrimary mb-3">
                   Devotional Testing
                 </Text>
+
+                {/* Bible Cache Test Button */}
+                <TouchableOpacity
+                  className="bg-[#E8F4FD] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
+                  onPress={() => {
+                    setModalVisible(false);
+                    setTimeout(() => {
+                      router.push('/bibleCacheTest' as any);
+                    }, 300);
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Bible Cache Test
+                  </Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Test Bible API caching and batch fetching optimizations
+                  </Text>
+                </TouchableOpacity>
 
                 {/* Upload Devotionals Button */}
                 <TouchableOpacity
