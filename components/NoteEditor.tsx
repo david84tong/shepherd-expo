@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
   ScrollView,
   KeyboardAvoidingView,
   Platform
@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import { useNoteStore } from '~/app/stores/noteStore';
 import analytics from '../utils/analytics';
 import EmptyModal from './EmptyModal';
+import { hapticSuccess } from '~/utils/haptics';
 
 interface NoteEditorProps {
   isVisible: boolean;
@@ -38,13 +39,13 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   const getNote = useNoteStore(state => state.getNote);
   const addOrUpdateNote = useNoteStore(state => state.addOrUpdateNote);
   const removeNote = useNoteStore(state => state.removeNote);
-  
+
   // Local state
   const [noteContent, setNoteContent] = useState('');
   const [initialNoteContent, setInitialNoteContent] = useState('');
   const [isEdited, setIsEdited] = useState(false);
   const [localVisible, setLocalVisible] = useState(false);
-  
+
   // Input ref for focusing
   const inputRef = useRef<TextInput>(null);
 
@@ -63,7 +64,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
       setNoteContent(content);
       setInitialNoteContent(content);
       setIsEdited(false);
-      
+
       // Focus the input after a short delay
       setTimeout(() => {
         inputRef.current?.focus();
@@ -79,7 +80,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   // Handle close with animation
   const closeWithAnimation = () => {
     setLocalVisible(false);
-    
+
     // Allow animation to complete before calling the parent's onClose
     setTimeout(() => {
       onClose();
@@ -89,33 +90,33 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
   // Handle saving the note
   const handleSave = () => {
     const trimmedContent = noteContent.trim();
-    
+
     if (trimmedContent) {
       // Add or update note
       addOrUpdateNote(bookId, chapter, verse, trimmedContent);
-      
+
       // Provide haptic feedback
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      
+      hapticSuccess()
+
       // Log analytics
       analytics.logEvent('BibleReader_Saved_Note', {
-        bookId, 
-        chapter, 
+        bookId,
+        chapter,
         verse,
         isNew: !initialNoteContent
       });
     } else if (initialNoteContent) {
       // If note is empty but had content before, remove it
       removeNote(bookId, chapter, verse);
-      
+
       // Log analytics
       analytics.logEvent('BibleReader_Removed_Note', {
-        bookId, 
-        chapter, 
+        bookId,
+        chapter,
         verse
       });
     }
-    
+
     // Close the bottom sheet with animation
     closeWithAnimation();
   };
@@ -128,18 +129,18 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
         keyboardVerticalOffset={80}
       >
         <View style={styles.dragHandle} />
-        
+
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.title}>Note</Text>
-          <TouchableOpacity 
-            style={styles.closeButton} 
+          <TouchableOpacity
+            style={styles.closeButton}
             onPress={closeWithAnimation}
           >
             <Feather name="x" size={20} color="#666" />
           </TouchableOpacity>
         </View>
-        
+
         {/* Verse reference and preview */}
         <View style={styles.verseContainer}>
           <Text style={styles.verseReference}>
@@ -151,7 +152,7 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
             </ScrollView>
           )}
         </View>
-        
+
         {/* Note input */}
         <View style={styles.inputContainer}>
           <TextInput
@@ -167,14 +168,14 @@ const NoteEditor: React.FC<NoteEditorProps> = ({
             autoCapitalize="sentences"
           />
         </View>
-        
+
         {/* Action buttons */}
         <View style={styles.actionButtons}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={[
               styles.saveButton,
               (!isEdited) && styles.disabledButton
-            ]} 
+            ]}
             onPress={handleSave}
             disabled={!isEdited}
           >

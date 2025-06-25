@@ -33,9 +33,10 @@ import bananaSkin from '~/assets/lambStatic/bananaSkin.png';
 import tenSkin from '~/assets/lambStatic/10Skin.png';
 import appleSkin from '~/assets/lambStatic/appleSkin.png';
 import lionSkin from '~/assets/lambStatic/lionSkin.png';
-import josephsCoat from  '~/assets/lambStatic/JosephsCoat.png';
-import armorOfGod from  '~/assets/lambStatic/armorOfGod.png';
-import whale from  '~/assets/lambStatic/whale.png';
+import josephsCoat from '~/assets/lambStatic/JosephsCoat.png';
+import armorOfGod from '~/assets/lambStatic/armorOfGod.png';
+import whale from '~/assets/lambStatic/whale.png';
+import { hapticLight, hapticMedium, hapticSuccess } from '~/utils/haptics';
 
 // Define store item types
 type StoreCategory = 'skins' | 'powerups' | 'hearts';
@@ -66,12 +67,12 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const equippedSkin = useShopStore(state => state.equippedSkin);
   const riveRef = useHomeStore(state => state.riveRef);
   const setCurrentSkin = useHomeStore(state => state.setCurrentSkin);
-  
+
   const lamb = getLamb();
   const user = getUser();
   const userGems = user?.gens || 0;
   const userLevel = lamb?.level || 1;
-  
+
   const [selectedCategory, setSelectedCategory] = useState<StoreCategory>('skins');
 
   // Ensure Pro users have the Annointed Lamb skin in their shop store
@@ -141,7 +142,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       skinNumber: 7,
       unlockLevel: 17,
     },
- 
+
 
     {
       id: 'skin_noah',
@@ -177,7 +178,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       skinNumber: 3,
       unlockLevel: 22,
     },
-  
+
 
     {
       id: 'skin_whale',
@@ -202,24 +203,24 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       unlockLevel: 24,
     },
 
-   
+
   ], [userLevel]);
 
   // Filter items by category
-  const filteredItems = useMemo(() => 
+  const filteredItems = useMemo(() =>
     storeItems.filter(item => item.category === selectedCategory),
     [selectedCategory, storeItems]
   );
 
   // Handle item purchase
   const handlePurchase = useCallback(async (item: StoreItem) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+    hapticMedium();
+
     // Check if user has enough gems
     if (item.currency === 'gems' && userGems < item.price) {
-      analytics.logEvent('Store_Purchase_Failed', { 
-        item: item.id, 
-        reason: 'insufficient_gems' 
+      analytics.logEvent('Store_Purchase_Failed', {
+        item: item.id,
+        reason: 'insufficient_gems'
       });
       // Show alert for insufficient gems
       Alert.alert(
@@ -233,9 +234,9 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
 
     // Check if user meets level requirement
     if (item.unlockLevel && userLevel < item.unlockLevel) {
-      analytics.logEvent('Store_Purchase_Failed', { 
-        item: item.id, 
-        reason: 'level_locked' 
+      analytics.logEvent('Store_Purchase_Failed', {
+        item: item.id,
+        reason: 'level_locked'
       });
       // Show alert for level requirement
       Alert.alert(
@@ -257,7 +258,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
           style: 'cancel',
           onPress: () => {
             console.log('❌ Purchase cancelled by user:', item.name);
-            analytics.logEvent('Store_Purchase_Cancelled', { 
+            analytics.logEvent('Store_Purchase_Cancelled', {
               item: item.id,
               price: item.price
             });
@@ -271,18 +272,18 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
             try {
               const skinId = item.skinNumber?.toString() || item.id;
               const success = await purchaseSkin(skinId, item.price);
-              
+
               if (success) {
-                analytics.logEvent('Store_Purchase_Success', { 
+                analytics.logEvent('Store_Purchase_Success', {
                   item: item.id,
                   skinId: skinId,
                   price: item.price
                 });
                 console.log('✅ Successfully purchased skin:', item.name);
-                
+
                 // Haptic feedback for successful purchase
-                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-                
+                hapticSuccess()
+
                 // Show success alert
                 Alert.alert(
                   'Purchase Successful!',
@@ -290,12 +291,12 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                   [{ text: 'Great!', style: 'default' }]
                 );
               } else {
-                analytics.logEvent('Store_Purchase_Failed', { 
-                  item: item.id, 
-                  reason: 'purchase_failed' 
+                analytics.logEvent('Store_Purchase_Failed', {
+                  item: item.id,
+                  reason: 'purchase_failed'
                 });
                 console.log('❌ Failed to purchase skin:', item.name);
-                
+
                 // Show failure alert
                 Alert.alert(
                   'Purchase Failed',
@@ -305,12 +306,12 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
               }
             } catch (error) {
               console.error('❌ Error during purchase:', error);
-              analytics.logEvent('Store_Purchase_Failed', { 
-                item: item.id, 
+              analytics.logEvent('Store_Purchase_Failed', {
+                item: item.id,
                 reason: 'error',
                 error: error instanceof Error ? error.message : 'Unknown error'
               });
-              
+
               // Show error alert
               Alert.alert(
                 'Purchase Error',
@@ -326,18 +327,18 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
 
   // Handle item equip
   const handleEquip = useCallback((item: StoreItem) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
+    hapticLight();
+
     const skinId = item.skinNumber?.toString() || item.id;
-    
+
     // Update shop store (this handles the equipped skin state)
     equipSkin(skinId);
-    
+
     // Update home store to persist the current skin
     setCurrentSkin(skinId);
-    
+
     console.log('🔄 Updated equipped skin to:', skinId);
-    
+
     // Update Rive animation if ref is available
     if (riveRef && riveRef.current && riveRef.current.setInputState) {
       try {
@@ -351,13 +352,13 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     } else {
       console.log('⚠️ Rive ref not available for skin update');
     }
-    
-    analytics.logEvent('Store_Skin_Equipped', { 
+
+    analytics.logEvent('Store_Skin_Equipped', {
       item: item.id,
       skinId: skinId,
       skinNumber: item.skinNumber
     });
-    
+
     // Show success toast
     Toast.show({
       type: 'success',
@@ -366,17 +367,17 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       position: 'top',
       visibilityTime: 3000,
     });
-    
+
     console.log('✅ Equipped skin:', item.name, 'with skin number:', item.skinNumber);
   }, [equipSkin, setCurrentSkin, riveRef]);
 
   // Handle upgrade to pro (for Annointed Lamb)
   const handleUpgradeToProForLamb = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+    hapticMedium();
+
     // Set from screen for analytics
     useSubscriptionStore.getState().setFromScreen('store_annointed_lamb');
-    
+
     // Present the paywall
     try {
       const result = await useSubscriptionStore.getState().presentFreeTrialPaywall();
@@ -384,12 +385,12 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         // Automatically give the user the Annointed Lamb skin
         const skinId = '99'; // Annointed Lamb skin number
         addSkin(skinId);
-        
-        analytics.logEvent('Store_AnointedLamb_Upgraded', { 
+
+        analytics.logEvent('Store_AnointedLamb_Upgraded', {
           fromScreen: 'store'
         });
         console.log('✅ Successfully upgraded to pro from Annointed Lamb card');
-        
+
         // Show success message
         Toast.show({
           type: 'success',
@@ -412,7 +413,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     const isOwned = item.isOwned || hasSkin(skinId); // Check both item property and shop store
     const isEquipped = equippedSkin === skinId;
     const isAnointedLamb = item.id === 'skin_super';
-    
+
     // Debug logging for Annointed Lamb
     if (isAnointedLamb) {
       console.log('🔍 Annointed Lamb Debug:', {
@@ -427,14 +428,14 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
         hasSkinResult: hasSkin(skinId)
       });
     }
-    
+
     return (
       <View
         key={item.id}
-        className={`${isAnointedLamb 
-          ? 'bg-lightYellow border-2 border-accentGold shadow-lg' 
+        className={`${isAnointedLamb
+          ? 'bg-lightYellow border-2 border-accentGold shadow-lg'
           : 'bg-surfaceCreamLight border border-brownBorder shadow-card'
-        } rounded-[24px] mb-4 overflow-hidden h-48`}
+          } rounded-[24px] mb-4 overflow-hidden h-48`}
         style={isAnointedLamb ? {
           shadowColor: '#FCD34D',
           shadowOffset: { width: 0, height: 4 },
@@ -442,12 +443,12 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
           shadowRadius: 8,
           elevation: 8,
         } : {}}>
-        
+
         <View className="flex-row p-4 h-48 justify-between">
           {/* Lamb Image - Full size, no background, clipped at bottom */}
           <View className="w-48 h-full absolute left-0 bottom-0 ml-2">
             {isAnointedLamb && (
-              <View 
+              <View
                 className="w-48 h-48 absolute bottom-[-20] rounded-full"
                 style={{
                   backgroundColor: 'rgba(252, 211, 77, 0.2)',
@@ -460,9 +461,9 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                 }}
               />
             )}
-            <Image 
-              source={item.image} 
-              className="w-48 h-48 absolute bottom-[-20]" 
+            <Image
+              source={item.image}
+              className="w-48 h-48 absolute bottom-[-20]"
               resizeMode="contain"
             />
           </View>
@@ -480,14 +481,14 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
             </Text>
 
             {/* Button */}
-            <View style={{marginBottom: 4, marginTop: -4}}>
+            <View style={{ marginBottom: 4, marginTop: -4 }}>
               {isAnointedLamb ? (
                 // Special handling for Annointed Lamb
                 isProMember ? (
                   userLevel < 10 ? (
                     <PrimaryButton
                       title="Equip at LVL 10"
-                      onPress={() => {}}
+                      onPress={() => { }}
                       disabled={true}
                       buttonType="blue"
                       buttonHeight={40}
@@ -496,7 +497,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                   ) : isEquipped ? (
                     <PrimaryButton
                       title="Equipped"
-                      onPress={() => {}}
+                      onPress={() => { }}
                       disabled={true}
                       buttonType="blue"
                       buttonHeight={40}
@@ -528,7 +529,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
               ) : isLocked ? (
                 <PrimaryButton
                   title={`Unlocks lvl ${item.unlockLevel}`}
-                  onPress={() => {}}
+                  onPress={() => { }}
                   disabled={true}
                   buttonType="blue"
                   buttonHeight={40}
@@ -539,7 +540,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                 isEquipped ? (
                   <PrimaryButton
                     title="Equipped"
-                    onPress={() => {}}
+                    onPress={() => { }}
                     disabled={true}
                     buttonType="blue"
                     buttonHeight={40}
@@ -579,7 +580,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      
+
       {/* Header */}
       <View className="flex-row items-center justify-between px-6 pt-8 pb-4 relative">
         {/* Gems counter - left */}
@@ -593,20 +594,20 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
 
         {/* Close button - right */}
         <View className="w-24 flex justify-end items-end pr-4">
-        <TouchableOpacity
-          className=" w-10 h-10 bg-black/30 rounded-full items-center justify-center z-10"
-          onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            onClose ? onClose() : router.back();
-          }}
-          activeOpacity={0.7}>
-          <FontAwesome name="times" size={20} color="white" />
-        </TouchableOpacity>
+          <TouchableOpacity
+            className=" w-10 h-10 bg-black/30 rounded-full items-center justify-center z-10"
+            onPress={() => {
+              hapticLight();
+              onClose ? onClose() : router.back();
+            }}
+            activeOpacity={0.7}>
+            <FontAwesome name="times" size={20} color="white" />
+          </TouchableOpacity>
         </View>
       </View>
 
       {/* Store Items List */}
-      <ScrollView 
+      <ScrollView
         className="flex-1 px-6"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}>

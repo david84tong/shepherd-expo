@@ -31,6 +31,7 @@ import DailyVerseCard from './Shared/DailyVerseCard';
 import analytics from '~/utils/analytics';
 import i18n from '../app/utils/i18n';
 import { useSoundStore } from '~/app/stores/soundStore';
+import { hapticLight, hapticMedium } from '~/utils/haptics';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -346,7 +347,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
   const handleClose = useCallback(() => {
     useHomeStore.getState().setShowGlobalButtons(false);
     if (onClose) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      hapticMedium();
       onClose({ isPrayPresses: false });
     }
   }, [onClose]);
@@ -541,7 +542,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
             setReadingCompleted(true);
             setIsRewarding(false);
             if (onClose) {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              hapticMedium();
               const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
               onClose({ isPrayPresses: false });
@@ -562,7 +563,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
             setReadingCompleted(true);
             setIsRewarding(false);
             if (onClose) {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              hapticMedium();
               const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
               onClose({ isPrayPresses: true });
@@ -589,7 +590,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
             {onClose && (
               <TouchableOpacity
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  hapticLight();
                   onClose({ isPrayPresses: false });
                 }}
                 className="bg-brown/10 w-8 h-8 rounded-full items-center justify-center">

@@ -16,6 +16,7 @@ import analytics from '../../utils/analytics';
 import { useNotificationStore, NotificationTimeOption } from '../stores/notificationStore';
 import i18n from '../utils/i18n';
 import { RPH } from '../helper/helper';
+import { hapticLight } from '~/utils/haptics';
 
 export default function OnboardingReminderTimeScreen() {
   const router = useRouter();
@@ -99,9 +100,7 @@ export default function OnboardingReminderTimeScreen() {
   const handleSelection = async (time: string) => {
     // Trigger light haptic feedback
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
-        console.log('Haptics not available');
-      });
+      hapticLight();
     } catch (error) {
       console.log('Haptics not available');
     }
@@ -271,7 +270,7 @@ export default function OnboardingReminderTimeScreen() {
                   onPressOut={() => setPressedButton(null)}
                   style={{
                     height: RPH(9),
-                    paddingHorizontal:RPH(1.5)
+                    paddingHorizontal: RPH(1.5)
                   }}
                   className={`
               my-2

@@ -28,6 +28,7 @@ import { IS_ANDROID } from './utils/utils';
 import i18n from '~/app/utils/i18n';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
+import { hapticLight, hapticMedium } from '~/utils/haptics';
 
 // Key for tracking daily first load
 const DAILY_FIRST_LOAD_KEY = 'daily_first_load_';
@@ -83,14 +84,14 @@ const PricingScreen = () => {
         fromLoading: fromLoading || false,
         animateFromBottom: animateScreenFromBottom || false,
       });
-      
+
       // Check if onboarding is completed and set from screen accordingly
       try {
         const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-        const fromScreenValue = onboardingCompleted === 'true' 
-          ? 'pricingscreen_onboardingdone' 
+        const fromScreenValue = onboardingCompleted === 'true'
+          ? 'pricingscreen_onboardingdone'
           : 'pricingscreen';
-        
+
         useSubscriptionStore.getState().setFromScreen(fromScreenValue);
       } catch (error) {
         console.error('Error checking onboarding status:', error);
@@ -98,7 +99,7 @@ const PricingScreen = () => {
         useSubscriptionStore.getState().setFromScreen('pricingscreen');
       }
     };
-    
+
     initializeScreen();
   }, [fromLoading, animateScreenFromBottom]);
 
@@ -139,8 +140,8 @@ const PricingScreen = () => {
   const [riveAssets] = useAssets([require('../assets/riveAnimations/goldLamb.riv')]);
 
   const handleSubscribe = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+    hapticMedium();
+
     // Get A/B test value to determine action
     let abTestValue = 0; // Default value
     try {
@@ -179,7 +180,7 @@ const PricingScreen = () => {
   };
 
   const handleBack = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     analytics.logEvent('PricingScreen_BackButton_Tapped');
 
     // Always navigate to tabs when closing pricing screen for logged in users

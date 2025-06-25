@@ -14,6 +14,7 @@ import BottomSheet, {
 import * as Haptics from 'expo-haptics';
 import { useUIStore } from '../app/stores/uiStore';
 import dayjs from 'dayjs';
+import { hapticMedium } from '~/utils/haptics';
 
 // Using exact same date handling from stats.tsx
 function toDateSafe(ts: any): Date {
@@ -119,7 +120,7 @@ const OldReflectionSheet: React.FC = () => {
       }, 100);
 
       // Provide haptic feedback when sheet opens
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
+      hapticMedium();
     } else {
       console.log('OldReflectionSheet: Closing sheet');
       bottomSheetRef.current?.close();

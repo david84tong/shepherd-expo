@@ -9,6 +9,7 @@ import { useHomeStore } from '~/app/stores/homeStore';
 import i18n from '~/app/utils/i18n';
 import { useRouter } from 'expo-router';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
+import { hapticLight } from '~/utils/haptics';
 
 interface SecondaryButtonProps {
   icon: ImageSourcePropType;
@@ -59,7 +60,7 @@ const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   } : {};
 
   const handlePressIn = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+    hapticLight();
     if (disabled) {
       useSoundStore.getState()?.playDisabledSound();
     } else {

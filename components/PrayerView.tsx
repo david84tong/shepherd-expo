@@ -37,6 +37,7 @@ import i18n from '../app/utils/i18n';
 
 import { getLevelData } from '~/utils/levelUtils';
 import SuccessMessage from './SuccessMessage';
+import { hapticLight, hapticMedium } from '~/utils/haptics';
 
 // AsyncStorage keys for prayer settings
 const PRAYER_HAPTICS_KEY = 'prayer_haptics_enabled';
@@ -112,11 +113,11 @@ const BreatheText: React.FC<{ breathingProgress: Reanimated.SharedValue<number> 
   // Separate effect to handle subtle fade animation when word changes
   useEffect(() => {
     // Gentle fade to 0.3 opacity, then back to 1 for a subtle transition
-    textOpacity.value = withTiming(0.3, { 
+    textOpacity.value = withTiming(0.3, {
       duration: 600,
       easing: Easing.inOut(Easing.ease)
     }, () => {
-      textOpacity.value = withTiming(1, { 
+      textOpacity.value = withTiming(1, {
         duration: 600,
         easing: Easing.inOut(Easing.ease)
       });
@@ -127,16 +128,16 @@ const BreatheText: React.FC<{ breathingProgress: Reanimated.SharedValue<number> 
     const progress = breathingProgress.value;
     const fontSize = interpolate(progress, [0, 1], [24, 36]);
     const scale = interpolate(progress, [0, 1], [0.8, 1.4]);
-    
+
     // Track animation direction and detect full cycles
     const lastValue = lastProgressValue.current;
-    
+
     // Detect when we reach the peak (inhale complete)
     if (progress > 0.95 && !hasReachedPeak.current) {
       hasReachedPeak.current = true;
       console.log('Reached peak - inhale complete');
     }
-    
+
     // Detect when we return to the bottom after reaching peak (full cycle complete)
     if (hasReachedPeak.current && progress < 0.05 && lastValue > 0.05) {
       hasReachedPeak.current = false;
@@ -144,9 +145,9 @@ const BreatheText: React.FC<{ breathingProgress: Reanimated.SharedValue<number> 
       console.log('Full cycle completed, count:', cycleCount.current);
       runOnJS(cycleToNextWord)();
     }
-    
+
     lastProgressValue.current = progress;
-    
+
     return {
       fontSize: fontSize,
       opacity: textOpacity.value,
@@ -176,7 +177,7 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
   // Haptic feedback function - stabilize with empty dependency array
   const triggerHaptic = useCallback(() => {
     if (hapticsEnabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
     }
   }, [hapticsEnabled]);
 
@@ -187,7 +188,7 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
   useEffect(() => {
     if (isActive && !animationStarted.current) {
       animationStarted.current = true;
-      
+
       // Add a small delay to allow component to settle and reduce lag
       startupTimer.current = setTimeout(() => {
         // Begin a smooth inhale ↔ exhale cycle (autoreverse produces a natural loop)
@@ -213,7 +214,7 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
       // Stop animation smoothly
       breathingProgress.value = withTiming(0, { duration: 600 });
     }
-    
+
     // Cleanup timer on unmount
     return () => {
       if (startupTimer.current) {
@@ -284,9 +285,9 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
       {/* Breathing instruction text */}
       <Reanimated.View
         style={{
-          position: 'absolute', 
-          pointerEvents: 'none', 
-          zIndex: 2, 
+          position: 'absolute',
+          pointerEvents: 'none',
+          zIndex: 2,
           maxWidth: SCREEN_WIDTH * 0.8,
           alignItems: 'center',
           justifyContent: 'center'
@@ -374,7 +375,7 @@ const PrayerCard: React.FC<{
 
 interface PrayerViewProps {
   visible?: boolean;
-  onClose?: ({isReflectPresses}:{isReflectPresses?:boolean}) => void;
+  onClose?: ({ isReflectPresses }: { isReflectPresses?: boolean }) => void;
   onSetIdle?: () => void;
   setFinishReading: (finishReading: boolean) => void;
   setShowControlRow: (showControlRow: boolean) => void;
@@ -388,12 +389,12 @@ export interface PrayerViewRef {
   handleSettings: () => void;
 }
 
-const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({ 
-  visible = true, 
-  onClose, 
-  onSetIdle, 
-  setFinishReading, 
-  setShowControlRow, 
+const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
+  visible = true,
+  onClose,
+  onSetIdle,
+  setFinishReading,
+  setShowControlRow,
   showControlRow,
   setIsCompletePrayerDisabled
 }, ref) => {
@@ -468,7 +469,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         devotionalPrayer = (currentDevotional.prayer as any).en;
       }
     }
-    
+
     if (devotionalPrayer && devotionalPrayer.trim().length > 0) {
       return devotionalPrayer;
     }
@@ -499,7 +500,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   useEffect(() => {
     const setShowGlobalButtons = useHomeStore.getState().setShowGlobalButtons;
     setShowGlobalButtons(true);
-  
+
     const loadSettings = async () => {
       try {
         const savedHaptics = await AsyncStorage.getItem(PRAYER_HAPTICS_KEY);
@@ -738,7 +739,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       if (onSetIdle) onSetIdle();
       if (onClose) {
         if (hapticsEnabled) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          hapticMedium();
         }
         onClose({});
       }
@@ -805,8 +806,8 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
   // Prayer progress bar animation style
   const prayerProgressAnimatedStyle = useAnimatedStyle(() => {
-    return { 
-      width: `${prayerProgressValue.value * 100}%` 
+    return {
+      width: `${prayerProgressValue.value * 100}%`
     };
   });
 
@@ -816,7 +817,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
     // Haptic feedback for every tap
     if (hapticsEnabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
     }
 
     // If currently visible, hide immediately
@@ -872,20 +873,20 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       useHomeStore.getState().setShowGlobalButtons(false);
       setFinishReading(true);
       setShowSuccess(true);
-      
+
       // Apply rewards (2 hearts + 25 XP for prayer)
       const heartReward = 2;
       const xpReward = 25;
       const MAX_HEARTS = 100;
-      
+
       const currentHearts = useUserStore.getState().getLambHearts();
       const setLambHearts = useUserStore.getState().setLambHearts;
       const addXp = useUserStore.getState().addXp;
       const setLambMood = useUserStore.getState().setLambMood;
-      
+
       // Calculate actual heart reward (don't exceed MAX_HEARTS)
       const heartsToAdd = Math.min(heartReward, MAX_HEARTS - currentHearts);
-      
+
       // Apply rewards
       if (heartsToAdd > 0) {
         setLambHearts(currentHearts + heartsToAdd);
@@ -901,14 +902,14 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
           setLambMood('lamb-angry');
         }
       }
-      
+
       // Always add XP
       addXp(xpReward);
-      
+
       // Mark prayer as completed
       const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
       setPrayerCompleted(true);
-      
+
       // Update timestamps
       const now = firestore.Timestamp.now();
       const setLastActivityDate = useUserStore.getState().setLastActivityDate;
@@ -1067,122 +1068,31 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   return (
     <Reanimated.View style={[{ flex: 1, borderRadius: 24 }, animatedBackgroundStyle, componentAnimatedStyle]}>
       {showSuccess ? (
-       <View style={{marginHorizontal: 24,flex:1, marginTop: 24}}>
-         <SuccessMessage
-          title={i18n.t('prayer_complete')}
-          description={i18n.t('prayer_complete_desc')}
-          level={levelInfo.level}
-          prevLevel={levelInfo.level}
-          buttonsEnabled={buttonsEnabled}
-          onGoHome={() => {
-            // Update lastActivityDate to prevent completion states from being reset
-            setTimeout(() => {
-              setFinishReading(false)
-            }, 2000);
-            const now = firestore.Timestamp.now();
-            const setLastActivityDate = useUserStore.getState().setLastActivityDate;
-            const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
-            setLastActivityDate(now);
-            setLastPrayerDate(now);
-
-            // Mark prayer as completed
-            const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
-            setPrayerCompleted(true);
-
-            // Show tab bar again
-            const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
-            setPrayerViewVisible(false);
-
-            // Log completion analytics
-            analytics.logEvent('PrayerView_Completed', {
-              prayerTopic: recentPrayers[0] || 'general',
-              totalCards: totalCards,
-              devotionalId: currentDevotional?.id || null,
-              bibleReference: currentDevotional?.bibleReference || null,
-            });
-
-            // Close the prayer view
-            if (onSetIdle) onSetIdle();
-            if (onClose) {
-              if (hapticsEnabled) {
-                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-              }
-              onClose({});
-            }
-          }}
-          onPray={() => {
-            // Update lastActivityDate to prevent completion states from being reset
-            setTimeout(() => {
-              setFinishReading(false)
-            }, 2000);
-            const now = firestore.Timestamp.now();
-            const setLastActivityDate = useUserStore.getState().setLastActivityDate;
-            const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
-            setLastActivityDate(now);
-            setLastPrayerDate(now);
-
-            // Mark prayer as completed
-            const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
-            setPrayerCompleted(true);
-
-            // Check if we should show bonus collection
-            const readingCompleted = useHomeStore.getState().readingCompleted;
-            const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
-            const sawDailyBonus = useHomeStore.getState().sawDailyBonus;
-            const sawStreakToday = useHomeStore.getState().sawStreakToday;
-            const isFirstReadingOfDay = !sawStreakToday;
-            const isBonusAvailable = readingCompleted && reflectionCompleted && isFirstReadingOfDay && !sawDailyBonus;
-
-            if (isBonusAvailable) {
-              // Show bonus collection screen
-              const setSuccessType = useHomeStore.getState().setSuccessType;
-              setSuccessType(SuccessAnimationType.BONUS);
-              
-              // Show tab bar again
+        <View style={{ marginHorizontal: 24, flex: 1, marginTop: 24 }}>
+          <SuccessMessage
+            title={i18n.t('prayer_complete')}
+            description={i18n.t('prayer_complete_desc')}
+            level={levelInfo.level}
+            prevLevel={levelInfo.level}
+            buttonsEnabled={buttonsEnabled}
+            onGoHome={() => {
+              // Update lastActivityDate to prevent completion states from being reset
               setTimeout(() => {
-                const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
-                setPrayerViewVisible(false);
+                setFinishReading(false)
               }, 2000);
-              
-              // Navigate to bonus screen
-              router.push({
-                pathname: '/success',
-                params: {
-                  showStreakScreen: 'true'
-                }
-              });
-              
-              // Reset Rive animation to appropriate state after navigation
-              setTimeout(() => {
-                const homeStore = useHomeStore.getState();
-                const riveRef = homeStore.riveRef;
-                if (riveRef?.current?.setInputState) {
-                  try {
-                    const currentMood = useUserStore.getState()?.getLambMood?.();
-                    const moodToStateInput: Record<string, number> = {
-                      'lamb-idle': 0,
-                      'lamb-sleepy': 4,
-                      'lamb-angry': 5,
-                      'lamb-chubby dying': 6,
-                      'lamb-skinny dying': 7,
-                      'smoking': 8,
-                      'lamb-full': 3,
-                    };
-                    const targetStateInput = moodToStateInput[currentMood] || 0;
-                    riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
-                    console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
-                  } catch (error) {
-                    console.log('Could not reset Rive state after navigation:', error);
-                  }
-                }
-              }, 1000);
-            } else {
-              // Normal reflection flow
+              const now = firestore.Timestamp.now();
+              const setLastActivityDate = useUserStore.getState().setLastActivityDate;
+              const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
+              setLastActivityDate(now);
+              setLastPrayerDate(now);
+
+              // Mark prayer as completed
+              const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
+              setPrayerCompleted(true);
+
               // Show tab bar again
               const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
-              setTimeout(() => {
-                setPrayerViewVisible(false);
-              }, 2000);
+              setPrayerViewVisible(false);
 
               // Log completion analytics
               analytics.logEvent('PrayerView_Completed', {
@@ -1196,16 +1106,107 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               if (onSetIdle) onSetIdle();
               if (onClose) {
                 if (hapticsEnabled) {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  hapticMedium();
                 }
-                onClose({isReflectPresses: true});
+                onClose({});
               }
-            }
-          }}
-          prayButtonTitle={i18n.t('reflect_on_this_verse')}
-          rewardsTitle={i18n.t('prayer_rewards')}
-        />
-       </View>
+            }}
+            onPray={() => {
+              // Update lastActivityDate to prevent completion states from being reset
+              setTimeout(() => {
+                setFinishReading(false)
+              }, 2000);
+              const now = firestore.Timestamp.now();
+              const setLastActivityDate = useUserStore.getState().setLastActivityDate;
+              const setLastPrayerDate = useUserStore.getState().setLastPrayerDate;
+              setLastActivityDate(now);
+              setLastPrayerDate(now);
+
+              // Mark prayer as completed
+              const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
+              setPrayerCompleted(true);
+
+              // Check if we should show bonus collection
+              const readingCompleted = useHomeStore.getState().readingCompleted;
+              const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
+              const sawDailyBonus = useHomeStore.getState().sawDailyBonus;
+              const sawStreakToday = useHomeStore.getState().sawStreakToday;
+              const isFirstReadingOfDay = !sawStreakToday;
+              const isBonusAvailable = readingCompleted && reflectionCompleted && isFirstReadingOfDay && !sawDailyBonus;
+
+              if (isBonusAvailable) {
+                // Show bonus collection screen
+                const setSuccessType = useHomeStore.getState().setSuccessType;
+                setSuccessType(SuccessAnimationType.BONUS);
+
+                // Show tab bar again
+                setTimeout(() => {
+                  const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
+                  setPrayerViewVisible(false);
+                }, 2000);
+
+                // Navigate to bonus screen
+                router.push({
+                  pathname: '/success',
+                  params: {
+                    showStreakScreen: 'true'
+                  }
+                });
+
+                // Reset Rive animation to appropriate state after navigation
+                setTimeout(() => {
+                  const homeStore = useHomeStore.getState();
+                  const riveRef = homeStore.riveRef;
+                  if (riveRef?.current?.setInputState) {
+                    try {
+                      const currentMood = useUserStore.getState()?.getLambMood?.();
+                      const moodToStateInput: Record<string, number> = {
+                        'lamb-idle': 0,
+                        'lamb-sleepy': 4,
+                        'lamb-angry': 5,
+                        'lamb-chubby dying': 6,
+                        'lamb-skinny dying': 7,
+                        'smoking': 8,
+                        'lamb-full': 3,
+                      };
+                      const targetStateInput = moodToStateInput[currentMood] || 0;
+                      riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+                      console.log(`Reset Rive animation to mood state: ${targetStateInput} (${currentMood}) after navigation delay`);
+                    } catch (error) {
+                      console.log('Could not reset Rive state after navigation:', error);
+                    }
+                  }
+                }, 1000);
+              } else {
+                // Normal reflection flow
+                // Show tab bar again
+                const setPrayerViewVisible = useHomeStore.getState().setPrayerViewVisible;
+                setTimeout(() => {
+                  setPrayerViewVisible(false);
+                }, 2000);
+
+                // Log completion analytics
+                analytics.logEvent('PrayerView_Completed', {
+                  prayerTopic: recentPrayers[0] || 'general',
+                  totalCards: totalCards,
+                  devotionalId: currentDevotional?.id || null,
+                  bibleReference: currentDevotional?.bibleReference || null,
+                });
+
+                // Close the prayer view
+                if (onSetIdle) onSetIdle();
+                if (onClose) {
+                  if (hapticsEnabled) {
+                    hapticMedium();
+                  }
+                  onClose({ isReflectPresses: true });
+                }
+              }
+            }}
+            prayButtonTitle={i18n.t('reflect_on_this_verse')}
+            rewardsTitle={i18n.t('prayer_rewards')}
+          />
+        </View>
       ) : (
         <>
           {/* Header */}
@@ -1222,10 +1223,10 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
           </View>
 
           {/* Prayer Progress Bar */}
-          <View style={{ 
-            height: 8, 
-            borderRadius: 50, 
-            marginBottom: 56, 
+          <View style={{
+            height: 8,
+            borderRadius: 50,
+            marginBottom: 56,
             marginHorizontal: 24,
             overflow: 'hidden',
             marginTop: -32,
@@ -1326,20 +1327,20 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                       // Show success UI within the component
                       setFinishReading(true);
                       setShowSuccess(true);
-                      
+
                       // Apply rewards (2 hearts + 25 XP for prayer)
                       const heartReward = 2;
                       const xpReward = 25;
                       const MAX_HEARTS = 100;
-                      
+
                       const currentHearts = useUserStore.getState().getLambHearts();
                       const setLambHearts = useUserStore.getState().setLambHearts;
                       const addXp = useUserStore.getState().addXp;
                       const setLambMood = useUserStore.getState().setLambMood;
-                      
+
                       // Calculate actual heart reward (don't exceed MAX_HEARTS)
                       const heartsToAdd = Math.min(heartReward, MAX_HEARTS - currentHearts);
-                      
+
                       // Apply rewards
                       if (heartsToAdd > 0) {
                         setLambHearts(currentHearts + heartsToAdd);
@@ -1355,14 +1356,14 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                           setLambMood('lamb-angry');
                         }
                       }
-                      
+
                       // Always add XP
                       addXp(xpReward);
-                      
+
                       // Mark prayer as completed
                       const setPrayerCompleted = useHomeStore.getState().setPrayerCompleted;
                       setPrayerCompleted(true);
-                      
+
                       // Update timestamps
                       const now = firestore.Timestamp.now();
                       const setLastActivityDate = useUserStore.getState().setLastActivityDate;

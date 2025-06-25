@@ -7,6 +7,7 @@ import { useSoundStore } from '../app/stores/soundStore';
 import { Feather } from '@expo/vector-icons';
 import { RPH } from '~/app/helper/helper';
 import { IS_IOS } from '~/app/utils/utils';
+import { hapticMedium } from '~/utils/haptics';
 
 interface PrimaryButtonProps {
   title: string;
@@ -85,10 +86,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   const triggerHaptic = () => {
     if (!disabled && isActive) {
       try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {
-          // Silently fail if haptics don't work
-          console.log('Haptics not available');
-        });
+        hapticMedium();
       } catch (error) {
         // Safely ignore haptic errors
         console.log('Haptics not available');

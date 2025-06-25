@@ -22,6 +22,7 @@ import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import * as Haptics from 'expo-haptics';
 import analytics from '~/utils/analytics';
+import { hapticHeavy } from '~/utils/haptics';
 
 const { width, height } = Dimensions.get('window');
 
@@ -107,7 +108,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const isCreatingDevotional = useDevotionalStore((s) => s.isCreatingDevotional);
   const devotionalStoreCurrentDevotional = useDevotionalStore((s) => s.currentDevotional);
   const devotionalError = useDevotionalStore((s) => s.error);
-  
+
   // Check if user is pro and get paywall function
   const isProMember = useSubscriptionStore((s) => s.isProMember);
   const { presentFreeTrialPaywall } = useSubscriptionStore();
@@ -281,7 +282,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     const hapticThresholds = [25, 50, 75, 100];
     for (const threshold of hapticThresholds) {
       if (currentPercentage >= threshold && lastHapticPercentage.current < threshold) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        hapticHeavy();
         lastHapticPercentage.current = threshold;
         break; // Only trigger one haptic per update
       }
@@ -343,10 +344,10 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           try {
             // Set the fromScreen property for tracking
             useSubscriptionStore.getState().setFromScreen('CustomDevotional');
-            
+
             // Show the paywall
             const result = await presentFreeTrialPaywall();
-            
+
             // Handle paywall result
             if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
               // User upgraded - navigate to home with devotional

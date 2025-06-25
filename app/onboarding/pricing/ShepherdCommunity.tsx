@@ -15,6 +15,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { hapticMedium } from '~/utils/haptics';
 
 const DISCORD_CARD_DISMISSED_KEY = 'shepherd_discord_card_dismissed_v1';
 
@@ -144,7 +145,7 @@ export default function ShepherdCommunityScreen() {
   };
 
   const handleDone = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
     const userSignedIn = isSignedIn();
     analytics.logEvent('ShepherdCommunity_Button_Done', {
       timestamp: new Date().toISOString(),
@@ -152,7 +153,7 @@ export default function ShepherdCommunityScreen() {
       isSignedIn: userSignedIn,
       nextDestination: userSignedIn ? 'tabs' : 'signin'
     });
-    
+
     // Check if user is signed in and redirect accordingly
     if (userSignedIn) {
       // User is signed in, go to home/tabs
@@ -168,7 +169,7 @@ export default function ShepherdCommunityScreen() {
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <ScrollView className="flex-1 bg-surfaceCream">
         <View className="flex-1 px-6 pt-16 pb-8">
-          
+
           {/* Header Section */}
           <Animated.View style={headerStyle} className="items-center mt-8 mb-3">
             <Text className="font-feather text-3xl text-textPrimary text-center mb-4">
@@ -197,12 +198,12 @@ export default function ShepherdCommunityScreen() {
 
           {/* Community Text Section */}
           <Animated.View style={formStyle} className="items-center mb-8">
- 
+
 
             {/* Discord Card */}
             {showDiscordCard && (
               <View className="w-full bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder relative mb-0">
-           
+
 
                 <View className="flex-row items-center mb-4">
                   <View className="bg-white p-3 rounded-full mr-4 shadow-md">

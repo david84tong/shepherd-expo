@@ -17,6 +17,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import { toBool } from '../utils/toBool';
 import i18n from '../utils/i18n';
 import { RPH } from '../helper/helper';
+import { hapticLight } from '~/utils/haptics';
 
 export default function OnboardingIntentScreen() {
   const router = useRouter();
@@ -135,9 +136,7 @@ export default function OnboardingIntentScreen() {
   const handleSelection = (intent: string) => {
     // Trigger light haptic feedback
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
-        console.log('Haptics not available');
-      });
+      hapticLight();
     } catch (error) {
       console.log('Haptics not available');
     }
@@ -255,11 +254,10 @@ export default function OnboardingIntentScreen() {
                 <View
                   className={`
                 w-6 h-6 rounded-full border-2 items-center justify-center
-                ${
-                  selectedIntents.includes(button.id)
-                    ? 'bg-accentGold border-accentGold'
-                    : 'border-description'
-                }
+                ${selectedIntents.includes(button.id)
+                      ? 'bg-accentGold border-accentGold'
+                      : 'border-description'
+                    }
               `}>
                   {selectedIntents.includes(button.id) && (
                     <Ionicons name="checkmark" size={16} color="white" />

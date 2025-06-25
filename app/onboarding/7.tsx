@@ -18,6 +18,7 @@ import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
 import i18n from '../utils/i18n';
 import { RPH } from '../helper/helper';
+import { hapticLight } from '~/utils/haptics';
 
 export default function OnboardingAgeRangeScreen() {
   const router = useRouter();
@@ -103,7 +104,7 @@ export default function OnboardingAgeRangeScreen() {
       }
 
       try {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        await hapticLight();
       } catch (error) {
         console.log('Haptics not available');
       }

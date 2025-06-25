@@ -35,6 +35,7 @@ import { getLevelData } from '~/utils/levelUtils';
 import SuccessMessage from './SuccessMessage';
 import PrayerSettingsModal from './PrayerSettingsModal';
 import { useSoundStore } from '~/app/stores/soundStore';
+import { hapticHeavy, hapticLight, hapticMedium } from '~/utils/haptics';
 
 // AsyncStorage keys for prayer settings
 const PRAYER_HAPTICS_KEY = 'prayer_haptics_enabled';
@@ -121,7 +122,7 @@ const WaterWaveAnimation: React.FC<{
   // Haptic feedback function
   const triggerHaptic = useCallback(() => {
     if (hapticsEnabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
     }
   }, [hapticsEnabled]);
 
@@ -716,7 +717,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       if (onSetIdle) onSetIdle();
       if (onClose) {
         if (hapticsEnabled) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          hapticMedium();
         }
         onClose({});
       }
@@ -784,7 +785,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
     // Haptic feedback for every tap
     if (hapticsEnabled) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
     }
 
     // Don't show controls if animation has been triggered (max time exceeded)
@@ -885,7 +886,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         // Trigger haptic feedback every 1000ms (continue even after reaching maximum)
         const currentTime = Date.now();
         if (hapticsEnabled && currentTime - lastHapticTime >= 1000) {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+          hapticMedium();
           lastHapticTime = currentTime;
           console.log('🎯 Triggered 1000ms interval haptic');
         }
@@ -937,7 +938,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
       // Trigger haptic feedback for success
       if (hapticsEnabled) {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        hapticHeavy();
       }
     } else {
       console.log('🎯 Water stays at current level, threshold not reached');
@@ -1101,7 +1102,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               if (onSetIdle) onSetIdle();
               if (onClose) {
                 if (hapticsEnabled) {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  hapticMedium();
                 }
                 onClose({});
               }
@@ -1147,7 +1148,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               if (onSetIdle) onSetIdle();
               if (onClose) {
                 if (hapticsEnabled) {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+                  hapticMedium();
                 }
                 onClose({ isReflectPresses: true });
               }

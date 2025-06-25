@@ -15,6 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import analytics from '../utils/analytics';
 import skins from '../assets/onboarding/skins.png';
 import { IS_ANDROID, IS_IOS } from '../app/utils/utils';
+import { hapticLight } from '~/utils/haptics';
 
 interface ExplainerModalProps {
   visible: boolean;
@@ -83,7 +84,7 @@ export default function ExplainerModal({ visible, onClose }: ExplainerModalProps
 
   // Handle close with haptic feedback and analytics
   const handleClose = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     analytics.logEvent('ExplainerModal_Tapped_Close');
     onClose();
   };

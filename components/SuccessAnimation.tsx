@@ -34,6 +34,7 @@ import { IS_ANDROID } from '~/app/utils/utils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 import { AppFonts } from '~/app/constants/appFonts';
 import { RPH } from '~/app/helper/helper';
+import { hapticMedium } from '~/utils/haptics';
 
 // Get screen dimensions to ensure full screen sizing
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -616,7 +617,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   // Default navigation behavior
   const handleGoHome = () => {
     // Add medium haptic feedback for navigation
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
 
     // Log the event
     analytics.logEvent('SuccessAnimation_Tapped_GoHome', {

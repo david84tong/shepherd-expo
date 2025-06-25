@@ -16,6 +16,7 @@ import * as Haptics from 'expo-haptics';
 import analytics from '~/utils/analytics';
 import i18n from '../utils/i18n';
 import { RPH } from '../helper/helper';
+import { hapticLight } from '~/utils/haptics';
 
 export default function OnboardingBibleFamiliarityScreen() {
   const router = useRouter();
@@ -91,9 +92,7 @@ export default function OnboardingBibleFamiliarityScreen() {
 
     // Trigger light haptic feedback
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
-        console.log('Haptics not available');
-      });
+      hapticLight();
     } catch (error) {
       console.log('Haptics not available');
     }
@@ -159,7 +158,7 @@ export default function OnboardingBibleFamiliarityScreen() {
               primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
               textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
               buttonHeight={RPH(7)}
-              
+
             />
           ))}
         </Animated.View>

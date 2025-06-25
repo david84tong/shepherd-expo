@@ -18,6 +18,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { RPH } from '~/app/helper/helper';
+import { hapticLight, hapticMedium } from '~/utils/haptics';
 
 export default function SelfFundedMissionScreen() {
   const router = useRouter();
@@ -77,7 +78,7 @@ export default function SelfFundedMissionScreen() {
   }));
 
   const handleFundFeatures = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
     analytics.logEvent('SelfFundedMission_Button_FundFeatures', {
       timestamp: new Date().toISOString(),
       action: 'fund_features_pressed'
@@ -146,7 +147,7 @@ export default function SelfFundedMissionScreen() {
   };
 
   const handleNotToday = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     analytics.logEvent('SelfFundedMission_Button_NotToday', {
       timestamp: new Date().toISOString(),
       action: 'not_today_pressed'

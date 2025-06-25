@@ -22,6 +22,7 @@ import { useUserStore } from '~/app/stores/userStore';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { router } from 'expo-router';
 import { BIBLE_BOOK_IDS } from '~/app/models/Path';
+import { hapticLight } from '~/utils/haptics';
 
 
 interface DailyVerseCardProps {
@@ -70,7 +71,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
   const handleLikePress = async () => {
     if (!isRealDevotional || !currentUser?.id || !devotional.id) return;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     const newLikedState = !isLiked;
     setIsLiked(newLikedState);
 
@@ -97,7 +98,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
 
   const handleCardPress = () => {
     if (onPress) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
       analytics.logEvent('DailyVerseCard_Tapped', {
         bibleReference: devotional.bibleReference,
         isShareCard: share,
@@ -141,7 +142,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
     }
     */
     if (onShare) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
       analytics.logEvent('DailyVerseCard_Tapped_Share_To_Expand', {
         isShareCard: share,
         bibleReference: devotional.bibleReference,
@@ -152,7 +153,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
 
   const handleExpandPress = () => {
     if (onExpand) {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
       analytics.logEvent('DailyVerseCard_Tapped_Expand', {
         isShareCard: share,
       });
@@ -163,7 +164,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
   const handleReadFullChapter = () => {
     if (!devotional?.bibleReference) return;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
 
     // Parse the Bible reference to get book and chapter
     const parsedRef = parseBibleReference(devotional.bibleReference);

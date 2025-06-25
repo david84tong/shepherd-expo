@@ -8,6 +8,7 @@ import { AntDesign } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_COMPLETED_KEY } from './types/onboarding';
 import * as Haptics from 'expo-haptics';
+import { hapticLight } from '~/utils/haptics';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -64,7 +65,7 @@ export default function LoginScreen() {
   const handleBeginJourney = async () => {
     try {
       // Trigger haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      hapticLight();
       // Remove the onboarding completed key
       await AsyncStorage.removeItem(ONBOARDING_COMPLETED_KEY);
       // Navigate to onboarding

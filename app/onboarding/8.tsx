@@ -18,6 +18,7 @@ import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
 import i18n from '../utils/i18n';
+import { hapticLight } from '~/utils/haptics';
 
 interface OnboardingPathScreenProps {
   onPathSelected?: (pathObj: any) => void;
@@ -85,7 +86,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
   const handleSelection = async (pathId: string) => {
     // Trigger light haptic feedback
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await hapticLight();
     } catch (error) {
       console.log('Haptics not available');
     }
@@ -158,7 +159,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
                   onPress={() => handleSelection(path.id)}
                   onPressIn={() => {
                     setPressedId(path.id);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    hapticLight();
                   }}
                   onPressOut={() => setPressedId(undefined)}
                   className={`transform ${pressedId === path.id ? 'translate-y-[3px]' : 'translate-y-0'}`}

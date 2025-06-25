@@ -15,6 +15,7 @@ import Animated, {
   withDelay,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
+import { hapticMedium } from '~/utils/haptics';
 
 export default function FreeOfferScreen() {
   const router = useRouter();
@@ -99,7 +100,7 @@ export default function FreeOfferScreen() {
   }));
 
   const handleSeeOffer = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
     analytics.logEvent('FreeOffer_Button_SeeOffer', {
       lambName: lambName,
       timestamp: new Date().toISOString(),

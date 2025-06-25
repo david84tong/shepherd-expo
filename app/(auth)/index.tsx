@@ -31,6 +31,7 @@ import { IS_ANDROID } from '../utils/utils';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import i18n from '../utils/i18n';
 import { RPH } from '../helper/helper';
+import { hapticLight } from '~/utils/haptics';
 
 // We'll use the background directly in the source prop
 
@@ -64,7 +65,7 @@ export default function LoginScreen() {
 
     try {
       // Trigger haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      hapticLight();
 
       setLoading(true);
 
@@ -310,7 +311,7 @@ export default function LoginScreen() {
                   });
                 }}
                 className="mt-4"
-                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
+                onPressIn={() => hapticLight()}>
                 <Text className="font-feather text-body text-center underline mt-4 text-white">
                   {i18n.t('onboarding_login')}
                 </Text>

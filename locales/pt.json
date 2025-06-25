@@ -21,6 +21,8 @@
     "background_music_disabled": "Música de fundo desativada",
     "sound_effects_enabled": "Efeitos sonoros ativados",
     "sound_effects_disabled": "Efeitos sonoros desativados",
+    "haptics_enabled": "Hápticos ativados",
+    "haptics_disabled": "Hápticos desativados",
     "community_title": "Comunidade",
     "join_discord": "Junte-se à família Shepherd!",
     "roadmap_feature_requests": "Roteiro e sugestões",

@@ -62,6 +62,7 @@ import { THEME_COLORS } from '~/app/constants/theme';
 import SideButton from './SideButton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
+import { hapticLight, hapticMedium, hapticWarning } from '~/utils/haptics';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -713,7 +714,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
     if (loading) return;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
     const chaptersInCurrentBook = BIBLE_CHAPTER_COUNTS[currentBookId];
 
     if (currentChapter >= chaptersInCurrentBook) {
@@ -721,7 +722,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       if (nextBookId <= 66) {
         loadChapter(nextBookId, 1, true); // isNavigation = true
       } else {
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        hapticWarning()
         Alert.alert('End of the Bible', "You've reached Revelation 22, the last chapter of the Bible.");
       }
     } else {
@@ -734,7 +735,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
     if (loading) return;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
     if (currentBookId === 1 && currentChapter === 1) return;
 
     if (currentChapter > 1) {
@@ -851,7 +852,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     if (!currentPath || !chapterData) return;
 
     // haptic
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
 
     // save reading
     const now = firestore.Timestamp.now();
@@ -1015,7 +1016,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const handlePresentSettingsModal = useCallback(() => {
     // If a parent-provided settings handler exists, use it to open the
     // shared sheet so both readers reference one source of truth.
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     onOpenSettings?.();
 
 
@@ -1041,7 +1042,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       `📖 [NewBibleReader] chapterData:`,
       chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'null'
     );
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     showBookChapterSelector(
       currentBookId,
       currentChapter,
@@ -1117,7 +1118,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       setIsFadingToChat(true);
       setSelectedVerse(verse);
 
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
 
       // Reset animation value before starting new animation
       fadeOpacity.value = 1;
@@ -1176,7 +1177,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         position: { x: menuX, y: menuY },
       });
 
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      hapticMedium();
 
       // Reset animation values before starting new animations
       menuScaleAnim.value = 0;
@@ -1218,7 +1219,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       if (isFadingToChat || isCreatingDevotional) return;
 
       // Immediate haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      hapticMedium();
 
       // Close the swipeable immediately
       const swipeableRef = swipeableRefs.current.get(verse.verse);
@@ -1299,7 +1300,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           position: { x: menuX, y: menuY },
         });
 
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+        hapticMedium();
 
         menuScaleAnim.value = 0.7;
         menuOpacityAnim.value = 0;
@@ -1598,7 +1599,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       removeHighlight(currentBookId, currentChapter, verseToHighlight.verse);
 
       // Show removal confirmation
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      hapticMedium();
       Toast.show({
         type: 'success',
         text1: i18n.t('highlight_removed'),
@@ -1617,7 +1618,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       addHighlight(currentBookId, currentChapter, verseToHighlight.verse, colorKey);
 
       // Show confirmation
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      hapticMedium();
       Toast.show({
         type: 'success',
         text1: i18n.t('verse_highlighted'),
@@ -1650,7 +1651,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     removeHighlight(currentBookId, currentChapter, verse.verse);
 
     // Show confirmation
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
     Toast.show({
       type: 'success',
       text1: i18n.t('highlight_removed'),

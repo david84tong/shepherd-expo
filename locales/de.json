@@ -21,6 +21,8 @@
     "background_music_disabled": "Hintergrundmusik deaktiviert",
     "sound_effects_enabled": "Soundeffekte aktiviert",
     "sound_effects_disabled": "Soundeffekte deaktiviert",
+    "haptics_enabled": "Haptisches Feedback aktiviert",
+    "haptics_disabled": "Haptisches Feedback deaktiviert",
     "community_title": "Community",
     "join_discord": "Tritt der Shepherd-Familie bei!",
     "roadmap_feature_requests": "Roadmap & Feature Requests",

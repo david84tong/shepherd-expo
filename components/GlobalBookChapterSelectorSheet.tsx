@@ -17,6 +17,7 @@ import { BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from '../app/models/Path';
 import { useUIStore } from '../app/stores/uiStore';
 import { usePathStore } from '../app/stores/pathStore';
 import * as Haptics from 'expo-haptics';
+import { hapticLight, hapticMedium } from '~/utils/haptics';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -86,7 +87,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
       setSelectedChapter(chapter);
 
       bottomSheetRef.current?.snapToIndex(0);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      hapticMedium();
     } else {
       bottomSheetRef.current?.close();
     }
@@ -119,7 +120,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
         }
 
         bottomSheetRef.current?.close();
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        hapticLight();
       } finally {
         setIsSelecting(false);
       }
@@ -135,7 +136,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
       console.log(`📖 [GlobalBookChapterSelector] Selected book: ${bookId}`);
       setSelectedBookId(bookId);
       setSelectedChapter(1); // Reset to chapter 1 when switching books
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      hapticLight();
     },
     [selectedBookId, isSelecting]
   );
@@ -169,7 +170,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
           animated: true,
         });
       },
-      () => {} // Error callback - empty
+      () => { } // Error callback - empty
     );
   }, [selectedBookId, WINDOW_WIDTH]);
 

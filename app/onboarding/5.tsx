@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import { RPH } from '../helper/helper';
+import { hapticLight, hapticSuccess } from '~/utils/haptics';
 
 export default function OnboardingReadingTimeScreen() {
   const router = useRouter();
@@ -84,7 +85,7 @@ export default function OnboardingReadingTimeScreen() {
 
   // Handle navigation back when coming from settings
   const handleBackFromSettings = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+    hapticLight();
     router.back();
   };
 
@@ -114,9 +115,7 @@ export default function OnboardingReadingTimeScreen() {
 
     // Trigger light haptic feedback
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
-        console.log('Haptics not available');
-      });
+      hapticLight();
     } catch (error) {
       console.log('Haptics not available');
     }
@@ -140,7 +139,7 @@ export default function OnboardingReadingTimeScreen() {
     // If coming from settings, just go back
     if (fromSettings) {
       // Show a success feedback before going back
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
+      hapticSuccess()
       setTimeout(() => {
         router.back();
       }, 300);

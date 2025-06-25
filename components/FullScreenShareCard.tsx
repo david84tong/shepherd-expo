@@ -28,6 +28,7 @@ import { BIBLE_BOOK_IDS } from '~/app/models/Path';
 import analytics from '~/utils/analytics';
 import ViewShot from 'react-native-view-shot';
 import Share from 'react-native-share';
+import { hapticLight } from '~/utils/haptics';
 
 interface FullScreenShareCardProps {
     visible: boolean;
@@ -106,7 +107,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
     const handleLikePress = async () => {
         if (!isRealDevotional || !currentUser?.id || !devotionalData?.id) return;
 
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        hapticLight();
         const newLikedState = !isLiked;
         setIsLiked(newLikedState);
 
@@ -132,7 +133,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
 
     const handleSharePress = () => {
         if (!isRealDevotional || !devotionalData?.id) return;
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        hapticLight();
         setIsCapturing(true);
         if (startShareFlow) {
             setStartShareFlow(false);
@@ -142,7 +143,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
     const handleReadFullChapter = () => {
         if (!devotionalData?.bibleReference) return;
 
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        hapticLight();
 
         // Parse the Bible reference to get book and chapter
         const parsedRef = parseBibleReference(devotionalData.bibleReference);

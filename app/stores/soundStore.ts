@@ -6,11 +6,13 @@ import { Audio, AVPlaybackStatus } from 'expo-av';
 interface SoundState {
   backgroundMusicEnabled: boolean;
   soundEffectsEnabled: boolean;
+  hapticsEnabled: boolean;
   backgroundSound: Audio.Sound | null;
   breadEatingSound: Audio.Sound | null;
   isAudioConfigured: boolean;
   setBackgroundMusicEnabled: (enabled: boolean) => void;
   setSoundEffectsEnabled: (enabled: boolean) => void;
+  setHapticsEnabled: (enabled: boolean) => void;
   playBackgroundMusic: () => Promise<void>;
   stopBackgroundMusic: () => Promise<void>;
   playButtonSound: () => Promise<void>;
@@ -28,6 +30,7 @@ export const useSoundStore = create<SoundState>()(
     (set, get) => ({
       backgroundMusicEnabled: true,
       soundEffectsEnabled: true,
+      hapticsEnabled: true,
       backgroundSound: null,
       breadEatingSound: null,
       isAudioConfigured: false,
@@ -46,6 +49,10 @@ export const useSoundStore = create<SoundState>()(
 
       setSoundEffectsEnabled: (enabled) => {
         set({ soundEffectsEnabled: enabled });
+      },
+
+      setHapticsEnabled: (enabled) => {
+        set({ hapticsEnabled: enabled });
       },
 
       playBackgroundMusic: async () => {
@@ -351,6 +358,7 @@ export const useSoundStore = create<SoundState>()(
       partialize: (state) => ({
         backgroundMusicEnabled: state.backgroundMusicEnabled,
         soundEffectsEnabled: state.soundEffectsEnabled,
+        hapticsEnabled: state.hapticsEnabled,
       }),
     }
   )

@@ -5,6 +5,7 @@ import { View, Pressable, Platform } from 'react-native';
 
 import { BIBLE_PATHS, Unit } from '../../app/models/Path';
 import analytics from '../../utils/analytics';
+import { hapticLight } from '~/utils/haptics';
 // Define node status
 export type NodeStatus = 'locked' | 'active' | 'completed';
 
@@ -35,7 +36,7 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress, p
     if (status === 'locked') {
       return 'bg-gray-200';
     }
-    
+
     // For active and completed nodes, use the path color
     switch (pathColor) {
       case 'yellow':
@@ -73,7 +74,7 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress, p
     if (status === 'locked') {
       return 'border-gray-400';
     }
-    
+
     // For active and completed nodes, use the path color
     switch (pathColor) {
       case 'yellow':
@@ -111,7 +112,7 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress, p
     if (status === 'locked') {
       return '#9CA3AF'; // gray-400
     }
-    
+
     // For active and completed nodes, use the path color
     switch (pathColor) {
       case 'yellow':
@@ -148,7 +149,7 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress, p
     if (isPressed) {
       return {};
     }
-    
+
     // For locked nodes, use grey shadow
     if (status === 'locked') {
       return Platform.select({
@@ -163,7 +164,7 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress, p
         },
       });
     }
-    
+
     // Get shadow color based on path color
     const getShadowColor = () => {
       switch (pathColor) {
@@ -195,7 +196,7 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress, p
           return '#24CA17';
       }
     };
-    
+
     return Platform.select({
       ios: {
         shadowColor: getShadowColor(),
@@ -215,7 +216,7 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress, p
         onPress={() => {
           if (!isDisabled) {
             // Add light haptic feedback when tapping a node
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            hapticLight();
             onPress(unit);
             analytics.logEvent("PathNode_Tapped", {
               unit: unit.id,
@@ -238,21 +239,21 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress, p
           ${getBgColorClass()} ${getBorderColorClass()}
           transform ${isPressed ? 'translate-y-1' : 'translate-y-0'}
         `}
-        style={{ 
+        style={{
           opacity: isDisabled ? 0.3 : 1,
           ...getShadowStyles(),
         }}
       >
-        <Ionicons 
-          name={(unit.icon || "book") as React.ComponentProps<typeof Ionicons>['name']} 
-          size={42} 
-          color={getTextIconColor()} 
+        <Ionicons
+          name={(unit.icon || "book") as React.ComponentProps<typeof Ionicons>['name']}
+          size={42}
+          color={getTextIconColor()}
         />
-       
+
         {/* Completed check icon */}
         {status === 'completed' && (
           <View className="absolute ml-4 mt-4 -bottom-1 -right-2 bg-lightGreen rounded-full p-1.5 border-4 border-darkGreen ">
-          <Ionicons name="checkmark" size={24} color="green" style={{ fontWeight: 'bold' }} />
+            <Ionicons name="checkmark" size={24} color="green" style={{ fontWeight: 'bold' }} />
           </View>
         )}
 
@@ -263,7 +264,7 @@ const PathNode: React.FC<PathNodeProps> = ({ unit, status, alignment, onPress, p
           </View>
         )}
       </Pressable>
-      
+
       {/* Debug ID text */}
     </View>
   );

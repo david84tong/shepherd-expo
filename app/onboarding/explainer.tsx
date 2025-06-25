@@ -17,17 +17,18 @@ import analytics from '../../utils/analytics';
 import skins from '../../assets/onboarding/skins.png';
 import { IS_ANDROID } from '../utils/utils';
 import { RPH } from '../helper/helper';
+import { hapticLight } from '~/utils/haptics';
 
 export default function OnboardingExplainerScreen({ onContinue }: { onContinue?: () => void }) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
-  
+
   // Create refs for each Rive instance
   const riveRef1 = useRef<RiveRef>(null);
   const riveRef10 = useRef<RiveRef>(null);
   const riveRef20 = useRef<RiveRef>(null);
   const riveRef33 = useRef<RiveRef>(null);
-  
+
   // Load Rive assets
   const [riveAssets] = useAssets([
     require('../../assets/riveAnimations/new_shepherd.riv'),
@@ -123,9 +124,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
   const handleContinue = () => {
     // Trigger light haptic feedback
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
-        console.log('Haptics not available');
-      });
+      hapticLight();
     } catch (error) {
       console.log('Haptics not available');
     }
@@ -183,114 +182,34 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
       <View
         className="flex-1 bg-surfaceCream pt-12 w-full items-center"
         style={{ paddingBottom: insets.bottom }}>
-    <ScrollView contentContainerStyle={{paddingBottom:RPH(12)}}>
+        <ScrollView contentContainerStyle={{ paddingBottom: RPH(12) }}>
           {/* Title */}
           <Animated.View style={titleStyle} className="mb-8 px-6">
-          <Text className="font-feather text-2xl text-textPrimary text-center mb-0">
-            But if you read, pray and reflect, your lamb grows...
-          </Text>
-        </Animated.View>
-
-        {/* Lamb grid */}
-        <View className="flex-row flex-wrap justify-center items-center gap-4 mb-4">
-          {/* Row 1 */}
-          <Animated.View
-            style={[
-              cardStyles[0],
-              {
-                // No glow for level 1
-                shadowColor: 'transparent',
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0,
-                shadowRadius: 0,
-              },
-            ]}
-            className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-            {riveAssets && (
-              <View className="w-[120px] h-[120px]">
-                {IS_ANDROID ? (
-                  <Rive
-                    ref={riveRef1}
-                    resourceName={'new_shepherd'}
-                    artboardName="[Main] Shpeherd"
-                    stateMachineName="State Machine 1"
-                    style={{ width: '100%', height: '100%' }}
-                  />
-                ) : (
-                  <Rive
-                    ref={riveRef1}
-                    url={riveAssets[0].uri!}
-                    artboardName="[Main] Shpeherd"
-                    stateMachineName="State Machine 1"
-                    style={{ width: '100%', height: '100%' }}
-                  />
-                )}
-              </View>
-            )}
-            <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-              <Text className="font-feather text-accentGold">LVL 1</Text>
-            </View>
+            <Text className="font-feather text-2xl text-textPrimary text-center mb-0">
+              But if you read, pray and reflect, your lamb grows...
+            </Text>
           </Animated.View>
-          <Animated.View
-            style={[
-              cardStyles[1],
-              {
-                // No glow for level 10
-                shadowColor: 'transparent',
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0,
-                shadowRadius: 0,
-              },
-            ]}
-            className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-            {riveAssets && (
-              <View className="w-[140px] h-[140px]">
-                {IS_ANDROID ? (
-                  <Rive
-                    ref={riveRef10}
-                    resourceName={'new_shepherd'}
-                    artboardName="[Main] Shpeherd"
-                    stateMachineName="State Machine 1"
-                    style={{ width: '100%', height: '100%' }}
-                  />
-                ) : (
-                  <Rive
-                    ref={riveRef10}
-                    url={riveAssets[0].uri!}
-                    artboardName="[Main] Shpeherd"
-                    stateMachineName="State Machine 1"
-                    style={{ width: '100%', height: '100%' }}
-                  />
-                )}
-              </View>
-            )}
-            <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-              <Text className="font-feather text-accentGold">LVL 10</Text>
-            </View>
-          </Animated.View>
-          {/* Row 2 */}
-          <Animated.View
-            style={[
-              cardStyles[2],
-              {
-                // Remove card-level shadow since we want glow behind the lamb
-              },
-            ]}
-            className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-            {riveAssets && (
-              <>
-                {/* Multiple background elements for blur effect */}
 
-                {/* BlurView that blurs all the elements above */}
-                <Image
-                  source={require('../../assets/redShadow.png')}
-                  className="absolute w-[200px] h-[200px]"
-                />
-
-                <View className="w-[140px] h-[140px]">
+          {/* Lamb grid */}
+          <View className="flex-row flex-wrap justify-center items-center gap-4 mb-4">
+            {/* Row 1 */}
+            <Animated.View
+              style={[
+                cardStyles[0],
+                {
+                  // No glow for level 1
+                  shadowColor: 'transparent',
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0,
+                  shadowRadius: 0,
+                },
+              ]}
+              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
+              {riveAssets && (
+                <View className="w-[120px] h-[120px]">
                   {IS_ANDROID ? (
                     <Rive
-                      ref={riveRef20}
+                      ref={riveRef1}
                       resourceName={'new_shepherd'}
                       artboardName="[Main] Shpeherd"
                       stateMachineName="State Machine 1"
@@ -298,7 +217,7 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
                     />
                   ) : (
                     <Rive
-                      ref={riveRef20}
+                      ref={riveRef1}
                       url={riveAssets[0].uri!}
                       artboardName="[Main] Shpeherd"
                       stateMachineName="State Machine 1"
@@ -306,58 +225,138 @@ export default function OnboardingExplainerScreen({ onContinue }: { onContinue?:
                     />
                   )}
                 </View>
-              </>
-            )}
-            <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-              <Text className="font-feather text-accentGold">LVL 20</Text>
-            </View>
-          </Animated.View>
-          <Animated.View
-            style={[cardStyles[3], {}]}
-            className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
-            <Image
-              source={require('../../assets/yellowShadow.png')}
-              className="absolute w-[200px] h-[200px]"
-            />
-
-            {riveAssets && (
-              <View className="w-[140px] h-[140px]">
-                {IS_ANDROID ? (
-                  <Rive
-                    ref={riveRef33}
-                    resourceName={'new_shepherd'}
-                    artboardName="[Main] Shpeherd"
-                    stateMachineName="State Machine 1"
-                    style={{ width: '100%', height: '100%' }}
-                  />
-                ) : (
-                  <Rive
-                    ref={riveRef33}
-                    url={riveAssets[0].uri!}
-                    artboardName="[Main] Shpeherd"
-                    stateMachineName="State Machine 1"
-                    style={{ width: '100%', height: '100%' }}
-                  />
-                )}
+              )}
+              <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
+                <Text className="font-feather text-accentGold">LVL 1</Text>
               </View>
-            )}
+            </Animated.View>
+            <Animated.View
+              style={[
+                cardStyles[1],
+                {
+                  // No glow for level 10
+                  shadowColor: 'transparent',
+                  shadowOffset: { width: 0, height: 0 },
+                  shadowOpacity: 0,
+                  shadowRadius: 0,
+                },
+              ]}
+              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
+              {riveAssets && (
+                <View className="w-[140px] h-[140px]">
+                  {IS_ANDROID ? (
+                    <Rive
+                      ref={riveRef10}
+                      resourceName={'new_shepherd'}
+                      artboardName="[Main] Shpeherd"
+                      stateMachineName="State Machine 1"
+                      style={{ width: '100%', height: '100%' }}
+                    />
+                  ) : (
+                    <Rive
+                      ref={riveRef10}
+                      url={riveAssets[0].uri!}
+                      artboardName="[Main] Shpeherd"
+                      stateMachineName="State Machine 1"
+                      style={{ width: '100%', height: '100%' }}
+                    />
+                  )}
+                </View>
+              )}
+              <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
+                <Text className="font-feather text-accentGold">LVL 10</Text>
+              </View>
+            </Animated.View>
+            {/* Row 2 */}
+            <Animated.View
+              style={[
+                cardStyles[2],
+                {
+                  // Remove card-level shadow since we want glow behind the lamb
+                },
+              ]}
+              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
+              {riveAssets && (
+                <>
+                  {/* Multiple background elements for blur effect */}
+
+                  {/* BlurView that blurs all the elements above */}
+                  <Image
+                    source={require('../../assets/redShadow.png')}
+                    className="absolute w-[200px] h-[200px]"
+                  />
+
+                  <View className="w-[140px] h-[140px]">
+                    {IS_ANDROID ? (
+                      <Rive
+                        ref={riveRef20}
+                        resourceName={'new_shepherd'}
+                        artboardName="[Main] Shpeherd"
+                        stateMachineName="State Machine 1"
+                        style={{ width: '100%', height: '100%' }}
+                      />
+                    ) : (
+                      <Rive
+                        ref={riveRef20}
+                        url={riveAssets[0].uri!}
+                        artboardName="[Main] Shpeherd"
+                        stateMachineName="State Machine 1"
+                        style={{ width: '100%', height: '100%' }}
+                      />
+                    )}
+                  </View>
+                </>
+              )}
+              <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
+                <Text className="font-feather text-accentGold">LVL 20</Text>
+              </View>
+            </Animated.View>
+            <Animated.View
+              style={[cardStyles[3], {}]}
+              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative">
+              <Image
+                source={require('../../assets/yellowShadow.png')}
+                className="absolute w-[200px] h-[200px]"
+              />
+
+              {riveAssets && (
+                <View className="w-[140px] h-[140px]">
+                  {IS_ANDROID ? (
+                    <Rive
+                      ref={riveRef33}
+                      resourceName={'new_shepherd'}
+                      artboardName="[Main] Shpeherd"
+                      stateMachineName="State Machine 1"
+                      style={{ width: '100%', height: '100%' }}
+                    />
+                  ) : (
+                    <Rive
+                      ref={riveRef33}
+                      url={riveAssets[0].uri!}
+                      artboardName="[Main] Shpeherd"
+                      stateMachineName="State Machine 1"
+                      style={{ width: '100%', height: '100%' }}
+                    />
+                  )}
+                </View>
+              )}
+              <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
+                <Text className="font-feather text-accentGold">LVL 33</Text>
+              </View>
+            </Animated.View>
+          </View>
+
+          {/* Skins section */}
+          <Animated.View
+            style={cardStyles[4]}
+            className="w-[340px] self-center h-[140px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative mb-4">
+            <Image source={skins} className="w-full h-[120px]" resizeMode="contain" />
             <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-              <Text className="font-feather text-accentGold">LVL 33</Text>
+              <Text className="font-feather text-accentGold">Shop for skins at level 10</Text>
             </View>
           </Animated.View>
-        </View>
 
-        {/* Skins section */}
-        <Animated.View
-          style={cardStyles[4]}
-          className="w-[340px] self-center h-[140px] bg-surfaceCream rounded-2xl border-2 border-accentGold items-center justify-center relative mb-4">
-          <Image source={skins} className="w-full h-[120px]" resizeMode="contain" />
-          <View className="absolute top-2.5 right-2.5 bg-lightYellow px-4 py-1 rounded-full">
-            <Text className="font-feather text-accentGold">Shop for skins at level 10</Text>
-          </View>
-        </Animated.View>
-
-    </ScrollView>
+        </ScrollView>
         {/* Continue Button - fixed at bottom */}
         <View
           className="absolute left-6 right-6"

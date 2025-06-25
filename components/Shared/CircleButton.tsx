@@ -3,6 +3,7 @@ import { Pressable, Platform } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
 import { RPH } from '~/app/helper/helper';
+import { hapticLight } from '~/utils/haptics';
 
 interface CircleButtonProps {
   onPress: () => void;
@@ -31,35 +32,33 @@ const CircleButton: React.FC<CircleButtonProps> = ({
   // Handle press with haptic feedback
   const handlePress = () => {
     if (disabled) return;
-    
+
     if (hapticsEnabled) {
       try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
-          console.log('Haptics not available');
-        });
+        hapticLight();
       } catch (error) {
         console.log('Haptics not available');
       }
     }
-    
+
     onPress();
   };
 
   // Platform-specific shadow styles
   const shadowStyles = !isPressed && !disabled
     ? {
-        ...Platform.select({
-          ios: {
-            shadowColor: '#CFA860',
-            shadowOffset: { width: 0, height: 5 },
-            shadowOpacity: 1,
-            shadowRadius: 0,
-          },
-          android: {
-            elevation: 5,
-          },
-        }),
-      }
+      ...Platform.select({
+        ios: {
+          shadowColor: '#CFA860',
+          shadowOffset: { width: 0, height: 5 },
+          shadowOpacity: 1,
+          shadowRadius: 0,
+        },
+        android: {
+          elevation: 5,
+        },
+      }),
+    }
     : {};
 
   return (
@@ -85,9 +84,9 @@ const CircleButton: React.FC<CircleButtonProps> = ({
       {iconComponent ? (
         iconComponent
       ) : (
-        <Feather 
-          name={icon} 
-          size={actualSize * 0.4} 
+        <Feather
+          name={icon}
+          size={actualSize * 0.4}
           color={disabled ? '#999999' : '#634012'}
         />
       )}

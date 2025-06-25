@@ -14,6 +14,7 @@ import React, {
 
 import { useUIStore } from '../app/stores/uiStore';
 import StoreScreen from './StoreScreen';
+import { hapticMedium } from '~/utils/haptics';
 
 interface StoreSheetProps {
   storeSheetRef: React.RefObject<StoreSheetRef>;
@@ -66,7 +67,7 @@ const StoreSheet: React.FC<StoreSheetProps> = ({ storeSheetRef }) => {
   const showSheet = useCallback(() => {
     showStoreSheet(); // Set visibility state first
     bottomSheetRef.current?.expand();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
+    hapticMedium();
   }, [showStoreSheet]);
 
   // Expose methods via ref

@@ -22,6 +22,7 @@ import { heightScreen } from '~/utils/dimensions';
 import * as Haptics from 'expo-haptics';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import { useHomeStore } from '../stores/homeStore';
+import { hapticMedium } from '~/utils/haptics';
 
 // Define our custom section type
 type BibleSection = {
@@ -238,7 +239,7 @@ export default function MapScreen() {
 
   // Handle subscription button press using the store action
   const handleSubscriptionPress = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
     subscriptionStore.setFromScreen('map');
     router.push('/PricingScreen' as any);
   };

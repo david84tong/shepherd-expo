@@ -23,6 +23,7 @@ import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
 import analytics from '../../utils/analytics';
 import { IS_ANDROID } from '../utils/utils';
 import { RPH } from '../helper/helper';
+import { hapticHeavy, hapticLight, hapticRigid } from '~/utils/haptics';
 
 const FIRST_WELCOME_TEXT = 'Every Shepherd starts with one lost lamb...';
 const SECOND_WELCOME_TEXT = "This one's yours.";
@@ -37,10 +38,7 @@ const AB_TEST_KEY = 'abTest';
 // Function to trigger a light haptic feedback
 const triggerTypeHaptic = () => {
   try {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid).catch(() => {
-      // Silently fail if haptics don't work
-      console.log('Haptics not available');
-    });
+    hapticRigid();
   } catch (error) {
     // Safely ignore haptic errors
     console.log('Haptics not available');
@@ -309,9 +307,7 @@ export default function OnboardingWelcomeScreen() {
     console.log('handleLambTap2');
     // Set the tap input to true to trigger the state machine
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {
-      console.log('Haptics not available');
-    });
+    hapticHeavy();
 
     if (!secondStageActive || isLambTapped) return;
 
@@ -441,9 +437,7 @@ export default function OnboardingWelcomeScreen() {
           }}>
           <Pressable
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
-                console.log('Haptics not available');
-              });
+              hapticLight();
               analytics.logEvent('Onboarding_Tapped_Back', {
                 step: 1,
                 screenName: 'Welcome',

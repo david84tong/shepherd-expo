@@ -204,6 +204,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { IS_ANDROID } from './utils/utils';
 import { THEME_COLORS } from './constants/theme';
 import { RPH } from './helper/helper';
+import { hapticLight, hapticMedium, hapticWarning } from '~/utils/haptics';
 
 // Add at the top of the file, after imports
 const chapterCache = new Map<string, any>();
@@ -382,15 +383,15 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     // Only run this effect if we have valid props and they're different from current state
     if (initialBookId !== undefined && initialChapter !== undefined) {
       const bookName = Object.keys(BIBLE_BOOK_IDS).find(key => BIBLE_BOOK_IDS[key] === initialBookId);
-      
+
       if (bookName && (initialBookId !== currentBookId || initialChapter !== currentChapter)) {
         console.log(`🔄 BibleReader: Props changed - Loading bookId: ${initialBookId}, chapter: ${initialChapter}`);
-        
+
         // Update local state to match props
         setCurrentBookId(initialBookId);
         setCurrentChapter(initialChapter);
         setCurrentBook(bookName);
-        
+
         // Load the new chapter
         loadChapter(currentVersion, bookName, initialBookId, initialChapter, true);
       }
@@ -524,7 +525,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     if (loading || !chapterData) return;
 
     // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     analytics.logEvent('BibleReader_Tapped_PreviousChapter', {
       chapter: currentChapter,
     });
@@ -552,7 +553,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       } else {
         console.log('Already at the beginning of the Bible');
         // Provide user feedback
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        hapticWarning()
         Alert.alert(
           'Beginning of the Bible',
           "You're at Genesis 1, the first chapter of the Bible."
@@ -571,7 +572,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       chapter: currentChapter,
     });
     // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
 
     // Check if we're at the last chapter of the current book
     const chaptersInCurrentBook = BIBLE_CHAPTER_COUNTS[currentBookId];
@@ -594,7 +595,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       } else {
         console.log('Reached the end of the Bible');
         // Provide user feedback
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+        hapticWarning()
         Alert.alert(
           'End of the Bible',
           "You've reached Revelation 22, the last chapter of the Bible."
@@ -610,7 +611,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const updateFontSize = async (newSize: number) => {
     if (newSize >= MIN_FONT_SIZE && newSize <= MAX_FONT_SIZE) {
       // Add haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
 
       // Update the store (which will save to AsyncStorage)
       readerSettings.setFontSize(newSize);
@@ -640,7 +641,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     });
 
     // Add haptic feedback - medium for completion
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
 
     console.log('Finish Reading Pressed - Updating completion status');
     let nextUnit: Unit | null = null;
@@ -964,7 +965,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       position: { x: menuX, y: menuY },
     });
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
   };
 
   // Add highlight picker state
@@ -1065,7 +1066,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   const handleOpenSelector = debounce(() => {
     // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
 
     console.log('🔍 DEBUG: Opening selector');
     showBookChapterSelector(currentBookId, currentChapter, handleSelectBookChapter);
@@ -1073,7 +1074,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   const handleSelectBookChapter = (bookId: number, chapter: number) => {
     // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
 
     console.log(`📖 New selection: Book ID ${bookId}, Chapter ${chapter}`);
     // Find book name from reverse map for logging/UI update (optional here)
@@ -1089,7 +1090,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   // Handle back navigation based on context
   const handleBackNavigation = () => {
     // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     analytics.logEvent('BibleReader_Tapped_BackButton', {
       book: currentBook,
       bookId: currentBookId,
@@ -1135,7 +1136,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const handlePresentModal = useCallback(() => {
     console.log('[BibleReader] Present Settings Modal triggered');
     setIsModalVisible(true);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     RNAnimated.timing(slideAnim, {
       toValue: 1,
       duration: 300,
@@ -1166,7 +1167,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   const handleThemeChange = useCallback(
     (theme: ThemeType) => {
       // Add haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
 
       // Update the store (which will save to AsyncStorage)
       readerSettings.setTheme(theme);
@@ -1180,7 +1181,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       // Update store (which will save to AsyncStorage)
       readerSettings.setLineHeightPreset(preset);
 
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
     },
     [readerSettings]
   );
@@ -1190,7 +1191,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     async (value: boolean) => {
       console.log('[BibleReader] CardViewToggle value', value);
       // Add haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      hapticMedium();
       analytics.logEvent('BibleReader_Tapped_CardViewToggle', {
         value: value ? 'default-to-card' : 'card-to-default',
       });
@@ -1390,7 +1391,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                       thumbColor={readerSettings.tapToShowNextCard ? '#FFFFFF' : '#FFFFFF'}
                       ios_backgroundColor="#E0E0E0"
                       onValueChange={(value) => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        hapticLight();
                         readerSettings.setTapToShowNextCard(value);
                       }}
                       value={readerSettings.tapToShowNextCard}
@@ -1708,7 +1709,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                               thumbColor={readerSettings.tapToShowNextCard ? '#FFFFFF' : '#FFFFFF'}
                               ios_backgroundColor="#E0E0E0"
                               onValueChange={(value) => {
-                                Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                                hapticLight();
                                 readerSettings.setTapToShowNextCard(value);
                               }}
                               value={readerSettings.tapToShowNextCard}

@@ -30,6 +30,7 @@ import { useUIStore } from '../app/stores/uiStore';
 import { useHomeStore } from '../app/stores/homeStore';
 import { KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { hapticLight, hapticMedium } from '~/utils/haptics';
 interface PrayerSheetProps {
   prayerSheetRef: React.RefObject<PrayerSheetRef>;
   onPrayerGenerated?: () => void;
@@ -83,7 +84,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({ prayerSheetRef, onPrayerGener
     setIsCustomInput(isCustom); // Track if this is a custom or predefined topic
 
     // No need to increment count here, we'll only increment when actually generating the prayer
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    hapticLight();
   }, []);
 
   // Handle prayer generation
@@ -185,7 +186,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({ prayerSheetRef, onPrayerGener
     setOrderedTopics(getOrderedTopics().map((topic) => topic.name));
 
     bottomSheetRef.current?.expand();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    hapticMedium();
   }, [getOrderedTopics]);
 
   // Expose methods via ref

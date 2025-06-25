@@ -70,6 +70,7 @@ const DISCORD_CARD_DISMISSED_KEY = 'shepherd_discord_card_dismissed_v1';
 import i18n from '../utils/i18n';
 import { useLanguageStore } from '../stores/languageStore';
 import { AppFonts } from '../constants/appFonts';
+import { hapticLight, hapticMedium } from '~/utils/haptics';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -144,7 +145,7 @@ export default function ProfileScreen() {
 
   // Show settings sheet
   const handleShowSettings = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
     if (typeof global !== 'undefined' && (global as any).showSettings) {
       (global as any).showSettings({
         userId: userId || 'Anonymous user',
@@ -298,7 +299,7 @@ export default function ProfileScreen() {
 
   // Handle subscription button press using the store action
   const handleSubscriptionPress = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
     await presentFreeTrialPaywall();
   }, [presentFreeTrialPaywall]);
 
@@ -461,7 +462,7 @@ export default function ProfileScreen() {
 
   // Add ref for edit name sheet
   const editNameSheetRef = useRef<{ show: () => void; close: () => void }>(null);
-  
+
 
 
   // Subscribe to language changes to trigger re-render
@@ -486,7 +487,7 @@ export default function ProfileScreen() {
             <View className="flex-row space-x-3">
               <TouchableOpacity
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  hapticLight();
                   useUIStore.getState().showStoreSheet();
                 }}
                 className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center mr-2">
@@ -517,7 +518,7 @@ export default function ProfileScreen() {
                   <TouchableOpacity
                     className={`flex-row items-center justify-center ${Platform.OS === 'ios' ? 'bg-black' : 'bg-white border border-gray-300'} w-full  px-6 rounded-[16px] mb-4 shadow-appleShadow`}
                     onPress={handleSignIn}
-                    style={{paddingVertical:RPH(1.8)}}
+                    style={{ paddingVertical: RPH(1.8) }}
                     disabled={signInLoading}>
                     {signInLoading ? (
                       <ActivityIndicator
@@ -534,7 +535,7 @@ export default function ProfileScreen() {
                       />
                     )}
                     <Text
-                    style={{fontSize:AppFonts[15]}}
+                      style={{ fontSize: AppFonts[15] }}
                       className={`font-din ${Platform.OS === 'ios' ? 'text-white' : 'text-[#4285F4]'} font-bold`}>
                       {signInLoading
                         ? i18n.t('signing_in')
@@ -553,21 +554,21 @@ export default function ProfileScreen() {
           {/* Discord Card */}
           {showDiscordCard && (
             <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder relative">
-                                <TouchableOpacity
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      handleDismissDiscordCard();
-                    }}
-                    className="absolute top-3 right-3 p-1 z-10 bg-darkPurple/10 rounded-full">
-                    <Feather name="x" size={20} color="#3C584A" />
-                  </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  hapticLight();
+                  handleDismissDiscordCard();
+                }}
+                className="absolute top-3 right-3 p-1 z-10 bg-darkPurple/10 rounded-full">
+                <Feather name="x" size={20} color="#3C584A" />
+              </TouchableOpacity>
 
               <View className="flex-row items-center mb-4">
                 <View className="bg-white p-3 rounded-full mr-4 shadow-md">
                   <FontAwesome6 name="discord" size={20} color="#5865F2" />
                 </View>
                 <View className="flex-1">
-                  <Text style={{fontSize:AppFonts[15]}} className="font-feather text-darkPurple">
+                  <Text style={{ fontSize: AppFonts[15] }} className="font-feather text-darkPurple">
                     {i18n.t('join_discord')}
                   </Text>
                   <Text className="font-din text-body text-darkPurple opacity-80 mt-1 leading-tight">
@@ -589,9 +590,9 @@ export default function ProfileScreen() {
           {/* Lamb Stats Card */}
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
             <View className="flex-row justify-between items-center mb-6">
-                              <TouchableOpacity
+              <TouchableOpacity
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  hapticLight();
                   editNameSheetRef.current?.show();
                 }}
                 className="flex-row items-center bg-lightYellow px-4 py-1 rounded-lg opacity-80">
@@ -643,10 +644,10 @@ export default function ProfileScreen() {
           </View>
 
           {/* Rive Lamb Test Card */}
-          
+
 
           {/* Selected Path Card */}
-        
+
 
           {/* Path Selection Modal */}
           <Modal
@@ -657,26 +658,26 @@ export default function ProfileScreen() {
             <View style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
               {/* Show X button if onboarding_completed */}
               {onboardingCompleted && (
-                                  <TouchableOpacity
-                    onPress={() => {
-                      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                      setShowPathModal(false);
-                    }}
-                    style={{
-                      position: 'absolute',
-                      top: 48,
-                      right: 24,
-                      zIndex: 10,
-                      backgroundColor: '#fff',
-                      borderRadius: 20,
-                      padding: 8,
-                      shadowColor: '#000',
-                      shadowOpacity: 0.08,
-                      shadowRadius: 4,
-                    }}
-                    hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
-                    <Feather name="x" size={24} color="#3C584A" />
-                  </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => {
+                    hapticLight();
+                    setShowPathModal(false);
+                  }}
+                  style={{
+                    position: 'absolute',
+                    top: 48,
+                    right: 24,
+                    zIndex: 10,
+                    backgroundColor: '#fff',
+                    borderRadius: 20,
+                    padding: 8,
+                    shadowColor: '#000',
+                    shadowOpacity: 0.08,
+                    shadowRadius: 4,
+                  }}
+                  hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}>
+                  <Feather name="x" size={24} color="#3C584A" />
+                </TouchableOpacity>
               )}
               <OnboardingPathScreen
                 // Pass a callback to handle path selection
@@ -710,16 +711,16 @@ export default function ProfileScreen() {
                 <PrimaryButton
                   title={i18n.t('upgrade_to_pro')}
                   onPress={async () => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-                    
+                    hapticMedium();
+
                     // Set from screen for analytics
                     setFromScreen('profile');
-                    
+
                     // Present the paywall
                     try {
                       const result = await presentPaywall();
                       if (result === 'PURCHASED') {
-                        analytics.logEvent('Profile_Upgrade_Success', { 
+                        analytics.logEvent('Profile_Upgrade_Success', {
                           fromScreen: 'profile'
                         });
                         console.log('✅ Successfully upgraded to pro from profile');
@@ -735,7 +736,7 @@ export default function ProfileScreen() {
           </View>
 
           {/* Store Section */}
-       
+
           {/* Activity History Timeline Card */}
           <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
             <Text className="font-feather text-heading text-textPrimary mb-4">{i18n.t('your_journey')}</Text>
@@ -754,7 +755,7 @@ export default function ProfileScreen() {
                   const showDateHeader =
                     index === 0 ||
                     formatActivityDate(activity.date) !==
-                      formatActivityDate(allActivities[index - 1].date);
+                    formatActivityDate(allActivities[index - 1].date);
 
                   return (
                     <View key={`${activity.type}-${index}`}>

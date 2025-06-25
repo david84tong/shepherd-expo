@@ -15,6 +15,7 @@ import useSubscriptionStore from '../stores/subscriptionStore';
 import { RPH, RPW } from '../helper/helper';
 import i18n from '../utils/i18n';
 import { AppFonts } from '../constants/appFonts';
+import { hapticMedium } from '~/utils/haptics';
 
 // Key for tracking first app launch
 const FIRST_APP_LAUNCH_KEY = 'first_app_launch_completed';
@@ -34,10 +35,7 @@ function CustomTabBarButton(props: any) {
   // Handle press with haptic feedback
   const handlePress = () => {
     // Trigger medium haptic feedback when tab is pressed
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {
-      // Silently fail if haptics don't work
-      console.log('Haptics not available');
-    });
+    hapticMedium();
 
     // Call the original onPress handler
     onPress();
@@ -152,7 +150,7 @@ export default function TabsLayout() {
 
   useEffect(() => {
     const shouldShowTabBar = mode === 'DEFAULT' && !pathInProgress && !devotionalReaderVisible && !prayerViewVisible && !journalViewVisible;
-    
+
     Animated.timing(tabBarAnim, {
       toValue: shouldShowTabBar ? 1 : 0,
       duration: 300,
@@ -239,7 +237,7 @@ export default function TabsLayout() {
   return (
     <Tabs
       screenOptions={({ route }) => ({
-        headerShown: false, 
+        headerShown: false,
         tabBarStyle: animatedTabBarStyle,
         tabBarLabelStyle: {
           marginTop: 2,
@@ -251,7 +249,7 @@ export default function TabsLayout() {
         tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
       })}>
 
-  
+
 
       <Tabs.Screen
         name="index"
@@ -260,7 +258,7 @@ export default function TabsLayout() {
           tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: RPW(14) }} className="items-center justify-center  mt-6">
-              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/today.png')} style={{width:RPH(2.5),height:RPH(2.5)}} />
+              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/today.png')} style={{ width: RPH(2.5), height: RPH(2.5) }} />
               <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_home_title')}</Text>
             </View>
           ),
@@ -274,7 +272,7 @@ export default function TabsLayout() {
           tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: RPW(14) }} className="items-center justify-center  mt-6">
-              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/bible.png')} style={{width:RPH(2.5),height:RPH(2.5)}}/>
+              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/bible.png')} style={{ width: RPH(2.5), height: RPH(2.5) }} />
               <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_bible_title')}</Text>
             </View>
           ),
@@ -288,8 +286,8 @@ export default function TabsLayout() {
           tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
             <View style={{ width: RPW(14) }} className="items-center justify-center  mt-6">
-              <Image resizeMode='contain' tintColor={focused ? "orange" : ""} source={require('../../assets/icons/profile.png')} style={{width:RPH(2.5),height:RPH(2.5)}} />
-              <Text className={`mt-1 font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din',fontSize:AppFonts[11] }}>{i18n.t('bottom_profile_title')}</Text>
+              <Image resizeMode='contain' tintColor={focused ? "orange" : ""} source={require('../../assets/icons/profile.png')} style={{ width: RPH(2.5), height: RPH(2.5) }} />
+              <Text className={`mt-1 font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din', fontSize: AppFonts[11] }}>{i18n.t('bottom_profile_title')}</Text>
             </View>
           ),
         }}

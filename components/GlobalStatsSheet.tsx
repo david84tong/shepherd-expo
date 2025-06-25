@@ -13,6 +13,7 @@ import React, {
 
 import { useUIStore } from '../app/stores/uiStore';
 import StatsScreen from '../app/components/stats';
+import { hapticMedium } from '~/utils/haptics';
 
 interface StatsSheetProps {
   statsSheetRef: React.RefObject<StatsSheetRef>;
@@ -63,7 +64,7 @@ const StatsSheet: React.FC<StatsSheetProps> = ({ statsSheetRef }) => {
   // Show the stats sheet
   const showSheet = useCallback(() => {
     bottomSheetRef.current?.expand();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    hapticMedium();
   }, []);
 
   // Expose methods via ref

@@ -14,6 +14,7 @@ import { useSharedValue, withTiming } from 'react-native-reanimated';
 import { useUIStore } from './stores/uiStore';
 import { useUserStore } from './stores/userStore';
 import PrimaryButton from '../components/PrimaryButton';
+import { hapticMedium } from '~/utils/haptics';
 
 // Define the types of modals this screen can display
 export enum HalfModalType {
@@ -72,7 +73,7 @@ export default function HalfModalScreen() {
   // Function to dismiss the modal
   const handleDismiss = () => {
     bottomSheetRef.current?.close();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
   };
 
   // Handle bottom sheet changes

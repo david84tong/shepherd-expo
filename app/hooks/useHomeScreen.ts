@@ -33,6 +33,7 @@ import { Devotional } from '../models/Devotional';
 import { useRiveAnimation } from './useRiveAnimation';
 import i18n from '../utils/i18n';
 import { useSoundStore } from '../stores/soundStore';
+import { hapticLight, hapticMedium } from '~/utils/haptics';
 
 // Constants
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -778,7 +779,7 @@ export const useHomeScreen = () => {
   }, [isPro, reflectionCompleted, readingCompleted, prayerCompleted]);
 
   const handleWidgetPromptPress = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     analytics.logEvent('HomeScreen_Tapped_AddWidget');
     showWidgetPrompt();
   }, []);
@@ -800,11 +801,11 @@ export const useHomeScreen = () => {
   }, []);
 
   const handleSheetChanges = useCallback((index: number) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
   }, []);
 
   const handleSubscriptionPress = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
     router.push('/PricingScreen' as any);
   }, [router]);
 
@@ -991,7 +992,7 @@ export const useHomeScreen = () => {
   const onSuperBadgePress = useCallback(() => {
     if (!isPro) {
       analytics.logEvent('HomeScreen_TappedProBadge');
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
 
       const subscriptionStore = useSubscriptionStore.getState();
       if (subscriptionStore.shouldShowFreeTrialPaywall()) {
@@ -1004,7 +1005,7 @@ export const useHomeScreen = () => {
   }, [isPro]);
 
   const onLevelPress = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     analytics.logEvent('HomeScreen_Tapped_Level');
     setIsLevelPillExpanded(!isLevelPillExpanded);
 
@@ -1025,7 +1026,7 @@ export const useHomeScreen = () => {
   }, [isLevelPillExpanded]);
 
   const onGemsPress = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     analytics.logEvent('HomeScreen_Tapped_Gems');
     
     // Show the store sheet
@@ -1064,7 +1065,7 @@ export const useHomeScreen = () => {
   ).current;
 
   function onStreakPress() {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     analytics.logEvent('HomeScreen_Tapped_Streak');
     const showStatsSheet = useUIStore.getState().showStatsSheet;
     showStatsSheet();

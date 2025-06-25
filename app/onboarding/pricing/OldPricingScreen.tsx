@@ -32,6 +32,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IS_ANDROID } from '../../utils/utils';
 import i18n from '~/app/utils/i18n';
 import { ONBOARDING_COMPLETED_KEY } from '../../models/Onboarding';
+import { hapticLight, hapticMedium } from '~/utils/haptics';
 // Key for tracking daily first load
 const DAILY_FIRST_LOAD_KEY = 'daily_first_load_';
 
@@ -86,14 +87,14 @@ const OldPricingScreen = () => {
         fromLoading: fromLoading || false,
         animateFromBottom: animateScreenFromBottom || false,
       });
-      
+
       // Check if onboarding is completed and set from screen accordingly
       try {
         const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-        const fromScreenValue = onboardingCompleted === 'true' 
-          ? 'oldpricingscreen_onboardingdone' 
+        const fromScreenValue = onboardingCompleted === 'true'
+          ? 'oldpricingscreen_onboardingdone'
           : 'oldpricingscreen';
-        
+
         useSubscriptionStore.getState().setFromScreen(fromScreenValue);
       } catch (error) {
         console.error('Error checking onboarding status:', error);
@@ -101,7 +102,7 @@ const OldPricingScreen = () => {
         useSubscriptionStore.getState().setFromScreen('oldpricingscreen');
       }
     };
-    
+
     initializeScreen();
   }, [fromLoading, animateScreenFromBottom]);
 
@@ -144,7 +145,7 @@ const OldPricingScreen = () => {
   const [riveAssets] = useAssets([require('../../../assets/riveAnimations/goldLamb.riv')]);
 
   const toggleSwitch = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     const newValue = !trialEnabled;
     setTrialEnabled(newValue);
     analytics.logEvent('PricingScreen_TrialToggled', {
@@ -154,7 +155,7 @@ const OldPricingScreen = () => {
 
   const handleSubscribe = async () => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+      hapticMedium();
       analytics.logEvent('PricingScreen_SubscribeButton_Tapped', {
         trialEnabled: trialEnabled,
       });
@@ -166,7 +167,7 @@ const OldPricingScreen = () => {
   };
 
   const handleBack = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     analytics.logEvent('PricingScreen_BackButton_Tapped');
 
     // Always navigate to tabs when closing pricing screen for logged in users
@@ -184,7 +185,7 @@ const OldPricingScreen = () => {
       } catch (error) {
         console.error('Error checking onboarding status:', error);
         router.replace('/(tabs)');
-    }
+      }
     }
   };
 
@@ -229,11 +230,11 @@ const OldPricingScreen = () => {
         {/* Header */}
         <AnimatedItem index={0} animateItemFromBottom={animateScreenFromBottom}>
           <View className="flex-row items-center justify-between px-5 py-3 mb-3">
-              <Animated.View entering={FadeIn.duration(600)}>
-                <TouchableOpacity onPress={handleBack} className="p-2">
-                  <Feather name="x" size={28} color="#B89B4C" />
-                </TouchableOpacity>
-              </Animated.View>            
+            <Animated.View entering={FadeIn.duration(600)}>
+              <TouchableOpacity onPress={handleBack} className="p-2">
+                <Feather name="x" size={28} color="#B89B4C" />
+              </TouchableOpacity>
+            </Animated.View>
             <View className="w-10" />
           </View>
         </AnimatedItem>
@@ -436,7 +437,7 @@ const OldPricingScreen = () => {
             </View>
 
             <View className="mb-10">
-             
+
               <View
                 className="bg-lightYellow border-2 border-accentGold shadow-lg rounded-[24px] mb-0 overflow-hidden h-48 mt-4"
                 style={{
@@ -524,7 +525,7 @@ const OldPricingScreen = () => {
               <Text className="font-din text-body text-description text-center mt-2">
                 - {i18n.t('pricing_translating_languages')}
               </Text>
-           
+
               <Text className="font-din text-body text-description text-center mt-2">
                 - {i18n.t('pricing_prayer_requests')}
               </Text>

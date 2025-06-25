@@ -42,6 +42,7 @@ import { useHomeStore } from '../stores/homeStore';
 import i18n from '../utils/i18n';
 import { RPH } from '../helper/helper';
 import { AppFonts } from '../constants/appFonts';
+import { hapticLight } from '~/utils/haptics';
 
 // Add this near the top of the file, after imports
 
@@ -369,7 +370,7 @@ export default function SaveProgressScreen() {
     analytics.logEvent(eventName);
 
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
       setLoading(true);
       console.log('Starting Apple sign in process...');
 
@@ -484,7 +485,7 @@ export default function SaveProgressScreen() {
     analytics.logEvent(eventName);
 
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
       setLoading(true);
       console.log('Starting Google sign in process...');
 
@@ -511,7 +512,8 @@ export default function SaveProgressScreen() {
             setTimeout(() => {
               setTimeout(() => {
                 router.replace('/(tabs)');
-              }, 1000);            }, 1000);
+              }, 1000);
+            }, 1000);
           } else {
             setTimeout(() => {
               router.replace('/(tabs)');
@@ -604,7 +606,7 @@ export default function SaveProgressScreen() {
     }
 
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
       setLoading(true);
 
       let user;
@@ -723,7 +725,7 @@ export default function SaveProgressScreen() {
   const handleSkip = async (showConfirmation = true) => {
     if (isLoginMode) return; // Don't allow anonymous login in login mode
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     analytics.logEvent('OnboardingSignUp_Tapped_Skip');
     if (showConfirmation) {
       Alert.alert(

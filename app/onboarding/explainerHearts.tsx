@@ -17,6 +17,7 @@ import analytics from '../../utils/analytics';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { IS_ANDROID } from '../utils/utils';
 import { RPH } from '../helper/helper';
+import { hapticLight } from '~/utils/haptics';
 
 export default function OnboardingExplainerHeartsScreen({
   onContinue,
@@ -32,7 +33,7 @@ export default function OnboardingExplainerHeartsScreen({
 
   // Load Rive assets
   const [riveAssets] = useAssets([require('../../assets/riveAnimations/new_shepherd.riv')]);
-  
+
   // Create refs for each Rive instance
   const riveRefs = useRef<(RiveRef | null)[]>(Array(6).fill(null));
 
@@ -105,9 +106,7 @@ export default function OnboardingExplainerHeartsScreen({
   const handleContinue = () => {
     // Trigger light haptic feedback
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
-        console.log('Haptics not available');
-      });
+      hapticLight();
     } catch (error) {
       console.log('Haptics not available');
     }
@@ -172,61 +171,61 @@ export default function OnboardingExplainerHeartsScreen({
       <View
         className="flex-1 bg-surfaceCream w-full items-center"
         style={{ paddingBottom: insets.bottom }}>
-     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{paddingBottom:insets?.bottom + RPH(12)}}>
-         {/* Title */}
-         <Animated.View style={titleStyle} className="mb-8 px-6">
-          <Text style={{paddingTop:insets?.top}} className="font-feather text-2xl text-textPrimary text-center mb-0">
-            Everyday you don&apos;t read, {lambName}&apos;s health will suffer...
-          </Text>
-        </Animated.View>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: insets?.bottom + RPH(12) }}>
+          {/* Title */}
+          <Animated.View style={titleStyle} className="mb-8 px-6">
+            <Text style={{ paddingTop: insets?.top }} className="font-feather text-2xl text-textPrimary text-center mb-0">
+              Everyday you don&apos;t read, {lambName}&apos;s health will suffer...
+            </Text>
+          </Animated.View>
 
-        {/* Lamb grid */}
-        <View className="flex-row flex-wrap justify-center items-center gap-4 mb-4">
-          {lambStates.map((state, index) => (
-            <Animated.View
-              key={index}
-              style={[
-                cardStyles[index],
-                {
-                  // Add conditional glow effect
-                  shadowColor: state.glow ? '#FDE047' : 'transparent',
-                  shadowOffset: { width: 0, height: 0 },
-                  shadowOpacity: state.glow ? 0.6 : 0,
-                  shadowRadius: 15,
-                },
-              ]}
-              className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-lightRed items-center justify-center relative">
-              {riveAssets && (
-                <View className="w-40 h-40">
-                  {IS_ANDROID ? (
-                    <Rive
-                      ref={(ref) => (riveRefs.current[index] = ref)}
-                      resourceName={'new_shepherd'}
-                      artboardName="[Main] Shpeherd"
-                      stateMachineName="State Machine 1"
-                      autoplay
-                      style={{ width: '100%', height: '100%' }}
-                    />
-                  ) : (
-                    <Rive
-                      ref={(ref) => (riveRefs.current[index] = ref)}
-                      url={riveAssets[0].uri!}
-                      artboardName="[Main] Shpeherd"
-                      stateMachineName="State Machine 1"
-                      autoplay
-                      style={{ width: '100%', height: '100%' }}
-                    />
-                  )}
+          {/* Lamb grid */}
+          <View className="flex-row flex-wrap justify-center items-center gap-4 mb-4">
+            {lambStates.map((state, index) => (
+              <Animated.View
+                key={index}
+                style={[
+                  cardStyles[index],
+                  {
+                    // Add conditional glow effect
+                    shadowColor: state.glow ? '#FDE047' : 'transparent',
+                    shadowOffset: { width: 0, height: 0 },
+                    shadowOpacity: state.glow ? 0.6 : 0,
+                    shadowRadius: 15,
+                  },
+                ]}
+                className="w-[165px] h-[150px] bg-surfaceCream rounded-2xl border-2 border-lightRed items-center justify-center relative">
+                {riveAssets && (
+                  <View className="w-40 h-40">
+                    {IS_ANDROID ? (
+                      <Rive
+                        ref={(ref) => (riveRefs.current[index] = ref)}
+                        resourceName={'new_shepherd'}
+                        artboardName="[Main] Shpeherd"
+                        stateMachineName="State Machine 1"
+                        autoplay
+                        style={{ width: '100%', height: '100%' }}
+                      />
+                    ) : (
+                      <Rive
+                        ref={(ref) => (riveRefs.current[index] = ref)}
+                        url={riveAssets[0].uri!}
+                        artboardName="[Main] Shpeherd"
+                        stateMachineName="State Machine 1"
+                        autoplay
+                        style={{ width: '100%', height: '100%' }}
+                      />
+                    )}
+                  </View>
+                )}
+                <View className="absolute top-2.5 right-2.5 bg-lightRed px-4 py-1 rounded-full">
+                  <Text className="font-feather text-darkRed">{state.hearts} ❤️</Text>
                 </View>
-              )}
-              <View className="absolute top-2.5 right-2.5 bg-lightRed px-4 py-1 rounded-full">
-                <Text className="font-feather text-darkRed">{state.hearts} ❤️</Text>
-              </View>
-            </Animated.View>
-          ))}
-        </View>
+              </Animated.View>
+            ))}
+          </View>
 
-     </ScrollView>
+        </ScrollView>
         {/* Continue Button - fixed at bottom */}
         <View
           className="absolute left-6 right-6"

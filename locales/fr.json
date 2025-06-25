@@ -21,6 +21,8 @@
     "background_music_disabled": "Musique de fond désactivée",
     "sound_effects_enabled": "Effets sonores activés",
     "sound_effects_disabled": "Effets sonores désactivés",
+    "haptics_enabled": "Retour haptique activé",
+    "haptics_disabled": "Retour haptique désactivé",
     "community_title": "Communauté",
     "join_discord": "Rejoignez la famille Shepherd !",
     "roadmap_feature_requests": "Feuille de route & suggestions",
