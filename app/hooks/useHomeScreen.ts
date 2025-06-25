@@ -108,6 +108,7 @@ export const useHomeScreen = () => {
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
   const showGlobalButtons = useHomeStore((state) => state.showGlobalButtons);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
+  const nextUnitPreview = usePathStore((state) => state.nextUnitPreview);
   const lambHearts = useUserStore((state) => state?.getLambHearts?.());
   const streakCount = useUserStore((state) => state?.getStreakCount?.());
   const gens = useUserStore((state) => state?.getGens?.());
@@ -1038,6 +1039,21 @@ export const useHomeScreen = () => {
     if (setHasSeenWidgetModal) setHasSeenWidgetModal(true);
   }, [setHasSeenWidgetModal]);
 
+  const handleNextUnitPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    analytics.logEvent('HomeScreen_Tapped_NextUnit', {
+      unitTitle: nextUnitPreview?.title,
+    });
+    // Navigate to map screen with animation
+    router.push({
+      pathname: '/components/map',
+      params: {
+        fromHome: 'true',
+        targetUnitId: nextUnitPreview?.id || '',
+      }
+    });
+  }, [nextUnitPreview, router]);
+
   // Pan responder for share card
   const panResponder = useRef(
     PanResponder.create({
@@ -1219,6 +1235,7 @@ export const useHomeScreen = () => {
     devotionalError,
     isPro,
     showGlobalButtons,
+    nextUnitPreview,
 
     // Refs
     devotionalReaderRef,
@@ -1280,6 +1297,7 @@ export const useHomeScreen = () => {
     onLevelPress,
     onGemsPress,
     handleWidgetSheetClose,
+    handleNextUnitPress,
 
     // Other values
     snapPoints,

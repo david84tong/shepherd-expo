@@ -32,6 +32,7 @@ import DailyVerseCard from '~/components/Shared/DailyVerseCard';
 import CustomToast from '../components/Shared/CustomToast';
 import { imageAssets, useAssetsStore } from '../stores/assetsStore';
 import { useDevotionalStore } from '../stores/devotionalStore';
+import { usePathStore } from '../stores/pathStore';
 import { useMemo, useState } from 'react';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import Rive from 'rive-react-native';
@@ -62,6 +63,11 @@ export default function HomeScreen() {
   // Test effect to verify component is mounting
   useEffect(() => {
     console.log('🎉 HomeScreen component mounted!');
+    
+    // Initialize next unit preview based on current completion state
+    const initializeNextUnit = usePathStore.getState().initializeNextUnitPreview;
+    initializeNextUnit();
+    
     // Try fetching devotional immediately when component mounts
     console.log('🎯 Attempting to fetch devotional on mount...');
     const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
@@ -78,7 +84,7 @@ export default function HomeScreen() {
       console.log('❌ fetchTodaysDevotional function not found!');
     }
   }, []);
-  
+
   // Local state for prayer success screen visibility
   const [showPrayerSuccess, setShowPrayerSuccess] = useState(false);
 
@@ -118,6 +124,7 @@ export default function HomeScreen() {
     isLoadingDevotional,
     devotionalError,
     isPro,
+    nextUnitPreview,
 
     // Refs
     devotionalReaderRef,
@@ -167,6 +174,7 @@ export default function HomeScreen() {
     onLevelPress,
     onGemsPress,
     handleWidgetSheetClose,
+    handleNextUnitPress,
     onStreakPress,
     setShowShareCard,
     setFinishReading,
@@ -189,6 +197,18 @@ export default function HomeScreen() {
 
   const [startShareFlow, setStartShareFlow] = useState(false);
 
+  // Debug effect to track nextUnitPreview changes
+  useEffect(() => {
+    console.log('🔍 NextUnitPreview debug:', {
+      hasNextUnit: !!nextUnitPreview,
+      unitId: nextUnitPreview?.id,
+      unitTitle: nextUnitPreview?.title,
+      readingCompleted,
+      prayerCompleted,
+      reflectionCompleted
+    });
+  }, [nextUnitPreview, readingCompleted, prayerCompleted, reflectionCompleted]);
+
   // Load Rive assets
   const [riveAssets] = useAssets([
     require('../../assets/riveAnimations/new_shepherd.riv'),
@@ -205,23 +225,6 @@ export default function HomeScreen() {
     i18n.locale = currentLanguage;
   }, [currentLanguage]);
   
-  // Fetch devotional after assets are loaded
-  useEffect(() => {
-    console.log('📚 Asset check in HomeScreen effect:', { assetsLoaded, hasAssets: !!assets });
-    if (assetsLoaded && assets) {
-      console.log('✅ Assets loaded, now fetching devotional...');
-      const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
-      if (fetchDevotional) {
-        fetchDevotional()
-          .then(() => {
-            console.log('✅ Devotional fetched in index.tsx');
-          })
-          .catch((error) => {
-            console.error('❌ Error fetching devotional in index.tsx:', error);
-          });
-      }
-    }
-  }, [assetsLoaded, assets]);
 
   // Set bottomSheetRef in home store so other components can access it
   useEffect(() => {
@@ -707,6 +710,38 @@ export default function HomeScreen() {
                           showShareButton={true}
                           showExpandButton={true}
                         />
+                      )}
+
+                      {/* Next Unit Button - Only show when all activities are completed and there's a next unit */}
+                      {prayerCompleted && readingCompleted && reflectionCompleted && nextUnitPreview && (
+                        <View
+                          className="flex-row items-center justify-between"
+                          style={{ marginTop: responsiveHeight(2) }}>
+                          <View
+                            style={{
+                              width: 22,
+                              marginRight: 10,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}>
+                            <View
+                              className="bg-lightBrown/20"
+                              style={{ width: 20, height: 20, borderRadius: 12 }}
+                            />
+                          </View>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <SecondaryButton
+                              icon={require('../../assets/icons/map.png')}
+                              title={nextUnitPreview.title}
+                              subtitle="Start Bible Reading Plan"
+                              points={0}
+                              onPress={handleNextUnitPress}
+                              completed={false}
+                              disabled={false}
+                            />
+                          </View>
+                        </View>
                       )}
 
                       <View

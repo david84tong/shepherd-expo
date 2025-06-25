@@ -646,7 +646,14 @@ export default function ProfileScreen() {
           
 
           {/* Selected Path Card */}
-        
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+            <Text className="font-feather text-heading text-textPrimary mb-2">Selected Path</Text>
+            <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
+              <Text className="font-din text-description underline text-accentGold">
+                {selectedPath?.title || 'No path selected'}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
           {/* Path Selection Modal */}
           <Modal
@@ -684,6 +691,8 @@ export default function ProfileScreen() {
                 // Optionally pass selectedPathId for highlighting
                 selectedPathId={selectedPath?.id}
                 hideContinueButton={false}
+                // Pass callback to close modal when continue is pressed after onboarding completion
+                onModalClose={() => setShowPathModal(false)}
               />
             </View>
           </Modal>

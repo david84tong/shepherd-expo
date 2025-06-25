@@ -263,28 +263,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
     }
   };
 
-  // Handler for "Just Read Bible" button
-  const handleJustReadBible = () => {
-    console.log('Just Read Bible');
-    // Set path progress to true for "just read" mode
-    setPathInProgress(true);
 
-    // Navigate directly to the Bible reader with saved state
-    router.push({
-      pathname: '/bibleReader',
-      params: {
-        bookId: savedBookId?.toString(),
-        chapters: savedChapter?.toString(),
-        title: savedBook,
-        source: 'just-read',
-        justReadMode: 'true', // Special flag for just read mode
-        timestamp: Date.now().toString(),
-        isFromDailyBread: 'true',
-      },
-    });
-
-    // Close the preview overlay
-  };
 
   // Handler for "Finish Reading" button
   // const handleFinishReading = () => {
@@ -358,11 +337,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
             handleStart();
           }}
         />
-        <TouchableOpacity onPress={handleJustReadBible} className="mt-4 py-2" activeOpacity={0.7}>
-          <Text className="text-body font-nunito-bold text-textPrimary/70 text-center underline text-white">
-            Just Read Bible
-          </Text>
-        </TouchableOpacity>
+    
       </Animated.View>
     </Animated.View>
   );

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Unit, PathOption } from '../models/Path'; // Import Unit and PathOption types
+import { Unit, PathOption, SHORTER_BIBLE_PATHS_2 } from '../models/Path'; // Import Unit and PathOption types
 
 // Type definition for a complete path object
 export interface PathInfo {
@@ -60,6 +60,12 @@ interface PathState {
   
   // Mark a unit as completed
   markUnitAsCompleted: (unitId: string) => void;
+  
+  // Update next unit preview based on completed units
+  updateNextUnitPreview: () => void;
+  
+  // Initialize next unit preview on app start
+  initializeNextUnitPreview: () => void;
 }
 
 export const usePathStore = create<PathState>()(
@@ -100,11 +106,16 @@ export const usePathStore = create<PathState>()(
       
       // Set selected path
       setSelectedPath: (path: PathOption) => {
+        console.log('🛤️ Setting selected path:', path.id, path.title);
+        
         set({ 
           selectedPath: path,
           selectedPathId: path.id,
           selectedPathTitle: path.title
         });
+        
+        // Update next unit preview after setting the path
+        get().updateNextUnitPreview();
       },
       
       // Set current path with all information
@@ -125,7 +136,54 @@ export const usePathStore = create<PathState>()(
           set((state) => ({
             completedUnitIds: [...state.completedUnitIds, unitId]
           }));
+          // Update next unit preview after marking as completed
+          get().updateNextUnitPreview();
         }
+      },
+      
+      // Update next unit preview based on completed units
+      updateNextUnitPreview: () => {
+        const state = get();
+        const { selectedPath, completedUnitIds } = state;
+        
+        if (!selectedPath) {
+          console.log('🚫 No selected path, cannot update next unit preview');
+          return;
+        }
+        
+        console.log('🔍 Updating next unit preview. Completed units:', completedUnitIds);
+        
+        // Get ordered paths based on selected path
+        const pathMap = Object.fromEntries(SHORTER_BIBLE_PATHS_2.map((p) => [p.id, p]));
+        const orderedPaths = selectedPath.order.map((id) => pathMap[id]).filter(Boolean);
+        
+        // Find the first uncompleted unit across all ordered paths
+        let nextUnit = null;
+        for (const path of orderedPaths) {
+          console.log(`🔍 Checking path ${path.id} with ${path.units.length} units`);
+          for (const unit of path.units) {
+            if (!completedUnitIds.includes(unit.id)) {
+              console.log(`📚 Found next uncompleted unit: ${unit.id} (${unit.title}) in path ${path.id}`);
+              nextUnit = unit;
+              break;
+            }
+          }
+          if (nextUnit) break;
+        }
+        
+        if (nextUnit) {
+          console.log('📚 Updated next unit preview:', nextUnit.id, nextUnit.title);
+          set({ nextUnitPreview: nextUnit });
+        } else {
+          console.log('🎉 All units completed! No next unit.');
+          set({ nextUnitPreview: null });
+        }
+      },
+      
+      // Initialize next unit preview on app start
+      initializeNextUnitPreview: () => {
+        console.log('🚀 Initializing next unit preview on app start');
+        get().updateNextUnitPreview();
       },
     }),
     {
