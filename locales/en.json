@@ -88,7 +88,7 @@
     "pro": "Pro",
     "pro_access": "You have access to all premium features!",
     "unlock_premium_features": "Unlock premium features and enhance your spiritual journey",
-    "upgrade_to_pro": "Upgrade to Pro",
+    "upgrade_to_pro": "Upgrade to PRO",
     "store": "Store",
     "unlocks_at_level_10": "Unlocks at Level 10",
     "customize_lamb": "Customize your lamb and unlock special items!",
@@ -482,5 +482,8 @@
     "bible_chat_upgrade_message_shown": "Upgrade message shown",
     "bible_chat_auto_paywall_shown": "Auto paywall shown",
     "bible_chat_used_free_message": "Free message used",
-    "bible_chat_pro_member_used": "Pro member used chat"
+    "bible_chat_pro_member_used": "Pro member used chat",
+    "unlock_premium_features_enhance": "Unlock premium features enhance your spiritual journey.",
+    "join_super_users": "Join 10,000+ other super users",
+    "claim_lamb_save_progress": "Claim your lamb and save your progress"
 }

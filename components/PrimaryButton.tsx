@@ -27,6 +27,7 @@ interface PrimaryButtonProps {
   reward?: string | number;
   opacity?: number;
   width?: DimensionValue;
+  fullBorderRadius?: boolean;
 }
 
 const PrimaryButton: React.FC<PrimaryButtonProps> = ({
@@ -47,6 +48,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   reward,
   opacity = 1,
   width,
+  fullBorderRadius = false,
 }) => {
   // Simple state to track pressed state
   const [isPressed, setIsPressed] = useState(false);
@@ -160,7 +162,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
             height: buttonHeight || RPH(7),
             width: '100%',
             transform: [{ translateY: isPressed ? 3 : 0 }],
-            borderRadius: RPH(2.5),
+            borderRadius: fullBorderRadius ? (buttonHeight || RPH(7)) / 2 : RPH(2.5),
             // paddingVertical: buttonHeight && buttonHeight <= 40 ? 4 : RPH(2),
             paddingHorizontal: buttonHeight && buttonHeight <= 40 ? RPH(2) : 24,
           }

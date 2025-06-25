@@ -1,4 +1,4 @@
-import { AntDesign, Feather } from '@expo/vector-icons';
+import { AntDesign, Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import dayjs from 'dayjs';
 import * as Haptics from 'expo-haptics';
@@ -29,6 +29,7 @@ import { getLevelData } from '../../utils/levelUtils';
 import { isSignedInWithGoogle, isSignedInWithApple, RPH } from '../helper/helper';
 import auth from '@react-native-firebase/auth';
 import { useAssets } from 'expo-asset';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
@@ -44,6 +45,7 @@ import breadIcon from '../../assets/icons/breadIcon.png';
 import quillIcon from '../../assets/icons/journalIcon.png';
 import dropIcon from '../../assets/icons/waterIcon.png';
 import sheepIcon from '../../assets/icons/sheepIcon.png';
+import starIcon from '../../assets/icons/starIcon.png';
 
 // Define activity type for the timeline
 type ActivityType = {
@@ -477,49 +479,119 @@ export default function ProfileScreen() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* Split background container */}
+        <View style={{ flex: 1, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+          {/* Linear gradient top half */}
+          <LinearGradient
+            colors={['#FFB200', "#5C4307",]}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '40%',
+            }}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          />
+          {/* Green bottom half */}
+
+          <LinearGradient
+            // className="bg-surfaceCream"
+            colors={['#ffd080', "#FDEBB8",]}
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '60%',
+            }} />
+          {/* Ellipse image - positioned to bridge both sections */}
+          <Image
+            source={require('../../assets/images/Ellipse.png')}
+            style={{
+              position: 'absolute',
+              top: '34%',
+              left: 0,
+              right: 0,
+              width: "100%",
+              height: 97,
+              resizeMode: 'cover',
+            }}
+          />
+        </View>
+
         <ScrollView
-          className="flex-1 bg-surfaceCream"
+          className="flex-1 "
           contentContainerStyle={{ paddingBottom: 50 }}>
           {/* Header */}
-          <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
-            <Text className="font-feather text-h2 text-textPrimary">{i18n.t('profile_title')}</Text>
-            <View className="flex-row space-x-3">
-              <TouchableOpacity
-                onPress={() => {
-                  hapticLight();
-                  useUIStore.getState().showStoreSheet();
-                }}
-                className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center mr-2">
-                <Feather name="shopping-bag" size={20} color="#B89B4C" />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleShowSettings}
-                className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center">
-                <Feather name="settings" size={20} color="#B89B4C" />
-              </TouchableOpacity>
+          <View className="flex-row justify-between  px-6 pt-6 pb-4">
+            <TouchableOpacity
+              onPress={handleShowSettings}
+              className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+              <Ionicons name="settings-sharp" size={20} color="#795323" style={{ opacity: 0.4 }} />
+            </TouchableOpacity>
+
+            <View className=" justify-center items-center">
+              <Text className="font-feather text-h2 text-white">
+                {user?.username || user?.displayName || 'Profile'}
+              </Text>
+              <Text className="font-semibold text-[12px] text-white/50" >{i18n.t('journey_started')}</Text>
+              <Text className="font-semibold text-[12px] text-white/50 pt-1">{joinDate}</Text>
             </View>
+
+            <TouchableOpacity
+              onPress={() => {
+                hapticLight();
+                useUIStore.getState().showStoreSheet();
+              }}
+              className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+              <Feather name="shopping-bag" size={20} color="#795323"
+                style={{ opacity: 0.4 }} />
+            </TouchableOpacity>
           </View>
+
+          <View className=" items-center justify-center mt-10">
+            <Image
+              source={isAnonymous ? require('../../assets/images/lambDanceDark.png') : require('../../assets/images/lambDance.png')}
+              style={{
+                width: 170,
+                height: 170,
+                resizeMode: 'cover',
+              }}
+            />
+          </View>
+          {/* lambDanceDark.png */}
 
           {/* Sign In to Save Progress Card (only for anonymous users and not signed in with any method) */}
           {isAnonymous &&
             !isSignedInWithGoogle() &&
             !isSignedInWithApple() &&
             !isSignedInWithEmail && (
-              <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
-                <Text className="font-feather text-xl text-accentGold mb-2 text-center">
-                  {i18n.t('sign_in_save_progress')}
+              <View className="mx-6 -mt-3 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
+                <Text className="font-feather font-bold text-[20px] w-[70%]  text-black/70 text-center mx-auto" >
+                  {i18n.t('claim_lamb_save_progress')}
                 </Text>
-                <Text className="font-din text-body text-textPrimary mb-4 text-center">
+                <Text className="font-nunito-bold font-bold text-[18px]  text-black/50 mb-3 mt-4 text-center">
                   {i18n.t('sign_in_sync_description')}
                 </Text>
 
-                <View className="items-center mb-4">
+                <View className="items-center ">
                   <TouchableOpacity
-                    className={`flex-row items-center justify-center ${Platform.OS === 'ios' ? 'bg-black' : 'bg-white border border-gray-300'} w-full  px-6 rounded-[16px] mb-4 shadow-appleShadow`}
+                    className={`flex-row items-center justify-center ${Platform.OS === 'ios' ? 'bg-black' : 'bg-white border border-gray-300'} w-full  px-6 rounded-full mb-4 shadow-appleShadow`}
                     onPress={handleSignIn}
                     style={{ paddingVertical: RPH(1.8) }}
                     disabled={signInLoading}>
+                    <Text
+                      style={{ fontSize: AppFonts[15] }}
+                      className={`font-feather  text-[20px] text-center ${Platform.OS === 'ios' ? 'text-white' : 'text-[#4285F4]'} font-bold pr-2`}>
+                      {signInLoading
+                        ? i18n.t('signing_in')
+                        : Platform.OS === 'ios'
+                          ? i18n.t('sign_in_with_apple')
+                          : i18n.t('sign_in_with_google')}
+                    </Text>
                     {signInLoading ? (
                       <ActivityIndicator
                         color={Platform.OS === 'ios' ? 'white' : '#4285F4'}
@@ -534,15 +606,7 @@ export default function ProfileScreen() {
                         style={{ marginRight: 10 }}
                       />
                     )}
-                    <Text
-                      style={{ fontSize: AppFonts[15] }}
-                      className={`font-din ${Platform.OS === 'ios' ? 'text-white' : 'text-[#4285F4]'} font-bold`}>
-                      {signInLoading
-                        ? i18n.t('signing_in')
-                        : Platform.OS === 'ios'
-                          ? i18n.t('sign_in_with_apple')
-                          : i18n.t('sign_in_with_google')}
-                    </Text>
+
                   </TouchableOpacity>
                 </View>
                 {signInError && (
@@ -551,9 +615,51 @@ export default function ProfileScreen() {
               </View>
             )}
 
+          {/* Upgrade to PRO Card */}
+          {!isProMember && (
+            <View className="mx-6 mt-4 rounded-[20px] overflow-hidden shadow-card border border-brownBorder relative">
+              <Image
+                source={require('../../assets/backgrounds/godBackground.png')}
+                className="absolute w-full h-full left-0 top-0"
+                style={{ resizeMode: 'cover', opacity: 0.9 }}
+              />
+              <View className="p-6 items-center justify-center">
+                <Text className="font-feather font-bold text-[20px] text-center text-black/70 mb-2">
+                  {i18n.t('upgrade_to_pro')}
+                  <Image
+                    source={starIcon}
+                    className="w-10 h-10 ml-1"
+                    style={{ resizeMode: 'contain', marginBottom: -2 }}
+                  />
+                </Text>
+                <Text className="font-nunito-bold font-bold text-[18px] text-center text-black/50 mb-6">
+                  {i18n.t('unlock_premium_features_enhance')}
+                </Text>
+                <Image
+                  source={require('../../assets/images/reviews.png')}
+                  className="w-32 h-14"
+                  style={{ resizeMode: 'contain' }}
+                />
+                <Text className="font-nunito-bold font-bold text-[15px] text-center text-black/70 ">
+                  {i18n.t('join_super_users')}
+                </Text>
+                <PrimaryButton
+                  title={i18n.t('claim_free_week') || 'Claim my free week'}
+                  onPress={handleSubscriptionPress}
+                  buttonType="blue"
+                  width="100%"
+                  style='rounded-full'
+                  fullBorderRadius={true}
+                />
+              </View>
+            </View>
+          )}
+
+
+
           {/* Discord Card */}
           {showDiscordCard && (
-            <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder relative">
+            <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card border border-brownBorder relative">
               <TouchableOpacity
                 onPress={() => {
                   hapticLight();
@@ -587,8 +693,42 @@ export default function ProfileScreen() {
               />
             </View>
           )}
+
+          {/* Selected Path Card */}
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+            <View className="flex-row justify-between items-center">
+              <Text className="font-feather text-heading text-textPrimary ">Selected Path</Text>
+              <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
+                <Text className="font-din text-description underline text-accentGold font-bold">
+                  {selectedPath?.title || 'No path selected'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* XP Bar */}
+
+            <View className="flex-row justify-between align-center mb-2 mt-6 border-t border-t-gray-200 pt-6">
+
+              <Text className="font-nunito-bold text-blue">{i18n.t('level')} {levelData.level}</Text>
+
+              <View className="h-3 mt-1.5 w-[55%] bg-black/10 rounded-full overflow-hidden">
+                <View
+                  className="h-full bg-blue rounded-full"
+                  style={{ width: `${levelData.progress}%` }}
+                />
+              </View>
+
+              <Text className="font-nunito-bold text-blue">
+                {levelData.xpCurrent}/{levelData.xpForNextLevel} {i18n.t('xp')}
+              </Text>
+
+            </View>
+          </View>
+
+
+
           {/* Lamb Stats Card */}
-          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card border border-brownBorder">
             <View className="flex-row justify-between items-center mb-6">
               <TouchableOpacity
                 onPress={() => {
@@ -620,25 +760,11 @@ export default function ProfileScreen() {
                 <Text className="font-din text-description">{i18n.t('hearts')}</Text>
               </View>
             </View>
-            {/* XP Bar */}
-            <View className="mt-6 mx-2">
-              <View className="flex-row justify-between mb-2">
-                <Text className="font-din text-description">{i18n.t('level')} {levelData.level}</Text>
-                <Text className="font-din text-description">
-                  {levelData.xpCurrent}/{levelData.xpForNextLevel} {i18n.t('xp')}
-                </Text>
-              </View>
-              <View className="h-4 bg-lightYellow rounded-full overflow-hidden">
-                <View
-                  className="h-full bg-accentGold rounded-full"
-                  style={{ width: `${levelData.progress}%` }}
-                />
-              </View>
-            </View>
+
           </View>
 
           {/* Join Date Card */}
-          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card border border-brownBorder">
             <Text className="font-feather text-heading text-textPrimary mb-2">{i18n.t('journey_started')}</Text>
             <Text className="font-din text-description">{joinDate}</Text>
           </View>
@@ -646,15 +772,7 @@ export default function ProfileScreen() {
           {/* Rive Lamb Test Card */}
 
 
-          {/* Selected Path Card */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-            <Text className="font-feather text-heading text-textPrimary mb-2">Selected Path</Text>
-            <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
-              <Text className="font-din text-description underline text-accentGold">
-                {selectedPath?.title || 'No path selected'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+
 
           {/* Path Selection Modal */}
           <Modal
@@ -699,7 +817,7 @@ export default function ProfileScreen() {
           </Modal>
 
           {/* Subscription Management Section */}
-          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card border border-brownBorder">
             <View className="flex-row justify-between items-center mb-2">
               <Text className="font-feather text-heading text-textPrimary">
                 {i18n.t('manage_subscription')}
@@ -747,7 +865,7 @@ export default function ProfileScreen() {
           {/* Store Section */}
 
           {/* Activity History Timeline Card */}
-          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card border border-brownBorder">
             <Text className="font-feather text-heading text-textPrimary mb-4">{i18n.t('your_journey')}</Text>
 
             {allActivities.length === 0 ? (
@@ -833,6 +951,8 @@ export default function ProfileScreen() {
             </Text>
           </View>
         </ScrollView>
+
+
       </SafeAreaView>
 
       {/* Add EditNameSheet */}
