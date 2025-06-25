@@ -24,11 +24,12 @@ interface OnboardingPathScreenProps {
   onPathSelected?: (pathObj: any) => void;
   selectedPathId?: string;
   hideContinueButton?: boolean;
+  onModalClose?: () => void; // Add callback to close modal from profile
 }
 
-export default function OnboardingPathScreen({ onPathSelected, selectedPathId: externalSelectedPathId, hideContinueButton }: OnboardingPathScreenProps) {
+export default function OnboardingPathScreen({ onPathSelected, selectedPathId: externalSelectedPathId, hideContinueButton, onModalClose }: OnboardingPathScreenProps) {
   const router = useRouter();
-  const { setResponse, setPathSelection } = useOnboardingStore();
+  const { setResponse } = useOnboardingStore();
   const { setUser } = useUserStore();
   const { setSelectedPath } = usePathStore();
   const [selectedPathId, setSelectedPathId] = useState(externalSelectedPathId || 'knowing-jesus');
@@ -101,13 +102,8 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
     const selectedPathObj = PATH_OPTIONS.find((p) => p.id === pathId);
 
     if (selectedPathObj) {
-      // Save to onboarding store using enhanced method
-      await setPathSelection({
-        id: selectedPathObj.id,
-        title: selectedPathObj.title,
-        subtitle: selectedPathObj.subtitle,
-        order: selectedPathObj.order
-      });
+      // Save to onboarding store
+      await setResponse('selectedPath', pathId);
 
       // For backward compatibility
       await setResponse('selectedPath', pathId);
@@ -128,10 +124,21 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
         value: selectedPathId,
       });
       setUser({ selectedPathId: selectedPathId });
-      console.log(selectedPathId, "selectedPathId")
-      router.push('/onboarding/explainerHearts' as any);
+      console.log(selectedPathId, "selectedPathId");
+      
+      // Check if user has completed onboarding
+      const user = useUserStore.getState().getUser();
+      const onboardingCompleted = (user as any)?.onboarding_completed ?? false;
+      
+      if (onboardingCompleted && onModalClose) {
+        // If onboarding is completed and we're in a modal (from profile), just close the modal
+        onModalClose();
+      } else {
+        // If onboarding is not completed, continue to next onboarding screen
+        router.push('/onboarding/explainerHearts' as any);
+      }
     }
-  }, [selectedPathId, setUser, router]);
+  }, [selectedPathId, setUser, router, onModalClose]);
 
   return (
     <>

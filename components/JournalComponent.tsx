@@ -106,6 +106,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   // Get store functions
   const setSuccessType = useHomeStore((state) => state.setSuccessType);
   const setReflectionCompleted = useHomeStore((state) => state.setReflectionCompleted);
+  const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
   const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
@@ -195,7 +196,10 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
   // Get reflection prompt from devotional or fallback
   const getReflectionPrompt = () => {
-
+    // If reflection is already completed, show a different prompt
+    if (reflectionCompleted) {
+      return "Tell God what's on your mind";
+    }
 
     // First try to use the devotional reflection prompt (handle both string and object structures)
     if (currentDevotional?.reflectionPrompt) {
@@ -623,6 +627,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       });
       useHomeStore.getState().setTappedReflectAboutVerse(false);
       console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
+      
+      // Don't change reflection completion state - preserve existing state
       onClose({});
 
       // Reset Rive animation to idle state with delay after navigation
@@ -918,6 +924,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                 });
                 useHomeStore.getState().setTappedReflectAboutVerse(false);
                 console.log('Reset tappedReflectAboutVerse flag to false (from cancel button)');
+                
+                // Don't change reflection completion state - preserve existing state
                 onClose({});
 
                 // Reset Rive animation to idle state with delay after navigation

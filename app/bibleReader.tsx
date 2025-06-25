@@ -1320,7 +1320,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   ];
 
   // When user enabled Card View preference, render the NewBibleReader component
-  if (useCardView) {
+  if (useCardView && !pathInProgress) {
     return <View className='flex-1 bg-surfaceCream/80'>
       <StatusBar translucent backgroundColor="transparent" />
       <NewBibleReader
@@ -1558,14 +1558,22 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                       {i18n.t('bible_title')}
                     </Text>
                   )}
-                  <TouchableOpacity onPress={handlePresentModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
-                    <MaterialIcons
-                      name="settings"
-                      size={22}
-                      color="#795323"
-                      style={{ opacity: 0.4 }}
-                    />
-                  </TouchableOpacity>
+                  {pathInProgress ? (
+                    <View className="bg-white/80 px-4 py-2 rounded-full">
+                      <Text className="font-feather text-brown" style={{ fontSize: 16 }}>
+                        {effectiveChapterData ? `${effectiveChapterData.book} ${effectiveChapterData.chapter}` : ''}
+                      </Text>
+                    </View>
+                  ) : (
+                    <TouchableOpacity onPress={handlePresentModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+                      <MaterialIcons
+                        name="settings"
+                        size={22}
+                        color="#795323"
+                        style={{ opacity: 0.4 }}
+                      />
+                    </TouchableOpacity>
+                  )}
                 </View>
               </View>
 
@@ -1576,8 +1584,8 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                 {effectiveChapterData && renderBibleContent(effectiveChapterData)}
               </Animated.View>
 
-              {/* Bottom Navigation Row - Only in Map mode for simple reader */}
-              {!isEmbedded && pathInProgress && isMapMode && !useCardView && (
+              {/* Bottom Navigation Row - Show when in path mode */}
+              {!isEmbedded && pathInProgress && (isMapMode || !useCardView) && (
                 <RNAnimated.View
                   style={[
                     {

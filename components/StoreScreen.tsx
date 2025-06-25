@@ -36,8 +36,7 @@ import lionSkin from '~/assets/lambStatic/lionSkin.png';
 import josephsCoat from '~/assets/lambStatic/JosephsCoat.png';
 import armorOfGod from '~/assets/lambStatic/armorOfGod.png';
 import whale from '~/assets/lambStatic/whale.png';
-import { hapticLight, hapticMedium, hapticSuccess } from '~/utils/haptics';
-
+import pinkSkin from '~/assets/lambStatic/pinkSkin.png';
 // Define store item types
 type StoreCategory = 'skins' | 'powerups' | 'hearts';
 
@@ -135,15 +134,24 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       id: 'skin_lion',
       category: 'skins',
       name: "Den of Lions",
-      description: 'Courageous ',
+      description: 'A skin for those who are brave and fearless',
       price: 2200,
       currency: 'gems',
       image: lionSkin,
       skinNumber: 7,
       unlockLevel: 17,
     },
-
-
+    {
+      id: 'pink_skin',
+      category: 'skins',
+      name: "The Pink Lamb",
+      description: 'Just a simple cute pink skin, limited to 1000',
+      price: 2000,
+      currency: 'gems',
+      image: pinkSkin,
+      skinNumber: 1,
+      unlockLevel: 15,
+    },
     {
       id: 'skin_noah',
       category: 'skins',
@@ -178,8 +186,6 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       skinNumber: 3,
       unlockLevel: 22,
     },
-
-
     {
       id: 'skin_whale',
       category: 'skins',

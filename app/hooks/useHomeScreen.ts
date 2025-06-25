@@ -109,6 +109,7 @@ export const useHomeScreen = () => {
   const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
   const showGlobalButtons = useHomeStore((state) => state.showGlobalButtons);
   const setPathInProgress = usePathStore((state) => state.setPathInProgress);
+  const nextUnitPreview = usePathStore((state) => state.nextUnitPreview);
   const lambHearts = useUserStore((state) => state?.getLambHearts?.());
   const streakCount = useUserStore((state) => state?.getStreakCount?.());
   const gens = useUserStore((state) => state?.getGens?.());
@@ -116,6 +117,7 @@ export const useHomeScreen = () => {
   const lambName = useUserStore((state) => state?.getLambName?.());
   const lamb = useUserStore((state) => state.getLamb?.());
   const currentDevotional = useDevotionalStore((state) => state.currentDevotional);
+  const dailyDevotional = useDevotionalStore((state) => state.dailyDevotional);
   const isLoadingDevotional = useDevotionalStore((state) => state.isLoading);
   const devotionalError = useDevotionalStore((state) => state.error);
   const fetchTodaysDevotional = useDevotionalStore((state) => state.fetchTodaysDevotional);
@@ -253,42 +255,48 @@ export const useHomeScreen = () => {
         }, 1000);
         // setHasHandledDevotionalParam(true);
       }
-
-      
-    }, [showDevotional])
+    }, [showDevotional, hasHandledDevotionalParam, router])
   );
 
-    // Move the sound store hooks inside the component
-    const backgroundMusicEnabled = useSoundStore.getState().backgroundMusicEnabled;
-    // Initialize background music
-    useEffect(() => {
-      if (backgroundMusicEnabled) {
-        useSoundStore.getState().playBackgroundMusic();
-      } else {
-        useSoundStore.getState().stopBackgroundMusic();
-      }
-    }, [backgroundMusicEnabled]);
-    const appState = useRef(AppState.currentState);
-    useEffect(() => {
-      const subscription = AppState.addEventListener('change', (nextAppState) => {
-        if (appState.current.match(/active/) && nextAppState.match(/inactive|background/)) {
-          // App has gone to background, stop the music
-          if (backgroundMusicEnabled) {
-            useSoundStore.getState().stopBackgroundMusic();
-          }
-        } else if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-          // App has come to foreground, restart music if it was enabled
-          if (backgroundMusicEnabled) {
-            useSoundStore.getState().playBackgroundMusic();
-          }
+  // Sync devotional data from store
+  useEffect(() => {
+    console.log('📱 Syncing devotional from store:', currentDevotional?.id);
+    if (currentDevotional) {
+      setDevotionalData(currentDevotional);
+    }
+  }, [currentDevotional]);
+
+  // Move the sound store hooks inside the component
+  const backgroundMusicEnabled = useSoundStore.getState().backgroundMusicEnabled;
+  // Initialize background music
+  useEffect(() => {
+    if (backgroundMusicEnabled) {
+      useSoundStore.getState().playBackgroundMusic();
+    } else {
+      useSoundStore.getState().stopBackgroundMusic();
+    }
+  }, [backgroundMusicEnabled]);
+  const appState = useRef(AppState.currentState);
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextAppState) => {
+      if (appState.current.match(/active/) && nextAppState.match(/inactive|background/)) {
+        // App has gone to background, stop the music
+        if (backgroundMusicEnabled) {
+          useSoundStore.getState().stopBackgroundMusic();
         }
-        appState.current = nextAppState;
-      });
-  
-      return () => {
-        subscription.remove();
-      };
-    }, []);
+      } else if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
+        // App has come to foreground, restart music if it was enabled
+        if (backgroundMusicEnabled) {
+          useSoundStore.getState().playBackgroundMusic();
+        }
+      }
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, []);
 
   // Set riveRef in home store so other components can access it
   useEffect(() => {
@@ -492,71 +500,6 @@ export const useHomeScreen = () => {
     console.log(`🚨 EFFECT #${effectCounter} REGISTERED - Basic test effect is running!`);
   });
   
-  useEffect(() => {
-    console.log('🏠 HomeScreen mounted - checking if fetchTodaysDevotional exists:', !!fetchTodaysDevotional);
-    analytics.logEvent('HomeScreen_Viewed');
-    console.log('🏠 HomeScreen useEffect - fetching todays devotional');
-    
-    // Small delay to ensure store is initialized
-    const timer = setTimeout(() => {
-      console.log('🏠 Timer fired - checking fetchTodaysDevotional again:', !!fetchTodaysDevotional);
-      
-      if (!fetchTodaysDevotional) {
-        console.error('❌ fetchTodaysDevotional is still not available after delay!');
-        // Try to get it directly from the store
-        const storeFetch = useDevotionalStore.getState().fetchTodaysDevotional;
-        console.log('🏠 Trying direct store access:', !!storeFetch);
-        if (storeFetch) {
-          storeFetch()
-            .then(() => {
-              const devotionalStore = useDevotionalStore.getState();
-              const data = devotionalStore.currentDevotional;
-              console.log('📖 Devotional fetched successfully via direct access:', data?.id, data?.bibleReference);
-              setDevotionalData(data);
-            })
-            .catch((error) => {
-              console.error('❌ Error fetching devotional via direct access:', error);
-            });
-        }
-        return;
-      }
-      
-      fetchTodaysDevotional()
-        .then(() => {
-          const devotionalStore = useDevotionalStore.getState();
-          const data = devotionalStore.currentDevotional;
-          console.log('📖 Devotional fetched successfully:', data?.id, data?.bibleReference);
-          setDevotionalData(data);
-        })
-        .catch((error) => {
-          console.error('❌ Error fetching devotional in HomeScreen:', error);
-        });
-    }, 100);
-    
-    return () => clearTimeout(timer);
-  }, []);
-
-  // // Reset Rive and cache on screen unfocus, re-initialize on focus
-  // useFocusEffect(
-  //   useCallback(() => {
-  //     // On focus: re-initialize Rive key
-  //     // riveKeyRef.current = Date.now();
-  //     if(riveRef.current){
-  //       riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
-  //     }
-  //     // setRiveSkinInitialized(false);
-  //     // setRiveReady(false);
-  //     // // Add any additional cache/state reset logic here
-
-  //     // return () => {
-  //     //   // On unfocus: reset any cache/state
-  //     //   setRiveSkinInitialized(false);
-  //     //   setRiveReady(false);
-  //     //   // Add any additional cache/state reset logic here
-  //     // };
-  //   }, [])
-  // );
-
   // Handlers
   const handleDevotionalFinishPress = useCallback(() => {
     if (devotionalReaderRef.current) devotionalReaderRef.current.onFinishPress();
@@ -1039,6 +982,21 @@ export const useHomeScreen = () => {
     if (setHasSeenWidgetModal) setHasSeenWidgetModal(true);
   }, [setHasSeenWidgetModal]);
 
+  const handleNextUnitPress = useCallback(() => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    analytics.logEvent('HomeScreen_Tapped_NextUnit', {
+      unitTitle: nextUnitPreview?.title,
+    });
+    // Navigate to map screen with animation
+    router.push({
+      pathname: '/components/map',
+      params: {
+        fromHome: 'true',
+        targetUnitId: nextUnitPreview?.id || '',
+      }
+    });
+  }, [nextUnitPreview, router]);
+
   // Pan responder for share card
   const panResponder = useRef(
     PanResponder.create({
@@ -1216,10 +1174,12 @@ export const useHomeScreen = () => {
     lambName,
     lamb,
     currentDevotional,
+    dailyDevotional,
     isLoadingDevotional,
     devotionalError,
     isPro,
     showGlobalButtons,
+    nextUnitPreview,
 
     // Refs
     devotionalReaderRef,
@@ -1281,6 +1241,7 @@ export const useHomeScreen = () => {
     onLevelPress,
     onGemsPress,
     handleWidgetSheetClose,
+    handleNextUnitPress,
 
     // Other values
     snapPoints,

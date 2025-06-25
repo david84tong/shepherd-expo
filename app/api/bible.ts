@@ -92,9 +92,9 @@ export const fetchChapter = async (
     }
 
     const rawJson = await response.json();
-    console.log('📋 RAW JSON RESPONSE:');
-    console.log(JSON.stringify(rawJson, null, 2));
-    console.log('📋 END RAW JSON RESPONSE');
+    // console.log('📋 RAW JSON RESPONSE:');
+    // console.log(JSON.stringify(rawJson, null, 2));
+    // console.log('📋 END RAW JSON RESPONSE');
 
     let transformedVerses: Verse[] = [];
     let bookName = '';

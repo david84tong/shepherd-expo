@@ -32,7 +32,9 @@ import DailyVerseCard from '~/components/Shared/DailyVerseCard';
 import CustomToast from '../components/Shared/CustomToast';
 import { imageAssets, useAssetsStore } from '../stores/assetsStore';
 import { useDevotionalStore } from '../stores/devotionalStore';
-import { useMemo, useState } from 'react';
+import { usePathStore } from '../stores/pathStore';
+import { useUserStore } from '../stores/userStore';
+import { useMemo, useState, useEffect } from 'react';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import Rive from 'rive-react-native';
 import * as Haptics from 'expo-haptics';
@@ -42,8 +44,9 @@ import analytics from '~/utils/analytics';
 import BottomControls from '../components/BottomControls';
 import i18n from '../utils/i18n';
 import { useLanguageStore } from '../stores/languageStore';
-import { useEffect } from 'react';
 import { AppFonts } from '../constants/appFonts';
+import React from 'react';
+import { hapticLight } from '~/utils/haptics';
 
 // Custom toast config with explicit styling
 const toastConfig = CustomToast;
@@ -58,29 +61,74 @@ const gemIcon = imageAssets[8];
 const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
 
+console.log('📄 HomeScreen file loaded at:', new Date().toISOString());
+
 export default function HomeScreen() {
-  // Test effect to verify component is mounting
-  useEffect(() => {
-    console.log('🎉 HomeScreen component mounted!');
-    // Try fetching devotional immediately when component mounts
-    console.log('🎯 Attempting to fetch devotional on mount...');
-    const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
-    if (fetchDevotional) {
-      console.log('✅ fetchTodaysDevotional function found!');
-      fetchDevotional()
-        .then(() => {
-          console.log('✅ Devotional fetched successfully on mount!');
-        })
-        .catch((error: any) => {
-          console.error('❌ Error fetching devotional on mount:', error);
-        });
-    } else {
-      console.log('❌ fetchTodaysDevotional function not found!');
-    }
+  console.log('🏠 HomeScreen function called at:', new Date().toISOString());
+
+  // Direct function call to test
+  React.useEffect(() => {
+    console.log('🔥 INLINE EFFECT RUNNING!');
   }, []);
-  
+
+  // Add a state to ensure component is mounted
+  const [isMounted, setIsMounted] = useState(false);
+  console.log('📍 State initialized');
+
+  // Test effect to verify component is mounting
+  try {
+    useEffect(() => {
+      const timestamp = new Date().toISOString();
+      console.log(`🎉 [${timestamp}] HomeScreen component mounted!`);
+      setIsMounted(true);
+
+      // Initialize next unit preview based on current completion state
+      const initializeNextUnit = usePathStore.getState().initializeNextUnitPreview;
+      initializeNextUnit();
+
+      return () => {
+        console.log(`👋 [${timestamp}] HomeScreen component unmounting`);
+      };
+    }, []);
+  } catch (error) {
+    console.error('❌ Error registering first useEffect:', error);
+  }
+
+  console.log('📍 First useEffect registered');
+
+  // Separate effect for fetching devotional - runs when component is mounted
+  try {
+    useEffect(() => {
+      if (!isMounted) return;
+
+      const timestamp = new Date().toISOString();
+      console.log(`🎯 [${timestamp}] Component is mounted, attempting to fetch devotional...`);
+      const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
+      if (fetchDevotional) {
+        console.log(`✅ [${timestamp}] fetchTodaysDevotional function found!`);
+        fetchDevotional()
+          .then(() => {
+            const devotionalStore = useDevotionalStore.getState();
+            const data = devotionalStore.currentDevotional;
+            console.log(`📖 [${timestamp}] Devotional fetched successfully:`, data?.id, data?.bibleReference);
+          })
+          .catch((error: any) => {
+            console.error(`❌ [${timestamp}] Error fetching devotional:`, error);
+          });
+      } else {
+        console.log(`❌ [${timestamp}] fetchTodaysDevotional function not found!`);
+      }
+    }, [isMounted]);
+  } catch (error) {
+    console.error('❌ Error registering second useEffect:', error);
+  }
+
+  console.log('📍 Second useEffect registered');
+
   // Local state for prayer success screen visibility
   const [showPrayerSuccess, setShowPrayerSuccess] = useState(false);
+
+  console.log('📍 About to call useHomeScreen hook');
 
   const {
     // State
@@ -115,9 +163,11 @@ export default function HomeScreen() {
     gens,
     lambName,
     currentDevotional,
+    dailyDevotional,
     isLoadingDevotional,
     devotionalError,
     isPro,
+    nextUnitPreview,
 
     // Refs
     devotionalReaderRef,
@@ -167,6 +217,7 @@ export default function HomeScreen() {
     onLevelPress,
     onGemsPress,
     handleWidgetSheetClose,
+    handleNextUnitPress,
     onStreakPress,
     setShowShareCard,
     setFinishReading,
@@ -187,7 +238,46 @@ export default function HomeScreen() {
     MAX_HEARTS
   } = useHomeScreen();
 
+  console.log('📍 useHomeScreen hook called successfully');
+
   const [startShareFlow, setStartShareFlow] = useState(false);
+
+  console.log('📍 All local state initialized');
+
+  // Debug effect to track nextUnitPreview changes
+  useEffect(() => {
+    console.log('🔍 NextUnitPreview debug:', {
+      hasNextUnit: !!nextUnitPreview,
+      unitId: nextUnitPreview?.id,
+      unitTitle: nextUnitPreview?.title,
+      readingCompleted,
+      prayerCompleted,
+      reflectionCompleted
+    });
+  }, [nextUnitPreview, readingCompleted, prayerCompleted, reflectionCompleted]);
+
+  // Check if there are 2 readings from today
+  const getCompletedReadings = useUserStore((state) => state.getCompletedReadings);
+  const todaysReadingsCount = useMemo(() => {
+    const readings = getCompletedReadings();
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const todaysReadings = readings.filter(reading => {
+      const readingDate = reading.date.toDate();
+      readingDate.setHours(0, 0, 0, 0);
+      return readingDate.getTime() === today.getTime();
+    });
+
+    return todaysReadings.length;
+  }, [getCompletedReadings]);
+
+  // Determine if next unit button should be marked as completed
+  const isNextUnitCompleted = todaysReadingsCount >= 2;
+
+  // Determine subtitle text based on total readings count
+  const totalReadingsCount = getCompletedReadings().length;
+  const nextUnitSubtitle = totalReadingsCount >= 4 ? "Continue Reading Plan" : "Start Bible Reading Plan";
 
   // Load Rive assets
   const [riveAssets] = useAssets([
@@ -204,24 +294,7 @@ export default function HomeScreen() {
   useEffect(() => {
     i18n.locale = currentLanguage;
   }, [currentLanguage]);
-  
-  // Fetch devotional after assets are loaded
-  useEffect(() => {
-    console.log('📚 Asset check in HomeScreen effect:', { assetsLoaded, hasAssets: !!assets });
-    if (assetsLoaded && assets) {
-      console.log('✅ Assets loaded, now fetching devotional...');
-      const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
-      if (fetchDevotional) {
-        fetchDevotional()
-          .then(() => {
-            console.log('✅ Devotional fetched in index.tsx');
-          })
-          .catch((error) => {
-            console.error('❌ Error fetching devotional in index.tsx:', error);
-          });
-      }
-    }
-  }, [assetsLoaded, assets]);
+
 
   // Set bottomSheetRef in home store so other components can access it
   useEffect(() => {
@@ -249,7 +322,7 @@ export default function HomeScreen() {
         }}>
         <TouchableOpacity
           onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            hapticLight()
             analytics.logEvent('HomeScreen_Tapped_LambName');
           }}
           activeOpacity={0.7}
@@ -584,7 +657,7 @@ export default function HomeScreen() {
                   <>
                     <Animated.View
                       onTouchStart={() => {
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                        hapticLight()
                       }}
                       style={{
                         width: lambSizeAnim,
@@ -697,9 +770,9 @@ export default function HomeScreen() {
                     <BottomSheetScrollView
                       showsVerticalScrollIndicator={false}
                       contentContainerStyle={{ paddingBottom: RPH(20), paddingHorizontal: 24 }}>
-                      {prayerCompleted && readingCompleted && reflectionCompleted && (currentDevotional || devotionalData) && (
+                      {prayerCompleted && readingCompleted && reflectionCompleted && dailyDevotional && (
                         <DailyVerseCard
-                          devotional={currentDevotional || devotionalData!}
+                          devotional={dailyDevotional}
                           share={true}
                           onPress={handleDailyVersePress}
                           onExpand={handleDailyVerseExpand}
@@ -707,6 +780,48 @@ export default function HomeScreen() {
                           showShareButton={true}
                           showExpandButton={true}
                         />
+                      )}
+
+                      {/* Next Unit Button - Only show when all activities are completed and there's a next unit */}
+                      {prayerCompleted && readingCompleted && reflectionCompleted && nextUnitPreview && (
+                        <View
+                          className="flex-row items-center justify-between"
+                          style={{ marginTop: responsiveHeight(2) }}>
+
+                          <View
+                            style={{
+                              width: 22,
+                              marginRight: 10,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              flexShrink: 0,
+                            }}>
+                            {isNextUnitCompleted ? (
+                              <Image
+                                source={require('../../assets/icons/checkMini.png')}
+                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                              />
+
+                            ) : (
+                              <View
+                                className="bg-lightBrown/20"
+                                style={{ width: 20, height: 20, borderRadius: 12 }}
+                              />
+                            )}
+
+                          </View>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <SecondaryButton
+                              icon={require('../../assets/icons/map.png')}
+                              title={"Your Custom Plan"}
+                              subtitle={nextUnitSubtitle}
+                              points={0}
+                              onPress={handleNextUnitPress}
+                              completed={isNextUnitCompleted}
+                              disabled={false}
+                            />
+                          </View>
+                        </View>
                       )}
 
                       <View
@@ -812,6 +927,7 @@ export default function HomeScreen() {
                             disabled={!readingCompleted}
                           />
                         </View>
+                        <View style={{ height: 4 }} />
                       </View>
 
                       {/* {isLoadingDevotional && (
@@ -883,7 +999,7 @@ export default function HomeScreen() {
       <FullScreenShareCard
         visible={showShareCard}
         onClose={handleFullScreenShareClose}
-        devotionalData={currentDevotional || devotionalData}
+        devotionalData={dailyDevotional || devotionalData}
         startShareFlow={startShareFlow}
         setStartShareFlow={setStartShareFlow}
       />
