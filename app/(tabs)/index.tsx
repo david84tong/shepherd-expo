@@ -285,7 +285,7 @@ export default function HomeScreen() {
 
   // Determine subtitle text based on total readings count
   const totalReadingsCount = getCompletedReadings().length;
-  const nextUnitSubtitle = totalReadingsCount >= 4 ? "Continue Reading Plan" : "Start Bible Reading Plan";
+  const nextUnitSubtitle = totalReadingsCount >= 4 ? i18n.t('continue_reading_plan') : i18n.t('start_bible_reading_plan');
 
   // Handler for path selection
   const handlePathSelected = (pathObj: any) => {
@@ -758,6 +758,7 @@ export default function HomeScreen() {
                   android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
                 }),
               }}
+              
               onChange={handleSheetChanges}>
               <Animated.View style={{ flex: 1, opacity: devotionalCardOpacityAnim }}>
                 {showDevotionalContent ? (
@@ -836,7 +837,7 @@ export default function HomeScreen() {
                           <View style={{ flex: 1, minWidth: 0 }}>
                             <SecondaryButton
                               icon={require('../../assets/icons/map.png')}
-                              title={"Your Custom Plan"}
+                              title={i18n.t('your_custom_plan')}
                               subtitle={nextUnitSubtitle}
                               points={0}
                               onPress={() => {
@@ -915,7 +916,7 @@ export default function HomeScreen() {
                           <SecondaryButton
                             icon={dropIcon}
                             title={i18n.t('living_water')}
-                            subtitle={i18n.t('feed_soul')}
+                            subtitle={i18n.t('refresh_spirit_prayer')}
                             points={50}
                             onPress={handlePrayerPress}
                             completed={prayerCompleted}
@@ -950,7 +951,7 @@ export default function HomeScreen() {
                           <SecondaryButton
                             icon={bibleIcon}
                             title={i18n.t('quiet_time')}
-                            subtitle={i18n.t('feed_soul')}
+                            subtitle={i18n.t('pause_meet_god')}
                             points={50}
                             onPress={handleReflectionPress}
                             completed={reflectionCompleted}
