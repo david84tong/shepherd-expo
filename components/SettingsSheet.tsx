@@ -1286,9 +1286,25 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     initializeNotificationState();
   }, []);
 
-  const handleLanguageChange = (lang: string) => {
+  const handleLanguageChange = async (lang: string) => {
+    console.log(`[SettingsSheet] Language changed to: ${lang}`);
     setLanguage(lang);
     setLanguageModalVisible(false);
+
+    // Also update chat language preference to match app language
+    // This ensures chat language stays in sync unless user explicitly sets it differently
+    try {
+      const chatLanguageSet = await AsyncStorage.getItem('shepherd_bible_chat_language_set');
+      console.log(`[SettingsSheet] Chat language set flag: ${chatLanguageSet}`);
+
+      // Clear the chat language set flag so that chat language will sync with new app language
+      // This ensures that when app language changes, chat language follows unless user explicitly sets it
+      await AsyncStorage.removeItem('shepherd_bible_chat_language_set');
+      await AsyncStorage.setItem('shepherd_bible_chat_language', lang);
+      console.log(`[SettingsSheet] Synced chat language with app language: ${lang}`);
+    } catch (error) {
+      console.error('Error syncing chat language with app language:', error);
+    }
   };
 
   return (
