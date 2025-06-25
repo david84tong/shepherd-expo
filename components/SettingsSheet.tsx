@@ -358,7 +358,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       }
 
       // Reset stores in finally block as well to ensure cleanup
-      useUserStore.getState().resetUserStore();
+        useUserStore.getState().resetUserStore();
+        useHomeStore.getState().resetCompletionStates()
     }
   }, [router, setIsModalDimActive, userId]);
 
