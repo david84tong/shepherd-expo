@@ -571,6 +571,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
               setCurrentIndex(result.verses.length - 1);
             }
 
+            // Scroll to top after loading new chapter
+            scrollToTop();
+
             console.log(`📖 [NewBibleReader] Chapter loaded successfully: ${result.book} ${result.chapter}`);
             return true;
           }

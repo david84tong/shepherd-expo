@@ -511,6 +511,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
         setSavedReading(result.book, bookId, result.chapter);
 
         setError(null);
+        // Scroll to top after loading new chapter
+        if (scrollViewRef.current) {
+          scrollViewRef.current.scrollTo({ y: 0, animated: false });
+        }
       }
     } catch (error) {
       console.error('Failed to load chapter', error);
@@ -1320,7 +1324,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
   ];
 
   // When user enabled Card View preference, render the NewBibleReader component
-  if (useCardView ) {
+  if (useCardView) {
     return <View className='flex-1 bg-surfaceCream/80'>
       <StatusBar translucent backgroundColor="transparent" />
       <NewBibleReader
@@ -1565,14 +1569,14 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                       </Text>
                     </View>
                   ) : ( */}
-                    <TouchableOpacity onPress={handlePresentModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
-                      <MaterialIcons
-                        name="settings"
-                        size={22}
-                        color="#795323"
-                        style={{ opacity: 0.4 }}
-                      />
-                    </TouchableOpacity>
+                  <TouchableOpacity onPress={handlePresentModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+                    <MaterialIcons
+                      name="settings"
+                      size={22}
+                      color="#795323"
+                      style={{ opacity: 0.4 }}
+                    />
+                  </TouchableOpacity>
                   {/* )} */}
                 </View>
               </View>
