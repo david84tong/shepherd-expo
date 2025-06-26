@@ -844,14 +844,14 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
         setFinishReading(true);
         setShowSuccess(true);
 
-        // Change Rive animation to achievement (action-number 12)
+        // Change Rive animation to drinking animation
         const riveRef = useHomeStore.getState().riveRef;
         if (riveRef?.current?.setInputState) {
           try {
-            riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
-            console.log('🎯 Set Rive to achievement animation (action-number 12)');
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 11);
+            console.log('🎯 Set Rive to drinking animation (action-number 11)');
           } catch (error) {
-            console.log('Error setting Rive achievement animation:', error);
+            console.log('Error setting Rive drinking animation:', error);
           }
         }
       }, 1000);
@@ -958,14 +958,14 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       setFinishReading(true);
       setShowSuccess(true);
 
-      // Change Rive animation to achievement (action-number 12)
+      // Change Rive animation to drinking animation
       const riveRef = useHomeStore.getState().riveRef;
       if (riveRef?.current?.setInputState) {
         try {
-          riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
-          console.log('🎯 Set Rive to achievement animation (action-number 12)');
+          riveRef.current.setInputState('State Machine 1', 'Action-Number', 11);
+          console.log('🎯 Set Rive to drinking animation (action-number 11)');
         } catch (error) {
-          console.log('Error setting Rive achievement animation:', error);
+          console.log('Error setting Rive drinking animation:', error);
         }
       }
 
@@ -1252,14 +1252,14 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                       setFinishReading(true);
                       setShowSuccess(true);
 
-                      // Change Rive animation to achievement (action-number 12)
+                      // Change Rive animation to drinking animation
                       const riveRef = useHomeStore.getState().riveRef;
                       if (riveRef?.current?.setInputState) {
                         try {
-                          riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
-                          console.log('🎯 Set Rive to achievement animation (action-number 12)');
+                          riveRef.current.setInputState('State Machine 1', 'Action-Number', 11);
+                          console.log('🎯 Set Rive to drinking animation (action-number 11)');
                         } catch (error) {
-                          console.log('Error setting Rive achievement animation:', error);
+                          console.log('Error setting Rive drinking animation:', error);
                         }
                       }
 
