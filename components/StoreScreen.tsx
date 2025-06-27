@@ -37,7 +37,7 @@ import josephsCoat from '~/assets/lambStatic/JosephsCoat.png';
 import armorOfGod from '~/assets/lambStatic/armorOfGod.png';
 import whale from '~/assets/lambStatic/whale.png';
 import pinkSkin from '~/assets/lambStatic/pinkSkin.png';
-import { hapticLight } from '~/utils/haptics';
+import { hapticLight, hapticMedium, hapticSuccess } from '~/utils/haptics';
 // Define store item types
 type StoreCategory = 'skins' | 'powerups' | 'hearts';
 
@@ -65,15 +65,18 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
   const { isProMember } = useSubscriptionStore();
   const { hasSkin, purchaseSkin, equipSkin, addSkin } = useShopStore();
   const equippedSkin = useShopStore(state => state.equippedSkin);
+  const ownedSkins = useShopStore(state => state.ownedSkins);
   const riveRef = useHomeStore(state => state.riveRef);
   const setCurrentSkin = useHomeStore(state => state.setCurrentSkin);
 
-  const lamb = getLamb();
-  const user = getUser();
-  const userGems = user?.gens || 0;
-  const userLevel = lamb?.level || 1;
+  // Use reactive store subscriptions for real-time updates
+  const userGems = useUserStore(state => state.gens || 0);
+  const userLevel = useUserStore(state => state.lamb?.level || 1);
 
   const [selectedCategory, setSelectedCategory] = useState<StoreCategory>('skins');
+
+  const lamb = getLamb();
+  const user = getUser();
 
   // Ensure Pro users have the Annointed Lamb skin in their shop store
   useEffect(() => {
@@ -281,6 +284,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
               const success = await purchaseSkin(skinId, item.price);
 
               if (success) {
+                console.log('✅ [StoreScreen] Purchase successful for:', item.name);
                 analytics.logEvent('Store_Purchase_Success', {
                   item: item.id,
                   skinId: skinId,
@@ -312,7 +316,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
                 );
               }
             } catch (error) {
-              console.error('❌ Error during purchase:', error);
+              console.error('❌ [StoreScreen] Error during purchase:', error);
               analytics.logEvent('Store_Purchase_Failed', {
                 item: item.id,
                 reason: 'error',
