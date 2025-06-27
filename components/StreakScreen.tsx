@@ -111,6 +111,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   const buttonOpacity = useSharedValue(0);
   const buttonTranslateY = useSharedValue(20);
   const riveRef = useRef<RiveRef>(null);
+  const isMounted = useRef(true);
   const insets = useSafeAreaInsets();
   const { playFlameSound } = useSoundStore();
 
@@ -279,9 +280,14 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   }, [streak, setStreakCount]);
   useEffect(() => {
     return () => {
-      // Cleanup Rive resources
+      isMounted.current = false;
+      // Cleanup Rive resources safely
       if (riveRef.current?.reset) {
-        riveRef.current.reset();
+        try {
+          riveRef.current.reset();
+        } catch (e) {
+          console.error('Error resetting Rive animation on unmount:', e);
+        }
       }
     };
   }, []);
@@ -352,8 +358,12 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
     startAnimations();
 
     // Trigger the Rive animation immediately
-    if (riveRef.current) {
-      riveRef.current.play();
+    if (isMounted.current && riveRef.current) {
+      try {
+        riveRef.current.play();
+      } catch (e) {
+        console.error('Error playing Rive animation:', e);
+      }
     }
   }, []);
 
@@ -445,6 +455,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
               className={`${insets.top > 20 ? 'w-96 h-96' : 'w-56 h-56'} justify-center items-center`}>
               {IS_ANDROID ? (
                 <Rive
+                  key={`rive-streak-${streak}`}
                   resourceName={'success_lamb'}
                   artboardName="streak"
                   autoplay
@@ -456,6 +467,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
                 />
               ) : (
                 <Rive
+                  key={`rive-streak-${streak}`}
                   url={riveAssets[0].uri!}
                   artboardName="streak"
                   autoplay
