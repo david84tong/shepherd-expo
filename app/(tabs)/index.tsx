@@ -817,7 +817,7 @@ export default function HomeScreen() {
                       )}
 
                       {/* Next Unit Button - Only show when all activities are completed and there's a next unit */}
-                      {prayerCompleted && readingCompleted && reflectionCompleted && nextUnitPreview && (
+                      {prayerCompleted && readingCompleted && reflectionCompleted && (
                         <View
                           className="flex-row items-center justify-between"
                           style={{ marginTop: responsiveHeight(2) }}>
@@ -859,7 +859,7 @@ export default function HomeScreen() {
                                 }
                               }}
                               completed={isNextUnitCompleted}
-                              disabled={false}
+                              disabled={isNextUnitCompleted}
                             />
                           </View>
                         </View>
