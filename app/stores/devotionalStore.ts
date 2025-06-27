@@ -3,7 +3,7 @@ import { Devotional } from '../models/Devotional';
 import firestore from '@react-native-firebase/firestore';
 import { fetchChapter, fetchChaptersBatch, ChapterResponse, FetchError, fetchChapterWithCache, clearChapterCache } from '../api/bible';
 import { BIBLE_BOOK_IDS } from '../models/Path';
-import { createDevotionalFromVerse } from '../api/ai';
+import { createDevotionalFromVerse, checkNetworkConnectivity } from '../api/ai';
 import auth from '@react-native-firebase/auth';
 import { NativeModules } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -452,11 +452,46 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
           null // No image for AI devotionals
         );
       }
-    } catch (error) {
-      console.error('Error creating AI devotional:', error);
+    } catch (error: unknown) {
+      console.error('[DevotionalStore] Error creating AI devotional:', error);
+      
+      // Handle different types of errors
+      let errorMessage = 'Failed to create AI devotional';
+      
+      if (error instanceof TypeError && error.message.includes('Network error')) {
+        // Check network connectivity to provide better error message
+        const isConnected = await checkNetworkConnectivity();
+        if (!isConnected) {
+          errorMessage = 'No internet connection. Please check your network and try again.';
+        } else {
+          errorMessage = 'Network connection issue. Please check your internet connection and try again.';
+        }
+      } else if (error instanceof Error) {
+        if (error.message.includes('HTTP 401')) {
+          errorMessage = 'Authentication failed. Please sign in again.';
+        } else if (error.message.includes('HTTP 429')) {
+          errorMessage = 'Too many requests. Please wait a moment and try again.';
+        } else if (error.message.includes('HTTP 500')) {
+          errorMessage = 'Server error. Please try again later.';
+        } else if (error.message.includes('User not authenticated')) {
+          errorMessage = 'Please sign in to create custom devotionals.';
+        } else if (error.name === 'AbortError') {
+          errorMessage = 'Request timed out. Please check your connection and try again.';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       set({ 
         isCreatingDevotional: false, 
-        error: error instanceof Error ? error.message : 'Failed to create AI devotional' 
+        error: errorMessage
+      });
+      
+      // Log the error for debugging
+      console.error('[DevotionalStore] Detailed error info:', {
+        errorType: error instanceof Error ? error.constructor.name : typeof error,
+        errorMessage: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined
       });
     }
   },

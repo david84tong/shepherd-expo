@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import {
   View,
   Text,
@@ -119,6 +119,22 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     [isOnboarding]
   );
 
+  // Add loading state for API call
+  const [apiLoadingState, setApiLoadingState] = useState<'idle' | 'loading' | 'completed' | 'error'>('idle');
+
+  // Monitor API loading state
+  useEffect(() => {
+    if (!isOnboarding) {
+      if (isCreatingDevotional) {
+        setApiLoadingState('loading');
+      } else if (devotionalStoreCurrentDevotional) {
+        setApiLoadingState('completed');
+      } else if (devotionalError) {
+        setApiLoadingState('error');
+      }
+    }
+  }, [isOnboarding, isCreatingDevotional, devotionalStoreCurrentDevotional, devotionalError]);
+
   // Animation values for checklist items
   const animValuesRef = useRef(
     Array(loadingPoints.length)
@@ -138,8 +154,19 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
   // Progress animation
   const progressAnim = useRef(new Animated.Value(0)).current;
+  const [progressValue, setProgressValue] = useState(0);
   const CIRCLE_RADIUS = 52;
   const CIRCLE_CIRCUM = 2 * Math.PI * CIRCLE_RADIUS;
+
+  // Listen to animation updates and sync progressValue
+  useEffect(() => {
+    const listenerId = progressAnim.addListener(({ value }) => {
+      setProgressValue(value);
+    });
+    return () => {
+      progressAnim.removeListener(listenerId);
+    };
+  }, [progressAnim]);
 
   // Cleanup function
   useEffect(() => {
@@ -207,6 +234,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     let timer: NodeJS.Timeout;
 
     if (isOnboarding) {
+      // Onboarding flow - keep existing timer-based progress unchanged
       if (currentStep < loadingPoints.length) {
         timer = setTimeout(() => {
           setCurrentStep(prev => prev + 1);
@@ -244,11 +272,14 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         }, FINAL_DELAY);
       }
     } else {
-      // For devotional creation - always progress through steps
+      // For custom devotional creation - progress based on API completion
       if (currentStep < loadingPoints.length) {
+        // For custom devotionals, progress through steps more slowly to match API timing
+        // Each step takes longer to give the API time to complete
+        const customStepDuration = 2000; // 2 seconds per step for custom devotionals
         timer = setTimeout(() => {
           setCurrentStep(prev => prev + 1);
-        }, STEP_DURATION);
+        }, customStepDuration);
       }
       // Note: The actual navigation is handled by the monitoring effect below
     }
@@ -258,24 +289,69 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
   // Optimize checklist animation timing
   useEffect(() => {
-    if (!hasStarted || currentStep >= loadingPoints.length) return;
+    if (!hasStarted) return;
 
-    if (!animatedStepsRef.current.has(currentStep)) {
-      animatedStepsRef.current.add(currentStep);
-      animValuesRef.current[currentStep].setValue(0);
-      Animated.timing(animValuesRef.current[currentStep], {
-        toValue: 1,
-        duration: 300, // Reduced from 400ms
-        useNativeDriver: true,
-      }).start();
+    if (isOnboarding) {
+      // Onboarding: animate steps one by one
+      if (currentStep < loadingPoints.length && !animatedStepsRef.current.has(currentStep)) {
+        animatedStepsRef.current.add(currentStep);
+        animValuesRef.current[currentStep].setValue(0);
+        Animated.timing(animValuesRef.current[currentStep], {
+          toValue: 1,
+          duration: 300, // Reduced from 400ms
+          useNativeDriver: true,
+        }).start();
+      }
+    } else {
+      // Custom devotional: check API loading state
+      if (apiLoadingState === 'completed') {
+        // API completed - immediately animate all remaining steps
+        console.log('[LoadingScreen] API completed, animating all remaining steps');
+        for (let i = 0; i < loadingPoints.length; i++) {
+          if (!animatedStepsRef.current.has(i)) {
+            animatedStepsRef.current.add(i);
+            animValuesRef.current[i].setValue(0);
+            Animated.timing(animValuesRef.current[i], {
+              toValue: 1,
+              duration: 200, // Faster animation for API completion
+              useNativeDriver: true,
+            }).start();
+          }
+        }
+      } else if (currentStep < loadingPoints.length && !animatedStepsRef.current.has(currentStep)) {
+        // API still loading - animate current step
+        animatedStepsRef.current.add(currentStep);
+        animValuesRef.current[currentStep].setValue(0);
+        Animated.timing(animValuesRef.current[currentStep], {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      }
     }
-  }, [currentStep, hasStarted, loadingPoints.length]);
+  }, [currentStep, hasStarted, loadingPoints.length, isOnboarding, apiLoadingState]);
 
   // Optimize progress animation timing
   useEffect(() => {
     if (!hasStarted) return;
 
-    const progress = currentStep / loadingPoints.length;
+    let progress;
+
+    if (isOnboarding) {
+      progress = currentStep / loadingPoints.length;
+    } else {
+      if (apiLoadingState === 'completed') {
+        progress = 1;
+      } else if (apiLoadingState === 'error') {
+        progress = currentStep / loadingPoints.length;
+      } else if (apiLoadingState === 'loading') {
+        const stepProgress = currentStep / loadingPoints.length;
+        progress = Math.min(stepProgress, 0.8);
+      } else {
+        progress = currentStep / loadingPoints.length;
+      }
+    }
+
     const currentPercentage = Math.round(progress * 100);
 
     // Trigger heavy haptic feedback at 25%, 50%, 75%, and 100%
@@ -284,108 +360,161 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       if (currentPercentage >= threshold && lastHapticPercentage.current < threshold) {
         hapticHeavy();
         lastHapticPercentage.current = threshold;
-        break; // Only trigger one haptic per update
+        break;
       }
     }
 
+    // Animate progress bar
+    let duration = isOnboarding ? 500 : 300;
+    if (apiLoadingState === 'completed' && !isOnboarding) {
+      duration = 200; // Fast fill for pro user
+    }
     Animated.timing(progressAnim, {
       toValue: progress,
-      duration: 500, // Reduced from 700ms
+      duration,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
     }).start();
-  }, [currentStep, hasStarted, loadingPoints.length, progressAnim]);
+  }, [currentStep, hasStarted, loadingPoints.length, progressAnim, isOnboarding, apiLoadingState]);
 
   // Build checklist state
-  const checklist = useMemo(() =>
-    loadingPoints.map((label, idx) => {
-      if (idx < currentStep) return { label, status: 'done' };
-      if (idx === currentStep) return { label, status: 'loading' };
-      return { label, status: 'pending' };
-    }).slice(0, Math.max(1, currentStep + 1)),
-    [loadingPoints, currentStep]
-  );
+  const checklist = useMemo(() => {
+    if (isOnboarding) {
+      // Onboarding: show steps based on currentStep
+      return loadingPoints.map((label, idx) => {
+        if (idx < currentStep) return { label, status: 'done' };
+        if (idx === currentStep) return { label, status: 'loading' };
+        return { label, status: 'pending' };
+      }).slice(0, Math.max(1, currentStep + 1));
+    } else {
+      // Custom devotional: check API loading state
+      if (apiLoadingState === 'completed') {
+        // API completed - show all steps as done
+        return loadingPoints.map((label) => ({ label, status: 'done' }));
+      } else if (apiLoadingState === 'error') {
+        // API error - show current step progress
+        return loadingPoints.map((label, idx) => {
+          if (idx < currentStep) return { label, status: 'done' };
+          if (idx === currentStep) return { label, status: 'loading' };
+          return { label, status: 'pending' };
+        }).slice(0, Math.max(1, currentStep + 1));
+      } else {
+        // API loading or idle - show current step progress
+        return loadingPoints.map((label, idx) => {
+          if (idx < currentStep) return { label, status: 'done' };
+          if (idx === currentStep) return { label, status: 'loading' };
+          return { label, status: 'pending' };
+        }).slice(0, Math.max(1, currentStep + 1));
+      }
+    }
+  }, [loadingPoints, currentStep, isOnboarding, apiLoadingState]);
 
-  // Monitor devotional creation progress
+  // Helper function to show paywall for non-pro users
+  const showPaywallForNonProUser = useCallback(async () => {
+    analytics.logEvent('LoadingScreen_Custom_Devotional_Paywalled', {
+      isProMember: false,
+      verseText: verseText || 'unknown',
+      reference: reference || 'unknown',
+      totalLoadingTime: currentStep * STEP_DURATION,
+    });
+
+    const timer = setTimeout(async () => {
+      try {
+        // Set the fromScreen property for tracking
+        useSubscriptionStore.getState().setFromScreen('CustomDevotional');
+
+        // Show the paywall
+        const result = await presentFreeTrialPaywall();
+
+        // Handle paywall result
+        if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+          // User upgraded - navigate to home with devotional
+          analytics.logEvent('LoadingScreen_Custom_Devotional_Created', {
+            isProMember: true,
+            verseText: verseText || 'unknown',
+            reference: reference || 'unknown',
+            totalLoadingTime: currentStep * STEP_DURATION,
+            upgradedFromPaywall: true,
+          });
+          router.navigate({
+            pathname: '/(tabs)',
+            params: { showDevotional: 'true' }
+          });
+        } else {
+          // User cancelled or error - go back to Bible tab
+          analytics.logEvent('LoadingScreen_Custom_Devotional_Paywall_Cancelled', {
+            paywallResult: result,
+            verseText: verseText || 'unknown',
+            reference: reference || 'unknown',
+          });
+          router.navigate('/(tabs)/bible');
+        }
+      } catch (error) {
+        console.error('Error showing paywall:', error);
+        analytics.logEvent('LoadingScreen_Custom_Devotional_Paywall_Error', {
+          error: error instanceof Error ? error.message : 'unknown',
+          verseText: verseText || 'unknown',
+          reference: reference || 'unknown',
+        });
+        // Fallback - go to Bible tab
+        router.navigate('/(tabs)/bible');
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [presentFreeTrialPaywall, verseText, reference, currentStep, router]);
+
+  // Monitor devotional creation progress - MODIFIED for API-based progress
   useEffect(() => {
-    if (!isOnboarding && currentStep === loadingPoints.length) {
-      // Loading steps completed, decide where to navigate
-      if (devotionalStoreCurrentDevotional && isProMember) {
-        // Devotional was created successfully (pro user)
+    if (!isOnboarding) {
+      console.log('[LoadingScreen] Navigation check:', {
+        apiLoadingState,
+        isProMember,
+        hasDevotional: !!devotionalStoreCurrentDevotional,
+        hasError: !!devotionalError
+      });
+
+      // For custom devotionals, check if API has completed
+      if (apiLoadingState === 'completed' && isProMember) {
+        // API completed successfully - immediately complete all steps and navigate
+        console.log('[LoadingScreen] API completed for pro user, navigating to home');
+        setCurrentStep(loadingPoints.length);
+
         analytics.logEvent('LoadingScreen_Custom_Devotional_Created', {
           isProMember: true,
           verseText: verseText || 'unknown',
           reference: reference || 'unknown',
           totalLoadingTime: currentStep * STEP_DURATION,
         });
+
         const timer = setTimeout(() => {
           router.navigate({
             pathname: '/(tabs)',
             params: { showDevotional: 'true' }
           });
-        }, 1000);
+        }, 500); // Short delay for smooth transition
         return () => clearTimeout(timer);
-      } else if (devotionalError) {
-        // Error occurred
+      } else if (apiLoadingState === 'error') {
+        // Error occurred - navigate back
+        console.log('[LoadingScreen] API error occurred:', devotionalError);
         const timer = setTimeout(() => {
           router.replace('/');
         }, 2000);
         return () => clearTimeout(timer);
-      } else if (!isProMember) {
-        console.log('LoadingScreen: User is not pro, showing paywall');
-        // User is not pro - show paywall before dismissing
-        analytics.logEvent('LoadingScreen_Custom_Devotional_Paywalled', {
-          isProMember: false,
-          verseText: verseText || 'unknown',
-          reference: reference || 'unknown',
-          totalLoadingTime: currentStep * STEP_DURATION,
-        });
-        const timer = setTimeout(async () => {
-          try {
-            // Set the fromScreen property for tracking
-            useSubscriptionStore.getState().setFromScreen('CustomDevotional');
-
-            // Show the paywall
-            const result = await presentFreeTrialPaywall();
-
-            // Handle paywall result
-            if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
-              // User upgraded - navigate to home with devotional
-              analytics.logEvent('LoadingScreen_Custom_Devotional_Created', {
-                isProMember: true,
-                verseText: verseText || 'unknown',
-                reference: reference || 'unknown',
-                totalLoadingTime: currentStep * STEP_DURATION,
-                upgradedFromPaywall: true,
-              });
-              router.navigate({
-                pathname: '/(tabs)',
-                params: { showDevotional: 'true' }
-              });
-            } else {
-              // User cancelled or error - go back to Bible tab
-              analytics.logEvent('LoadingScreen_Custom_Devotional_Paywall_Cancelled', {
-                paywallResult: result,
-                verseText: verseText || 'unknown',
-                reference: reference || 'unknown',
-              });
-              router.navigate('/(tabs)/bible');
-            }
-          } catch (error) {
-            console.error('Error showing paywall:', error);
-            analytics.logEvent('LoadingScreen_Custom_Devotional_Paywall_Error', {
-              error: error instanceof Error ? error.message : 'unknown',
-              verseText: verseText || 'unknown',
-              reference: reference || 'unknown',
-            });
-            // Fallback - go to Bible tab
-            router.navigate('/(tabs)/bible');
-          }
-        }, 1000);
-        return () => clearTimeout(timer);
+      } else if (apiLoadingState === 'completed' && !isProMember) {
+        // User is not pro - show paywall when API completes
+        console.log('[LoadingScreen] API completed for non-pro user, showing paywall');
+        showPaywallForNonProUser();
       }
     }
-  }, [isOnboarding, devotionalStoreCurrentDevotional, devotionalError, router, currentStep, loadingPoints.length, isProMember, presentFreeTrialPaywall]);
+  }, [isOnboarding, apiLoadingState, router, currentStep, loadingPoints.length, isProMember, presentFreeTrialPaywall, verseText, reference, devotionalError, devotionalStoreCurrentDevotional]);
+
+  // Fallback check for non-pro users with devotional
+  useEffect(() => {
+    if (!isOnboarding && devotionalStoreCurrentDevotional && !isProMember && apiLoadingState !== 'completed') {
+      console.log('[LoadingScreen] Fallback: Non-pro user has devotional, showing paywall');
+      showPaywallForNonProUser();
+    }
+  }, [isOnboarding, devotionalStoreCurrentDevotional, isProMember, apiLoadingState, showPaywallForNonProUser]);
 
   // --- GLOWING BORDER EFFECT ---
   const glViewRef = useRef<{ stop: () => void } | null>(null);
@@ -454,7 +583,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             return smoothstep(0.06, 0.0, edgeDist);
           }
   
-  float verticalEdgeGlow(float x, float y, float time, float edge) {
+ float verticalEdgeGlow(float x, float y, float time, float edge) {
     float spotX = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
     float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
     float edgeDist = abs(y - edge);
@@ -595,7 +724,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           <Text
             className="absolute top-0 left-0 w-[120px] h-[120px] text-center text-2xl font-feather text-accentGold flex items-center justify-center"
             style={{ lineHeight: 120, color: ORANGE }}>
-            {Math.min(Math.round((currentStep / loadingPoints.length) * 100), 100)}%
+            {Math.round(progressValue * 100)}%
           </Text>
         </View>
 
@@ -632,7 +761,6 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
               {item.status === 'loading' && (
                 <Animated.View
                   style={{
-                    marginRight: 8,
                     transform: [
                       {
                         rotate: spinnerAnimsRef.current[idx].interpolate({
@@ -641,19 +769,9 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
                         }),
                       },
                     ],
-                  }}>
-                  <Svg height="24" width="24">
-                    <Circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke={ORANGE}
-                      strokeWidth="3"
-                      fill="none"
-                      strokeDasharray="60"
-                      strokeDashoffset="24"
-                    />
-                  </Svg>
+                  }}
+                  className="mr-2">
+                  <Ionicons name="ellipse" size={24} color={ORANGE} />
                 </Animated.View>
               )}
               <Text
