@@ -106,7 +106,6 @@ export const usePathStore = create<PathState>()(
       
       // Set selected path
       setSelectedPath: (path: PathOption) => {
-        console.log('🛤️ Setting selected path:', path.id, path.title);
         
         set({ 
           selectedPath: path,
@@ -146,24 +145,22 @@ export const usePathStore = create<PathState>()(
         const state = get();
         const { selectedPath, completedUnitIds } = state;
         
+
         if (!selectedPath) {
-          console.log('🚫 No selected path, cannot update next unit preview');
           return;
         }
         
-        console.log('🔍 Updating next unit preview. Completed units:', completedUnitIds);
         
         // Get ordered paths based on selected path
         const pathMap = Object.fromEntries(SHORTER_BIBLE_PATHS_2.map((p) => [p.id, p]));
+
         const orderedPaths = selectedPath.order.map((id) => pathMap[id]).filter(Boolean);
         
         // Find the first uncompleted unit across all ordered paths
         let nextUnit = null;
         for (const path of orderedPaths) {
-          console.log(`🔍 Checking path ${path.id} with ${path.units.length} units`);
           for (const unit of path.units) {
             if (!completedUnitIds.includes(unit.id)) {
-              console.log(`📚 Found next uncompleted unit: ${unit.id} (${unit.title}) in path ${path.id}`);
               nextUnit = unit;
               break;
             }
@@ -172,40 +169,39 @@ export const usePathStore = create<PathState>()(
         }
         
         if (nextUnit) {
-          console.log('📚 Updated next unit preview:', nextUnit.id, nextUnit.title);
           set({ nextUnitPreview: nextUnit });
         } else {
-          console.log('🎉 All units completed! No next unit.');
           set({ nextUnitPreview: null });
         }
       },
       
       // Initialize next unit preview on app start
       initializeNextUnitPreview: () => {
-        console.log('🚀 Initializing next unit preview on app start');
         get().updateNextUnitPreview();
       },
     }),
     {
       name: 'shepherd-path-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
-        selectedPath: state.selectedPath,
-        savedBook: state.savedBook,
-        savedBookId: state.savedBookId,
-        savedChapter: state.savedChapter,
-        savedTranslation: state.savedTranslation,
-        selectedPathId: state.selectedPathId,
-        selectedPathTitle: state.selectedPathTitle,
-        selectedUnitId: state.selectedUnitId,
-        selectedUnitTitle: state.selectedUnitTitle,
-        startChapter: state.startChapter,
-        endChapter: state.endChapter,
-        selectedBookChapter: state.selectedBookChapter,
-        currentPath: state.currentPath,
-        completedUnitIds: state.completedUnitIds,
-        nextUnitPreview: state.nextUnitPreview,
-      }),
+      partialize: (state) => {
+        return {
+          selectedPath: state.selectedPath,
+          savedBook: state.savedBook,
+          savedBookId: state.savedBookId,
+          savedChapter: state.savedChapter,
+          savedTranslation: state.savedTranslation,
+          selectedPathId: state.selectedPathId,
+          selectedPathTitle: state.selectedPathTitle,
+          selectedUnitId: state.selectedUnitId,
+          selectedUnitTitle: state.selectedUnitTitle,
+          startChapter: state.startChapter,
+          endChapter: state.endChapter,
+          selectedBookChapter: state.selectedBookChapter,
+          currentPath: state.currentPath,
+          completedUnitIds: state.completedUnitIds,
+          nextUnitPreview: state.nextUnitPreview,
+        };
+      },
     }
   )
 );

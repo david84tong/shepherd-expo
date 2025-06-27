@@ -794,8 +794,16 @@ export default function HomeScreen() {
                   />
                   : (
                     <BottomSheetScrollView
+                      key={`scroll-${prayerCompleted}-${readingCompleted}-${reflectionCompleted}-${!!nextUnitPreview}`}
                       showsVerticalScrollIndicator={false}
-                      contentContainerStyle={{ paddingBottom: RPH(20), paddingHorizontal: 24 }}>
+                      contentContainerStyle={{ paddingBottom: RPH(30), paddingHorizontal: 24 }}
+                      bounces={true}
+                      alwaysBounceVertical={false}
+                      keyboardShouldPersistTaps="handled"
+                      nestedScrollEnabled={true}
+                      removeClippedSubviews={false}
+                      automaticallyAdjustContentInsets={false}
+                      contentInsetAdjustmentBehavior="never">
                       {prayerCompleted && readingCompleted && reflectionCompleted && dailyDevotional && (
                         <DailyVerseCard
                           devotional={dailyDevotional}

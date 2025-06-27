@@ -114,17 +114,29 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
       if (onPathSelected) {
         onPathSelected(selectedPathObj);
       }
+    } else {
+      console.log('❌ [OnboardingPathScreen] Path object not found for ID:', pathId);
     }
   };
 
-  const handleContinue = useCallback(() => {
+  const handleContinue = useCallback(() => {    
     if (selectedPathId) {
       // Track continue button press in analytics
       analytics.logEvent("OnboardingPathScreen_Tapped_Continue", {
         value: selectedPathId,
       });
+      
       setUser({ selectedPathId: selectedPathId });
       console.log(selectedPathId, "selectedPathId");
+      
+      // IMPORTANT: If this is during onboarding (no onPathSelected callback), 
+      // we need to save the path to the pathStore as well
+      if (!onPathSelected) {
+        const selectedPathObj = PATH_OPTIONS.find((p) => p.id === selectedPathId);
+        if (selectedPathObj) {
+          setSelectedPath(selectedPathObj);
+        }
+      }
       
       // Check if user has completed onboarding
       const user = useUserStore.getState().getUser();
@@ -137,8 +149,10 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
         // If onboarding is not completed, continue to next onboarding screen
         router.push('/onboarding/explainerHearts' as any);
       }
+    } else {
+      console.log('❌ [OnboardingPathScreen] No selectedPathId, cannot continue');
     }
-  }, [selectedPathId, setUser, router, onModalClose]);
+  }, [selectedPathId, setUser, router, onModalClose, onPathSelected, setSelectedPath]);
 
   return (
     <>
