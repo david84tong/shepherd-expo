@@ -432,6 +432,14 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         verse: verseText,
       };
       
+      // Save to Firestore customDevotionals collection
+      try {
+        await firestore().collection('customDevotionals').doc(aiDevotional.id).set(aiDevotional);
+        console.log('[DevotionalStore] Saved custom devotional to Firestore:', aiDevotional.id);
+      } catch (Error) {
+        console.error('[DevotionalStore] Failed to save custom devotional to Firestore:', Error);
+      }
+      
       console.log('[DevotionalStore] AI devotional created successfully:', aiDevotional);
       set({ 
         currentDevotional: aiDevotional, 
