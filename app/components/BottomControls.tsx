@@ -1,8 +1,11 @@
-import { View, Animated } from 'react-native';
+import { View, Animated, TouchableOpacity } from 'react-native';
 import CircleButton from '~/components/Shared/CircleButton';
 import PrimaryButton from '~/components/PrimaryButton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { IS_IOS } from '../utils/utils';
+import { FontAwesome6 } from '@expo/vector-icons';
+import { useState } from 'react';
+import { hapticLight } from '~/utils/haptics';
 
 interface BottomControlsProps {
   bottomContentOpacity: Animated.Value;
@@ -42,6 +45,8 @@ export default function BottomControls({
   showPrayerSuccess = false,
 }: BottomControlsProps) {
   const insets = useSafeAreaInsets();
+  const [isLiked, setIsLiked] = useState(false);
+  const [isShared, setIsShared] = useState(false);
   return (
     <Animated.View
       style={[
@@ -54,10 +59,37 @@ export default function BottomControls({
       ]}
       className='px-10 absolute items-center w-full justify-between'>
       {showDevotionalContent && (
-        <View className='flex-row items-center w-full justify-between mr-12'>
-          <View className="flex-row gap-3">
-            {/* <Image source={require('../../assets/icons/share.png')} style={{opacity:0.7}} />
-            <Image source={require('../../assets/icons/bookmark.png')} style={{opacity:0.7}} /> */}
+        <View className='flex-row items-center w-full justify-between mr-12 -mb-4'>
+          <View className="flex-row gap-4">
+            <TouchableOpacity
+              onPress={() => {
+                hapticLight();
+                setIsLiked(!isLiked);
+              }}
+              className="p-2 pl-8"
+            >
+              <FontAwesome6
+                name="heart"
+                size={20}
+                color={isLiked ? "#FC8A02" : "#B89B4C"}
+                solid
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                hapticLight();
+                setIsShared(!isShared);
+                // Add share functionality here
+              }}
+              className="py-2"
+            >
+              <FontAwesome6
+                name="share-nodes"
+                size={20}
+                color={isShared ? "#FC8A02" : "#B89B4C"}
+                solid
+              />
+            </TouchableOpacity>
           </View>
         </View>
       )}

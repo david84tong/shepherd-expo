@@ -162,12 +162,23 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   // Monitor API loading state
   useEffect(() => {
     if (!isOnboarding) {
+      console.log('[LoadingScreen] API State Monitor:', {
+        isCreatingDevotional,
+        hasCustomDevotional: !!customDevotional,
+        hasCurrentDevotional: !!devotionalStoreCurrentDevotional,
+        hasError: !!devotionalError,
+        isCheckInFlow,
+        currentApiState: apiLoadingState
+      });
+      
       if (isCreatingDevotional) {
         setApiLoadingState('loading');
       } else if (isCheckInFlow && customDevotional) {
         // Keep as 'loading' for now; we'll mark it completed once the checklist finishes
         setApiLoadingState('loading');
-      } else if (devotionalStoreCurrentDevotional) {
+      } else if (customDevotional || devotionalStoreCurrentDevotional) {
+        // Check for either customDevotional or currentDevotional
+        console.log('[LoadingScreen] Setting API state to completed - devotional ready');
         setApiLoadingState('completed');
       } else if (devotionalError) {
         setApiLoadingState('error');
@@ -221,6 +232,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       progressAnim.setValue(0); // Reset progress to 0
       lastHapticPercentage.current = 0; // Reset haptic tracking
       setAnimationComplete(false); // Reset animation complete state
+      setApiLoadingState('idle'); // Reset API loading state
     };
   }, [progressAnim]);
 

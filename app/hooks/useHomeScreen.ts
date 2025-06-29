@@ -97,6 +97,7 @@ export const useHomeScreen = () => {
   const [riveError, setRiveError] = useState<any>(null);
   const [riveSkinInitialized, setRiveSkinInitialized] = useState(false);
   const [hasHandledDevotionalParam, setHasHandledDevotionalParam] = useState(false);
+  const clearParamTimerRef = useRef<NodeJS.Timeout | null>(null);
   
   // Store hooks  
   const mode = useHomeStore((state) => state.mode);
@@ -240,7 +241,15 @@ export const useHomeScreen = () => {
   // Effects
   useFocusEffect(
     useCallback(() => {
-      if (showDevotional === 'true' && !hasHandledDevotionalParam) {
+      console.log('[useHomeScreen] Focus effect triggered:', {
+        showDevotional,
+        hasHandledDevotionalParam,
+        customDevotional: !!customDevotional,
+        currentDevotional: !!currentDevotional
+      });
+      
+      if (showDevotional === 'true' && !hasHandledDevotionalParam && !devotionalReaderVisible && !showDevotionalContent) {
+        console.log('[useHomeScreen] Opening devotional reader from navigation param');
         setTimeout(() => {
           setShowDevotionalContent(true);
           setDevotionalReaderVisible(true);
@@ -248,14 +257,31 @@ export const useHomeScreen = () => {
             riveRef.current.setInputState('State Machine 1', 'Action-Number', 9);
           }
         }, 100);
-        setTimeout(() => {
+        
+        // Clear any existing timer
+        if (clearParamTimerRef.current) {
+          clearTimeout(clearParamTimerRef.current);
+        }
+        
+        // Set new timer to clear the parameter
+        clearParamTimerRef.current = setTimeout(() => {
           if (router?.setParams) {
             router.setParams({ showDevotional: undefined });
           }
+          clearParamTimerRef.current = null;
         }, 1000);
+        
         setHasHandledDevotionalParam(true);
       }
-    }, [showDevotional, hasHandledDevotionalParam, router])
+      
+      // Cleanup function to clear timer on unmount
+      return () => {
+        if (clearParamTimerRef.current) {
+          clearTimeout(clearParamTimerRef.current);
+          clearParamTimerRef.current = null;
+        }
+      };
+    }, [showDevotional, hasHandledDevotionalParam, router, customDevotional, currentDevotional, devotionalReaderVisible, showDevotionalContent])
   );
 
   // Sync devotional data from store
@@ -506,16 +532,39 @@ export const useHomeScreen = () => {
   }, []);
 
   const handleDevotionalClose = useCallback(({ isPrayPresses }: { isPrayPresses?: boolean }) => {
+    console.log('[useHomeScreen] handleDevotionalClose called, isPrayPresses:', isPrayPresses);
+    console.log('[useHomeScreen] Current state:', {
+      showDevotionalContent,
+      devotionalReaderVisible,
+      hasHandledDevotionalParam,
+      showDevotional
+    });
     
     if (devotionalReaderRef.current) {
       clearCustomDevotional();
       
-      // Clear the showDevotional param to prevent re-opening
+      // Cancel any pending parameter clear timer
+      if (clearParamTimerRef.current) {
+        console.log('[useHomeScreen] Canceling parameter clear timer');
+        clearTimeout(clearParamTimerRef.current);
+        clearParamTimerRef.current = null;
+      }
+      
+      // Clear the showDevotional param immediately to prevent re-opening
       if (router?.setParams) {
+        console.log('[useHomeScreen] Clearing showDevotional parameter');
         router.setParams({ showDevotional: undefined });
       }
-      // Also mark that we've handled the devotional param
+      // Keep the handled flag as true until navigation completes
+      // This prevents re-opening if there's a race condition with the parameter clearing
       setHasHandledDevotionalParam(true);
+      
+      // Reset the flag after a longer delay to prevent race conditions
+      // This ensures the parameter is fully cleared from navigation state
+      setTimeout(() => {
+        console.log('[useHomeScreen] Resetting hasHandledDevotionalParam to false');
+        setHasHandledDevotionalParam(false);
+      }, 2000);
       
       if (isPrayPresses) {
         setFinishReading(false);
@@ -546,15 +595,18 @@ export const useHomeScreen = () => {
         setShowPrayerView(true);
         setPrayerViewVisible(true);
       } else {
-       
+        console.log('[useHomeScreen] Closing devotional (non-prayer path)');
+        
+        // Immediately hide the devotional content
         setDevotionalReaderVisible(false);
+        setShowDevotionalContent(false);
+        
         Animated.parallel([
           Animated.timing(devotionalCardOpacityAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
           Animated.timing(riveArtboardOpacityAnim, { toValue: 0, duration: 500, useNativeDriver: true })
         ]).start();
         
         setTimeout(() => {
-          setShowDevotionalContent(false);
           
           // Check if all three actions are completed - if so, set to full (3)
           const homeStore = useHomeStore.getState();
@@ -581,7 +633,7 @@ export const useHomeScreen = () => {
         }, 250);
       }
     }
-  }, [router]);
+  }, [router, showDevotionalContent, devotionalReaderVisible, clearCustomDevotional, setShowDevotionalContent, setDevotionalReaderVisible, setFinishReading, setShowPrayerView, setPrayerViewVisible, devotionalCardOpacityAnim, riveArtboardOpacityAnim, setRiveIdle, setCurrentStateInput, riveRef]);
 
   const handlePrayerPress = useCallback(() => {
     if (!isPro && prayerCompleted) {
@@ -1057,88 +1109,101 @@ export const useHomeScreen = () => {
     }
   }, [riveRef, riveReady, riveSkinInitialized, currentSkin]);
 
+  // ADD: Ensure the correct Level-Number is always applied once Rive is ready
+  useEffect(() => {
+    if (!riveReady || !riveRef.current) return;
 
+    const currentLevel = levelInfo?.level ?? 1;
+    // In our Rive state machine, 1 = baby/low-level (<10), 0 = grown (>=10)
+    const targetLevelNumber = currentLevel < 10 ? 1 : 0;
 
-     // Handler for when Rive starts playing (indicates it's ready)
-     const handleRivePlay = () => {
-       console.log('Rive component started playing, ensuring correct skin & action state');
-       
-       // Use a small timeout to ensure Rive is fully ready before sending inputs
-       setTimeout(() => {
-         if (!riveRef.current || !riveRef.current.setInputState) return;
-         
-         try {
-           // Initialise skin once
-           if (!riveSkinInitialized) {
-             // Get the current skin number from store, default to 0 if empty
-             const skinNumber = currentSkin ? parseInt(currentSkin, 10) : 0;
-             
-             if(showBgRive){
-               if(riveRef.current){
-                 riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
-               }
-             } else {
-               riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
-             }
-             console.log(`Set Rive Skin-Number: ${skinNumber} (${currentSkin || 'normal'} skin) on play`);
-             
-             // Set Level-Number based on lamb level
-             const currentLevel = levelInfo?.level || 1;
-             const levelNumber = currentLevel < 10 ? 1 : 0;
-             riveRef.current.setInputState('State Machine 1', 'Level-Number', levelNumber);
-             console.log(`Set Rive Level-Number: ${levelNumber} (level ${currentLevel})`);
-             
-             setRiveSkinInitialized(true);
-           }
-            // if(showDevotional){
-            //   riveRef.current.setInputState('State Machine 1', 'Action-Number', 2);
-            //   riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
+    try {
+      riveRef.current.setInputState('State Machine 1', 'Level-Number', targetLevelNumber);
+      console.log(`[LevelFallback] Applied Level-Number ${targetLevelNumber} for level ${currentLevel}`);
+    } catch (e) {
+      console.log('[LevelFallback] Error applying Level-Number:', e);
+    }
+  }, [riveReady, levelInfo?.level]);
 
-            // }
-            
+  // Handler for when Rive starts playing (indicates it's ready)
+  const handleRivePlay = () => {
+    console.log('Rive component started playing, ensuring correct skin & action state');
+    
+    // Use a small timeout to ensure Rive is fully ready before sending inputs
+    setTimeout(() => {
+      if (!riveRef.current || !riveRef.current.setInputState) return;
+      
+      try {
+        // Initialise skin once
+        if (!riveSkinInitialized) {
+          // Get the current skin number from store, default to 0 if empty
+          const skinNumber = currentSkin ? parseInt(currentSkin, 10) : 0;
           
-          // Determine which action should be active
-          let targetAction = 0;
-          if (showDevotionalContent) {
-            targetAction = 9; // reading
-          } else if (showPrayerContent) {
-            targetAction = 1; // prayer
-          } else if (showJournalContent) {
-            targetAction = 12; // journal
-          } else {
-            // Check if all three actions are completed - if so, set to full (3)
-            const homeStore = useHomeStore.getState();
-            const allActionsCompleted = homeStore.readingCompleted && homeStore.prayerCompleted && homeStore.reflectionCompleted;
-            
-            if (allActionsCompleted) {
-              targetAction = 3; // lamb-full state
-            } else {
-              const currentMood = useUserStore.getState()?.getLambMood?.();
-              const moodToStateInput: Record<string, number> = {
-                'lamb-idle': 0,
-                'lamb-sleepy': 4,
-                'lamb-angry': 5,
-                'lamb-chubby dying': 6,
-                'lamb-skinny dying': 7,
-                'smoking': 8,
-                'lamb-full': 3,
-              };
-              targetAction = moodToStateInput[currentMood] || 0;
+          if(showBgRive){
+            if(riveRef.current){
+              riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
             }
+          } else {
+            riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
           }
-
-          // Only update if action changed to prevent spamming
-          if (lastActionInputRef.current !== targetAction) {
-            riveRef.current.setInputState('State Machine 1', 'Action-Number', targetAction);
-            lastActionInputRef.current = targetAction;
-            console.log(`Set Rive Action-Number: ${targetAction} on play (changed)`);
-          }
-        } catch (e) {
-          console.log('Error setting Rive inputs on play:', e);
+          console.log(`Set Rive Skin-Number: ${skinNumber} (${currentSkin || 'normal'} skin) on play`);
+          
+          // Set Level-Number based on lamb level
+          const currentLevel = levelInfo?.level || 1;
+          const levelNumber = currentLevel < 10 ? 1 : 0;
+          riveRef.current.setInputState('State Machine 1', 'Level-Number', levelNumber);
+          console.log(`Set Rive Level-Number: ${levelNumber} (level ${currentLevel})`);
+          
+          setRiveSkinInitialized(true);
         }
-      }, 100); // Delay ensures Rive is ready for state changes
-    };
+         // if(showDevotional){
+         //   riveRef.current.setInputState('State Machine 1', 'Action-Number', 2);
+         //   riveRef.current.setInputState('State Machine 1', 'Skin-Number', 0);
 
+         // }
+        
+      
+      // Determine which action should be active
+      let targetAction = 0;
+      if (showDevotionalContent) {
+        targetAction = 9; // reading
+      } else if (showPrayerContent) {
+        targetAction = 1; // prayer
+      } else if (showJournalContent) {
+        targetAction = 12; // journal
+      } else {
+        // Check if all three actions are completed - if so, set to full (3)
+        const homeStore = useHomeStore.getState();
+        const allActionsCompleted = homeStore.readingCompleted && homeStore.prayerCompleted && homeStore.reflectionCompleted;
+        
+        if (allActionsCompleted) {
+          targetAction = 3; // lamb-full state
+        } else {
+          const currentMood = useUserStore.getState()?.getLambMood?.();
+          const moodToStateInput: Record<string, number> = {
+            'lamb-idle': 0,
+            'lamb-sleepy': 4,
+            'lamb-angry': 5,
+            'lamb-chubby dying': 6,
+            'lamb-skinny dying': 7,
+            'smoking': 8,
+            'lamb-full': 3,
+          };
+          targetAction = moodToStateInput[currentMood] || 0;
+        }
+      }
+
+      // Only update if action changed to prevent spamming
+      if (lastActionInputRef.current !== targetAction) {
+        riveRef.current.setInputState('State Machine 1', 'Action-Number', targetAction);
+        lastActionInputRef.current = targetAction;
+        console.log(`Set Rive Action-Number: ${targetAction} on play (changed)`);
+      }
+    } catch (e) {
+      console.log('Error setting Rive inputs on play:', e);
+    }
+  }, 100); // Delay ensures Rive is ready for state changes
+};
 
   // Return all values and handlers needed by the component
   return {

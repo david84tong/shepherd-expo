@@ -396,7 +396,13 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   // NEW ACTION: Create AI-powered devotional from verse
   createAIDevotional: async (verseText: string, reference: string, bookName: string, chapter: number, verse: number) => {
     console.log('[DevotionalStore] Creating AI devotional from verse:', { verseText, reference, bookName, chapter, verse });
-    set({ isCreatingDevotional: true, error: null });
+    // Clear any existing custom devotional state before creating a new one
+    set({ 
+      customDevotional: null,
+      isCreatingDevotional: true, 
+      error: null,
+      isFromCheckIn: false 
+    });
     
     try {
       // Get the current user's ID token for API authentication
@@ -510,7 +516,12 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
   clearCustomDevotional: async () => {
     console.log('[DevotionalStore] Clearing custom devotional');
-    set({ customDevotional: null });
+    set({ 
+      customDevotional: null,
+      isCreatingDevotional: false,
+      error: null,
+      isFromCheckIn: false 
+    });
     
     // Clear widget data when custom devotional is cleared
     await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
@@ -612,7 +623,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
       // Process devotionals using batch-fetched data
       const processedDevotionals = await Promise.all(
-        rawDevotionals.map(async (devotional, index) => {
+        rawDevotionals.map(async (devotional) => {
           if (!devotional) return null;
           
           let verseText = devotional.verse;

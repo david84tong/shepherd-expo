@@ -346,10 +346,14 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
   }, [currentIndex, totalCards, scrollToBottom, showTapGuidance, tapCount, setDevotionalReadedFully]);
 
   const handleClose = useCallback(() => {
+    console.log('[DevotionalReader] handleClose called');
     useHomeStore.getState().setShowGlobalButtons(false);
     if (onClose) {
+      console.log('[DevotionalReader] Calling onClose callback');
       hapticMedium();
       onClose({ isPrayPresses: false });
+    } else {
+      console.log('[DevotionalReader] No onClose callback provided');
     }
   }, [onClose]);
 
@@ -591,6 +595,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
             {onClose && (
               <TouchableOpacity
                 onPress={() => {
+                  console.log('[DevotionalReader] X button pressed');
                   hapticLight();
                   onClose({ isPrayPresses: false });
                 }}
