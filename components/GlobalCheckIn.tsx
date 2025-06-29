@@ -479,13 +479,28 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               // Set check-in flag
               setIsFromCheckIn(true);
               
-              // Navigate to LoadingScreen immediately
-              handleDismiss();
+              // Close the sheet directly without handleDismiss to prevent reappearing
+              bottomSheetRef.current?.close();
               
-              // Navigate to loading screen
+              // Navigate after sheet closes
               setTimeout(() => {
-                router.push('/onboarding/LoadingScreen' as any);
-              }, 400);
+                router.push('/devotionalLoading' as any);
+                
+                // Reset state after navigation
+                setTimeout(() => {
+                  setCurrentScreen('mood');
+                  setSelectedMood(null);
+                  setSelectedFocus(null);
+                  setSelectedStruggle(null);
+                  clearCurrentSession();
+                  setIsGenerating(false);
+                  // Reset animations
+                  moodAnim.setValue(0);
+                  focusAnim.setValue(screenWidth);
+                  struggleAnim.setValue(screenWidth);
+                  successAnim.setValue(screenWidth);
+                }, 100);
+              }, 300);
               
               // Generate custom devotional in background
               handleGenerateCustomDevotional();
@@ -497,12 +512,29 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 focus: currentFocus,
                 struggle: currentStruggle
               });
-              handleDismiss();
               
-              // Navigate to regular devotional
+              // Close the sheet directly without handleDismiss to prevent reappearing
+              bottomSheetRef.current?.close();
+              
+              // Navigate after sheet closes
               setTimeout(() => {
                 router.push('/(tabs)');
-              }, 400);
+                
+                // Reset state after navigation
+                setTimeout(() => {
+                  setCurrentScreen('mood');
+                  setSelectedMood(null);
+                  setSelectedFocus(null);
+                  setSelectedStruggle(null);
+                  clearCurrentSession();
+                  setIsGenerating(false);
+                  // Reset animations
+                  moodAnim.setValue(0);
+                  focusAnim.setValue(screenWidth);
+                  struggleAnim.setValue(screenWidth);
+                  successAnim.setValue(screenWidth);
+                }, 100);
+              }, 300);
             }
           }}
           style="w-full"

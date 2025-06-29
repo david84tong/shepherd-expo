@@ -53,14 +53,14 @@ export default function BottomControls({
         }
       ]}
       className='px-10 absolute items-center w-full justify-between'>
-      {/* {showDevotionalContent && (
+      {showDevotionalContent && (
         <View className='flex-row items-center w-full justify-between mr-12'>
           <View className="flex-row gap-3">
-            <Image source={require('../../assets/icons/share.png')} style={{opacity:0.7}} />
-            <Image source={require('../../assets/icons/bookmark.png')} style={{opacity:0.7}} />
+            {/* <Image source={require('../../assets/icons/share.png')} style={{opacity:0.7}} />
+            <Image source={require('../../assets/icons/bookmark.png')} style={{opacity:0.7}} /> */}
           </View>
         </View>
-      )} */}
+      )}
       <View className="flex-row items-center justify-between w-full">
         <View className='flex-row items-center w-[20%] justify-between'>
         {!showJournalContent && !showPrayerSuccess && (

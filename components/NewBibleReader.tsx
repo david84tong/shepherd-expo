@@ -1253,9 +1253,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
         // Small delay to ensure devotional creation has started
         setTimeout(() => {
-          // Navigate to LoadingScreen after starting creation
+          // Navigate to standalone devotional loading screen (bypasses onboarding)
           router.push({
-            pathname: '/onboarding/LoadingScreen',
+            pathname: '/devotionalLoading',
             params: {
               isOnboarding: 'false',
               fromSwipe: 'true',

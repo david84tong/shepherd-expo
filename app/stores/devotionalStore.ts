@@ -88,6 +88,7 @@ interface DevotionalStore {
   locale: string;
   customDevotional: Devotional | null; // Quick devotional from Bible reader swipe
   isCreatingDevotional: boolean; // Loading state for AI devotional creation
+  isFromCheckIn: boolean; // Flag to indicate devotional is from check-in flow
   
   // Actions
   fetchTodaysDevotional: () => Promise<void>;
@@ -124,6 +125,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   locale: 'en',
   customDevotional: null,
   isCreatingDevotional: false,
+  isFromCheckIn: false,
 
     fetchTodaysDevotional: async () => {
     console.log('🚀 fetchTodaysDevotional function called!');

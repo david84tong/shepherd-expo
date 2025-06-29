@@ -37,6 +37,7 @@ export default function SitemapScreen() {
       <Link href="/biblePreview" className="text-blue-600 mb-1"><Text>/biblePreview</Text></Link>
       <Link href="/bibleReader" className="text-blue-600 mb-1"><Text>/bibleReader</Text></Link>
       <Link href="/newBibleReader" className="text-blue-600 mb-1"><Text>/newBibleReader</Text></Link>
+      <Link href="/devotionalLoading" className="text-blue-600 mb-1"><Text>/devotionalLoading</Text></Link>
       <Link href="/basicTestModal" className="text-blue-600 mb-1"><Text>/basicTestModal</Text></Link>
     </ScrollView>
   );

@@ -915,9 +915,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
     const reference = `${chapterData.book} ${chapterData.chapter}:${verse.verse}`;
 
-    // Navigate to LoadingScreen
+    // Navigate to standalone devotional loading screen (bypasses onboarding)
     router.push({
-      pathname: '/onboarding/LoadingScreen',
+      pathname: '/devotionalLoading',
       params: {
         isOnboarding: 'false',
         fromSwipe: 'true',
