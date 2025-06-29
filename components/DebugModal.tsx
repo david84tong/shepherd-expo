@@ -16,7 +16,6 @@ import { HalfModalType } from '../app/halfModal';
 import { calculateExpForLevel } from '../utils/levelUtils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 import WidgetHowToSheet from './WidgetHowToSheet';
-import BibleCacheTest from '../app/components/BibleCacheTest';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -657,8 +656,8 @@ export function DebugButton() {
             bibleReference: devotional.verse || devotional.bibleReference || '',
             prayer: typeof devotional.prayer === 'object' ? devotional.prayer : { en: devotional.prayer || '' },
             reflectionPrompt: typeof devotional.reflection === 'object' ? devotional.reflection : { en: devotional.reflection || devotional.reflectionPrompt || '' },
-            likes: devotional.likes || devotional.liked || 0,
-            shares: devotional.shares || devotional.shared || 0,
+            likes: devotional.likes || devotional.liked || Math.floor(Math.random() * (1000 - 800 + 1)) + 800,
+            shares: devotional.shares || devotional.shared || Math.floor(Math.random() * (500 - 400 + 1)) + 400,
             completed: devotional.completed || 0,
             date: devotional.date || devotional.id || new Date().toISOString().split('T')[0],
             imageURL: devotional.imageURL || '',

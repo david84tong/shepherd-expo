@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { View, Text, Image, ImageSourcePropType, Pressable, Platform } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import analytics from '../utils/analytics';
 import { useSoundStore } from '../app/stores/soundStore';
 import { responsiveHeight, responsiveWidth, responsiveFontSize } from 'react-native-responsive-dimensions';

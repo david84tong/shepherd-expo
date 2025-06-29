@@ -1,6 +1,5 @@
 import {Platform} from 'react-native';
 import {responsiveFontSize} from 'react-native-responsive-dimensions';
-import DeviceInfo from 'expo-device';
 // const isTablet = DeviceInfo.deviceType === DeviceInfo.DeviceType.TABLET;
 const isTablet = false;
 

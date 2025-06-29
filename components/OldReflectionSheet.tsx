@@ -11,7 +11,6 @@ import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
-import * as Haptics from 'expo-haptics';
 import { useUIStore } from '../app/stores/uiStore';
 import dayjs from 'dayjs';
 import { hapticMedium } from '~/utils/haptics';

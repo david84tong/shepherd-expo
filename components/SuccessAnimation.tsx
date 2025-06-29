@@ -2,7 +2,6 @@ import firestore from '@react-native-firebase/firestore';
 import dayjs from 'dayjs';
 import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import analytics from '../utils/analytics';
 import {

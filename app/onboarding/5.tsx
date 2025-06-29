@@ -15,7 +15,6 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import { RPH } from '../helper/helper';

@@ -16,7 +16,6 @@ import Animated, {
   withSpring,
   useSharedValue,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import { RPH } from '~/app/helper/helper';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
 

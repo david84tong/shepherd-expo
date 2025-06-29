@@ -14,7 +14,6 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import { hapticMedium } from '~/utils/haptics';
 
 export default function FreeOfferScreen() {

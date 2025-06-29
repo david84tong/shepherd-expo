@@ -2,9 +2,7 @@ import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
   BottomSheetScrollView,
-  BottomSheetView,
 } from '@gorhom/bottom-sheet';
-import * as Haptics from 'expo-haptics';
 import React, {
   useCallback,
   useImperativeHandle,

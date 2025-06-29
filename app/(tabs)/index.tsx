@@ -547,8 +547,8 @@ export default function HomeScreen() {
                         <View style={{ position: 'relative', zIndex: 2 }}>
                           <ProgressPill
                             value={0}
-                            label={lambHearts?.toString?.()}
-                            icon={heartIcon}
+                            label={lambHearts >= MAX_HEARTS ? levelInfo.level?.toString?.() : lambHearts?.toString?.()}
+                            icon={lambHearts >= MAX_HEARTS ? starIcon : heartIcon}
                           />
 
                           {isLevelPillExpanded && (
@@ -817,7 +817,7 @@ export default function HomeScreen() {
                       )}
 
                       {/* Next Unit Button - Only show when all activities are completed and there's a next unit */}
-                      {prayerCompleted && readingCompleted && reflectionCompleted && nextUnitPreview && (
+                      {prayerCompleted && readingCompleted && reflectionCompleted && (
                         <View
                           className="flex-row items-center justify-between"
                           style={{ marginTop: responsiveHeight(2) }}>
@@ -859,7 +859,7 @@ export default function HomeScreen() {
                                 }
                               }}
                               completed={isNextUnitCompleted}
-                              disabled={false}
+                              disabled={isNextUnitCompleted}
                             />
                           </View>
                         </View>

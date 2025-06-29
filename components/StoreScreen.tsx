@@ -10,7 +10,6 @@ import {
   Alert,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import Toast from 'react-native-toast-message';
 import { useUserStore } from '~/app/stores/userStore';

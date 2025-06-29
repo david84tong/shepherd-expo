@@ -8,7 +8,6 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useAssets } from 'expo-asset';
 import Rive, { RiveRef } from 'rive-react-native';

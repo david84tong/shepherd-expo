@@ -20,7 +20,6 @@ import { ONBOARDING_COMPLETED_KEY } from '~/app/models/Onboarding';
 import i18n from '~/app/utils/i18n';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
-import * as Haptics from 'expo-haptics';
 import analytics from '~/utils/analytics';
 import { hapticHeavy } from '~/utils/haptics';
 
@@ -56,7 +55,7 @@ interface LoadingScreenProps {
 }
 
 // Optimize loading points timing
-const STEP_DURATION = 1200; // Reduced from 1500ms
+const STEP_DURATION = 1500; // Duration for each step
 const FINAL_DELAY = 500; // Reduced from 600ms
 
 export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseText: propVerseText, reference: propReference }: LoadingScreenProps) {
@@ -68,31 +67,68 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
   const lastHapticPercentage = useRef(0);
 
+  // Get custom devotional from store FIRST - needs to be before useEffect
+  const customDevotional = useDevotionalStore((s) => s.customDevotional);
+  const isFromCheckInStore = useDevotionalStore((s) => s.isFromCheckIn);
+
   // Check onboarding completion status
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       try {
+        // If we're from check-in, skip onboarding check entirely
+        if (isFromCheckInStore) {
+          console.log('[LoadingScreen] Skipping onboarding check - from check-in');
+          setOnboardingCompleted(true); // Treat as completed to prevent redirect
+          return;
+        }
+        
         const completed = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
         setOnboardingCompleted(completed === 'true');
+        console.log('[LoadingScreen] Onboarding completed status:', completed === 'true');
       } catch (error) {
         console.error('Error checking onboarding status:', error);
         setOnboardingCompleted(false);
       }
     };
     checkOnboardingStatus();
-  }, []);
+  }, [isFromCheckInStore]);
+
+  // Check if this is from check-in flow - MUST be defined before isOnboarding
+  const isCheckInFlow = useMemo(() => {
+    // Check store flag first as it's the most reliable
+    if (isFromCheckInStore) {
+      console.log('[LoadingScreen] Check-in flow detected from store');
+      return true;
+    }
+    // Then check params
+    if (params.isCheckInFlow === 'true' || params.fromCheckIn === 'true') {
+      console.log('[LoadingScreen] Check-in flow detected from params');
+      return true;
+    }
+    return false;
+  }, [isFromCheckInStore, params.isCheckInFlow, params.fromCheckIn]);
 
   // Stabilize critical route-derived values
   const isOnboarding = useMemo(() => {
+    // Check-in flow overrides everything
+    if (isCheckInFlow) {
+      console.log('[LoadingScreen] isOnboarding: false (check-in flow)');
+      return false;
+    }
     if (params.fromSwipe === 'true') {
+      console.log('[LoadingScreen] isOnboarding: false (from swipe)');
       return false;
     }
     // Use onboarding completion status if available, otherwise fall back to params/props
     if (onboardingCompleted !== null) {
-      return !onboardingCompleted;
+      const result = !onboardingCompleted;
+      console.log('[LoadingScreen] isOnboarding:', result, '(based on completion status)');
+      return result;
     }
-    return params.isOnboarding !== undefined ? params.isOnboarding === 'true' : propIsOnboarding;
-  }, [params.fromSwipe, params.isOnboarding, propIsOnboarding, onboardingCompleted]);
+    const result = params.isOnboarding !== undefined ? params.isOnboarding === 'true' : propIsOnboarding;
+    console.log('[LoadingScreen] isOnboarding:', result, '(from params/props)');
+    return result;
+  }, [params.fromSwipe, params.isOnboarding, propIsOnboarding, onboardingCompleted, isCheckInFlow]);
 
   const verseText = useMemo(() =>
     (params.verseText as string | undefined) || propVerseText,
@@ -114,10 +150,11 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const { presentFreeTrialPaywall } = useSubscriptionStore();
 
   // Use appropriate loading points
-  const loadingPoints = useMemo(() =>
-    isOnboarding ? LOADING_POINTS : DEVOTIONAL_LOADING_POINTS,
-    [isOnboarding]
-  );
+  const loadingPoints = useMemo(() => {
+    if (isOnboarding) return LOADING_POINTS;
+    if (isCheckInFlow) return DEVOTIONAL_LOADING_POINTS;
+    return DEVOTIONAL_LOADING_POINTS;
+  }, [isOnboarding, isCheckInFlow]);
 
   // Add loading state for API call
   const [apiLoadingState, setApiLoadingState] = useState<'idle' | 'loading' | 'completed' | 'error'>('idle');
@@ -127,13 +164,16 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     if (!isOnboarding) {
       if (isCreatingDevotional) {
         setApiLoadingState('loading');
+      } else if (isCheckInFlow && customDevotional) {
+        // Keep as 'loading' for now; we'll mark it completed once the checklist finishes
+        setApiLoadingState('loading');
       } else if (devotionalStoreCurrentDevotional) {
         setApiLoadingState('completed');
       } else if (devotionalError) {
         setApiLoadingState('error');
       }
     }
-  }, [isOnboarding, isCreatingDevotional, devotionalStoreCurrentDevotional, devotionalError]);
+  }, [isOnboarding, isCreatingDevotional, devotionalStoreCurrentDevotional, devotionalError, isCheckInFlow, customDevotional]);
 
   // Animation values for checklist items
   const animValuesRef = useRef(
@@ -152,11 +192,15 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   // Track which steps have been animated
   const animatedStepsRef = useRef(new Set<number>());
 
-  // Progress animation
+  // Progress animation - Always start from 0
   const progressAnim = useRef(new Animated.Value(0)).current;
   const [progressValue, setProgressValue] = useState(0);
   const CIRCLE_RADIUS = 52;
   const CIRCLE_CIRCUM = 2 * Math.PI * CIRCLE_RADIUS;
+  
+  // Track if we've started animating to prevent jumping to 100%
+  const hasStartedAnimating = useRef(false);
+  const [animationComplete, setAnimationComplete] = useState(false);
 
   // Listen to animation updates and sync progressValue
   useEffect(() => {
@@ -173,8 +217,12 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     return () => {
       setHasStarted(false);
       animatedStepsRef.current.clear();
+      hasStartedAnimating.current = false;
+      progressAnim.setValue(0); // Reset progress to 0
+      lastHapticPercentage.current = 0; // Reset haptic tracking
+      setAnimationComplete(false); // Reset animation complete state
     };
-  }, []);
+  }, [progressAnim]);
 
   // Start spinner animation for the current step
   useEffect(() => {
@@ -219,26 +267,33 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   // Initialize animation sequence
   useEffect(() => {
     if (!hasStarted) {
+      // Ensure progress starts at 0
+      progressAnim.setValue(0);
+      setProgressValue(0);
+      
       const startTimer = setTimeout(() => {
         setHasStarted(true);
-        setCurrentStep(0);
+        // Don't set currentStep here - let it stay at 0
       }, 100);
       return () => clearTimeout(startTimer);
     }
-  }, [hasStarted]);
+  }, [hasStarted, progressAnim]);
 
   // Handle step progression with optimized timing
   useEffect(() => {
     if (!hasStarted) return;
 
     let timer: NodeJS.Timeout;
+    
+    // Add initial delay for the first step to allow smooth start
+    const delay = currentStep === 0 ? 300 : STEP_DURATION;
 
     if (isOnboarding) {
       // Onboarding flow - keep existing timer-based progress unchanged
       if (currentStep < loadingPoints.length) {
         timer = setTimeout(() => {
           setCurrentStep(prev => prev + 1);
-        }, STEP_DURATION);
+        }, delay);
       } else {
         timer = setTimeout(async () => {
           // Get A/B test value to determine which pricing screen to show
@@ -263,23 +318,26 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             redirectTo: abTestValue === 0 ? 'PricingScreen' : 'OldPricingScreen',
           });
 
-          // Navigate based on A/B test value
-          if (abTestValue === 0) {
-            router.push('/PricingScreen');
+          // Navigate based on A/B test value - but skip if from check-in
+          if (!isCheckInFlow) {
+            console.log('[LoadingScreen] Navigating to pricing screen (not check-in flow)');
+            if (abTestValue === 0) {
+              router.push('/PricingScreen');
+            } else {
+              router.push('/onboarding/pricing/OldPricingScreen');
+            }
           } else {
-            router.push('/onboarding/pricing/OldPricingScreen');
+            console.log('[LoadingScreen] Skipping pricing navigation (check-in flow detected)');
           }
         }, FINAL_DELAY);
       }
     } else {
-      // For custom devotional creation - progress based on API completion
+      // For custom devotional creation - consistent timing
       if (currentStep < loadingPoints.length) {
-        // For custom devotionals, progress through steps more slowly to match API timing
-        // Each step takes longer to give the API time to complete
-        const customStepDuration = 2000; // 2 seconds per step for custom devotionals
+        // Match the step duration with onboarding for consistency
         timer = setTimeout(() => {
           setCurrentStep(prev => prev + 1);
-        }, customStepDuration);
+        }, delay);
       }
       // Note: The actual navigation is handled by the monitoring effect below
     }
@@ -287,71 +345,28 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     return () => clearTimeout(timer);
   }, [currentStep, hasStarted, isOnboarding, loadingPoints.length, router]);
 
-  // Optimize checklist animation timing
+  // Optimize checklist animation timing - same for both modes
   useEffect(() => {
     if (!hasStarted) return;
 
-    if (isOnboarding) {
-      // Onboarding: animate steps one by one
-      if (currentStep < loadingPoints.length && !animatedStepsRef.current.has(currentStep)) {
-        animatedStepsRef.current.add(currentStep);
-        animValuesRef.current[currentStep].setValue(0);
-        Animated.timing(animValuesRef.current[currentStep], {
-          toValue: 1,
-          duration: 300, // Reduced from 400ms
-          useNativeDriver: true,
-        }).start();
-      }
-    } else {
-      // Custom devotional: check API loading state
-      if (apiLoadingState === 'completed') {
-        // API completed - immediately animate all remaining steps
-        console.log('[LoadingScreen] API completed, animating all remaining steps');
-        for (let i = 0; i < loadingPoints.length; i++) {
-          if (!animatedStepsRef.current.has(i)) {
-            animatedStepsRef.current.add(i);
-            animValuesRef.current[i].setValue(0);
-            Animated.timing(animValuesRef.current[i], {
-              toValue: 1,
-              duration: 200, // Faster animation for API completion
-              useNativeDriver: true,
-            }).start();
-          }
-        }
-      } else if (currentStep < loadingPoints.length && !animatedStepsRef.current.has(currentStep)) {
-        // API still loading - animate current step
-        animatedStepsRef.current.add(currentStep);
-        animValuesRef.current[currentStep].setValue(0);
-        Animated.timing(animValuesRef.current[currentStep], {
-          toValue: 1,
-          duration: 300,
-          useNativeDriver: true,
-        }).start();
-      }
+    // Animate steps one by one for both onboarding and devotional
+    if (currentStep < loadingPoints.length && !animatedStepsRef.current.has(currentStep)) {
+      animatedStepsRef.current.add(currentStep);
+      animValuesRef.current[currentStep].setValue(0);
+      Animated.timing(animValuesRef.current[currentStep], {
+        toValue: 1,
+        duration: 300, // Consistent duration for both modes
+        useNativeDriver: true,
+      }).start();
     }
-  }, [currentStep, hasStarted, loadingPoints.length, isOnboarding, apiLoadingState]);
+  }, [currentStep, hasStarted, loadingPoints.length]);
 
   // Optimize progress animation timing
   useEffect(() => {
     if (!hasStarted) return;
 
-    let progress;
-
-    if (isOnboarding) {
-      progress = currentStep / loadingPoints.length;
-    } else {
-      if (apiLoadingState === 'completed') {
-        progress = 1;
-      } else if (apiLoadingState === 'error') {
-        progress = currentStep / loadingPoints.length;
-      } else if (apiLoadingState === 'loading') {
-        const stepProgress = currentStep / loadingPoints.length;
-        progress = Math.min(stepProgress, 0.8);
-      } else {
-        progress = currentStep / loadingPoints.length;
-      }
-    }
-
+    // Calculate progress based on current step
+    const progress = currentStep / loadingPoints.length;
     const currentPercentage = Math.round(progress * 100);
 
     // Trigger heavy haptic feedback at 25%, 50%, 75%, and 100%
@@ -364,50 +379,46 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       }
     }
 
-    // Animate progress bar
-    let duration = isOnboarding ? 500 : 300;
-    if (apiLoadingState === 'completed' && !isOnboarding) {
-      duration = 200; // Fast fill for pro user
+    // Mark that we've started animating
+    if (!hasStartedAnimating.current && hasStarted) {
+      hasStartedAnimating.current = true;
     }
+
+    // Calculate animation duration to match step progression
+    // Animation should be smooth and match the step duration
+    const animationDuration = STEP_DURATION - 200; // Slightly less than step duration for smooth transition
+    
     Animated.timing(progressAnim, {
       toValue: progress,
-      duration,
+      duration: animationDuration,
       easing: Easing.out(Easing.cubic),
       useNativeDriver: false,
-    }).start();
-  }, [currentStep, hasStarted, loadingPoints.length, progressAnim, isOnboarding, apiLoadingState]);
+    }).start(() => {
+      // Mark animation as complete when progress reaches 100%
+      if (progress >= 1) {
+        setAnimationComplete(true);
+      }
+    });
+  }, [currentStep, hasStarted, loadingPoints.length, progressAnim, isOnboarding]);
+
+  // Ensure check-in flow only marks API as completed once the checklist animation is finished
+  useEffect(() => {
+    if (!isOnboarding && isCheckInFlow && customDevotional && apiLoadingState === 'loading') {
+      if (currentStep >= loadingPoints.length - 1) {
+        setApiLoadingState('completed');
+      }
+    }
+  }, [isOnboarding, isCheckInFlow, customDevotional, apiLoadingState, currentStep, loadingPoints.length]);
 
   // Build checklist state
   const checklist = useMemo(() => {
-    if (isOnboarding) {
-      // Onboarding: show steps based on currentStep
-      return loadingPoints.map((label, idx) => {
-        if (idx < currentStep) return { label, status: 'done' };
-        if (idx === currentStep) return { label, status: 'loading' };
-        return { label, status: 'pending' };
-      }).slice(0, Math.max(1, currentStep + 1));
-    } else {
-      // Custom devotional: check API loading state
-      if (apiLoadingState === 'completed') {
-        // API completed - show all steps as done
-        return loadingPoints.map((label) => ({ label, status: 'done' }));
-      } else if (apiLoadingState === 'error') {
-        // API error - show current step progress
-        return loadingPoints.map((label, idx) => {
-          if (idx < currentStep) return { label, status: 'done' };
-          if (idx === currentStep) return { label, status: 'loading' };
-          return { label, status: 'pending' };
-        }).slice(0, Math.max(1, currentStep + 1));
-      } else {
-        // API loading or idle - show current step progress
-        return loadingPoints.map((label, idx) => {
-          if (idx < currentStep) return { label, status: 'done' };
-          if (idx === currentStep) return { label, status: 'loading' };
-          return { label, status: 'pending' };
-        }).slice(0, Math.max(1, currentStep + 1));
-      }
-    }
-  }, [loadingPoints, currentStep, isOnboarding, apiLoadingState]);
+    // Use the same logic for both onboarding and devotional - show steps one by one
+    return loadingPoints.map((label, idx) => {
+      if (idx < currentStep) return { label, status: 'done' };
+      if (idx === currentStep) return { label, status: 'loading' };
+      return { label, status: 'pending' };
+    }).slice(0, Math.max(1, currentStep + 1));
+  }, [loadingPoints, currentStep]);
 
   // Helper function to show paywall for non-pro users
   const showPaywallForNonProUser = useCallback(async () => {
@@ -469,44 +480,78 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       console.log('[LoadingScreen] Navigation check:', {
         apiLoadingState,
         isProMember,
+        isCheckInFlow,
+        hasCustomDevotional: !!customDevotional,
         hasDevotional: !!devotionalStoreCurrentDevotional,
-        hasError: !!devotionalError
+        hasError: !!devotionalError,
+        currentStep,
+        totalSteps: loadingPoints.length
       });
 
-      // For custom devotionals, check if API has completed
-      if (apiLoadingState === 'completed' && isProMember) {
-        // API completed successfully - immediately complete all steps and navigate
-        console.log('[LoadingScreen] API completed for pro user, navigating to home');
-        setCurrentStep(loadingPoints.length);
+      // Only navigate after all steps are complete AND animation has finished
+      if (currentStep >= loadingPoints.length && animationComplete) {
+        // For check-in flow, check if custom devotional is ready
+        if (isCheckInFlow && customDevotional && apiLoadingState === 'completed') {
+          // Check-in devotional ready - navigate to DevotionalReader
+          console.log('[LoadingScreen] All steps complete and check-in devotional ready, navigating to DevotionalReader');
 
-        analytics.logEvent('LoadingScreen_Custom_Devotional_Created', {
-          isProMember: true,
-          verseText: verseText || 'unknown',
-          reference: reference || 'unknown',
-          totalLoadingTime: currentStep * STEP_DURATION,
-        });
-
-        const timer = setTimeout(() => {
-          router.navigate({
-            pathname: '/(tabs)',
-            params: { showDevotional: 'true' }
+          analytics.logEvent('LoadingScreen_CheckIn_Devotional_Ready', {
+            totalLoadingTime: loadingPoints.length * STEP_DURATION,
           });
-        }, 500); // Short delay for smooth transition
-        return () => clearTimeout(timer);
-      } else if (apiLoadingState === 'error') {
+
+          const timer = setTimeout(() => {
+            router.navigate({
+              pathname: '/(tabs)',
+              params: { showDevotional: 'true' }
+            });
+          }, 500); // Short delay for smooth transition
+          return () => clearTimeout(timer);
+        } else if (apiLoadingState === 'completed' && isProMember && !isCheckInFlow) {
+          // API completed successfully - navigate after all steps complete
+          console.log('[LoadingScreen] All steps complete and API completed for pro user, navigating to home');
+
+          analytics.logEvent('LoadingScreen_Custom_Devotional_Created', {
+            isProMember: true,
+            verseText: verseText || 'unknown',
+            reference: reference || 'unknown',
+            totalLoadingTime: loadingPoints.length * STEP_DURATION,
+          });
+
+          const timer = setTimeout(() => {
+            router.navigate({
+              pathname: '/(tabs)',
+              params: { showDevotional: 'true' }
+            });
+          }, 500); // Short delay for smooth transition
+          return () => clearTimeout(timer);
+        } else if (apiLoadingState === 'completed' && !isProMember && !isCheckInFlow) {
+          // User is not pro - show paywall when all steps complete
+          console.log('[LoadingScreen] All steps complete and API completed for non-pro user, showing paywall');
+          showPaywallForNonProUser();
+        }
+      }
+      
+      // Handle error case regardless of step count
+      if (apiLoadingState === 'error') {
         // Error occurred - navigate back
         console.log('[LoadingScreen] API error occurred:', devotionalError);
         const timer = setTimeout(() => {
           router.replace('/');
         }, 2000);
         return () => clearTimeout(timer);
-      } else if (apiLoadingState === 'completed' && !isProMember) {
-        // User is not pro - show paywall when API completes
-        console.log('[LoadingScreen] API completed for non-pro user, showing paywall');
-        showPaywallForNonProUser();
       }
     }
-  }, [isOnboarding, apiLoadingState, router, currentStep, loadingPoints.length, isProMember, presentFreeTrialPaywall, verseText, reference, devotionalError, devotionalStoreCurrentDevotional]);
+  }, [isOnboarding, apiLoadingState, router, currentStep, loadingPoints.length, isProMember, presentFreeTrialPaywall, verseText, reference, devotionalError, devotionalStoreCurrentDevotional, isCheckInFlow, customDevotional, showPaywallForNonProUser, animationComplete]);
+  
+  // Clear the check-in flag when navigating away
+  useEffect(() => {
+    return () => {
+      if (isFromCheckInStore) {
+        console.log('[LoadingScreen] Clearing isFromCheckIn flag on unmount');
+        useDevotionalStore.getState().setIsFromCheckIn(false);
+      }
+    };
+  }, [isFromCheckInStore]);
 
   // Fallback check for non-pro users with devotional
   useEffect(() => {
@@ -730,10 +775,10 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
         {/* Headline and subheadline */}
         <Text className="text-3xl font-feather text-center mb-2" style={{ color: TEXT_PRIMARY }}>
-          {isOnboarding ? i18n.t('loading_just_a_moment') : devotionalError ? i18n.t('loading_something_wrong') : i18n.t('loading_creating_devotional')}
+          {isOnboarding ? i18n.t('loading_just_a_moment') : isCheckInFlow ? 'Preparing Your Devotional' : devotionalError ? i18n.t('loading_something_wrong') : i18n.t('loading_creating_devotional')}
         </Text>
         <Text className="text-lg font-din text-center mb-8" style={{ color: DESCRIPTION }}>
-          {isOnboarding ? i18n.t('loading_building_plan') : devotionalError ? i18n.t('loading_redirecting_back') : i18n.t('loading_preparing_meal')}
+          {isOnboarding ? i18n.t('loading_building_plan') : isCheckInFlow ? 'Crafting guidance based on your check-in...' : devotionalError ? i18n.t('loading_redirecting_back') : i18n.t('loading_preparing_meal')}
         </Text>
 
         {/* Checklist directly below */}

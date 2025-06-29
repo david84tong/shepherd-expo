@@ -22,8 +22,7 @@ import {
   Image,
   Dimensions,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
-import { fetchChapter, fetchChapterWithCache, Verse } from './api/bible';
+import { fetchChapterWithCache, Verse } from './api/bible';
 import SideButton from '~/components/SideButton';
 import { usePathStore } from './stores/pathStore';
 import { useHomeStore, SuccessAnimationType } from './stores/homeStore';
@@ -916,9 +915,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
     const reference = `${chapterData.book} ${chapterData.chapter}:${verse.verse}`;
 
-    // Navigate to LoadingScreen
+    // Navigate to standalone devotional loading screen (bypasses onboarding)
     router.push({
-      pathname: '/onboarding/LoadingScreen',
+      pathname: '/devotionalLoading',
       params: {
         isOnboarding: 'false',
         fromSwipe: 'true',

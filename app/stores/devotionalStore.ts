@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { Devotional } from '../models/Devotional';
 import firestore from '@react-native-firebase/firestore';
-import { fetchChapter, fetchChaptersBatch, ChapterResponse, FetchError, fetchChapterWithCache, clearChapterCache } from '../api/bible';
+import { fetchChaptersBatch, ChapterResponse, FetchError, fetchChapterWithCache, clearChapterCache } from '../api/bible';
 import { BIBLE_BOOK_IDS } from '../models/Path';
 import { createDevotionalFromVerse, checkNetworkConnectivity } from '../api/ai';
 import auth from '@react-native-firebase/auth';
@@ -88,6 +88,7 @@ interface DevotionalStore {
   locale: string;
   customDevotional: Devotional | null; // Quick devotional from Bible reader swipe
   isCreatingDevotional: boolean; // Loading state for AI devotional creation
+  isFromCheckIn: boolean; // Flag to indicate devotional is from check-in flow
   
   // Actions
   fetchTodaysDevotional: () => Promise<void>;
@@ -106,6 +107,8 @@ interface DevotionalStore {
   // NEW ACTION: Update widget timeline with 5 days of data
   updateWidgetTimeline: () => Promise<void>;
   clearCustomDevotional: () => void;
+  setCustomDevotional: (devotional: Devotional) => void;
+  setIsFromCheckIn: (value: boolean) => void;
   updateLikeStatus: (devotionalId: string, liked: boolean) => void;
   incrementShareCount: (devotionalId: string) => void;
   // Utility function to clear Bible chapter cache
@@ -122,6 +125,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   locale: 'en',
   customDevotional: null,
   isCreatingDevotional: false,
+  isFromCheckIn: false,
 
     fetchTodaysDevotional: async () => {
     console.log('🚀 fetchTodaysDevotional function called!');
@@ -525,6 +529,19 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       console.log('📱 No daily devotional available, setting widget to noVerseAvailable');
       await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
     }
+  },
+
+  setCustomDevotional: (devotional: Devotional) => {
+    console.log('[DevotionalStore] Setting custom devotional:', devotional);
+    set({ 
+      customDevotional: devotional,
+      currentDevotional: devotional 
+    });
+  },
+  
+  setIsFromCheckIn: (value: boolean) => {
+    console.log('[DevotionalStore] Setting isFromCheckIn:', value);
+    set({ isFromCheckIn: value });
   },
 
   // Refresh widget data with current devotional

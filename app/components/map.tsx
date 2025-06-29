@@ -20,7 +20,6 @@ import { BIBLE_BOOK_IDS, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS, Unit } from '../mod
 import { PathInfo, usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import { heightScreen } from '~/utils/dimensions';
-import * as Haptics from 'expo-haptics';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import { useHomeStore } from '../stores/homeStore';
 import { hapticMedium } from '~/utils/haptics';

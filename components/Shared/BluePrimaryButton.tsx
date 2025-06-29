@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Text, View, Pressable, Platform, DimensionValue } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
 import { hapticMedium } from '~/utils/haptics';
 

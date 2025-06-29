@@ -13,7 +13,6 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_COMPLETED_KEY } from '../types/onboarding';
-import * as Haptics from 'expo-haptics';
 import { useAssets } from 'expo-asset';
 import Rive, { RiveRef } from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';

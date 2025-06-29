@@ -1,4 +1,3 @@
-import * as Haptics from 'expo-haptics';
 import { Redirect, Tabs } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, Platform, Pressable, Text, View, ViewStyle } from 'react-native';

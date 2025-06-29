@@ -105,6 +105,7 @@ module.exports = {
         title: '36px',
         h1: '28px', // H1
         h2: '24px', // H1
+        h3: '24px', // H1
         heading: '20px', // Heading (~17pt)
         h4: '18', // H1
 

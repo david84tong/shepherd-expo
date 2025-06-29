@@ -1,5 +1,4 @@
 import { useAssets } from 'expo-asset';
-import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState, useRef } from 'react';

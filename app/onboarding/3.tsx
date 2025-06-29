@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { View, Text, Pressable, ScrollView, StatusBar } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,

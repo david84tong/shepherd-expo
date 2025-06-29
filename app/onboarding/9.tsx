@@ -2,7 +2,6 @@ import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, Linking, StatusBar } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
   withTiming,

@@ -253,7 +253,7 @@ export const useHomeScreen = () => {
             router.setParams({ showDevotional: undefined });
           }
         }, 1000);
-        // setHasHandledDevotionalParam(true);
+        setHasHandledDevotionalParam(true);
       }
     }, [showDevotional, hasHandledDevotionalParam, router])
   );
@@ -510,6 +510,13 @@ export const useHomeScreen = () => {
     if (devotionalReaderRef.current) {
       clearCustomDevotional();
       
+      // Clear the showDevotional param to prevent re-opening
+      if (router?.setParams) {
+        router.setParams({ showDevotional: undefined });
+      }
+      // Also mark that we've handled the devotional param
+      setHasHandledDevotionalParam(true);
+      
       if (isPrayPresses) {
         setFinishReading(false);
         Animated.parallel([
@@ -574,7 +581,7 @@ export const useHomeScreen = () => {
         }, 250);
       }
     }
-  }, []);
+  }, [router]);
 
   const handlePrayerPress = useCallback(() => {
     if (!isPro && prayerCompleted) {
@@ -630,6 +637,9 @@ export const useHomeScreen = () => {
     setShowDevotionalReader(true);
     setDevotionalReaderVisible(true);
     setShowDevotionalContent(true);
+    
+    // Reset the handled param flag when manually opening devotional
+    setHasHandledDevotionalParam(false);
 
     Animated.timing(devotionalCardOpacityAnim, {
       toValue: 0,

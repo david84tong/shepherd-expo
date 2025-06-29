@@ -19,7 +19,6 @@ import useNoteStore, { VerseNote } from '../stores/noteStore';
 import { Feather, FontAwesome } from '@expo/vector-icons';
 import { fetchChapter } from '../api/bible';
 
-import * as Haptics from 'expo-haptics';
 import { Prayer, Reading, Reflection } from '../models/User';
 import i18n from '../utils/i18n';
 import journalIcon from '../../assets/icons/journalIcon.png';

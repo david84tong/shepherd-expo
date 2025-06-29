@@ -16,7 +16,6 @@ import BottomSheet, {
 import { BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from '../app/models/Path';
 import { useUIStore } from '../app/stores/uiStore';
 import { usePathStore } from '../app/stores/pathStore';
-import * as Haptics from 'expo-haptics';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
