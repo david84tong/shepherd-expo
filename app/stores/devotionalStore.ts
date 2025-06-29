@@ -143,7 +143,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       
       // Query for devotional where the 'id' field matches today's date in YYYY-MM-DD format
       const idQuerySnapshot = await devotionalsRef
-        .where('id', '==', todayIdFormat)
+        .where('date', '==', todayIdFormat)
         .limit(1)
         .get();
         
@@ -508,8 +508,23 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     console.log('[DevotionalStore] Clearing custom devotional');
     set({ customDevotional: null });
     
-    // Clear widget data when custom devotional is cleared
-    await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
+    // Instead of clearing widget data, restore the daily devotional data
+    const { dailyDevotional } = get();
+    if (dailyDevotional?.bibleReference && dailyDevotional?.verse) {
+      console.log('📱 Restoring daily devotional to widget after clearing custom devotional:', {
+        bibleReference: dailyDevotional.bibleReference,
+        verseLength: dailyDevotional.verse.length,
+        imageURL: dailyDevotional.imageURL
+      });
+      await safeWidgetCall('updateVerseData',
+        dailyDevotional.bibleReference,
+        dailyDevotional.verse,
+        dailyDevotional.imageURL || null
+      );
+    } else {
+      console.log('📱 No daily devotional available, setting widget to noVerseAvailable');
+      await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
+    }
   },
 
   // Refresh widget data with current devotional
@@ -537,8 +552,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     console.log('🚀 Updating widget timeline with 5 days of data...');
 
     try {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const today = dayjs().startOf('day');
 
       // Fetch 5 days of devotionals from Firestore
    
@@ -552,7 +566,6 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         .where('date', '>=', startDate)
         .where('date', '<=', endDate)
         .get();
-
       // Map the results into an array of 5 days, filling nulls for missing dates
       const devotionalPromises = Array.from({ length: 5 }).map((_, i) => {
         const dateToFind = dayjs(today).startOf('day').add(i, 'days').format('YYYY-MM-DD');
@@ -631,7 +644,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
       // Create widget timeline entries
       const widgetEntries = processedDevotionals.map((devotional, i) => {
-        const date = new Date(today);
+        const date = new Date(today.toDate());
         date.setDate(date.getDate() + i);
         if (devotional) {
           
