@@ -12,7 +12,6 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import analytics from '~/utils/analytics';
 import i18n from '../utils/i18n';
 import { RPH } from '../helper/helper';

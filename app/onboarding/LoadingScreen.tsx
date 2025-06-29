@@ -20,7 +20,6 @@ import { ONBOARDING_COMPLETED_KEY } from '~/app/models/Onboarding';
 import i18n from '~/app/utils/i18n';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
-import * as Haptics from 'expo-haptics';
 import analytics from '~/utils/analytics';
 import { hapticHeavy } from '~/utils/haptics';
 
@@ -82,17 +81,25 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     checkOnboardingStatus();
   }, []);
 
+  // Check if this is from check-in flow
+  const isCheckInFlow = useMemo(() => {
+    return isFromCheckInStore || params.isCheckInFlow === 'true' || params.fromCheckIn === 'true';
+  }, [isFromCheckInStore, params.isCheckInFlow, params.fromCheckIn]);
+
   // Stabilize critical route-derived values
   const isOnboarding = useMemo(() => {
     if (params.fromSwipe === 'true') {
       return false;
+    }
+    if (isCheckInFlow) {
+      return false; // Check-in flow is not onboarding
     }
     // Use onboarding completion status if available, otherwise fall back to params/props
     if (onboardingCompleted !== null) {
       return !onboardingCompleted;
     }
     return params.isOnboarding !== undefined ? params.isOnboarding === 'true' : propIsOnboarding;
-  }, [params.fromSwipe, params.isOnboarding, propIsOnboarding, onboardingCompleted]);
+  }, [params.fromSwipe, params.isOnboarding, propIsOnboarding, onboardingCompleted, isCheckInFlow]);
 
   const verseText = useMemo(() =>
     (params.verseText as string | undefined) || propVerseText,
@@ -114,26 +121,33 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const { presentFreeTrialPaywall } = useSubscriptionStore();
 
   // Use appropriate loading points
-  const loadingPoints = useMemo(() =>
-    isOnboarding ? LOADING_POINTS : DEVOTIONAL_LOADING_POINTS,
-    [isOnboarding]
-  );
+  const loadingPoints = useMemo(() => {
+    if (isOnboarding) return LOADING_POINTS;
+    if (isCheckInFlow) return DEVOTIONAL_LOADING_POINTS;
+    return DEVOTIONAL_LOADING_POINTS;
+  }, [isOnboarding, isCheckInFlow]);
 
   // Add loading state for API call
   const [apiLoadingState, setApiLoadingState] = useState<'idle' | 'loading' | 'completed' | 'error'>('idle');
+
+  // Get custom devotional from store
+  const customDevotional = useDevotionalStore((s) => s.customDevotional);
+  const isFromCheckInStore = useDevotionalStore((s) => s.isFromCheckIn);
 
   // Monitor API loading state
   useEffect(() => {
     if (!isOnboarding) {
       if (isCreatingDevotional) {
         setApiLoadingState('loading');
+      } else if (isCheckInFlow && customDevotional) {
+        setApiLoadingState('completed');
       } else if (devotionalStoreCurrentDevotional) {
         setApiLoadingState('completed');
       } else if (devotionalError) {
         setApiLoadingState('error');
       }
     }
-  }, [isOnboarding, isCreatingDevotional, devotionalStoreCurrentDevotional, devotionalError]);
+  }, [isOnboarding, isCreatingDevotional, devotionalStoreCurrentDevotional, devotionalError, isCheckInFlow, customDevotional]);
 
   // Animation values for checklist items
   const animValuesRef = useRef(
@@ -469,12 +483,30 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       console.log('[LoadingScreen] Navigation check:', {
         apiLoadingState,
         isProMember,
+        isCheckInFlow,
+        hasCustomDevotional: !!customDevotional,
         hasDevotional: !!devotionalStoreCurrentDevotional,
         hasError: !!devotionalError
       });
 
-      // For custom devotionals, check if API has completed
-      if (apiLoadingState === 'completed' && isProMember) {
+      // For check-in flow, check if custom devotional is ready
+      if (isCheckInFlow && customDevotional && apiLoadingState === 'completed') {
+        // Check-in devotional ready - navigate to DevotionalReader
+        console.log('[LoadingScreen] Check-in devotional ready, navigating to DevotionalReader');
+        setCurrentStep(loadingPoints.length);
+
+        analytics.logEvent('LoadingScreen_CheckIn_Devotional_Ready', {
+          totalLoadingTime: currentStep * STEP_DURATION,
+        });
+
+        const timer = setTimeout(() => {
+          router.navigate({
+            pathname: '/(tabs)',
+            params: { showDevotional: 'true' }
+          });
+        }, 500); // Short delay for smooth transition
+        return () => clearTimeout(timer);
+      } else if (apiLoadingState === 'completed' && isProMember && !isCheckInFlow) {
         // API completed successfully - immediately complete all steps and navigate
         console.log('[LoadingScreen] API completed for pro user, navigating to home');
         setCurrentStep(loadingPoints.length);
@@ -500,13 +532,22 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           router.replace('/');
         }, 2000);
         return () => clearTimeout(timer);
-      } else if (apiLoadingState === 'completed' && !isProMember) {
+      } else if (apiLoadingState === 'completed' && !isProMember && !isCheckInFlow) {
         // User is not pro - show paywall when API completes
         console.log('[LoadingScreen] API completed for non-pro user, showing paywall');
         showPaywallForNonProUser();
       }
     }
-  }, [isOnboarding, apiLoadingState, router, currentStep, loadingPoints.length, isProMember, presentFreeTrialPaywall, verseText, reference, devotionalError, devotionalStoreCurrentDevotional]);
+  }, [isOnboarding, apiLoadingState, router, currentStep, loadingPoints.length, isProMember, presentFreeTrialPaywall, verseText, reference, devotionalError, devotionalStoreCurrentDevotional, isCheckInFlow, customDevotional]);
+  
+  // Clear the check-in flag when navigating away
+  useEffect(() => {
+    return () => {
+      if (isFromCheckInStore) {
+        useDevotionalStore.getState().setIsFromCheckIn(false);
+      }
+    };
+  }, [isFromCheckInStore]);
 
   // Fallback check for non-pro users with devotional
   useEffect(() => {
@@ -730,10 +771,10 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
         {/* Headline and subheadline */}
         <Text className="text-3xl font-feather text-center mb-2" style={{ color: TEXT_PRIMARY }}>
-          {isOnboarding ? i18n.t('loading_just_a_moment') : devotionalError ? i18n.t('loading_something_wrong') : i18n.t('loading_creating_devotional')}
+          {isOnboarding ? i18n.t('loading_just_a_moment') : isCheckInFlow ? 'Creating Your Devotional' : devotionalError ? i18n.t('loading_something_wrong') : i18n.t('loading_creating_devotional')}
         </Text>
         <Text className="text-lg font-din text-center mb-8" style={{ color: DESCRIPTION }}>
-          {isOnboarding ? i18n.t('loading_building_plan') : devotionalError ? i18n.t('loading_redirecting_back') : i18n.t('loading_preparing_meal')}
+          {isOnboarding ? i18n.t('loading_building_plan') : isCheckInFlow ? 'Based on your check-in...' : devotionalError ? i18n.t('loading_redirecting_back') : i18n.t('loading_preparing_meal')}
         </Text>
 
         {/* Checklist directly below */}

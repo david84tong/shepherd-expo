@@ -2,7 +2,6 @@ import React, { useLayoutEffect } from 'react';
 import { View, Text, Modal, TouchableOpacity, Dimensions } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 import { useAssets } from 'expo-asset';
 import Rive from 'rive-react-native';
 import { Ionicons } from '@expo/vector-icons';

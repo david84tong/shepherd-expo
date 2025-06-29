@@ -14,7 +14,7 @@ import {
   FlatList,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchChapter, fetchChapterWithCache, Verse, ChapterResponse } from '~/app/api/bible';
+import { fetchChapterWithCache, Verse, ChapterResponse } from '~/app/api/bible';
 import { usePathStore } from '~/app/stores/pathStore';
 import { AntDesign, Feather, FontAwesome6, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import Reanimated, {
@@ -1388,26 +1388,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     return (
       <View style={styles.swipeActionContainer}>
         <View
-          style={[
-            styles.swipeActionContent,
-            // {
-            //   opacity: _progress.interpolate({
-            //     inputRange: [0.03, 0.1, 0.3],
-            //     outputRange: [0, 0.8, 1],
-            //     extrapolate: 'clamp',
-            //   }),
-            //   transform: [
-            //     {
-            //       scale: _progress.interpolate({
-            //         inputRange: [0.03, 0.3],
-            //         outputRange: [0.8, 1],
-            //         extrapolate: 'clamp',
-            //       }),
-            //     },
-            //     { translateX },
-            //   ],
-            // },
-          ]}>
+          style={styles.swipeActionContent}>
           <Ionicons name="chatbubble-ellipses" size={30} color="#634012" style={{ opacity: 0.5 }} />
         </View>
       </View>
@@ -1436,26 +1417,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     return (
       <View style={styles.swipeActionContainer}>
         <View
-          style={[
-            styles.swipeActionContent,
-            // {
-            //   opacity: _progress.interpolate({
-            //     inputRange: [0.03, 0.1, 0.3],
-            //     outputRange: [0, 0.8, 1],
-            //     extrapolate: 'clamp',
-            //   }),
-            //   transform: [
-            //     {
-            //       scale: _progress.interpolate({
-            //         inputRange: [0.03, 0.3],
-            //         outputRange: [0.8, 1],
-            //         extrapolate: 'clamp',
-            //       }),
-            //     },
-            //     { translateX },
-            //   ],
-            // },
-          ]}>
+          style={styles.swipeActionContent}>
           <FontAwesome6 name="book" size={25} color="#634012" style={{ opacity: 0.5 }} />
         </View>
       </View>

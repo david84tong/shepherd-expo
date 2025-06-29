@@ -1,7 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
 import { create } from 'zustand';
-import { createJSONStorage, persist, PersistStorage } from 'zustand/middleware';
+import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { updateField, createUserDocument } from '../../utils/firestore';
 import { syncStreakDataToWidget } from '../../utils/widgetSync';

@@ -19,7 +19,6 @@ import BottomSheet, {
   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
 import Clipboard from '@react-native-clipboard/clipboard';
-import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
 import { FontAwesome6 } from '@expo/vector-icons';
 import auth from '@react-native-firebase/auth';
@@ -2124,37 +2123,136 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 };
 
 const styles = StyleSheet.create({
-  handleIndicator: {
-    backgroundColor: '#DCB280',
-    height: 4,
-    width: 40,
-  },
-  settingsContentContainer: {
-    flexGrow: 1,
-    paddingBottom: 40,
-  },
-  settingsContent: {
-    flex: 1,
-    padding: 12,
-  },
-  sheetBackground: {
-    backgroundColor: '#FFF4D9', // surfaceCream
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  settingsHeader: {
+  cancelButton: {
     alignItems: 'center',
-    borderBottomColor: '#FFE4A8',
-    borderBottomWidth: 1,
+    backgroundColor: 'rgba(60, 88, 74, 0.1)',
+    borderRadius: 8,
+    marginTop: 12,
+    padding: 14,
+  },
+  cancelButtonText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  copyButton: {
+    padding: 5,
+  },
+  deleteAccountButton: {
+    backgroundColor: 'rgba(223, 69, 51, 0.2)',
+    borderLeftColor: '#DF4533',
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    marginBottom: 20,
+    padding: 16,
+  },
+  deleteAccountText: {
+    color: '#DF4533',
+    fontFamily: 'Nunito-Black',
+    fontSize: 16,
+  },
+  developerDataLabel: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 12,
+    opacity: 0.8,
+  },
+  developerDataRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    marginBottom: 5,
   },
-  settingsTitle: {
+  developerDataValue: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  developerExpandText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 14,
+  },
+  developerPanel: {
+    backgroundColor: 'rgba(60, 88, 74, 0.05)',
+    borderRadius: 10,
+    marginBottom: 20,
+    padding: 15,
+  },
+  developerPanelExpandButton: {
+    alignItems: 'center',
+    borderTopColor: 'rgba(60, 88, 74, 0.1)',
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    paddingVertical: 8,
+  },
+  developerPanelHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  developerPanelSection: {
+    borderBottomColor: 'rgba(60, 88, 74, 0.1)',
+    borderBottomWidth: 1,
+    marginBottom: 15,
+    paddingBottom: 10,
+  },
+  developerPanelSectionTitle: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 5,
+  },
+  developerPanelTitle: {
     color: '#3C584A',
     fontFamily: 'Nunito-Black',
-    fontSize: 18,
+    fontSize: 16,
+  },
+  developerToggleButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(60, 88, 74, 0.05)',
+    borderLeftColor: '#3C584A',
+    borderLeftWidth: 4,
+    borderRadius: 10,
+    marginBottom: 10,
+    marginTop: 20,
+    padding: 12,
+  },
+  developerToggleText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  discordButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(88, 101, 242, 0.1)',
+    borderLeftColor: '#5865F2',
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  discordButtonContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  discordButtonText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    marginLeft: 10,
+  },
+  divider: {
+    backgroundColor: '#FFE4A8',
+    height: 1,
+    marginVertical: 12,
   },
   doneButton: {
     color: '#F7B500',
@@ -2162,46 +2260,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  settingsSection: {
-    marginBottom: 20,
-  },
-  settingsSectionTitle: {
-    color: '#3C584A',
-    fontFamily: 'Nunito-Black',
-    fontSize: 18,
-    marginBottom: 10,
-  },
-  userIdContainer: {
+  donePickingButton: {
     alignItems: 'center',
-    flexDirection: 'row',
+    backgroundColor: '#F7B500',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    padding: 8,
   },
-  userIdText: {
-    color: '#3C584A',
-    flexShrink: 1,
+  donePickingText: {
+    color: '#FFFFFF',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
-    marginRight: 10,
+    fontWeight: '600',
   },
-  copyButton: {
-    padding: 5,
-  },
-  divider: {
-    backgroundColor: '#FFE4A8',
-    height: 1,
-    marginVertical: 12,
-  },
-  translationSelector: {
+  forceCheckButton: {
     alignItems: 'center',
-    backgroundColor: 'rgba(60, 88, 74, 0.05)',
-    borderRadius: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 12,
+    backgroundColor: 'rgba(247, 181, 0, 0.15)',
+    borderRadius: 8,
+    marginTop: 10,
+    padding: 10,
   },
-  translationText: {
+  forceCheckButtonText: {
     color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  handleIndicator: {
+    backgroundColor: '#DCB280',
+    height: 4,
+    width: 40,
   },
   modalContainer: {
     alignItems: 'center',
@@ -2224,29 +2312,29 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  translationScrollView: {
-    maxHeight: 450,
+  refreshButton: {
+    padding: 5,
   },
-  translationOption: {
+  roadmapButton: {
     alignItems: 'center',
-    borderRadius: 8,
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    borderLeftColor: '#22C55E',
+    borderLeftWidth: 4,
+    borderRadius: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
+    marginTop: 12,
+    padding: 16,
   },
-  selectedTranslation: {
-    backgroundColor: 'rgba(247, 181, 0, 0.1)',
+  roadmapButtonContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
   },
-  translationOptionText: {
+  roadmapButtonText: {
     color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
-  },
-  selectedTranslationText: {
-    color: '#3C584A',
-    fontWeight: '600',
+    marginLeft: 10,
   },
   saveButton: {
     alignItems: 'center',
@@ -2267,18 +2355,98 @@ const styles = StyleSheet.create({
   saveButtonTextDisabled: {
     color: 'rgba(255, 255, 255, 0.6)',
   },
-  cancelButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(60, 88, 74, 0.1)',
-    borderRadius: 8,
-    marginTop: 12,
-    padding: 14,
+  selectedTranslation: {
+    backgroundColor: 'rgba(247, 181, 0, 0.1)',
   },
-  cancelButtonText: {
+  selectedTranslationText: {
+    color: '#3C584A',
+    fontWeight: '600',
+  },
+  settingsContent: {
+    flex: 1,
+    padding: 12,
+  },
+  settingsContentContainer: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  settingsHeader: {
+    alignItems: 'center',
+    borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  settingsSection: {
+    marginBottom: 20,
+  },
+  settingsSectionTitle: {
+    color: '#3C584A',
+    fontFamily: 'Nunito-Black',
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  settingsTitle: {
+    color: '#3C584A',
+    fontFamily: 'Nunito-Black',
+    fontSize: 18,
+  },
+  sheetBackground: {
+    backgroundColor: '#FFF4D9', // surfaceCream
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  signOutButton: {
+    backgroundColor: 'rgba(223, 69, 51, 0.1)',
+    borderLeftColor: '#DF4533',
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    marginBottom: 20,
+    padding: 16,
+  },
+  signOutText: {
+    color: '#DF4533',
+    fontFamily: 'Nunito-Black',
+    fontSize: 16,
+  },
+  timePicker: {
+    height: 180,
+    width: '100%',
+  },
+  timePickerContainer: {
+    backgroundColor: 'rgba(255, 244, 217, 0.95)',
+    borderColor: '#FFE4A8',
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 24,
+    overflow: 'hidden',
+  },
+  timePickerWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 8,
+  },
+  timeSelector: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(60, 88, 74, 0.05)',
+    borderRadius: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    padding: 12,
+  },
+  timeSelectorActive: {
+    backgroundColor: 'rgba(247, 181, 0, 0.15)',
+    borderColor: '#F7B500',
+  },
+  timeSelectorText: {
     color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
-    fontWeight: '600',
   },
   toggleButton: {
     backgroundColor: '#E0E0E0',
@@ -2301,215 +2469,46 @@ const styles = StyleSheet.create({
   toggleKnobActive: {
     // Remove transform from here, we'll handle it with Animated
   },
-  timeSelector: {
+  translationOption: {
     alignItems: 'center',
-    backgroundColor: 'rgba(60, 88, 74, 0.05)',
-    borderRadius: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-    padding: 12,
-  },
-  timeSelectorText: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 16,
-  },
-  timePickerContainer: {
-    backgroundColor: 'rgba(255, 244, 217, 0.95)',
-    borderColor: '#FFE4A8',
-    borderRadius: 16,
-    borderWidth: 1,
-    marginTop: 24,
-    overflow: 'hidden',
-  },
-  timePicker: {
-    height: 180,
-    width: '100%',
-  },
-  donePickingButton: {
-    alignItems: 'center',
-    backgroundColor: '#F7B500',
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-    padding: 8,
-  },
-  donePickingText: {
-    color: '#FFFFFF',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  timeSelectorActive: {
-    backgroundColor: 'rgba(247, 181, 0, 0.15)',
-    borderColor: '#F7B500',
-  },
-  timePickerWrapper: {
-    backgroundColor: '#FFFFFF',
-    borderBottomColor: '#FFE4A8',
-    borderBottomWidth: 1,
-    borderRadius: 16,
-    paddingVertical: 8,
-  },
-  discordButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(88, 101, 242, 0.1)',
-    borderLeftColor: '#5865F2',
-    borderLeftWidth: 4,
-    borderRadius: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 16,
-  },
-  discordButtonContent: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  discordButtonText: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 16,
-    marginLeft: 10,
-  },
-  developerToggleButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(60, 88, 74, 0.05)',
-    borderLeftColor: '#3C584A',
-    borderLeftWidth: 4,
-    borderRadius: 10,
-    marginBottom: 10,
-    marginTop: 20,
-    padding: 12,
-  },
-  developerToggleText: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  developerPanel: {
-    backgroundColor: 'rgba(60, 88, 74, 0.05)',
-    borderRadius: 10,
-    marginBottom: 20,
-    padding: 15,
-  },
-  developerPanelHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  developerPanelTitle: {
-    color: '#3C584A',
-    fontFamily: 'Nunito-Black',
-    fontSize: 16,
-  },
-  refreshButton: {
-    padding: 5,
-  },
-  developerPanelSection: {
-    borderBottomColor: 'rgba(60, 88, 74, 0.1)',
-    borderBottomWidth: 1,
-    marginBottom: 15,
-    paddingBottom: 10,
-  },
-  developerPanelSectionTitle: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 5,
-  },
-  developerDataRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 5,
-  },
-  developerDataLabel: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 12,
-    opacity: 0.8,
-  },
-  developerDataValue: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  developerPanelExpandButton: {
-    alignItems: 'center',
-    borderTopColor: 'rgba(60, 88, 74, 0.1)',
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-    paddingVertical: 8,
-  },
-  developerExpandText: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 14,
-  },
-  forceCheckButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(247, 181, 0, 0.15)',
     borderRadius: 8,
-    marginTop: 10,
-    padding: 10,
-  },
-  forceCheckButtonText: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  signOutButton: {
-    backgroundColor: 'rgba(223, 69, 51, 0.1)',
-    borderLeftColor: '#DF4533',
-    borderLeftWidth: 4,
-    borderRadius: 12,
-    marginBottom: 20,
-    padding: 16,
-  },
-  signOutText: {
-    color: '#DF4533',
-    fontFamily: 'Nunito-Black',
-    fontSize: 16,
-  },
-  deleteAccountButton: {
-    backgroundColor: 'rgba(223, 69, 51, 0.2)',
-    borderLeftColor: '#DF4533',
-    borderLeftWidth: 4,
-    borderRadius: 12,
-    marginBottom: 20,
-    padding: 16,
-  },
-  deleteAccountText: {
-    color: '#DF4533',
-    fontFamily: 'Nunito-Black',
-    fontSize: 16,
-  },
-  roadmapButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-    borderLeftColor: '#22C55E',
-    borderLeftWidth: 4,
-    borderRadius: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 12,
-    padding: 16,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
   },
-  roadmapButtonContent: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  roadmapButtonText: {
+  translationOptionText: {
     color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
-    marginLeft: 10,
+  },
+  translationScrollView: {
+    maxHeight: 450,
+  },
+  translationSelector: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(60, 88, 74, 0.05)',
+    borderRadius: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+  translationText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+  },
+  userIdContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  userIdText: {
+    color: '#3C584A',
+    flexShrink: 1,
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    marginRight: 10,
   },
 });
 

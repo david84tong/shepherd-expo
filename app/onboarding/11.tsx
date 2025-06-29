@@ -14,7 +14,6 @@ import {
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { AntDesign, FontAwesome6 } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { useAuth } from '../hooks/authHook';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';

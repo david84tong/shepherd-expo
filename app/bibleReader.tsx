@@ -22,8 +22,7 @@ import {
   Image,
   Dimensions,
 } from 'react-native';
-import * as Haptics from 'expo-haptics';
-import { fetchChapter, fetchChapterWithCache, Verse } from './api/bible';
+import { fetchChapterWithCache, Verse } from './api/bible';
 import SideButton from '~/components/SideButton';
 import { usePathStore } from './stores/pathStore';
 import { useHomeStore, SuccessAnimationType } from './stores/homeStore';

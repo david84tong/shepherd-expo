@@ -5,7 +5,6 @@
  */
 
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import * as Haptics from 'expo-haptics';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useRef, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';

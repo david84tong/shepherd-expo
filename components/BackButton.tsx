@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { Pressable } from 'react-native';
 import { useState } from 'react';
 import { Platform, View } from 'react-native';

@@ -9,7 +9,6 @@ import {
 } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import * as Haptics from 'expo-haptics';
 import analytics from '~/utils/analytics';
 import PrimaryButton from '../PrimaryButton';
 import { Devotional } from '~/app/models/Devotional';

@@ -8,7 +8,6 @@ import Animated, {
   withSpring,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 import { useAssets } from 'expo-asset';
 import Rive from 'rive-react-native';
 import { Ionicons } from '@expo/vector-icons';

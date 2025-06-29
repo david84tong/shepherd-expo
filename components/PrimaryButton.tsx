@@ -1,4 +1,3 @@
-import * as Haptics from 'expo-haptics';
 import React, { useState } from 'react';
 import { Text, View, Pressable, Platform, ActivityIndicator, Image, DimensionValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

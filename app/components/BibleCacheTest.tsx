@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useDevotionalStore } from '../stores/devotionalStore';
-import { fetchChapterWithCache, fetchChaptersBatch, clearChapterCache } from '../api/bible';
+import { fetchChapterWithCache, fetchChaptersBatch } from '../api/bible';
 
 const BibleCacheTest: React.FC = () => {
     const [testResults, setTestResults] = useState<string[]>([]);
@@ -162,52 +162,52 @@ const BibleCacheTest: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 20,
-        backgroundColor: '#F9F3E5',
-    },
-    title: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        marginBottom: 20,
-        color: '#3C584A',
-        fontFamily: 'Nunito-Black',
+    button: {
+        alignItems: 'center',
+        backgroundColor: '#3C584A',
+        borderRadius: 10,
+        padding: 15,
     },
     buttonContainer: {
         gap: 10,
         marginBottom: 20,
     },
-    button: {
-        backgroundColor: '#3C584A',
-        padding: 15,
-        borderRadius: 10,
-        alignItems: 'center',
-    },
     buttonDisabled: {
         opacity: 0.5,
+    },
+    buttonText: {
+        color: 'white',
+        fontFamily: 'DIN Next Rounded LT W01 Regular',
+        fontSize: 16,
+        fontWeight: '600',
     },
     clearButton: {
         backgroundColor: '#F7B500',
     },
-    buttonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-        fontFamily: 'DIN Next Rounded LT W01 Regular',
-    },
-    resultsContainer: {
+    container: {
+        backgroundColor: '#F9F3E5',
         flex: 1,
-        backgroundColor: 'white',
-        borderRadius: 10,
-        padding: 15,
+        padding: 20,
     },
     resultText: {
+        color: '#3C584A',
+        fontFamily: 'DIN Next Rounded LT W01 Regular',
         fontSize: 14,
         marginBottom: 5,
-        fontFamily: 'DIN Next Rounded LT W01 Regular',
+    },
+    resultsContainer: {
+        backgroundColor: 'white',
+        borderRadius: 10,
+        flex: 1,
+        padding: 15,
+    },
+    title: {
         color: '#3C584A',
+        fontFamily: 'Nunito-Black',
+        fontSize: 20,
+        fontWeight: 'bold',
+        marginBottom: 20,
+        textAlign: 'center',
     },
 });
 

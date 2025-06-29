@@ -10,7 +10,6 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import analytics from '../../utils/analytics';
 import { useNotificationStore, NotificationTimeOption } from '../stores/notificationStore';

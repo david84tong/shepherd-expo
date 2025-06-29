@@ -8,7 +8,7 @@ import {
   Image,
 } from 'react-native';
 import remoteConfig from '@react-native-firebase/remote-config';
-import sheepIcon from '../assets/icons/sheepIcon.png';
+import sheepIcon from '../assets/icons/moods/sheepIcon.png';
 import PrimaryButton from './PrimaryButton';
 
 const ForceUpdateModal = ({ visible }: { visible: boolean }) => {

@@ -7,7 +7,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AntDesign } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_COMPLETED_KEY } from './types/onboarding';
-import * as Haptics from 'expo-haptics';
 import { hapticLight } from '~/utils/haptics';
 
 export default function LoginScreen() {

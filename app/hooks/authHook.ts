@@ -13,8 +13,6 @@ import { useSoundStore } from '../stores/soundStore';
 import analytics from '../../utils/analytics';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { syncStreakDataToWidget } from '~/utils/widgetSync';
-import { useDevotionalStore } from '../stores/devotionalStore';
-import { usePrayerStore } from '../stores/prayerStore';
 
 // Safely get WidgetDataSharer with error handling
 const getWidgetDataSharer = () => {

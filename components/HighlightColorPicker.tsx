@@ -9,7 +9,6 @@ import Reanimated, {
   withTiming,
   Easing
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import { HIGHLIGHT_COLORS, HighlightColorKey } from '~/app/stores/highlightStore';
 import analytics from '../utils/analytics';
 import { hapticLight, hapticMedium } from '~/utils/haptics';

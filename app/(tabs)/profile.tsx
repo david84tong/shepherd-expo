@@ -1,7 +1,6 @@
-import { AntDesign, Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { AntDesign, Feather, Ionicons } from '@expo/vector-icons';
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import dayjs from 'dayjs';
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useEffect, useState, useRef } from 'react';
 import {
@@ -44,7 +43,7 @@ import EditNameSheet from '../../components/EditNameSheet';
 import breadIcon from '../../assets/icons/breadIcon.png';
 import quillIcon from '../../assets/icons/journalIcon.png';
 import dropIcon from '../../assets/icons/waterIcon.png';
-import sheepIcon from '../../assets/icons/sheepIcon.png';
+import sheepIcon from '../../assets/icons/moods/sheepIcon.png';
 import starIcon from '../../assets/icons/starIcon.png';
 
 // Define activity type for the timeline

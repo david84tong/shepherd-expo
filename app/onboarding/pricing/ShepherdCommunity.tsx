@@ -14,7 +14,6 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import { hapticMedium } from '~/utils/haptics';
 
 const DISCORD_CARD_DISMISSED_KEY = 'shepherd_discord_card_dismissed_v1';
