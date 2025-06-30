@@ -163,6 +163,10 @@ function calculateStreakAndPenalties({
   const daysSinceReflection = lastReflectionDateObj
     ? getDaysDifference(now, lastReflectionDateObj)
     : daysSinceActivity;
+  
+  // Debug: Log the actual calculation
+  console.log(`[Day Calculation] Now: ${now.toDateString()}, Last Activity: ${lastActivityDateObj?.toDateString()}`);
+  console.log(`[Day Calculation] Days since activity: ${daysSinceActivity}, Days missed: ${Math.max(0, daysSinceActivity - 1)}`);
 
   // Calculate days since last penalties were applied
   const daysSinceReadingPenalty = lastReadingPenaltyDateObj
@@ -310,7 +314,7 @@ function calculateStreakAndPenalties({
     return {
       streakBroken: isReadingStreakBroken,
       heartPenalty,
-      daysMissed: daysSinceActivity,
+      daysMissed: Math.max(0, daysSinceActivity - 1), // Subtract 1 because if you're 2 days since activity, you missed 1 day
       readingPenalized: applyReadingPenalty,
       prayerPenalized: applyPrayerPenalty,
       reflectionPenalized: applyReflectionPenalty,

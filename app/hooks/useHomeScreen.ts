@@ -500,8 +500,18 @@ export const useHomeScreen = () => {
       if (!riveSkinInitialized) {
         console.log('Fallback: Setting skin to initialized after timeout');
         setRiveSkinInitialized(true);
-
-
+      }
+      
+      // Force set the level after initialization
+      if (riveRef.current && levelInfo) {
+        const currentLevel = levelInfo.level || 1;
+        const levelNumber = currentLevel < 10 ? 1 : 0;
+        try {
+          console.log(`[ForceLevelSet] Setting Level-Number to ${levelNumber} for level ${currentLevel}`);
+          riveRef.current.setInputState('State Machine 1', 'Level-Number', levelNumber);
+        } catch (e) {
+          console.log('[ForceLevelSet] Error:', e);
+        }
       }
     }, 1000); // 1 second fallback
 
@@ -1112,19 +1122,20 @@ export const useHomeScreen = () => {
 
   // ADD: Ensure the correct Level-Number is always applied once Rive is ready
   useEffect(() => {
-    if (!riveReady || !riveRef.current) return;
+    if (!riveReady || !riveRef.current || !riveSkinInitialized) return;
 
     const currentLevel = levelInfo?.level ?? 1;
     // In our Rive state machine, 1 = baby/low-level (<10), 0 = grown (>=10)
     const targetLevelNumber = currentLevel < 10 ? 1 : 0;
 
     try {
+      console.log(`[LevelDebug] Current level: ${currentLevel}, Setting Level-Number to: ${targetLevelNumber}`);
       riveRef.current.setInputState('State Machine 1', 'Level-Number', targetLevelNumber);
       console.log(`[LevelFallback] Applied Level-Number ${targetLevelNumber} for level ${currentLevel}`);
     } catch (e) {
       console.log('[LevelFallback] Error applying Level-Number:', e);
     }
-  }, [riveReady, levelInfo?.level]);
+  }, [riveReady, levelInfo?.level, riveSkinInitialized]);
 
   // Handler for when Rive starts playing (indicates it's ready)
   const handleRivePlay = () => {
@@ -1152,6 +1163,7 @@ export const useHomeScreen = () => {
           // Set Level-Number based on lamb level
           const currentLevel = levelInfo?.level || 1;
           const levelNumber = currentLevel < 10 ? 1 : 0;
+          console.log(`[RivePlay] Current level: ${currentLevel}, Setting Level-Number to: ${levelNumber}`);
           riveRef.current.setInputState('State Machine 1', 'Level-Number', levelNumber);
           console.log(`Set Rive Level-Number: ${levelNumber} (level ${currentLevel})`);
           
