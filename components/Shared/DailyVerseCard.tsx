@@ -74,7 +74,11 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
     const newLikedState = !isLiked;
     setIsLiked(newLikedState);
 
-    const devotionalRef = firestore().collection('dailyDevotionals').doc(devotional.id);
+    // Determine which collection to update based on devotional type
+    const isCustomDevotional = devotional.id.startsWith('ai-') || devotional.id.startsWith('custom-');
+    const collectionName = isCustomDevotional ? 'customDevotionals' : 'dailyDevotionals';
+
+    const devotionalRef = firestore().collection(collectionName).doc(devotional.id);
 
     try {
       await devotionalRef.update({
@@ -86,6 +90,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
       analytics.logEvent('DailyVerseCard_Tapped_Like', {
         bibleReference: devotional.bibleReference,
         liked: newLikedState,
+        devotionalType: isCustomDevotional ? 'custom' : 'daily',
       });
       useDevotionalStore.getState().updateLikeStatus(devotional.id, newLikedState);
     } catch (error) {
@@ -126,13 +131,18 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
 
       // 3. Only increment if the share was successful
 
-      const devotionalRef = firestore().collection('dailyDevotionals').doc(devotional.id);
+      // Determine which collection to update based on devotional type
+      const isCustomDevotional = devotional.id.startsWith('ai-') || devotional.id.startsWith('custom-');
+      const collectionName = isCustomDevotional ? 'customDevotionals' : 'dailyDevotionals';
+
+      const devotionalRef = firestore().collection(collectionName).doc(devotional.id);
       await devotionalRef.update({
         shares: firestore.FieldValue.increment(1),
       });
       analytics.logEvent('DailyVerseCard_Tapped_Share', {
         isShareCard: share,
         bibleReference: devotional.bibleReference,
+        devotionalType: isCustomDevotional ? 'custom' : 'daily',
       });
       useDevotionalStore.getState().incrementShareCount(devotional.id);
 

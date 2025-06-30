@@ -738,6 +738,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       return {
         dailyDevotional: updateDevotional(state.dailyDevotional),
         currentDevotional: updateDevotional(state.currentDevotional),
+        customDevotional: updateDevotional(state.customDevotional),
       };
     });
   },
@@ -754,6 +755,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       return {
         dailyDevotional: updateDevotional(state.dailyDevotional),
         currentDevotional: updateDevotional(state.currentDevotional),
+        customDevotional: updateDevotional(state.customDevotional),
       };
     });
   },

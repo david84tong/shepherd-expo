@@ -54,16 +54,19 @@ export default function BottomControls({
   const [isLiked, setIsLiked] = useState(false);
   const [isShared, setIsShared] = useState(false);
 
-  // Get store data
-  const { customDevotional, updateLikeStatus, incrementShareCount } = useDevotionalStore();
+  // Get store data - use same logic as DevotionalReader
+  const { customDevotional, currentDevotional, updateLikeStatus, incrementShareCount } = useDevotionalStore();
   const currentUser = useUserStore.getState();
+
+  // Use customDevotional if it exists (AI-generated), otherwise use currentDevotional
+  const activeDevotional = customDevotional || currentDevotional;
 
   // Check if current devotional is liked by user
   useEffect(() => {
-    if (currentUser?.id && customDevotional?.likedBy) {
-      setIsLiked(customDevotional.likedBy.includes(currentUser.id));
+    if (currentUser?.id && activeDevotional?.likedBy) {
+      setIsLiked(activeDevotional.likedBy.includes(currentUser.id));
     }
-  }, [customDevotional, currentUser]);
+  }, [activeDevotional, currentUser]);
 
   // Debug showDevotionalContent
   useEffect(() => {
@@ -71,15 +74,25 @@ export default function BottomControls({
   }, [showDevotionalContent]);
 
   const handleLikePress = async () => {
-    if (!customDevotional?.id || !currentUser?.id) return;
+    if (!activeDevotional?.id || !currentUser?.id) return;
 
     hapticLight();
     const newLikedState = !isLiked;
     setIsLiked(newLikedState);
 
     try {
+      // Determine which collection to update based on devotional type
+      const isCustomDevotional = customDevotional?.id === activeDevotional.id;
+      const collectionName = isCustomDevotional ? 'customDevotionals' : 'dailyDevotionals';
+
+      console.log('🔍 Updating like for devotional:', {
+        id: activeDevotional.id,
+        collection: collectionName,
+        liked: newLikedState
+      });
+
       // Update Firestore
-      const devotionalRef = firestore().collection('customDevotionals').doc(customDevotional.id);
+      const devotionalRef = firestore().collection(collectionName).doc(activeDevotional.id);
       await devotionalRef.update({
         likes: firestore.FieldValue.increment(newLikedState ? 1 : -1),
         likedBy: newLikedState
@@ -88,13 +101,14 @@ export default function BottomControls({
       });
 
       // Update local store
-      updateLikeStatus(customDevotional.id, newLikedState);
+      updateLikeStatus(activeDevotional.id, newLikedState);
 
       // Log analytics
       analytics.logEvent('BottomControls_Like', {
-        devotionalId: customDevotional.id,
-        bibleReference: customDevotional.bibleReference,
+        devotionalId: activeDevotional.id,
+        bibleReference: activeDevotional.bibleReference,
         liked: newLikedState,
+        devotionalType: isCustomDevotional ? 'custom' : 'daily',
       });
     } catch (error) {
       console.error("Error updating like:", error);
@@ -103,31 +117,35 @@ export default function BottomControls({
   };
 
   const handleSharePress = async () => {
-
     hapticLight();
     setIsShared(true);
 
     try {
-      // Only update Firestore if we have a customDevotional with an ID
-      if (customDevotional?.id) {
-        console.log('🔍 Updating Firestore share count for customDevotional:', customDevotional.id);
+      // Only update Firestore if we have an activeDevotional with an ID
+      if (activeDevotional?.id) {
+        console.log('🔍 Updating Firestore share count for devotional:', activeDevotional.id);
+
+        // Determine which collection to update based on devotional type
+        const isCustomDevotional = customDevotional?.id === activeDevotional.id;
+        const collectionName = isCustomDevotional ? 'customDevotionals' : 'dailyDevotionals';
 
         // Update Firestore share count
-        const devotionalRef = firestore().collection('customDevotionals').doc(customDevotional.id);
+        const devotionalRef = firestore().collection(collectionName).doc(activeDevotional.id);
         await devotionalRef.update({
           shares: firestore.FieldValue.increment(1),
         });
 
         // Update local store
-        incrementShareCount(customDevotional.id);
+        incrementShareCount(activeDevotional.id);
 
         // Log analytics
         analytics.logEvent('BottomControls_Share', {
-          devotionalId: customDevotional.id,
-          bibleReference: customDevotional.bibleReference,
+          devotionalId: activeDevotional.id,
+          bibleReference: activeDevotional.bibleReference,
+          devotionalType: isCustomDevotional ? 'custom' : 'daily',
         });
       } else {
-        console.log('🔍 No customDevotional ID, skipping Firestore update');
+        console.log('🔍 No activeDevotional ID, skipping Firestore update');
       }
 
       // Trigger full screen share card (this should always work)
