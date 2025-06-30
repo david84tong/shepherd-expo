@@ -41,6 +41,7 @@ import GlobalStatsSheet, { StatsSheetRef } from '../components/GlobalStatsSheet'
 import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet';
 import OldReflectionSheet from '../components/OldReflectionSheet';
 import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
+import GlobalDevotionalsSheet, { DevotionalsSheetRef } from '../components/GlobalDevotionalsSheet';
 import useForceUpdateCheck from './hooks/useForceUpdateCheck';
 import ForceUpdateModal from '~/components/ForceUpdateModal';
 import { disableFontScaling } from './helper/disableFontScaling';
@@ -153,6 +154,8 @@ export default function RootLayout() {
   const showStoreSheet = useUIStore((state) => state.showStoreSheet);
   const showStatsSheet = useUIStore((state) => state.showStatsSheet);
   const isStatsSheetVisible = useUIStore((state) => state.isStatsSheetVisible);
+  const showDevotionalsSheet = useUIStore((state) => state.showDevotionalsSheet);
+  const isDevotionalsSheetVisible = useUIStore((state) => state.isDevotionalsSheetVisible);
 
   // Widget states from UI store
   const isWidgetPromptVisible = useUIStore((state) => state.isWidgetPromptVisible);
@@ -169,6 +172,7 @@ export default function RootLayout() {
   const storeSheetRef = useRef<StoreSheetRef>(null);
   const statsSheetRef = useRef<StatsSheetRef>(null);
   const checkInRef = useRef<GlobalCheckInRef>(null);
+  const devotionalsSheetRef = useRef<DevotionalsSheetRef>(null);
 
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
@@ -308,8 +312,9 @@ export default function RootLayout() {
       (global as any).showStoreSheet = showStoreSheet;
       (global as any).showStatsSheet = showStatsSheet;
       (global as any).showCheckIn = showCheckIn;
+      (global as any).showDevotionalsSheet = showDevotionalsSheet;
     }
-  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet, showStoreSheet, showStatsSheet]);
+  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet, showStoreSheet, showStatsSheet, showDevotionalsSheet]);
 
   // Effect to watch isPrayerSheetVisible and control the sheet ref
   useEffect(() => {
@@ -326,6 +331,14 @@ export default function RootLayout() {
       statsSheetRef.current.show();
     }
   }, [isStatsSheetVisible]);
+
+  // Effect to watch isDevotionalsSheetVisible and control the sheet ref
+  useEffect(() => {
+    if (isDevotionalsSheetVisible && devotionalsSheetRef.current) {
+      console.log('[RootLayout] Opening devotionals sheet via ref');
+      devotionalsSheetRef.current.show();
+    }
+  }, [isDevotionalsSheetVisible]);
 
   // Add timeout for initialization if it takes too long. That's just a safety net.
   useEffect(() => {
@@ -585,6 +598,9 @@ export default function RootLayout() {
 
             {/* Global Check-In Sheet */}
             <GlobalCheckIn checkInRef={checkInRef} />
+
+            {/* Global Devotionals Sheet */}
+            <GlobalDevotionalsSheet devotionalsSheetRef={devotionalsSheetRef} />
 
             {/* Dimmed background for modal overlays */}
             {isModalDimActive && (

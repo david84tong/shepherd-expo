@@ -126,6 +126,7 @@ class Analytics {
       // Initialize Mixpanel with trackAutomaticEvents explicitly set to false
       this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false);
       await this.mixpanel.init();
+      this.mixpanel.registerSuperPropertiesOnce({ platform: Platform.OS });
 
       // Initialize Amplitude
       await amplitudeInit(AMPLITUDE_API_KEY);
@@ -136,7 +137,6 @@ class Analytics {
 
       // Set up default parameters that will be included with all events
       this.defaultParams = {
-        platform: Platform.OS,
         platformVersion: Platform.Version,
         appVersion: Constants.expoConfig?.version ?? 'unknown',
         buildNumber:
@@ -160,6 +160,7 @@ class Analytics {
       if (this.userId && this.userId !== 'anonymous') {
         amplitudeSetUserId(this.userId);
       }
+      this.mixpanel?.registerSuperPropertiesOnce({ platform: Platform.OS });
 
       // Set super properties for all events in Mixpanel
       this.mixpanel?.registerSuperProperties(this.defaultParams);
@@ -187,6 +188,7 @@ class Analytics {
 
       // Log app open event
       this.logEvent(AnalyticsEvent.APP_OPEN);
+      this.logEvent("app_opening");
 
       console.log('✅ Analytics (Mixpanel + Amplitude) initialized successfully');
     } catch (error) {

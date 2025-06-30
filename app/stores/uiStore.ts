@@ -53,6 +53,13 @@ interface UIState {
   showStatsSheet: () => void;
   hideStatsSheet: () => void;
   
+  // Devotionals sheet state
+  isDevotionalsSheetVisible: boolean;
+  
+  // Devotionals sheet actions
+  showDevotionalsSheet: () => void;
+  hideDevotionalsSheet: () => void;
+  
   // Widget prompt and guide state
   isWidgetPromptVisible: boolean;
   isWidgetGuideVisible: boolean;
@@ -144,6 +151,17 @@ export const useUIStore = create<UIState>((set) => ({
   hideStatsSheet: () => {
     console.log('[UIStore] Hiding stats sheet');
     set({ isStatsSheetVisible: false });
+  },
+  
+  // Devotionals sheet state and actions
+  isDevotionalsSheetVisible: false,
+  showDevotionalsSheet: () => {
+    console.log('[UIStore] Showing devotionals sheet');
+    set({ isDevotionalsSheetVisible: true });
+  },
+  hideDevotionalsSheet: () => {
+    console.log('[UIStore] Hiding devotionals sheet');
+    set({ isDevotionalsSheetVisible: false });
   },
     
   // Widget prompt and guide state

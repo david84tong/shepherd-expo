@@ -283,6 +283,9 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   // Tutorial state
   const hasSeenBibleReaderTutorial = useUserStore((state) => state.hasSeenBibleReaderTutorial);
+  
+  // Get showDevotionalsSheet from UIStore
+  const showDevotionalsSheet = useUIStore((state) => state.showDevotionalsSheet);
 
 
   // Always call hooks unconditionally, even if we don't use the results
@@ -1474,6 +1477,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           useUserStore.getState().setHasSeenBibleReaderTutorial(true);
         }}
       />
+      
     </View>
   } else {
     // Use pendingChapterData if available
@@ -1568,14 +1572,29 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                       </Text>
                     </View>
                   ) : ( */}
-                  <TouchableOpacity onPress={handlePresentModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
-                    <MaterialIcons
-                      name="settings"
-                      size={22}
-                      color="#795323"
-                      style={{ opacity: 0.4 }}
-                    />
-                  </TouchableOpacity>
+                  <View className="flex-row gap-2">
+                    {/* <TouchableOpacity 
+                      onPress={() => {
+                        hapticLight();
+                        showDevotionalsSheet();
+                      }} 
+                      className="bg-white/80 w-10 h-10 rounded-full items-center justify-center"
+                    >
+                      <Feather
+                        name="heart"
+                        size={20}
+                        color="#FF6B35"
+                      />
+                    </TouchableOpacity> */}
+                    <TouchableOpacity onPress={handlePresentModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+                      <MaterialIcons
+                        name="settings"
+                        size={22}
+                        color="#795323"
+                        style={{ opacity: 0.4 }}
+                      />
+                    </TouchableOpacity>
+                  </View>
                   {/* )} */}
                 </View>
               </View>
@@ -1876,6 +1895,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
               useUserStore.getState().setHasSeenBibleReaderTutorial(true);
             }}
           />
+          
         </View>
       </>
     );

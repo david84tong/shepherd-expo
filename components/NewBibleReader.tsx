@@ -498,6 +498,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Devotional store actions
   const createAIDevotional = useDevotionalStore((s) => s.createAIDevotional);
   const isCreatingDevotional = useDevotionalStore((s) => s.isCreatingDevotional);
+  
+  // Get showDevotionalsSheet from UIStore
+  const showDevotionalsSheet = useUIStore((state) => state.showDevotionalsSheet);
 
 
   // Track translation changes in analytics
@@ -2017,11 +2020,26 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             )}
 
 
-            <TouchableOpacity
-              onPress={handlePresentSettingsModal}
-              className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
-              <MaterialIcons name="settings" size={22} color="#795323" style={{ opacity: 0.4 }} />
-            </TouchableOpacity>
+            <View className="flex-row gap-2">
+              {/* <TouchableOpacity 
+                onPress={() => {
+                  hapticLight();
+                  showDevotionalsSheet();
+                }} 
+                className="bg-white/80 w-10 h-10 rounded-full items-center justify-center"
+              >
+                <Feather
+                  name="heart"
+                  size={20}
+                  color="#FF6B35"
+                />
+              </TouchableOpacity> */}
+              <TouchableOpacity
+                onPress={handlePresentSettingsModal}
+                className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+                <MaterialIcons name="settings" size={22} color="#795323" style={{ opacity: 0.4 }} />
+              </TouchableOpacity>
+            </View>
           </View>
           {
             false ? <View className='items-center justify-center flex-1'>
@@ -2499,6 +2517,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
           }
         />
       ) : null}
+      
 
     </View>
   )
