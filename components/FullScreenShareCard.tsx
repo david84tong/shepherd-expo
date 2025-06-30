@@ -104,13 +104,16 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
     }, [visible, storeDevotional, currentUser, isRealDevotional]);
 
     const handleLikePress = async () => {
-        if (!isRealDevotional || !currentUser?.id || !devotionalData?.id) return;
+        if (!currentUser?.id || !devotionalData?.id) return;
 
         hapticLight();
         const newLikedState = !isLiked;
         setIsLiked(newLikedState);
 
-        const devotionalRef = firestore().collection('dailyDevotionals').doc(devotionalData.id);
+        // Determine the correct collection based on devotional ID
+        const isCustomDevotional = devotionalData.id.startsWith('ai-') || devotionalData.id.startsWith('quick-');
+        const collectionName = isCustomDevotional ? 'customDevotionals' : 'dailyDevotionals';
+        const devotionalRef = firestore().collection(collectionName).doc(devotionalData.id);
 
         try {
             await devotionalRef.update({
@@ -122,6 +125,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
             analytics.logEvent('FullScreenShareCard_Like', {
                 bibleReference: devotionalData.bibleReference,
                 liked: newLikedState,
+                isCustomDevotional: isCustomDevotional,
             });
             useDevotionalStore.getState().updateLikeStatus(devotionalData.id, newLikedState);
         } catch (error) {
@@ -131,9 +135,11 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
     };
 
     const handleSharePress = () => {
-        if (!isRealDevotional || !devotionalData?.id) return;
+
+        if (!devotionalData?.id) return;
         hapticLight();
         setIsCapturing(true);
+
         if (startShareFlow) {
             setStartShareFlow(false);
         }
@@ -200,8 +206,9 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
 
     const isSharing = useRef(false);
     useEffect(() => {
+
         if (isCapturing) {
-            if(isSharing.current) return;
+            if (isSharing.current) return;
             isSharing.current = true;
             const captureAndShare = async () => {
                 if (!viewShotRef.current) {
@@ -226,32 +233,39 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                 type: 'image/jpeg',
                                 subject: 'Daily Verse from Shepherd',
                             };
-                            const devotionalRef = firestore().collection('dailyDevotionals').doc(devotionalData.id);
+
+                            // Determine the correct collection based on devotional ID
+                            const isCustomDevotional = devotionalData.id.startsWith('ai-') || devotionalData.id.startsWith('quick-');
+                            const collectionName = isCustomDevotional ? 'customDevotionals' : 'dailyDevotionals';
+                            const devotionalRef = firestore().collection(collectionName).doc(devotionalData.id);
                             await devotionalRef.update({
                                 shares: firestore.FieldValue.increment(1),
                             });
                             analytics.logEvent('FullScreenShareCard_Share', {
                                 bibleReference: devotionalData.bibleReference,
                                 platform: Platform.OS,
+                                isCustomDevotional: isCustomDevotional,
                             });
                             useDevotionalStore.getState().incrementShareCount(devotionalData.id);
-
                             const shareResult = await Share.open(shareOptions);
                             console.log('Share successful:', shareResult);
 
                             // Update share count and analytics
-                         
-                          
+
+
                         } catch (shareError) {
                             console.log('Share cancelled or failed:', shareError);
                             // Don't update share count if user cancelled
                         }
 
                         setIsCapturing(false);
+                    } else {
+                        setIsCapturing(false);
                     }
                 } catch (error) {
                     console.error("Error sharing:", error);
-                }finally{
+                    setIsCapturing(false);
+                } finally {
                     isSharing.current = false;
                 }
             };
@@ -416,11 +430,11 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                     </Text>
 
                                     <View style={{ opacity: isCapturing ? 0 : 1 }} className="flex-row items-center mt-4">
-                                        <TouchableOpacity onPress={handleLikePress} disabled={!isRealDevotional} className="flex-row items-center mr-4">
-                                            <Ionicons name="heart" size={RPH(2.2)} color={isLiked && isRealDevotional ? "#B36303" : "white"} />
+                                        <TouchableOpacity onPress={handleLikePress} className="flex-row items-center mr-4">
+                                            <Ionicons name="heart" size={RPH(2.2)} color={isLiked ? "#B36303" : "white"} />
                                             <Text className="ml-2 text-white font-din text-lg">{likeCount}</Text>
                                         </TouchableOpacity>
-                                        <TouchableOpacity onPress={handleSharePress} disabled={!isRealDevotional || isCapturing} className="flex-row items-center">
+                                        <TouchableOpacity onPress={handleSharePress} disabled={isCapturing} className="flex-row items-center">
                                             <FontAwesome5 name="share-alt" size={RPH(1.8)} color="white" />
                                             <Text className="ml-2 text-white font-din text-lg">{shareCount}</Text>
                                         </TouchableOpacity>

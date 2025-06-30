@@ -541,8 +541,6 @@ export const useHomeScreen = () => {
     });
     
     if (devotionalReaderRef.current) {
-      clearCustomDevotional();
-      
       // Cancel any pending parameter clear timer
       if (clearParamTimerRef.current) {
         console.log('[useHomeScreen] Canceling parameter clear timer');
@@ -567,6 +565,9 @@ export const useHomeScreen = () => {
       }, 2000);
       
       if (isPrayPresses) {
+        // Only clear custom devotional when user completes the devotional
+        clearCustomDevotional();
+        
         setFinishReading(false);
         Animated.parallel([
           Animated.timing(devotionalCardOpacityAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
@@ -1250,6 +1251,7 @@ export const useHomeScreen = () => {
     lamb,
     currentDevotional,
     dailyDevotional,
+    customDevotional,
     isLoadingDevotional,
     devotionalError,
     isPro,

@@ -83,11 +83,11 @@ export default function HomeScreen() {
     const timestamp = new Date().toISOString();
     console.log(`🎉 [${timestamp}] HomeScreen component mounted!`);
     setIsMounted(true);
-    
+
     try {
-    // Initialize next unit preview based on current completion state
-    const initializeNextUnit = usePathStore.getState().initializeNextUnitPreview;
-    initializeNextUnit();
+      // Initialize next unit preview based on current completion state
+      const initializeNextUnit = usePathStore.getState().initializeNextUnitPreview;
+      initializeNextUnit();
     } catch (error) {
       console.error('❌ Error initializing next unit preview:', error);
     }
@@ -106,21 +106,21 @@ export default function HomeScreen() {
 
     const timestamp = new Date().toISOString();
     console.log(`🎯 [${timestamp}] Component is mounted, attempting to fetch devotional...`);
-    
+
     try {
-    const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
-    if (fetchDevotional) {
+      const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
+      if (fetchDevotional) {
         console.log(`✅ [${timestamp}] fetchTodaysDevotional function found!`);
-      fetchDevotional()
-        .then(() => {
+        fetchDevotional()
+          .then(() => {
             const devotionalStore = useDevotionalStore.getState();
             const data = devotionalStore.currentDevotional;
             console.log(`📖 [${timestamp}] Devotional fetched successfully:`, data?.id, data?.bibleReference);
-        })
-        .catch((error: any) => {
+          })
+          .catch((error: any) => {
             console.error(`❌ [${timestamp}] Error fetching devotional:`, error);
-        });
-    } else {
+          });
+      } else {
         console.log(`❌ [${timestamp}] fetchTodaysDevotional function not found!`);
       }
     } catch (error) {
@@ -169,6 +169,7 @@ export default function HomeScreen() {
     lambName,
     currentDevotional,
     dailyDevotional,
+    customDevotional,
     isLoadingDevotional,
     devotionalError,
     isPro,
@@ -318,7 +319,7 @@ export default function HomeScreen() {
   useEffect(() => {
     i18n.locale = currentLanguage;
   }, [currentLanguage]);
-  
+
 
   // Set bottomSheetRef in home store so other components can access it
   useEffect(() => {
@@ -434,6 +435,11 @@ export default function HomeScreen() {
   const handleFullScreenShareClose = () => {
     setShowShareCard(false);
     setStartShareFlow(false);
+  };
+
+  const handleCustomDevotionalShare = () => {
+    setStartShareFlow(true);
+    setShowShareCard(true);
   };
 
   return (
@@ -759,7 +765,7 @@ export default function HomeScreen() {
                   android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
                 }),
               }}
-              
+
               onChange={handleSheetChanges}>
               <Animated.View style={{ flex: 1, opacity: devotionalCardOpacityAnim }}>
                 {showDevotionalContent ? (
@@ -837,10 +843,10 @@ export default function HomeScreen() {
                               />
 
                             ) : (
-                            <View
-                              className="bg-lightBrown/20"
-                              style={{ width: 20, height: 20, borderRadius: 12 }}
-                            />
+                              <View
+                                className="bg-lightBrown/20"
+                                style={{ width: 20, height: 20, borderRadius: 12 }}
+                              />
                             )}
 
                           </View>
@@ -1023,6 +1029,7 @@ export default function HomeScreen() {
               devotionalReadedFully={devotionalReadedFully}
               isCompletePrayerDisabled={isCompletePrayerDisabled}
               showPrayerSuccess={showPrayerSuccess}
+              onSharePress={handleCustomDevotionalShare}
             />
 
             <WidgetHowToSheet visible={showWidgetSheet} onClose={handleWidgetSheetClose} />
@@ -1076,7 +1083,7 @@ export default function HomeScreen() {
       <FullScreenShareCard
         visible={showShareCard}
         onClose={handleFullScreenShareClose}
-        devotionalData={dailyDevotional || devotionalData}
+        devotionalData={customDevotional || dailyDevotional || devotionalData}
         startShareFlow={startShareFlow}
         setStartShareFlow={setStartShareFlow}
       />
