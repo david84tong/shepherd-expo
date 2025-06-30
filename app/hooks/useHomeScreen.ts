@@ -281,7 +281,7 @@ export const useHomeScreen = () => {
           clearParamTimerRef.current = null;
         }
       };
-    }, [showDevotional, hasHandledDevotionalParam, router, customDevotional, currentDevotional, devotionalReaderVisible, showDevotionalContent])
+    }, [showDevotional, router, customDevotional, currentDevotional, devotionalReaderVisible, showDevotionalContent])
   );
 
   // Sync devotional data from store
