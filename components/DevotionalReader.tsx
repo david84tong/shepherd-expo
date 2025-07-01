@@ -656,8 +656,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                           <Reanimated.View
                             key={index}
                             entering={SlideInDown.duration(1000).delay(index * 60).withInitialValues({ opacity: 0 })}
-                            layout={Layout.springify()}
-                            style={{ marginBottom: 12 }}>
+                            layout={Layout.springify()}>
                             <DailyVerseCard
                               devotional={activeDevotional}
                               showShareButton={false}

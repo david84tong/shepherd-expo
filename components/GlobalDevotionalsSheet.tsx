@@ -185,7 +185,7 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
           <BottomSheetScrollView style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-              <Text style={styles.title}>Saved Devotionals</Text>
+              <Text className="text-2xl font-feather text-textPrimary ml-1">Saved Devotionals</Text>
               <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
                 <Feather name="x" size={24} color="#795323" />
               </TouchableOpacity>
@@ -237,11 +237,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 20,
   },
-  title: {
-    fontSize: 24,
-    fontFamily: 'Feather',
-    color: '#795323',
-  },
+
   closeButton: {
     padding: 8,
   },

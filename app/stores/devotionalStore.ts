@@ -161,7 +161,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         console.log('No devotional found with id property:', todayIdFormat, 'trying fallback strategies...');
         
         // Fallback: Try known test document IDs for development
-        const testIds = ['proverbs_3_5', '2025-06-11', 'CFo121cim0OuAT1AwZpp'];
+        const testIds = ['proverbs_3_5', '2025-06-11'];
         
         for (const testId of testIds) {
           console.log('Trying test document ID:', testId);

@@ -290,7 +290,8 @@ export default function HomeScreen() {
             date: d?.date,
             bibleReference: d?.bibleReference
           })));
-          setRecentDevotionals(devotionals);
+          
+          setRecentDevotionals(devotionals.slice(0, 2));
         })
         .catch((error) => {
           console.error('❌ Error fetching recent devotionals:', error);
@@ -852,29 +853,7 @@ export default function HomeScreen() {
                       removeClippedSubviews={false}
                       automaticallyAdjustContentInsets={false}
                       contentInsetAdjustmentBehavior="never">
-                      {prayerCompleted && readingCompleted && reflectionCompleted && recentDevotionals.length > 0 && (
-                        <View className="w-full mb-[50px]">
-                          {(() => {
-                            const filteredDevotionals = recentDevotionals.filter(d => d && d.id && d.id !== 'undefined') as Devotional[];
-                            return (
-                              <CardStack
-                                data={filteredDevotionals}
-                                renderCard={(devotional: Devotional) => (
-                                  <DailyVerseCard
-                                    devotional={devotional}
-                                    share={true}
-                                    onPress={() => handleDailyVersePress(devotional)}
-                                    onExpand={() => handleDailyVerseExpand(devotional)}
-                                    onShare={() => handleDailyVerseShare(devotional)}
-                                    showShareButton={true}
-                                    showExpandButton={true}
-                                  />
-                                )}
-                              />
-                            );
-                          })()}
-                        </View>
-                      )}
+                   
 
                       {/* Next Unit Button - Only show when all activities are completed and there's a next unit */}
                       {prayerCompleted && readingCompleted && reflectionCompleted && (
@@ -924,7 +903,29 @@ export default function HomeScreen() {
                           </View>
                         </View>
                       )}
-
+   {prayerCompleted && readingCompleted && reflectionCompleted && recentDevotionals.length > 0 && (
+                        <View className="w-full mb-[50px]">
+                          {(() => {
+                            const filteredDevotionals = recentDevotionals.filter(d => d && d.id && d.id !== 'undefined') as Devotional[];
+                            return (
+                              <CardStack
+                                data={filteredDevotionals}
+                                renderCard={(devotional: Devotional) => (
+                                  <DailyVerseCard
+                                    devotional={devotional}
+                                    share={true}
+                                    onPress={() => handleDailyVersePress(devotional)}
+                                    onExpand={() => handleDailyVerseExpand(devotional)}
+                                    onShare={() => handleDailyVerseShare(devotional)}
+                                    showShareButton={true}
+                                    showExpandButton={true}
+                                  />
+                                )}
+                              />
+                            );
+                          })()}
+                        </View>
+                      )}
                       <View
                         className="flex-row items-center justify-between "
                         style={{ marginTop: responsiveHeight(2) }}>

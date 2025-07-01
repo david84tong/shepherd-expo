@@ -929,7 +929,6 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                   }
                 }
               }}
-              maxLength={300}
             />
           </View>
 
