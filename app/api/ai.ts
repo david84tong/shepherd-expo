@@ -514,3 +514,6 @@ export async function checkNetworkConnectivity(): Promise<boolean> {
     return false;
   }
 }
+
+// Default export for Expo Router compatibility
+export default {}

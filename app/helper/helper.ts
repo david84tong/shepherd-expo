@@ -19,3 +19,6 @@ export const RPW = (width: number) => {
 export const RPH = (height: number) => {
   return Dimensions.get('window').height * height / 100;
 }
+
+// Default export for Expo Router compatibility
+export default {}

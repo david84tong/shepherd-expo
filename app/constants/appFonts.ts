@@ -45,3 +45,6 @@ const FontLineHeight = {
 };
 
 export {AppFonts, FontLineHeight};
+
+// Default export for Expo Router compatibility
+export default {}

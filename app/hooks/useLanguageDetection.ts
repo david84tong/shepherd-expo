@@ -25,4 +25,7 @@ export const useLanguageDetection = () => {
     getLanguageDisplayName,
     SUPPORTED_LANGUAGES,
   };
-}; 
+};
+
+// Default export for Expo Router compatibility
+export default {}

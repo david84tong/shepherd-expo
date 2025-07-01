@@ -178,3 +178,6 @@ export const createUserDocumentIfNotExists = async (currentState: UserDoc): Prom
     return false;
   }
 };
+
+// Default export for Expo Router compatibility
+export default {}

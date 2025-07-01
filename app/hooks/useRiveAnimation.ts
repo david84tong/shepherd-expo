@@ -44,4 +44,7 @@ export const useRiveAnimation = ({ onError }: UseRiveAnimationProps = {}) => {
     handleRiveError,
     setRiveState,
   };
-}; 
+};
+
+// Default export for Expo Router compatibility
+export default {}

@@ -153,3 +153,6 @@ export const useCheckInStore = create<CheckInState>()(
     }
   )
 );
+
+// Default export for Expo Router compatibility
+export default {}

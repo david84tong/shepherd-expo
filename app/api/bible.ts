@@ -373,3 +373,6 @@ export const fetchFirst10GenesisChapters = async (
     return chapterNumbers.map(() => ({ error: true, message }));
   }
 };
+
+// Default export for Expo Router compatibility
+export default {}

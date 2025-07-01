@@ -96,3 +96,6 @@ export const useOnboarding = () => {
     response: onboardingResponse,
   };
 };
+
+// Default export for Expo Router compatibility
+export default {}

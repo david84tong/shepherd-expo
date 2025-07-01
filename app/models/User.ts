@@ -197,3 +197,6 @@ export interface Lamb {
   name: string;
   skin: string;
 }
+
+// Default export for Expo Router compatibility
+export default {}

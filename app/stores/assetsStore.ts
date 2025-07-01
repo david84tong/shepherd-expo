@@ -54,4 +54,7 @@ export function usePreloadAssets() {
   }, [assets, error]);
 }
 
-export { imageAssets }; 
+export { imageAssets };
+
+// Default export for Expo Router compatibility
+export default {}

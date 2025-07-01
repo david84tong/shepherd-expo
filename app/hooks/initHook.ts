@@ -190,3 +190,6 @@ export const useAppInitialization = () => {
   return { isInitialized };
 };
 
+// Default export for Expo Router compatibility
+export default {}
+

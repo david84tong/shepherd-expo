@@ -10,3 +10,6 @@ export const disableFontScaling = () => {
   TextComponent.defaultProps.allowFontScaling = false;
   TextInputComponent.defaultProps.allowFontScaling = false;
 };
+
+// Default export for Expo Router compatibility
+export default {}

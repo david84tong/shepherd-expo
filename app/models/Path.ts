@@ -2051,4 +2051,7 @@ export const generateShorterBiblePaths = (
 // Finally, export the shorter reading plan constant (1-2 chapters per unit)
 export const SHORTER_BIBLE_PATHS_2: Path[] = generateShorterBiblePaths(BIBLE_PATHS, 2);
 
+// Default export for Expo Router compatibility
+export default {}
+
 

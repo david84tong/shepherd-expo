@@ -1015,4 +1015,7 @@ const saveWidgetStatusToAsyncStorage = async (status: string) => {
   }
 };
 
+// Default export for Expo Router compatibility
+export default {}
+
 

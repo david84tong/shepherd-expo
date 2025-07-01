@@ -220,3 +220,6 @@ export const useHomeStore = create<HomeState>()(
     }
   )
 );
+
+// Default export for Expo Router compatibility
+export default {}

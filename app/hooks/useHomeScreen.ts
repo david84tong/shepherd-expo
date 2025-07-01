@@ -1361,3 +1361,6 @@ export const useHomeScreen = () => {
     showDevotional
   };
 };
+
+// Default export for Expo Router compatibility
+export default {}

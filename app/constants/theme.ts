@@ -72,3 +72,6 @@ export const THEME_COLORS = {
       cardTextColor: '#fff',
     },
   } as const;
+
+// Default export for Expo Router compatibility
+export default {}

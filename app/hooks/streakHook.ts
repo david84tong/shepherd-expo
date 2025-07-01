@@ -547,3 +547,6 @@ export const getStreakSubtext = (day: number): string => {
 };
 
 export { calculateStreakAndPenalties };
+
+// Default export for Expo Router compatibility
+export default {}

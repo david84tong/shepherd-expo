@@ -28,8 +28,8 @@ export const FirebaseDebugScreen = () => {
     onStartShouldSetPanResponder: () => true,
     onPanResponderMove: (_, gesture) => {
       position.setValue({
-        x: Math.max(0, Math.min(SCREEN_WIDTH - 120, position.x._value + gesture.dx)),
-        y: Math.max(0, Math.min(SCREEN_HEIGHT - 200, position.y._value + gesture.dy)),
+        x: Math.max(0, Math.min(SCREEN_WIDTH - 120, (position.x as any)._value + gesture.dx)),
+        y: Math.max(0, Math.min(SCREEN_HEIGHT - 200, (position.y as any)._value + gesture.dy)),
       });
     },
   });
@@ -66,7 +66,7 @@ export const FirebaseDebugScreen = () => {
           height: isExpanded ? 500 : 40,
         },
       ]}
-      // {...panResponder.panHandlers}
+    // {...panResponder.panHandlers}
     >
       <TouchableOpacity
         style={styles.header}
@@ -139,7 +139,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 8,
-  
+
   },
   data: {
     color: '#ccc',
@@ -184,4 +184,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
   },
-}); 
+});
+
+export default FirebaseDebugScreen; 

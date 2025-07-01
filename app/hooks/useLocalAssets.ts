@@ -51,4 +51,7 @@ export function useLocalAssets() {
     isLoaded,
     imageAssets
   };
-} 
+}
+
+// Default export for Expo Router compatibility
+export default {}

@@ -690,3 +690,6 @@ export const useAuth = () => {
 };
 
 WebBrowser.maybeCompleteAuthSession();
+
+// Default export for Expo Router compatibility
+export default {}

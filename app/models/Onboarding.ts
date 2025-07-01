@@ -130,3 +130,6 @@ export const shepherdOnboardingInitialState: OnboardingResponses = {
   completedAt: undefined,
   appRated: false,
 };
+
+// Default export for Expo Router compatibility
+export default {}
