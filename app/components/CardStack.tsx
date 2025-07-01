@@ -189,9 +189,12 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
     // Default width for the stack if not overridden
     const containerWidth = style && style.width ? style.width : 320;
 
+    // Calculate card width properly for React Native (no CSS calc)
+    const cardWidth = containerWidth - (maxOffset * 0.1); // Reduced offset for more width
+
     return (
         <View
-            style={[{ width: containerWidth, height: 320, position: 'relative', alignItems: 'center', marginTop: 25 }, style]}
+            style={[{ width: containerWidth, minHeight: 320, position: 'relative', alignItems: 'center', marginTop: 25 }, style]}
             pointerEvents="box-none"
             onTouchStart={() => {
                 // Mark gesture as potentially active immediately
@@ -207,7 +210,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
                         left: cardPositions[i],
                         top: cardPositions[i],
                         zIndex: cardZIndices[i],
-                        width: `calc(100% - ${2 * maxOffset}px)` as any,
+                        width: cardWidth,
                     },
                     isTop && {
                         transform: [
