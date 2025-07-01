@@ -240,7 +240,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
       className="bg-surfaceCream rounded-3xl overflow-hidden mb-4 border border-buttonBorder shadow-card">
       <ImageBackground
         source={{ uri: devotional.imageURL }}
-        style={{ width: '100%', minHeight: RPH(23) }}
+        style={{ width: '100%', height: RPH(40) }}
         resizeMode="cover">
         {/* Linear gradient overlay for readability - darker at top, lighter at bottom */}
         <LinearGradient
@@ -256,7 +256,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
         />
 
         {/* Content */}
-        <View style={{ padding: RPH(2), minHeight: RPH(23) }} className="pb-4 justify-between">
+        <View style={{ padding: RPH(2), height: RPH(40) }} className="pb-4 justify-between">
           <View>
             <Text style={{ fontSize: AppFonts[17], marginBottom: RPH(0.3) }} className="font-feather text-white">
               {devotional.bibleReference}
@@ -282,7 +282,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
 
           {/* Read Full Chapter Button - only show when share=true AND showShareButton is true */}
           {share && showShareButton && (
-            <View style={{ marginTop: RPH(1) }} className="w-full ">
+            <View className="w-full">
               <PrimaryButton
                 title={i18n.t('read_full_chapter') || "Read Full Chapter"}
                 onPress={handleReadFullChapter}

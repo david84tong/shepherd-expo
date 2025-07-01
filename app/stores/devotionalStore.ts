@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Devotional } from '../models/Devotional';
-import firestore from '@react-native-firebase/firestore';
+import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { fetchChaptersBatch, ChapterResponse, FetchError, fetchChapterWithCache, clearChapterCache } from '../api/bible';
 import { BIBLE_BOOK_IDS } from '../models/Path';
 import { createDevotionalFromVerse, checkNetworkConnectivity } from '../api/ai';
@@ -106,6 +106,8 @@ interface DevotionalStore {
   refreshWidgetData: () => Promise<void>;
   // NEW ACTION: Update widget timeline with 5 days of data
   updateWidgetTimeline: () => Promise<void>;
+  // NEW ACTION: Fetch current devotional plus 2 previous days
+  fetchRecentDevotionals: () => Promise<(Devotional | null)[]>;
   clearCustomDevotional: () => void;
   setCustomDevotional: (devotional: Devotional) => void;
   setIsFromCheckIn: (value: boolean) => void;
@@ -572,6 +574,142 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     } else {
       console.log('📱 No current devotional data available for widget refresh');
       await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
+    }
+  },
+
+  // NEW ACTION: Fetch current devotional plus 2 previous days
+  fetchRecentDevotionals: async () => {
+    console.log('🚀 Fetching current devotional plus 2 previous days...');
+
+    try {
+      const today = dayjs().startOf('day');
+      
+      // Query for the last 30 days to ensure we get enough devotionals
+      const startDate = dayjs(today).startOf('day').subtract(30, 'days').format('YYYY-MM-DD');
+      const endDate = dayjs(today).startOf('day').format('YYYY-MM-DD');
+
+      console.log(`🔍 Querying range: ${startDate} to ${endDate} (30 days)`);
+
+      const querySnap = await firestore()
+        .collection('dailyDevotionals')
+        .where('date', '>=', startDate)
+        .where('date', '<=', endDate)
+        .orderBy('date', 'desc') // Most recent first
+        .get();
+
+      console.log(`🔍 Found ${querySnap.docs.length} devotionals in range`);
+
+      querySnap.docs.forEach((doc: FirebaseFirestoreTypes.QueryDocumentSnapshot<FirebaseFirestoreTypes.DocumentData>, i: number) => {
+        console.log(`🔍 Doc ${i}:`, {
+          id: doc.id,
+          date: doc.data().date,
+          bibleReference: doc.data().bibleReference
+        });
+      });
+
+      // Take the 3 most recent devotionals
+      const recentDevotionals = querySnap.docs.slice(0, 3).map(doc => ({
+        ...doc.data(),
+        id: doc.id
+      } as Devotional));
+
+      console.log(`🔍 Taking ${recentDevotionals.length} most recent devotionals:`, recentDevotionals.map(d => ({
+        id: d.id,
+        date: d.date,
+        bibleReference: d.bibleReference
+      })));
+
+      // Create a 3-day array with the most recent devotionals
+      const rawDevotionals = Array.from({ length: 3 }).map((_, i: number) => {
+        return recentDevotionals[i] || null;
+      });
+
+      console.log('🔍 Raw devotionals before processing:', rawDevotionals.map((d, i) => ({
+        index: i,
+        isNull: d === null,
+        id: d?.id,
+        date: d?.date,
+        bibleReference: d?.bibleReference
+      })));
+
+      // OPTIMIZED: Collect all unique chapter references for batch fetching
+      const chaptersToFetch: Array<{ bookId: number; chapter: number }> = [];
+      
+      rawDevotionals.forEach((devotional) => {
+        if (!devotional) return;
+        
+        const reference = devotional.bibleReference || devotional.verse;
+        if (reference && reference.includes(':')) {
+          try {
+            const parsed = parseBibleReference(reference);
+            if (parsed) {
+              const bookId = BIBLE_BOOK_IDS[parsed.book];
+              if (bookId) {
+                chaptersToFetch.push({ bookId, chapter: parsed.chapter });
+              }
+            }
+          } catch (e) {
+            console.error(`Failed to parse reference ${reference}`, e);
+          }
+        }
+      });
+
+      // Batch fetch all needed chapters
+      let chapterResults: Map<string, ChapterResponse | FetchError> = new Map();
+      if (chaptersToFetch.length > 0) {
+        console.log(`📚 Batch fetching ${chaptersToFetch.length} chapters for recent devotionals`);
+        chapterResults = await fetchChaptersBatch(get().bibleVersion, chaptersToFetch);
+      }
+
+      // Process devotionals using batch-fetched data
+      const processedDevotionals = await Promise.all(
+        rawDevotionals.map(async (devotional) => {
+          if (!devotional) return null;
+          
+          let verseText = devotional.verse;
+          const reference = devotional.bibleReference || devotional.verse;
+
+          if (verseText && verseText.includes(':')) {
+            try {
+              const parsed = parseBibleReference(reference);
+              if (parsed) {
+                const bookId = BIBLE_BOOK_IDS[parsed.book];
+                if (bookId) {
+                  const chapterKey = `${bookId}:${parsed.chapter}`;
+                  const chapterData = chapterResults.get(chapterKey);
+                  
+                  if (chapterData && !('error' in chapterData)) {
+                    const verseData = chapterData.verses.find(v => v.verse === parsed.verse);
+                    if (verseData) {
+                      verseText = verseData.text;
+                      console.log(`✅ Found verse text for ${reference}: ${verseText.substring(0, 50)}...`);
+                    }
+                  } else if (chapterData && 'error' in chapterData) {
+                    console.error(`❌ Failed to fetch chapter for ${reference}:`, chapterData.message);
+                  }
+                }
+              }
+            } catch (e) { 
+              console.error(`Failed to process verse text for ${reference}`, e); 
+            }
+          }
+          return { ...devotional, verse: verseText, bibleReference: reference };
+        })
+      );
+
+      console.log(`📚 Processed ${processedDevotionals.filter(Boolean).length} recent devotionals`);
+      console.log('🔍 Final processed devotionals:', processedDevotionals.map((d, i) => ({
+        index: i,
+        isNull: d === null,
+        id: d?.id,
+        date: d?.date,
+        bibleReference: d?.bibleReference
+      })));
+      return processedDevotionals;
+      
+    } catch (error) {
+      console.error('Error fetching recent devotionals:', error);
+      return [null, null, null];
     }
   },
 

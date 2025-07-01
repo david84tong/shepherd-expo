@@ -36,6 +36,7 @@ import { useDevotionalStore } from '../stores/devotionalStore';
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import { useMemo, useState, useEffect } from 'react';
+import type { Devotional } from '../models/Devotional';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import Rive from 'rive-react-native';
 import * as Haptics from 'expo-haptics';
@@ -50,6 +51,7 @@ import React from 'react';
 import { hapticLight } from '~/utils/haptics';
 import OnboardingPathScreen from '../onboarding/8';
 import { Feather } from '@expo/vector-icons';
+import CardStack from '../components/CardStack';
 
 // Custom toast config with explicit styling
 const toastConfig = CustomToast;
@@ -254,6 +256,10 @@ export default function HomeScreen() {
   // Add state for path selection modal
   const [showPathModal, setShowPathModal] = useState(false);
 
+  // Add state for recent devotionals
+  const [recentDevotionals, setRecentDevotionals] = useState<(Devotional | null)[]>([]);
+  console.log("recentDevotionals ==>", recentDevotionals);
+
   // Debug effect to track nextUnitPreview changes
   useEffect(() => {
     console.log('🔍 NextUnitPreview debug:', {
@@ -265,6 +271,29 @@ export default function HomeScreen() {
       reflectionCompleted
     });
   }, [nextUnitPreview, readingCompleted, prayerCompleted, reflectionCompleted]);
+
+  // Fetch recent devotionals when all activities are completed
+  useEffect(() => {
+    if (prayerCompleted && readingCompleted && reflectionCompleted) {
+      const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
+      fetchRecentDevotionals()
+        .then((devotionals) => {
+          console.log('📚 Fetched recent devotionals:', devotionals.map(d => d?.id));
+          console.log('📚 Devotionals count:', devotionals.length);
+          console.log('📚 Non-null devotionals:', devotionals.filter(Boolean).length);
+          console.log('📚 Devotionals details:', devotionals.map((d, i) => ({
+            index: i,
+            id: d?.id,
+            date: d?.date,
+            bibleReference: d?.bibleReference
+          })));
+          setRecentDevotionals(devotionals);
+        })
+        .catch((error) => {
+          console.error('❌ Error fetching recent devotionals:', error);
+        });
+    }
+  }, [prayerCompleted, readingCompleted, reflectionCompleted]);
 
   // Check if there are 2 readings from today
   const getCompletedReadings = useUserStore((state) => state.getCompletedReadings);
@@ -810,16 +839,33 @@ export default function HomeScreen() {
                       removeClippedSubviews={false}
                       automaticallyAdjustContentInsets={false}
                       contentInsetAdjustmentBehavior="never">
-                      {prayerCompleted && readingCompleted && reflectionCompleted && dailyDevotional && (
-                        <DailyVerseCard
-                          devotional={dailyDevotional}
-                          share={true}
-                          onPress={handleDailyVersePress}
-                          onExpand={handleDailyVerseExpand}
-                          onShare={handleDailyVerseShare}
-                          showShareButton={true}
-                          showExpandButton={true}
-                        />
+                      {prayerCompleted && readingCompleted && reflectionCompleted && recentDevotionals.length > 0 && (
+                        <View className="w-full mb-[50px]">
+                          {(() => {
+                            const filteredDevotionals = recentDevotionals.filter(d => d && d.id && d.id !== 'undefined') as Devotional[];
+                            console.log('🎴 CardStack data:', {
+                              total: recentDevotionals.length,
+                              filtered: filteredDevotionals.length,
+                              devotionals: filteredDevotionals.map(d => ({ id: d.id, date: d.date }))
+                            });
+                            return (
+                              <CardStack
+                                data={filteredDevotionals}
+                                renderCard={(devotional: Devotional) => (
+                                  <DailyVerseCard
+                                    devotional={devotional}
+                                    share={true}
+                                    onPress={handleDailyVersePress}
+                                    onExpand={handleDailyVerseExpand}
+                                    onShare={handleDailyVerseShare}
+                                    showShareButton={true}
+                                    showExpandButton={true}
+                                  />
+                                )}
+                              />
+                            );
+                          })()}
+                        </View>
                       )}
 
                       {/* Next Unit Button - Only show when all activities are completed and there's a next unit */}
