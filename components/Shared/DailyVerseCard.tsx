@@ -1,12 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-
-  Pressable,
-
-} from 'react-native';
+import { View, Text, TouchableOpacity, Pressable } from 'react-native';
 import { FontAwesome5, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import analytics from '~/utils/analytics';
@@ -23,7 +16,6 @@ import { router } from 'expo-router';
 import { BIBLE_BOOK_IDS } from '~/app/models/Path';
 import { hapticLight } from '~/utils/haptics';
 
-
 interface DailyVerseCardProps {
   devotional: Devotional & { likedBy?: string[] };
   onPress?: () => void;
@@ -32,6 +24,7 @@ interface DailyVerseCardProps {
   showShareButton?: boolean;
   showExpandButton?: boolean;
   share?: boolean; // New prop to determine if this is a share card or regular card
+  height?: number; // Height in RPH units, defaults to 23
 }
 
 const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
@@ -42,6 +35,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
   showShareButton = true,
   showExpandButton = true,
   share = false,
+  height = 23,
 }) => {
   const currentUser = useUserStore.getState();
 
@@ -50,9 +44,12 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
   const dailyDevotional = useDevotionalStore((state) => state.dailyDevotional);
 
   // Use store data if this devotional matches the current or daily devotional
-  const storeDevotional = (currentDevotional?.id === devotional.id ? currentDevotional :
-    dailyDevotional?.id === devotional.id ? dailyDevotional :
-      devotional);
+  const storeDevotional =
+    currentDevotional?.id === devotional.id
+      ? currentDevotional
+      : dailyDevotional?.id === devotional.id
+        ? dailyDevotional
+        : devotional;
 
   const [isLiked, setIsLiked] = useState(false);
   const likeCount = storeDevotional.likes || 0;
@@ -75,7 +72,8 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
     setIsLiked(newLikedState);
 
     // Determine which collection to update based on devotional type
-    const isCustomDevotional = devotional.id.startsWith('ai-') || devotional.id.startsWith('custom-');
+    const isCustomDevotional =
+      devotional.id.startsWith('ai-') || devotional.id.startsWith('custom-');
     const collectionName = isCustomDevotional ? 'customDevotionals' : 'dailyDevotionals';
 
     const devotionalRef = firestore().collection(collectionName).doc(devotional.id);
@@ -94,7 +92,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
       });
       useDevotionalStore.getState().updateLikeStatus(devotional.id, newLikedState);
     } catch (error) {
-      console.error("Error updating likes:", error);
+      console.error('Error updating likes:', error);
       // Revert state on error
       setIsLiked(!newLikedState);
     }
@@ -218,7 +216,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
         const [, book, chapter] = match;
         return {
           book: book.trim(),
-          chapter: parseInt(chapter, 10)
+          chapter: parseInt(chapter, 10),
         };
       }
 
@@ -240,7 +238,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
       className="bg-surfaceCream rounded-3xl overflow-hidden mb-4 border border-buttonBorder shadow-card">
       <ImageBackground
         source={{ uri: devotional.imageURL }}
-        style={{ width: '100%', height: RPH(40) }}
+        style={{ width: '100%', minHeight: RPH(height) }}
         resizeMode="cover">
         {/* Linear gradient overlay for readability - darker at top, lighter at bottom */}
         <LinearGradient
@@ -256,35 +254,53 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
         />
 
         {/* Content */}
-        <View style={{ padding: RPH(2), height: RPH(40) }} className="pb-4 justify-between">
+        <View style={{ padding: RPH(2), minHeight: RPH(height) }} className="pb-4 justify-between">
           <View>
-            <Text style={{ fontSize: AppFonts[17], marginBottom: RPH(0.3) }} className="font-feather text-white">
+            <Text
+              style={{ fontSize: AppFonts[17], marginBottom: RPH(0.3) }}
+              className="font-feather text-white">
               {devotional.bibleReference}
             </Text>
-            <Text style={{ fontSize: AppFonts[17], marginBottom: RPH(2) }} className="font-nunito-mediumItalic text-white shadow-lg  leading-[26px]">
+            <Text
+              style={{ fontSize: AppFonts[17], marginBottom: RPH(2) }}
+              className="font-nunito-mediumItalic text-white shadow-lg  leading-[26px]">
               {i18n.t('verse_of_the_day')}
             </Text>
-            <Text style={{ fontSize: AppFonts[17] }} className="font-din text-white  leading-[22px]">
+            <Text
+              style={{ fontSize: AppFonts[17] }}
+              className="font-din text-white  leading-[22px]">
               {devotional.verse}
             </Text>
 
-            {showExpandButton ? <View className="flex-row items-center mt-4">
-              <TouchableOpacity onPress={handleLikePress} disabled={!isRealDevotional} className="flex-row items-center mr-4">
-                <Ionicons name="heart" size={RPH(2.2)} color={isLiked && isRealDevotional ? "#FF8800" : "white"} />
-                <Text className="ml-2 text-white font-din text-lg">{likeCount}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={handleSharePress} disabled={!isRealDevotional} className="flex-row items-center">
-                <FontAwesome5 name="share-alt" size={RPH(1.8)} color="white" />
-                <Text className="ml-2 text-white font-din text-lg">{shareCount}</Text>
-              </TouchableOpacity>
-            </View> : null}
+            {showExpandButton ? (
+              <View className="flex-row items-center mt-4">
+                <TouchableOpacity
+                  onPress={handleLikePress}
+                  disabled={!isRealDevotional}
+                  className="flex-row items-center mr-4">
+                  <Ionicons
+                    name="heart"
+                    size={RPH(2.2)}
+                    color={isLiked && isRealDevotional ? '#FF8800' : 'white'}
+                  />
+                  <Text className="ml-2 text-white font-din text-lg">{likeCount}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleSharePress}
+                  disabled={!isRealDevotional}
+                  className="flex-row items-center">
+                  <FontAwesome5 name="share-alt" size={RPH(1.8)} color="white" />
+                  <Text className="ml-2 text-white font-din text-lg">{shareCount}</Text>
+                </TouchableOpacity>
+              </View>
+            ) : null}
           </View>
 
           {/* Read Full Chapter Button - only show when share=true AND showShareButton is true */}
           {share && showShareButton && (
             <View className="w-full">
               <PrimaryButton
-                title={i18n.t('read_full_chapter') || "Read Full Chapter"}
+                title={i18n.t('read_full_chapter') || 'Read Full Chapter'}
                 onPress={handleReadFullChapter}
                 buttonType="orange"
               />
@@ -294,9 +310,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
 
         {/* Expand button - only show when share=true AND showExpandButton is true */}
         {share && showExpandButton && (
-          <TouchableOpacity
-            className="absolute top-6 right-4"
-            onPress={handleExpandPress}>
+          <TouchableOpacity className="absolute top-6 right-4" onPress={handleExpandPress}>
             <Ionicons name="expand" size={24} color="white" />
           </TouchableOpacity>
         )}

@@ -862,6 +862,7 @@ export default function HomeScreen() {
                                 renderCard={(devotional: Devotional) => (
                                   <DailyVerseCard
                                     devotional={devotional}
+                                    height={40}
                                     share={true}
                                     onPress={() => handleDailyVersePress(devotional)}
                                     onExpand={() => handleDailyVerseExpand(devotional)}
