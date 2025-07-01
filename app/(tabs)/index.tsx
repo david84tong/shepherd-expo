@@ -290,7 +290,7 @@ export default function HomeScreen() {
             date: d?.date,
             bibleReference: d?.bibleReference
           })));
-          
+
           setRecentDevotionals(devotionals.slice(0, 2));
         })
         .catch((error) => {
@@ -853,7 +853,7 @@ export default function HomeScreen() {
                       removeClippedSubviews={false}
                       automaticallyAdjustContentInsets={false}
                       contentInsetAdjustmentBehavior="never">
-                   
+
 
                       {/* Next Unit Button - Only show when all activities are completed and there's a next unit */}
                       {prayerCompleted && readingCompleted && reflectionCompleted && (
@@ -903,22 +903,23 @@ export default function HomeScreen() {
                           </View>
                         </View>
                       )}
-   {prayerCompleted && readingCompleted && reflectionCompleted && recentDevotionals.length > 0 && (
+                      {prayerCompleted && readingCompleted && reflectionCompleted && recentDevotionals.length > 0 && (
                         <View className="w-full mb-[50px]">
                           {(() => {
                             const filteredDevotionals = recentDevotionals.filter(d => d && d.id && d.id !== 'undefined') as Devotional[];
                             return (
                               <CardStack
                                 data={filteredDevotionals}
-                                renderCard={(devotional: Devotional) => (
+                                renderCard={(devotional: Devotional, index: number, onCardTap: () => void) => (
                                   <DailyVerseCard
                                     devotional={devotional}
                                     share={true}
-                                    onPress={() => handleDailyVersePress(devotional)}
+                                    onPress={onCardTap}
                                     onExpand={() => handleDailyVerseExpand(devotional)}
                                     onShare={() => handleDailyVerseShare(devotional)}
                                     showShareButton={true}
                                     showExpandButton={true}
+                                    height={40}
                                   />
                                 )}
                               />

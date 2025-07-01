@@ -5,7 +5,7 @@ const CARD_OFFSET = 16; // px offset for both right and bottom
 
 interface CardStackProps<T> {
     data: T[];
-    renderCard: (item: T, index: number) => React.ReactNode;
+    renderCard: (item: T, index: number, onCardTap: () => void) => React.ReactNode;
     style?: any; // Pass { width: number } to override default width (320)
 }
 
@@ -28,18 +28,6 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
     const cardZIndices = useRef(
         Array.from({ length: stackSize }, (_, i) => new Animated.Value(stackSize - i))
     ).current;
-
-    // Create stable keys for each card position
-    const cardKeys = useMemo(() => {
-        return Array.from({ length: stackSize }, (_, i) => `card-${i}`);
-    }, [stackSize]);
-
-    console.log('🎴 CardStack render:', {
-        dataLength: data.length,
-        stackSize,
-        maxOffset,
-        cardKeys: cardKeys.length
-    });
 
     // Get the current cards to display based on currentIndex
     const cardsToShow = useMemo(() => {
@@ -135,16 +123,84 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
             cardZIndices.forEach((zIndex, index) => {
                 zIndex.setValue(stackSize - index);
             });
-
             setIsAnimating(false);
         });
     }, [isAnimating, cardPositions, cardZIndices, position, data.length, stackSize]);
 
+    // Handle tap on front card to trigger swipe animation
+    const handleCardTap = useCallback((cardIndex: number) => {
+        if (isAnimating) return;
+
+        // If it's the front card (index 0), trigger the same animation as swipe
+        if (cardIndex === 0) {
+            handleSwipe();
+            return;
+        }
+
+        // For back cards, bring them to front (original functionality)
+        setIsAnimating(true);
+
+        // Animate the tapped card to the front
+        const animations = [];
+
+        // Move tapped card to front position
+        animations.push(
+            Animated.timing(cardPositions[cardIndex], {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: false,
+            })
+        );
+
+        // Set tapped card to highest z-index
+        animations.push(
+            Animated.timing(cardZIndices[cardIndex], {
+                toValue: stackSize,
+                duration: 300,
+                useNativeDriver: false,
+            })
+        );
+
+        // Move other cards back one position
+        for (let i = 0; i < stackSize; i++) {
+            if (i !== cardIndex) {
+                const newPosition = i < cardIndex ? i + 1 : i;
+                animations.push(
+                    Animated.timing(cardPositions[i], {
+                        toValue: newPosition * CARD_OFFSET,
+                        duration: 300,
+                        useNativeDriver: false,
+                    })
+                );
+
+                // Adjust z-index for other cards
+                const newZIndex = i < cardIndex ? stackSize - (i + 1) : stackSize - i;
+                animations.push(
+                    Animated.timing(cardZIndices[i], {
+                        toValue: newZIndex,
+                        duration: 300,
+                        useNativeDriver: false,
+                    })
+                );
+            }
+        }
+
+        Animated.parallel(animations).start(() => {
+            // Reset positions and z-indices
+            cardPositions.forEach((pos, index) => {
+                pos.setValue(index * CARD_OFFSET);
+            });
+            cardZIndices.forEach((zIndex, index) => {
+                zIndex.setValue(stackSize - index);
+            });
+
+            setIsAnimating(false);
+        });
+    }, [isAnimating, cardPositions, cardZIndices, data.length, stackSize, handleSwipe]);
+
     const panResponder = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: (_, gesture) => {
-                console.log("RENDERING");
-
                 // Be more aggressive about claiming horizontal gestures
                 return Math.abs(gesture.dx) > Math.abs(gesture.dy) && Math.abs(gesture.dx) > 3;
             },
@@ -220,13 +276,14 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
                         ],
                     },
                 ];
+
                 return (
                     <Animated.View
-                        key={cardKeys[i]}
+                        key={`card-${cardInfo.dataIndex}`}
                         style={cardStyle}
                         {...(isTop && !isAnimating ? panResponder.panHandlers : {})}
                     >
-                        {renderCard(cardInfo.item, cardInfo.dataIndex)}
+                        {renderCard(cardInfo.item, cardInfo.dataIndex, () => handleCardTap(i))}
                     </Animated.View>
                 );
             })}
