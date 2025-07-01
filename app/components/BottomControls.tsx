@@ -61,12 +61,23 @@ export default function BottomControls({
   // Use customDevotional if it exists (AI-generated), otherwise use currentDevotional
   const activeDevotional = customDevotional || currentDevotional;
 
-  // Check if current devotional is liked by user
+  // Check if current devotional is saved by user
   useEffect(() => {
-    if (currentUser?.id && activeDevotional?.likedBy) {
-      setIsLiked(activeDevotional.likedBy.includes(currentUser.id));
-    }
-  }, [activeDevotional, currentUser]);
+    const checkIfSaved = async () => {
+      if (currentUser?.id && activeDevotional?.id) {
+        const savedDevotionalId = `${currentUser.id}_${activeDevotional.id}`;
+        try {
+          const savedDoc = await firestore().collection('savedDevotionals').doc(savedDevotionalId).get();
+          setIsLiked(savedDoc.exists);
+        } catch (error) {
+          console.error('Error checking if devotional is saved:', error);
+          setIsLiked(false);
+        }
+      }
+    };
+
+    checkIfSaved();
+  }, [activeDevotional, currentUser, showDevotionalContent]);
 
   // Debug showDevotionalContent
   useEffect(() => {
@@ -81,37 +92,59 @@ export default function BottomControls({
     setIsLiked(newLikedState);
 
     try {
-      // Determine which collection to update based on devotional type
-      const isCustomDevotional = customDevotional?.id === activeDevotional.id;
-      const collectionName = isCustomDevotional ? 'customDevotionals' : 'dailyDevotionals';
+      if (newLikedState) {
+        // Save devotional to savedDevotionals collection
+        const savedDevotionalData = {
+          ...activeDevotional,
+          savedAt: new Date().toISOString(),
+          userId: currentUser.id,
+          originalCollection: customDevotional?.id === activeDevotional.id ? 'customDevotionals' : 'dailyDevotionals',
+          originalId: activeDevotional.id,
+        };
 
-      console.log('🔍 Updating like for devotional:', {
-        id: activeDevotional.id,
-        collection: collectionName,
-        liked: newLikedState
-      });
+        // Create a unique document ID for the saved devotional
+        const savedDevotionalId = `${currentUser.id}_${activeDevotional.id}`;
 
-      // Update Firestore
-      const devotionalRef = firestore().collection(collectionName).doc(activeDevotional.id);
-      await devotionalRef.update({
-        likes: firestore.FieldValue.increment(newLikedState ? 1 : -1),
-        likedBy: newLikedState
-          ? firestore.FieldValue.arrayUnion(currentUser.id)
-          : firestore.FieldValue.arrayRemove(currentUser.id),
-      });
+        console.log('🔍 Saving devotional to savedDevotionals:', {
+          id: savedDevotionalId,
+          devotionalId: activeDevotional.id,
+          userId: currentUser.id
+        });
 
-      // Update local store
-      updateLikeStatus(activeDevotional.id, newLikedState);
+        // Save to savedDevotionals collection
+        await firestore().collection('savedDevotionals').doc(savedDevotionalId).set(savedDevotionalData);
 
-      // Log analytics
-      analytics.logEvent('BottomControls_Like', {
-        devotionalId: activeDevotional.id,
-        bibleReference: activeDevotional.bibleReference,
-        liked: newLikedState,
-        devotionalType: isCustomDevotional ? 'custom' : 'daily',
-      });
+        // Log analytics
+        analytics.logEvent('BottomControls_SaveDevotional', {
+          devotionalId: activeDevotional.id,
+          bibleReference: activeDevotional.bibleReference,
+          devotionalType: customDevotional?.id === activeDevotional.id ? 'custom' : 'daily',
+        });
+      } else {
+        // Remove devotional from savedDevotionals collection
+        const savedDevotionalId = `${currentUser.id}_${activeDevotional.id}`;
+
+        console.log('🔍 Removing devotional from savedDevotionals:', {
+          id: savedDevotionalId,
+          devotionalId: activeDevotional.id,
+          userId: currentUser.id
+        });
+
+        // Delete from savedDevotionals collection
+        await firestore().collection('savedDevotionals').doc(savedDevotionalId).delete();
+
+        // Log analytics
+        analytics.logEvent('BottomControls_UnsaveDevotional', {
+          devotionalId: activeDevotional.id,
+          bibleReference: activeDevotional.bibleReference,
+          devotionalType: customDevotional?.id === activeDevotional.id ? 'custom' : 'daily',
+        });
+      }
+
+      // Update local state
+      setIsLiked(newLikedState);
     } catch (error) {
-      console.error("Error updating like:", error);
+      console.error("Error saving/unsaving devotional:", error);
       setIsLiked(!newLikedState); // Revert on error
     }
   };

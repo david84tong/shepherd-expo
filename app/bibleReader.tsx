@@ -283,7 +283,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   // Tutorial state
   const hasSeenBibleReaderTutorial = useUserStore((state) => state.hasSeenBibleReaderTutorial);
-  
+
   // Get showDevotionalsSheet from UIStore
   const showDevotionalsSheet = useUIStore((state) => state.showDevotionalsSheet);
 
@@ -1477,7 +1477,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
           useUserStore.getState().setHasSeenBibleReaderTutorial(true);
         }}
       />
-      
+
     </View>
   } else {
     // Use pendingChapterData if available
@@ -1573,11 +1573,11 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                     </View>
                   ) : ( */}
                   <View className="flex-row gap-2">
-                    {/* <TouchableOpacity 
+                    <TouchableOpacity
                       onPress={() => {
                         hapticLight();
                         showDevotionalsSheet();
-                      }} 
+                      }}
                       className="bg-white/80 w-10 h-10 rounded-full items-center justify-center"
                     >
                       <Feather
@@ -1585,7 +1585,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                         size={20}
                         color="#FF6B35"
                       />
-                    </TouchableOpacity> */}
+                    </TouchableOpacity>
                     <TouchableOpacity onPress={handlePresentModal} className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
                       <MaterialIcons
                         name="settings"
@@ -1895,7 +1895,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
               useUserStore.getState().setHasSeenBibleReaderTutorial(true);
             }}
           />
-          
+
         </View>
       </>
     );
