@@ -135,6 +135,9 @@ export default function HomeScreen() {
   // Local state for prayer success screen visibility
   const [showPrayerSuccess, setShowPrayerSuccess] = useState(false);
 
+  // Add state to track the selected devotional for FullScreenShareCard
+  const [selectedDevotionalForShare, setSelectedDevotionalForShare] = useState<Devotional | null>(null);
+
   console.log('📍 About to call useHomeScreen hook');
 
   const {
@@ -446,17 +449,26 @@ export default function HomeScreen() {
   // Pre-calculate the expanded width for the pill (use a reasonable fixed width instead of screen-based)
   const pillExpandedWidth = 350;
 
-  const handleDailyVerseShare = () => {
+  const handleDailyVerseShare = (devotional?: Devotional) => {
+    if (devotional) {
+      setSelectedDevotionalForShare(devotional);
+    }
     setStartShareFlow(true);
     setShowShareCard(true);
   };
 
-  const handleDailyVersePress = () => {
+  const handleDailyVersePress = (devotional?: Devotional) => {
+    if (devotional) {
+      setSelectedDevotionalForShare(devotional);
+    }
     setStartShareFlow(false); // Ensure share flow is off when opening via card press
     setShowShareCard(true);
   };
 
-  const handleDailyVerseExpand = () => {
+  const handleDailyVerseExpand = (devotional?: Devotional) => {
+    if (devotional) {
+      setSelectedDevotionalForShare(devotional);
+    }
     setStartShareFlow(false); // Ensure share flow is off when opening via expand
     setShowShareCard(true);
   };
@@ -464,6 +476,7 @@ export default function HomeScreen() {
   const handleFullScreenShareClose = () => {
     setShowShareCard(false);
     setStartShareFlow(false);
+    setSelectedDevotionalForShare(null); // Clear the selected devotional
   };
 
   const handleCustomDevotionalShare = () => {
@@ -843,11 +856,6 @@ export default function HomeScreen() {
                         <View className="w-full mb-[50px]">
                           {(() => {
                             const filteredDevotionals = recentDevotionals.filter(d => d && d.id && d.id !== 'undefined') as Devotional[];
-                            console.log('🎴 CardStack data:', {
-                              total: recentDevotionals.length,
-                              filtered: filteredDevotionals.length,
-                              devotionals: filteredDevotionals.map(d => ({ id: d.id, date: d.date }))
-                            });
                             return (
                               <CardStack
                                 data={filteredDevotionals}
@@ -855,9 +863,9 @@ export default function HomeScreen() {
                                   <DailyVerseCard
                                     devotional={devotional}
                                     share={true}
-                                    onPress={handleDailyVersePress}
-                                    onExpand={handleDailyVerseExpand}
-                                    onShare={handleDailyVerseShare}
+                                    onPress={() => handleDailyVersePress(devotional)}
+                                    onExpand={() => handleDailyVerseExpand(devotional)}
+                                    onShare={() => handleDailyVerseShare(devotional)}
                                     showShareButton={true}
                                     showExpandButton={true}
                                   />
@@ -1129,7 +1137,7 @@ export default function HomeScreen() {
       <FullScreenShareCard
         visible={showShareCard}
         onClose={handleFullScreenShareClose}
-        devotionalData={customDevotional || dailyDevotional || devotionalData}
+        devotionalData={selectedDevotionalForShare || customDevotional || dailyDevotional || devotionalData}
         startShareFlow={startShareFlow}
         setStartShareFlow={setStartShareFlow}
       />
