@@ -37,6 +37,16 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
   share = false,
   height = 23,
 }) => {
+  // Debug logging
+  useEffect(() => {
+    console.log('🎨 [DailyVerseCard] Received devotional:', {
+      id: devotional?.id,
+      title: devotional?.title,
+      imageURL: devotional?.imageURL,
+      imageURLLength: devotional?.imageURL?.length
+    });
+  }, [devotional]);
+  
   const currentUser = useUserStore.getState();
 
   // Get current devotional from store (for real-time updates)
@@ -239,7 +249,16 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
       <ImageBackground
         source={{ uri: devotional.imageURL }}
         style={{ width: '100%', minHeight: RPH(height) }}
-        resizeMode="cover">
+        resizeMode="cover"
+        onError={(error) => {
+          console.error('🚨 [DailyVerseCard] Image load error:', {
+            imageURL: devotional.imageURL,
+            error
+          });
+        }}
+        onLoad={() => {
+          console.log('✅ [DailyVerseCard] Image loaded successfully:', devotional.imageURL);
+        }}>
         {/* Linear gradient overlay for readability - darker at top, lighter at bottom */}
         <LinearGradient
           colors={['rgba(0, 0, 0, 0.5)', 'rgba(0, 0, 0, 0.3)', 'rgba(0, 0, 0, 0.1)']}

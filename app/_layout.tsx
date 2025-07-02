@@ -33,6 +33,7 @@ import { useOnboardingStore } from './stores/onboardingStore';
 import { useAssets } from 'expo-asset';
 import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
 import GlobalCheckIn, { GlobalCheckInRef } from '../components/GlobalCheckIn';
+import { useCheckInStore } from './stores/checkInStore';
 import GlobalPrayerSheet, {
   PrayerSheetRef as GlobalPrayerSheetRefInternal,
 } from '../components/GlobalPrayerSheet';
@@ -200,6 +201,7 @@ export default function RootLayout() {
     console.log('isInitialized ==>', isInitialized);
     if (isInitialized) {
       onAppForegroundOrInit();
+      checkAndShowCheckInIfNeeded();
     }
   }, [isInitialized]);
 
@@ -272,6 +274,18 @@ export default function RootLayout() {
       }
     } catch (error) {
       console.log('Error checking streak status:', error);
+    }
+  };
+  
+  // Check if one hour has passed since last check-in
+  const checkAndShowCheckInIfNeeded = () => {
+    const checkInStore = useCheckInStore.getState();
+    if (checkInStore.hasBeenOneHourSinceLastCheckIn()) {
+      console.log('One hour has passed since last check-in, showing check-in screen');
+      // Show check-in with a delay to ensure app is ready
+      setTimeout(() => {
+        showCheckIn();
+      }, 2000);
     }
   };
 
@@ -400,6 +414,9 @@ export default function RootLayout() {
         await checkOnboarding();
         await checkStreakStatus();
         await initializeNotifications();
+        
+        // Check if we need to show check-in after initialization
+        checkAndShowCheckInIfNeeded();
       } catch (error) { }
       // Set Rive ready
       setIsRiveReady(true);
@@ -451,6 +468,7 @@ export default function RootLayout() {
         console.log('App has come to the foreground!');
         onAppForegroundOrInit();
         useHighlightStore.getState().syncHighlights();
+        checkAndShowCheckInIfNeeded();
       }
       appState.current = nextAppState;
     };

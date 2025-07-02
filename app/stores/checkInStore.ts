@@ -21,6 +21,12 @@ interface CheckInState {
   // Check-in history
   checkInHistory: CheckInData[];
   
+  // Last check-in timestamp
+  lastCheckInTime: string | null;
+  
+  // Temporary flag to prevent auto-show after worldwide devotional
+  temporarilyDisableAutoShow: boolean;
+  
   // Actions
   setMood: (mood: string) => void;
   setFocus: (focus: string) => void;
@@ -32,6 +38,9 @@ interface CheckInState {
   getTodaysCheckIn: () => CheckInData | null;
   hasCompletedTodaysCheckIn: () => boolean;
   shouldShowCustomDevotional: () => boolean;
+  hasBeenOneHourSinceLastCheckIn: () => boolean;
+  resetCheckInData: () => void;
+  setTemporarilyDisableAutoShow: (value: boolean) => void;
 }
 
 const getTodayDateString = () => {
@@ -47,6 +56,8 @@ export const useCheckInStore = create<CheckInState>()(
       currentStruggle: '',
       todaysCheckIn: null,
       checkInHistory: [],
+      lastCheckInTime: null,
+      temporarilyDisableAutoShow: false,
 
       // Actions
       setMood: (mood: string) => {
@@ -72,12 +83,13 @@ export const useCheckInStore = create<CheckInState>()(
       completeCheckIn: () => {
         const state = get();
         const today = getTodayDateString();
+        const now = new Date().toISOString();
         
         const checkInData: CheckInData = {
           mood: state.currentMood,
           focus: state.currentFocus,
           struggle: state.currentStruggle,
-          completedAt: new Date().toISOString(),
+          completedAt: now,
         };
 
         // Add to history if not already exists for today
@@ -102,6 +114,7 @@ export const useCheckInStore = create<CheckInState>()(
         set({
           todaysCheckIn: checkInData,
           checkInHistory: newHistory,
+          lastCheckInTime: now,
         });
       },
 
@@ -141,6 +154,37 @@ export const useCheckInStore = create<CheckInState>()(
         // Show custom devotional if either focus or struggle is not empty
         return todaysCheckIn.focus !== '' || todaysCheckIn.struggle !== '';
       },
+      
+      hasBeenOneHourSinceLastCheckIn: () => {
+        const state = get();
+        
+        // If temporarily disabled, return false to prevent auto-show
+        if (state.temporarilyDisableAutoShow) return false;
+        
+        if (!state.lastCheckInTime) return true; // If never checked in, return true
+        
+        const lastCheckIn = new Date(state.lastCheckInTime);
+        const now = new Date();
+        const hoursSinceLastCheckIn = (now.getTime() - lastCheckIn.getTime()) / (1000 * 60 * 60);
+        
+        return hoursSinceLastCheckIn >= 1;
+      },
+      
+      resetCheckInData: () => {
+        set({
+          currentMood: '',
+          currentFocus: '',
+          currentStruggle: '',
+          todaysCheckIn: null,
+          checkInHistory: [],
+          lastCheckInTime: null,
+          temporarilyDisableAutoShow: false,
+        });
+      },
+      
+      setTemporarilyDisableAutoShow: (value: boolean) => {
+        set({ temporarilyDisableAutoShow: value });
+      },
     }),
     {
       name: 'shepherd-checkin-storage',
@@ -149,6 +193,7 @@ export const useCheckInStore = create<CheckInState>()(
       partialize: (state) => ({
         todaysCheckIn: state.todaysCheckIn,
         checkInHistory: state.checkInHistory,
+        lastCheckInTime: state.lastCheckInTime,
       }),
     }
   )

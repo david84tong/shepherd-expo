@@ -35,8 +35,10 @@ import { imageAssets, useAssetsStore } from '../stores/assetsStore';
 import { useDevotionalStore } from '../stores/devotionalStore';
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
+import { useCheckInStore } from '../stores/checkInStore';
 import { useMemo, useState, useEffect } from 'react';
 import type { Devotional } from '../models/Devotional';
+import { devotionalBackgrounds } from '../models/Devotional';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import Rive from 'rive-react-native';
 import * as Haptics from 'expo-haptics';
@@ -52,6 +54,8 @@ import { hapticLight } from '~/utils/haptics';
 import OnboardingPathScreen from '../onboarding/8';
 import { Feather } from '@expo/vector-icons';
 import CardStack from '../components/CardStack';
+import { useRouter } from 'expo-router';
+import auth from '@react-native-firebase/auth';
 
 // Custom toast config with explicit styling
 const toastConfig = CustomToast;
@@ -70,6 +74,8 @@ console.log('📄 HomeScreen file loaded at:', new Date().toISOString());
 
 export default function HomeScreen() {
   console.log('🏠 HomeScreen function called at:', new Date().toISOString());
+  
+  const router = useRouter();
 
   // Direct function call to test
   React.useEffect(() => {
@@ -353,6 +359,14 @@ export default function HomeScreen() {
     i18n.locale = currentLanguage;
   }, [currentLanguage]);
 
+  // Expose handleReadPress globally so it can be called from GlobalCheckIn
+  useEffect(() => {
+    (global as any).triggerDailyBread = handleReadPress;
+    return () => {
+      delete (global as any).triggerDailyBread;
+    };
+  }, [handleReadPress]);
+
 
   // Set bottomSheetRef in home store so other components can access it
   useEffect(() => {
@@ -401,6 +415,7 @@ export default function HomeScreen() {
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 10,
+            marginLeft: RPH(1)
           }}>
           {IS_ANDROID ? (
             <Rive
@@ -483,6 +498,86 @@ export default function HomeScreen() {
   const handleCustomDevotionalShare = () => {
     setStartShareFlow(true);
     setShowShareCard(true);
+  };
+
+  // Handler for custom devotional button
+  const handleCustomDevotionalPress = async () => {
+    const checkInStore = useCheckInStore.getState();
+    const todaysCheckIn = checkInStore.getTodaysCheckIn();
+    
+    if (todaysCheckIn && (todaysCheckIn.focus || todaysCheckIn.struggle)) {
+      // User has completed check-in with focus/struggle, generate custom devotional
+      console.log('🎯 Generating custom devotional with check-in data:', todaysCheckIn);
+      
+      // Set flag to indicate this is from check-in flow
+      const devotionalStore = useDevotionalStore.getState();
+      devotionalStore.setIsFromCheckIn(true);
+      
+      // Navigate to devotional loading screen
+      router.push('/devotionalLoading' as any);
+      
+      // Generate custom devotional in background (similar to GlobalCheckIn)
+      try {
+        const currentUser = auth().currentUser;
+        if (!currentUser) {
+          console.error('No authenticated user for custom devotional');
+          handleReadPress(); // Fallback to regular devotional
+          return;
+        }
+        
+        const idToken = await currentUser.getIdToken();
+        const { createDevotionalFromCheckIn } = await import('../api/ai');
+        
+        // Generate the custom devotional
+        const customDevotional = await createDevotionalFromCheckIn(todaysCheckIn, idToken);
+        
+        // Get random background using the proper backgrounds from model
+        const backgroundUrls = Object.values(devotionalBackgrounds);
+        const randomIndex = Math.floor(Math.random() * backgroundUrls.length);
+        const randomBackground = backgroundUrls[randomIndex];
+        console.log('🎨 [Index] Selected background for custom devotional:', {
+          index: randomIndex,
+          url: randomBackground,
+          totalBackgrounds: backgroundUrls.length
+        });
+        
+        // Create full devotional object
+        const fullDevotional: Devotional = {
+          id: 'custom-checkin',
+          title: customDevotional.title,
+          content: customDevotional.context,
+          createdAt: new Date().toISOString(),
+          context: customDevotional.context,
+          bibleReference: customDevotional.bibleReference || '',
+          prayer: customDevotional.prayer,
+          reflectionPrompt: customDevotional.reflectionPrompt,
+          likes: 0,
+          shares: 0,
+          completed: 0,
+          date: new Date().toISOString().split('T')[0],
+          imageURL: randomBackground,
+          verse: customDevotional.verse || ''
+        };
+        
+        devotionalStore.setCustomDevotional(fullDevotional);
+        
+        analytics.logEvent('custom_devotional_generated_from_button', {
+          mood: todaysCheckIn.mood,
+          focus: todaysCheckIn.focus,  
+          struggle: todaysCheckIn.struggle
+        });
+        
+      } catch (error) {
+        console.error('Error generating custom devotional:', error);
+        // Navigate to regular devotional on error
+        router.push('/(tabs)');
+        handleReadPress();
+      }
+    } else {
+      // No check-in for today, use regular devotional
+      console.log('📖 No check-in data, using regular devotional');
+      handleReadPress();
+    }
   };
 
   return (
@@ -788,9 +883,9 @@ export default function HomeScreen() {
               detached={false}
               handleComponent={showPrayerContent ? () => null : undefined}
               handleIndicatorStyle={{
-                opacity: showPrayerContent || showDevotionalContent || showJournalContent ? 0 : 0.3,
+                opacity: 0.3,
                 height: 4,
-                width: showPrayerContent || showDevotionalContent || showJournalContent ? 0 : 40,
+                width: 40,
                 backgroundColor: '#634012',
                 borderRadius: 2,
               }}
@@ -927,16 +1022,54 @@ export default function HomeScreen() {
                           })()}
                         </View>
                       )}
-                      <View
-                        className="flex-row items-center justify-between "
-                        style={{ marginTop: responsiveHeight(2) }}>
+                      <View style={{ position: 'relative' }}>
+                        {/* Daily Bread Button */}
+                        <View
+                          className="flex-row items-center justify-between"
+                          style={{ marginTop: responsiveHeight(2) }}>
+                          <View style={{ width: 22, marginRight: 10 }} />
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <SecondaryButton
+                              icon={breadIcon}
+                              title={i18n.t('daily_bread')}
+                              subtitle={i18n.t('feed_soul')}
+                              points={50}
+                              onPress={handleReadPress}
+                              completed={readingCompleted}
+                              disabled={readingCompleted}
+                            />
+                          </View>
+                        </View>
+                        
+                        {/* Custom Devotional Button */}
+                        <View
+                          className="flex-row items-center"
+                          style={{ marginTop: responsiveHeight(2) }}>
+                          <View style={{ width: 22, marginRight: 10 }} />
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <SecondaryButton
+                              icon={require('../../assets/icons/customBread.png')}
+                              title={i18n.t('custom_devotional')}
+                              subtitle={i18n.t('your_custom_devotional')}
+                              points={50}
+                              onPress={handleCustomDevotionalPress}
+                              completed={false}
+                              disabled={false}
+                            />
+                          </View>
+                        </View>
+                        
+                        {/* Centered Check Circle - Positioned between both buttons */}
                         <View
                           style={{
-                            width: 22,
-                            marginRight: 10,
+                            position: 'absolute',
+                            left: -8,
+                            top: '50%',
+                            transform: [{ translateY: -10, }],
+                            width: 32,
+                            height: 20,
                             alignItems: 'center',
                             justifyContent: 'center',
-                            flexShrink: 0,
                           }}>
                           {readingCompleted ? (
                             <Image
@@ -950,88 +1083,40 @@ export default function HomeScreen() {
                             />
                           )}
                         </View>
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                          <SecondaryButton
-                            icon={breadIcon}
-                            title={i18n.t('daily_bread')}
-                            subtitle={i18n.t('feed_soul')}
-                            points={50}
-                            onPress={handleReadPress}
-                            completed={readingCompleted}
-                            disabled={readingCompleted}
-                          />
-                        </View>
                       </View>
-                      <View
-                        className="flex-row items-center "
-                        style={{ marginTop: responsiveHeight(2) }}>
+                      
+                      {/* Custom Path Button - Hidden when all activities are completed */}
+                      {!(prayerCompleted && readingCompleted && reflectionCompleted) && (
                         <View
-                          style={{
-                            width: 22,
-                            marginRight: 10,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                          }}>
-                          {prayerCompleted ? (
-                            <Image
-                              source={require('../../assets/icons/checkMini.png')}
-                              style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                            />
-                          ) : (
+                          className="flex-row items-center "
+                          style={{ marginTop: responsiveHeight(3) }}>
+                          <View
+                            style={{
+                              width: 22,
+                              marginRight: 10,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              left: -8,
+                            }}>
                             <View
                               className="bg-textPrimary/15"
                               style={{ width: 20, height: 20, borderRadius: 12 }}
                             />
-                          )}
-                        </View>
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                          <SecondaryButton
-                            icon={dropIcon}
-                            title={i18n.t('living_water')}
-                            subtitle={i18n.t('refresh_spirit_prayer')}
-                            points={50}
-                            onPress={handlePrayerPress}
-                            completed={prayerCompleted}
-                            disabled={!readingCompleted || prayerCompleted}
-                          />
-                        </View>
-                      </View>
-                      <View
-                        className="flex-row items-center"
-                        style={{ marginTop: responsiveHeight(2) }}>
-                        <View
-                          style={{
-                            width: 22,
-                            marginRight: 10,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            flexShrink: 0,
-                          }}>
-                          {reflectionCompleted ? (
-                            <Image
-                              source={require('../../assets/icons/checkMini.png')}
-                              style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                          </View>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <SecondaryButton
+                              icon={require('../../assets/icons/map.png')}
+                              title={i18n.t('custom_path')}
+                              subtitle={i18n.t('your_custom_path')}
+                              points={0}
+                              onPress={() => setShowPathModal(true)}
+                              completed={false}
+                              disabled={true}
                             />
-                          ) : (
-                            <View
-                              className="bg-textPrimary/15"
-                              style={{ width: 20, height: 20, borderRadius: 12 }}
-                            />
-                          )}
+                          </View>
                         </View>
-                        <View style={{ flex: 1 }}>
-                          <SecondaryButton
-                            icon={bibleIcon}
-                            title={i18n.t('quiet_time')}
-                            subtitle={i18n.t('pause_meet_god')}
-                            points={50}
-                            onPress={handleReflectionPress}
-                            completed={reflectionCompleted}
-                            disabled={!readingCompleted}
-                          />
-                        </View>
-                        <View style={{ height: 4 }} />
-                      </View>
+                      )}
+                    
 
                       {/* {isLoadingDevotional && (
                         <View className="bg-white/60 rounded-xl p-4 mb-4 border border-lightGreen/20">

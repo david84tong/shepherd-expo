@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Devotional } from '../models/Devotional';
+import { Devotional, devotionalBackgrounds } from '../models/Devotional';
 import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import { fetchChaptersBatch, ChapterResponse, FetchError, fetchChapterWithCache, clearChapterCache } from '../api/bible';
 import { BIBLE_BOOK_IDS } from '../models/Path';
@@ -9,6 +9,19 @@ import { NativeModules } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePathStore } from './pathStore';
 import dayjs from 'dayjs';
+
+// Helper function to get a random devotional background
+const getRandomDevotionalBackground = () => {
+  const backgroundUrls = Object.values(devotionalBackgrounds);
+  const randomIndex = Math.floor(Math.random() * backgroundUrls.length);
+  const selectedBackground = backgroundUrls[randomIndex];
+  console.log('🖼️ [DevotionalStore] Selected random background:', {
+    index: randomIndex,
+    url: selectedBackground,
+    totalBackgrounds: backgroundUrls.length
+  });
+  return selectedBackground;
+};
 
 // Safely get WidgetDataSharer with error handling
 const getWidgetDataSharer = () => {
@@ -361,6 +374,9 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
   // QUICK DEVOTIONAL CREATION -----------------------------------------------
   createQuickDevotional: async (verseText: string, reference: string) => {
+    const selectedImageURL = getRandomDevotionalBackground();
+    console.log('🎨 [DevotionalStore] Creating quick devotional with image:', selectedImageURL);
+    
     const quickDevotional: Devotional = {
       id: `quick-${Date.now()}`,
       title: '',
@@ -374,11 +390,15 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       shares: 0,
       completed: 0,
       date: new Date().toISOString(),
-      imageURL: 'https://firebasestorage.googleapis.com/v0/b/shepherd-c74ad.firebasestorage.app/o/waterBackground.png?alt=media&token=b0266692-ada8-4ec9-98ce-a1e0a242186d',
+      imageURL: selectedImageURL,
       verse: verseText,
     };
 
-    console.log('[DevotionalStore] Created quick devotional from verse:', quickDevotional);
+    console.log('[DevotionalStore] Created quick devotional from verse:', {
+      id: quickDevotional.id,
+      imageURL: quickDevotional.imageURL,
+      verse: quickDevotional.verse?.substring(0, 50) + '...'
+    });
     set({ customDevotional: quickDevotional, currentDevotional: quickDevotional });
 
     // Share the quick devotional with the widget
@@ -426,6 +446,10 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       // Call the AI API to create devotional content
       const aiResponse = await createDevotionalFromVerse(verseContext, idToken);
       
+      // Get random background image
+      const selectedImageURL = getRandomDevotionalBackground();
+      console.log('🎨 [DevotionalStore] Creating AI devotional with image:', selectedImageURL);
+      
       // Create a full Devotional object from the AI response
       const aiDevotional: Devotional = {
         id: `ai-${Date.now()}`,
@@ -440,7 +464,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         shares: 0,
         completed: 0,
         date: new Date().toISOString(),
-        imageURL: 'https://firebasestorage.googleapis.com/v0/b/shepherd-c74ad.firebasestorage.app/o/waterBackground.png?alt=media&token=b0266692-ada8-4ec9-98ce-a1e0a242186d',
+        imageURL: selectedImageURL,
         verse: verseText,
       };
       

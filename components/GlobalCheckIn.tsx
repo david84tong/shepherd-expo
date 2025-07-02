@@ -15,8 +15,11 @@ import { useCheckInStore } from '~/app/stores/checkInStore';
 import { createDevotionalFromCheckIn } from '~/app/api/ai';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { useRouter } from 'expo-router';
-import { Devotional } from '~/app/models/Devotional';
+import { Devotional, devotionalBackgrounds } from '~/app/models/Devotional';
 import auth from '@react-native-firebase/auth';
+import { useHomeStore } from '~/app/stores/homeStore';
+import { useUserStore } from '~/app/stores/userStore';
+import { Timestamp } from '@react-native-firebase/firestore';
 
 export type GlobalCheckInRef = {
   expand: () => void;
@@ -39,6 +42,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   // Hooks
   const router = useRouter();
   const { setCustomDevotional, setIsFromCheckIn } = useDevotionalStore();
+  const { readingCompleted } = useHomeStore();
+  const { addCheckIn } = useUserStore();
   
   // Use CheckIn store
   const {
@@ -52,6 +57,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     skipStruggle,
     completeCheckIn,
     clearCurrentSession,
+    setTemporarilyDisableAutoShow,
   } = useCheckInStore();
   
   // Local state for UI feedback
@@ -67,6 +73,36 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
   // Fixed snap points - use 60% for all screens
   const snapPoints = ['60%'];
+
+  // Complete check-in and save to both stores
+  const handleCompleteCheckIn = useCallback(async () => {
+    console.log('handleCompleteCheckIn called with:', {
+      mood: currentMood,
+      focus: currentFocus,
+      struggle: currentStruggle
+    });
+    
+    // Complete check-in in checkInStore
+    completeCheckIn();
+    
+    // Save to userStore for Firestore sync
+    const checkInData = {
+      mood: currentMood,
+      focus: currentFocus,
+      struggle: currentStruggle,
+      completedAt: Timestamp.now()
+    };
+    
+    // Create unique key using timestamp to prevent overrides
+    const now = new Date();
+    const timestamp = now.getTime(); // milliseconds since epoch
+    const dateKey = `${timestamp}`; // Use timestamp as key for uniqueness
+    
+    console.log('Saving check-in data to userStore with key:', dateKey, checkInData);
+    await addCheckIn(dateKey, checkInData);
+    
+    console.log('Check-in completed and saved to both stores');
+  }, [currentMood, currentFocus, currentStruggle, completeCheckIn, addCheckIn]);
 
   // Handle dismiss
   const handleDismiss = useCallback(() => {
@@ -114,6 +150,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       // Generate the custom devotional
       const customDevotional = await createDevotionalFromCheckIn(checkInData, idToken);
       
+      // Get random background using the proper backgrounds from model
+      const backgroundUrls = Object.values(devotionalBackgrounds);
+      const randomBackground = backgroundUrls[Math.floor(Math.random() * backgroundUrls.length)];
+      
       // Save the custom devotional to the store
       const fullDevotional: Devotional = {
         id: 'custom-checkin',
@@ -128,7 +168,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         shares: 0,
         completed: 0,
         date: new Date().toISOString().split('T')[0],
-        imageURL: 'https://firebasestorage.googleapis.com/v0/b/shepherd-c74ad.firebasestorage.app/o/waterBackground.png?alt=media&token=b0266692-ada8-4ec9-98ce-a1e0a242186d',
+        imageURL: randomBackground,
         verse: customDevotional.verse || ''
       };
       
@@ -138,8 +178,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       
       setCustomDevotional(fullDevotional);
       
-      // Complete the check-in
-      completeCheckIn();
+      // Complete the check-in and save to both stores
+      await handleCompleteCheckIn();
       
       // Log analytics
       analytics.logEvent('checkin_custom_devotional_generated', {
@@ -155,7 +195,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       setIsGenerating(false);
       // You might want to show an error toast here
     }
-  }, [currentMood, currentFocus, currentStruggle, setCustomDevotional, completeCheckIn, handleDismiss, router]);
+  }, [currentMood, currentFocus, currentStruggle, setCustomDevotional, handleCompleteCheckIn, handleDismiss, router]);
 
   // Animate screen transitions
   const animateToScreen = useCallback((screen: CheckInScreen) => {
@@ -247,6 +287,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         focusAnim.setValue(screenWidth);
         struggleAnim.setValue(screenWidth);
         successAnim.setValue(screenWidth);
+        
+        // Log analytics for check-in shown
+        analytics.logEvent('checkin_sheet_shown', {
+          trigger: 'one_hour_reminder',
+          hasBeenOneHour: useCheckInStore.getState().hasBeenOneHourSinceLastCheckIn(),
+        });
       },
       close: () => bottomSheetRef.current?.close(),
     }),
@@ -474,7 +520,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       <View className="w-full mt-auto">
         <PrimaryButton
           title={(currentFocus !== '' || currentStruggle !== '') ? "Generate Custom Devotional" : "Start Today's Devotional"}
-          onPress={() => {
+          onPress={async () => {
             if (currentFocus !== '' || currentStruggle !== '') {
               // Set check-in flag
               setIsFromCheckIn(true);
@@ -506,7 +552,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               handleGenerateCustomDevotional();
             } else {
               // Just complete check-in and go to regular devotional
-              completeCheckIn();
+              await handleCompleteCheckIn();
               analytics.logEvent('checkin_completed', {
                 mood: currentMood,
                 focus: currentFocus,
@@ -545,6 +591,82 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           <Text className="font-din text-sm text-gray-600 text-center mt-2">
             Generating your personalized devotional...
           </Text>
+        )}
+        {!readingCompleted && (
+          <Pressable
+            onPress={async () => {
+              hapticMedium();
+              analytics.logEvent('checkin_start_worldwide_devotional_tapped', {
+                mood: currentMood,
+                focus: currentFocus,
+                struggle: currentStruggle
+              });
+              
+              // Log the check-in completion
+              console.log('Starting worldwide devotional check-in completion...');
+              
+              // Set the temporary flag to prevent auto-show
+              setTemporarilyDisableAutoShow(true);
+              
+              // Complete the check-in to save data and update lastCheckInTime
+              await handleCompleteCheckIn();
+              
+              // Verify the check-in was saved
+              const checkInState = useCheckInStore.getState();
+              console.log('Check-in state after completion:', {
+                lastCheckInTime: checkInState.lastCheckInTime,
+                hasBeenOneHour: checkInState.hasBeenOneHourSinceLastCheckIn(),
+                temporarilyDisableAutoShow: checkInState.temporarilyDisableAutoShow
+              });
+              
+              // Log analytics
+              analytics.logEvent('checkin_completed', {
+                mood: currentMood,
+                focus: currentFocus,
+                struggle: currentStruggle,
+                source: 'start_worldwide_devotional'
+              });
+              
+              // Close the sheet
+              bottomSheetRef.current?.close();
+              
+              // Reset check-in state immediately
+              setCurrentScreen('mood');
+              setSelectedMood(null);
+              setSelectedFocus(null);
+              setSelectedStruggle(null);
+              clearCurrentSession();
+              setIsGenerating(false);
+              // Reset animations
+              moodAnim.setValue(0);
+              focusAnim.setValue(screenWidth);
+              struggleAnim.setValue(screenWidth);
+              successAnim.setValue(screenWidth);
+              
+              // Wait for sheet to close, then trigger devotional
+              setTimeout(() => {
+                // Trigger the daily bread devotional
+                const triggerDailyBread = (global as any).triggerDailyBread;
+                if (triggerDailyBread && typeof triggerDailyBread === 'function') {
+                  console.log('Triggering daily bread from check-in...');
+                  triggerDailyBread();
+                } else {
+                  console.error('triggerDailyBread function not found on global');
+                }
+                
+                // Reset the temporary flag after a delay to allow the devotional to open
+                setTimeout(() => {
+                  console.log('Resetting temporarilyDisableAutoShow flag');
+                  useCheckInStore.getState().setTemporarilyDisableAutoShow(false);
+                }, 3000);
+              }, 600); // Wait for sheet to fully close
+            }}
+            className="mt-4"
+          >
+            <Text className="font-din text-base text-gray-500 underline text-center">
+              Start worldwide devotional
+            </Text>
+          </Pressable>
         )}
       </View>
     </Animated.View>

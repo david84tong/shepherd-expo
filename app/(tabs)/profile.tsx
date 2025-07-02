@@ -34,6 +34,7 @@ import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import { useUIStore } from '../stores/uiStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
+import { useCheckInStore } from '../stores/checkInStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import OnboardingPathScreen from '../onboarding/8';
 import EditNameSheet from '../../components/EditNameSheet';
@@ -45,11 +46,12 @@ import quillIcon from '../../assets/icons/journalIcon.png';
 import dropIcon from '../../assets/icons/waterIcon.png';
 import sheepIcon from '../../assets/icons/moods/sheepIcon.png';
 import starIcon from '../../assets/icons/starIcon.png';
+import heartIcon from '../../assets/icons/heartIcon.png';
 
 // Define activity type for the timeline
 type ActivityType = {
-  type: 'reading' | 'prayer' | 'reflection';
-  date: FirebaseFirestoreTypes.Timestamp;
+  type: 'reading' | 'prayer' | 'reflection' | 'checkin';
+  date: FirebaseFirestoreTypes.Timestamp | Date;
   data: any;
   icon: any;
   title: string;
@@ -96,6 +98,9 @@ export default function ProfileScreen() {
   const completedReflections = getCompletedReflections();
   const user = getUser();
   const userId = user?.id || null;
+  
+  // Get check-in history from store
+  const { checkInHistory } = useCheckInStore();
 
   const [showDiscordCard, setShowDiscordCard] = useState(true);
   const { signInWithApple, signInWithGoogle, upgradeAnonymousToApple } = useAuth();
@@ -221,13 +226,32 @@ export default function ProfileScreen() {
         content: reflection.content,
       })) || [];
 
-    const combined = [...readings, ...prayers, ...reflections];
+    // Add check-in activities
+    const checkIns =
+      checkInHistory?.map((checkIn) => {
+        // Build a content string with mood, focus, and struggle
+        const parts = [];
+        if (checkIn.mood) parts.push(`Mood: ${checkIn.mood}`);
+        if (checkIn.focus) parts.push(`Focus: ${checkIn.focus}`);
+        if (checkIn.struggle) parts.push(`Struggle: ${checkIn.struggle}`);
+        
+        return {
+          type: 'checkin' as const,
+          date: new Date(checkIn.completedAt),
+          data: checkIn,
+          icon: heartIcon,
+          title: 'Daily Check-in',
+          content: parts.join(' • '),
+        };
+      }) || [];
+
+    const combined = [...readings, ...prayers, ...reflections, ...checkIns];
     return combined.sort((a, b) => {
       const dateA = toDateSafe(a.date);
       const dateB = toDateSafe(b.date);
       return dateB.getTime() - dateA.getTime();
     });
-  }, [completedReadings, completedPrayers, completedReflections]);
+  }, [completedReadings, completedPrayers, completedReflections, checkInHistory]);
 
   // Function to format activity date for headers
   const formatActivityDate = (timestamp: FirebaseFirestoreTypes.Timestamp | any): string => {
@@ -927,6 +951,15 @@ export default function ProfileScreen() {
                               <Text
                                 className="font-din text-sm text-description mt-1"
                                 numberOfLines={1}
+                                ellipsizeMode="tail">
+                                {activity.content}
+                              </Text>
+                            )}
+                            {/* Display check-in content (mood, focus, struggle) */}
+                            {activity.type === 'checkin' && activity.content && (
+                              <Text
+                                className="font-din text-sm text-description mt-1"
+                                numberOfLines={2}
                                 ellipsizeMode="tail">
                                 {activity.content}
                               </Text>

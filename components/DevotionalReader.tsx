@@ -65,6 +65,19 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
 
   // Use customDevotional if it exists (AI-generated), otherwise use currentDevotional
   const activeDevotional = customDevotional || currentDevotional;
+  
+  // Debug logging for devotional data
+  useEffect(() => {
+    console.log('🔍 [DevotionalReader] Active devotional:', {
+      id: activeDevotional?.id,
+      title: activeDevotional?.title,
+      imageURL: activeDevotional?.imageURL,
+      hasCustom: !!customDevotional,
+      hasCurrent: !!currentDevotional,
+      customImageURL: customDevotional?.imageURL,
+      currentImageURL: currentDevotional?.imageURL
+    });
+  }, [activeDevotional, customDevotional, currentDevotional]);
 
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showTapGuidance, setShowTapGuidance] = useState(true);
