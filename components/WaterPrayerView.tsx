@@ -104,7 +104,8 @@ const WaterWaveAnimation: React.FC<{
   isHolding: boolean;
   animationTriggered: boolean;
   totalHoldTime: number;
-}> = ({ isActive, waterProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional, isHolding, animationTriggered, totalHoldTime }) => {
+  prayerText: string;
+}> = ({ isActive, waterProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional, isHolding, animationTriggered, totalHoldTime, prayerText }) => {
   const [waveOffset, setWaveOffset] = useState(0);
   const [waterLevel, setWaterLevel] = useState(SCREEN_HEIGHT);
   const textOpacity = useSharedValue(1);
@@ -262,7 +263,7 @@ const WaterWaveAnimation: React.FC<{
       >
         {guidedPrayerEnabled ? (
           <TypingText
-            text="Dear God, I come before you today with a grateful heart. Please guide me through this day and help me grow in faith. Amen."
+            text={prayerText}
             className="text-blue-700 font-feather text-xl text-center"
             baseTextStyle={{
               color: '#1E40AF',
@@ -270,6 +271,8 @@ const WaterWaveAnimation: React.FC<{
               fontFamily: 'Nunito-Black',
               textAlign: 'center',
               lineHeight: 28,
+              paddingHorizontal: 24,
+              marginTop: 150,
             }}
             speed={50}
             skipAnimation={false}
@@ -446,8 +449,17 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     if (currentDevotional?.prayer) {
       if (typeof currentDevotional.prayer === 'string') {
         devotionalPrayer = currentDevotional.prayer;
-      } else if (typeof currentDevotional.prayer === 'object' && (currentDevotional.prayer as any).en) {
-        devotionalPrayer = (currentDevotional.prayer as any).en;
+      } else if (typeof currentDevotional.prayer === 'object') {
+        // Try to get the current language, fallback to 'en'
+        let lang = 'en';
+        if (typeof navigator !== 'undefined') {
+          const navLang = (navigator.language || (navigator.languages && navigator.languages[0]));
+          if (typeof navLang === 'string') {
+            lang = navLang.split('-')[0];
+          }
+        }
+        const prayerObj = currentDevotional.prayer as Record<string, string>;
+        devotionalPrayer = prayerObj[lang] || prayerObj['en'] || Object.values(prayerObj)[0];
       }
     }
 
@@ -1179,7 +1191,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               onPressOut={handlePressOut}
               onPress={toggleControlRow}>
               <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -SCREEN_HEIGHT * 0.46 }}>
-                <WaterWaveAnimation isActive={showBreathingAnimation} waterProgress={waterProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} currentDevotional={currentDevotional} isHolding={isHolding} animationTriggered={animationTriggered} totalHoldTime={totalHoldTime} />
+                <WaterWaveAnimation isActive={showBreathingAnimation} waterProgress={waterProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} currentDevotional={currentDevotional} isHolding={isHolding} animationTriggered={animationTriggered} totalHoldTime={totalHoldTime} prayerText={generatePrayerContent()} />
               </View>
             </TouchableWithoutFeedback>
           )}
