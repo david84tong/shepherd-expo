@@ -472,6 +472,12 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       try {
         await firestore().collection('customDevotionals').doc(aiDevotional.id).set(aiDevotional);
         console.log('[DevotionalStore] Saved custom devotional to Firestore:', aiDevotional.id);
+        
+        // Also track in user document
+        // Import is done at the top of the file to avoid circular dependency issues
+        const { useUserStore } = require('./userStore');
+        await useUserStore.getState().addCustomDevotional(aiDevotional.id, firestore.Timestamp.now());
+        console.log('[DevotionalStore] Added custom devotional reference to user document');
       } catch (Error) {
         console.error('[DevotionalStore] Failed to save custom devotional to Firestore:', Error);
       }

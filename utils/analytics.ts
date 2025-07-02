@@ -97,6 +97,8 @@ class Analytics {
   private isEnabled: boolean = true;
   private mixpanel: Mixpanel | null = null;
   private amplitudeInitialized: boolean = false;
+  private initializationPromise: Promise<void> | null = null;
+  private eventQueue: Array<{eventName: string, params: Record<string, any>}> = [];
 
   /**
    * Private constructor to enforce singleton pattern
@@ -120,14 +122,32 @@ class Analytics {
    * Sets up device info and session tracking
    */
   public async init(): Promise<void> {
-    if (this.isInitialized) return;
+    // If already initialized, return immediately
+    if (this.isInitialized) return Promise.resolve();
+    
+    // If initialization is in progress, return the existing promise
+    if (this.initializationPromise) return this.initializationPromise;
 
+    // Create a new initialization promise
+    this.initializationPromise = this.performInitialization();
+    return this.initializationPromise;
+  }
+
+  /**
+   * Perform the actual initialization
+   */
+  private async performInitialization(): Promise<void> {
     try {
       console.log("Initializing analytics ******************");
       // Initialize Mixpanel with trackAutomaticEvents explicitly set to false
       this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false);
       await this.mixpanel.init();
-      this.mixpanel.registerSuperPropertiesOnce({ platform: Platform.OS });
+      
+      // Always set platform as a super property (not just once)
+      this.mixpanel.registerSuperProperties({ 
+        platform: Platform.OS,
+        $os: Platform.OS === 'ios' ? 'iOS' : 'Android'
+      });
 
       // Initialize Amplitude
       await amplitudeInit(AMPLITUDE_API_KEY);
@@ -152,16 +172,22 @@ class Analytics {
       const user = useUserStore.getState().getUser?.();
       this.userId = user ? user.id || 'anonymous' : 'anonymous';
 
-      // Set user identity in Mixpanel
+      // Set user identity in both Mixpanel and Amplitude
       if (this.userId && this.userId !== 'anonymous') {
+        // User is already authenticated
         this.mixpanel?.identify(this.userId);
-      }
-
-      // Set user identity in Amplitude
-      if (this.userId && this.userId !== 'anonymous') {
         amplitudeSetUserId(this.userId);
+        console.log("✅ Both platforms: Authenticated user ID set:", this.userId);
+      } else {
+        // Create placeholder ID for anonymous user
+        const placeholderId = await this.getOrCreatePlaceholderId();
+        this.userId = placeholderId;
+        
+        // Set placeholder ID in both platforms
+        this.mixpanel?.identify(placeholderId);
+        amplitudeSetUserId(placeholderId);
+        console.log("✅ Both platforms: Anonymous placeholder ID set:", placeholderId);
       }
-      this.mixpanel?.registerSuperPropertiesOnce({ platform: Platform.OS });
 
       // Set super properties for all events in Mixpanel
       this.mixpanel?.registerSuperProperties(this.defaultParams);
@@ -187,6 +213,9 @@ class Analytics {
 
       this.isInitialized = true;
 
+      // Process any queued events
+      this.processQueuedEvents();
+
       // Log app open event
       this.logEvent(AnalyticsEvent.APP_OPEN);
       this.logEvent("app_opening");
@@ -194,18 +223,40 @@ class Analytics {
       console.log('✅ Analytics (Mixpanel + Amplitude) initialized successfully');
     } catch (error) {
       console.log('❌ Failed to initialize analytics:', error);
+      this.isInitialized = false;
+      this.initializationPromise = null; // Reset to allow retry
     }
   }
 
+
   /**
-   * Log an event with optional parameters
+   * Log an event synchronously (queues if not initialized)
+   * This is the original synchronous method that most of the app uses
    */
   public logEvent(eventName: string | AnalyticsEvent, params: Record<string, any> = {}): void {
     if (!this.isInitialized) {
-      console.warn('Analytics not initialized. Call init() first.');
+      // Queue the event to be sent once initialized
+      this.eventQueue.push({ eventName: eventName.toString(), params });
+      
+      // Try to initialize if not already in progress
+      if (!this.initializationPromise) {
+        this.init().then(() => {
+          // Process queued events after initialization
+          this.processQueuedEvents();
+        });
+      }
       return;
     }
 
+    // If initialized, log immediately
+    this.logEventAsync(eventName, params);
+  }
+
+  /**
+   * The actual async implementation
+   */
+  private async logEventAsync(eventName: string | AnalyticsEvent, params: Record<string, any> = {}): Promise<void> {
+    // This is the implementation from the previous logEvent
     if (!this.isEnabled) {
       return; // Silently ignore if analytics is disabled
     }
@@ -231,12 +282,26 @@ class Analytics {
 
       // Track event in Amplitude
       if (this.amplitudeInitialized) {
-        
         amplitudeTrack(eventName?.toString(), eventParams);
-        console.log("EVENT TRACK WITH AMPLITUDE");
       }
     } catch (error) {
       console.log('Failed to log analytics event:', error);
+    }
+  }
+
+  /**
+   * Process any events that were queued before initialization
+   */
+  private processQueuedEvents(): void {
+    if (this.eventQueue.length > 0) {
+      console.log(`📊 Processing ${this.eventQueue.length} queued analytics events`);
+      
+      const queueCopy = [...this.eventQueue];
+      this.eventQueue = []; // Clear the queue
+      
+      queueCopy.forEach(({ eventName, params }) => {
+        this.logEventAsync(eventName, params);
+      });
     }
   }
 
@@ -256,62 +321,135 @@ class Analytics {
   }
 
   /**
-   * Set user ID for analytics
+   * Set user ID for analytics (both Mixpanel and Amplitude)
    */
-  public setUserId(userId: string): void {
+  public async setUserId(userId: string, isNewUser: boolean = false): Promise<void> {
+    const previousUserId = this.userId;
+    const wasAnonymous = previousUserId?.startsWith('anon_');
+    
+    console.log(`🔄 Setting user ID: ${userId} (isNewUser: ${isNewUser}, wasAnonymous: ${wasAnonymous})`);
+    
     this.userId = userId;
 
     // Update identity in Mixpanel
     if (this.mixpanel && userId !== 'anonymous') {
+      // If transitioning from anonymous to authenticated and it's a new user signup
+      if (wasAnonymous && isNewUser) {
+        // Use alias to link the anonymous user to the new authenticated user
+        console.log(`🔗 Mixpanel: Aliasing anonymous user ${previousUserId} to authenticated user ${userId}`);
+        this.mixpanel.alias(userId, previousUserId!);
+      }
+      
+      // Always identify with the new user ID
       this.mixpanel.identify(userId);
+      console.log("✅ Mixpanel: User ID updated:", userId);
     }
 
     // Update identity in Amplitude
     if (this.amplitudeInitialized && userId !== 'anonymous') {
+      // For Amplitude, we handle the transition by setting user properties to link the anonymous session
+      if (wasAnonymous && isNewUser) {
+        console.log(`🔗 Amplitude: Transitioning from anonymous user ${previousUserId} to authenticated user ${userId}`);
+        
+        // Set a user property to track the transition
+        const identify = new Identify();
+        if (previousUserId) {
+          identify.set('previous_anonymous_id', previousUserId);
+        }
+        identify.set('user_transition', 'anonymous_to_authenticated');
+        identify.set('transition_timestamp', new Date().toISOString());
+        amplitudeIdentify(identify);
+        
+        // Log a transition event for better tracking
+        amplitudeTrack('user_identity_linked', {
+          previous_user_id: previousUserId,
+          new_user_id: userId,
+          transition_type: 'anonymous_to_authenticated'
+        });
+      }
+      
+      // Set the new user ID
       amplitudeSetUserId(userId);
+      console.log("✅ Amplitude: User ID updated:", userId);
+    }
+
+    // Clear the placeholder ID from storage since user is now authenticated
+    if (userId !== 'anonymous' && !userId.startsWith('anon_')) {
+      await AsyncStorage.removeItem('shepherd-analytics-placeholder-id');
+      console.log("🗑️ Cleared placeholder ID from storage");
     }
   }
 
   /**
-   * Set user properties for segmentation
+   * Set user properties for segmentation (both Mixpanel and Amplitude)
    */
   public setUserProperties(properties: Record<string, any>): void {
     if (!this.isInitialized || !this.isEnabled) return;
 
     try {
+      console.log("🔧 Setting user properties for both platforms:", properties);
+      
+      // Set properties in Mixpanel
       if (this.mixpanel && this.userId) {
-        this.mixpanel.getPeople().set(properties);
+        // Always include platform in user properties
+        const propertiesWithPlatform = {
+          ...properties,
+          platform: Platform.OS,
+          $os: Platform.OS === 'ios' ? 'iOS' : 'Android'
+        };
+        this.mixpanel.getPeople().set(propertiesWithPlatform);
+        console.log("✅ Mixpanel: User properties set");
       }
 
+      // Set properties in Amplitude
       if (this.amplitudeInitialized) {
         const identify = new Identify();
         Object.entries(properties).forEach(([key, value]) => {
           identify.set(key, value);
         });
+        // Also set platform for Amplitude
+        identify.set('platform', Platform.OS);
+        identify.set('os', Platform.OS === 'ios' ? 'iOS' : 'Android');
         amplitudeIdentify(identify);
+        console.log("✅ Amplitude: User properties set");
       }
     } catch (error) {
-      console.log('Failed to set user properties:', error);
+      console.log('❌ Failed to set user properties:', error);
     }
   }
 
   /**
-   * Reset the user (for logout)
+   * Reset the user (for logout) - handles both Mixpanel and Amplitude
    */
-  public resetUser(): void {
+  public async resetUser(): Promise<void> {
     if (!this.isInitialized) return;
 
-    this.userId = 'anonymous';
+    const previousUserId = this.userId;
+    console.log(`🔄 Resetting user analytics (previous ID: ${previousUserId})`);
+
+    // Clear the stored placeholder ID to force creation of a new one
+    await AsyncStorage.removeItem('shepherd-analytics-placeholder-id');
+    
+    // Create a new placeholder ID for the logged out user
+    this.userId = await this.getOrCreatePlaceholderId();
 
     // Reset identity in Mixpanel
     if (this.mixpanel) {
       this.mixpanel.reset();
+      // Identify with the new placeholder ID
+      this.mixpanel.identify(this.userId);
+      console.log("✅ Mixpanel: User reset and new placeholder ID set:", this.userId);
     }
 
     // Reset identity in Amplitude
     if (this.amplitudeInitialized) {
       amplitudeReset();
+      // Set the new placeholder ID in Amplitude
+      amplitudeSetUserId(this.userId);
+      console.log("✅ Amplitude: User reset and new placeholder ID set:", this.userId);
     }
+
+    console.log("🗑️ User reset complete, new placeholder ID:", this.userId);
   }
 
   /**
@@ -367,6 +505,21 @@ class Analytics {
     const newSessionId = this.generateUUID();
     await AsyncStorage.setItem('shepherd-analytics-session-id', newSessionId);
     return newSessionId;
+  }
+
+  /**
+   * Get or create a placeholder user ID for anonymous users
+   */
+  private async getOrCreatePlaceholderId(): Promise<string> {
+    const storedPlaceholderId = await AsyncStorage.getItem('shepherd-analytics-placeholder-id');
+    if (storedPlaceholderId) {
+      return storedPlaceholderId;
+    }
+
+    // Create a new placeholder ID with a recognizable prefix
+    const newPlaceholderId = `anon_${this.generateUUID()}`;
+    await AsyncStorage.setItem('shepherd-analytics-placeholder-id', newPlaceholderId);
+    return newPlaceholderId;
   }
 
   /**

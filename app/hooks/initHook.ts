@@ -167,12 +167,20 @@ const restoreUserState = async () => {
 };
 export const useAppInitialization = () => {
   const [isInitialized, setIsInitialized] = useState(false);
+  const [isAnalyticsReady, setIsAnalyticsReady] = useState(false);
+  
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Initialize analytics first
+        // Initialize analytics first and wait for completion
         console.log('🔧 Initializing analytics...');
-        await analytics.init();
+        if (!analytics.isInitialized) {
+          await analytics.init();
+          console.log('✅ Analytics initialized successfully');
+        } else {
+          console.log('✅ Analytics already initialized');
+        }
+        setIsAnalyticsReady(true);
         
         // Test analytics integration
         analytics.testAnalytics();
@@ -182,12 +190,13 @@ export const useAppInitialization = () => {
         setIsInitialized(true);
       } catch (error) {
         console.error('Error during app initialization:', error);
-        setIsInitialized(true); // Set to true even on error to not block the app
+        setIsAnalyticsReady(true); // Set to true even on error to not block the app
+        setIsInitialized(true);
       }
     };
     initializeApp();
   }, []);
-  return { isInitialized };
+  return { isInitialized, isAnalyticsReady };
 };
 
 // Default export for Expo Router compatibility

@@ -35,6 +35,7 @@ import { adapty } from 'react-native-adapty';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import { UserDoc } from '../models/User';
 import firestore from '@react-native-firebase/firestore';
+import { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import PrimaryButton from '../../components/PrimaryButton';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { useHomeStore } from '../stores/homeStore';
@@ -190,7 +191,7 @@ export default function SaveProgressScreen() {
     }
   };
 
-  async function syncUser(user: UserDoc) {
+  async function syncUser(user: FirebaseAuthTypes.User) {
     const { success, data: firestoreData } = await fetchFromFirestore({
       currentLoggedUser: user,
     });
@@ -277,9 +278,11 @@ export default function SaveProgressScreen() {
       }
 
       const spiritualGoal = allResponses.intent || 'Understand';
+      const now = firestore.Timestamp.now();
       const userData: UserDoc = {
         id: uid,
         displayName,
+        email: '', // Will be set from auth
         spiritualGoal,
         experienceLevel:
           allResponses.bibleFamiliarity === 'never'
@@ -289,13 +292,14 @@ export default function SaveProgressScreen() {
               : allResponses.bibleFamiliarity === 'a-lot'
                 ? 'mature'
                 : 'growing',
+        notificationTime: allResponses.notificationTime || '',
+        notificationEnabled:
+          allResponses.notificationEnabled !== undefined ? allResponses.notificationEnabled : false,
+        setNotificationTime: async () => {}, // Default implementation
         frequencyGoal: allResponses.frequencyGoal || '',
         denomination: allResponses.religiousAffiliation,
         ageRange: allResponses.ageRange || '',
-        notificationEnabled:
-          allResponses.notificationEnabled !== undefined ? allResponses.notificationEnabled : false,
-        notificationTime: allResponses.notificationTime || '',
-        selectedPathId: allResponses.selectedPath || '',
+        username: allResponses.username || '',
         lamb: {
           level: 1,
           xp: 90,
@@ -304,18 +308,48 @@ export default function SaveProgressScreen() {
           name: allResponses.lambName || '',
           skin: 'default',
         },
-        username: allResponses.username || '',
+        selectedPathId: allResponses.selectedPath || '',
+        streakCount: 0,
+        lastActivityDate: now,
+        versesReadTotal: 0,
+        chaptersReadTotal: 0,
+        bibleVersion: 'NIV',
+        proStatus: 'free',
+        createdAt: now,
+        updatedAt: now,
+        gens: 0,
+        lastReadingDate: now,
+        lastPrayerDate: now,
+        lastReflectionDate: now,
+        lastReadingPenaltyDate: now,
+        lastPrayerPenaltyDate: now,
+        lastReflectionPenaltyDate: now,
+        completedReflections: [],
+        completedPrayers: [],
+        completedReadings: [],
+        isProFromOnboarding: false,
+        hasSeenWidgetModal: false,
+        hasSeenBibleReaderTutorial: false,
+        skins: ['default'],
+        checkIns: [],
+        level: 1,
+        xp: 90,
+        streak: 0,
+        isPro: false,
+        isProWithReferral: false,
+        completedMapPaths: [],
       };
 
       console.log('Creating user data:', JSON.stringify(userData));
       // We are checking if user have premium in this mobile also user if purchased before signup from onboarding or user restored from paywall in onboarding before signup.
       if (isPremium && !isProFromOnboarding) {
         userData.isPro = true;
-        userData.proExpiryDate = null;
+        userData.proExpiryDate = undefined;
         useUserStore.getState().setProStatus('pro');
       }
       // Identify user in Mixpanel
-      analytics.setUserId(uid);
+      // Pass isNewUser=true since this is called during user creation
+      await analytics.setUserId(uid, true);
       analytics.setUserProperties({
         ...userData,
         $name: displayName,

@@ -11,6 +11,14 @@ export interface MapPathCompletion {
   endChapter: number;
 }
 
+export interface CheckIn {
+  mood: string;
+  focus: string; // can be blank
+  struggles: string; // can be blank
+  // customDevotionalId: string;
+  timeStamp: FirebaseFirestoreTypes.Timestamp;
+}
+
 export interface UserDoc {
   //onboarding questions
   id: string;
@@ -19,6 +27,7 @@ export interface UserDoc {
   spiritualGoal: string;
   experienceLevel: string;
   notificationTime: string;
+  notificationEnabled?: boolean;
   setNotificationTime: (time: string) => Promise<void>;
   frequencyGoal: string;
   denomination?: string;
@@ -48,15 +57,7 @@ export interface UserDoc {
   hasSeenWidgetModal: boolean;
   hasSeenBibleReaderTutorial: boolean;
   skins: string[];
-  // Check-in data - dictionary with date keys (YYYYMMDD format)
-  checkIns?: {
-    [dateKey: string]: {
-      mood: string;
-      focus: string;
-      struggle: string;
-      completedAt: FirebaseFirestoreTypes.Timestamp;
-    };
-  };
+  checkIns: CheckIn[];
   // Progress data
   level: number;
   xp: number;
@@ -64,7 +65,7 @@ export interface UserDoc {
   // Pro status
   isPro: boolean;
   isProWithReferral: boolean;
-  proExpiryDate: FirebaseFirestoreTypes.Timestamp;
+  proExpiryDate?: FirebaseFirestoreTypes.Timestamp;
   completedMapPaths: MapPathCompletion[];
 }
 
@@ -172,11 +173,6 @@ export interface UserStore extends UserDoc {
 
   setCompletedMapPaths: (paths: MapPathCompletion[]) => void;
   addCompletedMapPath: (path: MapPathCompletion) => void;
-  
-  // Check-in getter/setter
-  getCheckIns: () => UserDoc['checkIns'];
-  setCheckIns: (checkIns: UserDoc['checkIns']) => Promise<void>;
-  addCheckIn: (dateKey: string, checkInData: NonNullable<UserDoc['checkIns']>[string]) => Promise<void>;
 }
 
 export interface Reading {
