@@ -613,6 +613,29 @@ export const useHomeScreen = () => {
       } else {
         console.log('[useHomeScreen] Closing devotional (non-prayer path)');
         
+        // Check streak trigger conditions when user presses "Go Home"
+        const homeStore = useHomeStore.getState();
+        const { readingCompleted, sawStreakToday } = homeStore;
+        
+        // Only trigger if reading is completed and streak hasn't been shown today
+        if (readingCompleted && !sawStreakToday) {
+          
+          // Mark that we've shown the streak screen today
+          homeStore.setSawStreakToday(true);
+          
+          // Navigate to streak screen
+          router.push('/streak');
+          
+          analytics.logEvent('HomeScreen_StreakTriggered', {
+            readingCompleted,
+            sawStreakToday: false,
+            timestamp: new Date().toISOString()
+          });
+          
+          return; // Exit early to prevent further processing
+        } else {
+        }
+        
         // Immediately hide the devotional content
         setDevotionalReaderVisible(false);
         setShowDevotionalContent(false);
@@ -625,7 +648,6 @@ export const useHomeScreen = () => {
         setTimeout(() => {
           
           // Check if all three actions are completed - if so, set to full (3)
-          const homeStore = useHomeStore.getState();
           const allActionsCompleted = homeStore.readingCompleted && homeStore.prayerCompleted && homeStore.reflectionCompleted;
           
           let targetStateInput;
@@ -649,7 +671,7 @@ export const useHomeScreen = () => {
         }, 250);
       }
     }
-  }, [router, showDevotionalContent, devotionalReaderVisible, clearCustomDevotional, setShowDevotionalContent, setDevotionalReaderVisible, setFinishReading, setShowPrayerView, setPrayerViewVisible, devotionalCardOpacityAnim, riveArtboardOpacityAnim, setRiveIdle, setCurrentStateInput, riveRef]);
+  }, [router, showDevotionalContent, devotionalReaderVisible, clearCustomDevotional, setShowDevotionalContent, setDevotionalReaderVisible, setFinishReading, setShowPrayerView, setPrayerViewVisible, devotionalCardOpacityAnim, riveArtboardOpacityAnim, setRiveIdle, setCurrentStateInput, riveRef, analytics]);
 
   const handlePrayerPress = useCallback(() => {
     if (!isPro && prayerCompleted) {

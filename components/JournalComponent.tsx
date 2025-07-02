@@ -420,7 +420,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       // Don't reset showJournalContent here - keep the component visible during success state
       // It will be reset when actually navigating away
       console.log('🔍 JOURNAL SUCCESS - Keeping showJournalContent true during success state');
-      
+
       // Use a small delay to allow snapPoints to recalculate before snapping
       setTimeout(() => {
         const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
@@ -635,7 +635,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       });
       useHomeStore.getState().setTappedReflectAboutVerse(false);
       console.log('Reset tappedReflectAboutVerse flag to false (from back button)');
-      
+
       // Don't change reflection completion state - preserve existing state
       onClose({});
 
@@ -689,7 +689,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
           }}
           onGoHome={() => {
             console.log('🔍 JOURNAL SUCCESS - onGoHome called, delaying navigation for animation');
-            
+
             // Delay the actual navigation/close to allow success animation to play
             setTimeout(() => {
               console.log('🔍 JOURNAL SUCCESS - Now executing navigation after delay');
@@ -700,7 +700,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
               // Set journalViewVisible to false to show tab bar again
               useHomeStore.getState().setJournalViewVisible(false);
               console.log('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onGoHome');
-              
+
               // Reset showJournalContent when actually navigating
               if (setShowJournalContent) {
                 setShowJournalContent(false);
@@ -718,10 +718,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
               if (isBonusAvailable) {
                 setSuccessType(SuccessAnimationType.BONUS);
                 router.push({
-                  pathname: '/success',
-                  params: {
-                    showStreakScreen: 'true'
-                  }
+                  pathname: '/success'
                 });
 
                 // Reset Rive animation to appropriate state after navigation with delay
@@ -782,7 +779,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
           }}
           onPray={() => {
             console.log('🔍 JOURNAL SUCCESS - onPray called');
-            
+
             // Handle bonus collection if available
             const sawStreakToday = useHomeStore.getState().sawStreakToday;
             const isFirstReadingOfDay = !sawStreakToday;
@@ -795,18 +792,15 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
               // Set journalViewVisible to false to show tab bar again
               useHomeStore.getState().setJournalViewVisible(false);
               console.log('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onPray (bonus)');
-              
+
               // Reset showJournalContent when navigating
               if (setShowJournalContent) {
                 setShowJournalContent(false);
                 console.log('🔍 JOURNAL SUCCESS - Set showJournalContent to false when navigating to bonus');
               }
-              
+
               router.push({
-                pathname: '/success',
-                params: {
-                  showStreakScreen: 'true'
-                }
+                pathname: '/success'
               });
 
               // Reset Rive animation to appropriate state after navigation with delay
@@ -841,13 +835,13 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                 // Normal prayer flow - close journal and signal to open prayer view
                 useHomeStore.getState().setJournalViewVisible(false);
                 console.log('🔍 JOURNAL SUCCESS - journalViewVisible set to false in onPray (no bonus)');
-                
+
                 // Reset showJournalContent when actually navigating
                 if (setShowJournalContent) {
                   setShowJournalContent(false);
                   console.log('🔍 JOURNAL SUCCESS - Set showJournalContent to false when navigating to prayer');
                 }
-                
+
                 onClose({ isReflectPresses: true }); // Pass flag to trigger prayer navigation
               }, 2500); // Wait 2.5 seconds for success animation to play
             }
@@ -961,7 +955,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                 });
                 useHomeStore.getState().setTappedReflectAboutVerse(false);
                 console.log('Reset tappedReflectAboutVerse flag to false (from cancel button)');
-                
+
                 // Don't change reflection completion state - preserve existing state
                 onClose({});
 

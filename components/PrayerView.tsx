@@ -1147,10 +1147,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
                 // Navigate to bonus screen
                 router.push({
-                  pathname: '/success',
-                  params: {
-                    showStreakScreen: 'true'
-                  }
+                  pathname: '/success'
                 });
 
                 // Reset Rive animation to appropriate state after navigation

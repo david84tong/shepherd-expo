@@ -623,8 +623,6 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       fromType: successType,
     });
 
-    // If this is the first reading of the day, effectiveType is READING, and we haven't shown the streak screen today
-
     // Set unmounting flag first
     isUnmounting.current = true;
 
@@ -639,8 +637,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     homeStore.setPrayerViewVisible(false);
     homeStore.setJournalViewVisible(false);
 
-    // Navigate without changing the successType - it will be reset in the cleanup effect
-    if (showStreakScreenParam) {
+    // Always navigate to home screen - streak will be triggered from home if conditions are met
+    if (!sawStreakToday) {
       router.push({
         pathname: '/streak',
       });

@@ -36,7 +36,7 @@ import { useDevotionalStore } from '../stores/devotionalStore';
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import { useCheckInStore } from '../stores/checkInStore';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useCallback } from 'react';
 import type { Devotional } from '../models/Devotional';
 import { devotionalBackgrounds } from '../models/Devotional';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
@@ -56,6 +56,8 @@ import { Feather } from '@expo/vector-icons';
 import CardStack from '../components/CardStack';
 import { useRouter } from 'expo-router';
 import auth from '@react-native-firebase/auth';
+import { createDevotionalFromCheckIn } from '../api/ai';
+
 
 // Custom toast config with explicit styling
 const toastConfig = CustomToast;
@@ -74,7 +76,7 @@ console.log('📄 HomeScreen file loaded at:', new Date().toISOString());
 
 export default function HomeScreen() {
   console.log('🏠 HomeScreen function called at:', new Date().toISOString());
-  
+
   const router = useRouter();
 
   // Direct function call to test
@@ -367,6 +369,7 @@ export default function HomeScreen() {
     };
   }, [handleReadPress]);
 
+  // Streak trigger logic will be handled in handleDevotionalClose when user presses "Go Home"
 
   // Set bottomSheetRef in home store so other components can access it
   useEffect(() => {
@@ -504,25 +507,25 @@ export default function HomeScreen() {
   const handleCustomDevotionalPress = async () => {
     const checkInStore = useCheckInStore.getState();
     const todaysCheckIn = checkInStore.getTodaysCheckIn();
-    
+
     console.log('🔍 [handleCustomDevotionalPress] Check-in store state:', {
       todaysCheckIn: checkInStore.todaysCheckIn,
       checkInHistory: checkInStore.checkInHistory,
       hasCompletedToday: checkInStore.hasCompletedTodaysCheckIn(),
       todaysCheckInFromGetter: todaysCheckIn
     });
-    
+
     if (todaysCheckIn && (todaysCheckIn.focus !== '' || todaysCheckIn.struggle !== '')) {
       // User has completed check-in with focus/struggle, generate custom devotional
       console.log('🎯 Generating custom devotional with check-in data:', todaysCheckIn);
-      
+
       // Set flag to indicate this is from check-in flow
       const devotionalStore = useDevotionalStore.getState();
       devotionalStore.setIsFromCheckIn(true);
-      
+
       // Navigate to devotional loading screen
       router.push('/devotionalLoading' as any);
-      
+
       // Generate custom devotional in background (similar to GlobalCheckIn)
       try {
         const currentUser = auth().currentUser;
@@ -531,13 +534,13 @@ export default function HomeScreen() {
           handleReadPress(); // Fallback to regular devotional
           return;
         }
-        
+
         const idToken = await currentUser.getIdToken();
-        const { createDevotionalFromCheckIn } = await import('../api/ai');
-        
+        // createDevotionalFromCheckIn is already imported at the top
+
         // Generate the custom devotional
         const customDevotional = await createDevotionalFromCheckIn(todaysCheckIn, idToken);
-        
+
         // Get random background using the proper backgrounds from model
         const backgroundUrls = Object.values(devotionalBackgrounds);
         const randomIndex = Math.floor(Math.random() * backgroundUrls.length);
@@ -547,7 +550,7 @@ export default function HomeScreen() {
           url: randomBackground,
           totalBackgrounds: backgroundUrls.length
         });
-        
+
         // Create full devotional object
         const fullDevotional: Devotional = {
           id: 'custom-checkin',
@@ -565,15 +568,15 @@ export default function HomeScreen() {
           imageURL: randomBackground,
           verse: customDevotional.verse || ''
         };
-        
+
         devotionalStore.setCustomDevotional(fullDevotional);
-        
+
         analytics.logEvent('custom_devotional_generated_from_button', {
           mood: todaysCheckIn.mood,
-          focus: todaysCheckIn.focus,  
+          focus: todaysCheckIn.focus,
           struggle: todaysCheckIn.struggle
         });
-        
+
       } catch (error) {
         console.error('Error generating custom devotional:', error);
         // Navigate to regular devotional on error
@@ -1047,7 +1050,7 @@ export default function HomeScreen() {
                             />
                           </View>
                         </View>
-                        
+
                         {/* Custom Devotional Button */}
                         <View
                           className="flex-row items-center"
@@ -1065,7 +1068,7 @@ export default function HomeScreen() {
                             />
                           </View>
                         </View>
-                        
+
                         {/* Centered Check Circle - Positioned between both buttons */}
                         <View
                           style={{
@@ -1091,7 +1094,7 @@ export default function HomeScreen() {
                           )}
                         </View>
                       </View>
-                      
+
                       {/* Custom Path Button - Hidden when all activities are completed */}
                       {!(prayerCompleted && readingCompleted && reflectionCompleted) && (
                         <View
@@ -1123,7 +1126,7 @@ export default function HomeScreen() {
                           </View>
                         </View>
                       )}
-                    
+
 
                       {/* {isLoadingDevotional && (
                         <View className="bg-white/60 rounded-xl p-4 mb-4 border border-lightGreen/20">
