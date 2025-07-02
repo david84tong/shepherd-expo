@@ -1,4 +1,4 @@
-import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { View, Animated, PanResponder, StyleSheet } from 'react-native';
 
 const CARD_OFFSET = 16; // px offset for both right and bottom

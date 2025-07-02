@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -9,11 +10,6 @@ import { UserDoc, Lamb, UserStore, MapPathCompletion } from '../models/User';
 import { isAuthenticated, updateUserData } from '../helper/firebaseHelper';
 
 // Constants
-const USER_FETCH_CACHE_DURATION = 5000; // 5 seconds
-const SYNC_DEBOUNCE_MS = 2000;
-
-// Types
-type ProStatus = 'free' | 'trial' | 'pro';
 
 // Initial state
 const initialLamb: Lamb = {
@@ -67,7 +63,8 @@ const initialState: UserDoc = {
   proExpiryDate: Timestamp.now(),
   completedMapPaths: [],
   skins: [],
-  setNotificationTime: async (time: string) => {
+  checkIns: {},
+  setNotificationTime: async (_time: string) => {
     // This will be overridden by the actual implementation
     console.warn('setNotificationTime not implemented in initial state');
   },
@@ -165,6 +162,11 @@ export const useUserStore = create<UserStore>()(
             isPro: firestoreData.isPro || state.isPro || false,
             isProWithReferral: firestoreData.isProWithReferral || state.isProWithReferral || false,
             proExpiryDate: firestoreData.proExpiryDate || state.proExpiryDate,
+            // Sync check-in data - merge instead of replace
+            checkIns: {
+              ...(state.checkIns || {}),
+              ...(firestoreData.checkIns || {})
+            },
           };
         });
         console.log('Firestore data sync complete');
@@ -197,7 +199,7 @@ export const useUserStore = create<UserStore>()(
       },
 
       setUser: (user: Partial<UserDoc>) => {
-        set((state) => {
+        set((_state) => {
           const updates = {
             ...user,
             updatedAt: Timestamp.now(),
@@ -254,6 +256,7 @@ export const useUserStore = create<UserStore>()(
       getHasSeenWidgetModal: () => get().hasSeenWidgetModal || false,
       getHasSeenBibleReaderTutorial: () => get().hasSeenBibleReaderTutorial || false,
       getSkins: () => get().skins || initialState.skins,
+      getCheckIns: () => get().checkIns,
 
       // Setters
       setSpiritualGoal: (spiritualGoal) => set({ spiritualGoal }),
@@ -518,6 +521,50 @@ export const useUserStore = create<UserStore>()(
           return state;
         });
       },
+
+      setCheckIns: async (checkIns: UserDoc['checkIns']) => {
+        console.log('[setCheckIns] Called with:', checkIns);
+        set({ checkIns });
+        
+        if (isAuthenticated()) {
+          updateUserData({ checkIns });
+        }
+      },
+
+      addCheckIn: async (dateKey: string, checkInData: NonNullable<UserDoc['checkIns']>[string]) => {
+        console.log('[addCheckIn] Called with dateKey:', dateKey, 'data:', checkInData);
+        
+        // Update local state first
+        const state = get();
+        const updatedCheckIns = {
+          ...(state.checkIns || {}),
+          [dateKey]: checkInData
+        };
+        
+        set({ checkIns: updatedCheckIns });
+        
+        // Update Firestore directly with nested field path
+        if (isAuthenticated()) {
+          try {
+            const currentUser = auth().currentUser;
+            if (currentUser) {
+              // Use Firestore's dot notation for nested field updates
+              await firestore()
+                .collection('users')
+                .doc(currentUser.uid)
+                .update({
+                  [`checkIns.${dateKey}`]: checkInData,
+                  updatedAt: Timestamp.now()
+                });
+              console.log('[addCheckIn] Successfully updated Firestore with nested field path');
+            }
+          } catch (error) {
+            console.error('[addCheckIn] Error updating Firestore:', error);
+            // Fallback to updating the entire checkIns object
+            updateUserData({ checkIns: updatedCheckIns });
+          }
+        }
+      },
     }),
     {
       name: 'shepherd-user-storage',
@@ -609,6 +656,9 @@ export const useUserStore = create<UserStore>()(
           addCompletedMapPath,
           setSkins,
           addSkin,
+          getCheckIns,
+          setCheckIns,
+          addCheckIn,
           // Keep only data fields
           ...dataOnly
         } = state;

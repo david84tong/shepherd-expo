@@ -48,6 +48,15 @@ export interface UserDoc {
   hasSeenWidgetModal: boolean;
   hasSeenBibleReaderTutorial: boolean;
   skins: string[];
+  // Check-in data - dictionary with date keys (YYYYMMDD format)
+  checkIns?: {
+    [dateKey: string]: {
+      mood: string;
+      focus: string;
+      struggle: string;
+      completedAt: FirebaseFirestoreTypes.Timestamp;
+    };
+  };
   // Progress data
   level: number;
   xp: number;
@@ -163,6 +172,11 @@ export interface UserStore extends UserDoc {
 
   setCompletedMapPaths: (paths: MapPathCompletion[]) => void;
   addCompletedMapPath: (path: MapPathCompletion) => void;
+  
+  // Check-in getter/setter
+  getCheckIns: () => UserDoc['checkIns'];
+  setCheckIns: (checkIns: UserDoc['checkIns']) => Promise<void>;
+  addCheckIn: (dateKey: string, checkInData: NonNullable<UserDoc['checkIns']>[string]) => Promise<void>;
 }
 
 export interface Reading {

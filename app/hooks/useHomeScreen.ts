@@ -191,18 +191,23 @@ export const useHomeScreen = () => {
 
   // Memoized values
   const snapPoints = useMemo(() => (
-    showPrayerContent || showJournalContent
-      ? ['60%', '65%', '70%', '75%', '80%', '85%', '88%']
-      : ['60%', '65%', '70%', '75%', '80%', '85%', '88%']
+    showPrayerContent
+      ? ['60%'] // Fixed at 60% for WaterPrayerView
+      : showJournalContent
+        ? ['60%', '65%', '70%', '75%', '80%', '85%', '88%']
+        : ['60%', '65%', '70%', '75%', '80%', '85%', '88%']
   ), [showPrayerContent, showJournalContent]);
 
   const lambTranslateX = useMemo(
     () =>
       Animated.add(
-        previewAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0], extrapolate: 'clamp' }),
+        new Animated.Value(0), // Base offset to center the lamb
         Animated.add(
-          prayerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -20], extrapolate: 'clamp' }),
-          reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40], extrapolate: 'clamp' })
+          previewAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 0], extrapolate: 'clamp' }),
+          Animated.add(
+            prayerAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -20], extrapolate: 'clamp' }),
+            reflectionAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -40], extrapolate: 'clamp' })
+          )
         )
       ),
     []

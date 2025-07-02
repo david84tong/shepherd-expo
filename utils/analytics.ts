@@ -123,6 +123,7 @@ class Analytics {
     if (this.isInitialized) return;
 
     try {
+      console.log("Initializing analytics ******************");
       // Initialize Mixpanel with trackAutomaticEvents explicitly set to false
       this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false);
       await this.mixpanel.init();

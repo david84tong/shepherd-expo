@@ -4,7 +4,6 @@ import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
   BottomSheetScrollView,
-  BottomSheetView,
 } from '@gorhom/bottom-sheet';
 import { Feather } from '@expo/vector-icons';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
@@ -226,81 +225,81 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
 };
 
 const styles = StyleSheet.create({
+  closeButton: {
+    padding: 8,
+  },
   container: {
     flex: 1,
     paddingTop: 10,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
 
-  closeButton: {
-    padding: 8,
-  },
   content: {
     flex: 1,
+    paddingHorizontal: 20,
+  },
+  emptyState: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  emptyStateText: {
+    color: '#795323',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    opacity: 0.6,
+    textAlign: 'center',
+  },
+  emptyStateTitle: {
+    color: '#795323',
+    fontFamily: 'Feather',
+    fontSize: 20,
+    marginBottom: 8,
+    marginTop: 16,
+  },
+  errorContainer: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+  },
+  errorText: {
+    color: '#795323',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 20,
     paddingHorizontal: 20,
   },
   listContainer: {
     paddingBottom: 20,
   },
   loadingContainer: {
-    flex: 1,
     alignItems: 'center',
+    flex: 1,
     justifyContent: 'center',
   },
   loadingText: {
-    fontSize: 16,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
     color: '#795323',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
     marginTop: 12,
     opacity: 0.6,
   },
-  errorContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  errorText: {
-    fontSize: 16,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    color: '#795323',
-    textAlign: 'center',
-    marginBottom: 16,
-  },
   retryButton: {
     backgroundColor: '#795323',
+    borderRadius: 8,
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 8,
   },
   retryButtonText: {
-    fontSize: 16,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
     color: '#FFF4DC',
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyStateTitle: {
-    fontSize: 20,
-    fontFamily: 'Feather',
-    color: '#795323',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  emptyStateText: {
-    fontSize: 16,
     fontFamily: 'DIN Next Rounded LT W01 Regular',
-    color: '#795323',
-    opacity: 0.6,
-    textAlign: 'center',
+    fontSize: 16,
   },
 });
 

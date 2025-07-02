@@ -16,6 +16,7 @@ import { HalfModalType } from '../app/halfModal';
 import { calculateExpForLevel } from '../utils/levelUtils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 import WidgetHowToSheet from './WidgetHowToSheet';
+import { useCheckInStore } from '~/app/stores/checkInStore';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -1006,6 +1007,39 @@ export function DebugButton() {
                   </TouchableOpacity>
                 </View>
 
+                {/* Set Streak Count Buttons */}
+                <View className="mb-4">
+                  <Text className="font-feather text-base text-textPrimary mb-2">
+                    Set Streak Count
+                  </Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {[0, 1, 3, 7, 14, 30, 50, 100].map((streak) => (
+                      <TouchableOpacity
+                        key={streak}
+                        className="bg-[#FFE0E8] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
+                        onPress={() => {
+                          const userStore = useUserStore.getState();
+                          userStore.setStreakCount(streak);
+
+                          // Force sync to Firestore
+                          syncWithFirestore();
+
+                          console.log(`Debug: Set streak count to ${streak}`);
+
+                          Toast.show({
+                            type: 'success',
+                            text1: 'Streak Set!',
+                            text2: `Streak count set to ${streak} 🔥`,
+                            position: 'top',
+                            visibilityTime: 3000,
+                          });
+                        }}>
+                        <Text className="font-din text-sm text-textPrimary">{`${streak} 🔥`}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
                 {/* Set Only Penalty Dates Buttons */}
                 <View className="mb-4">
                   <Text className="font-feather text-base text-textPrimary mb-2">
@@ -1131,6 +1165,44 @@ export function DebugButton() {
                   </Text>
                   <Text className="font-din text-sm text-[#A57070] mt-1">
                     Reset HomeStore and clear completed readings
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Reset Check In Button */}
+                <TouchableOpacity
+                  className="bg-[#E8E0FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
+                  onPress={() => {
+                    Alert.alert(
+                      'Reset Check In',
+                      'This will clear all check-in history and reset the timer. Continue?',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Reset',
+                          style: 'destructive',
+                          onPress: () => {
+                            const checkInStore = useCheckInStore.getState();
+                            checkInStore.resetCheckInData();
+                            
+                            Toast.show({
+                              type: 'success',
+                              text1: 'Check In Reset',
+                              text2: 'All check-in data has been cleared',
+                              position: 'top',
+                              visibilityTime: 3000,
+                            });
+                            
+                            console.log('✅ Check-in data reset successfully');
+                          },
+                        },
+                      ]
+                    );
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Reset Check In
+                  </Text>
+                  <Text className="font-din text-sm text-[#7C6F94] mt-1">
+                    Clear all check-in history and reset timer
                   </Text>
                 </TouchableOpacity>
 
