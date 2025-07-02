@@ -250,7 +250,7 @@ export default function BiblePreviewScreen() {
           {/* Back Button - Same position as map.tsx */}
           <BackButton
             onPress={handleBack}
-            containerClassName="absolute -top-20 left-0 z-50"
+            containerClassName="absolute -top-10 left-0 z-50"
           />
 
           {/* Content Area */}
@@ -304,6 +304,7 @@ export default function BiblePreviewScreen() {
                 });
                 handleStart();
               }}
+              buttonType="blue"
             />
       
           </Animated.View>

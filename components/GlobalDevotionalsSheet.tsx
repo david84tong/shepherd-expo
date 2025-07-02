@@ -152,7 +152,7 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
   );
 
   const renderEmptyState = () => (
-    <View style={styles.emptyState}>
+    <View style={styles.emptyState} className='mt-20'>
       <Feather name="heart" size={48} color="#795323" style={{ opacity: 0.3 }} />
       <Text style={styles.emptyStateTitle}>No Saved Devotionals</Text>
       <Text style={styles.emptyStateText}>

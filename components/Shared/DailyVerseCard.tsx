@@ -255,7 +255,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
   return (
     <Pressable
       onPress={handleCardPress}
-      className="bg-surfaceCream rounded-3xl overflow-hidden mb-4 border border-buttonBorder shadow-card">
+      className={`bg-surfaceCream rounded-3xl overflow-hidden mb-4 border ${isCustomDevotional ? '' : '  '}  border-2 shadow-card`}>
       <ImageBackground
         source={{ uri: devotional.imageURL }}
         style={{ width: '100%', minHeight: RPH(height) }}
@@ -282,6 +282,15 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
           }}
         />
 
+        {/* Custom badge for custom devotionals */}
+        {/* {isCustomDevotional && (
+          <View className="absolute top-4 right-14">
+            <View className="bg-yellow-500 px-3 py-1 rounded-full">
+              <Text className="text-white font-feather text-xs uppercase">Custom ✨</Text>
+            </View>
+          </View>
+        )} */}
+
         {/* Content */}
         <View style={{ padding: RPH(2), minHeight: RPH(height) }} className="pb-4 justify-between">
           <View>
@@ -293,7 +302,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
             <Text
               style={{ fontSize: AppFonts[17], marginBottom: RPH(2) }}
               className="font-nunito-mediumItalic text-white shadow-lg  leading-[26px]">
-              {isCustomDevotional && devotional.createdAt ? formatDate(devotional.createdAt) : i18n.t('verse_of_the_day')}
+              {isCustomDevotional && devotional.createdAt ? `${formatDate(devotional.createdAt)} • Custom` : i18n.t('verse_of_the_day')}
             </Text>
             <Text
               style={{ fontSize: AppFonts[17] }}

@@ -28,7 +28,7 @@ module.exports = {
         forestGreen50: '#A8F093', // Light background shapes
         forestGreen80: '#24CA17', // Trees, path outlines
         textPrimary: '#795323', // All primary text
-        orange: '#FF8800', // All primary text
+        orange: '#FF8803', // All primary text
         brown: '#634012', // All primary text
         gold: '#FBCA71', // All primary text
         shadowColor: 'rgba(0,0,0,0.08)', // Shadow color separate for RN

@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { View, Animated, PanResponder, StyleSheet } from 'react-native';
 
-const CARD_OFFSET = 16; // px offset for both right and bottom
+const CARD_OFFSET = 20; // px offset for both right and bottom - increased for better visibility
 
 interface CardStackProps<T> {
     data: T[];
@@ -35,7 +35,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
     ).current;
 
     const cardTranslations = useRef(
-        Array.from({ length: stackSize }, (_, i) => new Animated.Value(i === stackSize - 1 ? -50 : 0))
+        Array.from({ length: stackSize }, (_, i) => new Animated.Value(i === stackSize - 1 ? -30 : 0)) // Changed from -50 to -30
     ).current;
 
     // Get the current cards to display based on currentIndex
@@ -113,7 +113,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
         // Smoothly animate translation to back card style
         animations.push(
             Animated.timing(cardTranslations[0], {
-                toValue: -50,
+                toValue: -30, // Changed from -50 to -30
                 duration: 300,
                 useNativeDriver: false,
             })
@@ -151,7 +151,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
             // Smoothly animate translation for cards moving to new positions
             animations.push(
                 Animated.timing(cardTranslations[i], {
-                    toValue: newIsBack ? -50 : 0,
+                    toValue: newIsBack ? -30 : 0, // Changed from -50 to -30
                     duration: 300,
                     useNativeDriver: false,
                 })
@@ -175,7 +175,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
                 rotation.setValue(index === stackSize - 1 ? 1 : 0);
             });
             cardTranslations.forEach((translation, index) => {
-                translation.setValue(index === stackSize - 1 ? -50 : 0);
+                translation.setValue(index === stackSize - 1 ? -30 : 0); // Changed from -50 to -30
             });
             setIsAnimating(false);
         });
@@ -290,7 +290,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
                 rotation.setValue(index === stackSize - 1 ? 1 : 0);
             });
             cardTranslations.forEach((translation, index) => {
-                translation.setValue(index === stackSize - 1 ? -50 : 0);
+                translation.setValue(index === stackSize - 1 ? -30 : 0); // Changed from -50 to -30
             });
 
             setIsAnimating(false);
@@ -378,10 +378,13 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
                             {
                                 rotateZ: cardRotations[i].interpolate({
                                     inputRange: [0, 1],
-                                    outputRange: ['0deg', '4deg'],
+                                    outputRange: ['0deg', '5deg'], // Reduced rotation for cleaner look
                                 })
                             },
-                            { translateY: cardTranslations[i] },
+                            { translateY: cardTranslations[i].interpolate({
+                                inputRange: [-50, -30],
+                                outputRange: [-30, 0], // Less upward translation for better visibility
+                            }) },
                         ],
                     },
                 ];
