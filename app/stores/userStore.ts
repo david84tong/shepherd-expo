@@ -64,6 +64,7 @@ const initialState: UserDoc = {
   completedMapPaths: [],
   skins: [],
   checkIns: {},
+  customDevotionals: {},
   setNotificationTime: async (_time: string) => {
     // This will be overridden by the actual implementation
     console.warn('setNotificationTime not implemented in initial state');
@@ -167,6 +168,11 @@ export const useUserStore = create<UserStore>()(
               ...(state.checkIns || {}),
               ...(firestoreData.checkIns || {})
             },
+            // Sync custom devotionals - merge instead of replace
+            customDevotionals: {
+              ...(state.customDevotionals || {}),
+              ...(firestoreData.customDevotionals || {})
+            },
           };
         });
         console.log('Firestore data sync complete');
@@ -257,6 +263,7 @@ export const useUserStore = create<UserStore>()(
       getHasSeenBibleReaderTutorial: () => get().hasSeenBibleReaderTutorial || false,
       getSkins: () => get().skins || initialState.skins,
       getCheckIns: () => get().checkIns,
+      getCustomDevotionals: () => get().customDevotionals,
 
       // Setters
       setSpiritualGoal: (spiritualGoal) => set({ spiritualGoal }),
@@ -565,6 +572,50 @@ export const useUserStore = create<UserStore>()(
           }
         }
       },
+
+      setCustomDevotionals: async (customDevotionals: UserDoc['customDevotionals']) => {
+        console.log('[setCustomDevotionals] Called with:', customDevotionals);
+        set({ customDevotionals });
+        
+        if (isAuthenticated()) {
+          updateUserData({ customDevotionals });
+        }
+      },
+
+      addCustomDevotional: async (devotionalId: string, timestamp: FirebaseFirestoreTypes.Timestamp) => {
+        console.log('[addCustomDevotional] Called with devotionalId:', devotionalId, 'timestamp:', timestamp);
+        
+        // Update local state first
+        const state = get();
+        const updatedCustomDevotionals = {
+          ...(state.customDevotionals || {}),
+          [devotionalId]: { timestamp }
+        };
+        
+        set({ customDevotionals: updatedCustomDevotionals });
+        
+        // Update Firestore directly with nested field path
+        if (isAuthenticated()) {
+          try {
+            const currentUser = auth().currentUser;
+            if (currentUser) {
+              // Use Firestore's dot notation for nested field updates
+              await firestore()
+                .collection('users')
+                .doc(currentUser.uid)
+                .update({
+                  [`customDevotionals.${devotionalId}`]: { timestamp },
+                  updatedAt: Timestamp.now()
+                });
+              console.log('[addCustomDevotional] Successfully updated Firestore with nested field path');
+            }
+          } catch (error) {
+            console.error('[addCustomDevotional] Error updating Firestore:', error);
+            // Fallback to updating the entire customDevotionals object
+            updateUserData({ customDevotionals: updatedCustomDevotionals });
+          }
+        }
+      },
     }),
     {
       name: 'shepherd-user-storage',
@@ -659,6 +710,9 @@ export const useUserStore = create<UserStore>()(
           getCheckIns,
           setCheckIns,
           addCheckIn,
+          getCustomDevotionals,
+          setCustomDevotionals,
+          addCustomDevotional,
           // Keep only data fields
           ...dataOnly
         } = state;

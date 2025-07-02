@@ -145,6 +145,7 @@ export default function RootLayout() {
   const [hasError, setHasError] = useState(false);
   const [showRiveAnimation, setShowRiveAnimation] = useState(false);
   const [isRiveReady, setIsRiveReady] = useState(false);
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
 
   // Global modal state
   const isModalDimActive = useUIStore((state) => state.isModalDimActive);
@@ -189,7 +190,7 @@ export default function RootLayout() {
   }>({});
 
   // App initialization
-  const { isInitialized } = useAppInitialization();
+  const { isInitialized, isAnalyticsReady } = useAppInitialization();
 
   const appState = useRef(AppState.currentState);
 
@@ -279,6 +280,16 @@ export default function RootLayout() {
   
   // Check if one hour has passed since last check-in AND today's check-in is not complete
   const checkAndShowCheckInIfNeeded = () => {
+    // Import auth to check if user is logged in
+    const auth = require('@react-native-firebase/auth').default;
+    const currentUser = auth().currentUser;
+    
+    // Don't show check-in if user is not logged in or is anonymous
+    if (!currentUser || currentUser.isAnonymous) {
+      console.log('[CheckIn] Skipping check-in: User not logged in or is anonymous');
+      return;
+    }
+    
     const checkInStore = useCheckInStore.getState();
     const hasCompletedToday = checkInStore.hasCompletedTodaysCheckIn();
     const hasBeenOneHour = checkInStore.hasBeenOneHourSinceLastCheckIn();
@@ -286,7 +297,9 @@ export default function RootLayout() {
     console.log('[CheckIn] Auto-show check:', {
       hasCompletedToday,
       hasBeenOneHour,
-      todaysCheckIn: checkInStore.getTodaysCheckIn()
+      todaysCheckIn: checkInStore.getTodaysCheckIn(),
+      isLoggedIn: !!currentUser,
+      isAnonymous: currentUser?.isAnonymous
     });
     
     // Only show if one hour has passed AND today's check-in is not complete
@@ -324,8 +337,34 @@ export default function RootLayout() {
   };
 
   const showCheckIn = () => {
+    // Import auth to check if user is logged in
+    const auth = require('@react-native-firebase/auth').default;
+    const currentUser = auth().currentUser;
+    
+    // Don't show check-in if user is not logged in or is anonymous
+    if (!currentUser || currentUser.isAnonymous) {
+      console.log('[CheckIn] Not showing check-in: User not logged in or is anonymous');
+      return;
+    }
+    
     checkInRef.current?.expand();
   };
+
+  // Monitor auth state changes
+  useEffect(() => {
+    const auth = require('@react-native-firebase/auth').default;
+    const unsubscribe = auth().onAuthStateChanged((user: any) => {
+      const isLoggedIn = !!user && !user.isAnonymous;
+      setIsUserLoggedIn(isLoggedIn);
+      console.log('[Auth] User auth state changed:', { 
+        isLoggedIn, 
+        isAnonymous: user?.isAnonymous,
+        uid: user?.uid 
+      });
+    });
+    
+    return unsubscribe;
+  }, []);
 
   // Expose global functions
   useEffect(() => {
@@ -626,8 +665,8 @@ export default function RootLayout() {
             {/* Old Reflection Sheet */}
             {Boolean(showOldReflectionSheet) && <OldReflectionSheet />}
 
-            {/* Global Check-In Sheet */}
-            <GlobalCheckIn checkInRef={checkInRef} />
+            {/* Global Check-In Sheet - Only show for logged-in users */}
+            {isUserLoggedIn && <GlobalCheckIn checkInRef={checkInRef} />}
 
             {/* Global Devotionals Sheet */}
             <GlobalDevotionalsSheet devotionalsSheetRef={devotionalsSheetRef} />
