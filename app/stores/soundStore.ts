@@ -238,7 +238,7 @@ export const useSoundStore = create<SoundState>()(
           const { sound } = await Audio.Sound.createAsync(
             require('../../assets/sounds/Prayer_Success.m4a'),
             { 
-              volume: 0.35,
+              volume: 0.25,
               androidImplementation: 'MediaPlayer',
             }
           );
@@ -271,7 +271,7 @@ export const useSoundStore = create<SoundState>()(
           const { sound } = await Audio.Sound.createAsync(
             require('../../assets/sounds/Journaling_Success.m4a'),
             { 
-              volume: 0.35,
+              volume: 0.25,
               androidImplementation: 'MediaPlayer',
             }
           );
@@ -304,7 +304,7 @@ export const useSoundStore = create<SoundState>()(
           const { sound } = await Audio.Sound.createAsync(
             require('../../assets/sounds/Chest_Opening.m4a'),
             { 
-              volume: 0.35,
+              volume: 0.25,
               androidImplementation: 'MediaPlayer',
             }
           );
