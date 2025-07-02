@@ -13,8 +13,7 @@ import {
   KeyboardAvoidingView,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { AntDesign } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
+import { AntDesign, FontAwesome6 } from '@expo/vector-icons';
 import { useAuth } from '../hooks/authHook';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
@@ -37,9 +36,12 @@ import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import { UserDoc } from '../models/User';
 import firestore from '@react-native-firebase/firestore';
 import PrimaryButton from '../../components/PrimaryButton';
-import { useRemoteConfig } from '../hooks/useRemoteConfig';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { useHomeStore } from '../stores/homeStore';
+import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
+import { AppFonts } from '../constants/appFonts';
+import { hapticLight } from '~/utils/haptics';
 
 // Add this near the top of the file, after imports
 
@@ -159,6 +161,11 @@ export default function SaveProgressScreen() {
   const completeOnboarding = async () => {
     try {
       await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
+      // Mark first app launch as completed so TabsLayout won't treat this session as first launch
+      await AsyncStorage.setItem('first_app_launch_completed', 'true');
+      // Also mark today's daily first load as completed to avoid an extra redirect right after sign-up
+      const today = new Date().toISOString().split('T')[0];
+      await AsyncStorage.setItem(`daily_first_load_${today}`, 'true');
       await clearResponses(); // Clear onboarding responses after completion
 
       // Animate out all components before navigation using Reanimated
@@ -255,6 +262,20 @@ export default function SaveProgressScreen() {
       const allResponses = getAllResponses();
       console.log('Onboarding responses:', JSON.stringify(allResponses));
 
+      // Get A/B test value from AsyncStorage (set in onboarding screen 1)
+      let abTestValue = 0; // Default value
+      try {
+        const storedAbTest = await AsyncStorage.getItem('abTest');
+        if (storedAbTest !== null) {
+          abTestValue = parseInt(storedAbTest, 10);
+          console.log('[OnboardingScreen11] Retrieved A/B test value:', abTestValue);
+        } else {
+          console.log('[OnboardingScreen11] No A/B test value found, using default:', abTestValue);
+        }
+      } catch (abTestError) {
+        console.error('[OnboardingScreen11] Error retrieving A/B test value:', abTestError);
+      }
+
       const spiritualGoal = allResponses.intent || 'Understand';
       const userData: UserDoc = {
         id: uid,
@@ -302,6 +323,7 @@ export default function SaveProgressScreen() {
         experience_level: userData.experienceLevel,
         denomination: userData.denomination,
         age_range: userData.ageRange,
+        abTest: abTestValue,
         notification_enabled: userData.notificationEnabled,
         notification_time: userData.notificationTime,
         selected_path: userData.selectedPathId,
@@ -347,7 +369,7 @@ export default function SaveProgressScreen() {
     analytics.logEvent(eventName);
 
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
       setLoading(true);
       console.log('Starting Apple sign in process...');
 
@@ -383,7 +405,7 @@ export default function SaveProgressScreen() {
           const isProMember = useUserStore.getState().getProStatus() === 'pro';
           if (!isProMember) {
             setTimeout(() => {
-              router.replace('/PricingScreen?fromLoading=true&animateFromBottom=true');
+              router.replace('/(tabs)');
             }, 1000);
           } else {
             setTimeout(() => {
@@ -462,7 +484,7 @@ export default function SaveProgressScreen() {
     analytics.logEvent(eventName);
 
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
       setLoading(true);
       console.log('Starting Google sign in process...');
 
@@ -487,7 +509,9 @@ export default function SaveProgressScreen() {
           const isProMember = useUserStore.getState().getProStatus() === 'pro';
           if (!isProMember) {
             setTimeout(() => {
-              router.replace('/PricingScreen?fromLoading=true&animateFromBottom=true');
+              setTimeout(() => {
+                router.replace('/(tabs)');
+              }, 1000);
             }, 1000);
           } else {
             setTimeout(() => {
@@ -581,7 +605,7 @@ export default function SaveProgressScreen() {
     }
 
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
       setLoading(true);
 
       let user;
@@ -631,7 +655,10 @@ export default function SaveProgressScreen() {
           const allResponses = getAllResponses();
           const displayName = allResponses.username || 'Anonymous User';
 
+          console.log("CALLED API");
           user = await signUpWithEmailPassword(email, password, displayName);
+          console.log("user ====>", user);
+
           analytics.logEvent('OnboardingSignUp_Success_Email');
 
           await createUserFromResponses(user.uid, displayName);
@@ -697,7 +724,7 @@ export default function SaveProgressScreen() {
   const handleSkip = async (showConfirmation = true) => {
     if (isLoginMode) return; // Don't allow anonymous login in login mode
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     analytics.logEvent('OnboardingSignUp_Tapped_Skip');
     if (showConfirmation) {
       Alert.alert(
@@ -752,16 +779,16 @@ export default function SaveProgressScreen() {
           {/* Header */}
           <Animated.View style={headerStyle} className="items-center mt-16 mb-8">
             <Text className="font-feather text-h1 text-center text-textPrimary mb-3">
-              {isLoginMode ? 'Welcome Back' : 'Save Your Progress'}
+              {isLoginMode ? i18n.t('onboarding_welcome_back') : i18n.t('onboarding_save_progress')}
             </Text>
             <Text className="font-din text-body text-center text-description mb-6">
               {isLoginMode
-                ? 'Sign in to your existing account to continue your journey.'
-                : 'Sign in to keep your reading streak and Bible progress synced across devices.'}
+                ? i18n.t('onboarding_sign_in_existing')
+                : i18n.t('onboarding_sign_in_sync')}
             </Text>
 
             {/* Icon */}
-            <View className="mb-8 overflow-hidden w-64 h-64 items-center justify-center">
+            <View style={{ width: RPH(27), height: RPH(25) }} className="mb-8 overflow-hidden  items-center justify-center">
               {riveAssets && riveAssets[0]?.uri && (
                 <>
                   {IS_ANDROID ? (
@@ -771,7 +798,7 @@ export default function SaveProgressScreen() {
                       autoplay={true}
                       fit={Fit.Contain}
                       alignment={Alignment.Center}
-                      style={{ width: 240, height: 240 }}
+                      style={{ width: RPH(27), height: RPH(27) }}
                     />
                   ) : (
                     <Rive
@@ -780,7 +807,7 @@ export default function SaveProgressScreen() {
                       autoplay={true}
                       fit={Fit.Contain}
                       alignment={Alignment.Center}
-                      style={{ width: 240, height: 240 }}
+                      style={{ width: RPH(27), height: RPH(27) }}
                     />
                   )}
                 </>
@@ -793,28 +820,28 @@ export default function SaveProgressScreen() {
             <Animated.View style={benefitsStyle} className="mb-8">
               <View className="flex-row items-center mb-4">
                 <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
-                  <AntDesign name="check" size={18} color="#24CA17" />
+                  <FontAwesome6 name="check" size={18} color="#24CA17" />
                 </View>
                 <Text className="font-din text-body text-textPrimary flex-1">
-                  Save your reading progress
+                  {i18n.t('onboarding_benefit_save_progress')}
                 </Text>
               </View>
 
               <View className="flex-row items-center mb-4">
                 <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
-                  <AntDesign name="check" size={18} color="#24CA17" />
+                  <FontAwesome6 name="check" size={18} color="#24CA17" />
                 </View>
                 <Text className="font-din text-body text-textPrimary flex-1">
-                  Transfer between devices
+                  {i18n.t('onboarding_benefit_transfer_devices')}
                 </Text>
               </View>
 
               <View className="flex-row items-center mb-4">
                 <View className="bg-lightGreen w-8 h-8 rounded-full items-center justify-center mr-3">
-                  <AntDesign name="check" size={18} color="#24CA17" />
+                  <FontAwesome6 name="check" size={18} color="#24CA17" />
                 </View>
                 <Text className="font-din text-body text-textPrimary flex-1">
-                  Keep your reading streak safe
+                  {i18n.t('onboarding_benefit_keep_streak')}
                 </Text>
               </View>
             </Animated.View>
@@ -825,8 +852,8 @@ export default function SaveProgressScreen() {
             <Animated.View style={benefitsStyle} className="mb-8">
               <Text className="font-din text-body text-center text-description mb-2">
                 {IS_IOS
-                  ? 'Please sign in with the same Apple ID you used to create your account.'
-                  : 'Please sign in with the same Google account you used to create your account.'}
+                  ? i18n.t('onboarding_sign_in_apple')
+                  : i18n.t('onboarding_sign_in_google')}
               </Text>
             </Animated.View>
           )}
@@ -837,7 +864,7 @@ export default function SaveProgressScreen() {
               <View className="w-full mb-4">
                 <TextInput
                   className="font-feather text-2xl text-textPrimary bg-white px-6 py-5 rounded-2xl border-4 border-border"
-                  placeholder="Email"
+                  placeholder={i18n.t('onboarding_email_placeholder')}
                   value={email}
                   onChangeText={setEmail}
                   keyboardType="email-address"
@@ -846,7 +873,7 @@ export default function SaveProgressScreen() {
                 />
                 <TextInput
                   className="font-feather text-2xl text-textPrimary bg-white mt-1 px-6 py-5 rounded-2xl border-4 border-border"
-                  placeholder="Password"
+                  placeholder={i18n.t('onboarding_password_placeholder')}
                   value={password}
                   onChangeText={setPassword}
                   secureTextEntry
@@ -854,7 +881,7 @@ export default function SaveProgressScreen() {
                 />
                 <View className="mt-4">
                   <PrimaryButton
-                    title={loading ? 'Please wait...' : isLoginMode ? 'Sign In' : 'Sign Up'}
+                    title={loading ? i18n.t('onboarding_please_wait') : isLoginMode ? i18n.t('onboarding_sign_in') : i18n.t('onboarding_sign_up')}
                     onPress={handleEmailAuth}
                     disabled={loading}
                     buttonType="default"
@@ -868,7 +895,7 @@ export default function SaveProgressScreen() {
                     if (showNoAccountToast) {
                       Toast.show({
                         type: 'error',
-                        text1: 'Please go through onboarding.',
+                        text1: i18n.t('please_go_through_onboarding'),
                         position: 'top',
                         visibilityTime: 3000,
                       });
@@ -879,7 +906,7 @@ export default function SaveProgressScreen() {
                   className="items-center mt-3"
                   disabled={loading}>
                   <Text className="font-din text-description underline text-[16px]">
-                    {loading ? 'Please wait...' : 'Back to Home'}
+                    {loading ? i18n.t('onboarding_please_wait') : i18n.t('onboarding_back_to_home')}
                   </Text>
                 </TouchableOpacity>
               )}
@@ -894,7 +921,7 @@ export default function SaveProgressScreen() {
                   style={buttonsStyle}
                   className="flex-row items-center justify-center mb-6">
                   <View className="flex-1 h-[1px] bg-gray-300" />
-                  <Text className="font-din text-description mx-4">OR</Text>
+                  <Text className="font-din text-description mx-4">{i18n.t('or')}</Text>
                   <View className="flex-1 h-[1px] bg-gray-300" />
                 </Animated.View>
               ) : null}
@@ -905,7 +932,8 @@ export default function SaveProgressScreen() {
                   <View className="items-center mb-4">
                     {Platform.OS === 'ios' ? (
                       <TouchableOpacity
-                        className="flex-row items-center justify-center bg-black w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow"
+                        style={{ height: RPH(6) }}
+                        className="flex-row items-center justify-center bg-black w-full  px-6 rounded-[16px] mb-4 shadow-appleShadow"
                         onPress={handleAppleSignIn}
                         disabled={loading}>
                         {loading ? (
@@ -917,13 +945,13 @@ export default function SaveProgressScreen() {
                         ) : (
                           <AntDesign
                             name="apple1"
-                            size={24}
+                            size={RPH(3)}
                             color="white"
                             style={{ marginRight: 10 }}
                           />
                         )}
-                        <Text className="font-din text-white text-[18px] font-bold">
-                          {loading ? 'Signing in...' : 'Continue with Apple'}
+                        <Text style={{ fontSize: AppFonts[14] }} className="font-din text-white  font-bold">
+                          {loading ? i18n.t('onboarding_signing_in') : i18n.t('onboarding_continue_with_apple')}
                         </Text>
                       </TouchableOpacity>
                     ) : (
@@ -940,13 +968,13 @@ export default function SaveProgressScreen() {
                         ) : (
                           <AntDesign
                             name="google"
-                            size={24}
+                            size={RPH(3)}
                             color="#4285F4"
                             style={{ marginRight: 10 }}
                           />
                         )}
-                        <Text className="font-din text-[#4285F4] text-[18px] font-bold">
-                          {loading ? 'Signing in...' : 'Continue with Google'}
+                        <Text style={{ fontSize: AppFonts[14] }} className="font-din text-[#4285F4]  font-bold">
+                          {loading ? i18n.t('onboarding_signing_in') : i18n.t('onboarding_continue_with_google')}
                         </Text>
                       </TouchableOpacity>
                     )}
@@ -966,7 +994,7 @@ export default function SaveProgressScreen() {
                     }}
                     disabled={loading}>
                     <Text className="font-din text-description underline text-[16px]">
-                      {loading ? 'Please wait...' : 'Skip for now'}
+                      {loading ? i18n.t('onboarding_please_wait') : i18n.t('onboarding_skip_for_now')}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -978,7 +1006,7 @@ export default function SaveProgressScreen() {
                       if (showNoAccountToast) {
                         Toast.show({
                           type: 'error',
-                          text1: 'Please go through onboarding.',
+                          text1: i18n.t('please_go_through_onboarding'),
                           position: 'top',
                           visibilityTime: 3000,
                         });
@@ -989,7 +1017,7 @@ export default function SaveProgressScreen() {
                     className="items-center"
                     disabled={loading}>
                     <Text className="font-din text-description underline text-[16px]">
-                      {loading ? 'Please wait...' : 'Back to Home'}
+                      {loading ? i18n.t('onboarding_please_wait') : i18n.t('onboarding_back_to_home')}
                     </Text>
                   </TouchableOpacity>
                 )}

@@ -9,7 +9,6 @@ import {
   View,
   AppState,
   AppStateStatus,
-  Text,
   Alert,
   Linking,
 } from 'react-native';
@@ -33,27 +32,30 @@ import { useOnboardingStore } from './stores/onboardingStore';
 // Import the sheet components
 import { useAssets } from 'expo-asset';
 import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
+import GlobalCheckIn, { GlobalCheckInRef } from '../components/GlobalCheckIn';
+import { useCheckInStore } from './stores/checkInStore';
 import GlobalPrayerSheet, {
   PrayerSheetRef as GlobalPrayerSheetRefInternal,
 } from '../components/GlobalPrayerSheet';
+import GlobalStoreSheet, { StoreSheetRef } from '../components/GlobalStoreSheet';
+import GlobalStatsSheet, { StatsSheetRef } from '../components/GlobalStatsSheet';
 import HalfModalSheet, { HalfModalSheetRef } from '../components/HalfModalSheet';
 import OldReflectionSheet from '../components/OldReflectionSheet';
 import SettingsSheet, { SettingsSheetRef } from '../components/SettingsSheet';
+import GlobalDevotionalsSheet, { DevotionalsSheetRef } from '../components/GlobalDevotionalsSheet';
 import useForceUpdateCheck from './hooks/useForceUpdateCheck';
 import ForceUpdateModal from '~/components/ForceUpdateModal';
 import { disableFontScaling } from './helper/disableFontScaling';
 import { adapty } from 'react-native-adapty';
 import './stores/userStore';
-import { IS_ANDROID, IS_IOS } from './utils/utils';
+import { IS_ANDROID } from './utils/utils';
 
 // Import highlight store setup function
-import { setupHighlightListeners } from './stores/highlightStore';
 import useHighlightStore from './stores/highlightStore';
-import { useSoundStore } from './stores/soundStore';
 import './stores/userStore';
 import './stores/subscriptionStore';
-import SaveProgressScreen from './onboarding/11';
 import { useRemoteConfig } from './hooks/useRemoteConfig';
+import { initializeLanguage } from './utils/i18n';
 // Define missing ref types
 type PrayerSheetRef = {
   show: () => void;
@@ -125,11 +127,11 @@ export default function RootLayout() {
   const segments = useSegments();
   const { visibleForceUpdate } = useForceUpdateCheck();
   const [fontsLoaded, fontError] = useFonts({
-    'Feather Bold': require('../assets/fonts/Feather Bold.ttf'),
     'DIN Next Rounded LT W01 Regular': require('../assets/fonts/DIN Next Rounded LT W01 Regular.ttf'),
     'Nunito-Bold': require('../assets/fonts/Nunito-Bold.ttf'),
     'Nunito-Black': require('../assets/fonts/Nunito-Black.ttf'),
     'Nunito-Medium': require('../assets/fonts/Nunito-Medium.ttf'),
+    'Nunito-MediumItalic': require('../assets/fonts/Nunito-MediumItalic.ttf'),
     'Nunito-Regular': require('../assets/fonts/Nunito-Regular.ttf'),
     'Nunito-BlackItalic': require('../assets/fonts/Nunito-BlackItalic.ttf'),
   });
@@ -150,6 +152,11 @@ export default function RootLayout() {
   const showPrayerSheet = useUIStore((state) => state.showPrayerSheet);
   const showBookChapterSelector = useUIStore((state) => state.showBookChapterSelector);
   const showOldReflectionSheet = useUIStore((state) => state.showOldReflectionSheet);
+  const showStoreSheet = useUIStore((state) => state.showStoreSheet);
+  const showStatsSheet = useUIStore((state) => state.showStatsSheet);
+  const isStatsSheetVisible = useUIStore((state) => state.isStatsSheetVisible);
+  const showDevotionalsSheet = useUIStore((state) => state.showDevotionalsSheet);
+  const isDevotionalsSheetVisible = useUIStore((state) => state.isDevotionalsSheetVisible);
 
   // Widget states from UI store
   const isWidgetPromptVisible = useUIStore((state) => state.isWidgetPromptVisible);
@@ -163,6 +170,10 @@ export default function RootLayout() {
   const halfModalRef = useRef<HalfModalSheetRef>(null);
   const settingsSheetRef = useRef<SettingsSheetRef>(null);
   const prayerSheetRef = useRef<GlobalPrayerSheetRefInternal>(null);
+  const storeSheetRef = useRef<StoreSheetRef>(null);
+  const statsSheetRef = useRef<StatsSheetRef>(null);
+  const checkInRef = useRef<GlobalCheckInRef>(null);
+  const devotionalsSheetRef = useRef<DevotionalsSheetRef>(null);
 
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
@@ -187,9 +198,10 @@ export default function RootLayout() {
 
   // Call onAppForegroundOrInit after initialization
   useEffect(() => {
+    console.log('isInitialized ==>', isInitialized);
     if (isInitialized) {
-      console.log('bada');
       onAppForegroundOrInit();
+      checkAndShowCheckInIfNeeded();
     }
   }, [isInitialized]);
 
@@ -264,6 +276,18 @@ export default function RootLayout() {
       console.log('Error checking streak status:', error);
     }
   };
+  
+  // Check if one hour has passed since last check-in
+  const checkAndShowCheckInIfNeeded = () => {
+    const checkInStore = useCheckInStore.getState();
+    if (checkInStore.hasBeenOneHourSinceLastCheckIn()) {
+      console.log('One hour has passed since last check-in, showing check-in screen');
+      // Show check-in with a delay to ensure app is ready
+      setTimeout(() => {
+        showCheckIn();
+      }, 2000);
+    }
+  };
 
   // Initialize notifications system
   const initializeNotifications = async () => {
@@ -287,6 +311,10 @@ export default function RootLayout() {
     settingsSheetRef.current?.show();
   };
 
+  const showCheckIn = () => {
+    checkInRef.current?.expand();
+  };
+
   // Expose global functions
   useEffect(() => {
     if (typeof global !== 'undefined') {
@@ -295,8 +323,12 @@ export default function RootLayout() {
       (global as any).showPrayerSheet = showPrayerSheet;
       (global as any).showBookChapterSelector = showBookChapterSelector;
       (global as any).showOldReflectionSheet = showOldReflectionSheet;
+      (global as any).showStoreSheet = showStoreSheet;
+      (global as any).showStatsSheet = showStatsSheet;
+      (global as any).showCheckIn = showCheckIn;
+      (global as any).showDevotionalsSheet = showDevotionalsSheet;
     }
-  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet]);
+  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet, showStoreSheet, showStatsSheet, showDevotionalsSheet]);
 
   // Effect to watch isPrayerSheetVisible and control the sheet ref
   useEffect(() => {
@@ -305,6 +337,22 @@ export default function RootLayout() {
       prayerSheetRef.current.show();
     }
   }, [isPrayerSheetVisible]);
+
+  // Effect to watch isStatsSheetVisible and control the sheet ref
+  useEffect(() => {
+    if (isStatsSheetVisible && statsSheetRef.current) {
+      console.log('[RootLayout] Opening stats sheet via ref');
+      statsSheetRef.current.show();
+    }
+  }, [isStatsSheetVisible]);
+
+  // Effect to watch isDevotionalsSheetVisible and control the sheet ref
+  useEffect(() => {
+    if (isDevotionalsSheetVisible && devotionalsSheetRef.current) {
+      console.log('[RootLayout] Opening devotionals sheet via ref');
+      devotionalsSheetRef.current.show();
+    }
+  }, [isDevotionalsSheetVisible]);
 
   // Add timeout for initialization if it takes too long. That's just a safety net.
   useEffect(() => {
@@ -321,6 +369,7 @@ export default function RootLayout() {
 
   // Add error boundary for initialization
   useEffect(() => {
+    initializeLanguage()
     const handleError = (error: Error) => {
       console.log('App initialization error:', error);
       setHasError(true);
@@ -365,7 +414,10 @@ export default function RootLayout() {
         await checkOnboarding();
         await checkStreakStatus();
         await initializeNotifications();
-      } catch (error) {}
+        
+        // Check if we need to show check-in after initialization
+        checkAndShowCheckInIfNeeded();
+      } catch (error) { }
       // Set Rive ready
       setIsRiveReady(true);
       setShowRiveAnimation(true);
@@ -377,7 +429,7 @@ export default function RootLayout() {
       }, 100);
     } catch (error) {
       console.log('Error during app initialization:', error);
-      Alert.alert('Error during app initialization:', error);
+      Alert.alert('Error during app initialization:', error instanceof Error ? error.message : String(error));
       setHasError(true);
       setAppReady(true);
       SplashScreen.hideAsync();
@@ -416,6 +468,7 @@ export default function RootLayout() {
         console.log('App has come to the foreground!');
         onAppForegroundOrInit();
         useHighlightStore.getState().syncHighlights();
+        checkAndShowCheckInIfNeeded();
       }
       appState.current = nextAppState;
     };
@@ -464,16 +517,6 @@ export default function RootLayout() {
       subscription.remove();
     };
   }, [router]);
-  // Move the sound store hooks inside the component
-  const backgroundMusicEnabled = useSoundStore.getState().backgroundMusicEnabled;
-  // Initialize background music
-  useEffect(() => {
-    if (backgroundMusicEnabled) {
-      useSoundStore.getState().playBackgroundMusic();
-    } else {
-      useSoundStore.getState().stopBackgroundMusic();
-    }
-  }, [backgroundMusicEnabled]);
 
   // Show Rive animation
   if (showRiveAnimation && riveAssets?.[0]?.uri) {
@@ -522,7 +565,7 @@ export default function RootLayout() {
   console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
       <BottomSheetModalProvider>
         {visibleForceUpdate ? (
           <ForceUpdateModal visible={visibleForceUpdate} />
@@ -533,7 +576,7 @@ export default function RootLayout() {
                 headerShown: false,
                 animation: 'fade',
                 animationDuration: 200,
-                contentStyle: { backgroundColor: '#FFF4D9' },
+                contentStyle: { backgroundColor: '#FDEBB8' },
               }}
             />
 
@@ -559,11 +602,23 @@ export default function RootLayout() {
               onPrayerGenerated={useUIStore.getState().prayerGeneratedCallback || undefined}
             />
 
+            {/* Global Store Sheet */}
+            <GlobalStoreSheet storeSheetRef={storeSheetRef} />
+
+            {/* Global Stats Sheet */}
+            <GlobalStatsSheet statsSheetRef={statsSheetRef} />
+
             {/* Book/Chapter Selector Sheet */}
             {Boolean(showBookChapterSelector) && <GlobalBookChapterSelectorSheet />}
 
             {/* Old Reflection Sheet */}
             {Boolean(showOldReflectionSheet) && <OldReflectionSheet />}
+
+            {/* Global Check-In Sheet */}
+            <GlobalCheckIn checkInRef={checkInRef} />
+
+            {/* Global Devotionals Sheet */}
+            <GlobalDevotionalsSheet devotionalsSheetRef={devotionalsSheetRef} />
 
             {/* Dimmed background for modal overlays */}
             {isModalDimActive && (
@@ -591,6 +646,10 @@ export default function RootLayout() {
 }
 
 const styles = StyleSheet.create({
+  container: {
+    backgroundColor: '#FFF4D9',
+    flex: 1,
+  },
   riveAnimation: {
     height: '100%',
     width: '100%',
@@ -600,9 +659,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FFF4D9',
     justifyContent: 'center',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#FFF4D9',
   },
 });

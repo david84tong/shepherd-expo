@@ -13,21 +13,28 @@ module.exports = {
         // accent: '#DCB280',
         // text: '#3C584A',
         // 'secondary-button-bg': '#F9F3E5',
-
+        brownBorder: '#eed39d',
         // New Tokens
+        blue: '#00B0F7',
+        darkBlue: '#119AD1',
+        lightBrown: '#FBCA71',
         brightYellow: '#FFD629',
         lightGreen: '#D2FFC6',
+        
         darkGreen: '#24CA17',
         accentGold: '#FCD34D', // Buttons, progress, XP fill
-        surfaceCream: '#FFF4D9', // Card backgrounds, pills
+        surfaceCream: '#FDEBB8', // Card backgrounds, pills
+        surfaceCreamLight: '#fff1c9', // Card backgrounds, pills
         forestGreen50: '#A8F093', // Light background shapes
         forestGreen80: '#24CA17', // Trees, path outlines
-        textPrimary: '#3C584A', // All primary text
+        textPrimary: '#795323', // All primary text
+        orange: '#FF8800', // All primary text
+        brown: '#634012', // All primary text
+        gold: '#FBCA71', // All primary text
         shadowColor: 'rgba(0,0,0,0.08)', // Shadow color separate for RN
         pillBorder: '#E9E2C7', // Border for metric pills
         description: '#B89B4C',
         buttonBorder: '#FFE4A8',
-        blue: '#06B6FE', // Shadow color for secondary button
         red: '#DF4533',
 
         // Path colors from Path.ts (Adjusted to be lighter backgrounds)
@@ -84,11 +91,11 @@ module.exports = {
         // Updated font mappings to match actual font files
         feather: ['Nunito-Black'], // for headers
         din: ['DIN Next Rounded LT W01 Regular'], // for body
-        'feather-bold': ['Nunito-Black'], // Was Nunito-Black
         'nunito-italic': ['Nunito-BlackItalic'], // Added for backward compatibility
         'nunito-bold': ['Nunito-Bold'], // Added for backward compatibility
         'nunito-black': ['Nunito-Black'], // Added for backward compatibility
         'nunito-medium': ['Nunito-Medium'], // Added for backward compatibility
+        'nunito-mediumItalic': ['Nunito-MediumItalic'], // Added for backward compatibility
         'nunito-regular': ['Nunito-Regular'], // Added for backward compatibility
       },
       fontSize: {
@@ -98,10 +105,15 @@ module.exports = {
         title: '36px',
         h1: '28px', // H1
         h2: '24px', // H1
+        h3: '24px', // H1
         heading: '20px', // Heading (~17pt)
+        h4: '18', // H1
+
         body: '16px', // Body
         caption: '16px', // Caption
         smallCaption: '14px', // Caption
+        xsCaption: '12px', // Caption
+        mini: '10px'
       },
       boxShadow: {
         // Define the unified shadow - Note: NativeWind shadow support varies
@@ -129,6 +141,8 @@ module.exports = {
         darkScarlet: '0px 5px 0px 0px #D72618',
         gray: '0px 5px 0px 0px #808080',
         darkApple: '0px 5px 0px 0px #171717',
+        brownShadow: '0px 5px 0px 0px #CFA860',
+        darkBlueShadow: '0px 5px 0px 0px #119AD1',
       },
       secondaryButtonShadow: {
         secondary: '', // Match spec

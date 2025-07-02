@@ -1,7 +1,15 @@
 import { useAssets } from 'expo-asset';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { View, Text, TextInput, Keyboard, ActivityIndicator, Platform, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Keyboard,
+  ActivityIndicator,
+  Platform,
+  StatusBar,
+} from 'react-native';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
@@ -15,6 +23,8 @@ import Animated, {
 } from 'react-native-reanimated';
 import { toBool } from '../utils/toBool';
 import { validateName } from '../../utils/validation';
+import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
 
 export default function OnboardingUsernameScreen() {
   const router = useRouter();
@@ -25,6 +35,13 @@ export default function OnboardingUsernameScreen() {
   const [error, setError] = useState<string | undefined>();
   const [isKeyboardVisible, setKeyboardVisible] = useState(false);
   const inputRef = useRef<TextInput>(null);
+
+  // Get translated text
+  const titleText = i18n.t('onboarding_username_title');
+  const subtitleText = i18n.t('onboarding_username_subtitle');
+  const placeholderText = i18n.t('onboarding_username_placeholder');
+  const continueText = i18n.t('onboarding_continue');
+  const loadingText = i18n.t('loading_just_a_moment');
 
   // Load Rive assets
   const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
@@ -123,7 +140,7 @@ export default function OnboardingUsernameScreen() {
   const screenStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
     flex: 1,
-    backgroundColor: '#FFF4D9',
+    backgroundColor: '#FDEBB8',
   }));
 
   // Create animated styles for each component
@@ -184,7 +201,7 @@ export default function OnboardingUsernameScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-surfaceCream pt-4">
         <ActivityIndicator size="large" color="#3C584A" />
-        <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
+        <Text className="font-feather text-textPrimary mt-4">{loadingText}</Text>
       </View>
     );
   }
@@ -196,10 +213,10 @@ export default function OnboardingUsernameScreen() {
         {/* Question Text */}
         <Animated.View style={titleStyle}>
           <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-8">
-            Choose your username
+            {titleText}
           </Text>
           <Text className="font-din text-body text-center text-textSecondary mb-4">
-            This is how other shepherds will know you
+            {subtitleText}
           </Text>
         </Animated.View>
 
@@ -219,8 +236,12 @@ export default function OnboardingUsernameScreen() {
         <Animated.View style={inputStyle}>
           <TextInput
             ref={inputRef}
-            className="font-feather text-3xl text-center text-textPrimary bg-white mt-12 p-6 rounded-2xl border-4 border-border"
-            placeholder="@username"
+            className="font-feather text-3xl text-center text-textPrimary bg-white mt-12 rounded-2xl border-4 border-border"
+            style={{
+              paddingVertical: RPH(2),
+              paddingHorizontal: RPH(3),
+            }}
+            placeholder={placeholderText}
             placeholderTextColor="#B89B4C"
             value={inputUsername}
             onChangeText={handleInputChange}
@@ -228,17 +249,15 @@ export default function OnboardingUsernameScreen() {
             autoCapitalize="none"
             autoCorrect={false}
           />
-          {error && (
-            <Text className="font-din text-sm text-red-500 mt-2 text-center">
-              {error}
-            </Text>
-          )}
+          {error && <Text className="font-din text-sm text-red-500 mt-2 text-center">{error}</Text>}
         </Animated.View>
 
         {/* Continue Button */}
-        <Animated.View style={buttonStyle} className={`mt-8 ${isKeyboardVisible ? 'mb-4' : 'mb-8'}`}>
+        <Animated.View
+          style={buttonStyle}
+          className={`mt-8 ${isKeyboardVisible ? 'mb-4' : 'mb-8'}`}>
           <PrimaryButton
-            title="Continue"
+            title={continueText}
             onPress={handleContinue}
             disabled={!inputUsername.trim() || !!error}
             isActive={!!inputUsername.trim() && !error}

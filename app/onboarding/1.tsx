@@ -1,5 +1,4 @@
 import { useAssets } from 'expo-asset';
-import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState, useRef } from 'react';
@@ -14,13 +13,16 @@ import {
   StatusBar,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useAnalytics } from '../hooks/useAnalytics';
 import PrimaryButton from '../../components/PrimaryButton';
 import Rive, { RiveRef, Fit, Alignment } from 'rive-react-native';
 
 import analytics from '../../utils/analytics';
-import { IS_ANDROID, IS_IOS } from '../utils/utils';
+import { IS_ANDROID } from '../utils/utils';
+import { RPH } from '../helper/helper';
+import { hapticHeavy, hapticLight, hapticRigid } from '~/utils/haptics';
 
 const FIRST_WELCOME_TEXT = 'Every Shepherd starts with one lost lamb...';
 const SECOND_WELCOME_TEXT = "This one's yours.";
@@ -29,13 +31,13 @@ const TYPING_SPEED = 75; // Speed for all typing effects
 const ZOOM_DURATION = 3000; // Slow zoom effect (3 seconds)
 const TRANSITION_DURATION = 350; // Faster transition animation duration
 
+// A/B Test key for AsyncStorage
+const AB_TEST_KEY = 'abTest';
+
 // Function to trigger a light haptic feedback
 const triggerTypeHaptic = () => {
   try {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Rigid).catch(() => {
-      // Silently fail if haptics don't work
-      console.log('Haptics not available');
-    });
+    hapticRigid();
   } catch (error) {
     // Safely ignore haptic errors
     console.log('Haptics not available');
@@ -50,8 +52,39 @@ export default function OnboardingWelcomeScreen() {
   // Initialize analytics
   const { logScreenView, logButtonPress, logEvent, AnalyticsEvent, EventCategory } = useAnalytics();
 
+  // A/B Test assignment function
+  const assignABTest = async () => {
+    try {
+      // Check if abTest already exists
+      const existingAbTest = await AsyncStorage.getItem(AB_TEST_KEY);
+
+      if (existingAbTest === null) {
+        // Generate random integer 0, 1, or 2 (33% chance each)
+        const abTestValue = Math.floor(Math.random() * 3);
+
+        // Save to AsyncStorage
+        await AsyncStorage.setItem(AB_TEST_KEY, abTestValue.toString());
+
+        console.log('[OnboardingScreen1] Assigned new A/B test value:', abTestValue);
+
+        // Log analytics event for A/B test assignment
+        analytics.logEvent('ABTest_Assigned', {
+          abTestGroup: abTestValue,
+          screenName: 'OnboardingWelcomeScreen',
+        });
+      } else {
+        console.log('[OnboardingScreen1] Existing A/B test value found:', existingAbTest);
+      }
+    } catch (error) {
+      console.error('[OnboardingScreen1] Error handling A/B test assignment:', error);
+    }
+  };
+
   // Log screen view when component mounts
   useEffect(() => {
+    // Assign A/B test first
+    assignABTest();
+
     analytics.logEvent('LambLostScreenViewed', {
       screenName: 'OnboardingWelcomeScreen',
       step: 1,
@@ -273,9 +306,7 @@ export default function OnboardingWelcomeScreen() {
     console.log('handleLambTap2');
     // Set the tap input to true to trigger the state machine
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {
-      console.log('Haptics not available');
-    });
+    hapticHeavy();
 
     if (!secondStageActive || isLambTapped) return;
 
@@ -287,7 +318,7 @@ export default function OnboardingWelcomeScreen() {
       action: 'Tapped Lamb',
     });
 
-    riveRef.current?.fireState('State Machine 1', 'tap');
+    riveRef.current?.setInputState('Baby', 'wake up', true);
     setIsAnimating(false);
     setIsLambTapped(true);
 
@@ -355,7 +386,7 @@ export default function OnboardingWelcomeScreen() {
   };
 
   // Load the Rive asset - Moved after all other hooks
-  const [assets] = useAssets([require('../../assets/riveAnimations/makeLamb.riv')]);
+  const [assets] = useAssets([require('../../assets/riveAnimations/babyLambWaking.riv')]);
 
   // Show loading indicator while assets are loading
   if (!assets) {
@@ -405,9 +436,7 @@ export default function OnboardingWelcomeScreen() {
           }}>
           <Pressable
             onPress={() => {
-              Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
-                console.log('Haptics not available');
-              });
+              hapticLight();
               analytics.logEvent('Onboarding_Tapped_Back', {
                 step: 1,
                 screenName: 'Welcome',
@@ -464,9 +493,8 @@ export default function OnboardingWelcomeScreen() {
 
             {/* Inner container */}
             <View className="flex-1">
-              {/* Lamb Animation */}
-              <View className="flex-1 items-center justify-center mt-72">
-                <View className="w-[225px] h-[225px] w-full justify-center items-center relative">
+              <View style={{ marginTop: RPH(25) }} className="flex-1 items-center justify-center">
+                <View className="h-[245px] w-full justify-center items-center relative">
                   {IS_ANDROID ? (
                     <Rive
                       ref={riveRef}
@@ -474,13 +502,13 @@ export default function OnboardingWelcomeScreen() {
                       onError={(error) => {
                         console.log('------>', error);
                       }}
-                      resourceName={'make_lamb'}
+                      resourceName={'baby_lamb_waking'}
                       // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
-                      stateMachineName="State Machine 1"
-                      artboardName={'lamb-wakingup-click'}
+                      stateMachineName="Baby"
+                      artboardName={'Baby-Spepherd 2'}
                       fit={Fit.Contain}
                       alignment={Alignment.Center}
-                      style={{ width: '100%', height: '100%' }}
+                      style={{ width: RPH(25), height: RPH(25) }}
                     />
                   ) : (
                     <Rive
@@ -491,27 +519,14 @@ export default function OnboardingWelcomeScreen() {
                       }}
                       url={assets[0].uri!} // Use url prop with localUri
                       // url="https://public.rive.app/community/runtime-files/2195-4346-avatar-pack-use-case.riv"
-                      stateMachineName="State Machine 1"
-                      artboardName={'lamb-wakingup-click'}
+                      stateMachineName="Baby"
+                      artboardName={'Baby-Spepherd 2'}
                       fit={Fit.Contain}
                       alignment={Alignment.Center}
-                      style={{ width: '100%', height: '100%' }}
+                      style={{ width: RPH(25), height: RPH(25) }}
                     />
                   )}
-                  {/* <Rive
-                    ref={riveRef}
-                    onError={(error) => {
-                      console.log('------>', error);
-                    }}
-                    // resourceName={assets[0].uri}
-                    url={assets[0].uri}
-                    artboardName={'lamb-wakingup'}
-                    stateMachineName="State Machine 1"
-                    fit={Fit.Contain}
-                    alignment={Alignment.Center}
-                    style={{ width: '100%', height: '100%' }}
-                  /> */}
-                  {/* Transparent overlay for tap detection */}
+
                   <Pressable
                     onPress={handleLambTap}
                     disabled={!secondStageActive || isLambTapped || isTransitioning}

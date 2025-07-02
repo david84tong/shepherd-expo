@@ -28,8 +28,8 @@ export const FirebaseDebugScreen = () => {
     onStartShouldSetPanResponder: () => true,
     onPanResponderMove: (_, gesture) => {
       position.setValue({
-        x: Math.max(0, Math.min(SCREEN_WIDTH - 120, position.x._value + gesture.dx)),
-        y: Math.max(0, Math.min(SCREEN_HEIGHT - 200, position.y._value + gesture.dy)),
+        x: Math.max(0, Math.min(SCREEN_WIDTH - 120, (position.x as any)._value + gesture.dx)),
+        y: Math.max(0, Math.min(SCREEN_HEIGHT - 200, (position.y as any)._value + gesture.dy)),
       });
     },
   });
@@ -66,7 +66,7 @@ export const FirebaseDebugScreen = () => {
           height: isExpanded ? 500 : 40,
         },
       ]}
-      // {...panResponder.panHandlers}
+    // {...panResponder.panHandlers}
     >
       <TouchableOpacity
         style={styles.header}
@@ -112,10 +112,22 @@ export const FirebaseDebugScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  button: {
+    alignItems: 'center',
+    backgroundColor: '#007AFF',
+    borderRadius: 4,
+    minWidth: 50,
+    padding: 4,
+  },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     marginBottom: 8,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
   container: {
     backgroundColor: 'rgba(0, 0, 0, 0.8)',
@@ -127,7 +139,12 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     padding: 8,
-  
+
+  },
+  data: {
+    color: '#ccc',
+    fontFamily: 'monospace',
+    fontSize: 10,
   },
   header: {
     alignItems: 'center',
@@ -137,23 +154,6 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
   },
-  title: {
-    color: 'white',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  button: {
-    alignItems: 'center',
-    backgroundColor: '#007AFF',
-    borderRadius: 4,
-    minWidth: 50,
-    padding: 4,
-  },
-  buttonText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
   logContainer: {
     flex: 1,
   },
@@ -162,11 +162,6 @@ const styles = StyleSheet.create({
     borderRadius: 4,
     marginBottom: 4,
     padding: 4,
-  },
-  timestamp: {
-    color: '#999',
-    fontSize: 10,
-    marginBottom: 2,
   },
   operation: {
     color: '#007AFF',
@@ -179,9 +174,16 @@ const styles = StyleSheet.create({
     fontSize: 10,
     marginBottom: 2,
   },
-  data: {
-    color: '#ccc',
-    fontFamily: 'monospace',
+  timestamp: {
+    color: '#999',
     fontSize: 10,
+    marginBottom: 2,
   },
-}); 
+  title: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+  },
+});
+
+export default FirebaseDebugScreen; 

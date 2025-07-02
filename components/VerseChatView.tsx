@@ -1,26 +1,22 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  SafeAreaView, 
-  KeyboardAvoidingView, 
-  Platform, 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
   FlatList,
   StyleSheet,
   StatusBar,
   Dimensions,
-  Keyboard,
-  ActivityIndicator
+  Keyboard
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import Reanimated, { 
-  FadeIn,
-  FadeInUp, 
+import Reanimated, {
+  FadeInUp,
   FadeInRight,
-  FadeOutLeft,
-  SlideInUp,
   interpolate,
   useAnimatedStyle,
   useSharedValue,
@@ -32,6 +28,11 @@ import { useAuth } from '../app/hooks/authHook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import useSubscriptionStore from '../app/stores/subscriptionStore';
 import analytics from '../utils/analytics';
+import { getBibleVerseAIResponse } from '../app/api/ai';
+import { useLanguageStore } from '../app/stores/languageStore';
+import { SupportedLanguage } from '../app/utils/i18n';
+import i18n from '../app/utils/i18n';
+import LanguageSelectionModal from './LanguageSelectionModal';
 
 interface Message {
   id: string;
@@ -39,6 +40,8 @@ interface Message {
   isUser: boolean;
   timestamp: Date;
   isLoading?: boolean;
+  isTyping?: boolean;
+  displayText?: string;
 }
 
 interface VerseChatViewProps {
@@ -56,16 +59,51 @@ const AnimatedSafeAreaView = Reanimated.createAnimatedComponent(SafeAreaView);
 
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get('window');
 // Use visual tab bar height (not layout height which includes safe areas)
-const TAB_BAR_HEIGHT = 35; 
+const TAB_BAR_HEIGHT = 35;
 
 // Key to store chat usage in AsyncStorage
 const CHAT_USED_KEY = 'shepherd_bible_chat_used_global';
 const CHAT_MESSAGE_COUNT_KEY = 'shepherd_bible_chat_message_count_global';
 
-const VerseChatView: React.FC<VerseChatViewProps> = ({ 
-  verse, 
-  bookName, 
-  chapter, 
+// Key to store chat language preference
+const CHAT_LANGUAGE_KEY = 'shepherd_bible_chat_language';
+const CHAT_LANGUAGE_SET_KEY = 'shepherd_bible_chat_language_set';
+
+// Add new component for typing animation
+const TypingMessage: React.FC<{ text: string }> = ({ text }) => {
+  const [displayText, setDisplayText] = useState('');
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (currentIndex < text.length) {
+      const timeout = setTimeout(() => {
+        setDisplayText(prev => prev + text[currentIndex]);
+        setCurrentIndex(prev => prev + 1);
+      }, 15); // Adjust speed here (lower = faster)
+
+      return () => clearTimeout(timeout);
+    }
+  }, [currentIndex, text]);
+
+  return (
+    <Reanimated.View
+      entering={FadeInUp.duration(300)}
+      style={[styles.messageBubble, styles.aiBubble]}
+    >
+      <Text style={[styles.messageText, styles.aiText]}>
+        {displayText}
+        {currentIndex < text.length && (
+          <Text style={styles.cursor}>|</Text>
+        )}
+      </Text>
+    </Reanimated.View>
+  );
+};
+
+const VerseChatView: React.FC<VerseChatViewProps> = ({
+  verse,
+  bookName,
+  chapter,
   onClose,
   onMessageSent
 }) => {
@@ -76,15 +114,82 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
   const [globalMessageCount, setGlobalMessageCount] = useState(0);
   const [inputMessage, setInputMessage] = useState('');
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [hasMessageBeenSent, setHasMessageBeenSent] = useState(false);
+  const [chatLanguage, setChatLanguage] = useState<SupportedLanguage>('en');
+  const [hasSetLanguage, setHasSetLanguage] = useState(false);
+  const [showLanguageModal, setShowLanguageModal] = useState(false);
+  const [hasDismissedLanguageModal, setHasDismissedLanguageModal] = useState(false); // Track if user dismissed modal without selecting
   const flatListRef = useRef<FlatList>(null);
-  
+
   const fadeAnim = useSharedValue(0);
   const slideAnim = useSharedValue(40);
   const inputSlideAnim = useSharedValue(80);
-  
+
   const { getFirebaseIdToken } = useAuth();
-  const { isProMember, presentPaywall } = useSubscriptionStore();
-  
+  const { isProMember, presentFreeTrialPaywall } = useSubscriptionStore();
+  const { language } = useLanguageStore();
+
+  // Combined language loading and syncing logic
+  useEffect(() => {
+    const handleLanguageLogic = async () => {
+      try {
+        const storedLanguage = await AsyncStorage.getItem(CHAT_LANGUAGE_KEY);
+        const languageSet = await AsyncStorage.getItem(CHAT_LANGUAGE_SET_KEY);
+
+        console.log(`[VerseChatView] App language: ${language}, Stored chat language: ${storedLanguage}, Language set: ${languageSet}`);
+
+        if (storedLanguage && languageSet === 'true') {
+          // User has explicitly set a chat language preference
+          setChatLanguage(storedLanguage as SupportedLanguage);
+          setHasSetLanguage(true);
+          console.log(`[VerseChatView] Using explicit chat language: ${storedLanguage}`);
+        } else {
+          // User hasn't explicitly set chat language, so sync with app language
+          setChatLanguage(language as SupportedLanguage);
+          await AsyncStorage.setItem(CHAT_LANGUAGE_KEY, language);
+          console.log(`[VerseChatView] Synced chat language with app language: ${language}`);
+        }
+      } catch (error) {
+        console.error('Error handling chat language logic:', error);
+        setChatLanguage(language as SupportedLanguage);
+      }
+    };
+
+    handleLanguageLogic();
+  }, [language]); // Watch for changes in app language
+
+  // Handle language selection
+  const handleLanguageSelect = async (selectedLanguage: SupportedLanguage) => {
+    try {
+      setChatLanguage(selectedLanguage);
+      setHasSetLanguage(true);
+      setHasDismissedLanguageModal(false); // Reset dismissed state when language is selected
+      await AsyncStorage.setItem(CHAT_LANGUAGE_KEY, selectedLanguage);
+      await AsyncStorage.setItem(CHAT_LANGUAGE_SET_KEY, 'true');
+
+      analytics.logEvent("Bible_Chat_LanguageChanged", {
+        book: bookName,
+        chapter,
+        verse: verse.verse,
+        language: selectedLanguage,
+        isProMember
+      });
+    } catch (error) {
+      console.error('Error saving chat language:', error);
+    }
+  };
+
+  // Show language selection on first visit
+  useEffect(() => {
+    if (!hasSetLanguage && !showLanguageModal && !hasDismissedLanguageModal) {
+      const timer = setTimeout(() => {
+        setShowLanguageModal(true);
+      }, 1000); // Show after 1 second
+
+      return () => clearTimeout(timer);
+    }
+  }, [hasSetLanguage, showLanguageModal, hasDismissedLanguageModal]);
+
   // Check if user has already used their free message
   useEffect(() => {
     const checkFreeMessageUsage = async () => {
@@ -92,7 +197,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         const hasUsed = await AsyncStorage.getItem(CHAT_USED_KEY);
         setHasUsedFreeMessage(hasUsed === 'true');
         console.log("[VerseChatView] Free message already used:", hasUsed === 'true');
-        
+
         // Load global message count
         const messageCountStr = await AsyncStorage.getItem(CHAT_MESSAGE_COUNT_KEY);
         const messageCount = messageCountStr ? parseInt(messageCountStr, 10) : 0;
@@ -113,34 +218,34 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         console.error('Error checking free message usage:', error);
       }
     };
-    
+
     checkFreeMessageUsage();
   }, [isProMember, bookName, chapter, verse.verse]);
-  
+
   const showPaywall = async () => {
     // Set the fromScreen property for tracking
     useSubscriptionStore.getState().setFromScreen('BibleChat');
-    
+
     analytics.logEvent("Bible_Chat_PaywallShown", {
       book: bookName,
       chapter,
       verse: verse.verse,
       reason: "used_free_message"
     });
-    
+
     // Try to present the main paywall first, if it fails, show free trial
-    const result = await presentPaywall();
+    const result = await presentFreeTrialPaywall();
     console.log("[VerseChatView] presentPaywall result:", result);
-    
+
     return result;
   }
-  
+
   useEffect(() => {
     fadeAnim.value = withTiming(1, { duration: 500 });
-    
+
     slideAnim.value = withTiming(0, { duration: 600 });
     inputSlideAnim.value = withDelay(200, withTiming(0, { duration: 500 }));
-    
+
     // Listen for layout changes in the FlatList
     const layoutSubscription = Dimensions.addEventListener('change', () => {
       if (flatListRef.current && messages.length > 0) {
@@ -149,26 +254,30 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         }, 100);
       }
     });
-    
+
     return () => {
       layoutSubscription.remove();
     };
   }, []); // Empty dependency array - only run once
-  
+
   // Separate useEffect to handle initial message setup based on loaded state
   useEffect(() => {
     // If we already have messages, don't reset them
     if (messages.length > 0) {
       return;
     }
-    
+
     // Wait a bit for the data to load, then set up initial message
     setTimeout(() => {
       // Pro members always get the normal welcome message
       if (isProMember) {
         console.log("[VerseChatView] Setting up welcome message for pro member");
-        const initialMessage = `Welcome! I'm here to help you study ${bookName} ${chapter}:${verse.verse}. What would you like to know about this verse?`;
-        
+        const initialMessage = i18n.t('bible_chat_welcome', {
+          bookName,
+          chapter,
+          verse: verse.verse
+        });
+
         setMessages([{
           id: Date.now().toString(),
           text: initialMessage,
@@ -180,7 +289,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         console.log("[VerseChatView] Setting up upgrade message for user who has used all messages");
         const upgradeMessage = {
           id: Date.now().toString(),
-          text: "You've used your free messages for the entire app. Upgrade to Shepherd Super to unlock unlimited Bible conversations across all verses!",
+          text: i18n.t('bible_chat_upgrade_message'),
           isUser: false,
           timestamp: new Date()
         };
@@ -188,8 +297,12 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       } else {
         // Non-pro users with remaining messages get normal welcome
         console.log("[VerseChatView] Setting up welcome message for non-pro user with remaining messages");
-        const initialMessage = `Welcome! I'm here to help you study ${bookName} ${chapter}:${verse.verse}. What would you like to know about this verse?`;
-        
+        const initialMessage = i18n.t('bible_chat_welcome', {
+          bookName,
+          chapter,
+          verse: verse.verse
+        });
+
         setMessages([{
           id: Date.now().toString(),
           text: initialMessage,
@@ -199,10 +312,10 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       }
     }, 500); // Increased delay to ensure data is loaded
   }, [globalMessageCount, hasUsedFreeMessage, isProMember, messages.length, bookName, chapter, verse.verse]);
-  
+
   const handleSend = async () => {
     if (inputMessage.trim() === '') return;
-    
+
     console.log("[VerseChatView] handleSend called", {
       isProMember,
       hasUsedFreeMessage,
@@ -220,18 +333,18 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       messageLength: inputMessage.trim().length,
       willGetAIResponse: isProMember || globalMessageCount < 2
     });
-    
+
     // Pro members can always send messages with AI response
     if (isProMember) {
       console.log("[VerseChatView] Pro member - sending message with AI response");
       sendMessage(true);
       return;
     }
-    
+
     // For non-pro members, check their message count
     if (globalMessageCount >= 3) {
       console.log("[VerseChatView] User has sent 3 messages - showing paywall on 4th attempt");
-      
+
       // Track paywall trigger
       analytics.logEvent("Bible_Chat_PaywallTriggered", {
         book: bookName,
@@ -240,11 +353,11 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         trigger: "message_limit_reached",
         globalMessageCount
       });
-      
+
       showPaywall();
       return;
     }
-    
+
     // User can send this message
     if (globalMessageCount < 2) {
       // First or second message - send with AI response
@@ -253,7 +366,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
     } else {
       // Third message - send but no AI response, then add upgrade message
       console.log(`[VerseChatView] Allowing message ${globalMessageCount + 1} but no AI response, then adding upgrade message`);
-      
+
       // Track final free message
       analytics.logEvent("Bible_Chat_FinalFreeMessage", {
         book: bookName,
@@ -261,25 +374,25 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         verse: verse.verse,
         globalMessageCount
       });
-      
+
       sendMessage(false); // false = no AI response
-      
+
       // Add upgrade message to chat after a short delay
       setTimeout(() => {
         const upgradeMessage = {
           id: (Date.now() + 1).toString(),
-          text: "You've used your free messages for the entire app. Upgrade to Shepherd Super to unlock unlimited Bible conversations across all verses!",
+          text: i18n.t('bible_chat_upgrade_message'),
           isUser: false,
           timestamp: new Date()
         };
-        
+
         setMessages(prev => [...prev, upgradeMessage]);
-        
+
         // Scroll to bottom to show the upgrade message
         setTimeout(() => {
           flatListRef.current?.scrollToEnd({ animated: true });
         }, 100);
-        
+
         // Track upgrade message shown
         analytics.logEvent("Bible_Chat_UpgradeMessageShown", {
           book: bookName,
@@ -287,7 +400,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           verse: verse.verse,
           globalMessageCount: globalMessageCount + 1
         });
-        
+
         // Also show the paywall automatically after the message appears
         setTimeout(() => {
           analytics.logEvent("Bible_Chat_AutoPaywallShown", {
@@ -301,11 +414,11 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       }, 1000);
     }
   };
-  
+
   const sendMessage = async (getAIResponse: boolean) => {
     // Store user input before clearing it
     const userQuestion = inputMessage;
-    
+
     // Add user message immediately
     const newMessage = {
       id: Date.now().toString(),
@@ -313,42 +426,45 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       isUser: true,
       timestamp: new Date()
     };
-    
+
     // Clear input field
     setInputMessage('');
-    
+
     // Add user message to chat
     setMessages(prev => [...prev, newMessage]);
-    
+
+    // Set hasMessageBeenSent to true when first message is sent
+    setHasMessageBeenSent(true);
+
     // Force scroll to bottom after a short delay
     setTimeout(() => {
       flatListRef.current?.scrollToEnd({ animated: true });
     }, 100);
-    
+
     // For non-pro members only, increment global message count
     if (!isProMember) {
       // Use a setTimeout to ensure this happens after the message state update
       setTimeout(async () => {
         const newMessageCount = globalMessageCount + 1;
         setGlobalMessageCount(newMessageCount);
-        
+
         try {
           await AsyncStorage.setItem(CHAT_MESSAGE_COUNT_KEY, newMessageCount.toString());
           console.log(`[VerseChatView] Saved global message count: ${newMessageCount}`);
         } catch (error) {
           console.error('Error saving global message count:', error);
         }
-        
+
         // If this is their first message ever globally, mark it as used
         if (!hasUsedFreeMessage) {
           try {
             await AsyncStorage.setItem(CHAT_USED_KEY, 'true');
             setHasUsedFreeMessage(true);
             console.log("[VerseChatView] Marked free message as used permanently");
-            
+
             // Notify parent component that message was sent
             onMessageSent?.();
-            
+
             analytics.logEvent("Bible_Chat_UsedFreeMessage", {
               book: bookName,
               chapter,
@@ -371,67 +487,49 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
         });
       }
     }
-    
+
     // Only make API call if we should get AI response
     if (!getAIResponse) {
       console.log("[VerseChatView] Skipping AI response for 3rd message");
       return;
     }
-    
+
     // Show loading message
     setIsAiLoading(true);
-    
+
     // Make API call with the user's input
     setTimeout(async () => {
       try {
         // Get Firebase ID token
         const idToken = await getFirebaseIdToken();
-        
+
         if (!idToken) {
           console.error('Failed to get Firebase ID token');
           throw new Error('Authentication failed');
         }
-        
-        const response = await fetch('https://shepherd-dev-api.skylar.gg/oai/gpt?model=gpt-3.5-turbo', {
-          method: 'POST',
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${idToken}`
-          },
-          body: JSON.stringify({
-            "messages": [
-              {
-                "role": "system",
-                "content": `You are a Bible study assistant helping with ${bookName} ${chapter}:${verse.verse}: "${verse.text}"`
-              },
-              {
-                "role": "user",
-                "content": userQuestion
-              }
-            ]
-          })
-        });
 
-        const data = await response.json();
-
-        // Update to handle the new response format
-        if (!data || !data.role || typeof data.content !== 'string') {
-          console.error('Invalid API response structure:', data);
-          
-          // Track API response error
-          analytics.logEvent("Bible_Chat_AIResponseError", {
-            book: bookName,
+        // Use the refactored AI API function
+        const aiMessage = await getBibleVerseAIResponse(
+          userQuestion,
+          {
+            bookName,
             chapter,
             verse: verse.verse,
-            error: "invalid_response_format",
-            responseData: JSON.stringify(data)
-          });
-          
-          throw new Error('Invalid API response format');
-        }
+            verseText: verse.text
+          },
+          idToken,
+          chatLanguage
+        );
 
-        const aiMessage = data.content;
-        
+        // Add message with typing animation
+        setMessages(prev => [...prev, {
+          id: (Date.now() + 1).toString(),
+          text: aiMessage,
+          isUser: false,
+          timestamp: new Date(),
+          isTyping: true
+        }]);
+
         // Track successful AI response
         analytics.logEvent("Bible_Chat_AIResponseReceived", {
           book: bookName,
@@ -441,48 +539,47 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           isProMember,
           globalMessageCount: globalMessageCount + 1
         });
-        
+
         // Remove loading state
         setIsAiLoading(false);
-        
-        const aiResponse = {
-          id: (Date.now() + 1).toString(),
-          text: aiMessage,
-          isUser: false,
-          timestamp: new Date()
-        };
-        
-        // Add AI response and force scroll
-        setMessages(prev => {
-          const updatedMessages = [...prev, aiResponse];
-          // Force scroll after state update
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              flatListRef.current?.scrollToEnd({ animated: false });
-            }, 100);
-          });
-          return updatedMessages;
+
+        // Force scroll after state update
+        requestAnimationFrame(() => {
+          setTimeout(() => {
+            flatListRef.current?.scrollToEnd({ animated: false });
+          }, 100);
         });
       } catch (error) {
         console.error('Error calling AI API:', error);
-        
-        // Track API error
-        analytics.logEvent("Bible_Chat_APIError", {
-          book: bookName,
-          chapter,
-          verse: verse.verse,
-          error: error instanceof Error ? error.message : 'Unknown error',
-          isProMember,
-          globalMessageCount: globalMessageCount + 1
-        });
-        
+
+        // Track API error with different event names based on error type
+        if (error instanceof Error && error.message === 'Invalid API response format') {
+          analytics.logEvent("Bible_Chat_AIResponseError", {
+            book: bookName,
+            chapter,
+            verse: verse.verse,
+            error: "invalid_response_format",
+            isProMember,
+            globalMessageCount: globalMessageCount + 1
+          });
+        } else {
+          analytics.logEvent("Bible_Chat_APIError", {
+            book: bookName,
+            chapter,
+            verse: verse.verse,
+            error: error instanceof Error ? error.message : 'Unknown error',
+            isProMember,
+            globalMessageCount: globalMessageCount + 1
+          });
+        }
+
         // Remove loading state
         setIsAiLoading(false);
-        
+
         // Fallback message in case of API error
         const errorResponse = {
           id: (Date.now() + 1).toString(),
-          text: "I'm sorry, I couldn't process your request at the moment. Please try again later.",
+          text: i18n.t('bible_chat_error_message'),
           isUser: false,
           timestamp: new Date()
         };
@@ -500,7 +597,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       }
     }, 1000);
   };
-  
+
   // Keyboard event listeners
   useEffect(() => {
     const keyboardDidShowListener = Keyboard.addListener(
@@ -527,19 +624,20 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       keyboardDidHideListener.remove();
     };
   }, [messages.length]);
-  
+
   const renderMessage = ({ item }: { item: Message }) => {
     const isUser = item.isUser;
-    
+
     // If this is an upgrade prompt, render a special message with an upgrade button
-    if (!isUser && (item.text.includes("Upgrade to Shepherd Super") || item.text.includes("You've used your free message"))) {
+    if (!isUser && (item.text.includes(i18n.t('bible_chat_upgrade_message')))) {
       return (
         <Reanimated.View
           entering={FadeInUp.duration(300).delay(200)}
           style={[
             styles.messageBubble,
             styles.aiBubble,
-            styles.upgradePromptBubble
+            styles.upgradePromptBubble,
+
           ]}
         >
           <Text style={[
@@ -551,7 +649,6 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
           <TouchableOpacity
             style={styles.upgradeButton}
             onPress={() => {
-              // Track upgrade button tap
               analytics.logEvent("Bible_Chat_UpgradeButtonTapped", {
                 book: bookName,
                 chapter,
@@ -562,13 +659,19 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
               });
               showPaywall();
             }}
+            accessibilityLabel={i18n.t('bible_chat_upgrade_now')}
           >
-            <Text style={styles.upgradeButtonText}>Upgrade Now</Text>
+            <Text style={styles.upgradeButtonText}>{i18n.t('bible_chat_upgrade_now')}</Text>
           </TouchableOpacity>
         </Reanimated.View>
       );
     }
-    
+
+    // If this is a typing message, render with typing animation
+    if (!isUser && item.isTyping) {
+      return <TypingMessage text={item.text} />;
+    }
+
     return (
       <Reanimated.View
         entering={isUser ? FadeInRight.duration(300) : FadeInUp.duration(300).delay(200)}
@@ -586,7 +689,7 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       </Reanimated.View>
     );
   };
-  
+
   // Create animated styles
   const containerStyle = useAnimatedStyle(() => {
     return {
@@ -594,34 +697,34 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
       transform: [{ translateY: interpolate(fadeAnim.value, [0, 1], [20, 0]) }]
     };
   });
-  
+
   const verseContainerStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateY: slideAnim.value }],
       opacity: fadeAnim.value
     };
   });
-  
+
   const inputContainerStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateY: inputSlideAnim.value }],
       opacity: fadeAnim.value
     };
   });
-  
+
   return (
     <AnimatedSafeAreaView style={[styles.safeArea, containerStyle]}>
       <StatusBar barStyle="dark-content" backgroundColor="#FFF4DC" />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
+        style={[styles.container, { marginBottom: Math.max(insets.bottom + TAB_BAR_HEIGHT - 10, 16) }]}
         keyboardVerticalOffset={0}
       >
-        <Reanimated.View 
+        <Reanimated.View
           style={styles.header}
           entering={FadeInUp.duration(400)}
         >
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={() => {
               // Track chat close
               analytics.logEvent("Bible_Chat_Closed", {
@@ -637,20 +740,30 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
             }}
             style={styles.backButton}
             activeOpacity={0.7}
+            accessibilityLabel={i18n.t('bible_chat_back')}
           >
             <Feather name="chevron-left" size={22} color="#3C584A" />
-            <Text style={styles.backButtonText}>Back</Text>
+            <Text style={styles.backButtonText}>{i18n.t('bible_chat_back')}</Text>
           </TouchableOpacity>
           <Text style={styles.headerText}>
             {bookName} {chapter}:{verse.verse}
           </Text>
-          <View style={styles.placeholder} />
+          <TouchableOpacity
+            onPress={() => setShowLanguageModal(true)}
+            style={styles.settingsButton}
+            activeOpacity={0.7}
+            accessibilityLabel={i18n.t('bible_chat_settings')}
+          >
+            <Feather name="settings" size={20} color="#3C584A" />
+          </TouchableOpacity>
         </Reanimated.View>
-        
-        <Reanimated.View style={[styles.verseContainer, verseContainerStyle]}>
-          <Text style={styles.verseText}>{verse.text}</Text>
-        </Reanimated.View>
-        
+
+        {!hasMessageBeenSent && (
+          <Reanimated.View style={[styles.verseContainer, verseContainerStyle]}>
+            <Text style={styles.verseText}>{verse.text}</Text>
+          </Reanimated.View>
+        )}
+
         <View style={styles.chatContainer}>
           <FlatList
             ref={flatListRef}
@@ -669,8 +782,8 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
                 flatListRef.current?.scrollToEnd({ animated: false });
               }
             }}
-            ListFooterComponent={isAiLoading ? 
-              <Reanimated.View 
+            ListFooterComponent={isAiLoading ?
+              <Reanimated.View
                 entering={FadeInUp.duration(300)}
                 style={[styles.messageBubble, styles.aiBubble, styles.loadingBubble]}
               >
@@ -679,21 +792,21 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
                   <View style={[styles.dot, styles.dotMiddle]} />
                   <View style={styles.dot} />
                 </View>
-              </Reanimated.View> 
+              </Reanimated.View>
               : null
             }
           />
         </View>
-        
+
         <Reanimated.View style={[styles.inputWrapper, inputContainerStyle]}>
-          <View style={[styles.inputContainer, { 
-            paddingBottom: Math.max(insets.bottom + TAB_BAR_HEIGHT, 16) 
+          <View style={[styles.inputContainer, {
+            // paddingBottom: Math.max(insets.bottom + TAB_BAR_HEIGHT, 16) 
           }]}>
             <TextInput
               style={styles.input}
               placeholder={!isProMember && globalMessageCount >= 3
-                ? "Upgrade to continue chatting..." 
-                : "Ask about this verse..."}
+                ? i18n.t('bible_chat_upgrade_placeholder')
+                : i18n.t('bible_chat_ask_verse_placeholder')}
               placeholderTextColor="#B89B4C"
               value={inputMessage}
               onChangeText={setInputMessage}
@@ -702,26 +815,50 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
               autoCapitalize="none"
               editable={isProMember || globalMessageCount < 3}
             />
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[
                 styles.sendButton,
-                (!inputMessage.trim()) 
-                  ? styles.sendButtonDisabled 
+                (!inputMessage.trim())
+                  ? styles.sendButtonDisabled
                   : {}
               ]}
               onPress={handleSend}
               disabled={!inputMessage.trim()}
               activeOpacity={0.8}
+              accessibilityLabel={!isProMember && globalMessageCount >= 3 ? i18n.t('bible_chat_unlock') : i18n.t('bible_chat_send')}
             >
-              <Feather 
-                name={!isProMember && globalMessageCount >= 3 ? "unlock" : "send"} 
-                size={20} 
-                color={(!inputMessage.trim()) ? "#CCCCCC" : "#FFFFFF"} 
+              <Feather
+                name={!isProMember && globalMessageCount >= 3 ? "unlock" : "send"}
+                size={20}
+                color={(!inputMessage.trim()) ? "#CCCCCC" : "#FFFFFF"}
               />
             </TouchableOpacity>
           </View>
         </Reanimated.View>
       </KeyboardAvoidingView>
+
+      {/* Language Selection Modal */}
+      <LanguageSelectionModal
+        visible={showLanguageModal}
+        onClose={async () => {
+          setShowLanguageModal(false);
+          setHasDismissedLanguageModal(true);
+          setHasSetLanguage(true); // Mark as set so modal won't show again
+          
+          // Save current app language as chat language if user dismisses without selecting
+          // This ensures the modal won't show again and chat uses the current app language
+          try {
+            await AsyncStorage.setItem(CHAT_LANGUAGE_KEY, language);
+            await AsyncStorage.setItem(CHAT_LANGUAGE_SET_KEY, 'true');
+            console.log(`[VerseChatView] Saved current app language as chat language on dismiss: ${language}`);
+          } catch (error) {
+            console.error('Error saving current language on modal dismiss:', error);
+          }
+        }}
+        onLanguageSelect={handleLanguageSelect}
+        selectedLanguage={chatLanguage}
+        title={i18n.t('select_chat_language')}
+      />
     </AnimatedSafeAreaView>
   );
 };
@@ -729,12 +866,12 @@ const VerseChatView: React.FC<VerseChatViewProps> = ({
 const styles = StyleSheet.create({
   aiBubble: {
     backgroundColor: '#FFF9E6',
-    borderTopRightRadius: 20,
-    borderBottomRightRadius: 20,
     borderBottomLeftRadius: 20,
-    marginRight: 60,
+    borderBottomRightRadius: 20,
     borderColor: '#FFE4A8',
+    borderTopRightRadius: 20,
     borderWidth: 1,
+    marginRight: 60,
   },
   aiText: {
     color: '#3C584A'
@@ -762,13 +899,17 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF4DC',
     flex: 1,
   },
+  cursor: {
+    fontWeight: 'bold',
+    opacity: 0.7
+  },
   dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
     backgroundColor: '#B89B4C',
+    borderRadius: 4,
+    height: 8,
     marginHorizontal: 2,
     opacity: 0.7,
+    width: 8,
   },
   dotMiddle: {
     opacity: 0.9,
@@ -787,10 +928,10 @@ const styles = StyleSheet.create({
   },
   headerText: {
     color: '#3C584A',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 18,
-    position: 'absolute',
     left: 0,
+    position: 'absolute',
     right: 0,
     textAlign: 'center',
     zIndex: -1,
@@ -823,43 +964,39 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   loadingBubble: {
-    paddingVertical: 15,
-    paddingHorizontal: 18,
-    width: 100,
-    marginBottom: 12,
     alignSelf: 'flex-start',
+    marginBottom: 12,
+    paddingHorizontal: 18,
+    paddingVertical: 15,
+    width: 100,
   },
   loadingContainer: {
-    flexDirection: 'row',
     alignItems: 'center',
+    flexDirection: 'row',
     justifyContent: 'center',
   },
   messageBubble: {
     borderRadius: 20,
+    elevation: 1,
     marginBottom: 12,
     maxWidth: '80%',
     padding: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
-    shadowRadius: 1, 
-    elevation: 1,
+    shadowRadius: 1,
   },
   messageList: {
     flexGrow: 1,
+    paddingBottom: 16,
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 16,
   },
   messageText: {
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
     lineHeight: 22,
     textTransform: 'none',
-  },
-  placeholder: {
-    height: 38,
-    width: 100,
   },
   safeArea: {
     backgroundColor: '#FFF4DC',
@@ -869,6 +1006,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#F7B500',
     borderRadius: 24,
+    elevation: 2,
     height: 48,
     justifyContent: 'center',
     marginLeft: 8,
@@ -879,26 +1017,33 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.1,
     shadowRadius: 3,
-    elevation: 2,
     width: 48,
   },
   sendButtonDisabled: {
     backgroundColor: '#E5E5E5',
-    shadowOpacity: 0,
     elevation: 0,
+    shadowOpacity: 0,
+  },
+  settingsButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(220, 178, 128, 0.2)',
+    borderRadius: 20,
+    height: 38,
+    justifyContent: 'center',
+    width: 38,
   },
   upgradeButton: {
     alignItems: 'center',
+    alignSelf: 'flex-start',
     backgroundColor: '#F7B500',
     borderRadius: 16,
     marginTop: 12,
     paddingHorizontal: 16,
     paddingVertical: 8,
-    alignSelf: 'flex-start',
   },
   upgradeButtonText: {
     color: '#FFFFFF',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 14,
   },
   upgradePromptBubble: {
@@ -909,15 +1054,15 @@ const styles = StyleSheet.create({
   userBubble: {
     alignSelf: 'flex-end',
     backgroundColor: '#FCD34D',
-    borderTopLeftRadius: 20,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
+    borderTopLeftRadius: 20,
+    elevation: 2,
     marginLeft: 60,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 2,
-    elevation: 2,
   },
   userText: {
     color: '#3C584A'
@@ -934,7 +1079,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontStyle: 'italic',
     lineHeight: 24,
-  }
+  },
 });
 
 export default VerseChatView;

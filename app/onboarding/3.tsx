@@ -1,22 +1,23 @@
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { View, Text, Pressable, ActivityIndicator, ScrollView, StatusBar } from 'react-native';
+import { View, Text, Pressable, ScrollView, StatusBar } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
-
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   withDelay,
   withTiming,
   withSpring,
-  FadeIn,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import analytics from '../../utils/analytics';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import { toBool } from '../utils/toBool';
+import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
+import { hapticLight } from '~/utils/haptics';
+
 export default function OnboardingIntentScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
@@ -46,7 +47,7 @@ export default function OnboardingIntentScreen() {
 
   // Log screen view when component mounts
   useEffect(() => {
-    analytics.logEvent("OnboardingIntentScreen_Viewed");
+    analytics.logEvent('OnboardingIntentScreen_Viewed');
   }, []);
 
   // Run animations only once during initial layout
@@ -103,7 +104,7 @@ export default function OnboardingIntentScreen() {
   const screenStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
     flex: 1,
-    backgroundColor: '#FFF4D9', // Explicitly set the cream background color
+    backgroundColor: '#FDEBB8', // Explicitly set the cream background color
   }));
 
   // Create animated styles for each component
@@ -134,17 +135,15 @@ export default function OnboardingIntentScreen() {
   const handleSelection = (intent: string) => {
     // Trigger light haptic feedback
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
-        console.log('Haptics not available');
-      });
+      hapticLight();
     } catch (error) {
       console.log('Haptics not available');
     }
 
-    analytics.logEvent("OnboardingIntentScreen_Tapped_Option", {
+    analytics.logEvent('OnboardingIntentScreen_Tapped_Option', {
       value: intent,
     });
-    setSelectedIntents(prev => {
+    setSelectedIntents((prev) => {
       const newSelection = prev.includes(intent)
         ? prev.filter((i) => i !== intent)
         : [...prev, intent];
@@ -176,32 +175,32 @@ export default function OnboardingIntentScreen() {
       icon: 'book-outline',
       color: '#F7B500',
       bgColor: 'bg-lightYellow',
-      title: 'Read the Bible',
-      description: 'Start your journey through scripture',
+      title: i18n.t('onboarding_intent_read_bible'),
+      description: i18n.t('onboarding_intent_read_bible_desc'),
     },
     {
       id: 'talk-to-god',
       icon: 'chatbubble-outline',
       color: '#2196F3',
       bgColor: 'bg-lightBlue',
-      title: 'Talk to God',
-      description: 'Learn to pray with confidence',
+      title: i18n.t('onboarding_intent_talk_to_god'),
+      description: i18n.t('onboarding_intent_talk_to_god_desc'),
     },
     {
       id: 'reflection-quiet-time',
       icon: 'leaf-outline',
       color: '#24CA17',
       bgColor: 'bg-lightGreen',
-      title: 'Reflection & Quiet Time',
-      description: 'Daily moments of peace with God',
+      title: i18n.t('onboarding_intent_reflection'),
+      description: i18n.t('onboarding_intent_reflection_desc'),
     },
     {
       id: 'just-exploring',
       icon: 'compass-outline',
       color: '#FF8C1A',
       bgColor: 'bg-lightOrange',
-      title: 'Just Exploring',
-      description: 'Discover at your own pace',
+      title: i18n.t('onboarding_intent_exploring'),
+      description: i18n.t('onboarding_intent_exploring_desc'),
     },
   ];
 
@@ -212,37 +211,44 @@ export default function OnboardingIntentScreen() {
         {/* Question Text */}
         <Animated.View style={titleStyle}>
           <Text className="font-feather text-h1 text-center text-textPrimary mb-4 px-12">
-            What brings you here today?
+            {i18n.t('onboarding_intent_question')}
           </Text>
         </Animated.View>
 
         <Animated.View style={subtitleStyle}>
           <Text className="font-din text-lg text-description text-center mt-0">
-            Select all that apply
+            {i18n.t('onboarding_intent_subtitle')}
           </Text>
         </Animated.View>
 
         {/* Buttons Container - with padding at bottom to make space for fixed button */}
         <Animated.View style={buttonsStyle} className="space-y-4 mt-8 mb-20">
-          <ScrollView contentContainerStyle={{ paddingBottom: 120 }} showsVerticalScrollIndicator={false}>
+          <ScrollView
+            contentContainerStyle={{ paddingBottom: 120 }}
+            showsVerticalScrollIndicator={false}>
             {buttons.map((button) => (
               <Pressable
                 key={button.id}
                 onPress={() => handleSelection(button.id)}
                 onPressIn={() => setPressedButton(button.id)}
                 onPressOut={() => setPressedButton(null)}
+                style={{
+                  height: RPH(9.5),
+                }}
                 className={`
-                h-[80px] bg-white rounded-card border-[3px] border-border px-4
+                 bg-white rounded-card border-[3px] border-border px-4
                 flex-row items-center shadow-buttonShadow mt-4
                 ${pressedButton === button.id ? 'translate-y-[3px] shadow-none' : 'translate-y-0'}
                 ${selectedIntents.includes(button.id) ? 'border-accentGold bg-surfaceCream' : ''}
               `}>
                 <View className={`${button.bgColor} rounded-xl p-3`}>
-                  <Ionicons name={button.icon as any} size={24} color={button.color} />
+                  <Ionicons name={button.icon as any} size={RPH(2.6)} color={button.color} />
                 </View>
                 <View className="ml-4 flex-1">
                   <Text className="font-feather text-lg text-textPrimary">{button.title}</Text>
-                  <Text className="font-din text-md text-description mt-1">{button.description}</Text>
+                  <Text className="font-din text-md text-description mt-1">
+                    {button.description}
+                  </Text>
                 </View>
                 <View
                   className={`
@@ -264,7 +270,7 @@ export default function OnboardingIntentScreen() {
         {/* Continue Button - Fixed at bottom */}
         <Animated.View style={continueStyle}>
           <PrimaryButton
-            title="Continue"
+            title={i18n.t('continue_button')}
             onPress={handleContinue}
             disabled={selectedIntents.length === 0}
             isActive={selectedIntents.length > 0}

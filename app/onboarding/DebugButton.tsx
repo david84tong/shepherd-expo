@@ -78,3 +78,6 @@ export function DebugButton({ }: DebugButtonProps) {
     </>
   );
 }
+
+// Default export for Expo Router compatibility
+export default {}

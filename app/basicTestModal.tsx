@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#333333',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 10,

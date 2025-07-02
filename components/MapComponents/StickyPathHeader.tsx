@@ -134,7 +134,7 @@ const StickyPathHeader: React.FC<StickyPathHeaderProps> = ({
   };
 
   return (
-    <View className="w-full">
+    <View className="w-full mt-12">
       <View className="px-4 pt-10">
         <View
           className={`flex-row items-center w-full ${getBgColor()} ${getBorderClass()} border-2 rounded-3xl px-5 py-4`}

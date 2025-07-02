@@ -1,33 +1,97 @@
 import dayjs from 'dayjs';
 import { useCallback, useState, useEffect, useRef } from 'react';
-import { Alert, Image, SafeAreaView, ScrollView, Text, TouchableOpacity, TouchableWithoutFeedback, View, Modal, StatusBar } from 'react-native';
+import {
+  Alert,
+  Image,
+  SafeAreaView,
+  ScrollView,
+  Text,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  View,
+  Modal,
+  StatusBar,
+} from 'react-native';
 import { useUIStore } from '../stores/uiStore';
 import { useUserStore } from '../stores/userStore';
 import useHighlightStore, { VerseHighlight, HIGHLIGHT_COLORS } from '../stores/highlightStore';
 import useNoteStore, { VerseNote } from '../stores/noteStore';
-import { Feather } from '@expo/vector-icons';
+import { Feather, FontAwesome } from '@expo/vector-icons';
 import { fetchChapter } from '../api/bible';
 
-import * as Haptics from 'expo-haptics';
 import { Prayer, Reading, Reflection } from '../models/User';
+import i18n from '../utils/i18n';
+import journalIcon from '../../assets/icons/journalIcon.png';
+import { hapticLight } from '~/utils/haptics';
 
 // Bible book names mapping
 const BIBLE_BOOK_NAMES: { [bookId: number]: string } = {
-  1: "Genesis", 2: "Exodus", 3: "Leviticus", 4: "Numbers", 5: "Deuteronomy",
-  6: "Joshua", 7: "Judges", 8: "Ruth", 9: "1 Samuel", 10: "2 Samuel",
-  11: "1 Kings", 12: "2 Kings", 13: "1 Chronicles", 14: "2 Chronicles",
-  15: "Ezra", 16: "Nehemiah", 17: "Esther", 18: "Job", 19: "Psalms",
-  20: "Proverbs", 21: "Ecclesiastes", 22: "Song of Solomon", 23: "Isaiah",
-  24: "Jeremiah", 25: "Lamentations", 26: "Ezekiel", 27: "Daniel",
-  28: "Hosea", 29: "Joel", 30: "Amos", 31: "Obadiah", 32: "Jonah",
-  33: "Micah", 34: "Nahum", 35: "Habakkuk", 36: "Zephaniah", 37: "Haggai",
-  38: "Zechariah", 39: "Malachi", 40: "Matthew", 41: "Mark", 42: "Luke",
-  43: "John", 44: "Acts", 45: "Romans", 46: "1 Corinthians", 47: "2 Corinthians",
-  48: "Galatians", 49: "Ephesians", 50: "Philippians", 51: "Colossians",
-  52: "1 Thessalonians", 53: "2 Thessalonians", 54: "1 Timothy", 55: "2 Timothy",
-  56: "Titus", 57: "Philemon", 58: "Hebrews", 59: "James", 60: "1 Peter",
-  61: "2 Peter", 62: "1 John", 63: "2 John", 64: "3 John", 65: "Jude",
-  66: "Revelation"
+  1: 'Genesis',
+  2: 'Exodus',
+  3: 'Leviticus',
+  4: 'Numbers',
+  5: 'Deuteronomy',
+  6: 'Joshua',
+  7: 'Judges',
+  8: 'Ruth',
+  9: '1 Samuel',
+  10: '2 Samuel',
+  11: '1 Kings',
+  12: '2 Kings',
+  13: '1 Chronicles',
+  14: '2 Chronicles',
+  15: 'Ezra',
+  16: 'Nehemiah',
+  17: 'Esther',
+  18: 'Job',
+  19: 'Psalms',
+  20: 'Proverbs',
+  21: 'Ecclesiastes',
+  22: 'Song of Solomon',
+  23: 'Isaiah',
+  24: 'Jeremiah',
+  25: 'Lamentations',
+  26: 'Ezekiel',
+  27: 'Daniel',
+  28: 'Hosea',
+  29: 'Joel',
+  30: 'Amos',
+  31: 'Obadiah',
+  32: 'Jonah',
+  33: 'Micah',
+  34: 'Nahum',
+  35: 'Habakkuk',
+  36: 'Zephaniah',
+  37: 'Haggai',
+  38: 'Zechariah',
+  39: 'Malachi',
+  40: 'Matthew',
+  41: 'Mark',
+  42: 'Luke',
+  43: 'John',
+  44: 'Acts',
+  45: 'Romans',
+  46: '1 Corinthians',
+  47: '2 Corinthians',
+  48: 'Galatians',
+  49: 'Ephesians',
+  50: 'Philippians',
+  51: 'Colossians',
+  52: '1 Thessalonians',
+  53: '2 Thessalonians',
+  54: '1 Timothy',
+  55: '2 Timothy',
+  56: 'Titus',
+  57: 'Philemon',
+  58: 'Hebrews',
+  59: 'James',
+  60: '1 Peter',
+  61: '2 Peter',
+  62: '1 John',
+  63: '2 John',
+  64: '3 John',
+  65: 'Jude',
+  66: 'Revelation',
 };
 
 // Content type for the dropdown
@@ -207,28 +271,28 @@ function getMonthGrid(
   return grid;
 }
 
-const breadIcon = require('../../assets/icons/breadIcon.png');
-const journalIcon = require('../../assets/icons/journalIcon.png');
-const dropIcon = require('../../assets/icons/waterIcon.png');
-
 // Function to handle haptic feedback
 const triggerHaptic = () => {
-  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+  hapticLight();
 };
 
-export default function StatsScreen() {
-  const readings = useUserStore(s => s.getCompletedReadings());
-  const prayers = useUserStore(s => s.getCompletedPrayers());
-  const reflections = useUserStore(s => s.getCompletedReflections());
+interface StatsScreenProps {
+  onClose?: () => void;
+}
+
+export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
+  const readings = useUserStore((s) => s.getCompletedReadings());
+  const prayers = useUserStore((s) => s.getCompletedPrayers());
+  const reflections = useUserStore((s) => s.getCompletedReflections());
 
   // Get the showOldReflectionSheet function directly from uiStore
-  const showOldReflectionSheet = useUIStore(state => state.showOldReflectionSheet);
+  const showOldReflectionSheet = useUIStore((state) => state.showOldReflectionSheet);
 
   // Highlight and note store hooks
-  const highlights = useHighlightStore(state => state.highlights);
-  const notes = useNoteStore(state => state.notes);
-  const loadHighlights = useHighlightStore(state => state.loadHighlights);
-  const loadNotes = useNoteStore(state => state.loadNotes);
+  const highlights = useHighlightStore((state) => state.highlights);
+  const notes = useNoteStore((state) => state.notes);
+  const loadHighlights = useHighlightStore((state) => state.loadHighlights);
+  const loadNotes = useNoteStore((state) => state.loadNotes);
 
   // State for dropdown
   const [selectedContentType, setSelectedContentType] = useState<ContentType>('reflections');
@@ -279,7 +343,7 @@ export default function StatsScreen() {
       if ('error' in response) {
         setVerseText('Error loading verse');
       } else {
-        const verse = response.verses.find(v => v.verse === verseNumber);
+        const verse = response.verses.find((v) => v.verse === verseNumber);
         setVerseText(verse?.text || 'Verse not found');
       }
     } catch (error) {
@@ -309,7 +373,7 @@ export default function StatsScreen() {
   // Handle month selection with haptic feedback
   const handleMonthPress = useCallback(() => {
     // Provide light haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+    hapticLight();
 
     // Month selection logic would go here
     console.log('Month selector pressed');
@@ -317,28 +381,31 @@ export default function StatsScreen() {
   }, []);
 
   // Function to handle tapping on a reflection
-  const handleReflectionPress = useCallback((reflection: Reflection) => {
-    console.log('Reflection tapped:', reflection);
+  const handleReflectionPress = useCallback(
+    (reflection: Reflection) => {
+      console.log('Reflection tapped:', reflection);
 
-    // Provide haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+      // Provide haptic feedback
+      hapticLight();
 
-    // First try using the local reference to the function
-    if (showOldReflectionSheet) {
-      console.log('Using direct UIStore reference to show sheet');
-      showOldReflectionSheet(reflection);
-    }
-    // Fallback to global object if needed
-    else if (typeof global !== 'undefined' && (global as any).showOldReflectionSheet) {
-      console.log('Using global reference to show sheet');
-      (global as any).showOldReflectionSheet(reflection);
-    }
-    // Final fallback to alert
-    else {
-      console.log('showOldReflectionSheet is not available');
-      Alert.alert('Reflection Detail', reflection.content || 'No content.');
-    }
-  }, [showOldReflectionSheet]);
+      // First try using the local reference to the function
+      if (showOldReflectionSheet) {
+        console.log('Using direct UIStore reference to show sheet');
+        showOldReflectionSheet(reflection);
+      }
+      // Fallback to global object if needed
+      else if (typeof global !== 'undefined' && (global as any).showOldReflectionSheet) {
+        console.log('Using global reference to show sheet');
+        (global as any).showOldReflectionSheet(reflection);
+      }
+      // Final fallback to alert
+      else {
+        console.log('showOldReflectionSheet is not available');
+        Alert.alert('Reflection Detail', reflection.content || 'No content.');
+      }
+    },
+    [showOldReflectionSheet]
+  );
 
   // Handle opening a reflection
   const handleOpenReflection = (reflection: Reflection) => {
@@ -380,7 +447,7 @@ export default function StatsScreen() {
       dropdownButtonRef.current.measure((x, y, width, height, pageX, pageY) => {
         setDropdownPosition({
           top: pageY + height + 8, // 8px below the button
-          right: 24 // 24px from right edge (matching the container padding)
+          right: 24, // 24px from right edge (matching the container padding)
         });
         setIsDropdownOpen(true);
       });
@@ -404,7 +471,7 @@ export default function StatsScreen() {
       chapter: highlight.chapter,
       verse: highlight.verse,
       type: 'highlight',
-      highlight
+      highlight,
     });
     setIsVerseModalVisible(true);
   };
@@ -417,7 +484,7 @@ export default function StatsScreen() {
       chapter: note.chapter,
       verse: note.verse,
       type: 'note',
-      note
+      note,
     });
     setIsVerseModalVisible(true);
   };
@@ -430,9 +497,10 @@ export default function StatsScreen() {
 
   // Render content based on selected type
   const renderSelectedContent = () => {
+    let recentHighlights = [], recentNotes = [];
     switch (selectedContentType) {
       case 'highlights':
-        const recentHighlights = getRecentHighlights();
+        recentHighlights = getRecentHighlights();
         return recentHighlights.length > 0 ? (
           <View className="space-y-4">
             {recentHighlights.map((highlight, i) => (
@@ -440,13 +508,11 @@ export default function StatsScreen() {
                 key={highlight.id}
                 className="bg-surfaceCream rounded-xl p-4 my-2"
                 onPress={() => handleHighlightPress(highlight)}
-                activeOpacity={0.7}
-              >
+                activeOpacity={0.7}>
                 <View className="flex-row items-center">
                   <View
                     className="w-10 h-10 rounded-full items-center justify-center mr-4"
-                    style={{ backgroundColor: HIGHLIGHT_COLORS[highlight.colorKey] }}
-                  >
+                    style={{ backgroundColor: HIGHLIGHT_COLORS[highlight.colorKey] }}>
                     <Feather name="edit-2" size={16} color="#3C584A" />
                   </View>
                   <View className="flex-1 flex-row justify-between items-center">
@@ -455,7 +521,7 @@ export default function StatsScreen() {
                         {BIBLE_BOOK_NAMES[highlight.bookId]} {highlight.chapter}:{highlight.verse}
                       </Text>
                       <Text className="font-din text-sm text-description mt-1">
-                        Highlighted verse
+                        {i18n.t('highlighted_verse')}
                       </Text>
                     </View>
                     <Text className="font-din text-description text-sm ml-2">
@@ -467,19 +533,24 @@ export default function StatsScreen() {
             ))}
           </View>
         ) : (
-          <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center">
-            <Feather name="edit-2" size={48} color="#3C584A" style={{ opacity: 0.5, marginBottom: 12 }} />
+          <View className="bg-surfaceCreamLight/70 rounded-xl p-5 flex items-center justify-center">
+            <Feather
+              name="edit-2"
+              size={48}
+              color="#3C584A"
+              style={{ opacity: 0.5, marginBottom: 12 }}
+            />
             <Text className="font-feather text-heading text-textPrimary/70 text-center">
-              No highlights yet
+              {i18n.t('no_highlights_yet')}
             </Text>
             <Text className="font-din text-body text-description text-center mt-1">
-              Highlight verses as you read to save them here
+              {i18n.t('highlight_verses_hint')}
             </Text>
           </View>
         );
 
       case 'notes':
-        const recentNotes = getRecentNotes();
+        recentNotes = getRecentNotes();
         return recentNotes.length > 0 ? (
           <View className="space-y-4">
             {recentNotes.map((note, i) => (
@@ -487,8 +558,7 @@ export default function StatsScreen() {
                 key={note.id}
                 className="bg-surfaceCream rounded-xl p-4 my-2"
                 onPress={() => handleNotePress(note)}
-                activeOpacity={0.7}
-              >
+                activeOpacity={0.7}>
                 <View className="flex-row items-center">
                   <View className="w-10 h-10 rounded-full bg-surfaceCream items-center justify-center mr-4">
                     <Feather name="edit-3" size={16} color="#3C584A" />
@@ -498,7 +568,10 @@ export default function StatsScreen() {
                       <Text className="font-feather text-body text-textPrimary" numberOfLines={1}>
                         {BIBLE_BOOK_NAMES[note.bookId]} {note.chapter}:{note.verse}
                       </Text>
-                      <Text className="font-din text-sm text-description mt-1" numberOfLines={1} ellipsizeMode="tail">
+                      <Text
+                        className="font-din text-sm text-description mt-1"
+                        numberOfLines={1}
+                        ellipsizeMode="tail">
                         {note.content}
                       </Text>
                     </View>
@@ -511,13 +584,18 @@ export default function StatsScreen() {
             ))}
           </View>
         ) : (
-          <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center">
-            <Feather name="edit-3" size={48} color="#3C584A" style={{ opacity: 0.5, marginBottom: 12 }} />
+          <View className="bg-surfaceCreamLight/70 rounded-xl p-5 flex items-center justify-center">
+            <Feather
+              name="edit-3"
+              size={48}
+              color="#3C584A"
+              style={{ opacity: 0.5, marginBottom: 12 }}
+            />
             <Text className="font-feather text-heading text-textPrimary/70 text-center">
-              No notes yet
+              {i18n.t('no_notes_yet')}
             </Text>
             <Text className="font-din text-body text-description text-center mt-1">
-              Add notes to verses as you study to save them here
+              {i18n.t('add_notes_hint')}
             </Text>
           </View>
         );
@@ -531,8 +609,7 @@ export default function StatsScreen() {
                 key={i}
                 className="bg-surfaceCream rounded-xl p-4 my-2"
                 onPress={() => handleReflectionPress(rf)}
-                activeOpacity={0.7}
-              >
+                activeOpacity={0.7}>
                 <View className="flex-row items-center">
                   <View className="w-10 h-10 rounded-full bg-surfaceCream items-center justify-center mr-4">
                     <Image source={journalIcon} className="w-12 h-12" />
@@ -540,10 +617,13 @@ export default function StatsScreen() {
                   <View className="flex-1 flex-row justify-between items-center">
                     <View className="flex-1 mr-2">
                       <Text className="font-feather text-body text-textPrimary" numberOfLines={1}>
-                        Quiet Time
+                        {i18n.t('quiet_time')}
                       </Text>
                       {rf.content && (
-                        <Text className="font-din text-sm text-description mt-1" numberOfLines={1} ellipsizeMode="tail">
+                        <Text
+                          className="font-din text-sm text-description mt-1"
+                          numberOfLines={1}
+                          ellipsizeMode="tail">
                           {rf.content}
                         </Text>
                       )}
@@ -557,13 +637,13 @@ export default function StatsScreen() {
             ))}
           </View>
         ) : (
-          <View className="bg-surfaceCream/70 rounded-xl p-5 flex items-center justify-center">
+          <View className="bg-surfaceCreamLight/70 rounded-xl p-5 flex items-center justify-center">
             <Image source={journalIcon} className="w-24 h-24 opacity-50 mb-3" />
             <Text className="font-feather text-heading text-textPrimary/70 text-center">
-              No recent reflections
+              {i18n.t('no_recent_reflections')}
             </Text>
             <Text className="font-din text-body text-description text-center mt-1">
-              Take a moment to reflect on your journey with God
+              {i18n.t('reflect_hint')}
             </Text>
           </View>
         );
@@ -571,24 +651,41 @@ export default function StatsScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <TouchableWithoutFeedback onPress={() => setIsDropdownOpen(false)}>
-        <ScrollView className="flex-1 bg-surfaceCream" contentContainerStyle={{ paddingBottom: 40 }}>
+        <ScrollView
+          className="flex-1 bg-surfaceCream"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 40 }}>
           {/* Header */}
-          <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
-            <Text className="font-feather text-h2 text-textPrimary">Heart Posture</Text>
+          <View className="flex-row items-center justify-between px-6 pt-8 pb-4 relative">
+            <Text className="font-feather text-h2 text-textPrimary">{i18n.t('stats_title')}</Text>
+
+            {/* Close button - right */}
+            {onClose && (
+              <View className="w-24 flex justify-end items-end pr-4">
+                <TouchableOpacity
+                  className="w-10 h-10 bg-black/30 rounded-full items-center justify-center z-10"
+                  onPress={() => {
+                    hapticLight();
+                    onClose();
+                  }}
+                  activeOpacity={0.7}>
+                  <FontAwesome name="times" size={20} color="white" />
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
 
           {/* Heatmap Card */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card shadow-lg  border border-brownBorder">
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="font-feather text-heading text-textPrimary">Monthly Activity</Text>
+              <Text className="font-feather text-heading text-textPrimary ">{i18n.t('monthly_activity')}</Text>
               <TouchableOpacity
                 className="bg-lightYellow px-4 py-1 rounded-full"
                 onPress={handleMonthPress}
-                activeOpacity={0.7}
-              >
+                activeOpacity={0.7}>
                 <Text className="font-feather text-accentGold">{now.format('MMMM YYYY')}</Text>
               </TouchableOpacity>
             </View>
@@ -616,7 +713,7 @@ export default function StatsScreen() {
                       activeOpacity={0.8}
                       onPress={() => {
                         // Provide light haptic feedback
-                        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+                        hapticLight();
 
                         // In the future, this could show detail for the specific day
                         console.log('Day pressed:', day.date);
@@ -648,50 +745,49 @@ export default function StatsScreen() {
           </View>
 
           {/* Activity Summary Card - Moved to bottom */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-cardx mt-8">
-            <Text className="font-feather text-heading text-textPrimary mb-4">Activity Summary</Text>
+          <View className="mx-6 mt-4 bg-surfaceCreamLight rounded-[20px] p-6 shadow-cardx mt-8 border border-brownBorder">
+            <Text className="font-feather text-heading text-textPrimary mb-4 ">
+              {i18n.t('activity_summary')}
+            </Text>
 
             <View className="flex-row justify-between">
               <TouchableOpacity
-                className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1"
+                className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1 border border-brownBorder"
                 activeOpacity={0.8}
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+                  hapticLight();
                   console.log('Readings summary pressed');
-                }}
-              >
+                }}>
                 <Text className="font-feather text-h2 text-textPrimary">{totalBibleReadings}</Text>
-                <Text className="font-din text-description text-center">Readings</Text>
+                <Text className="font-din text-description text-center">{i18n.t('readings')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1"
+                className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1 border border-brownBorder"
                 activeOpacity={0.8}
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+                  hapticLight();
                   console.log('Prayers summary pressed');
-                }}
-              >
+                }}>
                 <Text className="font-feather text-h2 text-textPrimary">{totalPrayerSessions}</Text>
-                <Text className="font-din text-description text-center">Prayers</Text>
+                <Text className="font-din text-description text-center">{i18n.t('prayers')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
-                className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1"
+                className="items-center bg-surfaceCream rounded-xl px-3 py-3 flex-1 mx-1 border border-brownBorder"
                 activeOpacity={0.8}
                 onPress={() => {
-                  Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+                  hapticLight();
                   console.log('Reflections summary pressed');
-                }}
-              >
+                }}>
                 <Text className="font-feather text-h2 text-textPrimary">{totalReflections}</Text>
-                <Text className="font-din text-description text-center">Reflections</Text>
+                <Text className="font-din text-description text-center">{i18n.t('reflections')}</Text>
               </TouchableOpacity>
             </View>
           </View>
 
           {/* Recent reflections */}
-          <View className="mx-6 mt-8 bg-white rounded-[20px] p-6 shadow-card mb-24">
+          <View className="mx-6 mt-8 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card mb-24 border border-brownBorder">
             <View className="flex-row justify-between items-center mb-4">
-              <Text className="font-feather text-heading text-textPrimary">Recent Activity</Text>
+              <Text className="font-feather text-heading text-textPrimary ">{i18n.t('recent_activity')}</Text>
 
               {/* Dropdown for content type selection */}
               <View className="relative">
@@ -699,13 +795,12 @@ export default function StatsScreen() {
                   ref={dropdownButtonRef}
                   className="bg-lightYellow px-4 py-2 rounded-full flex-row items-center"
                   onPress={handleDropdownToggle}
-                  activeOpacity={0.7}
-                >
+                  activeOpacity={0.7}>
                   <Text className="font-feather text-accentGold mr-2 capitalize">
                     {selectedContentType}
                   </Text>
                   <Feather
-                    name={isDropdownOpen ? "chevron-up" : "chevron-down"}
+                    name={isDropdownOpen ? 'chevron-up' : 'chevron-down'}
                     size={16}
                     color="#F7B500"
                   />
@@ -715,7 +810,6 @@ export default function StatsScreen() {
 
             {renderSelectedContent()}
           </View>
-
         </ScrollView>
       </TouchableWithoutFeedback>
 
@@ -724,37 +818,41 @@ export default function StatsScreen() {
         visible={isDropdownOpen}
         transparent={true}
         animationType="fade"
-        onRequestClose={() => setIsDropdownOpen(false)}
-      >
+        onRequestClose={() => setIsDropdownOpen(false)}>
         <TouchableWithoutFeedback onPress={() => setIsDropdownOpen(false)}>
           <View className="flex-1">
             <View
-              className="absolute bg-white rounded-xl shadow-card border border-border min-w-[140px]"
+              className="absolute bg-surfaceCreamLight rounded-xl shadow-card border border-border min-w-[140px]"
               style={{
                 top: dropdownPosition.top,
                 right: dropdownPosition.right,
-              }}
-            >
+              }}>
               <TouchableOpacity
                 className="px-4 py-3 border-b border-border"
-                onPress={() => handleContentTypeSelect('reflections')}
-                activeOpacity={0.7}
-              >
-                <Text className="font-din text-textPrimary">Reflections</Text>
+                onPress={() => {
+                  hapticLight();
+                  handleContentTypeSelect('reflections');
+                }}
+                activeOpacity={0.7}>
+                <Text className="font-din text-textPrimary">{i18n.t('reflections')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="px-4 py-3 border-b border-border"
-                onPress={() => handleContentTypeSelect('highlights')}
-                activeOpacity={0.7}
-              >
-                <Text className="font-din text-textPrimary">Highlights</Text>
+                onPress={() => {
+                  hapticLight();
+                  handleContentTypeSelect('highlights');
+                }}
+                activeOpacity={0.7}>
+                <Text className="font-din text-textPrimary">{i18n.t('highlights')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 className="px-4 py-3"
-                onPress={() => handleContentTypeSelect('notes')}
-                activeOpacity={0.7}
-              >
-                <Text className="font-din text-textPrimary">Notes</Text>
+                onPress={() => {
+                  hapticLight();
+                  handleContentTypeSelect('notes');
+                }}
+                activeOpacity={0.7}>
+                <Text className="font-din text-textPrimary">{i18n.t('notes')}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -766,20 +864,21 @@ export default function StatsScreen() {
         visible={isVerseModalVisible}
         transparent={true}
         animationType="slide"
-        onRequestClose={handleCloseVerseModal}
-      >
+        onRequestClose={handleCloseVerseModal}>
         <View className="flex-1 justify-center items-center p-6">
-          <View className="bg-white rounded-[20px] p-6 w-full max-w-sm shadow-card">
+          <View className="bg-surfaceCreamLight rounded-[20px] p-6 w-full max-w-sm shadow-card">
             {/* Header */}
             <View className="flex-row justify-between items-center mb-4">
               <Text className="font-feather text-heading text-textPrimary">
                 {selectedVerse?.bookName} {selectedVerse?.chapter}:{selectedVerse?.verse}
               </Text>
               <TouchableOpacity
-                onPress={handleCloseVerseModal}
+                onPress={() => {
+                  hapticLight();
+                  handleCloseVerseModal();
+                }}
                 className="w-8 h-8 rounded-full bg-surfaceCream items-center justify-center"
-                activeOpacity={0.7}
-              >
+                activeOpacity={0.7}>
                 <Feather name="x" size={16} color="#3C584A" />
               </TouchableOpacity>
             </View>
@@ -788,23 +887,22 @@ export default function StatsScreen() {
             <View className="mb-6">
               {loadingVerse ? (
                 <View className="py-4 items-center">
-                  <Text className="font-din text-description">Loading verse...</Text>
+                  <Text className="font-din text-description">{i18n.t('loading_verse')}</Text>
                 </View>
               ) : (
                 <View
                   className="p-4 rounded-xl border-2"
                   style={{
-                    backgroundColor: selectedVerse?.type === 'highlight' && selectedVerse.highlight
-                      ? HIGHLIGHT_COLORS[selectedVerse.highlight.colorKey]
-                      : '#FFF9E6',
-                    borderColor: selectedVerse?.type === 'highlight' && selectedVerse.highlight
-                      ? HIGHLIGHT_COLORS[selectedVerse.highlight.colorKey]
-                      : '#FFE4A8'
-                  }}
-                >
-                  <Text className="font-din text-textPrimary text-body leading-6">
-                    {verseText}
-                  </Text>
+                    backgroundColor:
+                      selectedVerse?.type === 'highlight' && selectedVerse.highlight
+                        ? HIGHLIGHT_COLORS[selectedVerse.highlight.colorKey]
+                        : '#FFF9E6',
+                    borderColor:
+                      selectedVerse?.type === 'highlight' && selectedVerse.highlight
+                        ? HIGHLIGHT_COLORS[selectedVerse.highlight.colorKey]
+                        : '#FFE4A8',
+                  }}>
+                  <Text className="font-din text-textPrimary text-body leading-6">{verseText}</Text>
                 </View>
               )}
             </View>
@@ -817,7 +915,7 @@ export default function StatsScreen() {
                     className="w-4 h-4 rounded-full mr-2"
                     style={{ backgroundColor: HIGHLIGHT_COLORS[selectedVerse.highlight.colorKey] }}
                   />
-                  <Text className="font-feather text-body text-textPrimary">Highlighted</Text>
+                  <Text className="font-feather text-body text-textPrimary">{i18n.t('highlighted')}</Text>
                 </View>
                 <Text className="font-din text-description text-sm">
                   {formatTimestamp(selectedVerse.highlight.timestamp)}
@@ -829,7 +927,7 @@ export default function StatsScreen() {
               <View className="mb-4">
                 <View className="flex-row items-center mb-2">
                   <Feather name="edit-3" size={16} color="#3C584A" style={{ marginRight: 8 }} />
-                  <Text className="font-feather text-body text-textPrimary">Note</Text>
+                  <Text className="font-feather text-body text-textPrimary">{i18n.t('note')}</Text>
                 </View>
                 <View className="bg-surfaceCream rounded-xl p-3 mb-2">
                   <Text className="font-din text-textPrimary text-body leading-5">
@@ -844,11 +942,13 @@ export default function StatsScreen() {
 
             {/* Close Button */}
             <TouchableOpacity
-              onPress={handleCloseVerseModal}
+              onPress={() => {
+                hapticLight();
+                handleCloseVerseModal();
+              }}
               className="bg-accentGold rounded-xl py-3 items-center"
-              activeOpacity={0.8}
-            >
-              <Text className="font-feather text-white text-body">Close</Text>
+              activeOpacity={0.8}>
+              <Text className="font-feather text-white text-body">{i18n.t('close')}</Text>
             </TouchableOpacity>
           </View>
         </View>

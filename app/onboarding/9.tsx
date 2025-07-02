@@ -2,7 +2,6 @@ import * as Notifications from 'expo-notifications';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Image, Alert, Linking, StatusBar } from 'react-native';
-import * as Haptics from 'expo-haptics';
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -15,6 +14,9 @@ import Animated, {
 import { useNotificationStore } from '../stores/notificationStore';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
+import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
+import { hapticLight } from '~/utils/haptics';
 
 export default function NotificationPermissionScreen() {
   const router = useRouter();
@@ -80,7 +82,7 @@ export default function NotificationPermissionScreen() {
 
   // Function to handle the don't allow button
   const handleDontAllow = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
 
     // Track analytics event
     analytics.logEvent("OnboardingNotificationPermissionScreen_Tapped_Deny");
@@ -101,7 +103,7 @@ export default function NotificationPermissionScreen() {
   const handleAllow = async () => {
     analytics.logEvent("OnboardingNotificationPermissionScreen_Tapped_Allow");
     if (showingAlert) return;
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     setShowingAlert(true);
 
     try {
@@ -161,18 +163,18 @@ export default function NotificationPermissionScreen() {
 
         // Show alert offering to open system settings
         Alert.alert(
-          'Enable Notifications',
-          'To receive daily reminders and streak notifications, please enable notifications in your device settings.',
+          i18n.t('onboarding_notification_enable_title'),
+          i18n.t('onboarding_notification_enable_desc'),
           [
             {
-              text: 'Open Settings',
+              text: i18n.t('onboarding_notification_open_settings'),
               onPress: () => {
                 analytics.logEvent("Onboarding_Opened_SystemSettings_Notifications");
                 Linking.openSettings();
               }
             },
             {
-              text: 'Continue Anyway',
+              text: i18n.t('onboarding_notification_continue_anyway'),
               style: 'cancel'
             }
           ]
@@ -199,7 +201,7 @@ export default function NotificationPermissionScreen() {
 
   // Function to handle the remind me button
   const handleRemindMe = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
 
     // Track analytics event
     analytics.logEvent(AnalyticsEvent.USER_PREFERENCE_CHANGE, {
@@ -225,15 +227,15 @@ export default function NotificationPermissionScreen() {
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
       <View className="flex-1 bg-surfaceCream items-center px-5">
-        <Animated.View style={titleStyle}>
-          <Text className="font-feather text-h1 text-center text-textPrimary mb-12 mt-32 mx-12">
-            Get Support from Shepherd
+        <Animated.View style={[titleStyle, { marginTop: RPH(10) }]}>
+          <Text className="font-feather text-h1 text-center text-textPrimary mb-12 mx-12">
+            {i18n.t('onboarding_notification_question')}
           </Text>
         </Animated.View>
 
         <Animated.View style={contentStyle} className="items-center">
           {/* iOS-style Notification Example */}
-          <View className="bg-white rounded-xl w-[360px] shadow-sm mb-6 flex-row p-3 items-center mx-12">
+          <View style={{ width: '90%' }} className="bg-white rounded-xl shadow-sm mb-6 flex-row p-3 items-center mx-12">
             <Image
               source={require('../../assets/icon.png')}
               className="w-12 h-12 mr-3 rounded-[8px]"
@@ -251,12 +253,11 @@ export default function NotificationPermissionScreen() {
           <View className="absolute top-[42%] left-0 right-0 flex items-center justify-center z-10 opacity-90 mt-28">
             <View className="bg-white rounded-[14px] w-[280px] overflow-hidden shadow-lg">
               <View className="p-4">
-                <Text className="text-black text-[17px] font-feather text-center mb-2 mt-2">
-                  &ldquo;Shepherd&rdquo; Would Like to Send You Notifications
+                <Text className="font-feather text-center text-[17px] font-feather mb-2 mt-2">
+                  {i18n.t('onboarding_notification_dialog_title')}
                 </Text>
                 <Text className="text-[#666666] text-[15px] font-din text-center px-6 mb-2">
-                  Notifications may include alerts, sounds, and icon badges. These can be configured
-                  in Settings.
+                  {i18n.t('onboarding_notification_dialog_desc')}
                 </Text>
               </View>
 
@@ -264,11 +265,11 @@ export default function NotificationPermissionScreen() {
                 <TouchableOpacity
                   className="flex-1 py-[12px] border-r border-gray-200"
                   onPress={handleDontAllow}>
-                  <Text className="text-[#007AFF] text-[17px] text-center font-din">Don&apos;t Allow</Text>
+                  <Text className="text-[#007AFF] text-[17px] text-center font-din">{i18n.t('onboarding_notification_dont_allow')}</Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity className="flex-1 py-[12px]" onPress={handleAllow}>
-                  <Text className="text-accentGold text-[17px] text-center font-bold">Allow</Text>
+                  <Text className="text-accentGold text-[17px] text-center font-bold">{i18n.t('onboarding_notification_allow')}</Text>
                 </TouchableOpacity>
               </View>
             </View>

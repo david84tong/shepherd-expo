@@ -6,6 +6,7 @@ export const FONT_SIZE_KEY = 'userBibleFontSize';
 export const LINE_HEIGHT_KEY = 'userBibleLineHeight';
 export const THEME_COLOR_KEY = 'userBibleThemeColor';
 export const READER_PREFERENCE_KEY = 'userDefaultReaderPreference';
+export const TAP_TO_SHOW_NEXT_CARD_KEY = 'tapToShowNextCard';
 
 export const DEFAULT_FONT_SIZE = 20;
 export const MIN_FONT_SIZE = 14;
@@ -29,12 +30,13 @@ export type LineHeightPreset = keyof typeof LINE_HEIGHT_PRESETS;
 
 export type ThemeType = 'white' | 'light' | 'medium' | 'dark';
 
-interface ReaderSettings {
+export interface ReaderSettings {
   // State
   fontSize: number;
   lineHeightPreset: LineHeightPreset;
   theme: ThemeType;
   useCardView: boolean;
+  tapToShowNextCard: boolean;
   initialized: boolean;
 
   // Actions
@@ -42,6 +44,7 @@ interface ReaderSettings {
   setLineHeightPreset: (preset: LineHeightPreset) => Promise<void>;
   setTheme: (theme: ThemeType) => Promise<void>;
   setCardView: (enabled: boolean) => Promise<void>;
+  setTapToShowNextCard: (enabled: boolean) => Promise<void>;
   initializeSettings: () => Promise<void>;
 }
 
@@ -49,8 +52,9 @@ export const useReaderSettingsStore = create<ReaderSettings>((set, get) => ({
   // Default settings
   fontSize: DEFAULT_FONT_SIZE,
   lineHeightPreset: 'REGULAR',
-  theme: 'light',
+  theme: 'medium',
   useCardView: true, // Default to card view as requested
+  tapToShowNextCard: true,
   initialized: false,
 
   // Update font size and save to AsyncStorage
@@ -101,6 +105,17 @@ export const useReaderSettingsStore = create<ReaderSettings>((set, get) => ({
     }
   },
 
+  // Toggle tap-to-show-next-card behavior
+  setTapToShowNextCard: async (enabled: boolean) => {
+    set({ tapToShowNextCard: enabled });
+    try {
+      await AsyncStorage.setItem(TAP_TO_SHOW_NEXT_CARD_KEY, enabled ? 'true' : 'false');
+      console.log(`👉 Tap-to-show-next-card behavior saved: ${enabled}`);
+    } catch (e) {
+      console.error('Failed to save tap-to-show-next-card behavior to AsyncStorage', e);
+    }
+  },
+
   // Initialize settings from AsyncStorage
   initializeSettings: async () => {
     try {
@@ -137,6 +152,12 @@ export const useReaderSettingsStore = create<ReaderSettings>((set, get) => ({
       const readerPref = await AsyncStorage.getItem(READER_PREFERENCE_KEY);
       if (readerPref !== null) {
         set({ useCardView: readerPref === 'new' });
+      }
+
+      // Initialize tap-to-show-next-card behavior
+      const savedTapToShowNextCard = await AsyncStorage.getItem(TAP_TO_SHOW_NEXT_CARD_KEY);
+      if (savedTapToShowNextCard !== null) {
+        set({ tapToShowNextCard: savedTapToShowNextCard === 'true' });
       }
 
       // Mark as initialized

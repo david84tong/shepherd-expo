@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react';
+import React, { useCallback, useRef, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,9 @@ import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
-import { Ionicons } from '@expo/vector-icons';
-import * as Haptics from 'expo-haptics';
 import { useUIStore } from '../app/stores/uiStore';
-import { Reflection } from '../app/models/User';
 import dayjs from 'dayjs';
+import { hapticMedium } from '~/utils/haptics';
 
 // Using exact same date handling from stats.tsx
 function toDateSafe(ts: any): Date {
@@ -121,7 +119,7 @@ const OldReflectionSheet: React.FC = () => {
       }, 100);
 
       // Provide haptic feedback when sheet opens
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => { });
+      hapticMedium();
     } else {
       console.log('OldReflectionSheet: Closing sheet');
       bottomSheetRef.current?.close();
@@ -211,65 +209,6 @@ const OldReflectionSheet: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  sheetBackground: {
-    backgroundColor: '#FFF4D9', // surfaceCream
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  handleIndicator: {
-    backgroundColor: '#DCB280', // accent
-    width: 40,
-    height: 4,
-  },
-  contentContainer: {
-    flex: 1, // Ensure content container takes up space
-    paddingBottom: 30,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFE4A8', // border
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontFamily: 'Nunito-Bold', // din font
-    color: '#B89B4C', // description color
-    flexShrink: 1, // Allow title to shrink if needed
-    marginRight: 10,
-  },
-  closeButton: {
-    padding: 5,
-  },
-  doneButtonText: {
-    fontSize: 16,
-    fontFamily: 'DIN Next Rounded LT W01 Regular', // din font
-    color: '#F7B500', // accentGold
-    fontWeight: '600',
-  },
-  scrollArea: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingTop: 20,
-    paddingHorizontal: 25, // Consistent horizontal padding
-    paddingBottom: 50, // Extra padding to avoid overlap with character count
-  },
-  relativeTimeText: {
-    fontSize: 14,
-    fontFamily: 'DIN Next Rounded LT W01 Regular', // din font
-    color: '#B89B4C', // description color
-    marginBottom: 12,
-  },
-  reflectionText: {
-    fontSize: 16, // body size
-    fontFamily: 'DIN Next Rounded LT W01 Regular', // din font
-    color: '#3C584A', // textPrimary
-    lineHeight: 24, // Improve readability
-  },
   charCountContainer: {
     position: 'absolute',
     bottom: 20,
@@ -289,6 +228,65 @@ const styles = StyleSheet.create({
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     color: '#FFFFFF', // white
     fontWeight: '500',
+  },
+  closeButton: {
+    padding: 5,
+  },
+  contentContainer: {
+    flex: 1, // Ensure content container takes up space
+    paddingBottom: 30,
+  },
+  doneButtonText: {
+    fontSize: 16,
+    fontFamily: 'DIN Next Rounded LT W01 Regular', // din font
+    color: '#F7B500', // accentGold
+    fontWeight: '600',
+  },
+  handleIndicator: {
+    backgroundColor: '#DCB280', // accent
+    width: 40,
+    height: 4,
+  },
+  header: {
+    alignItems: 'center',
+    borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15, // border
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontFamily: 'Nunito-Bold', // din font
+    color: '#B89B4C', // description color
+    flexShrink: 1, // Allow title to shrink if needed
+    marginRight: 10,
+  },
+  reflectionText: {
+    fontSize: 16, // body size
+    fontFamily: 'DIN Next Rounded LT W01 Regular', // din font
+    color: '#3C584A', // textPrimary
+    lineHeight: 24, // Improve readability
+  },
+  relativeTimeText: {
+    fontSize: 14,
+    fontFamily: 'DIN Next Rounded LT W01 Regular', // din font
+    color: '#B89B4C', // description color
+    marginBottom: 12,
+  },
+  scrollArea: {
+    flex: 1,
+  },
+  scrollContent: {
+    paddingTop: 20,
+    paddingHorizontal: 25, // Consistent horizontal padding
+    paddingBottom: 50, // Extra padding to avoid overlap with character count
+  },
+  sheetBackground: {
+    backgroundColor: '#FFF4D9', // surfaceCream
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
 });
 

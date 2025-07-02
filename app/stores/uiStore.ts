@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import HalfModalType from '../../components/HalfModalSheet';
 // Define the callback type directly here
 export type BookChapterSelectorCallback = (bookId: number, chapter: number) => void;
 import { Reflection } from '../models/User'; // Import Reflection type
@@ -40,6 +39,27 @@ interface UIState {
   showOldReflectionSheet: (reflection: Reflection) => void;
   hideOldReflectionSheet: () => void;
   
+  // Store sheet state
+  isStoreSheetVisible: boolean;
+  
+  // Store sheet actions
+  showStoreSheet: () => void;
+  hideStoreSheet: () => void;
+  
+  // Stats sheet state
+  isStatsSheetVisible: boolean;
+  
+  // Stats sheet actions
+  showStatsSheet: () => void;
+  hideStatsSheet: () => void;
+  
+  // Devotionals sheet state
+  isDevotionalsSheetVisible: boolean;
+  
+  // Devotionals sheet actions
+  showDevotionalsSheet: () => void;
+  hideDevotionalsSheet: () => void;
+  
   // Widget prompt and guide state
   isWidgetPromptVisible: boolean;
   isWidgetGuideVisible: boolean;
@@ -49,6 +69,11 @@ interface UIState {
   hideWidgetPrompt: () => void;
   showWidgetGuide: () => void;
   hideWidgetGuide: () => void;
+
+  showDevotionalContent: boolean;
+  tabBarVisible: boolean;
+  setShowDevotionalContent: (value: boolean) => void;
+  setTabBarVisible: (visible: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -106,6 +131,39 @@ export const useUIStore = create<UIState>((set) => ({
   hideOldReflectionSheet: () => 
     set({ isOldReflectionSheetVisible: false, reflectionToShow: null }),
     
+  // Store sheet state and actions
+  isStoreSheetVisible: false,
+  showStoreSheet: () => {
+    console.log('[UIStore] Showing store sheet');
+    set({ isStoreSheetVisible: true });
+  },
+  hideStoreSheet: () => {
+    console.log('[UIStore] Hiding store sheet');
+    set({ isStoreSheetVisible: false });
+  },
+  
+  // Stats sheet state and actions
+  isStatsSheetVisible: false,
+  showStatsSheet: () => {
+    console.log('[UIStore] Showing stats sheet');
+    set({ isStatsSheetVisible: true });
+  },
+  hideStatsSheet: () => {
+    console.log('[UIStore] Hiding stats sheet');
+    set({ isStatsSheetVisible: false });
+  },
+  
+  // Devotionals sheet state and actions
+  isDevotionalsSheetVisible: false,
+  showDevotionalsSheet: () => {
+    console.log('[UIStore] Showing devotionals sheet');
+    set({ isDevotionalsSheetVisible: true });
+  },
+  hideDevotionalsSheet: () => {
+    console.log('[UIStore] Hiding devotionals sheet');
+    set({ isDevotionalsSheetVisible: false });
+  },
+    
   // Widget prompt and guide state
   isWidgetPromptVisible: false,
   isWidgetGuideVisible: false,
@@ -127,4 +185,9 @@ export const useUIStore = create<UIState>((set) => ({
     console.log('[UIStore] Hiding widget guide');
     set({ isWidgetGuideVisible: false });
   },
+
+  showDevotionalContent: false,
+  tabBarVisible: true,
+  setShowDevotionalContent: (value) => set({ showDevotionalContent: value }),
+  setTabBarVisible: (visible) => set({ tabBarVisible: visible }),
 })); 

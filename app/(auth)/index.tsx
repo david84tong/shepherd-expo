@@ -1,4 +1,4 @@
-import React, { useState, useRef, useLayoutEffect } from 'react';
+import React, { useState, useRef, useLayoutEffect, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,8 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ONBOARDING_COMPLETED_KEY } from '../types/onboarding';
-import * as Haptics from 'expo-haptics';
 import { useAssets } from 'expo-asset';
-import Rive from 'rive-react-native';
+import Rive, { RiveRef } from 'rive-react-native';
 import PrimaryButton from '../../components/PrimaryButton';
 import { LinearGradient } from 'expo-linear-gradient';
 import analytics from '~/utils/analytics';
@@ -29,15 +28,19 @@ import {
 import CustomAnimatedView from '../components/CustomAnimatedView';
 import { IS_ANDROID } from '../utils/utils';
 import { useOnboardingStore } from '../stores/onboardingStore';
+import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
+import { hapticLight } from '~/utils/haptics';
 
 // We'll use the background directly in the source prop
 
 export default function LoginScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const riveRef = useRef<RiveRef>(null);
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/new_shepherd.riv')]);
 
   // Track if animations have been initialized
   const animationsInitialized = useRef(false);
@@ -61,7 +64,7 @@ export default function LoginScreen() {
 
     try {
       // Trigger haptic feedback
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      hapticLight();
 
       setLoading(true);
 
@@ -94,9 +97,18 @@ export default function LoginScreen() {
     } catch (error) {
       console.error('Error starting journey:', error);
       setLoading(false);
-      Alert.alert('Error', 'Could not start journey. Please try again.');
+      Alert.alert(i18n.t('error'), i18n.t('onboarding_could_not_start'));
     }
   };
+
+  // Set Rive input to reading state
+  useEffect(() => {
+    if (riveRef.current) {
+      setTimeout(() => {
+        riveRef.current?.setInputState('State Machine 1', 'Action-Number', 9);
+      }, 500);
+    }
+  }, [riveAssets]);
 
   // Run animations
   useLayoutEffect(() => {
@@ -183,7 +195,7 @@ export default function LoginScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-surfaceCream">
         <ActivityIndicator size="large" color="#3C584A" />
-        <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
+        <Text className="font-feather text-textPrimary mt-4">{i18n.t('loading')}</Text>
       </View>
     );
   }
@@ -212,10 +224,10 @@ export default function LoginScreen() {
           }}
         />
 
-        <SafeAreaView className="flex-1 justify-between px-6 pt-10 pb-10 relative z-10">
+        <SafeAreaView className="flex-1 justify-between px-6 pt-12 pb-10 relative z-10">
           {/* Title at the top */}
           <Text className="text-accentGold font-feather text-h1 text-center mb-2 -mt-12">
-            Shepherd
+            {i18n.t('home_title')}
           </Text>
           <CustomAnimatedView style={titleStyle} className="items-center -mt-12">
             {/* Shepherd title */}
@@ -229,16 +241,16 @@ export default function LoginScreen() {
               {/* Bible Study text with icons */}
               <View className="flex-col items-center justify-center mt-1">
                 <Text className="text-white font-nunito-bold text-title text-center">
-                  Bible Study
+                  {i18n.t('onboarding_bible_study')}
                 </Text>
 
                 {/* Made Joyful with Bible icons */}
                 <View className="flex-row items-center justify-center mt-1">
-                  <Text className="text-white font-nunito-bold text-title">Made </Text>
+                  <Text className="text-white font-nunito-bold text-title">{i18n.t('onboarding_made')}</Text>
                   <Text
                     className="text-accentGold font-feather text-title"
                     style={{ borderBottomColor: '#F7B500' }}>
-                    Joyful
+                    {i18n.t('onboarding_joyful')}
                   </Text>
                 </View>
               </View>
@@ -253,20 +265,24 @@ export default function LoginScreen() {
           {/* Rive Animation in the middle */}
           <CustomAnimatedView
             style={lambStyle}
-            className="h-[200px] w-full justify-center items-center -mt-24">
+            className="h-[240px] w-full justify-center items-center -mt-24">
             {IS_ANDROID ? (
               <Rive
-                resourceName={'home_lamb'}
-                artboardName="lamb-reading"
+                ref={riveRef}
+                resourceName={'new_shepherd'}
+                artboardName="[Main] Shpeherd"
+                stateMachineName="State Machine 1"
                 autoplay
-                style={{ width: '120%', height: '120%' }}
+                style={{ width: RPH(28), height: RPH(28) }}
               />
             ) : (
               <Rive
+                ref={riveRef}
                 url={riveAssets[0].localUri!}
-                artboardName="lamb-reading"
+                artboardName="[Main] Shpeherd"
+                stateMachineName="State Machine 1"
                 autoplay
-                style={{ width: '120%', height: '120%' }}
+                style={{ width: RPH(32), height: RPH(32) }}
               />
             )}
           </CustomAnimatedView>
@@ -277,7 +293,7 @@ export default function LoginScreen() {
               <PrimaryButton
                 onPress={handleBeginJourney}
                 disabled={loading}
-                title="Begin My Journey"
+                title={i18n.t('onboarding_begin_journey')}
               />
             </CustomAnimatedView>
             <CustomAnimatedView style={linkStyle}>
@@ -294,9 +310,9 @@ export default function LoginScreen() {
                   });
                 }}
                 className="mt-4"
-                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
+                onPressIn={() => hapticLight()}>
                 <Text className="font-feather text-body text-center underline mt-4 text-white">
-                  Login
+                  {i18n.t('onboarding_login')}
                 </Text>
               </TouchableOpacity>
             </CustomAnimatedView>

@@ -12,31 +12,35 @@ import {
 import EmptyModal from './EmptyModal';
 import { Feather } from '@expo/vector-icons';
 import { analytics } from '~/utils/analytics';
+import i18n from '~/app/utils/i18n';
+import { RPH } from '~/app/helper/helper';
+import { AppFonts } from '~/app/constants/appFonts';
+import PrimaryButton from './PrimaryButton';
 
 // Image references
-const PREVIEW_IMAGE = require('../assets/images/widgetPreviewStep.png');
-const STEP1_IMAGE = require('../assets/images/widgetStep1.png');
-const STEP2_IMAGE = require('../assets/images/widgetStep2.png');
-const STEP3_IMAGE = require('../assets/images/widgetStep3.png');
-const STEP4_IMAGE = require('../assets/images/widgetStep4.png');
+import PREVIEW_IMAGE from '../assets/images/widgetPreviewStep.png';
+import STEP1_IMAGE from '../assets/images/widgetStep1.png';
+import STEP2_IMAGE from '../assets/images/widgetStep2.png';
+import STEP3_IMAGE from '../assets/images/widgetStep3.png';
+import STEP4_IMAGE from '../assets/images/widgetStep4.png';
 
 
 // Simplified steps with concise instructions
 const steps = [
   {
-    instruction: 'Press and hold on any empty area of your home screen until the apps start to jiggle.',
+    instruction: i18n.t('widget_step1_instruction'),
     image: STEP1_IMAGE,
   },
   {
-    instruction: 'Tap the Edit button in the top-left corner of your screen.',
+    instruction: i18n.t('widget_step2_instruction'),
     image: STEP2_IMAGE,
   },
   {
-    instruction: 'Find Shepherd in the widget gallery.',
+    instruction: i18n.t('widget_step3_instruction'),
     image: STEP3_IMAGE,
   },
   {
-    instruction: 'Tap "Add Widget" and position it on your home screen.',
+    instruction: i18n.t('widget_step4_instruction'),
     image: STEP4_IMAGE,
   },
 ];
@@ -122,7 +126,7 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
           <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
             <Feather name="x" size={24} color="#3C584A" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Shepherd Widget</Text>
+          <Text style={styles.headerTitle}>{i18n.t('widget_howto_header')}</Text>
           <View style={{ width: 40 }} />
         </View>
         {/* Landing screen or instructions */}
@@ -131,7 +135,7 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
             contentContainerStyle={{ flexGrow: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}
             showsVerticalScrollIndicator={false}
           >
-            <Text className="text-2xl font-feather font-bold text-center text-[#3C584A] mb-8 ">Add Shepherd to your home screen with the widget!</Text>
+            <Text className="text-2xl font-feather font-bold text-center text-[#3C584A] mb-8 ">{i18n.t('widget_howto_landing_title')}</Text>
             <View style={styles.imageContainerPreview}>
               <Image
                 source={PREVIEW_IMAGE}
@@ -139,18 +143,16 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
                 resizeMode="contain"
               />
             </View>
-            <TouchableOpacity
-              className="w-full rounded-full py-4 mb-4"
+            <PrimaryButton
+              title={i18n.t('widget_howto_add_widget')}
               onPress={onAddWidgetPressed}
-              style={{ backgroundColor: '#FCD34D' }}
-            >
-              <Text className="text-lg font-feather font-bold text-[#3C584A] text-center">Add widget</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="w-full rounded-full py-4"
-              onPress={onNoThanksPressed}
-            >
-              <Text className="text-lg font-feather text-[#3C584A] text-center">No thanks</Text>
+              buttonType="gold"
+              style="mb-4"
+            />
+            <TouchableOpacity onPress={onNoThanksPressed}>
+              <Text className="text-lg font-feather text-[#3C584A] text-center underline">
+                {i18n.t('widget_howto_no_thanks')}
+              </Text>
             </TouchableOpacity>
           </ScrollView>
         ) : (
@@ -189,7 +191,7 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
                 <Image
                   source={steps[step].image}
                   style={styles.image}
-                  resizeMode="cover"
+                  resizeMode="contain"
 
                 />
               </View>
@@ -198,14 +200,11 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
             {/* Fixed Bottom Area */}
             <View style={styles.fixedBottomContainer}>
               {/* Button */}
-              <TouchableOpacity
-                style={styles.button}
+              <PrimaryButton
+                title={step < steps.length - 1 ? i18n.t('next') : i18n.t('done')}
                 onPress={handleNextStep}
-              >
-                <Text style={styles.buttonText}>
-                  {step < steps.length - 1 ? 'Next' : 'Done'}
-                </Text>
-              </TouchableOpacity>
+                buttonType="gold"
+              />
             </View>
           </>
         )}
@@ -215,148 +214,132 @@ export default function WidgetHowToSheet({ visible, onClose }: WidgetHowToSheetP
 }
 
 const styles = StyleSheet.create({
-  modalContent: {
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    flexDirection: 'column',
+  activeCircle: {
+    backgroundColor: '#FCD34D',
   },
-  handleContainer: {
-    width: '100%',
-    alignItems: 'center',
-    paddingTop: 12,
-    paddingBottom: 8,
+  activeLine: {
+    backgroundColor: '#FCD34D',
   },
-  handle: {
-    width: 40,
-    height: 4,
-    borderRadius: 100,
-    backgroundColor: '#D1D5DB',
+  activeNumber: {
+    color: '#3C584A',
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    marginBottom: 12,
-  },
+
   closeButton: {
     padding: 8,
   },
-  headerTitle: {
-    fontSize: 20,
-    fontFamily: 'feather',
-    color: '#3C584A',
-    fontWeight: '600',
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    alignItems: 'center',
-  },
-  imageContainer: {
-    width: 240,
-    height: Dimensions.get('window').width * 0.8,
-    marginTop: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  imageContainerPreview: {
-    width: Dimensions.get('window').width * 0.8,
-    height: Dimensions.get('window').width * 0.8,
-    marginBottom: 40,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  mainInstruction: {
-    fontFamily: 'feather',
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#3C584A',
-    textAlign: 'center',
-  },
   fixedBottomContainer: {
-    width: '100%',
+    backgroundColor: '#FEF3C7',
+    paddingBottom: 20,
     paddingHorizontal: 24,
     paddingTop: 8,
-    paddingBottom: 20,
-    backgroundColor: '#FEF3C7',
+    width: '100%',
+  },
+  handle: {
+    backgroundColor: '#D1D5DB',
+    borderRadius: 100,
+    height: 4,
+    width: 40,
+  },
+  handleContainer: {
+    alignItems: 'center',
+    paddingBottom: 8,
+    paddingTop: 12,
+    width: '100%',
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    paddingHorizontal: 24,
+    paddingVertical: 8,
+  },
+  headerTitle: {
+    color: '#3C584A',
+    fontFamily: 'Nunito-Bold',
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  image: {
+    borderRadius: 16,
+    height: RPH(35),
+    overflow: 'hidden',
+    width: '100%',
+  },
+  imageContainer: {
+    alignItems: 'center',
+    borderRadius: 16,
+    // height: Dimensions.get('window').width * 0.8,
+    justifyContent: 'center',
+    marginTop: RPH(2),
+    overflow: 'hidden',
+    width: 240,
+  },
+  imageContainerPreview: {
+    alignItems: 'center',
+    borderRadius: 16,
+    height: RPH(35),
+    justifyContent: 'center',
+    marginBottom: RPH(4),
+    overflow: 'hidden',
+    width: Dimensions.get('window').width * 0.8,
+  },
+  inactiveCircle: {
+    backgroundColor: '#FFF4D9',
+    borderColor: '#E9E2C7',
+    borderWidth: 1,
+  },
+  inactiveLine: {
+    backgroundColor: '#E9E2C7',
+  },
+  inactiveNumber: {
+    color: '#B89B4C',
+  },
+  mainInstruction: {
+    color: '#3C584A',
+    fontFamily: 'feather',
+    fontSize: AppFonts[17],
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  modalContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    width: '100%',
+  },
+  progressCircle: {
+    alignItems: 'center',
+    borderRadius: 16,
+    height: 32,
+    justifyContent: 'center',
+    width: 32,
   },
   progressContainer: {
     marginBottom: 16,
     width: '100%',
   },
-  progressTrack: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  progressCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  activeCircle: {
-    backgroundColor: '#FCD34D',
-  },
-  inactiveCircle: {
-    backgroundColor: '#FFF4D9',
-    borderWidth: 1,
-    borderColor: '#E9E2C7',
+  progressLine: {
+    flex: 1,
+    height: 2,
+    marginHorizontal: 4,
   },
   progressNumber: {
     fontFamily: 'feather',
     fontSize: 14,
     fontWeight: '600',
   },
-  activeNumber: {
-    color: '#3C584A',
-  },
-  inactiveNumber: {
-    color: '#B89B4C',
-  },
-  progressLine: {
-    height: 2,
-    flex: 1,
-    marginHorizontal: 4,
-  },
-  activeLine: {
-    backgroundColor: '#FCD34D',
-  },
-  inactiveLine: {
-    backgroundColor: '#E9E2C7',
-  },
-  button: {
-    backgroundColor: '#FCD34D',
-    borderRadius: 100,
-    paddingVertical: 16,
+  progressTrack: {
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 3,
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
-  buttonText: {
-    fontFamily: 'feather',
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#3C584A',
+  scrollView: {
+    flex: 1,
+  },
+  scrollViewContent: {
+    alignItems: 'center',
+    paddingHorizontal: 24,
+    paddingVertical: 8,
   },
 });

@@ -1,7 +1,7 @@
 import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
 import React, { useEffect, useRef, useMemo, useState } from 'react';
-import { View, Text, TouchableOpacity, Animated, ScrollView, AppState } from 'react-native';
+import { View, Text, Animated, ScrollView, AppState } from 'react-native';
 import BackButton from './BackButton';
 import PrimaryButton from './PrimaryButton';
 import { Unit, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS } from '../app/models/Path'; // Import both path constants
@@ -84,7 +84,17 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
   const subtitle = useMemo(() => {
     if (nextUnit) {
       const ref = getFirstReference(nextUnit.reference);
-      return `Next: ${ref.bookName} ${ref.chapters[0]}`;
+      const chapters = ref.chapters;
+      
+      // If there's only one chapter, show single chapter format
+      if (chapters.length === 1) {
+        return `Next: ${ref.bookName} ${chapters[0]}`;
+      } else {
+        // Show chapter range for multiple chapters
+        const startChapter = chapters[0];
+        const endChapter = chapters[chapters.length - 1];
+        return `Next: ${ref.bookName} ${startChapter}-${endChapter}`;
+      }
     }
     return `Today's Reading · ${savedBook} ${savedChapter}`;
   }, [nextUnit, savedBook, savedChapter]);
@@ -263,28 +273,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
     }
   };
 
-  // Handler for "Just Read Bible" button
-  const handleJustReadBible = () => {
-    console.log('Just Read Bible');
-    // Set path progress to true for "just read" mode
-    setPathInProgress(true);
 
-    // Navigate directly to the Bible reader with saved state
-    router.push({
-      pathname: '/bibleReader',
-      params: {
-        bookId: savedBookId?.toString(),
-        chapters: savedChapter?.toString(),
-        title: savedBook,
-        source: 'just-read',
-        justReadMode: 'true', // Special flag for just read mode
-        timestamp: Date.now().toString(),
-        isFromDailyBread: 'true',
-      },
-    });
-
-    // Close the preview overlay
-  };
 
   // Handler for "Finish Reading" button
   // const handleFinishReading = () => {
@@ -358,11 +347,7 @@ const BiblePreviewComponent: React.FC<BiblePreviewProps> = ({ visible, onClose }
             handleStart();
           }}
         />
-        <TouchableOpacity onPress={handleJustReadBible} className="mt-4 py-2" activeOpacity={0.7}>
-          <Text className="text-body font-nunito-bold text-textPrimary/70 text-center underline text-white">
-            Just Read Bible
-          </Text>
-        </TouchableOpacity>
+    
       </Animated.View>
     </Animated.View>
   );

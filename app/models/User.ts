@@ -46,6 +46,17 @@ export interface UserDoc {
   completedReadings: Reading[];
   isProFromOnboarding: boolean;
   hasSeenWidgetModal: boolean;
+  hasSeenBibleReaderTutorial: boolean;
+  skins: string[];
+  // Check-in data - dictionary with date keys (YYYYMMDD format)
+  checkIns?: {
+    [dateKey: string]: {
+      mood: string;
+      focus: string;
+      struggle: string;
+      completedAt: FirebaseFirestoreTypes.Timestamp;
+    };
+  };
   // Progress data
   level: number;
   xp: number;
@@ -93,6 +104,7 @@ export interface UserStore extends UserDoc {
   getCompletedReflections: () => Reflection[];
   getCompletedPrayers: () => Prayer[];
   getCompletedReadings: () => Reading[];
+  getSkins: () => string[];
 
   // Getters for Lamb fields
   getLambLevel: () => number;
@@ -131,6 +143,8 @@ export interface UserStore extends UserDoc {
   addCompletedReflection: (reflection: Reflection) => void;
   addCompletedPrayer: (prayer: Prayer) => void;
   addCompletedReading: (reading: Reading) => void;
+  setSkins: (skins: string[]) => void;
+  addSkin: (skin: string) => void;
   setIsProFromOnboarding: (isProFromOnboarding: boolean) => void;
 
   // Setters for Lamb fields
@@ -152,8 +166,17 @@ export interface UserStore extends UserDoc {
   getHasSeenWidgetModal: () => boolean;
   setHasSeenWidgetModal: (hasSeen: boolean) => void;
 
+  // Add new getter/setter for Bible Reader tutorial
+  getHasSeenBibleReaderTutorial: () => boolean;
+  setHasSeenBibleReaderTutorial: (hasSeen: boolean) => void;
+
   setCompletedMapPaths: (paths: MapPathCompletion[]) => void;
   addCompletedMapPath: (path: MapPathCompletion) => void;
+  
+  // Check-in getter/setter
+  getCheckIns: () => UserDoc['checkIns'];
+  setCheckIns: (checkIns: UserDoc['checkIns']) => Promise<void>;
+  addCheckIn: (dateKey: string, checkInData: NonNullable<UserDoc['checkIns']>[string]) => Promise<void>;
 }
 
 export interface Reading {
@@ -188,3 +211,6 @@ export interface Lamb {
   name: string;
   skin: string;
 }
+
+// Default export for Expo Router compatibility
+export default {}

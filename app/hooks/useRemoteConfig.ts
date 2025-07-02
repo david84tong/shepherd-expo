@@ -33,3 +33,6 @@ export const useRemoteConfig = () => {
 
   return {};
 };
+
+// Default export for Expo Router compatibility
+export default {}

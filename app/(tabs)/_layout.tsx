@@ -1,8 +1,9 @@
-import * as Haptics from 'expo-haptics';
 import { Redirect, Tabs } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Image, Platform, Pressable, View, ViewStyle } from 'react-native';
+import { Animated, Image, Platform, Pressable, Text, View, ViewStyle } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
+
 
 import { isSignedIn } from '../hooks/authHook';
 import { useHomeStore } from '../stores/homeStore';
@@ -10,6 +11,10 @@ import { usePathStore } from '../stores/pathStore';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
+import { RPH, RPW } from '../helper/helper';
+import i18n from '../utils/i18n';
+import { AppFonts } from '../constants/appFonts';
+import { hapticMedium } from '~/utils/haptics';
 
 // Key for tracking first app launch
 const FIRST_APP_LAUNCH_KEY = 'first_app_launch_completed';
@@ -29,10 +34,7 @@ function CustomTabBarButton(props: any) {
   // Handle press with haptic feedback
   const handlePress = () => {
     // Trigger medium haptic feedback when tab is pressed
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {
-      // Silently fail if haptics don't work
-      console.log('Haptics not available');
-    });
+    hapticMedium();
 
     // Call the original onPress handler
     onPress();
@@ -41,8 +43,8 @@ function CustomTabBarButton(props: any) {
   return (
     <Pressable
       onPress={handlePress}
-      // Apply base flex styling and only horizontal margin
-      className="flex-1 items-center justify-center mx-1">
+      // Apply base flex styling, horizontal margin, and horizontal padding for spacing
+      className="flex-1  items-center justify-center">
       {children}
     </Pressable>
   );
@@ -59,7 +61,7 @@ export default function TabsLayout() {
   const { savedScreenToNavigateTo, isInitialized: isOnboardingStoreInitialized } = useOnboardingStore();
 
   // Get subscription status
-  const { isProMember, getCustomerInfo } = useSubscriptionStore();
+  const { isProMember, getCustomerInfo, presentFreeTrialPaywall } = useSubscriptionStore();
 
   // Check onboarding status from AsyncStorage
   useEffect(() => {
@@ -125,20 +127,35 @@ export default function TabsLayout() {
     }
   }, [signedIn, getCustomerInfo]);
 
+  // Handle free trial paywall presentation
+  useEffect(() => {
+    if (signedIn && onboardingCompleted && !isProMember && (isFirstAppLaunch || isDailyFirstLoad)) {
+      const reason = isFirstAppLaunch ? "First app launch" : "Daily first load";
+      console.log(`[TabsLayout] ${reason}, user is signed in but not pro. Showing free trial paywall.`);
+      presentFreeTrialPaywall();
+    }
+  }, [signedIn, onboardingCompleted, isProMember, isFirstAppLaunch, isDailyFirstLoad, presentFreeTrialPaywall]);
+
   // Zustand selectors – always call, even if the user ends up being redirected.}
   const mode = useHomeStore((state) => state.mode);
+  const devotionalReaderVisible = useHomeStore((state) => state.devotionalReaderVisible);
+  const prayerViewVisible = useHomeStore((state) => state.prayerViewVisible);
+  const journalViewVisible = useHomeStore((state) => state.journalViewVisible);
   const pathInProgress = usePathStore((state) => state.pathInProgress);
+  const isTabBarVisible = !devotionalReaderVisible && !prayerViewVisible && !journalViewVisible;
 
   // Ref that drives tab-bar show / hide animation
   const tabBarAnim = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
+    const shouldShowTabBar = mode === 'DEFAULT' && !pathInProgress && !devotionalReaderVisible && !prayerViewVisible && !journalViewVisible;
+
     Animated.timing(tabBarAnim, {
-      toValue: mode === 'DEFAULT' && !pathInProgress ? 1 : 0,
+      toValue: shouldShowTabBar ? 1 : 0,
       duration: 300,
       useNativeDriver: true,
     }).start();
-  }, [mode, pathInProgress]);
+  }, [mode, pathInProgress, devotionalReaderVisible, prayerViewVisible, journalViewVisible]);
 
   // Wait for both onboarding status from AsyncStorage and onboardingStore to be initialized
   if (onboardingCompleted === null || !isOnboardingStoreInitialized || isFirstAppLaunch === null || isDailyFirstLoad === null) {
@@ -163,12 +180,7 @@ export default function TabsLayout() {
   }
 
   // CASE 2: User IS signed in
-  // Check if this is their first app launch OR daily first load and they're not pro - redirect to pricing
-  if ((isFirstAppLaunch || isDailyFirstLoad) && !isProMember && onboardingCompleted) {
-    const reason = isFirstAppLaunch ? "First app launch" : "Daily first load";
-    console.log(`[TabsLayout] Case 2A: ${reason}, user is signed in but not pro. Redirecting to PricingScreen.`);
-    return <Redirect href="/PricingScreen?fromLoading=true&animateFromBottom=true" />;
-  }
+  // Free trial paywall is now handled in useEffect above
 
   // If user is signed in, they should always go to the main app regardless of onboarding completion status
   // Being signed in means they've completed the necessary authentication/setup process
@@ -179,11 +191,12 @@ export default function TabsLayout() {
 
   // Using absolute positioning to prevent the "chin" gap
   const animatedTabBarStyle = {
+    display: isTabBarVisible ? 'flex' : 'none',
     position: 'absolute' as const,
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#FEE4A9',
+    backgroundColor: '#FDEBB8',
     opacity: tabBarAnim,
     // Pull tab bar completely out of view when hidden
     transform: [
@@ -199,7 +212,7 @@ export default function TabsLayout() {
     ...Platform.select({
       ios: {
         shadowColor: '#FFE4A8',
-        shadowOffset: { width: 0, height: -3 },
+        shadowOffset: { width: 0, height: -0.9 },
         shadowOpacity: 1,
         shadowRadius: 0,
       },
@@ -208,126 +221,72 @@ export default function TabsLayout() {
       },
     }),
     // Ensure a minimum height for the tab bar
-    height: Platform.OS === 'ios' ? 90 : 70,
+    height: Platform.OS === 'ios' ? RPH(9.5) : 70,
+    paddingHorizontal: 32,
+    gap: 16,
   } as ViewStyle; // Cast to ViewStyle for type safety
+
+  // Function to determine if tab bar should be visible for a given route
+  const isRouteAllowed = (routeName: string) => {
+    // Implement the logic to determine if a route is allowed to show the tab bar
+    // This is a placeholder and should be replaced with the actual implementation
+    return true; // Placeholder return, actual implementation needed
+  };
 
   return (
     <Tabs
-      initialRouteName='index'
-      screenOptions={{
-        tabBarStyle: animatedTabBarStyle,
-        tabBarActiveTintColor: '#3C584A',
-        tabBarInactiveTintColor: '#3C584A80',
+      screenOptions={({ route }) => ({
         headerShown: false,
+        tabBarStyle: animatedTabBarStyle,
         tabBarLabelStyle: {
           marginTop: 2,
           fontSize: 1, // Reset font size to be visible
         },
+        tabBarScrollEnabled: false, // Disable scrolling to prevent arrows
+        tabBarShowLabel: false, // Hide labels since we're using custom icons with text
         // Use the custom button component for all tabs
-        tabBarButton: (props) => <CustomTabBarButton {...props} />,
-      }}>
+        tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
+      })}>
+
+
+
       <Tabs.Screen
-        name="map"
+        name="index"
         options={{
-          title: 'map',
-          tabBarButton: (props) => <CustomTabBarButton {...props} />,
+          title: 'sheep',
+          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center relative mt-4">
-              {focused && (
-                <View
-                  className="absolute w-16 h-16 rounded-2xl"
-                  style={{
-                    backgroundColor: '#FFF5D9',
-                    zIndex: -1,
-                  }}
-                />
-              )}
-              <Image source={require('../../assets/icons/trophyIcon.png')} className="w-12 h-12" />
+            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-6">
+              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/today.png')} style={{ width: RPH(2.5), height: RPH(2.5) }} />
+              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_home_title')}</Text>
             </View>
           ),
         }}
       />
 
       <Tabs.Screen
-        name="stats"
-        options={{
-          title: 'heart',
-          tabBarButton: (props) => <CustomTabBarButton {...props} />,
-          tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center relative mt-4">
-              {focused && (
-                <View
-                  className="absolute w-16 h-16 rounded-2xl"
-                  style={{
-                    backgroundColor: '#FFF5D9',
-                    zIndex: -1,
-                  }}
-                />
-              )}
-              <Image source={require('../../assets/icons/heartIcon.png')} className="w-12 h-12" />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: 'sheep',
-          tabBarButton: (props) => <CustomTabBarButton {...props} />,
-          tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center relative mt-4">
-              {focused && (
-                <View
-                  className="absolute w-16 h-16 rounded-2xl"
-                  style={{
-                    backgroundColor: '#FFF5D9',
-                    zIndex: -1,
-                  }}
-                />
-              )}
-              <Image source={require('../../assets/icons/sheepIcon.png')} className="w-16 h-16" />
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="bible"
         options={{
           title: 'Bible',
-          tabBarButton: (props) => <CustomTabBarButton {...props} />,
+          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center relative mt-4">
-              {focused && (
-                <View
-                  className="absolute w-16 h-16 rounded-2xl"
-                  style={{
-                    backgroundColor: '#FFF5D9',
-                    zIndex: -1,
-                  }}
-                />
-              )}
-              <Image source={require('../../assets/icons/bibleIcon.png')} className="w-14 h-14" />
+            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-6">
+              <Image tintColor={focused ? "orange" : ""} source={require('../../assets/icons/bible.png')} style={{ width: RPH(2.5), height: RPH(2.5) }} />
+              <Text className={`mt-1 text-[12px] font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din' }}>{i18n.t('bottom_bible_title')}</Text>
             </View>
           ),
         }}
       />
+
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarButton: (props) => <CustomTabBarButton {...props} />,
+          tabBarButton: (props: BottomTabBarButtonProps) => <CustomTabBarButton {...props} />,
           tabBarIcon: ({ color, focused }) => (
-            <View className="items-center justify-center relative mt-4">
-              {focused && (
-                <View
-                  className="absolute w-16 h-16 rounded-2xl"
-                  style={{
-                    backgroundColor: '#FFF5D9',
-                    zIndex: -1,
-                  }}
-                />
-              )}
-              <Image source={require('../../assets/icons/profileIcon.png')} className="w-14 h-14" />
+            <View style={{ width: RPW(14) }} className="items-center justify-center  mt-6">
+              <Image resizeMode='contain' tintColor={focused ? "orange" : ""} source={require('../../assets/icons/profile.png')} style={{ width: RPH(2.5), height: RPH(2.5) }} />
+              <Text className={`mt-1 font-normal ${focused ? 'text-orange' : 'text-brown/70'}`} style={{ fontFamily: 'din', fontSize: AppFonts[11] }}>{i18n.t('bottom_profile_title')}</Text>
             </View>
           ),
         }}

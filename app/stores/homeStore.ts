@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import React from 'react';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -18,6 +19,14 @@ interface HomeState {
   // UI mode states
   mode: HomeMode;
   successType: SuccessAnimationType | null;
+  devotionalReaderVisible: boolean; // Track if devotional reader is showing
+  prayerViewVisible: boolean; // Track if prayer view is showing
+  showStreakScreen: boolean; // Track if streak screen should be shown
+  keyboardVisible: boolean; // Track if keyboard is visible for journal
+  journalViewVisible: boolean;
+  bottomSheetRef: React.RefObject<any> | null;
+  riveRef: React.RefObject<any> | null;
+  currentSkin: string; // Track the currently equipped skin
 
   // Completion tracking states
   readingCompleted: boolean;
@@ -27,10 +36,18 @@ interface HomeState {
   tappedPrayAboutVerse: boolean;
   tappedReflectAboutVerse: boolean;
   sawStreakToday: boolean; // Track if streak screen was shown today
+  showGlobalButtons: boolean;
+
+  // Daily XP tracking
+  dailyXpEarned: number; // Track XP earned today
+  lastXpResetDate: string; // Track when XP was last reset (YYYY-MM-DD format)
 
   // Setter functions
   setMode: (mode: HomeMode) => void;
   setSuccessType: (type: SuccessAnimationType | null) => void;
+  setDevotionalReaderVisible: (visible: boolean) => void;
+  setPrayerViewVisible: (visible: boolean) => void;
+  setShowStreakScreen: (show: boolean) => void;
   setReadingCompleted: (completed: boolean) => void;
   setPrayerCompleted: (completed: boolean) => void;
   setReflectionCompleted: (completed: boolean) => void;
@@ -39,6 +56,17 @@ interface HomeState {
   setTappedReflectAboutVerse: (tapped: boolean) => void;
   setSawStreakToday: (saw: boolean) => void; // Setter for sawStreakToday
   resetCompletionStates: () => void; // Reset all completion states
+  setShowGlobalButtons: (show: boolean) => void;
+  setKeyboardVisible: (visible: boolean) => void; // Control keyboard visibility state
+  setJournalViewVisible: (visible: boolean) => void;
+  setBottomSheetRef: (ref: React.RefObject<any> | null) => void;
+  setRiveRef: (ref: React.RefObject<any> | null) => void;
+  setCurrentSkin: (skin: string) => void;
+
+  // Daily XP functions
+  addDailyXp: (amount: number) => number; // Returns actual XP added (may be limited)
+  getDailyXpRemaining: () => number; // Returns remaining XP that can be earned today
+  resetDailyXpIfNeeded: () => void; // Reset XP if it's a new day
 }
 
 /**
@@ -47,11 +75,19 @@ interface HomeState {
  */
 export const useHomeStore = create<HomeState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       // Default UI states
       mode: 'DEFAULT',
       successType: null,
-
+      devotionalReaderVisible: false,
+      prayerViewVisible: false,
+      showStreakScreen: false,
+      showGlobalButtons: false,
+      keyboardVisible: false,
+      journalViewVisible: false,
+      bottomSheetRef: null,
+      riveRef: null,
+      currentSkin: '',
       // Default completion states
       readingCompleted: false,
       prayerCompleted: false,
@@ -60,18 +96,91 @@ export const useHomeStore = create<HomeState>()(
       tappedPrayAboutVerse: false,
       tappedReflectAboutVerse: false,
       sawStreakToday: false,
+      // Default daily XP tracking
+      dailyXpEarned: 0,
+      lastXpResetDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
 
       // Setter functions
       setMode: (mode) => set({ mode }),
       setSuccessType: (type) => set({ successType: type }),
-      setReadingCompleted: (completed) => set({ readingCompleted: completed }),
-      setPrayerCompleted: (completed) => set({ prayerCompleted: completed }),
-      setReflectionCompleted: (completed) => set({ reflectionCompleted: completed }),
+      setDevotionalReaderVisible: (visible) => set({ devotionalReaderVisible: visible }),
+      setPrayerViewVisible: (visible) => set({ prayerViewVisible: visible }),
+      setShowStreakScreen: (show) => set({ showStreakScreen: show }),
+      setReadingCompleted: (completed) => {
+        console.log('🔍 HOMESTORE - setReadingCompleted called:', { completed, timestamp: new Date().toLocaleTimeString() });
+        set({ readingCompleted: completed });
+      },
+      setPrayerCompleted: (completed) => {
+        console.log('🔍 HOMESTORE - setPrayerCompleted called:', { completed, timestamp: new Date().toLocaleTimeString() });
+        set({ prayerCompleted: completed });
+      },
+      setReflectionCompleted: (completed) => {
+        console.log('🔍 HOMESTORE - setReflectionCompleted called:', { completed, timestamp: new Date().toLocaleTimeString() });
+        set({ reflectionCompleted: completed });
+      },
       setSawDailyBonus: (saw) => set({ sawDailyBonus: saw }),
       setTappedPrayAboutVerse: (tapped) => set({ tappedPrayAboutVerse: tapped }),
       setTappedReflectAboutVerse: (tapped) => set({ tappedReflectAboutVerse: tapped }),
       setSawStreakToday: (saw) => set({ sawStreakToday: saw }),
-      resetCompletionStates: () =>
+      setShowGlobalButtons: (show) => set({ showGlobalButtons: show }),
+      setKeyboardVisible: (visible) => set({ keyboardVisible: visible }),
+      setJournalViewVisible: (visible) => set({ journalViewVisible: visible }),
+      setBottomSheetRef: (ref) => set({ bottomSheetRef: ref }),
+      setRiveRef: (ref) => set({ riveRef: ref }),
+      setCurrentSkin: (skin) => set({ currentSkin: skin }),
+
+      // Daily XP functions
+      resetDailyXpIfNeeded: () => {
+        const today = new Date().toISOString().split('T')[0];
+        const { lastXpResetDate } = get();
+        
+        if (lastXpResetDate !== today) {
+          console.log('🔄 Resetting daily XP for new day:', today);
+          set({ 
+            dailyXpEarned: 0, 
+            lastXpResetDate: today 
+          });
+        }
+      },
+
+      addDailyXp: (amount: number) => {
+        // First check if we need to reset for a new day
+        get().resetDailyXpIfNeeded();
+        
+        const { dailyXpEarned } = get();
+        const MAX_DAILY_XP = 300;
+        const remaining = Math.max(0, MAX_DAILY_XP - dailyXpEarned);
+        const actualXpToAdd = Math.min(amount, remaining);
+        
+        if (actualXpToAdd > 0) {
+          set({ dailyXpEarned: dailyXpEarned + actualXpToAdd });
+          console.log(`📊 Daily XP: +${actualXpToAdd} (${dailyXpEarned + actualXpToAdd}/${MAX_DAILY_XP})`);
+        } else {
+          console.log('🚫 Daily XP limit reached (300/300)');
+        }
+        
+        return actualXpToAdd;
+      },
+
+      getDailyXpRemaining: () => {
+        // First check if we need to reset for a new day
+        get().resetDailyXpIfNeeded();
+        
+        const { dailyXpEarned } = get();
+        const MAX_DAILY_XP = 300;
+        return Math.max(0, MAX_DAILY_XP - dailyXpEarned);
+      },
+
+      resetCompletionStates: () => {
+        console.log('🔍 HOMESTORE - resetCompletionStates called - BEFORE reset:', {
+          currentState: {
+            readingCompleted: useHomeStore.getState().readingCompleted,
+            prayerCompleted: useHomeStore.getState().prayerCompleted,
+            reflectionCompleted: useHomeStore.getState().reflectionCompleted,
+          },
+          timestamp: new Date().toLocaleTimeString()
+        });
+        
         set({
           readingCompleted: false,
           prayerCompleted: false,
@@ -80,13 +189,23 @@ export const useHomeStore = create<HomeState>()(
           tappedPrayAboutVerse: false,
           tappedReflectAboutVerse: false,
           sawStreakToday: false,
-        }),
+        });
+
+        console.log('🔍 HOMESTORE - resetCompletionStates called - AFTER reset:', {
+          newState: {
+            readingCompleted: useHomeStore.getState().readingCompleted,
+            prayerCompleted: useHomeStore.getState().prayerCompleted,
+            reflectionCompleted: useHomeStore.getState().reflectionCompleted,
+          },
+          timestamp: new Date().toLocaleTimeString()
+        });
+      },
     }),
     {
       name: 'shepherd-home-storage',
       storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
-        // Only persist these fields (completion states)
+        // Only persist these fields (completion states and daily XP tracking)
         readingCompleted: state.readingCompleted,
         prayerCompleted: state.prayerCompleted,
         reflectionCompleted: state.reflectionCompleted,
@@ -94,7 +213,13 @@ export const useHomeStore = create<HomeState>()(
         tappedPrayAboutVerse: state.tappedPrayAboutVerse,
         tappedReflectAboutVerse: state.tappedReflectAboutVerse,
         sawStreakToday: state.sawStreakToday,
+        currentSkin: state.currentSkin,
+        dailyXpEarned: state.dailyXpEarned,
+        lastXpResetDate: state.lastXpResetDate,
       }),
     }
   )
 );
+
+// Default export for Expo Router compatibility
+export default {}

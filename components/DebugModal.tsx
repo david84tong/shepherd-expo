@@ -2,20 +2,13 @@ import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import firestore from '@react-native-firebase/firestore';
 import { useRouter, usePathname } from 'expo-router';
 import React, { useState, useRef, useMemo, useCallback } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Modal,
-  SafeAreaView,
-  ScrollView,
-  Alert,
-} from 'react-native';
+import { View, Text, TouchableOpacity, Modal, SafeAreaView, ScrollView, Alert, TextInput, NativeModules } from 'react-native';
 import Toast, { ToastConfig, ToastConfigParams } from 'react-native-toast-message';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { useUserStore } from '../app/stores/userStore';
 import { usePathStore } from '../app/stores/pathStore';
+import { useDevotionalStore } from '../app/stores/devotionalStore';
 import { useAuth, isSignedIn } from '../app/hooks/authHook';
 import SuccessAnimation from './SuccessAnimation'; // Import the full SuccessAnimation component
 import SuccessAnimationContent from './SuccessAnimation'; // Assuming SuccessAnimation is in the same components dir
@@ -23,6 +16,7 @@ import { HalfModalType } from '../app/halfModal';
 import { calculateExpForLevel } from '../utils/levelUtils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 import WidgetHowToSheet from './WidgetHowToSheet';
+import { useCheckInStore } from '~/app/stores/checkInStore';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -40,7 +34,6 @@ const ONBOARDING_SCREENS: DebugScreen[] = [
   { name: 'Onboarding 5 - Reading Time', route: '/onboarding/5' },
   { name: 'Onboarding 6 - Custom Plan', route: '/onboarding/6' },
   { name: 'Onboarding 7 - Notifications', route: '/onboarding/7' },
-  { name: 'Onboarding 8 - Path Selection', route: '/onboarding/8' },
   { name: 'Onboarding 9 - Notification Permission', route: '/onboarding/9' },
   { name: 'Onboarding 10 - Reminder Time', route: '/onboarding/10' },
   { name: 'Loading Screen', route: '/onboarding/LoadingScreen' },
@@ -80,13 +73,150 @@ export function DebugButton() {
   const [modalVisible, setModalVisible] = useState(false);
   const [successModalVisible, setSuccessModalVisible] = useState(false);
   const [showWidgetSheet, setShowWidgetSheet] = useState(false);
+  const [isDebugButtonVisible, setIsDebugButtonVisible] = useState(true);
+  const [devotionalUploadModalVisible, setDevotionalUploadModalVisible] = useState(false);
+  const [devotionalJsonInput, setDevotionalJsonInput] = useState('');
   const { signOut } = useAuth();
 
   // Reference to the success bottom sheet modal
   const successSheetRef = useRef<BottomSheetModal>(null);
 
+  // Reference to the Rive animation from homeStore
+  const riveRef = useHomeStore(state => state.riveRef);
+
   // Snap points for success animation
   const successSnapPoints = useMemo(() => ['90%'], []);
+
+  // Helper function to safely set Rive skin
+  const setRiveSkin = useCallback((skinNumber: number, actionNumber: number = 0) => {
+    console.log('🔍 Debug setRiveSkin called:', {
+      skinNumber,
+      actionNumber,
+      riveRef: !!riveRef,
+      riveRefCurrent: !!riveRef?.current,
+      setInputState: !!riveRef?.current?.setInputState
+    });
+
+    // Special logging for armor skin
+    if (skinNumber === 9) {
+      console.log('🛡️ ARMOR SKIN DEBUG: Attempting to set armor skin (9)');
+    }
+
+    // Update homeStore currentSkin to prevent handleRivePlay from overriding our debug change
+    const setCurrentSkin = useHomeStore.getState().setCurrentSkin;
+    setCurrentSkin(skinNumber.toString());
+    console.log(`🏠 Updated homeStore currentSkin to: ${skinNumber}`);
+
+    if (riveRef && riveRef.current && riveRef.current.setInputState) {
+      try {
+        console.log('🎯 Setting Rive skin:', skinNumber, 'action:', actionNumber);
+
+        // Set action first, then skin
+        riveRef.current.setInputState('State Machine 1', 'Action-Number', actionNumber);
+        riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
+
+        // Special logging for armor skin
+        if (skinNumber === 9) {
+          console.log('🛡️ ARMOR SKIN DEBUG: Successfully called setInputState for skin 9');
+
+          // Try to read back the current state if possible
+          setTimeout(() => {
+            console.log('🛡️ ARMOR SKIN DEBUG: Checking if skin 9 was applied...');
+          }, 500);
+        }
+
+        Toast.show({
+          type: 'success',
+          text1: `Skin ${skinNumber} applied!`,
+          text2: skinNumber === 9 ? 'Armor skin should be visible' : 'Rive animation updated successfully',
+          position: 'top',
+          visibilityTime: 2000,
+        });
+      } catch (error) {
+        console.log(`❌ Error setting skin ${skinNumber}:`, error);
+
+        // Special error logging for armor skin
+        if (skinNumber === 9) {
+          console.log('🛡️ ARMOR SKIN DEBUG: Failed to set armor skin!', error);
+        }
+
+        Toast.show({
+          type: 'error',
+          text1: `Failed to set skin ${skinNumber}`,
+          text2: `Error: ${error}`,
+          position: 'top',
+          visibilityTime: 3000,
+        });
+      }
+    } else {
+      const reasons = [];
+      if (!riveRef) reasons.push('riveRef is null');
+      if (!riveRef?.current) reasons.push('riveRef.current is null');
+      if (!riveRef?.current?.setInputState) reasons.push('setInputState not available');
+
+      console.log('❌ Rive ref not available:', reasons.join(', '));
+
+      // Special logging for armor skin
+      if (skinNumber === 9) {
+        console.log('🛡️ ARMOR SKIN DEBUG: Cannot set armor skin - Rive not ready!', reasons);
+      }
+
+      Toast.show({
+        type: 'info',
+        text1: 'Rive not ready',
+        text2: `Issues: ${reasons.join(', ')}`,
+        position: 'top',
+        visibilityTime: 4000,
+      });
+    }
+  }, [riveRef]);
+
+  // Helper function to safely set Rive action
+  const setRiveAction = useCallback((actionNumber: number) => {
+    console.log('🔍 Debug setRiveAction called:', {
+      actionNumber,
+      riveRef: !!riveRef,
+      riveRefCurrent: !!riveRef?.current,
+      setInputState: !!riveRef?.current?.setInputState
+    });
+
+    if (riveRef && riveRef.current && riveRef.current.setInputState) {
+      try {
+        console.log('🎯 Setting Rive action:', actionNumber);
+        riveRef.current.setInputState('State Machine 1', 'Action-Number', actionNumber);
+        Toast.show({
+          type: 'success',
+          text1: `Action ${actionNumber} applied!`,
+          text2: 'Rive animation updated successfully',
+          position: 'top',
+          visibilityTime: 2000,
+        });
+      } catch (error) {
+        console.log(`❌ Error setting action ${actionNumber}:`, error);
+        Toast.show({
+          type: 'error',
+          text1: `Failed to set action ${actionNumber}`,
+          text2: `Error: ${error}`,
+          position: 'top',
+          visibilityTime: 3000,
+        });
+      }
+    } else {
+      const reasons = [];
+      if (!riveRef) reasons.push('riveRef is null');
+      if (!riveRef?.current) reasons.push('riveRef.current is null');
+      if (!riveRef?.current?.setInputState) reasons.push('setInputState not available');
+
+      console.log('❌ Rive ref not available:', reasons.join(', '));
+      Toast.show({
+        type: 'info',
+        text1: 'Rive not ready',
+        text2: `Issues: ${reasons.join(', ')}`,
+        position: 'top',
+        visibilityTime: 4000,
+      });
+    }
+  }, [riveRef]);
 
   // Present the success animation directly (not using bottom sheet)
   const handleShowSuccessSheet = useCallback(() => {
@@ -240,7 +370,7 @@ export function DebugButton() {
   const handleResetCompletionData = useCallback(() => {
     Alert.alert(
       'Reset Completion Data',
-      'This will reset all completion states and clear reading history. Continue?',
+      'This will reset all completion states, collected bonus, and clear reading history. Continue?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
@@ -252,17 +382,22 @@ export function DebugButton() {
             homeStore.resetCompletionStates();
             homeStore.setMode('DEFAULT');
             homeStore.setSuccessType(null);
+            homeStore.setSawDailyBonus(false); // Reset collected bonus state
 
-            // Clear completedReadings from userStore
+            // Clear completedReadings, completedPrayers, and completedReflections from userStore
             const userStore = useUserStore.getState();
             userStore.setCompletedReadings([] as any);
+            userStore.setCompletedPrayers([] as any);
+            userStore.setCompletedReflections([] as any);
 
-        
+            // Reset devotionalStore data
+            const devotionalStore = useDevotionalStore.getState();
+            devotionalStore.reset();
 
             // Sync with Firestore to save changes
             syncWithFirestore();
 
-            Alert.alert('Reset Complete', 'HomeStore data and completed readings have been reset.');
+            Alert.alert('Reset Complete', 'HomeStore data, collected bonus, and completed readings have been reset.');
           },
         },
       ]
@@ -413,19 +548,175 @@ export function DebugButton() {
     ]);
   }, [signOut, router]);
 
+  // Handler to hide debug button
+  const handleHideDebugButton = useCallback(() => {
+    Alert.alert(
+      'Hide Debug Button',
+      'This will hide the debug button from the screen. You can show it again by restarting the app.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Hide',
+          style: 'destructive',
+          onPress: () => {
+            setIsDebugButtonVisible(false);
+            setModalVisible(false);
+            Toast.show({
+              type: 'info',
+              text1: 'Debug button hidden',
+              text2: 'Restart the app to show it again.',
+              position: 'top',
+              visibilityTime: 3000,
+            });
+          },
+        },
+      ]
+    );
+  }, []);
+
   const navigateTo = (item: DebugScreen) => {
     setModalVisible(false);
     router.push(item.route as any);
   };
 
+  // Function to upload devotionals to Firestore
+  const handleUploadDevotionals = useCallback(async () => {
+    try {
+      // Parse the JSON input
+      let devotionals;
+      try {
+        devotionals = JSON.parse(devotionalJsonInput);
+      } catch (parseError) {
+        Alert.alert('Invalid JSON', 'Please ensure your input is valid JSON format.');
+        return;
+      }
+
+      // Ensure it's an array
+      if (!Array.isArray(devotionals)) {
+        devotionals = [devotionals];
+      }
+
+      // Get reference to dailyDevotionals collection
+      const devotionalsRef = firestore().collection('dailyDevotionals');
+
+      let newCount = 0;
+      let overriddenCount = 0;
+      let errorCount = 0;
+
+      // Process each devotional
+      for (const devotional of devotionals) {
+        try {
+          // Create document ID from chapter and verse name instead of date
+          const bibleReference = devotional.verse || devotional.bibleReference || '';
+          let documentId = bibleReference;
+
+          // Clean up the bible reference to make it a valid document ID
+          if (bibleReference) {
+            // Remove spaces, colons, and other special characters, replace with underscores
+            documentId = bibleReference
+              .replace(/[^a-zA-Z0-9]/g, '_')
+              .replace(/_+/g, '_')
+              .replace(/^_|_$/g, '')
+              .toLowerCase();
+          }
+
+          // Fallback to original ID if no bible reference
+          if (!documentId) {
+            documentId = devotional.id || `devotional_${Date.now()}`;
+          }
+
+          const docRef = devotionalsRef.doc(documentId);
+          const doc = await docRef.get();
+
+          // Check if document exists and override if it does
+          let shouldOverride = false;
+          if (doc.exists) {
+            const existingData = doc.data();
+            const existingId = existingData?.id;
+            const existingDate = existingData?.date;
+            const newId = devotional.id;
+            const newDate = devotional.date;
+
+            // Override any existing document with the same bible reference (document ID)
+            shouldOverride = true;
+            overriddenCount++;
+            console.log(`Overriding devotional with document ID: ${documentId}`);
+            console.log(`  Existing: ID=${existingId}, Date=${existingDate}`);
+            console.log(`  New: ID=${newId}, Date=${newDate}`);
+          } else {
+            newCount++;
+          }
+
+          // Format the devotional according to Devotional.ts interface
+          const formattedDevotional = {
+            id: devotional.id,
+            title: devotional.title || '',
+            content: devotional.content || '',
+            createdAt: devotional.createdAt || new Date().toISOString(),
+            context: typeof devotional.context === 'object' ? devotional.context.en : devotional.context || '',
+            bibleReference: devotional.verse || devotional.bibleReference || '',
+            prayer: typeof devotional.prayer === 'object' ? devotional.prayer : { en: devotional.prayer || '' },
+            reflectionPrompt: typeof devotional.reflection === 'object' ? devotional.reflection : { en: devotional.reflection || devotional.reflectionPrompt || '' },
+            likes: devotional.likes || devotional.liked || Math.floor(Math.random() * (1000 - 800 + 1)) + 800,
+            shares: devotional.shares || devotional.shared || Math.floor(Math.random() * (500 - 400 + 1)) + 400,
+            completed: devotional.completed || 0,
+            date: devotional.date || devotional.id || new Date().toISOString().split('T')[0],
+            imageURL: devotional.imageURL || '',
+            verse: devotional.verse || devotional.bibleReference || ''
+          };
+
+          // Upload to Firestore (this will override if document exists)
+          await docRef.set(formattedDevotional);
+          console.log(`Successfully ${shouldOverride ? 'overrode' : 'uploaded'} devotional with document ID: ${documentId} (Original ID: ${devotional.id})`);
+        } catch (error) {
+          errorCount++;
+          console.error(`Error uploading devotional ${devotional.id}:`, error);
+        }
+      }
+
+      // Show results
+      Alert.alert(
+        'Upload Complete',
+        `Results:\n- New devotionals added: ${newCount}\n- Devotionals overridden: ${overriddenCount}\n- Errors: ${errorCount}`,
+        [
+          {
+            text: 'OK',
+            onPress: () => {
+              if (newCount > 0 || overriddenCount > 0) {
+                setDevotionalJsonInput('');
+                setDevotionalUploadModalVisible(false);
+              }
+            }
+          }
+        ]
+      );
+
+      // Show toast for quick feedback
+      if (newCount > 0 || overriddenCount > 0) {
+        Toast.show({
+          type: 'success',
+          text1: 'Devotionals Uploaded!',
+          text2: `Added ${newCount}, overridden ${overriddenCount}`,
+          position: 'top',
+          visibilityTime: 3000,
+        });
+      }
+    } catch (error) {
+      console.error('Error uploading devotionals:', error);
+      Alert.alert('Upload Failed', 'An error occurred while uploading devotionals. Check console for details.');
+    }
+  }, [devotionalJsonInput]);
+
   return (
     <>
       {/* Floating Debug Button */}
-      <TouchableOpacity
-        onPress={() => setModalVisible(true)}
-        className="absolute bottom-6 left-6 bg-forestGreen80/80 rounded-3xl w-12 h-12 justify-center items-center z-50 shadow-md">
-        <Text className="text-white text-2xl">🐛</Text>
-      </TouchableOpacity>
+      {isDebugButtonVisible && (
+        <TouchableOpacity
+          onPress={() => setModalVisible(true)}
+          className="absolute bottom-6 left-6 bg-forestGreen80/80 rounded-3xl w-12 h-12 justify-center items-center z-50 shadow-md">
+          <Text className="text-white text-2xl">🐛</Text>
+        </TouchableOpacity>
+      )}
 
       {/* Debug Navigation Modal */}
       <Modal
@@ -508,6 +799,25 @@ export function DebugButton() {
                   </Text>
                 </TouchableOpacity>
 
+                {/* Check-In Modal Button */}
+                <TouchableOpacity
+                  className="bg-[#E8E0FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
+                  onPress={() => {
+                    setModalVisible(false);
+                    setTimeout(() => {
+                      if (typeof global !== 'undefined' && (global as any).showCheckIn) {
+                        (global as any).showCheckIn();
+                      } else {
+                        console.log('showCheckIn not available on global object');
+                      }
+                    }, 300);
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Test Check-In Sheet</Text>
+                  <Text className="font-din text-sm text-[#7C6F94] mt-1">
+                    Show daily check-in flow
+                  </Text>
+                </TouchableOpacity>
+
                 {/* Sitemap Button */}
                 <TouchableOpacity
                   className="bg-[#E0F7E6] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FD675]"
@@ -548,9 +858,58 @@ export function DebugButton() {
                     }}>
                     <Text className="font-din text-sm text-textPrimary">Kids Bible Reader</Text>
                   </TouchableOpacity>
+
+                  {/* Self Funded Mission Button */}
+                  <TouchableOpacity
+                    className="bg-gradient-to-r from-purple-100 to-yellow-100 px-3 py-2 rounded-lg border border-purple-300 mb-1"
+                    onPress={() => {
+                      setModalVisible(false);
+                      setTimeout(() => {
+                        router.push('/onboarding/pricing/selfFundedMission' as any);
+                      }, 300);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">Self Funded Mission</Text>
+                  </TouchableOpacity>
+
+                  {/* Free Offer Button */}
+                  <TouchableOpacity
+                    className="bg-gradient-to-r from-blue-100 to-blue-200 px-3 py-2 rounded-lg border border-blue-300 mb-1"
+                    onPress={() => {
+                      setModalVisible(false);
+                      setTimeout(() => {
+                        router.push('/onboarding/pricing/FreeOffer' as any);
+                      }, 300);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">Free Offer</Text>
+                  </TouchableOpacity>
+
+                  {/* Shepherd Community Button */}
+                  <TouchableOpacity
+                    className="bg-gradient-to-r from-green-100 to-green-200 px-3 py-2 rounded-lg border border-green-300 mb-1"
+                    onPress={() => {
+                      setModalVisible(false);
+                      setTimeout(() => {
+                        router.push('/onboarding/pricing/ShepherdCommunity' as any);
+                      }, 300);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">Shepherd Community</Text>
+                  </TouchableOpacity>
+
+                  {/* Old Pricing Screen Button */}
+                  <TouchableOpacity
+                    className="bg-gradient-to-r from-orange-100 to-orange-200 px-3 py-2 rounded-lg border border-orange-300 mb-1"
+                    onPress={() => {
+                      setModalVisible(false);
+                      setTimeout(() => {
+                        router.push('/onboarding/pricing/OldPricingScreen' as any);
+                      }, 300);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">Old Pricing Screen</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
 
+              {/* Heart & Penalty System */}
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">
                   Heart & Penalty System
@@ -615,6 +974,67 @@ export function DebugButton() {
                           );
                         }}>
                         <Text className="font-din text-sm text-textPrimary">{`Level ${level} ⭐`}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                {/* Set Gems Button */}
+                <View className="mb-4">
+                  <Text className="font-feather text-base text-textPrimary mb-2">
+                    Set Gems
+                  </Text>
+                  <TouchableOpacity
+                    className="bg-[#E0FFE0] px-4 py-3 rounded-lg border border-[#4FD675] mb-1 w-32"
+                    onPress={() => {
+                      const userStore = useUserStore.getState();
+                      userStore.setGens(10000);
+
+                      // Force sync to Firestore
+                      syncWithFirestore();
+
+                      console.log('Debug: Set gems to 1000');
+
+                      Toast.show({
+                        type: 'success',
+                        text1: 'Gems Set!',
+                        text2: 'You now have 1000 gems 💎',
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary text-center">{`10000 💎`}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Set Streak Count Buttons */}
+                <View className="mb-4">
+                  <Text className="font-feather text-base text-textPrimary mb-2">
+                    Set Streak Count
+                  </Text>
+                  <View className="flex-row flex-wrap gap-2">
+                    {[0, 1, 3, 7, 14, 30, 50, 100].map((streak) => (
+                      <TouchableOpacity
+                        key={streak}
+                        className="bg-[#FFE0E8] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
+                        onPress={() => {
+                          const userStore = useUserStore.getState();
+                          userStore.setStreakCount(streak);
+
+                          // Force sync to Firestore
+                          syncWithFirestore();
+
+                          console.log(`Debug: Set streak count to ${streak}`);
+
+                          Toast.show({
+                            type: 'success',
+                            text1: 'Streak Set!',
+                            text2: `Streak count set to ${streak} 🔥`,
+                            position: 'top',
+                            visibilityTime: 3000,
+                          });
+                        }}>
+                        <Text className="font-din text-sm text-textPrimary">{`${streak} 🔥`}</Text>
                       </TouchableOpacity>
                     ))}
                   </View>
@@ -748,6 +1168,44 @@ export function DebugButton() {
                   </Text>
                 </TouchableOpacity>
 
+                {/* Reset Check In Button */}
+                <TouchableOpacity
+                  className="bg-[#E8E0FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
+                  onPress={() => {
+                    Alert.alert(
+                      'Reset Check In',
+                      'This will clear all check-in history and reset the timer. Continue?',
+                      [
+                        { text: 'Cancel', style: 'cancel' },
+                        {
+                          text: 'Reset',
+                          style: 'destructive',
+                          onPress: () => {
+                            const checkInStore = useCheckInStore.getState();
+                            checkInStore.resetCheckInData();
+                            
+                            Toast.show({
+                              type: 'success',
+                              text1: 'Check In Reset',
+                              text2: 'All check-in data has been cleared',
+                              position: 'top',
+                              visibilityTime: 3000,
+                            });
+                            
+                            console.log('✅ Check-in data reset successfully');
+                          },
+                        },
+                      ]
+                    );
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Reset Check In
+                  </Text>
+                  <Text className="font-din text-sm text-[#7C6F94] mt-1">
+                    Clear all check-in history and reset timer
+                  </Text>
+                </TouchableOpacity>
+
                 {/* Delete All Data Button */}
                 <TouchableOpacity
                   className="bg-[#FF6666] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF0000]"
@@ -761,7 +1219,40 @@ export function DebugButton() {
 
               {/* Devotional Testing */}
               <View className="mb-4">
-                <Text className="font-feather text-lg text-textPrimary mb-3">Devotional Testing</Text>
+                <Text className="font-feather text-lg text-textPrimary mb-3">
+                  Devotional Testing
+                </Text>
+
+                {/* Bible Cache Test Button */}
+                <TouchableOpacity
+                  className="bg-[#E8F4FD] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
+                  onPress={() => {
+                    setModalVisible(false);
+                    setTimeout(() => {
+                      router.push('/bibleCacheTest' as any);
+                    }, 300);
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Bible Cache Test
+                  </Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Test Bible API caching and batch fetching optimizations
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Upload Devotionals Button */}
+                <TouchableOpacity
+                  className="bg-[#F0E6FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
+                  onPress={() => {
+                    setDevotionalUploadModalVisible(true);
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Upload Devotionals to Firestore
+                  </Text>
+                  <Text className="font-din text-sm text-[#7C6F94] mt-1">
+                    Bulk upload devotionals from JSON
+                  </Text>
+                </TouchableOpacity>
 
                 {/* Fetch Today's Devotional Button */}
                 <TouchableOpacity
@@ -776,6 +1267,98 @@ export function DebugButton() {
                   </Text>
                   <Text className="font-din text-sm text-[#7C927E] mt-1">
                     Test fetching devotional from Firestore and Bible API
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Refresh Widget Data Button */}
+                <TouchableOpacity
+                  className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
+                  onPress={() => {
+                    console.log('📱 DEBUG: Manual widget refresh triggered from DebugModal');
+                    const devotionalStore = useDevotionalStore.getState();
+                    devotionalStore.refreshWidgetData();
+                    Toast.show({
+                      type: 'success',
+                      text1: 'Widget Refreshed',
+                      text2: 'Widget data has been updated',
+                      position: 'top',
+                      visibilityTime: 2000,
+                    });
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Refresh Widget Data
+                  </Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Manually refresh the daily verse widget
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Show Widget Guide Button */}
+                <TouchableOpacity
+                  className="bg-[#F0E6FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
+                  onPress={() => {
+                    console.log('📱 DEBUG: Showing widget guide from DebugModal');
+                    setModalVisible(false);
+                    setShowWidgetSheet(true);
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Show Widget Guide
+                  </Text>
+                  <Text className="font-din text-sm text-[#7C6A94] mt-1">
+                    Show how to add the daily verse widget
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Test Widget Native Module Button */}
+                <TouchableOpacity
+                  className="bg-[#FFE0E8] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF80A0]"
+                  onPress={() => {
+                    console.log('📱 DEBUG: Testing WidgetDataSharer native module');
+                    console.log('📱 Available NativeModules:', Object.keys(NativeModules));
+
+                    try {
+                      const { WidgetDataSharer } = NativeModules;
+                      if (WidgetDataSharer) {
+                        console.log('📱 WidgetDataSharer found:', {
+                          hasUpdateVerseData: typeof WidgetDataSharer.updateVerseData === 'function',
+                          hasUpdateWidgetStatus: typeof WidgetDataSharer.updateWidgetStatus === 'function',
+                        });
+
+                        // Test calling the method
+                        WidgetDataSharer.updateWidgetStatus('noVerseAvailable');
+                        Toast.show({
+                          type: 'success',
+                          text1: 'Native Module Working',
+                          text2: 'WidgetDataSharer is available and functional',
+                          position: 'top',
+                          visibilityTime: 3000,
+                        });
+                      } else {
+                        console.log('📱 WidgetDataSharer not found in NativeModules');
+                        Toast.show({
+                          type: 'error',
+                          text1: 'Native Module Missing',
+                          text2: 'WidgetDataSharer not found - check console',
+                          position: 'top',
+                          visibilityTime: 3000,
+                        });
+                      }
+                    } catch (error) {
+                      console.error('📱 Error testing WidgetDataSharer:', error);
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Native Module Error',
+                        text2: `Error: ${error}`,
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">
+                    Test Widget Native Module
+                  </Text>
+                  <Text className="font-din text-sm text-[#B86A7C] mt-1">
+                    Check if WidgetDataSharer is properly linked
                   </Text>
                 </TouchableOpacity>
 
@@ -796,20 +1379,179 @@ export function DebugButton() {
                   </Text>
                 </TouchableOpacity>
 
-                {/* Test Widget Instructions Button */}
+                {/* Clear Path Data Button */}
                 <TouchableOpacity
                   className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
-                  onPress={() => {
-                    console.log('🔍 DEBUG: Opening widget instructions modal');
-                    setShowWidgetSheet(true);
+                  onPress={async () => {
+                    try {
+                      console.log('🔍 DEBUG: Clearing path and nextUnit data from store and AsyncStorage');
+                      const pathStore = usePathStore.getState();
+                      
+                      // Clear path data from store
+                      pathStore.setCurrentPath(null);
+                      pathStore.setSelectedPath(null as any);
+                      pathStore.setPathInProgress(false);
+                      pathStore.setNextUnitPreview(null);
+                      
+                      // Clear path data from AsyncStorage
+                      console.log('🗑️ Clearing AsyncStorage key: shepherd-path-storage');
+                      await AsyncStorage.removeItem('shepherd-path-storage');
+                      
+                      // Also clear any user selectedPathId from userStore
+                      const userStore = useUserStore.getState();
+                      userStore.setSelectedPathId('');
+                      
+                      // Sync with Firestore
+                      syncWithFirestore();
+                      
+                      Toast.show({
+                        type: 'success',
+                        text1: 'Path Data Wiped',
+                        text2: 'All path data cleared from store & AsyncStorage',
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    } catch (error) {
+                      console.error('❌ Error clearing path data:', error);
+                      Toast.show({
+                        type: 'error',
+                        text1: 'Clear Failed',
+                        text2: 'Error clearing path data - check console',
+                        position: 'top',
+                        visibilityTime: 3000,
+                      });
+                    }
                   }}>
                   <Text className="font-feather text-base text-textPrimary">
-                    Test Widget Instructions
+                    Clear Path & NextUnit Data
                   </Text>
                   <Text className="font-din text-sm text-[#6A8A94] mt-1">
-                    Open widget setup instructions modal
+                    Hard wipe from store & AsyncStorage
                   </Text>
                 </TouchableOpacity>
+              </View>
+
+              {/* Skin Change Section */}
+              <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">
+                  Change Lamb Skin
+                </Text>
+
+                {/* Debug Info Button */}
+                <TouchableOpacity
+                  className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE] mb-3"
+                  onPress={() => {
+                    const debugInfo = {
+                      riveRef: !!riveRef,
+                      riveRefCurrent: !!riveRef?.current,
+                      setInputState: !!riveRef?.current?.setInputState,
+                      riveRefType: typeof riveRef?.current,
+                      riveRefKeys: riveRef?.current ? Object.keys(riveRef.current) : [],
+                    };
+                    console.log('🔍 Complete Rive Debug Info:', debugInfo);
+                    Toast.show({
+                      type: 'info',
+                      text1: 'Debug Info Logged',
+                      text2: 'Check console for detailed Rive state',
+                      position: 'top',
+                      visibilityTime: 3000,
+                    });
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Debug Rive State</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">
+                    Check console for detailed Rive ref info
+                  </Text>
+                </TouchableOpacity>
+
+                <View className="flex-row flex-wrap gap-2">
+                  <TouchableOpacity
+                    className="bg-[#E0F7FF] px-3 py-2 rounded-lg border border-[#4FB8FE] mb-1"
+                    onPress={() => setRiveAction(0)}>
+                    <Text className="font-din text-sm text-textPrimary">0 Idle</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-[#F7B500] mb-1"
+                    onPress={() => setRiveAction(1)}>
+                    <Text className="font-din text-sm text-textPrimary">1 Raising Hand</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#E8F3E0] px-3 py-2 rounded-lg border border-[#A0D468] mb-1"
+                    onPress={() => setRiveSkin(0, 0)}>
+                    <Text className="font-din text-sm text-textPrimary">0 Normal Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#FFEDED] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
+                    onPress={() => setRiveSkin(99, 0)}>
+                    <Text className="font-din text-sm text-textPrimary">99 Gold Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#E0F7FF] px-3 py-2 rounded-lg border border-[#4FB8FE] mb-1"
+                    onPress={() => setRiveSkin(1, 0)}>
+                    <Text className="font-din text-sm text-textPrimary">1 Pink Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#F0E6FF] px-3 py-2 rounded-lg border border-[#9B7FFE] mb-1"
+                    onPress={() => setRiveSkin(2, 0)}>
+                    <Text className="font-din text-sm text-textPrimary">2 Noah Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-[#F7B500] mb-1"
+                    onPress={() => setRiveSkin(3, 0)}>
+                    <Text className="font-din text-sm text-textPrimary">3 Cloak Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#E8F3E0] px-3 py-2 rounded-lg border border-[#A0D468] mb-1"
+                    onPress={() => setRiveSkin(4, 0)}>
+                    <Text className="font-din text-sm text-textPrimary">4 Banana Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#FFEDED] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
+                    onPress={() => setRiveSkin(5, 0)}>
+                    <Text className="font-din text-sm text-textPrimary">5 10 Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#E0F7FF] px-3 py-2 rounded-lg border border-[#4FB8FE] mb-1"
+                    onPress={() => setRiveSkin(6, 0)}>
+                    <Text className="font-din text-sm text-textPrimary">6 Apple Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#F0E6FF] px-3 py-2 rounded-lg border border-[#9B7FFE] mb-1"
+                    onPress={() => setRiveSkin(7, 0)}>
+                    <Text className="font-din text-sm text-textPrimary">7 Lion Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#FFF4D9] px-3 py-2 rounded-lg border border-[#F7B500] mb-1"
+                    onPress={() => setRiveSkin(8, 0)}>
+                    <Text className="font-din text-sm text-textPrimary">8 Whale Skin</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    className="bg-[#E8F3E0] px-3 py-2 rounded-lg border border-[#A0D468] mb-1"
+                    onPress={() => {
+                      console.log('🛡️ Attempting to set Armor skin (9)');
+                      setRiveSkin(9, 0);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">9 Armor Skin</Text>
+                  </TouchableOpacity>
+
+                  {/* Additional test buttons for armor skin debugging */}
+                  <TouchableOpacity
+                    className="bg-[#FFE0E8] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
+                    onPress={() => {
+                      console.log('🔟 Testing skin 10');
+                      setRiveSkin(10, 0);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">10 Test</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    className="bg-[#E0FFE0] px-3 py-2 rounded-lg border border-[#4FD675] mb-1"
+                    onPress={() => {
+                      console.log('🛡️ Testing armor with action 1');
+                      setRiveSkin(9, 1);
+                    }}>
+                    <Text className="font-din text-sm text-textPrimary">9 Armor + Action</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
 
               {/* Onboarding Navigation */}
@@ -860,6 +1602,18 @@ export function DebugButton() {
                     </View>
                   </View>
                 ))}
+              </View>
+
+              {/* Hide Debug Button */}
+              <View className="mt-6 pt-4 border-t border-buttonBorder">
+                <TouchableOpacity
+                  className="bg-orange-500 p-4 rounded-xl border-l-4 border-l-orange-600"
+                  onPress={handleHideDebugButton}>
+                  <Text className="font-feather text-base text-white text-center">Hide Debug Button</Text>
+                  <Text className="font-din text-sm text-white/80 mt-1 text-center">
+                    Hide the debug button from screen
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               {/* Sign Out Button - Only show if user is signed in */}
@@ -913,6 +1667,72 @@ export function DebugButton() {
 
       {/* Widget How-To Sheet */}
       <WidgetHowToSheet visible={showWidgetSheet} onClose={() => setShowWidgetSheet(false)} />
+
+      {/* Devotional Upload Modal */}
+      <Modal
+        animationType="slide"
+        transparent
+        visible={devotionalUploadModalVisible}
+        onRequestClose={() => setDevotionalUploadModalVisible(false)}>
+        <SafeAreaView className="flex-1 bg-black/50">
+          <View className="m-5 mt-[60px] bg-surfaceCream rounded-[20px] flex-1 shadow-lg">
+            <View className="flex-row items-center justify-between border-b border-b-buttonBorder p-4">
+              <Text className="font-feather text-xl text-textPrimary">Upload Devotionals</Text>
+              <TouchableOpacity
+                onPress={() => setDevotionalUploadModalVisible(false)}
+                className="w-8 h-8 rounded-full bg-forestGreen80 items-center justify-center">
+                <Text className="text-white text-base font-bold">✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView className="p-4 flex-1" keyboardShouldPersistTaps="handled">
+              <Text className="font-din text-base text-textPrimary mb-2">
+                Paste your devotionals JSON below. The format should match the Devotional.ts interface.
+              </Text>
+
+              <Text className="font-din text-sm text-description mb-4">
+                Example format: {`[{"id": "2025-01-01", "title": "New Year", "verse": "John 3:16", ...}]`}
+              </Text>
+
+              <TextInput
+                multiline
+                numberOfLines={15}
+                value={devotionalJsonInput}
+                onChangeText={setDevotionalJsonInput}
+                placeholder="Paste your JSON here..."
+                placeholderTextColor="#B89B4C"
+                className="bg-surfaceCreamLight border border-buttonBorder rounded-xl p-4 font-din text-textPrimary mb-4"
+                style={{ minHeight: 300, textAlignVertical: 'top' }}
+              />
+
+              {/* Padding bottom so content doesn't hide behind action area */}
+              <View style={{ height: 120 }} />
+            </ScrollView>
+
+            {/* Fixed action area */}
+            <View className="p-4 border-t border-buttonBorder bg-surfaceCreamLight">
+              <TouchableOpacity
+                className="bg-accentGold p-4 rounded-xl border-l-4 border-l-buttonBorder"
+                onPress={handleUploadDevotionals}>
+                <Text className="font-feather text-base text-white text-center">
+                  Upload Devotionals
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="mt-3 bg-surfaceCream p-4 rounded-xl border border-buttonBorder"
+                onPress={() => {
+                  setDevotionalJsonInput('');
+                  setDevotionalUploadModalVisible(false);
+                }}>
+                <Text className="font-feather text-base text-textPrimary text-center">
+                  Cancel
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </>
   );
 }

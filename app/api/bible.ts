@@ -40,6 +40,203 @@ export interface FetchError {
   status?: number;
 }
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Cache for in-memory storage (faster than AsyncStorage for frequent access)
+const chapterCache = new Map<string, ChapterResponse>();
+const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+
+// Interface for cached data with expiry
+interface CachedChapterData {
+  data: ChapterResponse;
+  timestamp: number;
+}
+
+/**
+ * Generates a cache key for a chapter
+ */
+const getCacheKey = (translation: string, bookId: number, chapter: number): string => {
+  return `bible_chapter_${translation}_${bookId}_${chapter}`;
+};
+
+/**
+ * Checks if cached data is still valid
+ */
+const isCacheValid = (timestamp: number): boolean => {
+  return Date.now() - timestamp < CACHE_EXPIRY;
+};
+
+/**
+ * Fetches a single chapter with caching
+ */
+export const fetchChapterWithCache = async (
+  translation: string,
+  bookId: number,
+  chapter: number
+): Promise<ChapterResponse | FetchError> => {
+  const cacheKey = getCacheKey(translation, bookId, chapter);
+  
+  // Check in-memory cache first
+  if (chapterCache.has(cacheKey)) {
+    console.log(`📚 Using in-memory cache for ${translation} ${bookId}:${chapter}`);
+    return chapterCache.get(cacheKey)!;
+  }
+  
+  // Check AsyncStorage cache
+  try {
+    const cachedData = await AsyncStorage.getItem(cacheKey);
+    if (cachedData) {
+      const parsed: CachedChapterData = JSON.parse(cachedData);
+      if (isCacheValid(parsed.timestamp)) {
+        console.log(`📚 Using AsyncStorage cache for ${translation} ${bookId}:${chapter}`);
+        // Store in memory cache for faster future access
+        chapterCache.set(cacheKey, parsed.data);
+        return parsed.data;
+      }
+    }
+  } catch (error) {
+    console.warn('Failed to read from AsyncStorage cache:', error);
+  }
+  
+  // Fetch from API
+  console.log(`🌐 Fetching from API: ${translation} ${bookId}:${chapter}`);
+  const result = await fetchChapter(translation, bookId, chapter);
+  
+  // Cache successful results
+  if (!('error' in result)) {
+    const cacheData: CachedChapterData = {
+      data: result,
+      timestamp: Date.now()
+    };
+    
+    // Store in memory cache
+    chapterCache.set(cacheKey, result);
+    
+    // Store in AsyncStorage cache
+    try {
+      await AsyncStorage.setItem(cacheKey, JSON.stringify(cacheData));
+    } catch (error) {
+      console.warn('Failed to write to AsyncStorage cache:', error);
+    }
+  }
+  
+  return result;
+};
+
+/**
+ * Fetches multiple chapters efficiently with batching and deduplication
+ */
+export const fetchChaptersBatch = async (
+  translation: string,
+  chapters: Array<{ bookId: number; chapter: number }>
+): Promise<Map<string, ChapterResponse | FetchError>> => {
+  console.log(`🚀 Batch fetching ${chapters.length} chapters for ${translation}`);
+  
+  const results = new Map<string, ChapterResponse | FetchError>();
+  const uniqueChapters = new Map<string, { bookId: number; chapter: number }>();
+  
+  // Deduplicate chapters
+  chapters.forEach(({ bookId, chapter }) => {
+    const key = `${bookId}:${chapter}`;
+    if (!uniqueChapters.has(key)) {
+      uniqueChapters.set(key, { bookId, chapter });
+    }
+  });
+  
+  console.log(`📊 Deduplicated to ${uniqueChapters.size} unique chapters`);
+  
+  // Check cache for all chapters first
+  const chaptersToFetch: Array<{ bookId: number; chapter: number; key: string }> = [];
+  
+  for (const [key, { bookId, chapter }] of uniqueChapters) {
+    const cacheKey = getCacheKey(translation, bookId, chapter);
+    
+    // Check in-memory cache
+    if (chapterCache.has(cacheKey)) {
+      results.set(key, chapterCache.get(cacheKey)!);
+      continue;
+    }
+    
+    // Check AsyncStorage cache
+    try {
+      const cachedData = await AsyncStorage.getItem(cacheKey);
+      if (cachedData) {
+        const parsed: CachedChapterData = JSON.parse(cachedData);
+        if (isCacheValid(parsed.timestamp)) {
+          chapterCache.set(cacheKey, parsed.data);
+          results.set(key, parsed.data);
+          continue;
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to read from AsyncStorage cache:', error);
+    }
+    
+    // Need to fetch this chapter
+    chaptersToFetch.push({ bookId, chapter, key });
+  }
+  
+  console.log(`📊 ${results.size} chapters found in cache, ${chaptersToFetch.length} need fetching`);
+  
+  // Fetch remaining chapters in parallel
+  if (chaptersToFetch.length > 0) {
+    const fetchPromises = chaptersToFetch.map(async ({ bookId, chapter, key }) => {
+      const result = await fetchChapter(translation, bookId, chapter);
+      
+      // Cache successful results
+      if (!('error' in result)) {
+        const cacheKey = getCacheKey(translation, bookId, chapter);
+        const cacheData: CachedChapterData = {
+          data: result,
+          timestamp: Date.now()
+        };
+        
+        // Store in memory cache
+        chapterCache.set(cacheKey, result);
+        
+        // Store in AsyncStorage cache
+        try {
+          await AsyncStorage.setItem(cacheKey, JSON.stringify(cacheData));
+        } catch (error) {
+          console.warn('Failed to write to AsyncStorage cache:', error);
+        }
+      }
+      
+      return { key, result };
+    });
+    
+    const fetchResults = await Promise.all(fetchPromises);
+    fetchResults.forEach(({ key, result }) => {
+      results.set(key, result);
+    });
+  }
+  
+  console.log(`✅ Batch fetch completed. ${results.size} total results`);
+  return results;
+};
+
+/**
+ * Clears all cached chapter data
+ */
+export const clearChapterCache = async (): Promise<void> => {
+  console.log('🧹 Clearing chapter cache...');
+  
+  // Clear in-memory cache
+  chapterCache.clear();
+  
+  // Clear AsyncStorage cache
+  try {
+    const keys = await AsyncStorage.getAllKeys();
+    const bibleKeys = keys.filter(key => key.startsWith('bible_chapter_'));
+    if (bibleKeys.length > 0) {
+      await AsyncStorage.multiRemove(bibleKeys);
+      console.log(`🧹 Cleared ${bibleKeys.length} cached chapters from AsyncStorage`);
+    }
+  } catch (error) {
+    console.error('Failed to clear AsyncStorage cache:', error);
+  }
+};
+
 /**
  * Fetches a single chapter from the Bible API (rkeplin.com).
  * @param translation - The Bible translation ID (e.g., 'KJV', 'NIV')
@@ -92,9 +289,9 @@ export const fetchChapter = async (
     }
 
     const rawJson = await response.json();
-    console.log('📋 RAW JSON RESPONSE:');
-    console.log(JSON.stringify(rawJson, null, 2));
-    console.log('📋 END RAW JSON RESPONSE');
+    // console.log('📋 RAW JSON RESPONSE:');
+    // console.log(JSON.stringify(rawJson, null, 2));
+    // console.log('📋 END RAW JSON RESPONSE');
 
     let transformedVerses: Verse[] = [];
     let bookName = '';
@@ -176,3 +373,6 @@ export const fetchFirst10GenesisChapters = async (
     return chapterNumbers.map(() => ({ error: true, message }));
   }
 };
+
+// Default export for Expo Router compatibility
+export default {}

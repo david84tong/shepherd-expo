@@ -16,7 +16,7 @@ import BottomSheet, {
 import { BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from '../app/models/Path';
 import { useUIStore } from '../app/stores/uiStore';
 import { usePathStore } from '../app/stores/pathStore';
-import * as Haptics from 'expo-haptics';
+import { hapticLight, hapticMedium } from '~/utils/haptics';
 
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -86,7 +86,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
       setSelectedChapter(chapter);
 
       bottomSheetRef.current?.snapToIndex(0);
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      hapticMedium();
     } else {
       bottomSheetRef.current?.close();
     }
@@ -119,7 +119,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
         }
 
         bottomSheetRef.current?.close();
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        hapticLight();
       } finally {
         setIsSelecting(false);
       }
@@ -135,7 +135,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
       console.log(`📖 [GlobalBookChapterSelector] Selected book: ${bookId}`);
       setSelectedBookId(bookId);
       setSelectedChapter(1); // Reset to chapter 1 when switching books
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+      hapticLight();
     },
     [selectedBookId, isSelecting]
   );
@@ -169,7 +169,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
           animated: true,
         });
       },
-      () => {} // Error callback - empty
+      () => { } // Error callback - empty
     );
   }, [selectedBookId, WINDOW_WIDTH]);
 
@@ -297,32 +297,59 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  sheetBackground: {
-    backgroundColor: '#FFF4D9', // surfaceCream
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
+  bookItem: {
+    backgroundColor: '#F9F3E5',
+    borderColor: '#E9E2C7',
+    borderRadius: 15,
+    borderWidth: 1,
+    marginHorizontal: 4,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
   },
-  handleIndicator: {
-    backgroundColor: '#DCB280',
-    width: 40,
-    height: 4,
+  bookItemText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 15, // textPrimary
   },
-  contentContainer: {
+  bookRow: {
+    flexDirection: 'row',
+    marginVertical: 4,
+  },
+  bookRowsContainer: {
+    flexDirection: 'column',
+  },
+  bookSection: {
+    height: 120,
+    paddingTop: 10,
+  },
+  chapterGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    paddingBottom: 300,
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+  },
+  chapterItem: {
+    alignItems: 'center',
+    aspectRatio: 1,
+    backgroundColor: '#F9F3E5',
+    borderColor: '#E9E2C7',
+    borderRadius: 100,
+    borderWidth: 1,
+    justifyContent: 'center',
+  },
+  chapterItemText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+  },
+  chapterScrollContainer: {
     flex: 1,
   },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#FFE4A8', // buttonBorder
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontFamily: 'Feather Bold',
-    color: '#3C584A', // textPrimary
+  chapterSection: {
+    flex: 1,
+    paddingTop: 10,
   },
   closeButton: {
     padding: 5,
@@ -333,19 +360,27 @@ const styles = StyleSheet.create({
     color: '#F7B500', // darkYellow
     fontWeight: '600',
   },
-  mainContent: {
+  contentContainer: {
     flex: 1,
   },
-  bookSection: {
-    paddingTop: 10,
-    height: 120,
+  handleIndicator: {
+    backgroundColor: '#DCB280',
+    height: 4,
+    width: 40,
   },
-  chapterSection: {
-    flex: 1,
-    paddingTop: 10,
+  header: {
+    alignItems: 'center',
+    borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15, // buttonBorder
   },
-  chapterScrollContainer: {
-    flex: 1,
+  headerTitle: {
+    color: '#3C584A',
+    fontFamily: 'Nunito-Black',
+    fontSize: 18, // textPrimary
   },
   listTitle: {
     fontSize: 14,
@@ -355,63 +390,28 @@ const styles = StyleSheet.create({
     marginLeft: 20,
     textTransform: 'uppercase',
   },
-  bookRowsContainer: {
-    flexDirection: 'column',
-  },
-  bookRow: {
-    flexDirection: 'row',
-    marginVertical: 4,
-  },
-  bookItem: {
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-    marginHorizontal: 4,
-    backgroundColor: '#F9F3E5',
-    borderRadius: 15,
-    borderWidth: 1,
-    borderColor: '#E9E2C7',
+  mainContent: {
+    flex: 1,
   },
   selectedBookItem: {
     backgroundColor: '#FFE4A8', // buttonBorder
     borderColor: '#F7B500', // darkYellow
   },
-  bookItemText: {
-    fontSize: 15,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    color: '#3C584A', // textPrimary
-  },
   selectedBookItemText: {
     fontWeight: '600',
-  },
-  chapterGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    justifyContent: 'center',
-    paddingBottom: 300,
-  },
-  chapterItem: {
-    aspectRatio: 1,
-    borderRadius: 100,
-    backgroundColor: '#F9F3E5',
-    borderWidth: 1,
-    borderColor: '#E9E2C7',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   selectedChapterItem: {
     backgroundColor: '#F7B500', // darkYellow
     borderColor: '#F7B500',
   },
-  chapterItemText: {
-    fontSize: 16,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    color: '#3C584A',
-  },
   selectedChapterItemText: {
     color: 'white',
     fontWeight: 'bold',
+  },
+  sheetBackground: {
+    backgroundColor: '#FFF4D9', // surfaceCream
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
 });
 

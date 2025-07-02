@@ -2,13 +2,11 @@ import firestore from '@react-native-firebase/firestore';
 import dayjs from 'dayjs';
 import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import analytics from '../utils/analytics';
 import {
   View,
   Text,
-  TouchableOpacity,
   Dimensions,
   Animated,
   Image,
@@ -16,6 +14,7 @@ import {
   ScrollView,
 } from 'react-native';
 import Rive, { RiveRef } from 'rive-react-native';
+import i18n from '~/app/utils/i18n';
 
 import PrimaryButton from './PrimaryButton';
 import { StreakScreen } from './StreakScreen';
@@ -23,14 +22,18 @@ import { getLambMoodByHearts } from '../app/hooks/streakHook';
 import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '../app/stores/userStore';
+import { useSoundStore } from '../app/stores/soundStore';
 import { calculateLevelFromXp } from '../utils/levelUtils';
 
 // Import icons
 import gemIcon from '../assets/icons/greenGemIcon.png';
 import heartIcon from '../assets/icons/heartIcon.png';
 import starIcon from '../assets/icons/starIcon.png';
-import { IS_ANDROID, IS_IOS } from '~/app/utils/utils';
+import { IS_ANDROID } from '~/app/utils/utils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
+import { AppFonts } from '~/app/constants/appFonts';
+import { RPH } from '~/app/helper/helper';
+import { hapticMedium } from '~/utils/haptics';
 
 // Get screen dimensions to ensure full screen sizing
 const { height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -40,6 +43,9 @@ interface SuccessAnimationProps {
   message?: string;
   subMessage?: string;
   onClose?: () => void;
+  isPrayPresses?: boolean;
+  showStreakScreen?: boolean;
+  hideStreakInSuccess?: boolean;
 }
 
 // Max hearts constant
@@ -52,6 +58,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   message: propMessage,
   subMessage: propSubMessage,
   onClose: propOnClose,
+  isPrayPresses,
+  showStreakScreen: showStreakScreenParam,
+  hideStreakInSuccess
 }) => {
   const riveRef = useRef<RiveRef>(null);
   const setHomeMode = useHomeStore((state) => state.setMode);
@@ -88,6 +97,11 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const setGens = useUserStore((state) => state.setGens);
   const setLambMood = useUserStore((state) => state.setLambMood);
 
+  // Home store hooks for daily XP tracking
+  const addDailyXp = useHomeStore((state) => state.addDailyXp);
+  const getDailyXpRemaining = useHomeStore((state) => state.getDailyXpRemaining);
+  const { playTrifectaCompleteSound } = useSoundStore();
+
   // Determine which type to use for rendering
   const effectiveType = successType ?? SuccessAnimationType.READING;
 
@@ -103,6 +117,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const [rewardsApplied, setRewardsApplied] = useState(false);
   // Calculate actual heart reward (don't exceed MAX_HEARTS)
   const [actualHeartReward, setActualHeartReward] = useState(0);
+  // Calculate actual XP reward (don't exceed daily limit)
+  const [actualXpReward, setActualXpReward] = useState(0);
   // Flag to check if at max hearts
   const [isAtMaxHearts, setIsAtMaxHearts] = useState(false);
   // State to track if user leveled up
@@ -144,18 +160,21 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const homeButtonOpacity = useRef(new Animated.Value(0)).current;
   const homeButtonTranslateY = useRef(new Animated.Value(15)).current;
 
+  // State to control when to show the home button
+  const [showHomeButton, setShowHomeButton] = useState(false);
+
   // Add Rive animation effects
   const riveScaleAnim = useRef(new Animated.Value(0.9)).current;
   const riveRotateAnim = useRef(new Animated.Value(0.05)).current;
 
   // Determine messages, rewards, and Rive resource based on successType
-  let message = propMessage || 'Great job!';
-  let subMessage = propSubMessage || 'Task completed successfully.';
+  let message = propMessage || i18n.t('success_reading_complete');
+  let subMessage = propSubMessage || i18n.t('success_reading_complete_desc');
   let heartReward = 0;
   let xpReward = 0;
   const riveResource = 'successLamb'; // Default animation
   let riveArtboard: string | undefined = undefined;
-  let rewardTitle = 'REWARDS EARNED';
+  let rewardTitle = i18n.t('reading_rewards');
 
   // State to track if we should show the streak screen
   const [showStreakScreen, setShowStreakScreen] = useState(false);
@@ -248,7 +267,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Reading Complete!';
     subMessage = "You finished today's Bible reading & fed your lamb.";
     heartReward = 3;
-    xpReward = 25;
+    xpReward = 50;
     riveArtboard = 'lamb-eating';
     rewardTitle = 'READING REWARDS';
   } else if (effectiveType === SuccessAnimationType.BONUS) {
@@ -256,7 +275,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Daily Trifecta Complete!';
     subMessage = "Amazing! You've completed all three spiritual disciplines today.";
     heartReward = 5;
-    xpReward = 25;
+    xpReward = 0;
     riveArtboard = 'chest';
     rewardTitle = 'BONUS REWARDS';
   } else if (effectiveType === SuccessAnimationType.REFLECTION) {
@@ -264,7 +283,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Reflection Complete!';
     subMessage = "You've recorded your thoughts and connected with the Word.";
     heartReward = 1;
-    xpReward = 25;
+    xpReward = 50;
     riveArtboard = 'heart-hold';
     rewardTitle = 'REFLECTION REWARDS';
   } else if (effectiveType === SuccessAnimationType.PRAYER) {
@@ -272,7 +291,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     message = 'Prayer Complete!';
     subMessage = 'You spent quality time with the Shepherd in prayer.';
     heartReward = 2;
-    xpReward = 25;
+    xpReward = 50;
     rewardTitle = 'PRAYER REWARDS';
     riveArtboard = 'success-heart'; // Show heart animation by default
   } else {
@@ -307,6 +326,10 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       const heartsToAdd = isMax ? 0 : Math.min(heartReward, MAX_HEARTS - lambHearts);
       setActualHeartReward(heartsToAdd);
 
+      // Calculate how much XP to actually add (respecting daily limit)
+      const xpToAdd = addDailyXp(xpReward);
+      setActualXpReward(xpToAdd);
+
       // Update user state with new values
       if (heartsToAdd > 0) {
         setLambHearts(lambHearts + heartsToAdd);
@@ -324,11 +347,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Check current level before adding XP using the level utility function
       const currentLevel = calculateLevelFromXp(lambXp);
 
-      // Always add XP
-      addXp(xpReward);
+      // Only add XP if we got some after daily limit check
+      if (xpToAdd > 0) {
+        addXp(xpToAdd);
+      }
 
       // Calculate new level after XP is added
-      const newXpTotal = lambXp + xpReward;
+      const newXpTotal = lambXp + xpToAdd;
       const newLevelValue = calculateLevelFromXp(newXpTotal);
 
       // Check if level increased
@@ -347,10 +372,12 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         successType: effectiveType,
         heartsAwarded: heartsToAdd,
         intentionalHeartReward: heartReward,
-        xpAwarded: xpReward,
+        xpAwarded: xpToAdd,
+        intentionalXpReward: xpReward,
+        dailyXpRemaining: getDailyXpRemaining(),
         isAtMaxHearts: isMax,
         newLambHearts: lambHearts + heartsToAdd,
-        newLambXp: lambXp + xpReward,
+        newLambXp: lambXp + xpToAdd,
         leveledUp: leveledUp,
         newLevel: leveledUp ? newLevel : undefined,
       };
@@ -369,12 +396,12 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Only add gems if this is truly the first time seeing the bonus (sawDailyBonus was false)
       if (effectiveType === SuccessAnimationType.BONUS && !sawDailyBonus) {
         const currentGems = getGens();
-        setGens(currentGems + 9);
-        console.log(`Applied +9 Gems. Updated value - Gems: ${currentGems + 9}`);
+        setGens(currentGems + 100);
+        console.log(`Applied +9 Gems. Updated value - Gems: ${currentGems + 100}`);
 
         // Add gems data to analytics
-        rewardsData.gemsAwarded = 9;
-        rewardsData.newGemCount = currentGems + 9;
+        rewardsData.gemsAwarded = 100;
+        rewardsData.newGemCount = currentGems + 100;
 
         // Set the flag to indicate user has seen daily bonus
         setSawDailyBonus(true);
@@ -503,6 +530,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
     // Animate the home button/link
     setTimeout(() => {
+      setShowHomeButton(true); // Show the button first
       Animated.parallel([
         Animated.timing(homeButtonOpacity, {
           toValue: 1,
@@ -517,8 +545,12 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       ]).start();
     }, 1400); // Delay to start after action buttons animation
 
+    if (effectiveType === SuccessAnimationType.BONUS) {
+      playTrifectaCompleteSound();
+    }
+
     return () => clearTimeout(timer);
-  }, [effectiveType]); // Keep effectiveType dependency
+  }, [effectiveType, playTrifectaCompleteSound]); // Keep effectiveType dependency
 
   // Log analytics when component mounts or successType changes
   useEffect(() => {
@@ -532,33 +564,37 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       case SuccessAnimationType.READING:
         eventName = 'SuccessAnimation_Shown_Reading';
         params = {
-          xpReward: xpReward,
+          xpReward: actualXpReward,
           heartReward: actualHeartReward,
+          dailyXpRemaining: getDailyXpRemaining(),
         };
         break;
 
       case SuccessAnimationType.PRAYER:
         eventName = 'SuccessAnimation_Shown_Prayer';
         params = {
-          xpReward: xpReward,
+          xpReward: actualXpReward,
           heartReward: actualHeartReward,
+          dailyXpRemaining: getDailyXpRemaining(),
         };
         break;
 
       case SuccessAnimationType.REFLECTION:
         eventName = 'SuccessAnimation_Shown_Reflection';
         params = {
-          xpReward: xpReward,
+          xpReward: actualXpReward,
           heartReward: actualHeartReward,
+          dailyXpRemaining: getDailyXpRemaining(),
         };
         break;
 
       case SuccessAnimationType.BONUS:
         eventName = 'SuccessAnimation_Shown_Bonus';
         params = {
-          xpReward: xpReward,
+          xpReward: actualXpReward,
           heartReward: actualHeartReward,
           gemsAwarded: sawDailyBonus ? 0 : 9,
+          dailyXpRemaining: getDailyXpRemaining(),
         };
         break;
     }
@@ -580,7 +616,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   // Default navigation behavior
   const handleGoHome = () => {
     // Add medium haptic feedback for navigation
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
 
     // Log the event
     analytics.logEvent('SuccessAnimation_Tapped_GoHome', {
@@ -588,21 +624,34 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     });
 
     // If this is the first reading of the day, effectiveType is READING, and we haven't shown the streak screen today
-    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING && !sawStreakToday) {
-      triggerStreakScreen();
-      return; // Prevent navigation so StreakScreen can show
-    }
 
     // Set unmounting flag first
     isUnmounting.current = true;
 
     // Reset states (except successType until after navigation)
-    console.log('handleGoHome - Resetting states');
+    console.log('handleGoHome - Resetting states to ensure tab bar is visible');
     setPathInProgress(false);
     setHomeMode('DEFAULT');
 
+    // Reset all view visibility states to ensure tab bar shows
+    const homeStore = useHomeStore.getState();
+    homeStore.setDevotionalReaderVisible(false);
+    homeStore.setPrayerViewVisible(false);
+    homeStore.setJournalViewVisible(false);
+
     // Navigate without changing the successType - it will be reset in the cleanup effect
-    router.replace('/(tabs)');
+    if (showStreakScreenParam) {
+      router.push({
+        pathname: '/streak',
+      });
+    } else {
+      router.replace({
+        pathname: '/(tabs)',
+        params: {
+          isPrayPresses: isPrayPresses ? 'true' : 'false'
+        },
+      });
+    }
   };
 
   const triggerStreakScreen = () => {
@@ -641,87 +690,12 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Determine the action for the button press
   const handlePress = propOnClose || handleGoHome;
-  const buttonText = propOnClose ? 'Close' : 'Return Home';
+  const buttonText = propOnClose ? i18n.t('close') : i18n.t('continue_button');
 
-  // Handler for prayer button
-  const handleGoToPrayer = () => {
-    // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  // Removed prayer and reflection handlers - only continue button needed
 
-    console.log('Navigating to Prayer from Success screen');
-
-    // Log analytics
-    analytics.logEvent('SuccessAnimation_Tapped_PrayButton', {
-      fromType: successType,
-    });
-
-    // Set tappedPrayAboutVerse regardless of where we're coming from
-    console.log('Setting tappedPrayAboutVerse to true');
-    useHomeStore.getState().setTappedPrayAboutVerse(true);
-
-    // First update the state in the store
-    setHomeMode('PRAYER');
-    setPathInProgress(true); // Make sure path is in progress to show the component
-    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING && !sawStreakToday) {
-      triggerStreakScreen();
-    } else {
-      setTimeout(() => {
-        // Navigate back to the home tab - the useEffect in index.tsx will respond to mode change
-        router.replace('/(tabs)');
-      }, 500); // 500ms delay
-    }
-
-    // Add delay to give assets time to load
-    console.log('Adding delay before navigation to ensure assets load');
-  };
-
-  // Handler for reflection button
-  const handleGoToReflection = () => {
-    // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-
-    console.log('Navigating to Reflection from Success screen');
-
-    // Log analytics
-    analytics.logEvent('SuccessAnimation_Tapped_ReflectButton', {
-      fromType: successType,
-    });
-
-    // If this came from a reading or prayer success, set the tappedReflectAboutVerse flag
-    if (
-      effectiveType === SuccessAnimationType.READING ||
-      effectiveType === SuccessAnimationType.PRAYER
-    ) {
-      console.log('Setting tappedReflectAboutVerse to true');
-      useHomeStore.getState().setTappedReflectAboutVerse(true);
-    }
-
-    // First update the state in the store
-    // Make sure path is in progress to show the component
-    setHomeMode('DEFAULT');
-    setPathInProgress(false);
-
-    if (isFirstReadingOfDay && effectiveType === SuccessAnimationType.READING && !sawStreakToday) {
-      triggerStreakScreen();
-    } else {
-      router.replace('/(tabs)');
-    }
-
-    // Add delay to give assets time to load
-    console.log('Adding delay before navigation to ensure assets load');
-    setTimeout(() => {
-      // Navigate back to the home tab - the useEffect in index.tsx will respond to mode change
-      setHomeMode('REFLECTION');
-      setPathInProgress(true);
-    }, 100); // 500ms delay
-  };
-
-  // Determine if we should show next action buttons
-  // Show after reading completion OR after prayer completion (if reflection not done)
-  const showNextButtons =
-    (effectiveType === SuccessAnimationType.READING ||
-      effectiveType === SuccessAnimationType.PRAYER) &&
-    (!prayerCompleted || !reflectionCompleted);
+  // Remove next action buttons - only show continue button
+  const showNextButtons = false;
 
   // If we're showing the streak screen, return it
   if (showStreakScreen) {
@@ -739,249 +713,192 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   }
 
   return (
-    <ScrollView
-      contentContainerStyle={{ flexGrow: 1, paddingBottom: 30 }}
-      showsVerticalScrollIndicator={false}
-      className="bg-surfaceCream"
-      style={{ flex: 1, backgroundColor: '#FFF4DC' }}>
-      <Animated.View
-        className="flex-1 items-center justify-center pt-4 pb-8 px-5 bg-surfaceCream"
-        style={{ opacity: fadeToStreakAnim }}>
-        {isTransitioning && (
-          <View className="absolute inset-0 items-center justify-center bg-surfaceCream">
-            <ActivityIndicator size="large" color="#F2B705" />
-          </View>
-        )}
+    <View className="flex-1 bg-surfaceCream" style={{ backgroundColor: '#FFF4DC' }}>
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1, paddingBottom: RPH(12) }}
+        showsVerticalScrollIndicator={false}
+        className="bg-surfaceCream">
+        <Animated.View
+          className="flex-1 items-center justify-center pt-4 px-5 bg-surfaceCream"
+          style={{ opacity: fadeToStreakAnim }}>
+          {isTransitioning && (
+            <View className="absolute inset-0 items-center justify-center bg-surfaceCream">
+              <ActivityIndicator size="large" color="#F2B705" />
+            </View>
+          )}
 
-        {/* Rive animation - centered */}
-        <View className="w-full h-[275px] my-4 items-center justify-center ">
+          {/* Rive animation - centered */}
+          <View className="w-full h-[275px] my-4 items-center justify-center ">
+            <Animated.View
+              style={{
+                width: effectiveType === SuccessAnimationType.BONUS ? '144%' : '120%',
+                height: effectiveType === SuccessAnimationType.BONUS ? '144%' : '120%',
+                marginTop: 10,
+                transform: [
+                  { scale: riveScaleAnim },
+                  {
+                    rotate: riveRotateAnim.interpolate({
+                      inputRange: [-1, 0, 1],
+                      outputRange: ['-15deg', '0deg', '15deg'],
+                    }),
+                  },
+                ],
+              }}>
+              {effectiveType === SuccessAnimationType.SECTION_COMPLETE ? (
+                <>
+                  {IS_ANDROID ? (
+                    <Rive
+                      ref={riveRef}
+                      autoplay={true}
+                      resourceName={'home_lamb'}
+                      artboardName="lamb-milestone"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        maxWidth: 300,
+                        maxHeight: 300,
+                        alignSelf: 'center',
+                      }}
+                    />
+                  ) : (
+                    <Rive
+                      ref={riveRef}
+                      url={(homeLambAssets && homeLambAssets[0] && homeLambAssets[0].uri) || ''}
+                      autoplay={true}
+                      artboardName="lamb-milestone"
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        maxWidth: 300,
+                        maxHeight: 300,
+                        alignSelf: 'center',
+                      }}
+                    />
+                  )}
+                </>
+              ) : (
+                <>
+                  {IS_ANDROID ? (
+                    <Rive
+                      ref={riveRef}
+                      resourceName={'success_lamb'}
+                      autoplay={true}
+                      style={{ width: '100%', height: '100%' }}
+                      {...(riveArtboard ? { artboardName: riveArtboard } : {})}
+                    />
+                  ) : (
+                    <Rive
+                      ref={riveRef}
+                      url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
+                      autoplay={true}
+                      style={{ width: '100%', height: '100%' }}
+                      {...(riveArtboard ? { artboardName: riveArtboard } : {})}
+                    />
+                  )}
+                </>
+              )}
+            </Animated.View>
+          </View>
+
+          {/* Success message - enlarged */}
+          <Text style={{ fontSize: AppFonts[28] }} className="font-feather  text-textPrimary mb-4 text-center -mt-16">
+            {message}
+          </Text>
+          <Text className="font-din text-xl text-secondaryText text-center mb-6 px-6">
+            {subMessage}
+          </Text>
+
+          {/* Rewards Card */}
           <Animated.View
+            className="w-full bg-surfaceCream/50 rounded-[18px] p-4 my-4 border-2 border-border"
             style={{
-              width: effectiveType === SuccessAnimationType.BONUS ? '144%' : '120%',
-              height: effectiveType === SuccessAnimationType.BONUS ? '144%' : '120%',
-              marginTop: 10,
-              transform: [
-                { scale: riveScaleAnim },
-                {
-                  rotate: riveRotateAnim.interpolate({
-                    inputRange: [-1, 0, 1],
-                    outputRange: ['-15deg', '0deg', '15deg'],
-                  }),
-                },
-              ],
+              opacity: cardOpacity,
+              transform: [{ translateY: cardAnim }],
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 2 },
+              shadowOpacity: 0.1,
+              shadowRadius: 3,
             }}>
-            {effectiveType === SuccessAnimationType.SECTION_COMPLETE ? (
-              <>
-                {IS_ANDROID ? (
-                  <Rive
-                    ref={riveRef}
-                    autoplay={true}
-                    resourceName={'home_lamb'}
-                    artboardName="lamb-milestone"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      maxWidth: 300,
-                      maxHeight: 300,
-                      alignSelf: 'center',
-                    }}
-                  />
-                ) : (
-                  <Rive
-                    ref={riveRef}
-                    url={(homeLambAssets && homeLambAssets[0] && homeLambAssets[0].uri) || ''}
-                    autoplay={true}
-                    artboardName="lamb-milestone"
-                    style={{
-                      width: '100%',
-                      height: '100%',
-                      maxWidth: 300,
-                      maxHeight: 300,
-                      alignSelf: 'center',
-                    }}
-                  />
-                )}
-              </>
+            <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
+              {rewardTitle}
+            </Text>
+
+            {effectiveType === SuccessAnimationType.BONUS ? (
+              // Special bonus reward display
+              <View className="flex-row items-center justify-center mb-2">
+                <Image source={gemIcon} className="w-6 h-6 mr-2" />
+                <Text className="font-din text-textPrimary text-xl">{i18n.t('gems_awarded', { count: 100 })}</Text>
+              </View>
             ) : (
+              // Standard rewards display for other success types
               <>
-                {IS_ANDROID ? (
-                  <Rive
-                    ref={riveRef}
-                    resourceName={'success_lamb'}
-                    autoplay={true}
-                    style={{ width: '100%', height: '100%' }}
-                    {...(riveArtboard ? { artboardName: riveArtboard } : {})}
-                  />
-                ) : (
-                  <Rive
-                    ref={riveRef}
-                    url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
-                    autoplay={true}
-                    style={{ width: '100%', height: '100%' }}
-                    {...(riveArtboard ? { artboardName: riveArtboard } : {})}
-                  />
+                {/* Only show hearts reward if not at max hearts */}
+                {!isAtMaxHearts && actualHeartReward > 0 && (
+                  <View className="flex-row items-center justify-center mb-2">
+                    <Image source={heartIcon} className="w-4 h-6 mr-2" />
+                    <Text className="font-din text-textPrimary text-xl">
+                      {i18n.t('hearts_awarded', { count: actualHeartReward })}
+                    </Text>
+                  </View>
+                )}
+                <View className="flex-row items-center justify-center">
+                  <Image source={starIcon} className="w-6 h-6 mr-2" />
+                  <Text className="font-din text-textPrimary text-xl">{i18n.t('soul_points_awarded', { count: actualXpReward })}</Text>
+                </View>
+
+                {/* Show daily XP limit message if XP was reduced or at cap */}
+                {actualXpReward < xpReward && (
+                  <View className="mt-2 py-2 bg-lightYellow rounded-xl">
+                    <Text className="font-din text-description text-center text-sm">
+                      {getDailyXpRemaining() === 0
+                        ? i18n.t('daily_xp_cap_reached')
+                        : i18n.t('daily_xp_limit_message', { remaining: getDailyXpRemaining() })
+                      }
+                    </Text>
+                  </View>
+                )}
+
+                {/* Show message when at daily XP cap even if no XP was intended */}
+                {actualXpReward === 0 && xpReward > 0 && getDailyXpRemaining() === 0 && (
+                  <View className="mt-2 py-2 bg-lightYellow rounded-xl">
+                    <Text className="font-din text-description text-center text-sm">
+                      {i18n.t('daily_xp_cap_reached')}
+                    </Text>
+                  </View>
+                )}
+
+                {/* Show level up message if user leveled up */}
+                {leveledUp && (
+                  <View className="mt-4 py-2 bg-lightYellow rounded-xl">
+                    <Text className="font-feather text-xl text-primary text-center">{i18n.t('level_up')}</Text>
+                    <Text className="font-din text-description text-center mt-1">
+                      Leveled Up to {newLevel}!
+                    </Text>
+                  </View>
                 )}
               </>
             )}
           </Animated.View>
-        </View>
-
-        {/* Success message - enlarged */}
-        <Text className="font-feather text-[32px] text-textPrimary mb-4 text-center -mt-16">
-          {message}
-        </Text>
-        <Text className="font-din text-xl text-secondaryText text-center mb-6 px-6">
-          {subMessage}
-        </Text>
-
-        {/* Rewards Card */}
-        <Animated.View
-          className="w-full bg-surfaceCream/50 rounded-[18px] p-4 my-4 border-2 border-border"
-          style={{
-            opacity: cardOpacity,
-            transform: [{ translateY: cardAnim }],
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.1,
-            shadowRadius: 3,
-          }}>
-          <Text className="text-caption font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
-            {rewardTitle}
-          </Text>
-
-          {effectiveType === SuccessAnimationType.BONUS ? (
-            // Special bonus reward display
-            <View className="flex-row items-center justify-center mb-2">
-              <Image source={gemIcon} className="w-6 h-6 mr-2" />
-              <Text className="font-din text-textPrimary text-xl">+9 Gems</Text>
-            </View>
-          ) : (
-            // Standard rewards display for other success types
-            <>
-              {/* Only show hearts reward if not at max hearts */}
-              {!isAtMaxHearts && actualHeartReward > 0 && (
-                <View className="flex-row items-center justify-center mb-2">
-                  <Image source={heartIcon} className="w-6 h-6 mr-2" />
-                  <Text className="font-din text-textPrimary text-xl">
-                    +{actualHeartReward} Hearts
-                  </Text>
-                </View>
-              )}
-              <View className="flex-row items-center justify-center">
-                <Image source={starIcon} className="w-6 h-6 mr-2" />
-                <Text className="font-din text-textPrimary text-xl">+{xpReward} Soul Points</Text>
-              </View>
-
-              {/* Show level up message if user leveled up */}
-              {leveledUp && (
-                <View className="mt-4 py-2 bg-lightYellow rounded-xl">
-                  <Text className="font-feather text-xl text-primary text-center">LEVEL UP!</Text>
-                  <Text className="font-din text-description text-center mt-1">
-                    Your lamb grew to level {newLevel}
-                  </Text>
-                </View>
-              )}
-            </>
-          )}
         </Animated.View>
+      </ScrollView>
 
-        {/* Next Action Buttons - only show if needed */}
-        {showNextButtons && (
-          <Animated.View
-            className="w-full mt-4 mb-2"
-            style={{
-              opacity: buttonsOpacity,
-              transform: [{ translateY: buttonsTranslateY }],
-            }}>
-            <View className="flex justify-center space-x-4 h-48">
-              {/* Show Pray button only if prayer is not completed */}
-              {!prayerCompleted && (
-                <PrimaryButton
-                  title="Pray about this verse"
-                  onPress={handleGoToPrayer}
-                  style={reflectionCompleted ? 'w-full' : 'flex-1 h-32'}
-                  buttonType="blue"
-                />
-              )}
-
-              {/* Show Reflect button only if reflection is not completed */}
-              {!reflectionCompleted && (
-                <PrimaryButton
-                  title="Reflect on this verse"
-                  onPress={handleGoToReflection}
-                  style={
-                    prayerCompleted || effectiveType === SuccessAnimationType.PRAYER
-                      ? 'w-full'
-                      : 'flex-1 h-24'
-                  }
-                />
-              )}
-            </View>
-          </Animated.View>
-        )}
-
-        {/* Special case for Reflection success with prayer not completed */}
-        {effectiveType === SuccessAnimationType.REFLECTION && !prayerCompleted ? (
-          <Animated.View
-            className="w-full"
-            style={{
-              opacity: buttonsOpacity,
-              transform: [{ translateY: buttonsTranslateY }],
-            }}>
-            {/* Pray button as primary action */}
-            <PrimaryButton
-              title="Pray about today's verse"
-              onPress={handleGoToPrayer}
-              buttonType="blue"
-            />
-
-            {/* Go Home link below the pray button */}
-            <Animated.View
-              style={{
-                opacity: homeButtonOpacity,
-                transform: [{ translateY: homeButtonTranslateY }],
-              }}>
-              <TouchableOpacity
-                onPress={handlePress}
-                className="mt-4"
-                onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
-                <Text className="font-feather text-description text-center underline mt-4">
-                  Go Home
-                </Text>
-              </TouchableOpacity>
-            </Animated.View>
-          </Animated.View>
-        ) : (
-          /* Regular Return Home button for all other cases, except when showing other action buttons */
-          !showNextButtons && (
-            <Animated.View
-              style={{
-                width: '100%',
-                opacity: homeButtonOpacity,
-                transform: [{ translateY: homeButtonTranslateY }],
-              }}>
-              <PrimaryButton title={buttonText} onPress={handlePress} style="mt-4" />
-            </Animated.View>
-          )
-        )}
-
-        {/* Text link version of Return Home for original action button case */}
-        {showNextButtons && (
-          <Animated.View
-            style={{
-              opacity: homeButtonOpacity,
-              transform: [{ translateY: homeButtonTranslateY }],
-            }}>
-            <TouchableOpacity
-              onPress={handlePress}
-              className="mt-4"
-              onPressIn={() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)}>
-              <Text className="font-feather text-description text-center underline">Go Home</Text>
-            </TouchableOpacity>
-          </Animated.View>
-        )}
-      </Animated.View>
-    </ScrollView>
+      {/* Continue Button - Fixed at bottom */}
+      {showHomeButton && (
+        <Animated.View
+          className="absolute bottom-0 left-0 right-0 bg-surfaceCream px-5 pb-8 pt-4"
+          style={{
+            opacity: homeButtonOpacity,
+            transform: [{ translateY: homeButtonTranslateY }],
+            shadowColor: '#000',
+            shadowOffset: { width: 0, height: -2 },
+            shadowOpacity: 0.0,
+            shadowRadius: 4,
+            elevation: 5,
+          }}>
+          <PrimaryButton buttonType="blue" title={buttonText} onPress={handlePress} />
+        </Animated.View>
+      )}
+    </View>
   );
 };
 

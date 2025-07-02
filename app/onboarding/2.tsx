@@ -1,12 +1,12 @@
 import { useAssets } from 'expo-asset';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import React, { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import { View, Text, TextInput, Keyboard, ActivityIndicator, Image, StatusBar } from 'react-native';
+import { View, Text, TextInput, Keyboard, ActivityIndicator, StatusBar } from 'react-native';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
 import PrimaryButton from '../../components/PrimaryButton';
-import Rive from 'rive-react-native';
+import Rive, { RiveRef } from 'rive-react-native';
 import {
   useAnimatedStyle,
   withTiming,
@@ -18,6 +18,8 @@ import { toBool } from '../utils/toBool';
 import { validateName } from '../../utils/validation';
 import CustomAnimatedView from '../components/CustomAnimatedView';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
+import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
 
 export default function OnboardingLambNameScreen() {
   const router = useRouter();
@@ -31,10 +33,16 @@ export default function OnboardingLambNameScreen() {
   const inputRef = useRef<TextInput>(null);
 
   // Load Rive assets
-  const [riveAssets] = useAssets([require('../../assets/riveAnimations/homeLamb.riv')]);
+  const [riveAssets] = useAssets([require('../../assets/riveAnimations/new_shepherd.riv')]);
+  
+  // Create ref for Rive component
+  const riveRef = useRef<RiveRef>(null);
 
   // Track if animations have been initialized
   const animationsInitialized = useRef(false);
+  
+  // Track if Rive has been initialized to prevent repeated Level-Number setting
+  const riveInitialized = useRef(false);
 
   // Create Reanimated shared values for each component
   const screenOpacity = useSharedValue(0);
@@ -117,7 +125,7 @@ export default function OnboardingLambNameScreen() {
   const screenStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
     flex: 1,
-    backgroundColor: '#FFF4D9', // Explicitly set the cream background color
+    backgroundColor: '#FDEBB8', // Explicitly set the cream background color
   }));
 
   // Create animated styles for each component
@@ -180,7 +188,7 @@ export default function OnboardingLambNameScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-[#FFF4D9] px-6">
         <ActivityIndicator size="large" color="#3C584A" />
-        <Text className="font-feather text-textPrimary mt-4">Loading...</Text>
+        <Text className="font-feather text-textPrimary mt-4">{i18n.t('loading')}</Text>
       </View>
     );
   }
@@ -192,36 +200,74 @@ export default function OnboardingLambNameScreen() {
         {/* Question Text */}
         <CustomAnimatedView style={titleStyle}>
           <Text className="font-feather text-h1 text-center text-textPrimary mb-4 mt-0">
-            What should we call your lamb?
+            {i18n.t('onboarding_lamb_name_question')}
           </Text>
         </CustomAnimatedView>
 
         {/* Rive Animation with Fallback */}
         <CustomAnimatedView
           style={lambStyle}
-          className="h-[160px] w-full justify-center items-center my-4">
-          {IS_ANDROID ? (
-            <Rive
-              resourceName={IS_ANDROID ? 'home_lamb' : undefined}
-              artboardName="lamb-idle"
-              autoplay
-              style={{ width: '80%', height: '80%' }}
-              onError={(error) => {
-                console.warn('Rive animation error:', error);
-                // setRiveError(true);
-              }}
-            />
-          ) : (
-            <Rive
-              url={riveAssets?.[0]?.uri}
-              artboardName="lamb-idle"
-              autoplay
-              style={{ width: '80%', height: '80%' }}
-              onError={(error) => {
-                console.warn('Rive animation error:', error);
-                // setRiveError(true);
-              }}
-            />
+          className="h-[200px] w-full justify-center items-center mb-4 -mt-12">
+          {riveAssets && (
+            IS_ANDROID ? (
+              <Rive
+                ref={riveRef}
+                resourceName="new_shepherd"
+                artboardName="[Main] Shpeherd"
+                stateMachineName="State Machine 1"
+                autoplay
+                style={{ width: '100%', height: '100%' }}
+                onError={(error) => {
+                  console.warn('Rive animation error:', error);
+                }}
+                onPlay={() => {
+                  // Set Level-Number to 1 when Rive starts playing (only once)
+                  if (!riveInitialized.current) {
+                    riveInitialized.current = true;
+                    setTimeout(() => {
+                      if (riveRef.current?.setInputState) {
+                        try {
+                          riveRef.current.setInputState('State Machine 1', 'Level-Number', 1);
+                          console.log('Set Rive Level-Number to 1 for onboarding');
+                        } catch (e) {
+                          console.log('Error setting Level-Number:', e);
+                        }
+                      }
+                    }, 100);
+                  }
+                }}
+              />
+            ) : (
+              riveAssets[0]?.uri && (
+                <Rive
+                  ref={riveRef}
+                  url={riveAssets[0].uri}
+                  artboardName="[Main] Shpeherd"
+                  stateMachineName="State Machine 1"
+                  autoplay
+                  style={{ width: '100%', height: '100%' }}
+                  onError={(error) => {
+                    console.warn('Rive animation error:', error);
+                  }}
+                  onPlay={() => {
+                    // Set Level-Number to 1 when Rive starts playing (only once)
+                    if (!riveInitialized.current) {
+                      riveInitialized.current = true;
+                      setTimeout(() => {
+                        if (riveRef.current?.setInputState) {
+                          try {
+                            riveRef.current.setInputState('State Machine 1', 'Level-Number', 1);
+                            console.log('Set Rive Level-Number to 1 for onboarding');
+                          } catch (e) {
+                            console.log('Error setting Level-Number:', e);
+                          }
+                        }
+                      }, 100);
+                    }
+                  }}
+                />
+              )
+            )
           )}
         </CustomAnimatedView>
 
@@ -229,8 +275,12 @@ export default function OnboardingLambNameScreen() {
         <CustomAnimatedView style={inputStyle}>
           <TextInput
             ref={inputRef}
-            className="font-feather text-3xl text-center text-textPrimary bg-white p-6 rounded-2xl border-4 border-border"
-            placeholder="Enter name"
+            className="font-feather text-3xl text-center text-textPrimary bg-white  rounded-2xl border-4 border-border"
+            style={{
+              paddingVertical: RPH(2),
+              paddingHorizontal: RPH(3),
+            }}
+            placeholder={i18n.t('onboarding_lamb_name_placeholder')}
             placeholderTextColor="#B89B4C"
             maxLength={16}
             value={inputLambName}
@@ -245,7 +295,7 @@ export default function OnboardingLambNameScreen() {
         {/* Continue Button */}
         <CustomAnimatedView style={buttonStyle} className="mt-0">
           <PrimaryButton
-            title="Continue"
+            title={i18n.t('continue_button')}
             onPress={handleContinue}
             disabled={!inputLambName.trim() || !!error}
             isActive={!!inputLambName.trim() && !error}

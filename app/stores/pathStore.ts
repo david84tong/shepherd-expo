@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Unit, PathOption } from '../models/Path'; // Import Unit and PathOption types
+import { Unit, PathOption, SHORTER_BIBLE_PATHS_2 } from '../models/Path'; // Import Unit and PathOption types
 
 // Type definition for a complete path object
 export interface PathInfo {
@@ -60,6 +60,12 @@ interface PathState {
   
   // Mark a unit as completed
   markUnitAsCompleted: (unitId: string) => void;
+  
+  // Update next unit preview based on completed units
+  updateNextUnitPreview: () => void;
+  
+  // Initialize next unit preview on app start
+  initializeNextUnitPreview: () => void;
 }
 
 export const usePathStore = create<PathState>()(
@@ -100,11 +106,15 @@ export const usePathStore = create<PathState>()(
       
       // Set selected path
       setSelectedPath: (path: PathOption) => {
+        
         set({ 
           selectedPath: path,
           selectedPathId: path.id,
           selectedPathTitle: path.title
         });
+        
+        // Update next unit preview after setting the path
+        get().updateNextUnitPreview();
       },
       
       // Set current path with all information
@@ -125,29 +135,73 @@ export const usePathStore = create<PathState>()(
           set((state) => ({
             completedUnitIds: [...state.completedUnitIds, unitId]
           }));
+          // Update next unit preview after marking as completed
+          get().updateNextUnitPreview();
         }
+      },
+      
+      // Update next unit preview based on completed units
+      updateNextUnitPreview: () => {
+        const state = get();
+        const { selectedPath, completedUnitIds } = state;
+        
+
+        if (!selectedPath) {
+          return;
+        }
+        
+        
+        // Get ordered paths based on selected path
+        const pathMap = Object.fromEntries(SHORTER_BIBLE_PATHS_2.map((p) => [p.id, p]));
+
+        const orderedPaths = selectedPath.order.map((id) => pathMap[id]).filter(Boolean);
+        
+        // Find the first uncompleted unit across all ordered paths
+        let nextUnit = null;
+        for (const path of orderedPaths) {
+          for (const unit of path.units) {
+            if (!completedUnitIds.includes(unit.id)) {
+              nextUnit = unit;
+              break;
+            }
+          }
+          if (nextUnit) break;
+        }
+        
+        if (nextUnit) {
+          set({ nextUnitPreview: nextUnit });
+        } else {
+          set({ nextUnitPreview: null });
+        }
+      },
+      
+      // Initialize next unit preview on app start
+      initializeNextUnitPreview: () => {
+        get().updateNextUnitPreview();
       },
     }),
     {
       name: 'shepherd-path-storage',
       storage: createJSONStorage(() => AsyncStorage),
-      partialize: (state) => ({
-        selectedPath: state.selectedPath,
-        savedBook: state.savedBook,
-        savedBookId: state.savedBookId,
-        savedChapter: state.savedChapter,
-        savedTranslation: state.savedTranslation,
-        selectedPathId: state.selectedPathId,
-        selectedPathTitle: state.selectedPathTitle,
-        selectedUnitId: state.selectedUnitId,
-        selectedUnitTitle: state.selectedUnitTitle,
-        startChapter: state.startChapter,
-        endChapter: state.endChapter,
-        selectedBookChapter: state.selectedBookChapter,
-        currentPath: state.currentPath,
-        completedUnitIds: state.completedUnitIds,
-        nextUnitPreview: state.nextUnitPreview,
-      }),
+      partialize: (state) => {
+        return {
+          selectedPath: state.selectedPath,
+          savedBook: state.savedBook,
+          savedBookId: state.savedBookId,
+          savedChapter: state.savedChapter,
+          savedTranslation: state.savedTranslation,
+          selectedPathId: state.selectedPathId,
+          selectedPathTitle: state.selectedPathTitle,
+          selectedUnitId: state.selectedUnitId,
+          selectedUnitTitle: state.selectedUnitTitle,
+          startChapter: state.startChapter,
+          endChapter: state.endChapter,
+          selectedBookChapter: state.selectedBookChapter,
+          currentPath: state.currentPath,
+          completedUnitIds: state.completedUnitIds,
+          nextUnitPreview: state.nextUnitPreview,
+        };
+      },
     }
   )
 );

@@ -10,10 +10,12 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import * as Notifications from 'expo-notifications';
 import analytics from '../../utils/analytics';
 import { useNotificationStore, NotificationTimeOption } from '../stores/notificationStore';
+import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
+import { hapticLight } from '~/utils/haptics';
 
 export default function OnboardingReminderTimeScreen() {
   const router = useRouter();
@@ -97,9 +99,7 @@ export default function OnboardingReminderTimeScreen() {
   const handleSelection = async (time: string) => {
     // Trigger light haptic feedback
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
-        console.log('Haptics not available');
-      });
+      hapticLight();
     } catch (error) {
       console.log('Haptics not available');
     }
@@ -136,21 +136,21 @@ export default function OnboardingReminderTimeScreen() {
           // Alert user that notifications won't work without permission
           console.log('📱 Onboarding: Notification permission denied');
           Alert.alert(
-            'Notification Permission Required',
-            'Without notification permission, we cannot send you reading reminders. You can enable this in your device settings.',
+            i18n.t('onboarding_reminder_time_permission_title'),
+            i18n.t('onboarding_reminder_time_permission_desc'),
             [
               {
-                text: 'Open Settings',
+                text: i18n.t('onboarding_reminder_time_open_settings'),
                 onPress: () => {
                   analytics.logEvent("Onboarding_Opened_SystemSettings_Notifications");
                   Linking.openSettings();
                 }
               },
               {
-                text: 'Continue Anyway',
+                text: i18n.t('onboarding_reminder_time_continue_anyway'),
                 style: 'default',
                 onPress: () => {
-                  router.push('/onboarding/rating');
+                  router.push('/onboarding/LoadingScreen');
                 }
               }
             ]
@@ -192,7 +192,7 @@ export default function OnboardingReminderTimeScreen() {
     }
 
     // Navigate to the next screen
-    router.push('/onboarding/rating');
+    router.push('/onboarding/LoadingScreen');
   };
 
   const options = [
@@ -201,40 +201,40 @@ export default function OnboardingReminderTimeScreen() {
       icon: 'sunny-outline',
       color: '#F7B500', // Yellow for morning sun
       bgColor: 'bg-lightYellow',
-      title: 'Morning (7-9 AM)',
-      description: 'Start your day with scripture',
+      title: i18n.t('onboarding_reminder_time_morning'),
+      description: i18n.t('onboarding_reminder_time_morning_desc'),
     },
     {
       id: 'afternoon',
       icon: 'partly-sunny-outline',
       color: '#FF8C1A', // Orange for afternoon
       bgColor: 'bg-lightOrange',
-      title: 'Afternoon (2-5 PM)',
-      description: 'Mid-day reflection time',
+      title: i18n.t('onboarding_reminder_time_afternoon'),
+      description: i18n.t('onboarding_reminder_time_afternoon_desc'),
     },
     {
       id: 'evening',
       icon: 'moon-outline',
       color: '#7B2BFF', // Purple for evening
       bgColor: 'bg-lightPurple',
-      title: 'Evening (6-8 PM)',
-      description: 'Wind down with God\'s word',
+      title: i18n.t('onboarding_reminder_time_evening'),
+      description: i18n.t('onboarding_reminder_time_evening_desc'),
     },
     {
       id: 'night',
       icon: 'star-outline',
       color: '#3040FF', // Blue for night sky
       bgColor: 'bg-lightIndigo',
-      title: 'Night (9-11 PM)',
-      description: 'Peaceful moments before sleep',
+      title: i18n.t('onboarding_reminder_time_night'),
+      description: i18n.t('onboarding_reminder_time_night_desc'),
     },
     {
       id: 'none',
       icon: 'notifications-off-outline',
       color: '#B89B4C', // Description color
       bgColor: 'bg-surfaceLight',
-      title: 'No reminders, please',
-      description: 'I\'ll remember on my own',
+      title: i18n.t('onboarding_reminder_time_none'),
+      description: i18n.t('onboarding_reminder_time_none_desc'),
     },
   ] as const;
 
@@ -246,14 +246,14 @@ export default function OnboardingReminderTimeScreen() {
         {/* Question Text */}
         <Animated.View style={titleStyle}>
           <Text className="font-feather text-h2 text-center text-textPrimary mb-4 ">
-            When would you like to be reminded to read?
+            {i18n.t('onboarding_reminder_time_question')}
           </Text>
         </Animated.View>
 
         {/* Subtext */}
         <Animated.View style={subtextStyle}>
           <Text className="font-din text-center text-description text-body mb-4">
-            This can be edited later in settings
+            {i18n.t('onboarding_reminder_time_subtext')}
           </Text>
         </Animated.View>
 
@@ -267,16 +267,20 @@ export default function OnboardingReminderTimeScreen() {
                   onPress={() => handleSelection(option.id)}
                   onPressIn={() => setPressedButton(option.id)}
                   onPressOut={() => setPressedButton(null)}
+                  style={{
+                    height: RPH(9),
+                    paddingHorizontal: RPH(1.5)
+                  }}
                   className={`
               my-2
-              h-[80px] bg-white rounded-card border-[3px] border-border px-4
+              bg-white rounded-card border-[3px] border-border 
               flex-row items-center shadow-buttonShadow
               ${pressedButton === option.id ? 'translate-y-[3px] shadow-none' : 'translate-y-0'}
               ${selectedOption === option.id ? 'border-accentGold bg-surfaceCream' : ''}
             `}
                 >
                   <View className={`${option.bgColor} rounded-xl p-3`}>
-                    <Ionicons name={option.icon as any} size={24} color={option.color} />
+                    <Ionicons name={option.icon as any} size={RPH(2.6)} color={option.color} />
                   </View>
                   <View className="ml-4 flex-1">
                     <Text className="font-feather text-lg text-textPrimary">{option.title}</Text>

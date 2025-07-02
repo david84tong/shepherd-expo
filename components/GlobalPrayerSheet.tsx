@@ -4,7 +4,6 @@ import BottomSheet, {
   BottomSheetBackdropProps,
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
-import * as Haptics from 'expo-haptics';
 import React, {
   useCallback,
   useEffect,
@@ -30,6 +29,7 @@ import { useUIStore } from '../app/stores/uiStore';
 import { useHomeStore } from '../app/stores/homeStore';
 import { KeyboardAvoidingView } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { hapticLight, hapticMedium } from '~/utils/haptics';
 interface PrayerSheetProps {
   prayerSheetRef: React.RefObject<PrayerSheetRef>;
   onPrayerGenerated?: () => void;
@@ -83,7 +83,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({ prayerSheetRef, onPrayerGener
     setIsCustomInput(isCustom); // Track if this is a custom or predefined topic
 
     // No need to increment count here, we'll only increment when actually generating the prayer
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    hapticLight();
   }, []);
 
   // Handle prayer generation
@@ -185,7 +185,7 @@ const PrayerSheet: React.FC<PrayerSheetProps> = ({ prayerSheetRef, onPrayerGener
     setOrderedTopics(getOrderedTopics().map((topic) => topic.name));
 
     bottomSheetRef.current?.expand();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    hapticMedium();
   }, [getOrderedTopics]);
 
   // Expose methods via ref
@@ -348,13 +348,13 @@ const styles = StyleSheet.create({
     marginVertical: 20,
   },
   prayerHeader: {
-    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderBottomWidth: 1,
     borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
   prayerInputContainer: {
     marginBottom: 30,
@@ -379,9 +379,9 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   prayerTitle: {
-    fontSize: 18,
-    fontFamily: 'Nunito-Black',
     color: '#3C584A',
+    fontFamily: 'Nunito-Black',
+    fontSize: 18,
   },
   prayerTopicButton: {
     backgroundColor: 'white',

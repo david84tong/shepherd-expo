@@ -2,12 +2,12 @@ import React, { useLayoutEffect } from 'react';
 import { View, Text, Modal, TouchableOpacity, Dimensions } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withDelay, withTiming, withSpring } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
 import { useAssets } from 'expo-asset';
 import Rive from 'rive-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useUserStore } from '../app/stores/userStore';
 import { IS_ANDROID } from '../app/utils/utils';
+import { hapticLight } from '~/utils/haptics';
 
 interface HeartsExplainerModalProps {
   visible: boolean;
@@ -41,11 +41,11 @@ export default function HeartsExplainerModal({ visible, onClose }: HeartsExplain
       titleTranslateY.value = 20;
       cardOpacities.forEach((v, i) => (v.value = 0));
       cardTranslateYs.forEach((v, i) => (v.value = 40));
-      
+
       // Animate title
       titleOpacity.value = withDelay(100, withTiming(1, { duration: 400 }));
       titleTranslateY.value = withDelay(100, withSpring(0, { damping: 18, stiffness: 90 }));
-      
+
       // Animate cards staggered
       cardOpacities.forEach((v, i) => {
         v.value = withDelay(300 + i * 120, withTiming(1, { duration: 400 }));
@@ -56,7 +56,7 @@ export default function HeartsExplainerModal({ visible, onClose }: HeartsExplain
 
   // Handle close with haptic feedback
   const handleClose = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    hapticLight();
     onClose();
   };
 
@@ -112,16 +112,16 @@ export default function HeartsExplainerModal({ visible, onClose }: HeartsExplain
     >
       <View className="flex-1 bg-surfaceCream" style={{ paddingTop: 0 }}>
         {/* Header with X button */}
-                 <View className="flex-row justify-between items-center px-6 pt-12">
-           <TouchableOpacity
+        <View className="flex-row justify-between items-center px-6 pt-12">
+          <TouchableOpacity
             onPress={handleClose}
             className="w-8 h-8 rounded-full bg-gray-200 items-center justify-center"
             activeOpacity={0.7}
           >
             <Ionicons name="close" size={20} color="#3C584A" />
           </TouchableOpacity>
-           <Text className="font-feather text-xl text-textPrimary"></Text>
-           <View className="w-8" />
+          <Text className="font-feather text-xl text-textPrimary"></Text>
+          <View className="w-8" />
 
         </View>
 
@@ -156,14 +156,14 @@ export default function HeartsExplainerModal({ visible, onClose }: HeartsExplain
               >
                 {riveAssets && (
                   <View className="w-36 h-36">
-                                         <Rive
-                       {...(IS_ANDROID 
-                         ? { resourceName: 'home_lamb' }
-                         : { url: riveAssets[0].uri! }
-                       )}
-                       artboardName={state.artboard}
-                       style={{ width: '100%', height: '100%' }}
-                     />
+                    <Rive
+                      {...(IS_ANDROID
+                        ? { resourceName: 'home_lamb' }
+                        : { url: riveAssets[0].uri! }
+                      )}
+                      artboardName={state.artboard}
+                      style={{ width: '100%', height: '100%' }}
+                    />
                   </View>
                 )}
                 <View className="absolute top-2.5 right-2.5 bg-lightRed px-4 py-1 rounded-full">

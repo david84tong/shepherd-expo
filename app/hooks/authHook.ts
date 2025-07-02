@@ -1,17 +1,54 @@
 // authStore.ts
 
-import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
+import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as WebBrowser from 'expo-web-browser';
 import { useState, useEffect } from 'react';
-import { Platform } from 'react-native';
+import { Platform, NativeModules } from 'react-native';
 import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import Constants from 'expo-constants';
 import { useUserStore } from '../stores/userStore';
+import { useSoundStore } from '../stores/soundStore';
 import analytics from '../../utils/analytics';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { syncStreakDataToWidget } from '~/utils/widgetSync';
+
+// Safely get WidgetDataSharer with error handling
+const getWidgetDataSharer = () => {
+  try {
+    const { WidgetDataSharer } = NativeModules;
+    if (!WidgetDataSharer) {
+      console.warn('📱 WidgetDataSharer native module not found');
+      return null;
+    }
+    return WidgetDataSharer;
+  } catch (error) {
+    console.error('📱 Error accessing WidgetDataSharer:', error);
+    return null;
+  }
+};
+
+// Helper function to safely call widget methods
+const safeWidgetCall = (method: string, ...args: any[]) => {
+  const widgetModule = getWidgetDataSharer();
+  if (!widgetModule) {
+    console.warn(`📱 Cannot call ${method} - WidgetDataSharer not available`);
+    return;
+  }
+  
+  try {
+    if (method === 'updateVerseData' && widgetModule.updateVerseData) {
+      widgetModule.updateVerseData(...args);
+    } else if (method === 'updateWidgetStatus' && widgetModule.updateWidgetStatus) {
+      widgetModule.updateWidgetStatus(...args);
+    } else {
+      console.warn(`📱 Method ${method} not available on WidgetDataSharer`);
+    }
+  } catch (error) {
+    console.error(`📱 Error calling ${method}:`, error);
+  }
+};
 
 // Helper function to check if user is signed in
 export const isSignedIn = () => {
@@ -31,7 +68,7 @@ export const checkUserExists = async (uid: string): Promise<boolean> => {
 };
 
 // useAuth.ts hook
-export function useAuth() {
+export const useAuth = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -44,6 +81,9 @@ export function useAuth() {
   useEffect(() => {
     const unsubscribe = auth().onAuthStateChanged((user) => {
       setIsAuthenticated(user !== null);
+      if (user === null) {
+        safeWidgetCall('updateWidgetStatus', 'loggedOut');
+      }
     });
 
     return () => unsubscribe();
@@ -154,13 +194,11 @@ export function useAuth() {
       console.log('[Auth] User document updated in Firestore');
 
       // Update local store
-      useUserStore.getState().setUser({
+      updateUser({
         id: uid,
         displayName,
         email: email || undefined,
       });
-      setCreatedAt(firestore.Timestamp.now());
-      setUpdatedAt(firestore.Timestamp.now());
 
       // Wait for auth state to be ready before fetching data
       await new Promise((resolve) => setTimeout(resolve, 5000));
@@ -232,12 +270,11 @@ export function useAuth() {
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
 
       // Update local store
-      useUserStore.getState().setUser({
+      updateUser({
         id: uid,
         displayName: 'Anonymous User',
       });
-      setCreatedAt(firestore.Timestamp.now());
-      setUpdatedAt(firestore.Timestamp.now());
+
       syncStreakDataToWidget(0, firestore.Timestamp.now()?.toDate());
       // Log successful anonymous sign in
       if (analytics.isInitialized) {
@@ -361,13 +398,11 @@ export function useAuth() {
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Update local store with basic info first
-      useUserStore.getState().setUser({
+      updateUser({
         id: uid,
         displayName: userDoc.displayName,
         email: userDoc.email,
       });
-      setCreatedAt(firestore.Timestamp.now());
-      setUpdatedAt(firestore.Timestamp.now());
 
       // Fetch the complete user data to ensure all fields are synced
       await fetchFromFirestore({ currentLoggedUser: userCredential?.user });
@@ -405,13 +440,23 @@ export function useAuth() {
 
       await auth().signOut();
 
+      // Stop background music when signing out
+      useSoundStore.getState().stopBackgroundMusic();
+
       if (Platform.OS === 'android' && !isAnonymous) {
         await GoogleSignin.revokeAccess?.();
       }
 
+      // Clear widget data when signing out
+      safeWidgetCall('updateWidgetStatus', 'loggedOut');
+
       // await subscriptionStore.logoutAdaptyUser();
     } catch (error) {
       console.log('[Auth] Error during sign out:', error);
+      
+      // Stop background music even if there was an error
+      useSoundStore.getState().stopBackgroundMusic();
+      
       throw error;
     }
   };
@@ -422,25 +467,7 @@ export function useAuth() {
       setLoading(true);
       setError(null);
 
-      // Check if user already exists by trying to sign in
-      try {
-        await auth().signInWithEmailAndPassword(email, password);
-        // If we get here, the user exists
-        await auth().signOut(); // Sign out immediately
-        throw new Error('EXISTS');
-      } catch (err: any) {
-        // If error code is user-not-found, proceed with signup
-        if (err.code !== 'auth/user-not-found') {
-          if (err.message === 'EXISTS') {
-            throw new Error(
-              'An account with this email already exists. Would you like to login instead?'
-            );
-          }
-          throw err;
-        }
-      }
-
-      // Create user with email and password
+      // Try to create the user directly - Firebase will throw an error if the email already exists
       const userCredential = await auth().createUserWithEmailAndPassword(email, password);
       console.log('[Auth] Email/Password sign-up successful, uid:', userCredential.user.uid);
 
@@ -460,13 +487,11 @@ export function useAuth() {
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
 
       // Update local store
-      useUserStore.getState().setUser({
+      updateUser({
         id: uid,
         displayName,
         email,
       });
-      setCreatedAt(firestore.Timestamp.now());
-      setUpdatedAt(firestore.Timestamp.now());
 
       // Wait for auth state to be ready before fetching data
       await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -482,11 +507,27 @@ export function useAuth() {
       }
 
       return userCredential.user;
-    } catch (err) {
+    } catch (err: any) {
       const error = err as Error;
+      
+      // Handle specific Firebase auth errors
+      if (err.code === 'auth/email-already-in-use') {
+        error.message = 'An account with this email already exists. Would you like to login instead?';
+      } else if (err.code === 'auth/invalid-email') {
+        error.message = 'Please enter a valid email address.';
+      } else if (err.code === 'auth/weak-password') {
+        error.message = 'Password should be at least 6 characters long.';
+      } else if (err.code === 'auth/operation-not-allowed') {
+        error.message = 'Email/password accounts are not enabled. Please contact support.';
+      } else {
+        // Generic error for other cases
+        error.message = 'Unable to create account. Please try again.';
+      }
+      
       if (analytics.isInitialized) {
         analytics.logError('Authentication error', 'email_signup_failed', {
           error_message: error.message,
+          error_code: err.code,
         });
       }
       setError(error);
@@ -526,7 +567,7 @@ export function useAuth() {
 
       // Update local store
       const { uid, displayName } = userCredential.user;
-      useUserStore.getState().setUser({
+      updateUser({
         id: uid,
         displayName: displayName || 'Email User',
         email,
@@ -633,9 +674,9 @@ export function useAuth() {
 
   return {
     user,
+    isAuthenticated,
     loading,
     error,
-    isAuthenticated,
     signInWithApple,
     signInWithGoogle,
     signInAnonymously,
@@ -646,6 +687,9 @@ export function useAuth() {
     getFirebaseIdToken,
     upgradeAnonymousToApple,
   };
-}
+};
 
 WebBrowser.maybeCompleteAuthSession();
+
+// Default export for Expo Router compatibility
+export default {}

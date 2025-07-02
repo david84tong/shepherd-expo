@@ -133,7 +133,7 @@ See these files for implementation examples:
 
 - `app/onboarding/2.tsx` - Simple screen with standard button
 - `app/onboarding/1.tsx` - Complex screen with multiple interaction points
-- `app/onboarding/8.tsx` - Screen with selection options
+- `app/onboarding/7.tsx` - Screen with selection options
 - `utils/analytics-usage-example.tsx` - Comprehensive example component
 
 ## Adding Analytics to New Features

@@ -1,5 +1,14 @@
 import React, { useRef, useLayoutEffect, useState, useEffect } from 'react';
-import { View, Text, SafeAreaView, Image, TouchableOpacity, Platform, ActivityIndicator, StatusBar } from 'react-native';
+import {
+  View,
+  Text,
+  SafeAreaView,
+  Image,
+  TouchableOpacity,
+  Platform,
+  ActivityIndicator,
+  StatusBar,
+} from 'react-native';
 import Lottie from 'lottie-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -13,6 +22,7 @@ import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import { useRouter } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
+import { RPH, RPW } from '../helper/helper';
 
 const Rating = () => {
   const insets = useSafeAreaInsets();
@@ -100,7 +110,7 @@ const Rating = () => {
   const screenStyle = useAnimatedStyle(() => ({
     opacity: screenOpacity.value,
     flex: 1,
-    backgroundColor: '#FFF4D9',
+    backgroundColor: '#FDEBB8',
   }));
 
   const titleStyle = useAnimatedStyle(() => ({
@@ -150,7 +160,12 @@ const Rating = () => {
 
   const handleIRatedPress = () => {
     analytics.logEvent('RatingScreen_Tapped_IRated');
-    router.push('/onboarding/LoadingScreen');
+    router.push({
+      pathname: '/onboarding/LoadingScreen',
+      params: {
+        isOnboarding: 'true',
+      },
+    });
   };
 
   // Show loading indicator while assets load
@@ -174,29 +189,29 @@ const Rating = () => {
           <View className="flex-1 px-6 pt-6 items-center">
             {/* Title at the top */}
             <Animated.View style={titleStyle}>
-              <Text className="font-feather-bold text-3xl text-center text-textPrimary mb-4 mt-12">
+              <Text style={{marginTop:RPH(3),marginBottom:RPH(1)}} className="font-feather text-3xl text-center text-textPrimary ">
                 Support our small team!
               </Text>
-              <Text className="font-feather-bold text-xl text-center text-description ">
+              <Text className="font-feather text-xl text-center text-description ">
                 Help spread the word
               </Text>
             </Animated.View>
 
             {/* Centered stars animation */}
-            <Animated.View style={starsStyle} className="justify-center items-center mb-6 -mt-24">
+            <Animated.View style={starsStyle} className="justify-center items-center mb-6">
               <Lottie
                 source={require('../../assets/riveAnimations/stars.json')}
                 autoPlay
                 loop={false}
-                style={{ width: 350, height: 300 }}
+                style={{ width: RPW(100), height: RPH(11) }}
               />
             </Animated.View>
 
             {/* shepherd Ratings image */}
-            <Animated.View style={imageStyle} className="items-center -mt-48 mb-12">
+            <Animated.View style={imageStyle} className="items-center mb-12">
               <Image
                 source={require('../../assets/onboarding/shepReviews.png')}
-                style={{ width: 400, height: 420, resizeMode: 'cover' }}
+                style={{ width: 500, height: RPH(45), resizeMode: 'contain' }}
                 defaultSource={require('../../assets/icon.png')}
                 className={`rounded ${Platform.OS === 'ios' ? 'shadow-md' : undefined}`}
               />

@@ -1,125 +1,583 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, Text, Animated, Easing, Dimensions, ActivityIndicator, StatusBar } from 'react-native';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
+import {
+  View,
+  Text,
+  Animated,
+  Easing,
+  Dimensions,
+  StatusBar,
+} from 'react-native';
 import { GLView, ExpoWebGLRenderingContext } from 'expo-gl';
 import { Renderer } from 'expo-three';
-// @ts-ignore: If you get type errors for 'three', install @types/three for type support
+// @ts-expect-error: If you get type errors for 'three', install @types/three for type support
 import * as THREE from 'three';
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useDevotionalStore } from '~/app/stores/devotionalStore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ONBOARDING_COMPLETED_KEY } from '~/app/models/Onboarding';
+import i18n from '~/app/utils/i18n';
+import useSubscriptionStore from '~/app/stores/subscriptionStore';
+import { PAYWALL_RESULT } from 'react-native-purchases-ui';
+import analytics from '~/utils/analytics';
+import { hapticHeavy } from '~/utils/haptics';
 
 const { width, height } = Dimensions.get('window');
 
 const ORANGE = '#FCD34D';
-const DARK_BG = '#FFF4D9';
+const DARK_BG = '#FDEBB8';
 const TEXT_PRIMARY = '#3C584A';
 const DESCRIPTION = '#B89B4C';
 const GRAY_400 = '#9ca3af';
 const GRAY_500 = '#6b7280';
 
 const LOADING_POINTS = [
-  "Saving your responses",
-  "Encrypting your data",
-  "Sprinkling some holy water",
-  "Generating your custom bible study plan"
+  i18n.t('loading_saving_responses'),
+  i18n.t('loading_encrypting_data'),
+  i18n.t('loading_sprinkling_holy_water'),
+  i18n.t('loading_generating_study_plan'),
+];
+
+const DEVOTIONAL_LOADING_POINTS = [
+  i18n.t('loading_crafting_devotional'),
+  i18n.t('loading_cross_checking_verses'),
+  i18n.t('loading_sprinkling_holy_water'),
+  i18n.t('loading_waking_lamb'),
 ];
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
-export default function LoadingScreen() {
+interface LoadingScreenProps {
+  isOnboarding?: boolean;
+  verseText?: string;
+  reference?: string;
+}
+
+// Optimize loading points timing
+const STEP_DURATION = 1500; // Duration for each step
+const FINAL_DELAY = 500; // Reduced from 600ms
+
+export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseText: propVerseText, reference: propReference }: LoadingScreenProps) {
   const [currentStep, setCurrentStep] = useState(0);
-  const [anim, setAnim] = useState(0);
   const animRef = useRef(0);
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const [hasStarted, setHasStarted] = useState(false);
+  const [onboardingCompleted, setOnboardingCompleted] = useState<boolean | null>(null);
+  const lastHapticPercentage = useRef(0);
+
+  // Get custom devotional from store FIRST - needs to be before useEffect
+  const customDevotional = useDevotionalStore((s) => s.customDevotional);
+  const isFromCheckInStore = useDevotionalStore((s) => s.isFromCheckIn);
+
+  // Check onboarding completion status
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      try {
+        // If we're from check-in, skip onboarding check entirely
+        if (isFromCheckInStore) {
+          console.log('[LoadingScreen] Skipping onboarding check - from check-in');
+          setOnboardingCompleted(true); // Treat as completed to prevent redirect
+          return;
+        }
+        
+        const completed = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+        setOnboardingCompleted(completed === 'true');
+        console.log('[LoadingScreen] Onboarding completed status:', completed === 'true');
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
+        setOnboardingCompleted(false);
+      }
+    };
+    checkOnboardingStatus();
+  }, [isFromCheckInStore]);
+
+  // Check if this is from check-in flow - MUST be defined before isOnboarding
+  const isCheckInFlow = useMemo(() => {
+    // Check store flag first as it's the most reliable
+    if (isFromCheckInStore) {
+      console.log('[LoadingScreen] Check-in flow detected from store');
+      return true;
+    }
+    // Then check params
+    if (params.isCheckInFlow === 'true' || params.fromCheckIn === 'true') {
+      console.log('[LoadingScreen] Check-in flow detected from params');
+      return true;
+    }
+    return false;
+  }, [isFromCheckInStore, params.isCheckInFlow, params.fromCheckIn]);
+
+  // Stabilize critical route-derived values
+  const isOnboarding = useMemo(() => {
+    // Check-in flow overrides everything
+    if (isCheckInFlow) {
+      console.log('[LoadingScreen] isOnboarding: false (check-in flow)');
+      return false;
+    }
+    if (params.fromSwipe === 'true') {
+      console.log('[LoadingScreen] isOnboarding: false (from swipe)');
+      return false;
+    }
+    // Use onboarding completion status if available, otherwise fall back to params/props
+    if (onboardingCompleted !== null) {
+      const result = !onboardingCompleted;
+      console.log('[LoadingScreen] isOnboarding:', result, '(based on completion status)');
+      return result;
+    }
+    const result = params.isOnboarding !== undefined ? params.isOnboarding === 'true' : propIsOnboarding;
+    console.log('[LoadingScreen] isOnboarding:', result, '(from params/props)');
+    return result;
+  }, [params.fromSwipe, params.isOnboarding, propIsOnboarding, onboardingCompleted, isCheckInFlow]);
+
+  const verseText = useMemo(() =>
+    (params.verseText as string | undefined) || propVerseText,
+    [params.verseText, propVerseText]
+  );
+
+  const reference = useMemo(() =>
+    (params.reference as string | undefined) || propReference,
+    [params.reference, propReference]
+  );
+
+  // Devotional store actions
+  const isCreatingDevotional = useDevotionalStore((s) => s.isCreatingDevotional);
+  const devotionalStoreCurrentDevotional = useDevotionalStore((s) => s.currentDevotional);
+  const devotionalError = useDevotionalStore((s) => s.error);
+
+  // Check if user is pro and get paywall function
+  const isProMember = useSubscriptionStore((s) => s.isProMember);
+  const { presentFreeTrialPaywall } = useSubscriptionStore();
+
+  // Use appropriate loading points
+  const loadingPoints = useMemo(() => {
+    if (isOnboarding) return LOADING_POINTS;
+    if (isCheckInFlow) return DEVOTIONAL_LOADING_POINTS;
+    return DEVOTIONAL_LOADING_POINTS;
+  }, [isOnboarding, isCheckInFlow]);
+
+  // Add loading state for API call
+  const [apiLoadingState, setApiLoadingState] = useState<'idle' | 'loading' | 'completed' | 'error'>('idle');
+
+  // Monitor API loading state
+  useEffect(() => {
+    if (!isOnboarding) {
+      console.log('[LoadingScreen] API State Monitor:', {
+        isCreatingDevotional,
+        hasCustomDevotional: !!customDevotional,
+        hasCurrentDevotional: !!devotionalStoreCurrentDevotional,
+        hasError: !!devotionalError,
+        isCheckInFlow,
+        currentApiState: apiLoadingState
+      });
+      
+      if (isCreatingDevotional) {
+        setApiLoadingState('loading');
+      } else if (isCheckInFlow && customDevotional) {
+        // Keep as 'loading' for now; we'll mark it completed once the checklist finishes
+        setApiLoadingState('loading');
+      } else if (customDevotional || devotionalStoreCurrentDevotional) {
+        // Check for either customDevotional or currentDevotional
+        console.log('[LoadingScreen] Setting API state to completed - devotional ready');
+        setApiLoadingState('completed');
+      } else if (devotionalError) {
+        setApiLoadingState('error');
+      }
+    }
+  }, [isOnboarding, isCreatingDevotional, devotionalStoreCurrentDevotional, devotionalError, isCheckInFlow, customDevotional]);
 
   // Animation values for checklist items
   const animValuesRef = useRef(
-    Array(LOADING_POINTS.length)
+    Array(loadingPoints.length)
       .fill(0)
       .map(() => new Animated.Value(0))
   );
 
-  // Spinner rotation animation value (only one, for the current loading item)
-  const spinnerAnim = useRef(new Animated.Value(0)).current;
+  // Spinner animation values for each step
+  const spinnerAnimsRef = useRef(
+    Array(loadingPoints.length)
+      .fill(0)
+      .map(() => new Animated.Value(0))
+  );
+
+  // Track which steps have been animated
+  const animatedStepsRef = useRef(new Set<number>());
+
+  // Progress animation - Always start from 0
+  const progressAnim = useRef(new Animated.Value(0)).current;
+  const [progressValue, setProgressValue] = useState(0);
+  const CIRCLE_RADIUS = 52;
+  const CIRCLE_CIRCUM = 2 * Math.PI * CIRCLE_RADIUS;
+  
+  // Track if we've started animating to prevent jumping to 100%
+  const hasStartedAnimating = useRef(false);
+  const [animationComplete, setAnimationComplete] = useState(false);
+
+  // Listen to animation updates and sync progressValue
   useEffect(() => {
-    spinnerAnim.setValue(0); // Reset to 0 on each new step
-    const loop = Animated.loop(
+    const listenerId = progressAnim.addListener(({ value }) => {
+      setProgressValue(value);
+    });
+    return () => {
+      progressAnim.removeListener(listenerId);
+    };
+  }, [progressAnim]);
+
+  // Cleanup function
+  useEffect(() => {
+    return () => {
+      setHasStarted(false);
+      animatedStepsRef.current.clear();
+      hasStartedAnimating.current = false;
+      progressAnim.setValue(0); // Reset progress to 0
+      lastHapticPercentage.current = 0; // Reset haptic tracking
+      setAnimationComplete(false); // Reset animation complete state
+      setApiLoadingState('idle'); // Reset API loading state
+    };
+  }, [progressAnim]);
+
+  // Start spinner animation for the current step
+  useEffect(() => {
+    if (!hasStarted || currentStep >= loadingPoints.length) return;
+
+    const spinnerAnim = spinnerAnimsRef.current[currentStep];
+    spinnerAnim.setValue(0);
+    const spinnerLoop = Animated.loop(
       Animated.timing(spinnerAnim, {
         toValue: 1,
-        duration: 1200, // Smoother
+        duration: 1200,
         easing: Easing.linear,
         useNativeDriver: true,
       })
     );
-    loop.start();
-    return () => loop.stop();
-  }, [currentStep]);
+    spinnerLoop.start();
+    return () => spinnerLoop.stop();
+  }, [currentStep, hasStarted, loadingPoints.length]);
 
-  // Animate glow
+  // Animate glow effect using requestAnimationFrame
   useEffect(() => {
-    let frame: number;
-    const animate = () => {
-      animRef.current += 0.02;
-      setAnim(animRef.current);
-      frame = requestAnimationFrame(animate);
+    let frameId: number;
+    let lastTime = performance.now();
+    const targetFPS = 60;
+    const frameInterval = 1000 / targetFPS;
+
+    const animate = (currentTime: number) => {
+      const deltaTime = currentTime - lastTime;
+
+      if (deltaTime >= frameInterval) {
+        animRef.current += 0.02;
+        lastTime = currentTime;
+      }
+
+      frameId = requestAnimationFrame(animate);
     };
-    animate();
-    return () => cancelAnimationFrame(frame);
+
+    frameId = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frameId);
   }, []);
 
-  // Step-by-step checklist progression
+  // Initialize animation sequence
   useEffect(() => {
-    if (currentStep < LOADING_POINTS.length) {
-      const timer = setTimeout(() => {
-        setCurrentStep((step) => step + 1);
-      }, 2000); // Slower: 2 seconds per checklist step
-      return () => clearTimeout(timer);
-    } else {
-      // All steps complete, navigate
-      setTimeout(() => {
-        router.replace({ pathname: '/PricingScreen', params: { animateFromBottom: 'true' } });
-      }, 600);
+    if (!hasStarted) {
+      // Ensure progress starts at 0
+      progressAnim.setValue(0);
+      setProgressValue(0);
+      
+      const startTimer = setTimeout(() => {
+        setHasStarted(true);
+        // Don't set currentStep here - let it stay at 0
+      }, 100);
+      return () => clearTimeout(startTimer);
     }
-  }, [currentStep, router]);
+  }, [hasStarted, progressAnim]);
 
-  // Animate the current checklist item when it appears
+  // Handle step progression with optimized timing
   useEffect(() => {
-    if (currentStep < LOADING_POINTS.length) {
+    if (!hasStarted) return;
+
+    let timer: NodeJS.Timeout;
+    
+    // Add initial delay for the first step to allow smooth start
+    const delay = currentStep === 0 ? 300 : STEP_DURATION;
+
+    if (isOnboarding) {
+      // Onboarding flow - keep existing timer-based progress unchanged
+      if (currentStep < loadingPoints.length) {
+        timer = setTimeout(() => {
+          setCurrentStep(prev => prev + 1);
+        }, delay);
+      } else {
+        timer = setTimeout(async () => {
+          // Get A/B test value to determine which pricing screen to show
+          let abTestValue = 0; // Default value
+          try {
+            const storedAbTest = await AsyncStorage.getItem('abTest');
+            if (storedAbTest !== null) {
+              abTestValue = parseInt(storedAbTest, 10);
+              console.log('[LoadingScreen] Retrieved A/B test value:', abTestValue);
+            } else {
+              console.log('[LoadingScreen] No A/B test value found, using default:', abTestValue);
+            }
+          } catch (abTestError) {
+            console.error('[LoadingScreen] Error retrieving A/B test value:', abTestError);
+          }
+
+          // Track onboarding loading completion with A/B test info
+          analytics.logEvent('LoadingScreen_Onboarding_Completed', {
+            totalSteps: loadingPoints.length,
+            timeSpent: currentStep * STEP_DURATION + FINAL_DELAY,
+            abTestGroup: abTestValue,
+            redirectTo: abTestValue === 0 ? 'PricingScreen' : 'OldPricingScreen',
+          });
+
+          // Navigate based on A/B test value - but skip if from check-in
+          if (!isCheckInFlow) {
+            console.log('[LoadingScreen] Navigating to pricing screen (not check-in flow)');
+            if (abTestValue === 0) {
+              router.push('/PricingScreen');
+            } else {
+              router.push('/onboarding/pricing/OldPricingScreen');
+            }
+          } else {
+            console.log('[LoadingScreen] Skipping pricing navigation (check-in flow detected)');
+          }
+        }, FINAL_DELAY);
+      }
+    } else {
+      // For custom devotional creation - consistent timing
+      if (currentStep < loadingPoints.length) {
+        // Match the step duration with onboarding for consistency
+        timer = setTimeout(() => {
+          setCurrentStep(prev => prev + 1);
+        }, delay);
+      }
+      // Note: The actual navigation is handled by the monitoring effect below
+    }
+
+    return () => clearTimeout(timer);
+  }, [currentStep, hasStarted, isOnboarding, loadingPoints.length, router]);
+
+  // Optimize checklist animation timing - same for both modes
+  useEffect(() => {
+    if (!hasStarted) return;
+
+    // Animate steps one by one for both onboarding and devotional
+    if (currentStep < loadingPoints.length && !animatedStepsRef.current.has(currentStep)) {
+      animatedStepsRef.current.add(currentStep);
+      animValuesRef.current[currentStep].setValue(0);
       Animated.timing(animValuesRef.current[currentStep], {
         toValue: 1,
-        duration: 400,
+        duration: 300, // Consistent duration for both modes
         useNativeDriver: true,
       }).start();
     }
-  }, [currentStep]);
+  }, [currentStep, hasStarted, loadingPoints.length]);
 
-  // Animated progress value for smooth circular progress bar
-  const progressAnim = useRef(new Animated.Value(0)).current;
-  const CIRCLE_RADIUS = 52;
-  const CIRCLE_CIRCUM = 2 * Math.PI * CIRCLE_RADIUS;
-
+  // Optimize progress animation timing
   useEffect(() => {
-    Animated.timing(progressAnim, {
-      toValue: currentStep / LOADING_POINTS.length,
-      duration: 700,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: false, // SVG props can't use native driver
-    }).start();
-  }, [currentStep]);
+    if (!hasStarted) return;
 
-  // Build checklist state (stepper style)
-  const checklist = LOADING_POINTS.map((label, idx) => {
-    if (idx < currentStep) return { label, status: 'done' };
-    if (idx === currentStep) return { label, status: 'loading' };
-    return { label, status: 'pending' };
-  }).slice(0, currentStep + 1);
+    // Calculate progress based on current step
+    const progress = currentStep / loadingPoints.length;
+    const currentPercentage = Math.round(progress * 100);
+
+    // Trigger heavy haptic feedback at 25%, 50%, 75%, and 100%
+    const hapticThresholds = [25, 50, 75, 100];
+    for (const threshold of hapticThresholds) {
+      if (currentPercentage >= threshold && lastHapticPercentage.current < threshold) {
+        hapticHeavy();
+        lastHapticPercentage.current = threshold;
+        break;
+      }
+    }
+
+    // Mark that we've started animating
+    if (!hasStartedAnimating.current && hasStarted) {
+      hasStartedAnimating.current = true;
+    }
+
+    // Calculate animation duration to match step progression
+    // Animation should be smooth and match the step duration
+    const animationDuration = STEP_DURATION - 200; // Slightly less than step duration for smooth transition
+    
+    Animated.timing(progressAnim, {
+      toValue: progress,
+      duration: animationDuration,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: false,
+    }).start(() => {
+      // Mark animation as complete when progress reaches 100%
+      if (progress >= 1) {
+        setAnimationComplete(true);
+      }
+    });
+  }, [currentStep, hasStarted, loadingPoints.length, progressAnim, isOnboarding]);
+
+  // Ensure check-in flow only marks API as completed once the checklist animation is finished
+  useEffect(() => {
+    if (!isOnboarding && isCheckInFlow && customDevotional && apiLoadingState === 'loading') {
+      if (currentStep >= loadingPoints.length - 1) {
+        setApiLoadingState('completed');
+      }
+    }
+  }, [isOnboarding, isCheckInFlow, customDevotional, apiLoadingState, currentStep, loadingPoints.length]);
+
+  // Build checklist state
+  const checklist = useMemo(() => {
+    // Use the same logic for both onboarding and devotional - show steps one by one
+    return loadingPoints.map((label, idx) => {
+      if (idx < currentStep) return { label, status: 'done' };
+      if (idx === currentStep) return { label, status: 'loading' };
+      return { label, status: 'pending' };
+    }).slice(0, Math.max(1, currentStep + 1));
+  }, [loadingPoints, currentStep]);
+
+  // Helper function to show paywall for non-pro users
+  const showPaywallForNonProUser = useCallback(async () => {
+    analytics.logEvent('LoadingScreen_Custom_Devotional_Paywalled', {
+      isProMember: false,
+      verseText: verseText || 'unknown',
+      reference: reference || 'unknown',
+      totalLoadingTime: currentStep * STEP_DURATION,
+    });
+
+    const timer = setTimeout(async () => {
+      try {
+        // Set the fromScreen property for tracking
+        useSubscriptionStore.getState().setFromScreen('CustomDevotional');
+
+        // Show the paywall
+        const result = await presentFreeTrialPaywall();
+
+        // Handle paywall result
+        if (result === PAYWALL_RESULT.PURCHASED || result === PAYWALL_RESULT.RESTORED) {
+          // User upgraded - navigate to home with devotional
+          analytics.logEvent('LoadingScreen_Custom_Devotional_Created', {
+            isProMember: true,
+            verseText: verseText || 'unknown',
+            reference: reference || 'unknown',
+            totalLoadingTime: currentStep * STEP_DURATION,
+            upgradedFromPaywall: true,
+          });
+          router.navigate({
+            pathname: '/(tabs)',
+            params: { showDevotional: 'true' }
+          });
+        } else {
+          // User cancelled or error - go back to Bible tab
+          analytics.logEvent('LoadingScreen_Custom_Devotional_Paywall_Cancelled', {
+            paywallResult: result,
+            verseText: verseText || 'unknown',
+            reference: reference || 'unknown',
+          });
+          router.navigate('/(tabs)/bible');
+        }
+      } catch (error) {
+        console.error('Error showing paywall:', error);
+        analytics.logEvent('LoadingScreen_Custom_Devotional_Paywall_Error', {
+          error: error instanceof Error ? error.message : 'unknown',
+          verseText: verseText || 'unknown',
+          reference: reference || 'unknown',
+        });
+        // Fallback - go to Bible tab
+        router.navigate('/(tabs)/bible');
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [presentFreeTrialPaywall, verseText, reference, currentStep, router]);
+
+  // Monitor devotional creation progress - MODIFIED for API-based progress
+  useEffect(() => {
+    if (!isOnboarding) {
+      console.log('[LoadingScreen] Navigation check:', {
+        apiLoadingState,
+        isProMember,
+        isCheckInFlow,
+        hasCustomDevotional: !!customDevotional,
+        hasDevotional: !!devotionalStoreCurrentDevotional,
+        hasError: !!devotionalError,
+        currentStep,
+        totalSteps: loadingPoints.length
+      });
+
+      // Only navigate after all steps are complete AND animation has finished
+      if (currentStep >= loadingPoints.length && animationComplete) {
+        // For check-in flow, check if custom devotional is ready
+        if (isCheckInFlow && customDevotional && apiLoadingState === 'completed') {
+          // Check-in devotional ready - navigate to DevotionalReader
+          console.log('[LoadingScreen] All steps complete and check-in devotional ready, navigating to DevotionalReader');
+
+          analytics.logEvent('LoadingScreen_CheckIn_Devotional_Ready', {
+            totalLoadingTime: loadingPoints.length * STEP_DURATION,
+          });
+
+          const timer = setTimeout(() => {
+            router.navigate({
+              pathname: '/(tabs)',
+              params: { showDevotional: 'true' }
+            });
+          }, 500); // Short delay for smooth transition
+          return () => clearTimeout(timer);
+        } else if (apiLoadingState === 'completed' && isProMember && !isCheckInFlow) {
+          // API completed successfully - navigate after all steps complete
+          console.log('[LoadingScreen] All steps complete and API completed for pro user, navigating to home');
+
+          analytics.logEvent('LoadingScreen_Custom_Devotional_Created', {
+            isProMember: true,
+            verseText: verseText || 'unknown',
+            reference: reference || 'unknown',
+            totalLoadingTime: loadingPoints.length * STEP_DURATION,
+          });
+
+          const timer = setTimeout(() => {
+            router.navigate({
+              pathname: '/(tabs)',
+              params: { showDevotional: 'true' }
+            });
+          }, 500); // Short delay for smooth transition
+          return () => clearTimeout(timer);
+        } else if (apiLoadingState === 'completed' && !isProMember && !isCheckInFlow) {
+          // User is not pro - show paywall when all steps complete
+          console.log('[LoadingScreen] All steps complete and API completed for non-pro user, showing paywall');
+          showPaywallForNonProUser();
+        }
+      }
+      
+      // Handle error case regardless of step count
+      if (apiLoadingState === 'error') {
+        // Error occurred - navigate back
+        console.log('[LoadingScreen] API error occurred:', devotionalError);
+        const timer = setTimeout(() => {
+          router.replace('/');
+        }, 2000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isOnboarding, apiLoadingState, router, currentStep, loadingPoints.length, isProMember, presentFreeTrialPaywall, verseText, reference, devotionalError, devotionalStoreCurrentDevotional, isCheckInFlow, customDevotional, showPaywallForNonProUser, animationComplete]);
+  
+  // Clear the check-in flag when navigating away
+  useEffect(() => {
+    return () => {
+      if (isFromCheckInStore) {
+        console.log('[LoadingScreen] Clearing isFromCheckIn flag on unmount');
+        useDevotionalStore.getState().setIsFromCheckIn(false);
+      }
+    };
+  }, [isFromCheckInStore]);
+
+  // Fallback check for non-pro users with devotional
+  useEffect(() => {
+    if (!isOnboarding && devotionalStoreCurrentDevotional && !isProMember && apiLoadingState !== 'completed') {
+      console.log('[LoadingScreen] Fallback: Non-pro user has devotional, showing paywall');
+      showPaywallForNonProUser();
+    }
+  }, [isOnboarding, devotionalStoreCurrentDevotional, isProMember, apiLoadingState, showPaywallForNonProUser]);
 
   // --- GLOWING BORDER EFFECT ---
-  // We'll use a ref to keep track of the animation frame for Three.js
   const glViewRef = useRef<{ stop: () => void } | null>(null);
   const threeFrameRef = useRef<number | null>(null);
 
-  // Handler for GLView context creation
+  // Optimize GLView animation
   const handleContextCreate = async (gl: ExpoWebGLRenderingContext) => {
     let scene: THREE.Scene;
     let camera: THREE.Camera;
@@ -127,6 +585,9 @@ export default function LoadingScreen() {
     let material: THREE.ShaderMaterial;
     let plane: THREE.Mesh;
     let shouldAnimate = true;
+    let lastFrameTime = 0;
+    const targetFPS = 30; // Reduced from 60 FPS
+    const frameInterval = 1000 / targetFPS;
 
     try {
       renderer = new Renderer({ gl });
@@ -152,34 +613,34 @@ export default function LoadingScreen() {
           }
         `,
         fragmentShader: `
-  precision highp float;
-  uniform float u_time;
-  uniform vec2 u_resolution;
-  uniform vec3 u_color;
-  varying vec2 vUv;
-  
-  float noise(vec2 p) {
-    return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453);
-  }
-  
+          precision highp float;
+          uniform float u_time;
+          uniform vec2 u_resolution;
+          uniform vec3 u_color;
+          varying vec2 vUv;
+          
+          float noise(vec2 p) {
+            return fract(sin(dot(p, vec2(12.9898,78.233))) * 43758.5453);
+          }
+          
   // Animated side glow (left & right)
-  float edgeGlow(float x, float y, float time, float edge) {
-    float spotY = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
-    float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
-    float edgeDist = abs(x - edge);
-    float yDist = abs(y - spotY);
-    float spot = exp(-pow(yDist / spotWidth, 2.0) * 6.0);
-    float flicker = 0.6 + 0.4 * noise(vec2(y * 10.0, time * 0.5 + edge * 10.0));
-    return smoothstep(0.12, 0.0, edgeDist) * (0.5 + 0.8 * spot * flicker);
-  }
-  
+          float edgeGlow(float x, float y, float time, float edge) {
+            float spotY = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
+            float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
+            float edgeDist = abs(x - edge);
+            float yDist = abs(y - spotY);
+            float spot = exp(-pow(yDist / spotWidth, 2.0) * 6.0);
+            float flicker = 0.6 + 0.4 * noise(vec2(y * 10.0, time * 0.5 + edge * 10.0));
+            return smoothstep(0.12, 0.0, edgeDist) * (0.5 + 0.8 * spot * flicker);
+          }
+          
   // Static glow for top and bottom
-  float staticGlow(float y, float edge) {
-    float edgeDist = abs(y - edge);
-    return smoothstep(0.06, 0.0, edgeDist);
-  }
+          float staticGlow(float y, float edge) {
+            float edgeDist = abs(y - edge);
+            return smoothstep(0.06, 0.0, edgeDist);
+          }
   
-  float verticalEdgeGlow(float x, float y, float time, float edge) {
+ float verticalEdgeGlow(float x, float y, float time, float edge) {
     float spotX = 0.5 + 0.3 * sin(time * 1.2 + edge * 3.0);
     float spotWidth = 0.1 + 0.05 * sin(time * 1.7 + edge * 2.0);
     float edgeDist = abs(y - edge);
@@ -188,32 +649,32 @@ export default function LoadingScreen() {
     float flicker = 0.6 + 0.4 * noise(vec2(x * 10.0, time * 0.5 + edge * 10.0));
     return smoothstep(0.08, 0.0, edgeDist) * (0.5 + 0.5 * spot * flicker);
   }
-  
-  void main() {
-    float t = u_time;
+          
+          void main() {
+            float t = u_time;
   
     // Center fading glow
-    float edgeDist = min(vUv.x, 1.0 - vUv.x);
-    float n = noise(vUv * 10.0 + t * 0.2);
-    float glow = smoothstep(0.0, 0.25 + 0.08 * sin(t + n * 6.0), edgeDist);
-    float intensity = (1.0 - glow) * (0.7 + 0.3 * sin(t + vUv.x * 10.0));
-    float centerAlpha = pow(1.0 - edgeDist, 2.5) * intensity;
-  
+            float edgeDist = min(vUv.x, 1.0 - vUv.x);
+            float n = noise(vUv * 10.0 + t * 0.2);
+            float glow = smoothstep(0.0, 0.25 + 0.08 * sin(t + n * 6.0), edgeDist);
+            float intensity = (1.0 - glow) * (0.7 + 0.3 * sin(t + vUv.x * 10.0));
+            float centerAlpha = pow(1.0 - edgeDist, 2.5) * intensity;
+            
     // Animated left/right
-    float leftGlow = edgeGlow(vUv.x, vUv.y, t, 0.0);
-    float rightGlow = edgeGlow(vUv.x, vUv.y, t, 1.0);
+            float leftGlow = edgeGlow(vUv.x, vUv.y, t, 0.0);
+            float rightGlow = edgeGlow(vUv.x, vUv.y, t, 1.0);
   
     // Static top/bottom
-    float bottomGlow = staticGlow(vUv.y, 0.0);
-    float topGlow = staticGlow(vUv.y, 1.0);
-  
+            float bottomGlow = staticGlow(vUv.y, 0.0);
+            float topGlow = staticGlow(vUv.y, 1.0);
+            
     // Combine
-    float sideAlpha = leftGlow + rightGlow;
-    float verticalAlpha = bottomGlow + topGlow;
-    float finalAlpha = centerAlpha + sideAlpha + verticalAlpha;
-  
-    gl_FragColor = vec4(u_color, finalAlpha);
-  }
+            float sideAlpha = leftGlow + rightGlow;
+            float verticalAlpha = bottomGlow + topGlow;
+            float finalAlpha = centerAlpha + sideAlpha + verticalAlpha;
+            
+            gl_FragColor = vec4(u_color, finalAlpha);
+          }
   
   
         `,
@@ -226,16 +687,22 @@ export default function LoadingScreen() {
       plane = new THREE.Mesh(geometry, material);
       scene.add(plane);
 
-      const animate = () => {
+      const animate = (currentTime: number) => {
         if (!shouldAnimate) return;
 
-        material.uniforms.u_time.value += 0.016;
-        renderer.render(scene, camera);
-        gl.endFrameEXP();
+        const deltaTime = currentTime - lastFrameTime;
+
+        if (deltaTime >= frameInterval) {
+          material.uniforms.u_time.value += 0.016;
+          renderer.render(scene, camera);
+          gl.endFrameEXP();
+          lastFrameTime = currentTime;
+        }
+
         threeFrameRef.current = requestAnimationFrame(animate);
       };
 
-      animate();
+      animate(0);
 
       // Store cleanup function
       glViewRef.current = {
@@ -244,11 +711,10 @@ export default function LoadingScreen() {
           if (threeFrameRef.current) {
             cancelAnimationFrame(threeFrameRef.current);
           }
-          // Clean up Three.js resources
           if (geometry) geometry.dispose();
           if (material) material.dispose();
           if (plane) scene?.remove(plane);
-        }
+        },
       };
     } catch (error) {
       console.error('GLView error:', error);
@@ -265,7 +731,9 @@ export default function LoadingScreen() {
   }, []);
 
   return (
-    <View className="flex-1 items-center justify-center bg-surfaceCream" style={{ backgroundColor: DARK_BG }}>
+    <View
+      className="flex-1 items-center justify-center bg-surfaceCream"
+      style={{ backgroundColor: DARK_BG }}>
       <StatusBar translucent backgroundColor="transparent" />
       {/* Glowing border background */}
       <GLView
@@ -310,81 +778,65 @@ export default function LoadingScreen() {
               origin="60,60"
             />
           </Svg>
-          <Text className="absolute top-0 left-0 w-[120px] h-[120px] text-center text-2xl font-feather text-accentGold flex items-center justify-center" style={{ lineHeight: 120, color: ORANGE }}>{Math.round((currentStep / LOADING_POINTS.length) * 100)}%</Text>
+          <Text
+            className="absolute top-0 left-0 w-[120px] h-[120px] text-center text-2xl font-feather text-accentGold flex items-center justify-center"
+            style={{ lineHeight: 120, color: ORANGE }}>
+            {Math.round(progressValue * 100)}%
+          </Text>
         </View>
 
         {/* Headline and subheadline */}
-        <Text className="text-3xl font-feather text-center mb-2" style={{ color: TEXT_PRIMARY }}>Just a moment</Text>
-        <Text className="text-lg font-din text-center mb-8" style={{ color: DESCRIPTION }}>Building a personalized plan</Text>
+        <Text className="text-3xl font-feather text-center mb-2" style={{ color: TEXT_PRIMARY }}>
+          {isOnboarding ? i18n.t('loading_just_a_moment') : isCheckInFlow ? 'Preparing Your Devotional' : devotionalError ? i18n.t('loading_something_wrong') : i18n.t('loading_creating_devotional')}
+        </Text>
+        <Text className="text-lg font-din text-center mb-8" style={{ color: DESCRIPTION }}>
+          {isOnboarding ? i18n.t('loading_building_plan') : isCheckInFlow ? 'Crafting guidance based on your check-in...' : devotionalError ? i18n.t('loading_redirecting_back') : i18n.t('loading_preparing_meal')}
+        </Text>
 
         {/* Checklist directly below */}
-        <View className="w-[75%] min-h-[160px] flex-col justify-start self-center" style={{ zIndex: 1, }}>
+        <View
+          className="w-[75%] min-h-[160px] flex-col justify-start self-center"
+          style={{ zIndex: 1 }}>
           {checklist.map((item, idx) => (
             <Animated.View
               key={item.label}
               style={{
-                opacity: animValuesRef.current[idx],
+                opacity: hasStarted && idx > 0 ? animValuesRef.current[idx] : 1, // Hide until animation starts
                 transform: [
                   {
-                    translateY: animValuesRef.current[idx].interpolate({
+                    translateY: idx > 0 ? animValuesRef.current[idx].interpolate({
                       inputRange: [0, 1],
                       outputRange: [24, 0],
-                    }),
+                    }) : 0,
                   },
                 ],
               }}
-              className="flex-row items-start mb-4"
-            >
+              className="flex-row items-start mb-4">
               {item.status === 'done' && (
                 <Ionicons name="checkmark-circle" size={24} color={ORANGE} className="mr-2" />
               )}
-              {item.status === 'loading' && idx === currentStep && (
+              {item.status === 'loading' && (
                 <Animated.View
                   style={{
-                    marginRight: 8,
                     transform: [
                       {
-                        rotate: spinnerAnim.interpolate({
+                        rotate: spinnerAnimsRef.current[idx].interpolate({
                           inputRange: [0, 1],
                           outputRange: ['0deg', '360deg'],
                         }),
                       },
                     ],
                   }}
-                >
-                  <Svg height="24" width="24">
-                    <Circle
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke={ORANGE}
-                      strokeWidth="3"
-                      fill="none"
-                      strokeDasharray="60"
-                      strokeDashoffset={24}
-                    />
-                  </Svg>
+                  className="mr-2">
+                  <Ionicons name="ellipse" size={24} color={ORANGE} />
                 </Animated.View>
-              )}
-              {/* If not the current loading item, show static spinner (no animation) for safety */}
-              {item.status === 'loading' && idx !== currentStep && (
-                <Svg height="24" width="24" style={{ marginRight: 8 }}>
-                  <Circle
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke={ORANGE}
-                    strokeWidth="3"
-                    fill="none"
-                    strokeDasharray="60"
-                    strokeDashoffset={24}
-                  />
-                </Svg>
               )}
               <Text
                 className={`text-lg font-din ${item.status === 'done' || item.status === 'loading' ? '' : 'text-gray-400'}`}
-                style={{ color: item.status === 'done' || item.status === 'loading' ? TEXT_PRIMARY : GRAY_400 }}
-              >
+                style={{
+                  color:
+                    item.status === 'done' || item.status === 'loading' ? TEXT_PRIMARY : GRAY_400,
+                }}>
                 {item.label}
               </Text>
             </Animated.View>
@@ -395,4 +847,6 @@ export default function LoadingScreen() {
   );
 }
 
-
+export const unstable_settings = {
+  safeAreaInsets: { top: 'never', bottom: 'never' }
+};

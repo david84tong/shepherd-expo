@@ -2,7 +2,7 @@
   "expo": {
     "name": "Shepherd",
     "slug": "shepherd",
-    "version": "1.3.9",
+    "version": "1.6.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "scheme": "io.bytehouse",
@@ -33,6 +33,9 @@
       },
       {
         "asset": "./assets/fonts/Nunito-Medium.ttf"
+      },
+      {
+        "asset": "./assets/fonts/Nunito-MediumItalic.ttf"
       },
       {
         "asset": "./assets/fonts/Nunito-Regular.ttf"
@@ -69,6 +72,15 @@
         {
           "targetName": "ShepherdStreakWidget",
           "bundleIdentifier": "second.round.shepherd.widget",
+          "entitlements": {
+            "com.apple.security.application-groups": [
+              "group.shepherd.widget.streak1"
+            ]
+          }
+        },
+        {
+          "targetName": "DailyVerseWidget",
+          "bundleIdentifier": "second.round.shepherd.dailyverse",
           "entitlements": {
             "com.apple.security.application-groups": [
               "group.shepherd.widget.streak1"
@@ -125,7 +137,8 @@
           ]
         }
       ],
-      "expo-audio"
+      "expo-audio",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,

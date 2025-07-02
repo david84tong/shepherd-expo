@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
+import auth from '@react-native-firebase/auth';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
@@ -9,11 +10,6 @@ import { UserDoc, Lamb, UserStore, MapPathCompletion } from '../models/User';
 import { isAuthenticated, updateUserData } from '../helper/firebaseHelper';
 
 // Constants
-const USER_FETCH_CACHE_DURATION = 5000; // 5 seconds
-const SYNC_DEBOUNCE_MS = 2000;
-
-// Types
-type ProStatus = 'free' | 'trial' | 'pro';
 
 // Initial state
 const initialLamb: Lamb = {
@@ -58,6 +54,7 @@ const initialState: UserDoc = {
   username: '',
   isProFromOnboarding: false,
   hasSeenWidgetModal: false,
+  hasSeenBibleReaderTutorial: false,
   level: 1,
   xp: 0,
   streak: 0,
@@ -65,7 +62,9 @@ const initialState: UserDoc = {
   isProWithReferral: false,
   proExpiryDate: Timestamp.now(),
   completedMapPaths: [],
-  setNotificationTime: async (time: string) => {
+  skins: [],
+  checkIns: {},
+  setNotificationTime: async (_time: string) => {
     // This will be overridden by the actual implementation
     console.warn('setNotificationTime not implemented in initial state');
   },
@@ -90,7 +89,8 @@ const syncStreakWithWidget = (streakCount: number, lastActivityDate: Timestamp |
   if (lastActivityDate) {
     activityDate = lastActivityDate instanceof Date ? lastActivityDate : lastActivityDate.toDate();
   }
-
+  
+  if(streakCount === 0) return
   syncStreakDataToWidget(streakCount, activityDate).catch((error) =>
     console.error('Failed to sync streak with widget:', error)
   );
@@ -162,6 +162,11 @@ export const useUserStore = create<UserStore>()(
             isPro: firestoreData.isPro || state.isPro || false,
             isProWithReferral: firestoreData.isProWithReferral || state.isProWithReferral || false,
             proExpiryDate: firestoreData.proExpiryDate || state.proExpiryDate,
+            // Sync check-in data - merge instead of replace
+            checkIns: {
+              ...(state.checkIns || {}),
+              ...(firestoreData.checkIns || {})
+            },
           };
         });
         console.log('Firestore data sync complete');
@@ -194,7 +199,7 @@ export const useUserStore = create<UserStore>()(
       },
 
       setUser: (user: Partial<UserDoc>) => {
-        set((state) => {
+        set((_state) => {
           const updates = {
             ...user,
             updatedAt: Timestamp.now(),
@@ -249,6 +254,9 @@ export const useUserStore = create<UserStore>()(
       getLambName: () => get().lamb?.name || initialState.lamb.name,
       getLambSkin: () => get().lamb?.skin || initialState.lamb.skin,
       getHasSeenWidgetModal: () => get().hasSeenWidgetModal || false,
+      getHasSeenBibleReaderTutorial: () => get().hasSeenBibleReaderTutorial || false,
+      getSkins: () => get().skins || initialState.skins,
+      getCheckIns: () => get().checkIns,
 
       // Setters
       setSpiritualGoal: (spiritualGoal) => set({ spiritualGoal }),
@@ -468,6 +476,14 @@ export const useUserStore = create<UserStore>()(
         }
       },
 
+      setHasSeenBibleReaderTutorial: (hasSeen: boolean) => {
+        
+        set({ hasSeenBibleReaderTutorial: hasSeen });
+        if (isAuthenticated()) {
+          updateField('hasSeenBibleReaderTutorial', hasSeen);
+        }
+      },
+
       setCompletedMapPaths: (completedMapPaths: MapPathCompletion[]) => {
         set({ completedMapPaths });
         if (isAuthenticated()) {
@@ -483,10 +499,171 @@ export const useUserStore = create<UserStore>()(
           }
           return { completedMapPaths: updatedPaths };
         }),
+
+      // Skins methods
+      setSkins: (skins: string[]) => {
+        set({ skins });
+        if (isAuthenticated()) {
+          updateUserData({ skins });
+        }
+      },
+
+      addSkin: (skin: string) => {
+        set((state) => {
+          const currentSkins = state.skins || [];
+          if (!currentSkins.includes(skin)) {
+            const updatedSkins = [...currentSkins, skin];
+            if (isAuthenticated()) {
+              updateUserData({ skins: updatedSkins });
+            }
+            return { skins: updatedSkins };
+          }
+          return state;
+        });
+      },
+
+      setCheckIns: async (checkIns: UserDoc['checkIns']) => {
+        console.log('[setCheckIns] Called with:', checkIns);
+        set({ checkIns });
+        
+        if (isAuthenticated()) {
+          updateUserData({ checkIns });
+        }
+      },
+
+      addCheckIn: async (dateKey: string, checkInData: NonNullable<UserDoc['checkIns']>[string]) => {
+        console.log('[addCheckIn] Called with dateKey:', dateKey, 'data:', checkInData);
+        
+        // Update local state first
+        const state = get();
+        const updatedCheckIns = {
+          ...(state.checkIns || {}),
+          [dateKey]: checkInData
+        };
+        
+        set({ checkIns: updatedCheckIns });
+        
+        // Update Firestore directly with nested field path
+        if (isAuthenticated()) {
+          try {
+            const currentUser = auth().currentUser;
+            if (currentUser) {
+              // Use Firestore's dot notation for nested field updates
+              await firestore()
+                .collection('users')
+                .doc(currentUser.uid)
+                .update({
+                  [`checkIns.${dateKey}`]: checkInData,
+                  updatedAt: Timestamp.now()
+                });
+              console.log('[addCheckIn] Successfully updated Firestore with nested field path');
+            }
+          } catch (error) {
+            console.error('[addCheckIn] Error updating Firestore:', error);
+            // Fallback to updating the entire checkIns object
+            updateUserData({ checkIns: updatedCheckIns });
+          }
+        }
+      },
     }),
     {
       name: 'shepherd-user-storage',
       storage: createJSONStorage(() => AsyncStorage as any),
+      // Only persist data fields, exclude all functions
+      partialize: (state) => {
+        const {
+          // Exclude all functions
+          getUser,
+          setUser,
+          createUser,
+          syncFirestoreData,
+          resetUserStore,
+          getSpiritualGoal,
+          getExperienceLevel,
+          getFrequencyGoal,
+          getDenomination,
+          getDisplayName,
+          getSelectedPathId,
+          getLamb,
+          getStreakCount,
+          getLastActivityDate,
+          getVersesReadTotal,
+          getChaptersReadTotal,
+          getBibleVersion,
+          getProStatus,
+          getCreatedAt,
+          getUpdatedAt,
+          getGens,
+          getLastReadingDate,
+          getLastPrayerDate,
+          getLastReflectionDate,
+          getLastReadingPenaltyDate,
+          getLastPrayerPenaltyDate,
+          getLastReflectionPenaltyDate,
+          getCompletedReflections,
+          getCompletedPrayers,
+          getCompletedReadings,
+          getLambLevel,
+          getLambXp,
+          getLambMood,
+          getLambHearts,
+          getLambName,
+          getLambSkin,
+          getHasSeenWidgetModal,
+          getHasSeenBibleReaderTutorial,
+          getSkins,
+          setSpiritualGoal,
+          setExperienceLevel,
+          setFrequencyGoal,
+          setDenomination,
+          setDisplayName,
+          setSelectedPathId,
+          setIsProFromOnboarding,
+          setLamb,
+          setStreakCount,
+          setLastActivityDate,
+          setLastReadingDate,
+          setLastPrayerDate,
+          setLastReflectionDate,
+          setLastReadingPenaltyDate,
+          setLastPrayerPenaltyDate,
+          setLastReflectionPenaltyDate,
+          setVersesReadTotal,
+          setChaptersReadTotal,
+          setBibleVersion,
+          setProStatus,
+          setCreatedAt,
+          setUpdatedAt,
+          setGens,
+          setNotificationTime,
+          setCompletedReflections,
+          setCompletedPrayers,
+          setCompletedReadings,
+          addCompletedReflection,
+          addCompletedPrayer,
+          addCompletedReading,
+          setLambLevel,
+          setLambXp,
+          setLambMood,
+          setLambHearts,
+          setLambName,
+          setLambSkin,
+          incrementStreak,
+          addXp,
+          setHasSeenWidgetModal,
+          setHasSeenBibleReaderTutorial,
+          setCompletedMapPaths,
+          addCompletedMapPath,
+          setSkins,
+          addSkin,
+          getCheckIns,
+          setCheckIns,
+          addCheckIn,
+          // Keep only data fields
+          ...dataOnly
+        } = state;
+        return dataOnly;
+      },
     }
   )
 );

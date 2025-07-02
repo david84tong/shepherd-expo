@@ -1,18 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet, TouchableWithoutFeedback, Dimensions } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import Reanimated, { 
-  FadeIn, 
-  FadeOut, 
-  useSharedValue, 
-  useAnimatedStyle, 
+import Reanimated, {
+  FadeIn,
+  FadeOut,
+  useSharedValue,
+  useAnimatedStyle,
   withTiming,
-  withSequence,
   Easing
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import { HIGHLIGHT_COLORS, HighlightColorKey } from '~/app/stores/highlightStore';
 import analytics from '../utils/analytics';
+import { hapticLight, hapticMedium } from '~/utils/haptics';
 
 interface HighlightColorPickerProps {
   isVisible: boolean;
@@ -55,7 +54,7 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
   useEffect(() => {
     if (isVisible) {
       setSelectedColor(initialColor || defaultColor);
-      
+
       // Track color picker opened
       analytics.logEvent("Highlight_ColorPicker_Opened", {
         book: bookName || 'unknown',
@@ -64,17 +63,17 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
         initialColor: initialColor || 'none',
         hasExistingHighlight: !!initialColor
       });
-      
+
       // Animate modal appearance
       modalScale.value = 0.95;
       modalOpacity.value = 0;
-      
-      modalScale.value = withTiming(1, { 
+
+      modalScale.value = withTiming(1, {
         duration: 300,
         easing: Easing.out(Easing.back(2))
       });
-      
-      modalOpacity.value = withTiming(1, { 
+
+      modalOpacity.value = withTiming(1, {
         duration: 250
       });
     }
@@ -82,8 +81,8 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
 
   const handleColorSelect = (colorKey: HighlightColorKey) => {
     // Provide haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    
+    hapticLight();
+
     // Track color selection
     analytics.logEvent("Highlight_ColorSelected", {
       book: bookName || 'unknown',
@@ -92,13 +91,13 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
       selectedColor: colorKey,
       previousColor: selectedColor || 'none'
     });
-    
+
     setSelectedColor(colorKey);
   };
 
   const handleConfirm = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    
+    hapticMedium();
+
     // Track highlight action
     const isRemoving = selectedColor === null && initialColor;
     analytics.logEvent(isRemoving ? "Highlight_Removed" : "Highlight_Applied", {
@@ -109,17 +108,17 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
       previousColor: initialColor || 'none',
       action: isRemoving ? 'remove' : 'apply'
     });
-    
+
     // Pass the selected color (including null for removal) to parent
     onSelectColor(selectedColor);
-    
+
     // Animate out before closing
     modalScale.value = withTiming(0.95, { duration: 200 });
-    modalOpacity.value = withTiming(0, { 
+    modalOpacity.value = withTiming(0, {
       duration: 200,
       easing: Easing.in(Easing.cubic)
     });
-    
+
     // Delay closing to allow animation to complete
     setTimeout(onClose, 200);
   };
@@ -133,14 +132,14 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
       initialColor: initialColor || 'none',
       selectedColor: selectedColor || 'none'
     });
-    
+
     // Animate out
     modalScale.value = withTiming(0.95, { duration: 180 });
-    modalOpacity.value = withTiming(0, { 
+    modalOpacity.value = withTiming(0, {
       duration: 180,
       easing: Easing.in(Easing.cubic)
     });
-    
+
     // Delay closing to allow animation to complete
     setTimeout(onClose, 180);
   };
@@ -170,17 +169,17 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
               <View style={styles.header}>
                 <Text style={styles.title}>Choose Highlight Color</Text>
               </View>
-              
+
               {/* Verse preview if provided */}
               {versePreview && (
                 <View style={[
-                  styles.previewContainer, 
+                  styles.previewContainer,
                   selectedColor ? { backgroundColor: HIGHLIGHT_COLORS[selectedColor] } : {}
                 ]}>
                   <Text style={styles.previewText} numberOfLines={2}>{versePreview}</Text>
                 </View>
               )}
-              
+
               {/* Color options */}
               <View style={styles.colorContainer}>
                 {colorOptions.map(({ key, color }) => (
@@ -202,23 +201,23 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
                   </AnimatedTouchable>
                 ))}
               </View>
-              
+
               {/* Action buttons */}
               <View style={styles.actionButtons}>
-                <TouchableOpacity 
-                  style={styles.cancelButton} 
+                <TouchableOpacity
+                  style={styles.cancelButton}
                   onPress={handleCancel}
                   activeOpacity={0.7}
                 >
                   <Text style={styles.cancelText}>Cancel</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity 
+
+                <TouchableOpacity
                   style={[
-                    styles.confirmButton, 
+                    styles.confirmButton,
                     // Button should only be disabled if we have no selection and no initial color to remove
                     (selectedColor === null && !initialColor) && styles.disabledButton
-                  ]} 
+                  ]}
                   onPress={handleConfirm}
                   disabled={selectedColor === null && !initialColor}
                   activeOpacity={0.7}
@@ -228,14 +227,14 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
                   </Text>
                 </TouchableOpacity>
               </View>
-              
+
               {/* Remove highlight option */}
               {initialColor && (
-                <TouchableOpacity 
+                <TouchableOpacity
                   style={styles.removeButton}
                   onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                    
+                    hapticLight();
+
                     // Track remove highlight button tap
                     analytics.logEvent("Highlight_RemoveButtonTapped", {
                       book: bookName || 'unknown',
@@ -244,7 +243,7 @@ const HighlightColorPicker: React.FC<HighlightColorPickerProps> = ({
                       currentColor: initialColor,
                       selectedColor: selectedColor || 'none'
                     });
-                    
+
                     setSelectedColor(null);
                   }}
                 >
@@ -289,9 +288,9 @@ const styles = StyleSheet.create({
   },
   colorOption: {
     alignItems: 'center',
+    borderColor: 'transparent',
     borderRadius: 20,
     borderWidth: 2,
-    borderColor: 'transparent',
     height: 40,
     justifyContent: 'center',
     marginBottom: 16,
@@ -307,7 +306,7 @@ const styles = StyleSheet.create({
   },
   confirmText: {
     color: 'white',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 16,
   },
   disabledButton: {
@@ -369,7 +368,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#3C584A',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 18,
   },
 });

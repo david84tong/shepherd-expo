@@ -1,7 +1,6 @@
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, Platform, StatusBar, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, Platform, StatusBar } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Animated, {
   useAnimatedStyle,
@@ -16,6 +15,9 @@ import { OnboardingResponses } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
+import i18n from '../utils/i18n';
+import { RPH } from '../helper/helper';
+import { hapticLight } from '~/utils/haptics';
 
 export default function OnboardingAgeRangeScreen() {
   const router = useRouter();
@@ -101,7 +103,7 @@ export default function OnboardingAgeRangeScreen() {
       }
 
       try {
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+        await hapticLight();
       } catch (error) {
         console.log('Haptics not available');
       }
@@ -134,35 +136,35 @@ export default function OnboardingAgeRangeScreen() {
   const options = [
     {
       id: 'parent',
-      title: "I'm a parent/guardian",
+      title: i18n.t('onboarding_age_parent'),
     },
     {
       id: 'under-12',
-      title: '12 or under',
+      title: i18n.t('onboarding_age_under_12'),
     },
     {
       id: '13-17',
-      title: '13-17',
+      title: i18n.t('onboarding_age_13_17'),
     },
     {
       id: '18-24',
-      title: '18-24',
+      title: i18n.t('onboarding_age_18_24'),
     },
     {
       id: '25-34',
-      title: '25-34',
+      title: i18n.t('onboarding_age_25_34'),
     },
     {
       id: '35-44',
-      title: '35-44',
+      title: i18n.t('onboarding_age_35_44'),
     },
     {
       id: '45-54',
-      title: '45-54',
+      title: i18n.t('onboarding_age_45_54'),
     },
     {
       id: '55-64+',
-      title: '55-64+',
+      title: i18n.t('onboarding_age_55_64'),
     },
   ] as const;
 
@@ -173,7 +175,7 @@ export default function OnboardingAgeRangeScreen() {
         {/* Question Text */}
         <Animated.View style={titleStyle}>
           <Text className="font-feather text-h2 text-center text-textPrimary mb-4">
-            What is your age range?
+            {i18n.t('onboarding_age_range_question')}
           </Text>
         </Animated.View>
 
@@ -227,6 +229,7 @@ export default function OnboardingAgeRangeScreen() {
                       textColor={
                         selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'
                       }
+                      buttonHeight={RPH(7)}
                     />
                   </View>
                 );

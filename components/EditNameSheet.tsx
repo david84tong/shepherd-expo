@@ -3,7 +3,6 @@ import {
   BottomSheetScrollView,
   BottomSheetTextInput,
 } from '@gorhom/bottom-sheet';
-import * as Haptics from 'expo-haptics';
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { View, Text, TouchableOpacity, KeyboardAvoidingView, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
@@ -13,6 +12,7 @@ import BottomSheet from '@gorhom/bottom-sheet';
 import analytics from '../utils/analytics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
+import { hapticLight } from '~/utils/haptics';
 
 interface EditNameSheetProps {
   editNameSheetRef: React.RefObject<{
@@ -94,7 +94,7 @@ const EditNameSheet: React.FC<EditNameSheetProps> = ({ editNameSheetRef }) => {
 
       // Close sheet
       bottomSheetRef.current?.close();
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      hapticLight();
 
       // Show success toast
       Toast.show({
@@ -180,17 +180,15 @@ const EditNameSheet: React.FC<EditNameSheetProps> = ({ editNameSheetRef }) => {
               <TouchableOpacity
                 onPress={handleSave}
                 disabled={!inputName.trim() || !!error || inputName === initialName}
-                className={`mt-6 p-4 rounded-2xl items-center justify-center ${
-                  !inputName.trim() || !!error || inputName === initialName
+                className={`mt-6 p-4 rounded-2xl items-center justify-center ${!inputName.trim() || !!error || inputName === initialName
                     ? 'bg-gray-200'
                     : 'bg-accentGold'
-                }`}>
+                  }`}>
                 <Text
-                  className={`font-feather text-lg ${
-                    !inputName.trim() || !!error || inputName === initialName
+                  className={`font-feather text-lg ${!inputName.trim() || !!error || inputName === initialName
                       ? 'text-gray-500'
                       : 'text-white'
-                  }`}>
+                    }`}>
                   Save Changes
                 </Text>
               </TouchableOpacity>

@@ -1,5 +1,5 @@
 import { useAssets } from 'expo-asset';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -15,13 +15,14 @@ import {
 
 import PathNode, { NodeStatus } from '../../components/MapComponents/PathNode';
 import StickyPathHeader from '../../components/MapComponents/StickyPathHeader';
-import { BIBLE_BOOK_IDS, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS, Unit } from '../../app/models/Path';
+import BackButton from '../../components/BackButton';
+import { BIBLE_BOOK_IDS, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS, Unit } from '../models/Path';
 import { PathInfo, usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import { heightScreen } from '~/utils/dimensions';
-import * as Haptics from 'expo-haptics';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import { useHomeStore } from '../stores/homeStore';
+import { hapticMedium } from '~/utils/haptics';
 
 // Define our custom section type
 type BibleSection = {
@@ -36,6 +37,8 @@ type BibleSection = {
   riveName?: string;
   artboardName?: string;
 };
+
+
 
 // Optimize NextNodeIndicator with memo
 // const NextNodeIndicator = React.memo(({ alignment }: { alignment: 'start' | 'center' | 'end' }) => {
@@ -167,6 +170,11 @@ const ITEM_HEIGHT = 180; // adjust if needed
 
 export default function MapScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  
+  // Check if we're coming from home screen
+  const fromHome = params.fromHome === 'true';
+  const targetUnitId = params.targetUnitId as string;
 
   // Get user reading time preference
   const frequencyGoal = useUserStore((state) => state.frequencyGoal);
@@ -234,17 +242,47 @@ export default function MapScreen() {
 
   // Get pro status from subscription store
   const isProMember = useSubscriptionStore((state) => state.isProMember);
+  const { presentFreeTrialPaywall } = useSubscriptionStore();
   const subscriptionStore = useSubscriptionStore();
 
   // Handle subscription button press using the store action
   const handleSubscriptionPress = async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
     subscriptionStore.setFromScreen('map');
-    router.push('/PricingScreen' as any);
+    presentFreeTrialPaywall();
   };
 
   // Track if we need to suppress haptic feedback (e.g., on first render)
   const isFirstRender = useRef(true);
+  
+  // Scroll to target unit when coming from home
+  useEffect(() => {
+    if (fromHome && targetUnitId && sectionListRef.current) {
+      // Find the section and item index for the target unit
+      let sectionIndex = -1;
+      let itemIndex = -1;
+      
+      sections.forEach((section, sIdx) => {
+        const idx = section.data.findIndex(unit => unit.id === targetUnitId);
+        if (idx !== -1) {
+          sectionIndex = sIdx;
+          itemIndex = idx;
+        }
+      });
+      
+      if (sectionIndex !== -1 && itemIndex !== -1) {
+        // Small delay to ensure the list is rendered
+        setTimeout(() => {
+          sectionListRef.current?.scrollToLocation({
+            sectionIndex,
+            itemIndex,
+            animated: true,
+            viewOffset: 100, // Offset from top
+          });
+        }, 300);
+      }
+    }
+  }, [fromHome, targetUnitId, sections]);
 
   // Load all Rive assets needed for sections
   const [riveAssets] = useAssets([
@@ -255,7 +293,7 @@ export default function MapScreen() {
   const handleNodePress = (unit: Unit, isLastUnitInSection: boolean) => {
     console.log('Pressed unit:', unit.title, unit.reference);
     console.log('Reference details:', JSON.stringify(unit.reference));
-    console.log('unit selected', unit.startVerse, unit.endVerse, unit);
+    console.log('unit selected', unit);
 
     // Get the current section/path information
     const currentPath = sections.find((section) => section.data.some((u) => u.id === unit.id));
@@ -331,41 +369,17 @@ export default function MapScreen() {
     }
 
     // Fallback: if unit object already has startVerse/endVerse properties, use them
-    if (!pathInfo.startVerse && unit.startVerse && unit.endVerse) {
-      pathInfo.startVerse = unit.startVerse;
-      pathInfo.endVerse = unit.endVerse;
-    }
+    // Note: Unit type doesn't have startVerse/endVerse properties by default
 
     setCurrentPath(pathInfo);
 
-    // Set path in progress to hide tab bar when opening Bible
-    setPathInProgress(true);
-
-    // Genesis 1 first node should have bookId=1, chapters=[1,2]
-    // Verify the data looks right
-    console.log(`Selected node data: Book ID=${bookId}, Chapters=${JSON.stringify(chapters)}`);
-
-    // Ensure chapters is always an array and join correctly
-    const chaptersQuery = Array.isArray(chapters) ? chapters.join(',') : '';
-
-    if (bookId && chaptersQuery) {
-      // Use an absolute path format to target the Bible reader screen
-      router.push({
-        pathname: '/bibleReader',
-        params: {
-          bookId: bookId?.toString(),
-          chapters: chaptersQuery,
-          title: encodeURIComponent(unit.title),
-          // Add a flag to help identify where this navigation came from
-          source: 'map',
-          timestamp: Date.now()?.toString(), // Force new params by adding timestamp
-          isLastUnitInSection: isLastUnitInSection?.toString(),
-          isFromDailyBread: 'true',
-        },
-      });
-    } else {
-      console.warn('Invalid unit reference for navigation:', unit.reference);
-    }
+    // Navigate to Bible preview screen
+    router.push({
+      pathname: '/biblePreview',
+      params: {
+        fromMap: 'true',
+      }
+    });
   };
 
   // This function handles viewability change for section headers
@@ -496,7 +510,7 @@ export default function MapScreen() {
         // 1. User is not a pro member (proStatus !== "pro")
         // 2. User has completed their daily reading (readingCompleted is true)
         // 3. They're trying to access a non-first path (section.index > 0)
-        if (!isProMember && readingCompleted && section.index > 0) {
+        if (!isProMember) {
           console.log(
             'Showing pricing screen: user is not pro, has completed reading, and is trying to access a non-first path'
           );
@@ -576,9 +590,19 @@ export default function MapScreen() {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-surfaceCream">
-      <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      <SectionList<Unit, BibleSection>
+    <>
+      <SafeAreaView className="flex-1 bg-surfaceCream mt-4">
+        <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
+        
+        {/* Back button when coming from home screen */}
+        {fromHome && (
+          <BackButton 
+            onPress={() => router.back()} 
+            containerClassName="absolute top-0 left-0 z-50"
+          />
+        )}
+        
+        <SectionList<Unit, BibleSection>
         ref={sectionListRef}
         sections={sections}
         keyExtractor={(item) => item.id}
@@ -602,11 +626,12 @@ export default function MapScreen() {
           index,
         })}
         updateCellsBatchingPeriod={50}
-        maintainVisibleContentPosition={{
-          minIndexForVisible: 0,
-          autoscrollToTopThreshold: 10,
-        }}
-      />
-    </SafeAreaView>
+                  maintainVisibleContentPosition={{
+            minIndexForVisible: 0,
+            autoscrollToTopThreshold: 10,
+          }}
+        />
+      </SafeAreaView>
+    </>
   );
 }

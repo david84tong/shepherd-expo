@@ -20,7 +20,7 @@ const IMPLEMENTED_SCREENS = [
   '5',
   '6',
   '7',
-  '8',
+  'explainerHearts',
   'explainer',
   '9',
   '10', // Ensure 10 is included
@@ -29,25 +29,26 @@ const IMPLEMENTED_SCREENS = [
   'auth',
   'lambFound',
   'pathAffinity',
+  'LoadingScreen',
 ];
 
 export default function OnboardingLayout() {
   const pathname = usePathname();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { 
-    currentScreen, 
-    setCurrentScreen, 
+  const {
+    currentScreen,
+    setCurrentScreen,
     isInitialized,
     needsNavigationToSavedScreen,
     savedScreenToNavigateTo,
-    clearSavedScreenNavigation
+    clearSavedScreenNavigation,
   } = useOnboardingStore();
   const [previousScreen, setPreviousScreen] = useState('');
   const progressOpacity = useSharedValue(1);
 
   // Initialize app and create user on first open
-  const { isInitialized: appIsInitialized, isLoading } = useAppInitialization();
+  const { isInitialized: appIsInitialized } = useAppInitialization();
 
   // IMPORTANT: All hooks must be declared before any conditional returns
   // Animated style for progress bar
@@ -61,7 +62,8 @@ export default function OnboardingLayout() {
     pathname !== '/onboarding/1' &&
     pathname !== '/onboarding/11' &&
     !pathname.includes('Loading') &&
-    !pathname.includes('/onboarding/auth');
+    !pathname.includes('/onboarding/auth') &&
+    !pathname.includes('/pricing');
 
   console.log(
     `[OnboardingLayout] Path: ${pathname}, Should show progress bar: ${shouldShowProgressBar}`
@@ -75,13 +77,17 @@ export default function OnboardingLayout() {
     if (pathname && isInitialized) {
       const screen = pathname.split('/').pop() || '1';
 
-      console.log(`[OnboardingLayout] Pathname changed to: ${pathname}, extracted screen: ${screen}, current screen: ${currentScreen}`);
+      console.log(
+        `[OnboardingLayout] Pathname changed to: ${pathname}, extracted screen: ${screen}, current screen: ${currentScreen}`
+      );
 
       // Only update if the screen is actually different from what's saved
       // This prevents unnecessary updates during navigation
       if (screen !== currentScreen) {
-        console.log(`[OnboardingLayout] Screen changed from ${currentScreen} to ${screen}, saving...`);
-        
+        console.log(
+          `[OnboardingLayout] Screen changed from ${currentScreen} to ${screen}, saving...`
+        );
+
         // Save previous screen for transition handling
         if (currentScreen && currentScreen !== screen) {
           setPreviousScreen(currentScreen);
@@ -118,16 +124,20 @@ export default function OnboardingLayout() {
 
   // Handle navigation to saved screen after mounting (backup - tabs layout should handle this)
   useEffect(() => {
-    console.log(`[OnboardingLayout] Navigation effect triggered - isInitialized: ${isInitialized}, needsNavigation: ${needsNavigationToSavedScreen}, savedScreen: ${savedScreenToNavigateTo}`);
-    
+    console.log(
+      `[OnboardingLayout] Navigation effect triggered - isInitialized: ${isInitialized}, needsNavigation: ${needsNavigationToSavedScreen}, savedScreen: ${savedScreenToNavigateTo}`
+    );
+
     // This is now mainly a backup since tabs layout should handle the redirect
     if (isInitialized && needsNavigationToSavedScreen && savedScreenToNavigateTo) {
       console.log(`🚀 Backup navigation to saved screen: ${savedScreenToNavigateTo}`);
-      
+
       // Shorter delay since this is backup navigation
       const timeoutId = setTimeout(() => {
         try {
-          console.log(`[OnboardingLayout] 🔄 Backup navigation executing: /onboarding/${savedScreenToNavigateTo}`);
+          console.log(
+            `[OnboardingLayout] 🔄 Backup navigation executing: /onboarding/${savedScreenToNavigateTo}`
+          );
           router.replace(`/onboarding/${savedScreenToNavigateTo}` as any);
           clearSavedScreenNavigation();
           console.log(`[OnboardingLayout] ✅ Backup navigation completed`);
@@ -138,9 +148,17 @@ export default function OnboardingLayout() {
 
       return () => clearTimeout(timeoutId);
     } else {
-      console.log(`[OnboardingLayout] ⏸️ Backup navigation skipped - tabs layout should handle this`);
+      console.log(
+        `[OnboardingLayout] ⏸️ Backup navigation skipped - tabs layout should handle this`
+      );
     }
-  }, [isInitialized, needsNavigationToSavedScreen, savedScreenToNavigateTo, router, clearSavedScreenNavigation]);
+  }, [
+    isInitialized,
+    needsNavigationToSavedScreen,
+    savedScreenToNavigateTo,
+    router,
+    clearSavedScreenNavigation,
+  ]);
 
   const checkStorageAndDebug = async () => {
     try {
@@ -191,9 +209,9 @@ export default function OnboardingLayout() {
   };
 
   // If still initializing, could show a loading indicator here
-  if (isLoading) {
+  if (!appIsInitialized) {
     // Return a minimal loading component instead of continuing to render
-    return <View style={{ flex: 1, backgroundColor: '#FFF4D9' }} />;
+    return <View style={{ flex: 1, backgroundColor: '#FDEBB8' }} />;
   }
 
   return (
@@ -202,7 +220,7 @@ export default function OnboardingLayout() {
         flex: 1,
         paddingLeft: insets.left,
         paddingRight: insets.right,
-        backgroundColor: '#FFF4D9',
+        backgroundColor: '#FDEBB8',
       }}>
       <Stack
         screenOptions={{
@@ -210,7 +228,7 @@ export default function OnboardingLayout() {
           animation: 'fade',
           animationDuration: 200,
           contentStyle: {
-            backgroundColor: '#FFF4D9',
+            backgroundColor: '#FDEBB8',
           },
           animationTypeForReplace: 'push',
           gestureEnabled: false,
@@ -221,8 +239,8 @@ export default function OnboardingLayout() {
             name={screen}
             options={{
               contentStyle: {
-                backgroundColor: '#FFF4D9',
-                marginTop: screen === '1' ? 0 : insets.top > 20 ? 48 : 0,
+                backgroundColor: '#FDEBB8',
+                marginTop: screen === '1' || screen === 'LoadingScreen' ? 0 : insets.top > 20 ? 48 : 0,
               },
               ...(screen === '1' && {
                 gestureEnabled: false,
@@ -235,10 +253,11 @@ export default function OnboardingLayout() {
 
       {/* Animated Progress Bar */}
       {pathname &&
-        !(pathname == ('/onboarding/1')) && 
-         !(pathname == ('/onboarding/11')) &&
+        !(pathname == '/onboarding/1') &&
+        !(pathname == '/onboarding/11') &&
         !pathname.includes('/onboarding/LoadingScreen') &&
-        !pathname.includes('/onboarding/auth') && (
+        !pathname.includes('/onboarding/auth') &&
+        !pathname.includes('/pricing') && (
           <Animated.View
             style={[
               {
@@ -246,7 +265,7 @@ export default function OnboardingLayout() {
                 top: 0,
                 left: 0,
                 right: 0,
-                backgroundColor: '#FFF4D9',
+                backgroundColor: '#FDEBB8',
                 paddingTop: insets.top,
                 zIndex: 100,
               },
@@ -258,11 +277,10 @@ export default function OnboardingLayout() {
         )}
 
       {/* Debug button (keep commented out) */}
-      {(__DEV__) && (
+      {__DEV__ && (
         <Text
           onPress={handleDebug}
-          className="absolute top-2.5 right-2.5 text-textPrimary/30 text-[10px] z-[1000]"
-        >
+          className="absolute top-2.5 right-2.5 text-textPrimary/30 text-[10px] z-[1000]">
           Debug
         </Text>
       )}

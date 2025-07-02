@@ -6,6 +6,7 @@ import { useUserStore } from '../stores/userStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import analytics from '../../utils/analytics';
 import { Feather } from '@expo/vector-icons';
+import i18n from '../utils/i18n';
 
 import Animated, {
   useAnimatedStyle,
@@ -14,9 +15,10 @@ import Animated, {
   useSharedValue,
   withDelay,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
+import { RPH } from '../helper/helper';
+import { hapticLight, hapticSuccess } from '~/utils/haptics';
 
 export default function OnboardingReadingTimeScreen() {
   const router = useRouter();
@@ -82,7 +84,7 @@ export default function OnboardingReadingTimeScreen() {
 
   // Handle navigation back when coming from settings
   const handleBackFromSettings = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => { });
+    hapticLight();
     router.back();
   };
 
@@ -98,34 +100,36 @@ export default function OnboardingReadingTimeScreen() {
       '60+': 90,
     } as const;
 
-    // Set in user store
-    setFrequencyGoal(duration);
+    // Always save "6-10" regardless of user selection
+    const savedDuration = '6-10';
+
+    // Set in user store (always save 6-10)
+    setFrequencyGoal(savedDuration);
 
     analytics.logEvent('OnboardingDurationScreen_Tapped_Option', {
-      value: duration,
+      value: duration, // Log what they selected
+      savedValue: savedDuration, // Log what we actually saved
       fromSettings: fromSettings,
     });
 
     // Trigger light haptic feedback
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {
-        console.log('Haptics not available');
-      });
+      hapticLight();
     } catch (error) {
       console.log('Haptics not available');
     }
 
-    setSelectedOption(duration);
+    setSelectedOption(duration); // Show their selection in UI
 
-    // Also update in Firestore directly
+    // Also update in Firestore directly (always save 6-10)
     const user = auth().currentUser;
     if (user) {
       try {
         await firestore().collection('users').doc(user.uid).update({
-          frequencyGoal: duration,
+          frequencyGoal: savedDuration, // Always save 6-10
           updatedAt: firestore.FieldValue.serverTimestamp(),
         });
-        console.log('Updated frequency goal in Firestore');
+        console.log('Updated frequency goal in Firestore to 6-10 (regardless of selection)');
       } catch (error) {
         console.log('Error updating frequency goal in Firestore:', error);
       }
@@ -134,14 +138,13 @@ export default function OnboardingReadingTimeScreen() {
     // If coming from settings, just go back
     if (fromSettings) {
       // Show a success feedback before going back
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => { });
+      hapticSuccess()
       setTimeout(() => {
         router.back();
       }, 300);
     } else {
-      // Normal onboarding flow
-
-      await setResponse('frequencyGoal', duration);
+      // Normal onboarding flow (always save 6-10)
+      await setResponse('frequencyGoal', savedDuration);
       router.push('/onboarding/6');
     }
   };
@@ -149,15 +152,15 @@ export default function OnboardingReadingTimeScreen() {
   const options = [
     {
       id: '1-5',
-      title: '3-6 mins (1 chapter)',
+      title: i18n.t('reading_time_1_5'),
     },
     {
       id: '6-10',
-      title: '7-10 mins (3-4 chapters)',
+      title: i18n.t('reading_time_6_10'),
     },
     {
       id: '15-25',
-      title: '11-15 mins (6-8 chapters)',
+      title: i18n.t('reading_time_11_15'),
     },
   ] as const;
 
@@ -178,7 +181,7 @@ export default function OnboardingReadingTimeScreen() {
         {/* Question Text */}
         <Animated.View style={titleStyle}>
           <Text className="font-feather text-h2 text-center text-textPrimary mb-0">
-            How many minutes per day can you spend with God?
+            {i18n.t('onboarding_reading_time_question')}
           </Text>
         </Animated.View>
 
@@ -195,6 +198,7 @@ export default function OnboardingReadingTimeScreen() {
                 isActive={true}
                 primaryColor={selectedOption === option.id ? 'bg-surfaceCream' : 'bg-white'}
                 textColor={selectedOption === option.id ? 'text-accentGold' : 'text-textPrimary'}
+                buttonHeight={RPH(7)}
               />
             ))}
           </Animated.View>

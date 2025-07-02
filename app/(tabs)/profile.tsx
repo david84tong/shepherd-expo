@@ -1,7 +1,6 @@
-import { AntDesign, Feather } from '@expo/vector-icons';
+import { AntDesign, Feather, Ionicons } from '@expo/vector-icons';
 import { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 import dayjs from 'dayjs';
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useEffect, useState, useRef } from 'react';
 import {
@@ -21,30 +20,38 @@ import {
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as Application from 'expo-application';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { RiveRef } from 'rive-react-native';
 import analytics from '../../utils/analytics';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useAuth } from '../hooks/authHook';
 import { getLevelData } from '../../utils/levelUtils';
-import { isSignedInWithGoogle, isSignedInWithApple } from '../helper/helper';
+import { isSignedInWithGoogle, isSignedInWithApple, RPH } from '../helper/helper';
 import auth from '@react-native-firebase/auth';
+import { useAssets } from 'expo-asset';
+import { LinearGradient } from 'expo-linear-gradient';
 
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
+import { useUIStore } from '../stores/uiStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
+import { useCheckInStore } from '../stores/checkInStore';
 import PrimaryButton from '../../components/PrimaryButton';
 import OnboardingPathScreen from '../onboarding/8';
 import EditNameSheet from '../../components/EditNameSheet';
+
 
 // Import the icons using import statements
 import breadIcon from '../../assets/icons/breadIcon.png';
 import quillIcon from '../../assets/icons/journalIcon.png';
 import dropIcon from '../../assets/icons/waterIcon.png';
-import sheepIcon from '../../assets/icons/sheepIcon.png';
+import sheepIcon from '../../assets/icons/moods/sheepIcon.png';
+import starIcon from '../../assets/icons/starIcon.png';
+import heartIcon from '../../assets/icons/heartIcon.png';
 
 // Define activity type for the timeline
 type ActivityType = {
-  type: 'reading' | 'prayer' | 'reflection';
-  date: FirebaseFirestoreTypes.Timestamp;
+  type: 'reading' | 'prayer' | 'reflection' | 'checkin';
+  date: FirebaseFirestoreTypes.Timestamp | Date;
   data: any;
   icon: any;
   title: string;
@@ -63,6 +70,11 @@ function toDateSafe(ts: any): Date {
 
 const DISCORD_CARD_DISMISSED_KEY = 'shepherd_discord_card_dismissed_v1';
 
+import i18n from '../utils/i18n';
+import { useLanguageStore } from '../stores/languageStore';
+import { AppFonts } from '../constants/appFonts';
+import { hapticLight, hapticMedium } from '~/utils/haptics';
+
 export default function ProfileScreen() {
   const router = useRouter();
   const {
@@ -76,7 +88,7 @@ export default function ProfileScreen() {
   } = useUserStore();
 
   // Get subscription state and actions from the store
-  const { isProMember, presentPaywall, getCustomerInfo, setFromScreen } = useSubscriptionStore();
+  const { isProMember, presentFreeTrialPaywall, getCustomerInfo, setFromScreen } = useSubscriptionStore();
 
   const lamb = getLamb();
   const streak = getStreakCount();
@@ -86,6 +98,9 @@ export default function ProfileScreen() {
   const completedReflections = getCompletedReflections();
   const user = getUser();
   const userId = user?.id || null;
+  
+  // Get check-in history from store
+  const { checkInHistory } = useCheckInStore();
 
   const [showDiscordCard, setShowDiscordCard] = useState(true);
   const { signInWithApple, signInWithGoogle, upgradeAnonymousToApple } = useAuth();
@@ -136,7 +151,7 @@ export default function ProfileScreen() {
 
   // Show settings sheet
   const handleShowSettings = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    hapticMedium();
     if (typeof global !== 'undefined' && (global as any).showSettings) {
       (global as any).showSettings({
         userId: userId || 'Anonymous user',
@@ -211,13 +226,32 @@ export default function ProfileScreen() {
         content: reflection.content,
       })) || [];
 
-    const combined = [...readings, ...prayers, ...reflections];
+    // Add check-in activities
+    const checkIns =
+      checkInHistory?.map((checkIn) => {
+        // Build a content string with mood, focus, and struggle
+        const parts = [];
+        if (checkIn.mood) parts.push(`Mood: ${checkIn.mood}`);
+        if (checkIn.focus) parts.push(`Focus: ${checkIn.focus}`);
+        if (checkIn.struggle) parts.push(`Struggle: ${checkIn.struggle}`);
+        
+        return {
+          type: 'checkin' as const,
+          date: new Date(checkIn.completedAt),
+          data: checkIn,
+          icon: heartIcon,
+          title: 'Daily Check-in',
+          content: parts.join(' • '),
+        };
+      }) || [];
+
+    const combined = [...readings, ...prayers, ...reflections, ...checkIns];
     return combined.sort((a, b) => {
       const dateA = toDateSafe(a.date);
       const dateB = toDateSafe(b.date);
       return dateB.getTime() - dateA.getTime();
     });
-  }, [completedReadings, completedPrayers, completedReflections]);
+  }, [completedReadings, completedPrayers, completedReflections, checkInHistory]);
 
   // Function to format activity date for headers
   const formatActivityDate = (timestamp: FirebaseFirestoreTypes.Timestamp | any): string => {
@@ -290,9 +324,9 @@ export default function ProfileScreen() {
 
   // Handle subscription button press using the store action
   const handleSubscriptionPress = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    await presentPaywall();
-  }, [presentPaywall]);
+    hapticMedium();
+    await presentFreeTrialPaywall();
+  }, [presentFreeTrialPaywall]);
 
   // Get app version and build number
   const appVersion = Application.nativeApplicationVersion || 'Unknown';
@@ -353,6 +387,60 @@ export default function ProfileScreen() {
   // Check if onboarding is completed - defaulting to true if not found
   const onboardingCompleted = (user as any)?.onboarding_completed ?? true;
 
+  // Rive component state
+  const [riveSkin, setRiveSkin] = useState<'pink' | 'gold'>('pink');
+  const [riveAction, setRiveAction] = useState<'idle' | 'eat'>('idle');
+  const riveRef = useRef<RiveRef>(null);
+  const [riveError, setRiveError] = useState<string | null>(null);
+  const [riveLoaded, setRiveLoaded] = useState(false);
+
+  // Load Rive assets
+  const [riveAssets] = useAssets([
+    require('../../assets/riveAnimations/new_shepherd.riv'),
+  ]);
+
+  // Rive constants
+  const STATE_MACHINE = 'State Machine 1';
+  const INPUTS = {
+    pink: '1 Pink Skin',
+    gold: '99 Gold Skin',
+    idle: '0 Idle',
+    eat: '2 Eating',
+  };
+
+  // Map skins and actions to numbers
+  const SKIN_MAP = { pink: 1, gold: 99 } as const;
+  const ACTION_MAP = { idle: 0, eat: 2 } as const;
+
+  // Update skin number input
+  useEffect(() => {
+    if (!riveRef.current || !riveLoaded) return;
+    const skinValue = SKIN_MAP[riveSkin];
+    console.log('Setting Skin-Number to', skinValue);
+    riveRef.current?.setInputState(STATE_MACHINE, 'Skin-Number', skinValue);
+  }, [riveSkin, riveLoaded]);
+
+  // Update action number input
+  useEffect(() => {
+    if (!riveRef.current || !riveLoaded) return;
+    const actionValue = ACTION_MAP[riveAction];
+    console.log('Setting Action-Number to', actionValue);
+    riveRef.current?.setInputState(STATE_MACHINE, 'Action-Number', actionValue);
+  }, [riveAction, riveLoaded]);
+
+  // Debug Rive assets loading
+  useEffect(() => {
+    console.log('Rive assets loaded:', riveAssets);
+    if (riveAssets && riveAssets[0]) {
+      console.log('Rive asset URI:', riveAssets[0].uri);
+      // Set riveLoaded after a short delay as fallback
+      setTimeout(() => {
+        setRiveLoaded(true);
+        console.log('Rive loaded via timeout');
+      }, 500);
+    }
+  }, [riveAssets]);
+
   // Handler for updating path selection
   const handlePathSelected = (pathObj: any) => {
     if (!pathObj) return;
@@ -400,42 +488,133 @@ export default function ProfileScreen() {
   // Add ref for edit name sheet
   const editNameSheetRef = useRef<{ show: () => void; close: () => void }>(null);
 
+
+
+  // Subscribe to language changes to trigger re-render
+  const currentLanguage = useLanguageStore((state) => state.language);
+
+  // Force re-render when language changes
+  useEffect(() => {
+    // This effect will run whenever the language changes
+    i18n.locale = currentLanguage;
+  }, [currentLanguage]);
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      <SafeAreaView style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
+      <SafeAreaView style={{ flex: 1 }}>
+        {/* Split background container */}
+        <View style={{ flex: 1, position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}>
+          {/* Linear gradient top half */}
+          <LinearGradient
+            colors={['#FFB200', "#5C4307",]}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '40%',
+            }}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 0, y: 1 }}
+          />
+          {/* Green bottom half */}
+
+          <LinearGradient
+            // className="bg-surfaceCream"
+            colors={['#ffd080', "#FDEBB8",]}
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: '60%',
+            }} />
+          {/* Ellipse image - positioned to bridge both sections */}
+          <Image
+            source={require('../../assets/images/Ellipse.png')}
+            style={{
+              position: 'absolute',
+              top: '34%',
+              left: 0,
+              right: 0,
+              width: "100%",
+              height: 97,
+              resizeMode: 'cover',
+            }}
+          />
+        </View>
+
         <ScrollView
-          className="flex-1 bg-surfaceCream"
+          className="flex-1 "
           contentContainerStyle={{ paddingBottom: 50 }}>
           {/* Header */}
-          <View className="flex-row justify-between items-center px-6 pt-8 pb-4">
-            <Text className="font-feather text-h2 text-textPrimary">Profile</Text>
+          <View className="flex-row justify-between  px-6 pt-6 pb-4">
             <TouchableOpacity
               onPress={handleShowSettings}
-              className="w-10 h-10 rounded-full bg-lightYellow items-center justify-center">
-              <Feather name="settings" size={20} color="#B89B4C" />
+              className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+              <Ionicons name="settings-sharp" size={20} color="#795323" style={{ opacity: 0.4 }} />
+            </TouchableOpacity>
+
+            <View className=" justify-center items-center">
+              <Text className="font-feather text-h2 text-white">
+                {user?.username || user?.displayName || 'Profile'}
+              </Text>
+              <Text className="font-semibold text-[12px] text-white/50" >{i18n.t('journey_started')}</Text>
+              <Text className="font-semibold text-[12px] text-white/50 pt-1">{joinDate}</Text>
+            </View>
+
+            <TouchableOpacity
+              onPress={() => {
+                hapticLight();
+                useUIStore.getState().showStoreSheet();
+              }}
+              className="bg-white/80 w-10 h-10 rounded-full items-center justify-center">
+              <Feather name="shopping-bag" size={20} color="#795323"
+                style={{ opacity: 0.4 }} />
             </TouchableOpacity>
           </View>
+
+          <View className=" items-center justify-center mt-10">
+            <Image
+              source={isAnonymous ? require('../../assets/images/lambDanceDark.png') : require('../../assets/images/lambDance.png')}
+              style={{
+                width: 170,
+                height: 170,
+                resizeMode: 'cover',
+              }}
+            />
+          </View>
+          {/* lambDanceDark.png */}
 
           {/* Sign In to Save Progress Card (only for anonymous users and not signed in with any method) */}
           {isAnonymous &&
             !isSignedInWithGoogle() &&
             !isSignedInWithApple() &&
             !isSignedInWithEmail && (
-              <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-                <Text className="font-feather text-xl text-accentGold mb-2 text-center">
-                  Sign in to save your progress
+              <View className="mx-6 -mt-3 bg-surfaceCreamLight rounded-[20px] p-6 shadow-card border border-brownBorder">
+                <Text className="font-feather font-bold text-[20px] w-[70%]  text-black/70 text-center mx-auto" >
+                  {i18n.t('claim_lamb_save_progress')}
                 </Text>
-                <Text className="font-din text-body text-textPrimary mb-4 text-center">
-                  Create a free account to sync your streak, XP, and lamb across devices. You can
-                  always sign in later!
+                <Text className="font-nunito-bold font-bold text-[18px]  text-black/50 mb-3 mt-4 text-center">
+                  {i18n.t('sign_in_sync_description')}
                 </Text>
 
-                <View className="items-center mb-4">
+                <View className="items-center ">
                   <TouchableOpacity
-                    className={`flex-row items-center justify-center ${Platform.OS === 'ios' ? 'bg-black' : 'bg-white border border-gray-300'} w-full py-4 px-6 rounded-[16px] mb-4 shadow-appleShadow`}
+                    className={`flex-row items-center justify-center ${Platform.OS === 'ios' ? 'bg-black' : 'bg-white border border-gray-300'} w-full  px-6 rounded-full mb-4 shadow-appleShadow`}
                     onPress={handleSignIn}
+                    style={{ paddingVertical: RPH(1.8) }}
                     disabled={signInLoading}>
+                    <Text
+                      style={{ fontSize: AppFonts[15] }}
+                      className={`font-feather  text-[20px] text-center ${Platform.OS === 'ios' ? 'text-white' : 'text-[#4285F4]'} font-bold pr-2`}>
+                      {signInLoading
+                        ? i18n.t('signing_in')
+                        : Platform.OS === 'ios'
+                          ? i18n.t('sign_in_with_apple')
+                          : i18n.t('sign_in_with_google')}
+                    </Text>
                     {signInLoading ? (
                       <ActivityIndicator
                         color={Platform.OS === 'ios' ? 'white' : '#4285F4'}
@@ -445,19 +624,12 @@ export default function ProfileScreen() {
                     ) : (
                       <AntDesign
                         name={Platform.OS === 'ios' ? 'apple1' : 'google'}
-                        size={24}
+                        size={RPH(2.5)}
                         color={Platform.OS === 'ios' ? 'white' : '#4285F4'}
                         style={{ marginRight: 10 }}
                       />
                     )}
-                    <Text
-                      className={`font-din ${Platform.OS === 'ios' ? 'text-white' : 'text-[#4285F4]'} text-[18px] font-bold`}>
-                      {signInLoading
-                        ? 'Signing in...'
-                        : Platform.OS === 'ios'
-                          ? 'Sign in with Apple'
-                          : 'Sign in with Google'}
-                    </Text>
+
                   </TouchableOpacity>
                 </View>
                 {signInError && (
@@ -466,11 +638,56 @@ export default function ProfileScreen() {
               </View>
             )}
 
+          {/* Upgrade to PRO Card */}
+          {!isProMember && (
+            <View className="mx-6 mt-4 rounded-[20px] overflow-hidden shadow-card border border-brownBorder relative">
+              <Image
+                source={require('../../assets/backgrounds/godBackground.png')}
+                className="absolute w-full h-full left-0 top-0"
+                style={{ resizeMode: 'cover', opacity: 0.9 }}
+              />
+              <View className="p-6 items-center justify-center">
+                <Text className="font-feather font-bold text-[20px] text-center text-black/70 mb-2">
+                  {i18n.t('upgrade_to_pro')}
+                  <Image
+                    source={starIcon}
+                    className="w-10 h-10 ml-1"
+                    style={{ resizeMode: 'contain', marginBottom: -2 }}
+                  />
+                </Text>
+                <Text className="font-nunito-bold font-bold text-[18px] text-center text-black/50 mb-6">
+                  {i18n.t('unlock_premium_features_enhance')}
+                </Text>
+                <Image
+                  source={require('../../assets/images/reviews.png')}
+                  className="w-32 h-14"
+                  style={{ resizeMode: 'contain' }}
+                />
+                <Text className="font-nunito-bold font-bold text-[15px] text-center text-black/70 ">
+                  {i18n.t('join_super_users')}
+                </Text>
+                <PrimaryButton
+                  title={i18n.t('claim_free_week') || 'Claim my free week'}
+                  onPress={handleSubscriptionPress}
+                  buttonType="blue"
+                  width="100%"
+                  style='rounded-full'
+                  fullBorderRadius={true}
+                />
+              </View>
+            </View>
+          )}
+
+
+
           {/* Discord Card */}
           {showDiscordCard && (
-            <View className="mx-6 mt-4 bg-lightPurple rounded-[20px] p-6 shadow-card relative">
+            <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card border border-brownBorder relative">
               <TouchableOpacity
-                onPress={handleDismissDiscordCard}
+                onPress={() => {
+                  hapticLight();
+                  handleDismissDiscordCard();
+                }}
                 className="absolute top-3 right-3 p-1 z-10 bg-darkPurple/10 rounded-full">
                 <Feather name="x" size={20} color="#3C584A" />
               </TouchableOpacity>
@@ -480,17 +697,17 @@ export default function ProfileScreen() {
                   <FontAwesome6 name="discord" size={20} color="#5865F2" />
                 </View>
                 <View className="flex-1">
-                  <Text className="font-feather text-xl text-darkPurple">
-                    Join our Shepherd Family!
+                  <Text style={{ fontSize: AppFonts[15] }} className="font-feather text-darkPurple">
+                    {i18n.t('join_discord')}
                   </Text>
                   <Text className="font-din text-body text-darkPurple opacity-80 mt-1 leading-tight">
-                    Connect, share insights, and grow together on our Discord server.
+                    {i18n.t('discord_card_description')}
                   </Text>
                 </View>
               </View>
 
               <PrimaryButton
-                title="Join the Herd"
+                title={i18n.t('join_herd')}
                 onPress={handleJoinDiscord}
                 primaryColor="bg-darkPurple"
                 textColor="text-white"
@@ -499,14 +716,51 @@ export default function ProfileScreen() {
               />
             </View>
           )}
-          {/* Lamb Stats Card */}
+
+          {/* Selected Path Card */}
           <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+            <View className="flex-row justify-between items-center">
+              <Text className="font-feather text-heading text-textPrimary ">Selected Path</Text>
+              <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
+                <Text className="font-din text-description underline text-accentGold font-bold">
+                  {selectedPath?.title || 'No path selected'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* XP Bar */}
+
+            <View className="flex-row justify-between align-center mb-2 mt-6 border-t border-t-gray-200 pt-6">
+
+              <Text className="font-nunito-bold text-blue">{i18n.t('level')} {levelData.level}</Text>
+
+              <View className="h-3 mt-1.5 w-[55%] bg-black/10 rounded-full overflow-hidden">
+                <View
+                  className="h-full bg-blue rounded-full"
+                  style={{ width: `${levelData.progress}%` }}
+                />
+              </View>
+
+              <Text className="font-nunito-bold text-blue">
+                {levelData.xpCurrent}/{levelData.xpForNextLevel} {i18n.t('xp')}
+              </Text>
+
+            </View>
+          </View>
+
+
+
+          {/* Lamb Stats Card */}
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card border border-brownBorder">
             <View className="flex-row justify-between items-center mb-6">
               <TouchableOpacity
-                onPress={() => editNameSheetRef.current?.show()}
+                onPress={() => {
+                  hapticLight();
+                  editNameSheetRef.current?.show();
+                }}
                 className="flex-row items-center bg-lightYellow px-4 py-1 rounded-lg opacity-80">
                 <Text className="font-feather text-heading text-primary">
-                  {lamb.name ? lamb.name : 'Your Lamb'}
+                  {lamb.name ? lamb.name : i18n.t('your_lamb')}
                 </Text>
                 <Feather name="edit-2" size={16} color="#3C584A" className="ml-2" />
               </TouchableOpacity>
@@ -517,50 +771,31 @@ export default function ProfileScreen() {
             <View className="flex-row justify-between space-x-8">
               <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3 ">
                 <Text className="font-feather text-h2 text-textPrimary">{levelData.level}</Text>
-                <Text className="font-din text-description">Level</Text>
+                <Text className="font-din text-description">{i18n.t('level')}</Text>
               </View>
               <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3 mx-4">
                 <Text className="font-feather text-h2 text-textPrimary">{streak}</Text>
-                <Text className="font-din text-description">Day Streak</Text>
+                <Text className="font-din text-description">{i18n.t('day_streak')}</Text>
               </View>
 
               <View className="flex-1 items-center bg-surfaceCream rounded-xl py-3">
                 <Text className="font-feather text-h2 text-textPrimary">{lamb.hearts}</Text>
-                <Text className="font-din text-description">Hearts</Text>
+                <Text className="font-din text-description">{i18n.t('hearts')}</Text>
               </View>
             </View>
-            {/* XP Bar */}
-            <View className="mt-6 mx-2">
-              <View className="flex-row justify-between mb-2">
-                <Text className="font-din text-description">Level {levelData.level}</Text>
-                <Text className="font-din text-description">
-                  {levelData.xpCurrent}/{levelData.xpForNextLevel} XP
-                </Text>
-              </View>
-              <View className="h-4 bg-lightYellow rounded-full overflow-hidden">
-                <View
-                  className="h-full bg-accentGold rounded-full"
-                  style={{ width: `${levelData.progress}%` }}
-                />
-              </View>
-            </View>
+
           </View>
 
           {/* Join Date Card */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-            <Text className="font-feather text-heading text-textPrimary mb-2">Journey Started</Text>
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card border border-brownBorder">
+            <Text className="font-feather text-heading text-textPrimary mb-2">{i18n.t('journey_started')}</Text>
             <Text className="font-din text-description">{joinDate}</Text>
           </View>
 
-          {/* Selected Path Card */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-            <Text className="font-feather text-heading text-textPrimary mb-2">Selected Path</Text>
-            <TouchableOpacity onPress={() => setShowPathModal(true)} activeOpacity={0.7}>
-              <Text className="font-din text-description underline text-accentGold">
-                {selectedPath?.title || 'No path selected'}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          {/* Rive Lamb Test Card */}
+
+
+
 
           {/* Path Selection Modal */}
           <Modal
@@ -568,11 +803,14 @@ export default function ProfileScreen() {
             animationType="slide"
             transparent={false}
             onRequestClose={() => setShowPathModal(false)}>
-            <View style={{ flex: 1, backgroundColor: '#FFF4D9' }}>
+            <View style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
               {/* Show X button if onboarding_completed */}
               {onboardingCompleted && (
                 <TouchableOpacity
-                  onPress={() => setShowPathModal(false)}
+                  onPress={() => {
+                    hapticLight();
+                    setShowPathModal(false);
+                  }}
                   style={{
                     position: 'absolute',
                     top: 48,
@@ -595,34 +833,51 @@ export default function ProfileScreen() {
                 // Optionally pass selectedPathId for highlighting
                 selectedPathId={selectedPath?.id}
                 hideContinueButton={false}
+                // Pass callback to close modal when continue is pressed after onboarding completion
+                onModalClose={() => setShowPathModal(false)}
               />
             </View>
           </Modal>
 
           {/* Subscription Management Section */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card border border-brownBorder">
             <View className="flex-row justify-between items-center mb-2">
               <Text className="font-feather text-heading text-textPrimary">
-                Manage Subscription
+                {i18n.t('manage_subscription')}
               </Text>
               {isProMember && (
                 <View className="bg-lightYellow px-4 py-1 rounded-full">
-                  <Text className="font-din text-accentGold">Pro</Text>
+                  <Text className="font-din text-accentGold">{i18n.t('pro')}</Text>
                 </View>
               )}
             </View>
             <Text className="font-din text-description mb-4">
               {isProMember
-                ? 'You have access to all premium features!'
-                : 'Unlock premium features and enhance your spiritual journey'}
+                ? i18n.t('pro_access')
+                : i18n.t('unlock_premium_features')}
             </Text>
             {!isProMember && (
               <>
                 <PrimaryButton
-                  title="Upgrade to Pro"
-                  onPress={() => {
+                  title={i18n.t('upgrade_to_pro')}
+                  onPress={async () => {
+                    hapticMedium();
+
+                    // Set from screen for analytics
                     setFromScreen('profile');
-                    router.push('/PricingScreen' as any);
+
+                    // Present the paywall
+                    try {
+                      const result = await presentFreeTrialPaywall();
+                      if (result === 'PURCHASED') {
+                        analytics.logEvent('Profile_Upgrade_Success', {
+                          fromScreen: 'profile'
+                        });
+                        console.log('✅ Successfully upgraded to pro from profile');
+                      }
+                    } catch (error) {
+                      console.error('❌ Error presenting paywall from profile:', error);
+                    }
                   }}
                   style="mt-0 mb-3"
                 />
@@ -631,24 +886,14 @@ export default function ProfileScreen() {
           </View>
 
           {/* Store Section */}
-          <View className="mx-6 mt-4 mb-8 bg-white/50 rounded-[20px] p-6 shadow-card">
-            <View className="flex-row justify-between items-center">
-              <Text className="font-feather text-heading text-textPrimary">Store</Text>
-              <View className="bg-lightYellow px-4 py-1 rounded-full">
-                <Text className="font-feather text-accentGold">Unlocks at Level 10</Text>
-              </View>
-            </View>
-            <Text className="font-din text-description mt-2">
-              Customize your lamb and unlock special items!
-            </Text>
-          </View>
+
           {/* Activity History Timeline Card */}
-          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card">
-            <Text className="font-feather text-heading text-textPrimary mb-4">Your Journey</Text>
+          <View className="mx-6 mt-4 bg-white rounded-[20px] p-6 shadow-card border border-brownBorder">
+            <Text className="font-feather text-heading text-textPrimary mb-4">{i18n.t('your_journey')}</Text>
 
             {allActivities.length === 0 ? (
               <Text className="font-din text-description text-center py-6">
-                No activities yet. Begin your journey today!
+                {i18n.t('no_activities_yet')}
               </Text>
             ) : (
               <View className="mt-2">
@@ -660,7 +905,7 @@ export default function ProfileScreen() {
                   const showDateHeader =
                     index === 0 ||
                     formatActivityDate(activity.date) !==
-                      formatActivityDate(allActivities[index - 1].date);
+                    formatActivityDate(allActivities[index - 1].date);
 
                   return (
                     <View key={`${activity.type}-${index}`}>
@@ -699,13 +944,22 @@ export default function ProfileScreen() {
                               activity.data.topic &&
                               activity.title !== `Prayed for ${activity.data.topic}` && (
                                 <Text className="font-din text-sm text-description mt-1">
-                                  Topic: {activity.data.topic}
+                                  {i18n.t('topic')}: {activity.data.topic}
                                 </Text>
                               )}
                             {activity.type === 'reflection' && activity.content && (
                               <Text
                                 className="font-din text-sm text-description mt-1"
                                 numberOfLines={1}
+                                ellipsizeMode="tail">
+                                {activity.content}
+                              </Text>
+                            )}
+                            {/* Display check-in content (mood, focus, struggle) */}
+                            {activity.type === 'checkin' && activity.content && (
+                              <Text
+                                className="font-din text-sm text-description mt-1"
+                                numberOfLines={2}
                                 ellipsizeMode="tail">
                                 {activity.content}
                               </Text>
@@ -725,10 +979,12 @@ export default function ProfileScreen() {
           {/* Version Info */}
           <View className="mx-6 mt-2 mb-10 items-center">
             <Text className="font-din text-description text-center text-textSecondary opacity-60">
-              Version {appVersion} (Build {buildNumber})
+              {i18n.t('version')} {appVersion} ({i18n.t('build')} {buildNumber})
             </Text>
           </View>
         </ScrollView>
+
+
       </SafeAreaView>
 
       {/* Add EditNameSheet */}

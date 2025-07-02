@@ -3,13 +3,13 @@ import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
-import * as Haptics from 'expo-haptics';
 import React, { useCallback, useRef, useImperativeHandle } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 
 import PrimaryButton from './PrimaryButton';
 import { HalfModalType } from '../app/halfModal';
 import { useUserStore } from '../app/stores/userStore';
+import { hapticMedium } from '~/utils/haptics';
 
 export type HalfModalSheetRef = {
   expand: () => void;
@@ -35,7 +35,7 @@ const HalfModalSheet: React.FC<HalfModalSheetProps> = ({ halfModalRef, snapPoint
   // Handle dismiss of half modal
   const handleDismiss = useCallback(() => {
     bottomSheetRef.current?.close();
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    hapticMedium();
   }, []);
 
   // Handle bottom sheet changes

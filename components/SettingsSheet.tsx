@@ -19,7 +19,6 @@ import BottomSheet, {
   BottomSheetScrollView,
 } from '@gorhom/bottom-sheet';
 import Clipboard from '@react-native-clipboard/clipboard';
-import * as Haptics from 'expo-haptics';
 import { Feather } from '@expo/vector-icons';
 import { FontAwesome6 } from '@expo/vector-icons';
 import auth from '@react-native-firebase/auth';
@@ -45,7 +44,8 @@ import * as Application from 'expo-application';
 import { useOnboardingStore } from '../app/stores/onboardingStore';
 import { saveFeedback } from '../utils/firestore';
 import { useSoundStore } from '../app/stores/soundStore';
-
+import { useDevotionalStore } from '../app/stores/devotionalStore';
+import { useIsFocused } from '@react-navigation/native';
 import Animated, {
   useAnimatedStyle,
   withTiming,
@@ -59,6 +59,9 @@ import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 import { useHomeStore } from '~/app/stores/homeStore';
 import { syncStreakDataToWidget } from '~/utils/widgetSync';
 import dayjs from 'dayjs';
+import i18n from '~/app/utils/i18n';
+import { useLanguageStore } from '~/app/stores/languageStore';
+import { hapticLight, hapticMedium, hapticSuccess } from '~/utils/haptics';
 
 interface SettingsSheetProps {
   settingsSheetRef: React.RefObject<SettingsSheetRef>;
@@ -81,6 +84,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   const [translationModalVisible, setTranslationModalVisible] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [showAndroidPicker, setShowAndroidPicker] = useState(false);
+  const selectedLanguage = useLanguageStore((state) => state.language);
+  const setLanguage = useLanguageStore((state) => state.setLanguage);
+  const [languageModalVisible, setLanguageModalVisible] = useState(false);
 
   // Get user store data
   const notificationTime = useUserStore((state) => state.notificationTime);
@@ -184,6 +190,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   const savedTranslation = usePathStore((state) => state.savedTranslation);
   const setSavedTranslation = usePathStore((state) => state.setSavedTranslation);
 
+  // Add state for temporary translation selection
+  const [tempSelectedTranslation, setTempSelectedTranslation] = useState<string>(savedTranslation);
+  const [isSavingTranslation, setIsSavingTranslation] = useState(false);
+
   // Available translations
   const translations = [
     { id: 'WEB', name: 'World English Bible (WEB)' },
@@ -191,6 +201,11 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     { id: 'NIV', name: 'New International Version (NIV)' },
     { id: 'ESV', name: 'English Standard Version (ESV)' },
     { id: 'ICB', name: "International Children's Bible (ICB)" },
+    { id: 'BDS_FR', name: '🇫🇷 La Bible du Semeur (BDS)' },
+    { id: 'HTB_NL', name: '🇳🇱 Het Boek (HTB)' },
+    { id: 'LUT_DE', name: '🇩🇪 Lutherbibel 1912 (LUT)' },
+    { id: 'NVI_ES', name: '🇪🇸 NUEVA VERSIÓN INTERNACIONAL (NVI_ES)' },
+    { id: 'NVI_PT', name: '🇵🇹 Bíblia Sagrada, Nova Versão Internacional (NVI_PT)' },
   ];
 
   // Add internal ref for the actual BottomSheet
@@ -227,7 +242,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
     // Show the sheet at the first snap point (60%)
     bottomSheetRef.current?.snapToIndex(0);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    hapticMedium();
   }, []);
 
   // Expose methods via ref
@@ -236,6 +251,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     () => ({
       show: prepareAndShow,
       close: () => {
+        hapticLight();
         setIsVisible(false);
         bottomSheetRef.current?.close();
       },
@@ -253,7 +269,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Close the settings sheet
   const handleClose = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    hapticLight();
     setIsVisible(false);
     bottomSheetRef.current?.close();
   }, []);
@@ -265,13 +281,17 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     });
 
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      hapticMedium();
 
       const currentUser = auth().currentUser;
       const isAnonymous = currentUser?.isAnonymous ?? false;
       const providerId = currentUser?.providerData[0]?.providerId;
 
       await auth().signOut();
+
+      // Stop background music when signing out
+
+      useSoundStore.getState().stopBackgroundMusic();
 
       // Revoke access based on the sign-in provider
       if (Platform.OS === 'android' && !isAnonymous) {
@@ -285,15 +305,27 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       // Apple sign-out: no explicit revoke needed in Firebase
       // (Apple does not expose logout in same way as Google)
 
-      // useUserStore.getState().resetUserStore();
-      // useHomeStore.getState().resetCompletionStates();
+      // Reset all stores and clear AsyncStorage data
+      useUserStore.getState().resetUserStore();
+      useHomeStore.getState().resetCompletionStates();
       syncStreakDataToWidget(0, dayjs()?.toDate());
+
+      // Clear all AsyncStorage data - this removes all user-specific data including:
+      // - onboarding completion status
+      // - A/B test assignments
+      // - daily first load tracking
+      // - notification preferences
+      // - translation preferences
+      // - and all other cached user data
+      await AsyncStorage.clear();
+      console.log('✅ All AsyncStorage data cleared on sign out');
+
       bottomSheetRef.current?.close();
       setIsModalDimActive(false);
 
       router.replace({ pathname: '/(auth)' });
     } catch (error) {
-      const msg = error?.message ?? '';
+      const msg = (typeof error === 'object' && error && 'message' in error) ? (error as any).message : '';
 
       const isExpectedLogoutError =
         msg.includes('[auth/no-current-user]') ||
@@ -308,20 +340,32 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       }
 
       // Continue with post-logout cleanup regardless
+      // Stop background music even if there was an error
+
+      useSoundStore.getState().stopBackgroundMusic();
 
       bottomSheetRef.current?.close();
       setIsModalDimActive(false);
       router.replace({ pathname: '/(auth)' });
     } finally {
-      // useUserStore.getState().resetUserStore();
-      AsyncStorage.clear();
+      // Ensure AsyncStorage is cleared even if there were errors
+      try {
+        await AsyncStorage.clear();
+        console.log('✅ AsyncStorage cleared in finally block');
+      } catch (clearError) {
+        console.error('❌ Error clearing AsyncStorage:', clearError);
+      }
+
+      // Reset stores in finally block as well to ensure cleanup
+        useUserStore.getState().resetUserStore();
+        useHomeStore.getState().resetCompletionStates()
     }
   }, [router, setIsModalDimActive, userId]);
 
   // Handle copying the user ID
   const handleCopyUserId = useCallback(() => {
     Clipboard.setString(userId);
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    hapticSuccess();
     Alert.alert('Copied!', 'User ID copied to clipboard');
   }, [userId]);
 
@@ -333,19 +377,55 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     []
   );
 
-  // Handle translation selection
-  const handleTranslationChange = useCallback(
-    (translation: string) => {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-      setSavedTranslation(translation);
-      setTranslationModalVisible(false);
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      analytics.logEvent('Settings_Tapped_TranslationChange', {
-        translation: translation,
-      });
+  // Handle temporary translation selection (just for preview)
+  const handleTempTranslationSelect = useCallback((translation: string) => {
+    hapticLight();
+    setTempSelectedTranslation(translation);
+  }, []);
+
+  // Handle saving the translation (apply the changes)
+  const handleSaveTranslation = useCallback(
+    async () => {
+      setIsSavingTranslation(true);
+
+      try {
+        // Update path store (primary translation setting)
+        setSavedTranslation(tempSelectedTranslation);
+
+        // Update devotional store bible version
+        const devotionalStore = useDevotionalStore.getState();
+        devotionalStore.setBibleVersion(tempSelectedTranslation);
+
+        // If there's a current devotional, refetch it with the new translation
+        if (devotionalStore.currentDevotional || devotionalStore.dailyDevotional) {
+          console.log('🔄 Translation changed, refetching devotional with new translation:', tempSelectedTranslation);
+          try {
+            await devotionalStore.fetchTodaysDevotional();
+          } catch (error) {
+            console.error('Error refetching devotional with new translation:', error);
+          }
+        }
+
+        setTranslationModalVisible(false);
+        hapticSuccess()
+        analytics.logEvent('Settings_Tapped_TranslationChange', {
+          translation: tempSelectedTranslation,
+        });
+      } catch (error) {
+        console.error('Error saving translation:', error);
+      } finally {
+        setIsSavingTranslation(false);
+      }
     },
-    [setSavedTranslation]
+    [setSavedTranslation, tempSelectedTranslation]
   );
+
+  // Handle opening translation modal
+  const handleOpenTranslationModal = useCallback(() => {
+    // Reset temp selection to current saved translation
+    setTempSelectedTranslation(savedTranslation);
+    setTranslationModalVisible(true);
+  }, [savedTranslation]);
 
   // Function to get display text for notification time
   const getNotificationTimeDisplay = useCallback(() => {
@@ -379,7 +459,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Toggle notifications on/off
   const toggleNotifications = async (enableNotifications: boolean) => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    hapticLight();
 
     if (enableNotifications) {
       // Request permissions if enabling notifications
@@ -489,7 +569,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Toggle time picker visibility
   const toggleTimePicker = () => {
     // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    hapticLight();
 
     // Animate the scale of the selector button
     toggleScale.value = withSequence(
@@ -535,7 +615,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Handle time selection and close picker
   const handleTimeConfirm = async (event?: any, selectedDate?: Date) => {
     // Add haptic feedback
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    hapticLight();
 
     // For Android, we need to handle the selected date from the event
     const finalSelectedTime = Platform.OS === 'android' ? selectedDate : selectedTime;
@@ -619,7 +699,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
           }, 200);
         }
 
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        hapticSuccess()
       } catch (error) {
         console.log('Failed to update notification time:', error);
         Alert.alert('Error', 'Failed to update notification time. Please try again.');
@@ -640,13 +720,13 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Update the cancel button in translation modal
   const handleCancelTranslation = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    hapticLight();
     setTranslationModalVisible(false);
   }, []);
 
   // Open Discord link
   const handleOpenDiscord = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    hapticLight();
     Linking.openURL('https://discord.gg/W9MZdVaKBs').catch((err) => {
       console.log('Error opening Discord link:', err);
       Alert.alert('Could not open link', 'Please check your internet connection and try again.');
@@ -655,7 +735,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Open roadmap link
   const handleOpenRoadmap = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    hapticLight();
     Linking.openURL('https://shepherd.nolt.io/roadmap').catch((err) => {
       console.error('Error opening roadmap link:', err);
       Alert.alert('Could not open link', 'Please check your internet connection and try again.');
@@ -727,6 +807,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   // Only sign out if account deletion was successful
                   await auth().signOut();
                   console.log('✅ User signed out after account deletion');
+
+                  // Stop background music when account is deleted and user is signed out
+
+                  useSoundStore.getState().stopBackgroundMusic();
                 }
               } catch (authError: any) {
                 console.log('❌ Error with auth operations:', authError);
@@ -742,6 +826,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                         onPress: async () => {
                           try {
                             await auth().signOut();
+                            // Stop background music when signing out due to auth timeout
+
+                            useSoundStore.getState().stopBackgroundMusic();
                             bottomSheetRef.current?.close();
                             router.replace({ pathname: '/(auth)' });
                           } catch (e) {
@@ -766,6 +853,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   {
                     text: 'OK',
                     onPress: () => {
+                      // Stop background music when redirecting to auth screen
+
+                      useSoundStore.getState().stopBackgroundMusic();
                       bottomSheetRef.current?.close();
                       router.replace({ pathname: '/(auth)' });
                     },
@@ -783,6 +873,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                     onPress: async () => {
                       try {
                         await auth().signOut();
+                        // Stop background music when signing out due to error
+
+                        useSoundStore.getState().stopBackgroundMusic();
                         bottomSheetRef.current?.close();
                         router.replace({ pathname: '/(auth)' });
                       } catch (e) {
@@ -792,6 +885,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   },
                 ]
               );
+            } finally {
+              useUserStore.getState().resetUserStore();
+              useHomeStore.getState().resetCompletionStates();
             }
           },
         },
@@ -811,14 +907,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Handle subscription button press using the store action
   const handleSubscriptionPress = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    hapticMedium();
     await presentPaywall();
   }, [presentPaywall]);
 
   // Handle promo code redemption
   const handlePromoCodePress = useCallback(async () => {
     try {
-      Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+      hapticMedium();
 
       // Track analytics event
       analytics.logEvent('Settings_Tapped_PromoCode');
@@ -875,7 +971,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
       refreshStreakData();
     }
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    hapticMedium();
   }, [showDevPanel]);
 
   // Refresh streak data
@@ -896,7 +992,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   // Toggle expand/collapse of developer panel
   const toggleDevPanelExpanded = useCallback(() => {
     setDevPanelExpanded(!devPanelExpanded);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    hapticLight();
   }, [devPanelExpanded]);
 
   // Function to get display text for reading time
@@ -916,7 +1012,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Handle navigation to reading time selection
   const handleEditReadingTime = useCallback(() => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    hapticLight();
     setSelectedReadingTime(frequencyGoal || '6-10');
     setReadingTimeModalVisible(true);
     analytics.logEvent('Settings_Tapped_EditReadingTime');
@@ -951,7 +1047,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
   const handleReadingTimeSelection = useCallback(
     async (duration: string) => {
       try {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        hapticLight();
 
         // Update user store
         setFrequencyGoal(duration);
@@ -970,7 +1066,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         setReadingTimeModalVisible(false);
 
         // Success feedback
-        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        hapticSuccess()
 
         // Log analytics
         analytics.logEvent('Settings_Changed_ReadingTime', {
@@ -1006,7 +1102,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   // Handle cancellation modal open
   const handleOpenCancellationModal = useCallback(async () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+    hapticMedium();
 
     // Check if user has already cancelled today
     if (hasCancelledToday) {
@@ -1127,7 +1223,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         // They successfully subscribed, no need to redirect to Apple
       }
 
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+      hapticSuccess()
     } catch (error) {
       console.error('❌ Error submitting cancellation feedback:', error);
       Alert.alert('Error', 'Failed to submit feedback. Please try again.');
@@ -1139,33 +1235,17 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
   const backgroundMusicEnabled = useSoundStore((state) => state.backgroundMusicEnabled);
   const soundEffectsEnabled = useSoundStore((state) => state.soundEffectsEnabled);
+  const hapticsEnabled = useSoundStore((state) => state.hapticsEnabled);
   const setBackgroundMusicEnabled = useSoundStore((state) => state.setBackgroundMusicEnabled);
   const setSoundEffectsEnabled = useSoundStore((state) => state.setSoundEffectsEnabled);
+  const setHapticsEnabled = useSoundStore((state) => state.setHapticsEnabled);
 
   // Add app state ref
   const appState = useRef(AppState.currentState);
+  const isFocused = useIsFocused();
 
   // Add effect to handle app state changes
-  useEffect(() => {
-    const subscription = AppState.addEventListener('change', (nextAppState) => {
-      if (appState.current.match(/active/) && nextAppState.match(/inactive|background/)) {
-        // App has gone to background, stop the music
-        if (backgroundMusicEnabled) {
-          useSoundStore.getState().stopBackgroundMusic();
-        }
-      } else if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
-        // App has come to foreground, restart music if it was enabled
-        if (backgroundMusicEnabled) {
-          useSoundStore.getState().playBackgroundMusic();
-        }
-      }
-      appState.current = nextAppState;
-    });
 
-    return () => {
-      subscription.remove();
-    };
-  }, []);
 
   // Add effect to initialize notification state
   useEffect(() => {
@@ -1206,6 +1286,27 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
     initializeNotificationState();
   }, []);
 
+  const handleLanguageChange = async (lang: string) => {
+    console.log(`[SettingsSheet] Language changed to: ${lang}`);
+    setLanguage(lang);
+    setLanguageModalVisible(false);
+
+    // Also update chat language preference to match app language
+    // This ensures chat language stays in sync unless user explicitly sets it differently
+    try {
+      const chatLanguageSet = await AsyncStorage.getItem('shepherd_bible_chat_language_set');
+      console.log(`[SettingsSheet] Chat language set flag: ${chatLanguageSet}`);
+
+      // Clear the chat language set flag so that chat language will sync with new app language
+      // This ensures that when app language changes, chat language follows unless user explicitly sets it
+      await AsyncStorage.removeItem('shepherd_bible_chat_language_set');
+      await AsyncStorage.setItem('shepherd_bible_chat_language', lang);
+      console.log(`[SettingsSheet] Synced chat language with app language: ${lang}`);
+    } catch (error) {
+      console.error('Error syncing chat language with app language:', error);
+    }
+  };
+
   return (
     <>
       {isVisible ? (
@@ -1225,9 +1326,9 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             contentContainerStyle={styles.settingsContentContainer}>
             {/* Header */}
             <View style={styles.settingsHeader}>
-              <Text style={styles.settingsTitle}>Settings</Text>
+              <Text style={styles.settingsTitle}>{i18n.t('settings_title')}</Text>
               <TouchableOpacity onPress={handleClose} style={{ padding: 5 }}>
-                <Text style={styles.doneButton}>Done</Text>
+                <Text style={styles.doneButton}>{i18n.t('done_button')}</Text>
               </TouchableOpacity>
             </View>
 
@@ -1235,10 +1336,10 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             <View style={styles.settingsContent}>
               {/* Bible Translation Section */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>Bible Translation</Text>
+                <Text style={styles.settingsSectionTitle}>{i18n.t('bible_translation_title')}</Text>
                 <TouchableOpacity
                   style={styles.translationSelector}
-                  onPress={() => setTranslationModalVisible(true)}>
+                  onPress={handleOpenTranslationModal}>
                   <Text style={styles.translationText}>
                     {translations.find((t) => t.id === savedTranslation)?.name ||
                       'English Standard Version (ESV)'}
@@ -1247,11 +1348,34 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 </TouchableOpacity>
               </View>
 
+              {/* Language Section */}
+              <View style={styles.settingsSection}>
+                <Text style={styles.settingsSectionTitle}>{i18n.t('language_title')}</Text>
+                <TouchableOpacity
+                  style={styles.translationSelector}
+                  onPress={() => setLanguageModalVisible(true)}>
+                  <Text style={styles.translationText}>
+                    {(() => {
+                      switch (selectedLanguage) {
+                        case 'en': return 'English';
+                        case 'es': return 'Español';
+                        case 'pt': return 'Português';
+                        case 'nl': return 'Nederlands';
+                        case 'fr': return 'Français';
+                        case 'de': return 'Deutsch';
+                        default: return 'English';
+                      }
+                    })()}
+                  </Text>
+                  <Feather name="chevron-right" size={18} color="#3C584A" />
+                </TouchableOpacity>
+              </View>
+
               <View style={styles.divider} />
 
               {/* Daily Reading Time Section */}
-              <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>Daily Reading Time</Text>
+              {/* <View style={styles.settingsSection}>
+                <Text style={styles.settingsSectionTitle}>{i18n.t('daily_reading_time_title')}</Text>
                 <TouchableOpacity
                   style={styles.translationSelector}
                   onPress={handleEditReadingTime}>
@@ -1260,11 +1384,11 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 </TouchableOpacity>
               </View>
 
-              <View style={styles.divider} />
+              <View style={styles.divider} /> */}
 
               {/* Notification Time Section */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>Notifications</Text>
+                <Text style={styles.settingsSectionTitle}>{i18n.t('notifications_title')}</Text>
 
                 {/* Toggle for enabling/disabling notifications */}
                 <TouchableOpacity
@@ -1272,7 +1396,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   onPress={() => animateToggle(!notificationsEnabled)}
                   activeOpacity={0.7}>
                   <Text style={styles.translationText}>
-                    {notificationsEnabled ? 'Notifications enabled' : 'Notifications disabled'}
+                    {notificationsEnabled ? i18n.t('notifications_enabled') : i18n.t('notifications_disabled')}
                   </Text>
                   <View
                     style={[
@@ -1354,20 +1478,20 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
               {/* Sound Settings Section */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>Sound</Text>
+                <Text style={styles.settingsSectionTitle}>{i18n.t('sound_title')}</Text>
 
                 {/* Background Music Toggle */}
                 <TouchableOpacity
                   style={styles.translationSelector}
                   onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                    hapticLight();
                     setBackgroundMusicEnabled(!backgroundMusicEnabled);
                   }}
                   activeOpacity={0.7}>
                   <Text style={styles.translationText}>
                     {backgroundMusicEnabled
-                      ? 'Background music enabled'
-                      : 'Background music disabled'}
+                      ? i18n.t('background_music_enabled')
+                      : i18n.t('background_music_disabled')}
                   </Text>
                   <View
                     style={[
@@ -1390,12 +1514,12 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 <TouchableOpacity
                   style={[styles.translationSelector, { marginTop: 10 }]}
                   onPress={() => {
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+                    hapticLight();
                     setSoundEffectsEnabled(!soundEffectsEnabled);
                   }}
                   activeOpacity={0.7}>
                   <Text style={styles.translationText}>
-                    {soundEffectsEnabled ? 'Sound effects enabled' : 'Sound effects disabled'}
+                    {soundEffectsEnabled ? i18n.t('sound_effects_enabled') : i18n.t('sound_effects_disabled')}
                   </Text>
                   <View
                     style={[
@@ -1413,17 +1537,45 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                     />
                   </View>
                 </TouchableOpacity>
+
+                {/* Haptics Toggle */}
+                <TouchableOpacity
+                  style={[styles.translationSelector, { marginTop: 10 }]}
+                  onPress={() => {
+                    hapticLight();
+                    setHapticsEnabled(!hapticsEnabled);
+                  }}
+                  activeOpacity={0.7}>
+                  <Text style={styles.translationText}>
+                    {hapticsEnabled ? i18n.t('haptics_enabled') : i18n.t('haptics_disabled')}
+                  </Text>
+                  <View
+                    style={[
+                      styles.toggleButton,
+                      hapticsEnabled ? styles.toggleButtonActive : {},
+                    ]}>
+                    <Animated.View
+                      style={[
+                        styles.toggleKnob,
+                        hapticsEnabled ? styles.toggleKnobActive : {},
+                        {
+                          transform: [{ translateX: hapticsEnabled ? 20 : 0 }],
+                        },
+                      ]}
+                    />
+                  </View>
+                </TouchableOpacity>
               </View>
 
               <View style={styles.divider} />
 
               {/* Join Discord */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>Community</Text>
+                <Text style={styles.settingsSectionTitle}>{i18n.t('community_title')}</Text>
                 <TouchableOpacity style={styles.discordButton} onPress={handleOpenDiscord}>
                   <View style={styles.discordButtonContent}>
                     <FontAwesome6 name="discord" size={20} color="#5865F2" />
-                    <Text style={styles.discordButtonText}>Join the Shepherd Family!</Text>
+                    <Text style={styles.discordButtonText}>{i18n.t('join_discord')}</Text>
                   </View>
                   <Feather name="external-link" size={18} color="#3C584A" />
                 </TouchableOpacity>
@@ -1431,7 +1583,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 <TouchableOpacity style={styles.roadmapButton} onPress={handleOpenRoadmap}>
                   <View style={styles.roadmapButtonContent}>
                     <Feather name="map" size={20} color="#22C55E" />
-                    <Text style={styles.roadmapButtonText}>Roadmap & Feature Requests</Text>
+                    <Text style={styles.roadmapButtonText}>{i18n.t('roadmap_feature_requests')}</Text>
                   </View>
                   <Feather name="external-link" size={18} color="#3C584A" />
                 </TouchableOpacity>
@@ -1441,17 +1593,17 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
               {/* Subscription Section */}
               <View className="mb-6">
-                <Text className="font-feather text-xl text-[#5D5531] mb-2">Subscription</Text>
+                <Text className="font-feather text-xl text-[#5D5531] mb-2">{i18n.t('subscription_title')}</Text>
                 <View className="bg-white rounded-xl p-4 shadow-sm mb-2">
                   <View className="flex-row justify-between items-center">
                     <View className="flex-1 mr-4">
                       <Text className="font-feather text-base text-textPrimary">
-                        {isProMember ? 'Super Shepherd (Active)' : 'Upgrade to Super Shepherd'}
+                        {isProMember ? i18n.t('super_shepherd_active') : i18n.t('upgrade_super_shepherd')}
                       </Text>
                       <Text className="font-din text-description mt-1">
                         {isProMember
-                          ? 'Thank you for supporting our mission!'
-                          : 'Unlock premium features and support our mission'}
+                          ? i18n.t('thank_you_support')
+                          : i18n.t('unlock_premium')}
                       </Text>
                     </View>
                     {isProMember ? (
@@ -1477,10 +1629,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   onPress={handleOpenReferralModal}
                   className="bg-white rounded-xl p-4 mt-2 shadow-sm flex-row justify-between items-center">
                   <View>
-                    <Text className="font-feather text-base text-textPrimary">Referral Code</Text>
-                    <Text className="font-din text-description mt-1">
-                      Enter a referral code to unlock special features
-                    </Text>
+                    <Text className="font-feather text-base text-textPrimary">{i18n.t('referral_code_title')}</Text>
+                    <Text className="font-din text-description mt-1">{i18n.t('referral_code_description')}</Text>
                   </View>
                   <Feather name="gift" size={20} color="#B89B4C" />
                 </TouchableOpacity>
@@ -1488,7 +1638,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
               {/* User ID Section - Moved to bottom */}
               <View style={styles.settingsSection}>
-                <Text style={styles.settingsSectionTitle}>User ID</Text>
+                <Text style={styles.settingsSectionTitle}>{i18n.t('user_id_title')}</Text>
                 <TouchableOpacity onPress={handleCopyUserId} style={styles.userIdContainer}>
                   <Text style={styles.userIdText} numberOfLines={1} ellipsizeMode="tail">
                     {userId}
@@ -1503,14 +1653,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               {isUserSignedIn && (
                 <>
                   <TouchableOpacity onPress={handleSignOut} style={styles.signOutButton}>
-                    <Text style={styles.signOutText}>Sign Out</Text>
+                    <Text style={styles.signOutText}>{i18n.t('sign_out_button')}</Text>
                   </TouchableOpacity>
 
                   {/* Delete Account Button */}
                   <TouchableOpacity
                     onPress={handleDeleteAccount}
                     style={styles.deleteAccountButton}>
-                    <Text style={styles.deleteAccountText}>Delete Account</Text>
+                    <Text style={styles.deleteAccountText}>{i18n.t('delete_account_button')}</Text>
                   </TouchableOpacity>
                 </>
               )}
@@ -1518,7 +1668,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               {/* Developer Panel Toggle */}
               <TouchableOpacity onPress={toggleDevPanel} style={styles.developerToggleButton}>
                 <Text style={styles.developerToggleText}>
-                  {showDevPanel ? 'Hide Developer Panel' : 'Show Developer Panel'}
+                  {showDevPanel ? i18n.t('hide_developer_panel') : i18n.t('show_developer_panel')}
                 </Text>
               </TouchableOpacity>
 
@@ -1526,7 +1676,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               {showDevPanel && (
                 <View style={styles.developerPanel}>
                   <View style={styles.developerPanelHeader}>
-                    <Text style={styles.developerPanelTitle}>Developer Panel</Text>
+                    <Text style={styles.developerPanelTitle}>{i18n.t('developer_panel_title')}</Text>
                     {devPanelLoading ? (
                       <ActivityIndicator size="small" color="#3C584A" />
                     ) : (
@@ -1541,30 +1691,30 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
                   {/* App Version Info Section */}
                   <View style={styles.developerPanelSection}>
-                    <Text style={styles.developerPanelSectionTitle}>App Information</Text>
+                    <Text style={styles.developerPanelSectionTitle}>{i18n.t('app_information_title')}</Text>
                     <View style={styles.developerDataRow}>
-                      <Text style={styles.developerDataLabel}>Version:</Text>
+                      <Text style={styles.developerDataLabel}>{i18n.t('version')}:</Text>
                       <Text style={styles.developerDataValue}>{appVersion}</Text>
                     </View>
                     <View style={styles.developerDataRow}>
-                      <Text style={styles.developerDataLabel}>Build:</Text>
+                      <Text style={styles.developerDataLabel}>{i18n.t('build')}:</Text>
                       <Text style={styles.developerDataValue}>{buildNumber}</Text>
                     </View>
                   </View>
 
                   {/* Basic Data */}
                   <View style={styles.developerPanelSection}>
-                    <Text style={styles.developerPanelSectionTitle}>Streak Data</Text>
+                    <Text style={styles.developerPanelSectionTitle}>{i18n.t('streak_data_title')}</Text>
                     <View style={styles.developerDataRow}>
-                      <Text style={styles.developerDataLabel}>Streak Count:</Text>
+                      <Text style={styles.developerDataLabel}>{i18n.t('streak_count')}:</Text>
                       <Text style={styles.developerDataValue}>{userData.streakCount}</Text>
                     </View>
                     <View style={styles.developerDataRow}>
-                      <Text style={styles.developerDataLabel}>Lamb Hearts:</Text>
+                      <Text style={styles.developerDataLabel}>{i18n.t('lamb_hearts')}:</Text>
                       <Text style={styles.developerDataValue}>{userData.lambHearts}</Text>
                     </View>
                     <View style={styles.developerDataRow}>
-                      <Text style={styles.developerDataLabel}>Lamb Mood:</Text>
+                      <Text style={styles.developerDataLabel}>{i18n.t('lamb_mood')}:</Text>
                       <Text style={styles.developerDataValue}>{userData.lambMood}</Text>
                     </View>
                   </View>
@@ -1588,27 +1738,27 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                     <>
                       {/* Last Activity Dates */}
                       <View style={styles.developerPanelSection}>
-                        <Text style={styles.developerPanelSectionTitle}>Last Activity Dates</Text>
+                        <Text style={styles.developerPanelSectionTitle}>{i18n.t('last_activity_dates_title')}</Text>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Last Activity:</Text>
+                          <Text style={styles.developerDataLabel}>{i18n.t('last_activity')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {formatDate(userData.lastActivityDate)}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Last Reading:</Text>
+                          <Text style={styles.developerDataLabel}>{i18n.t('last_reading')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {formatDate(userData.lastReadingDate)}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Last Prayer:</Text>
+                          <Text style={styles.developerDataLabel}>{i18n.t('last_prayer')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {formatDate(userData.lastPrayerDate)}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Last Reflection:</Text>
+                          <Text style={styles.developerDataLabel}>{i18n.t('last_reflection')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {formatDate(userData.lastReflectionDate)}
                           </Text>
@@ -1617,21 +1767,21 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 
                       {/* Last Penalty Dates */}
                       <View style={styles.developerPanelSection}>
-                        <Text style={styles.developerPanelSectionTitle}>Last Penalty Dates</Text>
+                        <Text style={styles.developerPanelSectionTitle}>{i18n.t('last_penalty_dates_title')}</Text>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Reading Penalty:</Text>
+                          <Text style={styles.developerDataLabel}>{i18n.t('reading_penalty')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {formatDate(userData.lastReadingPenaltyDate)}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Prayer Penalty:</Text>
+                          <Text style={styles.developerDataLabel}>{i18n.t('prayer_penalty')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {formatDate(userData.lastPrayerPenaltyDate)}
                           </Text>
                         </View>
                         <View style={styles.developerDataRow}>
-                          <Text style={styles.developerDataLabel}>Reflection Penalty:</Text>
+                          <Text style={styles.developerDataLabel}>{i18n.t('reflection_penalty')}:</Text>
                           <Text style={styles.developerDataValue}>
                             {formatDate(userData.lastReflectionPenaltyDate)}
                           </Text>
@@ -1642,35 +1792,35 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                       {streakData && (
                         <View style={styles.developerPanelSection}>
                           <Text style={styles.developerPanelSectionTitle}>
-                            Last Streak Check Results
+                            {i18n.t('last_streak_check_results_title')}
                           </Text>
                           <View style={styles.developerDataRow}>
-                            <Text style={styles.developerDataLabel}>Streak Broken:</Text>
+                            <Text style={styles.developerDataLabel}>{i18n.t('streak_broken')}:</Text>
                             <Text style={styles.developerDataValue}>
-                              {streakData.streakBroken ? 'Yes' : 'No'}
+                              {streakData.streakBroken ? i18n.t('yes') : i18n.t('no')}
                             </Text>
                           </View>
                           <View style={styles.developerDataRow}>
-                            <Text style={styles.developerDataLabel}>Heart Penalty:</Text>
+                            <Text style={styles.developerDataLabel}>{i18n.t('heart_penalty')}:</Text>
                             <Text style={styles.developerDataValue}>
                               {streakData.heartPenalty || 0}
                             </Text>
                           </View>
                           <View style={styles.developerDataRow}>
-                            <Text style={styles.developerDataLabel}>Days Missed:</Text>
+                            <Text style={styles.developerDataLabel}>{i18n.t('days_missed')}:</Text>
                             <Text style={styles.developerDataValue}>
                               {streakData.daysMissed || 0}
                             </Text>
                           </View>
                           <View style={styles.developerDataRow}>
-                            <Text style={styles.developerDataLabel}>New Day:</Text>
+                            <Text style={styles.developerDataLabel}>{i18n.t('new_day')}:</Text>
                             <Text style={styles.developerDataValue}>
-                              {streakData.newDay ? 'Yes' : 'No'}
+                              {streakData.newDay ? i18n.t('yes') : i18n.t('no')}
                             </Text>
                           </View>
                           {streakData.error && (
                             <View style={styles.developerDataRow}>
-                              <Text style={styles.developerDataLabel}>Error:</Text>
+                              <Text style={styles.developerDataLabel}>{i18n.t('error')}:</Text>
                               <Text style={[styles.developerDataValue, { color: 'red' }]}>
                                 {String(streakData.error)}
                               </Text>
@@ -1687,7 +1837,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                     style={styles.forceCheckButton}
                     disabled={devPanelLoading}>
                     <Text style={styles.forceCheckButtonText}>
-                      {devPanelLoading ? 'Checking...' : 'Force Streak Check'}
+                      {devPanelLoading ? i18n.t('checking') : i18n.t('force_streak_check')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -1708,7 +1858,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
         onRequestClose={handleCancelTranslation}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Select Bible Translation</Text>
+            <Text style={styles.modalTitle}>{i18n.t('select_bible_translation_title')}</Text>
 
             <ScrollView style={styles.translationScrollView} showsVerticalScrollIndicator={false}>
               {translations.map((translation) => (
@@ -1716,25 +1866,35 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                   key={translation.id}
                   style={[
                     styles.translationOption,
-                    savedTranslation === translation.id && styles.selectedTranslation,
+                    tempSelectedTranslation === translation.id && styles.selectedTranslation,
                   ]}
-                  onPress={() => handleTranslationChange(translation.id)}>
+                  onPress={() => handleTempTranslationSelect(translation.id)}>
                   <Text
                     style={[
                       styles.translationOptionText,
-                      savedTranslation === translation.id && styles.selectedTranslationText,
+                      tempSelectedTranslation === translation.id && styles.selectedTranslationText,
                     ]}>
                     {translation.name}
                   </Text>
-                  {savedTranslation === translation.id && (
+                  {tempSelectedTranslation === translation.id && (
                     <Feather name="check" size={18} color="#F7B500" />
                   )}
                 </TouchableOpacity>
               ))}
             </ScrollView>
 
+            {/* Save Button */}
+            <TouchableOpacity
+              style={[styles.saveButton, tempSelectedTranslation === savedTranslation && styles.saveButtonDisabled]}
+              onPress={handleSaveTranslation}
+              disabled={isSavingTranslation || tempSelectedTranslation === savedTranslation}>
+              <Text style={[styles.saveButtonText, tempSelectedTranslation === savedTranslation && styles.saveButtonTextDisabled]}>
+                {isSavingTranslation ? "Saving..." : "Save"}
+              </Text>
+            </TouchableOpacity>
+
             <TouchableOpacity style={styles.cancelButton} onPress={handleCancelTranslation}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
+              <Text style={styles.cancelButtonText}>{i18n.t('cancel_button')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1750,14 +1910,14 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
           <View className="bg-surfaceCream rounded-2xl p-5 w-[85%] max-w-[350px]">
             {/* Title */}
             <Text className="font-feather text-xl text-textPrimary text-center mb-4">
-              Enter Referral Code
+              {i18n.t('enter_referral_code')}
             </Text>
 
             {/* Input Field */}
             <View className="mb-4">
               <TextInput
                 className="bg-white rounded-xl px-4 py-3 text-lg font-din text-textPrimary border border-[#FFE4A8]"
-                placeholder="Enter code here"
+                placeholder={i18n.t('enter_code_here')}
                 placeholderTextColor="#B89B4C"
                 value={referralInput || ''}
                 onChangeText={setReferralInput}
@@ -1773,7 +1933,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               className={`bg-[#FFE07D] rounded-xl p-4 mb-2 ${referralInput.length !== 6 ? 'opacity-50' : ''}`}
               disabled={referralInput.length !== 6 || isSubmittingReferral}>
               <Text className="font-feather text-textPrimary text-center text-lg">
-                {isSubmittingReferral ? 'Submitting...' : 'Confirm'}
+                {isSubmittingReferral ? i18n.t('submitting') : i18n.t('confirm_button')}
               </Text>
             </TouchableOpacity>
 
@@ -1781,7 +1941,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             <TouchableOpacity
               onPress={() => setReferralModalVisible(false)}
               className="bg-textPrimary/10 rounded-xl p-4">
-              <Text className="font-din text-textPrimary text-center">Cancel</Text>
+              <Text className="font-din text-textPrimary text-center">{i18n.t('cancel_button')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1797,15 +1957,15 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
           <View className="bg-surfaceCream rounded-2xl p-5 w-[85%] max-w-[350px]">
             {/* Title */}
             <Text className="font-feather text-xl text-textPrimary text-center mb-4">
-              Daily Reading Time
+              {i18n.t('daily_reading_time_title')}
             </Text>
 
             {/* Options */}
             <View className="mb-4 space-y-3">
               {[
-                { id: '1-5', title: '3-6 mins (1 chapter)' },
-                { id: '6-10', title: '7-10 mins (3-4 chapters)' },
-                { id: '15-25', title: '11-15 mins (6-8 chapters)' },
+                { id: '1-5', title: i18n.t('reading_time_1_5') },
+                { id: '6-10', title: i18n.t('reading_time_6_10') },
+                { id: '15-25', title: i18n.t('reading_time_11_15') },
               ].map((option) => (
                 <TouchableOpacity
                   key={option.id}
@@ -1813,15 +1973,13 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                     setSelectedReadingTime(option.id);
                     handleReadingTimeSelection(option.id);
                   }}
-                  className={`rounded-xl p-4 border-2 ${
-                    selectedReadingTime === option.id
-                      ? 'bg-[#FFE07D] border-[#F7B500]'
-                      : 'bg-white border-[#FFE4A8]'
-                  }`}>
-                  <Text
-                    className={`font-feather text-center ${
-                      selectedReadingTime === option.id ? 'text-textPrimary' : 'text-textPrimary'
+                  className={`rounded-xl p-4 border-2 ${selectedReadingTime === option.id
+                    ? 'bg-[#FFE07D] border-[#F7B500]'
+                    : 'bg-white border-[#FFE4A8]'
                     }`}>
+                  <Text
+                    className={`font-feather text-center ${selectedReadingTime === option.id ? 'text-textPrimary' : 'text-textPrimary'
+                      }`}>
                     {option.title}
                   </Text>
                 </TouchableOpacity>
@@ -1832,7 +1990,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             <TouchableOpacity
               onPress={() => setReadingTimeModalVisible(false)}
               className="bg-textPrimary/10 rounded-xl p-4">
-              <Text className="font-din text-textPrimary text-center">Cancel</Text>
+              <Text className="font-din text-textPrimary text-center">{i18n.t('cancel_button')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1848,32 +2006,30 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
           <View className="bg-surfaceCream rounded-2xl p-5 w-[85%] max-w-[350px]">
             {/* Title */}
             <Text className="font-feather text-xl text-textPrimary text-center mb-4">
-              Why are you cancelling?
+              {i18n.t('why_are_you_cancelling')}
             </Text>
 
             {/* Options */}
             <View className="mb-4 space-y-3">
               {[
-                'Too expensive',
-                'Technical Issues',
-                'Missing features',
-                'Missing language',
-                'Missing Translation',
-                'Not rewarding enough',
-                'Bible is too boring',
+                i18n.t('too_expensive'),
+                i18n.t('technical_issues'),
+                i18n.t('missing_features'),
+                i18n.t('missing_language'),
+                i18n.t('missing_translation'),
+                i18n.t('not_rewarding_enough'),
+                i18n.t('bible_too_boring'),
               ].map((reason) => (
                 <TouchableOpacity
                   key={reason}
                   onPress={() => toggleCancellationReason(reason)}
-                  className={`rounded-xl p-4 border-2 ${
-                    cancellationReasons.includes(reason)
-                      ? 'bg-[#FFE07D] border-[#F7B500]'
-                      : 'bg-white border-[#FFE4A8]'
-                  }`}>
-                  <Text
-                    className={`font-feather text-center ${
-                      cancellationReasons.includes(reason) ? 'text-textPrimary' : 'text-textPrimary'
+                  className={`rounded-xl p-4 border-2 ${cancellationReasons.includes(reason)
+                    ? 'bg-[#FFE07D] border-[#F7B500]'
+                    : 'bg-white border-[#FFE4A8]'
                     }`}>
+                  <Text
+                    className={`font-feather text-center ${cancellationReasons.includes(reason) ? 'text-textPrimary' : 'text-textPrimary'
+                      }`}>
                     {reason}
                   </Text>
                 </TouchableOpacity>
@@ -1883,11 +2039,11 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             {/* Feedback Input */}
             <View className="mb-4">
               <Text className="font-din text-textPrimary mb-2">
-                Please elaborate, we really want to improve 😢
+                {i18n.t('please_elaborate')}
               </Text>
               <TextInput
                 className="bg-white rounded-xl px-4 py-3 text-lg font-din text-textPrimary border border-[#FFE4A8] min-h-[120px]"
-                placeholder="Your feedback helps us improve..."
+                placeholder={i18n.t('your_feedback_helps_us_improve')}
                 placeholderTextColor="#B89B4C"
                 value={cancellationFeedback}
                 onChangeText={setCancellationFeedback}
@@ -1904,7 +2060,7 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               className={`bg-[#FFE07D] rounded-xl p-4 mb-2 ${cancellationReasons.length === 0 ? 'opacity-50' : ''}`}
               disabled={cancellationReasons.length === 0 || isSubmittingCancellation}>
               <Text className="font-feather text-textPrimary text-center text-lg">
-                {isSubmittingCancellation ? 'Submitting...' : 'Continue'}
+                {isSubmittingCancellation ? i18n.t('submitting') : i18n.t('continue_button')}
               </Text>
             </TouchableOpacity>
 
@@ -1912,7 +2068,52 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
             <TouchableOpacity
               onPress={() => setCancellationModalVisible(false)}
               className="bg-textPrimary/10 rounded-xl p-4">
-              <Text className="font-din text-textPrimary text-center">Cancel</Text>
+              <Text className="font-din text-textPrimary text-center">{i18n.t('cancel_button')}</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Language Selection Modal */}
+      <Modal
+        visible={languageModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setLanguageModalVisible(false)}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>{i18n.t('select_language_title')}</Text>
+            <ScrollView style={styles.translationScrollView} showsVerticalScrollIndicator={false}>
+              {[
+                { id: 'en', name: 'English' },
+                { id: 'es', name: 'Español' },
+                { id: 'pt', name: 'Português' },
+                { id: 'nl', name: 'Nederlands' },
+                { id: 'fr', name: 'Français' },
+                { id: 'de', name: 'Deutsch' },
+              ].map((lang) => (
+                <TouchableOpacity
+                  key={lang.id}
+                  style={[
+                    styles.translationOption,
+                    selectedLanguage === lang.id && styles.selectedTranslation,
+                  ]}
+                  onPress={() => handleLanguageChange(lang.id)}>
+                  <Text
+                    style={[
+                      styles.translationOptionText,
+                      selectedLanguage === lang.id && styles.selectedTranslationText,
+                    ]}>
+                    {lang.name}
+                  </Text>
+                  {selectedLanguage === lang.id && (
+                    <Feather name="check" size={18} color="#F7B500" />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity style={styles.cancelButton} onPress={() => setLanguageModalVisible(false)}>
+              <Text style={styles.cancelButtonText}>{i18n.t('cancel_button')}</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -1922,37 +2123,136 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
 };
 
 const styles = StyleSheet.create({
-  handleIndicator: {
-    backgroundColor: '#DCB280',
-    height: 4,
-    width: 40,
-  },
-  settingsContentContainer: {
-    flexGrow: 1,
-    paddingBottom: 40,
-  },
-  sheetBackground: {
-    backgroundColor: '#FFF4D9', // surfaceCream
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  settingsContent: {
-    flex: 1,
-    padding: 20,
-  },
-  settingsHeader: {
+  cancelButton: {
     alignItems: 'center',
-    borderBottomColor: '#FFE4A8',
-    borderBottomWidth: 1,
+    backgroundColor: 'rgba(60, 88, 74, 0.1)',
+    borderRadius: 8,
+    marginTop: 12,
+    padding: 14,
+  },
+  cancelButtonText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  copyButton: {
+    padding: 5,
+  },
+  deleteAccountButton: {
+    backgroundColor: 'rgba(223, 69, 51, 0.2)',
+    borderLeftColor: '#DF4533',
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    marginBottom: 20,
+    padding: 16,
+  },
+  deleteAccountText: {
+    color: '#DF4533',
+    fontFamily: 'Nunito-Black',
+    fontSize: 16,
+  },
+  developerDataLabel: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 12,
+    opacity: 0.8,
+  },
+  developerDataRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+    marginBottom: 5,
   },
-  settingsTitle: {
+  developerDataValue: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  developerExpandText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 14,
+  },
+  developerPanel: {
+    backgroundColor: 'rgba(60, 88, 74, 0.05)',
+    borderRadius: 10,
+    marginBottom: 20,
+    padding: 15,
+  },
+  developerPanelExpandButton: {
+    alignItems: 'center',
+    borderTopColor: 'rgba(60, 88, 74, 0.1)',
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+    paddingVertical: 8,
+  },
+  developerPanelHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 10,
+  },
+  developerPanelSection: {
+    borderBottomColor: 'rgba(60, 88, 74, 0.1)',
+    borderBottomWidth: 1,
+    marginBottom: 15,
+    paddingBottom: 10,
+  },
+  developerPanelSectionTitle: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 5,
+  },
+  developerPanelTitle: {
     color: '#3C584A',
     fontFamily: 'Nunito-Black',
-    fontSize: 18,
+    fontSize: 16,
+  },
+  developerToggleButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(60, 88, 74, 0.05)',
+    borderLeftColor: '#3C584A',
+    borderLeftWidth: 4,
+    borderRadius: 10,
+    marginBottom: 10,
+    marginTop: 20,
+    padding: 12,
+  },
+  developerToggleText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  discordButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(88, 101, 242, 0.1)',
+    borderLeftColor: '#5865F2',
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 16,
+  },
+  discordButtonContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  discordButtonText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    marginLeft: 10,
+  },
+  divider: {
+    backgroundColor: '#FFE4A8',
+    height: 1,
+    marginVertical: 12,
   },
   doneButton: {
     color: '#F7B500',
@@ -1960,46 +2260,36 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
   },
-  settingsSection: {
-    marginBottom: 20,
-  },
-  settingsSectionTitle: {
-    color: '#3C584A',
-    fontFamily: 'Nunito-Black',
-    fontSize: 18,
-    marginBottom: 10,
-  },
-  userIdContainer: {
+  donePickingButton: {
     alignItems: 'center',
-    flexDirection: 'row',
+    backgroundColor: '#F7B500',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    padding: 8,
   },
-  userIdText: {
-    color: '#3C584A',
-    flexShrink: 1,
+  donePickingText: {
+    color: '#FFFFFF',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
-    marginRight: 10,
+    fontWeight: '600',
   },
-  copyButton: {
-    padding: 5,
-  },
-  divider: {
-    backgroundColor: '#FFE4A8',
-    height: 1,
-    marginVertical: 12,
-  },
-  translationSelector: {
+  forceCheckButton: {
     alignItems: 'center',
-    backgroundColor: 'rgba(60, 88, 74, 0.05)',
-    borderRadius: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 12,
+    backgroundColor: 'rgba(247, 181, 0, 0.15)',
+    borderRadius: 8,
+    marginTop: 10,
+    padding: 10,
   },
-  translationText: {
+  forceCheckButtonText: {
     color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 16,
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  handleIndicator: {
+    backgroundColor: '#DCB280',
+    height: 4,
+    width: 40,
   },
   modalContainer: {
     alignItems: 'center',
@@ -2017,47 +2307,146 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     color: '#3C584A',
-    fontFamily: 'Feather Bold',
+    fontFamily: 'Nunito-Black',
     fontSize: 18,
     marginBottom: 16,
     textAlign: 'center',
   },
-  translationScrollView: {
-    maxHeight: 450,
+  refreshButton: {
+    padding: 5,
   },
-  translationOption: {
+  roadmapButton: {
     alignItems: 'center',
-    borderRadius: 8,
+    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+    borderLeftColor: '#22C55E',
+    borderLeftWidth: 4,
+    borderRadius: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
+    marginTop: 12,
+    padding: 16,
   },
-  selectedTranslation: {
-    backgroundColor: 'rgba(247, 181, 0, 0.1)',
+  roadmapButtonContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
   },
-  translationOptionText: {
+  roadmapButtonText: {
     color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
+    marginLeft: 10,
+  },
+  saveButton: {
+    alignItems: 'center',
+    backgroundColor: '#F7B500',
+    borderRadius: 8,
+    marginTop: 12,
+    padding: 14,
+  },
+  saveButtonDisabled: {
+    backgroundColor: 'rgba(247, 181, 0, 0.3)',
+  },
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  saveButtonTextDisabled: {
+    color: 'rgba(255, 255, 255, 0.6)',
+  },
+  selectedTranslation: {
+    backgroundColor: 'rgba(247, 181, 0, 0.1)',
   },
   selectedTranslationText: {
     color: '#3C584A',
     fontWeight: '600',
   },
-  cancelButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(60, 88, 74, 0.1)',
-    borderRadius: 8,
-    marginTop: 12,
-    padding: 14,
+  settingsContent: {
+    flex: 1,
+    padding: 12,
   },
-  cancelButtonText: {
+  settingsContentContainer: {
+    flexGrow: 1,
+    paddingBottom: 40,
+  },
+  settingsHeader: {
+    alignItems: 'center',
+    borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+  },
+  settingsSection: {
+    marginBottom: 20,
+  },
+  settingsSectionTitle: {
+    color: '#3C584A',
+    fontFamily: 'Nunito-Black',
+    fontSize: 18,
+    marginBottom: 10,
+  },
+  settingsTitle: {
+    color: '#3C584A',
+    fontFamily: 'Nunito-Black',
+    fontSize: 18,
+  },
+  sheetBackground: {
+    backgroundColor: '#FFF4D9', // surfaceCream
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  signOutButton: {
+    backgroundColor: 'rgba(223, 69, 51, 0.1)',
+    borderLeftColor: '#DF4533',
+    borderLeftWidth: 4,
+    borderRadius: 12,
+    marginBottom: 20,
+    padding: 16,
+  },
+  signOutText: {
+    color: '#DF4533',
+    fontFamily: 'Nunito-Black',
+    fontSize: 16,
+  },
+  timePicker: {
+    height: 180,
+    width: '100%',
+  },
+  timePickerContainer: {
+    backgroundColor: 'rgba(255, 244, 217, 0.95)',
+    borderColor: '#FFE4A8',
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 24,
+    overflow: 'hidden',
+  },
+  timePickerWrapper: {
+    backgroundColor: '#FFFFFF',
+    borderBottomColor: '#FFE4A8',
+    borderBottomWidth: 1,
+    borderRadius: 16,
+    paddingVertical: 8,
+  },
+  timeSelector: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(60, 88, 74, 0.05)',
+    borderRadius: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+    padding: 12,
+  },
+  timeSelectorActive: {
+    backgroundColor: 'rgba(247, 181, 0, 0.15)',
+    borderColor: '#F7B500',
+  },
+  timeSelectorText: {
     color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
-    fontWeight: '600',
   },
   toggleButton: {
     backgroundColor: '#E0E0E0',
@@ -2080,215 +2469,46 @@ const styles = StyleSheet.create({
   toggleKnobActive: {
     // Remove transform from here, we'll handle it with Animated
   },
-  timeSelector: {
+  translationOption: {
     alignItems: 'center',
-    backgroundColor: 'rgba(60, 88, 74, 0.05)',
-    borderRadius: 10,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 10,
-    padding: 12,
-  },
-  timeSelectorText: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 16,
-  },
-  timePickerContainer: {
-    backgroundColor: 'rgba(255, 244, 217, 0.95)',
-    borderColor: '#FFE4A8',
-    borderRadius: 16,
-    borderWidth: 1,
-    marginTop: 24,
-    overflow: 'hidden',
-  },
-  timePicker: {
-    height: 180,
-    width: '100%',
-  },
-  donePickingButton: {
-    alignItems: 'center',
-    backgroundColor: '#F7B500',
-    borderBottomLeftRadius: 16,
-    borderBottomRightRadius: 16,
-    padding: 8,
-  },
-  donePickingText: {
-    color: '#FFFFFF',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  timeSelectorActive: {
-    backgroundColor: 'rgba(247, 181, 0, 0.15)',
-    borderColor: '#F7B500',
-  },
-  timePickerWrapper: {
-    backgroundColor: '#FFFFFF',
-    borderBottomColor: '#FFE4A8',
-    borderBottomWidth: 1,
-    borderRadius: 16,
-    paddingVertical: 8,
-  },
-  discordButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(88, 101, 242, 0.1)',
-    borderLeftColor: '#5865F2',
-    borderLeftWidth: 4,
-    borderRadius: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 16,
-  },
-  discordButtonContent: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  discordButtonText: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 16,
-    marginLeft: 10,
-  },
-  developerToggleButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(60, 88, 74, 0.05)',
-    borderLeftColor: '#3C584A',
-    borderLeftWidth: 4,
-    borderRadius: 10,
-    marginBottom: 10,
-    marginTop: 20,
-    padding: 12,
-  },
-  developerToggleText: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  developerPanel: {
-    backgroundColor: 'rgba(60, 88, 74, 0.05)',
-    borderRadius: 10,
-    marginBottom: 20,
-    padding: 15,
-  },
-  developerPanelHeader: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-  },
-  developerPanelTitle: {
-    color: '#3C584A',
-    fontFamily: 'Nunito-Black',
-    fontSize: 16,
-  },
-  refreshButton: {
-    padding: 5,
-  },
-  developerPanelSection: {
-    borderBottomColor: 'rgba(60, 88, 74, 0.1)',
-    borderBottomWidth: 1,
-    marginBottom: 15,
-    paddingBottom: 10,
-  },
-  developerPanelSectionTitle: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 5,
-  },
-  developerDataRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 5,
-  },
-  developerDataLabel: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 12,
-    opacity: 0.8,
-  },
-  developerDataValue: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  developerPanelExpandButton: {
-    alignItems: 'center',
-    borderTopColor: 'rgba(60, 88, 74, 0.1)',
-    borderTopWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 10,
-    paddingVertical: 8,
-  },
-  developerExpandText: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 14,
-  },
-  forceCheckButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(247, 181, 0, 0.15)',
     borderRadius: 8,
-    marginTop: 10,
-    padding: 10,
-  },
-  forceCheckButtonText: {
-    color: '#3C584A',
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  signOutButton: {
-    backgroundColor: 'rgba(223, 69, 51, 0.1)',
-    borderLeftColor: '#DF4533',
-    borderLeftWidth: 4,
-    borderRadius: 12,
-    marginBottom: 20,
-    padding: 16,
-  },
-  signOutText: {
-    color: '#DF4533',
-    fontFamily: 'Nunito-Black',
-    fontSize: 16,
-  },
-  deleteAccountButton: {
-    backgroundColor: 'rgba(223, 69, 51, 0.2)',
-    borderLeftColor: '#DF4533',
-    borderLeftWidth: 4,
-    borderRadius: 12,
-    marginBottom: 20,
-    padding: 16,
-  },
-  deleteAccountText: {
-    color: '#DF4533',
-    fontFamily: 'Nunito-Black',
-    fontSize: 16,
-  },
-  roadmapButton: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(34, 197, 94, 0.1)',
-    borderLeftColor: '#22C55E',
-    borderLeftWidth: 4,
-    borderRadius: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 12,
-    padding: 16,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 14,
   },
-  roadmapButtonContent: {
-    alignItems: 'center',
-    flexDirection: 'row',
-  },
-  roadmapButtonText: {
+  translationOptionText: {
     color: '#3C584A',
     fontFamily: 'DIN Next Rounded LT W01 Regular',
     fontSize: 16,
-    marginLeft: 10,
+  },
+  translationScrollView: {
+    maxHeight: 450,
+  },
+  translationSelector: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(60, 88, 74, 0.05)',
+    borderRadius: 10,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    padding: 12,
+  },
+  translationText: {
+    color: '#3C584A',
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+  },
+  userIdContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  userIdText: {
+    color: '#3C584A',
+    flexShrink: 1,
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
+    marginRight: 10,
   },
 });
 

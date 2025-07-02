@@ -1,4 +1,3 @@
-import * as Haptics from 'expo-haptics';
 import { useRouter } from 'expo-router';
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, Image, Pressable, StatusBar } from 'react-native';
@@ -17,16 +16,19 @@ import { useOnboardingStore } from '../stores/onboardingStore';
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import analytics from '../../utils/analytics';
+import i18n from '../utils/i18n';
+import { hapticLight } from '~/utils/haptics';
 
 interface OnboardingPathScreenProps {
   onPathSelected?: (pathObj: any) => void;
   selectedPathId?: string;
   hideContinueButton?: boolean;
+  onModalClose?: () => void; // Add callback to close modal from profile
 }
 
-export default function OnboardingPathScreen({ onPathSelected, selectedPathId: externalSelectedPathId, hideContinueButton }: OnboardingPathScreenProps) {
+export default function OnboardingPathScreen({ onPathSelected, selectedPathId: externalSelectedPathId, hideContinueButton, onModalClose }: OnboardingPathScreenProps) {
   const router = useRouter();
-  const { setResponse, setPathSelection } = useOnboardingStore();
+  const { setResponse } = useOnboardingStore();
   const { setUser } = useUserStore();
   const { setSelectedPath } = usePathStore();
   const [selectedPathId, setSelectedPathId] = useState(externalSelectedPathId || 'knowing-jesus');
@@ -41,7 +43,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
   const insets = useSafeAreaInsets();
 
   // Calculate image height dynamically based on insets
-  const imageHeight = insets.top > 20 ? 160 : 112; // Use numeric values instead of tailwind classes
+  const imageHeight = insets.top > 20 ? 140 : 112; // Use numeric values instead of tailwind classes
 
   useEffect(() => {
     // Log screen view when component mounts
@@ -84,7 +86,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
   const handleSelection = async (pathId: string) => {
     // Trigger light haptic feedback
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await hapticLight();
     } catch (error) {
       console.log('Haptics not available');
     }
@@ -99,13 +101,8 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
     const selectedPathObj = PATH_OPTIONS.find((p) => p.id === pathId);
 
     if (selectedPathObj) {
-      // Save to onboarding store using enhanced method
-      await setPathSelection({
-        id: selectedPathObj.id,
-        title: selectedPathObj.title,
-        subtitle: selectedPathObj.subtitle,
-        order: selectedPathObj.order
-      });
+      // Save to onboarding store
+      await setResponse('selectedPath', pathId);
 
       // For backward compatibility
       await setResponse('selectedPath', pathId);
@@ -116,32 +113,57 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
       if (onPathSelected) {
         onPathSelected(selectedPathObj);
       }
+    } else {
+      console.log('❌ [OnboardingPathScreen] Path object not found for ID:', pathId);
     }
   };
 
-  const handleContinue = useCallback(() => {
+  const handleContinue = useCallback(() => {    
     if (selectedPathId) {
       // Track continue button press in analytics
       analytics.logEvent("OnboardingPathScreen_Tapped_Continue", {
         value: selectedPathId,
       });
+      
       setUser({ selectedPathId: selectedPathId });
-      console.log(selectedPathId, "selectedPathId")
-      router.push('/onboarding/explainerHearts' as any);
+      console.log(selectedPathId, "selectedPathId");
+      
+      // IMPORTANT: If this is during onboarding (no onPathSelected callback), 
+      // we need to save the path to the pathStore as well
+      if (!onPathSelected) {
+        const selectedPathObj = PATH_OPTIONS.find((p) => p.id === selectedPathId);
+        if (selectedPathObj) {
+          setSelectedPath(selectedPathObj);
+        }
+      }
+      
+      // Check if user has completed onboarding
+      const user = useUserStore.getState().getUser();
+      const onboardingCompleted = (user as any)?.onboarding_completed ?? false;
+      
+      if (onboardingCompleted && onModalClose) {
+        // If onboarding is completed and we're in a modal (from profile), just close the modal
+        onModalClose();
+      } else {
+        // If onboarding is not completed, continue to next onboarding screen
+        router.push('/onboarding/explainerHearts' as any);
+      }
+    } else {
+      console.log('❌ [OnboardingPathScreen] No selectedPathId, cannot continue');
     }
-  }, [selectedPathId, setUser, router]);
+  }, [selectedPathId, setUser, router, onModalClose, onPathSelected, setSelectedPath]);
 
   return (
     <>
       <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-      <View className="flex-1 bg-surfaceCream px-6 pt-12">
+      <View className="flex-1 bg-surfaceCream px-6 pt-24">
         {/* Title Section */}
         <Animated.View style={titleStyle}>
           <Text className="font-feather text-h1 text-center text-textPrimary mb-2">
-            Choose Your Path
+            {i18n.t('onboarding_path_question')}
           </Text>
           <Text className="font-din text-body text-center text-description mb-8">
-            How would you like to read the Bible?
+            {i18n.t('onboarding_path_subtitle')}
           </Text>
         </Animated.View>
 
@@ -157,7 +179,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
                   onPress={() => handleSelection(path.id)}
                   onPressIn={() => {
                     setPressedId(path.id);
-                    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                    hapticLight();
                   }}
                   onPressOut={() => setPressedId(undefined)}
                   className={`transform ${pressedId === path.id ? 'translate-y-[3px]' : 'translate-y-0'}`}
@@ -190,7 +212,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
         {/* Continue Button */}
         {!hideContinueButton && (
           <PrimaryButton
-            title="Continue"
+            title={i18n.t('continue_button')}
             onPress={handleContinue}
             disabled={!selectedPathId}
             style="mt-6 mb-12"

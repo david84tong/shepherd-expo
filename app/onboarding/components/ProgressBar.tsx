@@ -18,7 +18,7 @@ const ORDERED_SCREENS = [
   '5',
   '6',
   '7',
-  '8',
+  'explainerHearts',
   'explainer',
   '9',
   '10',
@@ -46,12 +46,15 @@ export default function ProgressBar() {
 
     const targetProgress = Math.min(((currentIndex + 1) / totalSteps) * 100, 100);
 
+    // Debug logging for progress calculation
+    console.log(`[ProgressBar] Screen: ${currentScreen}, Index: ${currentIndex}, Total: ${totalSteps}, Progress: ${targetProgress}%`);
+
     // Use faster animation with easing for smoother transition
     progressValue.value = withTiming(targetProgress, {
       duration: 250, // Faster animation
       easing: Easing.bezier(0.25, 0.1, 0.25, 1), // Smoother easing curve
     });
-  }, [currentIndex, totalSteps, progressValue]);
+  }, [currentIndex, totalSteps, progressValue, currentScreen]);
 
   // Create animated style for the progress bar
   const progressStyle = useAnimatedStyle(() => {
