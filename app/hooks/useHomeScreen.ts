@@ -336,16 +336,17 @@ export const useHomeScreen = () => {
 
   // Apply current skin whenever it changes or rive becomes ready
   useEffect(() => {
-    if (riveRef.current && currentSkin && riveSkinInitialized) {
-      const skinNumber = parseInt(currentSkin, 10);
+    if (riveRef.current && riveSkinInitialized) {
+      // Use the user's selected skin from store
+      const skinNumber = currentSkin ? parseInt(currentSkin, 10) : 0;
       try {
         riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
-        console.log(`Applied skin change: ${skinNumber} (${currentSkin} skin)`);
+        console.log(`Applied skin change: ${skinNumber} (${isPro ? 'golden pro' : currentSkin || 'normal'} skin)`);
       } catch (error) {
         console.log('Error applying skin change:', error);
       }
     }
-  }, [currentSkin, riveSkinInitialized]);
+  }, [currentSkin, riveSkinInitialized, isPro]);
 
   useEffect(() => {
     if (isPrayPresses === 'true') handlePrayerPress();
@@ -514,6 +515,11 @@ export const useHomeScreen = () => {
         try {
           console.log(`[ForceLevelSet] Setting Level-Number to ${levelNumber} for level ${currentLevel}`);
           riveRef.current.setInputState('State Machine 1', 'Level-Number', levelNumber);
+          
+          // Apply the user's selected skin from store
+          const skinNumber = currentSkin ? parseInt(currentSkin, 10) : 0;
+          riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
+          console.log(`[ForceLevelSet] Also set Skin-Number to ${skinNumber} (${currentSkin || 'normal'} skin)`);
         } catch (e) {
           console.log('[ForceLevelSet] Error:', e);
         }
@@ -533,7 +539,7 @@ export const useHomeScreen = () => {
       console.log('Cleaning up Home component');
       clearTimeout(fallbackTimeout);
     };
-  }, [riveSkinInitialized, isFirstLoad]);
+  }, [riveSkinInitialized, isFirstLoad, isPro, currentSkin, levelInfo]);
 
   // First, add a simple effect to verify effects are running at all
   useEffect(() => {
@@ -633,7 +639,6 @@ export const useHomeScreen = () => {
           });
           
           return; // Exit early to prevent further processing
-        } else {
         }
         
         // Immediately hide the devotional content
@@ -843,7 +848,7 @@ export const useHomeScreen = () => {
     setMode('DEFAULT');
   }, []);
 
-  const handleSheetChanges = useCallback((index: number) => {
+  const handleSheetChanges = useCallback((_index: number) => {
     hapticLight();
   }, []);
 
@@ -1080,6 +1085,17 @@ export const useHomeScreen = () => {
   const handleWidgetSheetClose = useCallback(() => {
     setShowWidgetSheet(false);
     if (setHasSeenWidgetModal) setHasSeenWidgetModal(true);
+    
+    // Trigger the GlobalCheckIn sheet after dismissing the widget modal
+    setTimeout(() => {
+      const showCheckIn = (global as any).showCheckIn;
+      if (showCheckIn && typeof showCheckIn === 'function') {
+        console.log('[HomeScreen] Triggering check-in after widget modal close');
+        showCheckIn();
+      } else {
+        console.error('[HomeScreen] showCheckIn function not found on global');
+      }
+    }, 300); // Small delay to allow widget modal to fully close
   }, [setHasSeenWidgetModal]);
 
   const handleNextUnitPress = useCallback(() => {
@@ -1134,18 +1150,18 @@ export const useHomeScreen = () => {
   useEffect(() => {
     if (!riveRef.current || !riveReady || riveSkinInitialized) return;
     
-    // Set skin from currentSkin store, default to 0 if not set
+    // Use the user's selected skin from store
     const skinNumber = currentSkin ? parseInt(currentSkin, 10) : 0;
     try {
       riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
-      console.log(`Applied skin from store: ${skinNumber} (${currentSkin || 'normal'} skin)`);
+      console.log(`Applied skin from store: ${skinNumber} (${isPro ? 'golden pro' : currentSkin || 'normal'} skin)`);
       setRiveSkinInitialized(true);
     } catch (e) {
       console.log('Error setting lamb skin:', e);
       // Still mark as initialized to prevent blocking
       setRiveSkinInitialized(true);
     }
-  }, [riveRef, riveReady, riveSkinInitialized, currentSkin]);
+  }, [riveRef, riveReady, riveSkinInitialized, currentSkin, isPro]);
 
   // ADD: Ensure the correct Level-Number is always applied once Rive is ready
   useEffect(() => {
@@ -1175,7 +1191,7 @@ export const useHomeScreen = () => {
       try {
         // Initialise skin once
         if (!riveSkinInitialized) {
-          // Get the current skin number from store, default to 0 if empty
+          // Use the user's selected skin from store
           const skinNumber = currentSkin ? parseInt(currentSkin, 10) : 0;
           
           if(showBgRive){
@@ -1185,7 +1201,7 @@ export const useHomeScreen = () => {
           } else {
             riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
           }
-          console.log(`Set Rive Skin-Number: ${skinNumber} (${currentSkin || 'normal'} skin) on play`);
+          console.log(`Set Rive Skin-Number: ${skinNumber} (${isPro ? 'golden pro' : currentSkin || 'normal'} skin) on play`);
           
           // Set Level-Number based on lamb level
           const currentLevel = levelInfo?.level || 1;

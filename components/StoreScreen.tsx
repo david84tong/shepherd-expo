@@ -25,6 +25,7 @@ import gemIcon from '~/assets/icons/greenGemIcon.png';
 
 // Import lamb static images
 import goldLamb from '~/assets/lambStatic/goldSkin.png';
+import babyGoldenSheep from '~/assets/lambStatic/babyGoldenSheep.png';
 import normalLamb from '~/assets/lambStatic/normalSkin.png';
 import babyLamb from '~/assets/lambStatic/babySkin.png';
 import noahSkin from '~/assets/lambStatic/noahSkin.png';
@@ -79,9 +80,13 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
 
   // Ensure Pro users have the Annointed Lamb skin in their shop store
   useEffect(() => {
-    if (isProMember && !hasSkin('99')) {
-      console.log('🔄 Adding Annointed Lamb skin to Pro user\'s collection');
-      addSkin('99');
+    if (isProMember) {
+      // Add the skin if they don't have it
+      if (!hasSkin('99')) {
+        console.log('🔄 Adding Annointed Lamb skin to Pro user\'s collection');
+        addSkin('99');
+      }
+      // Do NOT auto-equip - let users choose their skin
     }
   }, [isProMember, hasSkin, addSkin]);
 
@@ -95,7 +100,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
       description: 'For a limited time, all super users unlock this golden skin',
       price: 109,
       currency: 'gems',
-      image: goldLamb,
+      image: userLevel < 10 ? babyGoldenSheep : goldLamb,
       skinNumber: 99,
       isPro: true,
       isOwned: isProMember, // Pro users automatically own this skin
@@ -213,7 +218,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     },
 
 
-  ], [userLevel]);
+  ], [userLevel, isProMember]);
 
   // Filter items by category
   const filteredItems = useMemo(() =>
@@ -350,10 +355,13 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     console.log('🔄 Updated equipped skin to:', skinId);
 
     // Update Rive animation if ref is available
+    // Note: The automatic golden skin for pro users in useHomeScreen.ts will override this
+    // if the user is pro and selects a non-golden skin
     if (riveRef && riveRef.current && riveRef.current.setInputState) {
       try {
+        // Use the skin that the user selected
         const skinNumber = item.skinNumber || 0;
-        console.log('🎯 Setting Rive skin from store:', skinNumber);
+        console.log('🎯 Setting Rive skin from store:', skinNumber, isProMember ? '(Pro user - golden skin)' : '');
         riveRef.current.setInputState('State Machine 1', 'Skin-Number', skinNumber);
         console.log('✅ Successfully updated Rive skin to:', skinNumber);
       } catch (error) {
@@ -366,7 +374,8 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     analytics.logEvent('Store_Skin_Equipped', {
       item: item.id,
       skinId: skinId,
-      skinNumber: item.skinNumber
+      skinNumber: item.skinNumber,
+      isPro: isProMember
     });
 
     // Show success toast
@@ -379,7 +388,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     });
 
     console.log('✅ Equipped skin:', item.name, 'with skin number:', item.skinNumber);
-  }, [equipSkin, setCurrentSkin, riveRef]);
+  }, [equipSkin, setCurrentSkin, riveRef, isProMember]);
 
   // Handle upgrade to pro (for Annointed Lamb)
   const handleUpgradeToProForLamb = useCallback(async () => {
@@ -421,8 +430,9 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
     const canAfford = item.currency === 'gems' ? userGems >= item.price : true;
     const skinId = item.skinNumber?.toString() || item.id;
     const isOwned = item.isOwned || hasSkin(skinId); // Check both item property and shop store
-    const isEquipped = equippedSkin === skinId;
     const isAnointedLamb = item.id === 'skin_super';
+    // Check if the skin is currently equipped
+    const isEquipped = equippedSkin === skinId;
 
     // Debug logging for Annointed Lamb
     if (isAnointedLamb) {
@@ -495,16 +505,7 @@ export default function StoreScreen({ onClose }: StoreScreenProps) {
               {isAnointedLamb ? (
                 // Special handling for Annointed Lamb
                 isProMember ? (
-                  userLevel < 10 ? (
-                    <PrimaryButton
-                      title="Equip at LVL 10"
-                      onPress={() => { }}
-                      disabled={true}
-                      buttonType="blue"
-                      buttonHeight={40}
-                      width="100%"
-                    />
-                  ) : isEquipped ? (
+                  isEquipped ? (
                     <PrimaryButton
                       title="Equipped"
                       onPress={() => { }}

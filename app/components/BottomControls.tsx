@@ -29,6 +29,7 @@ interface BottomControlsProps {
   isCompletePrayerDisabled: boolean;
   showPrayerSuccess?: boolean;
   onSharePress?: () => void;
+  showDevotionalSuccess?: boolean;
 }
 
 export default function BottomControls({
@@ -49,6 +50,7 @@ export default function BottomControls({
   isCompletePrayerDisabled,
   showPrayerSuccess = false,
   onSharePress,
+  showDevotionalSuccess = false,
 }: BottomControlsProps) {
   const insets = useSafeAreaInsets();
   const [isLiked, setIsLiked] = useState(false);
@@ -204,7 +206,7 @@ export default function BottomControls({
         }
       ]}
       className='px-10 absolute items-center w-full justify-between'>
-      {showDevotionalContent && (
+      {showDevotionalContent && !showDevotionalSuccess && (
         <View className='flex-row items-center w-full justify-between mr-12 -mb-4'>
           <View className="flex-row gap-4">
             <TouchableOpacity

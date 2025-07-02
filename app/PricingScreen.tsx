@@ -161,20 +161,14 @@ const PricingScreen = () => {
       action: abTestValue === 1 ? 'presentFreeTrialPaywall' : 'navigateToFreeOffer',
     });
 
-    if (abTestValue === 1) {
-      // Present free trial paywall for A/B test group 1
-      try {
-        setIsLoading(true);
-        const { presentFreeTrialPaywall } = useSubscriptionStore.getState();
-        await presentFreeTrialPaywall();
-      } catch (error) {
-        console.error('[PricingScreen] Error presenting free trial paywall:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      // Navigate to FreeOffer screen for other groups (0, 2)
-      router.push('/onboarding/pricing/FreeOffer');
+    try {
+      setIsLoading(true);
+      const { presentFreeTrialPaywall } = useSubscriptionStore.getState();
+      await presentFreeTrialPaywall();
+    } catch (error) {
+      console.error('[PricingScreen] Error presenting free trial paywall:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 

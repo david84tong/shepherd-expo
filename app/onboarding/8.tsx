@@ -196,7 +196,7 @@ export default function OnboardingPathScreen({ onPathSelected, selectedPathId: e
 
                   {/* Path Text Content */}
                   <View className="p-3">
-                    <Text className="font-feather text-h3 text-textPrimary mb-1 text-center">
+                    <Text className="font-feather text-body text-textPrimary mb-1 text-center">
                       {path.title}
                     </Text>
                     <Text className="font-din text-md text-description text-center">

@@ -67,6 +67,16 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
 
   // A devotional is only "real" (and thus likeable/shareable) if it's not a locally generated one.
   const isRealDevotional = !devotional.id.startsWith('quick-') && !devotional.id.startsWith('ai-');
+  
+  // Check if this is a custom devotional
+  const isCustomDevotional = devotional.id.startsWith('custom-') || devotional.id.startsWith('ai-');
+  
+  // Format date for custom devotionals
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = { month: 'long', day: 'numeric', year: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+  };
 
   useEffect(() => {
     if (currentUser?.id && storeDevotional.likedBy && isRealDevotional) {
@@ -283,7 +293,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
             <Text
               style={{ fontSize: AppFonts[17], marginBottom: RPH(2) }}
               className="font-nunito-mediumItalic text-white shadow-lg  leading-[26px]">
-              {i18n.t('verse_of_the_day')}
+              {isCustomDevotional && devotional.createdAt ? formatDate(devotional.createdAt) : i18n.t('verse_of_the_day')}
             </Text>
             <Text
               style={{ fontSize: AppFonts[17] }}
@@ -302,14 +312,14 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
                     size={RPH(2.2)}
                     color={isLiked && isRealDevotional ? '#FF8800' : 'white'}
                   />
-                  <Text className="ml-2 text-white font-din text-lg">{likeCount}</Text>
+                  {!isCustomDevotional && <Text className="ml-2 text-white font-din text-lg">{likeCount}</Text>}
                 </TouchableOpacity>
                 <TouchableOpacity
                   onPress={handleSharePress}
                   disabled={!isRealDevotional}
                   className="flex-row items-center">
                   <FontAwesome5 name="share-alt" size={RPH(1.8)} color="white" />
-                  <Text className="ml-2 text-white font-din text-lg">{shareCount}</Text>
+                  {!isCustomDevotional && <Text className="ml-2 text-white font-din text-lg">{shareCount}</Text>}
                 </TouchableOpacity>
               </View>
             ) : null}

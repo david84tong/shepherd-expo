@@ -69,6 +69,16 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
     const [isCapturing, setIsCapturing] = useState(false);
 
     const isRealDevotional = devotionalData ? !devotionalData.id.startsWith('quick-') && !devotionalData.id.startsWith('ai-') : false;
+    
+    // Check if this is a custom devotional
+    const isCustomDevotional = devotionalData ? (devotionalData.id.startsWith('custom-') || devotionalData.id.startsWith('ai-')) : false;
+    
+    // Format date for custom devotionals
+    const formatDate = (dateString: string) => {
+        const date = new Date(dateString);
+        const options: Intl.DateTimeFormatOptions = { month: 'long', day: 'numeric', year: 'numeric' };
+        return date.toLocaleDateString('en-US', options);
+    };
     useEffect(() => {
         if (startShareFlow) {
             handleSharePress();
@@ -423,7 +433,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                         {devotionalData?.bibleReference}
                                     </Text>
                                     <Text className="font-nunito-mediumItalic text-white text-[20px]  mb-7">
-                                        {i18n.t('verse_of_the_day')}
+                                        {isCustomDevotional && devotionalData?.createdAt ? formatDate(devotionalData.createdAt) : i18n.t('verse_of_the_day')}
                                     </Text>
                                     <Text className="font-din text-white text-[24px]  mb-10">
                                         {devotionalData?.verse}
@@ -432,11 +442,11 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                     <View style={{ opacity: isCapturing ? 0 : 1 }} className="flex-row items-center mt-4">
                                         <TouchableOpacity onPress={handleLikePress} className="flex-row items-center mr-4">
                                             <Ionicons name="heart" size={RPH(2.2)} color={isLiked ? "#B36303" : "white"} />
-                                            <Text className="ml-2 text-white font-din text-lg">{likeCount}</Text>
+                                            {!isCustomDevotional && <Text className="ml-2 text-white font-din text-lg">{likeCount}</Text>}
                                         </TouchableOpacity>
                                         <TouchableOpacity onPress={handleSharePress} disabled={isCapturing} className="flex-row items-center">
                                             <FontAwesome5 name="share-alt" size={RPH(1.8)} color="white" />
-                                            <Text className="ml-2 text-white font-din text-lg">{shareCount}</Text>
+                                            {!isCustomDevotional && <Text className="ml-2 text-white font-din text-lg">{shareCount}</Text>}
                                         </TouchableOpacity>
                                     </View>
                                 </Animated.View>

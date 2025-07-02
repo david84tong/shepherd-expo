@@ -202,7 +202,10 @@ export default function RootLayout() {
     console.log('isInitialized ==>', isInitialized);
     if (isInitialized) {
       onAppForegroundOrInit();
-      checkAndShowCheckInIfNeeded();
+      // Delay check-in to ensure auth and store are ready
+      setTimeout(() => {
+        checkAndShowCheckInIfNeeded();
+      }, 3000);
     }
   }, [isInitialized]);
 
@@ -284,15 +287,30 @@ export default function RootLayout() {
     const auth = require('@react-native-firebase/auth').default;
     const currentUser = auth().currentUser;
     
-    // Don't show check-in if user is not logged in or is anonymous
-    if (!currentUser || currentUser.isAnonymous) {
-      console.log('[CheckIn] Skipping check-in: User not logged in or is anonymous');
+    console.log('[CheckIn] checkAndShowCheckInIfNeeded called');
+    console.log('[CheckIn] Current user:', currentUser?.uid, 'Anonymous:', currentUser?.isAnonymous);
+    
+    // Don't show check-in if user is not logged in at all
+    if (!currentUser) {
+      console.log('[CheckIn] Skipping check-in: User not logged in');
       return;
     }
     
     const checkInStore = useCheckInStore.getState();
     const hasCompletedToday = checkInStore.hasCompletedTodaysCheckIn();
     const hasBeenOneHour = checkInStore.hasBeenOneHourSinceLastCheckIn();
+    const lastCheckInTime = checkInStore.lastCheckInTime;
+    const todaysCheckIn = checkInStore.getTodaysCheckIn();
+    const checkInHistory = checkInStore.checkInHistory;
+    
+    console.log('[CheckIn] Store state:', {
+      hasCompletedToday,
+      hasBeenOneHour,
+      lastCheckInTime,
+      todaysCheckIn,
+      checkInHistoryLength: checkInHistory?.length || 0,
+      temporarilyDisableAutoShow: checkInStore.temporarilyDisableAutoShow
+    });
     
     console.log('[CheckIn] Auto-show check:', {
       hasCompletedToday,
@@ -304,13 +322,18 @@ export default function RootLayout() {
     
     // Only show if one hour has passed AND today's check-in is not complete
     if (hasBeenOneHour && !hasCompletedToday) {
-      console.log('Showing check-in: One hour passed and today\'s check-in not complete');
+      console.log('[CheckIn] ✅ Showing check-in: One hour passed and today\'s check-in not complete');
       // Show check-in with a delay to ensure app is ready
       setTimeout(() => {
+        console.log('[CheckIn] Calling showCheckIn() now...');
         showCheckIn();
       }, 2000);
-    } else if (hasCompletedToday) {
-      console.log('Skipping check-in: Already completed today');
+    } else {
+      console.log('[CheckIn] ❌ Not showing check-in:', {
+        hasBeenOneHour,
+        hasCompletedToday,
+        reason: hasCompletedToday ? 'Already completed today' : 'Not been one hour yet'
+      });
     }
   };
 
@@ -341,12 +364,13 @@ export default function RootLayout() {
     const auth = require('@react-native-firebase/auth').default;
     const currentUser = auth().currentUser;
     
-    // Don't show check-in if user is not logged in or is anonymous
-    if (!currentUser || currentUser.isAnonymous) {
-      console.log('[CheckIn] Not showing check-in: User not logged in or is anonymous');
+    // Don't show check-in if user is not logged in at all
+    if (!currentUser) {
+      console.log('[CheckIn] Not showing check-in: User not logged in');
       return;
     }
     
+    console.log('[CheckIn] Showing check-in for user:', currentUser.uid, 'Anonymous:', currentUser.isAnonymous);
     checkInRef.current?.expand();
   };
 
@@ -354,7 +378,7 @@ export default function RootLayout() {
   useEffect(() => {
     const auth = require('@react-native-firebase/auth').default;
     const unsubscribe = auth().onAuthStateChanged((user: any) => {
-      const isLoggedIn = !!user && !user.isAnonymous;
+      const isLoggedIn = !!user; // Include anonymous users as logged in
       setIsUserLoggedIn(isLoggedIn);
       console.log('[Auth] User auth state changed:', { 
         isLoggedIn, 

@@ -57,6 +57,7 @@ export interface DevotionalReaderRef {
   handleClose: () => void;
   onFinishPress: () => void;
   isLastCard: boolean;
+  showSuccess: boolean;
 }
 
 const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(({ visible = true, onClose, setFinishReading, setDevotionalReadedFully, setCurrentVerseReference }, ref) => {
@@ -381,7 +382,8 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
     isRewarding,
     handleClose,
     isLastCard,
-    onFinishPress
+    onFinishPress,
+    showSuccess
   }));
 
   function onFinishPress() {

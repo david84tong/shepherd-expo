@@ -42,7 +42,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   
   // Hooks
   const router = useRouter();
-  const { setCustomDevotional, setIsFromCheckIn } = useDevotionalStore();
+  const { setCustomDevotional, setIsFromCheckIn, createCustomDevotionalFromCheckIn } = useDevotionalStore();
   const { readingCompleted } = useHomeStore();
   const { addCheckIn } = useUserStore();
   
@@ -190,7 +190,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       console.log('GlobalCheckIn: Verse field:', fullDevotional.verse);
       console.log('GlobalCheckIn: BibleReference field:', fullDevotional.bibleReference);
       
-      setCustomDevotional(fullDevotional);
+      // Use the new function to save to Firestore
+      await createCustomDevotionalFromCheckIn(fullDevotional);
       
       // Complete the check-in and save to both stores
       console.log('[GlobalCheckIn] About to save check-in...');
@@ -300,6 +301,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         setSelectedStruggle(null);
         clearCurrentSession(); // Clear store session
         setCheckInSaved(false); // Reset saved flag
+        setIsGenerating(false); // Reset generating state
         moodAnim.setValue(0);
         focusAnim.setValue(screenWidth);
         struggleAnim.setValue(screenWidth);
@@ -546,6 +548,9 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               // Set check-in flag
               setIsFromCheckIn(true);
               
+              // Set temporary flag to prevent auto-show when returning from loading screen
+              setTemporarilyDisableAutoShow(true);
+              
               // Close the sheet directly without handleDismiss to prevent reappearing
               bottomSheetRef.current?.close();
               
@@ -561,11 +566,17 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   setSelectedStruggle(null);
                   clearCurrentSession();
                   setIsGenerating(false);
+                  setCheckInSaved(false);
                   // Reset animations
                   moodAnim.setValue(0);
                   focusAnim.setValue(screenWidth);
                   struggleAnim.setValue(screenWidth);
                   successAnim.setValue(screenWidth);
+                  
+                  // Reset the temporary flag after a delay
+                  setTimeout(() => {
+                    setTemporarilyDisableAutoShow(false);
+                  }, 5000);
                 }, 100);
               }, 300);
               

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { Devotional, devotionalBackgrounds } from '../models/Devotional';
-import firestore, { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import { fetchChaptersBatch, ChapterResponse, FetchError, fetchChapterWithCache, clearChapterCache } from '../api/bible';
 import { BIBLE_BOOK_IDS } from '../models/Path';
 import { createDevotionalFromVerse, checkNetworkConnectivity } from '../api/ai';
@@ -124,6 +124,7 @@ interface DevotionalStore {
   clearCustomDevotional: () => void;
   setCustomDevotional: (devotional: Devotional) => void;
   setIsFromCheckIn: (value: boolean) => void;
+  createCustomDevotionalFromCheckIn: (devotional: Devotional) => Promise<void>;
   updateLikeStatus: (devotionalId: string, liked: boolean) => void;
   incrementShareCount: (devotionalId: string) => void;
   // Utility function to clear Bible chapter cache
@@ -587,6 +588,72 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     set({ isFromCheckIn: value });
   },
 
+  createCustomDevotionalFromCheckIn: async (devotional: Devotional) => {
+    console.log('[DevotionalStore] Creating custom devotional from check-in:', devotional);
+    
+    try {
+      // Generate unique ID for the custom devotional
+      const customDevotionalId = `custom-${Date.now()}`;
+      const devotionalWithId = {
+        ...devotional,
+        id: customDevotionalId,
+        createdAt: new Date().toISOString(),
+        date: new Date().toISOString()
+      };
+      
+      // Save to Firestore customDevotionals collection
+      await firestore()
+        .collection('customDevotionals')
+        .doc(customDevotionalId)
+        .set(devotionalWithId);
+      
+      console.log('[DevotionalStore] Saved custom devotional to Firestore:', customDevotionalId);
+      
+      // Update the store with the new devotional
+      set({ 
+        customDevotional: devotionalWithId,
+        currentDevotional: devotionalWithId,
+        isFromCheckIn: true
+      });
+      
+      // Also track in user document
+      const currentUser = auth().currentUser;
+      if (currentUser) {
+        try {
+          await firestore()
+            .collection('users')
+            .doc(currentUser.uid)
+            .update({
+              customDevotionals: firestore.FieldValue.arrayUnion({
+                devotionalId: customDevotionalId,
+                createdAt: firestore.Timestamp.now()
+              })
+            });
+          console.log('[DevotionalStore] Added custom devotional reference to user document');
+        } catch (error) {
+          console.error('[DevotionalStore] Failed to update user document:', error);
+        }
+      }
+      
+      // Update widget with the custom devotional
+      if (devotionalWithId.bibleReference && devotionalWithId.verse) {
+        console.log('📱 Sharing custom check-in devotional with widget:', {
+          bibleReference: devotionalWithId.bibleReference,
+          verseLength: devotionalWithId.verse.length
+        });
+        await safeWidgetCall('updateVerseData',
+          devotionalWithId.bibleReference,
+          devotionalWithId.verse,
+          devotionalWithId.imageURL || null
+        );
+      }
+      
+    } catch (error) {
+      console.error('[DevotionalStore] Error creating custom devotional from check-in:', error);
+      throw error;
+    }
+  },
+
   // Refresh widget data with current devotional
   refreshWidgetData: async () => {
     const { currentDevotional } = get();
@@ -620,37 +687,69 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
       console.log(`🔍 Querying range: ${startDate} to ${endDate} (30 days)`);
 
-      const querySnap = await firestore()
-        .collection('dailyDevotionals')
-        .where('date', '>=', startDate)
-        .where('date', '<=', endDate)
-        .orderBy('date', 'desc') // Most recent first
-        .get();
+      // Query both daily and custom devotionals
+      const [dailyQuerySnap, customQuerySnap] = await Promise.all([
+        firestore()
+          .collection('dailyDevotionals')
+          .where('date', '>=', startDate)
+          .where('date', '<=', endDate)
+          .orderBy('date', 'desc') // Most recent first
+          .get(),
+        firestore()
+          .collection('customDevotionals')
+          .where('createdAt', '>=', startDate)
+          .where('createdAt', '<=', endDate + 'T23:59:59.999Z') // Include full end date
+          .orderBy('createdAt', 'desc') // Most recent first
+          .get()
+      ]);
 
-      console.log(`🔍 Found ${querySnap.docs.length} devotionals in range`);
+      console.log(`🔍 Found ${dailyQuerySnap.docs.length} daily devotionals and ${customQuerySnap.docs.length} custom devotionals in range`);
 
-      querySnap.docs.forEach((doc: FirebaseFirestoreTypes.QueryDocumentSnapshot<FirebaseFirestoreTypes.DocumentData>, i: number) => {
-        console.log(`🔍 Doc ${i}:`, {
+      // Combine both types of devotionals
+      const allDevotionals = [
+        ...dailyQuerySnap.docs.map(doc => ({
+          ...doc.data(),
           id: doc.id,
-          date: doc.data().date,
-          bibleReference: doc.data().bibleReference
+          type: 'daily'
+        } as Devotional & { type: string })),
+        ...customQuerySnap.docs.map(doc => ({
+          ...doc.data(),
+          id: doc.id,
+          type: 'custom',
+          date: doc.data().createdAt // Use createdAt as date for custom devotionals
+        } as Devotional & { type: string }))
+      ];
+
+      // Sort all devotionals by date (most recent first)
+      allDevotionals.sort((a, b) => {
+        const dateA = new Date(a.date || a.createdAt).getTime();
+        const dateB = new Date(b.date || b.createdAt).getTime();
+        return dateB - dateA;
+      });
+
+      console.log(`🔍 Combined ${allDevotionals.length} total devotionals`);
+
+      allDevotionals.forEach((devotional: Devotional & { type: string }, i: number) => {
+        console.log(`🔍 Doc ${i}:`, {
+          id: devotional.id,
+          date: devotional.date || devotional.createdAt,
+          type: devotional.type,
+          bibleReference: devotional.bibleReference
         });
       });
 
-      // Take the 3 most recent devotionals
-      const recentDevotionals = querySnap.docs.slice(0, 3).map(doc => ({
-        ...doc.data(),
-        id: doc.id
-      } as Devotional));
+      // Take more devotionals to ensure we have enough
+      const recentDevotionals = allDevotionals.slice(0, 5); // Get 5 to have extras
 
       console.log(`🔍 Taking ${recentDevotionals.length} most recent devotionals:`, recentDevotionals.map(d => ({
         id: d.id,
-        date: d.date,
+        date: d.date || d.createdAt,
+        type: d.type,
         bibleReference: d.bibleReference
       })));
 
-      // Create a 3-day array with the most recent devotionals
-      const rawDevotionals = Array.from({ length: 3 }).map((_, i: number) => {
+      // Create an array with the most recent devotionals (up to 5)
+      const rawDevotionals = Array.from({ length: Math.min(5, recentDevotionals.length) }).map((_, i: number) => {
         return recentDevotionals[i] || null;
       });
 

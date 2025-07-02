@@ -23,7 +23,6 @@ import SecondaryButton from '../../components/SecondaryButton';
 import HeartsExplainerModal from '../../components/HeartsExplainerModal';
 import ExplainerModal from '../../components/ExplainerModal';
 import WidgetHowToSheet from '../../components/WidgetHowToSheet';
-import bibleIcon from '../../assets/icons/bibleIcon.png';
 import FullScreenShareCard from '../../components/FullScreenShareCard';
 import SpotlightOverlay from '../../components/SpotlightOverlay';
 // import PrayerView from '~/components/PrayerView';
@@ -36,7 +35,7 @@ import { useDevotionalStore } from '../stores/devotionalStore';
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import { useCheckInStore } from '../stores/checkInStore';
-import { useMemo, useState, useEffect, useCallback } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import type { Devotional } from '../models/Devotional';
 import { devotionalBackgrounds } from '../models/Devotional';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
@@ -283,9 +282,9 @@ export default function HomeScreen() {
     });
   }, [nextUnitPreview, readingCompleted, prayerCompleted, reflectionCompleted]);
 
-  // Fetch recent devotionals when all activities are completed
+  // Fetch recent devotionals when reading is completed or when all activities are completed
   useEffect(() => {
-    if (prayerCompleted && readingCompleted && reflectionCompleted) {
+    if (readingCompleted || (prayerCompleted && readingCompleted && reflectionCompleted)) {
       const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
       fetchRecentDevotionals()
         .then((devotionals) => {
@@ -299,7 +298,7 @@ export default function HomeScreen() {
             bibleReference: d?.bibleReference
           })));
 
-          setRecentDevotionals(devotionals.slice(0, 2));
+          setRecentDevotionals(devotionals.slice(0, 3));
         })
         .catch((error) => {
           console.error('❌ Error fetching recent devotionals:', error);
@@ -507,6 +506,7 @@ export default function HomeScreen() {
   const handleCustomDevotionalPress = async () => {
     const checkInStore = useCheckInStore.getState();
     const todaysCheckIn = checkInStore.getTodaysCheckIn();
+    const hasCompletedToday = checkInStore.hasCompletedTodaysCheckIn();
 
     console.log('🔍 [handleCustomDevotionalPress] Check-in store state:', {
       todaysCheckIn: checkInStore.todaysCheckIn,
@@ -514,6 +514,23 @@ export default function HomeScreen() {
       hasCompletedToday: checkInStore.hasCompletedTodaysCheckIn(),
       todaysCheckInFromGetter: todaysCheckIn
     });
+
+    // If user hasn't completed check-in today, show the check-in flow
+    if (!hasCompletedToday) {
+      console.log('📋 No check-in completed today, showing check-in flow');
+      
+      // Show the check-in sheet
+      const showCheckIn = (global as any).showCheckIn;
+      if (showCheckIn && typeof showCheckIn === 'function') {
+        showCheckIn();
+        analytics.logEvent('custom_devotional_triggered_checkin');
+      } else {
+        console.error('[handleCustomDevotionalPress] showCheckIn function not found on global');
+        // Fallback to regular devotional
+        handleReadPress();
+      }
+      return;
+    }
 
     if (todaysCheckIn && (todaysCheckIn.focus !== '' || todaysCheckIn.struggle !== '')) {
       // User has completed check-in with focus/struggle, generate custom devotional
@@ -584,8 +601,8 @@ export default function HomeScreen() {
         handleReadPress();
       }
     } else {
-      // No check-in for today, use regular devotional
-      console.log('📖 No check-in data, using regular devotional');
+      // Check-in completed but no focus/struggle selected, use regular devotional
+      console.log('📖 Check-in completed but no focus/struggle data, using regular devotional');
       handleReadPress();
     }
   };
@@ -1008,27 +1025,87 @@ export default function HomeScreen() {
                           </View>
                         </View>
                       )}
-                      {prayerCompleted && readingCompleted && reflectionCompleted && recentDevotionals.length > 0 && (
-                        <View className="w-full mt-10 mb-10">
+                      {readingCompleted && (
+                        <View className="w-full mt-4 mb-10">
                           {(() => {
-                            const filteredDevotionals = recentDevotionals.filter(d => d && d.id && d.id !== 'undefined') as Devotional[];
-                            return (
-                              <CardStack
-                                data={filteredDevotionals}
-                                renderCard={(devotional: Devotional, index: number, onCardTap: () => void) => (
+                            // Combine all available devotionals
+                            const devotionalsToShow: Devotional[] = [];
+                            const addedIds = new Set<string>();
+                            
+                            // First, add the daily devotional (verse of the day)
+                            if (dailyDevotional && dailyDevotional.id && dailyDevotional.id !== 'undefined') {
+                              devotionalsToShow.push(dailyDevotional);
+                              addedIds.add(dailyDevotional.id);
+                            }
+                            
+                            // Then add recent devotionals (which should include custom devotionals)
+                            if (recentDevotionals.length > 0) {
+                              const filteredRecentDevotionals = recentDevotionals.filter(d => 
+                                d && d.id && d.id !== 'undefined' && !addedIds.has(d.id)
+                              ) as Devotional[];
+                              
+                              // Add up to 2 more custom devotionals
+                              filteredRecentDevotionals.slice(0, 2).forEach(devotional => {
+                                devotionalsToShow.push(devotional);
+                                addedIds.add(devotional.id);
+                              });
+                            }
+                            
+                            // If we don't have recent devotionals but have a current custom devotional, add it
+                            if (devotionalsToShow.length < 3 && customDevotional && customDevotional.id && 
+                                customDevotional.id !== 'undefined' && !addedIds.has(customDevotional.id)) {
+                              devotionalsToShow.push(customDevotional);
+                              addedIds.add(customDevotional.id);
+                            }
+                            
+                            // If we still don't have any devotionals, try currentDevotional
+                            if (devotionalsToShow.length === 0 && currentDevotional && currentDevotional.id && 
+                                currentDevotional.id !== 'undefined') {
+                              devotionalsToShow.push(currentDevotional);
+                            }
+                            
+                            // Limit to 3 cards total
+                            const finalDevotionals = devotionalsToShow.slice(0, 3);
+                            
+                            if (finalDevotionals.length > 0) {
+                              // If only one devotional, render it directly without CardStack
+                              if (finalDevotionals.length === 1) {
+                                return (
                                   <DailyVerseCard
-                                    devotional={devotional}
+                                    devotional={finalDevotionals[0]}
                                     share={true}
-                                    onPress={onCardTap}
-                                    onExpand={() => handleDailyVerseExpand(devotional)}
-                                    onShare={() => handleDailyVerseShare(devotional)}
+                                    onPress={() => handleDailyVersePress(finalDevotionals[0])}
+                                    onExpand={() => handleDailyVerseExpand(finalDevotionals[0])}
+                                    onShare={() => handleDailyVerseShare(finalDevotionals[0])}
                                     showShareButton={true}
                                     showExpandButton={true}
                                     height={40}
                                   />
-                                )}
-                              />
-                            );
+                                );
+                              } else {
+                                // Multiple devotionals, use CardStack
+                                return (
+                                  <CardStack
+                                    data={finalDevotionals}
+                                    renderCard={(devotional: Devotional, index: number, onCardTap: () => void) => (
+                                      <DailyVerseCard
+                                        devotional={devotional}
+                                        share={true}
+                                        onPress={onCardTap}
+                                        onExpand={() => handleDailyVerseExpand(devotional)}
+                                        onShare={() => handleDailyVerseShare(devotional)}
+                                        showShareButton={true}
+                                        showExpandButton={true}
+                                        height={40}
+                                      />
+                                    )}
+                                  />
+                                );
+                              }
+                            }
+                            
+                            // If still no devotionals to show, return null
+                            return null;
                           })()}
                         </View>
                       )}
@@ -1181,6 +1258,7 @@ export default function HomeScreen() {
               isCompletePrayerDisabled={isCompletePrayerDisabled}
               showPrayerSuccess={showPrayerSuccess}
               onSharePress={handleCustomDevotionalShare}
+              showDevotionalSuccess={devotionalReaderRef.current?.showSuccess || false}
             />
 
             <WidgetHowToSheet visible={showWidgetSheet} onClose={handleWidgetSheetClose} />

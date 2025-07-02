@@ -169,15 +169,27 @@ Make sure your response is valid JSON format.`
       // Parse the JSON response from AI
       let devotionalData: DevotionalAIResponse;
       try {
-        if (data.content && data.content.startsWith('{') && data.content.endsWith('}')) {
-          devotionalData = JSON.parse(data.content);
-        } else {
-          throw new Error('AI response is not in valid JSON format');
-        }
-
+        // Clean up the content - remove any potential whitespace or special characters
+        const cleanContent = data.content.trim();
         
+        // Check if it looks like JSON
+        if (cleanContent && cleanContent.startsWith('{') && cleanContent.endsWith('}')) {
+          // Try to parse the JSON
+          devotionalData = JSON.parse(cleanContent);
+          console.log('[AI API] Successfully parsed devotional JSON');
+        } else {
+          // Try to extract JSON from the content in case it's wrapped in other text
+          const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            devotionalData = JSON.parse(jsonMatch[0]);
+            console.log('[AI API] Successfully extracted and parsed JSON from response');
+          } else {
+            throw new Error('AI response is not in valid JSON format');
+          }
+        }
       } catch (parseError) {
-        console.error('Failed to parse AI response as JSON:', data.content);
+        console.error('[AI API] Failed to parse AI response as JSON. Parse error:', parseError);
+        console.error('[AI API] Raw content that failed to parse:', data.content);
         // Fallback: try to extract content manually or provide defaults
         devotionalData = {
           title: `Reflection on ${verseContext.bookName} ${verseContext.chapter}:${verseContext.verse}`,
@@ -364,16 +376,29 @@ Make sure your response is valid JSON format and is deeply personalized to their
       // Parse the JSON response from AI
       let devotionalData: DevotionalAIResponse;
       try {
-        if (data.content && data.content.startsWith('{') && data.content.endsWith('}')) {
-          devotionalData = JSON.parse(data.content);
-          
-          // Log the parsed data to debug
+        // Clean up the content - remove any potential whitespace or special characters
+        const cleanContent = data.content.trim();
+        
+        // Check if it looks like JSON
+        if (cleanContent && cleanContent.startsWith('{') && cleanContent.endsWith('}')) {
+          // Try to parse the JSON
+          devotionalData = JSON.parse(cleanContent);
+          console.log('[AI API] Successfully parsed check-in devotional JSON');
           console.log('[AI API] Parsed devotional data:', devotionalData);
         } else {
-          throw new Error('AI response is not in valid JSON format');
+          // Try to extract JSON from the content in case it's wrapped in other text
+          const jsonMatch = cleanContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            devotionalData = JSON.parse(jsonMatch[0]);
+            console.log('[AI API] Successfully extracted and parsed JSON from response');
+            console.log('[AI API] Parsed devotional data:', devotionalData);
+          } else {
+            throw new Error('AI response is not in valid JSON format');
+          }
         }
       } catch (parseError) {
-        console.error('Failed to parse AI response as JSON:', data.content);
+        console.error('[AI API] Failed to parse AI response as JSON. Parse error:', parseError);
+        console.error('[AI API] Raw content that failed to parse:', data.content);
         // Fallback to check-in based devotional
         return createCheckInFallbackDevotional(checkInData);
       }
