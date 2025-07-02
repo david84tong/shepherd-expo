@@ -29,6 +29,15 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
         Array.from({ length: stackSize }, (_, i) => new Animated.Value(stackSize - i))
     ).current;
 
+    // Create animated values for back card rotation and translation
+    const cardRotations = useRef(
+        Array.from({ length: stackSize }, (_, i) => new Animated.Value(i === stackSize - 1 ? 1 : 0))
+    ).current;
+
+    const cardTranslations = useRef(
+        Array.from({ length: stackSize }, (_, i) => new Animated.Value(i === stackSize - 1 ? -50 : 0))
+    ).current;
+
     // Get the current cards to display based on currentIndex
     const cardsToShow = useMemo(() => {
         const cards = [];
@@ -92,6 +101,24 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
             })
         );
 
+        // Smoothly animate rotation to back card style
+        animations.push(
+            Animated.timing(cardRotations[0], {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: false,
+            })
+        );
+
+        // Smoothly animate translation to back card style
+        animations.push(
+            Animated.timing(cardTranslations[0], {
+                toValue: -50,
+                duration: 300,
+                useNativeDriver: false,
+            })
+        );
+
         // Move other cards up one position
         for (let i = 1; i < stackSize; i++) {
             animations.push(
@@ -110,6 +137,25 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
                     useNativeDriver: false,
                 })
             );
+
+            // Smoothly animate rotation for cards moving to new positions
+            const newIsBack = (i - 1) === stackSize - 1;
+            animations.push(
+                Animated.timing(cardRotations[i], {
+                    toValue: newIsBack ? 1 : 0,
+                    duration: 300,
+                    useNativeDriver: false,
+                })
+            );
+
+            // Smoothly animate translation for cards moving to new positions
+            animations.push(
+                Animated.timing(cardTranslations[i], {
+                    toValue: newIsBack ? -50 : 0,
+                    duration: 300,
+                    useNativeDriver: false,
+                })
+            );
         }
 
         Animated.parallel(animations).start(() => {
@@ -122,6 +168,14 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
             });
             cardZIndices.forEach((zIndex, index) => {
                 zIndex.setValue(stackSize - index);
+            });
+
+            // Reset rotation and translation values
+            cardRotations.forEach((rotation, index) => {
+                rotation.setValue(index === stackSize - 1 ? 1 : 0);
+            });
+            cardTranslations.forEach((translation, index) => {
+                translation.setValue(index === stackSize - 1 ? -50 : 0);
             });
             setIsAnimating(false);
         });
@@ -161,6 +215,24 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
             })
         );
 
+        // Smoothly animate rotation for tapped card (remove back card styling)
+        animations.push(
+            Animated.timing(cardRotations[cardIndex], {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: false,
+            })
+        );
+
+        // Smoothly animate translation for tapped card (remove back card styling)
+        animations.push(
+            Animated.timing(cardTranslations[cardIndex], {
+                toValue: 0,
+                duration: 300,
+                useNativeDriver: false,
+            })
+        );
+
         // Move other cards back one position
         for (let i = 0; i < stackSize; i++) {
             if (i !== cardIndex) {
@@ -182,6 +254,25 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
                         useNativeDriver: false,
                     })
                 );
+
+                // Smoothly animate rotation for cards moving to new positions
+                const newIsBack = newPosition === stackSize - 1;
+                animations.push(
+                    Animated.timing(cardRotations[i], {
+                        toValue: newIsBack ? 1 : 0,
+                        duration: 300,
+                        useNativeDriver: false,
+                    })
+                );
+
+                // Smoothly animate translation for cards moving to new positions
+                animations.push(
+                    Animated.timing(cardTranslations[i], {
+                        toValue: newIsBack ? -50 : 0,
+                        duration: 300,
+                        useNativeDriver: false,
+                    })
+                );
             }
         }
 
@@ -192,6 +283,14 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
             });
             cardZIndices.forEach((zIndex, index) => {
                 zIndex.setValue(stackSize - index);
+            });
+
+            // Reset rotation and translation values
+            cardRotations.forEach((rotation, index) => {
+                rotation.setValue(index === stackSize - 1 ? 1 : 0);
+            });
+            cardTranslations.forEach((translation, index) => {
+                translation.setValue(index === stackSize - 1 ? -50 : 0);
             });
 
             setIsAnimating(false);
@@ -259,6 +358,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
         >
             {cardsToShow.map((cardInfo, i) => {
                 const isTop = i === 0;
+                const isBack = i === stackSize - 1;
                 const cardStyle = [
                     styles.card,
                     {
@@ -268,11 +368,20 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
                         zIndex: cardZIndices[i],
                         width: cardWidth,
                     },
-                    isTop && {
+                    {
                         transform: [
-                            { translateX: position },
-                            { rotate: rotate },
-                            { scale: scale },
+                            ...(isTop ? [
+                                { translateX: position },
+                                { rotate: rotate },
+                                { scale: scale },
+                            ] : []),
+                            {
+                                rotateZ: cardRotations[i].interpolate({
+                                    inputRange: [0, 1],
+                                    outputRange: ['0deg', '4deg'],
+                                })
+                            },
+                            { translateY: cardTranslations[i] },
                         ],
                     },
                 ];

@@ -1006,7 +1006,7 @@ export default function HomeScreen() {
                         </View>
                       )}
                       {prayerCompleted && readingCompleted && reflectionCompleted && recentDevotionals.length > 0 && (
-                        <View className="w-full mb-[50px]">
+                        <View className="w-full mt-10 mb-10">
                           {(() => {
                             const filteredDevotionals = recentDevotionals.filter(d => d && d.id && d.id !== 'undefined') as Devotional[];
                             return (
