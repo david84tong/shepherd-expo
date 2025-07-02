@@ -79,7 +79,7 @@ export const useSoundStore = create<SoundState>()(
             require('../../assets/sounds/Shepherd_Background_Sound.m4a'),
             { 
               isLooping: true, 
-              volume: 0.5,
+              volume: 0.25,
               progressUpdateIntervalMillis: 100,
               shouldPlay: true,
               androidImplementation: 'MediaPlayer',
@@ -131,7 +131,7 @@ export const useSoundStore = create<SoundState>()(
             require('../../assets/sounds/Bread_Eating.m4a'),
             { 
               isLooping: true,
-              // volume: 0.6,
+              volume: 0.3,
               androidImplementation: 'MediaPlayer',
             }
           );
@@ -172,7 +172,7 @@ export const useSoundStore = create<SoundState>()(
           const { sound } = await Audio.Sound.createAsync(
             require('../../assets/sounds/Shepherd_Button_Sound.m4a'),
             { 
-              volume: 0.7,
+              volume: 0.5,
               androidImplementation: 'MediaPlayer',
             }
           );
@@ -238,7 +238,7 @@ export const useSoundStore = create<SoundState>()(
           const { sound } = await Audio.Sound.createAsync(
             require('../../assets/sounds/Prayer_Success.m4a'),
             { 
-              volume: 0.7,
+              volume: 0.35,
               androidImplementation: 'MediaPlayer',
             }
           );
@@ -271,7 +271,7 @@ export const useSoundStore = create<SoundState>()(
           const { sound } = await Audio.Sound.createAsync(
             require('../../assets/sounds/Journaling_Success.m4a'),
             { 
-              volume: 0.7,
+              volume: 0.35,
               androidImplementation: 'MediaPlayer',
             }
           );
@@ -304,7 +304,7 @@ export const useSoundStore = create<SoundState>()(
           const { sound } = await Audio.Sound.createAsync(
             require('../../assets/sounds/Chest_Opening.m4a'),
             { 
-              volume: 0.7,
+              volume: 0.35,
               androidImplementation: 'MediaPlayer',
             }
           );
