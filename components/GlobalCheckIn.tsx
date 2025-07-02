@@ -38,6 +38,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [currentScreen, setCurrentScreen] = useState<CheckInScreen>('mood');
   const [isGenerating, setIsGenerating] = useState(false);
+  const [checkInSaved, setCheckInSaved] = useState(false);
   
   // Hooks
   const router = useRouter();
@@ -76,6 +77,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
   // Complete check-in and save to both stores
   const handleCompleteCheckIn = useCallback(async () => {
+    // Prevent double-saving
+    if (checkInSaved) {
+      console.log('[GlobalCheckIn] Check-in already saved, skipping...');
+      return;
+    }
+    
     console.log('handleCompleteCheckIn called with:', {
       mood: currentMood,
       focus: currentFocus,
@@ -102,7 +109,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     await addCheckIn(dateKey, checkInData);
     
     console.log('Check-in completed and saved to both stores');
-  }, [currentMood, currentFocus, currentStruggle, completeCheckIn, addCheckIn]);
+    setCheckInSaved(true);
+    
+    // Verify the check-in was saved
+    const verifyCheckIn = useCheckInStore.getState().getTodaysCheckIn();
+    console.log('[GlobalCheckIn] Verification - Today\'s check-in after save:', verifyCheckIn);
+  }, [currentMood, currentFocus, currentStruggle, completeCheckIn, addCheckIn, checkInSaved]);
 
   // Handle dismiss
   const handleDismiss = useCallback(() => {
@@ -115,6 +127,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       setSelectedStruggle(null);
       clearCurrentSession(); // Clear store session
       setIsGenerating(false); // Reset generating state
+      setCheckInSaved(false); // Reset saved flag
       // Reset animations
       moodAnim.setValue(0);
       focusAnim.setValue(screenWidth);
@@ -126,6 +139,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
   // Handle custom devotional generation
   const handleGenerateCustomDevotional = useCallback(async () => {
+    console.log('[GlobalCheckIn] handleGenerateCustomDevotional started');
     const currentUser = auth().currentUser;
     if (!currentUser) {
       console.error('No authenticated user available for generating devotional');
@@ -145,7 +159,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         struggle: currentStruggle
       };
       
-      console.log('Generating custom devotional with check-in data:', checkInData);
+      console.log('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
       
       // Generate the custom devotional
       const customDevotional = await createDevotionalFromCheckIn(checkInData, idToken);
@@ -179,7 +193,9 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       setCustomDevotional(fullDevotional);
       
       // Complete the check-in and save to both stores
+      console.log('[GlobalCheckIn] About to save check-in...');
       await handleCompleteCheckIn();
+      console.log('[GlobalCheckIn] Check-in saved successfully');
       
       // Log analytics
       analytics.logEvent('checkin_custom_devotional_generated', {
@@ -283,6 +299,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         setSelectedFocus(null);
         setSelectedStruggle(null);
         clearCurrentSession(); // Clear store session
+        setCheckInSaved(false); // Reset saved flag
         moodAnim.setValue(0);
         focusAnim.setValue(screenWidth);
         struggleAnim.setValue(screenWidth);
@@ -456,8 +473,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               setStruggle(struggle.value); // Save to store
               hapticMedium();
               analytics.logEvent('checkin_struggle_selected', { struggle: struggle.value });
-              // Automatically move to success screen after selecting struggle
-              setTimeout(() => {
+              
+              // Save the check-in immediately after selecting struggle
+              setTimeout(async () => {
+                await handleCompleteCheckIn();
                 animateToScreen('success');
               }, 100);
             }}
@@ -490,8 +509,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           skipStruggle(); // Save empty string to store
           hapticMedium();
           analytics.logEvent('checkin_struggle_skipped');
-          // Skip struggle screen and go to success
-          setTimeout(() => {
+          
+          // Save the check-in immediately after skipping struggle
+          setTimeout(async () => {
+            await handleCompleteCheckIn();
             animateToScreen('success');
           }, 100);
         }}
@@ -514,8 +535,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       </View>
       <Text className="font-feather text-h2 text-textPrimary mb-4">Check-in Complete!</Text>
       <Text className="font-din text-lg text-gray-600 text-center mb-8">
-        You&apos;re all set for today. May God guide you in your focus on{' '}
-        {focusAreas.find((f) => f.value === selectedFocus)?.label.toLowerCase()}.
+        You&apos;re all set for today.{' '}
+        {selectedFocus && `May God guide you in your focus on ${focusAreas.find((f) => f.value === selectedFocus)?.label.toLowerCase()}.`}
       </Text>
       <View className="w-full mt-auto">
         <PrimaryButton
@@ -548,11 +569,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 }, 100);
               }, 300);
               
-              // Generate custom devotional in background
+              // Generate custom devotional in background (check-in already saved)
               handleGenerateCustomDevotional();
             } else {
-              // Just complete check-in and go to regular devotional
-              await handleCompleteCheckIn();
+              // Check-in already saved, just log analytics
               analytics.logEvent('checkin_completed', {
                 mood: currentMood,
                 focus: currentFocus,
@@ -608,8 +628,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               // Set the temporary flag to prevent auto-show
               setTemporarilyDisableAutoShow(true);
               
-              // Complete the check-in to save data and update lastCheckInTime
-              await handleCompleteCheckIn();
+              // Check-in already saved when struggle was selected/skipped
               
               // Verify the check-in was saved
               const checkInState = useCheckInStore.getState();
