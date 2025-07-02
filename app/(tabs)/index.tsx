@@ -505,7 +505,14 @@ export default function HomeScreen() {
     const checkInStore = useCheckInStore.getState();
     const todaysCheckIn = checkInStore.getTodaysCheckIn();
     
-    if (todaysCheckIn && (todaysCheckIn.focus || todaysCheckIn.struggle)) {
+    console.log('🔍 [handleCustomDevotionalPress] Check-in store state:', {
+      todaysCheckIn: checkInStore.todaysCheckIn,
+      checkInHistory: checkInStore.checkInHistory,
+      hasCompletedToday: checkInStore.hasCompletedTodaysCheckIn(),
+      todaysCheckInFromGetter: todaysCheckIn
+    });
+    
+    if (todaysCheckIn && (todaysCheckIn.focus !== '' || todaysCheckIn.struggle !== '')) {
       // User has completed check-in with focus/struggle, generate custom devotional
       console.log('🎯 Generating custom devotional with check-in data:', todaysCheckIn);
       

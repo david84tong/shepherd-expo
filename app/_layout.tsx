@@ -277,15 +277,27 @@ export default function RootLayout() {
     }
   };
   
-  // Check if one hour has passed since last check-in
+  // Check if one hour has passed since last check-in AND today's check-in is not complete
   const checkAndShowCheckInIfNeeded = () => {
     const checkInStore = useCheckInStore.getState();
-    if (checkInStore.hasBeenOneHourSinceLastCheckIn()) {
-      console.log('One hour has passed since last check-in, showing check-in screen');
+    const hasCompletedToday = checkInStore.hasCompletedTodaysCheckIn();
+    const hasBeenOneHour = checkInStore.hasBeenOneHourSinceLastCheckIn();
+    
+    console.log('[CheckIn] Auto-show check:', {
+      hasCompletedToday,
+      hasBeenOneHour,
+      todaysCheckIn: checkInStore.getTodaysCheckIn()
+    });
+    
+    // Only show if one hour has passed AND today's check-in is not complete
+    if (hasBeenOneHour && !hasCompletedToday) {
+      console.log('Showing check-in: One hour passed and today\'s check-in not complete');
       // Show check-in with a delay to ensure app is ready
       setTimeout(() => {
         showCheckIn();
       }, 2000);
+    } else if (hasCompletedToday) {
+      console.log('Skipping check-in: Already completed today');
     }
   };
 
