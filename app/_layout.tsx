@@ -32,6 +32,7 @@ import { useOnboardingStore } from './stores/onboardingStore';
 // Import the sheet components
 import { useAssets } from 'expo-asset';
 import GlobalBookChapterSelectorSheet from '../components/GlobalBookChapterSelectorSheet';
+import GlobalCheckIn, { GlobalCheckInRef } from '../components/GlobalCheckIn';
 import GlobalPrayerSheet, {
   PrayerSheetRef as GlobalPrayerSheetRefInternal,
 } from '../components/GlobalPrayerSheet';
@@ -167,6 +168,7 @@ export default function RootLayout() {
   const prayerSheetRef = useRef<GlobalPrayerSheetRefInternal>(null);
   const storeSheetRef = useRef<StoreSheetRef>(null);
   const statsSheetRef = useRef<StatsSheetRef>(null);
+  const checkInRef = useRef<GlobalCheckInRef>(null);
 
   // Snap points for sheets
   const halfModalSnapPoints = useMemo(() => ['60%'], []);
@@ -291,6 +293,10 @@ export default function RootLayout() {
     settingsSheetRef.current?.show();
   };
 
+  const showCheckIn = () => {
+    checkInRef.current?.expand();
+  };
+
   // Expose global functions
   useEffect(() => {
     if (typeof global !== 'undefined') {
@@ -301,6 +307,7 @@ export default function RootLayout() {
       (global as any).showOldReflectionSheet = showOldReflectionSheet;
       (global as any).showStoreSheet = showStoreSheet;
       (global as any).showStatsSheet = showStatsSheet;
+      (global as any).showCheckIn = showCheckIn;
     }
   }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet, showStoreSheet, showStatsSheet]);
 
@@ -575,6 +582,9 @@ export default function RootLayout() {
 
             {/* Old Reflection Sheet */}
             {Boolean(showOldReflectionSheet) && <OldReflectionSheet />}
+
+            {/* Global Check-In Sheet */}
+            <GlobalCheckIn checkInRef={checkInRef} />
 
             {/* Dimmed background for modal overlays */}
             {isModalDimActive && (

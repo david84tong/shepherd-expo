@@ -799,6 +799,25 @@ export function DebugButton() {
                   </Text>
                 </TouchableOpacity>
 
+                {/* Check-In Modal Button */}
+                <TouchableOpacity
+                  className="bg-[#E8E0FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
+                  onPress={() => {
+                    setModalVisible(false);
+                    setTimeout(() => {
+                      if (typeof global !== 'undefined' && (global as any).showCheckIn) {
+                        (global as any).showCheckIn();
+                      } else {
+                        console.log('showCheckIn not available on global object');
+                      }
+                    }, 300);
+                  }}>
+                  <Text className="font-feather text-base text-textPrimary">Test Check-In Sheet</Text>
+                  <Text className="font-din text-sm text-[#7C6F94] mt-1">
+                    Show daily check-in flow
+                  </Text>
+                </TouchableOpacity>
+
                 {/* Sitemap Button */}
                 <TouchableOpacity
                   className="bg-[#E0F7E6] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FD675]"
