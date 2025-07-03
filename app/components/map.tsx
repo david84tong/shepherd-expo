@@ -38,8 +38,6 @@ type BibleSection = {
   artboardName?: string;
 };
 
-
-
 // Optimize NextNodeIndicator with memo
 // const NextNodeIndicator = React.memo(({ alignment }: { alignment: 'start' | 'center' | 'end' }) => {
 //   // Load Rive assets
@@ -80,6 +78,11 @@ const useUnitStatus = (sections: BibleSection[]) => {
   const completedMapPaths = useUserStore((state) => state.completedMapPaths);
 
   const getStatus = (pathId: string, unitId: string): NodeStatus => {
+    // Debug logging to understand the issue
+    console.log('[getStatus] Checking unit:', unitId, 'in path:', pathId);
+    console.log('[getStatus] completedUnitIds:', completedUnitIds);
+    console.log('[getStatus] completedMapPaths:', completedMapPaths);
+
     // Check if this unit is in completedMapPaths
     const isCompletedInMapPaths = completedMapPaths?.some(
       (path) => path.pathId === pathId && path.unitId === unitId
@@ -87,11 +90,13 @@ const useUnitStatus = (sections: BibleSection[]) => {
 
     // If it's completed in MapPaths, return completed status
     if (isCompletedInMapPaths) {
+      console.log('[getStatus] Unit found in completedMapPaths!');
       return 'completed';
     }
 
     // 1. Check if the current unit is completed in completedUnitIds
     if (completedUnitIds.includes(unitId)) {
+      console.log('[getStatus] Unit found in completedUnitIds!');
       return 'completed';
     }
 
@@ -171,7 +176,7 @@ const ITEM_HEIGHT = 180; // adjust if needed
 export default function MapScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  
+
   // Check if we're coming from home screen
   const fromHome = params.fromHome === 'true';
   const targetUnitId = params.targetUnitId as string;
@@ -254,22 +259,22 @@ export default function MapScreen() {
 
   // Track if we need to suppress haptic feedback (e.g., on first render)
   const isFirstRender = useRef(true);
-  
+
   // Scroll to target unit when coming from home
   useEffect(() => {
     if (fromHome && targetUnitId && sectionListRef.current) {
       // Find the section and item index for the target unit
       let sectionIndex = -1;
       let itemIndex = -1;
-      
+
       sections.forEach((section, sIdx) => {
-        const idx = section.data.findIndex(unit => unit.id === targetUnitId);
+        const idx = section.data.findIndex((unit) => unit.id === targetUnitId);
         if (idx !== -1) {
           sectionIndex = sIdx;
           itemIndex = idx;
         }
       });
-      
+
       if (sectionIndex !== -1 && itemIndex !== -1) {
         // Small delay to ensure the list is rendered
         setTimeout(() => {
@@ -294,6 +299,7 @@ export default function MapScreen() {
     console.log('Pressed unit:', unit.title, unit.reference);
     console.log('Reference details:', JSON.stringify(unit.reference));
     console.log('unit selected', unit);
+    console.log('[handleNodePress] Unit ID:', unit.id);
 
     // Get the current section/path information
     const currentPath = sections.find((section) => section.data.some((u) => u.id === unit.id));
@@ -347,6 +353,15 @@ export default function MapScreen() {
       reflection: unit.reflectionPrompt,
     };
 
+    console.log('[handleNodePress] Setting currentPath:', {
+      unitId: unit.id,
+      unitTitle: unit.title,
+      bookId,
+      chapters,
+      startChapter,
+      endChapter,
+    });
+
     // Check for verse-level divisions (verse ranges)
     // Units with verse ranges have IDs like "gen-24b-v12-27" where "v12-27" indicates verses 12-27
     if (unit.id.includes('-v')) {
@@ -378,7 +393,7 @@ export default function MapScreen() {
       pathname: '/biblePreview',
       params: {
         fromMap: 'true',
-      }
+      },
     });
   };
 
@@ -593,40 +608,40 @@ export default function MapScreen() {
     <>
       <SafeAreaView className="flex-1 bg-surfaceCream mt-4">
         <StatusBar translucent backgroundColor="transparent" barStyle="dark-content" />
-        
+
         {/* Back button when coming from home screen */}
         {fromHome && (
-          <BackButton 
-            onPress={() => router.back()} 
+          <BackButton
+            onPress={() => router.back()}
             containerClassName="absolute top-0 left-0 z-50"
           />
         )}
-        
+
         <SectionList<Unit, BibleSection>
-        ref={sectionListRef}
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        renderSectionHeader={renderSectionHeader}
-        SectionSeparatorComponent={null}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: heightScreen * 0.1 }}
-        onViewableItemsChanged={onViewableItemsChanged}
-        viewabilityConfig={viewabilityConfig}
-        scrollEventThrottle={16}
-        stickySectionHeadersEnabled={false}
-        // Performance optimizations
-        initialNumToRender={5}
-        maxToRenderPerBatch={5}
-        windowSize={10}
-        removeClippedSubviews={true}
-        getItemLayout={(_data, index) => ({
-          length: ITEM_HEIGHT,
-          offset: ITEM_HEIGHT * index,
-          index,
-        })}
-        updateCellsBatchingPeriod={50}
-                  maintainVisibleContentPosition={{
+          ref={sectionListRef}
+          sections={sections}
+          keyExtractor={(item) => item.id}
+          renderItem={renderItem}
+          renderSectionHeader={renderSectionHeader}
+          SectionSeparatorComponent={null}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: heightScreen * 0.1 }}
+          onViewableItemsChanged={onViewableItemsChanged}
+          viewabilityConfig={viewabilityConfig}
+          scrollEventThrottle={16}
+          stickySectionHeadersEnabled={false}
+          // Performance optimizations
+          initialNumToRender={5}
+          maxToRenderPerBatch={5}
+          windowSize={10}
+          removeClippedSubviews={true}
+          getItemLayout={(_data, index) => ({
+            length: ITEM_HEIGHT,
+            offset: ITEM_HEIGHT * index,
+            index,
+          })}
+          updateCellsBatchingPeriod={50}
+          maintainVisibleContentPosition={{
             minIndexForVisible: 0,
             autoscrollToTopThreshold: 10,
           }}

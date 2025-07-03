@@ -23,6 +23,7 @@ interface SoundState {
   playJournalingSuccessSound: () => Promise<void>;
   playTrifectaCompleteSound: () => Promise<void>;
   playFlameSound: () => Promise<void>;
+  playChestOpeningSound: () => Promise<void>;
 }
 
 export const useSoundStore = create<SoundState>()(
@@ -349,6 +350,39 @@ export const useSoundStore = create<SoundState>()(
           });
         } catch (error) {
           console.log('Error playing flame sound:', error);
+        }
+      },
+
+      playChestOpeningSound: async () => {
+        if (!get().soundEffectsEnabled) return;
+        try {
+          // Configure audio if not already configured
+          if (!get().isAudioConfigured) {
+            await Audio.setAudioModeAsync({
+              playsInSilentModeIOS: true,
+              staysActiveInBackground: true,
+              shouldDuckAndroid: true,
+              playThroughEarpieceAndroid: false,
+            });
+            set({ isAudioConfigured: true });
+          }
+
+          const { sound } = await Audio.Sound.createAsync(
+            require('../../assets/sounds/Chest_Opening.m4a'),
+            { 
+              volume: 0.25,
+              androidImplementation: 'MediaPlayer',
+            }
+          );
+          await sound.playAsync();
+          sound.setOnPlaybackStatusUpdate(async (status: AVPlaybackStatus) => {
+            if (!status.isLoaded) return;
+            if (status.didJustFinish) {
+              await sound.unloadAsync();
+            }
+          });
+        } catch (error) {
+          console.log('Error playing chest opening sound:', error);
         }
       },
     }),

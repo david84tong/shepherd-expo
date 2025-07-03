@@ -117,11 +117,17 @@ export const usePathStore = create<PathState>()(
       // Set completed unit today
       setCompletedUnitToday: (completed) => {
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-        console.log(`📅 Setting completedUnitToday to ${completed} on ${today}`);
+        console.log(`🔍 DEBUG: setCompletedUnitToday called with completed: ${completed}`);
+        console.log(`📅 DEBUG: Today's date: ${today}`);
+        console.log(`📅 DEBUG: Current lastCompletionDate: ${get().lastCompletionDate}`);
+        console.log(`📅 DEBUG: Current completedUnitToday: ${get().completedUnitToday}`);
+        
         set({ 
           completedUnitToday: completed,
           lastCompletionDate: completed ? today : get().lastCompletionDate
         });
+        
+        console.log(`✅ DEBUG: After update - completedUnitToday: ${get().completedUnitToday}, lastCompletionDate: ${get().lastCompletionDate}`);
       },
       
       // Check if we need to reset daily completion (new day)
@@ -164,14 +170,28 @@ export const usePathStore = create<PathState>()(
       
       // Mark unit as completed
       markUnitAsCompleted: (unitId) => {
-        console.log(`💾 Marking unit ${unitId} as completed in store.`);
+        console.log(`🔍 DEBUG: markUnitAsCompleted called with unitId: ${unitId}`);
+        const currentCompletedIds = get().completedUnitIds;
+        console.log(`📋 DEBUG: Current completedUnitIds before adding:`, currentCompletedIds);
+        console.log(`📋 DEBUG: Current completedUnitIds length: ${currentCompletedIds.length}`);
+        
         // Avoid duplicates
-        if (!get().completedUnitIds.includes(unitId)) {
+        if (!currentCompletedIds.includes(unitId)) {
+          console.log(`✅ DEBUG: Unit ${unitId} not in completedUnitIds, adding it now...`);
           set((state) => ({
             completedUnitIds: [...state.completedUnitIds, unitId]
           }));
+          
+          // Log the updated state
+          const updatedCompletedIds = get().completedUnitIds;
+          console.log(`📋 DEBUG: Updated completedUnitIds after adding:`, updatedCompletedIds);
+          console.log(`📋 DEBUG: Updated completedUnitIds length: ${updatedCompletedIds.length}`);
+          console.log(`✅ DEBUG: Successfully added unit ${unitId} to completedUnitIds`);
+          
           // Update next unit preview after marking as completed
           get().updateNextUnitPreview();
+        } else {
+          console.log(`⚠️ DEBUG: Unit ${unitId} already exists in completedUnitIds, skipping...`);
         }
       },
       
@@ -180,32 +200,51 @@ export const usePathStore = create<PathState>()(
         const state = get();
         const { selectedPath, completedUnitIds } = state;
         
+        console.log(`🔍 DEBUG: updateNextUnitPreview called`);
+        console.log(`📋 DEBUG: Current completedUnitIds:`, completedUnitIds);
+        console.log(`📋 DEBUG: completedUnitIds length: ${completedUnitIds.length}`);
 
         if (!selectedPath) {
+          console.log(`⚠️ DEBUG: No selectedPath, returning early`);
           return;
         }
         
+        console.log(`📋 DEBUG: Selected path: ${selectedPath.id} - ${selectedPath.title}`);
         
         // Get ordered paths based on selected path
         const pathMap = Object.fromEntries(SHORTER_BIBLE_PATHS_2.map((p) => [p.id, p]));
 
         const orderedPaths = selectedPath.order.map((id) => pathMap[id]).filter(Boolean);
+        console.log(`📋 DEBUG: Number of ordered paths: ${orderedPaths.length}`);
         
         // Find the first uncompleted unit across all ordered paths
         let nextUnit = null;
+        let totalUnitsChecked = 0;
+        let completedUnitsFound = 0;
+        
         for (const path of orderedPaths) {
+          console.log(`🔍 DEBUG: Checking path: ${path.id} - ${path.title}`);
           for (const unit of path.units) {
+            totalUnitsChecked++;
             if (!completedUnitIds.includes(unit.id)) {
               nextUnit = unit;
+              console.log(`✅ DEBUG: Found next uncompleted unit: ${unit.id} - ${unit.title}`);
               break;
+            } else {
+              completedUnitsFound++;
+              console.log(`⏭️ DEBUG: Unit ${unit.id} already completed, skipping...`);
             }
           }
           if (nextUnit) break;
         }
         
+        console.log(`📊 DEBUG: Total units checked: ${totalUnitsChecked}, Completed units found: ${completedUnitsFound}`);
+        
         if (nextUnit) {
+          console.log(`✅ DEBUG: Setting nextUnitPreview to: ${nextUnit.id} - ${nextUnit.title}`);
           set({ nextUnitPreview: nextUnit });
         } else {
+          console.log(`🎉 DEBUG: All units completed! Setting nextUnitPreview to null`);
           set({ nextUnitPreview: null });
         }
       },
