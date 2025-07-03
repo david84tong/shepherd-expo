@@ -416,14 +416,19 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
   // Automatically mark bottom as reached if content fits without scrolling
   useEffect(() => {
-    // Reduce threshold to make it easier to detect when content fits on screen
-    const threshold = 50;
-    if (contentHeight && containerHeight) {
-      if (contentHeight <= containerHeight + threshold && !hasScrolledToBottom) {
-        console.log('[AutoBottom] Content fits on screen – showing bottom buttons.');
-        setHasScrolledToBottom(true);
+    // Add a small delay to prevent immediate auto-detection after chapter change
+    const timer = setTimeout(() => {
+      // Reduce threshold to make it easier to detect when content fits on screen
+      const threshold = 100;
+      if (contentHeight && containerHeight) {
+        if (contentHeight <= containerHeight + threshold && !hasScrolledToBottom) {
+          console.log('[AutoBottom] Content fits on screen – showing bottom buttons.');
+          setHasScrolledToBottom(true);
+        }
       }
-    }
+    }, 300); // 300ms delay to allow content to render and scroll position to settle
+
+    return () => clearTimeout(timer);
   }, [contentHeight, containerHeight, hasScrolledToBottom]);
 
   // Reset hasScrolledToBottom when chapter, bookId or version changes.
@@ -454,6 +459,10 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
 
     setLoading(true);
     setError(null);
+
+    // Reset hasScrolledToBottom immediately when loading a new chapter
+    // This ensures buttons hide properly when navigating between chapters
+    setHasScrolledToBottom(false);
 
     // Create a key for the current chapter
     const currentChapterKey = `${bookId}-${chapter}`;
@@ -795,6 +804,21 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     return isActuallyAtEnd;
   }, [pathInProgress, currentPath, currentBookId, currentChapter]);
 
+  // Check if the current chapter is the start chapter of the selected path
+  const isAtStartChapter = useMemo(() => {
+    if (!pathInProgress || !currentPath) {
+      console.log('[isAtStartChapter] Not in path or no currentPath data. Returning false.');
+      return false;
+    }
+
+    const isActuallyAtStart =
+      currentBookId === currentPath.bookId && currentChapter === currentPath.startChapter;
+    console.log(
+      `[isAtStartChapter] Calculation: pathInProgress=${pathInProgress}, currentPath.bookId=${currentPath.bookId}, currentBookId=${currentBookId}, currentPath.startChapter=${currentPath.startChapter}, currentChapter=${currentChapter}. Result: ${isActuallyAtStart}`
+    );
+    return isActuallyAtStart;
+  }, [pathInProgress, currentPath, currentBookId, currentChapter]);
+
   // Determine if the finish button should be enabled
   const isFinishEnabled = useMemo(() => {
     // Must be scrolled to bottom first
@@ -819,7 +843,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
 
     // Reduce the threshold to 50 for all cases to make it easier to detect scroll end
-    const threshold = 50;
+    const threshold = 100;
     const scrolledToBottomThreshold = contentSize.height - threshold;
     const bottomReached = layoutMeasurement.height + contentOffset.y >= scrolledToBottomThreshold;
 
@@ -1386,24 +1410,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                   />
                 </View>
 
-                {/* Tap to Show Next Card Toggle - Only show in Map mode */}
-                {isMapMode && (
-                  <View style={styles.toggleContainer}>
-                    <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>
-                      {i18n.t('tap_to_show_next_card')}
-                    </Text>
-                    <Switch
-                      trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
-                      thumbColor={readerSettings.tapToShowNextCard ? '#FFFFFF' : '#FFFFFF'}
-                      ios_backgroundColor="#E0E0E0"
-                      onValueChange={(value) => {
-                        hapticLight();
-                        readerSettings.setTapToShowNextCard(value);
-                      }}
-                      value={readerSettings.tapToShowNextCard}
-                    />
-                  </View>
-                )}
+
 
                 <View style={styles.sliderContainer}>
                   <Text style={[styles.sliderLabel, { color: THEME_COLORS[currentTheme].text }]}>
@@ -1650,15 +1657,15 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                     <TouchableOpacity
                       style={[
                         styles.navButton,
-                        (currentChapter <= 1 || loading) && styles.disabledNavButton,
+                        ((pathInProgress && isMapMode && isAtStartChapter) || loading) && styles.disabledNavButton,
                       ]}
                       onPress={navigateToPreviousChapter}
-                      disabled={currentChapter <= 1 || loading}
+                      disabled={(pathInProgress && isMapMode && isAtStartChapter) || loading}
                       activeOpacity={0.7}>
                       <Text
                         style={[
                           styles.navButtonText,
-                          (currentChapter <= 1 || loading) && styles.disabledButtonText,
+                          ((pathInProgress && isMapMode && isAtStartChapter) || loading) && styles.disabledButtonText,
                         ]}>
                         ←
                       </Text>
@@ -1728,24 +1735,7 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
                           />
                         </View>
 
-                        {/* Tap to Show Next Card Toggle - Only show in Map mode */}
-                        {isMapMode && (
-                          <View style={styles.toggleContainer}>
-                            <Text style={[styles.toggleLabel, { color: THEME_COLORS[currentTheme].text }]}>
-                              {i18n.t('tap_to_show_next_card')}
-                            </Text>
-                            <Switch
-                              trackColor={{ false: '#E0E0E0', true: '#F7B500' }}
-                              thumbColor={readerSettings.tapToShowNextCard ? '#FFFFFF' : '#FFFFFF'}
-                              ios_backgroundColor="#E0E0E0"
-                              onValueChange={(value) => {
-                                hapticLight();
-                                readerSettings.setTapToShowNextCard(value);
-                              }}
-                              value={readerSettings.tapToShowNextCard}
-                            />
-                          </View>
-                        )}
+
 
                         {/* Font Size Controls */}
                         <View style={styles.sliderContainer}>
