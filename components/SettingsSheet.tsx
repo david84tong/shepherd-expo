@@ -45,6 +45,8 @@ import { useOnboardingStore } from '../app/stores/onboardingStore';
 import { saveFeedback } from '../utils/firestore';
 import { useSoundStore } from '../app/stores/soundStore';
 import { useDevotionalStore } from '../app/stores/devotionalStore';
+import { useCheckInStore } from '../app/stores/checkInStore';
+import { usePrayerStore } from '../app/stores/prayerStore';
 import { useIsFocused } from '@react-navigation/native';
 import Animated, {
   useAnimatedStyle,
@@ -768,12 +770,48 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
               const userId = currentUser.uid;
               console.log('Attempting to delete user:', userId);
 
+              // Reset all stores FIRST before any deletion operations
+              useUserStore.getState().resetUserStore();
+              useDevotionalStore.getState().reset();
+              useCheckInStore.getState().resetCheckInData();
+              useHomeStore.getState().resetCompletionStates();
+              useSubscriptionStore.getState().logoutAdaptyUser();
+              usePrayerStore.getState().resetStore();
+              await useOnboardingStore.getState().clearResponses();
+              useOnboardingStore.getState().clearSavedScreenNavigation();
+              useSoundStore.getState().stopBackgroundMusic();
+              console.log('✅ All stores reset before deletion');
+
               try {
-                // Delete Firestore user document first
-                await firestore().collection('users').doc(userId).delete();
-                console.log('✅ User document deleted from Firestore');
+                // Delete all user-related Firestore data
+                const batch = firestore().batch();
+                
+                // Delete user document
+                batch.delete(firestore().collection('users').doc(userId));
+                
+                // Delete custom devotionals created by this user
+                const customDevotionals = await firestore()
+                  .collection('customDevotionals')
+                  .where('userId', '==', userId)
+                  .get();
+                customDevotionals.docs.forEach((doc) => {
+                  batch.delete(doc.ref);
+                });
+                
+                // Delete saved devotionals by this user
+                const savedDevotionals = await firestore()
+                  .collection('savedDevotionals')
+                  .where('userId', '==', userId)
+                  .get();
+                savedDevotionals.docs.forEach((doc) => {
+                  batch.delete(doc.ref);
+                });
+                
+                // Commit all deletions in a single batch
+                await batch.commit();
+                console.log('✅ All user data deleted from Firestore');
               } catch (firestoreError) {
-                console.log('❌ Error deleting Firestore document:', firestoreError);
+                console.log('❌ Error deleting Firestore data:', firestoreError);
                 Alert.alert(
                   'Firestore Error',
                   'Failed to delete Firestore data. Continuing with other deletion steps.'
@@ -792,10 +830,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 );
               }
 
-              // Reset user store regardless of other errors
-              useUserStore.getState().resetUserStore();
+              // Sync widget data with cleared streak
               syncStreakDataToWidget(0, dayjs().toDate());
-              console.log('✅ User store reset');
 
               try {
                 // Try to delete the account after sign out
@@ -845,23 +881,17 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 }
               }
 
-              // Always redirect to login screen regardless of errors
-              Alert.alert(
-                'Account Data Deleted',
-                'Your account data has been deleted. The app will now redirect to the login screen.',
-                [
-                  {
-                    text: 'OK',
-                    onPress: () => {
-                      // Stop background music when redirecting to auth screen
-
-                      useSoundStore.getState().stopBackgroundMusic();
-                      bottomSheetRef.current?.close();
-                      router.replace({ pathname: '/(auth)' });
-                    },
-                  },
-                ]
-              );
+              // Immediately redirect to login screen
+              bottomSheetRef.current?.close();
+              router.replace({ pathname: '/(auth)' });
+              
+              // Show success message after navigation
+              setTimeout(() => {
+                Alert.alert(
+                  'Account Deleted',
+                  'Your account and all associated data have been successfully deleted.'
+                );
+              }, 500);
             } catch (error) {
               console.log('❌ Unhandled error in account deletion:', error);
               Alert.alert(
@@ -886,8 +916,8 @@ const SettingsSheet: React.FC<SettingsSheetProps> = ({ settingsSheetRef, snapPoi
                 ]
               );
             } finally {
-              useUserStore.getState().resetUserStore();
-              useHomeStore.getState().resetCompletionStates();
+              // Stores are already reset at the beginning of the function
+              console.log('Account deletion process completed');
             }
           },
         },

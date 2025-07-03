@@ -45,6 +45,12 @@ interface PathState {
   // Completed unit tracking
   completedUnitIds: string[];
   
+  // Daily completion tracking
+  completedUnitToday: boolean;
+  lastCompletionDate: string | null; // Store as YYYY-MM-DD format
+  setCompletedUnitToday: (completed: boolean) => void;
+  checkAndResetDailyCompletion: () => void;
+  
   // Set selected path information
   setSelectedPath: (path: PathOption) => void;
   
@@ -103,6 +109,35 @@ export const usePathStore = create<PathState>()(
       
       // Default completed units
       completedUnitIds: [],
+      
+      // Default daily completion tracking
+      completedUnitToday: false,
+      lastCompletionDate: null,
+      
+      // Set completed unit today
+      setCompletedUnitToday: (completed) => {
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+        console.log(`📅 Setting completedUnitToday to ${completed} on ${today}`);
+        set({ 
+          completedUnitToday: completed,
+          lastCompletionDate: completed ? today : get().lastCompletionDate
+        });
+      },
+      
+      // Check if we need to reset daily completion (new day)
+      checkAndResetDailyCompletion: () => {
+        const state = get();
+        const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+        
+        if (state.lastCompletionDate !== today) {
+          // New day - update the last completion date
+          console.log(`🔄 New day detected. Updating lastCompletionDate from ${state.lastCompletionDate} to ${today}`);
+          set({ 
+            lastCompletionDate: today
+          });
+        }
+        // Note: completedUnitToday is not persisted, so it's always false on app start
+      },
       
       // Set selected path
       setSelectedPath: (path: PathOption) => {
@@ -200,6 +235,7 @@ export const usePathStore = create<PathState>()(
           currentPath: state.currentPath,
           completedUnitIds: state.completedUnitIds,
           nextUnitPreview: state.nextUnitPreview,
+          lastCompletionDate: state.lastCompletionDate,
         };
       },
     }

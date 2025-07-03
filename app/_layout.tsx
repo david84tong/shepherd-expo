@@ -309,32 +309,40 @@ export default function RootLayout() {
       lastCheckInTime,
       todaysCheckIn,
       checkInHistoryLength: checkInHistory?.length || 0,
-      temporarilyDisableAutoShow: checkInStore.temporarilyDisableAutoShow
+      isNavigating: checkInStore.isNavigating
     });
     
-    console.log('[CheckIn] Auto-show check:', {
-      hasCompletedToday,
-      hasBeenOneHour,
-      todaysCheckIn: checkInStore.getTodaysCheckIn(),
-      isLoggedIn: !!currentUser,
-      isAnonymous: currentUser?.isAnonymous
-    });
-    
-    // Only show if one hour has passed AND today's check-in is not complete
-    if (hasBeenOneHour && !hasCompletedToday) {
-      console.log('[CheckIn] ✅ Showing check-in: One hour passed and today\'s check-in not complete');
-      // Show check-in with a delay to ensure app is ready
-      setTimeout(() => {
-        console.log('[CheckIn] Calling showCheckIn() now...');
-        showCheckIn();
-      }, 2000);
-    } else {
-      console.log('[CheckIn] ❌ Not showing check-in:', {
-        hasBeenOneHour,
-        hasCompletedToday,
-        reason: hasCompletedToday ? 'Already completed today' : 'Not been one hour yet'
-      });
+    // Check if currently navigating
+    if (checkInStore.isNavigating) {
+      console.log('[CheckIn] ❌ Not showing check-in: Currently navigating');
+      return;
     }
+    
+    // Check if already completed today
+    if (hasCompletedToday) {
+      console.log('[CheckIn] ❌ Not showing check-in: Already completed today', {
+        todaysCheckIn,
+        completedAt: todaysCheckIn?.completedAt
+      });
+      return;
+    }
+    
+    // Check if one hour has passed since last check-in
+    if (!hasBeenOneHour) {
+      console.log('[CheckIn] ❌ Not showing check-in: Less than one hour since last check-in', {
+        lastCheckInTime,
+        currentTime: new Date().toISOString()
+      });
+      return;
+    }
+    
+    // All conditions met - show check-in
+    console.log('[CheckIn] ✅ All conditions met - showing check-in');
+    // Show check-in with a delay to ensure app is ready
+    setTimeout(() => {
+      console.log('[CheckIn] Calling showCheckIn() now...');
+      showCheckIn();
+    }, 2000);
   };
 
   // Initialize notifications system

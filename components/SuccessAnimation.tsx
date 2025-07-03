@@ -199,8 +199,14 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     console.log('DEBUG: today:', today.format('YYYY-MM-DD HH:mm:ss'));
 
     // Get the completed readings directly
-    const completedReadings = useUserStore.getState().getCompletedReadings();
+    const completedReadings = useUserStore.getState().getCompletedReadings() || [];
     console.log('DEBUG: Total completed readings:', completedReadings.length);
+
+    // Ensure completedReadings is an array
+    if (!Array.isArray(completedReadings)) {
+      console.log('DEBUG: completedReadings is not an array - returning false');
+      return false;
+    }
 
     // If this is the first reading ever, it's definitely the first of the day
     if (completedReadings.length <= 1) {
@@ -211,21 +217,32 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     try {
       // Map readings to date strings in YYYY-MM-DD format
       const readingDateStrings = completedReadings
-        .filter((reading) => reading.date) // Only include readings with dates
+        .filter((reading) => reading && reading.date) // Only include readings with dates
         .map((reading) => {
-          if (reading.date && typeof reading.date.toDate === 'function') {
-            // Firestore timestamp
-            const date = reading.date.toDate();
-            return dayjs(date).format('YYYY-MM-DD');
-          } else if (reading.date instanceof Date) {
-            // Regular Date
-            return dayjs(reading.date).format('YYYY-MM-DD');
-          } else {
-            // Try to handle as string or number
-            return dayjs(reading.date as any).format('YYYY-MM-DD');
+          try {
+            // Check if it's a Firestore Timestamp with toDate method
+            if (reading.date && typeof reading.date.toDate === 'function') {
+              const date = reading.date.toDate();
+              return dayjs(date).format('YYYY-MM-DD');
+            } 
+            // Check if it's already a regular Date object
+            else if (reading.date instanceof Date) {
+              return dayjs(reading.date).format('YYYY-MM-DD');
+            }
+            // Try to parse as string or number
+            else if (reading.date) {
+              const parsed = dayjs(reading.date);
+              if (parsed.isValid()) {
+                return parsed.format('YYYY-MM-DD');
+              }
+            }
+            return null;
+          } catch (error) {
+            console.error('Error parsing reading date:', error, 'for reading:', reading);
+            return null;
           }
         })
-        .filter((dateStr) => /^\d{4}-\d{2}-\d{2}$/.test(dateStr)); // Filter out invalid dates
+        .filter((dateStr) => dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)); // Filter out null and invalid dates
 
       // Today's date as string for easy comparison
       const todayStr = today.format('YYYY-MM-DD');
@@ -422,8 +439,12 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       setLastActivityDate(now);
 
       // Update specific activity timestamp based on success type
-      if (effectiveType === SuccessAnimationType.READING) {
+      if (effectiveType === SuccessAnimationType.READING || effectiveType === SuccessAnimationType.SECTION_COMPLETE) {
         setLastReadingDate(now);
+        // Mark that we completed a unit today
+        const pathStore = usePathStore.getState();
+        pathStore.setCompletedUnitToday(true);
+        console.log('✅ Marked completedUnitToday as true in SuccessAnimation for type:', effectiveType);
       } else if (effectiveType === SuccessAnimationType.PRAYER) {
         setLastPrayerDate(now);
       } else if (effectiveType === SuccessAnimationType.REFLECTION) {

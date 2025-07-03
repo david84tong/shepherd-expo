@@ -58,7 +58,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     skipStruggle,
     completeCheckIn,
     clearCurrentSession,
-    setTemporarilyDisableAutoShow,
   } = useCheckInStore();
   
   // Local state for UI feedback
@@ -545,11 +544,21 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           title={(currentFocus !== '' || currentStruggle !== '') ? "Generate Custom Devotional" : "Start Today's Devotional"}
           onPress={async () => {
             if (currentFocus !== '' || currentStruggle !== '') {
+              // Log the current check-in state
+              const checkInState = useCheckInStore.getState();
+              console.log('[GlobalCheckIn] Before navigation - check-in state:', {
+                todaysCheckIn: checkInState.getTodaysCheckIn(),
+                hasCompletedToday: checkInState.hasCompletedTodaysCheckIn(),
+                lastCheckInTime: checkInState.lastCheckInTime,
+                hasBeenOneHour: checkInState.hasBeenOneHourSinceLastCheckIn()
+              });
+              
               // Set check-in flag
               setIsFromCheckIn(true);
               
-              // Set temporary flag to prevent auto-show when returning from loading screen
-              setTemporarilyDisableAutoShow(true);
+              // Set navigation flag to prevent check-in from showing during navigation
+              const { setIsNavigating } = useCheckInStore.getState();
+              setIsNavigating(true);
               
               // Close the sheet directly without handleDismiss to prevent reappearing
               bottomSheetRef.current?.close();
@@ -557,6 +566,11 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               // Navigate after sheet closes
               setTimeout(() => {
                 router.push('/devotionalLoading' as any);
+                
+                // Reset navigation flag after a delay
+                setTimeout(() => {
+                  setIsNavigating(false);
+                }, 3000); // 3 seconds should be enough for navigation to complete
                 
                 // Reset state after navigation
                 setTimeout(() => {
@@ -572,11 +586,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   focusAnim.setValue(screenWidth);
                   struggleAnim.setValue(screenWidth);
                   successAnim.setValue(screenWidth);
-                  
-                  // Reset the temporary flag after a delay
-                  setTimeout(() => {
-                    setTemporarilyDisableAutoShow(false);
-                  }, 5000);
                 }, 100);
               }, 300);
               
@@ -590,12 +599,21 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 struggle: currentStruggle
               });
               
+              // Set navigation flag to prevent check-in from showing during navigation
+              const { setIsNavigating } = useCheckInStore.getState();
+              setIsNavigating(true);
+              
               // Close the sheet directly without handleDismiss to prevent reappearing
               bottomSheetRef.current?.close();
               
               // Navigate after sheet closes
               setTimeout(() => {
                 router.push('/(tabs)');
+                
+                // Reset navigation flag after a delay
+                setTimeout(() => {
+                  setIsNavigating(false);
+                }, 2000); // 2 seconds for home navigation
                 
                 // Reset state after navigation
                 setTimeout(() => {
@@ -636,17 +654,13 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               // Log the check-in completion
               console.log('Starting worldwide devotional check-in completion...');
               
-              // Set the temporary flag to prevent auto-show
-              setTemporarilyDisableAutoShow(true);
-              
               // Check-in already saved when struggle was selected/skipped
               
               // Verify the check-in was saved
               const checkInState = useCheckInStore.getState();
               console.log('Check-in state after completion:', {
                 lastCheckInTime: checkInState.lastCheckInTime,
-                hasBeenOneHour: checkInState.hasBeenOneHourSinceLastCheckIn(),
-                temporarilyDisableAutoShow: checkInState.temporarilyDisableAutoShow
+                hasBeenOneHour: checkInState.hasBeenOneHourSinceLastCheckIn()
               });
               
               // Log analytics
@@ -657,23 +671,14 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 source: 'start_worldwide_devotional'
               });
               
-              // Close the sheet
+              // Set navigation flag to prevent check-in from showing during navigation
+              const { setIsNavigating } = useCheckInStore.getState();
+              setIsNavigating(true);
+              
+              // Close the sheet first
               bottomSheetRef.current?.close();
               
-              // Reset check-in state immediately
-              setCurrentScreen('mood');
-              setSelectedMood(null);
-              setSelectedFocus(null);
-              setSelectedStruggle(null);
-              clearCurrentSession();
-              setIsGenerating(false);
-              // Reset animations
-              moodAnim.setValue(0);
-              focusAnim.setValue(screenWidth);
-              struggleAnim.setValue(screenWidth);
-              successAnim.setValue(screenWidth);
-              
-              // Wait for sheet to close, then trigger devotional
+              // Wait a bit for sheet to start closing, then trigger devotional
               setTimeout(() => {
                 // Trigger the daily bread devotional
                 const triggerDailyBread = (global as any).triggerDailyBread;
@@ -684,12 +689,28 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   console.error('triggerDailyBread function not found on global');
                 }
                 
-                // Reset the temporary flag after a delay to allow the devotional to open
+                // Reset navigation flag after a delay
                 setTimeout(() => {
-                  console.log('Resetting temporarilyDisableAutoShow flag');
-                  useCheckInStore.getState().setTemporarilyDisableAutoShow(false);
-                }, 3000);
-              }, 600); // Wait for sheet to fully close
+                  setIsNavigating(false);
+                }, 2000);
+                
+                // Reset check-in state after triggering devotional
+                setTimeout(() => {
+                  setCurrentScreen('mood');
+                  setSelectedMood(null);
+                  setSelectedFocus(null);
+                  setSelectedStruggle(null);
+                  clearCurrentSession();
+                  setIsGenerating(false);
+                  setCheckInSaved(false);
+                  // Reset animations
+                  moodAnim.setValue(0);
+                  focusAnim.setValue(screenWidth);
+                  struggleAnim.setValue(screenWidth);
+                  successAnim.setValue(screenWidth);
+                }, 300);
+                
+              }, 300); // Reduced wait time for better UX
             }}
             className="mt-4"
           >

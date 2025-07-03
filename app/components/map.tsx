@@ -16,7 +16,7 @@ import {
 import PathNode, { NodeStatus } from '../../components/MapComponents/PathNode';
 import StickyPathHeader from '../../components/MapComponents/StickyPathHeader';
 import BackButton from '../../components/BackButton';
-import { BIBLE_BOOK_IDS, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS, Unit } from '../models/Path';
+import { BIBLE_BOOK_IDS, SHORTER_BIBLE_PATHS_2, Unit } from '../models/Path';
 import { PathInfo, usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
 import { heightScreen } from '~/utils/dimensions';
@@ -187,8 +187,8 @@ export default function MapScreen() {
 
   // Calculate sections inside the component using useMemo
   const sections = useMemo(() => {
-    // Choose paths based on user's frequencyGoal
-    const pathsToUse = frequencyGoal === '1-5' ? SHORTER_BIBLE_PATHS_2 : BIBLE_PATHS;
+    // Always use SHORTER_BIBLE_PATHS_2 to ensure units have at most 1-2 chapters
+    const pathsToUse = SHORTER_BIBLE_PATHS_2;
 
     let orderedPaths = pathsToUse;
     if (selectedPath && Array.isArray(selectedPath.order) && selectedPath.order.length > 0) {
@@ -213,7 +213,7 @@ export default function MapScreen() {
       riveName: path.riveName,
       artboardName: path.artboardName,
     }));
-  }, [selectedPath, frequencyGoal]); // Added frequencyGoal as dependency
+  }, [selectedPath]); // Removed frequencyGoal as dependency since we always use SHORTER_BIBLE_PATHS_2
 
   const [currentSectionTitle, setCurrentSectionTitle] = useState(sections[0]?.title || 'Map');
   const [currentSectionIcon, setCurrentSectionIcon] = useState(sections[0]?.icon || 'book');
@@ -422,8 +422,8 @@ export default function MapScreen() {
 
   // Find the next available unit
   const nextAvailableUnit = useCallback(() => {
-    // Choose paths based on user's frequencyGoal
-    const pathsToUse = frequencyGoal === '1-5' ? SHORTER_BIBLE_PATHS_2 : BIBLE_PATHS;
+    // Always use SHORTER_BIBLE_PATHS_2 to ensure units have at most 1-2 chapters
+    const pathsToUse = SHORTER_BIBLE_PATHS_2;
 
     // Find first unit or next unlocked unit that isn't completed
     for (const path of pathsToUse) {
@@ -440,7 +440,7 @@ export default function MapScreen() {
       }
     }
     return null;
-  }, [completedUnitIds, frequencyGoal]); // Added frequencyGoal as dependency
+  }, [completedUnitIds]); // Removed frequencyGoal as dependency since we always use SHORTER_BIBLE_PATHS_2
 
   // Track visible items to locate next unit on screen
   const [nextItemLayout, setNextItemLayout] = useState<{ id: string; x: number; y: number } | null>(
