@@ -2085,23 +2085,19 @@ export const generateShorterBiblePaths = (
   chaptersPerUnit = 2
 ): Path[] => {
   console.log('generating shorter bible paths with chaptersPerUnit:', chaptersPerUnit);
-  alert('generating shorter bible paths with chaptersPerUnit:' + chaptersPerUnit);
   
   return paths.map((p) => {
     console.log(`Processing path: ${p.id} with ${p.units.length} units`);
-    alert(`Processing path: ${p.id} with ${p.units.length} units`);
     
     const newUnits: Unit[] = p.units.flatMap((u) => {
       const splitUnits = splitUnit(u, chaptersPerUnit);
       if (splitUnits.length > 1) {
         console.log(`Split unit ${u.id} into ${splitUnits.length} parts`);
-        alert(`Split unit ${u.id} into ${splitUnits.length} parts`);
       }
       return splitUnits;
     });
     
     console.log(`Path ${p.id}: ${p.units.length} original units → ${newUnits.length} new units`);
-    alert(`Path ${p.id}: ${p.units.length} original units → ${newUnits.length} new units`);
     return { ...p, units: newUnits };
   });
 };
