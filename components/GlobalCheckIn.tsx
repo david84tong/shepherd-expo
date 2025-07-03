@@ -39,17 +39,17 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const [currentScreen, setCurrentScreen] = useState<CheckInScreen>('mood');
   const [isGenerating, setIsGenerating] = useState(false);
   const [checkInSaved, setCheckInSaved] = useState(false);
-  
+
   // Hooks
   const router = useRouter();
   const { setCustomDevotional, setIsFromCheckIn, createCustomDevotionalFromCheckIn } = useDevotionalStore();
   const { readingCompleted } = useHomeStore();
   const { addCheckIn } = useUserStore();
-  
+
   // Use CheckIn store
   const {
     currentMood,
-    currentFocus, 
+    currentFocus,
     currentStruggle,
     setMood,
     setFocus,
@@ -59,12 +59,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     completeCheckIn,
     clearCurrentSession,
   } = useCheckInStore();
-  
+
   // Local state for UI feedback
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [selectedFocus, setSelectedFocus] = useState<string | null>(null);
   const [selectedStruggle, setSelectedStruggle] = useState<string | null>(null);
-  
+
   // Animation values for each screen
   const moodAnim = useRef(new Animated.Value(0)).current;
   const focusAnim = useRef(new Animated.Value(screenWidth)).current;
@@ -81,16 +81,16 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       console.log('[GlobalCheckIn] Check-in already saved, skipping...');
       return;
     }
-    
+
     console.log('handleCompleteCheckIn called with:', {
       mood: currentMood,
       focus: currentFocus,
       struggle: currentStruggle
     });
-    
+
     // Complete check-in in checkInStore
     completeCheckIn();
-    
+
     // Save to userStore for Firestore sync
     const checkInData = {
       mood: currentMood,
@@ -98,18 +98,18 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       struggle: currentStruggle,
       completedAt: Timestamp.now()
     };
-    
+
     // Create unique key using timestamp to prevent overrides
     const now = new Date();
     const timestamp = now.getTime(); // milliseconds since epoch
     const dateKey = `${timestamp}`; // Use timestamp as key for uniqueness
-    
+
     console.log('Saving check-in data to userStore with key:', dateKey, checkInData);
     await addCheckIn(dateKey, checkInData);
-    
+
     console.log('Check-in completed and saved to both stores');
     setCheckInSaved(true);
-    
+
     // Verify the check-in was saved
     const verifyCheckIn = useCheckInStore.getState().getTodaysCheckIn();
     console.log('[GlobalCheckIn] Verification - Today\'s check-in after save:', verifyCheckIn);
@@ -146,27 +146,27 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     }
 
     setIsGenerating(true);
-    
+
     try {
       // Get the user's ID token
       const idToken = await currentUser.getIdToken();
-      
+
       // Create the check-in data
       const checkInData = {
         mood: currentMood,
         focus: currentFocus,
         struggle: currentStruggle
       };
-      
+
       console.log('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
-      
+
       // Generate the custom devotional
       const customDevotional = await createDevotionalFromCheckIn(checkInData, idToken);
-      
+
       // Get random background using the proper backgrounds from model
       const backgroundUrls = Object.values(devotionalBackgrounds);
       const randomBackground = backgroundUrls[Math.floor(Math.random() * backgroundUrls.length)];
-      
+
       // Save the custom devotional to the store
       const fullDevotional: Devotional = {
         id: 'custom-checkin',
@@ -184,28 +184,28 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         imageURL: randomBackground,
         verse: customDevotional.verse || ''
       };
-      
+
       console.log('GlobalCheckIn: Full devotional object:', fullDevotional);
       console.log('GlobalCheckIn: Verse field:', fullDevotional.verse);
       console.log('GlobalCheckIn: BibleReference field:', fullDevotional.bibleReference);
-      
+
       // Use the new function to save to Firestore
       await createCustomDevotionalFromCheckIn(fullDevotional);
-      
+
       // Complete the check-in and save to both stores
       console.log('[GlobalCheckIn] About to save check-in...');
       await handleCompleteCheckIn();
       console.log('[GlobalCheckIn] Check-in saved successfully');
-      
+
       // Log analytics
       analytics.logEvent('checkin_custom_devotional_generated', {
         mood: currentMood,
         focus: currentFocus,
         struggle: currentStruggle
       });
-      
+
       // Don't navigate here - it's already handled in the button onPress
-      
+
     } catch (error) {
       console.error('Error generating custom devotional:', error);
       setIsGenerating(false);
@@ -216,7 +216,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   // Animate screen transitions
   const animateToScreen = useCallback((screen: CheckInScreen) => {
     const animations: Animated.CompositeAnimation[] = [];
-    
+
     if (screen === 'focus') {
       // Slide mood out to left, focus in from right
       animations.push(
@@ -277,7 +277,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     if (bottomSheetRef.current) {
       bottomSheetRef.current.snapToIndex(0);
     }
-  }, [currentScreen]);
+  }, []);
 
   // Custom backdrop renderer
   const renderBackdrop = useCallback(
@@ -305,7 +305,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         focusAnim.setValue(screenWidth);
         struggleAnim.setValue(screenWidth);
         successAnim.setValue(screenWidth);
-        
+
         // Log analytics for check-in shown
         analytics.logEvent('checkin_sheet_shown', {
           trigger: 'one_hour_reminder',
@@ -353,7 +353,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   ];
 
   const renderMoodScreen = () => (
-    <Animated.View 
+    <Animated.View
       style={{
         flex: 1,
         alignItems: 'center',
@@ -375,13 +375,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 animateToScreen('focus');
               }, 200); // Slightly longer delay for better visual feedback
             }}
-         
-            className={`w-28 h-32 rounded-2xl border-2 items-center justify-center shadow-buttonShadow bg-surfaceCreamLight ${
-              selectedMood === mood.value
-                ? 'border-orange'
-                : 'border-accentGold'
-            }`}>
-            <Image 
+
+            className={`w-28 h-32 rounded-2xl border-2 items-center justify-center shadow-buttonShadow bg-surfaceCreamLight ${selectedMood === mood.value
+              ? 'border-orange'
+              : 'border-accentGold'
+              }`}>
+            <Image
               source={mood.image}
               style={{ width: 90, height: 90, marginBottom: -8, marginTop: -12 }}
               resizeMode="contain"
@@ -394,7 +393,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   );
 
   const renderFocusScreen = () => (
-    <Animated.View 
+    <Animated.View
       style={{
         flex: 1,
         alignItems: 'center',
@@ -416,11 +415,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 animateToScreen('struggle');
               }, 100);
             }}
-            className={`w-[30%] h-28  rounded-2xl border-2 items-center justify-center ${
-              selectedFocus === focus.value
-                ? 'bg-surfaceCreamLight border-orange'
-                : 'bg-surfaceCreamLight border-accentGold'
-            }`}>
+            className={`w-[30%] h-28  rounded-2xl border-2 items-center justify-center ${selectedFocus === focus.value
+              ? 'bg-surfaceCreamLight border-orange'
+              : 'bg-surfaceCreamLight border-accentGold'
+              }`}>
             <View className={`${focus.bgColor} rounded-xl p-3 mb-2`}>
               {focus.iconType === 'fontawesome6' ? (
                 <FontAwesome6
@@ -457,7 +455,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   );
 
   const renderStruggleScreen = () => (
-    <Animated.View 
+    <Animated.View
       style={{
         flex: 1,
         alignItems: 'center',
@@ -474,18 +472,17 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               setStruggle(struggle.value); // Save to store
               hapticMedium();
               analytics.logEvent('checkin_struggle_selected', { struggle: struggle.value });
-              
+
               // Save the check-in immediately after selecting struggle
               setTimeout(async () => {
                 await handleCompleteCheckIn();
                 animateToScreen('success');
               }, 100);
             }}
-            className={`w-[30%] h-28 rounded-2xl border-2 items-center justify-center ${
-              selectedStruggle === struggle.value
-                ? 'bg-surfaceCreamLight border-orange'
-                : 'bg-surfaceCreamLight border-accentGold'
-            }`}>
+            className={`w-[30%] h-28 rounded-2xl border-2 items-center justify-center ${selectedStruggle === struggle.value
+              ? 'bg-surfaceCreamLight border-orange'
+              : 'bg-surfaceCreamLight border-accentGold'
+              }`}>
             <View className={`${struggle.bgColor} rounded-xl p-3 mb-2`}>
               {struggle.iconType === 'fontawesome6' ? (
                 <FontAwesome6
@@ -510,7 +507,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           skipStruggle(); // Save empty string to store
           hapticMedium();
           analytics.logEvent('checkin_struggle_skipped');
-          
+
           // Save the check-in immediately after skipping struggle
           setTimeout(async () => {
             await handleCompleteCheckIn();
@@ -524,7 +521,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   );
 
   const renderSuccessScreen = () => (
-    <Animated.View 
+    <Animated.View
       style={{
         flex: 1,
         alignItems: 'center',
@@ -552,26 +549,26 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 lastCheckInTime: checkInState.lastCheckInTime,
                 hasBeenOneHour: checkInState.hasBeenOneHourSinceLastCheckIn()
               });
-              
+
               // Set check-in flag
               setIsFromCheckIn(true);
-              
+
               // Set navigation flag to prevent check-in from showing during navigation
               const { setIsNavigating } = useCheckInStore.getState();
               setIsNavigating(true);
-              
+
               // Close the sheet directly without handleDismiss to prevent reappearing
               bottomSheetRef.current?.close();
-              
+
               // Navigate after sheet closes
               setTimeout(() => {
                 router.push('/devotionalLoading' as any);
-                
+
                 // Reset navigation flag after a delay
                 setTimeout(() => {
                   setIsNavigating(false);
                 }, 3000); // 3 seconds should be enough for navigation to complete
-                
+
                 // Reset state after navigation
                 setTimeout(() => {
                   setCurrentScreen('mood');
@@ -588,7 +585,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   successAnim.setValue(screenWidth);
                 }, 100);
               }, 300);
-              
+
               // Generate custom devotional in background (check-in already saved)
               handleGenerateCustomDevotional();
             } else {
@@ -598,23 +595,23 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 focus: currentFocus,
                 struggle: currentStruggle
               });
-              
+
               // Set navigation flag to prevent check-in from showing during navigation
               const { setIsNavigating } = useCheckInStore.getState();
               setIsNavigating(true);
-              
+
               // Close the sheet directly without handleDismiss to prevent reappearing
               bottomSheetRef.current?.close();
-              
+
               // Navigate after sheet closes
               setTimeout(() => {
                 router.push('/(tabs)');
-                
+
                 // Reset navigation flag after a delay
                 setTimeout(() => {
                   setIsNavigating(false);
                 }, 2000); // 2 seconds for home navigation
-                
+
                 // Reset state after navigation
                 setTimeout(() => {
                   setCurrentScreen('mood');
@@ -650,19 +647,19 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 focus: currentFocus,
                 struggle: currentStruggle
               });
-              
+
               // Log the check-in completion
               console.log('Starting worldwide devotional check-in completion...');
-              
+
               // Check-in already saved when struggle was selected/skipped
-              
+
               // Verify the check-in was saved
               const checkInState = useCheckInStore.getState();
               console.log('Check-in state after completion:', {
                 lastCheckInTime: checkInState.lastCheckInTime,
                 hasBeenOneHour: checkInState.hasBeenOneHourSinceLastCheckIn()
               });
-              
+
               // Log analytics
               analytics.logEvent('checkin_completed', {
                 mood: currentMood,
@@ -670,14 +667,14 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 struggle: currentStruggle,
                 source: 'start_worldwide_devotional'
               });
-              
+
               // Set navigation flag to prevent check-in from showing during navigation
               const { setIsNavigating } = useCheckInStore.getState();
               setIsNavigating(true);
-              
+
               // Close the sheet first
               bottomSheetRef.current?.close();
-              
+
               // Wait a bit for sheet to start closing, then trigger devotional
               setTimeout(() => {
                 // Trigger the daily bread devotional
@@ -688,12 +685,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 } else {
                   console.error('triggerDailyBread function not found on global');
                 }
-                
+
                 // Reset navigation flag after a delay
                 setTimeout(() => {
                   setIsNavigating(false);
                 }, 2000);
-                
+
                 // Reset check-in state after triggering devotional
                 setTimeout(() => {
                   setCurrentScreen('mood');
@@ -709,7 +706,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   struggleAnim.setValue(screenWidth);
                   successAnim.setValue(screenWidth);
                 }, 300);
-                
+
               }, 300); // Reduced wait time for better UX
             }}
             className="mt-4"
@@ -732,25 +729,25 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       backgroundStyle={{ backgroundColor: '#FFF4D9', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
       handleIndicatorStyle={{ backgroundColor: '#DCB280', height: 4, width: 40 }}
       backdropComponent={renderBackdrop}>
-      <BottomSheetView style={{ flex: 1, paddingTop: 20, paddingBottom: 30, overflow: 'hidden' }}>
+      <BottomSheetView style={{ width: '100%', height: '100%', paddingTop: 20, paddingBottom: 30, overflow: 'hidden' }}>
         <View style={{ flex: 1, position: 'relative' }}>
           {/* All screens are rendered but with proper touch handling */}
-          <View 
+          <View
             style={{ position: 'absolute', width: '100%', height: '100%' }}
             pointerEvents={currentScreen === 'mood' ? 'auto' : 'none'}>
             {renderMoodScreen()}
           </View>
-          <View 
+          <View
             style={{ position: 'absolute', width: '100%', height: '100%' }}
             pointerEvents={currentScreen === 'focus' ? 'auto' : 'none'}>
             {renderFocusScreen()}
           </View>
-          <View 
+          <View
             style={{ position: 'absolute', width: '100%', height: '100%' }}
             pointerEvents={currentScreen === 'struggle' ? 'auto' : 'none'}>
             {renderStruggleScreen()}
           </View>
-          <View 
+          <View
             style={{ position: 'absolute', width: '100%', height: '100%' }}
             pointerEvents={currentScreen === 'success' ? 'auto' : 'none'}>
             {renderSuccessScreen()}
