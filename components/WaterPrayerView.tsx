@@ -106,7 +106,10 @@ const WaterWaveAnimation: React.FC<{
   animationTriggered: boolean;
   totalHoldTime: number;
   prayerText: string;
-}> = ({ isActive, waterProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional, isHolding, animationTriggered, totalHoldTime, prayerText }) => {
+  onPressIn?: () => void;
+  onPressOut?: () => void;
+  onPress?: () => void;
+}> = ({ isActive, waterProgress, hapticsEnabled, guidedPrayerEnabled, currentDevotional, isHolding, animationTriggered, totalHoldTime, prayerText, onPressIn, onPressOut, onPress }) => {
   const [waveOffset, setWaveOffset] = useState(0);
   const [waterLevel, setWaterLevel] = useState(SCREEN_HEIGHT);
   const textOpacity = useSharedValue(1);
@@ -249,74 +252,79 @@ const WaterWaveAnimation: React.FC<{
       </Canvas>
 
       {/* Prayer instruction text overlay */}
-      <Reanimated.View
-        style={[{
-          position: 'absolute',
-          pointerEvents: 'none',
-          zIndex: 2,
-          alignItems: 'center',
-          justifyContent: 'center',
-          // backgroundColor: 'red'
-          top: RPH(40),
-          left: 0,
-          right: 0,
-          bottom: 0,
-          // alignSelf: 'center',
-        }, animatedTextStyle]}
+      <TouchableWithoutFeedback
+        onPressIn={onPressIn}
+        onPressOut={onPressOut}
+        onPress={onPress}
       >
-        {guidedPrayerEnabled ? (
-          <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
-            <View style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.95)',
-              borderRadius: 16,
-              padding: 20,
-              marginHorizontal: 24,
-              // marginTop: 150,
-              // backgroundColor: 'red'
-            }}>
-              <TypingText
-                text={prayerText}
-                className="text-blue-700 font-feather text-xl text-center"
-                baseTextStyle={{
-                  color: '#1E40AF',
-                  fontSize: 20,
-                  fontFamily: 'Nunito-Black',
-                  textAlign: 'center',
-                  lineHeight: 28,
-                }}
-                speed={50}
-                skipAnimation={false}
-              />
+        <Reanimated.View
+          style={[{
+            position: 'absolute',
+            zIndex: 2,
+            alignItems: 'center',
+            justifyContent: 'center',
+            // backgroundColor: 'red'
+            top: RPH(40),
+            left: 0,
+            right: 0,
+            bottom: 0,
+            // alignSelf: 'center',
+          }, animatedTextStyle]}
+        >
+          {guidedPrayerEnabled ? (
+            <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                borderRadius: 16,
+                padding: 20,
+                marginHorizontal: 24,
+                // marginTop: 150,
+                // backgroundColor: 'red'
+              }}>
+                <TypingText
+                  text={prayerText}
+                  className="text-blue-700 font-feather text-xl text-center"
+                  baseTextStyle={{
+                    color: '#1E40AF',
+                    fontSize: 20,
+                    fontFamily: 'Nunito-Black',
+                    textAlign: 'center',
+                    lineHeight: 28,
+                  }}
+                  speed={50}
+                  skipAnimation={false}
+                />
+              </View>
             </View>
-          </View>
-        ) : (
-          <View style={{ alignItems: 'center', alignSelf: 'center' }}>
-            <Text className='text-blue font-feather text-center text-3xl mt-48' style={{
-              textAlign: 'center',
-              marginBottom: 4,
-              fontFamily: 'Nunito-Black',
-            }}>
-              {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : 'Pour out your heart')}
-            </Text>
-            <Text className=' text-textPrimary ' style={{
-              fontFamily: 'DIN Next Rounded LT W01 Regular',
-              textAlign: 'center',
-              fontSize: 16,
-              color: `${totalHoldTime > 10000 ? 'white' : "#0369a1"}`,
-            }}>
-              {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : 'Let your prayers fill your cup')}
-            </Text>
-            <Text className='font-feather text-textPrimary' style={{
-              textAlign: 'center',
-              fontSize: 14,
-              marginTop: 24,
-              opacity: 0.8,
-            }}>
-              {animationTriggered ? '' : (totalHoldTime > 1000 ? '' : 'Hold to begin')}
-            </Text>
-          </View>
-        )}
-      </Reanimated.View>
+          ) : (
+            <View style={{ alignItems: 'center', alignSelf: 'center' }}>
+              <Text className='text-blue font-feather text-center text-3xl mt-48' style={{
+                textAlign: 'center',
+                marginBottom: 4,
+                fontFamily: 'Nunito-Black',
+              }}>
+                {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : 'Pour out your heart')}
+              </Text>
+              <Text className=' text-textPrimary ' style={{
+                fontFamily: 'DIN Next Rounded LT W01 Regular',
+                textAlign: 'center',
+                fontSize: 16,
+                color: `${totalHoldTime > 10000 ? 'white' : "#0369a1"}`,
+              }}>
+                {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : 'Let your prayers fill your cup')}
+              </Text>
+              <Text className='font-feather text-textPrimary' style={{
+                textAlign: 'center',
+                fontSize: 14,
+                marginTop: 24,
+                opacity: 0.8,
+              }}>
+                {animationTriggered ? '' : (totalHoldTime > 1000 ? '' : 'Hold to begin')}
+              </Text>
+            </View>
+          )}
+        </Reanimated.View>
+      </TouchableWithoutFeedback>
     </View>
   );
 };
@@ -1221,14 +1229,22 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 
           {/* Water Wave Animation - Show initially */}
           {showBreathingAnimation && (
-            <TouchableWithoutFeedback
-              onPressIn={handlePressIn}
-              onPressOut={handlePressOut}
-              onPress={toggleControlRow}>
-              <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -SCREEN_HEIGHT * 0.46 }}>
-                <WaterWaveAnimation isActive={showBreathingAnimation} waterProgress={waterProgress} hapticsEnabled={hapticsEnabled} guidedPrayerEnabled={guidedPrayerEnabled} currentDevotional={currentDevotional} isHolding={isHolding} animationTriggered={animationTriggered} totalHoldTime={totalHoldTime} prayerText={generatePrayerContent()} />
-              </View>
-            </TouchableWithoutFeedback>
+            <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', marginTop: -SCREEN_HEIGHT * 0.46 }}>
+              <WaterWaveAnimation
+                isActive={showBreathingAnimation}
+                waterProgress={waterProgress}
+                hapticsEnabled={hapticsEnabled}
+                guidedPrayerEnabled={guidedPrayerEnabled}
+                currentDevotional={currentDevotional}
+                isHolding={isHolding}
+                animationTriggered={animationTriggered}
+                totalHoldTime={totalHoldTime}
+                prayerText={generatePrayerContent()}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
+                onPress={toggleControlRow}
+              />
+            </View>
           )}
 
           {/* Cards ScrollView - Show after breathing animation */}
