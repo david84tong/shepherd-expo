@@ -31,14 +31,9 @@ struct StreakData {
             return .active(days: currentStreak)
         }
         
-        // If not today, check if it was yesterday
+        // If not today, check if it was yesterday - show as active
         if calendar.isDateInYesterday(lastActivity) {
-            // Only show at risk if streak is more than 1 day
-            if currentStreak > 1 {
-                return .atRisk(days: currentStreak)
-            } else {
-                return .active(days: currentStreak)
-            }
+            return .active(days: currentStreak)
         }
         
         // If more than 1 day has passed
@@ -56,7 +51,6 @@ struct StreakData {
 enum StreakState {
     case noStreak
     case active(days: Int)
-    case atRisk(days: Int)
     case broken(daysMissed: Int)
     
     var labelText: String {
@@ -65,8 +59,6 @@ enum StreakState {
             return "Let's start!"
         case .active(let days):
             return days == 1 ? "\(days) day" : "\(days) days"
-        case .atRisk(let days):
-            return days == 1 ? "\(days)-day risk" : "\(days)-days risk"
         case .broken(let daysMissed):
             return daysMissed == 1 ? "\(daysMissed) day" : "\(daysMissed) days"
         }
@@ -80,15 +72,10 @@ enum StreakState {
             // Calculate the cycling day (1-8) for images only
             let cyclingDay = ((days - 1) % 8) + 1
             return "streak_\(cyclingDay)"
-        case .atRisk, .broken:
+        case .broken(let daysMissed):
             // For broken streaks, use the inactivity images (1-3 days)
-            let daysMissed: Int
-            if case .broken(let missed) = self {
-                daysMissed = min(missed, 3)  // Cap at 3 days of inactivity
-            } else {
-                daysMissed = 1  // For atRisk, show 1 day inactive
-            }
-            return "inactive_\(daysMissed)"
+            let daysMissedCapped = min(daysMissed, 3)  // Cap at 3 days of inactivity
+            return "inactive_\(daysMissedCapped)"
         }
     }
     
@@ -97,8 +84,6 @@ enum StreakState {
         case .noStreak:
             return "fireWidget"
         case .active:
-            return "fireWidget"
-        case .atRisk:
             return "fireWidget"
         case .broken:
             return "" 
@@ -111,8 +96,6 @@ enum StreakState {
             return .gray
         case .active:
             return .orange
-        case .atRisk:
-            return .yellow
         case .broken:
             return .gray
         }
@@ -229,13 +212,6 @@ struct ShepherdStreakWidgetEntryView : View {
                 }
                 
                 Spacer()
-                
-                if case .atRisk = state {
-                    Text("Open app now!")
-                        .font(.custom("Nunito-Bold", size: 12))
-                        .foregroundColor(.white.opacity(0.9))
-                        .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
-                }
             }
             .padding()
         }
