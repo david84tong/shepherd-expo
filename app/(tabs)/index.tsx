@@ -33,10 +33,8 @@ import { imageAssets, useAssetsStore } from '../stores/assetsStore';
 import { useDevotionalStore } from '../stores/devotionalStore';
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
-import { useCheckInStore } from '../stores/checkInStore';
 import { useMemo, useState, useEffect } from 'react';
 import type { Devotional } from '../models/Devotional';
-import { devotionalBackgrounds } from '../models/Devotional';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import Rive from 'rive-react-native';
 import { responsiveHeight } from 'react-native-responsive-dimensions';
@@ -50,9 +48,7 @@ import React from 'react';
 import { hapticLight } from '~/utils/haptics';
 import CardStack from '../components/CardStack';
 import { useRouter, useFocusEffect } from 'expo-router';
-import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import { createDevotionalFromCheckIn } from '../api/ai';
 
 // Custom toast config with explicit styling
 const toastConfig = CustomToast;
@@ -641,106 +637,13 @@ export default function HomeScreen() {
 
   // Handler for custom devotional button
   const handleCustomDevotionalPress = async () => {
-    const checkInStore = useCheckInStore.getState();
-    const todaysCheckIn = checkInStore.getTodaysCheckIn();
-    const hasCompletedToday = checkInStore.hasCompletedTodaysCheckIn();
-
-    console.log('🔍 [handleCustomDevotionalPress] Check-in store state:', {
-      todaysCheckIn: checkInStore.todaysCheckIn,
-      checkInHistory: checkInStore.checkInHistory,
-      hasCompletedToday: checkInStore.hasCompletedTodaysCheckIn(),
-      todaysCheckInFromGetter: todaysCheckIn,
-    });
-
-    // If user hasn't completed check-in today, show the check-in flow
-    if (!hasCompletedToday) {
-      console.log('📋 No check-in completed today, showing check-in flow');
-
-      // Show the check-in sheet
-      const showCheckIn = (global as any).showCheckIn;
-      if (showCheckIn && typeof showCheckIn === 'function') {
-        showCheckIn();
-        analytics.logEvent('custom_devotional_triggered_checkin');
-      } else {
-        console.error('[handleCustomDevotionalPress] showCheckIn function not found on global');
-        // Fallback to regular devotional
-        handleReadPress();
-      }
-      return;
-    }
-
-    if (todaysCheckIn && (todaysCheckIn.focus !== '' || todaysCheckIn.struggle !== '')) {
-      // User has completed check-in with focus/struggle, generate custom devotional
-      console.log('🎯 Generating custom devotional with check-in data:', todaysCheckIn);
-
-      // Set flag to indicate this is from check-in flow
-      const devotionalStore = useDevotionalStore.getState();
-      devotionalStore.setIsFromCheckIn(true);
-
-      // Navigate to devotional loading screen
-      router.push('/devotionalLoading' as any);
-
-      // Generate custom devotional in background (similar to GlobalCheckIn)
-      try {
-        const currentUser = auth().currentUser;
-        if (!currentUser) {
-          console.error('No authenticated user for custom devotional');
-          handleReadPress(); // Fallback to regular devotional
-          return;
-        }
-
-        const idToken = await currentUser.getIdToken();
-        // createDevotionalFromCheckIn is already imported at the top
-
-        // Generate the custom devotional
-        const customDevotional = await createDevotionalFromCheckIn(todaysCheckIn, idToken);
-
-        // Get random background using the proper backgrounds from model
-        const backgroundUrls = Object.values(devotionalBackgrounds);
-        const randomIndex = Math.floor(Math.random() * backgroundUrls.length);
-        const randomBackground = backgroundUrls[randomIndex];
-        console.log('🎨 [Index] Selected background for custom devotional:', {
-          index: randomIndex,
-          url: randomBackground,
-          totalBackgrounds: backgroundUrls.length,
-        });
-
-        // Create full devotional object
-        const fullDevotional: Devotional = {
-          id: 'custom-checkin',
-          title: customDevotional.title,
-          content: customDevotional.context,
-          createdAt: new Date().toISOString(),
-          context: customDevotional.context,
-          bibleReference: customDevotional.bibleReference || '',
-          prayer: customDevotional.prayer,
-          reflectionPrompt: customDevotional.reflectionPrompt,
-          likes: 0,
-          shares: 0,
-          completed: 0,
-          date: new Date().toISOString().split('T')[0],
-          imageURL: randomBackground,
-          verse: customDevotional.verse || '',
-        };
-
-        // Save the devotional to Firestore
-        await devotionalStore.createCustomDevotionalFromCheckIn(fullDevotional);
-
-        analytics.logEvent('custom_devotional_generated_from_button', {
-          mood: todaysCheckIn.mood,
-          focus: todaysCheckIn.focus,
-          struggle: todaysCheckIn.struggle,
-        });
-      } catch (error) {
-        console.error('Error generating custom devotional:', error);
-        // Navigate to regular devotional on error
-        router.push('/(tabs)');
-        handleReadPress();
-      }
+    // Simply show the check-in sheet
+    const showCheckIn = (global as any).showCheckIn;
+    if (showCheckIn && typeof showCheckIn === 'function') {
+      showCheckIn();
+      analytics.logEvent('custom_devotional_triggered_checkin');
     } else {
-      // Check-in completed but no focus/struggle selected, use regular devotional
-      console.log('📖 Check-in completed but no focus/struggle data, using regular devotional');
-      handleReadPress();
+      console.error('[handleCustomDevotionalPress] showCheckIn function not found on global');
     }
   };
 

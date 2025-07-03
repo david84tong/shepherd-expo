@@ -6,6 +6,8 @@ import BottomSheet, {
 import { Ionicons, FontAwesome6 } from '@expo/vector-icons';
 import React, { useCallback, useRef, useImperativeHandle, useState, useEffect } from 'react';
 import { View, Text, Pressable, Animated, Dimensions, Image } from 'react-native';
+import Rive, { RiveRef } from 'rive-react-native';
+import { useAssets } from 'expo-asset';
 
 import PrimaryButton from './PrimaryButton';
 import { hapticMedium } from '~/utils/haptics';
@@ -20,6 +22,11 @@ import auth from '@react-native-firebase/auth';
 import { useHomeStore } from '~/app/stores/homeStore';
 import { useUserStore } from '~/app/stores/userStore';
 import { Timestamp } from '@react-native-firebase/firestore';
+import { IS_ANDROID } from '~/app/utils/utils';
+import { useSoundStore } from '~/app/stores/soundStore';
+
+// Import gem icon
+import gemIcon from '../assets/icons/greenGemIcon.png';
 
 export type GlobalCheckInRef = {
   expand: () => void;
@@ -44,7 +51,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const router = useRouter();
   const { setCustomDevotional, setIsFromCheckIn, createCustomDevotionalFromCheckIn } = useDevotionalStore();
   const { readingCompleted } = useHomeStore();
-  const { addCheckIn } = useUserStore();
+  const { addCheckIn, getGens, setGens } = useUserStore();
+  const { playChestOpeningSound } = useSoundStore();
 
   // Use CheckIn store
   const {
@@ -64,15 +72,30 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [selectedFocus, setSelectedFocus] = useState<string | null>(null);
   const [selectedStruggle, setSelectedStruggle] = useState<string | null>(null);
+  
+  // State for gem reward
+  const [gemsAwarded, setGemsAwarded] = useState(false);
+  const [showRewardAnimation, setShowRewardAnimation] = useState(false);
 
   // Animation values for each screen
   const moodAnim = useRef(new Animated.Value(0)).current;
   const focusAnim = useRef(new Animated.Value(screenWidth)).current;
   const struggleAnim = useRef(new Animated.Value(screenWidth)).current;
   const successAnim = useRef(new Animated.Value(screenWidth)).current;
+  
+  // Animation values for rewards
+  const rewardCardOpacity = useRef(new Animated.Value(0)).current;
+  const rewardCardScale = useRef(new Animated.Value(0.8)).current;
+  const gemTextOpacity = useRef(new Animated.Value(0)).current;
+  
+  // Rive ref for chest animation
+  const riveRef = useRef<RiveRef>(null);
+  
+  // Load Rive assets
+  const [riveAssets] = useAssets([require('../assets/riveAnimations/successLamb.riv')]);
 
-  // Fixed snap points - use 60% for all screens
-  const snapPoints = ['60%'];
+  // Dynamic snap points based on current screen
+  const snapPoints = currentScreen === 'success' ? ['65%'] : ['65%'];
 
   // Complete check-in and save to both stores
   const handleCompleteCheckIn = useCallback(async () => {
@@ -109,11 +132,29 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
     console.log('Check-in completed and saved to both stores');
     setCheckInSaved(true);
+    
+    // Award 20 gems for completing check-in
+    if (!gemsAwarded) {
+      const currentGems = getGens();
+      setGens(currentGems + 20);
+      setGemsAwarded(true);
+      setShowRewardAnimation(true);
+      console.log(`Awarded +20 Gems for check-in. New total: ${currentGems + 20}`);
+      
+      // Log analytics
+      analytics.logEvent('checkin_gems_awarded', {
+        gemsAwarded: 20,
+        newGemCount: currentGems + 20,
+        mood: currentMood,
+        focus: currentFocus,
+        struggle: currentStruggle
+      });
+    }
 
     // Verify the check-in was saved
     const verifyCheckIn = useCheckInStore.getState().getTodaysCheckIn();
     console.log('[GlobalCheckIn] Verification - Today\'s check-in after save:', verifyCheckIn);
-  }, [currentMood, currentFocus, currentStruggle, completeCheckIn, addCheckIn, checkInSaved]);
+  }, [currentMood, currentFocus, currentStruggle, completeCheckIn, addCheckIn, checkInSaved, gemsAwarded, getGens, setGens]);
 
   // Handle dismiss
   const handleDismiss = useCallback(() => {
@@ -127,14 +168,19 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       clearCurrentSession(); // Clear store session
       setIsGenerating(false); // Reset generating state
       setCheckInSaved(false); // Reset saved flag
+      setGemsAwarded(false); // Reset gems awarded flag
+      setShowRewardAnimation(false); // Reset reward animation
       // Reset animations
       moodAnim.setValue(0);
       focusAnim.setValue(screenWidth);
       struggleAnim.setValue(screenWidth);
       successAnim.setValue(screenWidth);
+      rewardCardOpacity.setValue(0);
+      rewardCardScale.setValue(0.8);
+      gemTextOpacity.setValue(0);
     }, 300);
     hapticMedium();
-  }, [moodAnim, focusAnim, struggleAnim, successAnim, clearCurrentSession]);
+  }, [moodAnim, focusAnim, struggleAnim, successAnim, clearCurrentSession, rewardCardOpacity, rewardCardScale, gemTextOpacity]);
 
   // Handle custom devotional generation
   const handleGenerateCustomDevotional = useCallback(async () => {
@@ -250,17 +296,18 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         ])
       );
     } else if (screen === 'success') {
-      // Slide struggle out to left, success in from right
+      // Slide struggle out to left, success in from right with easing
       animations.push(
         Animated.parallel([
           Animated.timing(struggleAnim, {
             toValue: -screenWidth,
-            duration: 300,
+            duration: 350,
             useNativeDriver: true,
           }),
-          Animated.timing(successAnim, {
+          Animated.spring(successAnim, {
             toValue: 0,
-            duration: 300,
+            tension: 60,
+            friction: 10,
             useNativeDriver: true,
           }),
         ])
@@ -301,10 +348,15 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         clearCurrentSession(); // Clear store session
         setCheckInSaved(false); // Reset saved flag
         setIsGenerating(false); // Reset generating state
+        setGemsAwarded(false); // Reset gems awarded flag
+        setShowRewardAnimation(false); // Reset reward animation
         moodAnim.setValue(0);
         focusAnim.setValue(screenWidth);
         struggleAnim.setValue(screenWidth);
         successAnim.setValue(screenWidth);
+        rewardCardOpacity.setValue(0);
+        rewardCardScale.setValue(0.8);
+        gemTextOpacity.setValue(0);
 
         // Log analytics for check-in shown
         analytics.logEvent('checkin_sheet_shown', {
@@ -448,7 +500,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
             animateToScreen('struggle');
           }, 100);
         }}
-        className="mt-auto mb-4">
+        className="mt-4 mb-4">
         <Text className="font-din text-base text-gray-500 underline">Skip</Text>
       </Pressable>
     </Animated.View>
@@ -514,29 +566,147 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
             animateToScreen('success');
           }, 100);
         }}
-        className="mt-auto mb-4">
+        className="mt-4 mb-4">
         <Text className="font-din text-base text-gray-500 underline">Skip</Text>
       </Pressable>
     </Animated.View>
   );
 
+  // Trigger animations when success screen is shown
+  useEffect(() => {
+    if (currentScreen === 'success' && showRewardAnimation) {
+      // Reset animation values
+      rewardCardOpacity.setValue(0);
+      rewardCardScale.setValue(0.8);
+      gemTextOpacity.setValue(0);
+      
+      // Play chest opening sound
+      playChestOpeningSound?.();
+      
+      // Start Rive animation
+      setTimeout(() => {
+        if (riveRef.current) {
+          riveRef.current.play();
+        }
+      }, 100);
+      
+      // Animate reward card with bounce effect
+      setTimeout(() => {
+        Animated.parallel([
+          Animated.timing(rewardCardOpacity, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.spring(rewardCardScale, {
+            toValue: 1,
+            tension: 40,
+            friction: 6,
+            useNativeDriver: true,
+          }),
+        ]).start(() => {
+          // Animate gem text after card appears
+          Animated.sequence([
+            Animated.delay(100),
+            Animated.timing(gemTextOpacity, {
+              toValue: 1,
+              duration: 400,
+              useNativeDriver: true,
+            })
+          ]).start();
+        });
+      }, 600);
+    }
+  }, [currentScreen, showRewardAnimation]);
+
   const renderSuccessScreen = () => (
-    <Animated.View
-      style={{
-        flex: 1,
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        transform: [{ translateX: successAnim }],
-      }}>
-      <View className="bg-green-100 rounded-full w-32 h-32 items-center justify-center mb-6">
-        <Ionicons name="checkmark-circle" size={80} color="#10B981" />
-      </View>
-      <Text className="font-feather text-h2 text-textPrimary mb-4">Check-in Complete!</Text>
-      <Text className="font-din text-lg text-gray-600 text-center mb-8">
-        You&apos;re all set for today.{' '}
-        {selectedFocus && `May God guide you in your focus on ${focusAreas.find((f) => f.value === selectedFocus)?.label.toLowerCase()}.`}
-      </Text>
-      <View className="w-full mt-auto">
+      <Animated.View
+        style={{
+          flex: 1,
+          paddingHorizontal: 20,
+          transform: [{ translateX: successAnim }],
+        }}>
+        {/* Top spacing */}
+        
+        {/* Chest Animation - Much larger and prominent */}
+        {showRewardAnimation && riveAssets ? (
+          <View className="w-full items-center justify-center" style={{ height: RPH(20) }}>
+            {IS_ANDROID ? (
+              <Rive
+                ref={riveRef}
+                resourceName={'success_lamb'}
+                artboardName="chest"
+                autoplay={true}
+                style={{ width: '200%', height: '200%' }}
+              />
+            ) : (
+              <Rive
+                ref={riveRef}
+                url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
+                artboardName="chest"
+                autoplay={true}
+                style={{ width: '200%', height: '200%' }}
+              />
+            )}
+          </View>
+        ) : (
+          <View className="items-center justify-center" style={{ height: RPH(35) }}>
+            <View className="bg-green-100 rounded-full w-40 h-40 items-center justify-center">
+              <Ionicons name="checkmark-circle" size={100} color="#10B981" />
+            </View>
+          </View>
+        )}
+        
+        {/* Spacing between chest and title */}
+        <View style={{ height: RPH(1) }} />
+        
+        {/* Title */}
+        <Text className="font-feather text-h1 text-textPrimary text-center">Check-in Complete!</Text>
+        
+        {/* Spacing between title and reward card */}
+        <View style={{ height: RPH(3) }} />
+        
+        {/* Reward Card - More prominent */}
+        {showRewardAnimation && (
+          <View className="items-center">
+            <Animated.View
+              className="bg-white rounded-[20px] px-8 py-5 border-2 border-border"
+              style={{
+                opacity: rewardCardOpacity,
+                transform: [{ scale: rewardCardScale }],
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.15,
+                shadowRadius: 8,
+                elevation: 5,
+                minWidth: '70%',
+              }}>
+              <Text className="text-sm font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
+                CHECK-IN REWARDS
+              </Text>
+              <Animated.View 
+                className="flex-row items-center justify-center"
+                style={{ opacity: gemTextOpacity }}>
+                <Image source={gemIcon} className="w-8 h-8 mr-3" />
+                <Text className="font-din text-textPrimary text-2xl font-semibold">+20 Gems</Text>
+              </Animated.View>
+            </Animated.View>
+          </View>
+        )}
+        
+        {/* Spacing between reward card and description */}
+        
+        {/* Description text */}
+        {/* <Text className="font-din text-lg text-gray-600 text-center px-4 leading-relaxed">
+          You're all set for today.{' '}
+          {selectedFocus && `May God guide you in your focus on ${focusAreas.find((f) => f.value === selectedFocus)?.label.toLowerCase()}.`}
+        </Text> */}
+        
+        {/* Flexible spacer to push button to bottom */}
+        {/* <View style={{ flex: 1 }} /> */}
+        
+        {/* Button container with proper spacing */}
+        <View className="w-full pb-8 mt-8">
         <PrimaryButton
           title={(currentFocus !== '' || currentStruggle !== '') ? "Generate Custom Devotional" : "Start Today's Devotional"}
           onPress={async () => {
@@ -578,11 +748,16 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   clearCurrentSession();
                   setIsGenerating(false);
                   setCheckInSaved(false);
+                  setGemsAwarded(false);
+                  setShowRewardAnimation(false);
                   // Reset animations
                   moodAnim.setValue(0);
                   focusAnim.setValue(screenWidth);
                   struggleAnim.setValue(screenWidth);
                   successAnim.setValue(screenWidth);
+                  rewardCardOpacity.setValue(0);
+                  rewardCardScale.setValue(0.8);
+                  gemTextOpacity.setValue(0);
                 }, 100);
               }, 300);
 
@@ -620,11 +795,16 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   setSelectedStruggle(null);
                   clearCurrentSession();
                   setIsGenerating(false);
+                  setGemsAwarded(false);
+                  setShowRewardAnimation(false);
                   // Reset animations
                   moodAnim.setValue(0);
                   focusAnim.setValue(screenWidth);
                   struggleAnim.setValue(screenWidth);
                   successAnim.setValue(screenWidth);
+                  rewardCardOpacity.setValue(0);
+                  rewardCardScale.setValue(0.8);
+                  gemTextOpacity.setValue(0);
                 }, 100);
               }, 300);
             }
@@ -634,7 +814,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           disabled={isGenerating}
         />
         {isGenerating && (
-          <Text className="font-din text-sm text-gray-600 text-center mt-2">
+          <Text className="font-din text-sm text-gray-500 text-center mt-3">
             Generating your personalized devotional...
           </Text>
         )}
@@ -700,11 +880,16 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   clearCurrentSession();
                   setIsGenerating(false);
                   setCheckInSaved(false);
+                  setGemsAwarded(false);
+                  setShowRewardAnimation(false);
                   // Reset animations
                   moodAnim.setValue(0);
                   focusAnim.setValue(screenWidth);
                   struggleAnim.setValue(screenWidth);
                   successAnim.setValue(screenWidth);
+                  rewardCardOpacity.setValue(0);
+                  rewardCardScale.setValue(0.8);
+                  gemTextOpacity.setValue(0);
                 }, 300);
 
               }, 300); // Reduced wait time for better UX
@@ -717,7 +902,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           </Pressable>
         )}
       </View>
-    </Animated.View>
+      </Animated.View>
   );
 
   return (
@@ -726,8 +911,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       index={-1}
       snapPoints={snapPoints}
       enablePanDownToClose
-      backgroundStyle={{ backgroundColor: '#FFF4D9', borderTopLeftRadius: 20, borderTopRightRadius: 20 }}
-      handleIndicatorStyle={{ backgroundColor: '#DCB280', height: 4, width: 40 }}
+      backgroundStyle={{ backgroundColor: '#FFF4D9', borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
+      handleIndicatorStyle={{ backgroundColor: '#DCB280', height: 5, width: 48 }}
       backdropComponent={renderBackdrop}>
       <BottomSheetView style={{ width: '100%', height: '100%', paddingTop: 20, paddingBottom: 30, overflow: 'hidden' }}>
         <View style={{ flex: 1, position: 'relative' }}>

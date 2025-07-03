@@ -20,7 +20,7 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Animated from 'react-native-reanimated';
 import i18n from '~/app/utils/i18n';
-import { hapticLight, hapticMedium } from '~/utils/haptics';
+import { hapticLight } from '~/utils/haptics';
 import { useSettingSheet } from '~/app/hooks/useSettingsSheet';
 
 interface SettingsSheetProps {

@@ -692,6 +692,13 @@ export const BibleReader: React.FC<BibleReaderProps> = ({
       // and track it in Firestore
       if (pathInProgress && currentPath && isAtEndChapter) {
         console.log(`✅ Unit ${currentPath.unitId} completed! Attempting to mark...`);
+        console.log('[BibleReader] Current path details:', JSON.stringify(currentPath, null, 2));
+        console.log('[BibleReader] Debug - Unit ID being marked:', currentPath.unitId);
+        console.log('[BibleReader] Debug - Path ID:', currentPath.pathId);
+        console.log('[BibleReader] Debug - Unit Title:', currentPath.unitTitle);
+        console.log('[BibleReader] Debug - Book ID:', currentPath.bookId);
+        console.log('[BibleReader] Debug - Start Chapter:', currentPath.startChapter);
+        console.log('[BibleReader] Debug - End Chapter:', currentPath.endChapter);
         markUnitAsCompleted(currentPath.unitId);
 
         // Add completed map path to Firestore
