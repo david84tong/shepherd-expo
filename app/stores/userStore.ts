@@ -92,7 +92,8 @@ const syncStreakWithWidget = (streakCount: number, lastActivityDate: Timestamp |
   if (lastActivityDate) {
     activityDate = lastActivityDate instanceof Date ? lastActivityDate : lastActivityDate.toDate();
   }
-
+  
+  if(streakCount === 0) return
   syncStreakDataToWidget(streakCount, activityDate).catch((error) =>
     console.error('Failed to sync streak with widget:', error)
   );

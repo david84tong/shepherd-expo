@@ -142,6 +142,7 @@ export const fetchFromFirestore = async ({
             activityDate =
               lastActivityDate instanceof Date ? lastActivityDate : lastActivityDate.toDate();
           }
+          if(streakCount === 0) return
           syncStreakDataToWidget(streakCount, activityDate).catch((error: Error) =>
             console.log('Failed to sync streak with widget:', error)
           );
