@@ -46,7 +46,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
       imageURLLength: devotional?.imageURL?.length
     });
   }, [devotional]);
-  
+
   const currentUser = useUserStore.getState();
 
   // Get current devotional from store (for real-time updates)
@@ -67,10 +67,10 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
 
   // A devotional is only "real" (and thus likeable/shareable) if it's not a locally generated one.
   const isRealDevotional = !devotional.id.startsWith('quick-') && !devotional.id.startsWith('ai-');
-  
+
   // Check if this is a custom devotional
   const isCustomDevotional = devotional.id.startsWith('custom-') || devotional.id.startsWith('ai-');
-  
+
   // Format date for custom devotionals
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -99,12 +99,45 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
     const devotionalRef = firestore().collection(collectionName).doc(devotional.id);
 
     try {
+      // Update likes in the original collection
       await devotionalRef.update({
         likes: firestore.FieldValue.increment(newLikedState ? 1 : -1),
         likedBy: newLikedState
           ? firestore.FieldValue.arrayUnion(currentUser.id)
           : firestore.FieldValue.arrayRemove(currentUser.id),
       });
+
+      // Save or remove from savedDevotionals collection
+      const savedDevotionalId = `${currentUser.id}_${devotional.id}`;
+
+      if (newLikedState) {
+        // Save devotional to savedDevotionals collection
+        const savedDevotionalData = {
+          ...devotional,
+          savedAt: new Date().toISOString(),
+          userId: currentUser.id,
+          originalCollection: collectionName,
+          originalId: devotional.id,
+        };
+
+        console.log('🔍 Saving devotional to savedDevotionals:', {
+          id: savedDevotionalId,
+          devotionalId: devotional.id,
+          userId: currentUser.id
+        });
+
+        await firestore().collection('savedDevotionals').doc(savedDevotionalId).set(savedDevotionalData);
+      } else {
+        // Remove devotional from savedDevotionals collection
+        console.log('🔍 Removing devotional from savedDevotionals:', {
+          id: savedDevotionalId,
+          devotionalId: devotional.id,
+          userId: currentUser.id
+        });
+
+        await firestore().collection('savedDevotionals').doc(savedDevotionalId).delete();
+      }
+
       analytics.logEvent('DailyVerseCard_Tapped_Like', {
         bibleReference: devotional.bibleReference,
         liked: newLikedState,
