@@ -895,6 +895,7 @@ export const useHomeScreen = () => {
       return;
     }
 
+
     setReflectionCompleted(false);
     Animated.parallel([
       Animated.timing(devotionalCardOpacityAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
@@ -939,6 +940,29 @@ export const useHomeScreen = () => {
         setShowJournalReader(false);
       });
     }, 250);
+
+
+    // Check streak trigger conditions when user presses back/cancel from journal
+    const homeStore = useHomeStore.getState();
+    const { readingCompleted, sawStreakToday } = homeStore;
+    
+    // Only trigger if reading is completed and streak hasn't been shown today
+    if (readingCompleted && !sawStreakToday) {
+      
+      // Mark that we've shown the streak screen today
+      homeStore.setSawStreakToday(true);
+      
+      // Navigate to streak screen
+      router.push('/streak');
+      
+      analytics.logEvent('HomeScreen_StreakTriggered_FromJournal', {
+        readingCompleted,
+        sawStreakToday: false,
+        timestamp: new Date().toISOString()
+      });
+      
+      return; // Exit early to prevent further processing
+    }
   }, [handlePrayerPress]);
 
   const onClosePrayer = useCallback(({ isReflectPresses }: { isReflectPresses?: boolean }) => {
@@ -1034,6 +1058,29 @@ export const useHomeScreen = () => {
           setShowPrayerView(false);
         });
       }, 250);
+
+            // Check streak trigger conditions when user presses back from prayer
+      const homeStore = useHomeStore.getState();
+      const { readingCompleted, sawStreakToday } = homeStore;
+      
+      // Only trigger if reading is completed and streak hasn't been shown today
+      if (readingCompleted && !sawStreakToday) {
+        
+        // Mark that we've shown the streak screen today
+        homeStore.setSawStreakToday(true);
+        
+        // Navigate to streak screen
+        router.push('/streak');
+        
+        analytics.logEvent('HomeScreen_StreakTriggered_FromPrayer', {
+          readingCompleted,
+          sawStreakToday: false,
+          timestamp: new Date().toISOString()
+        });
+        
+        return; // Exit early to prevent further processing
+      }
+
     }
   }, [handleReflectionPress]);
 

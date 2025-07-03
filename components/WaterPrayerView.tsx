@@ -36,6 +36,7 @@ import SuccessMessage from './SuccessMessage';
 import PrayerSettingsModal from './PrayerSettingsModal';
 import { useSoundStore } from '~/app/stores/soundStore';
 import { hapticHeavy, hapticLight, hapticMedium } from '~/utils/haptics';
+import { RPH } from '~/app/helper/helper';
 
 // AsyncStorage keys for prayer settings
 const PRAYER_HAPTICS_KEY = 'prayer_haptics_enabled';
@@ -110,13 +111,14 @@ const WaterWaveAnimation: React.FC<{
   const [waterLevel, setWaterLevel] = useState(SCREEN_HEIGHT);
   const textOpacity = useSharedValue(1);
 
-  useEffect(() => {
-    textOpacity.value = withTiming(isHolding ? 0 : 1, { duration: 300 });
-  }, [isHolding]);
+  // Remove the opacity animation that hides text when holding
+  // useEffect(() => {
+  //   textOpacity.value = withTiming(isHolding ? 0 : 1, { duration: 300 });
+  // }, [isHolding]);
 
   const animatedTextStyle = useAnimatedStyle(() => {
     return {
-      opacity: textOpacity.value,
+      opacity: 1, // Always keep text visible, even when holding
     };
   });
 
@@ -254,29 +256,39 @@ const WaterWaveAnimation: React.FC<{
           zIndex: 2,
           alignItems: 'center',
           justifyContent: 'center',
-          top: 0,
+          // backgroundColor: 'red'
+          top: RPH(40),
           left: 0,
           right: 0,
           bottom: 0,
-          alignSelf: 'center',
+          // alignSelf: 'center',
         }, animatedTextStyle]}
       >
         {guidedPrayerEnabled ? (
-          <TypingText
-            text={prayerText}
-            className="text-blue-700 font-feather text-xl text-center"
-            baseTextStyle={{
-              color: '#1E40AF',
-              fontSize: 20,
-              fontFamily: 'Nunito-Black',
-              textAlign: 'center',
-              lineHeight: 28,
-              paddingHorizontal: 24,
-              marginTop: 150,
-            }}
-            speed={50}
-            skipAnimation={false}
-          />
+          <View style={{ width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.95)',
+              borderRadius: 16,
+              padding: 20,
+              marginHorizontal: 24,
+              // marginTop: 150,
+              // backgroundColor: 'red'
+            }}>
+              <TypingText
+                text={prayerText}
+                className="text-blue-700 font-feather text-xl text-center"
+                baseTextStyle={{
+                  color: '#1E40AF',
+                  fontSize: 20,
+                  fontFamily: 'Nunito-Black',
+                  textAlign: 'center',
+                  lineHeight: 28,
+                }}
+                speed={50}
+                skipAnimation={false}
+              />
+            </View>
+          </View>
         ) : (
           <View style={{ alignItems: 'center', alignSelf: 'center' }}>
             <Text className='text-blue font-feather text-center text-3xl mt-48' style={{
@@ -1118,6 +1130,29 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                 }
                 onClose({});
               }
+              // // Check streak trigger conditions when user presses "Go Home" from prayer success
+              const homeStore = useHomeStore.getState();
+              const { readingCompleted, sawStreakToday } = homeStore;
+
+              // Only trigger if reading is completed and streak hasn't been shown today
+              if (readingCompleted && !sawStreakToday) {
+
+                // Mark that we've shown the streak screen today
+                homeStore.setSawStreakToday(true);
+
+                // Navigate to streak screen
+                const { router } = require('expo-router');
+                router.push('/streak');
+
+                analytics.logEvent('WaterPrayerView_StreakTriggered_FromGoHome', {
+                  readingCompleted,
+                  sawStreakToday: false,
+                  timestamp: new Date().toISOString()
+                });
+
+                return; // Exit early to prevent further processing
+              }
+
             }}
             onPray={() => {
               // Update lastActivityDate to prevent completion states from being reset
