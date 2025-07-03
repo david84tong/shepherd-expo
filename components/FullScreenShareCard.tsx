@@ -199,9 +199,11 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
         }
     };
 
-
+    const isSharing = useRef(false);
     useEffect(() => {
         if (isCapturing) {
+            if(isSharing.current) return;
+            isSharing.current = true;
             const captureAndShare = async () => {
                 if (!viewShotRef.current) {
                     setIsCapturing(false);
@@ -225,11 +227,6 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                 type: 'image/jpeg',
                                 subject: 'Daily Verse from Shepherd',
                             };
-
-                            const shareResult = await Share.open(shareOptions);
-                            console.log('Share successful:', shareResult);
-
-                            // Update share count and analytics
                             const devotionalRef = firestore().collection('dailyDevotionals').doc(devotionalData.id);
                             await devotionalRef.update({
                                 shares: firestore.FieldValue.increment(1),
@@ -239,6 +236,13 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                                 platform: Platform.OS,
                             });
                             useDevotionalStore.getState().incrementShareCount(devotionalData.id);
+
+                            const shareResult = await Share.open(shareOptions);
+                            console.log('Share successful:', shareResult);
+
+                            // Update share count and analytics
+                         
+                          
                         } catch (shareError) {
                             console.log('Share cancelled or failed:', shareError);
                             // Don't update share count if user cancelled
@@ -248,6 +252,8 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                     }
                 } catch (error) {
                     console.error("Error sharing:", error);
+                }finally{
+                    isSharing.current = false;
                 }
             };
 
