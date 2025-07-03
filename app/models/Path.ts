@@ -2007,10 +2007,54 @@ const chunk = <T,>(arr: T[], size: number): T[][] => {
  * suffix added to the title & id.
  */
 const splitUnit = (unit: Unit, chaptersPerUnit = 2): Unit[] => {
-  // Only handle simple single-book references for now; if an array or multi-book
-  // reference comes in we leave it unchanged.
-  console.log("splitting unit", unit);
-  if (Array.isArray(unit.reference)) return [unit];
+  console.log("splitting unit", unit.id, "with chaptersPerUnit:", chaptersPerUnit);
+  
+  // Handle array of references
+  if (Array.isArray(unit.reference)) {
+    // For array references, split each reference individually
+    const splitReferences: BibleReference[] = [];
+    
+    unit.reference.forEach(ref => {
+      if (ref.chapters.length <= chaptersPerUnit) {
+        splitReferences.push(ref);
+      } else {
+        // Split this reference into chunks
+        const chapterChunks = chunk(ref.chapters, chaptersPerUnit);
+        chapterChunks.forEach(chapArr => {
+          splitReferences.push({
+            ...ref,
+            chapters: chapArr
+          });
+        });
+      }
+    });
+    
+    // If we have multiple split references, create separate units
+    if (splitReferences.length > 1) {
+      return splitReferences.map((ref, idx) => {
+        const part = idx + 1;
+        return {
+          ...unit,
+          id: `${unit.id}-p${part}`,
+          title: `${unit.title} (Part ${part})`,
+          description: `Part ${part} of ${splitReferences.length}: ${unit.description}`,
+          reference: ref,
+        } as Unit;
+      });
+    } else {
+      // Single reference after splitting
+      return [{
+        ...unit,
+        reference: splitReferences[0]
+      }];
+    }
+  }
+
+  // Handle single reference
+  if (!unit.reference || !unit.reference.chapters) {
+    console.warn(`Unit ${unit.id} has invalid reference structure:`, unit.reference);
+    return [unit];
+  }
 
   const { chapters } = unit.reference;
   if (chapters.length <= chaptersPerUnit) {
@@ -2019,6 +2063,7 @@ const splitUnit = (unit: Unit, chaptersPerUnit = 2): Unit[] => {
 
   const chapterChunks = chunk(chapters, chaptersPerUnit);
   const totalParts = chapterChunks.length;
+  
   return chapterChunks.map((chapArr, idx) => {
     const part = idx + 1;
     return {
@@ -2039,9 +2084,24 @@ export const generateShorterBiblePaths = (
   paths: Path[],
   chaptersPerUnit = 2
 ): Path[] => {
-  console.log('generating shorter bible paths', paths);
+  console.log('generating shorter bible paths with chaptersPerUnit:', chaptersPerUnit);
+  alert('generating shorter bible paths with chaptersPerUnit:' + chaptersPerUnit);
+  
   return paths.map((p) => {
-    const newUnits: Unit[] = p.units.flatMap((u) => splitUnit(u, chaptersPerUnit));
+    console.log(`Processing path: ${p.id} with ${p.units.length} units`);
+    alert(`Processing path: ${p.id} with ${p.units.length} units`);
+    
+    const newUnits: Unit[] = p.units.flatMap((u) => {
+      const splitUnits = splitUnit(u, chaptersPerUnit);
+      if (splitUnits.length > 1) {
+        console.log(`Split unit ${u.id} into ${splitUnits.length} parts`);
+        alert(`Split unit ${u.id} into ${splitUnits.length} parts`);
+      }
+      return splitUnits;
+    });
+    
+    console.log(`Path ${p.id}: ${p.units.length} original units → ${newUnits.length} new units`);
+    alert(`Path ${p.id}: ${p.units.length} original units → ${newUnits.length} new units`);
     return { ...p, units: newUnits };
   });
 };
