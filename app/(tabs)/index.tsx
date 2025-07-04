@@ -79,6 +79,10 @@ export default function HomeScreen() {
   const [isMounted, setIsMounted] = useState(false);
   console.log('📍 State initialized');
 
+  // Add animation state for devotional cards
+  const [devotionalCardsAnim] = useState(new Animated.Value(0));
+  const [devotionalCardsOpacity] = useState(new Animated.Value(0));
+
   // Test effect to verify component is mounting
   useEffect(() => {
     const timestamp = new Date().toISOString();
@@ -415,6 +419,31 @@ export default function HomeScreen() {
         });
     }
   }, [prayerCompleted, readingCompleted, reflectionCompleted]);
+
+  // Animate devotional cards when they become available
+  useEffect(() => {
+    if (readingCompleted && recentDevotionals.length > 0 && !fetchingRecentDevotionals) {
+      // Start animation after a short delay
+
+      Animated.parallel([
+        Animated.timing(devotionalCardsAnim, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+        Animated.timing(devotionalCardsOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start();
+
+    } else {
+      // Reset animation when conditions are not met
+      devotionalCardsAnim.setValue(0);
+      devotionalCardsOpacity.setValue(0);
+    }
+  }, [readingCompleted, recentDevotionals.length, fetchingRecentDevotionals, devotionalCardsAnim, devotionalCardsOpacity]);
 
   // Refresh recent devotionals when customDevotional changes (new custom devotional created)
   useEffect(() => {
@@ -1121,7 +1150,20 @@ export default function HomeScreen() {
                     )}
 
                     {readingCompleted && (
-                      <View className="w-full -mt-4 mb-10">
+                      <Animated.View
+                        className="w-full -mt-4 mb-10"
+                        style={{
+                          opacity: devotionalCardsOpacity,
+                          transform: [
+                            {
+                              translateY: devotionalCardsAnim.interpolate({
+                                inputRange: [0, 1],
+                                outputRange: [100, 0], // Slide up from 100px below
+                              }),
+                            },
+                          ],
+                        }}
+                      >
                         {(() => {
                           // Show at most 2 cards: daily verse + last custom devotional
                           const devotionalsToShow: Devotional[] = [];
@@ -1221,7 +1263,7 @@ export default function HomeScreen() {
                           // If still no devotionals to show, return null
                           return null;
                         })()}
-                      </View>
+                      </Animated.View>
                     )}
                     {!readingCompleted && (
                       <View style={{ position: 'relative' }}>
