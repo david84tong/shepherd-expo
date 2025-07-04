@@ -143,7 +143,7 @@ export const useHomeScreen = () => {
   const showWidgetPrompt = useUIStore((state) => state.showWidgetPrompt);
   const { recentPrayers } = usePrayerStore();
   const setPrayerViewVisible = useHomeStore((state) => state.setPrayerViewVisible);
-  const hasSeenWidgetModal = useUserStore((state) => state.getHasSeenWidgetModal());
+  const hasSeenWidgetModal = useUserStore((state) => state.getHasSeenWidgetModal?.());
   const setHasSeenWidgetModal = useUserStore((state) => state.setHasSeenWidgetModal);
   const setRiveRef = useHomeStore((state) => state.setRiveRef);
   const currentSkin = useHomeStore((state) => state.currentSkin);

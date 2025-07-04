@@ -370,3 +370,16 @@ export const saveFeedback = async (feedbackData: {
     return false;
   }
 };
+
+// Utility to remove all function properties from an object
+export function removeFunctions(obj: any): any {
+  if (Array.isArray(obj)) return obj.map(removeFunctions);
+  if (obj && typeof obj === 'object') {
+    return Object.fromEntries(
+      Object.entries(obj)
+        .filter(([_, v]) => typeof v !== 'function')
+        .map(([k, v]) => [k, removeFunctions(v)])
+    );
+  }
+  return obj;
+}

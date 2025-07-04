@@ -529,7 +529,7 @@ export default function HomeScreen() {
     // Check if any map path was completed today
     const todaysMapPathCompletions = completedMapPaths.filter((path) => {
       if (!path || !path.date) return false;
-      const completionDate = path.date.toDate();
+      const completionDate = path.date?.toDate?.() || new Date();
       completionDate.setHours(0, 0, 0, 0);
       return completionDate.getTime() === today.getTime();
     });

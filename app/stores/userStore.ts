@@ -1,10 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
-import auth from '@react-native-firebase/auth';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { updateField, createUserDocument } from '../../utils/firestore';
+import { updateField, createUserDocument, removeFunctions } from '../../utils/firestore';
 import { syncStreakDataToWidget } from '../../utils/widgetSync';
 import { UserDoc, Lamb, UserStore, MapPathCompletion } from '../models/User';
 import { isAuthenticated, updateUserData } from '../helper/firebaseHelper';
@@ -63,8 +62,7 @@ const initialState: UserDoc = {
   proExpiryDate: Timestamp.now(),
   completedMapPaths: [],
   skins: [],
-  checkIns: {},
-  customDevotionals: {},
+  checkIns: [],
   setNotificationTime: async (_time: string) => {
     // This will be overridden by the actual implementation
     console.warn('setNotificationTime not implemented in initial state');
@@ -88,7 +86,7 @@ const syncStreakWithWidget = (streakCount: number, lastActivityDate: Timestamp |
   let activityDate: Date | null = null;
 
   if (lastActivityDate) {
-    activityDate = lastActivityDate instanceof Date ? lastActivityDate : lastActivityDate.toDate();
+    activityDate = lastActivityDate instanceof Date ? lastActivityDate : lastActivityDate?.toDate?.();
   }
   
   if(streakCount === 0) return
@@ -111,6 +109,10 @@ export const useUserStore = create<UserStore>()(
 
       // Enhanced function to sync Firestore data
       syncFirestoreData: (firestoreData: UserDoc) => {
+        if (!firestoreData) {
+          console.error('Attempted to sync null/undefined Firestore data');
+          return;
+        }
         console.log('Syncing Firestore data to local store:', firestoreData);
         set((state) => {
           // Ensure we keep local data if Firestore data is undefined
@@ -168,11 +170,6 @@ export const useUserStore = create<UserStore>()(
               ...(state.checkIns || {}),
               ...(firestoreData.checkIns || {})
             },
-            // Sync custom devotionals - merge instead of replace
-            customDevotionals: {
-              ...(state.customDevotionals || {}),
-              ...(firestoreData.customDevotionals || {})
-            },
           };
         });
         console.log('Firestore data sync complete');
@@ -189,12 +186,12 @@ export const useUserStore = create<UserStore>()(
 
         set(newState);
 
-        const cleanedUserData = undefinedToNull({
+        const cleanedUserData = removeFunctions(undefinedToNull({
           ...userData,
           id,
           createdAt: Timestamp.now(),
           updatedAt: Timestamp.now(),
-        });
+        }));
 
         const success = await createUserDocument(id, cleanedUserData);
         if (!success) {
@@ -212,7 +209,7 @@ export const useUserStore = create<UserStore>()(
           };
 
           if (isAuthenticated()) {
-            updateUserData(updates);
+            updateUserData(removeFunctions(updates));
           }
 
           return updates;
@@ -224,7 +221,10 @@ export const useUserStore = create<UserStore>()(
       },
 
       // Getters
-      getSpiritualGoal: () => get().spiritualGoal || initialState.spiritualGoal,
+      getSpiritualGoal: () => {
+        const state = get();
+        return state?.spiritualGoal || initialState.spiritualGoal;
+      },
       getExperienceLevel: () => get().experienceLevel || initialState.experienceLevel,
       getFrequencyGoal: () => get().frequencyGoal || initialState.frequencyGoal,
       getDenomination: () => get().denomination || initialState.denomination,
@@ -263,7 +263,6 @@ export const useUserStore = create<UserStore>()(
       getHasSeenBibleReaderTutorial: () => get().hasSeenBibleReaderTutorial || false,
       getSkins: () => get().skins || initialState.skins,
       getCheckIns: () => get().checkIns,
-      getCustomDevotionals: () => get().customDevotionals,
 
       // Setters
       setSpiritualGoal: (spiritualGoal) => set({ spiritualGoal }),
@@ -280,6 +279,7 @@ export const useUserStore = create<UserStore>()(
         if (isAuthenticated()) {
           updateField('streakCount', count);
         }
+        
         syncStreakWithWidget(count, get().lastActivityDate);
       },
 
@@ -532,191 +532,28 @@ export const useUserStore = create<UserStore>()(
       setCheckIns: async (checkIns: UserDoc['checkIns']) => {
         console.log('[setCheckIns] Called with:', checkIns);
         set({ checkIns });
-        
         if (isAuthenticated()) {
           updateUserData({ checkIns });
         }
       },
 
-      addCheckIn: async (dateKey: string, checkInData: NonNullable<UserDoc['checkIns']>[string]) => {
-        console.log('[addCheckIn] Called with dateKey:', dateKey, 'data:', checkInData);
-        
-        // Update local state first
-        const state = get();
-        const updatedCheckIns = {
-          ...(state.checkIns || {}),
-          [dateKey]: checkInData
-        };
-        
-        set({ checkIns: updatedCheckIns });
-        
-        // Update Firestore directly with nested field path
-        if (isAuthenticated()) {
-          try {
-            const currentUser = auth().currentUser;
-            if (currentUser) {
-              // Use Firestore's dot notation for nested field updates
-              await firestore()
-                .collection('users')
-                .doc(currentUser.uid)
-                .update({
-                  [`checkIns.${dateKey}`]: checkInData,
-                  updatedAt: Timestamp.now()
-                });
-              console.log('[addCheckIn] Successfully updated Firestore with nested field path');
-            }
-          } catch (error) {
-            console.error('[addCheckIn] Error updating Firestore:', error);
-            // Fallback to updating the entire checkIns object
+      addCheckIn: async (_dateKey: string, checkInData: NonNullable<UserDoc['checkIns']>[number]) => {
+        // Ignore dateKey, just push to array
+        set((state) => {
+          const updatedCheckIns = [...(state.checkIns || []), checkInData];
+          if (isAuthenticated()) {
             updateUserData({ checkIns: updatedCheckIns });
           }
-        }
-      },
-
-      setCustomDevotionals: async (customDevotionals: UserDoc['customDevotionals']) => {
-        console.log('[setCustomDevotionals] Called with:', customDevotionals);
-        set({ customDevotionals });
-        
-        if (isAuthenticated()) {
-          updateUserData({ customDevotionals });
-        }
-      },
-
-      addCustomDevotional: async (devotionalId: string, timestamp: FirebaseFirestoreTypes.Timestamp) => {
-        console.log('[addCustomDevotional] Called with devotionalId:', devotionalId, 'timestamp:', timestamp);
-        
-        // Update local state first
-        const state = get();
-        const updatedCustomDevotionals = {
-          ...(state.customDevotionals || {}),
-          [devotionalId]: { timestamp }
-        };
-        
-        set({ customDevotionals: updatedCustomDevotionals });
-        
-        // Update Firestore directly with nested field path
-        if (isAuthenticated()) {
-          try {
-            const currentUser = auth().currentUser;
-            if (currentUser) {
-              // Use Firestore's dot notation for nested field updates
-              await firestore()
-                .collection('users')
-                .doc(currentUser.uid)
-                .update({
-                  [`customDevotionals.${devotionalId}`]: { timestamp },
-                  updatedAt: Timestamp.now()
-                });
-              console.log('[addCustomDevotional] Successfully updated Firestore with nested field path');
-            }
-          } catch (error) {
-            console.error('[addCustomDevotional] Error updating Firestore:', error);
-            // Fallback to updating the entire customDevotionals object
-            updateUserData({ customDevotionals: updatedCustomDevotionals });
-          }
-        }
+          return { checkIns: updatedCheckIns };
+        });
       },
     }),
     {
       name: 'shepherd-user-storage',
       storage: createJSONStorage(() => AsyncStorage as any),
-      // Only persist data fields, exclude all functions
-      partialize: (state) => {
-        const {
-          // Exclude all functions
-          getUser,
-          setUser,
-          createUser,
-          syncFirestoreData,
-          resetUserStore,
-          getSpiritualGoal,
-          getExperienceLevel,
-          getFrequencyGoal,
-          getDenomination,
-          getDisplayName,
-          getSelectedPathId,
-          getLamb,
-          getStreakCount,
-          getLastActivityDate,
-          getVersesReadTotal,
-          getChaptersReadTotal,
-          getBibleVersion,
-          getProStatus,
-          getCreatedAt,
-          getUpdatedAt,
-          getGens,
-          getLastReadingDate,
-          getLastPrayerDate,
-          getLastReflectionDate,
-          getLastReadingPenaltyDate,
-          getLastPrayerPenaltyDate,
-          getLastReflectionPenaltyDate,
-          getCompletedReflections,
-          getCompletedPrayers,
-          getCompletedReadings,
-          getLambLevel,
-          getLambXp,
-          getLambMood,
-          getLambHearts,
-          getLambName,
-          getLambSkin,
-          getHasSeenWidgetModal,
-          getHasSeenBibleReaderTutorial,
-          getSkins,
-          setSpiritualGoal,
-          setExperienceLevel,
-          setFrequencyGoal,
-          setDenomination,
-          setDisplayName,
-          setSelectedPathId,
-          setIsProFromOnboarding,
-          setLamb,
-          setStreakCount,
-          setLastActivityDate,
-          setLastReadingDate,
-          setLastPrayerDate,
-          setLastReflectionDate,
-          setLastReadingPenaltyDate,
-          setLastPrayerPenaltyDate,
-          setLastReflectionPenaltyDate,
-          setVersesReadTotal,
-          setChaptersReadTotal,
-          setBibleVersion,
-          setProStatus,
-          setCreatedAt,
-          setUpdatedAt,
-          setGens,
-          setNotificationTime,
-          setCompletedReflections,
-          setCompletedPrayers,
-          setCompletedReadings,
-          addCompletedReflection,
-          addCompletedPrayer,
-          addCompletedReading,
-          setLambLevel,
-          setLambXp,
-          setLambMood,
-          setLambHearts,
-          setLambName,
-          setLambSkin,
-          incrementStreak,
-          addXp,
-          setHasSeenWidgetModal,
-          setHasSeenBibleReaderTutorial,
-          setCompletedMapPaths,
-          addCompletedMapPath,
-          setSkins,
-          addSkin,
-          getCheckIns,
-          setCheckIns,
-          addCheckIn,
-          getCustomDevotionals,
-          setCustomDevotionals,
-          addCustomDevotional,
-          // Keep only data fields
-          ...dataOnly
-        } = state;
-        return dataOnly;
+      migrate: (persistedState, version) => {
+        if (!persistedState) return initialState;
+        return { ...initialState, ...persistedState };
       },
     }
   )
