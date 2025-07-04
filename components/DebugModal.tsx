@@ -584,7 +584,15 @@ export function DebugButton() {
       // Parse the JSON input
       let devotionals;
       try {
-        devotionals = JSON.parse(devotionalJsonInput);
+        if (
+          devotionalJsonInput &&
+          devotionalJsonInput.trim().length > 0 &&
+          (devotionalJsonInput.trim().startsWith('{') || devotionalJsonInput.trim().startsWith('['))
+        ) {
+          devotionals = JSON.parse(devotionalJsonInput);
+        } else {
+          throw new Error('Input is empty or not valid JSON');
+        }
       } catch (parseError) {
         Alert.alert('Invalid JSON', 'Please ensure your input is valid JSON format.');
         return;

@@ -128,10 +128,10 @@ const OldReflectionSheet: React.FC = () => {
 
   // Handle sheet closing
   const handleSheetChanges = useCallback((index: number) => {
-    console.log('OldReflectionSheet: Sheet index changed to:', index);
+      console.log('OldReflectionSheet: Sheet index changed to:', index);
     if (index === -1) { // Index -1 means sheet is closed
-      hideSheet();
-    }
+        hideSheet();
+      }
   }, [hideSheet]);
 
   // Close button handler
@@ -154,10 +154,10 @@ const OldReflectionSheet: React.FC = () => {
     []
   );
 
-  // Don't render anything if no reflection data
-  if (!reflectionData) {
-    console.log('OldReflectionSheet: No reflection data, not rendering');
-    return null;
+  // Don't render anything if not visible or no reflection data
+  if (!isVisible || !reflectionData) {
+    console.log('OldReflectionSheet: Not visible or no reflection data, not rendering');
+    return <View />;
   }
 
   return (

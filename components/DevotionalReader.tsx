@@ -21,6 +21,7 @@ import Reanimated, {
   withTiming,
   Layout,
   withSpring,
+  FadeInUp,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { useUserStore } from '~/app/stores/userStore';
@@ -60,6 +61,18 @@ export interface DevotionalReaderRef {
 }
 
 const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(({ visible = true, onClose, setFinishReading, setDevotionalReadedFully, setCurrentVerseReference }, ref) => {
+  // Defensive cleanup: Track component mount state to prevent Layout animation conflicts
+  // This prevents React Native 'child already has a parent' errors when components unmount during Layout animations
+  // See: https://github.com/software-mansion/react-native-reanimated/issues/1797 and related Android crash reports
+  const isMounted = useRef(true);
+  
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   const { currentDevotional, isLoading, customDevotional } = useDevotionalStore();
   const devotionalError = useDevotionalStore().error;
 
@@ -656,7 +669,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                           <Reanimated.View
                             key={index}
                             entering={SlideInDown.duration(1000).delay(index * 60).withInitialValues({ opacity: 0 })}
-                            layout={Layout.springify()}>
+                            layout={isMounted.current ? Layout.springify() : undefined}>
                             <DailyVerseCard
                               devotional={activeDevotional}
                               showShareButton={false}
@@ -672,8 +685,8 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                       return (
                         <Reanimated.View
                           key={index}
-                          entering={SlideInDown.duration(1000).delay(index * 60).withInitialValues({ opacity: 0 })}
-                          layout={Layout.springify()}
+                          entering={FadeInUp.duration(300).delay(index * 60)}
+                          layout={isMounted.current ? Layout.springify() : undefined}
                           style={{ marginBottom: 12 }}>
                           <View className="bg-surfaceCreamLight" style={{
                             shadowColor: '#000',

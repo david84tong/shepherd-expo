@@ -30,14 +30,21 @@ export const setAppLanguage = async (language: SupportedLanguage): Promise<void>
 export const getCurrentAppLanguage = async (): Promise<SupportedLanguage | null> => {
   try {
     const storedLanguage = await AsyncStorage.getItem('shepherd-language-storage');
-    if (storedLanguage) {
-      const parsedStorage = JSON.parse(storedLanguage);
-      const language = parsedStorage.state?.language as SupportedLanguage;
-      if (language && SUPPORTED_LANGUAGES[language]) {
-        return language;
+    // Defensive JSON.parse: Prevents crashes from empty or malformed JSON in language storage.
+    if (storedLanguage && typeof storedLanguage === 'string' && storedLanguage.trim().length > 0 && (storedLanguage.trim().startsWith('{') || storedLanguage.trim().startsWith('['))) {
+      try {
+        const parsedStorage = JSON.parse(storedLanguage);
+        const language = parsedStorage.state?.language as SupportedLanguage;
+        if (language && SUPPORTED_LANGUAGES[language]) {
+          return language;
+        }
+      } catch (e) {
+        console.log('Failed to parse storedLanguage as JSON:', storedLanguage);
+        return null;
       }
+    } else {
+      return null;
     }
-    return null;
   } catch (error) {
     console.error('Error getting current app language:', error);
     return null;

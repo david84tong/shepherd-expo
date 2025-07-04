@@ -169,19 +169,29 @@ Make sure your response is valid JSON format.`
       // Parse the JSON response from AI
       let devotionalData: DevotionalAIResponse;
       try {
-        if (data.content && data.content.startsWith('{') && data.content.endsWith('}')) {
-          devotionalData = JSON.parse(data.content);
+        if (
+          data.content &&
+          typeof data.content === 'string' &&
+          data.content.trim().length > 0 &&
+          data.content.trim().startsWith('{') &&
+          data.content.trim().endsWith('}')
+        ) {
+          try {
+            devotionalData = JSON.parse(data.content);
+            // Log the parsed data to debug
+            console.log('[AI API] Parsed devotional data:', devotionalData);
+          } catch (e) {
+            throw new Error('AI response content is not valid JSON');
+          }
         } else {
           throw new Error('AI response is not in valid JSON format');
         }
-
-        
       } catch (parseError) {
         console.error('Failed to parse AI response as JSON:', data.content);
         // Fallback: try to extract content manually or provide defaults
         devotionalData = {
           title: `Reflection on ${verseContext.bookName} ${verseContext.chapter}:${verseContext.verse}`,
-          context: data.content.substring(0, 500) + '...', // Use first part as context
+          context: (typeof data.content === 'string' ? data.content.substring(0, 500) : '') + '...', // Use first part as context
           prayer: 'Lord, help me to understand and apply this verse to my life. Amen.',
           reflectionPrompt: 'How can this verse guide my actions today?'
         };
@@ -364,18 +374,34 @@ Make sure your response is valid JSON format and is deeply personalized to their
       // Parse the JSON response from AI
       let devotionalData: DevotionalAIResponse;
       try {
-        if (data.content && data.content.startsWith('{') && data.content.endsWith('}')) {
-          devotionalData = JSON.parse(data.content);
-          
-          // Log the parsed data to debug
-          console.log('[AI API] Parsed devotional data:', devotionalData);
+        if (
+          data.content &&
+          typeof data.content === 'string' &&
+          data.content.trim().length > 0 &&
+          data.content.trim().startsWith('{') &&
+          data.content.trim().endsWith('}')
+        ) {
+          try {
+            devotionalData = JSON.parse(data.content);
+            // Log the parsed data to debug
+            console.log('[AI API] Parsed devotional data:', devotionalData);
+          } catch (e) {
+            throw new Error('AI response content is not valid JSON');
+          }
         } else {
           throw new Error('AI response is not in valid JSON format');
         }
       } catch (parseError) {
         console.error('Failed to parse AI response as JSON:', data.content);
-        // Fallback to check-in based devotional
-        return createCheckInFallbackDevotional(checkInData);
+        // Fallback: provide a default devotional object
+        devotionalData = {
+          title: 'Personal Devotional',
+          context: (typeof data.content === 'string' ? data.content.substring(0, 500) : '') + '...',
+          prayer: 'Lord, meet me in my current situation and guide my heart. Amen.',
+          reflectionPrompt: 'How can I invite God into my emotions and needs today?',
+          verse: '',
+          bibleReference: ''
+        };
       }
 
       // Validate the parsed data

@@ -83,6 +83,22 @@ export default function SelfFundedMissionScreen() {
       action: 'fund_features_pressed'
     });
 
+    // Check if Adapty is properly initialized
+    try {
+      const isActivated = await adapty.isActivated();
+      if (!isActivated) {
+        console.log('[SelfFundedMission] Adapty not activated, cannot make purchase');
+        // Fallback to pricing screen
+        router.push('/PricingScreen');
+        return;
+      }
+    } catch (error) {
+      console.log('[SelfFundedMission] Error checking Adapty activation:', error);
+      // Fallback to pricing screen
+      router.push('/PricingScreen');
+      return;
+    }
+
     try {
       // Get the weekly product and make direct purchase
       const paywall = await adapty.getPaywall('noFreeTrial');

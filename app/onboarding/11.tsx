@@ -334,16 +334,22 @@ export default function SaveProgressScreen() {
 
       // Identify user in Adapty
       try {
-        await adapty.identify(uid);
+        // Check if Adapty is properly initialized
+        const isActivated = await adapty.isActivated();
+        if (isActivated) {
+          await adapty.identify(uid);
 
-        // Prepare custom attributes, filtering out undefined/null values
-        const customAttributes: Record<string, string | number | boolean> = {};
+          // Prepare custom attributes, filtering out undefined/null values
+          const customAttributes: Record<string, string | number | boolean> = {};
 
-        if (userData.ageRange) customAttributes.age_range = userData.ageRange;
+          if (userData.ageRange) customAttributes.age_range = userData.ageRange;
 
-        await adapty.updateProfile({
-          codableCustomAttributes: customAttributes,
-        });
+          await adapty.updateProfile({
+            codableCustomAttributes: customAttributes,
+          });
+        } else {
+          console.log('[Onboarding] Adapty not activated, skipping user identification');
+        }
       } catch (adaptyError) {
         console.error('Error identifying user in Adapty:', adaptyError);
       }

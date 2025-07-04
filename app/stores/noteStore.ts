@@ -149,13 +149,21 @@ export const useNoteStore = create<NoteState>((set, get) => {
         // First try to load from AsyncStorage (works even when offline)
         const storedNotes = await AsyncStorage.getItem(`${NOTES_STORAGE_KEY}_${userId}`);
         
-        if (storedNotes) {
-          const noteArray = JSON.parse(storedNotes) as VerseNote[];
-          notesMap = noteArray.reduce((acc, note) => {
-            acc[note.id] = note;
-            return acc;
-          }, {} as {[key: string]: VerseNote});
+        // Defensive JSON.parse: Prevents crashes from empty or malformed JSON in notes storage.
+        let noteArray: VerseNote[] = [];
+        if (storedNotes && typeof storedNotes === 'string' && storedNotes.trim().length > 0 && (storedNotes.trim().startsWith('{') || storedNotes.trim().startsWith('['))) {
+          try {
+            noteArray = JSON.parse(storedNotes) as VerseNote[];
+          } catch (e) {
+            console.log('Failed to parse storedNotes as JSON:', storedNotes);
+            noteArray = [];
+          }
         }
+        
+        notesMap = noteArray.reduce((acc, note) => {
+          acc[note.id] = note;
+          return acc;
+        }, {} as {[key: string]: VerseNote});
         
         // If we have a logged-in user, also try to load from Firestore
         if (userId !== 'anonymous' && Platform.OS !== 'web') {

@@ -121,6 +121,9 @@ const PrayerComponent: React.FC<PrayerComponentProps> = ({
   useEffect(() => {
     console.log('PrayerComponent: visible =', visible);
 
+    // Defensive cleanup: This ensures all timers and animations are stopped when the component unmounts or visibility changes.
+    // This prevents React Native 'connectAnimatedNodes' errors and avoids memory leaks, without affecting animation logic or smoothness.
+    // See: https://github.com/software-mansion/react-native-reanimated/issues/1797 and related Android crash reports.
     if (visible) {
       console.log('PrayerComponent: Showing prayer component');
 

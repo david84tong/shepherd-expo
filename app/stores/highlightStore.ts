@@ -160,13 +160,21 @@ export const useHighlightStore = create<HighlightState>((set, get) => {
         // First try to load from AsyncStorage (works even when offline)
         const storedHighlights = await AsyncStorage.getItem(`${HIGHLIGHTS_STORAGE_KEY}_${userId}`);
         
-        if (storedHighlights) {
-          const highlightArray = JSON.parse(storedHighlights) as VerseHighlight[];
-          highlightsMap = highlightArray.reduce((acc, highlight) => {
-            acc[highlight.id] = highlight;
-            return acc;
-          }, {} as {[key: string]: VerseHighlight});
+        // Defensive JSON.parse: Prevents crashes from empty or malformed JSON in highlights storage.
+        let highlightArray: VerseHighlight[] = [];
+        if (storedHighlights && typeof storedHighlights === 'string' && storedHighlights.trim().length > 0 && (storedHighlights.trim().startsWith('{') || storedHighlights.trim().startsWith('['))) {
+          try {
+            highlightArray = JSON.parse(storedHighlights) as VerseHighlight[];
+          } catch (e) {
+            console.log('Failed to parse storedHighlights as JSON:', storedHighlights);
+            highlightArray = [];
+          }
         }
+        
+        highlightsMap = highlightArray.reduce((acc, highlight) => {
+          acc[highlight.id] = highlight;
+          return acc;
+        }, {} as {[key: string]: VerseHighlight});
         
         // If we have a logged-in user, also try to load from Firestore
         if (userId !== 'anonymous' && Platform.OS !== 'web') {

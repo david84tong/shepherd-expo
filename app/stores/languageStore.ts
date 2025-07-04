@@ -13,12 +13,20 @@ type LanguageState = {
 const initializeLanguage = async () => {
   try {
     const storedLanguage = await AsyncStorage.getItem('shepherd-language-storage');
-    if (storedLanguage) {
-      const parsedStorage = JSON.parse(storedLanguage);
-      const language = parsedStorage.state?.language;
-      if (language && i18n.translations[language]) {
-        return language;
+    // Defensive JSON.parse: Prevents crashes from empty or malformed JSON in language storage.
+    if (storedLanguage && typeof storedLanguage === 'string' && storedLanguage.trim().length > 0 && (storedLanguage.trim().startsWith('{') || storedLanguage.trim().startsWith('['))) {
+      try {
+        const parsedStorage = JSON.parse(storedLanguage);
+        const language = parsedStorage.state?.language;
+        if (language && i18n.translations[language]) {
+          return language;
+        }
+      } catch (e) {
+        console.log('Failed to parse storedLanguage as JSON:', storedLanguage);
+        return null;
       }
+    } else {
+      return null;
     }
 
     // Fall back to device locale if no stored language

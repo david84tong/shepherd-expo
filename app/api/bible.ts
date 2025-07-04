@@ -85,14 +85,22 @@ export const fetchChapterWithCache = async (
   // Check AsyncStorage cache
   try {
     const cachedData = await AsyncStorage.getItem(cacheKey);
-    if (cachedData) {
-      const parsed: CachedChapterData = JSON.parse(cachedData);
-      if (isCacheValid(parsed.timestamp)) {
-        console.log(`📚 Using AsyncStorage cache for ${translation} ${bookId}:${chapter}`);
-        // Store in memory cache for faster future access
-        chapterCache.set(cacheKey, parsed.data);
-        return parsed.data;
+    // Defensive JSON.parse: Prevents crashes from empty or malformed JSON in AsyncStorage cache.
+    if (cachedData && typeof cachedData === 'string' && cachedData.trim().length > 0 && (cachedData.trim().startsWith('{') || cachedData.trim().startsWith('['))) {
+      try {
+        const parsed: CachedChapterData = JSON.parse(cachedData);
+        if (isCacheValid(parsed.timestamp)) {
+          console.log(`📚 Using AsyncStorage cache for ${translation} ${bookId}:${chapter}`);
+          // Store in memory cache for faster future access
+          chapterCache.set(cacheKey, parsed.data);
+          return parsed.data;
+        }
+      } catch (e) {
+        console.log('Failed to parse cachedData as JSON:', cachedData);
+        return null;
       }
+    } else {
+      return null;
     }
   } catch (error) {
     console.warn('Failed to read from AsyncStorage cache:', error);
@@ -160,13 +168,20 @@ export const fetchChaptersBatch = async (
     // Check AsyncStorage cache
     try {
       const cachedData = await AsyncStorage.getItem(cacheKey);
-      if (cachedData) {
-        const parsed: CachedChapterData = JSON.parse(cachedData);
-        if (isCacheValid(parsed.timestamp)) {
-          chapterCache.set(cacheKey, parsed.data);
-          results.set(key, parsed.data);
+      if (cachedData && typeof cachedData === 'string' && cachedData.trim().length > 0 && (cachedData.trim().startsWith('{') || cachedData.trim().startsWith('['))) {
+        try {
+          const parsed: CachedChapterData = JSON.parse(cachedData);
+          if (isCacheValid(parsed.timestamp)) {
+            chapterCache.set(cacheKey, parsed.data);
+            results.set(key, parsed.data);
+            continue;
+          }
+        } catch (e) {
+          console.error('Failed to parse cachedData as JSON:', cachedData);
           continue;
         }
+      } else {
+        continue;
       }
     } catch (error) {
       console.warn('Failed to read from AsyncStorage cache:', error);

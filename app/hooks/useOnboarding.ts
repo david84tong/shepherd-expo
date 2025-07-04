@@ -25,8 +25,16 @@ export const useOnboarding = () => {
       setIsCompleted(completed === 'true');
 
       const savedResponse = await AsyncStorage.getItem(ONBOARDING_STORAGE_KEY);
-      if (savedResponse) {
-        setOnboardingResponse(JSON.parse(savedResponse));
+      // Defensive JSON.parse: Prevents crashes from empty or malformed JSON in onboarding storage.
+      if (savedResponse && typeof savedResponse === 'string' && savedResponse.trim().length > 0 && (savedResponse.trim().startsWith('{') || savedResponse.trim().startsWith('['))) {
+        try {
+          setOnboardingResponse(JSON.parse(savedResponse));
+        } catch (e) {
+          console.log('Failed to parse savedResponse as JSON:', savedResponse);
+          setOnboardingResponse(null);
+        }
+      } else {
+        setOnboardingResponse(null);
       }
     } catch (error) {
       console.log('Error checking onboarding status:', error);

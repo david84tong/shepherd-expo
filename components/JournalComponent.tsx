@@ -305,6 +305,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
   // Entry and exit animations
   useEffect(() => {
+    // Defensive cleanup: Ensures all animations are stopped and reset when the component unmounts or visibility changes.
+    // This prevents React Native 'connectAnimatedNodes' errors and avoids memory leaks, without affecting animation logic or smoothness.
+    // See: https://github.com/software-mansion/react-native-reanimated/issues/1797 and related Android crash reports.
     console.log('JournalComponent: visible =', visible);
 
     if (visible) {

@@ -191,7 +191,11 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
       const data = await AsyncStorage.getItem(ONBOARDING_STORAGE_KEY);
       console.log(`[OnboardingStore] 📱 Raw data from AsyncStorage:`, data);
       
-      const parsedData = data ? JSON.parse(data) : null;
+      // Defensive JSON.parse: Prevents crashes from empty or malformed JSON in onboarding data.
+      const parsedData = data && typeof data === 'string' && data.trim().length > 0 && (data.trim().startsWith('{') || data.trim().startsWith('['))
+        ? (() => { try { return JSON.parse(data); } catch (e) { console.log('Failed to parse onboarding data as JSON:', data); return null; } })()
+        : null;
+      
       console.log(`[OnboardingStore] 📋 Parsed data:`, parsedData);
       
       if (parsedData) {

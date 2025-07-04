@@ -400,7 +400,9 @@ export default function RootLayout() {
         await checkOnboarding();
         await checkStreakStatus();
         await initializeNotifications();
-      } catch (error) { }
+      } catch (error) {
+        console.log('Error during initialization:', error);
+      }
       // Set Rive ready
       setIsRiveReady(true);
       setShowRiveAnimation(true);
@@ -429,18 +431,27 @@ export default function RootLayout() {
 
   const activateAdapty = async () => {
     try {
+      console.log('[Adapty] Starting initialization...');
+      
+      // Check if already activated
       const isActivated = await adapty.isActivated();
-      console.log('isActivated ==>', isActivated);
-      if (isActivated) return;
-      // if(adapty){
-      //   console.log("adapty ==>",adapty?.isActivated());
-      // }
+      console.log('[Adapty] Is activated:', isActivated);
+      
+      if (isActivated) {
+        console.log('[Adapty] Already activated, skipping initialization');
+        return;
+      }
+
+      // Activate Adapty with proper error handling
       await adapty.activate('public_live_6JQmP6iR.y5BUrJSqvfMEVYQBPBLz', {
-        lockMethodsUntilReady: true,
+        lockMethodsUntilReady: false, // Changed to false to prevent blocking
       });
-      console.log('Adapty activated');
+      
+      console.log('[Adapty] Successfully activated');
     } catch (error) {
-      console.log('Error activating Adapty:', error);
+      console.error('[Adapty] Error during activation:', error);
+      // Don't throw the error - just log it and continue
+      // This prevents the app from crashing if Adapty fails to initialize
     }
   };
 
@@ -454,9 +465,6 @@ export default function RootLayout() {
       }
       appState.current = nextAppState;
     };
-    console.log('Activating Adapty');
-
-    activateAdapty();
 
     const subscription = AppState.addEventListener('change', handleAppStateChange);
 
@@ -464,6 +472,19 @@ export default function RootLayout() {
       subscription.remove();
     };
   }, []);
+
+  // Activate Adapty after app is ready
+  useEffect(() => {
+    if (appReady && !hasError) {
+      console.log('[Adapty] App is ready, activating Adapty...');
+      // Add a small delay to ensure app is fully initialized
+      const timer = setTimeout(() => {
+        activateAdapty();
+      }, 1000);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [appReady, hasError]);
 
   // Add state for isCreator
   const [isCreator, setIsCreator] = useState(false);
@@ -549,89 +570,79 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FDEBB8' }}>
       <BottomSheetModalProvider>
-        {visibleForceUpdate ? (
-          <ForceUpdateModal visible={visibleForceUpdate} />
-        ) : (
-          <>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-                animation: 'fade',
-                animationDuration: 200,
-                contentStyle: { backgroundColor: '#FDEBB8' },
-              }}
-            />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: 'fade',
+            animationDuration: 200,
+            contentStyle: { backgroundColor: '#FDEBB8' },
+          }}
+        />
 
-            {/* Half Modal Sheet for penalties, popups, etc. */}
-            <HalfModalSheet
-              halfModalRef={halfModalRef}
-              snapPoints={halfModalSnapPoints}
-              params={{
-                type: halfModalParams.type,
-                message: halfModalParams.message,
-                subMessage: halfModalParams.subMessage,
-                penalty: halfModalParams.penalty,
-                daysMissed: halfModalParams.daysMissed,
-              }}
-            />
+        {/* Half Modal Sheet for penalties, popups, etc. */}
+        <HalfModalSheet
+          halfModalRef={halfModalRef}
+          snapPoints={halfModalSnapPoints}
+          params={{
+            type: halfModalParams.type,
+            message: halfModalParams.message,
+            subMessage: halfModalParams.subMessage,
+            penalty: halfModalParams.penalty,
+            daysMissed: halfModalParams.daysMissed,
+          }}
+        />
 
-            {/* Settings Sheet */}
-            <SettingsSheet settingsSheetRef={settingsSheetRef} snapPoints={settingsSnapPoints} />
+        {/* Settings Sheet */}
+        <SettingsSheet settingsSheetRef={settingsSheetRef} snapPoints={settingsSnapPoints} />
 
-            {/* Global Prayer Sheet (available from anywhere in the app) */}
-            <GlobalPrayerSheet
-              prayerSheetRef={prayerSheetRef}
-              onPrayerGenerated={useUIStore.getState().prayerGeneratedCallback || undefined}
-            />
+        {/* Global Prayer Sheet (available from anywhere in the app) */}
+        <GlobalPrayerSheet
+          prayerSheetRef={prayerSheetRef}
+          onPrayerGenerated={useUIStore.getState().prayerGeneratedCallback || undefined}
+        />
 
-            {/* Global Store Sheet */}
-            <GlobalStoreSheet storeSheetRef={storeSheetRef} />
+        {/* Global Store Sheet */}
+        <GlobalStoreSheet storeSheetRef={storeSheetRef} />
 
-            {/* Global Stats Sheet */}
-            <GlobalStatsSheet statsSheetRef={statsSheetRef} />
+        {/* Global Stats Sheet */}
+        <GlobalStatsSheet statsSheetRef={statsSheetRef} />
 
-            {/* Book/Chapter Selector Sheet */}
-            {Boolean(showBookChapterSelector) && <GlobalBookChapterSelectorSheet />}
+        {/* Book/Chapter Selector Sheet */}
+        {Boolean(showBookChapterSelector) && <GlobalBookChapterSelectorSheet />}
 
-            {/* Old Reflection Sheet */}
-            {Boolean(showOldReflectionSheet) && <OldReflectionSheet />}
+        {/* Old Reflection Sheet */}
+        {Boolean(showOldReflectionSheet) && <OldReflectionSheet />}
 
-            {/* Global Check-In Sheet */}
-            <GlobalCheckIn checkInRef={checkInRef} />
+        {/* Global Check-In Sheet */}
+        <GlobalCheckIn checkInRef={checkInRef} />
 
-            {/* Global Devotionals Sheet */}
-            <GlobalDevotionalsSheet devotionalsSheetRef={devotionalsSheetRef} />
+        {/* Global Devotionals Sheet */}
+        <GlobalDevotionalsSheet devotionalsSheetRef={devotionalsSheetRef} />
 
-            {/* Dimmed background for modal overlays */}
-            {isModalDimActive && (
-              <View
-                style={{
-                  position: 'absolute',
-                  width: '100%',
-                  height: '100%',
-                  backgroundColor: 'rgba(0,0,0,0.5)',
-                  zIndex: 50,
-                }}
-              />
-            )}
-
-            {/* Debug button (visible only in development or for creators) */}
-            {(__DEV__ || isCreator) && <DebugButton />}
-          </>
+        {/* Dimmed background for modal overlays */}
+        {isModalDimActive && (
+          <View
+            style={{
+              position: 'absolute',
+              width: '100%',
+              height: '100%',
+              backgroundColor: 'rgba(0,0,0,0.5)',
+              zIndex: 50,
+            }}
+          />
         )}
+
+        {/* Debug button (visible only in development or for creators) */}
+        {(__DEV__ || isCreator) && <DebugButton />}
+
+        {/* Force Update Modal - rendered only once */}
+        {visibleForceUpdate && <ForceUpdateModal visible={visibleForceUpdate} />}
       </BottomSheetModalProvider>
-      {visibleForceUpdate && isInitialized ? (
-        <ForceUpdateModal visible={visibleForceUpdate} />
-      ) : null}
     </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: '#FFF4D9',
-    flex: 1,
-  },
   riveAnimation: {
     height: '100%',
     width: '100%',

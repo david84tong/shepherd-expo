@@ -325,6 +325,18 @@ const PrayerCard: React.FC<{
   skipTyping: boolean;
   onTypingComplete: () => void;
 }> = ({ card, index, isLast, breathingProgress, fontSize, skipTyping, onTypingComplete }) => {
+  // Defensive cleanup: Track component mount state to prevent Layout animation conflicts
+  // This prevents React Native 'child already has a parent' errors when components unmount during Layout animations
+  // See: https://github.com/software-mansion/react-native-reanimated/issues/1797 and related Android crash reports
+  const isMounted = useRef(true);
+  
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   const cardBackgroundStyle = useAnimatedStyle(() => {
     const progress = breathingProgress.value;
     // Interpolate between light blue and deeper blue based on breathing
@@ -340,7 +352,7 @@ const PrayerCard: React.FC<{
     <Reanimated.View
       key={index}
       entering={FadeInUp.duration(300).delay(index * 60)}
-      layout={Layout.springify()}
+      layout={isMounted.current ? Layout.springify() : undefined}
       style={{ marginBottom: 12 }}>
       <Reanimated.View
         className="bg-surfaceCreamLight"

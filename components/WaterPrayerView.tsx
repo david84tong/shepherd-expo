@@ -316,11 +316,19 @@ const PrayerCard: React.FC<{
   skipTyping: boolean;
   onTypingComplete: () => void;
 }> = ({ card, index, isLast, waterProgress, fontSize, skipTyping, onTypingComplete }) => {
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
   return (
     <Reanimated.View
       key={index}
       entering={FadeInUp.duration(300).delay(index * 60)}
-      layout={Layout.springify()}
+      layout={isMounted.current ? Layout.springify() : undefined}
       style={{ marginBottom: 12 }}>
       <View
         className="bg-surfaceCreamLight shadow-card"

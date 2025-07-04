@@ -184,6 +184,18 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       return PAYWALL_RESULT.CANCELLED;
     }
     
+    // Check if Adapty is properly initialized
+    try {
+      const isActivated = await adapty.isActivated();
+      if (!isActivated) {
+        console.log('[SubscriptionStore] Adapty not activated, cannot present paywall');
+        return PAYWALL_RESULT.ERROR;
+      }
+    } catch (error) {
+      console.log('[SubscriptionStore] Error checking Adapty activation:', error);
+      return PAYWALL_RESULT.ERROR;
+    }
+
     try {
       set({ isPaywallPresenting: true });
       analytics.logEvent('presentFreeTrialPaywall', {
@@ -300,6 +312,18 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
     // Mark that user has now seen the half-off paywall
     await get().markHalfOffPaywallAsSeen();
+
+    // Check if Adapty is properly initialized
+    try {
+      const isActivated = await adapty.isActivated();
+      if (!isActivated) {
+        console.error('[SubscriptionStore] Adapty not activated, cannot present half-off paywall');
+        return PAYWALL_RESULT.ERROR;
+      }
+    } catch (error) {
+      console.error('[SubscriptionStore] Error checking Adapty activation:', error);
+      return PAYWALL_RESULT.ERROR;
+    }
 
     try {
       set({ isPaywallPresenting: true });
@@ -608,6 +632,13 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   getCustomerInfo: async () => {
     console.log('[SubscriptionStore] getCustomerInfo called (Adapty + Firestore version).');
     try {
+      // Check if Adapty is properly initialized
+      const isActivated = await adapty.isActivated();
+      if (!isActivated) {
+        console.error('[SubscriptionStore] Adapty not activated, skipping profile fetch');
+        return;
+      }
+
       // 1. Check Adapty profile
       const profile = await adapty.getProfile();
       console.log(
@@ -828,6 +859,18 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   },
 
   loginAdaptyUser: async (userId: string) => {
+    // Check if Adapty is properly initialized
+    try {
+      const isActivated = await adapty.isActivated();
+      if (!isActivated) {
+        console.error('[SubscriptionStore] Adapty not activated, cannot login user');
+        return;
+      }
+    } catch (error) {
+      console.error('[SubscriptionStore] Error checking Adapty activation:', error);
+      return;
+    }
+
     // Call adapty.identify to associate purchases with a specific user
     try {
       await adapty.identify(userId);
@@ -839,6 +882,18 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     }
   },
   logoutAdaptyUser: async () => {
+    // Check if Adapty is properly initialized
+    try {
+      const isActivated = await adapty.isActivated();
+      if (!isActivated) {
+        console.error('[SubscriptionStore] Adapty not activated, cannot logout user');
+        return;
+      }
+    } catch (error) {
+      console.error('[SubscriptionStore] Error checking Adapty activation:', error);
+      return;
+    }
+
     // Call adapty.logout to disassociate purchases from the current user
     try {
       await adapty.logout();
