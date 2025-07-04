@@ -281,6 +281,7 @@ export default function HomeScreen() {
     handleRivePlay,
     MAX_HEARTS,
   } = useHomeScreen();
+  const fetchingRecentDevotionals = useDevotionalStore((state) => state.fetchingRecentDevotionals);
 
   console.log('📍 useHomeScreen hook called successfully');
 
@@ -293,6 +294,16 @@ export default function HomeScreen() {
   // Add state for recent devotionals
   const [recentDevotionals, setRecentDevotionals] = useState<(Devotional | null)[]>([]);
   console.log('recentDevotionals ==>', recentDevotionals);
+
+  // Get current path from pathStore
+  const currentPath = usePathStore((state) => state.currentPath);
+
+  // Get completed units from pathStore to check if any unit was completed today
+  const completedUnitIds = usePathStore((state) => state.completedUnitIds);
+  const completedMapPaths = useUserStore((state) => state.completedMapPaths);
+
+  // Get isFromCheckIn from devotional store
+  const isFromCheckIn = useDevotionalStore((state) => state.isFromCheckIn);
 
   // Debug effect to track nextUnitPreview changes
   useEffect(() => {
@@ -313,6 +324,22 @@ export default function HomeScreen() {
       paths: completedMapPaths,
     });
   }, [completedMapPaths]);
+
+  // Refresh recent devotionals when isFromCheckIn changes (indicates new custom devotional from check-in)
+  useEffect(() => {
+    if (isFromCheckIn && readingCompleted) {
+      console.log('🔄 isFromCheckIn changed, refreshing recent devotionals');
+      const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
+      fetchRecentDevotionals()
+        .then((devotionals) => {
+          console.log('📚 Refreshed recent devotionals after check-in devotional:', devotionals.map((d) => d?.id));
+          setRecentDevotionals(devotionals.slice(0, 3));
+        })
+        .catch((error) => {
+          console.error('❌ Error refreshing recent devotionals after check-in devotional:', error);
+        });
+    }
+  }, []);
 
   // Refresh data when screen comes into focus
   useFocusEffect(
@@ -342,7 +369,21 @@ export default function HomeScreen() {
             console.error('❌ Error refreshing data on focus:', error);
           });
       }
-    }, [])
+
+      // Also refresh recent devotionals when screen comes into focus
+      // This ensures new custom devotionals are shown when returning to home screen
+      // if (readingCompleted) {
+      //   const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
+      //   fetchRecentDevotionals()
+      //     .then((devotionals) => {
+      //       console.log('📚 Refreshed recent devotionals on focus:', devotionals.map((d) => d?.id));
+      //       setRecentDevotionals(devotionals.slice(0, 3));
+      //     })
+      //     .catch((error) => {
+      //       console.error('❌ Error refreshing recent devotionals on focus:', error);
+      //     });
+      // }
+    }, [readingCompleted])
   );
 
   // Fetch recent devotionals when reading is completed or when all activities are completed
@@ -374,6 +415,22 @@ export default function HomeScreen() {
         });
     }
   }, [prayerCompleted, readingCompleted, reflectionCompleted]);
+
+  // Refresh recent devotionals when customDevotional changes (new custom devotional created)
+  useEffect(() => {
+    if (customDevotional && customDevotional.id) {
+      console.log('🔄 Custom devotional changed, refreshing recent devotionals:', customDevotional.id);
+      const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
+      fetchRecentDevotionals()
+        .then((devotionals) => {
+          console.log('📚 Refreshed recent devotionals after custom devotional change:', devotionals.map((d) => d?.id));
+          setRecentDevotionals(devotionals.slice(0, 3));
+        })
+        .catch((error) => {
+          console.error('❌ Error refreshing recent devotionals after custom devotional change:', error);
+        });
+    }
+  }, [customDevotional?.id]); // Only trigger when the ID changes (new devotional created)
 
   // Check if there are 2 readings from today
   const getCompletedReadings = useUserStore((state) => state.getCompletedReadings);
@@ -461,13 +518,6 @@ export default function HomeScreen() {
   const totalReadingsCount = getCompletedReadings().length;
   const nextUnitSubtitle =
     totalReadingsCount >= 4 ? i18n.t('continue_reading_plan') : i18n.t('start_bible_reading_plan');
-
-  // Get current path from pathStore
-  const currentPath = usePathStore((state) => state.currentPath);
-
-  // Get completed units from pathStore to check if any unit was completed today
-  const completedUnitIds = usePathStore((state) => state.completedUnitIds);
-  const completedMapPaths = useUserStore((state) => state.completedMapPaths);
 
   // Load Rive assets
   const [riveAssets] = useAssets([
@@ -1125,7 +1175,7 @@ export default function HomeScreen() {
                           // Ensure maximum 2 cards
                           const finalDevotionals = devotionalsToShow.slice(0, 3);
 
-                          if (finalDevotionals.length > 0) {
+                          if (finalDevotionals.length > 0 && !fetchingRecentDevotionals) {
                             // If only one devotional, render it directly without CardStack
                             if (finalDevotionals.length === 1) {
                               return (
