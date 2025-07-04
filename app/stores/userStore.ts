@@ -1,5 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import firestore, { Timestamp } from '@react-native-firebase/firestore';
+import firestore, { FirebaseFirestoreTypes, Timestamp } from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
@@ -63,8 +63,8 @@ const initialState: UserDoc = {
   proExpiryDate: Timestamp.now(),
   completedMapPaths: [],
   skins: [],
-  checkIns: {},
-  customDevotionals: {},
+  checkIns: [],
+  customDevotionals: [],
   setNotificationTime: async (_time: string) => {
     // This will be overridden by the actual implementation
     console.warn('setNotificationTime not implemented in initial state');
@@ -538,7 +538,7 @@ export const useUserStore = create<UserStore>()(
         }
       },
 
-      addCheckIn: async (dateKey: string, checkInData: NonNullable<UserDoc['checkIns']>[string]) => {
+      addCheckIn: async (dateKey: string, checkInData: NonNullable<UserDoc['checkIns']>[any]) => {
         console.log('[addCheckIn] Called with dateKey:', dateKey, 'data:', checkInData);
         
         // Update local state first

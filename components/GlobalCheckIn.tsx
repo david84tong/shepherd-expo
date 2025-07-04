@@ -27,6 +27,7 @@ import { useSoundStore } from '~/app/stores/soundStore';
 
 // Import gem icon
 import gemIcon from '../assets/icons/greenGemIcon.png';
+import heartIcon from '../assets/icons/heartIcon.png';
 
 export type GlobalCheckInRef = {
   expand: () => void;
@@ -37,13 +38,13 @@ interface GlobalCheckInProps {
   checkInRef: React.RefObject<GlobalCheckInRef>;
 }
 
-type CheckInScreen = 'mood' | 'focus' | 'struggle' | 'success';
+type CheckInScreen = 'welcome' | 'heart' | 'prayer' | 'blessing';
 
 const { width: screenWidth } = Dimensions.get('window');
 
 const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
-  const [currentScreen, setCurrentScreen] = useState<CheckInScreen>('mood');
+  const [currentScreen, setCurrentScreen] = useState<CheckInScreen>('welcome');
   const [isGenerating, setIsGenerating] = useState(false);
   const [checkInSaved, setCheckInSaved] = useState(false);
 
@@ -69,122 +70,119 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   } = useCheckInStore();
 
   // Local state for UI feedback
-  const [selectedMood, setSelectedMood] = useState<string | null>(null);
-  const [selectedFocus, setSelectedFocus] = useState<string | null>(null);
-  const [selectedStruggle, setSelectedStruggle] = useState<string | null>(null);
+  const [selectedHeart, setSelectedHeart] = useState<string | null>(null);
+  const [selectedPrayer, setSelectedPrayer] = useState<string | null>(null);
   
   // State for gem reward
   const [gemsAwarded, setGemsAwarded] = useState(false);
-  const [showRewardAnimation, setShowRewardAnimation] = useState(false);
+  const [showBlessings, setShowBlessings] = useState(false);
 
   // Animation values for each screen
-  const moodAnim = useRef(new Animated.Value(0)).current;
-  const focusAnim = useRef(new Animated.Value(screenWidth)).current;
-  const struggleAnim = useRef(new Animated.Value(screenWidth)).current;
-  const successAnim = useRef(new Animated.Value(screenWidth)).current;
+  const welcomeAnim = useRef(new Animated.Value(0)).current;
+  const heartAnim = useRef(new Animated.Value(screenWidth)).current;
+  const prayerAnim = useRef(new Animated.Value(screenWidth)).current;
+  const blessingAnim = useRef(new Animated.Value(screenWidth)).current;
   
-  // Animation values for rewards
-  const rewardCardOpacity = useRef(new Animated.Value(0)).current;
-  const rewardCardScale = useRef(new Animated.Value(0.8)).current;
+  // Animation values for blessings
+  const blessingOpacity = useRef(new Animated.Value(0)).current;
+  const blessingScale = useRef(new Animated.Value(0.8)).current;
   const gemTextOpacity = useRef(new Animated.Value(0)).current;
   
-  // Rive ref for chest animation
+  // Animation for mood spiral rotation
+  const spiralRotation = useRef(new Animated.Value(0)).current;
+  
+  // Rive ref for blessing animation
   const riveRef = useRef<RiveRef>(null);
   
   // Load Rive assets
   const [riveAssets] = useAssets([require('../assets/riveAnimations/successLamb.riv')]);
 
   // Dynamic snap points based on current screen
-  const snapPoints = currentScreen === 'success' ? ['65%'] : ['65%'];
+  const snapPoints = currentScreen === 'blessing' ? ['70%'] : ['68%'];
 
   // Complete check-in and save to both stores
   const handleCompleteCheckIn = useCallback(async () => {
-    // Prevent double-saving
     if (checkInSaved) {
       console.log('[GlobalCheckIn] Check-in already saved, skipping...');
       return;
     }
 
-    console.log('handleCompleteCheckIn called with:', {
-      mood: currentMood,
-      focus: currentFocus,
-      struggle: currentStruggle
+    console.log('Completing heart check-in with:', {
+      heart: selectedHeart,
+      prayer: selectedPrayer
     });
 
-    // Complete check-in in checkInStore
+    // Map our new format to the existing store format
+    setMood(selectedHeart || 'peaceful');
+    setFocus(selectedPrayer || 'gratitude');
+    setStruggle(''); // We're not asking about struggles anymore
+
     completeCheckIn();
 
     // Save to userStore for Firestore sync
     const checkInData = {
-      mood: currentMood,
-      focus: currentFocus,
-      struggle: currentStruggle,
+      mood: selectedHeart || 'peaceful',
+      focus: selectedPrayer || 'gratitude',
+      struggle: '',
       completedAt: Timestamp.now()
     };
 
-    // Create unique key using timestamp to prevent overrides
     const now = new Date();
-    const timestamp = now.getTime(); // milliseconds since epoch
-    const dateKey = `${timestamp}`; // Use timestamp as key for uniqueness
+    const timestamp = now.getTime();
+    const dateKey = `${timestamp}`;
 
     console.log('Saving check-in data to userStore with key:', dateKey, checkInData);
-    await addCheckIn(dateKey, checkInData);
+    
+    await addCheckIn(dateKey, checkInData as any);
 
     console.log('Check-in completed and saved to both stores');
     setCheckInSaved(true);
     
-    // Award 20 gems for completing check-in
+    // Award 25 gems for completing check-in
     if (!gemsAwarded) {
       const currentGems = getGens();
-      setGens(currentGems + 20);
+      setGens(currentGems + 25);
       setGemsAwarded(true);
-      setShowRewardAnimation(true);
-      console.log(`Awarded +20 Gems for check-in. New total: ${currentGems + 20}`);
+      setShowBlessings(true);
+      console.log(`Awarded +25 Gems for check-in. New total: ${currentGems + 25}`);
       
       // Log analytics
       analytics.logEvent('checkin_gems_awarded', {
-        gemsAwarded: 20,
-        newGemCount: currentGems + 20,
-        mood: currentMood,
-        focus: currentFocus,
-        struggle: currentStruggle
+        gemsAwarded: 25,
+        newGemCount: currentGems + 25,
+        heart: selectedHeart,
+        prayer: selectedPrayer
       });
     }
-
-    // Verify the check-in was saved
-    const verifyCheckIn = useCheckInStore.getState().getTodaysCheckIn();
-    console.log('[GlobalCheckIn] Verification - Today\'s check-in after save:', verifyCheckIn);
-  }, [currentMood, currentFocus, currentStruggle, completeCheckIn, addCheckIn, checkInSaved, gemsAwarded, getGens, setGens]);
+  }, [selectedHeart, selectedPrayer, completeCheckIn, addCheckIn, checkInSaved, gemsAwarded, getGens, setGens, setMood, setFocus, setStruggle]);
 
   // Handle dismiss
   const handleDismiss = useCallback(() => {
     bottomSheetRef.current?.close();
-    // Reset everything after sheet closes
     setTimeout(() => {
-      setCurrentScreen('mood');
-      setSelectedMood(null);
-      setSelectedFocus(null);
-      setSelectedStruggle(null);
-      clearCurrentSession(); // Clear store session
-      setIsGenerating(false); // Reset generating state
-      setCheckInSaved(false); // Reset saved flag
-      setGemsAwarded(false); // Reset gems awarded flag
-      setShowRewardAnimation(false); // Reset reward animation
+      setCurrentScreen('welcome');
+      setSelectedHeart(null);
+      setSelectedPrayer(null);
+      clearCurrentSession();
+      setIsGenerating(false);
+      setCheckInSaved(false);
+      setGemsAwarded(false);
+      setShowBlessings(false);
       // Reset animations
-      moodAnim.setValue(0);
-      focusAnim.setValue(screenWidth);
-      struggleAnim.setValue(screenWidth);
-      successAnim.setValue(screenWidth);
-      rewardCardOpacity.setValue(0);
-      rewardCardScale.setValue(0.8);
+      welcomeAnim.setValue(0);
+      heartAnim.setValue(screenWidth);
+      prayerAnim.setValue(screenWidth);
+      blessingAnim.setValue(screenWidth);
+      blessingOpacity.setValue(0);
+      blessingScale.setValue(0.8);
       gemTextOpacity.setValue(0);
     }, 300);
     hapticMedium();
-  }, [moodAnim, focusAnim, struggleAnim, successAnim, clearCurrentSession, rewardCardOpacity, rewardCardScale, gemTextOpacity]);
+  }, [welcomeAnim, heartAnim, prayerAnim, blessingAnim, clearCurrentSession, blessingOpacity, blessingScale, gemTextOpacity]);
 
   // Handle custom devotional generation
   const handleGenerateCustomDevotional = useCallback(async () => {
-    console.log('[GlobalCheckIn] handleGenerateCustomDevotional started');
+    console.log('[GlobalCheckIn] Generating custom devotional');
     const currentUser = auth().currentUser;
     if (!currentUser) {
       console.error('No authenticated user available for generating devotional');
@@ -194,30 +192,25 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     setIsGenerating(true);
 
     try {
-      // Get the user's ID token
       const idToken = await currentUser.getIdToken();
 
-      // Create the check-in data
       const checkInData = {
-        mood: currentMood,
-        focus: currentFocus,
-        struggle: currentStruggle
+        mood: selectedHeart || 'peaceful',
+        focus: selectedPrayer || 'gratitude',
+        struggle: '' // No struggles in new flow
       };
 
-      console.log('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
+      console.log('[GlobalCheckIn] Generating with data:', checkInData);
 
-      // Generate the custom devotional
       const customDevotional = await createDevotionalFromCheckIn(checkInData, idToken);
 
-      // Get random background using the proper backgrounds from model
       const backgroundUrls = Object.values(devotionalBackgrounds);
       const randomBackground = backgroundUrls[Math.floor(Math.random() * backgroundUrls.length)];
 
-      // Save the custom devotional to the store
       const fullDevotional: Devotional = {
         id: 'custom-checkin',
         title: customDevotional.title,
-        content: customDevotional.context, // Using context as content
+        content: customDevotional.context,
         createdAt: new Date().toISOString(),
         context: customDevotional.context,
         bibleReference: customDevotional.bibleReference || '',
@@ -231,83 +224,68 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         verse: customDevotional.verse || ''
       };
 
-      console.log('GlobalCheckIn: Full devotional object:', fullDevotional);
-      console.log('GlobalCheckIn: Verse field:', fullDevotional.verse);
-      console.log('GlobalCheckIn: BibleReference field:', fullDevotional.bibleReference);
-
-      // Use the new function to save to Firestore
       await createCustomDevotionalFromCheckIn(fullDevotional);
-
-      // Complete the check-in and save to both stores
-      console.log('[GlobalCheckIn] About to save check-in...');
       await handleCompleteCheckIn();
-      console.log('[GlobalCheckIn] Check-in saved successfully');
 
-      // Log analytics
       analytics.logEvent('checkin_custom_devotional_generated', {
-        mood: currentMood,
-        focus: currentFocus,
-        struggle: currentStruggle
+        heart: selectedHeart,
+        prayer: selectedPrayer
       });
-
-      // Don't navigate here - it's already handled in the button onPress
 
     } catch (error) {
       console.error('Error generating custom devotional:', error);
       setIsGenerating(false);
-      // You might want to show an error toast here
     }
-  }, [currentMood, currentFocus, currentStruggle, setCustomDevotional, handleCompleteCheckIn, handleDismiss, router]);
+  }, [selectedHeart, selectedPrayer, setCustomDevotional, handleCompleteCheckIn, createCustomDevotionalFromCheckIn]);
 
   // Animate screen transitions
   const animateToScreen = useCallback((screen: CheckInScreen) => {
     const animations: Animated.CompositeAnimation[] = [];
 
-    if (screen === 'focus') {
-      // Slide mood out to left, focus in from right
+    if (screen === 'heart') {
       animations.push(
         Animated.parallel([
-          Animated.timing(moodAnim, {
-            toValue: -screenWidth,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(focusAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ])
-      );
-    } else if (screen === 'struggle') {
-      // Slide focus out to left, struggle in from right
-      animations.push(
-        Animated.parallel([
-          Animated.timing(focusAnim, {
-            toValue: -screenWidth,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-          Animated.timing(struggleAnim, {
-            toValue: 0,
-            duration: 300,
-            useNativeDriver: true,
-          }),
-        ])
-      );
-    } else if (screen === 'success') {
-      // Slide struggle out to left, success in from right with easing
-      animations.push(
-        Animated.parallel([
-          Animated.timing(struggleAnim, {
+          Animated.timing(welcomeAnim, {
             toValue: -screenWidth,
             duration: 350,
             useNativeDriver: true,
           }),
-          Animated.spring(successAnim, {
+          Animated.spring(heartAnim, {
             toValue: 0,
-            tension: 60,
-            friction: 10,
+            tension: 50,
+            friction: 8,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    } else if (screen === 'prayer') {
+      animations.push(
+        Animated.parallel([
+          Animated.timing(heartAnim, {
+            toValue: -screenWidth,
+            duration: 350,
+            useNativeDriver: true,
+          }),
+          Animated.spring(prayerAnim, {
+            toValue: 0,
+            tension: 50,
+            friction: 8,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+    } else if (screen === 'blessing') {
+      animations.push(
+        Animated.parallel([
+          Animated.timing(prayerAnim, {
+            toValue: -screenWidth,
+            duration: 350,
+            useNativeDriver: true,
+          }),
+          Animated.spring(blessingAnim, {
+            toValue: 0,
+            tension: 50,
+            friction: 8,
             useNativeDriver: true,
           }),
         ])
@@ -317,19 +295,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     Animated.sequence(animations).start(() => {
       setCurrentScreen(screen);
     });
-  }, [moodAnim, focusAnim, struggleAnim, successAnim]);
-
-  // Update snap points when screen changes
-  useEffect(() => {
-    if (bottomSheetRef.current) {
-      bottomSheetRef.current.snapToIndex(0);
-    }
-  }, []);
+  }, [welcomeAnim, heartAnim, prayerAnim, blessingAnim]);
 
   // Custom backdrop renderer
   const renderBackdrop = useCallback(
     (props: BottomSheetBackdropProps) => (
-      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
+      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.6} />
     ),
     []
   );
@@ -340,470 +311,550 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     () => ({
       expand: () => {
         bottomSheetRef.current?.expand();
-        // Reset to initial state when opening
-        setCurrentScreen('mood');
-        setSelectedMood(null);
-        setSelectedFocus(null);
-        setSelectedStruggle(null);
-        clearCurrentSession(); // Clear store session
-        setCheckInSaved(false); // Reset saved flag
-        setIsGenerating(false); // Reset generating state
-        setGemsAwarded(false); // Reset gems awarded flag
-        setShowRewardAnimation(false); // Reset reward animation
-        moodAnim.setValue(0);
-        focusAnim.setValue(screenWidth);
-        struggleAnim.setValue(screenWidth);
-        successAnim.setValue(screenWidth);
-        rewardCardOpacity.setValue(0);
-        rewardCardScale.setValue(0.8);
+        setCurrentScreen('welcome');
+        setSelectedHeart(null);
+        setSelectedPrayer(null);
+        clearCurrentSession();
+        setCheckInSaved(false);
+        setIsGenerating(false);
+        setGemsAwarded(false);
+        setShowBlessings(false);
+        welcomeAnim.setValue(0);
+        heartAnim.setValue(screenWidth);
+        prayerAnim.setValue(screenWidth);
+        blessingAnim.setValue(screenWidth);
+        blessingOpacity.setValue(0);
+        blessingScale.setValue(0.8);
         gemTextOpacity.setValue(0);
 
-        // Log analytics for check-in shown
         analytics.logEvent('checkin_sheet_shown', {
-          trigger: 'one_hour_reminder',
-          hasBeenOneHour: useCheckInStore.getState().hasBeenOneHourSinceLastCheckIn(),
+          trigger: 'heart_check_in',
         });
       },
       close: () => bottomSheetRef.current?.close(),
     }),
-    [moodAnim, focusAnim, struggleAnim, successAnim, clearCurrentSession]
+    [welcomeAnim, heartAnim, prayerAnim, blessingAnim, clearCurrentSession]
   );
 
-  // Mood options with corresponding lamb images
-  const moods = [
-    { emoji: '😊', label: 'Great', value: 'Great', image: require('../assets/icons/moods/greatLamb.png') },
-    { emoji: '😔', label: 'Good', value: 'good', image: require('../assets/icons/moods/goodLamb.png') },
-    { emoji: '😌', label: 'Meh', value: 'meb', image: require('../assets/icons/moods/sheepIcon.png') },
-    { emoji: '😤', label: 'Bad', value: 'bad', image: require('../assets/icons/moods/sadLamb.png') },
-    { emoji: '😴', label: 'Very Bad', value: 'veryBad', image: require('../assets/icons/moods/reallyBadLamb.png') },
-    { emoji: '🤗', label: 'Angry', value: 'angry', image: require('../assets/icons/moods/angryLamb.png') },
+  // Heart conditions - more gospel-focused
+  const heartConditions = [
+    { 
+      value: 'grateful', 
+      label: 'Grateful', 
+      verse: 'Ps 100:4',
+      icon: '🙏',
+      color: '#24CA17',
+      bgColor: 'bg-green-50',
+      description: 'My heart overflows with thankfulness'
+    },
+    { 
+      value: 'peaceful', 
+      label: 'Peaceful', 
+      verse: 'Phil 4:7',
+      icon: '🕊️',
+      color: '#2196F3',
+      bgColor: 'bg-blue-50',
+      description: 'His peace guards my heart and mind'
+    },
+    { 
+      value: 'hopeful', 
+      label: 'Hopeful', 
+      verse: 'Rom 15:13',
+      icon: '🌅',
+      color: '#F7B500',
+      bgColor: 'bg-yellow-50',
+      description: 'My hope is anchored in His promises'
+    },
+    { 
+      value: 'seeking', 
+      label: 'Seeking', 
+      verse: 'Jer 29:13',
+      icon: '🔍',
+      color: '#7B2BFF',
+      bgColor: 'bg-purple-50',
+      description: 'I am searching for His presence'
+    },
+    { 
+      value: 'weary', 
+      label: 'Weary', 
+      verse: 'Matt 11:28',
+      icon: '😌',
+      color: '#E6319E',
+      bgColor: 'bg-pink-50',
+      description: 'I need His rest and renewal'
+    },
+    { 
+      value: 'joyful', 
+      label: 'Joyful', 
+      verse: 'Neh 8:10',
+      icon: '✨',
+      color: '#17CABC',
+      bgColor: 'bg-teal-50',
+      description: 'His joy is my strength today'
+    },
   ];
 
-  // Focus areas with colors matching the style
-  const focusAreas = [
-    { icon: 'leaf', iconType: 'ionicon', label: 'Peace', value: 'peace', color: '#24CA17', bgColor: 'bg-lightGreen' },
-    { icon: 'hands-praying', iconType: 'fontawesome6', label: 'Gratitude', value: 'gratitude', color: '#E64132', bgColor: 'bg-lightRed' },
-    { icon: 'flower', iconType: 'ionicon', label: 'Humility', value: 'humility', color: '#7B2BFF', bgColor: 'bg-lightPurple' },
-    { icon: 'hand-holding-heart', iconType: 'fontawesome6', label: 'Compassion', value: 'compassion', color: '#E6319E', bgColor: 'bg-lightPink' },
-    { icon: 'shield', iconType: 'ionicon', label: 'Courage', value: 'courage', color: '#2196F3', bgColor: 'bg-lightBlue' },
-    { icon: 'sunny', iconType: 'ionicon', label: 'Peace', value: 'peace2', color: '#F7B500', bgColor: 'bg-lightYellow' },
-    { icon: 'star', iconType: 'ionicon', label: 'Faith', value: 'faith', color: '#17CABC', bgColor: 'bg-lightTeal' },
-    { icon: 'time', iconType: 'ionicon', label: 'Patience', value: 'patience', color: '#F7B500', bgColor: 'bg-lightYellow' },
+  // Prayer focus - simplified and more meaningful
+  const prayerFocus = [
+    { 
+      value: 'worship', 
+      label: 'Worship', 
+      verse: 'Ps 95:6',
+      icon: 'musical-notes',
+      color: '#7B2BFF',
+      description: 'I want to praise Him with my whole heart'
+    },
+    { 
+      value: 'gratitude', 
+      label: 'Gratitude', 
+      verse: '1 Thess 5:18',
+      icon: 'heart',
+      color: '#E64132',
+      description: 'I want to thank Him for His goodness'
+    },
+    { 
+      value: 'guidance', 
+      label: 'Guidance', 
+      verse: 'Prov 3:6',
+      icon: 'compass',
+      color: '#2196F3',
+      description: 'I need His wisdom for my path'
+    },
+    { 
+      value: 'healing', 
+      label: 'Healing', 
+      verse: 'Ps 147:3',
+      icon: 'medical',
+      color: '#24CA17',
+      description: 'I trust in His healing power'
+    },
+    { 
+      value: 'provision', 
+      label: 'Provision', 
+      verse: 'Phil 4:19',
+      icon: 'gift',
+      color: '#F7B500',
+      description: 'He will supply all my needs'
+    },
+    { 
+      value: 'others', 
+      label: 'Others', 
+      verse: '1 Tim 2:1',
+      icon: 'people',
+      color: '#17CABC',
+      description: 'I want to lift up those around me'
+    },
   ];
 
-  // Struggle areas with appropriate icons and colors
-  const struggleAreas = [
-    { icon: 'eye', iconType: 'ionicon', label: 'Lust', value: 'lust', color: '#E64132', bgColor: 'bg-lightRed' },
-    { icon: 'face-angry', iconType: 'fontawesome6', label: 'Envy', value: 'envy', color: '#E64132', bgColor: 'bg-lightRed' },
-    { icon: 'flash', iconType: 'ionicon', label: 'Anger', value: 'anger', color: '#C81E28', bgColor: 'bg-lightCrimson' },
-    { icon: 'cash', iconType: 'ionicon', label: 'Greed', value: 'greed', color: '#24CA17', bgColor: 'bg-lightGreen' },
-    { icon: 'bed', iconType: 'ionicon', label: 'Laziness', value: 'laziness', color: '#7B2BFF', bgColor: 'bg-lightPurple' },
-    { icon: 'trophy', iconType: 'ionicon', label: 'Pride', value: 'pride', color: '#FF8C1A', bgColor: 'bg-lightOrange' },
-    { icon: 'glasses', iconType: 'ionicon', label: 'Vanity', value: 'vanity', color: '#E6319E', bgColor: 'bg-lightPink' },
-    { icon: 'hourglass', iconType: 'ionicon', label: 'Impatience', value: 'impatience', color: '#18B2B6', bgColor: 'bg-lightCyan' },
-    { icon: 'restaurant', iconType: 'ionicon', label: 'Gluttony', value: 'gluttony', color: '#2196F3', bgColor: 'bg-lightBlue' },
-  ];
+  // Start spiral rotation animation on component mount
+  useEffect(() => {
+    const spinSpiral = () => {
+      spiralRotation.setValue(0);
+      Animated.timing(spiralRotation, {
+        toValue: 1,
+        duration: 15000, // 15 seconds for full rotation
+        useNativeDriver: true,
+      }).start(() => spinSpiral()); // Loop infinitely
+    };
+    
+    spinSpiral();
+  }, []);
 
-  const renderMoodScreen = () => (
+  // Mood spiral component
+  const MoodSpiral = () => {
+    // Vrais émojis d'humeur quotidienne pour le check-in
+    const moodEmojis = ['😊', '😔', '😰', '😌', '😤', '🤗', '😴', '🥰'];
+    
+    const rotation = spiralRotation.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0deg', '360deg'],
+    });
+
+    return (
+      <View className="w-40 h-40 items-center justify-center">
+        {/* Outer ring */}
+        <Animated.View
+          style={{
+            position: 'absolute',
+            width: 160,
+            height: 160,
+            transform: [{ rotate: rotation }],
+          }}
+        >
+          {moodEmojis.map((emoji, index) => {
+            const angle = (index * 360) / moodEmojis.length;
+            const radius = 65;
+            const x = Math.cos((angle * Math.PI) / 180) * radius;
+            const y = Math.sin((angle * Math.PI) / 180) * radius;
+            
+            return (
+              <View
+                key={index}
+                style={{
+                  position: 'absolute',
+                  left: 80 + x - 15,
+                  top: 80 + y - 15,
+                  width: 30,
+                  height: 30,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Text style={{ fontSize: 20 }}>{emoji}</Text>
+              </View>
+            );
+          })}
+        </Animated.View>
+        
+        {/* Center heart */}
+        <View className="w-20 h-20 bg-gradient-to-br from-rose-100 to-pink-100 rounded-full items-center justify-center shadow-lg border-2 border-pink-200">
+          <Image 
+            source={heartIcon} 
+            className="w-10 h-10"
+            style={{ tintColor: '#E91E63' }}
+          />
+        </View>
+        
+        {/* Inner glow effect */}
+        <View className="absolute w-32 h-32 bg-gradient-to-br from-yellow-100/30 to-orange-100/30 rounded-full" />
+      </View>
+    );
+  };
+
+
+  const renderWelcomeScreen = () => (
     <Animated.View
       style={{
         flex: 1,
         alignItems: 'center',
-        paddingHorizontal: 20,
-        transform: [{ translateX: moodAnim }],
+        justifyContent: 'center',
+        paddingHorizontal: 24,
+        transform: [{ translateX: welcomeAnim }],
       }}>
-      <Text className="font-feather text-heading text-textPrimary mb-8">How are you feeling right now?</Text>
-      <View className="flex-row flex-wrap justify-center gap-8 mb-6 ">
-        {moods.map((mood) => (
-          <Pressable
-            key={mood.value}
-            onPress={() => {
-              setSelectedMood(mood.value);
-              setMood(mood.value); // Save to store
-              hapticMedium();
-              analytics.logEvent('checkin_mood_selected', { mood: mood.value });
-              // Automatically move to focus screen after selecting mood
-              setTimeout(() => {
-                animateToScreen('focus');
-              }, 200); // Slightly longer delay for better visual feedback
-            }}
-
-            className={`w-28 h-32 rounded-2xl border-2 items-center justify-center shadow-buttonShadow bg-surfaceCreamLight ${selectedMood === mood.value
-              ? 'border-orange'
-              : 'border-accentGold'
-              }`}>
-            <Image
-              source={mood.image}
-              style={{ width: 90, height: 90, marginBottom: -8, marginTop: -12 }}
-              resizeMode="contain"
-            />
-            <Text className="font-din text-small text-textPrimary">{mood.label}</Text>
-          </Pressable>
-        ))}
+      
+      {/* Mood Spiral Animation */}
+      <View className="mb-8">
+        <MoodSpiral />
+        
       </View>
-    </Animated.View>
-  );
 
-  const renderFocusScreen = () => (
-    <Animated.View
-      style={{
-        flex: 1,
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        transform: [{ translateX: focusAnim }],
-      }}>
-      <Text className="font-feather text-heading text-textPrimary mb-6">What would you like to focus on?</Text>
-      <View className="flex-row flex-wrap justify-center gap-3">
-        {focusAreas.map((focus) => (
-          <Pressable
-            key={focus.value}
-            onPress={() => {
-              setSelectedFocus(focus.value);
-              setFocus(focus.value); // Save to store
-              hapticMedium();
-              analytics.logEvent('checkin_focus_selected', { focus: focus.value });
-              // Automatically move to struggle screen after selecting focus
-              setTimeout(() => {
-                animateToScreen('struggle');
-              }, 100);
-            }}
-            className={`w-[30%] h-28  rounded-2xl border-2 items-center justify-center ${selectedFocus === focus.value
-              ? 'bg-surfaceCreamLight border-orange'
-              : 'bg-surfaceCreamLight border-accentGold'
-              }`}>
-            <View className={`${focus.bgColor} rounded-xl p-3 mb-2`}>
-              {focus.iconType === 'fontawesome6' ? (
-                <FontAwesome6
-                  name={focus.icon as any}
-                  size={RPH(2.6)}
-                  color={focus.color}
-                />
-              ) : (
-                <Ionicons
-                  name={focus.icon as any}
-                  size={RPH(2.6)}
-                  color={focus.color}
-                />
-              )}
-            </View>
-            <Text className="font-din text-sm text-textPrimary">{focus.label}</Text>
-          </Pressable>
-        ))}
+      {/* Welcome message */}
+      <Text className="font-feather text-2xl text-textPrimary text-center mb-4">
+        Welcome to your Heart Check-in
+      </Text>
+      
+      <Text className="font-din text-base text-gray-600 text-center mb-8 leading-relaxed px-4">
+        Let's pause for a moment to connect with the Shepherd. 
+        How is your heart today?
+      </Text>
+      
+      <View className="w-full px-4">
+        <PrimaryButton
+          title="Begin"
+          onPress={() => {
+            hapticMedium();
+            animateToScreen('heart');
+            analytics.logEvent('checkin_welcome_begin');
+          }}
+          style="w-full"
+          buttonType="gold"
+        />
       </View>
-      <Pressable
-        onPress={() => {
-          skipFocus(); // Save empty string to store
-          hapticMedium();
-          analytics.logEvent('checkin_focus_skipped');
-          // Skip focus screen and go to struggle
-          setTimeout(() => {
-            animateToScreen('struggle');
-          }, 100);
-        }}
-        className="mt-4 mb-4">
-        <Text className="font-din text-base text-gray-500 underline">Skip</Text>
+      
+      <Pressable onPress={handleDismiss} className="mt-6">
+        <Text className="font-din text-sm text-gray-500">Maybe later</Text>
       </Pressable>
     </Animated.View>
   );
 
-  const renderStruggleScreen = () => (
+  const renderHeartScreen = () => (
     <Animated.View
       style={{
         flex: 1,
         alignItems: 'center',
         paddingHorizontal: 20,
-        transform: [{ translateX: struggleAnim }],
+        paddingTop: 16,
+        transform: [{ translateX: heartAnim }],
       }}>
-      <Text className="font-feather text-heading text-textPrimary mb-6">What are you struggling with?</Text>
+      
+      <Text className="font-feather text-xl text-textPrimary mb-2 text-center">
+        How is your heart today?
+      </Text>
+      
+      <Text className="font-din text-sm text-gray-600 mb-6 text-center">
+        Choose what resonates with your spirit right now
+      </Text>
+      
       <View className="flex-row flex-wrap justify-center gap-3 mb-6">
-        {struggleAreas.map((struggle) => (
+        {heartConditions.map((heart) => (
           <Pressable
-            key={struggle.value}
+            key={heart.value}
             onPress={() => {
-              setSelectedStruggle(struggle.value);
-              setStruggle(struggle.value); // Save to store
+              setSelectedHeart(heart.value);
               hapticMedium();
-              analytics.logEvent('checkin_struggle_selected', { struggle: struggle.value });
+              analytics.logEvent('checkin_heart_selected', { heart: heart.value });
+              setTimeout(() => {
+                animateToScreen('prayer');
+              }, 150);
+            }}
+            className={`w-[45%] rounded-2xl border-2 p-4 items-center ${
+              selectedHeart === heart.value
+                ? 'bg-white border-orange shadow-lg'
+                : 'bg-white border-gray-200 shadow-sm'
+            }`}>
+            
+            <View className={`${heart.bgColor} rounded-full w-12 h-12 items-center justify-center mb-3`}>
+              <Text className="text-2xl">{heart.icon}</Text>
+            </View>
+            
+            <Text className="font-feather text-base text-textPrimary mb-1">
+              {heart.label}
+            </Text>
+            
+            <Text className="font-din text-xs text-gray-500 text-center">
+              {heart.verse}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </Animated.View>
+  );
 
-              // Save the check-in immediately after selecting struggle
+  const renderPrayerScreen = () => (
+    <Animated.View
+      style={{
+        flex: 1,
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingTop: 16,
+        transform: [{ translateX: prayerAnim }],
+      }}>
+      
+      <Text className="font-feather text-xl text-textPrimary mb-2 text-center">
+        What's on your heart to pray about?
+      </Text>
+      
+      <Text className="font-din text-sm text-gray-600 mb-6 text-center">
+        Let's bring this before the Lord together
+      </Text>
+      
+      <View className="flex-row flex-wrap justify-center gap-3 mb-6">
+        {prayerFocus.map((prayer) => (
+          <Pressable
+            key={prayer.value}
+            onPress={() => {
+              setSelectedPrayer(prayer.value);
+              hapticMedium();
+              analytics.logEvent('checkin_prayer_selected', { prayer: prayer.value });
               setTimeout(async () => {
                 await handleCompleteCheckIn();
-                animateToScreen('success');
-              }, 100);
+                animateToScreen('blessing');
+              }, 150);
             }}
-            className={`w-[30%] h-28 rounded-2xl border-2 items-center justify-center ${selectedStruggle === struggle.value
-              ? 'bg-surfaceCreamLight border-orange'
-              : 'bg-surfaceCreamLight border-accentGold'
-              }`}>
-            <View className={`${struggle.bgColor} rounded-xl p-3 mb-2`}>
-              {struggle.iconType === 'fontawesome6' ? (
-                <FontAwesome6
-                  name={struggle.icon as any}
-                  size={RPH(2.6)}
-                  color={struggle.color}
-                />
-              ) : (
-                <Ionicons
-                  name={struggle.icon as any}
-                  size={RPH(2.6)}
-                  color={struggle.color}
-                />
-              )}
+            className={`w-[45%] rounded-2xl border-2 p-4 items-center ${
+              selectedPrayer === prayer.value
+                ? 'bg-white border-orange shadow-lg'
+                : 'bg-white border-gray-200 shadow-sm'
+            }`}>
+            
+            <View className="bg-blue-50 rounded-full w-12 h-12 items-center justify-center mb-3">
+              <Ionicons name={prayer.icon as any} size={24} color={prayer.color} />
             </View>
-            <Text className="font-din text-sm text-textPrimary">{struggle.label}</Text>
+            
+            <Text className="font-feather text-base text-textPrimary mb-1">
+              {prayer.label}
+            </Text>
+            
+            <Text className="font-din text-xs text-gray-500 text-center">
+              {prayer.verse}
+            </Text>
           </Pressable>
         ))}
       </View>
-      <Pressable
-        onPress={() => {
-          skipStruggle(); // Save empty string to store
-          hapticMedium();
-          analytics.logEvent('checkin_struggle_skipped');
-
-          // Save the check-in immediately after skipping struggle
-          setTimeout(async () => {
-            await handleCompleteCheckIn();
-            animateToScreen('success');
-          }, 100);
-        }}
-        className="mt-4 mb-4">
-        <Text className="font-din text-base text-gray-500 underline">Skip</Text>
-      </Pressable>
     </Animated.View>
   );
 
-  // Trigger animations when success screen is shown
+  // Trigger animations when blessing screen is shown
   useEffect(() => {
-    if (currentScreen === 'success' && showRewardAnimation) {
-      // Reset animation values
-      rewardCardOpacity.setValue(0);
-      rewardCardScale.setValue(0.8);
+    if (currentScreen === 'blessing' && showBlessings) {
+      blessingOpacity.setValue(0);
+      blessingScale.setValue(0.8);
       gemTextOpacity.setValue(0);
       
-      // Play chest opening sound
       playChestOpeningSound?.();
       
-      // Start Rive animation
       setTimeout(() => {
         if (riveRef.current) {
           riveRef.current.play();
         }
       }, 100);
       
-      // Animate reward card with bounce effect
       setTimeout(() => {
         Animated.parallel([
-          Animated.timing(rewardCardOpacity, {
+          Animated.timing(blessingOpacity, {
             toValue: 1,
-            duration: 500,
+            duration: 600,
             useNativeDriver: true,
           }),
-          Animated.spring(rewardCardScale, {
+          Animated.spring(blessingScale, {
             toValue: 1,
             tension: 40,
             friction: 6,
             useNativeDriver: true,
           }),
         ]).start(() => {
-          // Animate gem text after card appears
           Animated.sequence([
-            Animated.delay(100),
+            Animated.delay(200),
             Animated.timing(gemTextOpacity, {
               toValue: 1,
-              duration: 400,
+              duration: 500,
               useNativeDriver: true,
             })
           ]).start();
         });
-      }, 600);
+      }, 800);
     }
-  }, [currentScreen, showRewardAnimation]);
+  }, [currentScreen, showBlessings]);
 
-  const renderSuccessScreen = () => (
-      <Animated.View
-        style={{
-          flex: 1,
-          paddingHorizontal: 20,
-          transform: [{ translateX: successAnim }],
-        }}>
-        {/* Top spacing */}
-        
-        {/* Chest Animation - Much larger and prominent */}
-        {showRewardAnimation && riveAssets ? (
-          <View className="w-full items-center justify-center" style={{ height: RPH(20) }}>
-            {IS_ANDROID ? (
-              <Rive
-                ref={riveRef}
-                resourceName={'success_lamb'}
-                artboardName="chest"
-                autoplay={true}
-                style={{ width: '200%', height: '200%' }}
-              />
-            ) : (
-              <Rive
-                ref={riveRef}
-                url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
-                artboardName="chest"
-                autoplay={true}
-                style={{ width: '200%', height: '200%' }}
-              />
-            )}
+  const renderBlessingScreen = () => (
+    <Animated.View
+      style={{
+        flex: 1,
+        paddingHorizontal: 20,
+        paddingTop: 8,
+        transform: [{ translateX: blessingAnim }],
+      }}>
+      
+      {/* Blessing Animation */}
+      {showBlessings && riveAssets ? (
+        <View className="w-full items-center justify-center" style={{ height: RPH(18) }}>
+          {IS_ANDROID ? (
+            <Rive
+              ref={riveRef}
+              resourceName={'success_lamb'}
+              artboardName="chest"
+              autoplay={true}
+              style={{ width: '180%', height: '180%' }}
+            />
+          ) : (
+            <Rive
+              ref={riveRef}
+              url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
+              artboardName="chest"
+              autoplay={true}
+              style={{ width: '180%', height: '180%' }}
+            />
+          )}
+        </View>
+      ) : (
+        <View className="items-center justify-center" style={{ height: RPH(18) }}>
+          <View className="bg-gradient-to-br from-yellow-100 to-orange-100 rounded-full w-32 h-32 items-center justify-center shadow-lg">
+            <Text className="text-6xl">🙏</Text>
           </View>
-        ) : (
-          <View className="items-center justify-center" style={{ height: RPH(35) }}>
-            <View className="bg-green-100 rounded-full w-40 h-40 items-center justify-center">
-              <Ionicons name="checkmark-circle" size={100} color="#10B981" />
-            </View>
-          </View>
-        )}
-        
-        {/* Spacing between chest and title */}
-        <View style={{ height: RPH(1) }} />
-        
-        {/* Title */}
-        <Text className="font-feather text-h1 text-textPrimary text-center">Check-in Complete!</Text>
-        
-        {/* Spacing between title and reward card */}
-        <View style={{ height: RPH(3) }} />
-        
-        {/* Reward Card - More prominent */}
-        {showRewardAnimation && (
-          <View className="items-center">
-            <Animated.View
-              className="bg-white rounded-[20px] px-8 py-5 border-2 border-border"
-              style={{
-                opacity: rewardCardOpacity,
-                transform: [{ scale: rewardCardScale }],
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.15,
-                shadowRadius: 8,
-                elevation: 5,
-                minWidth: '70%',
-              }}>
-              <Text className="text-sm font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
-                CHECK-IN REWARDS
-              </Text>
-              <Animated.View 
-                className="flex-row items-center justify-center"
-                style={{ opacity: gemTextOpacity }}>
-                <Image source={gemIcon} className="w-8 h-8 mr-3" />
-                <Text className="font-din text-textPrimary text-2xl font-semibold">+20 Gems</Text>
-              </Animated.View>
+        </View>
+      )}
+      
+      <Text className="font-feather text-2xl text-textPrimary text-center mb-4">
+        Blessed Are You
+      </Text>
+      
+      <Text className="font-din text-base text-gray-600 text-center mb-6 leading-relaxed px-2">
+        The Lord sees your heart and delights in your desire to seek Him.
+      </Text>
+      
+      {/* Blessing Card */}
+      {showBlessings && (
+        <View className="items-center mb-6">
+          <Animated.View
+            className="bg-white rounded-3xl px-6 py-5 border border-gray-100"
+            style={{
+              opacity: blessingOpacity,
+              transform: [{ scale: blessingScale }],
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.1,
+              shadowRadius: 16,
+              elevation: 8,
+              minWidth: '80%',
+            }}>
+            <Text className="text-xs font-din text-amber-600 text-center uppercase mb-3 tracking-widest">
+              BLESSING RECEIVED
+            </Text>
+            <Animated.View 
+              className="flex-row items-center justify-center"
+              style={{ opacity: gemTextOpacity }}>
+              <Image source={gemIcon} className="w-8 h-8 mr-3" />
+              <Text className="font-feather text-textPrimary text-xl">+25 Gems</Text>
             </Animated.View>
-          </View>
-        )}
-        
-        {/* Spacing between reward card and description */}
-        
-        {/* Description text */}
-        {/* <Text className="font-din text-lg text-gray-600 text-center px-4 leading-relaxed">
-          You're all set for today.{' '}
-          {selectedFocus && `May God guide you in your focus on ${focusAreas.find((f) => f.value === selectedFocus)?.label.toLowerCase()}.`}
-        </Text> */}
-        
-        {/* Flexible spacer to push button to bottom */}
-        {/* <View style={{ flex: 1 }} /> */}
-        
-        {/* Button container with proper spacing */}
-        <View className="w-full pb-8 mt-8">
+          </Animated.View>
+        </View>
+      )}
+      
+      {/* Action Buttons */}
+      <View className="w-full space-y-3">
         <PrimaryButton
-          title={(currentFocus !== '' || currentStruggle !== '') ? "Generate Custom Devotional" : "Start Today's Devotional"}
+          title={selectedPrayer ? "Receive Personal Word" : "Continue in His Presence"}
           onPress={async () => {
-            if (currentFocus !== '' || currentStruggle !== '') {
-              // Log the current check-in state
-              const checkInState = useCheckInStore.getState();
-              console.log('[GlobalCheckIn] Before navigation - check-in state:', {
-                todaysCheckIn: checkInState.getTodaysCheckIn(),
-                hasCompletedToday: checkInState.hasCompletedTodaysCheckIn(),
-                lastCheckInTime: checkInState.lastCheckInTime,
-                hasBeenOneHour: checkInState.hasBeenOneHourSinceLastCheckIn()
-              });
-
-              // Set check-in flag
+            if (selectedPrayer) {
               setIsFromCheckIn(true);
-
-              // Set navigation flag to prevent check-in from showing during navigation
               const { setIsNavigating } = useCheckInStore.getState();
               setIsNavigating(true);
-
-              // Close the sheet directly without handleDismiss to prevent reappearing
+              
               bottomSheetRef.current?.close();
-
-              // Navigate after sheet closes
+              
               setTimeout(() => {
                 router.push('/devotionalLoading' as any);
-
-                // Reset navigation flag after a delay
+                setTimeout(() => setIsNavigating(false), 3000);
+                
                 setTimeout(() => {
-                  setIsNavigating(false);
-                }, 3000); // 3 seconds should be enough for navigation to complete
-
-                // Reset state after navigation
-                setTimeout(() => {
-                  setCurrentScreen('mood');
-                  setSelectedMood(null);
-                  setSelectedFocus(null);
-                  setSelectedStruggle(null);
+                  setCurrentScreen('welcome');
+                  setSelectedHeart(null);
+                  setSelectedPrayer(null);
                   clearCurrentSession();
                   setIsGenerating(false);
                   setCheckInSaved(false);
                   setGemsAwarded(false);
-                  setShowRewardAnimation(false);
-                  // Reset animations
-                  moodAnim.setValue(0);
-                  focusAnim.setValue(screenWidth);
-                  struggleAnim.setValue(screenWidth);
-                  successAnim.setValue(screenWidth);
-                  rewardCardOpacity.setValue(0);
-                  rewardCardScale.setValue(0.8);
+                  setShowBlessings(false);
+                  welcomeAnim.setValue(0);
+                  heartAnim.setValue(screenWidth);
+                  prayerAnim.setValue(screenWidth);
+                  blessingAnim.setValue(screenWidth);
+                  blessingOpacity.setValue(0);
+                  blessingScale.setValue(0.8);
                   gemTextOpacity.setValue(0);
                 }, 100);
               }, 300);
-
-              // Generate custom devotional in background (check-in already saved)
+              
               handleGenerateCustomDevotional();
             } else {
-              // Check-in already saved, just log analytics
               analytics.logEvent('checkin_completed', {
-                mood: currentMood,
-                focus: currentFocus,
-                struggle: currentStruggle
+                heart: selectedHeart,
+                prayer: selectedPrayer
               });
-
-              // Set navigation flag to prevent check-in from showing during navigation
+              
               const { setIsNavigating } = useCheckInStore.getState();
               setIsNavigating(true);
-
-              // Close the sheet directly without handleDismiss to prevent reappearing
+              
               bottomSheetRef.current?.close();
-
-              // Navigate after sheet closes
+              
               setTimeout(() => {
                 router.push('/(tabs)');
-
-                // Reset navigation flag after a delay
+                setTimeout(() => setIsNavigating(false), 2000);
+                
                 setTimeout(() => {
-                  setIsNavigating(false);
-                }, 2000); // 2 seconds for home navigation
-
-                // Reset state after navigation
-                setTimeout(() => {
-                  setCurrentScreen('mood');
-                  setSelectedMood(null);
-                  setSelectedFocus(null);
-                  setSelectedStruggle(null);
+                  setCurrentScreen('welcome');
+                  setSelectedHeart(null);
+                  setSelectedPrayer(null);
                   clearCurrentSession();
                   setIsGenerating(false);
                   setGemsAwarded(false);
-                  setShowRewardAnimation(false);
-                  // Reset animations
-                  moodAnim.setValue(0);
-                  focusAnim.setValue(screenWidth);
-                  struggleAnim.setValue(screenWidth);
-                  successAnim.setValue(screenWidth);
-                  rewardCardOpacity.setValue(0);
-                  rewardCardScale.setValue(0.8);
+                  setShowBlessings(false);
+                  welcomeAnim.setValue(0);
+                  heartAnim.setValue(screenWidth);
+                  prayerAnim.setValue(screenWidth);
+                  blessingAnim.setValue(screenWidth);
+                  blessingOpacity.setValue(0);
+                  blessingScale.setValue(0.8);
                   gemTextOpacity.setValue(0);
                 }, 100);
               }, 300);
@@ -813,96 +864,63 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           buttonType="gold"
           disabled={isGenerating}
         />
+        
         {isGenerating && (
-          <Text className="font-din text-sm text-gray-500 text-center mt-3">
-            Generating your personalized devotional...
+          <Text className="font-din text-sm text-gray-500 text-center">
+            Preparing your personal word from the Lord...
           </Text>
         )}
+        
         {!readingCompleted && (
           <Pressable
             onPress={async () => {
               hapticMedium();
-              analytics.logEvent('checkin_start_worldwide_devotional_tapped', {
-                mood: currentMood,
-                focus: currentFocus,
-                struggle: currentStruggle
+              analytics.logEvent('checkin_start_daily_devotional', {
+                heart: selectedHeart,
+                prayer: selectedPrayer
               });
-
-              // Log the check-in completion
-              console.log('Starting worldwide devotional check-in completion...');
-
-              // Check-in already saved when struggle was selected/skipped
-
-              // Verify the check-in was saved
-              const checkInState = useCheckInStore.getState();
-              console.log('Check-in state after completion:', {
-                lastCheckInTime: checkInState.lastCheckInTime,
-                hasBeenOneHour: checkInState.hasBeenOneHourSinceLastCheckIn()
-              });
-
-              // Log analytics
-              analytics.logEvent('checkin_completed', {
-                mood: currentMood,
-                focus: currentFocus,
-                struggle: currentStruggle,
-                source: 'start_worldwide_devotional'
-              });
-
-              // Set navigation flag to prevent check-in from showing during navigation
+              
               const { setIsNavigating } = useCheckInStore.getState();
               setIsNavigating(true);
-
-              // Close the sheet first
+              
               bottomSheetRef.current?.close();
-
-              // Wait a bit for sheet to start closing, then trigger devotional
+              
               setTimeout(() => {
-                // Trigger the daily bread devotional
                 const triggerDailyBread = (global as any).triggerDailyBread;
                 if (triggerDailyBread && typeof triggerDailyBread === 'function') {
-                  console.log('Triggering daily bread from check-in...');
                   triggerDailyBread();
-                } else {
-                  console.error('triggerDailyBread function not found on global');
                 }
-
-                // Reset navigation flag after a delay
+                
+                setTimeout(() => setIsNavigating(false), 2000);
+                
                 setTimeout(() => {
-                  setIsNavigating(false);
-                }, 2000);
-
-                // Reset check-in state after triggering devotional
-                setTimeout(() => {
-                  setCurrentScreen('mood');
-                  setSelectedMood(null);
-                  setSelectedFocus(null);
-                  setSelectedStruggle(null);
+                  setCurrentScreen('welcome');
+                  setSelectedHeart(null);
+                  setSelectedPrayer(null);
                   clearCurrentSession();
                   setIsGenerating(false);
                   setCheckInSaved(false);
                   setGemsAwarded(false);
-                  setShowRewardAnimation(false);
-                  // Reset animations
-                  moodAnim.setValue(0);
-                  focusAnim.setValue(screenWidth);
-                  struggleAnim.setValue(screenWidth);
-                  successAnim.setValue(screenWidth);
-                  rewardCardOpacity.setValue(0);
-                  rewardCardScale.setValue(0.8);
+                  setShowBlessings(false);
+                  welcomeAnim.setValue(0);
+                  heartAnim.setValue(screenWidth);
+                  prayerAnim.setValue(screenWidth);
+                  blessingAnim.setValue(screenWidth);
+                  blessingOpacity.setValue(0);
+                  blessingScale.setValue(0.8);
                   gemTextOpacity.setValue(0);
                 }, 300);
-
-              }, 300); // Reduced wait time for better UX
+              }, 300);
             }}
-            className="mt-4"
+            className="mt-3 py-3"
           >
-            <Text className="font-din text-base text-gray-500 underline text-center">
-              Start worldwide devotional
+            <Text className="font-din text-base text-gray-500 text-center underline">
+              Join today's devotional
             </Text>
           </Pressable>
         )}
       </View>
-      </Animated.View>
+    </Animated.View>
   );
 
   return (
@@ -911,31 +929,37 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       index={-1}
       snapPoints={snapPoints}
       enablePanDownToClose
-      backgroundStyle={{ backgroundColor: '#FFF4D9', borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
-      handleIndicatorStyle={{ backgroundColor: '#DCB280', height: 5, width: 48 }}
+      backgroundStyle={{ 
+        backgroundColor: '#FEFCF7', 
+        borderTopLeftRadius: 28, 
+        borderTopRightRadius: 28,
+        borderTopWidth: 1,
+        borderTopColor: '#F3E8D1'
+      }}
+      handleIndicatorStyle={{ backgroundColor: '#DCB280', height: 4, width: 40 }}
       backdropComponent={renderBackdrop}>
-      <BottomSheetView style={{ width: '100%', height: '100%', paddingTop: 20, paddingBottom: 30, overflow: 'hidden' }}>
+      <BottomSheetView style={{ width: '100%', height: '100%', paddingTop: 16, paddingBottom: 24 }}>
         <View style={{ flex: 1, position: 'relative' }}>
-          {/* All screens are rendered but with proper touch handling */}
+          {/* All screens rendered with proper touch handling */}
           <View
             style={{ position: 'absolute', width: '100%', height: '100%' }}
-            pointerEvents={currentScreen === 'mood' ? 'auto' : 'none'}>
-            {renderMoodScreen()}
+            pointerEvents={currentScreen === 'welcome' ? 'auto' : 'none'}>
+            {renderWelcomeScreen()}
           </View>
           <View
             style={{ position: 'absolute', width: '100%', height: '100%' }}
-            pointerEvents={currentScreen === 'focus' ? 'auto' : 'none'}>
-            {renderFocusScreen()}
+            pointerEvents={currentScreen === 'heart' ? 'auto' : 'none'}>
+            {renderHeartScreen()}
           </View>
           <View
             style={{ position: 'absolute', width: '100%', height: '100%' }}
-            pointerEvents={currentScreen === 'struggle' ? 'auto' : 'none'}>
-            {renderStruggleScreen()}
+            pointerEvents={currentScreen === 'prayer' ? 'auto' : 'none'}>
+            {renderPrayerScreen()}
           </View>
           <View
             style={{ position: 'absolute', width: '100%', height: '100%' }}
-            pointerEvents={currentScreen === 'success' ? 'auto' : 'none'}>
-            {renderSuccessScreen()}
+            pointerEvents={currentScreen === 'blessing' ? 'auto' : 'none'}>
+            {renderBlessingScreen()}
           </View>
         </View>
       </BottomSheetView>
