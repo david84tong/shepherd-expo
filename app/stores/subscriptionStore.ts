@@ -1,7 +1,7 @@
 import Purchases, { PurchasesPackage, LOG_LEVEL } from 'react-native-purchases';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { create } from 'zustand';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { useUserStore } from './userStore';
 import analytics from '~/utils/analytics';
 import { router } from 'expo-router';
@@ -177,6 +177,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
   },
   presentFreeTrialPaywall: async () => {
     console.log('[SubscriptionStore] presentFreeTrialPaywall called');
+    
+    // For Android, use regular paywall instead of free trial
+    if (Platform.OS === 'android') {
+      console.log('[SubscriptionStore] Android detected, using regular paywall instead of free trial');
+      return get().presentPaywall();
+    }
     
     // Check if a paywall is already presenting
     if (get().isPaywallPresenting) {
@@ -355,7 +361,10 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         },
         onPurchaseCancelled() {
           setTimeout(() => {
-            // get().presentFreeTrialPaywall();
+            // For Android, don't show free trial paywall
+            if (Platform.OS !== 'android') {
+              get().presentFreeTrialPaywall();
+            }
           }, 500);
           result = PAYWALL_RESULT.CANCELLED;
           // Check if onboarding is completed, if not redirect to onboarding 11
@@ -424,12 +433,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         onCloseButtonPress() {
           result = PAYWALL_RESULT.CANCELLED;
           set({ isPaywallPresenting: false });
-          // Check if onboarding is completed, if not redirect to PricingScreen
+          // Check if onboarding is completed, if not redirect to onboarding 11 (same as free trial)
           AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
             .then((completed) => {
               if (completed !== 'true') {
-                console.log('Onboarding not completed, redirecting to PricingScreen');
-                router.replace('/PricingScreen');
+                console.log('Onboarding not completed, redirecting to onboarding/11');
+                router.replace('/onboarding/11');
               }
             })
             .catch(() => {
@@ -463,8 +472,17 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
             get().presentHalfOffPaywall();
           }, 500);
           result = PAYWALL_RESULT.CANCELLED;
-          // Check if onboarding is completed, if not redirect to PricingScreen
-         
+          // Check if onboarding is completed, if not redirect to onboarding 11 (same as free trial)
+          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
+            .then((completed) => {
+              if (completed !== 'true') {
+                console.log('Onboarding not completed, redirecting to onboarding/11');
+                router.replace('/onboarding/11');
+              }
+            })
+            .catch(() => {
+              console.log('Could not check onboarding status');
+            });
           return true;
         },
         onPurchaseFailed() {
@@ -472,8 +490,17 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
             get().presentHalfOffPaywall();
           }, 500);
           result = PAYWALL_RESULT.CANCELLED;
-          // Check if onboarding is completed, if not redirect to PricingScreen
-      
+          // Check if onboarding is completed, if not redirect to onboarding 11 (same as free trial)
+          AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
+            .then((completed) => {
+              if (completed !== 'true') {
+                console.log('Onboarding not completed, redirecting to onboarding/11');
+                router.replace('/onboarding/11');
+              }
+            })
+            .catch(() => {
+              console.log('Could not check onboarding status');
+            });
           return true;
         },
         onRestoreFailed() {
@@ -873,6 +900,10 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
     }
   },
   shouldShowFreeTrialPaywall: () => {
+    // For Android, always show regular paywall instead of free trial
+    if (Platform.OS === 'android') {
+      return true;
+    }
     return get().hasSeenHalfOffPaywall;
   },
 }));
