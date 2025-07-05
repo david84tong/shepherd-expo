@@ -14,6 +14,7 @@ import { Devotional } from '~/app/models/Devotional';
 import firestore from '@react-native-firebase/firestore';
 import { router } from 'expo-router';
 import SavedDevotionalCard from '~/components/SavedDevotionalCard';
+import i18n from '~/app/utils/i18n';
 
 // Define the ref type
 export type DevotionalsSheetRef = {
@@ -89,7 +90,7 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
       setSavedDevotionals(devotionals);
     } catch (err) {
       console.error('Error fetching saved devotionals:', err);
-      setError('Failed to load saved devotionals');
+      setError(i18n.t('error_loading_saved_devotionals'));
     } finally {
       setIsLoading(false);
     }
@@ -154,9 +155,9 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
   const renderEmptyState = () => (
     <View style={styles.emptyState} className='mt-20'>
       <Feather name="heart" size={48} color="#795323" style={{ opacity: 0.3 }} />
-      <Text style={styles.emptyStateTitle}>No Saved Devotionals</Text>
+      <Text style={styles.emptyStateTitle}>{i18n.t('no_saved_devotionals')}</Text>
       <Text style={styles.emptyStateText}>
-        Like devotionals to see them here
+        {i18n.t('no_saved_devotionals_desc')}
       </Text>
     </View>
   );
@@ -184,7 +185,7 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
           <BottomSheetScrollView style={styles.container}>
             {/* Header */}
             <View style={styles.header}>
-              <Text className="text-2xl font-feather text-textPrimary ml-1">Saved Devotionals</Text>
+              <Text className="text-2xl font-feather text-textPrimary ml-1">{i18n.t('saved_devotionals_title')}</Text>
               <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
                 <Feather name="x" size={24} color="#795323" />
               </TouchableOpacity>
@@ -195,13 +196,13 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
               {isLoading ? (
                 <View style={styles.loadingContainer}>
                   <ActivityIndicator size="large" color="#795323" />
-                  <Text style={styles.loadingText}>Loading saved devotionals...</Text>
+                  <Text style={styles.loadingText}>{i18n.t('loading_saved_devotionals')}</Text>
                 </View>
               ) : error ? (
                 <View style={styles.errorContainer}>
                   <Text style={styles.errorText}>{error}</Text>
                   <TouchableOpacity onPress={fetchSavedDevotionals} style={styles.retryButton}>
-                    <Text style={styles.retryButtonText}>Retry</Text>
+                    <Text style={styles.retryButtonText}>{i18n.t('retry_button')}</Text>
                   </TouchableOpacity>
                 </View>
               ) : savedDevotionals.length === 0 ? (
