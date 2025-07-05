@@ -31,7 +31,7 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
   // Add internal ref for the actual BottomSheet
   const bottomSheetRef = useRef<BottomSheet>(null);
 
-  // Snap points for 95% height
+  // Snap points for 90% height
   const snapPoints = useMemo(() => ['90%'], []);
 
   // Access UI store for visibility
@@ -51,10 +51,6 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
   useEffect(() => {
     if (isDevotionalsSheetVisible && currentUser?.id) {
       fetchSavedDevotionals();
-      // Ensure the sheet expands to full height
-      setTimeout(() => {
-        bottomSheetRef.current?.expand();
-      }, 100);
     }
   }, [isDevotionalsSheetVisible, currentUser?.id]);
 
@@ -167,7 +163,7 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
       {isDevotionalsSheetVisible ? (
         <BottomSheet
           ref={bottomSheetRef}
-          index={-1}
+          index={1}
           snapPoints={snapPoints}
           enablePanDownToClose={true}
           onChange={handleSheetChange}
