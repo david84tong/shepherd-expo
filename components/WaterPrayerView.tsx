@@ -37,6 +37,7 @@ import PrayerSettingsModal from './PrayerSettingsModal';
 import { useSoundStore } from '~/app/stores/soundStore';
 import { hapticHeavy, hapticLight, hapticMedium } from '~/utils/haptics';
 import { RPH } from '~/app/helper/helper';
+import { router } from 'expo-router';
 
 // AsyncStorage keys for prayer settings
 const PRAYER_HAPTICS_KEY = 'prayer_haptics_enabled';
@@ -1149,7 +1150,6 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                 homeStore.setSawStreakToday(true);
 
                 // Navigate to streak screen
-                const { router } = require('expo-router');
                 router.push('/streak');
 
                 analytics.logEvent('WaterPrayerView_StreakTriggered_FromGoHome', {

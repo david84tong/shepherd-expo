@@ -154,7 +154,7 @@ export default function HomeScreen() {
             );
           })
           .catch((error: any) => {
-            console.error(`❌ [${timestamp}] Error fetching devotional:`, error);
+            console.error(`❌ [${timestamp}] Error fetching devotional`, error);
           });
       } else {
         console.log(`❌ [${timestamp}] fetchTodaysDevotional function not found!`);
