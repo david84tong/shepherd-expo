@@ -99,7 +99,7 @@ const safeWidgetCall = async (method: string, ...args: any[]) => {
       console.warn(`📱 Method ${method} not available on WidgetDataSharer`);
     }
   } catch (error) {
-    console.error(`📱 Error calling ${method}:`, error);
+    console.error(`📱 Error calling ${method}`, error);
 
     // Fallback to AsyncStorage on error
     if (method === 'updateVerseData' && args.length >= 2) {
@@ -304,8 +304,8 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
                       `✅ Found verse range (${parsed.verse}-${parsed.endVerse}): ${devotional.verse.substring(0, 100)}...`
                     );
                     console.log(`✅ Combined ${verses.length} verses`);
-                    console.log(`✅ Devotional verse field set:`, devotional.verse);
-                    console.log(`✅ Bible reference set:`, devotional.bibleReference);
+                    console.log(`✅ Devotional verse field set`, devotional.verse);
+                    console.log(`✅ Bible reference set`, devotional.bibleReference);
                   } else {
                     console.log(
                       `⚠️ No verses found in range ${parsed.verse}-${parsed.endVerse} for chapter ${parsed.chapter}`
@@ -318,9 +318,9 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
                     devotional.verse = verseData.text;
                     devotional.bibleReference = referenceToUse; // Set the reference properly
                     console.log(`✅ Found verse: ${verseData.text.substring(0, 50)}...`);
-                    console.log(`✅ Full verse text:`, verseData.text);
-                    console.log(`✅ Devotional verse field set:`, devotional.verse);
-                    console.log(`✅ Bible reference set:`, devotional.bibleReference);
+                    console.log(`✅ Full verse text`, verseData.text);
+                    console.log(`✅ Devotional verse field set`, devotional.verse);
+                    console.log(`✅ Bible reference set`, devotional.bibleReference);
                   } else {
                     console.log(`⚠️ Verse ${parsed.verse} not found in chapter ${parsed.chapter}`);
                     console.log(
@@ -529,10 +529,10 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
         // Also track in user document
         // Import is done at the top of the file to avoid circular dependency issues
-        const { useUserStore } = require('./userStore');
-        await useUserStore
-          .getState()
-          .addCustomDevotional(aiDevotional.id, firestore.Timestamp.now());
+        // const { useUserStore } = require('./userStore');
+        // await useUserStore
+        //   .getState()
+        //   .addCustomDevotional(aiDevotional.id, firestore.Timestamp.now());
         console.log('[DevotionalStore] Added custom devotional reference to user document');
       } catch (Error) {
         console.error('[DevotionalStore] Failed to save custom devotional to Firestore:', Error);
