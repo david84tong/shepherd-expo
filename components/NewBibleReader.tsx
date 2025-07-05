@@ -63,6 +63,7 @@ import SideButton from './SideButton';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import { hapticLight, hapticMedium, hapticWarning } from '~/utils/haptics';
+import { debounce } from 'lodash';
 
 const FONT_SIZE_KEY = 'userNewBibleFontSize';
 const DEFAULT_FONT_SIZE = 20;
@@ -436,6 +437,13 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Add state to track scroll progress when tap-to-show is disabled
   const [scrollProgress, setScrollProgress] = useState(0);
+  
+  // Debounced function to update scroll progress
+  const debouncedSetScrollProgress = useRef(
+    debounce((progress: number) => {
+      setScrollProgress(progress);
+    }, 60)
+  ).current;
 
   // Add ref to throttle scroll progress updates
   const lastScrollUpdate = useRef(0);
@@ -643,8 +651,11 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   useEffect(() => {
     setHasScrolledToBottom(false);
     setScrollProgress(0); // Reset scroll progress when chapter changes
+    
+    // Cancel any pending debounced updates
+    debouncedSetScrollProgress.cancel();
 
-  }, [currentBookId, currentChapter]);
+  }, [currentBookId, currentChapter, debouncedSetScrollProgress]);
 
   // Reset scroll progress when tap-to-show setting changes
   useEffect(() => {
@@ -787,22 +798,14 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
     const { layoutMeasurement, contentOffset, contentSize } = event.nativeEvent;
 
-    // Calculate scroll progress in map mode
-    // Use throttling to prevent performance issues
+    // Calculate scroll progress in map mode with 500ms debounce
     if (isMapMode && contentSize.height > layoutMeasurement.height) {
-      const now = Date.now();
-      if (now - lastScrollUpdate.current >= SCROLL_THROTTLE_MS) {
-        const scrollableHeight = contentSize.height - layoutMeasurement.height;
-        const currentScrollPosition = contentOffset.y;
-        const newScrollProgress = Math.min(Math.max(currentScrollPosition / scrollableHeight, 0), 1);
+      const scrollableHeight = contentSize.height - layoutMeasurement.height;
+      const currentScrollPosition = contentOffset.y;
+      const newScrollProgress = Math.min(Math.max(currentScrollPosition / scrollableHeight, 0), 1);
 
-        // Only update if progress changed significantly (avoid unnecessary re-renders)
-        if (Math.abs(newScrollProgress - scrollProgress) > 0.01) {
-          setScrollProgress(newScrollProgress);
-        }
-
-        lastScrollUpdate.current = now;
-      }
+      // Use debounced function to update progress
+      debouncedSetScrollProgress(newScrollProgress);
     }
 
     // Check if scrolled to bottom for finish reading button
@@ -823,7 +826,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     scrollTimeout.current = setTimeout(() => {
       setIsScrolling(false);
     }, 300);
-  }, [hasScrolledToBottom, isMapMode, scrollProgress]);
+  }, [hasScrolledToBottom, isMapMode]);
 
   const scrollToBottom = useCallback(() => {
     setTimeout(() => {
@@ -1077,6 +1080,9 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       if (menuScaleAnim) menuScaleAnim.value = 0;
       if (menuOpacityAnim) menuOpacityAnim.value = 0;
       if (progressValue) progressValue.value = 0;
+      
+      // Cancel any pending debounced updates
+      debouncedSetScrollProgress.cancel();
     };
   }, [fadeOpacity, menuScaleAnim, menuOpacityAnim, progressValue]);
 
