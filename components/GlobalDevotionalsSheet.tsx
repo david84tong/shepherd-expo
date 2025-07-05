@@ -116,9 +116,16 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
   // Handle start devotional
   const handleStartDevotional = useCallback((devotional: Devotional) => {
     hapticLight();
+    console.log('[GlobalDevotionalsSheet] Starting saved devotional:', devotional.id);
+    
+    // Set the devotional as custom devotional (same as creating custom devotional)
     setCustomDevotional(devotional);
+    
+    // Close the sheet
     hideDevotionalsSheet();
-    router.replace('/(tabs)');
+    
+    // Navigate to home screen with showDevotional parameter to trigger DevotionalReader
+    router.replace('/(tabs)?showDevotional=true');
   }, [setCustomDevotional, hideDevotionalsSheet]);
 
   // Custom backdrop renderer
