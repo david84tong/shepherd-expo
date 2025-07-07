@@ -102,7 +102,7 @@ const StoreSheet: React.FC<StoreSheetProps> = ({ storeSheetRef }) => {
             opacity: 0.3,
           }}
           backdropComponent={renderBackdrop}>
-          <BottomSheetScrollView style={{ flex: 1 }}>
+          <BottomSheetScrollView style={{ flex: 1 }} bounces={false}>
             <StoreScreen onClose={handleClose} />
           </BottomSheetScrollView>
         </BottomSheet>
