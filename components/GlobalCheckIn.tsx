@@ -72,7 +72,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const [selectedMood, setSelectedMood] = useState<string | null>(null);
   const [selectedFocus, setSelectedFocus] = useState<string | null>(null);
   const [selectedStruggle, setSelectedStruggle] = useState<string | null>(null);
-  
+
   // State for gem reward
   const [gemsAwarded, setGemsAwarded] = useState(false);
   const [showRewardAnimation, setShowRewardAnimation] = useState(false);
@@ -82,15 +82,15 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const focusAnim = useRef(new Animated.Value(screenWidth)).current;
   const struggleAnim = useRef(new Animated.Value(screenWidth)).current;
   const successAnim = useRef(new Animated.Value(screenWidth)).current;
-  
+
   // Animation values for rewards
   const rewardCardOpacity = useRef(new Animated.Value(0)).current;
   const rewardCardScale = useRef(new Animated.Value(0.8)).current;
   const gemTextOpacity = useRef(new Animated.Value(0)).current;
-  
+
   // Rive ref for chest animation
   const riveRef = useRef<RiveRef>(null);
-  
+
   // Load Rive assets
   const [riveAssets] = useAssets([require('../assets/riveAnimations/successLamb.riv')]);
 
@@ -99,40 +99,47 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
   // Complete check-in and save to both stores
   const handleCompleteCheckIn = useCallback(async () => {
+    console.log('[GlobalCheckIn] handleCompleteCheckIn started');
+
     // Prevent double-saving
     if (checkInSaved) {
       console.log('[GlobalCheckIn] Check-in already saved, skipping...');
       return;
     }
 
-    console.log('handleCompleteCheckIn called with:', {
+    console.log('[GlobalCheckIn] handleCompleteCheckIn called with:', {
       mood: currentMood,
       focus: currentFocus,
       struggle: currentStruggle
     });
 
-    // Complete check-in in checkInStore
-    completeCheckIn();
+    try {
+      // Complete check-in in checkInStore
+      console.log('[GlobalCheckIn] Completing check-in in checkInStore...');
+      completeCheckIn();
 
-    // Save to userStore for Firestore sync
-    const checkInData = {
-      mood: currentMood,
-      focus: currentFocus,
-      struggle: currentStruggle,
-      completedAt: Timestamp.now()
-    };
+      // Save to userStore for Firestore sync
+      const checkInData = {
+        mood: currentMood,
+        focus: currentFocus,
+        struggle: currentStruggle,
+        completedAt: Timestamp.now()
+      };
 
-    // Create unique key using timestamp to prevent overrides
-    const now = new Date();
-    const timestamp = now.getTime(); // milliseconds since epoch
-    const dateKey = `${timestamp}`; // Use timestamp as key for uniqueness
+      // Create unique key using timestamp to prevent overrides
+      const now = new Date();
+      const timestamp = now.getTime(); // milliseconds since epoch
+      const dateKey = `${timestamp}`; // Use timestamp as key for uniqueness
+      console.log('[GlobalCheckIn] Saving check-in data to userStore:', checkInData);
+      await addCheckIn(dateKey, checkInData);
 
-    console.log('Saving check-in data to userStore with key:', dateKey, checkInData);
-    await addCheckIn(dateKey, checkInData);
+      console.log('[GlobalCheckIn] Check-in completed and saved to both stores');
+      setCheckInSaved(true);
+    } catch (error) {
+      console.error('[GlobalCheckIn] Error in handleCompleteCheckIn:', error);
+      throw error; // Re-throw to be handled by caller
+    }
 
-    console.log('Check-in completed and saved to both stores');
-    setCheckInSaved(true);
-    
     // Award 20 gems for completing check-in
     if (!gemsAwarded) {
       const currentGems = getGens();
@@ -140,7 +147,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       setGemsAwarded(true);
       setShowRewardAnimation(true);
       console.log(`Awarded +20 Gems for check-in. New total: ${currentGems + 20}`);
-      
+
       // Log analytics
       analytics.logEvent('checkin_gems_awarded', {
         gemsAwarded: 20,
@@ -253,7 +260,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       // Don't navigate here - it's already handled in the button onPress
 
     } catch (error) {
-      console.error('Error generating custom devotional:', error);
+      console.log('Error generating custom devotional:', error);
       setIsGenerating(false);
       // You might want to show an error toast here
     }
@@ -519,17 +526,20 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         {struggleAreas.map((struggle) => (
           <Pressable
             key={struggle.value}
-            onPress={() => {
+            onPress={async () => {
               setSelectedStruggle(struggle.value);
               setStruggle(struggle.value); // Save to store
               hapticMedium();
               analytics.logEvent('checkin_struggle_selected', { struggle: struggle.value });
 
-              // Save the check-in immediately after selecting struggle
-              setTimeout(async () => {
+              try {
                 await handleCompleteCheckIn();
                 animateToScreen('success');
-              }, 100);
+              } catch (error) {
+                console.log('[GlobalCheckIn] Error completing check-in:', error);
+                // Still animate to success even if there's an error
+                animateToScreen('success');
+              }
             }}
             className={`w-[30%] h-28 rounded-2xl border-2 items-center justify-center ${selectedStruggle === struggle.value
               ? 'bg-surfaceCreamLight border-orange'
@@ -555,16 +565,20 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         ))}
       </View>
       <Pressable
-        onPress={() => {
+        onPress={async () => {
           skipStruggle(); // Save empty string to store
           hapticMedium();
           analytics.logEvent('checkin_struggle_skipped');
 
-          // Save the check-in immediately after skipping struggle
-          setTimeout(async () => {
+          try {
+            // Save the check-in immediately after skipping struggle
             await handleCompleteCheckIn();
             animateToScreen('success');
-          }, 100);
+          } catch (error) {
+            console.log('[GlobalCheckIn] Error completing check-in (skipped):', error);
+            // Still animate to success even if there's an error
+            animateToScreen('success');
+          }
         }}
         className="mt-4 mb-4">
         <Text className="font-din text-base text-gray-500 underline">Skip</Text>
@@ -579,17 +593,17 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       rewardCardOpacity.setValue(0);
       rewardCardScale.setValue(0.8);
       gemTextOpacity.setValue(0);
-      
+
       // Play chest opening sound
       playChestOpeningSound?.();
-      
+
       // Start Rive animation
       setTimeout(() => {
         if (riveRef.current) {
           riveRef.current.play();
         }
       }, 100);
-      
+
       // Animate reward card with bounce effect
       setTimeout(() => {
         Animated.parallel([
@@ -620,93 +634,93 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   }, [currentScreen, showRewardAnimation]);
 
   const renderSuccessScreen = () => (
-      <Animated.View
-        style={{
-          flex: 1,
-          paddingHorizontal: 20,
-          transform: [{ translateX: successAnim }],
-        }}>
-        {/* Top spacing */}
-        
-        {/* Chest Animation - Much larger and prominent */}
-        {showRewardAnimation && riveAssets ? (
-          <View className="w-full items-center justify-center" style={{ height: RPH(20) }}>
-            {IS_ANDROID ? (
-              <Rive
-                ref={riveRef}
-                resourceName={'success_lamb'}
-                artboardName="chest"
-                autoplay={true}
-                style={{ width: '200%', height: '200%' }}
-              />
-            ) : (
-              <Rive
-                ref={riveRef}
-                url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
-                artboardName="chest"
-                autoplay={true}
-                style={{ width: '200%', height: '200%' }}
-              />
-            )}
+    <Animated.View
+      style={{
+        flex: 1,
+        paddingHorizontal: 20,
+        transform: [{ translateX: successAnim }],
+      }}>
+      {/* Top spacing */}
+
+      {/* Chest Animation - Much larger and prominent */}
+      {showRewardAnimation && riveAssets ? (
+        <View className="w-full items-center justify-center" style={{ height: RPH(20) }}>
+          {IS_ANDROID ? (
+            <Rive
+              ref={riveRef}
+              resourceName={'success_lamb'}
+              artboardName="chest"
+              autoplay={true}
+              style={{ width: '200%', height: '200%' }}
+            />
+          ) : (
+            <Rive
+              ref={riveRef}
+              url={(riveAssets && riveAssets[0] && riveAssets[0].uri) || ''}
+              artboardName="chest"
+              autoplay={true}
+              style={{ width: '200%', height: '200%' }}
+            />
+          )}
+        </View>
+      ) : (
+        <View className="items-center justify-center" style={{ height: RPH(35) }}>
+          <View className="bg-green-100 rounded-full w-40 h-40 items-center justify-center">
+            <Ionicons name="checkmark-circle" size={100} color="#10B981" />
           </View>
-        ) : (
-          <View className="items-center justify-center" style={{ height: RPH(35) }}>
-            <View className="bg-green-100 rounded-full w-40 h-40 items-center justify-center">
-              <Ionicons name="checkmark-circle" size={100} color="#10B981" />
-            </View>
-          </View>
-        )}
-        
-        {/* Spacing between chest and title */}
-        <View style={{ height: RPH(1) }} />
-        
-        {/* Title */}
-        <Text className="font-feather text-h1 text-textPrimary text-center">Check-in Complete!</Text>
-        
-        {/* Spacing between title and reward card */}
-        <View style={{ height: RPH(3) }} />
-        
-        {/* Reward Card - More prominent */}
-        {showRewardAnimation && (
-          <View className="items-center">
+        </View>
+      )}
+
+      {/* Spacing between chest and title */}
+      <View style={{ height: RPH(1) }} />
+
+      {/* Title */}
+      <Text className="font-feather text-h1 text-textPrimary text-center">Check-in Complete!</Text>
+
+      {/* Spacing between title and reward card */}
+      <View style={{ height: RPH(3) }} />
+
+      {/* Reward Card - More prominent */}
+      {showRewardAnimation && (
+        <View className="items-center">
+          <Animated.View
+            className="bg-white rounded-[20px] px-8 py-5 border-2 border-border"
+            style={{
+              opacity: rewardCardOpacity,
+              transform: [{ scale: rewardCardScale }],
+              shadowColor: '#000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 8,
+              elevation: 5,
+              minWidth: '70%',
+            }}>
+            <Text className="text-sm font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
+              CHECK-IN REWARDS
+            </Text>
             <Animated.View
-              className="bg-white rounded-[20px] px-8 py-5 border-2 border-border"
-              style={{
-                opacity: rewardCardOpacity,
-                transform: [{ scale: rewardCardScale }],
-                shadowColor: '#000',
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.15,
-                shadowRadius: 8,
-                elevation: 5,
-                minWidth: '70%',
-              }}>
-              <Text className="text-sm font-din text-[#B89B4C] text-center uppercase mb-3 tracking-wider">
-                CHECK-IN REWARDS
-              </Text>
-              <Animated.View 
-                className="flex-row items-center justify-center"
-                style={{ opacity: gemTextOpacity }}>
-                <Image source={gemIcon} className="w-8 h-8 mr-3" />
-                <Text className="font-din text-textPrimary text-2xl font-semibold">+20 Gems</Text>
-              </Animated.View>
+              className="flex-row items-center justify-center"
+              style={{ opacity: gemTextOpacity }}>
+              <Image source={gemIcon} className="w-8 h-8 mr-3" />
+              <Text className="font-din text-textPrimary text-2xl font-semibold">+20 Gems</Text>
             </Animated.View>
-          </View>
-        )}
-        
-        {/* Spacing between reward card and description */}
-        
-        {/* Description text */}
-        {/* <Text className="font-din text-lg text-gray-600 text-center px-4 leading-relaxed">
+          </Animated.View>
+        </View>
+      )}
+
+      {/* Spacing between reward card and description */}
+
+      {/* Description text */}
+      {/* <Text className="font-din text-lg text-gray-600 text-center px-4 leading-relaxed">
           You're all set for today.{' '}
           {selectedFocus && `May God guide you in your focus on ${focusAreas.find((f) => f.value === selectedFocus)?.label.toLowerCase()}.`}
         </Text> */}
-        
-        {/* Flexible spacer to push button to bottom */}
-        {/* <View style={{ flex: 1 }} /> */}
-        
-        {/* Button container with proper spacing */}
-        <View className="w-full pb-8 mt-8">
+
+      {/* Flexible spacer to push button to bottom */}
+      {/* <View style={{ flex: 1 }} /> */}
+
+      {/* Button container with proper spacing */}
+      <View className="w-full pb-8 mt-8">
         <PrimaryButton
           title={(currentFocus !== '' || currentStruggle !== '') ? "Generate Custom Devotional" : "Start Today's Devotional"}
           onPress={async () => {
@@ -902,7 +916,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           </Pressable>
         )}
       </View>
-      </Animated.View>
+    </Animated.View>
   );
 
   return (

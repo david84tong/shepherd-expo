@@ -173,7 +173,7 @@ export interface UserStore extends UserDoc {
 
   setCompletedMapPaths: (paths: MapPathCompletion[]) => void;
   addCompletedMapPath: (path: MapPathCompletion) => void;
-  addCheckIn: (checkIn: CheckIn) => void;
+  addCheckIn: (dateKey: string, checkIn: CheckIn) => Promise<void>;
 }
 
 export interface Reading {

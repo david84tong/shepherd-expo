@@ -5,7 +5,7 @@ import { createJSONStorage, persist } from 'zustand/middleware';
 
 import { updateField, createUserDocument, removeFunctions } from '../../utils/firestore';
 import { syncStreakDataToWidget } from '../../utils/widgetSync';
-import { UserDoc, Lamb, UserStore, MapPathCompletion } from '../models/User';
+import { UserDoc, Lamb, UserStore, MapPathCompletion, CheckIn } from '../models/User';
 import { isAuthenticated, updateUserData } from '../helper/firebaseHelper';
 
 // Constants
@@ -165,11 +165,8 @@ export const useUserStore = create<UserStore>()(
             isPro: firestoreData.isPro || state.isPro || false,
             isProWithReferral: firestoreData.isProWithReferral || state.isProWithReferral || false,
             proExpiryDate: firestoreData.proExpiryDate || state.proExpiryDate,
-            // Sync check-in data - merge instead of replace
-            checkIns: {
-              ...(state.checkIns || {}),
-              ...(firestoreData.checkIns || {})
-            },
+            // Sync check-in data - ensure it's always an array
+            checkIns: Array.isArray(firestoreData.checkIns) ? firestoreData.checkIns : (state.checkIns || []),
           };
         });
         console.log('Firestore data sync complete');
@@ -537,10 +534,12 @@ export const useUserStore = create<UserStore>()(
         }
       },
 
-      addCheckIn: async (_dateKey: string, checkInData: NonNullable<UserDoc['checkIns']>[number]) => {
+      addCheckIn: async (_dateKey: string, checkInData: CheckIn) => {
         // Ignore dateKey, just push to array
         set((state) => {
-          const updatedCheckIns = [...(state.checkIns || []), checkInData];
+          // Ensure checkIns is always an array
+          const currentCheckIns = Array.isArray(state.checkIns) ? state.checkIns : [];
+          const updatedCheckIns = [...currentCheckIns, checkInData];
           if (isAuthenticated()) {
             updateUserData({ checkIns: updatedCheckIns });
           }
