@@ -298,8 +298,8 @@ const WaterWaveAnimation: React.FC<{
               </View>
             </View>
           ) : (
-            <View style={{ alignItems: 'center', alignSelf: 'center' }}>
-              <Text className='text-blue font-feather text-center text-3xl mt-48' style={{
+            <View style={{ alignItems: 'center', justifyContent: 'center', alignSelf: 'center', }}>
+              <Text className='text-blue font-feather text-center text-3xl' style={{
                 textAlign: 'center',
                 marginBottom: 4,
                 fontFamily: 'Nunito-Black',
