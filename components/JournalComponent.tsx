@@ -854,7 +854,13 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   ) : (
     <Reanimated.View
       className="flex-1 w-full mt-2 bg-surfaceCream"
-      pointerEvents="box-none">
+      pointerEvents="box-none"
+      onTouchStart={() => {
+        // Dismiss keyboard when tapping anywhere on the screen
+        if (keyboardVisible) {
+          Keyboard.dismiss();
+        }
+      }}>
       <Animated.View style={{ opacity: containerOpacity, flex: 1 }}>
         <View className="flex-1 px-6">
 
@@ -862,7 +868,14 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             {getReflectionPrompt()}
           </Text>
 
-          <View style={{ minHeight: RPH(25), maxHeight: RPH(40), borderRadius: 20 }} className="w-full  bg-surfaceCream border-[3px] border-gold/70 p-5 mb-2 shadow-card" >
+          <View
+            style={{ minHeight: RPH(25), maxHeight: RPH(40), borderRadius: 20 }}
+            className="w-full  bg-surfaceCream border-[3px] border-gold/70 p-5 mb-2 shadow-card"
+            onTouchStart={(e) => {
+              // Prevent keyboard dismissal when tapping on the input container
+              e.stopPropagation();
+            }}
+          >
             <TextInput
               ref={inputRef}
               className="w-full bg-transparent text-brown/95 text-[18px] font-nunito-medium  text-left"
