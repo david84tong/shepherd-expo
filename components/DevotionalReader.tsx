@@ -66,7 +66,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
 
   // Use customDevotional if it exists (AI-generated), otherwise use currentDevotional
   const activeDevotional = customDevotional || currentDevotional;
-  
+
   // Debug logging for devotional data
   useEffect(() => {
     console.log('🔍 [DevotionalReader] Active devotional:', {
@@ -542,6 +542,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
     <View style={{ flex: 1, margin: RPH(1), marginHorizontal: 24 }}>
       {showSuccess ? (
         <SuccessMessage
+          screenType="reading"
           onLoad={() => {
             useSoundStore.getState().playBreadEatingSound();
           }}

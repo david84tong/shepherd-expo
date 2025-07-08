@@ -26,6 +26,7 @@ interface SuccessMessageProps {
   xpGained?: number;
   showCollectBonus?: boolean;
   onLoad?: () => void;
+  screenType?: 'reading' | 'prayer' | 'reflection';
 }
 
 const MAX_HEARTS = 100;
@@ -46,6 +47,7 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
   xpGained = 0,
   showCollectBonus = false,
   onLoad,
+  screenType,
 }) => {
   const didLevelUp = useMemo(() => level > prevLevel, [level, prevLevel]);
 
@@ -316,7 +318,7 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
         ) : (
           // Normal flow with both buttons
           <>
-            {!hidePrayButton && (
+            {!hidePrayButton && (screenType !== 'reflection') && (
               <RNAnimated.View style={blueButtonStyle} className="w-full">
                 <PrimaryButton
                   title={prayButtonTitle || i18n.t('pray_about_this_verse')}

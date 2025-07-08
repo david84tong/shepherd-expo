@@ -1070,6 +1070,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       {showSuccess ? (
         <View style={{ marginHorizontal: 24, flex: 1, marginTop: 24 }}>
           <SuccessMessage
+            screenType="prayer"
             title={i18n.t('prayer_complete')}
             description={i18n.t('prayer_complete_desc')}
             level={levelInfo.level}

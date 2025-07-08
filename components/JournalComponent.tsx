@@ -679,6 +679,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       pointerEvents="box-none">
       <Animated.View style={{ opacity: containerOpacity, flex: 1 }}>
         <SuccessMessage
+          screenType="reflection"
           title={i18n.t('reflection_complete')}
           description={i18n.t('reflection_complete_desc')}
           level={levelInfo.level}
