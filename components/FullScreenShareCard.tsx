@@ -68,11 +68,11 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
     const shareCount = storeDevotional?.shares || 0;
     const [isCapturing, setIsCapturing] = useState(false);
 
-    const isRealDevotional = devotionalData ? !devotionalData.id.startsWith('quick-') && !devotionalData.id.startsWith('ai-') : false;
-    
+    const isRealDevotional = devotionalData ? !devotionalData.id.startsWith('quick-') : false;
+
     // Check if this is a custom devotional
     const isCustomDevotional = devotionalData ? (devotionalData.id.startsWith('custom-') || devotionalData.id.startsWith('ai-')) : false;
-    
+
     // Format date for custom devotionals
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -121,7 +121,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
         setIsLiked(newLikedState);
 
         // Determine the correct collection based on devotional ID
-        const isCustomDevotional = devotionalData.id.startsWith('ai-') || devotionalData.id.startsWith('quick-');
+        const isCustomDevotional = devotionalData.id.startsWith('ai-') || devotionalData.id.startsWith('custom-');
         const collectionName = isCustomDevotional ? 'customDevotionals' : 'dailyDevotionals';
         const devotionalRef = firestore().collection(collectionName).doc(devotionalData.id);
 
@@ -245,7 +245,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                             };
 
                             // Determine the correct collection based on devotional ID
-                            const isCustomDevotional = devotionalData.id.startsWith('ai-') || devotionalData.id.startsWith('quick-');
+                            const isCustomDevotional = devotionalData.id.startsWith('ai-') || devotionalData.id.startsWith('custom-');
                             const collectionName = isCustomDevotional ? 'customDevotionals' : 'dailyDevotionals';
                             const devotionalRef = firestore().collection(collectionName).doc(devotionalData.id);
                             await devotionalRef.update({

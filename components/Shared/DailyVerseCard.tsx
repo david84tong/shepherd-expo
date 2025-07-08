@@ -61,12 +61,24 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
         ? dailyDevotional
         : devotional;
 
+  // Subscribe to store changes for this specific devotional
+  const storeLikedBy = useDevotionalStore((state) => {
+    if (currentDevotional?.id === devotional.id) {
+      return currentDevotional.likedBy;
+    }
+    if (dailyDevotional?.id === devotional.id) {
+      return dailyDevotional.likedBy;
+    }
+    return devotional.likedBy;
+  });
+
   const [isLiked, setIsLiked] = useState(false);
-  const likeCount = storeDevotional.likes || 0;
-  const shareCount = storeDevotional.shares || 0;
+  const likeCount = storeDevotional?.likes || 0;
+  const shareCount = storeDevotional?.shares || 0;
 
   // A devotional is only "real" (and thus likeable/shareable) if it's not a locally generated one.
-  const isRealDevotional = !devotional.id.startsWith('quick-') && !devotional.id.startsWith('ai-');
+  // Custom devotionals (custom-*) and AI devotionals (ai-*) are real and can be liked
+  const isRealDevotional = !devotional.id.startsWith('quick-');
 
   // Check if this is a custom devotional
   const isCustomDevotional = devotional.id.startsWith('custom-') || devotional.id.startsWith('ai-');
@@ -79,10 +91,14 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
   };
 
   useEffect(() => {
-    if (currentUser?.id && storeDevotional.likedBy && isRealDevotional) {
-      setIsLiked(storeDevotional.likedBy.includes(currentUser.id));
+    if (currentUser?.id && storeLikedBy && isRealDevotional) {
+      const newLikedState = storeLikedBy.includes(currentUser.id);
+      setIsLiked(newLikedState);
+    } else {
+      // Reset like state if conditions are not met
+      setIsLiked(false);
     }
-  }, [storeDevotional, currentUser, isRealDevotional]);
+  }, [storeLikedBy, currentUser?.id, isRealDevotional, devotional?.id]);
 
   const handleLikePress = async () => {
     if (!isRealDevotional || !currentUser?.id || !devotional.id) return;

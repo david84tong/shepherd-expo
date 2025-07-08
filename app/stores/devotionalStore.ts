@@ -869,6 +869,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
               ...doc.data(),
               id: doc.id,
               type: 'daily',
+              likedBy: doc.data().likedBy || [], // Ensure likedBy field is included
             }) as Devotional & { type: string }
         ),
         ...customQuerySnap.docs.map(
@@ -878,6 +879,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
               id: doc.id,
               type: 'custom',
               date: doc.data().date || doc.data().createdAt, // Use date field if available, fallback to createdAt
+              likedBy: doc.data().likedBy || [], // Ensure likedBy field is included
             }) as Devotional & { type: string }
         ),
       ];
@@ -993,7 +995,12 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
               console.error(`Failed to process verse text for ${reference}`, e);
             }
           }
-          return { ...devotional, verse: verseText, bibleReference: reference };
+          return { 
+            ...devotional, 
+            verse: verseText, 
+            bibleReference: reference,
+            likedBy: devotional.likedBy || [], // Ensure likedBy is always an array
+          };
         })
       );
 
@@ -1006,6 +1013,8 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
           id: d?.id,
           date: d?.date,
           bibleReference: d?.bibleReference,
+          likedBy: d?.likedBy,
+          likes: d?.likes,
         }))
       );
       return processedDevotionals;
@@ -1163,7 +1172,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     }
   },
 
-  updateLikeStatus: (devotionalId, liked) => {
+  updateLikeStatus: (devotionalId, liked) => {  
     set((state) => {
       const currentUserId = auth().currentUser?.uid;
       if (!currentUserId) return state;
@@ -1181,11 +1190,12 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         return devotional;
       };
 
-      return {
+      const updatedState = {
         dailyDevotional: updateDevotional(state.dailyDevotional),
         currentDevotional: updateDevotional(state.currentDevotional),
         customDevotional: updateDevotional(state.customDevotional),
       };
+      return updatedState;
     });
   },
 

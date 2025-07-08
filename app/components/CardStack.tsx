@@ -381,10 +381,12 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
                                     outputRange: ['0deg', '5deg'], // Reduced rotation for cleaner look
                                 })
                             },
-                            { translateY: cardTranslations[i].interpolate({
-                                inputRange: [-50, -30],
-                                outputRange: [-30, 0], // Less upward translation for better visibility
-                            }) },
+                            {
+                                translateY: cardTranslations[i].interpolate({
+                                    inputRange: [-50, -30],
+                                    outputRange: [-30, 0], // Less upward translation for better visibility
+                                })
+                            },
                         ],
                     },
                 ];
@@ -393,9 +395,12 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
                     <Animated.View
                         key={`card-${cardInfo.dataIndex}`}
                         style={cardStyle}
+                        pointerEvents={isTop ? "box-none" : "none"}
                         {...(isTop && !isAnimating ? panResponder.panHandlers : {})}
                     >
-                        {renderCard(cardInfo.item, cardInfo.dataIndex, () => handleCardTap(i))}
+                        <View style={{ flex: 1 }} pointerEvents="box-none">
+                            {renderCard(cardInfo.item, cardInfo.dataIndex, () => handleCardTap(i))}
+                        </View>
                     </Animated.View>
                 );
             })}
