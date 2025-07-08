@@ -1084,7 +1084,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   console.log('📋 Prayer cards to show:', cardsToShow.length, cardsToShow);
 
   return (
-    <Reanimated.View style={[{ flex: 1, borderRadius: 24, backgroundColor: '#FDEBB8' }, componentAnimatedStyle, { overflow: 'hidden' }]}>
+    <Reanimated.View style={[{ flex: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: '#FDEBB8' }, componentAnimatedStyle, { overflow: 'hidden' }]}>
       {showSuccess ? (
         <View style={{ marginHorizontal: 24, flex: 1, marginTop: 24 }}>
           <SuccessMessage
