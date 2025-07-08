@@ -1143,7 +1143,7 @@ export default function HomeScreen() {
                               });
                             }}
                             completed={isCustomPathCompletedToday}
-                            disabled={!readingCompleted}
+                            disabled={isCustomPathCompletedToday}
                           />
                         </View>
                       </View>
