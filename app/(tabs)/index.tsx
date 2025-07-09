@@ -1186,7 +1186,7 @@ export default function HomeScreen() {
                                       onShare={() => handleDailyVerseShare(devotional)}
                                       showShareButton={true}
                                       showExpandButton={true}
-                                      height={40}
+                                      height={35}
                                     />
                                   )}
                                 />
@@ -1200,8 +1200,10 @@ export default function HomeScreen() {
                       </View>
                     )}
 
-                    {/* Custom Path Button - Show below cards when reading is completed */}
-                    {readingCompleted && (
+                    {/* UNCOMPLETED TASKS SECTION - Show first */}
+                    
+                    {/* Custom Path Button - Show when reading is completed and not completed today */}
+                    {readingCompleted && !isCustomPathCompletedToday && (
                       <View
                         className="flex-row items-center "
                         style={{
@@ -1216,17 +1218,10 @@ export default function HomeScreen() {
                             justifyContent: 'center',
                             left: -8,
                           }}>
-                          {isCustomPathCompletedToday ? (
-                            <Image
-                              source={require('../../assets/icons/checkMini.png')}
-                              style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                            />
-                          ) : (
-                            <View
-                              className="bg-textPrimary/15"
-                              style={{ width: 20, height: 20, borderRadius: 12 }}
-                            />
-                          )}
+                          <View
+                            className="bg-textPrimary/15"
+                            style={{ width: 20, height: 20, borderRadius: 12 }}
+                          />
                         </View>
                         <View style={{ flex: 1, minWidth: 0 }}>
                           <SecondaryButton
@@ -1243,10 +1238,274 @@ export default function HomeScreen() {
                                 },
                               });
                             }}
-                            completed={isCustomPathCompletedToday}
-                            disabled={!readingCompleted}
+                            completed={false}
+                            disabled={false}
                           />
                         </View>
+                      </View>
+                    )}
+
+                    {/* Prayer and Journal Buttons - Show only incomplete buttons when reading is completed */}
+                    {readingCompleted && (!prayerCompleted || !reflectionCompleted) && (
+                      <View style={{ marginTop: responsiveHeight(0) }}>
+                        {/* Prayer Button - Only show if not completed */}
+                        {!prayerCompleted && (
+                          <View
+                            className="flex-row items-center"
+                            style={{ marginBottom: responsiveHeight(2) }}>
+                            <View
+                              style={{
+                                width: 22,
+                                marginRight: 10,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                left: -8,
+                              }}>
+                              <View
+                                className="bg-textPrimary/15"
+                                style={{ width: 20, height: 20, borderRadius: 12 }}
+                              />
+                            </View>
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <SecondaryButton
+                                icon={dropIcon}
+                                title={i18n.t('praying')}
+                                subtitle={i18n.t('talk_to_god')}
+                                points={50}
+                                onPress={handlePrayerPress}
+                                completed={false}
+                                disabled={false}
+                              />
+                            </View>
+                          </View>
+                        )}
+
+                        {/* Journal Button - Only show if not completed */}
+                        {!reflectionCompleted && (
+                          <View
+                            className="flex-row items-center"
+                            style={{ marginBottom: responsiveHeight(2) }}>
+                            <View
+                              style={{
+                                width: 22,
+                                marginRight: 10,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                left: -8,
+                              }}>
+                              <View
+                                className="bg-textPrimary/15"
+                                style={{ width: 20, height: 20, borderRadius: 12 }}
+                              />
+                            </View>
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <SecondaryButton
+                                icon={require('../../assets/icons/journalIcon.png')}
+                                title={i18n.t('reflecting')}
+                                subtitle={i18n.t('journal_thoughts')}
+                                points={25}
+                                onPress={handleReflectionPress}
+                                completed={false}
+                                disabled={false}
+                              />
+                            </View>
+                          </View>
+                        )}
+                      </View>
+                    )}
+
+                    {/* COMPLETED TASKS SECTION - Show after uncompleted tasks */}
+                    
+                    {/* Show completed tasks when reading is completed */}
+                    {readingCompleted && (
+                      <View style={{ marginTop: responsiveHeight(1) }}>
+                        <View
+                          className="flex-row items-center"
+                          style={{ marginBottom: responsiveHeight(2) }}>
+                          <View
+                            style={{
+                              width: 22,
+                              marginRight: 10,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              left: -8,
+                            }}>
+                            <Image
+                              source={require('../../assets/icons/checkMini.png')}
+                              style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                            />
+                          </View>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <SecondaryButton
+                              icon={breadIcon}
+                              title={i18n.t('daily_bread')}
+                              subtitle={i18n.t('feed_soul')}
+                              points={50}
+                              onPress={() => {}}
+                              completed={true}
+                              disabled={true}
+                            />
+                          </View>
+                        </View>
+
+                        {/* Show completed prayer button */}
+                        {prayerCompleted && (
+                          <View
+                            className="flex-row items-center"
+                            style={{ marginBottom: responsiveHeight(2) }}>
+                            <View
+                              style={{
+                                width: 22,
+                                marginRight: 10,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                left: -8,
+                              }}>
+                              <Image
+                                source={require('../../assets/icons/checkMini.png')}
+                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                              />
+                            </View>
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <SecondaryButton
+                                icon={dropIcon}
+                                title={i18n.t('praying')}
+                                subtitle={i18n.t('talk_to_god')}
+                                points={50}
+                                onPress={() => {}}
+                                completed={true}
+                                disabled={true}
+                              />
+                            </View>
+                          </View>
+                        )}
+
+                        {/* Show completed reflection button */}
+                        {reflectionCompleted && (
+                          <View
+                            className="flex-row items-center"
+                            style={{ marginBottom: responsiveHeight(2) }}>
+                            <View
+                              style={{
+                                width: 22,
+                                marginRight: 10,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                left: -8,
+                              }}>
+                              <Image
+                                source={require('../../assets/icons/checkMini.png')}
+                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                              />
+                            </View>
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <SecondaryButton
+                                icon={require('../../assets/icons/journalIcon.png')}
+                                title={i18n.t('reflecting')}
+                                subtitle={i18n.t('journal_thoughts')}
+                                points={25}
+                                onPress={() => {}}
+                                completed={true}
+                                disabled={true}
+                              />
+                            </View>
+                          </View>
+                        )}
+
+                        {/* Show completed custom path button if it was completed today */}
+                        {isCustomPathCompletedToday && (
+                          <View
+                            className="flex-row items-center"
+                            style={{ marginBottom: responsiveHeight(2) }}>
+                            <View
+                              style={{
+                                width: 22,
+                                marginRight: 10,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                left: -8,
+                              }}>
+                              <Image
+                                source={require('../../assets/icons/checkMini.png')}
+                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                              />
+                            </View>
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <SecondaryButton
+                                icon={require('../../assets/icons/map.png')}
+                                title={i18n.t('custom_path')}
+                                subtitle={i18n.t('your_custom_path')}
+                                points={0}
+                                onPress={() => {}}
+                                completed={true}
+                                disabled={true}
+                              />
+                            </View>
+                          </View>
+                        )}
+
+                        {/* Show completed custom devotional button if it was completed today */}
+                        {(() => {
+                          // Check if there's a custom devotional in recent devotionals from today
+                          const today = new Date();
+                          today.setHours(0, 0, 0, 0);
+                          
+                          const hasCustomDevotionalToday = recentDevotionals.some((devotional) => {
+                            if (!devotional || !devotional.date) return false;
+                            
+                            let devotionalDate;
+                            try {
+                              if (devotional.date && typeof devotional.date.toDate === 'function') {
+                                devotionalDate = devotional.date.toDate();
+                              } else if (devotional.date instanceof Date) {
+                                devotionalDate = devotional.date;
+                              } else {
+                                return false;
+                              }
+                              
+                              devotionalDate.setHours(0, 0, 0, 0);
+                              // Check if it's from today and it's NOT the daily devotional
+                              return devotionalDate.getTime() === today.getTime() && 
+                                     devotional.id !== dailyDevotional?.id;
+                            } catch (error) {
+                              return false;
+                            }
+                          });
+
+                          if (hasCustomDevotionalToday) {
+                            return (
+                              <View
+                                className="flex-row items-center"
+                                style={{ marginBottom: responsiveHeight(2) }}>
+                                <View
+                                  style={{
+                                    width: 22,
+                                    marginRight: 10,
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    left: -8,
+                                  }}>
+                                  <Image
+                                    source={require('../../assets/icons/checkMini.png')}
+                                    style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                                  />
+                                </View>
+                                <View style={{ flex: 1, minWidth: 0 }}>
+                                  <SecondaryButton
+                                    icon={require('../../assets/icons/customBread.png')}
+                                    title={i18n.t('generate_custom_devotional') || 'Generate Custom Devotional'}
+                                    subtitle={i18n.t('create_personalized_devotional') || 'Create a personalized devotional'}
+                                    points={50}
+                                    onPress={() => {}}
+                                    completed={true}
+                                    disabled={true}
+                                  />
+                                </View>
+                              </View>
+                            );
+                          }
+                          return null;
+                        })()}
                       </View>
                     )}
                     {!readingCompleted && (
@@ -1315,84 +1574,6 @@ export default function HomeScreen() {
                     )}
 
 
-                    {/* Prayer and Journal Buttons - Show when reading is completed but prayer/journal aren't both completed */}
-                    {readingCompleted && (!prayerCompleted || !reflectionCompleted) && (
-                      <View style={{ marginTop: responsiveHeight(2) }}>
-                        {/* Prayer Button */}
-                        <View
-                          className="flex-row items-center"
-                          style={{ marginBottom: responsiveHeight(2) }}>
-                          <View
-                            style={{
-                              width: 22,
-                              marginRight: 10,
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              left: -8,
-                            }}>
-                            {prayerCompleted ? (
-                              <Image
-                                source={require('../../assets/icons/checkMini.png')}
-                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                              />
-                            ) : (
-                              <View
-                                className="bg-textPrimary/15"
-                                style={{ width: 20, height: 20, borderRadius: 12 }}
-                              />
-                            )}
-                          </View>
-                          <View style={{ flex: 1, minWidth: 0 }}>
-                            <SecondaryButton
-                              icon={dropIcon}
-                              title={i18n.t('praying')}
-                              subtitle={i18n.t('talk_to_god')}
-                              points={50}
-                              onPress={handlePrayerPress}
-                              completed={prayerCompleted}
-                              disabled={prayerCompleted}
-                            />
-                          </View>
-                        </View>
-
-                        {/* Journal Button */}
-                        <View
-                          className="flex-row items-center"
-                          style={{ marginBottom: responsiveHeight(2) }}>
-                          <View
-                            style={{
-                              width: 22,
-                              marginRight: 10,
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              left: -8,
-                            }}>
-                            {reflectionCompleted ? (
-                              <Image
-                                source={require('../../assets/icons/checkMini.png')}
-                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                              />
-                            ) : (
-                              <View
-                                className="bg-textPrimary/15"
-                                style={{ width: 20, height: 20, borderRadius: 12 }}
-                              />
-                            )}
-                          </View>
-                          <View style={{ flex: 1, minWidth: 0 }}>
-                            <SecondaryButton
-                              icon={require('../../assets/icons/journalIcon.png')}
-                              title={i18n.t('reflecting')}
-                              subtitle={i18n.t('journal_thoughts')}
-                              points={25}
-                              onPress={handleReflectionPress}
-                              completed={reflectionCompleted}
-                              disabled={reflectionCompleted}
-                            />
-                          </View>
-                        </View>
-                      </View>
-                    )}
 
                     {/* Custom Path Button - Show at bottom only when reading is NOT completed */}
                     {!readingCompleted &&
@@ -1471,20 +1652,52 @@ export default function HomeScreen() {
                       </View>
                     )}
 
-                    {/* Generate Custom Devotional Button - Only show when reading is completed */}
-                    {readingCompleted && (
-                      <View style={{ marginTop: responsiveHeight(3), marginBottom: responsiveHeight(4) }}>
-                        <SecondaryButton
-                          icon={require('../../assets/icons/customBread.png')}
-                          title={i18n.t('generate_custom_devotional') || 'Generate Custom Devotional'}
-                          subtitle={i18n.t('create_personalized_devotional') || 'Create a personalized devotional'}
-                          points={0}
-                          onPress={handleCustomDevotionalPress}
-                          completed={false}
-                          disabled={false}
-                        />
-                      </View>
-                    )}
+                    {/* Generate Custom Devotional Button - Only show when reading is completed and no custom devotional today */}
+                    {readingCompleted && (() => {
+                      // Check if there's a custom devotional in recent devotionals from today
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      
+                      const hasCustomDevotionalToday = recentDevotionals.some((devotional) => {
+                        if (!devotional || !devotional.date) return false;
+                        
+                        let devotionalDate;
+                        try {
+                          if (devotional.date && typeof devotional.date.toDate === 'function') {
+                            devotionalDate = devotional.date.toDate();
+                          } else if (devotional.date instanceof Date) {
+                            devotionalDate = devotional.date;
+                          } else {
+                            return false;
+                          }
+                          
+                          devotionalDate.setHours(0, 0, 0, 0);
+                          // Check if it's from today and it's NOT the daily devotional
+                          return devotionalDate.getTime() === today.getTime() && 
+                                 devotional.id !== dailyDevotional?.id;
+                        } catch (error) {
+                          return false;
+                        }
+                      });
+
+                      // Only show if custom devotional hasn't been completed today
+                      if (!hasCustomDevotionalToday) {
+                        return (
+                          <View style={{ marginTop: responsiveHeight(3), marginBottom: responsiveHeight(4) }}>
+                            <SecondaryButton
+                              icon={require('../../assets/icons/customBread.png')}
+                              title={i18n.t('generate_custom_devotional') || 'Generate Custom Devotional'}
+                              subtitle={i18n.t('create_personalized_devotional') || 'Create a personalized devotional'}
+                              points={0}
+                              onPress={handleCustomDevotionalPress}
+                              completed={false}
+                              disabled={false}
+                            />
+                          </View>
+                        );
+                      }
+                      return null;
+                    })()}
                     </MemoizedScrollContent>
                   </BottomSheetScrollView>
                   </View>

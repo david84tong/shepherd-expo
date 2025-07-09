@@ -899,8 +899,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                 const riveRef = homeStore.riveRef;
                 if (riveRef?.current?.setInputState) {
                   try {
-                    riveRef.current.setInputState('State Machine 1', 'Action-Number', 12); // 12 = Writing
-                    console.log('Set Rive animation to writing state (12) on input focus');
+                    riveRef.current.setInputState('State Machine 1', 'Action-Number', 10); // 10 = Writing
+                    console.log('Set Rive animation to writing state (10) on input focus');
                   } catch (error) {
                     console.log('Could not set Rive to writing state on focus:', error);
                   }
@@ -1075,8 +1075,15 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                     console.log('🔍 JOURNAL SUCCESS - Setting success state to true');
                     setSuccess(true);
 
-                    // Set Rive to achievement animation
+                    // Snap bottom sheet to lowest point after saving
                     const homeStore = useHomeStore.getState();
+                    const bottomSheetRef = homeStore.bottomSheetRef;
+                    if (bottomSheetRef?.current) {
+                      bottomSheetRef.current.snapToIndex(0); // Snap to lowest point (60%)
+                      console.log('🔍 JOURNAL - Snapped bottom sheet to lowest point after save');
+                    }
+
+                    // Set Rive to achievement animation
                     const riveRef = homeStore.riveRef;
                     if (riveRef?.current?.setInputState) {
                       try {

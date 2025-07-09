@@ -1,7 +1,7 @@
 import React, { useRef, useState, useCallback, useMemo } from 'react';
 import { View, Animated, PanResponder, StyleSheet } from 'react-native';
 
-const CARD_OFFSET = 20; // px offset for both right and bottom - increased for better visibility
+const CARD_OFFSET = 25; // px offset for both right and bottom - increased to prevent overlap
 
 interface CardStackProps<T> {
     data: T[];
@@ -35,7 +35,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
     ).current;
 
     const cardTranslations = useRef(
-        Array.from({ length: stackSize }, (_, i) => new Animated.Value(i === stackSize - 1 ? -30 : 0)) // Changed from -50 to -30
+        Array.from({ length: stackSize }, (_, i) => new Animated.Value(i === stackSize - 1 ? -20 : 0)) // Reduced to -20 to prevent overlap
     ).current;
 
     // Get the current cards to display based on currentIndex
@@ -113,7 +113,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
         // Smoothly animate translation to back card style
         animations.push(
             Animated.timing(cardTranslations[0], {
-                toValue: -30, // Changed from -50 to -30
+                toValue: -20, // Changed to -20 to match initial value
                 duration: 300,
                 useNativeDriver: false,
             })
@@ -151,7 +151,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
             // Smoothly animate translation for cards moving to new positions
             animations.push(
                 Animated.timing(cardTranslations[i], {
-                    toValue: newIsBack ? -30 : 0, // Changed from -50 to -30
+                    toValue: newIsBack ? -20 : 0, // Changed to -20 to match initial value
                     duration: 300,
                     useNativeDriver: false,
                 })
@@ -175,7 +175,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
                 rotation.setValue(index === stackSize - 1 ? 1 : 0);
             });
             cardTranslations.forEach((translation, index) => {
-                translation.setValue(index === stackSize - 1 ? -30 : 0); // Changed from -50 to -30
+                translation.setValue(index === stackSize - 1 ? -20 : 0); // Changed to -20 to match initial value
             });
             setIsAnimating(false);
         });
@@ -242,7 +242,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
             // Animate translation
             animations.push(
                 Animated.timing(cardTranslations[currentCardIndex], {
-                    toValue: newIsBack ? -30 : 0,
+                    toValue: newIsBack ? -20 : 0,
                     duration: 300,
                     useNativeDriver: false,
                 })
@@ -267,7 +267,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
                 rotation.setValue(index === stackSize - 1 ? 1 : 0);
             });
             cardTranslations.forEach((translation, index) => {
-                translation.setValue(index === stackSize - 1 ? -30 : 0);
+                translation.setValue(index === stackSize - 1 ? -20 : 0);
             });
 
             setIsAnimating(false);
@@ -322,11 +322,11 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
     const containerWidth = style && style.width ? style.width : 320;
 
     // Calculate card width properly for React Native (no CSS calc)
-    const cardWidth = containerWidth - (maxOffset * 0.1); // Reduced offset for more width
+    const cardWidth = containerWidth - maxOffset; // Each card is slightly smaller to account for offset
 
     return (
         <View
-            style={[{ width: containerWidth, minHeight: 400, position: 'relative', alignItems: 'center', marginTop: 25 }, style]}
+            style={[{ width: containerWidth, minHeight: 350, position: 'relative', alignItems: 'center', marginTop: 20 }, style]}
             pointerEvents="box-none"
             onTouchStart={() => {
                 // Mark gesture as potentially active immediately
@@ -360,8 +360,8 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
                             },
                             {
                                 translateY: cardTranslations[i].interpolate({
-                                    inputRange: [-50, -30],
-                                    outputRange: [-30, 0], // Less upward translation for better visibility
+                                    inputRange: [-20, 0],
+                                    outputRange: [-20, 0], // Updated to match new translation values
                                 })
                             },
                         ],

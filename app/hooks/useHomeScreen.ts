@@ -16,7 +16,6 @@ import * as Haptics from 'expo-haptics';
 import * as Sharing from 'expo-sharing';
 import auth from '@react-native-firebase/auth';
 import { useLocalSearchParams } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
 
 import {  useHomeStore } from '../stores/homeStore';
 import { usePathStore } from '../stores/pathStore';
@@ -776,6 +775,16 @@ export const useHomeScreen = () => {
   }, [currentDevotional]);
 
   const handleReflectionPress = useCallback(() => {
+    // If reflection is already completed, redirect to pricing
+    if (reflectionCompleted) {
+      analytics.logEvent('HomeScreen_Reflection_Pricing_Redirect', {
+        userType: isPro ? 'pro' : 'free',
+        reflectionCompleted: true,
+      });
+      router.push('/PricingScreen' as any);
+      return;
+    }
+
     // Analytics for pro users accessing reflection
     analytics.logEvent('HomeScreen_Reflection_Accessed', {
       userType: isPro ? 'pro' : 'free',
@@ -784,6 +793,12 @@ export const useHomeScreen = () => {
       prayerCompleted: prayerCompleted,
     });
     setFinishReading(false);
+    
+    // Snap to lowest point (index 0) when opening journal view
+    if (bottomSheetRef.current) {
+      bottomSheetRef.current.snapToIndex(0);
+    }
+    
     Animated.timing(devotionalCardOpacityAnim, {
       toValue: 0,
       duration: 400,
@@ -792,6 +807,17 @@ export const useHomeScreen = () => {
       setShowJournalContent(true);
       const setJournalViewVisible = useHomeStore.getState().setJournalViewVisible;
       setJournalViewVisible(true);
+      
+      // Force set the writing animation after journal content is shown
+      setTimeout(() => {
+        if (riveRef.current?.setInputState) {
+          try {
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
+            console.log('Force set Rive to writing animation (10) after journal shown');
+          } catch (_) {}
+        }
+      }, 100);
+      
       Animated.timing(devotionalCardOpacityAnim, {
         toValue: 1,
         duration: 600,
@@ -805,17 +831,14 @@ export const useHomeScreen = () => {
       duration: 400,
       useNativeDriver: true,
     }).start(() => {
-      setCurrentStateInput(12);
+      setCurrentStateInput(10);
       if (riveRef.current?.setInputState) {
-        setTimeout(() => {
-          if (riveRef.current) {
-            riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
-          }
-        }, 500);
         try {
-          riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
-        } catch (_) {
-          // Ignore if Action-Number input not present
+          // Set writing animation immediately
+          riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
+          console.log('Set Rive to writing animation (10) for reflection');
+        } catch (error) {
+          console.error('Error setting Rive to writing animation:', error);
         }
       }
       Animated.timing(riveArtboardOpacityAnim, {
@@ -824,7 +847,7 @@ export const useHomeScreen = () => {
         useNativeDriver: true,
       }).start();
     });
-  }, [isPro, reflectionCompleted, readingCompleted, prayerCompleted]);
+  }, [isPro, reflectionCompleted, readingCompleted, prayerCompleted, router]);
 
   const handleWidgetPromptPress = useCallback(() => {
     hapticLight();
@@ -1010,10 +1033,9 @@ export const useHomeScreen = () => {
         
         if (riveRef.current && riveRef.current.setInputState) {
           try {
-
-                riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
-           
-
+            // Set to writing animation for journal
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
+            console.log('Set Rive to writing animation (10) from prayer to reflection');
           } catch (e) {
             console.log('Error setting Rive Action-Number to Journal:', e);
           }
@@ -1301,7 +1323,7 @@ export const useHomeScreen = () => {
       } else if (showPrayerContent) {
         targetAction = 1; // prayer
       } else if (showJournalContent) {
-        targetAction = 12; // journal
+        targetAction = 10; // journal/writing animation
       } else {
         // Check if all three actions are completed - if so, set to full (3)
         const homeStore = useHomeStore.getState();
