@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   FlatList,
@@ -10,18 +10,57 @@ import {
 import { testimonials, Rating } from '../data/ratings';
 import { FontAwesome } from '@expo/vector-icons';
 import { useState } from 'react';
+import Animated, { LinearTransition, useAnimatedStyle, useSharedValue, withSequence, withTiming } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = width * 0.85;
+const _CardHeight = 200;
+const _CardSpacing = 10;
 const _spacing = 10;
+const _damping = 10;
+const _stiffness = 100;
 
-const TestimonialCard = ({ item }: { item: Rating }) => {
+const TestimonialCard = ({ item, index }: { item: Rating, index: number }) => {
   const [imageLoading, setImageLoading] = useState(true);
+  const translateY = useSharedValue(0);
+
+  const styleZ = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }]
+  }));
+
+  useEffect(() => {
+    translateY.value =
+       withSequence(
+        withTiming(
+          index === 0
+            ? _CardHeight + _CardSpacing * 3
+            : index === 1
+            ? _CardHeight / 2 
+            : -_CardHeight / 1.1,
+            {
+              duration: 200
+            }
+        ),
+        withTiming(
+          index === 0
+            ? 0
+            : index === 1
+            ? 0
+            : 0,
+            {
+              duration: 800
+            }
+        ),
+
+       )
+  }, [index]);
+
+
 
   return (
-    <View 
+    <Animated.View 
       className="bg-black rounded-xl p-6" 
-      style={{ width: ITEM_WIDTH }}
+      style={{ width: ITEM_WIDTH, ...styleZ }}
     >
       <View className="flex-row items-center mb-3">
         <View className="relative w-12 h-12 justify-center items-center">
@@ -59,18 +98,20 @@ const TestimonialCard = ({ item }: { item: Rating }) => {
       <Text className="font-['nunito-regular'] text-gray-300 text-base mb-2 leading-6">
         "{item.comment}"
       </Text>
-    </View>
+    </Animated.View>
   );
 };
 
 export const TestimonialList = () => {
   return (
-     <View className='items-center justify-center gap-3'>
+     <Animated.View
+     layout={LinearTransition.springify().damping(10).stiffness(100)}
+     className='items-center justify-center gap-3'>
         {
             testimonials.map((item, index) => (
-                <TestimonialCard key={index} item={item} />
+                <TestimonialCard key={index} item={item} index={index} />
             ))
         }
-     </View>
+     </Animated.View>
   );
 }; 
