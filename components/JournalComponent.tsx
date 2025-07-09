@@ -899,7 +899,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                 const riveRef = homeStore.riveRef;
                 if (riveRef?.current?.setInputState) {
                   try {
-                    // riveRef.current.setInputState('State Machine 1', 'Action-Number', 12); // 12 = Writing
+                    riveRef.current.setInputState('State Machine 1', 'Action-Number', 12); // 12 = Writing
                     console.log('Set Rive animation to writing state (12) on input focus');
                   } catch (error) {
                     console.log('Could not set Rive to writing state on focus:', error);

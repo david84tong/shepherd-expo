@@ -1096,58 +1096,8 @@ export default function HomeScreen() {
                     <MemoizedScrollContent>
                     {/* Next Unit Button - Only show when all activities are completed and there's a next unit */}
 
-                    {/* Custom Path Button - Show above cards when reading is completed */}
                     {readingCompleted && (
-                      <View
-                        className="flex-row items-center "
-                        style={{
-                          marginTop: responsiveHeight(2),
-                          marginBottom: responsiveHeight(2),
-                        }}>
-                        <View
-                          style={{
-                            width: 22,
-                            marginRight: 10,
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            left: -8,
-                          }}>
-                          {isCustomPathCompletedToday ? (
-                            <Image
-                              source={require('../../assets/icons/checkMini.png')}
-                              style={{ width: 20, height: 20, resizeMode: 'contain' }}
-                            />
-                          ) : (
-                            <View
-                              className="bg-textPrimary/15"
-                              style={{ width: 20, height: 20, borderRadius: 12 }}
-                            />
-                          )}
-                        </View>
-                        <View style={{ flex: 1, minWidth: 0 }}>
-                          <SecondaryButton
-                            icon={require('../../assets/icons/map.png')}
-                            title={i18n.t('custom_path')}
-                            subtitle={i18n.t('your_custom_path')}
-                            points={0}
-                            onPress={() => {
-                              hapticLight();
-                              router.push({
-                                pathname: '/components/map',
-                                params: {
-                                  fromHome: 'true',
-                                },
-                              });
-                            }}
-                            completed={isCustomPathCompletedToday}
-                            disabled={!readingCompleted}
-                          />
-                        </View>
-                      </View>
-                    )}
-
-                    {readingCompleted && (
-                      <View className="w-full -mt-4 mb-0">
+                      <View className="w-full mt-4 mb-0">
                         {(() => {
                           // Show at most 2 cards: daily verse + last custom devotional
                           const devotionalsToShow: Devotional[] = [];
@@ -1247,6 +1197,56 @@ export default function HomeScreen() {
                           // If still no devotionals to show, return null
                           return null;
                         })()}
+                      </View>
+                    )}
+
+                    {/* Custom Path Button - Show below cards when reading is completed */}
+                    {readingCompleted && (
+                      <View
+                        className="flex-row items-center "
+                        style={{
+                          marginTop: responsiveHeight(2),
+                          marginBottom: responsiveHeight(2),
+                        }}>
+                        <View
+                          style={{
+                            width: 22,
+                            marginRight: 10,
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            left: -8,
+                          }}>
+                          {isCustomPathCompletedToday ? (
+                            <Image
+                              source={require('../../assets/icons/checkMini.png')}
+                              style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                            />
+                          ) : (
+                            <View
+                              className="bg-textPrimary/15"
+                              style={{ width: 20, height: 20, borderRadius: 12 }}
+                            />
+                          )}
+                        </View>
+                        <View style={{ flex: 1, minWidth: 0 }}>
+                          <SecondaryButton
+                            icon={require('../../assets/icons/map.png')}
+                            title={i18n.t('custom_path')}
+                            subtitle={i18n.t('your_custom_path')}
+                            points={0}
+                            onPress={() => {
+                              hapticLight();
+                              router.push({
+                                pathname: '/components/map',
+                                params: {
+                                  fromHome: 'true',
+                                },
+                              });
+                            }}
+                            completed={isCustomPathCompletedToday}
+                            disabled={!readingCompleted}
+                          />
+                        </View>
                       </View>
                     )}
                     {!readingCompleted && (
@@ -1473,7 +1473,7 @@ export default function HomeScreen() {
 
                     {/* Generate Custom Devotional Button - Only show when reading is completed */}
                     {readingCompleted && (
-                      <View style={{ marginTop: responsiveHeight(3), marginBottom: responsiveHeight(2) }}>
+                      <View style={{ marginTop: responsiveHeight(3), marginBottom: responsiveHeight(4) }}>
                         <SecondaryButton
                           icon={require('../../assets/icons/customBread.png')}
                           title={i18n.t('generate_custom_devotional') || 'Generate Custom Devotional'}
