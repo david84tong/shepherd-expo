@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Image,
@@ -7,36 +7,19 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-  withDelay,
-} from 'react-native-reanimated';
+import Animated from 'react-native-reanimated';
 
 import { testimonials, Rating } from '../data/ratings';
 import { FlatList } from 'react-native-gesture-handler';
 
 const { width } = Dimensions.get('window');
 const ITEM_WIDTH = width * 0.9;
-const CARD_HEIGHT = 200;
-const STACK_OFFSET = 4;
-const SCALE_FACTOR = 0.05;
+
 
 const TestimonialCard = ({ item, index }: { item: Rating; index: number }) => {
   const [imageLoading, setImageLoading] = useState(true);
-  const translateY = useSharedValue(50);
-  const scale = useSharedValue(0.9);
-  const opacity = useSharedValue(0);
 
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateY: translateY.value },
-      { scale: scale.value }
-    ],
-    opacity: opacity.value,
-    zIndex: testimonials.length - index,
-  }));
+
 
   return (
     <Animated.View
