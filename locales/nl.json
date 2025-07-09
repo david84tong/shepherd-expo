@@ -503,5 +503,7 @@
     "praying": "Levend Water – Bidden",
     "talk_to_god": "Verfris je geest met gebed",
     "reflecting": "Stille Tijd – Reflecteren",
-    "capture_thoughts": "Pauzeer en ontmoet God"
+    "capture_thoughts": "Pauzeer en ontmoet God",
+    "generate_custom_devotional": "Aangepaste devotie creëren",
+    "create_personalized_devotional": "Gebaseerd op een check-in"
 }

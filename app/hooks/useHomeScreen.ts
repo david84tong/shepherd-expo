@@ -51,8 +51,6 @@ const moodToStateInput: Record<string, number> = {
   'lamb-full': 3,
 };
 
-let effectCounter = 0;
-
 export const useHomeScreen = () => {
   console.log('🎯 useHomeScreen hook called!');
   const router = useRouter();
@@ -531,11 +529,7 @@ export const useHomeScreen = () => {
     };
   }, [riveSkinInitialized, isFirstLoad, isPro, currentSkin, levelInfo]);
 
-  // First, add a simple effect to verify effects are running at all
-  useEffect(() => {
-    effectCounter++;
-    console.log(`🚨 EFFECT #${effectCounter} REGISTERED - Basic test effect is running!`);
-  });
+  // Debug effect removed - was causing infinite re-renders
   
   // Handlers
   const handleDevotionalFinishPress = useCallback(() => {
@@ -815,11 +809,11 @@ export const useHomeScreen = () => {
       if (riveRef.current?.setInputState) {
         setTimeout(() => {
           if (riveRef.current) {
-            riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
           }
         }, 500);
         try {
-          riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
+          riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
         } catch (_) {
           // Ignore if Action-Number input not present
         }
@@ -1017,11 +1011,11 @@ export const useHomeScreen = () => {
         if (riveRef.current && riveRef.current.setInputState) {
           try {
 
-                riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
+                riveRef.current.setInputState('State Machine 1', 'Action-Number', 12);
            
 
           } catch (e) {
-            console.log('Error setting Rive Action-Number to Raising Hand:', e);
+            console.log('Error setting Rive Action-Number to Journal:', e);
           }
         }
         Animated.parallel([

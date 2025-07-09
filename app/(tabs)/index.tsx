@@ -33,7 +33,7 @@ import { imageAssets, useAssetsStore } from '../stores/assetsStore';
 import { useDevotionalStore } from '../stores/devotionalStore';
 import { usePathStore } from '../stores/pathStore';
 import { useUserStore } from '../stores/userStore';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import type { Devotional } from '../models/Devotional';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import Rive from 'rive-react-native';
@@ -65,15 +65,15 @@ const starIcon = imageAssets[10];
 
 console.log('📄 HomeScreen file loaded at:', new Date().toISOString());
 
+// Memoized scroll view content to prevent unnecessary re-renders
+const MemoizedScrollContent = React.memo(({ children }: { children: React.ReactNode }) => {
+  return <>{children}</>;
+});
+
 export default function HomeScreen() {
   console.log('🏠 HomeScreen function called at:', new Date().toISOString());
 
   const router = useRouter();
-
-  // Direct function call to test
-  React.useEffect(() => {
-    console.log('🔥 INLINE EFFECT RUNNING!');
-  }, []);
 
   // Add a state to ensure component is mounted
   const [isMounted, setIsMounted] = useState(false);
@@ -169,6 +169,12 @@ export default function HomeScreen() {
   const [selectedDevotionalForShare, setSelectedDevotionalForShare] = useState<Devotional | null>(
     null
   );
+
+  // Track scroll position without triggering re-renders
+  const scrollOffsetRef = useRef(0);
+  const scrollViewRef = useRef<any>(null);
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   console.log('📍 About to call useHomeScreen hook');
 
@@ -292,7 +298,6 @@ export default function HomeScreen() {
 
   // Add state for recent devotionals
   const [recentDevotionals, setRecentDevotionals] = useState<(Devotional | null)[]>([]);
-  console.log('recentDevotionals ==>', recentDevotionals);
 
   // Debug effect to track nextUnitPreview changes
   useEffect(() => {
@@ -429,6 +434,21 @@ export default function HomeScreen() {
       checkAndResetDailyCompletion();
     }, [])
   );
+
+  // Fix scroll issues when bottom sheet state changes
+  useEffect(() => {
+    if (bottomSheetRef.current && scrollViewRef.current) {
+      // Force re-enable scrolling after state changes
+      const timer = setTimeout(() => {
+        if (scrollViewRef.current) {
+          scrollViewRef.current.scrollTo({ y: scrollOffsetRef.current, animated: false });
+          console.log('Restored scroll position to:', scrollOffsetRef.current);
+        }
+      }, 100);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showDevotionalContent, showJournalContent, showPrayerContent, prayerCompleted, readingCompleted, reflectionCompleted]);
 
   const isCustomPathCompletedToday = useMemo(() => {
     // First check the new completedUnitToday flag
@@ -998,7 +1018,12 @@ export default function HomeScreen() {
                   android: { elevation: 3, shadowColor: 'rgba(0,0,0,0.08)' },
                 }),
               }}
-              onChange={handleSheetChanges}>
+              onChange={handleSheetChanges}
+              android_keyboardInputMode="adjustResize"
+              keyboardBehavior={Platform.OS === 'ios' ? 'extend' : 'interactive'}
+              keyboardBlurBehavior="restore"
+              enableContentPanningGesture={!(showDevotionalContent || showJournalContent || showPrayerContent)}
+              simultaneousHandlers={[]}>
               <Animated.View style={{ flex: 1, opacity: devotionalCardOpacityAnim }}>
                 {showDevotionalContent ? (
                   <DevotionalReader
@@ -1030,17 +1055,45 @@ export default function HomeScreen() {
                     setShowPrayerSuccess={setShowPrayerSuccess}
                   />
                 ) : (
-                  <BottomSheetScrollView
-                    key={`scroll-${prayerCompleted}-${readingCompleted}-${reflectionCompleted}-${!!nextUnitPreview}`}
-                    showsVerticalScrollIndicator={false}
-                    contentContainerStyle={{ paddingBottom: RPH(30), paddingHorizontal: 24 }}
-                    bounces={true}
-                    alwaysBounceVertical={false}
-                    keyboardShouldPersistTaps="handled"
-                    nestedScrollEnabled={true}
-                    removeClippedSubviews={false}
-                    automaticallyAdjustContentInsets={false}
-                    contentInsetAdjustmentBehavior="never">
+                  <View style={{ flex: 1 }} pointerEvents="box-none">
+                    <BottomSheetScrollView
+                      ref={scrollViewRef}
+                      showsVerticalScrollIndicator={false}
+                      contentContainerStyle={{ 
+                        paddingBottom: Platform.select({ ios: RPH(30), android: RPH(35) }), 
+                        paddingHorizontal: 24,
+                        flexGrow: 1,
+                        minHeight: '100%'
+                      }}
+                      bounces={true}
+                      alwaysBounceVertical={true}
+                      keyboardShouldPersistTaps="handled"
+                      nestedScrollEnabled={true}
+                      scrollEventThrottle={16}
+                      removeClippedSubviews={Platform.OS === 'android'}
+                      automaticallyAdjustContentInsets={false}
+                      contentInsetAdjustmentBehavior="never"
+                      enableOnAndroid={true}
+                      enablePanDownToClose={false}
+                      overScrollMode="always"
+                      onScroll={(event) => {
+                        const offset = event.nativeEvent.contentOffset.y;
+                        scrollOffsetRef.current = offset;
+                      }}
+                      onScrollBeginDrag={() => {
+                        setIsScrolling(true);
+                      }}
+                      onScrollEndDrag={() => {
+                        setIsScrolling(false);
+                      }}
+                      onMomentumScrollBegin={() => {
+                        setIsScrolling(true);
+                      }}
+                      onMomentumScrollEnd={() => {
+                        setIsScrolling(false);
+                      }}
+                      scrollEnabled={true}>
+                    <MemoizedScrollContent>
                     {/* Next Unit Button - Only show when all activities are completed and there's a next unit */}
 
                     {/* Custom Path Button - Show above cards when reading is completed */}
@@ -1417,7 +1470,22 @@ export default function HomeScreen() {
                         </Text>
                       </View>
                     )}
+
+                    {/* Generate Custom Devotional Button - Always at the bottom */}
+                    <View style={{ marginTop: responsiveHeight(3), marginBottom: responsiveHeight(2) }}>
+                      <SecondaryButton
+                        icon={require('../../assets/icons/customBread.png')}
+                        title={i18n.t('generate_custom_devotional') || 'Generate Custom Devotional'}
+                        subtitle={i18n.t('create_personalized_devotional') || 'Create a personalized devotional'}
+                        points={0}
+                        onPress={handleCustomDevotionalPress}
+                        completed={false}
+                        disabled={false}
+                      />
+                    </View>
+                    </MemoizedScrollContent>
                   </BottomSheetScrollView>
+                  </View>
                 )}
               </Animated.View>
             </BottomSheet>

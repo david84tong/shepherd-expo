@@ -494,5 +494,7 @@
     "praying": "Agua Viva – Orar",
     "talk_to_god": "Refresca tu espíritu con oración",
     "reflecting": "Tiempo de Quietud – Reflexionar",
-    "capture_thoughts": "Pausa y encuentra a Dios"
+    "capture_thoughts": "Pausa y encuentra a Dios",
+    "generate_custom_devotional": "Crear devocional personalizado",
+    "create_personalized_devotional": "Basado en un check-in"
 }
