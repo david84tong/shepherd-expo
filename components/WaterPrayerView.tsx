@@ -1142,6 +1142,10 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               }
               // // Check streak trigger conditions when user presses "Go Home" from prayer success
               const homeStore = useHomeStore.getState();
+              
+              // First check and reset streak flag if it's a new day
+              homeStore.checkAndResetStreakIfNeeded();
+              
               const { readingCompleted, sawStreakToday } = homeStore;
 
               // Only trigger if reading is completed and streak hasn't been shown today
