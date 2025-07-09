@@ -37,6 +37,15 @@ async function moveUserToProMode(
 
   let onboardingCompleted: string | null = null;
   useUserStore.getState().setProStatus('pro');
+  
+  // Update user properties in analytics platforms
+  analytics.setUserProperties({
+    isPro: true,
+    proStatus: 'pro',
+    subscriptionType: fromPaywall || 'unknown',
+    packageId: packageId || 'unknown',
+  });
+  
   // Set isPro: true and proExpiryDate: null in Firestore for the current user
   try {
     const currentUser = auth().currentUser;
@@ -544,6 +553,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       // Update user's pro status in userStore
       if (isPro) {
         useUserStore.getState().setProStatus('pro');
+        
+        // Update user properties in analytics platforms
+        analytics.setUserProperties({
+          isPro: true,
+          proStatus: 'pro',
+          subscriptionType: 'direct_purchase',
+          packageId: pack.identifier,
+          productId: productIdentifier,
+        });
 
         // Show success toast
         Toast.show({
@@ -660,6 +678,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
               proExpiryDate = null;
               if (!isProAdapty) {
                 set({ isProMember: false });
+                // Update user properties in analytics platforms
+                analytics.setUserProperties({
+                  isPro: false,
+                  proStatus: 'free',
+                  subscriptionType: 'expired',
+                });
               }
               useUserStore.getState().setProStatus('free');
               console.log('[SubscriptionStore] Pro status expired in Firestore, set to free.');
@@ -684,6 +708,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       }
       set({ customerInfo: profile, isProMember: finalProStatus });
       useUserStore.getState().setProStatus(finalProStatus ? 'pro' : 'free');
+      
+      // Update user properties in analytics if status changed
+      if (prevIsPro !== finalProStatus) {
+        analytics.setUserProperties({
+          isPro: finalProStatus,
+          proStatus: finalProStatus ? 'pro' : 'free',
+        });
+      }
+      
       console.log(
         '[SubscriptionStore] Customer info and pro status updated in store (Adapty + Firestore).'
       );
@@ -809,6 +842,14 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
     set({ isProMember: true });
     useUserStore.getState().setProStatus('pro');
+    
+    // Update user properties in analytics platforms
+    analytics.setUserProperties({
+      isPro: true,
+      proStatus: 'pro',
+      subscriptionType: 'referral_code',
+      referralCode: code.toUpperCase(),
+    });
   },
   getUsedReferralCodes: async () => {
     const user = auth().currentUser;

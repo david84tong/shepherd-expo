@@ -455,7 +455,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const moods = [
     { emoji: '😊', label: 'Great', value: 'Great', image: require('../assets/icons/moods/greatLamb.png') },
     { emoji: '😔', label: 'Good', value: 'good', image: require('../assets/icons/moods/goodLamb.png') },
-    { emoji: '😌', label: 'Meh', value: 'meb', image: require('../assets/icons/moods/sheepIcon.png') },
+    { emoji: '😌', label: 'Okay', value: 'okay', image: require('../assets/icons/moods/sheepIcon.png') },
     { emoji: '😤', label: 'Bad', value: 'bad', image: require('../assets/icons/moods/sadLamb.png') },
     { emoji: '😴', label: 'Very Bad', value: 'veryBad', image: require('../assets/icons/moods/reallyBadLamb.png') },
     { emoji: '🤗', label: 'Angry', value: 'angry', image: require('../assets/icons/moods/angryLamb.png') },

@@ -675,6 +675,12 @@ export const useHomeScreen = () => {
       if (!__DEV__ && !readingCompleted) return;
 
       setFinishReading(false);
+      
+      // Snap to smallest point (index 0) when opening prayer view
+      if (bottomSheetRef.current) {
+        bottomSheetRef.current.snapToIndex(0);
+      }
+      
       Animated.timing(devotionalCardOpacityAnim, {
         toValue: 0,
         duration: 400,
@@ -713,7 +719,7 @@ export const useHomeScreen = () => {
         prayerTopic: recentPrayers[0] || 'general',
       });
     }
-  }, [isPro, prayerCompleted, readingCompleted]);
+  }, [isPro, prayerCompleted, readingCompleted, bottomSheetRef]);
 
   const handleReadPress = useCallback(() => {
     const setShowGlobalButtons = useHomeStore.getState().setShowGlobalButtons;

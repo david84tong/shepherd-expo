@@ -26,9 +26,10 @@ interface HalfModalSheetProps {
     penalty?: number;
     daysMissed?: number;
   };
+  onDismiss?: () => void;
 }
 
-const HalfModalSheet: React.FC<HalfModalSheetProps> = ({ halfModalRef, snapPoints, params }) => {
+const HalfModalSheet: React.FC<HalfModalSheetProps> = ({ halfModalRef, snapPoints, params, onDismiss }) => {
   // Add internal ref for the actual BottomSheet
   const bottomSheetRef = useRef<BottomSheet>(null);
 
@@ -36,7 +37,11 @@ const HalfModalSheet: React.FC<HalfModalSheetProps> = ({ halfModalRef, snapPoint
   const handleDismiss = useCallback(() => {
     bottomSheetRef.current?.close();
     hapticMedium();
-  }, []);
+    // Call onDismiss callback if provided
+    if (onDismiss) {
+      onDismiss();
+    }
+  }, [onDismiss]);
 
   // Handle bottom sheet changes
   const handleSheetChange = useCallback((index: number) => {

@@ -11,14 +11,12 @@ import {
   AppStateStatus,
   Alert,
   Linking,
-  Text,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Purchases from 'react-native-purchases';
 import Rive from 'rive-react-native';
 import '../global.css';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import auth from '@react-native-firebase/auth';
 import AppLoading from '../components/AppLoading';
 import { DebugButton } from '../components/DebugModal';
 import { HalfModalType } from './halfModal';
@@ -204,8 +202,11 @@ export default function RootLayout() {
     if (isInitialized) {
       onAppForegroundOrInit();
       // Check and show check-in after a delay to ensure everything is ready
+      // But only if hearts lost modal is not scheduled to show
       setTimeout(() => {
-        checkAndShowCheckInIfNeeded();
+        if (!isHeartsLostModalVisible.current) {
+          checkAndShowCheckInIfNeeded();
+        }
       }, 3000);
     }
   }, [isInitialized]);
@@ -272,6 +273,8 @@ export default function RootLayout() {
           penalty: result.heartPenalty,
           daysMissed: result.daysMissed,
         });
+        // Set flag to indicate hearts lost modal is visible
+        isHeartsLostModalVisible.current = true;
         // Show the half modal with a delay
         setTimeout(() => {
           showHalfModal(params);
@@ -284,6 +287,8 @@ export default function RootLayout() {
   
   // Add ref to track if check-in is already scheduled
   const checkInScheduledRef = useRef(false);
+  // Add ref to track if hearts lost modal is visible
+  const isHeartsLostModalVisible = useRef(false);
   
   // Check if one hour has passed since last check-in AND today's check-in is not complete
   const checkAndShowCheckInIfNeeded = () => {
@@ -303,6 +308,12 @@ export default function RootLayout() {
     // Check if check-in is already scheduled
     if (checkInScheduledRef.current) {
       console.log('[CheckIn] ❌ Check-in already scheduled, skipping duplicate call');
+      return;
+    }
+    
+    // Check if hearts lost modal is visible
+    if (isHeartsLostModalVisible.current) {
+      console.log('[CheckIn] ❌ Hearts lost modal is visible, delaying check-in');
       return;
     }
     
@@ -593,7 +604,10 @@ export default function RootLayout() {
         console.log('App has come to the foreground!');
         onAppForegroundOrInit();
         useHighlightStore.getState().syncHighlights();
-        checkAndShowCheckInIfNeeded();
+        // Only check for check-in if hearts lost modal is not visible
+        if (!isHeartsLostModalVisible.current) {
+          checkAndShowCheckInIfNeeded();
+        }
       }
       appState.current = nextAppState;
     };
@@ -715,6 +729,16 @@ export default function RootLayout() {
                 subMessage: halfModalParams.subMessage,
                 penalty: halfModalParams.penalty,
                 daysMissed: halfModalParams.daysMissed,
+              }}
+              onDismiss={() => {
+                // If this was a hearts lost modal, clear the flag and check if we need to show check-in
+                if (halfModalParams.type === HalfModalType.HEART_PENALTY) {
+                  isHeartsLostModalVisible.current = false;
+                  // Check if we should show check-in after hearts lost modal is dismissed
+                  setTimeout(() => {
+                    checkAndShowCheckInIfNeeded();
+                  }, 500);
+                }
               }}
             />
 
