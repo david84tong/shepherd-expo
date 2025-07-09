@@ -16,50 +16,50 @@ export const LanguageDetectionExample: React.FC = () => {
   const handleLanguageChange = async (languageCode: string) => {
     try {
       await setAppLanguage(languageCode as any);
-      Alert.alert('Success', `Language changed to ${getLanguageDisplayName(languageCode)}`);
+      Alert.alert(i18n.t('success'), i18n.t('language_changed_successfully', { language: getLanguageDisplayName(languageCode) }));
     } catch (error) {
-      Alert.alert('Error', 'Failed to change language');
+      Alert.alert(i18n.t('error'), i18n.t('failed_to_change_language'));
     }
   };
 
   const handleResetToDevice = async () => {
     try {
       await resetToDeviceLanguage();
-      Alert.alert('Success', 'Language reset to device default');
+      Alert.alert(i18n.t('success'), i18n.t('language_reset_success'));
     } catch (error) {
-      Alert.alert('Error', 'Failed to reset language');
+      Alert.alert(i18n.t('error'), i18n.t('failed_to_reset_language'));
     }
   };
 
   if (isLoading) {
     return (
       <View className="flex-1 justify-center items-center">
-        <Text>Detecting language...</Text>
+        <Text>{i18n.t('detecting_language')}</Text>
       </View>
     );
   }
 
   return (
     <View className="flex-1 p-4">
-      <Text className="text-xl font-bold mb-4">Language Detection</Text>
+      <Text className="text-xl font-bold mb-4">{i18n.t('language_detection')}</Text>
       
       <View className="mb-6">
-        <Text className="text-lg mb-2">Device Language: {getLanguageDisplayName(detectedLanguage)}</Text>
+        <Text className="text-lg mb-2">{i18n.t('device_language', { language: getLanguageDisplayName(detectedLanguage) })}</Text>
         <Text className="text-sm text-gray-600">
           {isLanguageSupported 
-            ? '✅ This language is supported by the app' 
-            : '❌ This language is not supported, using English as fallback'
+            ? i18n.t('language_supported')
+            : i18n.t('language_not_supported')
           }
         </Text>
       </View>
 
       <View className="mb-6">
-        <Text className="text-lg font-semibold mb-3">Current App Language:</Text>
+        <Text className="text-lg font-semibold mb-3">{i18n.t('current_app_language')}</Text>
         <Text className="text-base">{getLanguageDisplayName(i18n.locale)}</Text>
       </View>
 
       <View className="mb-6">
-        <Text className="text-lg font-semibold mb-3">Supported Languages:</Text>
+        <Text className="text-lg font-semibold mb-3">{i18n.t('supported_languages')}</Text>
         {supportedLanguages.map((lang) => (
           <TouchableOpacity
             key={lang.code}
@@ -84,7 +84,7 @@ export const LanguageDetectionExample: React.FC = () => {
         onPress={handleResetToDevice}
       >
         <Text className="text-white text-center font-semibold">
-          Reset to Device Language
+          {i18n.t('reset_to_device_language')}
         </Text>
       </TouchableOpacity>
     </View>

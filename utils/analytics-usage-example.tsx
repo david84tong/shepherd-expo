@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { useAnalytics } from '../app/hooks/useAnalytics';
+import i18n from '../app/utils/i18n';
 
 /**
  * Example component demonstrating how to use the analytics hook
@@ -70,21 +71,21 @@ const AnalyticsExampleComponent = () => {
   };
 
   return (
-    <View className="p-4">
-      <Text className="text-heading font-feather">Analytics Example</Text>
+    <View style={{ flex: 1, padding: 20 }}>
+      <Text className="text-heading font-feather">{i18n.t('analytics_example')}</Text>
       
       <TouchableOpacity 
         className="mt-4 bg-accentGreen p-4 rounded-md"
         onPress={handleStartReading}
       >
-        <Text className="text-white font-din text-center">Start Reading</Text>
+        <Text className="text-white font-din text-center">{i18n.t('start_reading')}</Text>
       </TouchableOpacity>
-      
+
       <TouchableOpacity 
         className="mt-4 bg-accentRed p-4 rounded-md"
         onPress={handleRiskyAction}
       >
-        <Text className="text-white font-din text-center">Try Risky Action</Text>
+        <Text className="text-white font-din text-center">{i18n.t('try_risky_action')}</Text>
       </TouchableOpacity>
     </View>
   );

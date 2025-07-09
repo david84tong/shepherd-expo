@@ -25,6 +25,7 @@ import { AppFonts } from '~/app/constants/appFonts';
 import { RPH } from '~/app/helper/helper';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import { useSoundStore } from '~/app/stores/soundStore';
+import i18n from '../app/utils/i18n';
 /* ─────────────── helper ─────────────── */
 type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE';
 
@@ -538,7 +539,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
 
         {/* Continue button */}
         <Animated.View style={buttonStyle} className="px-6 pb-10 mt-8">
-          <PrimaryButton buttonType="blue" title="Go home" onPress={handleContinue} />
+          <PrimaryButton buttonType="blue" title={i18n.t('go_home_button')} onPress={handleContinue} />
         </Animated.View>
 
         {/* Development debug info */}
