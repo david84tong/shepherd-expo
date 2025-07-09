@@ -380,7 +380,15 @@ export default function RootLayout() {
     }
     
     console.log('[CheckIn] Showing check-in for user:', currentUser.uid, 'Anonymous:', currentUser.isAnonymous);
-    checkInRef.current?.expand();
+    
+    // Check if the ref exists before trying to expand
+    if (checkInRef.current) {
+      console.log('[CheckIn] checkInRef exists, calling forceShow()');
+      // Use forceShow for more reliable opening
+      checkInRef.current.forceShow();
+    } else {
+      console.error('[CheckIn] checkInRef.current is null, cannot show check-in');
+    }
   };
 
   // Monitor auth state changes

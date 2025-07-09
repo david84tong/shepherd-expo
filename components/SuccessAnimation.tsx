@@ -658,18 +658,28 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     homeStore.setPrayerViewVisible(false);
     homeStore.setJournalViewVisible(false);
 
-    // Always navigate to home screen - streak will be triggered from home if conditions are met
-    if (!sawStreakToday) {
-      router.push({
-        pathname: '/streak',
-      });
-    } else {
+    // For reading completion, never show streak screen - just go home
+    if (effectiveType === SuccessAnimationType.READING || effectiveType === SuccessAnimationType.SECTION_COMPLETE) {
       router.replace({
         pathname: '/(tabs)',
         params: {
           isPrayPresses: isPrayPresses ? 'true' : 'false'
         },
       });
+    } else {
+      // For other success types, check if we should show streak
+      if (!sawStreakToday) {
+        router.push({
+          pathname: '/streak',
+        });
+      } else {
+        router.replace({
+          pathname: '/(tabs)',
+          params: {
+            isPrayPresses: isPrayPresses ? 'true' : 'false'
+          },
+        });
+      }
     }
   };
 
@@ -716,8 +726,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   // Remove next action buttons - only show continue button
   const showNextButtons = false;
 
-  // If we're showing the streak screen, return it
-  if (showStreakScreen) {
+  // Never show streak screen for reading completions
+  if (showStreakScreen && effectiveType !== SuccessAnimationType.READING && effectiveType !== SuccessAnimationType.SECTION_COMPLETE) {
     return <StreakScreen />;
   }
 

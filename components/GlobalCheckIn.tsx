@@ -24,6 +24,7 @@ import { useUserStore } from '~/app/stores/userStore';
 import { Timestamp } from '@react-native-firebase/firestore';
 import { IS_ANDROID } from '~/app/utils/utils';
 import { useSoundStore } from '~/app/stores/soundStore';
+import useSubscriptionStore from '~/app/stores/subscriptionStore';
 
 // Import gem icon
 import gemIcon from '../assets/icons/greenGemIcon.png';
@@ -31,6 +32,7 @@ import gemIcon from '../assets/icons/greenGemIcon.png';
 export type GlobalCheckInRef = {
   expand: () => void;
   close: () => void;
+  forceShow: () => void;
 };
 
 interface GlobalCheckInProps {
@@ -46,6 +48,9 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const [currentScreen, setCurrentScreen] = useState<CheckInScreen>('mood');
   const [isGenerating, setIsGenerating] = useState(false);
   const [checkInSaved, setCheckInSaved] = useState(false);
+  const [isSheetVisible, setIsSheetVisible] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const expandAttempts = useRef(0);
 
   // Hooks
   const router = useRouter();
@@ -166,6 +171,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   // Handle dismiss
   const handleDismiss = useCallback(() => {
     bottomSheetRef.current?.close();
+    setIsSheetVisible(false);
     // Reset everything after sheet closes
     setTimeout(() => {
       setCurrentScreen('mood');
@@ -195,6 +201,14 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     const currentUser = auth().currentUser;
     if (!currentUser) {
       console.error('No authenticated user available for generating devotional');
+      return;
+    }
+
+    // Check if user is pro
+    const { isProMember, presentFreeTrialPaywall } = useSubscriptionStore.getState();
+    if (!isProMember) {
+      console.log('[GlobalCheckIn] User is not pro, presenting free trial paywall');
+      await presentFreeTrialPaywall();
       return;
     }
 
@@ -346,17 +360,33 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     checkInRef,
     () => ({
       expand: () => {
-        bottomSheetRef.current?.expand();
+        console.log('[GlobalCheckIn] expand() called, isSheetVisible:', isSheetVisible, 'isClosing:', isClosing);
+        
+        // If currently closing, wait and retry
+        if (isClosing) {
+          console.log('[GlobalCheckIn] Sheet is closing, waiting to expand...');
+          expandAttempts.current++;
+          if (expandAttempts.current < 3) {
+            setTimeout(() => {
+              checkInRef.current?.expand();
+            }, 400);
+          }
+          return;
+        }
+        
+        // Reset expand attempts
+        expandAttempts.current = 0;
+        
         // Reset to initial state when opening
         setCurrentScreen('mood');
         setSelectedMood(null);
         setSelectedFocus(null);
         setSelectedStruggle(null);
-        clearCurrentSession(); // Clear store session
-        setCheckInSaved(false); // Reset saved flag
-        setIsGenerating(false); // Reset generating state
-        setGemsAwarded(false); // Reset gems awarded flag
-        setShowRewardAnimation(false); // Reset reward animation
+        clearCurrentSession();
+        setCheckInSaved(false);
+        setIsGenerating(false);
+        setGemsAwarded(false);
+        setShowRewardAnimation(false);
         moodAnim.setValue(0);
         focusAnim.setValue(screenWidth);
         struggleAnim.setValue(screenWidth);
@@ -365,15 +395,52 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         rewardCardScale.setValue(0.8);
         gemTextOpacity.setValue(0);
 
+        // Force expand using snapToIndex
+        setIsSheetVisible(true);
+        requestAnimationFrame(() => {
+          bottomSheetRef.current?.snapToIndex(0);
+        });
+
         // Log analytics for check-in shown
         analytics.logEvent('checkin_sheet_shown', {
-          trigger: 'one_hour_reminder',
+          trigger: 'custom_devotional',
           hasBeenOneHour: useCheckInStore.getState().hasBeenOneHourSinceLastCheckIn(),
         });
       },
-      close: () => bottomSheetRef.current?.close(),
+      close: () => {
+        console.log('[GlobalCheckIn] close() called');
+        setIsClosing(true);
+        bottomSheetRef.current?.close();
+      },
+      forceShow: () => {
+        console.log('[GlobalCheckIn] forceShow() called');
+        
+        // Reset expand attempts
+        expandAttempts.current = 0;
+        
+        // First, force close if visible
+        if (isSheetVisible) {
+          setIsClosing(true);
+          bottomSheetRef.current?.close();
+          
+          // Wait for close to complete, then expand
+          setTimeout(() => {
+            setIsClosing(false);
+            checkInRef.current?.expand();
+          }, 400);
+        } else {
+          // Not visible, just expand
+          setIsClosing(false);
+          checkInRef.current?.expand();
+        }
+        
+        // Log analytics
+        analytics.logEvent('checkin_sheet_force_shown', {
+          trigger: 'custom_devotional'
+        });
+      },
     }),
-    [moodAnim, focusAnim, struggleAnim, successAnim, clearCurrentSession]
+    [moodAnim, focusAnim, struggleAnim, successAnim, clearCurrentSession, isSheetVisible, isClosing]
   );
 
   // Mood options with corresponding lamb images
@@ -507,7 +574,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
             animateToScreen('struggle');
           }, 100);
         }}
-        className="mt-4 mb-4">
+        className="mt-12 mb-4">
         <Text className="font-din text-base text-gray-500 underline">Skip</Text>
       </Pressable>
     </Animated.View>
@@ -602,34 +669,31 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         if (riveRef.current) {
           riveRef.current.play();
         }
-      }, 100);
-
+      }, 50);
+      
       // Animate reward card with bounce effect
       setTimeout(() => {
         Animated.parallel([
           Animated.timing(rewardCardOpacity, {
             toValue: 1,
-            duration: 500,
+            duration: 250,
             useNativeDriver: true,
           }),
           Animated.spring(rewardCardScale, {
             toValue: 1,
-            tension: 40,
-            friction: 6,
+            tension: 60,
+            friction: 8,
             useNativeDriver: true,
           }),
         ]).start(() => {
           // Animate gem text after card appears
-          Animated.sequence([
-            Animated.delay(100),
-            Animated.timing(gemTextOpacity, {
-              toValue: 1,
-              duration: 400,
-              useNativeDriver: true,
-            })
-          ]).start();
+          Animated.timing(gemTextOpacity, {
+            toValue: 1,
+            duration: 200,
+            useNativeDriver: true,
+          }).start();
         });
-      }, 600);
+      }, 200);
     }
   }, [currentScreen, showRewardAnimation]);
 
@@ -725,6 +789,13 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           title={(currentFocus !== '' || currentStruggle !== '') ? "Generate Custom Devotional" : "Start Today's Devotional"}
           onPress={async () => {
             if (currentFocus !== '' || currentStruggle !== '') {
+              // Check if user is pro before generating custom devotional
+              const { isProMember, presentFreeTrialPaywall } = useSubscriptionStore.getState();
+              if (!isProMember) {
+                console.log('[GlobalCheckIn] User is not pro, presenting free trial paywall');
+                await presentFreeTrialPaywall();
+                return;
+              }
               // Log the current check-in state
               const checkInState = useCheckInStore.getState();
               console.log('[GlobalCheckIn] Before navigation - check-in state:', {
@@ -927,7 +998,42 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       enablePanDownToClose
       backgroundStyle={{ backgroundColor: '#FFF4D9', borderTopLeftRadius: 24, borderTopRightRadius: 24 }}
       handleIndicatorStyle={{ backgroundColor: '#DCB280', height: 5, width: 48 }}
-      backdropComponent={renderBackdrop}>
+      backdropComponent={renderBackdrop}
+      onChange={(index) => {
+        console.log('[GlobalCheckIn] BottomSheet changed to index:', index);
+        
+        // Update visibility state
+        const wasVisible = isSheetVisible;
+        const isNowVisible = index >= 0;
+        setIsSheetVisible(isNowVisible);
+        
+        // If sheet just closed
+        if (wasVisible && !isNowVisible) {
+          console.log('[GlobalCheckIn] Sheet closed, marking as not closing');
+          setIsClosing(false);
+          
+          // Reset states after close
+          setTimeout(() => {
+            setCurrentScreen('mood');
+            setSelectedMood(null);
+            setSelectedFocus(null);
+            setSelectedStruggle(null);
+            clearCurrentSession();
+            setIsGenerating(false);
+            setCheckInSaved(false);
+            setGemsAwarded(false);
+            setShowRewardAnimation(false);
+            // Reset animations
+            moodAnim.setValue(0);
+            focusAnim.setValue(screenWidth);
+            struggleAnim.setValue(screenWidth);
+            successAnim.setValue(screenWidth);
+            rewardCardOpacity.setValue(0);
+            rewardCardScale.setValue(0.8);
+            gemTextOpacity.setValue(0);
+          }, 300);
+        }
+      }}>
       <BottomSheetView style={{ width: '100%', height: '100%', paddingTop: 20, paddingBottom: 30, overflow: 'hidden' }}>
         <View style={{ flex: 1, position: 'relative' }}>
           {/* All screens are rendered but with proper touch handling */}

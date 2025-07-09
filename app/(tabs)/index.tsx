@@ -716,13 +716,26 @@ export default function HomeScreen() {
 
   // Handler for custom devotional button
   const handleCustomDevotionalPress = async () => {
+    console.log('[handleCustomDevotionalPress] Button pressed');
+    hapticLight(); // Add haptic feedback
+    
     // Simply show the check-in sheet
     const showCheckIn = (global as any).showCheckIn;
+    console.log('[handleCustomDevotionalPress] showCheckIn type:', typeof showCheckIn);
+    console.log('[handleCustomDevotionalPress] global object:', global);
+    
     if (showCheckIn && typeof showCheckIn === 'function') {
+      console.log('[handleCustomDevotionalPress] Calling showCheckIn()');
       showCheckIn();
       analytics.logEvent('custom_devotional_triggered_checkin');
     } else {
       console.error('[handleCustomDevotionalPress] showCheckIn function not found on global');
+      // Try to access it directly from window if global doesn't work
+      if ((window as any).showCheckIn && typeof (window as any).showCheckIn === 'function') {
+        console.log('[handleCustomDevotionalPress] Found showCheckIn on window, calling it');
+        (window as any).showCheckIn();
+        analytics.logEvent('custom_devotional_triggered_checkin');
+      }
     }
   };
 
@@ -1151,7 +1164,7 @@ export default function HomeScreen() {
 
                     {readingCompleted && (
                       <Animated.View
-                        className="w-full -mt-4 mb-10"
+                        className="w-full -mt-4"
                         style={{
                           opacity: devotionalCardsOpacity,
                           transform: [
@@ -1265,6 +1278,89 @@ export default function HomeScreen() {
                         })()}
                       </Animated.View>
                     )}
+                    
+                    {/* Prayer and Reflection buttons - Show when reading is complete but prayer/reflection are not */}
+                    {readingCompleted && (!prayerCompleted || !reflectionCompleted) && (
+                      <View className="mt-4 mb-8">
+                        {/* Prayer Button */}
+                        {!prayerCompleted && (
+                          <View
+                            className="flex-row items-center"
+                            style={{ marginBottom: responsiveHeight(2) }}>
+                            <View
+                              style={{
+                                width: 22,
+                                marginRight: 10,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                left: -8,
+                              }}>
+                              {prayerCompleted ? (
+                                <Image
+                                  source={require('../../assets/icons/checkMini.png')}
+                                  style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                                />
+                              ) : (
+                                <View
+                                  className="bg-textPrimary/15"
+                                  style={{ width: 20, height: 20, borderRadius: 12 }}
+                                />
+                              )}
+                            </View>
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <SecondaryButton
+                                icon={dropIcon}
+                                title={i18n.t('water_well')}
+                                subtitle={i18n.t('living_water')}
+                                points={30}
+                                onPress={handlePrayerPress}
+                                completed={prayerCompleted}
+                                disabled={prayerCompleted}
+                              />
+                            </View>
+                          </View>
+                        )}
+                        
+                        {/* Reflection Button */}
+                        {!reflectionCompleted && (
+                          <View
+                            className="flex-row items-center">
+                            <View
+                              style={{
+                                width: 22,
+                                marginRight: 10,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                left: -8,
+                              }}>
+                              {reflectionCompleted ? (
+                                <Image
+                                  source={require('../../assets/icons/checkMini.png')}
+                                  style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                                />
+                              ) : (
+                                <View
+                                  className="bg-textPrimary/15"
+                                  style={{ width: 20, height: 20, borderRadius: 12 }}
+                                />
+                              )}
+                            </View>
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <SecondaryButton
+                                icon={require('../../assets/icons/journalIcon.png')}
+                                title={i18n.t('reflect_daily')}
+                                subtitle={i18n.t('journal_thoughts')}
+                                points={20}
+                                onPress={handleReflectionPress}
+                                completed={reflectionCompleted}
+                                disabled={reflectionCompleted}
+                              />
+                            </View>
+                          </View>
+                        )}
+                      </View>
+                    )}
+                    
                     {!readingCompleted && (
                       <View style={{ position: 'relative' }}>
                         {/* Daily Bread Button */}

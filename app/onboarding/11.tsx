@@ -77,6 +77,14 @@ export default function SaveProgressScreen() {
     persistLoginMode();
   }, [params.isLogin]);
 
+  // Log screen load analytics event
+  useEffect(() => {
+    analytics.logEvent('onboarding_screen_11_loaded', {
+      isLoginMode: params.isLogin === 'true',
+      timestamp: new Date().toISOString(),
+    });
+  }, []);
+
   const [loading, setLoading] = useState(false);
   const {
     signInWithApple,
