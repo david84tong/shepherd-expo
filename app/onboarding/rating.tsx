@@ -23,6 +23,7 @@ import analytics from '../../utils/analytics';
 import { useRouter } from 'expo-router';
 import * as StoreReview from 'expo-store-review';
 import { RPH, RPW } from '../helper/helper';
+import { TestimonialList } from '../components/TestimonialList';
 
 const Rating = () => {
   const insets = useSafeAreaInsets();
@@ -123,18 +124,13 @@ const Rating = () => {
     transform: [{ translateY: starsTranslateY.value }],
   }));
 
-  const imageStyle = useAnimatedStyle(() => ({
-    opacity: imageOpacity.value,
-    transform: [{ translateY: imageTranslateY.value }],
-  }));
-
   const buttonStyle = useAnimatedStyle(() => ({
     opacity: buttonOpacity.value,
     transform: [{ translateY: buttonTranslateY.value }],
     position: 'absolute',
     left: 24,
     right: 24,
-    bottom: Math.max(insets.bottom + 16, 24),
+    bottom: Math.max(insets.bottom, 16),
   }));
 
   const handleRateApp = async () => {
@@ -208,14 +204,7 @@ const Rating = () => {
             </Animated.View>
 
             {/* shepherd Ratings image */}
-            <Animated.View style={imageStyle} className="items-center mb-12">
-              <Image
-                source={require('../../assets/onboarding/shepReviews.png')}
-                style={{ width: 500, height: RPH(45), resizeMode: 'contain' }}
-                defaultSource={require('../../assets/icon.png')}
-                className={`rounded ${Platform.OS === 'ios' ? 'shadow-md' : undefined}`}
-              />
-            </Animated.View>
+              <TestimonialList />
 
             {/* Bottom button */}
             <Animated.View style={buttonStyle} className="items-center mt-12">
