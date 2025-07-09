@@ -446,7 +446,7 @@ export default function HomeScreen() {
     // Check if any map path was completed today
     const todaysMapPathCompletions = completedMapPaths.filter((path) => {
       if (!path || !path.date) return false;
-      
+
       let completionDate;
       try {
         // Handle Firestore Timestamp
@@ -462,7 +462,7 @@ export default function HomeScreen() {
           console.warn('Unknown date format for completedMapPath:', path.date);
           return false;
         }
-        
+
         completionDate.setHours(0, 0, 0, 0);
         return completionDate.getTime() === today.getTime();
       } catch (error) {
@@ -1094,7 +1094,7 @@ export default function HomeScreen() {
                     )}
 
                     {readingCompleted && (
-                      <View className="w-full -mt-4 mb-10">
+                      <View className="w-full -mt-4 mb-0">
                         {(() => {
                           // Show at most 2 cards: daily verse + last custom devotional
                           const devotionalsToShow: Devotional[] = [];

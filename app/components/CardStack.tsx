@@ -326,7 +326,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
 
     return (
         <View
-            style={[{ width: containerWidth, minHeight: 320, position: 'relative', alignItems: 'center', marginTop: 25 }, style]}
+            style={[{ width: containerWidth, minHeight: 400, position: 'relative', alignItems: 'center', marginTop: 25 }, style]}
             pointerEvents="box-none"
             onTouchStart={() => {
                 // Mark gesture as potentially active immediately
