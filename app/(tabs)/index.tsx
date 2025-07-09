@@ -360,8 +360,12 @@ export default function HomeScreen() {
           .then((doc) => {
             if (doc.exists) {
               const userData = doc.data();
-              if (userData && userData.completedMapPaths) {
-                console.log('📥 Refreshed completedMapPaths on focus:', userData.completedMapPaths);
+              if (userData) {
+                console.log('📥 Refreshed user data on focus:', {
+                  streakCount: userData.streakCount,
+                  streak: userData.streak,
+                  completedMapPaths: userData.completedMapPaths?.length || 0
+                });
                 const syncData = useUserStore.getState().syncFirestoreData;
                 if (syncData) {
                   syncData(userData as any);

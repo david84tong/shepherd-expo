@@ -130,6 +130,7 @@ export const useUserStore = create<UserStore>()(
             level: firestoreData.level || state.level,
             xp: firestoreData.xp || state.xp,
             streak: firestoreData.streak || state.streak,
+            streakCount: firestoreData.streakCount || state.streakCount,
             // Sync completion data - use Firestore data if available
             completedReadings: firestoreData.completedReadings ?? state.completedReadings ?? [],
             completedPrayers: firestoreData.completedPrayers ?? state.completedPrayers ?? [],
@@ -272,9 +273,10 @@ export const useUserStore = create<UserStore>()(
       setLamb: (lamb) => set({ lamb }),
 
       setStreakCount: (count) => {
-        set({ streakCount: count });
+        set({ streakCount: count, streak: count });
         if (isAuthenticated()) {
           updateField('streakCount', count);
+          updateField('streak', count);
         }
         
         syncStreakWithWidget(count, get().lastActivityDate);
@@ -459,8 +461,9 @@ export const useUserStore = create<UserStore>()(
           const newStreakCount = (state.streakCount || 0) + 1;
           if (isAuthenticated()) {
             updateField('streakCount', newStreakCount);
+            updateField('streak', newStreakCount);
           }
-          return { streakCount: newStreakCount };
+          return { streakCount: newStreakCount, streak: newStreakCount };
         });
       },
 
