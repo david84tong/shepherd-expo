@@ -67,6 +67,7 @@ export interface UserDoc {
   isProWithReferral: boolean;
   proExpiryDate?: FirebaseFirestoreTypes.Timestamp;
   completedMapPaths: MapPathCompletion[];
+  customDevotionals: any[];
 }
 
 export interface UserStore extends UserDoc {
@@ -173,6 +174,17 @@ export interface UserStore extends UserDoc {
 
   setCompletedMapPaths: (paths: MapPathCompletion[]) => void;
   addCompletedMapPath: (path: MapPathCompletion) => void;
+
+  // add new getter/setter for check-ins
+  getCheckIns: () => CheckIn[];
+  setCheckIns: (checkIns: CheckIn[]) => void;
+  addCheckIn: (dateKey: string, checkInData: NonNullable<UserDoc['checkIns']>[any]) => void;
+
+
+  // add new getter/setter for custom devotionals
+  getCustomDevotionals: () => any[];
+  setCustomDevotionals: (devotionals: any[]) => void;
+  addCustomDevotional: (devotional: any, timestamp: any) => void;
 }
 
 export interface Reading {
