@@ -24,7 +24,7 @@ interface DailyVerseCardProps {
   showShareButton?: boolean;
   showExpandButton?: boolean;
   share?: boolean; // New prop to determine if this is a share card or regular card
-  height?: number; // Height in RPH units, defaults to 23
+  height?: number | 'dynamic'; // Height in RPH units, defaults to 23, or 'dynamic' for auto-sizing
 }
 
 const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
@@ -300,6 +300,10 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
     return null;
   }
 
+  // Calculate the actual height to use
+  const isDynamicHeight = height === 'dynamic';
+  const actualHeight = isDynamicHeight ? 23 : height; // Use 23 as minimum height for dynamic
+
   // Always use poster-style background, but conditionally show buttons based on props
   return (
     <Pressable
@@ -307,7 +311,11 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
       className={`bg-surfaceCream rounded-3xl overflow-hidden mb-4 border ${isCustomDevotional ? '' : '  '}  border-2 shadow-card border-border`}>
       <ImageBackground
         source={{ uri: devotional.imageURL }}
-        style={{ width: '100%', minHeight: RPH(height) }}
+        style={{ 
+          width: '100%', 
+          minHeight: RPH(actualHeight),
+          ...(isDynamicHeight && { height: 'auto' })
+        }}
         resizeMode="cover"
         onError={(error) => {
           console.error('🚨 [DailyVerseCard] Image load error:', {
@@ -341,7 +349,12 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
         )} */}
 
         {/* Content */}
-        <View style={{ padding: RPH(2), minHeight: RPH(height) }} className="pb-4 justify-between">
+        <View 
+          style={{ 
+            padding: RPH(2), 
+            ...(isDynamicHeight ? { minHeight: RPH(actualHeight) } : { minHeight: RPH(actualHeight) })
+          }} 
+          className="pb-4 justify-between">
           <View>
             <Text
               style={{ fontSize: AppFonts[17], marginBottom: RPH(0.3) }}

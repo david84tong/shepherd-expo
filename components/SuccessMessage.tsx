@@ -65,17 +65,20 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
   // Determine if we should show collect bonus button
   // This happens when completing prayer and both reading and reflection are already done
   // OR when completing reflection and prayer has already been done
+  // Get prayerCompleted from store properly
+  const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
+  
   const shouldShowCollectBonus = useMemo(() => {
     if (showCollectBonus) return true; // Explicit prop override
 
     // Check if bonus is available - either after prayer with reading+reflection done
     // OR after reflection with reading+prayer done
     const isFirstReadingOfDay = !sawStreakToday;
-    const allActivitiesComplete = readingCompleted && reflectionCompleted && useHomeStore.getState().prayerCompleted;
+    const allActivitiesComplete = readingCompleted && reflectionCompleted && prayerCompleted;
     const isBonusAvailable = allActivitiesComplete && isFirstReadingOfDay && !sawDailyBonus;
 
     return isBonusAvailable;
-  }, [showCollectBonus, readingCompleted, reflectionCompleted, sawStreakToday, sawDailyBonus]);
+  }, [showCollectBonus, readingCompleted, reflectionCompleted, prayerCompleted, sawStreakToday, sawDailyBonus]);
 
   // Get user data
   const lambHearts = useUserStore((state) => state?.getLambHearts?.());
