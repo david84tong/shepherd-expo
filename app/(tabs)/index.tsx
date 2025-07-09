@@ -1277,8 +1277,8 @@ export default function HomeScreen() {
                           <View style={{ flex: 1, minWidth: 0 }}>
                             <SecondaryButton
                               icon={require('../../assets/icons/customBread.png')}
-                              title={i18n.t('custom_devotional')}
-                              subtitle={i18n.t('your_custom_devotional')}
+                              title={i18n.t('generate_custom_devotional') || 'Generate Custom Devotional'}
+                              subtitle={i18n.t('create_personalized_devotional') || 'Create a personalized devotional'}
                               points={50}
                               onPress={handleCustomDevotionalPress}
                               completed={false}
@@ -1471,18 +1471,20 @@ export default function HomeScreen() {
                       </View>
                     )}
 
-                    {/* Generate Custom Devotional Button - Always at the bottom */}
-                    <View style={{ marginTop: responsiveHeight(3), marginBottom: responsiveHeight(2) }}>
-                      <SecondaryButton
-                        icon={require('../../assets/icons/customBread.png')}
-                        title={i18n.t('generate_custom_devotional') || 'Generate Custom Devotional'}
-                        subtitle={i18n.t('create_personalized_devotional') || 'Create a personalized devotional'}
-                        points={0}
-                        onPress={handleCustomDevotionalPress}
-                        completed={false}
-                        disabled={false}
-                      />
-                    </View>
+                    {/* Generate Custom Devotional Button - Only show when reading is completed */}
+                    {readingCompleted && (
+                      <View style={{ marginTop: responsiveHeight(3), marginBottom: responsiveHeight(2) }}>
+                        <SecondaryButton
+                          icon={require('../../assets/icons/customBread.png')}
+                          title={i18n.t('generate_custom_devotional') || 'Generate Custom Devotional'}
+                          subtitle={i18n.t('create_personalized_devotional') || 'Create a personalized devotional'}
+                          points={0}
+                          onPress={handleCustomDevotionalPress}
+                          completed={false}
+                          disabled={false}
+                        />
+                      </View>
+                    )}
                     </MemoizedScrollContent>
                   </BottomSheetScrollView>
                   </View>

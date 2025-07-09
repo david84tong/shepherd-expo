@@ -494,7 +494,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         paddingHorizontal: 20,
         transform: [{ translateX: moodAnim }],
       }}>
-      <Text className="font-feather text-heading text-textPrimary mb-8">How are you feeling right now?</Text>
+      <Text className="font-feather text-heading text-textPrimary mb-8 mt-8">How are you feeling right now?</Text>
       <View className="flex-row flex-wrap justify-center gap-8 mb-6 ">
         {moods.map((mood) => (
           <Pressable
@@ -534,7 +534,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         paddingHorizontal: 20,
         transform: [{ translateX: focusAnim }],
       }}>
-      <Text className="font-feather text-heading text-textPrimary mb-6">What would you like to focus on?</Text>
+      <Text className="font-feather text-heading text-textPrimary mb-6 mt-8">What would you like to focus on?</Text>
       <View className="flex-row flex-wrap justify-center gap-3">
         {focusAreas.map((focus) => (
           <Pressable
@@ -596,7 +596,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         paddingHorizontal: 20,
         transform: [{ translateX: struggleAnim }],
       }}>
-      <Text className="font-feather text-heading text-textPrimary mb-6">What are you struggling with?</Text>
+      <Text className="font-feather text-heading text-textPrimary mb-6 mt-8">What are you struggling with?</Text>
       <View className="flex-row flex-wrap justify-center gap-3 mb-6">
         {struggleAreas.map((struggle) => (
           <Pressable
@@ -716,7 +716,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
       {/* Chest Animation - Much larger and prominent */}
       {showRewardAnimation && riveAssets ? (
-        <View className="w-full items-center justify-center" style={{ height: RPH(20) }}>
+        <View className="w-full items-center justify-center" style={{ height: RPH(18) }}>
           {IS_ANDROID ? (
             <Rive
               ref={riveRef}
@@ -747,7 +747,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       <View style={{ height: RPH(1) }} />
 
       {/* Title */}
-      <Text className="font-feather text-h1 text-textPrimary text-center">Check-in Complete!</Text>
+      <Text className="font-feather text-h2 text-textPrimary text-center mt-0">Check-in Complete!</Text>
 
       {/* Spacing between title and reward card */}
       <View style={{ height: RPH(3) }} />
@@ -1044,6 +1044,25 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       }}>
       <BottomSheetView style={{ width: '100%', height: '100%', paddingTop: 20, paddingBottom: 30, overflow: 'hidden' }}>
         <View style={{ flex: 1, position: 'relative' }}>
+          {/* Top Right Close Button */}
+          <Pressable
+            style={{
+              position: 'absolute',
+              top: -10,
+              right: 20,
+              width: 36,
+              height: 36,
+              backgroundColor: 'rgba(0, 0, 0, 0.1)',
+              borderRadius: 18,
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10,
+            }}
+            onPress={handleDismiss}
+          >
+            <FontAwesome6 name="xmark" size={18} color="#634012" />
+          </Pressable>
+
           {/* All screens are rendered but with proper touch handling */}
           <View
             style={{ position: 'absolute', width: '100%', height: '100%' }}
