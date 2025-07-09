@@ -19,7 +19,6 @@ interface HomeState {
   // UI mode states
   mode: HomeMode;
   successType: SuccessAnimationType | null;
-  devotionalReaderVisible: boolean; // Track if devotional reader is showing
   prayerViewVisible: boolean; // Track if prayer view is showing
   showStreakScreen: boolean; // Track if streak screen should be shown
   keyboardVisible: boolean; // Track if keyboard is visible for journal
@@ -38,6 +37,9 @@ interface HomeState {
   sawStreakToday: boolean; // Track if streak screen was shown today
   showGlobalButtons: boolean;
 
+  // Navigation param handling
+  hasHandledDevotionalParam: boolean; // Track if devotional param has been handled
+
   // Daily XP tracking
   dailyXpEarned: number; // Track XP earned today
   lastXpResetDate: string; // Track when XP was last reset (YYYY-MM-DD format)
@@ -47,7 +49,6 @@ interface HomeState {
   // Setter functions
   setMode: (mode: HomeMode) => void;
   setSuccessType: (type: SuccessAnimationType | null) => void;
-  setDevotionalReaderVisible: (visible: boolean) => void;
   setPrayerViewVisible: (visible: boolean) => void;
   setShowStreakScreen: (show: boolean) => void;
   setReadingCompleted: (completed: boolean) => void;
@@ -64,6 +65,7 @@ interface HomeState {
   setBottomSheetRef: (ref: React.RefObject<any> | null) => void;
   setRiveRef: (ref: React.RefObject<any> | null) => void;
   setCurrentSkin: (skin: string) => void;
+  setHasHandledDevotionalParam: (handled: boolean) => void; // Setter for hasHandledDevotionalParam
 
   // Daily XP functions
   addDailyXp: (amount: number) => number; // Returns actual XP added (may be limited)
@@ -82,7 +84,6 @@ export const useHomeStore = create<HomeState>()(
       // Default UI states
       mode: 'DEFAULT',
       successType: null,
-      devotionalReaderVisible: false,
       prayerViewVisible: false,
       showStreakScreen: false,
       showGlobalButtons: false,
@@ -105,10 +106,12 @@ export const useHomeStore = create<HomeState>()(
       // Default streak tracking
       lastStreakDate: '', // Empty string initially
 
+      // Default navigation param handling
+      hasHandledDevotionalParam: false,
+
       // Setter functions
       setMode: (mode) => set({ mode }),
       setSuccessType: (type) => set({ successType: type }),
-      setDevotionalReaderVisible: (visible) => set({ devotionalReaderVisible: visible }),
       setPrayerViewVisible: (visible) => set({ prayerViewVisible: visible }),
       setShowStreakScreen: (show) => {
         // Only allow showing streak screen if we haven't seen it today
@@ -161,6 +164,7 @@ export const useHomeStore = create<HomeState>()(
       setBottomSheetRef: (ref) => set({ bottomSheetRef: ref }),
       setRiveRef: (ref) => set({ riveRef: ref }),
       setCurrentSkin: (skin) => set({ currentSkin: skin }),
+      setHasHandledDevotionalParam: (handled) => set({ hasHandledDevotionalParam: handled }),
 
       // Daily XP functions
       resetDailyXpIfNeeded: () => {
@@ -263,6 +267,7 @@ export const useHomeStore = create<HomeState>()(
         dailyXpEarned: state.dailyXpEarned,
         lastXpResetDate: state.lastXpResetDate,
         lastStreakDate: state.lastStreakDate,
+        hasHandledDevotionalParam: state.hasHandledDevotionalParam,
       }),
     }
   )

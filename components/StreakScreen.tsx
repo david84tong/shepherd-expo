@@ -25,6 +25,7 @@ import { AppFonts } from '~/app/constants/appFonts';
 import { RPH } from '~/app/helper/helper';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import { useSoundStore } from '~/app/stores/soundStore';
+import { useUIStore } from '~/app/stores/uiStore';
 /* ─────────────── helper ─────────────── */
 type DayStatus = 'BEFORE_ACCOUNT' | 'TODAY_PENDING' | 'COMPLETED' | 'MISSED' | 'FUTURE';
 
@@ -426,11 +427,16 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
     //     isPrayPresses: isPrayPresses
     //   }
     // });
-    router.push({
+    const devotionalReaderVisible = useUIStore.getState().devotionalReaderVisible;
+    if(devotionalReaderVisible){
+      useUIStore.getState().setDevotionalReaderVisible(false);
+    }
+    router.navigate({
       pathname: '/(tabs)',
       params: {
         isPrayPresses: isPrayPresses,
-        isReflectPresses: isReflectPresses
+        isReflectPresses: isReflectPresses,
+        showDevotional: 'false'
       }
     });
   };

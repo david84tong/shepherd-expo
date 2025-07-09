@@ -22,6 +22,7 @@ import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import analytics from '~/utils/analytics';
 import { hapticHeavy } from '~/utils/haptics';
+import { useHomeStore } from '../stores/homeStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -161,6 +162,12 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   
   // Track if paywall has been shown to prevent duplicate calls
   const [paywallShown, setPaywallShown] = useState(false);
+
+  function resetHasHandledDevotionalParam(){
+    if(useHomeStore.getState().hasHandledDevotionalParam){
+      useHomeStore.getState().setHasHandledDevotionalParam(false);
+    }
+  }
 
   // Monitor API loading state
   useEffect(() => {
@@ -477,6 +484,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             totalLoadingTime: currentStep * STEP_DURATION,
             upgradedFromPaywall: true,
           });
+          resetHasHandledDevotionalParam();
           router.navigate({
             pathname: '/(tabs)',
             params: { showDevotional: 'true' }
@@ -530,6 +538,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           });
 
           const timer = setTimeout(() => {
+            resetHasHandledDevotionalParam();
             router.navigate({
               pathname: '/(tabs)',
               params: { showDevotional: 'true' }
@@ -548,6 +557,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           });
 
           const timer = setTimeout(() => {
+            resetHasHandledDevotionalParam();
             router.navigate({
               pathname: '/(tabs)',
               params: { showDevotional: 'true' }

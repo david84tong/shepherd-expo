@@ -8,6 +8,7 @@ import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { isSignedIn } from '../hooks/authHook';
 import { useHomeStore } from '../stores/homeStore';
 import { usePathStore } from '../stores/pathStore';
+import { useUIStore } from '../stores/uiStore';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
@@ -146,7 +147,7 @@ export default function TabsLayout() {
 
   // Zustand selectors – always call, even if the user ends up being redirected.}
   const mode = useHomeStore((state) => state.mode);
-  const devotionalReaderVisible = useHomeStore((state) => state.devotionalReaderVisible);
+  const devotionalReaderVisible = useUIStore((state) => state.devotionalReaderVisible);
   const prayerViewVisible = useHomeStore((state) => state.prayerViewVisible);
   const journalViewVisible = useHomeStore((state) => state.journalViewVisible);
   const pathInProgress = usePathStore((state) => state.pathInProgress);

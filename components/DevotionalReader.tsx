@@ -13,6 +13,7 @@ import { Feather } from '@expo/vector-icons';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { useHomeStore } from '~/app/stores/homeStore';
+import { useUIStore } from '~/app/stores/uiStore';
 import firestore from '@react-native-firebase/firestore';
 import Reanimated, {
   SlideInDown,
@@ -564,7 +565,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
             setIsRewarding(false);
             if (onClose) {
               hapticMedium();
-              const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
+              const setDevotionalReaderVisible = useUIStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
               onClose({ isPrayPresses: false });
               setTimeout(() => {
@@ -585,7 +586,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
             setIsRewarding(false);
             if (onClose) {
               hapticMedium();
-              const setDevotionalReaderVisible = useHomeStore.getState().setDevotionalReaderVisible;
+              const setDevotionalReaderVisible = useUIStore.getState().setDevotionalReaderVisible;
               setDevotionalReaderVisible(false);
               onClose({ isPrayPresses: true });
               setTimeout(() => {
