@@ -46,7 +46,7 @@ const TestimonialCard = ({ item, index }: { item: Rating; index: number }) => {
       }}
       className="bg-[#FDF6E3] rounded-2xl p-5 border border-[#E9E2C7]"
     >
-      <View className="flex-row items-center p-4">
+      <View className="flex-row items-center">
         <View className="relative w-12 h-12 justify-center items-center">
           <Image
             source={{ uri: item.avatar }}
@@ -79,7 +79,7 @@ const TestimonialCard = ({ item, index }: { item: Rating; index: number }) => {
         </View>
       </View>
 
-      <Text className="text-[#3B4632] text-base leading-6 italic">
+      <Text className="text-[#3B4632] text-base leading-6 italic mt-4">
         "{item.comment}"
       </Text>
     </Animated.View>
