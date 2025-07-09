@@ -383,6 +383,7 @@ export function DebugButton() {
             homeStore.setMode('DEFAULT');
             homeStore.setSuccessType(null);
             homeStore.setSawDailyBonus(false); // Reset collected bonus state
+            homeStore.setSawStreakToday(false); // Reset streak shown today flag
 
             // Clear completedReadings, completedPrayers, and completedReflections from userStore
             const userStore = useUserStore.getState();
@@ -397,7 +398,7 @@ export function DebugButton() {
             // Sync with Firestore to save changes
             syncWithFirestore();
 
-            Alert.alert('Reset Complete', 'HomeStore data, collected bonus, and completed readings have been reset.');
+            Alert.alert('Reset Complete', 'HomeStore data, collected bonus, streak flag, and completed readings have been reset.');
           },
         },
       ]

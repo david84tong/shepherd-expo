@@ -617,21 +617,16 @@ export const useHomeScreen = () => {
         const { readingCompleted, sawStreakToday } = homeStore;
         
         // Only trigger if reading is completed and streak hasn't been shown today
-        // Get all completion states
-        const { prayerCompleted, reflectionCompleted } = homeStore;
-        
         console.log('🔍 handleDevotionalClose - Checking streak conditions:', {
           readingCompleted,
-          prayerCompleted,
-          reflectionCompleted,
           sawStreakToday,
           timestamp: new Date().toISOString()
         });
         
-        // Only trigger if all activities are completed and streak hasn't been shown today
-        if (readingCompleted && prayerCompleted && reflectionCompleted && !sawStreakToday) {
+        // Only trigger if reading is completed and streak hasn't been shown today
+        if (readingCompleted && !sawStreakToday) {
           
-          console.log('🎯 All activities completed! Triggering streak screen from devotional close');
+          console.log('🎯 Reading completed! Triggering streak screen from devotional close');
           
           // Mark that we've shown the streak screen today
           homeStore.setSawStreakToday(true);
@@ -641,8 +636,6 @@ export const useHomeScreen = () => {
           
           analytics.logEvent('HomeScreen_StreakTriggered', {
             readingCompleted,
-            prayerCompleted,
-            reflectionCompleted,
             sawStreakToday: false,
             timestamp: new Date().toISOString()
           });
@@ -963,21 +956,16 @@ export const useHomeScreen = () => {
     
     const { readingCompleted, sawStreakToday } = homeStore;
     
-    // Get all completion states
-    const { prayerCompleted, reflectionCompleted } = homeStore;
-    
     console.log('🔍 onCloseJournal - Checking streak conditions:', {
       readingCompleted,
-      prayerCompleted,
-      reflectionCompleted,
       sawStreakToday,
       timestamp: new Date().toISOString()
     });
     
-    // Only trigger if all activities are completed and streak hasn't been shown today
-    if (readingCompleted && prayerCompleted && reflectionCompleted && !sawStreakToday) {
+    // Only trigger if reading is completed and streak hasn't been shown today
+    if (readingCompleted && !sawStreakToday) {
       
-      console.log('🎯 All activities completed! Triggering streak screen from journal close');
+      console.log('🎯 Reading completed! Triggering streak screen from journal close');
       
       // Mark that we've shown the streak screen today
       homeStore.setSawStreakToday(true);
@@ -987,8 +975,6 @@ export const useHomeScreen = () => {
       
       analytics.logEvent('HomeScreen_StreakTriggered_FromJournal', {
         readingCompleted,
-        prayerCompleted,
-        reflectionCompleted,
         sawStreakToday: false,
         timestamp: new Date().toISOString()
       });
@@ -1099,20 +1085,18 @@ export const useHomeScreen = () => {
       
       // Get fresh state after potential reset
       const currentState = useHomeStore.getState();
-      const { readingCompleted, sawStreakToday, prayerCompleted, reflectionCompleted } = currentState;
+      const { readingCompleted, sawStreakToday } = currentState;
       
       console.log('🔍 onClosePrayer - Checking streak conditions:', {
         readingCompleted,
-        prayerCompleted,
-        reflectionCompleted,
         sawStreakToday,
         timestamp: new Date().toISOString()
       });
       
-      // Only trigger if all activities are completed and streak hasn't been shown today
-      if (readingCompleted && prayerCompleted && reflectionCompleted && !sawStreakToday) {
+      // Only trigger if reading is completed and streak hasn't been shown today
+      if (readingCompleted && !sawStreakToday) {
         
-        console.log('🎯 All activities completed! Triggering streak screen');
+        console.log('🎯 Reading completed! Triggering streak screen from prayer close');
         
         // Mark that we've shown the streak screen today
         homeStore.setSawStreakToday(true);
@@ -1122,8 +1106,6 @@ export const useHomeScreen = () => {
         
         analytics.logEvent('HomeScreen_StreakTriggered_FromPrayer', {
           readingCompleted,
-          prayerCompleted,
-          reflectionCompleted,
           sawStreakToday: false,
           timestamp: new Date().toISOString()
         });
