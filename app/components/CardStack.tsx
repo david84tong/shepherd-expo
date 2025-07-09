@@ -181,7 +181,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
         });
     }, [isAnimating, cardPositions, cardZIndices, position, data.length, stackSize]);
 
-    // Handle tap on front card to trigger swipe animation
+    // Handle tap on any card to bring it to front or cycle to next
     const handleCardTap = useCallback((cardIndex: number) => {
         if (isAnimating) return;
 
@@ -191,92 +191,69 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
             return;
         }
 
-        // For back cards, bring them to front (original functionality)
+        // For back cards, bring them to front using the same smooth animation style
         setIsAnimating(true);
 
-        // Animate the tapped card to the front
-        const animations = [];
-
-        // Move tapped card to front position
-        animations.push(
-            Animated.timing(cardPositions[cardIndex], {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: false,
-            })
-        );
-
-        // Set tapped card to highest z-index
-        animations.push(
-            Animated.timing(cardZIndices[cardIndex], {
-                toValue: stackSize,
-                duration: 300,
-                useNativeDriver: false,
-            })
-        );
-
-        // Smoothly animate rotation for tapped card (remove back card styling)
-        animations.push(
-            Animated.timing(cardRotations[cardIndex], {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: false,
-            })
-        );
-
-        // Smoothly animate translation for tapped card (remove back card styling)
-        animations.push(
-            Animated.timing(cardTranslations[cardIndex], {
-                toValue: 0,
-                duration: 300,
-                useNativeDriver: false,
-            })
-        );
-
-        // Move other cards back one position
+        // Calculate the new order after bringing the tapped card to front
+        const newOrder = [];
+        newOrder.push(cardIndex); // Tapped card goes to front
         for (let i = 0; i < stackSize; i++) {
             if (i !== cardIndex) {
-                const newPosition = i < cardIndex ? i + 1 : i;
-                animations.push(
-                    Animated.timing(cardPositions[i], {
-                        toValue: newPosition * CARD_OFFSET,
-                        duration: 300,
-                        useNativeDriver: false,
-                    })
-                );
-
-                // Adjust z-index for other cards
-                const newZIndex = i < cardIndex ? stackSize - (i + 1) : stackSize - i;
-                animations.push(
-                    Animated.timing(cardZIndices[i], {
-                        toValue: newZIndex,
-                        duration: 300,
-                        useNativeDriver: false,
-                    })
-                );
-
-                // Smoothly animate rotation for cards moving to new positions
-                const newIsBack = newPosition === stackSize - 1;
-                animations.push(
-                    Animated.timing(cardRotations[i], {
-                        toValue: newIsBack ? 1 : 0,
-                        duration: 300,
-                        useNativeDriver: false,
-                    })
-                );
-
-                // Smoothly animate translation for cards moving to new positions
-                animations.push(
-                    Animated.timing(cardTranslations[i], {
-                        toValue: newIsBack ? -50 : 0,
-                        duration: 300,
-                        useNativeDriver: false,
-                    })
-                );
+                newOrder.push(i);
             }
         }
 
+        const animations = [];
+
+        // Animate all cards to their new positions using the same smooth style as handleSwipe
+        for (let i = 0; i < stackSize; i++) {
+            const currentCardIndex = newOrder[i];
+            const newPosition = i * CARD_OFFSET;
+            const newZIndex = stackSize - i;
+            const newIsBack = i === stackSize - 1;
+
+            // Move card to new position
+            animations.push(
+                Animated.timing(cardPositions[currentCardIndex], {
+                    toValue: newPosition,
+                    duration: 300,
+                    useNativeDriver: false,
+                })
+            );
+
+            // Update z-index
+            animations.push(
+                Animated.timing(cardZIndices[currentCardIndex], {
+                    toValue: newZIndex,
+                    duration: 300,
+                    useNativeDriver: false,
+                })
+            );
+
+            // Animate rotation
+            animations.push(
+                Animated.timing(cardRotations[currentCardIndex], {
+                    toValue: newIsBack ? 1 : 0,
+                    duration: 300,
+                    useNativeDriver: false,
+                })
+            );
+
+            // Animate translation
+            animations.push(
+                Animated.timing(cardTranslations[currentCardIndex], {
+                    toValue: newIsBack ? -30 : 0,
+                    duration: 300,
+                    useNativeDriver: false,
+                })
+            );
+        }
+
         Animated.parallel(animations).start(() => {
+            // Update the current index to reflect the new front card
+            const newDataIndex = cardsToShow[cardIndex].dataIndex;
+            setCurrentIndex(newDataIndex);
+
             // Reset positions and z-indices
             cardPositions.forEach((pos, index) => {
                 pos.setValue(index * CARD_OFFSET);
@@ -290,12 +267,12 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
                 rotation.setValue(index === stackSize - 1 ? 1 : 0);
             });
             cardTranslations.forEach((translation, index) => {
-                translation.setValue(index === stackSize - 1 ? -30 : 0); // Changed from -50 to -30
+                translation.setValue(index === stackSize - 1 ? -30 : 0);
             });
 
             setIsAnimating(false);
         });
-    }, [isAnimating, cardPositions, cardZIndices, data.length, stackSize, handleSwipe]);
+    }, [isAnimating, cardPositions, cardZIndices, cardRotations, cardTranslations, data.length, stackSize, handleSwipe, cardsToShow]);
 
     const panResponder = useRef(
         PanResponder.create({
@@ -395,7 +372,7 @@ function CardStack<T>({ data, renderCard, style }: CardStackProps<T>) {
                     <Animated.View
                         key={`card-${cardInfo.dataIndex}`}
                         style={cardStyle}
-                        pointerEvents={isTop ? "box-none" : "none"}
+                        pointerEvents="box-none"
                         {...(isTop && !isAnimating ? panResponder.panHandlers : {})}
                     >
                         <View style={{ flex: 1 }} pointerEvents="box-none">
