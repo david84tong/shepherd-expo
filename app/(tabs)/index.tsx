@@ -1262,6 +1262,85 @@ export default function HomeScreen() {
                     )}
 
 
+                    {/* Prayer and Journal Buttons - Show when reading is completed but prayer/journal aren't both completed */}
+                    {readingCompleted && (!prayerCompleted || !reflectionCompleted) && (
+                      <View style={{ marginTop: responsiveHeight(2) }}>
+                        {/* Prayer Button */}
+                        <View
+                          className="flex-row items-center"
+                          style={{ marginBottom: responsiveHeight(2) }}>
+                          <View
+                            style={{
+                              width: 22,
+                              marginRight: 10,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              left: -8,
+                            }}>
+                            {prayerCompleted ? (
+                              <Image
+                                source={require('../../assets/icons/checkMini.png')}
+                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                              />
+                            ) : (
+                              <View
+                                className="bg-textPrimary/15"
+                                style={{ width: 20, height: 20, borderRadius: 12 }}
+                              />
+                            )}
+                          </View>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <SecondaryButton
+                              icon={dropIcon}
+                              title={i18n.t('praying')}
+                              subtitle={i18n.t('talk_to_god')}
+                              points={50}
+                              onPress={handlePrayerPress}
+                              completed={prayerCompleted}
+                              disabled={prayerCompleted}
+                            />
+                          </View>
+                        </View>
+
+                        {/* Journal Button */}
+                        <View
+                          className="flex-row items-center"
+                          style={{ marginBottom: responsiveHeight(2) }}>
+                          <View
+                            style={{
+                              width: 22,
+                              marginRight: 10,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              left: -8,
+                            }}>
+                            {reflectionCompleted ? (
+                              <Image
+                                source={require('../../assets/icons/checkMini.png')}
+                                style={{ width: 20, height: 20, resizeMode: 'contain' }}
+                              />
+                            ) : (
+                              <View
+                                className="bg-textPrimary/15"
+                                style={{ width: 20, height: 20, borderRadius: 12 }}
+                              />
+                            )}
+                          </View>
+                          <View style={{ flex: 1, minWidth: 0 }}>
+                            <SecondaryButton
+                              icon={require('../../assets/icons/journalIcon.png')}
+                              title={i18n.t('reflecting')}
+                              subtitle={i18n.t('journal_thoughts')}
+                              points={25}
+                              onPress={handleReflectionPress}
+                              completed={reflectionCompleted}
+                              disabled={reflectionCompleted}
+                            />
+                          </View>
+                        </View>
+                      </View>
+                    )}
+
                     {/* Custom Path Button - Show at bottom only when reading is NOT completed */}
                     {!readingCompleted &&
                       !(prayerCompleted && readingCompleted && reflectionCompleted) && (
