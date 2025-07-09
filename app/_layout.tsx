@@ -203,7 +203,7 @@ export default function RootLayout() {
     console.log('isInitialized ==>', isInitialized);
     if (isInitialized) {
       onAppForegroundOrInit();
-      // Delay check-in to ensure auth and store are ready
+      // Check and show check-in after a delay to ensure everything is ready
       setTimeout(() => {
         checkAndShowCheckInIfNeeded();
       }, 3000);
@@ -282,6 +282,9 @@ export default function RootLayout() {
     }
   };
   
+  // Add ref to track if check-in is already scheduled
+  const checkInScheduledRef = useRef(false);
+  
   // Check if one hour has passed since last check-in AND today's check-in is not complete
   const checkAndShowCheckInIfNeeded = () => {
     // Import auth to check if user is logged in
@@ -294,6 +297,12 @@ export default function RootLayout() {
     // Don't show check-in if user is not logged in at all
     if (!currentUser) {
       console.log('[CheckIn] Skipping check-in: User not logged in');
+      return;
+    }
+    
+    // Check if check-in is already scheduled
+    if (checkInScheduledRef.current) {
+      console.log('[CheckIn] ❌ Check-in already scheduled, skipping duplicate call');
       return;
     }
     
@@ -339,10 +348,15 @@ export default function RootLayout() {
     
     // All conditions met - show check-in
     console.log('[CheckIn] ✅ All conditions met - showing check-in');
+    // Mark as scheduled
+    checkInScheduledRef.current = true;
+    
     // Show check-in with a delay to ensure app is ready
     setTimeout(() => {
       console.log('[CheckIn] Calling showCheckIn() now...');
       showCheckIn();
+      // Reset the flag after showing
+      checkInScheduledRef.current = false;
     }, 2000);
   };
 
@@ -369,25 +383,45 @@ export default function RootLayout() {
   };
 
   const showCheckIn = () => {
+    console.log('[showCheckIn] Function called at:', new Date().toISOString());
+    
     // Import auth to check if user is logged in
     const auth = require('@react-native-firebase/auth').default;
     const currentUser = auth().currentUser;
     
     // Don't show check-in if user is not logged in at all
     if (!currentUser) {
-      console.log('[CheckIn] Not showing check-in: User not logged in');
+      console.log('[showCheckIn] Not showing check-in: User not logged in');
       return;
     }
     
-    console.log('[CheckIn] Showing check-in for user:', currentUser.uid, 'Anonymous:', currentUser.isAnonymous);
+    console.log('[showCheckIn] User authenticated:', currentUser.uid, 'Anonymous:', currentUser.isAnonymous);
+    console.log('[showCheckIn] checkInRef.current exists:', !!checkInRef.current);
+    console.log('[showCheckIn] isUserLoggedIn state:', isUserLoggedIn);
     
     // Check if the ref exists before trying to expand
     if (checkInRef.current) {
-      console.log('[CheckIn] checkInRef exists, calling forceShow()');
-      // Use forceShow for more reliable opening
-      checkInRef.current.forceShow();
+      console.log('[showCheckIn] checkInRef exists, calling forceShow()');
+      try {
+        // Use forceShow for more reliable opening
+        checkInRef.current.forceShow();
+        console.log('[showCheckIn] forceShow() called successfully');
+      } catch (error) {
+        console.error('[showCheckIn] Error calling forceShow():', error);
+      }
     } else {
-      console.error('[CheckIn] checkInRef.current is null, cannot show check-in');
+      console.error('[showCheckIn] checkInRef.current is null, cannot show check-in');
+      console.log('[showCheckIn] Attempting to retry in 500ms...');
+      
+      // Retry after a short delay
+      setTimeout(() => {
+        if (checkInRef.current) {
+          console.log('[showCheckIn] Retry successful, calling forceShow()');
+          checkInRef.current.forceShow();
+        } else {
+          console.error('[showCheckIn] Retry failed, checkInRef still null');
+        }
+      }, 500);
     }
   };
 
@@ -420,7 +454,7 @@ export default function RootLayout() {
       (global as any).showCheckIn = showCheckIn;
       (global as any).showDevotionalsSheet = showDevotionalsSheet;
     }
-  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet, showStoreSheet, showStatsSheet, showDevotionalsSheet]);
+  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet, showStoreSheet, showStatsSheet, showCheckIn, showDevotionalsSheet]);
 
   // Effect to watch isPrayerSheetVisible and control the sheet ref
   useEffect(() => {
@@ -507,8 +541,7 @@ export default function RootLayout() {
         await checkStreakStatus();
         await initializeNotifications();
         
-        // Check if we need to show check-in after initialization
-        checkAndShowCheckInIfNeeded();
+        // Note: checkAndShowCheckInIfNeeded is called in the isInitialized useEffect
       } catch (error) { }
       // Set Rive ready
       setIsRiveReady(true);

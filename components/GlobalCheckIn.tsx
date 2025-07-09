@@ -102,6 +102,14 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   // Dynamic snap points based on current screen
   const snapPoints = currentScreen === 'success' ? ['65%'] : ['65%'];
 
+  // Log when component mounts/unmounts
+  useEffect(() => {
+    console.log('[GlobalCheckIn] Component mounted at:', new Date().toISOString());
+    return () => {
+      console.log('[GlobalCheckIn] Component unmounted at:', new Date().toISOString());
+    };
+  }, []);
+
   // Complete check-in and save to both stores
   const handleCompleteCheckIn = useCallback(async () => {
     console.log('[GlobalCheckIn] handleCompleteCheckIn started');

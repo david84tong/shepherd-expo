@@ -41,6 +41,8 @@ interface HomeState {
   // Daily XP tracking
   dailyXpEarned: number; // Track XP earned today
   lastXpResetDate: string; // Track when XP was last reset (YYYY-MM-DD format)
+  // Daily streak tracking
+  lastStreakDate: string; // Track when streak screen was last shown (YYYY-MM-DD format)
 
   // Setter functions
   setMode: (mode: HomeMode) => void;
@@ -67,6 +69,7 @@ interface HomeState {
   addDailyXp: (amount: number) => number; // Returns actual XP added (may be limited)
   getDailyXpRemaining: () => number; // Returns remaining XP that can be earned today
   resetDailyXpIfNeeded: () => void; // Reset XP if it's a new day
+  checkAndResetStreakIfNeeded: () => void; // Check and reset streak flag if it's a new day
 }
 
 /**
@@ -99,13 +102,23 @@ export const useHomeStore = create<HomeState>()(
       // Default daily XP tracking
       dailyXpEarned: 0,
       lastXpResetDate: new Date().toISOString().split('T')[0], // Today's date in YYYY-MM-DD format
+      // Default streak tracking
+      lastStreakDate: '', // Empty string initially
 
       // Setter functions
       setMode: (mode) => set({ mode }),
       setSuccessType: (type) => set({ successType: type }),
       setDevotionalReaderVisible: (visible) => set({ devotionalReaderVisible: visible }),
       setPrayerViewVisible: (visible) => set({ prayerViewVisible: visible }),
-      setShowStreakScreen: (show) => set({ showStreakScreen: show }),
+      setShowStreakScreen: (show) => {
+        // Only allow showing streak screen if we haven't seen it today
+        const state = get();
+        if (show && state.sawStreakToday) {
+          console.log('🚫 Preventing streak screen - already shown today');
+          return;
+        }
+        set({ showStreakScreen: show });
+      },
       setReadingCompleted: (completed) => {
         console.log('🔍 HOMESTORE - setReadingCompleted called:', { completed, timestamp: new Date().toLocaleTimeString() });
         set({ readingCompleted: completed });
@@ -121,7 +134,27 @@ export const useHomeStore = create<HomeState>()(
       setSawDailyBonus: (saw) => set({ sawDailyBonus: saw }),
       setTappedPrayAboutVerse: (tapped) => set({ tappedPrayAboutVerse: tapped }),
       setTappedReflectAboutVerse: (tapped) => set({ tappedReflectAboutVerse: tapped }),
-      setSawStreakToday: (saw) => set({ sawStreakToday: saw }),
+      setSawStreakToday: (saw) => {
+        const today = new Date().toISOString().split('T')[0];
+        const { lastStreakDate } = get();
+        
+        // Check if it's a new day
+        if (lastStreakDate !== today && saw) {
+          // It's a new day, allow setting sawStreakToday
+          console.log('🔍 HOMESTORE - setSawStreakToday called (new day):', { saw, date: today, timestamp: new Date().toLocaleTimeString() });
+          set({ 
+            sawStreakToday: saw,
+            lastStreakDate: today 
+          });
+        } else if (!saw) {
+          // Always allow resetting to false
+          console.log('🔍 HOMESTORE - setSawStreakToday reset to false:', { timestamp: new Date().toLocaleTimeString() });
+          set({ sawStreakToday: saw });
+        } else {
+          // Same day, don't allow setting to true again
+          console.log('🚫 HOMESTORE - setSawStreakToday blocked (same day):', { date: today, lastStreakDate, timestamp: new Date().toLocaleTimeString() });
+        }
+      },
       setShowGlobalButtons: (show) => set({ showGlobalButtons: show }),
       setKeyboardVisible: (visible) => set({ keyboardVisible: visible }),
       setJournalViewVisible: (visible) => set({ journalViewVisible: visible }),
@@ -171,6 +204,19 @@ export const useHomeStore = create<HomeState>()(
         return Math.max(0, MAX_DAILY_XP - dailyXpEarned);
       },
 
+      checkAndResetStreakIfNeeded: () => {
+        const today = new Date().toISOString().split('T')[0];
+        const { lastStreakDate, sawStreakToday } = get();
+        
+        if (lastStreakDate !== today && sawStreakToday) {
+          console.log('🔄 Resetting sawStreakToday for new day:', today);
+          set({ 
+            sawStreakToday: false,
+            lastStreakDate: today 
+          });
+        }
+      },
+
       resetCompletionStates: () => {
         console.log('🔍 HOMESTORE - resetCompletionStates called - BEFORE reset:', {
           currentState: {
@@ -216,6 +262,7 @@ export const useHomeStore = create<HomeState>()(
         currentSkin: state.currentSkin,
         dailyXpEarned: state.dailyXpEarned,
         lastXpResetDate: state.lastXpResetDate,
+        lastStreakDate: state.lastStreakDate,
       }),
     }
   )

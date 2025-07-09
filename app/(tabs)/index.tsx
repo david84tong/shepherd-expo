@@ -720,27 +720,79 @@ export default function HomeScreen() {
 
   // Handler for custom devotional button
   const handleCustomDevotionalPress = async () => {
-    console.log('[handleCustomDevotionalPress] Button pressed');
+    console.log('[handleCustomDevotionalPress] Button pressed at:', new Date().toISOString());
     hapticLight(); // Add haptic feedback
     
-    // Simply show the check-in sheet
-    const showCheckIn = (global as any).showCheckIn;
-    console.log('[handleCustomDevotionalPress] showCheckIn type:', typeof showCheckIn);
-    console.log('[handleCustomDevotionalPress] global object:', global);
+    // Check if user is logged in first
+    const auth = require('@react-native-firebase/auth').default;
+    const currentUser = auth().currentUser;
+    console.log('[handleCustomDevotionalPress] Current user:', currentUser?.uid, 'Anonymous:', currentUser?.isAnonymous);
     
-    if (showCheckIn && typeof showCheckIn === 'function') {
-      console.log('[handleCustomDevotionalPress] Calling showCheckIn()');
-      showCheckIn();
-      analytics.logEvent('custom_devotional_triggered_checkin');
-    } else {
-      console.error('[handleCustomDevotionalPress] showCheckIn function not found on global');
-      // Try to access it directly from window if global doesn't work
-      if ((window as any).showCheckIn && typeof (window as any).showCheckIn === 'function') {
-        console.log('[handleCustomDevotionalPress] Found showCheckIn on window, calling it');
-        (window as any).showCheckIn();
-        analytics.logEvent('custom_devotional_triggered_checkin');
-      }
+    if (!currentUser) {
+      console.log('[handleCustomDevotionalPress] User not logged in, cannot show check-in');
+      Toast.show({
+        type: 'error',
+        text1: 'Please log in first',
+        text2: 'You need to be logged in to use this feature',
+        position: 'top',
+        topOffset: 60,
+      });
+      return;
     }
+    
+    // Try multiple times with increasing delays
+    let attempts = 0;
+    const maxAttempts = 5;
+    
+    const tryShowCheckIn = async () => {
+      attempts++;
+      console.log(`[handleCustomDevotionalPress] Attempt ${attempts} of ${maxAttempts}`);
+      
+      const showCheckIn = (global as any).showCheckIn;
+      console.log('[handleCustomDevotionalPress] showCheckIn available:', !!showCheckIn);
+      
+      if (showCheckIn && typeof showCheckIn === 'function') {
+        console.log('[handleCustomDevotionalPress] Calling showCheckIn()');
+        try {
+          showCheckIn();
+          analytics.logEvent('custom_devotional_triggered_checkin', {
+            timestamp: new Date().toISOString(),
+            success: true,
+            attempts: attempts
+          });
+          return true;
+        } catch (error) {
+          console.error('[handleCustomDevotionalPress] Error calling showCheckIn:', error);
+          return false;
+        }
+      } else if (attempts < maxAttempts) {
+        // Wait and retry with exponential backoff
+        const delay = 100 * Math.pow(2, attempts - 1);
+        console.log(`[handleCustomDevotionalPress] showCheckIn not found, retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return tryShowCheckIn();
+      } else {
+        console.error('[handleCustomDevotionalPress] showCheckIn function not found after all attempts');
+        analytics.logEvent('custom_devotional_triggered_checkin', {
+          timestamp: new Date().toISOString(),
+          success: false,
+          error: 'showCheckIn not found after retries',
+          attempts: attempts
+        });
+        
+        // Show a toast message to the user
+        Toast.show({
+          type: 'error',
+          text1: 'Unable to open check-in',
+          text2: 'Please try again in a moment',
+          position: 'top',
+          topOffset: 60,
+        });
+        return false;
+      }
+    };
+    
+    await tryShowCheckIn();
   };
 
   return (
