@@ -1171,6 +1171,7 @@ export default function HomeScreen() {
                             } else {
                               // Multiple devotionals, use CardStack
                               return (
+                                <View className="-mt-4">
                                 <CardStack
                                   data={finalDevotionals}
                                   renderCard={(
@@ -1190,6 +1191,7 @@ export default function HomeScreen() {
                                     />
                                   )}
                                 />
+                                </View>
                               );
                             }
                           }
@@ -1207,7 +1209,7 @@ export default function HomeScreen() {
                       <View
                         className="flex-row items-center "
                         style={{
-                          marginTop: responsiveHeight(2),
+                          marginTop: -responsiveHeight(2),
                           marginBottom: responsiveHeight(2),
                         }}>
                         <View
