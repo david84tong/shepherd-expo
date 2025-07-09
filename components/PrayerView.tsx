@@ -295,7 +295,7 @@ const BreathingAnimation: React.FC<{ isActive: boolean; breathingProgress: Reani
       >
         {guidedPrayerEnabled ? (
           <TypingText
-            text="Dear God, I come before you today with a grateful heart. Please guide me through this day and help me grow in faith. Amen."
+            text={i18n.t('dear_god_default_prayer')}
             className="text-yellow-700 font-feather text-xl text-center"
             baseTextStyle={{
               color: '#B45309',
@@ -477,7 +477,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     // Fallback to recent prayers
     const latestPrayer = recentPrayers[0];
     if (!latestPrayer) {
-      return "Dear God, I come before you today with a grateful heart. Please guide me through this day and help me grow in faith. Amen.";
+      return i18n.t('dear_god_default_prayer');
     }
 
     return `Dear God, I come before you today with a humble heart. Please help me with ${latestPrayer.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
