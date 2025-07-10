@@ -32,6 +32,8 @@ import analytics from '~/utils/analytics';
 import i18n from '../app/utils/i18n';
 import { useSoundStore } from '~/app/stores/soundStore';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
+import { Devotional } from '~/app/models/Devotional';
+import { useLanguageStore } from '~/app/stores/languageStore';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
@@ -65,7 +67,9 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
   const devotionalError = useDevotionalStore().error;
 
   // Use customDevotional if it exists (AI-generated), otherwise use currentDevotional
-  const activeDevotional = customDevotional || currentDevotional;
+  const activeDevotional: Devotional | null = customDevotional || currentDevotional;
+
+  const { language } = useLanguageStore();
   
   // Debug logging for devotional data
   useEffect(() => {
@@ -249,12 +253,28 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
         const contextObj = activeDevotional.context as any;
         if (contextObj.text) {
           contextText = contextObj.text;
-        } else if (contextObj.en) {
-          // Extract English text from multi-language object
-          contextText = contextObj.en;
         } else {
-          // Convert object to string as fallback
-          contextText = JSON.stringify(activeDevotional.context);
+          
+          // Get current language from i18n
+          const currentLang = language;
+          console.log('🔄 Current language:', currentLang);
+          
+          // Try to get text in current language, fallback to English if not available
+          if (contextObj[currentLang]) {
+            contextText = contextObj[currentLang];
+          } else if (contextObj.en) {
+            // Fallback to English if current language not available
+            contextText = contextObj.en;
+          } else {
+            // If no matching language found, use first available language
+            const availableLangs = Object.keys(contextObj);
+            if (availableLangs.length > 0) {
+              contextText = contextObj[availableLangs[0]];
+            } else {
+              // Last resort: stringify the object
+              contextText = JSON.stringify(activeDevotional.context);
+            }
+          }
         }
       }
 

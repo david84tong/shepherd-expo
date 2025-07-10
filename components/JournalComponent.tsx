@@ -35,6 +35,7 @@ import PrimaryButton from './PrimaryButton';
 import CircleButton from './Shared/CircleButton';
 import i18n from '../app/utils/i18n';
 import { useSoundStore } from '~/app/stores/soundStore';
+import { useLanguageStore } from '~/app/stores/languageStore';
 
 // Helper function to get book name from book ID
 const getBookNameFromId = (bookId: number): string => {
@@ -97,6 +98,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
   // Check if button should be enabled
   const isButtonEnabled = useMemo(() => charCount >= MIN_CHARS_REQUIRED, [charCount]);
+
+  const { language } = useLanguageStore();
 
   useEffect(() => {
     if (isButtonEnabled) {
@@ -202,14 +205,44 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       return "Tell God what's on your mind";
     }
 
+    const currentLang = language;
+     
     // First try to use the devotional reflection prompt (handle both string and object structures)
     if (currentDevotional?.reflectionPrompt) {
       if (typeof currentDevotional.reflectionPrompt === 'string') {
         console.log('📝 Using string reflection prompt:', currentDevotional.reflectionPrompt);
         return currentDevotional.reflectionPrompt;
-      } else if (typeof currentDevotional.reflectionPrompt === 'object' && (currentDevotional.reflectionPrompt as any).en) {
-        const prompt = (currentDevotional.reflectionPrompt as any).en;
-        console.log('📝 Using object.en reflection prompt:', prompt);
+      } else if (typeof currentDevotional.reflectionPrompt === 'object') {
+        const promptObj = currentDevotional.reflectionPrompt as any;
+        let prompt: string;
+
+        // Try to get prompt in current language
+        if (promptObj[currentLang]) {
+          prompt = promptObj[currentLang];
+          console.log(`📝 Using ${currentLang} reflection prompt:`, prompt);
+        } 
+        // Fallback to English
+        else if (promptObj.en) {
+          prompt = promptObj.en;
+          console.log('📝 Using fallback English reflection prompt:', prompt);
+        }
+        // Use first available language as last resort
+        else {
+          const availableLangs = Object.keys(promptObj);
+          prompt = availableLangs.length > 0 ? promptObj[availableLangs[0]] : '';
+          console.log('📝 Using first available language prompt:', prompt);
+        }
+
+        return prompt;
+      }
+      else if (typeof currentDevotional.reflectionPrompt === 'object' && (currentDevotional.reflectionPrompt as any).es) {
+        const prompt = (currentDevotional.reflectionPrompt as any).es;
+        console.log('📝 Using object.es reflection prompt:', prompt);
+        return prompt;
+      }
+      else if (typeof currentDevotional.reflectionPrompt === 'object' && (currentDevotional.reflectionPrompt as any).fr) {  
+        const prompt = (currentDevotional.reflectionPrompt as any).fr;
+        console.log('📝 Using object.fr reflection prompt:', prompt);
         return prompt;
       }
     }

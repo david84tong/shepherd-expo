@@ -3,10 +3,10 @@ export interface Devotional {
   title: string;
   content: string;
   createdAt: string;
-  context: string; // 4-5 sentences about the bible verse
+  context: string | { en: string , es: string , fr: string }; // 4-5 sentences about the bible verse
   bibleReference: string;
-  prayer: string | { en: string };
-  reflectionPrompt: string | { en: string };
+  prayer: string | { en: string , es: string, fr: string };
+  reflectionPrompt: string | { en: string , es: string, fr: string };
   likes: number;
   shares: number;
   completed: number;

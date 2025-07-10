@@ -37,6 +37,8 @@ import PrayerSettingsModal from './PrayerSettingsModal';
 import { useSoundStore } from '~/app/stores/soundStore';
 import { hapticHeavy, hapticLight, hapticMedium } from '~/utils/haptics';
 import { RPH } from '~/app/helper/helper';
+import { useLanguageStore } from '~/app/stores/languageStore';
+import i18n from '~/app/utils/i18n';
 
 // AsyncStorage keys for prayer settings
 const PRAYER_HAPTICS_KEY = 'prayer_haptics_enabled';
@@ -303,7 +305,7 @@ const WaterWaveAnimation: React.FC<{
                 marginBottom: 4,
                 fontFamily: 'Nunito-Black',
               }}>
-                {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : 'Pour out your heart')}
+                {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : i18n.t('pour_out_your_heart'))}
               </Text>
               <Text className=' text-textPrimary ' style={{
                 fontFamily: 'DIN Next Rounded LT W01 Regular',
@@ -311,7 +313,7 @@ const WaterWaveAnimation: React.FC<{
                 fontSize: 16,
                 color: `${totalHoldTime > 10000 ? 'white' : "#0369a1"}`,
               }}>
-                {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : 'Let your prayers fill your cup')}
+                {animationTriggered ? '' : (totalHoldTime > 17000 ? '' : i18n.t('let_your_prayers_fill_your_cup'))}
               </Text>
               <Text className='font-feather text-textPrimary' style={{
                 textAlign: 'center',
@@ -319,7 +321,7 @@ const WaterWaveAnimation: React.FC<{
                 marginTop: 24,
                 opacity: 0.8,
               }}>
-                {animationTriggered ? '' : (totalHoldTime > 1000 ? '' : 'Hold to begin')}
+                {animationTriggered ? '' : (totalHoldTime > 1000 ? '' : i18n.t('hold_to_begin'))}
               </Text>
             </View>
           )}
@@ -405,6 +407,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
 }, ref) => {
   const { recentPrayers } = usePrayerStore();
   const { currentDevotional } = useDevotionalStore();
+  const { language } = useLanguageStore();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [skipTyping, setSkipTyping] = useState(false);
   const [isTypingComplete, setIsTypingComplete] = useState(false);
@@ -470,16 +473,24 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       if (typeof currentDevotional.prayer === 'string') {
         devotionalPrayer = currentDevotional.prayer;
       } else if (typeof currentDevotional.prayer === 'object') {
-        // Try to get the current language, fallback to 'en'
-        let lang = 'en';
-        if (typeof navigator !== 'undefined') {
-          const navLang = (navigator.language || (navigator.languages && navigator.languages[0]));
-          if (typeof navLang === 'string') {
-            lang = navLang.split('-')[0];
-          }
-        }
         const prayerObj = currentDevotional.prayer as Record<string, string>;
-        devotionalPrayer = prayerObj[lang] || prayerObj['en'] || Object.values(prayerObj)[0];
+        
+        // Try to get prayer in current language
+        if (prayerObj[language]) {
+          devotionalPrayer = prayerObj[language];
+          console.log(`🙏 Using ${language} prayer text`);
+        }
+        // Fallback to English
+        else if (prayerObj.en) {
+          devotionalPrayer = prayerObj.en;
+          console.log('🙏 Using fallback English prayer text');
+        }
+        // Use first available language as last resort
+        else {
+          const availableLangs = Object.keys(prayerObj);
+          devotionalPrayer = availableLangs.length > 0 ? prayerObj[availableLangs[0]] : '';
+          console.log('🙏 Using first available language prayer text');
+        }
       }
     }
 
@@ -494,7 +505,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
     }
 
     return `Dear God, I come before you today with a humble heart. Please help me with ${latestPrayer.toLowerCase()} in my life. Guide me through this journey and give me strength. Thank you for your endless love and grace. Amen.`;
-  }, [currentDevotional?.prayer, recentPrayers]);
+  }, [currentDevotional?.prayer, recentPrayers, language]);
 
   // Smooth component fade-in on mount
   useEffect(() => {
@@ -1087,8 +1098,8 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       {showSuccess ? (
         <View style={{ marginHorizontal: 24, flex: 1, marginTop: 24 }}>
           <SuccessMessage
-            title="Prayer Complete!"
-            description="Wonderful! You spent time in prayer & strengthened your faith."
+            title={i18n.t('prayer_complete')}
+            description={i18n.t('prayer_complete_desc')}
             level={levelInfo.level}
             prevLevel={levelInfo.level}
             buttonsEnabled={buttonsEnabled}
@@ -1208,8 +1219,8 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                 onClose({ isReflectPresses: true });
               }
             }}
-            prayButtonTitle="Reflect on this verse"
-            rewardsTitle="PRAYER REWARDS"
+            prayButtonTitle={i18n.t('reflect_on_this_verse')}
+            rewardsTitle={i18n.t('prayer_rewards')}
           />
         </View>
       ) : (
