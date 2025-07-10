@@ -18,7 +18,7 @@ export default function SitemapScreen() {
       <Link href="/onboarding/explainerHearts" className="text-blue-600 mb-1"><Text>/onboarding/explainerHearts</Text></Link>
       <Link href="/onboarding/LoadingScreen" className="text-blue-600 mb-1"><Text>/onboarding/LoadingScreen</Text></Link>
       <Text className="text-lg font-bold mt-4 mb-2">Pricing</Text>
-      <Link href="/onboarding/pricing/OldPricingScreen" className="text-blue-600 mb-1"><Text>/onboarding/pricing/OldPricingScreen</Text></Link>
+      <Link href="/onboarding/OldPricingScreen" className="text-blue-600 mb-1"><Text>/onboarding/pricing/OldPricingScreen</Text></Link>
       <Link href="/onboarding/pricing/FreeOffer" className="text-blue-600 mb-1"><Text>/onboarding/pricing/FreeOffer</Text></Link>
       <Link href="/onboarding/pricing/ShepherdCommunity" className="text-blue-600 mb-1"><Text>/onboarding/pricing/ShepherdCommunity</Text></Link>
       <Link href="/onboarding/pricing/selfFundedMission" className="text-blue-600 mb-1"><Text>/onboarding/pricing/selfFundedMission</Text></Link>
