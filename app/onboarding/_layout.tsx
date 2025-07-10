@@ -31,6 +31,9 @@ const IMPLEMENTED_SCREENS = [
   'lambFound',
   'pathAffinity',
   'LoadingScreen',
+  'OldPricingScreen',
+  'PricingScreen',
+  'pricing',
 ];
 
 export default function OnboardingLayout() {
@@ -78,7 +81,14 @@ export default function OnboardingLayout() {
     // Only update screen from pathname if store is initialized
     // This prevents overriding the saved screen during app startup
     if (pathname && isInitialized) {
-      const screen = pathname.split('/').pop() || '1';
+      // Extract the screen path relative to `/onboarding/` so nested routes like `pricing/OldPricingScreen` are preserved.
+      let screen = pathname.startsWith('/onboarding/')
+        ? pathname.substring('/onboarding/'.length) // keep everything after `/onboarding/`
+        : pathname.startsWith('/')
+        ? pathname.slice(1)
+        : pathname;
+
+      if (!screen) screen = '1';
 
       appLog(
         `[OnboardingLayout] Pathname changed to: ${pathname}, extracted screen: ${screen}, current screen: ${currentScreen}`
@@ -138,10 +148,16 @@ export default function OnboardingLayout() {
       // Shorter delay since this is backup navigation
       const timeoutId = setTimeout(() => {
         try {
+          // Handle legacy saved screen values that didn't include nested path (e.g., "OldPricingScreen")
+          let targetScreen = savedScreenToNavigateTo;
+          if (targetScreen === 'OldPricingScreen') {
+            targetScreen = 'OldPricingScreen';
+          }
+
           appLog(
-            `[OnboardingLayout] 🔄 Backup navigation executing: /onboarding/${savedScreenToNavigateTo}`
+            `[OnboardingLayout] 🔄 Backup navigation executing: /onboarding/${targetScreen}`
           );
-          router.replace(`/onboarding/${savedScreenToNavigateTo}` as any);
+          router.replace(`/onboarding/${targetScreen}` as any);
           clearSavedScreenNavigation();
           appLog(`[OnboardingLayout] ✅ Backup navigation completed`);
         } catch (error) {

@@ -18,6 +18,7 @@ import analytics from '../../utils/analytics';
 import i18n from '../utils/i18n';
 import { appLog, RPH } from '../helper/helper';
 import { hapticLight } from '~/utils/haptics';
+import { updateAnalyticsForAgeChange, debugAnalyticsConfig } from '../../utils/analyticsConfig';
 
 export default function OnboardingAgeRangeScreen() {
   const router = useRouter();
@@ -122,6 +123,13 @@ export default function OnboardingAgeRangeScreen() {
           age_range: ageRange,
         },
       });
+
+      // Configure analytics based on user age
+      if (ageRange) {
+        await updateAnalyticsForAgeChange(ageRange);
+        // Debug: Check analytics configuration status
+        await debugAnalyticsConfig();
+      }
 
       // Navigate to next screen
       router.push('/onboarding/8' as any);

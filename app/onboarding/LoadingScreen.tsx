@@ -352,7 +352,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             totalSteps: loadingPoints.length,
             timeSpent: currentStep * STEP_DURATION + FINAL_DELAY,
             abTestGroup: abTestValue,
-            redirectTo: abTestValue === 0 ? 'PricingScreen' : 'OldPricingScreen',
+            redirectTo: abTestValue === 0 ? 'PricingScreen' : 'PricingScreen',
           });
 
           // Navigate based on A/B test value - but skip if from check-in
@@ -361,7 +361,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             if (abTestValue === 0) {
               router.push('/PricingScreen');
             } else {
-              router.push('/onboarding/pricing/OldPricingScreen');
+              router.push('/onboardin/OldPricingScreen');
             }
           } else {
             appLog('[LoadingScreen] Skipping pricing navigation (check-in flow detected)');
