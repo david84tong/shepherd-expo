@@ -68,6 +68,7 @@ console.log('📄 HomeScreen file loaded at:', new Date().toISOString());
 const MemoizedScrollContent = React.memo(({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 });
+MemoizedScrollContent.displayName = 'MemoizedScrollContent';
 
 export default function HomeScreen() {
   console.log('🏠 HomeScreen function called at:', new Date().toISOString());
@@ -162,6 +163,14 @@ export default function HomeScreen() {
   }, []);
 
   console.log('📍 Second useEffect registered');
+
+  // Fetch recent devotionals on mount
+  useEffect(() => {
+    console.log('📚 Fetching recent devotionals on mount');
+    fetchRecentDevotionals().catch((error) => {
+      console.error('❌ Error fetching recent devotionals on mount:', error);
+    });
+  }, []);
 
   // Local state for prayer success screen visibility
   const [showPrayerSuccess, setShowPrayerSuccess] = useState(false);
@@ -299,6 +308,7 @@ export default function HomeScreen() {
 
   // Get recent devotionals from global store
   const recentDevotionals = useDevotionalStore((state) => state.recentDevotionals);
+  const fetchRecentDevotionals = useDevotionalStore((state) => state.fetchRecentDevotionals);
 
   // Debug effect to track nextUnitPreview changes
   useEffect(() => {
@@ -353,7 +363,13 @@ export default function HomeScreen() {
             console.error('❌ Error refreshing data on focus:', error);
           });
       }
-    }, [])
+
+      // Also refresh recent devotionals when screen comes into focus
+      console.log('🔄 Fetching recent devotionals on focus');
+      fetchRecentDevotionals().catch((error) => {
+        console.error('❌ Error fetching recent devotionals:', error);
+      });
+    }, [fetchRecentDevotionals])
   );
 
 
@@ -1071,37 +1087,73 @@ export default function HomeScreen() {
                         {readingCompleted && (
                           <View className="w-full mt-4 mb-8">
                             {(() => {
-                              // Show at most 2 cards: daily verse + last custom devotional
+                              // Show at most 2 cards: prioritize custom devotional from today, then daily verse
                               const devotionalsToShow: Devotional[] = [];
                               const addedIds = new Set<string>();
+                              
+                              // Check for today's date
+                              const today = new Date();
+                              today.setHours(0, 0, 0, 0);
 
-                              // First, always add the daily devotional (verse of the day)
+                              // First, check if there's a custom devotional from today
+                              let todaysCustomDevotional: Devotional | null = null;
+                              
+                              if (recentDevotionals.length > 0) {
+                                // Find custom devotionals from today (sort by most recent first)
+                                const customDevotionalsToday = recentDevotionals.filter((d) => {
+                                  if (!d || !d.id || d.id === 'undefined') return false;
+                                  if (d.id === dailyDevotional?.id) return false; // Skip daily devotional
+                                  
+                                  let devotionalDate;
+                                  try {
+                                    if (d.date && typeof d.date.toDate === 'function') {
+                                      devotionalDate = d.date.toDate();
+                                    } else if (d.date instanceof Date) {
+                                      devotionalDate = d.date;
+                                    } else if (typeof d.date === 'string') {
+                                      // Handle string dates (YYYY-MM-DD or ISO format)
+                                      devotionalDate = new Date(d.date);
+                                    } else {
+                                      return false;
+                                    }
+                                    
+                                    devotionalDate.setHours(0, 0, 0, 0);
+                                    return devotionalDate.getTime() === today.getTime();
+                                  } catch (error) {
+                                    return false;
+                                  }
+                                }).sort((a, b) => {
+                                  // Sort by createdAt to get the most recent first
+                                  const dateA = new Date(a.createdAt || a.date).getTime();
+                                  const dateB = new Date(b.createdAt || b.date).getTime();
+                                  return dateB - dateA;
+                                }) as Devotional[];
+                                
+                                if (customDevotionalsToday.length > 0) {
+                                  todaysCustomDevotional = customDevotionalsToday[0];
+                                }
+                              }
+
+                              // If we found a custom devotional from today, add it first
+                              if (todaysCustomDevotional) {
+                                devotionalsToShow.push(todaysCustomDevotional);
+                                addedIds.add(todaysCustomDevotional.id);
+                              }
+
+                              // Then add the daily devotional (verse of the day)
                               if (
                                 dailyDevotional &&
                                 dailyDevotional.id &&
-                                dailyDevotional.id !== 'undefined'
+                                dailyDevotional.id !== 'undefined' &&
+                                !addedIds.has(dailyDevotional.id)
                               ) {
                                 devotionalsToShow.push(dailyDevotional);
                                 addedIds.add(dailyDevotional.id);
                               }
 
-                              // Then add the most recent custom devotional (if any)
-                              if (recentDevotionals.length > 0) {
-                                // Filter to get only custom devotionals (not daily verse)
-                                const customDevotionals = recentDevotionals.filter(
-                                  (d) => d && d.id && d.id !== 'undefined' && !addedIds.has(d.id)
-                                ) as Devotional[];
-
-                                // Add only the most recent custom devotional
-                                if (customDevotionals.length > 0) {
-                                  devotionalsToShow.push(customDevotionals[0]);
-                                  addedIds.add(customDevotionals[0].id);
-                                }
-                              }
-
-                              // If we don't have a custom devotional from recent, check if there's a current custom devotional
+                              // If we don't have any devotionals yet, check current custom devotional
                               if (
-                                devotionalsToShow.length === 1 &&
+                                devotionalsToShow.length === 0 &&
                                 customDevotional &&
                                 customDevotional.id &&
                                 customDevotional.id !== 'undefined' &&
@@ -1110,7 +1162,7 @@ export default function HomeScreen() {
                                 devotionalsToShow.push(customDevotional);
                               }
 
-                              // If we only have daily verse, that's fine. If we have no devotionals at all, try currentDevotional
+                              // If still no devotionals, try currentDevotional as fallback
                               if (
                                 devotionalsToShow.length === 0 &&
                                 currentDevotional &&
@@ -1121,7 +1173,7 @@ export default function HomeScreen() {
                               }
 
                               // Ensure maximum 2 cards
-                              const finalDevotionals = devotionalsToShow.slice(0, 3);
+                              const finalDevotionals = devotionalsToShow.slice(0, 2);
 
                               if (finalDevotionals.length > 0) {
                                 // If only one devotional, render it directly without CardStack
@@ -1176,49 +1228,6 @@ export default function HomeScreen() {
 
                         {/* UNCOMPLETED TASKS SECTION - Show first */}
 
-                        {/* Custom Path Button - Show when reading is completed and not completed today */}
-                        {readingCompleted && !isCustomPathCompletedToday && (
-                          <View
-                            className="flex-row items-center "
-                            style={{
-                              marginTop: -responsiveHeight(2),
-                              marginBottom: responsiveHeight(2),
-                            }}>
-                            <View
-                              style={{
-                                width: 22,
-                                marginRight: 10,
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                left: -8,
-                              }}>
-                              <View
-                                className="bg-textPrimary/15"
-                                style={{ width: 20, height: 20, borderRadius: 12 }}
-                              />
-                            </View>
-                            <View style={{ flex: 1, minWidth: 0 }}>
-                              <SecondaryButton
-                                icon={require('../../assets/icons/map.png')}
-                                title={i18n.t('custom_path')}
-                                subtitle={i18n.t('your_custom_path')}
-                                points={0}
-                                onPress={() => {
-                                  hapticLight();
-                                  router.push({
-                                    pathname: '/components/map',
-                                    params: {
-                                      fromHome: 'true',
-                                    },
-                                  });
-                                }}
-                                completed={false}
-                                disabled={false}
-                              />
-                            </View>
-                          </View>
-                        )}
-
                         {/* Prayer and Journal Buttons - Show only incomplete buttons when reading is completed */}
                         {readingCompleted && (!prayerCompleted || !reflectionCompleted) && (
                           <View style={{ marginTop: responsiveHeight(0) }}>
@@ -1226,7 +1235,7 @@ export default function HomeScreen() {
                             {!prayerCompleted && (
                               <View
                                 className="flex-row items-center"
-                                style={{ marginBottom: responsiveHeight(2) }}>
+                                style={{ marginBottom: responsiveHeight(2), marginTop: responsiveHeight(-4) }}>
                                 <View
                                   style={{
                                     width: 22,
@@ -1288,11 +1297,54 @@ export default function HomeScreen() {
                           </View>
                         )}
 
+                        {/* Custom Path Button - Show when reading is completed and not completed today */}
+                        {readingCompleted && !isCustomPathCompletedToday && (
+                          <View
+                            className="flex-row items-center "
+                            style={{
+                              marginTop: responsiveHeight(prayerCompleted && reflectionCompleted ? -4 : 0),
+                              marginBottom: responsiveHeight(2),
+                            }}>
+                            <View
+                              style={{
+                                width: 22,
+                                marginRight: 10,
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                left: -8,
+                              }}>
+                              <View
+                                className="bg-textPrimary/15"
+                                style={{ width: 20, height: 20, borderRadius: 12 }}
+                              />
+                            </View>
+                            <View style={{ flex: 1, minWidth: 0 }}>
+                              <SecondaryButton
+                                icon={require('../../assets/icons/map.png')}
+                                title={i18n.t('custom_path')}
+                                subtitle={i18n.t('your_custom_path')}
+                                points={0}
+                                onPress={() => {
+                                  hapticLight();
+                                  router.push({
+                                    pathname: '/components/map',
+                                    params: {
+                                      fromHome: 'true',
+                                    },
+                                  });
+                                }}
+                                completed={false}
+                                disabled={false}
+                              />
+                            </View>
+                          </View>
+                        )}
+
                         {/* COMPLETED TASKS SECTION - Show after uncompleted tasks */}
 
                         {/* Show completed tasks when reading is completed */}
                         {readingCompleted && (
-                          <View style={{ marginTop: responsiveHeight(1) }}>
+                          <View style={{ marginTop: responsiveHeight(0) }}>
                             <View
                               className="flex-row items-center"
                               style={{ marginBottom: responsiveHeight(2) }}>
@@ -1358,7 +1410,7 @@ export default function HomeScreen() {
                             {reflectionCompleted && (
                               <View
                                 className="flex-row items-center"
-                                style={{ marginBottom: responsiveHeight(2) }}>
+                                style={{ marginBottom: responsiveHeight(1) }}>
                                 <View
                                   style={{
                                     width: 22,

@@ -74,6 +74,11 @@ interface HomeState {
   checkAndResetStreakIfNeeded: () => void; // Check and reset streak flag if it's a new day
 }
 
+export const isBonusAvailable = (state: HomeState) => {
+  const isFirstReadingOfDay = !state.sawStreakToday;
+  return state.readingCompleted && state.prayerCompleted && isFirstReadingOfDay && !state.sawDailyBonus;
+};
+
 /**
  * Zustand store to manage the current operational mode of the Home screen.
  * Uses persist middleware to save completion states in AsyncStorage.

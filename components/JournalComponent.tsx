@@ -22,7 +22,11 @@ import Reanimated, {
   Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
+import {
+  useHomeStore,
+  SuccessAnimationType,
+  isBonusAvailable as isBonusAvailableSelector,
+} from '../app/stores/homeStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '../app/stores/userStore';
 import { useDevotionalStore } from '../app/stores/devotionalStore';
@@ -113,6 +117,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   const sawDailyBonus = useHomeStore((state) => state.sawDailyBonus);
   const addCompletedReflection = useUserStore((state) => state.addCompletedReflection);
   const setLastReflectionDate = useUserStore((state) => state.setLastReflectionDate);
+
+  const shouldShowBonus = useHomeStore(isBonusAvailableSelector);
 
   // Animation values
   const cardAnimY = useRef(new Animated.Value(200)).current;
@@ -688,7 +694,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
           level={levelInfo.level}
           prevLevel={levelInfo.level}
           buttonsEnabled={buttonsEnabled}
-          showCollectBonus={false} // Let SuccessMessage determine this automatically
+          showCollectBonus={shouldShowBonus}
           onLoad={() => {
             useSoundStore.getState().playJournalingSuccessSound();
           }}
@@ -718,7 +724,18 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
               const sawStreakToday = useHomeStore.getState().sawStreakToday;
               const isFirstReadingOfDay = !sawStreakToday;
-              const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
+              // Since we just completed reflection, all activities are now complete
+              const isBonusAvailable = shouldShowBonus && reflectionCompleted;
+
+              const freshHomeState = useHomeStore.getState();
+              console.log('🔍 JOURNAL SUCCESS - Bonus check (onGoHome):', {
+                readingCompleted: freshHomeState.readingCompleted,
+                prayerCompleted: freshHomeState.prayerCompleted,
+                reflectionCompleted: reflectionCompleted,
+                isFirstReadingOfDay,
+                sawDailyBonus,
+                isBonusAvailable
+              });
 
               if (isBonusAvailable) {
                 setSuccessType(SuccessAnimationType.BONUS);
@@ -788,7 +805,20 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             // Handle bonus collection if available
             const sawStreakToday = useHomeStore.getState().sawStreakToday;
             const isFirstReadingOfDay = !sawStreakToday;
-            const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
+            // Check current state from homeStore to get the most up-to-date values
+            const currentHomeState = useHomeStore.getState();
+            // Since we just completed reflection, all activities are now complete
+            const isBonusAvailable = shouldShowBonus && reflectionCompleted;
+
+            const freshHomeState = useHomeStore.getState();
+            console.log('🔍 JOURNAL SUCCESS - Bonus check (onPray):', {
+              readingCompleted: freshHomeState.readingCompleted,
+              prayerCompleted: freshHomeState.prayerCompleted,
+              reflectionCompleted: reflectionCompleted,
+              isFirstReadingOfDay,
+              sawDailyBonus,
+              isBonusAvailable
+            });
 
             if (isBonusAvailable) {
               // For bonus collection, navigate immediately without delay
@@ -1087,7 +1117,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                       console.log('🔍 JOURNAL - Snapped bottom sheet to lowest point after save');
                     }
 
-                    // Set Rive to achievement animation
+                    // Set Rive to celebration animation
                     const riveRef = homeStore.riveRef;
                     if (riveRef?.current?.setInputState) {
                       try {
