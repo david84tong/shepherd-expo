@@ -333,10 +333,37 @@ export default function HomeScreen() {
     });
   }, [completedMapPaths]);
 
+  // Refresh recent devotionals when customDevotional changes (when a new custom devotional is created)
+  useEffect(() => {
+    if (customDevotional) {
+      // Force immediate refresh
+      fetchRecentDevotionals().catch((error) => {
+        console.error('❌ Error fetching recent devotionals after custom devotional change:', error);
+      });
+      
+      // Also add the custom devotional directly to recentDevotionals if it's not there
+      const currentRecentDevotionals = useDevotionalStore.getState().recentDevotionals;
+      if (!currentRecentDevotionals.some(d => d?.id === customDevotional.id)) {
+        const updatedDevotionals = [customDevotional, ...currentRecentDevotionals];
+        useDevotionalStore.getState().setRecentDevotionals(updatedDevotionals);
+      }
+    }
+  }, [customDevotional, fetchRecentDevotionals]);
+
+  // Additional fetch after a delay to ensure we get the latest data
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      fetchRecentDevotionals().catch((error) => {
+        console.error('❌ Error fetching recent devotionals after delay:', error);
+      });
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }, [fetchRecentDevotionals]);
+
   // Refresh data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      console.log('🔄 HomeScreen focused - refreshing data');
 
       // Refresh user data from Firestore
       const currentUser = useUserStore.getState();
@@ -1105,30 +1132,14 @@ export default function HomeScreen() {
                               // First, check if there's a custom devotional from today
                               let todaysCustomDevotional: Devotional | null = null;
                               
+                              // Check recentDevotionals first
                               if (recentDevotionals.length > 0) {
-                                // Find custom devotionals from today (sort by most recent first)
                                 const customDevotionalsToday = recentDevotionals.filter((d) => {
                                   if (!d || !d.id || d.id === 'undefined') return false;
                                   if (d.id === dailyDevotional?.id) return false; // Skip daily devotional
                                   
-                                  let devotionalDate;
-                                  try {
-                                    if (d.date && typeof d.date.toDate === 'function') {
-                                      devotionalDate = d.date.toDate();
-                                    } else if (d.date instanceof Date) {
-                                      devotionalDate = d.date;
-                                    } else if (typeof d.date === 'string') {
-                                      // Handle string dates (YYYY-MM-DD or ISO format)
-                                      devotionalDate = new Date(d.date);
-                                    } else {
-                                      return false;
-                                    }
-                                    
-                                    devotionalDate.setHours(0, 0, 0, 0);
-                                    return devotionalDate.getTime() === today.getTime();
-                                  } catch (error) {
-                                    return false;
-                                  }
+                                  // Show all custom devotionals
+                                  return d.id.startsWith('custom-') || d.id.startsWith('ai-');
                                 }).sort((a, b) => {
                                   // Sort by createdAt to get the most recent first
                                   const dateA = new Date(a.createdAt || a.date).getTime();
@@ -1139,6 +1150,11 @@ export default function HomeScreen() {
                                 if (customDevotionalsToday.length > 0) {
                                   todaysCustomDevotional = customDevotionalsToday[0];
                                 }
+                              }
+                              
+                              // If no custom devotional found in recentDevotionals, check customDevotional from store
+                              if (!todaysCustomDevotional && customDevotional) {
+                                todaysCustomDevotional = customDevotional;
                               }
 
                               // If we found a custom devotional from today, add it first
@@ -1184,10 +1200,21 @@ export default function HomeScreen() {
 
                               console.log('📚 Devotionals Debug:', {
                                 recentDevotionalsCount: recentDevotionals.length,
+                                recentDevotionals: recentDevotionals.map(d => ({
+                                  id: d?.id,
+                                  date: d?.date,
+                                  createdAt: d?.createdAt,
+                                  type: d?.id?.startsWith('custom-') || d?.id?.startsWith('ai-') ? 'custom' : 'daily'
+                                })),
                                 todaysCustomDevotional: todaysCustomDevotional ? {
                                   id: todaysCustomDevotional.id,
                                   date: todaysCustomDevotional.date,
                                   createdAt: todaysCustomDevotional.createdAt
+                                } : null,
+                                customDevotionalFromStore: customDevotional ? {
+                                  id: customDevotional.id,
+                                  date: customDevotional.date,
+                                  createdAt: customDevotional.createdAt
                                 } : null,
                                 dailyDevotional: dailyDevotional ? {
                                   id: dailyDevotional.id,

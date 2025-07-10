@@ -25,6 +25,7 @@ import { Timestamp } from '@react-native-firebase/firestore';
 import { IS_ANDROID } from '~/app/utils/utils';
 import { useSoundStore } from '~/app/stores/soundStore';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
+import dayjs from 'dayjs';
 
 // Import gem icon
 import gemIcon from '../assets/icons/greenGemIcon.png';
@@ -255,7 +256,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         likes: 0,
         shares: 0,
         completed: 0,
-        date: new Date().toISOString().split('T')[0],
+        date: dayjs().format('YYYY-MM-DD') || new Date().toISOString().split('T')[0],
         imageURL: randomBackground,
         verse: customDevotional.verse || ''
       };

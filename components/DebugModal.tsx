@@ -17,6 +17,7 @@ import { calculateExpForLevel } from '../utils/levelUtils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 import WidgetHowToSheet from './WidgetHowToSheet';
 import { useCheckInStore } from '~/app/stores/checkInStore';
+import dayjs from 'dayjs';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -736,6 +737,76 @@ export function DebugButton() {
     }
   };
 
+  // Test custom devotional creation and refresh
+  const handleTestCustomDevotional = async () => {
+    try {
+      console.log('🧪 Testing custom devotional creation...');
+      
+      // Create a test custom devotional
+      const testDevotional = {
+        id: 'test-custom',
+        title: 'Test Custom Devotional',
+        content: 'This is a test custom devotional for debugging.',
+        createdAt: new Date().toISOString(),
+        context: 'This is a test context for debugging purposes.',
+        bibleReference: 'John 3:16',
+        prayer: 'Thank you for this test devotional.',
+        reflectionPrompt: 'What does this test devotional mean to you?',
+        likes: 0,
+        shares: 0,
+        completed: 0,
+        date: dayjs().format('YYYY-MM-DD'),
+        imageURL: 'https://example.com/test.jpg',
+        verse: 'For God so loved the world...'
+      };
+
+      // Use the devotional store to create it
+      await useDevotionalStore.getState().createCustomDevotionalFromCheckIn(testDevotional);
+      
+      Toast.show({ 
+        type: 'success', 
+        text1: 'Test custom devotional created!',
+        text2: 'Check console for details'
+      });
+      
+      console.log('✅ Test custom devotional created successfully');
+    } catch (error) {
+      console.error('❌ Error creating test custom devotional:', error);
+      Toast.show({ 
+        type: 'error', 
+        text1: 'Failed to create test devotional',
+        text2: String(error)
+      });
+    }
+  };
+
+  // Test recent devotionals refresh
+  const handleTestRefreshDevotionals = async () => {
+    try {
+      console.log('🔄 Testing recent devotionals refresh...');
+      
+      const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
+      if (fetchRecentDevotionals) {
+        await fetchRecentDevotionals();
+        Toast.show({ 
+          type: 'success', 
+          text1: 'Recent devotionals refreshed!',
+          text2: 'Check console for details'
+        });
+        console.log('✅ Recent devotionals refreshed successfully');
+      } else {
+        throw new Error('fetchRecentDevotionals function not available');
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing recent devotionals:', error);
+      Toast.show({ 
+        type: 'error', 
+        text1: 'Failed to refresh devotionals',
+        text2: String(error)
+      });
+    }
+  };
+
   return (
     <>
       {/* Floating Debug Button */}
@@ -774,6 +845,25 @@ export function DebugButton() {
                 >
                   <Text className="font-feather text-base text-textPrimary">Sync Firestore → Store</Text>
                   <Text className="font-din text-sm text-[#6A8A94] mt-1">Call syncFirestoreData with Firestore user doc</Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Custom Devotional Testing Section */}
+              <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">Custom Devotional Testing</Text>
+                <TouchableOpacity
+                  className="bg-[#FFE6E6] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF6B6B]"
+                  onPress={handleTestCustomDevotional}
+                >
+                  <Text className="font-feather text-base text-textPrimary">Create Test Custom Devotional</Text>
+                  <Text className="font-din text-sm text-[#A57070] mt-1">Create a test custom devotional for debugging</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  className="bg-[#E6F3FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
+                  onPress={handleTestRefreshDevotionals}
+                >
+                  <Text className="font-feather text-base text-textPrimary">Refresh Recent Devotionals</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">Manually refresh recent devotionals</Text>
                 </TouchableOpacity>
               </View>
               {/* Toast Message Section */}

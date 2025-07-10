@@ -433,7 +433,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       likes: 0,
       shares: 0,
       completed: 0,
-      date: new Date().toISOString(),
+      date: dayjs().format('YYYY-MM-DD'),
       imageURL: selectedImageURL,
       verse: verseText,
     };
@@ -522,7 +522,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         likes: 0,
         shares: 0,
         completed: 0,
-        date: new Date().toISOString().split('T')[0], // Store as YYYY-MM-DD format for consistency
+        date: dayjs().format('YYYY-MM-DD'), // Store as YYYY-MM-DD format for consistency using local timezone
         imageURL: selectedImageURL,
         verse: verseText,
       };
@@ -678,11 +678,14 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
       // Generate unique ID for the custom devotional
       const customDevotionalId = `custom-${Date.now()}`;
+      // Ensure we use the user's local timezone for the date
+      const today = dayjs().format('YYYY-MM-DD');
+      
       const devotionalWithId = {
         ...devotional,
         id: customDevotionalId,
         createdAt: new Date().toISOString(),
-        date: devotional.date || new Date().toISOString().split('T')[0], // Keep YYYY-MM-DD format
+        date: devotional.date || today, // Use dayjs to get local date
         userId: currentUser.uid,
       };
 
@@ -733,15 +736,24 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
       // Trigger a refresh of recent devotionals to update the UI immediately
       // This will help the HomeScreen component show the new devotional
+      // Immediate refresh
+      const fetchRecentDevotionals = get().fetchRecentDevotionals;
+      if (fetchRecentDevotionals) {
+        console.log('[DevotionalStore] Triggering immediate refresh of recent devotionals');
+        fetchRecentDevotionals().catch(error => {
+          console.error('[DevotionalStore] Error in immediate refresh of recent devotionals:', error);
+        });
+      }
+
+      // Also trigger a delayed refresh to ensure Firestore write is complete
       setTimeout(() => {
         const fetchRecentDevotionals = get().fetchRecentDevotionals;
         if (fetchRecentDevotionals) {
-          console.log('[DevotionalStore] Triggering refresh of recent devotionals after creating new custom devotional');
           fetchRecentDevotionals().catch(error => {
-            console.error('[DevotionalStore] Error refreshing recent devotionals:', error);
+            console.error('[DevotionalStore] Error in delayed refresh of recent devotionals:', error);
           });
         }
-      }, 1000); // Small delay to ensure Firestore write is complete
+      }, 2000); // Increased delay to ensure Firestore write is complete
 
     } catch (error) {
       console.error('[DevotionalStore] Error creating custom devotional from check-in:', error);
@@ -794,21 +806,19 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       // Query ONLY for today's devotionals
       const todayDate = dayjs(today).startOf('day').format('YYYY-MM-DD');
 
-      console.log(`🔍 Querying devotionals for today: ${todayDate} for user: ${currentUserId}`);
 
       // Query both daily and custom devotionals
       let dailyQuerySnap;
       let customQuerySnap;
       try {
-        // Try the optimized query first
+        // TEMPORARY: Fetch ALL custom devotionals for debugging (not just today's)
         const [dailyQuerySnapResult, customQuerySnapResult] = await Promise.all([
           // Daily devotionals for TODAY only (no userId filter)
           firestore().collection('dailyDevotionals').where('date', '==', todayDate).get(),
-          // Custom devotionals for TODAY only (user-specific) - query by date field
+          // TEMPORARY: Custom devotionals for ALL dates (user-specific) - for debugging
           firestore()
             .collection('customDevotionals')
             .where('userId', '==', currentUserId)
-            .where('date', '==', todayDate)
             .orderBy('createdAt', 'desc')
             .get(),
         ]);
@@ -831,6 +841,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
           .where('userId', '==', currentUserId)
           .get();
 
+
         // Filter by TODAY's date in memory using the date field
         const filteredCustomDocs = allCustomDevotionals.docs.filter((doc) => {
           const devotionalData = doc.data();
@@ -851,7 +862,8 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
             dateToCompare = dayjs(devotionalDate.toDate()).format('YYYY-MM-DD');
           }
           
-          return dateToCompare === todayDate;
+          const matches = dateToCompare === todayDate;          
+          return matches;
         });
 
         // Sort by createdAt in memory (most recent first)
