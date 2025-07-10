@@ -15,6 +15,7 @@ import firestore from '@react-native-firebase/firestore';
 import { router } from 'expo-router';
 import SavedDevotionalCard from '~/components/SavedDevotionalCard';
 import i18n from '~/app/utils/i18n';
+import { useHomeStore } from '~/app/stores/homeStore';
 
 // Define the ref type
 export type DevotionalsSheetRef = {
@@ -107,6 +108,12 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
     [hideDevotionalsSheet]
   );
 
+  function resetHasHandledDevotionalParam(){
+    if(useHomeStore.getState().hasHandledDevotionalParam){
+      useHomeStore.getState().setHasHandledDevotionalParam(false);
+    }
+  }
+
   // Show the sheet
   const showSheet = useCallback(() => {
     bottomSheetRef.current?.snapToIndex(0);
@@ -125,7 +132,12 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
     hideDevotionalsSheet();
     
     // Navigate to home screen with showDevotional parameter to trigger DevotionalReader
-    router.replace('/(tabs)?showDevotional=true');
+    // router.navigate('/(tabs)?showDevotional=true');
+    resetHasHandledDevotionalParam();
+    router.navigate({
+      pathname: '/(tabs)',
+      params: { showDevotional: 'true' }
+    });
   }, [setCustomDevotional, hideDevotionalsSheet]);
 
   // Custom backdrop renderer

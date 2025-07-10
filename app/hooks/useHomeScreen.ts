@@ -264,6 +264,7 @@ export const useHomeScreen = () => {
         // alert('opening devotional reader from navigation param')
         setDevotionalReaderVisible(true);
         if (riveRef.current) {
+        
           riveRef.current.setInputState('State Machine 1', 'Action-Number', 9);
         }
       }, 100);
