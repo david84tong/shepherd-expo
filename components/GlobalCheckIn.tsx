@@ -135,8 +135,8 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       const checkInData = {
         mood: currentMood,
         focus: currentFocus,
-        struggle: currentStruggle,
-        completedAt: Timestamp.now()
+        struggles: currentStruggle,
+        timeStamp: Timestamp.now()
       };
 
       // Create unique key using timestamp to prevent overrides
@@ -510,7 +510,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               }, 200); // Slightly longer delay for better visual feedback
             }}
 
-            className={`w-28 h-32 rounded-2xl border-2 items-center justify-center shadow-buttonShadow bg-surfaceCreamLight ${selectedMood === mood.value
+            className={`${screenWidth < 400 ? 'w-24 h-28' : 'w-28 h-32'} rounded-2xl border-2 items-center justify-center shadow-buttonShadow bg-surfaceCreamLight ${selectedMood === mood.value
               ? 'border-orange'
               : 'border-accentGold'
               }`}>
@@ -535,7 +535,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         transform: [{ translateX: focusAnim }],
       }}>
       <Text className="font-feather text-heading text-textPrimary mb-6 mt-8">What would you like to focus on?</Text>
-      <View className="flex-row flex-wrap justify-center gap-3">
+      <View className={`flex-row flex-wrap justify-center ${screenWidth < 400 ? 'gap-2' : 'gap-3'}`}>
         {focusAreas.map((focus) => (
           <Pressable
             key={focus.value}
@@ -549,7 +549,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 animateToScreen('struggle');
               }, 100);
             }}
-            className={`w-[30%] h-28  rounded-2xl border-2 items-center justify-center ${selectedFocus === focus.value
+            className={`${screenWidth < 400 ? 'w-[28%] h-24' : 'w-[30%] h-28'}  rounded-2xl border-2 items-center justify-center ${selectedFocus === focus.value
               ? 'bg-surfaceCreamLight border-orange'
               : 'bg-surfaceCreamLight border-accentGold'
               }`}>
@@ -582,7 +582,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
             animateToScreen('struggle');
           }, 100);
         }}
-        className="mt-12 mb-4">
+        className={`${screenWidth < 400 ? 'mt-6 mb-2' : 'mt-12 mb-4'}`}>
         <Text className="font-din text-base text-gray-500 underline">Skip</Text>
       </Pressable>
     </Animated.View>
@@ -597,7 +597,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         transform: [{ translateX: struggleAnim }],
       }}>
       <Text className="font-feather text-heading text-textPrimary mb-6 mt-8">What are you struggling with?</Text>
-      <View className="flex-row flex-wrap justify-center gap-3 mb-6">
+      <View className={`flex-row flex-wrap justify-center ${screenWidth < 400 ? 'gap-2' : 'gap-3'} mb-6`}>
         {struggleAreas.map((struggle) => (
           <Pressable
             key={struggle.value}
@@ -616,21 +616,21 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 animateToScreen('success');
               }
             }}
-            className={`w-[30%] h-28 rounded-2xl border-2 items-center justify-center ${selectedStruggle === struggle.value
+            className={`${screenWidth < 400 ? 'w-[28%] h-20' : 'w-[30%] h-28'} rounded-2xl border-2 items-center justify-center ${selectedStruggle === struggle.value
               ? 'bg-surfaceCreamLight border-orange'
               : 'bg-surfaceCreamLight border-accentGold'
               }`}>
-            <View className={`${struggle.bgColor} rounded-xl p-3 mb-2`}>
+            <View className={`${struggle.bgColor} rounded-xl ${screenWidth < 400 ? 'p-2 mb-1' : 'p-3 mb-2'}`}>
               {struggle.iconType === 'fontawesome6' ? (
                 <FontAwesome6
                   name={struggle.icon as any}
-                  size={RPH(2.6)}
+                  size={screenWidth < 400 ? RPH(2.2) : RPH(2.6)}
                   color={struggle.color}
                 />
               ) : (
                 <Ionicons
                   name={struggle.icon as any}
-                  size={RPH(2.6)}
+                  size={screenWidth < 400 ? RPH(2.2) : RPH(2.6)}
                   color={struggle.color}
                 />
               )}
@@ -655,7 +655,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
             animateToScreen('success');
           }
         }}
-        className="mt-4 mb-4">
+        className={`${screenWidth < 400 ? 'mt-4 mb-2' : 'mt-4 mb-4'}`}>
         <Text className="font-din text-base text-gray-500 underline">Skip</Text>
       </Pressable>
     </Animated.View>
