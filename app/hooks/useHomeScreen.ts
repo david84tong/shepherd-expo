@@ -263,6 +263,12 @@ export const useHomeScreen = () => {
       setTimeout(() => {
         // alert('opening devotional reader from navigation param')
         setDevotionalReaderVisible(true);
+        
+        // Snap to 60% (index 0) when opening devotional from LoadingScreen
+        if (bottomSheetRef.current) {
+          bottomSheetRef.current.snapToIndex(0);
+        }
+        
         if (riveRef.current) {
         
           riveRef.current.setInputState('State Machine 1', 'Action-Number', 9);
@@ -750,6 +756,11 @@ export const useHomeScreen = () => {
     
     // Reset the handled param flag when manually opening devotional
     // setHasHandledDevotionalParam(false);
+
+    // Snap to 60% (index 0) when opening devotional manually
+    if (bottomSheetRef.current) {
+      bottomSheetRef.current.snapToIndex(0);
+    }
 
     Animated.timing(devotionalCardOpacityAnim, {
       toValue: 0,
