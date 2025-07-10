@@ -369,6 +369,13 @@ export default function HomeScreen() {
       fetchRecentDevotionals().catch((error) => {
         console.error('❌ Error fetching recent devotionals:', error);
       });
+      
+      // Ensure we have today's daily devotional loaded
+      const fetchTodaysDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
+      console.log('🔄 Fetching today\'s daily devotional on focus');
+      fetchTodaysDevotional().catch((error) => {
+        console.error('❌ Error fetching today\'s devotional:', error);
+      });
     }, [fetchRecentDevotionals])
   );
 
@@ -1174,6 +1181,25 @@ export default function HomeScreen() {
 
                               // Ensure maximum 2 cards
                               const finalDevotionals = devotionalsToShow.slice(0, 2);
+
+                              console.log('📚 Devotionals Debug:', {
+                                recentDevotionalsCount: recentDevotionals.length,
+                                todaysCustomDevotional: todaysCustomDevotional ? {
+                                  id: todaysCustomDevotional.id,
+                                  date: todaysCustomDevotional.date,
+                                  createdAt: todaysCustomDevotional.createdAt
+                                } : null,
+                                dailyDevotional: dailyDevotional ? {
+                                  id: dailyDevotional.id,
+                                  date: dailyDevotional.date
+                                } : null,
+                                devotionalsToShow: devotionalsToShow.map(d => ({
+                                  id: d.id,
+                                  date: d.date,
+                                  type: d.id === dailyDevotional?.id ? 'daily' : 'custom'
+                                })),
+                                finalDevotionalsCount: finalDevotionals.length
+                              });
 
                               if (finalDevotionals.length > 0) {
                                 // If only one devotional, render it directly without CardStack

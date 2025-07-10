@@ -969,6 +969,13 @@ export const useHomeScreen = () => {
         console.log('🔍 JOURNAL CLOSE - Keeping reflectionCompleted as true (completed)');
         // Ensure it stays true
         setReflectionCompleted(true);
+        
+        // Fetch recent devotionals after completing a reflection to ensure we have the latest data
+        console.log('🔄 Fetching recent devotionals after journal completion');
+        const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
+        fetchRecentDevotionals().catch((error) => {
+          console.error('❌ Error fetching recent devotionals after journal completion:', error);
+        });
       }
 
       Animated.parallel([
