@@ -98,6 +98,8 @@ export default function ProfileScreen() {
   const completedReflections = getCompletedReflections();
   const user = getUser();
   const userId = user?.id || null;
+
+
   
   // Get check-in history from store
   const { checkInHistory } = useCheckInStore();
@@ -116,7 +118,7 @@ export default function ProfileScreen() {
     // Optional: Add listener for app state changes to refresh customer info
     // when app comes to foreground
   }, [getCustomerInfo]);
-
+  
   useEffect(() => {
     const checkDismissalStatus = async () => {
       try {
@@ -222,7 +224,7 @@ export default function ProfileScreen() {
         date: reflection.date,
         data: reflection,
         icon: quillIcon,
-        title: 'Quiet Time',
+        title: reflection.reflectionPrompt || 'Quiet Time',
         content: reflection.content,
       })) || [];
 
@@ -936,7 +938,7 @@ export default function ProfileScreen() {
                         {/* Content */}
                         <View className="flex-1 flex-row justify-between bg-surfaceCream px-4 py-3 rounded-md items-center">
                           <View className="flex-1 mr-2">
-                            <Text className="font-feather text-body text-textPrimary flex-wrap">
+                            <Text className="font-feather text-body text-textPrimary flex-wrap" numberOfLines={2}>
                               {activity.title}
                             </Text>
                             {/* Display prayer topic or reflection content if available */}

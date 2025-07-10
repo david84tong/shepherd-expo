@@ -636,6 +636,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             tappedReflectAboutVerse && currentPath && currentPath.bookId
               ? `[${getBookNameFromId(currentPath.bookId)} ${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}] ${reflectionContent.trim()}`
               : reflectionContent.trim() || 'Reflected on my spiritual journey today.',
+          reflectionPrompt: getReflectionPrompt(),
         });
 
         // Update last reflection date
@@ -1082,6 +1083,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                           tappedReflectAboutVerse && currentPath && currentPath.bookId
                             ? `[${getBookNameFromId(currentPath.bookId)} ${currentPath.startChapter}${currentPath.endChapter > currentPath.startChapter ? `-${currentPath.endChapter}` : ''}] ${reflectionContent.trim()}`
                             : reflectionContent.trim() || 'Reflected on my spiritual journey today.',
+                        reflectionPrompt: getReflectionPrompt(),
                       });
 
                       // Update last reflection date

@@ -196,6 +196,7 @@ export interface Reading {
 
 export interface Reflection {
   date: FirebaseFirestoreTypes.Timestamp;
+  reflectionPrompt: string;
   content: string;
 }
 

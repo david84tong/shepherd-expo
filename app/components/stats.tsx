@@ -616,9 +616,11 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
                   </View>
                   <View className="flex-1 flex-row justify-between items-center">
                     <View className="flex-1 mr-2">
-                      <Text className="font-feather text-body text-textPrimary" numberOfLines={1}>
-                        {i18n.t('quiet_time')}
-                      </Text>
+                      {rf.reflectionPrompt && (
+                        <Text className="font-feather text-body text-textPrimary" numberOfLines={2}>
+                          {rf.reflectionPrompt}
+                        </Text>
+                      )}
                       {rf.content && (
                         <Text
                           className="font-din text-sm text-description mt-1"

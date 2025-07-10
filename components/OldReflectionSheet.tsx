@@ -188,6 +188,9 @@ const OldReflectionSheet: React.FC = () => {
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          <Text style={styles.reflectionPromptText}>
+            {reflectionData?.reflectionPrompt || 'No prompt found.'}
+          </Text>
           <Text style={styles.relativeTimeText}>
             {formatRelativeTime(reflectionData.date)}
           </Text>
@@ -268,6 +271,13 @@ const styles = StyleSheet.create({
     fontFamily: 'DIN Next Rounded LT W01 Regular', // din font
     color: '#3C584A', // textPrimary
     lineHeight: 24, // Improve readability
+  },
+  reflectionPromptText: {
+    fontSize: 20,
+    fontFamily: 'Nunito-Bold', // din font
+    color: '#3C584A', // textPrimary
+    lineHeight: 24, // Improve readability
+    marginBottom: 12,
   },
   relativeTimeText: {
     fontSize: 14,
