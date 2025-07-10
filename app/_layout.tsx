@@ -22,7 +22,7 @@ import { DebugButton } from '../components/DebugModal';
 import { HalfModalType } from './halfModal';
 import { useAppInitialization, onAppForegroundOrInit } from './hooks/initHook';
 import { checkStreakAndApplyPenalties } from './hooks/streakHook';
-import { usePreloadAssets } from './stores/assetsStore';
+import { usePreloadAssets, usePreloadRiveAssets, useAssetsStore } from './stores/assetsStore';
 import { useNotificationStore } from './stores/notificationStore';
 import { useUIStore } from './stores/uiStore';
 import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
@@ -55,6 +55,8 @@ import './stores/userStore';
 import './stores/subscriptionStore';
 import { useRemoteConfig } from './hooks/useRemoteConfig';
 import { initializeLanguage } from './utils/i18n';
+import { useHomeStore } from './stores/homeStore';
+import { useDevotionalStore } from './stores/devotionalStore';
 // Define missing ref types
 type PrayerSheetRef = {
   show: () => void;
@@ -194,7 +196,12 @@ export default function RootLayout() {
   const appState = useRef(AppState.currentState);
 
   usePreloadAssets(); // Garante preload global dos assets
+  usePreloadRiveAssets(); // Preload Rive assets during splash screen
   useRemoteConfig();
+
+  // Get Rive assets loading status from store
+  const riveAssetsLoaded = useAssetsStore((s) => s.riveLoaded);
+  const preloadedRiveAssets = useAssetsStore((s) => s.riveAssets);
 
   // Call onAppForegroundOrInit after initialization
   useEffect(() => {
@@ -539,12 +546,15 @@ export default function RootLayout() {
       //   return;
       // }
 
-      // Wait for Rive assets to be ready
-      if (!riveAssets?.[0]?.uri) {
-        console.log('Waiting for Rive assets to load...');
+      // Wait for Rive assets to be ready (both splash and preloaded)
+      if (!riveAssets?.[0]?.uri || !riveAssetsLoaded) {
+        console.log('Waiting for Rive assets to load...', { 
+          splashRive: !!riveAssets?.[0]?.uri, 
+          preloadedRive: riveAssetsLoaded 
+        });
         return;
       }
-      console.log('CALLED TO RESOLVED');
+      console.log('🎬 All Rive assets loaded successfully');
 
       try {
         // Initialize app components
@@ -574,11 +584,11 @@ export default function RootLayout() {
 
   // Call initializeApp when fonts and Rive assets are ready
   useEffect(() => {
-    if (riveAssets?.[0]?.uri && !appReady) {
-      console.log('Assets ready, initializing app...');
+    if (riveAssets?.[0]?.uri && riveAssetsLoaded && !appReady) {
+      console.log('🎬 All assets ready, initializing app...');
       initializeApp();
     }
-  }, [fontsLoaded, riveAssets, appReady]);
+  }, [fontsLoaded, riveAssets, riveAssetsLoaded, appReady]);
 
   const activateAdapty = async () => {
     try {
@@ -656,6 +666,54 @@ export default function RootLayout() {
       subscription.remove();
     };
   }, [router]);
+
+  // Fetch recent devotionals when reading is completed or when all activities are completed
+  useEffect(() => {
+    const readingCompleted = useHomeStore.getState().readingCompleted;
+    const prayerCompleted = useHomeStore.getState().prayerCompleted;
+    const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
+
+    if (readingCompleted || (prayerCompleted && readingCompleted && reflectionCompleted)) {
+      console.log('📚 [Layout] Fetching recent devotionals due to completion state change');
+      const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
+      fetchRecentDevotionals()
+        .then((devotionals) => {
+          console.log(
+            '📚 [Layout] Fetched recent devotionals:',
+            devotionals.map((d) => d?.id)
+          );
+          console.log('📚 [Layout] Devotionals count:', devotionals.length);
+          console.log('📚 [Layout] Non-null devotionals:', devotionals.filter(Boolean).length);
+        })
+        .catch((error) => {
+          console.error('❌ [Layout] Error fetching recent devotionals:', error);
+        });
+    }
+  }, []);
+
+  // Monitor completion states and fetch devotionals when they change
+  const readingCompleted = useHomeStore((state) => state.readingCompleted);
+  const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
+  const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
+
+  useEffect(() => {
+    if (readingCompleted || (prayerCompleted && readingCompleted && reflectionCompleted)) {
+      console.log('📚 [Layout] Fetching recent devotionals due to completion state change');
+      const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
+      fetchRecentDevotionals()
+        .then((devotionals) => {
+          console.log(
+            '📚 [Layout] Fetched recent devotionals:',
+            devotionals.map((d) => d?.id)
+          );
+          console.log('📚 [Layout] Devotionals count:', devotionals.length);
+          console.log('📚 [Layout] Non-null devotionals:', devotionals.filter(Boolean).length);
+        })
+        .catch((error) => {
+          console.error('❌ [Layout] Error fetching recent devotionals:', error);
+        });
+    }
+  }, [readingCompleted, prayerCompleted, reflectionCompleted]);
 
   // Show Rive animation
   if (showRiveAnimation && riveAssets?.[0]?.uri) {

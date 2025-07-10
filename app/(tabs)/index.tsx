@@ -13,7 +13,6 @@ import {
 } from 'react-native';
 import BottomSheet, { BottomSheetScrollView, SCREEN_HEIGHT } from '@gorhom/bottom-sheet';
 import Toast from 'react-native-toast-message';
-import { useAssets } from 'expo-asset';
 import { useHomeScreen } from '../hooks/useHomeScreen';
 import { useHomeStore } from '../stores/homeStore';
 import DevotionalReader from '../../components/DevotionalReader';
@@ -150,7 +149,7 @@ export default function HomeScreen() {
             );
           })
           .catch((error: any) => {
-            console.error(`❌ [${timestamp}] Error fetching devotional:`, error);
+            console.error(`❌ [${timestamp}] Error fetching devotional`, error);
           });
       } else {
         console.log(`❌ [${timestamp}] fetchTodaysDevotional function not found!`);
@@ -296,8 +295,8 @@ export default function HomeScreen() {
 
   // Path selection modal state removed - now navigating directly to map screen
 
-  // Add state for recent devotionals
-  const [recentDevotionals, setRecentDevotionals] = useState<(Devotional | null)[]>([]);
+  // Get recent devotionals from global store
+  const recentDevotionals = useDevotionalStore((state) => state.recentDevotionals);
 
   // Debug effect to track nextUnitPreview changes
   useEffect(() => {
@@ -353,35 +352,7 @@ export default function HomeScreen() {
     }, [])
   );
 
-  // Fetch recent devotionals when reading is completed or when all activities are completed
-  useEffect(() => {
-    if (readingCompleted || (prayerCompleted && readingCompleted && reflectionCompleted)) {
-      const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
-      fetchRecentDevotionals()
-        .then((devotionals) => {
-          console.log(
-            '📚 Fetched recent devotionals:',
-            devotionals.map((d) => d?.id)
-          );
-          console.log('📚 Devotionals count:', devotionals.length);
-          console.log('📚 Non-null devotionals:', devotionals.filter(Boolean).length);
-          console.log(
-            '📚 Devotionals details:',
-            devotionals.map((d, i) => ({
-              index: i,
-              id: d?.id,
-              date: d?.date,
-              bibleReference: d?.bibleReference,
-            }))
-          );
 
-          setRecentDevotionals(devotionals.slice(0, 3));
-        })
-        .catch((error) => {
-          console.error('❌ Error fetching recent devotionals:', error);
-        });
-    }
-  }, [prayerCompleted, readingCompleted, reflectionCompleted]);
 
   // Check if there are 2 readings from today
   const getCompletedReadings = useUserStore((state) => state.getCompletedReadings);
@@ -512,11 +483,9 @@ export default function HomeScreen() {
   const completedUnitIds = usePathStore((state) => state.completedUnitIds);
   // const completedMapPaths = useUserStore((state) => state.completedMapPaths); // Moved up
 
-  // Load Rive assets
-  const [riveAssets] = useAssets([
-    require('../../assets/riveAnimations/new_shepherd.riv'),
-    require('../../assets/riveAnimations/bg-green.riv'),
-  ]);
+  // Use preloaded Rive assets from store instead of loading locally
+  const preloadedRiveAssets = useAssetsStore((s) => s.riveAssets);
+  const riveAssetsLoaded = useAssetsStore((s) => s.riveLoaded);
 
   // Add state for asset loading
   const assetsLoaded = useAssetsStore((s) => s.loaded);
@@ -546,7 +515,7 @@ export default function HomeScreen() {
 
   // Define riveComponent after state declarations so it can access showJournalContent and showPrayerContent
   const riveComponent = useMemo(() => {
-    if (!riveAssets || !riveReady) return null;
+    if (!preloadedRiveAssets || !riveReady || !riveAssetsLoaded) return null;
 
     // Always use the main lamb asset (index 0)
     const lambAssetIndex = 0;
@@ -606,7 +575,7 @@ export default function HomeScreen() {
             <Rive
               key={riveKey}
               ref={riveRef}
-              url={riveAssets[lambAssetIndex].uri!}
+              url={preloadedRiveAssets[lambAssetIndex].uri!}
               artboardName={useArtboardName}
               onPlay={handleRivePlay}
               stateMachineName="State Machine 1"
@@ -623,7 +592,8 @@ export default function HomeScreen() {
       </View>
     );
   }, [
-    riveAssets,
+    preloadedRiveAssets,
+    riveAssetsLoaded,
     currentStateInput,
     riveKey,
     riveReady,
@@ -634,8 +604,8 @@ export default function HomeScreen() {
   ]);
 
   // Gate of rendering: only render the screen if the assets are ready
-  console.log('🚪 Asset loading check:', { assetsLoaded, hasAssets: !!assets });
-  if (!assetsLoaded || !assets) {
+  console.log('🚪 Asset loading check:', { assetsLoaded, hasAssets: !!assets, riveAssetsLoaded, hasRiveAssets: !!preloadedRiveAssets });
+  if (!assetsLoaded || !assets || !riveAssetsLoaded || !preloadedRiveAssets) {
     console.log('❌ Returning null - assets not ready!');
     return null;
   }
@@ -752,9 +722,9 @@ export default function HomeScreen() {
             ]}>
             {IS_IOS ? (
               showBgRive &&
-              riveAssets && (
+              preloadedRiveAssets && (
                 <Rive
-                  url={riveAssets[1].uri!}
+                  url={preloadedRiveAssets[1].uri!}
                   autoplay={true}
                   style={{ width: '160%', height: '160%', top: -300, left: -128 }}
                 />

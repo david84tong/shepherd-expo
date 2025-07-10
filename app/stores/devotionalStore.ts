@@ -125,6 +125,7 @@ interface DevotionalStore {
   isCreatingDevotional: boolean; // Loading state for AI devotional creation
   isFromCheckIn: boolean; // Flag to indicate devotional is from check-in flow
   fetchingRecentDevotionals: boolean; // Flag to indicate we are fetching recent devotionals
+  recentDevotionals: (Devotional | null)[]; // Store recent devotionals globally
   // Actions
   fetchTodaysDevotional: () => Promise<void>;
   setCurrentDevotional: (devotional: Devotional | null) => void;
@@ -158,6 +159,7 @@ interface DevotionalStore {
   // Utility function to clear Bible chapter cache
   clearBibleCache: () => Promise<void>;
   setFetchingRecentDevotionals: (value: boolean) => void;
+  setRecentDevotionals: (devotionals: (Devotional | null)[]) => void;
 }
 
 export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
@@ -172,6 +174,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   isCreatingDevotional: false,
   isFromCheckIn: false,
   fetchingRecentDevotionals: false,
+  recentDevotionals: [],
 
   fetchTodaysDevotional: async () => {
     console.log('🚀 fetchTodaysDevotional function called!');
@@ -764,6 +767,9 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   setFetchingRecentDevotionals: (value: boolean) => {
     set({ fetchingRecentDevotionals: value });
   },
+  setRecentDevotionals: (devotionals: (Devotional | null)[]) => {
+    set({ recentDevotionals: devotionals });
+  },
 
   // NEW ACTION: Fetch current devotional plus 2 previous days
   fetchRecentDevotionals: async () => {
@@ -1017,6 +1023,10 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
           likes: d?.likes,
         }))
       );
+      
+      // Update global state with recent devotionals
+      set({ recentDevotionals: processedDevotionals });
+      
       return processedDevotionals;
     } catch (error) {
       console.error('Error fetching recent devotionals:', error);
