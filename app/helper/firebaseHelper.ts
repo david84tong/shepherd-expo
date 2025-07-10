@@ -4,6 +4,7 @@ import { UserDoc } from '../models/User';
 import { syncUserDocument, batchUpdate, removeFunctions } from '../../utils/firestore';
 import { useUserStore } from '../stores/userStore';
 import { syncStreakDataToWidget } from '../../utils/widgetSync';
+import { configureAnalyticsFromUserData } from '../../utils/analyticsConfig';
 
 // Constants
 const USER_FETCH_CACHE_DURATION = 5000; // 5 seconds
@@ -136,6 +137,15 @@ export const fetchFromFirestore = async ({
 
         // Sync the data to store
         await useUserStore.getState().syncFirestoreData(convertedUserData);
+
+        // Configure analytics based on user age range
+        await configureAnalyticsFromUserData(convertedUserData.ageRange);
+        
+        // Debug: Log current user age range from store
+        const { getCurrentUserAgeRange } = require('../../utils/analyticsConfig');
+        const currentUserAgeRange = getCurrentUserAgeRange();
+        console.log('🔍 [Sign-In Debug] User age range from Firestore:', convertedUserData.ageRange);
+        console.log('🔍 [Sign-In Debug] Current user age range from store:', currentUserAgeRange);
 
         // Sync streak data to widget
         const syncStreakWithWidget = (streakCount: number, lastActivityDate: any) => {

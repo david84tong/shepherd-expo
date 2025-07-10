@@ -11,6 +11,7 @@ import {
   Identify,
   reset as amplitudeReset
 } from '@amplitude/analytics-react-native';
+import { getMixpanelInstance, isAnalyticsEnabled } from './analyticsConfig';
 
 // schema for analytics
 // Screenname: Verb
@@ -139,9 +140,21 @@ class Analytics {
   private async performInitialization(): Promise<void> {
     try {
       console.log("Initializing analytics ******************");
-      // Initialize Mixpanel with trackAutomaticEvents explicitly set to false
-      this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false);
-      await this.mixpanel.init();
+      
+      // Check if analytics are enabled based on user age
+      const ageBasedAnalyticsEnabled = await isAnalyticsEnabled();
+      if (!ageBasedAnalyticsEnabled) {
+        console.log("🚫 Analytics disabled for user under 13, skipping initialization");
+        this.isInitialized = true;
+        return;
+      }
+
+      // Get existing Mixpanel instance or create new one
+      this.mixpanel = getMixpanelInstance();
+      if (!this.mixpanel) {
+        this.mixpanel = new Mixpanel(MIXPANEL_TOKEN, false);
+        await this.mixpanel.init();
+      }
       
       // Always set platform as a super property (not just once)
       this.mixpanel.registerSuperProperties({ 

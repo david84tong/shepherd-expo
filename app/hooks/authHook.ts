@@ -13,6 +13,7 @@ import { useSoundStore } from '../stores/soundStore';
 import analytics from '../../utils/analytics';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { syncStreakDataToWidget } from '~/utils/widgetSync';
+import { resetAnalyticsConfig } from '../../utils/analyticsConfig';
 
 // Safely get WidgetDataSharer with error handling
 const getWidgetDataSharer = () => {
@@ -449,6 +450,9 @@ export const useAuth = () => {
 
       // Clear widget data when signing out
       safeWidgetCall('updateWidgetStatus', 'loggedOut');
+
+      // Reset analytics configuration on logout
+      await resetAnalyticsConfig();
 
       // await subscriptionStore.logoutAdaptyUser();
     } catch (error) {

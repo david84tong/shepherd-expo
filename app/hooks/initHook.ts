@@ -7,6 +7,7 @@ import { checkStreakAndApplyPenalties } from './streakHook';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { useHomeStore } from '../stores/homeStore';
 import analytics from '../../utils/analytics';
+import { initializeAnalyticsConfig, configureAnalyticsFromUserData } from '../../utils/analyticsConfig';
 // Key to check if app has been initialized
 const APP_INITIALIZED_KEY = 'app_initialized';
 // Generate a unique UUID for anonymous users
@@ -29,6 +30,9 @@ const formatTimestamp = (timestamp: any) => {
 export const onAppForegroundOrInit = async () => {
   console.log('onAppForegroundOrInit=====>', onAppForegroundOrInit);
   
+  // Initialize analytics configuration if not already initialized
+  await initializeAnalyticsConfig();
+  
   // Initialize analytics if not already initialized
   if (!analytics.isInitialized) {
     console.log('🔧 Initializing analytics on app foreground...');
@@ -49,6 +53,16 @@ export const onAppForegroundOrInit = async () => {
     if (success && firestoreData) {
       // Update the Zustand store with Firestore data
       await useUserStore.getState().syncFirestoreData(firestoreData);
+      
+      // Configure analytics based on user's age range
+      await configureAnalyticsFromUserData(firestoreData.ageRange);
+      
+      // Debug: Log current user age range from store
+      const { getCurrentUserAgeRange } = require('../../utils/analyticsConfig');
+      const currentUserAgeRange = getCurrentUserAgeRange();
+      console.log('🔍 [App Foreground Debug] User age range from Firestore:', firestoreData.ageRange);
+      console.log('🔍 [App Foreground Debug] Current user age range from store:', currentUserAgeRange);
+      
       // Update selected path if needed
       const updatedUserData = getUser();
       if (updatedUserData.selectedPathId) {
@@ -95,6 +109,16 @@ const restoreUserState = async () => {
     const completedMapPaths = useUserStore.getState().completedMapPaths;
     // Update the Zustand store with Firestore data
     await useUserStore.getState().syncFirestoreData(firestoreData);
+    
+    // Configure analytics based on user's age range
+    await configureAnalyticsFromUserData(firestoreData.ageRange);
+    
+    // Debug: Log current user age range from store
+    const { getCurrentUserAgeRange } = require('../../utils/analyticsConfig');
+    const currentUserAgeRange = getCurrentUserAgeRange();
+    console.log('🔍 [Restore User Debug] User age range from Firestore:', firestoreData.ageRange);
+    console.log('🔍 [Restore User Debug] Current user age range from store:', currentUserAgeRange);
+    
     if (firestoreData?.completedPrayers && !prayerCompleted) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
@@ -172,7 +196,12 @@ export const useAppInitialization = () => {
   useEffect(() => {
     const initializeApp = async () => {
       try {
-        // Initialize analytics first and wait for completion
+        // Initialize analytics configuration first
+        console.log('🔧 Initializing analytics configuration...');
+        await initializeAnalyticsConfig();
+        console.log('✅ Analytics configuration initialized');
+        
+        // Initialize analytics
         console.log('🔧 Initializing analytics...');
         if (!analytics.isInitialized) {
           await analytics.init();
