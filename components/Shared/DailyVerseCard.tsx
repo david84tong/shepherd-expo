@@ -159,7 +159,9 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
         liked: newLikedState,
         devotionalType: isCustomDevotional ? 'custom' : 'daily',
       });
-      useDevotionalStore.getState().updateLikeStatus(devotional.id, newLikedState);
+      if(!isCustomDevotional){
+        useDevotionalStore.getState().updateLikeStatus(devotional.id, newLikedState);
+      }
     } catch (error) {
       console.error('Error updating likes:', error);
       // Revert state on error

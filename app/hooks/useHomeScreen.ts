@@ -184,6 +184,23 @@ export const useHomeScreen = () => {
     },
   });
 
+  // Helper function to reset Rive to default state based on lamb mood
+  const resetRiveToDefaultState = useCallback(() => {
+    if (!riveRef.current?.setInputState) return;
+    
+    try {
+      // Get current lamb mood to set appropriate default state
+      const currentMood = useUserStore.getState()?.getLambMood?.();
+      const targetStateInput = moodToStateInput[currentMood] || 0;
+      
+      riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+      setCurrentStateInput(targetStateInput);
+      console.log(`Reset Rive to default state: ${targetStateInput} (${currentMood || 'idle'})`);
+    } catch (error) {
+      console.log('Error resetting Rive to default state:', error);
+    }
+  }, [riveRef, setCurrentStateInput]);
+
   // Memoized values
   const snapPoints = useMemo(() => (
     showPrayerContent
@@ -650,19 +667,17 @@ export const useHomeScreen = () => {
           // Check if all three actions are completed - if so, set to full (3)
           const allActionsCompleted = homeStore.readingCompleted && homeStore.prayerCompleted && homeStore.reflectionCompleted;
           
-          let targetStateInput;
           if (allActionsCompleted) {
-            targetStateInput = 3; // lamb-full state
+            // If all actions completed, set to full state
+            setCurrentStateInput(3);
+            if (riveRef.current?.setInputState) {
+              riveRef.current.setInputState('State Machine 1', 'Action-Number', 3);
+            }
           } else {
-            const currentMood = useUserStore.getState()?.getLambMood?.();
-            targetStateInput = moodToStateInput[currentMood] || 0;
+            // Reset to default state based on lamb mood
+            resetRiveToDefaultState();
           }
           
-          setRiveIdle();
-          setCurrentStateInput(targetStateInput);
-          if (riveRef.current?.setInputState) {
-            riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
-          }
           Animated.parallel([
             Animated.timing(devotionalCardOpacityAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
             Animated.timing(riveArtboardOpacityAnim, { toValue: 1, duration: 500, useNativeDriver: true })
@@ -810,12 +825,14 @@ export const useHomeScreen = () => {
       
       // Force set the writing animation after journal content is shown
       setTimeout(() => {
-        if (riveRef.current?.setInputState) {
-          try {
-            riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
-            console.log('Force set Rive to writing animation (10) after journal shown');
-          } catch (_) {}
-        }
+                  if (riveRef.current?.setInputState) {
+            try {
+              riveRef.current.setInputState('State Machine 1', 'Action-Number', 10);
+              console.log('Force set Rive to writing animation (10) after journal shown');
+            } catch (_) {
+              // Ignore if Action-Number input not present
+            }
+          }
       }, 100);
       
       Animated.timing(devotionalCardOpacityAnim, {
@@ -932,29 +949,26 @@ export const useHomeScreen = () => {
       const homeStore = useHomeStore.getState();
       const allActionsCompleted = homeStore.readingCompleted && homeStore.prayerCompleted && homeStore.reflectionCompleted;
       
-      let targetStateInput;
       if (allActionsCompleted) {
-        targetStateInput = 3; // lamb-full state
+        // If all actions completed, set to full state
+        setCurrentStateInput(3);
+        if (riveRef.current?.setInputState) {
+          riveRef.current.setInputState('State Machine 1', 'Action-Number', 3);
+        }
       } else {
-        const currentMood = useUserStore.getState()?.getLambMood?.();
-        targetStateInput = moodToStateInput[currentMood] || 0;
-      }
-      
-      setCurrentStateInput(targetStateInput);
-      if (riveRef.current?.setInputState) {
-        riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
+        // Reset to default state based on lamb mood
+        resetRiveToDefaultState();
       }
 
-
-                    // Only reset reflection completion if the user didn't complete it
-                    if (!isCompleted) {
-                      console.log('🔍 JOURNAL CLOSE - Setting reflectionCompleted to false (cancelled)')
-                      setReflectionCompleted(false);
-                    } else {
-                      console.log('🔍 JOURNAL CLOSE - Keeping reflectionCompleted as true (completed)');
-                      // Ensure it stays true
-                      setReflectionCompleted(true);
-                    }
+      // Only reset reflection completion if the user didn't complete it
+      if (!isCompleted) {
+        console.log('🔍 JOURNAL CLOSE - Setting reflectionCompleted to false (cancelled)')
+        setReflectionCompleted(false);
+      } else {
+        console.log('🔍 JOURNAL CLOSE - Keeping reflectionCompleted as true (completed)');
+        // Ensure it stays true
+        setReflectionCompleted(true);
+      }
 
       Animated.parallel([
         Animated.timing(devotionalCardOpacityAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
@@ -1061,28 +1075,20 @@ export const useHomeScreen = () => {
       setTimeout(() => {
         setMode('DEFAULT');
         setShowPrayerContent(false);
-        if (riveRef.current?.setInputState) {
-          try {
-            // Check if all three actions are completed - if so, set to full (3)
-            const homeStore = useHomeStore.getState();
-            const allActionsCompleted = homeStore.readingCompleted && homeStore.prayerCompleted && homeStore.reflectionCompleted;
-            
-            let targetStateInput;
-            if (allActionsCompleted) {
-              targetStateInput = 3; // lamb-full state
-            } else {
-              const currentMood = useUserStore.getState()?.getLambMood?.();
-              targetStateInput = moodToStateInput[currentMood] || 0;
-            }
-            
-            setCurrentStateInput(targetStateInput);
-            setRiveIdle();
-            if (riveRef.current?.setInputState) {
-              riveRef.current.setInputState('State Machine 1', 'Action-Number', targetStateInput);
-            }
-          } catch (e) {
-            console.log('Error resetting Rive state:', e);
+        
+        // Check if all three actions are completed - if so, set to full (3)
+        const homeStore = useHomeStore.getState();
+        const allActionsCompleted = homeStore.readingCompleted && homeStore.prayerCompleted && homeStore.reflectionCompleted;
+        
+        if (allActionsCompleted) {
+          // If all actions completed, set to full state
+          setCurrentStateInput(3);
+          if (riveRef.current?.setInputState) {
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 3);
           }
+        } else {
+          // Reset to default state based on lamb mood
+          resetRiveToDefaultState();
         }
 
         Animated.parallel([
@@ -1277,6 +1283,21 @@ export const useHomeScreen = () => {
     }
   }, [riveReady, levelInfo?.level, riveSkinInitialized]);
 
+  // Reset Rive to default state when returning to home screen
+  useEffect(() => {
+    // Only reset when all views are closed and we're back to the main home state
+    if (!devotionalReaderVisible && !showPrayerContent && !showJournalContent && riveReady && riveSkinInitialized) {
+      // Small delay to ensure animations have completed
+      const timer = setTimeout(() => {
+        resetRiveToDefaultState();
+      }, 100);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [devotionalReaderVisible, showPrayerContent, showJournalContent, riveReady, riveSkinInitialized, resetRiveToDefaultState]);
+
+ 
+
   // Handler for when Rive starts playing (indicates it's ready)
   const handleRivePlay = () => {
     console.log('Rive component started playing, ensuring correct skin & action state');
@@ -1332,16 +1353,8 @@ export const useHomeScreen = () => {
         if (allActionsCompleted) {
           targetAction = 3; // lamb-full state
         } else {
+          // Use the helper function to get the default state
           const currentMood = useUserStore.getState()?.getLambMood?.();
-          const moodToStateInput: Record<string, number> = {
-            'lamb-idle': 0,
-            'lamb-sleepy': 4,
-            'lamb-angry': 5,
-            'lamb-chubby dying': 6,
-            'lamb-skinny dying': 7,
-            'smoking': 8,
-            'lamb-full': 3,
-          };
           targetAction = moodToStateInput[currentMood] || 0;
         }
       }
@@ -1495,7 +1508,8 @@ export const useHomeScreen = () => {
     handleRivePlay,
     riveSkinInitialized,
     MAX_HEARTS,
-    showDevotional
+    showDevotional,
+    resetRiveToDefaultState
   };
 };
 

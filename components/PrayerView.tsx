@@ -1122,7 +1122,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                 homeStore.setSawStreakToday(true);
 
                 // Navigate to streak screen
-                const { router } = require('expo-router');
+               
                 router.push('/streak');
 
                 analytics.logEvent('PrayerView_StreakTriggered_FromGoHome', {
