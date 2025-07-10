@@ -38,7 +38,6 @@ interface HomeState {
   showGlobalButtons: boolean;
 
   // Navigation param handling
-  hasHandledDevotionalParam: boolean; // Track if devotional param has been handled
 
   // Daily XP tracking
   dailyXpEarned: number; // Track XP earned today
@@ -65,7 +64,6 @@ interface HomeState {
   setBottomSheetRef: (ref: React.RefObject<any> | null) => void;
   setRiveRef: (ref: React.RefObject<any> | null) => void;
   setCurrentSkin: (skin: string) => void;
-  setHasHandledDevotionalParam: (handled: boolean) => void; // Setter for hasHandledDevotionalParam
 
   // Daily XP functions
   addDailyXp: (amount: number) => number; // Returns actual XP added (may be limited)
@@ -112,7 +110,6 @@ export const useHomeStore = create<HomeState>()(
       lastStreakDate: '', // Empty string initially
 
       // Default navigation param handling
-      hasHandledDevotionalParam: false,
 
       // Setter functions
       setMode: (mode) => set({ mode }),
@@ -170,7 +167,6 @@ export const useHomeStore = create<HomeState>()(
       setBottomSheetRef: (ref) => set({ bottomSheetRef: ref }),
       setRiveRef: (ref) => set({ riveRef: ref }),
       setCurrentSkin: (skin) => set({ currentSkin: skin }),
-      setHasHandledDevotionalParam: (handled) => set({ hasHandledDevotionalParam: handled }),
 
       // Daily XP functions
       resetDailyXpIfNeeded: () => {
@@ -273,7 +269,6 @@ export const useHomeStore = create<HomeState>()(
         dailyXpEarned: state.dailyXpEarned,
         lastXpResetDate: state.lastXpResetDate,
         lastStreakDate: state.lastStreakDate,
-        hasHandledDevotionalParam: state.hasHandledDevotionalParam,
       }),
     }
   )

@@ -902,43 +902,11 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         return dateB - dateA;
       });
 
-      console.log(`🔍 Combined ${allDevotionals.length} total devotionals`);
-
-      allDevotionals.forEach((devotional: Devotional & { type: string }, i: number) => {
-        console.log(`🔍 Doc ${i}:`, {
-          id: devotional.id,
-          date: devotional.date || devotional.createdAt,
-          type: devotional.type,
-          bibleReference: devotional.bibleReference,
-        });
-      });
 
       // Use all devotionals for today (no need to slice)
       const recentDevotionals = allDevotionals;
-
-      console.log(
-        `🔍 Found ${recentDevotionals.length} devotionals for today:`,
-        recentDevotionals.map((d) => ({
-          id: d.id,
-          date: d.date || d.createdAt,
-          type: d.type,
-          bibleReference: d.bibleReference,
-        }))
-      );
-
       // Use whatever devotionals we have for today
       const rawDevotionals = recentDevotionals;
-
-      console.log(
-        '🔍 Raw devotionals before processing:',
-        rawDevotionals.map((d, i) => ({
-          index: i,
-          isNull: d === null,
-          id: d?.id,
-          date: d?.date,
-          bibleReference: d?.bibleReference,
-        }))
-      );
 
       // OPTIMIZED: Collect all unique chapter references for batch fetching
       const chaptersToFetch: Array<{ bookId: number; chapter: number }> = [];

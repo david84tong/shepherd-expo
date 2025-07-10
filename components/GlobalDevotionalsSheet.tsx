@@ -17,6 +17,7 @@ import SavedDevotionalCard from '~/components/SavedDevotionalCard';
 import i18n from '~/app/utils/i18n';
 import { useHomeStore } from '~/app/stores/homeStore';
 
+
 // Define the ref type
 export type DevotionalsSheetRef = {
   show: () => void;
@@ -29,8 +30,8 @@ interface GlobalDevotionalsSheetProps {
 }
 
 const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotionalsSheetRef }) => {
-  // Add internal ref for the actual BottomSheet
-  const bottomSheetRef = useRef<BottomSheet>(null);
+  // Add navigation guard to prevent multiple navigations
+  const hasNavigated = useRef(false);
 
   // Snap points for 90% height
   const snapPoints = useMemo(() => ['90%'], []);
@@ -47,6 +48,7 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
   // Get current user and devotional store
   const currentUser = useUserStore.getState();
   const { setCustomDevotional } = useDevotionalStore();
+  const bottomSheetRef = useRef<BottomSheet>(null);
 
   // Fetch saved devotionals when sheet becomes visible
   useEffect(() => {
@@ -54,6 +56,13 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
       fetchSavedDevotionals();
     }
   }, [isDevotionalsSheetVisible, currentUser?.id]);
+
+  // Reset navigation guard when component unmounts
+  useEffect(() => {
+    return () => {
+      hasNavigated.current = false;
+    };
+  }, []);
 
   const fetchSavedDevotionals = async () => {
     if (!currentUser?.id) return;
@@ -108,9 +117,9 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
     [hideDevotionalsSheet]
   );
 
-  function resetHasHandledDevotionalParam(){
-    if(useHomeStore.getState().hasHandledDevotionalParam){
-      useHomeStore.getState().setHasHandledDevotionalParam(false);
+  function showDevotionalReader(){
+    if(!useUIStore.getState().devotionalReaderVisible){
+       useUIStore.getState().setDevotionalReaderVisible(true);
     }
   }
 
@@ -125,6 +134,12 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
     hapticLight();
     console.log('[GlobalDevotionalsSheet] Starting saved devotional:', devotional.id);
     
+    // Check navigation guard before navigating
+    if (hasNavigated.current) {
+      console.log('[GlobalDevotionalsSheet] Navigation already occurred, skipping');
+      return;
+    }
+    
     // Set the devotional as custom devotional (same as creating custom devotional)
     setCustomDevotional(devotional);
     
@@ -133,7 +148,8 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
     
     // Navigate to home screen with showDevotional parameter to trigger DevotionalReader
     // router.navigate('/(tabs)?showDevotional=true');
-    resetHasHandledDevotionalParam();
+    showDevotionalReader();
+    hasNavigated.current = true;
     router.navigate({
       pathname: '/(tabs)',
       params: { showDevotional: 'true' }

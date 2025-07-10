@@ -2102,8 +2102,8 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
                                 </LongPressGestureHandler>
                               );
                             }}
-                            initialNumToRender={5}
-                            maxToRenderPerBatch={5}
+                            initialNumToRender={10}
+                            maxToRenderPerBatch={10}
                             windowSize={5}
                             removeClippedSubviews={true}
                             getItemLayout={(data, index) => ({

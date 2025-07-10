@@ -98,8 +98,6 @@ export const useHomeScreen = () => {
   const setMode = useHomeStore((state) => state.setMode);
   const setDevotionalReaderVisible = useUIStore((state) => state.setDevotionalReaderVisible);
   const devotionalReaderVisible = useUIStore((state) => state.devotionalReaderVisible);
-  const hasHandledDevotionalParam = useHomeStore((state) => state.hasHandledDevotionalParam);
-  const setHasHandledDevotionalParam = useHomeStore.getState().setHasHandledDevotionalParam;
   const setReflectionCompleted = useHomeStore((state) => state.setReflectionCompleted);
   const readingCompleted = useHomeStore((state) => state.readingCompleted);
   const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
@@ -255,44 +253,6 @@ export const useHomeScreen = () => {
   const buttonTitle = useMemo(() => devotionalReaderVisible ? i18n.t('continue_button') : i18n.t('amen_button'), [devotionalReaderVisible]);
   const isDarkContant = useMemo(() => new Date().getHours() >= 19, []);
 
-  // Effects
-  useEffect(() => {
-
-    if (showDevotional === 'true' && !hasHandledDevotionalParam) {
-      console.log('[useHomeScreen] Opening devotional reader from navigation param');
-      setTimeout(() => {
-        // alert('opening devotional reader from navigation param')
-        setDevotionalReaderVisible(true);
-        if (riveRef.current) {
-        
-          riveRef.current.setInputState('State Machine 1', 'Action-Number', 9);
-        }
-      }, 100);
-
-      // Clear any existing timer
-      if (clearParamTimerRef.current) {
-        clearTimeout(clearParamTimerRef.current);
-      }
-
-      // Set new timer to clear the parameter
-      clearParamTimerRef.current = setTimeout(() => {
-        if (router?.setParams) {
-          router.setParams({ showDevotional: undefined });
-        }
-        clearParamTimerRef.current = null;
-      }, 1000);
-
-      setHasHandledDevotionalParam(true);
-    }
-
-    // Cleanup function to clear timer on unmount or dependency change
-    return () => {
-      if (clearParamTimerRef.current) {
-        clearTimeout(clearParamTimerRef.current);
-        clearParamTimerRef.current = null;
-      }
-    };
-  }, [showDevotional]);
 
   // Sync devotional data from store
   useEffect(() => {
@@ -552,15 +512,13 @@ export const useHomeScreen = () => {
   const handleDevotionalFinishPress = useCallback(() => {
     if (devotionalReaderRef.current) devotionalReaderRef.current.onFinishPress();
   }, []);
-
+function resetOpenedDevotionalFromParam(){
+  if(devotionalReaderVisible){
+    useUIStore.getState().setDevotionalReaderVisible(false);
+  }
+}
   const handleDevotionalClose = useCallback(({ isPrayPresses }: { isPrayPresses?: boolean }) => {
-    
-    console.log('[useHomeScreen] handleDevotionalClose called, isPrayPresses:', isPrayPresses);
-    console.log('[useHomeScreen] Current state:', {
-      devotionalReaderVisible,
-      hasHandledDevotionalParam,
-      showDevotional
-    });
+    resetOpenedDevotionalFromParam()
     
     if (devotionalReaderRef.current) {
       // Cancel any pending parameter clear timer
@@ -575,16 +533,6 @@ export const useHomeScreen = () => {
         console.log('[useHomeScreen] Clearing showDevotional parameter');
         router.setParams({ showDevotional: undefined });
       }
-      // Keep the handled flag as true until navigation completes
-      // This prevents re-opening if there's a race condition with the parameter clearing
-      // setHasHandledDevotionalParam(true);
-      
-      // Reset the flag after a longer delay to prevent race conditions
-      // This ensures the parameter is fully cleared from navigation state
-      // setTimeout(() => {
-      //   console.log('[useHomeScreen] Resetting hasHandledDevotionalParam to false');
-      //   setHasHandledDevotionalParam(false);
-      // }, 2000);
       
       if (isPrayPresses) {
         // Only clear custom devotional when user completes the devotional
@@ -748,8 +696,7 @@ export const useHomeScreen = () => {
     setShowGlobalButtons(true);
     setDevotionalReaderVisible(true);
     
-    // Reset the handled param flag when manually opening devotional
-    // setHasHandledDevotionalParam(false);
+
 
     Animated.timing(devotionalCardOpacityAnim, {
       toValue: 0,
@@ -923,6 +870,7 @@ export const useHomeScreen = () => {
   }, [devotionalData]);
 
   const onCloseJournal = useCallback(({isCompleted, isReflectPresses}:{isCompleted?:boolean, isReflectPresses?:boolean}) => {
+    resetOpenedDevotionalFromParam
     // If isReflectPresses is true, trigger prayer navigation
     if (isReflectPresses) {
 
@@ -1023,6 +971,7 @@ export const useHomeScreen = () => {
   }, [handlePrayerPress]);
 
   const onClosePrayer = useCallback(({ isReflectPresses }: { isReflectPresses?: boolean }) => {
+    resetOpenedDevotionalFromParam()
     if (isReflectPresses) {
       if(finishReading){
         setFinishReading(false);
@@ -1517,7 +1466,7 @@ export const useHomeScreen = () => {
     riveSkinInitialized,
     MAX_HEARTS,
     showDevotional,
-    resetRiveToDefaultState
+    resetRiveToDefaultState,
   };
 };
 
