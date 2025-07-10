@@ -126,12 +126,45 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
         const devotionalRef = firestore().collection(collectionName).doc(devotionalData.id);
 
         try {
+            // Update likes in the original collection
             await devotionalRef.update({
                 likes: firestore.FieldValue.increment(newLikedState ? 1 : -1),
                 likedBy: newLikedState
                     ? firestore.FieldValue.arrayUnion(currentUser.id)
                     : firestore.FieldValue.arrayRemove(currentUser.id),
             });
+
+            // Save or remove from savedDevotionals collection
+            const savedDevotionalId = `${currentUser.id}_${devotionalData.id}`;
+
+            if (newLikedState) {
+                // Save devotional to savedDevotionals collection
+                const savedDevotionalData = {
+                    ...devotionalData,
+                    savedAt: new Date().toISOString(),
+                    userId: currentUser.id,
+                    originalCollection: collectionName,
+                    originalId: devotionalData.id,
+                };
+
+                console.log('🔍 Saving devotional to savedDevotionals from FullScreenShareCard:', {
+                    id: savedDevotionalId,
+                    devotionalId: devotionalData.id,
+                    userId: currentUser.id
+                });
+
+                await firestore().collection('savedDevotionals').doc(savedDevotionalId).set(savedDevotionalData);
+            } else {
+                // Remove devotional from savedDevotionals collection
+                console.log('🔍 Removing devotional from savedDevotionals from FullScreenShareCard:', {
+                    id: savedDevotionalId,
+                    devotionalId: devotionalData.id,
+                    userId: currentUser.id
+                });
+
+                await firestore().collection('savedDevotionals').doc(savedDevotionalId).delete();
+            }
+
             analytics.logEvent('FullScreenShareCard_Like', {
                 bibleReference: devotionalData.bibleReference,
                 liked: newLikedState,
