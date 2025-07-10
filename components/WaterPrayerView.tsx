@@ -115,14 +115,19 @@ const WaterWaveAnimation: React.FC<{
   const [waterLevel, setWaterLevel] = useState(SCREEN_HEIGHT);
   const textOpacity = useSharedValue(1);
 
-  // Remove the opacity animation that hides text when holding
-  // useEffect(() => {
-  //   textOpacity.value = withTiming(isHolding ? 0 : 1, { duration: 300 });
-  // }, [isHolding]);
+  // Smooth opacity animation for text visibility (only when guided prayer is OFF)
+  useEffect(() => {
+    if (!guidedPrayerEnabled) {
+      textOpacity.value = withTiming(isHolding ? 0 : 1, { duration: 600 });
+    } else {
+      // Keep text visible when guided prayer is enabled
+      textOpacity.value = withTiming(1, { duration: 600 });
+    }
+  }, [isHolding, guidedPrayerEnabled]);
 
   const animatedTextStyle = useAnimatedStyle(() => {
     return {
-      opacity: 1, // Always keep text visible, even when holding
+      opacity: textOpacity.value,
     };
   });
 
@@ -298,7 +303,7 @@ const WaterWaveAnimation: React.FC<{
               </View>
             </View>
           ) : (
-            <View style={{ alignItems: 'center', justifyContent: 'center', alignSelf: 'center', }}>
+            <Reanimated.View style={[{ alignItems: 'center', justifyContent: 'center', alignSelf: 'center' }, animatedTextStyle]}>
               <Text className='text-blue font-feather text-center text-3xl' style={{
                 textAlign: 'center',
                 marginBottom: 4,
@@ -322,7 +327,7 @@ const WaterWaveAnimation: React.FC<{
               }}>
                 {animationTriggered ? '' : (totalHoldTime > 1000 ? '' : 'Hold to begin')}
               </Text>
-            </View>
+            </Reanimated.View>
           )}
         </Reanimated.View>
       </TouchableWithoutFeedback>
