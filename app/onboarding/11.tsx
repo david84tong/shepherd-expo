@@ -77,6 +77,14 @@ export default function SaveProgressScreen() {
     persistLoginMode();
   }, [params.isLogin]);
 
+  // Log screen load analytics event
+  useEffect(() => {
+    analytics.logEvent('onboarding_screen_11_loaded', {
+      isLoginMode: params.isLogin === 'true',
+      timestamp: new Date().toISOString(),
+    });
+  }, []);
+
   const [loading, setLoading] = useState(false);
   const {
     signInWithApple,
@@ -196,7 +204,7 @@ export default function SaveProgressScreen() {
       currentLoggedUser: user,
     });
     if (success && firestoreData) {
-      useUserStore.getState().syncFirestoreData(firestoreData);
+      await useUserStore.getState().syncFirestoreData(firestoreData);
       const prayerCompleted = useHomeStore.getState().prayerCompleted;
       const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
       const readingCompleted = useHomeStore.getState().readingCompleted;

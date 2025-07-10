@@ -141,9 +141,32 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
   );
 
   // Close handler
-  const handleClose = useCallback(() => {
-    bottomSheetRef.current?.close();
-  }, []);
+  const handleClose = useCallback(async () => {
+    if (isSelecting) return; // Prevent multiple selections
+
+    setIsSelecting(true);
+    console.log(
+      `📖 [GlobalBookChapterSelector] Done button pressed - saving book: ${selectedBookId}, chapter: ${selectedChapter}`
+    );
+
+    try {
+      // Save to pathStore as the last read chapter/verse
+      const bookName = bookNames[selectedBookId] || 'Unknown';
+      setSavedReading(bookName, selectedBookId, selectedChapter);
+      console.log(
+        `💾 [GlobalBookChapterSelector] Saved to pathStore: ${bookName} (${selectedBookId}) Chapter ${selectedChapter}`
+      );
+
+      if (bookChapterSelectorParams.onSelect) {
+        await bookChapterSelectorParams.onSelect(selectedBookId, selectedChapter);
+      }
+
+      bottomSheetRef.current?.close();
+      hapticLight();
+    } finally {
+      setIsSelecting(false);
+    }
+  }, [selectedBookId, selectedChapter, bookChapterSelectorParams.onSelect, bookNames, setSavedReading, isSelecting]);
 
   // Custom backdrop renderer
   const renderBackdrop = useCallback(
@@ -161,7 +184,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
     if (!bookScrollViewRef.current || !bookItemRefs.current[selectedBookId]) return;
 
     bookItemRefs.current[selectedBookId]?.measureLayout(
-      // @ts-ignore - Known React Native typing issue
+      // @ts-expect-error - Known React Native typing issue
       bookScrollViewRef.current,
       (x: number) => {
         bookScrollViewRef.current?.scrollTo({
@@ -355,9 +378,9 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   closeButtonText: {
-    fontSize: 16,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
     color: '#F7B500', // darkYellow
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 16,
     fontWeight: '600',
   },
   contentContainer: {
@@ -383,9 +406,9 @@ const styles = StyleSheet.create({
     fontSize: 18, // textPrimary
   },
   listTitle: {
-    fontSize: 14,
-    fontFamily: 'DIN Next Rounded LT W01 Regular',
     color: '#B89B4C', // description
+    fontFamily: 'DIN Next Rounded LT W01 Regular',
+    fontSize: 14,
     marginBottom: 8,
     marginLeft: 20,
     textTransform: 'uppercase',

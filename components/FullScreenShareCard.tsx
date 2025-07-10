@@ -68,11 +68,11 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
     const shareCount = storeDevotional?.shares || 0;
     const [isCapturing, setIsCapturing] = useState(false);
 
-    const isRealDevotional = devotionalData ? !devotionalData.id.startsWith('quick-') && !devotionalData.id.startsWith('ai-') : false;
-    
+    const isRealDevotional = devotionalData ? !devotionalData.id.startsWith('quick-') : false;
+
     // Check if this is a custom devotional
     const isCustomDevotional = devotionalData ? (devotionalData.id.startsWith('custom-') || devotionalData.id.startsWith('ai-')) : false;
-    
+
     // Format date for custom devotionals
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
@@ -121,17 +121,50 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
         setIsLiked(newLikedState);
 
         // Determine the correct collection based on devotional ID
-        const isCustomDevotional = devotionalData.id.startsWith('ai-') || devotionalData.id.startsWith('quick-');
+        const isCustomDevotional = devotionalData.id.startsWith('ai-') || devotionalData.id.startsWith('custom-');
         const collectionName = isCustomDevotional ? 'customDevotionals' : 'dailyDevotionals';
         const devotionalRef = firestore().collection(collectionName).doc(devotionalData.id);
 
         try {
+            // Update likes in the original collection
             await devotionalRef.update({
                 likes: firestore.FieldValue.increment(newLikedState ? 1 : -1),
                 likedBy: newLikedState
                     ? firestore.FieldValue.arrayUnion(currentUser.id)
                     : firestore.FieldValue.arrayRemove(currentUser.id),
             });
+
+            // Save or remove from savedDevotionals collection
+            const savedDevotionalId = `${currentUser.id}_${devotionalData.id}`;
+
+            if (newLikedState) {
+                // Save devotional to savedDevotionals collection
+                const savedDevotionalData = {
+                    ...devotionalData,
+                    savedAt: new Date().toISOString(),
+                    userId: currentUser.id,
+                    originalCollection: collectionName,
+                    originalId: devotionalData.id,
+                };
+
+                console.log('🔍 Saving devotional to savedDevotionals from FullScreenShareCard:', {
+                    id: savedDevotionalId,
+                    devotionalId: devotionalData.id,
+                    userId: currentUser.id
+                });
+
+                await firestore().collection('savedDevotionals').doc(savedDevotionalId).set(savedDevotionalData);
+            } else {
+                // Remove devotional from savedDevotionals collection
+                console.log('🔍 Removing devotional from savedDevotionals from FullScreenShareCard:', {
+                    id: savedDevotionalId,
+                    devotionalId: devotionalData.id,
+                    userId: currentUser.id
+                });
+
+                await firestore().collection('savedDevotionals').doc(savedDevotionalId).delete();
+            }
+
             analytics.logEvent('FullScreenShareCard_Like', {
                 bibleReference: devotionalData.bibleReference,
                 liked: newLikedState,
@@ -245,7 +278,7 @@ const FullScreenShareCard: React.FC<FullScreenShareCardProps> = ({
                             };
 
                             // Determine the correct collection based on devotional ID
-                            const isCustomDevotional = devotionalData.id.startsWith('ai-') || devotionalData.id.startsWith('quick-');
+                            const isCustomDevotional = devotionalData.id.startsWith('ai-') || devotionalData.id.startsWith('custom-');
                             const collectionName = isCustomDevotional ? 'customDevotionals' : 'dailyDevotionals';
                             const devotionalRef = firestore().collection(collectionName).doc(devotionalData.id);
                             await devotionalRef.update({

@@ -383,6 +383,7 @@ export function DebugButton() {
             homeStore.setMode('DEFAULT');
             homeStore.setSuccessType(null);
             homeStore.setSawDailyBonus(false); // Reset collected bonus state
+            homeStore.setSawStreakToday(false); // Reset streak shown today flag
 
             // Clear completedReadings, completedPrayers, and completedReflections from userStore
             const userStore = useUserStore.getState();
@@ -397,7 +398,7 @@ export function DebugButton() {
             // Sync with Firestore to save changes
             syncWithFirestore();
 
-            Alert.alert('Reset Complete', 'HomeStore data, collected bonus, and completed readings have been reset.');
+            Alert.alert('Reset Complete', 'HomeStore data, collected bonus, streak flag, and completed readings have been reset.');
           },
         },
       ]
@@ -707,6 +708,34 @@ export function DebugButton() {
     }
   }, [devotionalJsonInput]);
 
+  const handleSyncFirestoreData = async () => {
+    try {
+      // Get current user ID from Zustand store
+      const userId = useUserStore.getState().id;
+      if (!userId) {
+        Alert.alert('No user ID', 'User ID not found in store.');
+        return;
+      }
+      // Fetch user doc from Firestore
+      const doc = await firestore().collection('users').doc(userId).get();
+      if (!doc.exists) {
+        Alert.alert('Not found', 'No Firestore user document found.');
+        return;
+      }
+      // Call syncFirestoreData with Firestore data
+      const data = doc.data();
+      if (!data) {
+        Alert.alert('No data', 'Firestore document has no data.');
+        return;
+      }
+      await useUserStore.getState().syncFirestoreData(data as any); // Type assertion for UserDoc
+      Toast.show({ type: 'success', text1: 'Synced Firestore data to store!' });
+    } catch (err) {
+      console.error('Sync Firestore error', err);
+      Alert.alert('Sync error', String(err));
+    }
+  };
+
   return (
     <>
       {/* Floating Debug Button */}
@@ -736,6 +765,17 @@ export function DebugButton() {
             </View>
 
             <ScrollView className="p-4">
+                {/* Sync Firestore Data Button */}
+                <View className="mb-4">
+                <Text className="font-feather text-lg text-textPrimary mb-3">Sync Firestore Data</Text>
+                <TouchableOpacity
+                  className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
+                  onPress={handleSyncFirestoreData}
+                >
+                  <Text className="font-feather text-base text-textPrimary">Sync Firestore → Store</Text>
+                  <Text className="font-din text-sm text-[#6A8A94] mt-1">Call syncFirestoreData with Firestore user doc</Text>
+                </TouchableOpacity>
+              </View>
               {/* Toast Message Section */}
               <View className="mb-4">
                 <Text className="font-feather text-lg text-textPrimary mb-3">Toast Messages</Text>
@@ -1603,6 +1643,8 @@ export function DebugButton() {
                   </View>
                 ))}
               </View>
+
+            
 
               {/* Hide Debug Button */}
               <View className="mt-6 pt-4 border-t border-buttonBorder">

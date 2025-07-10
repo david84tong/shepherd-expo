@@ -17,13 +17,12 @@ import Purchases from 'react-native-purchases';
 import Rive from 'rive-react-native';
 import '../global.css';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
 import AppLoading from '../components/AppLoading';
 import { DebugButton } from '../components/DebugModal';
 import { HalfModalType } from './halfModal';
 import { useAppInitialization, onAppForegroundOrInit } from './hooks/initHook';
 import { checkStreakAndApplyPenalties } from './hooks/streakHook';
-import { usePreloadAssets } from './stores/assetsStore';
+import { usePreloadAssets, usePreloadRiveAssets, useAssetsStore } from './stores/assetsStore';
 import { useNotificationStore } from './stores/notificationStore';
 import { useUIStore } from './stores/uiStore';
 import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
@@ -56,6 +55,8 @@ import './stores/userStore';
 import './stores/subscriptionStore';
 import { useRemoteConfig } from './hooks/useRemoteConfig';
 import { initializeLanguage } from './utils/i18n';
+import { useHomeStore } from './stores/homeStore';
+import { useDevotionalStore } from './stores/devotionalStore';
 // Define missing ref types
 type PrayerSheetRef = {
   show: () => void;
@@ -195,16 +196,24 @@ export default function RootLayout() {
   const appState = useRef(AppState.currentState);
 
   usePreloadAssets(); // Garante preload global dos assets
+  usePreloadRiveAssets(); // Preload Rive assets during splash screen
   useRemoteConfig();
+
+  // Get Rive assets loading status from store
+  const riveAssetsLoaded = useAssetsStore((s) => s.riveLoaded);
+  const preloadedRiveAssets = useAssetsStore((s) => s.riveAssets);
 
   // Call onAppForegroundOrInit after initialization
   useEffect(() => {
     console.log('isInitialized ==>', isInitialized);
     if (isInitialized) {
       onAppForegroundOrInit();
-      // Delay check-in to ensure auth and store are ready
+      // Check and show check-in after a delay to ensure everything is ready
+      // But only if hearts lost modal is not scheduled to show
       setTimeout(() => {
-        checkAndShowCheckInIfNeeded();
+        if (!isHeartsLostModalVisible.current) {
+          checkAndShowCheckInIfNeeded();
+        }
       }, 3000);
     }
   }, [isInitialized]);
@@ -271,6 +280,8 @@ export default function RootLayout() {
           penalty: result.heartPenalty,
           daysMissed: result.daysMissed,
         });
+        // Set flag to indicate hearts lost modal is visible
+        isHeartsLostModalVisible.current = true;
         // Show the half modal with a delay
         setTimeout(() => {
           showHalfModal(params);
@@ -280,6 +291,11 @@ export default function RootLayout() {
       console.log('Error checking streak status:', error);
     }
   };
+  
+  // Add ref to track if check-in is already scheduled
+  const checkInScheduledRef = useRef(false);
+  // Add ref to track if hearts lost modal is visible
+  const isHeartsLostModalVisible = useRef(false);
   
   // Check if one hour has passed since last check-in AND today's check-in is not complete
   const checkAndShowCheckInIfNeeded = () => {
@@ -293,6 +309,18 @@ export default function RootLayout() {
     // Don't show check-in if user is not logged in at all
     if (!currentUser) {
       console.log('[CheckIn] Skipping check-in: User not logged in');
+      return;
+    }
+    
+    // Check if check-in is already scheduled
+    if (checkInScheduledRef.current) {
+      console.log('[CheckIn] ❌ Check-in already scheduled, skipping duplicate call');
+      return;
+    }
+    
+    // Check if hearts lost modal is visible
+    if (isHeartsLostModalVisible.current) {
+      console.log('[CheckIn] ❌ Hearts lost modal is visible, delaying check-in');
       return;
     }
     
@@ -338,10 +366,15 @@ export default function RootLayout() {
     
     // All conditions met - show check-in
     console.log('[CheckIn] ✅ All conditions met - showing check-in');
+    // Mark as scheduled
+    checkInScheduledRef.current = true;
+    
     // Show check-in with a delay to ensure app is ready
     setTimeout(() => {
       console.log('[CheckIn] Calling showCheckIn() now...');
       showCheckIn();
+      // Reset the flag after showing
+      checkInScheduledRef.current = false;
     }, 2000);
   };
 
@@ -368,18 +401,46 @@ export default function RootLayout() {
   };
 
   const showCheckIn = () => {
+    console.log('[showCheckIn] Function called at:', new Date().toISOString());
+    
     // Import auth to check if user is logged in
     const auth = require('@react-native-firebase/auth').default;
     const currentUser = auth().currentUser;
     
     // Don't show check-in if user is not logged in at all
     if (!currentUser) {
-      console.log('[CheckIn] Not showing check-in: User not logged in');
+      console.log('[showCheckIn] Not showing check-in: User not logged in');
       return;
     }
     
-    console.log('[CheckIn] Showing check-in for user:', currentUser.uid, 'Anonymous:', currentUser.isAnonymous);
-    checkInRef.current?.expand();
+    console.log('[showCheckIn] User authenticated:', currentUser.uid, 'Anonymous:', currentUser.isAnonymous);
+    console.log('[showCheckIn] checkInRef.current exists:', !!checkInRef.current);
+    console.log('[showCheckIn] isUserLoggedIn state:', isUserLoggedIn);
+    
+    // Check if the ref exists before trying to expand
+    if (checkInRef.current) {
+      console.log('[showCheckIn] checkInRef exists, calling forceShow()');
+      try {
+        // Use forceShow for more reliable opening
+        checkInRef.current.forceShow();
+        console.log('[showCheckIn] forceShow() called successfully');
+      } catch (error) {
+        console.error('[showCheckIn] Error calling forceShow():', error);
+      }
+    } else {
+      console.error('[showCheckIn] checkInRef.current is null, cannot show check-in');
+      console.log('[showCheckIn] Attempting to retry in 500ms...');
+      
+      // Retry after a short delay
+      setTimeout(() => {
+        if (checkInRef.current) {
+          console.log('[showCheckIn] Retry successful, calling forceShow()');
+          checkInRef.current.forceShow();
+        } else {
+          console.error('[showCheckIn] Retry failed, checkInRef still null');
+        }
+      }, 500);
+    }
   };
 
   // Monitor auth state changes
@@ -411,7 +472,7 @@ export default function RootLayout() {
       (global as any).showCheckIn = showCheckIn;
       (global as any).showDevotionalsSheet = showDevotionalsSheet;
     }
-  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet, showStoreSheet, showStatsSheet, showDevotionalsSheet]);
+  }, [showPrayerSheet, showBookChapterSelector, showOldReflectionSheet, showStoreSheet, showStatsSheet, showCheckIn, showDevotionalsSheet]);
 
   // Effect to watch isPrayerSheetVisible and control the sheet ref
   useEffect(() => {
@@ -485,12 +546,15 @@ export default function RootLayout() {
       //   return;
       // }
 
-      // Wait for Rive assets to be ready
-      if (!riveAssets?.[0]?.uri) {
-        console.log('Waiting for Rive assets to load...');
+      // Wait for Rive assets to be ready (both splash and preloaded)
+      if (!riveAssets?.[0]?.uri || !riveAssetsLoaded) {
+        console.log('Waiting for Rive assets to load...', { 
+          splashRive: !!riveAssets?.[0]?.uri, 
+          preloadedRive: riveAssetsLoaded 
+        });
         return;
       }
-      console.log('CALLED TO RESOLVED');
+      console.log('🎬 All Rive assets loaded successfully');
 
       try {
         // Initialize app components
@@ -498,8 +562,7 @@ export default function RootLayout() {
         await checkStreakStatus();
         await initializeNotifications();
         
-        // Check if we need to show check-in after initialization
-        checkAndShowCheckInIfNeeded();
+        // Note: checkAndShowCheckInIfNeeded is called in the isInitialized useEffect
       } catch (error) { }
       // Set Rive ready
       setIsRiveReady(true);
@@ -521,11 +584,11 @@ export default function RootLayout() {
 
   // Call initializeApp when fonts and Rive assets are ready
   useEffect(() => {
-    if (riveAssets?.[0]?.uri && !appReady) {
-      console.log('Assets ready, initializing app...');
+    if (riveAssets?.[0]?.uri && riveAssetsLoaded && !appReady) {
+      console.log('🎬 All assets ready, initializing app...');
       initializeApp();
     }
-  }, [fontsLoaded, riveAssets, appReady]);
+  }, [fontsLoaded, riveAssets, riveAssetsLoaded, appReady]);
 
   const activateAdapty = async () => {
     try {
@@ -551,7 +614,10 @@ export default function RootLayout() {
         console.log('App has come to the foreground!');
         onAppForegroundOrInit();
         useHighlightStore.getState().syncHighlights();
-        checkAndShowCheckInIfNeeded();
+        // Only check for check-in if hearts lost modal is not visible
+        if (!isHeartsLostModalVisible.current) {
+          checkAndShowCheckInIfNeeded();
+        }
       }
       appState.current = nextAppState;
     };
@@ -600,6 +666,54 @@ export default function RootLayout() {
       subscription.remove();
     };
   }, [router]);
+
+  // Fetch recent devotionals when reading is completed or when all activities are completed
+  useEffect(() => {
+    const readingCompleted = useHomeStore.getState().readingCompleted;
+    const prayerCompleted = useHomeStore.getState().prayerCompleted;
+    const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
+
+    if (readingCompleted || (prayerCompleted && readingCompleted && reflectionCompleted)) {
+      console.log('📚 [Layout] Fetching recent devotionals due to completion state change');
+      const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
+      fetchRecentDevotionals()
+        .then((devotionals) => {
+          console.log(
+            '📚 [Layout] Fetched recent devotionals:',
+            devotionals.map((d) => d?.id)
+          );
+          console.log('📚 [Layout] Devotionals count:', devotionals.length);
+          console.log('📚 [Layout] Non-null devotionals:', devotionals.filter(Boolean).length);
+        })
+        .catch((error) => {
+          console.error('❌ [Layout] Error fetching recent devotionals:', error);
+        });
+    }
+  }, []);
+
+  // Monitor completion states and fetch devotionals when they change
+  const readingCompleted = useHomeStore((state) => state.readingCompleted);
+  const prayerCompleted = useHomeStore((state) => state.prayerCompleted);
+  const reflectionCompleted = useHomeStore((state) => state.reflectionCompleted);
+
+  useEffect(() => {
+    if (readingCompleted || (prayerCompleted && readingCompleted && reflectionCompleted)) {
+      console.log('📚 [Layout] Fetching recent devotionals due to completion state change');
+      const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
+      fetchRecentDevotionals()
+        .then((devotionals) => {
+          console.log(
+            '📚 [Layout] Fetched recent devotionals:',
+            devotionals.map((d) => d?.id)
+          );
+          console.log('📚 [Layout] Devotionals count:', devotionals.length);
+          console.log('📚 [Layout] Non-null devotionals:', devotionals.filter(Boolean).length);
+        })
+        .catch((error) => {
+          console.error('❌ [Layout] Error fetching recent devotionals:', error);
+        });
+    }
+  }, [readingCompleted, prayerCompleted, reflectionCompleted]);
 
   // Show Rive animation
   if (showRiveAnimation && riveAssets?.[0]?.uri) {
@@ -673,6 +787,16 @@ export default function RootLayout() {
                 subMessage: halfModalParams.subMessage,
                 penalty: halfModalParams.penalty,
                 daysMissed: halfModalParams.daysMissed,
+              }}
+              onDismiss={() => {
+                // If this was a hearts lost modal, clear the flag and check if we need to show check-in
+                if (halfModalParams.type === HalfModalType.HEART_PENALTY) {
+                  isHeartsLostModalVisible.current = false;
+                  // Check if we should show check-in after hearts lost modal is dismissed
+                  setTimeout(() => {
+                    checkAndShowCheckInIfNeeded();
+                  }, 500);
+                }
               }}
             />
 

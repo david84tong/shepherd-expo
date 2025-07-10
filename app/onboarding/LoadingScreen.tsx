@@ -22,6 +22,7 @@ import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import analytics from '~/utils/analytics';
 import { hapticHeavy } from '~/utils/haptics';
+import { useHomeStore } from '../stores/homeStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -158,6 +159,15 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
   // Add loading state for API call
   const [apiLoadingState, setApiLoadingState] = useState<'idle' | 'loading' | 'completed' | 'error'>('idle');
+  
+  // Track if paywall has been shown to prevent duplicate calls
+  const [paywallShown, setPaywallShown] = useState(false);
+
+  function resetHasHandledDevotionalParam(){
+    if(useHomeStore.getState().hasHandledDevotionalParam){
+      useHomeStore.getState().setHasHandledDevotionalParam(false);
+    }
+  }
 
   // Monitor API loading state
   useEffect(() => {
@@ -233,6 +243,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       lastHapticPercentage.current = 0; // Reset haptic tracking
       setAnimationComplete(false); // Reset animation complete state
       setApiLoadingState('idle'); // Reset API loading state
+      setPaywallShown(false); // Reset paywall shown state
     };
   }, [progressAnim]);
 
@@ -434,6 +445,20 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
   // Helper function to show paywall for non-pro users
   const showPaywallForNonProUser = useCallback(async () => {
+    // Only show paywall for non-pro users
+    if (isProMember) {
+      console.log('[LoadingScreen] User is pro member, skipping paywall');
+      return;
+    }
+    
+    // Prevent duplicate paywall calls
+    if (paywallShown) {
+      console.log('[LoadingScreen] Paywall already shown, skipping');
+      return;
+    }
+    
+    setPaywallShown(true);
+    
     analytics.logEvent('LoadingScreen_Custom_Devotional_Paywalled', {
       isProMember: false,
       verseText: verseText || 'unknown',
@@ -459,6 +484,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             totalLoadingTime: currentStep * STEP_DURATION,
             upgradedFromPaywall: true,
           });
+          resetHasHandledDevotionalParam();
           router.navigate({
             pathname: '/(tabs)',
             params: { showDevotional: 'true' }
@@ -484,7 +510,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       }
     }, 500);
     return () => clearTimeout(timer);
-  }, [presentFreeTrialPaywall, verseText, reference, currentStep, router]);
+  }, [presentFreeTrialPaywall, verseText, reference, currentStep, router, paywallShown, isProMember]);
 
   // Monitor devotional creation progress - MODIFIED for API-based progress
   useEffect(() => {
@@ -512,6 +538,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           });
 
           const timer = setTimeout(() => {
+            resetHasHandledDevotionalParam();
             router.navigate({
               pathname: '/(tabs)',
               params: { showDevotional: 'true' }
@@ -530,13 +557,14 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
           });
 
           const timer = setTimeout(() => {
+            resetHasHandledDevotionalParam();
             router.navigate({
               pathname: '/(tabs)',
               params: { showDevotional: 'true' }
             });
           }, 500); // Short delay for smooth transition
           return () => clearTimeout(timer);
-        } else if (apiLoadingState === 'completed' && !isProMember && !isCheckInFlow) {
+        } else if (apiLoadingState === 'completed' && !isProMember && !isCheckInFlow && !paywallShown) {
           // User is not pro - show paywall when all steps complete
           console.log('[LoadingScreen] All steps complete and API completed for non-pro user, showing paywall');
           showPaywallForNonProUser();
@@ -553,7 +581,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         return () => clearTimeout(timer);
       }
     }
-  }, [isOnboarding, apiLoadingState, router, currentStep, loadingPoints.length, isProMember, presentFreeTrialPaywall, verseText, reference, devotionalError, devotionalStoreCurrentDevotional, isCheckInFlow, customDevotional, showPaywallForNonProUser, animationComplete]);
+  }, [isOnboarding, apiLoadingState, router, currentStep, loadingPoints.length, isProMember, presentFreeTrialPaywall, verseText, reference, devotionalError, devotionalStoreCurrentDevotional, isCheckInFlow, customDevotional, showPaywallForNonProUser, animationComplete, paywallShown]);
   
   // Clear the check-in flag when navigating away
   useEffect(() => {
@@ -565,13 +593,14 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
     };
   }, [isFromCheckInStore]);
 
-  // Fallback check for non-pro users with devotional
-  useEffect(() => {
-    if (!isOnboarding && devotionalStoreCurrentDevotional && !isProMember && apiLoadingState !== 'completed') {
-      console.log('[LoadingScreen] Fallback: Non-pro user has devotional, showing paywall');
-      showPaywallForNonProUser();
-    }
-  }, [isOnboarding, devotionalStoreCurrentDevotional, isProMember, apiLoadingState, showPaywallForNonProUser]);
+  // Fallback check for non-pro users with devotional - REMOVED to prevent duplicate paywall calls
+  // This was causing the paywall to show twice. The main navigation effect above handles all cases properly.
+  // useEffect(() => {
+  //   if (!isOnboarding && devotionalStoreCurrentDevotional && !isProMember && apiLoadingState !== 'completed') {
+  //     console.log('[LoadingScreen] Fallback: Non-pro user has devotional, showing paywall');
+  //     showPaywallForNonProUser();
+  //   }
+  // }, [isOnboarding, devotionalStoreCurrentDevotional, isProMember, apiLoadingState, showPaywallForNonProUser]);
 
   // --- GLOWING BORDER EFFECT ---
   const glViewRef = useRef<{ stop: () => void } | null>(null);

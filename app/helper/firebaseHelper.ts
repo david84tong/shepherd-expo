@@ -1,7 +1,7 @@
 import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import firestore, { Timestamp } from '@react-native-firebase/firestore';
 import { UserDoc } from '../models/User';
-import { syncUserDocument, batchUpdate } from '../../utils/firestore';
+import { syncUserDocument, batchUpdate, removeFunctions } from '../../utils/firestore';
 import { useUserStore } from '../stores/userStore';
 import { syncStreakDataToWidget } from '../../utils/widgetSync';
 
@@ -67,14 +67,16 @@ export const debouncedSyncUserDocument = async (data: Partial<UserDoc>) => {
 export const syncWithFirestore = async (): Promise<boolean> => {
   if (!isAuthenticated()) return false;
   const userData = useUserStore.getState();
-  await debouncedSyncUserDocument(userData);
+  // await debouncedSyncUserDocument({
+  await debouncedSyncUserDocument(removeFunctions(userData));
   return true;
 };
 
 export const updateUserData = async (updates: Partial<UserDoc>): Promise<void> => {
   if (isAuthenticated()) {
+    const cleanedData = removeFunctions(updates);
     const updatedData = {
-      ...updates,
+      ...cleanedData,
       updatedAt: Timestamp.now(),
     };
     await batchUpdate(updatedData);
@@ -133,7 +135,7 @@ export const fetchFromFirestore = async ({
         console.log('Syncing user data to store:', convertedUserData);
 
         // Sync the data to store
-        useUserStore.getState().syncFirestoreData(convertedUserData);
+        await useUserStore.getState().syncFirestoreData(convertedUserData);
 
         // Sync streak data to widget
         const syncStreakWithWidget = (streakCount: number, lastActivityDate: any) => {

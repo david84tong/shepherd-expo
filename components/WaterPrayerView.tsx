@@ -37,6 +37,7 @@ import PrayerSettingsModal from './PrayerSettingsModal';
 import { useSoundStore } from '~/app/stores/soundStore';
 import { hapticHeavy, hapticLight, hapticMedium } from '~/utils/haptics';
 import { RPH } from '~/app/helper/helper';
+import { router } from 'expo-router';
 import { useLanguageStore } from '~/app/stores/languageStore';
 import i18n from '~/app/utils/i18n';
 
@@ -116,14 +117,19 @@ const WaterWaveAnimation: React.FC<{
   const [waterLevel, setWaterLevel] = useState(SCREEN_HEIGHT);
   const textOpacity = useSharedValue(1);
 
-  // Remove the opacity animation that hides text when holding
-  // useEffect(() => {
-  //   textOpacity.value = withTiming(isHolding ? 0 : 1, { duration: 300 });
-  // }, [isHolding]);
+  // Smooth opacity animation for text visibility (only when guided prayer is OFF)
+  useEffect(() => {
+    if (!guidedPrayerEnabled) {
+      textOpacity.value = withTiming(isHolding ? 0 : 1, { duration: 600 });
+    } else {
+      // Keep text visible when guided prayer is enabled
+      textOpacity.value = withTiming(1, { duration: 600 });
+    }
+  }, [isHolding, guidedPrayerEnabled]);
 
   const animatedTextStyle = useAnimatedStyle(() => {
     return {
-      opacity: 1, // Always keep text visible, even when holding
+      opacity: textOpacity.value,
     };
   });
 
@@ -299,8 +305,8 @@ const WaterWaveAnimation: React.FC<{
               </View>
             </View>
           ) : (
-            <View style={{ alignItems: 'center', alignSelf: 'center' }}>
-              <Text className='text-blue font-feather text-center text-3xl mt-48' style={{
+            <Reanimated.View style={[{ alignItems: 'center', justifyContent: 'center', alignSelf: 'center' }, animatedTextStyle]}>
+              <Text className='text-blue font-feather text-center text-3xl' style={{
                 textAlign: 'center',
                 marginBottom: 4,
                 fontFamily: 'Nunito-Black',
@@ -323,7 +329,7 @@ const WaterWaveAnimation: React.FC<{
               }}>
                 {animationTriggered ? '' : (totalHoldTime > 1000 ? '' : i18n.t('hold_to_begin'))}
               </Text>
-            </View>
+            </Reanimated.View>
           )}
         </Reanimated.View>
       </TouchableWithoutFeedback>
@@ -1094,10 +1100,11 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
   console.log('📋 Prayer cards to show:', cardsToShow.length, cardsToShow);
 
   return (
-    <Reanimated.View style={[{ flex: 1, borderRadius: 24, backgroundColor: '#FDEBB8' }, componentAnimatedStyle, { overflow: 'hidden' }]}>
+    <Reanimated.View style={[{ flex: 1, borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: '#FDEBB8' }, componentAnimatedStyle, { overflow: 'hidden' }]}>
       {showSuccess ? (
         <View style={{ marginHorizontal: 24, flex: 1, marginTop: 24 }}>
           <SuccessMessage
+            screenType="prayer"
             title={i18n.t('prayer_complete')}
             description={i18n.t('prayer_complete_desc')}
             level={levelInfo.level}
@@ -1151,6 +1158,10 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
               }
               // // Check streak trigger conditions when user presses "Go Home" from prayer success
               const homeStore = useHomeStore.getState();
+              
+              // First check and reset streak flag if it's a new day
+              homeStore.checkAndResetStreakIfNeeded();
+              
               const { readingCompleted, sawStreakToday } = homeStore;
 
               // Only trigger if reading is completed and streak hasn't been shown today
@@ -1160,7 +1171,6 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                 homeStore.setSawStreakToday(true);
 
                 // Navigate to streak screen
-                const { router } = require('expo-router');
                 router.push('/streak');
 
                 analytics.logEvent('WaterPrayerView_StreakTriggered_FromGoHome', {

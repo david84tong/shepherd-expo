@@ -5,6 +5,7 @@ import {
   ScrollView,
   ActivityIndicator,
   StatusBar,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -23,7 +24,7 @@ import PrimaryButton from '../components/PrimaryButton';
 import analytics from '../utils/analytics';
 import { isSignedIn } from './hooks/authHook';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { IS_ANDROID } from './utils/utils';
+import { IS_ANDROID, IS_IOS } from './utils/utils';
 import i18n from '~/app/utils/i18n';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
@@ -179,16 +180,19 @@ const PricingScreen = () => {
     // Always navigate to tabs when closing pricing screen for logged in users
     if (isSignedIn()) {
       router.replace('/(tabs)');
-    } else if (fromLoading) {
-      // If we came from loading screen and not signed in, try to go back
-      if (router.canGoBack()) {
-        router.back();
-      } else {
+    } else {
+      // Check onboarding status before navigation
+      try {
+        const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
+        if (onboardingCompleted === 'true') {
+          router.replace('/(tabs)');
+        } else {
+          router.replace('/onboarding/11');
+        }
+      } catch (error) {
+        console.error('Error checking onboarding status:', error);
         router.replace('/(tabs)');
       }
-    } else {
-      // If user is not signed in, send them to onboarding screen 11
-      router.replace('/onboarding/11');
     }
   };
 
@@ -198,16 +202,18 @@ const PricingScreen = () => {
     return (
       <>
         {/* Header */}
-        {/* <AnimatedItem index={0} animateItemFromBottom={animateScreenFromBottom}>
-          <View className="flex-row items-center justify-between px-5 py-3 mb-3">
-              <Animated.View entering={FadeIn.duration(600)}>
-                <TouchableOpacity onPress={handleBack} className="p-2">
-                  <Feather name="x" size={28} color="#B89B4C" />
-                </TouchableOpacity>
-              </Animated.View>            
-            <View className="w-10" />
-          </View>
-        </AnimatedItem> */}
+        {IS_IOS && (
+          <AnimatedItem index={0} animateItemFromBottom={animateScreenFromBottom}>
+            <View className="flex-row items-center justify-between px-5 py-3 mb-3">
+                <Animated.View entering={FadeIn.duration(600)}>
+                  <TouchableOpacity onPress={handleBack} className="p-2">
+                    <Feather name="x" size={28} color="#B89B4C" />
+                  </TouchableOpacity>
+                </Animated.View>            
+              <View className="w-10" />
+            </View>
+          </AnimatedItem>
+        )}
 
         {/* Main content */}
         <ScrollView

@@ -1,7 +1,7 @@
 import Purchases, { PurchasesPackage, LOG_LEVEL } from 'react-native-purchases';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { create } from 'zustand';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { useUserStore } from './userStore';
 import analytics from '~/utils/analytics';
 import { router } from 'expo-router';
@@ -37,6 +37,15 @@ async function moveUserToProMode(
 
   let onboardingCompleted: string | null = null;
   useUserStore.getState().setProStatus('pro');
+  
+  // Update user properties in analytics platforms
+  analytics.setUserProperties({
+    isPro: true,
+    proStatus: 'pro',
+    subscriptionType: fromPaywall || 'unknown',
+    packageId: packageId || 'unknown',
+  });
+  
   // Set isPro: true and proExpiryDate: null in Firestore for the current user
   try {
     const currentUser = auth().currentUser;
@@ -201,10 +210,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         onCloseButtonPress() {
           result = PAYWALL_RESULT.CANCELLED;
           set({ isPaywallPresenting: false });
-          // Check if onboarding is completed, if not redirect to onboarding 11
+          // Check if onboarding is completed
           AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
             .then((completed) => {
-              if (completed !== 'true') {
+              if (completed !== 'true' && Platform.OS === 'ios') {
+                // For iOS users who haven't completed onboarding, just dismiss the paywall
+                console.log('iOS user skipped paywall during onboarding, dismissing paywall');
+                // No navigation - just let the paywall dismiss
+              } else if (completed !== 'true') {
+                // For Android users, redirect to onboarding 11
                 console.log('Onboarding not completed, redirecting to onboarding/11');
                 router.replace('/onboarding/11');
               }
@@ -321,8 +335,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
                 // Linking.openURL('https://apps.apple.com/account/subscriptions').catch(() => {
                 //   console.log('Could not open subscription management');
                 // });
+              } else if (Platform.OS === 'ios') {
+                // For iOS users who haven't completed onboarding, just dismiss the paywall
+                console.log('iOS user skipped half-off paywall during onboarding, dismissing paywall');
+                // No navigation - just let the paywall dismiss
               } else {
-                // Onboarding not complete - redirect to onboarding 11
+                // For Android users, redirect to onboarding 11
                 console.log('Onboarding not completed, redirecting to onboarding/11');
                 router.replace('/onboarding/11');
               }
@@ -424,10 +442,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         onCloseButtonPress() {
           result = PAYWALL_RESULT.CANCELLED;
           set({ isPaywallPresenting: false });
-          // Check if onboarding is completed, if not redirect to PricingScreen
+          // Check if onboarding is completed
           AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
             .then((completed) => {
-              if (completed !== 'true') {
+              if (completed !== 'true' && Platform.OS === 'ios') {
+                // For iOS users who haven't completed onboarding, just dismiss the paywall
+                console.log('iOS user skipped paywall during onboarding, dismissing paywall');
+                // No navigation - just let the paywall dismiss
+              } else if (completed !== 'true') {
+                // For Android users, redirect to PricingScreen
                 console.log('Onboarding not completed, redirecting to PricingScreen');
                 router.replace('/PricingScreen');
               }
@@ -544,6 +567,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       // Update user's pro status in userStore
       if (isPro) {
         useUserStore.getState().setProStatus('pro');
+        
+        // Update user properties in analytics platforms
+        analytics.setUserProperties({
+          isPro: true,
+          proStatus: 'pro',
+          subscriptionType: 'direct_purchase',
+          packageId: pack.identifier,
+          productId: productIdentifier,
+        });
 
         // Show success toast
         Toast.show({
@@ -660,6 +692,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
               proExpiryDate = null;
               if (!isProAdapty) {
                 set({ isProMember: false });
+                // Update user properties in analytics platforms
+                analytics.setUserProperties({
+                  isPro: false,
+                  proStatus: 'free',
+                  subscriptionType: 'expired',
+                });
               }
               useUserStore.getState().setProStatus('free');
               console.log('[SubscriptionStore] Pro status expired in Firestore, set to free.');
@@ -684,6 +722,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
       }
       set({ customerInfo: profile, isProMember: finalProStatus });
       useUserStore.getState().setProStatus(finalProStatus ? 'pro' : 'free');
+      
+      // Update user properties in analytics if status changed
+      if (prevIsPro !== finalProStatus) {
+        analytics.setUserProperties({
+          isPro: finalProStatus,
+          proStatus: finalProStatus ? 'pro' : 'free',
+        });
+      }
+      
       console.log(
         '[SubscriptionStore] Customer info and pro status updated in store (Adapty + Firestore).'
       );
@@ -809,6 +856,14 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
 
     set({ isProMember: true });
     useUserStore.getState().setProStatus('pro');
+    
+    // Update user properties in analytics platforms
+    analytics.setUserProperties({
+      isPro: true,
+      proStatus: 'pro',
+      subscriptionType: 'referral_code',
+      referralCode: code.toUpperCase(),
+    });
   },
   getUsedReferralCodes: async () => {
     const user = auth().currentUser;

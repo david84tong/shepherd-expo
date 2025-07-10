@@ -24,6 +24,7 @@ import { useUserStore } from '~/app/stores/userStore';
 import { Timestamp } from '@react-native-firebase/firestore';
 import { IS_ANDROID } from '~/app/utils/utils';
 import { useSoundStore } from '~/app/stores/soundStore';
+import useSubscriptionStore from '~/app/stores/subscriptionStore';
 
 // Import gem icon
 import gemIcon from '../assets/icons/greenGemIcon.png';
@@ -31,6 +32,7 @@ import gemIcon from '../assets/icons/greenGemIcon.png';
 export type GlobalCheckInRef = {
   expand: () => void;
   close: () => void;
+  forceShow: () => void;
 };
 
 interface GlobalCheckInProps {
@@ -46,6 +48,9 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const [currentScreen, setCurrentScreen] = useState<CheckInScreen>('mood');
   const [isGenerating, setIsGenerating] = useState(false);
   const [checkInSaved, setCheckInSaved] = useState(false);
+  const [isSheetVisible, setIsSheetVisible] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const expandAttempts = useRef(0);
 
   // Hooks
   const router = useRouter();
@@ -98,41 +103,56 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   // Dynamic snap points based on current screen
   const snapPoints = currentScreen === 'success' ? ['65%'] : ['65%'];
 
+  // Log when component mounts/unmounts
+  useEffect(() => {
+    console.log('[GlobalCheckIn] Component mounted at:', new Date().toISOString());
+    return () => {
+      console.log('[GlobalCheckIn] Component unmounted at:', new Date().toISOString());
+    };
+  }, []);
+
   // Complete check-in and save to both stores
   const handleCompleteCheckIn = useCallback(async () => {
+    console.log('[GlobalCheckIn] handleCompleteCheckIn started');
+
     // Prevent double-saving
     if (checkInSaved) {
       console.log('[GlobalCheckIn] Check-in already saved, skipping...');
       return;
     }
 
-    console.log('handleCompleteCheckIn called with:', {
+    console.log('[GlobalCheckIn] handleCompleteCheckIn called with:', {
       mood: currentMood,
       focus: currentFocus,
       struggle: currentStruggle,
     });
 
-    // Complete check-in in checkInStore
-    completeCheckIn();
+    try {
+      // Complete check-in in checkInStore
+      console.log('[GlobalCheckIn] Completing check-in in checkInStore...');
+      completeCheckIn();
 
-    // Save to userStore for Firestore sync
-    const checkInData = {
-      mood: currentMood,
-      focus: currentFocus,
-      struggle: currentStruggle,
-      completedAt: Timestamp.now(),
-    };
+      // Save to userStore for Firestore sync
+      const checkInData = {
+        mood: currentMood,
+        focus: currentFocus,
+        struggles: currentStruggle,
+        timeStamp: Timestamp.now()
+      };
 
-    // Create unique key using timestamp to prevent overrides
-    const now = new Date();
-    const timestamp = now.getTime(); // milliseconds since epoch
-    const dateKey = `${timestamp}`; // Use timestamp as key for uniqueness
+      // Create unique key using timestamp to prevent overrides
+      const now = new Date();
+      const timestamp = now.getTime(); // milliseconds since epoch
+      const dateKey = `${timestamp}`; // Use timestamp as key for uniqueness
+      console.log('[GlobalCheckIn] Saving check-in data to userStore:', checkInData);
+      await addCheckIn(dateKey, checkInData);
 
-    console.log('Saving check-in data to userStore with key:', dateKey, checkInData);
-    await addCheckIn(dateKey, checkInData as any); // -> we can put any type here because we are using the any type
-
-    console.log('Check-in completed and saved to both stores');
-    setCheckInSaved(true);
+      console.log('[GlobalCheckIn] Check-in completed and saved to both stores');
+      setCheckInSaved(true);
+    } catch (error) {
+      console.error('[GlobalCheckIn] Error in handleCompleteCheckIn:', error);
+      throw error; // Re-throw to be handled by caller
+    }
 
     // Award 20 gems for completing check-in
     if (!gemsAwarded) {
@@ -170,6 +190,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   // Handle dismiss
   const handleDismiss = useCallback(() => {
     bottomSheetRef.current?.close();
+    setIsSheetVisible(false);
     // Reset everything after sheet closes
     setTimeout(() => {
       setCurrentScreen('mood');
@@ -208,6 +229,14 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     const currentUser = auth().currentUser;
     if (!currentUser) {
       console.error('No authenticated user available for generating devotional');
+      return;
+    }
+
+    // Check if user is pro
+    const { isProMember, presentFreeTrialPaywall } = useSubscriptionStore.getState();
+    if (!isProMember) {
+      console.log('[GlobalCheckIn] User is not pro, presenting free trial paywall');
+      await presentFreeTrialPaywall();
       return;
     }
 
@@ -272,7 +301,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
       // Don't navigate here - it's already handled in the button onPress
     } catch (error) {
-      console.error('Error generating custom devotional:', error);
+      console.log('Error generating custom devotional:', error);
       setIsGenerating(false);
       // You might want to show an error toast here
     }
@@ -369,17 +398,33 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     checkInRef,
     () => ({
       expand: () => {
-        bottomSheetRef.current?.expand();
+        console.log('[GlobalCheckIn] expand() called, isSheetVisible:', isSheetVisible, 'isClosing:', isClosing);
+        
+        // If currently closing, wait and retry
+        if (isClosing) {
+          console.log('[GlobalCheckIn] Sheet is closing, waiting to expand...');
+          expandAttempts.current++;
+          if (expandAttempts.current < 3) {
+            setTimeout(() => {
+              checkInRef.current?.expand();
+            }, 400);
+          }
+          return;
+        }
+        
+        // Reset expand attempts
+        expandAttempts.current = 0;
+        
         // Reset to initial state when opening
         setCurrentScreen('mood');
         setSelectedMood(null);
         setSelectedFocus(null);
         setSelectedStruggle(null);
-        clearCurrentSession(); // Clear store session
-        setCheckInSaved(false); // Reset saved flag
-        setIsGenerating(false); // Reset generating state
-        setGemsAwarded(false); // Reset gems awarded flag
-        setShowRewardAnimation(false); // Reset reward animation
+        clearCurrentSession();
+        setCheckInSaved(false);
+        setIsGenerating(false);
+        setGemsAwarded(false);
+        setShowRewardAnimation(false);
         moodAnim.setValue(0);
         focusAnim.setValue(screenWidth);
         struggleAnim.setValue(screenWidth);
@@ -388,15 +433,52 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         rewardCardScale.setValue(0.8);
         gemTextOpacity.setValue(0);
 
+        // Force expand using snapToIndex
+        setIsSheetVisible(true);
+        requestAnimationFrame(() => {
+          bottomSheetRef.current?.snapToIndex(0);
+        });
+
         // Log analytics for check-in shown
         analytics.logEvent('checkin_sheet_shown', {
-          trigger: 'one_hour_reminder',
+          trigger: 'custom_devotional',
           hasBeenOneHour: useCheckInStore.getState().hasBeenOneHourSinceLastCheckIn(),
         });
       },
-      close: () => bottomSheetRef.current?.close(),
+      close: () => {
+        console.log('[GlobalCheckIn] close() called');
+        setIsClosing(true);
+        bottomSheetRef.current?.close();
+      },
+      forceShow: () => {
+        console.log('[GlobalCheckIn] forceShow() called');
+        
+        // Reset expand attempts
+        expandAttempts.current = 0;
+        
+        // First, force close if visible
+        if (isSheetVisible) {
+          setIsClosing(true);
+          bottomSheetRef.current?.close();
+          
+          // Wait for close to complete, then expand
+          setTimeout(() => {
+            setIsClosing(false);
+            checkInRef.current?.expand();
+          }, 400);
+        } else {
+          // Not visible, just expand
+          setIsClosing(false);
+          checkInRef.current?.expand();
+        }
+        
+        // Log analytics
+        analytics.logEvent('checkin_sheet_force_shown', {
+          trigger: 'custom_devotional'
+        });
+      },
     }),
-    [moodAnim, focusAnim, struggleAnim, successAnim, clearCurrentSession]
+    [moodAnim, focusAnim, struggleAnim, successAnim, clearCurrentSession, isSheetVisible, isClosing]
   );
 
   // Mood options with corresponding lamb images
@@ -805,20 +887,20 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         if (riveRef.current) {
           riveRef.current.play();
         }
-      }, 100);
-
+      }, 50);
+      
       // Animate reward card with bounce effect
       setTimeout(() => {
         Animated.parallel([
           Animated.timing(rewardCardOpacity, {
             toValue: 1,
-            duration: 500,
+            duration: 250,
             useNativeDriver: true,
           }),
           Animated.spring(rewardCardScale, {
             toValue: 1,
-            tension: 40,
-            friction: 6,
+            tension: 60,
+            friction: 8,
             useNativeDriver: true,
           }),
         ]).start(() => {
@@ -832,7 +914,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
             }),
           ]).start();
         });
-      }, 600);
+      }, 200);
     }
   }, [currentScreen, showRewardAnimation]);
 
@@ -905,6 +987,13 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           }
           onPress={async () => {
             if (currentFocus !== '' || currentStruggle !== '') {
+              // Check if user is pro before generating custom devotional
+              const { isProMember, presentFreeTrialPaywall } = useSubscriptionStore.getState();
+              if (!isProMember) {
+                console.log('[GlobalCheckIn] User is not pro, presenting free trial paywall');
+                await presentFreeTrialPaywall();
+                return;
+              }
               // Log the current check-in state
               const checkInState = useCheckInStore.getState();
               console.log('[GlobalCheckIn] Before navigation - check-in state:', {
@@ -1125,6 +1214,25 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
           overflow: 'hidden',
         }}>
         <View style={{ flex: 1, position: 'relative' }}>
+          {/* Top Right Close Button */}
+          <Pressable
+            style={{
+              position: 'absolute',
+              top: -10,
+              right: 20,
+              width: 36,
+              height: 36,
+              backgroundColor: 'rgba(0, 0, 0, 0.1)',
+              borderRadius: 18,
+              alignItems: 'center',
+              justifyContent: 'center',
+              zIndex: 10,
+            }}
+            onPress={handleDismiss}
+          >
+            <FontAwesome6 name="xmark" size={18} color="#634012" />
+          </Pressable>
+
           {/* All screens are rendered but with proper touch handling */}
           <View
             style={{ position: 'absolute', width: '100%', height: '100%' }}

@@ -8,9 +8,11 @@ import { BottomTabBarButtonProps } from '@react-navigation/bottom-tabs';
 import { isSignedIn } from '../hooks/authHook';
 import { useHomeStore } from '../stores/homeStore';
 import { usePathStore } from '../stores/pathStore';
+import { useUIStore } from '../stores/uiStore';
 import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
+import { useCheckInStore } from '../stores/checkInStore';
 import { RPH, RPW } from '../helper/helper';
 import i18n from '../utils/i18n';
 import { AppFonts } from '../constants/appFonts';
@@ -130,15 +132,22 @@ export default function TabsLayout() {
   // Handle free trial paywall presentation
   useEffect(() => {
     if (signedIn && onboardingCompleted && !isProMember && (isFirstAppLaunch || isDailyFirstLoad)) {
-      const reason = isFirstAppLaunch ? "First app launch" : "Daily first load";
-      console.log(`[TabsLayout] ${reason}, user is signed in but not pro. Showing free trial paywall.`);
-      presentFreeTrialPaywall();
+      // Check if user has completed today's check-in
+      const hasCompletedTodaysCheckIn = useCheckInStore.getState().hasCompletedTodaysCheckIn();
+      
+      if (hasCompletedTodaysCheckIn) {
+        const reason = isFirstAppLaunch ? "First app launch" : "Daily first load";
+        console.log(`[TabsLayout] ${reason}, user is signed in but not pro. Showing free trial paywall.`);
+        presentFreeTrialPaywall();
+      } else {
+        console.log(`[TabsLayout] User has not completed today's check-in. Skipping free trial paywall.`);
+      }
     }
   }, [signedIn, onboardingCompleted, isProMember, isFirstAppLaunch, isDailyFirstLoad, presentFreeTrialPaywall]);
 
   // Zustand selectors – always call, even if the user ends up being redirected.}
   const mode = useHomeStore((state) => state.mode);
-  const devotionalReaderVisible = useHomeStore((state) => state.devotionalReaderVisible);
+  const devotionalReaderVisible = useUIStore((state) => state.devotionalReaderVisible);
   const prayerViewVisible = useHomeStore((state) => state.prayerViewVisible);
   const journalViewVisible = useHomeStore((state) => state.journalViewVisible);
   const pathInProgress = usePathStore((state) => state.pathInProgress);

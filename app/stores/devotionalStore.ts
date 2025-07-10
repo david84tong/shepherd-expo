@@ -99,7 +99,7 @@ const safeWidgetCall = async (method: string, ...args: any[]) => {
       console.warn(`📱 Method ${method} not available on WidgetDataSharer`);
     }
   } catch (error) {
-    console.error(`📱 Error calling ${method}:`, error);
+    console.error(`📱 Error calling ${method}`, error);
 
     // Fallback to AsyncStorage on error
     if (method === 'updateVerseData' && args.length >= 2) {
@@ -124,7 +124,8 @@ interface DevotionalStore {
   customDevotional: Devotional | null; // Quick devotional from Bible reader swipe
   isCreatingDevotional: boolean; // Loading state for AI devotional creation
   isFromCheckIn: boolean; // Flag to indicate devotional is from check-in flow
-
+  fetchingRecentDevotionals: boolean; // Flag to indicate we are fetching recent devotionals
+  recentDevotionals: (Devotional | null)[]; // Store recent devotionals globally
   // Actions
   fetchTodaysDevotional: () => Promise<void>;
   setCurrentDevotional: (devotional: Devotional | null) => void;
@@ -157,6 +158,8 @@ interface DevotionalStore {
   incrementShareCount: (devotionalId: string) => void;
   // Utility function to clear Bible chapter cache
   clearBibleCache: () => Promise<void>;
+  setFetchingRecentDevotionals: (value: boolean) => void;
+  setRecentDevotionals: (devotionals: (Devotional | null)[]) => void;
 }
 
 export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
@@ -170,6 +173,8 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   customDevotional: null,
   isCreatingDevotional: false,
   isFromCheckIn: false,
+  fetchingRecentDevotionals: false,
+  recentDevotionals: [],
 
   fetchTodaysDevotional: async () => {
     console.log('🚀 fetchTodaysDevotional function called!');
@@ -302,8 +307,8 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
                       `✅ Found verse range (${parsed.verse}-${parsed.endVerse}): ${devotional.verse.substring(0, 100)}...`
                     );
                     console.log(`✅ Combined ${verses.length} verses`);
-                    console.log(`✅ Devotional verse field set:`, devotional.verse);
-                    console.log(`✅ Bible reference set:`, devotional.bibleReference);
+                    console.log(`✅ Devotional verse field set`, devotional.verse);
+                    console.log(`✅ Bible reference set`, devotional.bibleReference);
                   } else {
                     console.log(
                       `⚠️ No verses found in range ${parsed.verse}-${parsed.endVerse} for chapter ${parsed.chapter}`
@@ -316,9 +321,9 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
                     devotional.verse = verseData.text;
                     devotional.bibleReference = referenceToUse; // Set the reference properly
                     console.log(`✅ Found verse: ${verseData.text.substring(0, 50)}...`);
-                    console.log(`✅ Full verse text:`, verseData.text);
-                    console.log(`✅ Devotional verse field set:`, devotional.verse);
-                    console.log(`✅ Bible reference set:`, devotional.bibleReference);
+                    console.log(`✅ Full verse text`, verseData.text);
+                    console.log(`✅ Devotional verse field set`, devotional.verse);
+                    console.log(`✅ Bible reference set`, devotional.bibleReference);
                   } else {
                     console.log(`⚠️ Verse ${parsed.verse} not found in chapter ${parsed.chapter}`);
                     console.log(
@@ -431,7 +436,6 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       date: new Date().toISOString(),
       imageURL: selectedImageURL,
       verse: verseText,
-      userId: currentUser?.uid || null,
     };
 
     console.log('[DevotionalStore] Created quick devotional from verse:', {
@@ -464,40 +468,39 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     chapter: number,
     verse: number
   ) => {
-    console.log('[DevotionalStore] Creating AI devotional from verse:', {
-      verseText,
-      reference,
-      bookName,
-      chapter,
-      verse,
-    });
-    // Clear any existing custom devotional state before creating a new one
-    set({
-      customDevotional: null,
-      isCreatingDevotional: true,
-      error: null,
-      isFromCheckIn: false,
-    });
+    console.log('[DevotionalStore] Creating AI devotional for:', reference);
+    set({ isCreatingDevotional: true, error: null });
 
     try {
-      // Get the current user's ID token for API authentication
+      // Get current user
       const currentUser = auth().currentUser;
       if (!currentUser) {
         throw new Error('User not authenticated');
       }
 
+      // Get ID token for AI service
       const idToken = await currentUser.getIdToken();
+      if (!idToken) {
+        throw new Error('Failed to get authentication token');
+      }
 
-      // Create the verse context for the AI API
+      // Create context for AI
       const verseContext = {
-        bookName,
-        chapter,
-        verse,
-        verseText,
+        bookName: bookName,
+        chapter: chapter,
+        verse: verse,
+        verseText: verseText,
       };
 
-      // Call the AI API to create devotional content
+      console.log('[DevotionalStore] Calling AI service with context:', verseContext);
+
+      // Call AI service to create devotional
       const aiResponse = await createDevotionalFromVerse(verseContext, idToken);
+      
+      // If the AI service returns a fallback, we still have a valid devotional
+      if (!aiResponse) {
+        throw new Error('Failed to generate devotional content');
+      }
 
       // Get random background image, excluding the daily devotional's image
       const { dailyDevotional } = get();
@@ -519,23 +522,25 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         likes: 0,
         shares: 0,
         completed: 0,
-        date: new Date().toISOString(),
+        date: new Date().toISOString().split('T')[0], // Store as YYYY-MM-DD format for consistency
         imageURL: selectedImageURL,
         verse: verseText,
-        userId: currentUser.uid,
       };
 
-      // Save to Firestore customDevotionals collection
+      // Save to Firestore customDevotionals collection with userId as additional field
       try {
-        await firestore().collection('customDevotionals').doc(aiDevotional.id).set(aiDevotional);
+        await firestore().collection('customDevotionals').doc(aiDevotional.id).set({
+          ...aiDevotional,
+          userId: currentUser.uid, // Add userId as additional field for Firestore
+        } as any);
         console.log('[DevotionalStore] Saved custom devotional to Firestore:', aiDevotional.id);
 
         // Also track in user document
         // Import is done at the top of the file to avoid circular dependency issues
-        const { useUserStore } = require('./userStore');
-        await useUserStore
-          .getState()
-          .addCustomDevotional(aiDevotional.id, firestore.Timestamp.now());
+        // const { useUserStore } = require('./userStore');
+        // await useUserStore
+        //   .getState()
+        //   .addCustomDevotional(aiDevotional.id, firestore.Timestamp.now());
         console.log('[DevotionalStore] Added custom devotional reference to user document');
       } catch (Error) {
         console.error('[DevotionalStore] Failed to save custom devotional to Firestore:', Error);
@@ -562,6 +567,18 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
           null // No image for AI devotionals
         );
       }
+
+      // Trigger a refresh of recent devotionals to update the UI immediately
+      // This will help the HomeScreen component show the new devotional
+      setTimeout(() => {
+        const fetchRecentDevotionals = get().fetchRecentDevotionals;
+        if (fetchRecentDevotionals) {
+          console.log('[DevotionalStore] Triggering refresh of recent devotionals after creating new AI devotional');
+          fetchRecentDevotionals().catch(error => {
+            console.error('[DevotionalStore] Error refreshing recent devotionals:', error);
+          });
+        }
+      }, 1000); // Small delay to ensure Firestore write is complete
     } catch (error: unknown) {
       console.error('[DevotionalStore] Error creating AI devotional:', error);
 
@@ -583,7 +600,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         } else if (error.message.includes('HTTP 429')) {
           errorMessage = 'Too many requests. Please wait a moment and try again.';
         } else if (error.message.includes('HTTP 500')) {
-          errorMessage = 'Server error. Please try again later.';
+          errorMessage = 'Our AI service is temporarily unavailable. Please try again in a few moments.';
         } else if (error.message.includes('User not authenticated')) {
           errorMessage = 'Please sign in to create custom devotionals.';
         } else if (error.name === 'AbortError') {
@@ -713,6 +730,19 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
           devotionalWithId.imageURL || null
         );
       }
+
+      // Trigger a refresh of recent devotionals to update the UI immediately
+      // This will help the HomeScreen component show the new devotional
+      setTimeout(() => {
+        const fetchRecentDevotionals = get().fetchRecentDevotionals;
+        if (fetchRecentDevotionals) {
+          console.log('[DevotionalStore] Triggering refresh of recent devotionals after creating new custom devotional');
+          fetchRecentDevotionals().catch(error => {
+            console.error('[DevotionalStore] Error refreshing recent devotionals:', error);
+          });
+        }
+      }, 1000); // Small delay to ensure Firestore write is complete
+
     } catch (error) {
       console.error('[DevotionalStore] Error creating custom devotional from check-in:', error);
       throw error;
@@ -739,12 +769,19 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
     }
   },
+  setFetchingRecentDevotionals: (value: boolean) => {
+    set({ fetchingRecentDevotionals: value });
+  },
+  setRecentDevotionals: (devotionals: (Devotional | null)[]) => {
+    set({ recentDevotionals: devotionals });
+  },
 
   // NEW ACTION: Fetch current devotional plus 2 previous days
   fetchRecentDevotionals: async () => {
     console.log('🚀 Fetching current devotional plus 2 previous days...');
-
     try {
+      useDevotionalStore.getState().setFetchingRecentDevotionals(true);
+    
       const today = dayjs().startOf('day');
 
       // Get current user ID
@@ -767,12 +804,11 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         const [dailyQuerySnapResult, customQuerySnapResult] = await Promise.all([
           // Daily devotionals for TODAY only (no userId filter)
           firestore().collection('dailyDevotionals').where('date', '==', todayDate).get(),
-          // Custom devotionals for TODAY only (user-specific)
+          // Custom devotionals for TODAY only (user-specific) - query by date field
           firestore()
             .collection('customDevotionals')
             .where('userId', '==', currentUserId)
-            .where('createdAt', '>=', todayDate)
-            .where('createdAt', '<=', todayDate + 'T23:59:59.999Z')
+            .where('date', '==', todayDate)
             .orderBy('createdAt', 'desc')
             .get(),
         ]);
@@ -795,10 +831,27 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
           .where('userId', '==', currentUserId)
           .get();
 
-        // Filter by TODAY's date in memory
+        // Filter by TODAY's date in memory using the date field
         const filteredCustomDocs = allCustomDevotionals.docs.filter((doc) => {
-          const createdAt = doc.data().createdAt;
-          return createdAt >= todayDate && createdAt <= todayDate + 'T23:59:59.999Z';
+          const devotionalData = doc.data();
+          const devotionalDate = devotionalData.date || devotionalData.createdAt;
+          
+          // Handle both YYYY-MM-DD format and ISO string format
+          let dateToCompare;
+          if (typeof devotionalDate === 'string') {
+            if (devotionalDate.includes('T')) {
+              // ISO string format, extract YYYY-MM-DD
+              dateToCompare = devotionalDate.split('T')[0];
+            } else {
+              // Already in YYYY-MM-DD format
+              dateToCompare = devotionalDate;
+            }
+          } else {
+            // Handle Firestore Timestamp
+            dateToCompare = dayjs(devotionalDate.toDate()).format('YYYY-MM-DD');
+          }
+          
+          return dateToCompare === todayDate;
         });
 
         // Sort by createdAt in memory (most recent first)
@@ -827,6 +880,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
               ...doc.data(),
               id: doc.id,
               type: 'daily',
+              likedBy: doc.data().likedBy || [], // Ensure likedBy field is included
             }) as Devotional & { type: string }
         ),
         ...customQuerySnap.docs.map(
@@ -835,7 +889,8 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
               ...doc.data(),
               id: doc.id,
               type: 'custom',
-              date: doc.data().createdAt, // Use createdAt as date for custom devotionals
+              date: doc.data().date || doc.data().createdAt, // Use date field if available, fallback to createdAt
+              likedBy: doc.data().likedBy || [], // Ensure likedBy field is included
             }) as Devotional & { type: string }
         ),
       ];
@@ -951,7 +1006,12 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
               console.error(`Failed to process verse text for ${reference}`, e);
             }
           }
-          return { ...devotional, verse: verseText, bibleReference: reference };
+          return { 
+            ...devotional, 
+            verse: verseText, 
+            bibleReference: reference,
+            likedBy: devotional.likedBy || [], // Ensure likedBy is always an array
+          };
         })
       );
 
@@ -964,12 +1024,20 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
           id: d?.id,
           date: d?.date,
           bibleReference: d?.bibleReference,
+          likedBy: d?.likedBy,
+          likes: d?.likes,
         }))
       );
+      
+      // Update global state with recent devotionals
+      set({ recentDevotionals: processedDevotionals });
+      
       return processedDevotionals;
     } catch (error) {
       console.error('Error fetching recent devotionals:', error);
       return [];
+    } finally {
+      useDevotionalStore.getState().setFetchingRecentDevotionals(false);
     }
   },
 
@@ -1119,7 +1187,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     }
   },
 
-  updateLikeStatus: (devotionalId, liked) => {
+  updateLikeStatus: (devotionalId, liked) => {  
     set((state) => {
       const currentUserId = auth().currentUser?.uid;
       if (!currentUserId) return state;
@@ -1137,11 +1205,12 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         return devotional;
       };
 
-      return {
+      const updatedState = {
         dailyDevotional: updateDevotional(state.dailyDevotional),
         currentDevotional: updateDevotional(state.currentDevotional),
         customDevotional: updateDevotional(state.customDevotional),
       };
+      return updatedState;
     });
   },
 

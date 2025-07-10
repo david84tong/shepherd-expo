@@ -1070,6 +1070,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
       {showSuccess ? (
         <View style={{ marginHorizontal: 24, flex: 1, marginTop: 24 }}>
           <SuccessMessage
+            screenType="prayer"
             title={i18n.t('prayer_complete')}
             description={i18n.t('prayer_complete_desc')}
             level={levelInfo.level}
@@ -1121,7 +1122,7 @@ const PrayerView = forwardRef<PrayerViewRef, PrayerViewProps>(({
                 homeStore.setSawStreakToday(true);
 
                 // Navigate to streak screen
-                const { router } = require('expo-router');
+               
                 router.push('/streak');
 
                 analytics.logEvent('PrayerView_StreakTriggered_FromGoHome', {

@@ -48,7 +48,7 @@ export const onAppForegroundOrInit = async () => {
     });
     if (success && firestoreData) {
       // Update the Zustand store with Firestore data
-      useUserStore.getState().syncFirestoreData(firestoreData);
+      await useUserStore.getState().syncFirestoreData(firestoreData);
       // Update selected path if needed
       const updatedUserData = getUser();
       if (updatedUserData.selectedPathId) {
@@ -94,7 +94,7 @@ const restoreUserState = async () => {
     const readingCompleted = useHomeStore.getState().readingCompleted;
     const completedMapPaths = useUserStore.getState().completedMapPaths;
     // Update the Zustand store with Firestore data
-    useUserStore.getState().syncFirestoreData(firestoreData);
+    await useUserStore.getState().syncFirestoreData(firestoreData);
     if (firestoreData?.completedPrayers && !prayerCompleted) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);

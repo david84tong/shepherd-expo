@@ -22,7 +22,11 @@ import Reanimated, {
   Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useHomeStore, SuccessAnimationType } from '../app/stores/homeStore';
+import {
+  useHomeStore,
+  SuccessAnimationType,
+  isBonusAvailable as isBonusAvailableSelector,
+} from '../app/stores/homeStore';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '../app/stores/userStore';
 import { useDevotionalStore } from '../app/stores/devotionalStore';
@@ -117,6 +121,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   const addCompletedReflection = useUserStore((state) => state.addCompletedReflection);
   const setLastReflectionDate = useUserStore((state) => state.setLastReflectionDate);
 
+  const shouldShowBonus = useHomeStore(isBonusAvailableSelector);
+
   // Animation values
   const cardAnimY = useRef(new Animated.Value(200)).current;
   const cardOpacity = useRef(new Animated.Value(0)).current;
@@ -210,6 +216,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     // First try to use the devotional reflection prompt (handle both string and object structures)
     if (currentDevotional?.reflectionPrompt) {
       if (typeof currentDevotional.reflectionPrompt === 'string') {
+      
         console.log('📝 Using string reflection prompt:', currentDevotional.reflectionPrompt);
         return currentDevotional.reflectionPrompt;
       } else if (typeof currentDevotional.reflectionPrompt === 'object') {
@@ -294,12 +301,14 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       setKeyboardHeight(0);
       setKeyboardVisible(false);
 
-      // Reset keyboard visibility in homeStore and snap back to original position
+      // Reset keyboard visibility in homeStore and snap back to default position
       useHomeStore.getState().setKeyboardVisible(false);
-      // Get the bottomSheetRef from homeStore and snap back to default position (80%)
-      const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
-      if (bottomSheetRef?.current) {
-        bottomSheetRef.current.snapToIndex(4); // Index 4 is 80% in snapPoints array
+      // Only snap back to 80% if we are NOT in success state
+      if (!success) {
+        const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
+        if (bottomSheetRef?.current) {
+          bottomSheetRef.current.snapToIndex(4); // Index 4 is 80% in snapPoints array
+        }
       }
     };
 
@@ -713,11 +722,13 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       pointerEvents="box-none">
       <Animated.View style={{ opacity: containerOpacity, flex: 1 }}>
         <SuccessMessage
+          screenType="reflection"
           title={i18n.t('reflection_complete')}
           description={i18n.t('reflection_complete_desc')}
           level={levelInfo.level}
           prevLevel={levelInfo.level}
           buttonsEnabled={buttonsEnabled}
+          showCollectBonus={shouldShowBonus}
           onLoad={() => {
             useSoundStore.getState().playJournalingSuccessSound();
           }}
@@ -747,7 +758,19 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
               const sawStreakToday = useHomeStore.getState().sawStreakToday;
               const isFirstReadingOfDay = !sawStreakToday;
-              const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
+              // Check if bonus is available after reflection completion
+              const freshState = useHomeStore.getState();
+              const isBonusAvailable = freshState.readingCompleted && freshState.prayerCompleted && freshState.reflectionCompleted && isFirstReadingOfDay && !freshState.sawDailyBonus;
+
+              const freshHomeState = useHomeStore.getState();
+              console.log('🔍 JOURNAL SUCCESS - Bonus check (onGoHome):', {
+                readingCompleted: freshHomeState.readingCompleted,
+                prayerCompleted: freshHomeState.prayerCompleted,
+                reflectionCompleted: reflectionCompleted,
+                isFirstReadingOfDay,
+                sawDailyBonus,
+                isBonusAvailable
+              });
 
               if (isBonusAvailable) {
                 setSuccessType(SuccessAnimationType.BONUS);
@@ -817,7 +840,20 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             // Handle bonus collection if available
             const sawStreakToday = useHomeStore.getState().sawStreakToday;
             const isFirstReadingOfDay = !sawStreakToday;
-            const isBonusAvailable = readingCompleted && prayerCompleted && isFirstReadingOfDay && !sawDailyBonus;
+            // Check current state from homeStore to get the most up-to-date values
+            const currentHomeState = useHomeStore.getState();
+            // Check if bonus is available after reflection completion
+            const isBonusAvailable = currentHomeState.readingCompleted && currentHomeState.prayerCompleted && currentHomeState.reflectionCompleted && isFirstReadingOfDay && !currentHomeState.sawDailyBonus;
+
+            const freshHomeState = useHomeStore.getState();
+            console.log('🔍 JOURNAL SUCCESS - Bonus check (onPray):', {
+              readingCompleted: freshHomeState.readingCompleted,
+              prayerCompleted: freshHomeState.prayerCompleted,
+              reflectionCompleted: reflectionCompleted,
+              isFirstReadingOfDay,
+              sawDailyBonus,
+              isBonusAvailable
+            });
 
             if (isBonusAvailable) {
               // For bonus collection, navigate immediately without delay
@@ -887,7 +923,13 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
   ) : (
     <Reanimated.View
       className="flex-1 w-full mt-2 bg-surfaceCream"
-      pointerEvents="box-none">
+      pointerEvents="box-none"
+      onTouchStart={() => {
+        // Dismiss keyboard when tapping anywhere on the screen
+        if (keyboardVisible) {
+          Keyboard.dismiss();
+        }
+      }}>
       <Animated.View style={{ opacity: containerOpacity, flex: 1 }}>
         <View className="flex-1 px-6">
 
@@ -895,7 +937,14 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             {getReflectionPrompt()}
           </Text>
 
-          <View style={{ minHeight: RPH(25), maxHeight: RPH(40), borderRadius: 20 }} className="w-full  bg-surfaceCream border-[3px] border-gold/70 p-5 mb-2 shadow-card" >
+          <View
+            style={{ minHeight: RPH(25), maxHeight: RPH(40), borderRadius: 20 }}
+            className="w-full  bg-surfaceCream border-[3px] border-gold/70 p-5 mb-2 shadow-card"
+            onTouchStart={(e) => {
+              // Prevent keyboard dismissal when tapping on the input container
+              e.stopPropagation();
+            }}
+          >
             <TextInput
               ref={inputRef}
               className="w-full bg-transparent text-brown/95 text-[18px] font-nunito-medium  text-left"
@@ -919,8 +968,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                 const riveRef = homeStore.riveRef;
                 if (riveRef?.current?.setInputState) {
                   try {
-                    // riveRef.current.setInputState('State Machine 1', 'Action-Number', 12); // 12 = Writing
-                    console.log('Set Rive animation to writing state (12) on input focus');
+                    riveRef.current.setInputState('State Machine 1', 'Action-Number', 10); // 10 = Writing
+                    console.log('Set Rive animation to writing state (10) on input focus');
                   } catch (error) {
                     console.log('Could not set Rive to writing state on focus:', error);
                   }
@@ -1096,8 +1145,15 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
                     console.log('🔍 JOURNAL SUCCESS - Setting success state to true');
                     setSuccess(true);
 
-                    // Set Rive to achievement animation
+                    // Snap bottom sheet to lowest point after saving
                     const homeStore = useHomeStore.getState();
+                    const bottomSheetRef = homeStore.bottomSheetRef;
+                    if (bottomSheetRef?.current) {
+                      bottomSheetRef.current.snapToIndex(0); // Snap to lowest point (60%)
+                      console.log('🔍 JOURNAL - Snapped bottom sheet to lowest point after save');
+                    }
+
+                    // Set Rive to celebration animation
                     const riveRef = homeStore.riveRef;
                     if (riveRef?.current?.setInputState) {
                       try {

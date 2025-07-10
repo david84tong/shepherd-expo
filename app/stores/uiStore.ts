@@ -74,6 +74,10 @@ interface UIState {
   tabBarVisible: boolean;
   setShowDevotionalContent: (value: boolean) => void;
   setTabBarVisible: (visible: boolean) => void;
+
+  // Devotional reader state
+  devotionalReaderVisible: boolean;
+  setDevotionalReaderVisible: (visible: boolean) => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -190,4 +194,8 @@ export const useUIStore = create<UIState>((set) => ({
   tabBarVisible: true,
   setShowDevotionalContent: (value) => set({ showDevotionalContent: value }),
   setTabBarVisible: (visible) => set({ tabBarVisible: visible }),
+
+  // Devotional reader state
+  devotionalReaderVisible: false,
+  setDevotionalReaderVisible: (visible) => set({ devotionalReaderVisible: visible }),
 })); 
