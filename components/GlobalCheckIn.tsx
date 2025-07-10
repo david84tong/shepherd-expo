@@ -52,9 +52,6 @@ const getResponsiveCardDimensions = () => {
   const isLargeDevice = screenWidth >= 414 && screenWidth < 768;
   const isTablet = screenWidth >= 768;
 
-  // Debug logging for iPhone 16 Pro Max
-  console.log('Device detection - Screen width:', screenWidth, 'isLargeDevice:', isLargeDevice);
-
   // Calculate items per row based on device size
   const getMoodItemsPerRow = () => {
     if (isSmallDevice) return 2;
@@ -85,7 +82,6 @@ const getResponsiveCardDimensions = () => {
     );
   }
 
-  console.log('Focus box calculation - availableWidth:', availableWidth, 'focusBoxWidth:', focusBoxWidth, 'gap:', gap);
 
   return {
     mood: {
@@ -678,8 +674,6 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     console.log('Screen width:', screenWidth, 'isSmallDevice:', dimensions.isSmallDevice);
     const iconSize = dimensions.isSmallDevice ? RPH(4.2) : RPH(3.7); // Larger icons for iPhone SE
     
-    // Debug logging for struggle screen
-    console.log('Struggle screen - Screen width:', screenWidth, 'focus width:', dimensions.focus.width, 'gap:', dimensions.gap);
     
     return (
       <Animated.View
