@@ -205,6 +205,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
     // First try to use the devotional reflection prompt (handle both string and object structures)
     if (currentDevotional?.reflectionPrompt) {
       if (typeof currentDevotional.reflectionPrompt === 'string') {
+      
         console.log('📝 Using string reflection prompt:', currentDevotional.reflectionPrompt);
         return currentDevotional.reflectionPrompt;
       } else if (typeof currentDevotional.reflectionPrompt === 'object' && (currentDevotional.reflectionPrompt as any).en) {
@@ -261,12 +262,14 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
       setKeyboardHeight(0);
       setKeyboardVisible(false);
 
-      // Reset keyboard visibility in homeStore and snap back to original position
+      // Reset keyboard visibility in homeStore and snap back to default position
       useHomeStore.getState().setKeyboardVisible(false);
-      // Get the bottomSheetRef from homeStore and snap back to default position (80%)
-      const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
-      if (bottomSheetRef?.current) {
-        bottomSheetRef.current.snapToIndex(4); // Index 4 is 80% in snapPoints array
+      // Only snap back to 80% if we are NOT in success state
+      if (!success) {
+        const bottomSheetRef = useHomeStore.getState().bottomSheetRef;
+        if (bottomSheetRef?.current) {
+          bottomSheetRef.current.snapToIndex(4); // Index 4 is 80% in snapPoints array
+        }
       }
     };
 
@@ -685,6 +688,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
           level={levelInfo.level}
           prevLevel={levelInfo.level}
           buttonsEnabled={buttonsEnabled}
+          showCollectBonus={false} // Let SuccessMessage determine this automatically
           onLoad={() => {
             useSoundStore.getState().playJournalingSuccessSound();
           }}

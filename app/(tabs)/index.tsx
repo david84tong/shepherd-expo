@@ -1153,7 +1153,7 @@ export default function HomeScreen() {
                                 // If only one devotional, render it directly without CardStack
                                 if (finalDevotionals.length === 1) {
                                   return (
-                                    <View className="mt-4">
+                                    <View className="mt-4 mb-8">
                                       <DailyVerseCard
                                         devotional={finalDevotionals[0]}
                                         share={true}

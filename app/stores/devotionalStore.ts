@@ -493,6 +493,11 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
       // Call AI service to create devotional
       const aiResponse = await createDevotionalFromVerse(verseContext, idToken);
+      
+      // If the AI service returns a fallback, we still have a valid devotional
+      if (!aiResponse) {
+        throw new Error('Failed to generate devotional content');
+      }
 
       // Get random background image, excluding the daily devotional's image
       const { dailyDevotional } = get();
@@ -592,7 +597,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         } else if (error.message.includes('HTTP 429')) {
           errorMessage = 'Too many requests. Please wait a moment and try again.';
         } else if (error.message.includes('HTTP 500')) {
-          errorMessage = 'Server error. Please try again later.';
+          errorMessage = 'Our AI service is temporarily unavailable. Please try again in a few moments.';
         } else if (error.message.includes('User not authenticated')) {
           errorMessage = 'Please sign in to create custom devotionals.';
         } else if (error.name === 'AbortError') {

@@ -227,16 +227,18 @@ const OldPricingScreen = () => {
     return (
       <>
         {/* Header */}
-        <AnimatedItem index={0} animateItemFromBottom={animateScreenFromBottom}>
-          <View className="flex-row items-center justify-between px-5 py-3 mb-3">
-            <Animated.View entering={FadeIn.duration(600)}>
-              <TouchableOpacity onPress={handleBack} className="p-2">
-                <Feather name="x" size={28} color="#B89B4C" />
-              </TouchableOpacity>
-            </Animated.View>
-            <View className="w-10" />
-          </View>
-        </AnimatedItem>
+        {IS_ANDROID && (
+          <AnimatedItem index={0} animateItemFromBottom={animateScreenFromBottom}>
+            <View className="flex-row items-center justify-between px-5 py-3 mb-3">
+              <Animated.View entering={FadeIn.duration(600)}>
+                <TouchableOpacity onPress={handleBack} className="p-2">
+                  <Feather name="x" size={28} color="#B89B4C" />
+                </TouchableOpacity>
+              </Animated.View>
+              <View className="w-10" />
+            </View>
+          </AnimatedItem>
+        )}
 
         {/* Main content */}
         <ScrollView

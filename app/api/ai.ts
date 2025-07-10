@@ -148,8 +148,15 @@ Make sure your response is valid JSON format.`
         console.error('[AI API] HTTP error:', {
           status: response.status,
           statusText: response.statusText,
-          errorText
+          errorText: errorText || 'No error details available'
         });
+        
+        // If it's a 500 error, try to return a fallback instead of throwing
+        if (response.status === 500) {
+          console.log('[AI API] Server error (500) detected, using fallback devotional');
+          return createFallbackDevotional(verseContext);
+        }
+        
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
@@ -355,8 +362,15 @@ Make sure your response is valid JSON format and is deeply personalized to their
         console.error('[AI API] HTTP error:', {
           status: response.status,
           statusText: response.statusText,
-          errorText
+          errorText: errorText || 'There was an error in generating the text completion response'
         });
+        
+        // If it's a 500 error, try to return a fallback instead of throwing
+        if (response.status === 500) {
+          console.log('[AI API] Server error (500) detected, using fallback devotional');
+          return createCheckInFallbackDevotional(checkInData);
+        }
+        
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
@@ -423,7 +437,17 @@ Make sure your response is valid JSON format and is deeply personalized to their
   } catch (error) {
     console.error('[AI API] Error creating devotional from check-in:', error);
     
-    // Return fallback devotional for any error
+    // Log detailed error info for debugging
+    if (error instanceof Error) {
+      console.error('[AI API] Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+    }
+    
+    // Always return fallback devotional for any error to ensure user gets content
+    console.log('[AI API] Returning fallback devotional due to error');
     return createCheckInFallbackDevotional(checkInData);
   }
 }
@@ -449,6 +473,14 @@ function createCheckInFallbackDevotional(checkInData: CheckInData): DevotionalAI
       bibleReference: '1 Thessalonians 5:18',
       prayer: 'Lord, thank You for this sense of well-being. Help me to remain grateful and mindful of Your presence throughout this day. Amen.',
       reflectionPrompt: 'What specific blessings can you thank God for today?'
+    },
+    'meh': {
+      title: 'Finding Peace in the Middle',
+      context: 'Sometimes we feel neither great nor terrible - just "meh." God meets us in these ordinary moments too. Even in the mundane, God is working.',
+      verse: 'Not that I am speaking of being in need, for I have learned in whatever situation I am to be content.',
+      bibleReference: 'Philippians 4:11',
+      prayer: 'Lord, help me find Your presence in this ordinary day. Give me eyes to see Your work even when I don\'t feel particularly inspired. Amen.',
+      reflectionPrompt: 'What small act of faithfulness can you commit to today, regardless of how you feel?'
     },
     'meb': {
       title: 'Finding Peace in the Middle',
@@ -484,8 +516,12 @@ function createCheckInFallbackDevotional(checkInData: CheckInData): DevotionalAI
     }
   };
 
-  // Get the base devotional for the mood
-  const baseDevotional = moodDevotionals[checkInData.mood] || moodDevotionals['meb'];
+  // Get the base devotional for the mood (handle case variations)
+  const moodKey = checkInData.mood.toLowerCase();
+  const baseDevotional = moodDevotionals[checkInData.mood] || 
+                        moodDevotionals[moodKey] || 
+                        moodDevotionals['meh'] || 
+                        moodDevotionals['meb'];
   
   // Customize based on focus area if provided
   if (checkInData.focus) {

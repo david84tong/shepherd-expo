@@ -1,7 +1,7 @@
 import Purchases, { PurchasesPackage, LOG_LEVEL } from 'react-native-purchases';
 import { PAYWALL_RESULT } from 'react-native-purchases-ui';
 import { create } from 'zustand';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import { useUserStore } from './userStore';
 import analytics from '~/utils/analytics';
 import { router } from 'expo-router';
@@ -210,10 +210,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         onCloseButtonPress() {
           result = PAYWALL_RESULT.CANCELLED;
           set({ isPaywallPresenting: false });
-          // Check if onboarding is completed, if not redirect to onboarding 11
+          // Check if onboarding is completed
           AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
             .then((completed) => {
-              if (completed !== 'true') {
+              if (completed !== 'true' && Platform.OS === 'ios') {
+                // For iOS users who haven't completed onboarding, just dismiss the paywall
+                console.log('iOS user skipped paywall during onboarding, dismissing paywall');
+                // No navigation - just let the paywall dismiss
+              } else if (completed !== 'true') {
+                // For Android users, redirect to onboarding 11
                 console.log('Onboarding not completed, redirecting to onboarding/11');
                 router.replace('/onboarding/11');
               }
@@ -330,8 +335,12 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
                 // Linking.openURL('https://apps.apple.com/account/subscriptions').catch(() => {
                 //   console.log('Could not open subscription management');
                 // });
+              } else if (Platform.OS === 'ios') {
+                // For iOS users who haven't completed onboarding, just dismiss the paywall
+                console.log('iOS user skipped half-off paywall during onboarding, dismissing paywall');
+                // No navigation - just let the paywall dismiss
               } else {
-                // Onboarding not complete - redirect to onboarding 11
+                // For Android users, redirect to onboarding 11
                 console.log('Onboarding not completed, redirecting to onboarding/11');
                 router.replace('/onboarding/11');
               }
@@ -433,10 +442,15 @@ const useSubscriptionStore = create<SubscriptionState>((set, get) => ({
         onCloseButtonPress() {
           result = PAYWALL_RESULT.CANCELLED;
           set({ isPaywallPresenting: false });
-          // Check if onboarding is completed, if not redirect to PricingScreen
+          // Check if onboarding is completed
           AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY)
             .then((completed) => {
-              if (completed !== 'true') {
+              if (completed !== 'true' && Platform.OS === 'ios') {
+                // For iOS users who haven't completed onboarding, just dismiss the paywall
+                console.log('iOS user skipped paywall during onboarding, dismissing paywall');
+                // No navigation - just let the paywall dismiss
+              } else if (completed !== 'true') {
+                // For Android users, redirect to PricingScreen
                 console.log('Onboarding not completed, redirecting to PricingScreen');
                 router.replace('/PricingScreen');
               }
