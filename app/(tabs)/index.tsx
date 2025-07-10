@@ -1095,7 +1095,7 @@ export default function HomeScreen() {
                         {/* Next Unit Button - Only show when all activities are completed and there's a next unit */}
 
                         {readingCompleted && (
-                          <View className="w-full mt-4 mb-0">
+                          <View className="w-full mt-4 mb-8">
                             {(() => {
                               // Show at most 2 cards: daily verse + last custom devotional
                               const devotionalsToShow: Devotional[] = [];
