@@ -154,6 +154,9 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
       pathname: '/(tabs)',
       params: { showDevotional: 'true' }
     });
+    setTimeout(() => {
+      hasNavigated.current = false;
+    }, 2000);
   }, [setCustomDevotional, hideDevotionalsSheet]);
 
   // Custom backdrop renderer
@@ -169,7 +172,10 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
     devotionalsSheetRef,
     () => ({
       show: showSheet,
-      close: () => bottomSheetRef.current?.close(),
+      close: () => {
+        hasNavigated.current = false;
+        bottomSheetRef.current?.close()
+      },
       expand: () => bottomSheetRef.current?.expand(),
     }),
     [showSheet]
@@ -199,6 +205,10 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
         <BottomSheet
           ref={bottomSheetRef}
           index={1}
+          onClose={()=>{
+           
+            hasNavigated.current = false;
+          }}
           snapPoints={snapPoints}
           enablePanDownToClose={true}
           onChange={handleSheetChange}
