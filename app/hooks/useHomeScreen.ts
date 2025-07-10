@@ -253,6 +253,37 @@ export const useHomeScreen = () => {
   const buttonTitle = useMemo(() => devotionalReaderVisible ? i18n.t('continue_button') : i18n.t('amen_button'), [devotionalReaderVisible]);
   const isDarkContant = useMemo(() => new Date().getHours() >= 19, []);
 
+    // Effects
+    useEffect(() => {
+      if (showDevotional === 'true') {
+        console.log('[useHomeScreen] Opening devotional reader from navigation param');
+        setTimeout(() => {
+          if (riveRef.current) {
+            riveRef.current.setInputState('State Machine 1', 'Action-Number', 9);
+          }
+        }, 100);
+        // Clear any existing timer
+        if (clearParamTimerRef.current) {
+          clearTimeout(clearParamTimerRef.current);
+        }
+  
+        // Set new timer to clear the parameter
+        clearParamTimerRef.current = setTimeout(() => {
+          if (router?.setParams) {
+            router.setParams({ showDevotional: undefined });
+          }
+          clearParamTimerRef.current = null;
+        }, 1000);
+      }
+      // Cleanup function to clear timer on unmount or dependency change
+      return () => {
+        if (clearParamTimerRef.current) {
+          clearTimeout(clearParamTimerRef.current);
+          clearParamTimerRef.current = null;
+        }
+      };
+    }, [showDevotional]);
+  
 
   // Sync devotional data from store
   useEffect(() => {
