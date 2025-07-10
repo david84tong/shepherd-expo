@@ -137,7 +137,7 @@ export const useHomeStore = create<HomeState>()(
       setSawDailyBonus: (saw) => set({ sawDailyBonus: saw }),
       setTappedPrayAboutVerse: (tapped) => set({ tappedPrayAboutVerse: tapped }),
       setTappedReflectAboutVerse: (tapped) => set({ tappedReflectAboutVerse: tapped }),
-      setSawStreakToday: (saw) => {
+      setSawStreakToday: (saw) => {        
         const today = new Date().toISOString().split('T')[0];
         const { lastStreakDate } = get();
         
@@ -155,6 +155,7 @@ export const useHomeStore = create<HomeState>()(
           set({ sawStreakToday: saw });
         } else {
           // Same day, don't allow setting to true again
+          set({ sawStreakToday: saw });
           console.log('🚫 HOMESTORE - setSawStreakToday blocked (same day):', { date: today, lastStreakDate, timestamp: new Date().toLocaleTimeString() });
         }
       },
