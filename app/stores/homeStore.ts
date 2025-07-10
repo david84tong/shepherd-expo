@@ -74,7 +74,7 @@ interface HomeState {
 
 export const isBonusAvailable = (state: HomeState) => {
   const isFirstReadingOfDay = !state.sawStreakToday;
-  return state.readingCompleted && state.prayerCompleted && isFirstReadingOfDay && !state.sawDailyBonus;
+  return state.readingCompleted && state.prayerCompleted && state.reflectionCompleted && isFirstReadingOfDay && !state.sawDailyBonus;
 };
 
 /**

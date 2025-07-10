@@ -698,6 +698,11 @@ function resetOpenedDevotionalFromParam(){
     
 
 
+    // Snap to 60% (index 0) when opening devotional manually
+    if (bottomSheetRef.current) {
+      bottomSheetRef.current.snapToIndex(0);
+    }
+
     Animated.timing(devotionalCardOpacityAnim, {
       toValue: 0,
       duration: 400,

@@ -724,8 +724,9 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
 
               const sawStreakToday = useHomeStore.getState().sawStreakToday;
               const isFirstReadingOfDay = !sawStreakToday;
-              // Since we just completed reflection, all activities are now complete
-              const isBonusAvailable = shouldShowBonus && reflectionCompleted;
+              // Check if bonus is available after reflection completion
+              const freshState = useHomeStore.getState();
+              const isBonusAvailable = freshState.readingCompleted && freshState.prayerCompleted && freshState.reflectionCompleted && isFirstReadingOfDay && !freshState.sawDailyBonus;
 
               const freshHomeState = useHomeStore.getState();
               console.log('🔍 JOURNAL SUCCESS - Bonus check (onGoHome):', {
@@ -807,8 +808,8 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             const isFirstReadingOfDay = !sawStreakToday;
             // Check current state from homeStore to get the most up-to-date values
             const currentHomeState = useHomeStore.getState();
-            // Since we just completed reflection, all activities are now complete
-            const isBonusAvailable = shouldShowBonus && reflectionCompleted;
+            // Check if bonus is available after reflection completion
+            const isBonusAvailable = currentHomeState.readingCompleted && currentHomeState.prayerCompleted && currentHomeState.reflectionCompleted && isFirstReadingOfDay && !currentHomeState.sawDailyBonus;
 
             const freshHomeState = useHomeStore.getState();
             console.log('🔍 JOURNAL SUCCESS - Bonus check (onPray):', {
