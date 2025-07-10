@@ -16,6 +16,7 @@ import { router } from 'expo-router';
 import SavedDevotionalCard from '~/components/SavedDevotionalCard';
 import i18n from '~/app/utils/i18n';
 import { useHomeStore } from '~/app/stores/homeStore';
+import { appLog } from '~/app/helper/helper';
 
 
 // Define the ref type
@@ -132,11 +133,11 @@ const GlobalDevotionalsSheet: React.FC<GlobalDevotionalsSheetProps> = ({ devotio
   // Handle start devotional
   const handleStartDevotional = useCallback((devotional: Devotional) => {
     hapticLight();
-    console.log('[GlobalDevotionalsSheet] Starting saved devotional:', devotional.id);
+    appLog('[GlobalDevotionalsSheet] Starting saved devotional:', devotional.id);
     
     // Check navigation guard before navigating
     if (hasNavigated.current) {
-      console.log('[GlobalDevotionalsSheet] Navigation already occurred, skipping');
+      appLog('[GlobalDevotionalsSheet] Navigation already occurred, skipping');
       return;
     }
     

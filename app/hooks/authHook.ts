@@ -13,6 +13,7 @@ import { useSoundStore } from '../stores/soundStore';
 import analytics from '../../utils/analytics';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { syncStreakDataToWidget } from '~/utils/widgetSync';
+import { appLog } from '../helper/helper';
 
 // Safely get WidgetDataSharer with error handling
 const getWidgetDataSharer = () => {
@@ -62,7 +63,7 @@ export const checkUserExists = async (uid: string): Promise<boolean> => {
     const userDoc = await firestore().collection('users').doc(uid).get();
     return userDoc.exists;
   } catch (error) {
-    console.log('Error checking if user exists:', error);
+    appLog('Error checking if user exists:', error);
     return false;
   }
 };
@@ -90,19 +91,19 @@ export const useAuth = () => {
   }, []);
 
   const signInWithApple = async (isLoginMode = false) => {
-    console.log('[Auth] signInWithApple() called');
+    appLog('[Auth] signInWithApple() called');
     try {
       setLoading(true);
       setError(null);
       // Check if Apple Sign In is available on the device
       const isAvailable = await AppleAuthentication.isAvailableAsync();
       if (!isAvailable) {
-        console.log('[Auth] Apple Authentication is not available on this device');
+        appLog('[Auth] Apple Authentication is not available on this device');
         throw new Error('Apple Authentication is not available on this device');
       }
 
       // Start the Apple authentication flow using Expo
-      console.log('[Auth] Launching AppleAuthentication.signInAsync');
+      appLog('[Auth] Launching AppleAuthentication.signInAsync');
       const credential = await AppleAuthentication.signInAsync({
         requestedScopes: [
           AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
@@ -111,7 +112,7 @@ export const useAuth = () => {
       });
 
       // Log full credential object (excluding sensitive data) for debugging
-      console.log('[Auth] Apple credential received:', {
+      appLog('[Auth] Apple credential received:', {
         user: credential?.user,
         fullName: credential?.fullName,
         email: credential?.email ? 'email-exists' : 'no-email',
@@ -124,7 +125,7 @@ export const useAuth = () => {
       // Create Firebase credential from Apple response
       const { identityToken, authorizationCode } = credential;
       if (!identityToken) {
-        console.log('[Auth] No identityToken returned from Apple');
+        appLog('[Auth] No identityToken returned from Apple');
         throw new Error('Authentication incomplete: No identity token provided from Apple');
       }
       // Create a Firebase credential
@@ -132,11 +133,11 @@ export const useAuth = () => {
         identityToken,
         authorizationCode || undefined
       );
-      console.log('[Auth] Firebase credential created successfully');
+      appLog('[Auth] Firebase credential created successfully');
 
       // Sign in to Firebase with the Apple credential
       const userCredential = await auth().signInWithCredential(firebaseCredential);
-      console.log('[Auth] Firebase sign-in successful, uid:', userCredential.user.uid);
+      appLog('[Auth] Firebase sign-in successful, uid:', userCredential.user.uid);
 
       // Check if user exists in Firestore
       const userExists = await checkUserExists(userCredential.user.uid);
@@ -155,11 +156,11 @@ export const useAuth = () => {
 
       if (isLoginMode) {
         // In login mode, fetch the user's data from Firestore
-        console.log('[Auth] Login mode: fetching existing user data from Firestore');
+        appLog('[Auth] Login mode: fetching existing user data from Firestore');
         await new Promise((resolve) => setTimeout(resolve, 5000));
         const success = await fetchFromFirestore?.({ currentLoggedUser: userCredential?.user });
         if (!success) {
-          console.log('[Auth] Failed to fetch user data from Firestore');
+          appLog('[Auth] Failed to fetch user data from Firestore');
           throw new Error('Failed to fetch your account data. Please try again.');
         }
         return userCredential.user;
@@ -175,7 +176,7 @@ export const useAuth = () => {
         ? `${credential.fullName.givenName} ${credential.fullName.familyName || ''}`
         : userCredential.user.displayName || 'Anonymous User';
 
-      console.log('[Auth] User info combined:', {
+      appLog('[Auth] User info combined:', {
         uid,
         displayName,
         email: email ? 'exists' : 'none',
@@ -191,7 +192,7 @@ export const useAuth = () => {
       };
 
       await firestore().collection('users').doc(uid).set(userDoc, { merge: true });
-      console.log('[Auth] User document updated in Firestore');
+      appLog('[Auth] User document updated in Firestore');
 
       // Update local store
       updateUser({
@@ -214,7 +215,7 @@ export const useAuth = () => {
       return userCredential.user;
     } catch (err) {
       const error = err as Error;
-      console.log('[Auth] Apple sign in error details:', {
+      appLog('[Auth] Apple sign in error details:', {
         message: error.message,
         name: error.name,
         stack: error.stack,
@@ -222,10 +223,10 @@ export const useAuth = () => {
 
       // Check for specific Apple Authentication errors
       if (error.message?.includes("The operation couldn't be completed")) {
-        console.log('[Auth] Apple Sign In process was interrupted or incomplete');
+        appLog('[Auth] Apple Sign In process was interrupted or incomplete');
         error.message = 'Apple Sign In process was incomplete. Please try again.';
       } else if (error.message?.includes('canceled')) {
-        console.log('[Auth] User canceled the Apple Sign In');
+        appLog('[Auth] User canceled the Apple Sign In');
         error.message = 'Apple Sign In was canceled. Please try again.';
       } else if (error.message === 'EXISTS') {
         error.message =
@@ -248,15 +249,15 @@ export const useAuth = () => {
   };
 
   const signInAnonymously = async () => {
-    console.log('[Auth] signInAnonymously() called');
+    appLog('[Auth] signInAnonymously() called');
     try {
       setLoading(true);
       setError(null);
 
       // Sign in anonymously with Firebase
-      console.log('[Auth] Calling auth().signInAnonymously');
+      appLog('[Auth] Calling auth().signInAnonymously');
       const userCredential = await auth().signInAnonymously();
-      console.log('[Auth] Anonymous sign-in successful, uid:', userCredential.user.uid);
+      appLog('[Auth] Anonymous sign-in successful, uid:', userCredential.user.uid);
 
       // Create anonymous user document
       const { uid } = userCredential.user;
@@ -289,7 +290,7 @@ export const useAuth = () => {
       return userCredential.user;
     } catch (err) {
       const error = err as Error;
-      console.log('[Auth] Anonymous sign in error:', error.message, error.stack);
+      appLog('[Auth] Anonymous sign in error:', error.message, error.stack);
 
       // Log authentication error
       if (analytics.isInitialized) {
@@ -306,7 +307,7 @@ export const useAuth = () => {
   };
 
   const getFirebaseIdToken = async (): Promise<string | null> => {
-    console.log('[Auth] getFirebaseIdToken() called');
+    appLog('[Auth] getFirebaseIdToken() called');
     try {
       // Get current user
       const currentUser = auth().currentUser;
@@ -317,7 +318,7 @@ export const useAuth = () => {
 
       // Request a fresh token
       const idToken = await currentUser.getIdToken(true);
-      console.log('[Auth] Firebase ID token fetched successfully');
+      appLog('[Auth] Firebase ID token fetched successfully');
       return idToken;
     } catch (error) {
       console.error('[Auth] Error getting ID token:', error);
@@ -373,7 +374,7 @@ export const useAuth = () => {
       if (isLoginMode) {
         // Wait for auth state to be ready before fetching data
         await new Promise((resolve) => setTimeout(resolve, 5000));
-        console.log('userCredential?.user ===>', userCredential?.user);
+        appLog('userCredential?.user ===>', userCredential?.user);
 
         const success = await fetchFromFirestore({ currentLoggedUser: userCredential?.user });
         if (!success) {
@@ -452,7 +453,7 @@ export const useAuth = () => {
 
       // await subscriptionStore.logoutAdaptyUser();
     } catch (error) {
-      console.log('[Auth] Error during sign out:', error);
+      appLog('[Auth] Error during sign out:', error);
       
       // Stop background music even if there was an error
       useSoundStore.getState().stopBackgroundMusic();
@@ -462,14 +463,14 @@ export const useAuth = () => {
   };
 
   const signUpWithEmailPassword = async (email: string, password: string, displayName: string) => {
-    console.log('[Auth] signUpWithEmailPassword() called');
+    appLog('[Auth] signUpWithEmailPassword() called');
     try {
       setLoading(true);
       setError(null);
 
       // Try to create the user directly - Firebase will throw an error if the email already exists
       const userCredential = await auth().createUserWithEmailAndPassword(email, password);
-      console.log('[Auth] Email/Password sign-up successful, uid:', userCredential.user.uid);
+      appLog('[Auth] Email/Password sign-up successful, uid:', userCredential.user.uid);
 
       // Update display name
       await userCredential.user.updateProfile({ displayName });
@@ -538,14 +539,14 @@ export const useAuth = () => {
   };
 
   const signInWithEmailPassword = async (email: string, password: string, isLoginMode = false) => {
-    console.log('[Auth] signInWithEmailPassword() called');
+    appLog('[Auth] signInWithEmailPassword() called');
     try {
       setLoading(true);
       setError(null);
 
       // Sign in with email and password
       const userCredential = await auth().signInWithEmailAndPassword(email, password);
-      console.log('[Auth] Email/Password sign-in successful, uid:', userCredential.user.uid);
+      appLog('[Auth] Email/Password sign-in successful, uid:', userCredential.user.uid);
 
       // In login mode, verify the user account exists
       if (isLoginMode) {
@@ -597,12 +598,12 @@ export const useAuth = () => {
 
   // Separate function for handling anonymous to Apple upgrade from profile screen
   const upgradeAnonymousToApple = async () => {
-    console.log('[Auth] Starting anonymous to Apple upgrade from profile');
+    appLog('[Auth] Starting anonymous to Apple upgrade from profile');
     try {
       // First check if we have an anonymous user
       const currentUser = auth().currentUser;
       if (!currentUser?.isAnonymous) {
-        console.log('[Auth] Current user is not anonymous, aborting upgrade');
+        appLog('[Auth] Current user is not anonymous, aborting upgrade');
         throw new Error('Current user is not anonymous');
       }
 
@@ -626,11 +627,11 @@ export const useAuth = () => {
 
       try {
         // First sign out the anonymous user
-        console.log('[Auth] Signing out anonymous user');
+        appLog('[Auth] Signing out anonymous user');
         await auth().signOut();
 
         // Then sign in with Apple
-        console.log('[Auth] Signing in with Apple');
+        appLog('[Auth] Signing in with Apple');
         const result = await auth().signInWithCredential(firebaseCredential);
 
         // Update user profile with Apple info
@@ -653,13 +654,13 @@ export const useAuth = () => {
         // Fetch and sync user data
         await fetchFromFirestore({ currentLoggedUser: result.user });
 
-        console.log('[Auth] Successfully upgraded to Apple account');
+        appLog('[Auth] Successfully upgraded to Apple account');
         return result;
       } catch (error: any) {
         console.error('[Auth] Error during upgrade:', error);
         if (error.code === 'auth/credential-already-in-use') {
           // If the Apple ID is already in use, just sign in with it
-          console.log('[Auth] Apple ID already in use, signing in with existing account');
+          appLog('[Auth] Apple ID already in use, signing in with existing account');
           const result = await auth().signInWithCredential(firebaseCredential);
           await fetchFromFirestore({ currentLoggedUser: result.user });
           return result;

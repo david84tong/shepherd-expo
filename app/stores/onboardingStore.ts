@@ -3,6 +3,7 @@ import { create } from 'zustand';
 
 import { OnboardingResponses, ONBOARDING_STORAGE_KEY } from '../models/Onboarding';
 import analytics, { AnalyticsEvent, EventCategory } from '../../utils/analytics';
+import { appLog } from '../helper/helper';
 
 // Define specific response types for screens 9 and 10
 export interface NotificationResponse {
@@ -74,9 +75,9 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
         })
       );
       
-      console.log(`✅ Saved response for ${String(key)}:`, value);
+      appLog(`✅ Saved response for ${String(key)}:`, value);
     } catch (error) {
-      console.log('❌ Error saving onboarding response:', error);
+      appLog('❌ Error saving onboarding response:', error);
     }
   },
   
@@ -111,9 +112,9 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
         })
       );
       
-      console.log('✅ Saved notification preferences:', notificationData);
+      appLog('✅ Saved notification preferences:', notificationData);
     } catch (error) {
-      console.log('❌ Error saving notification preferences:', error);
+      appLog('❌ Error saving notification preferences:', error);
     }
   },
   
@@ -148,9 +149,9 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
         })
       );
       
-      console.log('✅ Saved auth method:', authData);
+      appLog('✅ Saved auth method:', authData);
     } catch (error) {
-      console.log('❌ Error saving auth method:', error);
+      appLog('❌ Error saving auth method:', error);
     }
   },
   
@@ -164,9 +165,9 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
           currentScreen: screen,
         })
       );
-      console.log(`✅ Set current screen to ${screen}`);
+      appLog(`✅ Set current screen to ${screen}`);
     } catch (error) {
-      console.log('❌ Error saving current screen:', error);
+      appLog('❌ Error saving current screen:', error);
     }
   },
   
@@ -174,9 +175,9 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
     try {
       set({ responses: {}, currentScreen: '1' });
       await AsyncStorage.removeItem(ONBOARDING_STORAGE_KEY);
-      console.log('✅ Cleared all onboarding responses');
+      appLog('✅ Cleared all onboarding responses');
     } catch (error) {
-      console.log('❌ Error clearing onboarding responses:', error);
+      appLog('❌ Error clearing onboarding responses:', error);
     }
   },
   
@@ -187,20 +188,20 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
   
   initializeFromStorage: async () => {
     try {
-      console.log(`[OnboardingStore] 🔄 Initializing from storage...`);
+      appLog(`[OnboardingStore] 🔄 Initializing from storage...`);
       const data = await AsyncStorage.getItem(ONBOARDING_STORAGE_KEY);
-      console.log(`[OnboardingStore] 📱 Raw data from AsyncStorage:`, data);
+      appLog(`[OnboardingStore] 📱 Raw data from AsyncStorage:`, data);
       
       const parsedData = data ? JSON.parse(data) : null;
-      console.log(`[OnboardingStore] 📋 Parsed data:`, parsedData);
+      appLog(`[OnboardingStore] 📋 Parsed data:`, parsedData);
       
       if (parsedData) {
         // Handle both old and new data structures
         const currentScreen = parsedData.currentScreen || '1';
         const responses = parsedData.responses || parsedData; // Fallback for old structure
         
-        console.log(`[OnboardingStore] 📍 Extracted current screen: ${currentScreen}`);
-        console.log(`[OnboardingStore] 💾 Extracted responses:`, responses);
+        appLog(`[OnboardingStore] 📍 Extracted current screen: ${currentScreen}`);
+        appLog(`[OnboardingStore] 💾 Extracted responses:`, responses);
         
         set({
           responses: responses,
@@ -211,15 +212,15 @@ export const useOnboardingStore = create<OnboardingState>((set, get) => ({
           savedScreenToNavigateTo: currentScreen !== '1' ? currentScreen : null,
         });
         
-        console.log(`✅ Loaded onboarding state from storage - Screen: ${currentScreen}`);
+        appLog(`✅ Loaded onboarding state from storage - Screen: ${currentScreen}`);
         if (currentScreen !== '1') {
-          console.log(`📍 Will navigate to saved screen: ${currentScreen}`);
+          appLog(`📍 Will navigate to saved screen: ${currentScreen}`);
         }
         return currentScreen;
       } else {
-        console.log(`[OnboardingStore] 🟢 No saved data found`);
+        appLog(`[OnboardingStore] 🟢 No saved data found`);
         set({ isInitialized: true });
-        console.log('🟢 No onboarding state found in storage, starting fresh');
+        appLog('🟢 No onboarding state found in storage, starting fresh');
         return '1';
       }
     } catch (error) {
@@ -246,10 +247,10 @@ export const debugOnboardingStorage = async () => {
   try {
     const data = await AsyncStorage.getItem(ONBOARDING_STORAGE_KEY);
     const parsedData = data ? JSON.parse(data) : null;
-    console.log('📊 Onboarding storage:', parsedData);
+    appLog('📊 Onboarding storage:', parsedData);
     return parsedData;
   } catch (error) {
-    console.log('❌ Error reading onboarding storage:', error);
+    appLog('❌ Error reading onboarding storage:', error);
     return null;
   }
 };

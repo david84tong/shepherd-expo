@@ -7,7 +7,7 @@ import PrimaryButton from '../PrimaryButton';
 import { Devotional } from '~/app/models/Devotional';
 import { ImageBackground } from 'expo-image';
 import i18n from '../../app/utils/i18n';
-import { RPH } from '~/app/helper/helper';
+import { appLog, RPH } from '~/app/helper/helper';
 import { AppFonts } from '~/app/constants/appFonts';
 import firestore from '@react-native-firebase/firestore';
 import { useUserStore } from '~/app/stores/userStore';
@@ -39,7 +39,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
 }) => {
   // Debug logging
   useEffect(() => {
-    console.log('🎨 [DailyVerseCard] Received devotional:', {
+    appLog('🎨 [DailyVerseCard] Received devotional:', {
       id: devotional?.id,
       title: devotional?.title,
       imageURL: devotional?.imageURL,
@@ -136,7 +136,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
           originalId: devotional.id,
         };
 
-        console.log('🔍 Saving devotional to savedDevotionals:', {
+        appLog('🔍 Saving devotional to savedDevotionals:', {
           id: savedDevotionalId,
           devotionalId: devotional.id,
           userId: currentUser.id
@@ -145,7 +145,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
         await firestore().collection('savedDevotionals').doc(savedDevotionalId).set(savedDevotionalData);
       } else {
         // Remove devotional from savedDevotionals collection
-        console.log('🔍 Removing devotional from savedDevotionals:', {
+        appLog('🔍 Removing devotional from savedDevotionals:', {
           id: savedDevotionalId,
           devotionalId: devotional.id,
           userId: currentUser.id
@@ -326,7 +326,7 @@ const DailyVerseCard: React.FC<DailyVerseCardProps> = ({
           });
         }}
         onLoad={() => {
-          console.log('✅ [DailyVerseCard] Image loaded successfully:', devotional.imageURL);
+          appLog('✅ [DailyVerseCard] Image loaded successfully:', devotional.imageURL);
         }}>
         {/* Linear gradient overlay for readability - darker at top, lighter at bottom */}
         <LinearGradient

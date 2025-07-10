@@ -1,3 +1,4 @@
+import { appLog } from '~/app/helper/helper';
 import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 
@@ -9,7 +10,7 @@ admin.initializeApp();
 export const sendDailyVerseUpdate = functions.pubsub
   .schedule("every day 08:00")
   .onRun(async (context) => {
-    console.log("Running daily verse update function...");
+    appLog("Running daily verse update function...");
 
     //
     // --- 1. Determine the Verse of the Day ---
@@ -18,7 +19,7 @@ export const sendDailyVerseUpdate = functions.pubsub
     // verse from your Firestore database based on the date.
     // For now, we will use a placeholder.
     const verseReference = "John 11:35";
-    console.log(`Determined verse of the day: ${verseReference}`);
+    appLog(`Determined verse of the day: ${verseReference}`);
 
     //
     // --- 2. Construct the Silent Push Notification ---
@@ -48,9 +49,9 @@ export const sendDailyVerseUpdate = functions.pubsub
     // --- 3. Send the Notification ---
     //
     try {
-      console.log("Sending silent push notification to topic 'daily-verse'...");
+      appLog("Sending silent push notification to topic 'daily-verse'...");
       await admin.messaging().send(payload);
-      console.log("Successfully sent message.");
+      appLog("Successfully sent message.");
       return null;
     } catch (error) {
       console.error("Error sending message:", error);

@@ -4,7 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import analytics from '../utils/analytics';
 import { useSoundStore } from '../app/stores/soundStore';
 import { Feather } from '@expo/vector-icons';
-import { RPH } from '~/app/helper/helper';
+import { appLog, RPH } from '~/app/helper/helper';
 import { IS_IOS } from '~/app/utils/utils';
 import { hapticMedium } from '~/utils/haptics';
 
@@ -90,7 +90,7 @@ const PrimaryButton: React.FC<PrimaryButtonProps> = ({
         hapticMedium();
       } catch (error) {
         // Safely ignore haptic errors
-        console.log('Haptics not available');
+        appLog('Haptics not available');
       }
     }
   };

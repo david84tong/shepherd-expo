@@ -57,6 +57,7 @@ import { useRemoteConfig } from './hooks/useRemoteConfig';
 import { initializeLanguage } from './utils/i18n';
 import { useHomeStore } from './stores/homeStore';
 import { useDevotionalStore } from './stores/devotionalStore';
+import { appLog } from './helper/helper';
 // Define missing ref types
 type PrayerSheetRef = {
   show: () => void;
@@ -79,18 +80,18 @@ if (__DEV__) {
   LogBox.ignoreLogs(['Warning: ...']); // Ignore specific warnings if needed
 } else {
   // Production error logging
-  const originalConsoleError = console.log;
+  const originalConsoleError = appLog;
   console.error = (...args) => {
     originalConsoleError(...args);
     if (args[0] && typeof args[0] === 'string') {
-      console.log(`An error occurred: ${args[0].substring(0, 100)}...`);
+      appLog(`An error occurred: ${args[0].substring(0, 100)}...`);
     }
   };
 
   // Set up global error handler
   ErrorUtils.setGlobalHandler((error, isFatal) => {
     if (isFatal) {
-      console.log(
+      appLog(
         `A critical error occurred in the app: ${error.message}\n\nPlease restart the app.`
       );
     }
@@ -205,7 +206,7 @@ export default function RootLayout() {
 
   // Call onAppForegroundOrInit after initialization
   useEffect(() => {
-    console.log('isInitialized ==>', isInitialized);
+    appLog('isInitialized ==>', isInitialized);
     if (isInitialized) {
       onAppForegroundOrInit();
       // Check and show check-in after a delay to ensure everything is ready
@@ -221,20 +222,20 @@ export default function RootLayout() {
   // Check onboarding status with timeout
   const checkOnboarding = async () => {
     try {
-      console.log(`[RootLayout] 🔄 Checking onboarding status...`);
+      appLog(`[RootLayout] 🔄 Checking onboarding status...`);
 
       // Check if onboarding has been completed by looking for the key in AsyncStorage
       const onboardingCompleted = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
-      console.log('[RootLayout] Onboarding completed status:', onboardingCompleted);
+      appLog('[RootLayout] Onboarding completed status:', onboardingCompleted);
 
       // If onboarding is completed, the value will be 'true'
       const isOnboardingCompleted = onboardingCompleted === 'true';
 
       // Initialize onboarding store to load saved screen
-      console.log(`[RootLayout] 🏪 Initializing onboarding store...`);
+      appLog(`[RootLayout] 🏪 Initializing onboarding store...`);
       const onboardingStore = useOnboardingStore.getState();
       const savedScreen = await onboardingStore.initializeFromStorage();
-      console.log(`[RootLayout] 📍 Onboarding store initialized, saved screen: ${savedScreen}`);
+      appLog(`[RootLayout] 📍 Onboarding store initialized, saved screen: ${savedScreen}`);
 
       setInitialRouteDetermined(true);
       setIsOnboardingChecked(true);
@@ -242,12 +243,12 @@ export default function RootLayout() {
 
       // Log the status for debugging
       if (isOnboardingCompleted) {
-        console.log('[RootLayout] ✅ User has completed onboarding');
+        appLog('[RootLayout] ✅ User has completed onboarding');
       } else {
-        console.log('[RootLayout] ❌ User has NOT completed onboarding');
-        console.log(`[RootLayout] 📍 Saved onboarding screen: ${savedScreen}`);
+        appLog('[RootLayout] ❌ User has NOT completed onboarding');
+        appLog(`[RootLayout] 📍 Saved onboarding screen: ${savedScreen}`);
         // Let the onboarding layout handle navigation to avoid timing issues
-        console.log('[RootLayout] 📝 Navigation will be handled by onboarding layout');
+        appLog('[RootLayout] 📝 Navigation will be handled by onboarding layout');
       }
 
       return isOnboardingCompleted;
@@ -288,7 +289,7 @@ export default function RootLayout() {
         }, 3000);
       }
     } catch (error) {
-      console.log('Error checking streak status:', error);
+      appLog('Error checking streak status:', error);
     }
   };
   
@@ -303,24 +304,24 @@ export default function RootLayout() {
     const auth = require('@react-native-firebase/auth').default;
     const currentUser = auth().currentUser;
     
-    console.log('[CheckIn] checkAndShowCheckInIfNeeded called');
-    console.log('[CheckIn] Current user:', currentUser?.uid, 'Anonymous:', currentUser?.isAnonymous);
+    appLog('[CheckIn] checkAndShowCheckInIfNeeded called');
+    appLog('[CheckIn] Current user:', currentUser?.uid, 'Anonymous:', currentUser?.isAnonymous);
     
     // Don't show check-in if user is not logged in at all
     if (!currentUser) {
-      console.log('[CheckIn] Skipping check-in: User not logged in');
+      appLog('[CheckIn] Skipping check-in: User not logged in');
       return;
     }
     
     // Check if check-in is already scheduled
     if (checkInScheduledRef.current) {
-      console.log('[CheckIn] ❌ Check-in already scheduled, skipping duplicate call');
+      appLog('[CheckIn] ❌ Check-in already scheduled, skipping duplicate call');
       return;
     }
     
     // Check if hearts lost modal is visible
     if (isHeartsLostModalVisible.current) {
-      console.log('[CheckIn] ❌ Hearts lost modal is visible, delaying check-in');
+      appLog('[CheckIn] ❌ Hearts lost modal is visible, delaying check-in');
       return;
     }
     
@@ -331,7 +332,7 @@ export default function RootLayout() {
     const todaysCheckIn = checkInStore.getTodaysCheckIn();
     const checkInHistory = checkInStore.checkInHistory;
     
-    console.log('[CheckIn] Store state:', {
+    appLog('[CheckIn] Store state:', {
       hasCompletedToday,
       hasBeenOneHour,
       lastCheckInTime,
@@ -342,13 +343,13 @@ export default function RootLayout() {
     
     // Check if currently navigating
     if (checkInStore.isNavigating) {
-      console.log('[CheckIn] ❌ Not showing check-in: Currently navigating');
+      appLog('[CheckIn] ❌ Not showing check-in: Currently navigating');
       return;
     }
     
     // Check if already completed today
     if (hasCompletedToday) {
-      console.log('[CheckIn] ❌ Not showing check-in: Already completed today', {
+      appLog('[CheckIn] ❌ Not showing check-in: Already completed today', {
         todaysCheckIn,
         completedAt: todaysCheckIn?.completedAt
       });
@@ -357,7 +358,7 @@ export default function RootLayout() {
     
     // Check if one hour has passed since last check-in
     if (!hasBeenOneHour) {
-      console.log('[CheckIn] ❌ Not showing check-in: Less than one hour since last check-in', {
+      appLog('[CheckIn] ❌ Not showing check-in: Less than one hour since last check-in', {
         lastCheckInTime,
         currentTime: new Date().toISOString()
       });
@@ -365,13 +366,13 @@ export default function RootLayout() {
     }
     
     // All conditions met - show check-in
-    console.log('[CheckIn] ✅ All conditions met - showing check-in');
+    appLog('[CheckIn] ✅ All conditions met - showing check-in');
     // Mark as scheduled
     checkInScheduledRef.current = true;
     
     // Show check-in with a delay to ensure app is ready
     setTimeout(() => {
-      console.log('[CheckIn] Calling showCheckIn() now...');
+      appLog('[CheckIn] Calling showCheckIn() now...');
       showCheckIn();
       // Reset the flag after showing
       checkInScheduledRef.current = false;
@@ -381,12 +382,12 @@ export default function RootLayout() {
   // Initialize notifications system
   const initializeNotifications = async () => {
     try {
-      console.log('Initializing notification system...');
+      appLog('Initializing notification system...');
       const notificationStore = useNotificationStore.getState();
       await notificationStore.initializeNotifications();
-      console.log('Notification system initialized successfully');
+      appLog('Notification system initialized successfully');
     } catch (error) {
-      console.log('Error initializing notifications:', error);
+      appLog('Error initializing notifications:', error);
     }
   };
 
@@ -401,7 +402,7 @@ export default function RootLayout() {
   };
 
   const showCheckIn = () => {
-    console.log('[showCheckIn] Function called at:', new Date().toISOString());
+    appLog('[showCheckIn] Function called at:', new Date().toISOString());
     
     // Import auth to check if user is logged in
     const auth = require('@react-native-firebase/auth').default;
@@ -409,32 +410,32 @@ export default function RootLayout() {
     
     // Don't show check-in if user is not logged in at all
     if (!currentUser) {
-      console.log('[showCheckIn] Not showing check-in: User not logged in');
+      appLog('[showCheckIn] Not showing check-in: User not logged in');
       return;
     }
     
-    console.log('[showCheckIn] User authenticated:', currentUser.uid, 'Anonymous:', currentUser.isAnonymous);
-    console.log('[showCheckIn] checkInRef.current exists:', !!checkInRef.current);
-    console.log('[showCheckIn] isUserLoggedIn state:', isUserLoggedIn);
+    appLog('[showCheckIn] User authenticated:', currentUser.uid, 'Anonymous:', currentUser.isAnonymous);
+    appLog('[showCheckIn] checkInRef.current exists:', !!checkInRef.current);
+    appLog('[showCheckIn] isUserLoggedIn state:', isUserLoggedIn);
     
     // Check if the ref exists before trying to expand
     if (checkInRef.current) {
-      console.log('[showCheckIn] checkInRef exists, calling forceShow()');
+      appLog('[showCheckIn] checkInRef exists, calling forceShow()');
       try {
         // Use forceShow for more reliable opening
         checkInRef.current.forceShow();
-        console.log('[showCheckIn] forceShow() called successfully');
+        appLog('[showCheckIn] forceShow() called successfully');
       } catch (error) {
         console.error('[showCheckIn] Error calling forceShow():', error);
       }
     } else {
       console.error('[showCheckIn] checkInRef.current is null, cannot show check-in');
-      console.log('[showCheckIn] Attempting to retry in 500ms...');
+      appLog('[showCheckIn] Attempting to retry in 500ms...');
       
       // Retry after a short delay
       setTimeout(() => {
         if (checkInRef.current) {
-          console.log('[showCheckIn] Retry successful, calling forceShow()');
+          appLog('[showCheckIn] Retry successful, calling forceShow()');
           checkInRef.current.forceShow();
         } else {
           console.error('[showCheckIn] Retry failed, checkInRef still null');
@@ -449,7 +450,7 @@ export default function RootLayout() {
     const unsubscribe = auth().onAuthStateChanged((user: any) => {
       const isLoggedIn = !!user; // Include anonymous users as logged in
       setIsUserLoggedIn(isLoggedIn);
-      console.log('[Auth] User auth state changed:', { 
+      appLog('[Auth] User auth state changed:', { 
         isLoggedIn, 
         isAnonymous: user?.isAnonymous,
         uid: user?.uid 
@@ -477,7 +478,7 @@ export default function RootLayout() {
   // Effect to watch isPrayerSheetVisible and control the sheet ref
   useEffect(() => {
     if (isPrayerSheetVisible && prayerSheetRef.current) {
-      console.log('[RootLayout] Opening prayer sheet via ref');
+      appLog('[RootLayout] Opening prayer sheet via ref');
       prayerSheetRef.current.show();
     }
   }, [isPrayerSheetVisible]);
@@ -485,7 +486,7 @@ export default function RootLayout() {
   // Effect to watch isStatsSheetVisible and control the sheet ref
   useEffect(() => {
     if (isStatsSheetVisible && statsSheetRef.current) {
-      console.log('[RootLayout] Opening stats sheet via ref');
+      appLog('[RootLayout] Opening stats sheet via ref');
       statsSheetRef.current.show();
     }
   }, [isStatsSheetVisible]);
@@ -493,7 +494,7 @@ export default function RootLayout() {
   // Effect to watch isDevotionalsSheetVisible and control the sheet ref
   useEffect(() => {
     if (isDevotionalsSheetVisible && devotionalsSheetRef.current) {
-      console.log('[RootLayout] Opening devotionals sheet via ref');
+      appLog('[RootLayout] Opening devotionals sheet via ref');
       devotionalsSheetRef.current.show();
     }
   }, [isDevotionalsSheetVisible]);
@@ -515,7 +516,7 @@ export default function RootLayout() {
   useEffect(() => {
     initializeLanguage()
     const handleError = (error: Error) => {
-      console.log('App initialization error:', error);
+      appLog('App initialization error:', error);
       setHasError(true);
       setAppReady(true);
       SplashScreen.hideAsync();
@@ -538,23 +539,23 @@ export default function RootLayout() {
   // Modify the initializeApp function to handle both scenarios
   const initializeApp = async () => {
     try {
-      console.log('🚀 Starting app initialization...');
+      appLog('🚀 Starting app initialization...');
 
       // Wait for fonts to load
       // if (!fontsLoaded && !fontError) {
-      //   console.log('Waiting for fonts to load...');
+      //   appLog('Waiting for fonts to load...');
       //   return;
       // }
 
       // Wait for Rive assets to be ready (both splash and preloaded)
       if (!riveAssets?.[0]?.uri || !riveAssetsLoaded) {
-        console.log('Waiting for Rive assets to load...', { 
+        appLog('Waiting for Rive assets to load...', { 
           splashRive: !!riveAssets?.[0]?.uri, 
           preloadedRive: riveAssetsLoaded 
         });
         return;
       }
-      console.log('🎬 All Rive assets loaded successfully');
+      appLog('🎬 All Rive assets loaded successfully');
 
       try {
         // Initialize app components
@@ -574,7 +575,7 @@ export default function RootLayout() {
         SplashScreen.hideAsync();
       }, 100);
     } catch (error) {
-      console.log('Error during app initialization:', error);
+      appLog('Error during app initialization:', error);
       Alert.alert('Error during app initialization:', error instanceof Error ? error.message : String(error));
       setHasError(true);
       setAppReady(true);
@@ -585,7 +586,7 @@ export default function RootLayout() {
   // Call initializeApp when fonts and Rive assets are ready
   useEffect(() => {
     if (riveAssets?.[0]?.uri && riveAssetsLoaded && !appReady) {
-      console.log('🎬 All assets ready, initializing app...');
+      appLog('🎬 All assets ready, initializing app...');
       initializeApp();
     }
   }, [fontsLoaded, riveAssets, riveAssetsLoaded, appReady]);
@@ -593,17 +594,17 @@ export default function RootLayout() {
   const activateAdapty = async () => {
     try {
       const isActivated = await adapty.isActivated();
-      console.log('isActivated ==>', isActivated);
+      appLog('isActivated ==>', isActivated);
       if (isActivated) return;
       // if(adapty){
-      //   console.log("adapty ==>",adapty?.isActivated());
+      //   appLog("adapty ==>",adapty?.isActivated());
       // }
       await adapty.activate('public_live_6JQmP6iR.y5BUrJSqvfMEVYQBPBLz', {
         lockMethodsUntilReady: true,
       });
-      console.log('Adapty activated');
+      appLog('Adapty activated');
     } catch (error) {
-      console.log('Error activating Adapty:', error);
+      appLog('Error activating Adapty:', error);
     }
   };
 
@@ -611,7 +612,7 @@ export default function RootLayout() {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         // App has come to the foreground!
-        console.log('App has come to the foreground!');
+        appLog('App has come to the foreground!');
         onAppForegroundOrInit();
         useHighlightStore.getState().syncHighlights();
         // Only check for check-in if hearts lost modal is not visible
@@ -621,7 +622,7 @@ export default function RootLayout() {
       }
       appState.current = nextAppState;
     };
-    console.log('Activating Adapty');
+    appLog('Activating Adapty');
 
     activateAdapty();
 
@@ -645,7 +646,7 @@ export default function RootLayout() {
   // Add deep linking handler
   useEffect(() => {
     const handleDeepLink = (event: { url: string }) => {
-      console.log('Deep link received:', event.url);
+      appLog('Deep link received:', event.url);
       if (event.url === 'io.bytehouse://stay') {
         // Navigate to the stay screen or handle the deep link as needed
         router.replace('/(tabs)');
@@ -674,16 +675,16 @@ export default function RootLayout() {
     const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
 
     if (readingCompleted || (prayerCompleted && readingCompleted && reflectionCompleted)) {
-      console.log('📚 [Layout] Fetching recent devotionals due to completion state change');
+      appLog('📚 [Layout] Fetching recent devotionals due to completion state change');
       const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
       fetchRecentDevotionals()
         .then((devotionals) => {
-          console.log(
+          appLog(
             '📚 [Layout] Fetched recent devotionals:',
             devotionals.map((d) => d?.id)
           );
-          console.log('📚 [Layout] Devotionals count:', devotionals.length);
-          console.log('📚 [Layout] Non-null devotionals:', devotionals.filter(Boolean).length);
+          appLog('📚 [Layout] Devotionals count:', devotionals.length);
+          appLog('📚 [Layout] Non-null devotionals:', devotionals.filter(Boolean).length);
         })
         .catch((error) => {
           console.error('❌ [Layout] Error fetching recent devotionals:', error);
@@ -698,16 +699,16 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (readingCompleted || (prayerCompleted && readingCompleted && reflectionCompleted)) {
-      console.log('📚 [Layout] Fetching recent devotionals due to completion state change');
+      appLog('📚 [Layout] Fetching recent devotionals due to completion state change');
       const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
       fetchRecentDevotionals()
         .then((devotionals) => {
-          console.log(
+          appLog(
             '📚 [Layout] Fetched recent devotionals:',
             devotionals.map((d) => d?.id)
           );
-          console.log('📚 [Layout] Devotionals count:', devotionals.length);
-          console.log('📚 [Layout] Non-null devotionals:', devotionals.filter(Boolean).length);
+          appLog('📚 [Layout] Devotionals count:', devotionals.length);
+          appLog('📚 [Layout] Non-null devotionals:', devotionals.filter(Boolean).length);
         })
         .catch((error) => {
           console.error('❌ [Layout] Error fetching recent devotionals:', error);
@@ -759,7 +760,7 @@ export default function RootLayout() {
 
   if (hasError) return <AppLoading loadingMessage="Something went wrong. Please try again..." />;
   // return <SaveProgressScreen />
-  console.log(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
+  appLog(`[RootLayout] Rendering. Modal Dim Active: ${isModalDimActive}`);
 
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: '#FDEBB8' }}>

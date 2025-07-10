@@ -13,6 +13,7 @@ import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetBackdropProps,
 } from '@gorhom/bottom-sheet';
+import { appLog } from '../app/helper/helper';
 import { BIBLE_BOOK_IDS, BIBLE_CHAPTER_COUNTS } from '../app/models/Path';
 import { useUIStore } from '../app/stores/uiStore';
 import { usePathStore } from '../app/stores/pathStore';
@@ -78,7 +79,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
       const bookId = bookChapterSelectorParams.initialBookId || 1;
       const chapter = bookChapterSelectorParams.initialChapter || 1;
 
-      console.log(
+      appLog(
         `📖 [GlobalBookChapterSelector] Sheet opened with bookId: ${bookId}, chapter: ${chapter}`
       );
 
@@ -102,7 +103,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
       if (isSelecting) return; // Prevent multiple selections
 
       setIsSelecting(true);
-      console.log(
+      appLog(
         `📖 [GlobalBookChapterSelector] Selected chapter: ${chapter} for book: ${selectedBookId}`
       );
 
@@ -110,7 +111,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
         // Save to pathStore as the last read chapter/verse
         const bookName = bookNames[selectedBookId] || 'Unknown';
         setSavedReading(bookName, selectedBookId, chapter);
-        console.log(
+        appLog(
           `💾 [GlobalBookChapterSelector] Saved to pathStore: ${bookName} (${selectedBookId}) Chapter ${chapter}`
         );
 
@@ -132,7 +133,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
     (bookId: number) => {
       if (bookId === selectedBookId || isSelecting) return; // Prevent unnecessary updates
 
-      console.log(`📖 [GlobalBookChapterSelector] Selected book: ${bookId}`);
+      appLog(`📖 [GlobalBookChapterSelector] Selected book: ${bookId}`);
       setSelectedBookId(bookId);
       setSelectedChapter(1); // Reset to chapter 1 when switching books
       hapticLight();
@@ -145,7 +146,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
     if (isSelecting) return; // Prevent multiple selections
 
     setIsSelecting(true);
-    console.log(
+    appLog(
       `📖 [GlobalBookChapterSelector] Done button pressed - saving book: ${selectedBookId}, chapter: ${selectedChapter}`
     );
 
@@ -153,7 +154,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
       // Save to pathStore as the last read chapter/verse
       const bookName = bookNames[selectedBookId] || 'Unknown';
       setSavedReading(bookName, selectedBookId, selectedChapter);
-      console.log(
+      appLog(
         `💾 [GlobalBookChapterSelector] Saved to pathStore: ${bookName} (${selectedBookId}) Chapter ${selectedChapter}`
       );
 
@@ -205,7 +206,7 @@ const GlobalBookChapterSelectorSheet: React.FC = () => {
   }, [isBookChapterSelectorVisible, selectedBookId, scrollToSelectedBook]);
 
   // Debug logging
-  console.log(
+  appLog(
     `📖 [GlobalBookChapterSelector] Rendering - selectedBookId: ${selectedBookId}, selectedChapter: ${selectedChapter}`
   );
 

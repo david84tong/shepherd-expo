@@ -11,7 +11,7 @@ import { useAssets } from 'expo-asset';
 
 import PrimaryButton from './PrimaryButton';
 import { hapticMedium } from '~/utils/haptics';
-import { RPH } from '~/app/helper/helper';
+import { appLog, RPH } from '~/app/helper/helper';
 import analytics from '~/utils/analytics';
 import { useCheckInStore } from '~/app/stores/checkInStore';
 import { createDevotionalFromCheckIn } from '~/app/api/ai';
@@ -163,23 +163,23 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
   // Log when component mounts/unmounts
   useEffect(() => {
-    console.log('[GlobalCheckIn] Component mounted at:', new Date().toISOString());
+    appLog('[GlobalCheckIn] Component mounted at:', new Date().toISOString());
     return () => {
-      console.log('[GlobalCheckIn] Component unmounted at:', new Date().toISOString());
+      appLog('[GlobalCheckIn] Component unmounted at:', new Date().toISOString());
     };
   }, []);
 
   // Complete check-in and save to both stores
   const handleCompleteCheckIn = useCallback(async () => {
-    console.log('[GlobalCheckIn] handleCompleteCheckIn started');
+    appLog('[GlobalCheckIn] handleCompleteCheckIn started');
 
     // Prevent double-saving
     if (checkInSaved) {
-      console.log('[GlobalCheckIn] Check-in already saved, skipping...');
+      appLog('[GlobalCheckIn] Check-in already saved, skipping...');
       return;
     }
 
-    console.log('[GlobalCheckIn] handleCompleteCheckIn called with:', {
+    appLog('[GlobalCheckIn] handleCompleteCheckIn called with:', {
       mood: currentMood,
       focus: currentFocus,
       struggle: currentStruggle
@@ -187,7 +187,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
     try {
       // Complete check-in in checkInStore
-      console.log('[GlobalCheckIn] Completing check-in in checkInStore...');
+      appLog('[GlobalCheckIn] Completing check-in in checkInStore...');
       completeCheckIn();
 
       // Save to userStore for Firestore sync
@@ -202,10 +202,10 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       const now = new Date();
       const timestamp = now.getTime(); // milliseconds since epoch
       const dateKey = `${timestamp}`; // Use timestamp as key for uniqueness
-      console.log('[GlobalCheckIn] Saving check-in data to userStore:', checkInData);
+      appLog('[GlobalCheckIn] Saving check-in data to userStore:', checkInData);
       await addCheckIn(dateKey, checkInData);
 
-      console.log('[GlobalCheckIn] Check-in completed and saved to both stores');
+      appLog('[GlobalCheckIn] Check-in completed and saved to both stores');
       setCheckInSaved(true);
     } catch (error) {
       console.error('[GlobalCheckIn] Error in handleCompleteCheckIn:', error);
@@ -218,7 +218,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       setGens(currentGems + 20);
       setGemsAwarded(true);
       setShowRewardAnimation(true);
-      console.log(`Awarded +20 Gems for check-in. New total: ${currentGems + 20}`);
+      appLog(`Awarded +20 Gems for check-in. New total: ${currentGems + 20}`);
 
       // Log analytics
       analytics.logEvent('checkin_gems_awarded', {
@@ -232,7 +232,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
     // Verify the check-in was saved
     const verifyCheckIn = useCheckInStore.getState().getTodaysCheckIn();
-    console.log('[GlobalCheckIn] Verification - Today\'s check-in after save:', verifyCheckIn);
+    appLog('[GlobalCheckIn] Verification - Today\'s check-in after save:', verifyCheckIn);
   }, [currentMood, currentFocus, currentStruggle, completeCheckIn, addCheckIn, checkInSaved, gemsAwarded, getGens, setGens]);
 
   // Handle dismiss
@@ -264,7 +264,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
   // Handle custom devotional generation
   const handleGenerateCustomDevotional = useCallback(async () => {
-    console.log('[GlobalCheckIn] handleGenerateCustomDevotional started');
+    appLog('[GlobalCheckIn] handleGenerateCustomDevotional started');
     const currentUser = auth().currentUser;
     if (!currentUser) {
       console.error('No authenticated user available for generating devotional');
@@ -274,7 +274,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     // Check if user is pro
     const { isProMember, presentFreeTrialPaywall } = useSubscriptionStore.getState();
     if (!isProMember) {
-      console.log('[GlobalCheckIn] User is not pro, presenting free trial paywall');
+      appLog('[GlobalCheckIn] User is not pro, presenting free trial paywall');
       await presentFreeTrialPaywall();
       return;
     }
@@ -292,7 +292,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         struggle: currentStruggle
       };
 
-      console.log('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
+      appLog('[GlobalCheckIn] Generating custom devotional with check-in data:', checkInData);
 
       // Generate the custom devotional
       const customDevotional = await createDevotionalFromCheckIn(checkInData, idToken);
@@ -319,17 +319,17 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         verse: customDevotional.verse || ''
       };
 
-      console.log('GlobalCheckIn: Full devotional object:', fullDevotional);
-      console.log('GlobalCheckIn: Verse field:', fullDevotional.verse);
-      console.log('GlobalCheckIn: BibleReference field:', fullDevotional.bibleReference);
+      appLog('GlobalCheckIn: Full devotional object:', fullDevotional);
+      appLog('GlobalCheckIn: Verse field:', fullDevotional.verse);
+      appLog('GlobalCheckIn: BibleReference field:', fullDevotional.bibleReference);
 
       // Use the new function to save to Firestore
       await createCustomDevotionalFromCheckIn(fullDevotional);
 
       // Complete the check-in and save to both stores
-      console.log('[GlobalCheckIn] About to save check-in...');
+      appLog('[GlobalCheckIn] About to save check-in...');
       await handleCompleteCheckIn();
-      console.log('[GlobalCheckIn] Check-in saved successfully');
+      appLog('[GlobalCheckIn] Check-in saved successfully');
 
       // Log analytics
       analytics.logEvent('checkin_custom_devotional_generated', {
@@ -341,7 +341,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       // Don't navigate here - it's already handled in the button onPress
 
     } catch (error) {
-      console.log('Error generating custom devotional:', error);
+      appLog('Error generating custom devotional:', error);
       setIsGenerating(false);
       // You might want to show an error toast here
     }
@@ -427,11 +427,11 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     checkInRef,
     () => ({
       expand: () => {
-        console.log('[GlobalCheckIn] expand() called, isSheetVisible:', isSheetVisible, 'isClosing:', isClosing);
+        appLog('[GlobalCheckIn] expand() called, isSheetVisible:', isSheetVisible, 'isClosing:', isClosing);
         
         // If currently closing, wait and retry
         if (isClosing) {
-          console.log('[GlobalCheckIn] Sheet is closing, waiting to expand...');
+          appLog('[GlobalCheckIn] Sheet is closing, waiting to expand...');
           expandAttempts.current++;
           if (expandAttempts.current < 3) {
             setTimeout(() => {
@@ -475,12 +475,12 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         });
       },
       close: () => {
-        console.log('[GlobalCheckIn] close() called');
+        appLog('[GlobalCheckIn] close() called');
         setIsClosing(true);
         bottomSheetRef.current?.close();
       },
       forceShow: () => {
-        console.log('[GlobalCheckIn] forceShow() called');
+        appLog('[GlobalCheckIn] forceShow() called');
         
         // Reset expand attempts
         expandAttempts.current = 0;
@@ -600,7 +600,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     const iconSize = dimensions.isSmallDevice ? RPH(2.8) : RPH(3.5); // Slightly smaller icons for iPhone SE
     
     // Debug logging for focus screen
-    console.log('Focus screen - Screen width:', screenWidth, 'focus width:', dimensions.focus.width, 'gap:', dimensions.gap);
+    appLog('Focus screen - Screen width:', screenWidth, 'focus width:', dimensions.focus.width, 'gap:', dimensions.gap);
     
     return (
       <Animated.View
@@ -671,7 +671,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
 
   const renderStruggleScreen = () => {
     const dimensions = getResponsiveCardDimensions();
-    console.log('Screen width:', screenWidth, 'isSmallDevice:', dimensions.isSmallDevice);
+    appLog('Screen width:', screenWidth, 'isSmallDevice:', dimensions.isSmallDevice);
     const iconSize = dimensions.isSmallDevice ? RPH(4.2) : RPH(3.7); // Larger icons for iPhone SE
     
     
@@ -698,7 +698,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                   await handleCompleteCheckIn();
                   animateToScreen('success');
                 } catch (error) {
-                  console.log('[GlobalCheckIn] Error completing check-in:', error);
+                  appLog('[GlobalCheckIn] Error completing check-in:', error);
                   // Still animate to success even if there's an error
                   animateToScreen('success');
                 }
@@ -741,7 +741,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               await handleCompleteCheckIn();
               animateToScreen('success');
             } catch (error) {
-              console.log('[GlobalCheckIn] Error completing check-in (skipped):', error);
+              appLog('[GlobalCheckIn] Error completing check-in (skipped):', error);
               // Still animate to success even if there's an error
               animateToScreen('success');
             }
@@ -892,13 +892,13 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               // Check if user is pro before generating custom devotional
               const { isProMember, presentFreeTrialPaywall } = useSubscriptionStore.getState();
               if (!isProMember) {
-                console.log('[GlobalCheckIn] User is not pro, presenting free trial paywall');
+                appLog('[GlobalCheckIn] User is not pro, presenting free trial paywall');
                 await presentFreeTrialPaywall();
                 return;
               }
               // Log the current check-in state
               const checkInState = useCheckInStore.getState();
-              console.log('[GlobalCheckIn] Before navigation - check-in state:', {
+              appLog('[GlobalCheckIn] Before navigation - check-in state:', {
                 todaysCheckIn: checkInState.getTodaysCheckIn(),
                 hasCompletedToday: checkInState.hasCompletedTodaysCheckIn(),
                 lastCheckInTime: checkInState.lastCheckInTime,
@@ -1014,13 +1014,13 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
               });
 
               // Log the check-in completion
-              console.log('Starting worldwide devotional check-in completion...');
+              appLog('Starting worldwide devotional check-in completion...');
 
               // Check-in already saved when struggle was selected/skipped
 
               // Verify the check-in was saved
               const checkInState = useCheckInStore.getState();
-              console.log('Check-in state after completion:', {
+              appLog('Check-in state after completion:', {
                 lastCheckInTime: checkInState.lastCheckInTime,
                 hasBeenOneHour: checkInState.hasBeenOneHourSinceLastCheckIn()
               });
@@ -1045,7 +1045,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
                 // Trigger the daily bread devotional
                 const triggerDailyBread = (global as any).triggerDailyBread;
                 if (triggerDailyBread && typeof triggerDailyBread === 'function') {
-                  console.log('Triggering daily bread from check-in...');
+                  appLog('Triggering daily bread from check-in...');
                   triggerDailyBread();
                 } else {
                   console.error('triggerDailyBread function not found on global');
@@ -1100,7 +1100,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
       handleIndicatorStyle={{ backgroundColor: '#DCB280', height: 5, width: 48 }}
       backdropComponent={renderBackdrop}
       onChange={(index) => {
-        console.log('[GlobalCheckIn] BottomSheet changed to index:', index);
+        appLog('[GlobalCheckIn] BottomSheet changed to index:', index);
         
         // Update visibility state
         const wasVisible = isSheetVisible;
@@ -1109,7 +1109,7 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
         
         // If sheet just closed
         if (wasVisible && !isNowVisible) {
-          console.log('[GlobalCheckIn] Sheet closed, marking as not closing');
+          appLog('[GlobalCheckIn] Sheet closed, marking as not closing');
           setIsClosing(false);
           
           // Reset states after close

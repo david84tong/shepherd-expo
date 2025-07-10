@@ -16,6 +16,7 @@ import { Unit, SHORTER_BIBLE_PATHS_2, BIBLE_PATHS } from './models/Path';
 import { usePathStore } from './stores/pathStore';
 import { useUserStore } from './stores/userStore';
 import analytics from '../utils/analytics';
+import { appLog } from './helper/helper';
 
 export default function BiblePreviewScreen() {
   const params = useLocalSearchParams();
@@ -54,16 +55,16 @@ export default function BiblePreviewScreen() {
   // Find the next uncompleted unit from the ordered paths
   const nextUnit = useMemo(() => {
     // Debug logging
-    console.log('[BiblePreview] Finding unit - currentPath:', currentPath);
-    console.log('[BiblePreview] completedUnitIds:', completedUnitIds);
+    appLog('[BiblePreview] Finding unit - currentPath:', currentPath);
+    appLog('[BiblePreview] completedUnitIds:', completedUnitIds);
 
     // If we have a current path set from the map, use that unit
     if (currentPath) {
-      console.log('[BiblePreview] Using unit from currentPath:', currentPath.unitId);
+      appLog('[BiblePreview] Using unit from currentPath:', currentPath.unitId);
       for (const path of orderedPaths) {
         const unit = path.units.find((u) => u.id === currentPath.unitId);
         if (unit) {
-          console.log(
+          appLog(
             '[BiblePreview] Found unit:',
             unit.id,
             unit.title,
@@ -76,13 +77,13 @@ export default function BiblePreviewScreen() {
     }
 
     // Otherwise find the next uncompleted unit
-    console.log('[BiblePreview] No currentPath, finding next uncompleted unit');
+    appLog('[BiblePreview] No currentPath, finding next uncompleted unit');
     let nextUnitToComplete: Unit | null = null;
     for (const path of orderedPaths) {
       for (const unit of path.units) {
         if (!completedUnitIds.includes(unit.id)) {
           nextUnitToComplete = unit;
-          console.log('[BiblePreview] Found uncompleted unit:', unit.id, unit.title);
+          appLog('[BiblePreview] Found uncompleted unit:', unit.id, unit.title);
           break;
         }
       }
@@ -90,7 +91,7 @@ export default function BiblePreviewScreen() {
     }
     if (!nextUnitToComplete && orderedPaths.length > 0 && orderedPaths[0].units.length > 0) {
       nextUnitToComplete = orderedPaths[0].units[0];
-      console.log('[BiblePreview] Fallback to first unit:', nextUnitToComplete.id);
+      appLog('[BiblePreview] Fallback to first unit:', nextUnitToComplete.id);
     }
     return nextUnitToComplete;
   }, [completedUnitIds, orderedPaths, currentPath]);
@@ -180,8 +181,8 @@ export default function BiblePreviewScreen() {
 
   const handleStart = () => {
     if (nextUnit) {
-      console.log('[BiblePreview handleStart] Starting with unit:', nextUnit.id, nextUnit.title);
-      console.log('[BiblePreview handleStart] Unit reference:', nextUnit.reference);
+      appLog('[BiblePreview handleStart] Starting with unit:', nextUnit.id, nextUnit.title);
+      appLog('[BiblePreview handleStart] Unit reference:', nextUnit.reference);
 
       // Find the path that contains this unit
       let pathId = '';
@@ -195,8 +196,8 @@ export default function BiblePreviewScreen() {
       }
 
       const ref = getFirstReference(nextUnit.reference);
-      console.log('[BiblePreview handleStart] Using reference:', ref);
-      console.log('[BiblePreview handleStart] Chapters:', ref.chapters);
+      appLog('[BiblePreview handleStart] Using reference:', ref);
+      appLog('[BiblePreview handleStart] Chapters:', ref.chapters);
 
       const startChapter = ref.chapters[0];
       const endChapter = ref.chapters[ref.chapters.length - 1];
@@ -214,7 +215,7 @@ export default function BiblePreviewScreen() {
         reflection: nextUnit.reflectionPrompt,
       });
 
-      console.log('[BiblePreview handleStart] Navigating to bibleReader with:', {
+      appLog('[BiblePreview handleStart] Navigating to bibleReader with:', {
         bookId: ref.bookId,
         chapters: ref.chapters.join(','),
         title: nextUnit.title,

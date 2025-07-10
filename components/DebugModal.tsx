@@ -18,6 +18,7 @@ import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 import WidgetHowToSheet from './WidgetHowToSheet';
 import { useCheckInStore } from '~/app/stores/checkInStore';
 import dayjs from 'dayjs';
+import { appLog } from '~/app/helper/helper';
 
 // Debug screen destinations
 interface DebugScreen {
@@ -90,7 +91,7 @@ export function DebugButton() {
 
   // Helper function to safely set Rive skin
   const setRiveSkin = useCallback((skinNumber: number, actionNumber: number = 0) => {
-    console.log('🔍 Debug setRiveSkin called:', {
+    appLog('🔍 Debug setRiveSkin called:', {
       skinNumber,
       actionNumber,
       riveRef: !!riveRef,
@@ -100,17 +101,17 @@ export function DebugButton() {
 
     // Special logging for armor skin
     if (skinNumber === 9) {
-      console.log('🛡️ ARMOR SKIN DEBUG: Attempting to set armor skin (9)');
+      appLog('🛡️ ARMOR SKIN DEBUG: Attempting to set armor skin (9)');
     }
 
     // Update homeStore currentSkin to prevent handleRivePlay from overriding our debug change
     const setCurrentSkin = useHomeStore.getState().setCurrentSkin;
     setCurrentSkin(skinNumber.toString());
-    console.log(`🏠 Updated homeStore currentSkin to: ${skinNumber}`);
+    appLog(`🏠 Updated homeStore currentSkin to: ${skinNumber}`);
 
     if (riveRef && riveRef.current && riveRef.current.setInputState) {
       try {
-        console.log('🎯 Setting Rive skin:', skinNumber, 'action:', actionNumber);
+        appLog('🎯 Setting Rive skin:', skinNumber, 'action:', actionNumber);
 
         // Set action first, then skin
         riveRef.current.setInputState('State Machine 1', 'Action-Number', actionNumber);
@@ -118,11 +119,11 @@ export function DebugButton() {
 
         // Special logging for armor skin
         if (skinNumber === 9) {
-          console.log('🛡️ ARMOR SKIN DEBUG: Successfully called setInputState for skin 9');
+          appLog('🛡️ ARMOR SKIN DEBUG: Successfully called setInputState for skin 9');
 
           // Try to read back the current state if possible
           setTimeout(() => {
-            console.log('🛡️ ARMOR SKIN DEBUG: Checking if skin 9 was applied...');
+            appLog('🛡️ ARMOR SKIN DEBUG: Checking if skin 9 was applied...');
           }, 500);
         }
 
@@ -134,11 +135,11 @@ export function DebugButton() {
           visibilityTime: 2000,
         });
       } catch (error) {
-        console.log(`❌ Error setting skin ${skinNumber}:`, error);
+        appLog(`❌ Error setting skin ${skinNumber}:`, error);
 
         // Special error logging for armor skin
         if (skinNumber === 9) {
-          console.log('🛡️ ARMOR SKIN DEBUG: Failed to set armor skin!', error);
+          appLog('🛡️ ARMOR SKIN DEBUG: Failed to set armor skin!', error);
         }
 
         Toast.show({
@@ -155,11 +156,11 @@ export function DebugButton() {
       if (!riveRef?.current) reasons.push('riveRef.current is null');
       if (!riveRef?.current?.setInputState) reasons.push('setInputState not available');
 
-      console.log('❌ Rive ref not available:', reasons.join(', '));
+      appLog('❌ Rive ref not available:', reasons.join(', '));
 
       // Special logging for armor skin
       if (skinNumber === 9) {
-        console.log('🛡️ ARMOR SKIN DEBUG: Cannot set armor skin - Rive not ready!', reasons);
+        appLog('🛡️ ARMOR SKIN DEBUG: Cannot set armor skin - Rive not ready!', reasons);
       }
 
       Toast.show({
@@ -174,7 +175,7 @@ export function DebugButton() {
 
   // Helper function to safely set Rive action
   const setRiveAction = useCallback((actionNumber: number) => {
-    console.log('🔍 Debug setRiveAction called:', {
+    appLog('🔍 Debug setRiveAction called:', {
       actionNumber,
       riveRef: !!riveRef,
       riveRefCurrent: !!riveRef?.current,
@@ -183,7 +184,7 @@ export function DebugButton() {
 
     if (riveRef && riveRef.current && riveRef.current.setInputState) {
       try {
-        console.log('🎯 Setting Rive action:', actionNumber);
+        appLog('🎯 Setting Rive action:', actionNumber);
         riveRef.current.setInputState('State Machine 1', 'Action-Number', actionNumber);
         Toast.show({
           type: 'success',
@@ -193,7 +194,7 @@ export function DebugButton() {
           visibilityTime: 2000,
         });
       } catch (error) {
-        console.log(`❌ Error setting action ${actionNumber}:`, error);
+        appLog(`❌ Error setting action ${actionNumber}:`, error);
         Toast.show({
           type: 'error',
           text1: `Failed to set action ${actionNumber}`,
@@ -208,7 +209,7 @@ export function DebugButton() {
       if (!riveRef?.current) reasons.push('riveRef.current is null');
       if (!riveRef?.current?.setInputState) reasons.push('setInputState not available');
 
-      console.log('❌ Rive ref not available:', reasons.join(', '));
+      appLog('❌ Rive ref not available:', reasons.join(', '));
       Toast.show({
         type: 'info',
         text1: 'Rive not ready',
@@ -249,7 +250,7 @@ export function DebugButton() {
     if (typeof global !== 'undefined' && (global as any).showHalfModal) {
       (global as any).showHalfModal(params);
     } else {
-      console.log('showHalfModal not available on global object');
+      appLog('showHalfModal not available on global object');
     }
   }, []);
 
@@ -419,7 +420,7 @@ export function DebugButton() {
           onPress: async () => {
             try {
               // Clear AsyncStorage first to ensure clean slate
-              console.log('Clearing all AsyncStorage data...');
+              appLog('Clearing all AsyncStorage data...');
               await AsyncStorage.clear();
 
               // Reset home store
@@ -454,7 +455,7 @@ export function DebugButton() {
                 visibilityTime: 4000,
               });
             } catch (error) {
-              console.log('Failed to delete all data:', error);
+              appLog('Failed to delete all data:', error);
               Toast.show({
                 type: 'error',
                 text1: 'Failed to delete all data',
@@ -509,7 +510,7 @@ export function DebugButton() {
       if (typeof global !== 'undefined' && (global as any).showPrayerModal) {
         (global as any).showPrayerModal();
       } else {
-        console.log('showPrayerModal not available on global object');
+        appLog('showPrayerModal not available on global object');
       }
     }, 300);
   }, []);
@@ -536,7 +537,7 @@ export function DebugButton() {
               visibilityTime: 3000,
             });
           } catch (error) {
-            console.log('Error signing out:', error);
+            appLog('Error signing out:', error);
             Toast.show({
               type: 'error',
               text1: 'Sign out failed',
@@ -642,9 +643,9 @@ export function DebugButton() {
             // Override any existing document with the same bible reference (document ID)
             shouldOverride = true;
             overriddenCount++;
-            console.log(`Overriding devotional with document ID: ${documentId}`);
-            console.log(`  Existing: ID=${existingId}, Date=${existingDate}`);
-            console.log(`  New: ID=${newId}, Date=${newDate}`);
+            appLog(`Overriding devotional with document ID: ${documentId}`);
+            appLog(`  Existing: ID=${existingId}, Date=${existingDate}`);
+            appLog(`  New: ID=${newId}, Date=${newDate}`);
           } else {
             newCount++;
           }
@@ -669,7 +670,7 @@ export function DebugButton() {
 
           // Upload to Firestore (this will override if document exists)
           await docRef.set(formattedDevotional);
-          console.log(`Successfully ${shouldOverride ? 'overrode' : 'uploaded'} devotional with document ID: ${documentId} (Original ID: ${devotional.id})`);
+          appLog(`Successfully ${shouldOverride ? 'overrode' : 'uploaded'} devotional with document ID: ${documentId} (Original ID: ${devotional.id})`);
         } catch (error) {
           errorCount++;
           console.error(`Error uploading devotional ${devotional.id}:`, error);
@@ -740,7 +741,7 @@ export function DebugButton() {
   // Test custom devotional creation and refresh
   const handleTestCustomDevotional = async () => {
     try {
-      console.log('🧪 Testing custom devotional creation...');
+      appLog('🧪 Testing custom devotional creation...');
       
       // Create a test custom devotional
       const testDevotional = {
@@ -769,7 +770,7 @@ export function DebugButton() {
         text2: 'Check console for details'
       });
       
-      console.log('✅ Test custom devotional created successfully');
+      appLog('✅ Test custom devotional created successfully');
     } catch (error) {
       console.error('❌ Error creating test custom devotional:', error);
       Toast.show({ 
@@ -783,7 +784,7 @@ export function DebugButton() {
   // Test recent devotionals refresh
   const handleTestRefreshDevotionals = async () => {
     try {
-      console.log('🔄 Testing recent devotionals refresh...');
+      appLog('🔄 Testing recent devotionals refresh...');
       
       const fetchRecentDevotionals = useDevotionalStore.getState().fetchRecentDevotionals;
       if (fetchRecentDevotionals) {
@@ -793,7 +794,7 @@ export function DebugButton() {
           text1: 'Recent devotionals refreshed!',
           text2: 'Check console for details'
         });
-        console.log('✅ Recent devotionals refreshed successfully');
+        appLog('✅ Recent devotionals refreshed successfully');
       } else {
         throw new Error('fetchRecentDevotionals function not available');
       }
@@ -938,7 +939,7 @@ export function DebugButton() {
                       if (typeof global !== 'undefined' && (global as any).showCheckIn) {
                         (global as any).showCheckIn();
                       } else {
-                        console.log('showCheckIn not available on global object');
+                        appLog('showCheckIn not available on global object');
                       }
                     }, 300);
                   }}>
@@ -1092,11 +1093,11 @@ export function DebugButton() {
 
                           // Try to refresh the UI state by updating key properties
                           const updatedLamb = userStore.getLamb();
-                          console.log(`Debug: Set lamb to level ${level} (${newXp} XP)`);
-                          console.log(
+                          appLog(`Debug: Set lamb to level ${level} (${newXp} XP)`);
+                          appLog(
                             `Debug: Level ${level} requires ${xpForLevel} XP, next level needs ${xpForNextLevel} XP`
                           );
-                          console.log(`Debug: Updated lamb: ${JSON.stringify(updatedLamb)}`);
+                          appLog(`Debug: Updated lamb: ${JSON.stringify(updatedLamb)}`);
 
                           Alert.alert(
                             'Level Set',
@@ -1123,7 +1124,7 @@ export function DebugButton() {
                       // Force sync to Firestore
                       syncWithFirestore();
 
-                      console.log('Debug: Set gems to 1000');
+                      appLog('Debug: Set gems to 1000');
 
                       Toast.show({
                         type: 'success',
@@ -1154,7 +1155,7 @@ export function DebugButton() {
                           // Force sync to Firestore
                           syncWithFirestore();
 
-                          console.log(`Debug: Set streak count to ${streak}`);
+                          appLog(`Debug: Set streak count to ${streak}`);
 
                           Toast.show({
                             type: 'success',
@@ -1322,7 +1323,7 @@ export function DebugButton() {
                               visibilityTime: 3000,
                             });
                             
-                            console.log('✅ Check-in data reset successfully');
+                            appLog('✅ Check-in data reset successfully');
                           },
                         },
                       ]
@@ -1388,7 +1389,7 @@ export function DebugButton() {
                 <TouchableOpacity
                   className="bg-[#E8F3E0] p-4 rounded-xl my-1.5 border-l-4 border-l-[#A0D468]"
                   onPress={() => {
-                    console.log('🔍 DEBUG: Manual devotional fetch triggered from DebugModal');
+                    appLog('🔍 DEBUG: Manual devotional fetch triggered from DebugModal');
                     const devotionalStore = useDevotionalStore.getState();
                     devotionalStore.fetchTodaysDevotional();
                   }}>
@@ -1404,7 +1405,7 @@ export function DebugButton() {
                 <TouchableOpacity
                   className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
                   onPress={() => {
-                    console.log('📱 DEBUG: Manual widget refresh triggered from DebugModal');
+                    appLog('📱 DEBUG: Manual widget refresh triggered from DebugModal');
                     const devotionalStore = useDevotionalStore.getState();
                     devotionalStore.refreshWidgetData();
                     Toast.show({
@@ -1427,7 +1428,7 @@ export function DebugButton() {
                 <TouchableOpacity
                   className="bg-[#F0E6FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#9B7FFE]"
                   onPress={() => {
-                    console.log('📱 DEBUG: Showing widget guide from DebugModal');
+                    appLog('📱 DEBUG: Showing widget guide from DebugModal');
                     setModalVisible(false);
                     setShowWidgetSheet(true);
                   }}>
@@ -1443,13 +1444,13 @@ export function DebugButton() {
                 <TouchableOpacity
                   className="bg-[#FFE0E8] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FF80A0]"
                   onPress={() => {
-                    console.log('📱 DEBUG: Testing WidgetDataSharer native module');
-                    console.log('📱 Available NativeModules:', Object.keys(NativeModules));
+                    appLog('📱 DEBUG: Testing WidgetDataSharer native module');
+                    appLog('📱 Available NativeModules:', Object.keys(NativeModules));
 
                     try {
                       const { WidgetDataSharer } = NativeModules;
                       if (WidgetDataSharer) {
-                        console.log('📱 WidgetDataSharer found:', {
+                        appLog('📱 WidgetDataSharer found:', {
                           hasUpdateVerseData: typeof WidgetDataSharer.updateVerseData === 'function',
                           hasUpdateWidgetStatus: typeof WidgetDataSharer.updateWidgetStatus === 'function',
                         });
@@ -1464,7 +1465,7 @@ export function DebugButton() {
                           visibilityTime: 3000,
                         });
                       } else {
-                        console.log('📱 WidgetDataSharer not found in NativeModules');
+                        appLog('📱 WidgetDataSharer not found in NativeModules');
                         Toast.show({
                           type: 'error',
                           text1: 'Native Module Missing',
@@ -1496,7 +1497,7 @@ export function DebugButton() {
                 <TouchableOpacity
                   className="bg-[#FFF4D9] p-4 rounded-xl my-1.5 border-l-4 border-l-[#FCD34D]"
                   onPress={() => {
-                    console.log('🔍 DEBUG: Clearing devotional data');
+                    appLog('🔍 DEBUG: Clearing devotional data');
                     const devotionalStore = useDevotionalStore.getState();
                     devotionalStore.reset();
                     Alert.alert('Devotional Data Cleared', 'All devotional data has been reset.');
@@ -1514,7 +1515,7 @@ export function DebugButton() {
                   className="bg-[#E0F7FF] p-4 rounded-xl my-1.5 border-l-4 border-l-[#4FB8FE]"
                   onPress={async () => {
                     try {
-                      console.log('🔍 DEBUG: Clearing path and nextUnit data from store and AsyncStorage');
+                      appLog('🔍 DEBUG: Clearing path and nextUnit data from store and AsyncStorage');
                       const pathStore = usePathStore.getState();
                       
                       // Clear path data from store
@@ -1524,7 +1525,7 @@ export function DebugButton() {
                       pathStore.setNextUnitPreview(null);
                       
                       // Clear path data from AsyncStorage
-                      console.log('🗑️ Clearing AsyncStorage key: shepherd-path-storage');
+                      appLog('🗑️ Clearing AsyncStorage key: shepherd-path-storage');
                       await AsyncStorage.removeItem('shepherd-path-storage');
                       
                       // Also clear any user selectedPathId from userStore
@@ -1578,7 +1579,7 @@ export function DebugButton() {
                       riveRefType: typeof riveRef?.current,
                       riveRefKeys: riveRef?.current ? Object.keys(riveRef.current) : [],
                     };
-                    console.log('🔍 Complete Rive Debug Info:', debugInfo);
+                    appLog('🔍 Complete Rive Debug Info:', debugInfo);
                     Toast.show({
                       type: 'info',
                       text1: 'Debug Info Logged',
@@ -1657,7 +1658,7 @@ export function DebugButton() {
                   <TouchableOpacity
                     className="bg-[#E8F3E0] px-3 py-2 rounded-lg border border-[#A0D468] mb-1"
                     onPress={() => {
-                      console.log('🛡️ Attempting to set Armor skin (9)');
+                      appLog('🛡️ Attempting to set Armor skin (9)');
                       setRiveSkin(9, 0);
                     }}>
                     <Text className="font-din text-sm text-textPrimary">9 Armor Skin</Text>
@@ -1667,7 +1668,7 @@ export function DebugButton() {
                   <TouchableOpacity
                     className="bg-[#FFE0E8] px-3 py-2 rounded-lg border border-[#FF80A0] mb-1"
                     onPress={() => {
-                      console.log('🔟 Testing skin 10');
+                      appLog('🔟 Testing skin 10');
                       setRiveSkin(10, 0);
                     }}>
                     <Text className="font-din text-sm text-textPrimary">10 Test</Text>
@@ -1676,7 +1677,7 @@ export function DebugButton() {
                   <TouchableOpacity
                     className="bg-[#E0FFE0] px-3 py-2 rounded-lg border border-[#4FD675] mb-1"
                     onPress={() => {
-                      console.log('🛡️ Testing armor with action 1');
+                      appLog('🛡️ Testing armor with action 1');
                       setRiveSkin(9, 1);
                     }}>
                     <Text className="font-din text-sm text-textPrimary">9 Armor + Action</Text>

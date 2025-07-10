@@ -14,6 +14,7 @@ import { useUIStore } from './stores/uiStore';
 import { useUserStore } from './stores/userStore';
 import PrimaryButton from '../components/PrimaryButton';
 import { hapticMedium } from '~/utils/haptics';
+import { appLog } from './helper/helper';
 
 // Define the types of modals this screen can display
 export enum HalfModalType {
@@ -95,7 +96,7 @@ export default function HalfModalScreen() {
 
   // Effect for managing dim state and presenting sheet
   useEffect(() => {
-    console.log(`[HalfModal] Mounting (Type: ${type}), activating dim...`);
+    appLog(`[HalfModal] Mounting (Type: ${type}), activating dim...`);
     setIsModalDimActive(true);
 
     // Open the bottom sheet after a slight delay
@@ -104,7 +105,7 @@ export default function HalfModalScreen() {
     }, 100);
 
     return () => {
-      console.log('[HalfModal] Unmounting, setting dim inactive');
+      appLog('[HalfModal] Unmounting, setting dim inactive');
       clearTimeout(timer);
       setIsModalDimActive(false);
     };

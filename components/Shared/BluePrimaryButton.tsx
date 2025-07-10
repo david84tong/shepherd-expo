@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Text, View, Pressable, Platform, DimensionValue } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { hapticMedium } from '~/utils/haptics';
+import { appLog } from '~/app/helper/helper';
 
 interface BluePrimaryButtonProps {
   title: string;
@@ -34,7 +35,7 @@ const BluePrimaryButton: React.FC<BluePrimaryButtonProps> = ({
       try {
         hapticMedium();
       } catch (error) {
-        console.log('Haptics not available');
+        appLog('Haptics not available');
       }
     }
 

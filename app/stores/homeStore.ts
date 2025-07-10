@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import React from 'react';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
+import { appLog } from '../helper/helper';
 
 // Define the possible states/modes for the home screen
 export type HomeMode = 'DEFAULT' | 'PREVIEW' | 'PRAYER' | 'REFLECTION';
@@ -119,21 +120,21 @@ export const useHomeStore = create<HomeState>()(
         // Only allow showing streak screen if we haven't seen it today
         const state = get();
         if (show && state.sawStreakToday) {
-          console.log('🚫 Preventing streak screen - already shown today');
+          appLog('🚫 Preventing streak screen - already shown today');
           return;
         }
         set({ showStreakScreen: show });
       },
       setReadingCompleted: (completed) => {
-        console.log('🔍 HOMESTORE - setReadingCompleted called:', { completed, timestamp: new Date().toLocaleTimeString() });
+        appLog('🔍 HOMESTORE - setReadingCompleted called:', { completed, timestamp: new Date().toLocaleTimeString() });
         set({ readingCompleted: completed });
       },
       setPrayerCompleted: (completed) => {
-        console.log('🔍 HOMESTORE - setPrayerCompleted called:', { completed, timestamp: new Date().toLocaleTimeString() });
+        appLog('🔍 HOMESTORE - setPrayerCompleted called:', { completed, timestamp: new Date().toLocaleTimeString() });
         set({ prayerCompleted: completed });
       },
       setReflectionCompleted: (completed) => {
-        console.log('🔍 HOMESTORE - setReflectionCompleted called:', { completed, timestamp: new Date().toLocaleTimeString() });
+        appLog('🔍 HOMESTORE - setReflectionCompleted called:', { completed, timestamp: new Date().toLocaleTimeString() });
         set({ reflectionCompleted: completed });
       },
       setSawDailyBonus: (saw) => set({ sawDailyBonus: saw }),
@@ -146,19 +147,19 @@ export const useHomeStore = create<HomeState>()(
         // Check if it's a new day
         if (lastStreakDate !== today && saw) {
           // It's a new day, allow setting sawStreakToday
-          console.log('🔍 HOMESTORE - setSawStreakToday called (new day):', { saw, date: today, timestamp: new Date().toLocaleTimeString() });
+          appLog('🔍 HOMESTORE - setSawStreakToday called (new day):', { saw, date: today, timestamp: new Date().toLocaleTimeString() });
           set({ 
             sawStreakToday: saw,
             lastStreakDate: today 
           });
         } else if (!saw) {
           // Always allow resetting to false
-          console.log('🔍 HOMESTORE - setSawStreakToday reset to false:', { timestamp: new Date().toLocaleTimeString() });
+          appLog('🔍 HOMESTORE - setSawStreakToday reset to false:', { timestamp: new Date().toLocaleTimeString() });
           set({ sawStreakToday: saw });
         } else {
           // Same day, don't allow setting to true again
           set({ sawStreakToday: saw });
-          console.log('🚫 HOMESTORE - setSawStreakToday blocked (same day):', { date: today, lastStreakDate, timestamp: new Date().toLocaleTimeString() });
+          appLog('🚫 HOMESTORE - setSawStreakToday blocked (same day):', { date: today, lastStreakDate, timestamp: new Date().toLocaleTimeString() });
         }
       },
       setShowGlobalButtons: (show) => set({ showGlobalButtons: show }),
@@ -174,7 +175,7 @@ export const useHomeStore = create<HomeState>()(
         const { lastXpResetDate } = get();
         
         if (lastXpResetDate !== today) {
-          console.log('🔄 Resetting daily XP for new day:', today);
+          appLog('🔄 Resetting daily XP for new day:', today);
           set({ 
             dailyXpEarned: 0, 
             lastXpResetDate: today 
@@ -193,9 +194,9 @@ export const useHomeStore = create<HomeState>()(
         
         if (actualXpToAdd > 0) {
           set({ dailyXpEarned: dailyXpEarned + actualXpToAdd });
-          console.log(`📊 Daily XP: +${actualXpToAdd} (${dailyXpEarned + actualXpToAdd}/${MAX_DAILY_XP})`);
+          appLog(`📊 Daily XP: +${actualXpToAdd} (${dailyXpEarned + actualXpToAdd}/${MAX_DAILY_XP})`);
         } else {
-          console.log('🚫 Daily XP limit reached (300/300)');
+          appLog('🚫 Daily XP limit reached (300/300)');
         }
         
         return actualXpToAdd;
@@ -215,7 +216,7 @@ export const useHomeStore = create<HomeState>()(
         const { lastStreakDate, sawStreakToday } = get();
         
         if (lastStreakDate !== today && sawStreakToday) {
-          console.log('🔄 Resetting sawStreakToday for new day:', today);
+          appLog('🔄 Resetting sawStreakToday for new day:', today);
           set({ 
             sawStreakToday: false,
             lastStreakDate: today 
@@ -224,7 +225,7 @@ export const useHomeStore = create<HomeState>()(
       },
 
       resetCompletionStates: () => {
-        console.log('🔍 HOMESTORE - resetCompletionStates called - BEFORE reset:', {
+        appLog('🔍 HOMESTORE - resetCompletionStates called - BEFORE reset:', {
           currentState: {
             readingCompleted: useHomeStore.getState().readingCompleted,
             prayerCompleted: useHomeStore.getState().prayerCompleted,
@@ -243,7 +244,7 @@ export const useHomeStore = create<HomeState>()(
           sawStreakToday: false,
         });
 
-        console.log('🔍 HOMESTORE - resetCompletionStates called - AFTER reset:', {
+        appLog('🔍 HOMESTORE - resetCompletionStates called - AFTER reset:', {
           newState: {
             readingCompleted: useHomeStore.getState().readingCompleted,
             prayerCompleted: useHomeStore.getState().prayerCompleted,

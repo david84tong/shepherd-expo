@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useUserStore } from './userStore';
+import { appLog } from '../helper/helper';
 
 interface ShopState {
   // User's owned skins
@@ -33,13 +34,13 @@ export const useShopStore = create<ShopState>()(
         
         // Check if user has enough gems
         if (currentGems < price) {
-          console.log('❌ Not enough gems to purchase skin:', skinId);
+          appLog('❌ Not enough gems to purchase skin:', skinId);
           return false;
         }
         
         // Check if user already owns the skin
         if (get().ownedSkins.includes(skinId)) {
-          console.log('❌ User already owns skin:', skinId);
+          appLog('❌ User already owns skin:', skinId);
           return false;
         }
         
@@ -59,8 +60,8 @@ export const useShopStore = create<ShopState>()(
             userStore.setSkins(updatedUserSkins);
           }
           
-          console.log('✅ Successfully purchased skin:', skinId, 'for', price, 'gems');
-          console.log('💎 Remaining gems:', newGemCount);
+          appLog('✅ Successfully purchased skin:', skinId, 'for', price, 'gems');
+          appLog('💎 Remaining gems:', newGemCount);
           
           return true;
         } catch (error) {
@@ -77,7 +78,7 @@ export const useShopStore = create<ShopState>()(
         const isDefaultSkin = skinId === '0';
         
         if (!isDefaultSkin && !ownedSkins.includes(skinId)) {
-          console.log('❌ Cannot equip skin that is not owned:', skinId);
+          appLog('❌ Cannot equip skin that is not owned:', skinId);
           return;
         }
         
@@ -93,7 +94,7 @@ export const useShopStore = create<ShopState>()(
         const userStore = useUserStore.getState();
         userStore.setLambSkin(skinId);
         
-        console.log('✅ Equipped skin:', skinId);
+        appLog('✅ Equipped skin:', skinId);
       },
       
       // Check if user owns a skin

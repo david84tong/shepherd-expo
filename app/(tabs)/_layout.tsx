@@ -13,7 +13,7 @@ import { ONBOARDING_COMPLETED_KEY } from '../models/Onboarding';
 import { useOnboardingStore } from '../stores/onboardingStore';
 import useSubscriptionStore from '../stores/subscriptionStore';
 import { useCheckInStore } from '../stores/checkInStore';
-import { RPH, RPW } from '../helper/helper';
+import { appLog, RPH, RPW } from '../helper/helper';
 import i18n from '../utils/i18n';
 import { AppFonts } from '../constants/appFonts';
 import { hapticMedium } from '~/utils/haptics';
@@ -71,7 +71,7 @@ export default function TabsLayout() {
       try {
         const completed = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
         setOnboardingCompleted(completed === 'true');
-        console.log(`[TabsLayout] Onboarding completed from AsyncStorage: ${completed}`);
+        appLog(`[TabsLayout] Onboarding completed from AsyncStorage: ${completed}`);
       } catch (error) {
         console.error('[TabsLayout] Error checking onboarding status:', error);
         setOnboardingCompleted(false); // Assume not completed on error
@@ -87,7 +87,7 @@ export default function TabsLayout() {
         const firstLaunchCompleted = await AsyncStorage.getItem(FIRST_APP_LAUNCH_KEY);
         const isFirst = firstLaunchCompleted !== 'true';
         setIsFirstAppLaunch(isFirst);
-        console.log(`[TabsLayout] Is first app launch: ${isFirst}`);
+        appLog(`[TabsLayout] Is first app launch: ${isFirst}`);
 
         // If this is the first launch, mark it as completed
         if (isFirst) {
@@ -110,7 +110,7 @@ export default function TabsLayout() {
         const dailyFirstLoadCompleted = await AsyncStorage.getItem(dailyKey);
         const isDailyFirst = dailyFirstLoadCompleted !== 'true';
         setIsDailyFirstLoad(isDailyFirst);
-        console.log(`[TabsLayout] Is daily first load for ${today}: ${isDailyFirst}`);
+        appLog(`[TabsLayout] Is daily first load for ${today}: ${isDailyFirst}`);
 
         // Note: We don't mark it as completed here anymore
         // The PricingScreen will mark it as completed when it loads
@@ -137,10 +137,10 @@ export default function TabsLayout() {
       
       if (hasCompletedTodaysCheckIn) {
         const reason = isFirstAppLaunch ? "First app launch" : "Daily first load";
-        console.log(`[TabsLayout] ${reason}, user is signed in but not pro. Showing free trial paywall.`);
+        appLog(`[TabsLayout] ${reason}, user is signed in but not pro. Showing free trial paywall.`);
         presentFreeTrialPaywall();
       } else {
-        console.log(`[TabsLayout] User has not completed today's check-in. Skipping free trial paywall.`);
+        appLog(`[TabsLayout] User has not completed today's check-in. Skipping free trial paywall.`);
       }
     }
   }, [signedIn, onboardingCompleted, isProMember, isFirstAppLaunch, isDailyFirstLoad, presentFreeTrialPaywall]);
@@ -168,23 +168,23 @@ export default function TabsLayout() {
 
   // Wait for both onboarding status from AsyncStorage and onboardingStore to be initialized
   if (onboardingCompleted === null || !isOnboardingStoreInitialized || isFirstAppLaunch === null || isDailyFirstLoad === null) {
-    console.log(`[TabsLayout] Waiting for initialization: onboardingCompleted (${onboardingCompleted}), isOnboardingStoreInitialized (${isOnboardingStoreInitialized}), isFirstAppLaunch (${isFirstAppLaunch}), isDailyFirstLoad (${isDailyFirstLoad})`);
+    appLog(`[TabsLayout] Waiting for initialization: onboardingCompleted (${onboardingCompleted}), isOnboardingStoreInitialized (${isOnboardingStoreInitialized}), isFirstAppLaunch (${isFirstAppLaunch}), isDailyFirstLoad (${isDailyFirstLoad})`);
     return null; // Show nothing while loading critical states
   }
 
-  console.log(`[TabsLayout] States evaluated: signedIn=${signedIn}, onboardingCompleted=${onboardingCompleted}, savedScreenToNavigateTo='${savedScreenToNavigateTo}' (Store initialized: ${isOnboardingStoreInitialized}), isFirstAppLaunch=${isFirstAppLaunch}, isDailyFirstLoad=${isDailyFirstLoad}, isProMember=${isProMember}`);
+  appLog(`[TabsLayout] States evaluated: signedIn=${signedIn}, onboardingCompleted=${onboardingCompleted}, savedScreenToNavigateTo='${savedScreenToNavigateTo}' (Store initialized: ${isOnboardingStoreInitialized}), isFirstAppLaunch=${isFirstAppLaunch}, isDailyFirstLoad=${isDailyFirstLoad}, isProMember=${isProMember}`);
 
   // CASE 1: User is NOT signed in
   if (!signedIn) {
     // If onboarding is NOT completed AND they have a specific saved screen (that is not '1')
     // This means they started onboarding, didn't finish, and are not signed in. Resume onboarding.
     if (!onboardingCompleted && savedScreenToNavigateTo && savedScreenToNavigateTo !== '1') {
-      console.log(`[TabsLayout] Case 1A: Not signed in, onboarding in progress (screen ${savedScreenToNavigateTo}). Redirecting to /onboarding/${savedScreenToNavigateTo}`);
+      appLog(`[TabsLayout] Case 1A: Not signed in, onboarding in progress (screen ${savedScreenToNavigateTo}). Redirecting to /onboarding/${savedScreenToNavigateTo}`);
       return <Redirect href={`/onboarding/${savedScreenToNavigateTo}` as any} />;
     }
     // Otherwise (brand new user, or user who only saw screen '1' and didn't sign in)
     // Send them to the auth screen to decide to log in or start fresh onboarding.
-    console.log(`[TabsLayout] Case 1B: Not signed in, fresh start or onboarding not meaningfully started. Redirecting to /(auth)`);
+    appLog(`[TabsLayout] Case 1B: Not signed in, fresh start or onboarding not meaningfully started. Redirecting to /(auth)`);
     return <Redirect href="/(auth)" />;
   }
 
@@ -193,10 +193,10 @@ export default function TabsLayout() {
 
   // If user is signed in, they should always go to the main app regardless of onboarding completion status
   // Being signed in means they've completed the necessary authentication/setup process
-  console.log("[TabsLayout] Case 2B: User is signed in. Proceeding to main app (tabs).");
+  appLog("[TabsLayout] Case 2B: User is signed in. Proceeding to main app (tabs).");
 
   // Proceed to the main app (tabs)
-  console.log("[TabsLayout] Rendering Tabs.");
+  appLog("[TabsLayout] Rendering Tabs.");
 
   // Using absolute positioning to prevent the "chin" gap
   const animatedTabBarStyle = {

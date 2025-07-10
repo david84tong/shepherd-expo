@@ -7,6 +7,7 @@ import { checkStreakAndApplyPenalties } from './streakHook';
 import { fetchFromFirestore } from '../helper/firebaseHelper';
 import { useHomeStore } from '../stores/homeStore';
 import analytics from '../../utils/analytics';
+import { appLog } from '../helper/helper';
 // Key to check if app has been initialized
 const APP_INITIALIZED_KEY = 'app_initialized';
 // Generate a unique UUID for anonymous users
@@ -27,11 +28,11 @@ const formatTimestamp = (timestamp: any) => {
 };
 // This function can be called after init or when app comes to foreground
 export const onAppForegroundOrInit = async () => {
-  console.log('onAppForegroundOrInit=====>', onAppForegroundOrInit);
+  appLog('onAppForegroundOrInit=====>', onAppForegroundOrInit);
   
   // Initialize analytics if not already initialized
   if (!analytics.isInitialized) {
-    console.log('🔧 Initializing analytics on app foreground...');
+    appLog('🔧 Initializing analytics on app foreground...');
     await analytics.init();
   }
   
@@ -40,7 +41,7 @@ export const onAppForegroundOrInit = async () => {
   const currentUser = auth().currentUser;
   try {
     if (!currentUser) {
-      console.log('No authenticated user found');
+      appLog('No authenticated user found');
       return;
     }
     const { success, data: firestoreData } = await fetchFromFirestore({
@@ -61,11 +62,11 @@ export const onAppForegroundOrInit = async () => {
       }
       // Update completedMapPaths from Firestore if available
       if (firestoreData?.completedMapPaths) {
-        console.log('Syncing completedMapPaths from Firestore:', firestoreData.completedMapPaths);
+        appLog('Syncing completedMapPaths from Firestore:', firestoreData.completedMapPaths);
         useUserStore.getState().setCompletedMapPaths(firestoreData.completedMapPaths);
       }
     }
-    console.log('onAppForegroundOrInit complete');
+    appLog('onAppForegroundOrInit complete');
   } catch (firestoreError) {
     console.error('Error fetching user from Firestore (foreground/init):', firestoreError);
   }
@@ -76,19 +77,19 @@ const restoreUserState = async () => {
   try {
     const firebaseUser = auth().currentUser;
     if (!firebaseUser) {
-      console.log('No authenticated user found');
+      appLog('No authenticated user found');
       return false;
     }
-    console.log('Restoring user state for:', firebaseUser.uid);
+    appLog('Restoring user state for:', firebaseUser.uid);
     // First try to fetch from Firestore
     const { success, data: firestoreData } = await fetchFromFirestore({
       currentLoggedUser: firebaseUser,
     });
     if (!success || !firestoreData) {
-      console.log('Failed to fetch user data from Firestore');
+      appLog('Failed to fetch user data from Firestore');
       return false;
     }
-    console.log('Successfully fetched Firestore data:', firestoreData);
+    appLog('Successfully fetched Firestore data:', firestoreData);
     const prayerCompleted = useHomeStore.getState().prayerCompleted;
     const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
     const readingCompleted = useHomeStore.getState().readingCompleted;
@@ -155,10 +156,10 @@ const restoreUserState = async () => {
     // Ensure we have all the required data
     const userData = useUserStore.getState().getUser();
     if (!userData) {
-      console.log('No user data found after sync');
+      appLog('No user data found after sync');
       return false;
     }
-    console.log('User state restored successfully');
+    appLog('User state restored successfully');
     return true;
   } catch (error) {
     console.error('Error restoring user state:', error);
@@ -173,12 +174,12 @@ export const useAppInitialization = () => {
     const initializeApp = async () => {
       try {
         // Initialize analytics first and wait for completion
-        console.log('🔧 Initializing analytics...');
+        appLog('🔧 Initializing analytics...');
         if (!analytics.isInitialized) {
           await analytics.init();
-          console.log('✅ Analytics initialized successfully');
+          appLog('✅ Analytics initialized successfully');
         } else {
-          console.log('✅ Analytics already initialized');
+          appLog('✅ Analytics already initialized');
         }
         setIsAnalyticsReady(true);
         

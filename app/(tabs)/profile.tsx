@@ -25,7 +25,7 @@ import analytics from '../../utils/analytics';
 import { FontAwesome6 } from '@expo/vector-icons';
 import { useAuth } from '../hooks/authHook';
 import { getLevelData } from '../../utils/levelUtils';
-import { isSignedInWithGoogle, isSignedInWithApple, RPH } from '../helper/helper';
+import { isSignedInWithGoogle, isSignedInWithApple, RPH, appLog } from '../helper/helper';
 import auth from '@react-native-firebase/auth';
 import { useAssets } from 'expo-asset';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -334,7 +334,7 @@ export default function ProfileScreen() {
 
   // Handle sign in based on platform
   const handleSignIn = async () => {
-    console.log('[Profile] Starting sign in process...');
+    appLog('[Profile] Starting sign in process...');
     setSignInError(null);
     setSignInLoading(true);
     try {
@@ -342,7 +342,7 @@ export default function ProfileScreen() {
         const currentUser = auth().currentUser;
         if (currentUser?.isAnonymous) {
           // Use the new upgrade function for anonymous users
-          console.log('[Profile] Current user is anonymous, using upgrade flow');
+          appLog('[Profile] Current user is anonymous, using upgrade flow');
           await upgradeAnonymousToApple();
         } else {
           // Use regular sign in for non-anonymous users
@@ -352,7 +352,7 @@ export default function ProfileScreen() {
         await signInWithGoogle(false);
       }
     } catch (error: any) {
-      console.log('[Profile] Sign in error:', error);
+      appLog('[Profile] Sign in error:', error);
       let errorMessage =
         Platform.OS === 'ios'
           ? 'There was a problem signing in with Apple.'
@@ -360,7 +360,7 @@ export default function ProfileScreen() {
 
       if (error.code === 'auth/credential-already-in-use') {
         // This should be handled automatically now
-        console.log('[Profile] Credential already in use - should be handled automatically');
+        appLog('[Profile] Credential already in use - should be handled automatically');
       } else if (error.message?.includes('already linked')) {
         errorMessage = error.message;
       } else if (error.message?.includes('canceled') || error.message?.includes('cancelled')) {
@@ -373,7 +373,7 @@ export default function ProfileScreen() {
         errorMessage = 'Sign in process was interrupted. Please try again.';
       } else if (error.message?.includes('not anonymous')) {
         // Don't show this error to the user, just log it
-        console.log('[Profile] User is not anonymous, using regular sign in flow');
+        appLog('[Profile] User is not anonymous, using regular sign in flow');
         return;
       }
       setSignInError(errorMessage);
@@ -416,7 +416,7 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (!riveRef.current || !riveLoaded) return;
     const skinValue = SKIN_MAP[riveSkin];
-    console.log('Setting Skin-Number to', skinValue);
+    appLog('Setting Skin-Number to', skinValue);
     riveRef.current?.setInputState(STATE_MACHINE, 'Skin-Number', skinValue);
   }, [riveSkin, riveLoaded]);
 
@@ -424,19 +424,19 @@ export default function ProfileScreen() {
   useEffect(() => {
     if (!riveRef.current || !riveLoaded) return;
     const actionValue = ACTION_MAP[riveAction];
-    console.log('Setting Action-Number to', actionValue);
+    appLog('Setting Action-Number to', actionValue);
     riveRef.current?.setInputState(STATE_MACHINE, 'Action-Number', actionValue);
   }, [riveAction, riveLoaded]);
 
   // Debug Rive assets loading
   useEffect(() => {
-    console.log('Rive assets loaded:', riveAssets);
+    appLog('Rive assets loaded:', riveAssets);
     if (riveAssets && riveAssets[0]) {
-      console.log('Rive asset URI:', riveAssets[0].uri);
+      appLog('Rive asset URI:', riveAssets[0].uri);
       // Set riveLoaded after a short delay as fallback
       setTimeout(() => {
         setRiveLoaded(true);
-        console.log('Rive loaded via timeout');
+        appLog('Rive loaded via timeout');
       }, 500);
     }
   }, [riveAssets]);
@@ -873,7 +873,7 @@ export default function ProfileScreen() {
                         analytics.logEvent('Profile_Upgrade_Success', {
                           fromScreen: 'profile'
                         });
-                        console.log('✅ Successfully upgraded to pro from profile');
+                        appLog('✅ Successfully upgraded to pro from profile');
                       }
                     } catch (error) {
                       console.error('❌ Error presenting paywall from profile:', error);

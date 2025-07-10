@@ -41,6 +41,7 @@ export interface FetchError {
 }
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { appLog } from '../helper/helper';
 
 // Cache for in-memory storage (faster than AsyncStorage for frequent access)
 const chapterCache = new Map<string, ChapterResponse>();
@@ -78,7 +79,7 @@ export const fetchChapterWithCache = async (
   
   // Check in-memory cache first
   if (chapterCache.has(cacheKey)) {
-    console.log(`📚 Using in-memory cache for ${translation} ${bookId}:${chapter}`);
+    appLog(`📚 Using in-memory cache for ${translation} ${bookId}:${chapter}`);
     return chapterCache.get(cacheKey)!;
   }
   
@@ -88,7 +89,7 @@ export const fetchChapterWithCache = async (
     if (cachedData) {
       const parsed: CachedChapterData = JSON.parse(cachedData);
       if (isCacheValid(parsed.timestamp)) {
-        console.log(`📚 Using AsyncStorage cache for ${translation} ${bookId}:${chapter}`);
+        appLog(`📚 Using AsyncStorage cache for ${translation} ${bookId}:${chapter}`);
         // Store in memory cache for faster future access
         chapterCache.set(cacheKey, parsed.data);
         return parsed.data;
@@ -99,7 +100,7 @@ export const fetchChapterWithCache = async (
   }
   
   // Fetch from API
-  console.log(`🌐 Fetching from API: ${translation} ${bookId}:${chapter}`);
+  appLog(`🌐 Fetching from API: ${translation} ${bookId}:${chapter}`);
   const result = await fetchChapter(translation, bookId, chapter);
   
   // Cache successful results
@@ -130,7 +131,7 @@ export const fetchChaptersBatch = async (
   translation: string,
   chapters: Array<{ bookId: number; chapter: number }>
 ): Promise<Map<string, ChapterResponse | FetchError>> => {
-  console.log(`🚀 Batch fetching ${chapters.length} chapters for ${translation}`);
+  appLog(`🚀 Batch fetching ${chapters.length} chapters for ${translation}`);
   
   const results = new Map<string, ChapterResponse | FetchError>();
   const uniqueChapters = new Map<string, { bookId: number; chapter: number }>();
@@ -143,7 +144,7 @@ export const fetchChaptersBatch = async (
     }
   });
   
-  console.log(`📊 Deduplicated to ${uniqueChapters.size} unique chapters`);
+  appLog(`📊 Deduplicated to ${uniqueChapters.size} unique chapters`);
   
   // Check cache for all chapters first
   const chaptersToFetch: Array<{ bookId: number; chapter: number; key: string }> = [];
@@ -176,7 +177,7 @@ export const fetchChaptersBatch = async (
     chaptersToFetch.push({ bookId, chapter, key });
   }
   
-  console.log(`📊 ${results.size} chapters found in cache, ${chaptersToFetch.length} need fetching`);
+  appLog(`📊 ${results.size} chapters found in cache, ${chaptersToFetch.length} need fetching`);
   
   // Fetch remaining chapters in parallel
   if (chaptersToFetch.length > 0) {
@@ -211,7 +212,7 @@ export const fetchChaptersBatch = async (
     });
   }
   
-  console.log(`✅ Batch fetch completed. ${results.size} total results`);
+  appLog(`✅ Batch fetch completed. ${results.size} total results`);
   return results;
 };
 
@@ -219,7 +220,7 @@ export const fetchChaptersBatch = async (
  * Clears all cached chapter data
  */
 export const clearChapterCache = async (): Promise<void> => {
-  console.log('🧹 Clearing chapter cache...');
+  appLog('🧹 Clearing chapter cache...');
   
   // Clear in-memory cache
   chapterCache.clear();
@@ -230,7 +231,7 @@ export const clearChapterCache = async (): Promise<void> => {
     const bibleKeys = keys.filter(key => key.startsWith('bible_chapter_'));
     if (bibleKeys.length > 0) {
       await AsyncStorage.multiRemove(bibleKeys);
-      console.log(`🧹 Cleared ${bibleKeys.length} cached chapters from AsyncStorage`);
+      appLog(`🧹 Cleared ${bibleKeys.length} cached chapters from AsyncStorage`);
     }
   } catch (error) {
     console.error('Failed to clear AsyncStorage cache:', error);
@@ -251,11 +252,11 @@ export const fetchChapter = async (
 ): Promise<ChapterResponse | FetchError> => {
   // Construct the URL for the new API
   const url = `${BASE_URL}/books/${bookId}/chapters/${chapter}/${translation}`;
-  console.log(`🌐 Fetching: ${url}`);
-  console.log(`📱 Platform: React Native, UserAgent: ${navigator?.userAgent || 'unknown'}`);
+  appLog(`🌐 Fetching: ${url}`);
+  appLog(`📱 Platform: React Native, UserAgent: ${navigator?.userAgent || 'unknown'}`);
 
   try {
-    console.log(`🔄 Starting fetch request...`);
+    appLog(`🔄 Starting fetch request...`);
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -264,15 +265,15 @@ export const fetchChapter = async (
         'User-Agent': 'ShepherdApp/1.0'
       },
     });
-    console.log(`✅ Fetch completed. Status: ${response.status}, StatusText: ${response.statusText}`);
-    console.log(`📄 Response headers:`, response.headers);
+    appLog(`✅ Fetch completed. Status: ${response.status}, StatusText: ${response.statusText}`);
+    appLog(`📄 Response headers:`, response.headers);
 
     if (!response.ok) {
       // Attempt to get error message from API response body if available
       let apiErrorMessage = `Failed to fetch chapter ${bookId}:${chapter} (${translation}). Status: ${response.status}`;
       try {
         const errorBody = await response.json();
-        console.log('❌ ERROR RESPONSE BODY:', JSON.stringify(errorBody, null, 2));
+        appLog('❌ ERROR RESPONSE BODY:', JSON.stringify(errorBody, null, 2));
         if (errorBody && errorBody.message) {
           apiErrorMessage = errorBody.message; // Use API's error message
         }
@@ -280,7 +281,7 @@ export const fetchChapter = async (
         /* Ignore parsing error, stick to default message */
       }
 
-      console.log(`API Error: ${response.status} ${response.statusText} for ${url}`);
+      appLog(`API Error: ${response.status} ${response.statusText} for ${url}`);
       return {
         error: true,
         message: apiErrorMessage,
@@ -289,16 +290,16 @@ export const fetchChapter = async (
     }
 
     const rawJson = await response.json();
-    // console.log('📋 RAW JSON RESPONSE:');
-    // console.log(JSON.stringify(rawJson, null, 2));
-    // console.log('📋 END RAW JSON RESPONSE');
+    // appLog('📋 RAW JSON RESPONSE:');
+    // appLog(JSON.stringify(rawJson, null, 2));
+    // appLog('📋 END RAW JSON RESPONSE');
 
     let transformedVerses: Verse[] = [];
     let bookName = '';
 
     if (Array.isArray(rawJson)) {
       // Old/array format
-      console.log('🔄 Processing as ARRAY format');
+      appLog('🔄 Processing as ARRAY format');
       const rawData: RawApiResponseArray = rawJson;
       if (rawData.length === 0) {
         console.warn(`API returned empty data array for ${url}`);
@@ -306,17 +307,17 @@ export const fetchChapter = async (
       }
       transformedVerses = rawData.map((v) => ({ verse: v.verseId, text: v.verse }));
       bookName = rawData[0].book.name;
-      console.log(`✅ Array format: Found ${transformedVerses.length} verses for ${bookName}`);
+      appLog(`✅ Array format: Found ${transformedVerses.length} verses for ${bookName}`);
     } else if (rawJson && rawJson.verses) {
       // New object format
-      console.log('🔄 Processing as OBJECT format');
+      appLog('🔄 Processing as OBJECT format');
       const dataObj = rawJson as ApiChapterObject;
       transformedVerses = dataObj.verses.map((v) => ({ verse: v.verse, text: v.content }));
       bookName = dataObj.book.name;
-      console.log(`✅ Object format: Found ${transformedVerses.length} verses for ${bookName}`);
+      appLog(`✅ Object format: Found ${transformedVerses.length} verses for ${bookName}`);
     } else {
-      console.log(`❌ Invalid data format received for ${url}:`, rawJson);
-      console.log('❌ Expected either an array or an object with "verses" property');
+      appLog(`❌ Invalid data format received for ${url}:`, rawJson);
+      appLog('❌ Expected either an array or an object with "verses" property');
       return { error: true, message: 'Invalid data format received from API.' };
     }
 
@@ -329,11 +330,11 @@ export const fetchChapter = async (
 
     return chapterResponse;
   } catch (err) {
-    console.log(`🚨 NETWORK ERROR fetching ${url}:`);
-    console.log(`❌ Error type: ${typeof err}`);
-    console.log(`❌ Error name: ${err instanceof Error ? err.name : 'Unknown'}`);
-    console.log(`❌ Error message: ${err instanceof Error ? err.message : String(err)}`);
-    console.log(`❌ Error stack: ${err instanceof Error ? err.stack : 'No stack'}`);
+    appLog(`🚨 NETWORK ERROR fetching ${url}:`);
+    appLog(`❌ Error type: ${typeof err}`);
+    appLog(`❌ Error name: ${err instanceof Error ? err.name : 'Unknown'}`);
+    appLog(`❌ Error message: ${err instanceof Error ? err.message : String(err)}`);
+    appLog(`❌ Error stack: ${err instanceof Error ? err.stack : 'No stack'}`);
     
     const message = err instanceof Error ? err.message : 'An unknown error occurred.';
     return { error: true, message: `Network or JSON parsing error: ${message}` };
@@ -351,7 +352,7 @@ export const fetchFirst10GenesisChapters = async (
   const bookId = 1; // Genesis is book 1
   const chapterNumbers = Array.from({ length: 10 }, (_, i) => i + 1); // Chapters 1 to 10
 
-  console.log(`Fetching chapters 1-10 of Genesis (Book ID ${bookId}) in ${translation}...`);
+  appLog(`Fetching chapters 1-10 of Genesis (Book ID ${bookId}) in ${translation}...`);
 
   const chapterPromises = chapterNumbers.map((chapter) =>
     fetchChapter(translation, bookId, chapter)
@@ -359,7 +360,7 @@ export const fetchFirst10GenesisChapters = async (
 
   try {
     const results = await Promise.all(chapterPromises);
-    console.log(`Successfully fetched ${results.filter((r) => !('error' in r)).length} chapters.`);
+    appLog(`Successfully fetched ${results.filter((r) => !('error' in r)).length} chapters.`);
     results.forEach((result, index) => {
       if ('error' in result) {
         console.warn(`Error fetching chapter ${index + 1}: ${result.message}`);
@@ -367,7 +368,7 @@ export const fetchFirst10GenesisChapters = async (
     });
     return results;
   } catch (error) {
-    console.log('Error fetching multiple chapters:', error);
+    appLog('Error fetching multiple chapters:', error);
     const message =
       error instanceof Error ? error.message : 'An unknown error occurred during batch fetch.';
     return chapterNumbers.map(() => ({ error: true, message }));

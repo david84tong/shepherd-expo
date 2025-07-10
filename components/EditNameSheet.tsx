@@ -13,6 +13,7 @@ import analytics from '../utils/analytics';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Toast from 'react-native-toast-message';
 import { hapticLight } from '~/utils/haptics';
+import { appLog } from '~/app/helper/helper';
 
 interface EditNameSheetProps {
   editNameSheetRef: React.RefObject<{
@@ -125,7 +126,7 @@ const EditNameSheet: React.FC<EditNameSheetProps> = ({ editNameSheetRef }) => {
     }),
     [initialName]
   );
-  console.log('snapPoints ==>', snapPoints);
+  appLog('snapPoints ==>', snapPoints);
 
   return (
     <>

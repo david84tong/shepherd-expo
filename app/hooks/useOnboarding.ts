@@ -9,6 +9,7 @@ import {
   ONBOARDING_STORAGE_KEY,
   ONBOARDING_COMPLETED_KEY,
 } from '../types/onboarding';
+import { appLog } from '../helper/helper';
 
 export const useOnboarding = () => {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -29,7 +30,7 @@ export const useOnboarding = () => {
         setOnboardingResponse(JSON.parse(savedResponse));
       }
     } catch (error) {
-      console.log('Error checking onboarding status:', error);
+      appLog('Error checking onboarding status:', error);
     }
   };
 
@@ -59,7 +60,7 @@ export const useOnboarding = () => {
         // setOnboardingResponse(updatedResponse);
         // await AsyncStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify(updatedResponse));
       } catch (error) {
-        console.log('Error saving onboarding response:', error);
+        appLog('Error saving onboarding response:', error);
       }
     },
     [onboardingResponse, setOnboardingResponse]
@@ -70,7 +71,7 @@ export const useOnboarding = () => {
       // await AsyncStorage.setItem(ONBOARDING_COMPLETED_KEY, 'true');
       // setIsCompleted(true);
     } catch (error) {
-      console.log('Error completing onboarding:', error);
+      appLog('Error completing onboarding:', error);
     }
   }, []);
 
@@ -81,7 +82,7 @@ export const useOnboarding = () => {
       setCurrentPageIndex(0);
       setOnboardingResponse({} as OnboardingResponse);
     } catch (error) {
-      console.log('Error resetting onboarding:', error);
+      appLog('Error resetting onboarding:', error);
     }
   }, [setOnboardingResponse]);
 

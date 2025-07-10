@@ -23,6 +23,7 @@ import { Prayer, Reading, Reflection } from '../models/User';
 import i18n from '../utils/i18n';
 import journalIcon from '../../assets/icons/journalIcon.png';
 import { hapticLight } from '~/utils/haptics';
+import { appLog } from '../helper/helper';
 
 // Bible book names mapping
 const BIBLE_BOOK_NAMES: { [bookId: number]: string } = {
@@ -156,7 +157,7 @@ function formatRelativeTime(timestamp: any): string {
     const diffYears = Math.floor(diffMonths / 12);
     return `${diffYears}y ago`;
   } catch (error) {
-    console.log('Error formatting relative time:', error, timestamp);
+    appLog('Error formatting relative time:', error, timestamp);
     return '';
   }
 }
@@ -376,31 +377,31 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
     hapticLight();
 
     // Month selection logic would go here
-    console.log('Month selector pressed');
+    appLog('Month selector pressed');
     // For now, this is just a visual element without actual month selection
   }, []);
 
   // Function to handle tapping on a reflection
   const handleReflectionPress = useCallback(
     (reflection: Reflection) => {
-      console.log('Reflection tapped:', reflection);
+      appLog('Reflection tapped:', reflection);
 
       // Provide haptic feedback
       hapticLight();
 
       // First try using the local reference to the function
       if (showOldReflectionSheet) {
-        console.log('Using direct UIStore reference to show sheet');
+        appLog('Using direct UIStore reference to show sheet');
         showOldReflectionSheet(reflection);
       }
       // Fallback to global object if needed
       else if (typeof global !== 'undefined' && (global as any).showOldReflectionSheet) {
-        console.log('Using global reference to show sheet');
+        appLog('Using global reference to show sheet');
         (global as any).showOldReflectionSheet(reflection);
       }
       // Final fallback to alert
       else {
-        console.log('showOldReflectionSheet is not available');
+        appLog('showOldReflectionSheet is not available');
         Alert.alert('Reflection Detail', reflection.content || 'No content.');
       }
     },
@@ -716,7 +717,7 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
                         hapticLight();
 
                         // In the future, this could show detail for the specific day
-                        console.log('Day pressed:', day.date);
+                        appLog('Day pressed:', day.date);
                       }}
                     />
                   );
@@ -756,7 +757,7 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
                 activeOpacity={0.8}
                 onPress={() => {
                   hapticLight();
-                  console.log('Readings summary pressed');
+                  appLog('Readings summary pressed');
                 }}>
                 <Text className="font-feather text-h2 text-textPrimary">{totalBibleReadings}</Text>
                 <Text className="font-din text-description text-center">{i18n.t('readings')}</Text>
@@ -766,7 +767,7 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
                 activeOpacity={0.8}
                 onPress={() => {
                   hapticLight();
-                  console.log('Prayers summary pressed');
+                  appLog('Prayers summary pressed');
                 }}>
                 <Text className="font-feather text-h2 text-textPrimary">{totalPrayerSessions}</Text>
                 <Text className="font-din text-description text-center">{i18n.t('prayers')}</Text>
@@ -776,7 +777,7 @@ export default function StatsScreen({ onClose }: StatsScreenProps = {}) {
                 activeOpacity={0.8}
                 onPress={() => {
                   hapticLight();
-                  console.log('Reflections summary pressed');
+                  appLog('Reflections summary pressed');
                 }}>
                 <Text className="font-feather text-h2 text-textPrimary">{totalReflections}</Text>
                 <Text className="font-din text-description text-center">{i18n.t('reflections')}</Text>

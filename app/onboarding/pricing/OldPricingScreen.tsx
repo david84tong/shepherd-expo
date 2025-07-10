@@ -32,6 +32,7 @@ import { IS_ANDROID } from '../../utils/utils';
 import i18n from '~/app/utils/i18n';
 import { ONBOARDING_COMPLETED_KEY } from '../../models/Onboarding';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
+import { appLog } from '~/app/helper/helper';
 // Key for tracking daily first load
 const DAILY_FIRST_LOAD_KEY = 'daily_first_load_';
 
@@ -112,7 +113,7 @@ const OldPricingScreen = () => {
         const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
         const dailyKey = DAILY_FIRST_LOAD_KEY + today;
         await AsyncStorage.setItem(dailyKey, 'true');
-        console.log(`[PricingScreen] Set daily first load to true for ${today}`);
+        appLog(`[PricingScreen] Set daily first load to true for ${today}`);
       } catch (error) {
         console.error('[PricingScreen] Error setting daily first load:', error);
       }
@@ -160,7 +161,7 @@ const OldPricingScreen = () => {
       });
       await showPaywall();
     } catch (error) {
-      console.log('Error during subscription process:', error);
+      appLog('Error during subscription process:', error);
       setIsLoading(false);
     }
   };
@@ -213,7 +214,7 @@ const OldPricingScreen = () => {
 
       // Adapty implementation
     } catch (error) {
-      console.log('Error presenting paywall:', error);
+      appLog('Error presenting paywall:', error);
       analytics.logEvent('PricingScreen_Paywall_Error', {
         errorMessage: (error as Error)?.message || 'Unknown error',
       });

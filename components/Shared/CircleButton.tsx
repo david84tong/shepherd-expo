@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { RPH } from '~/app/helper/helper';
+import { appLog, RPH } from '~/app/helper/helper';
 import { hapticLight } from '~/utils/haptics';
 
 interface CircleButtonProps {
@@ -36,7 +36,7 @@ const CircleButton: React.FC<CircleButtonProps> = ({
       try {
         hapticLight();
       } catch (error) {
-        console.log('Haptics not available');
+        appLog('Haptics not available');
       }
     }
 

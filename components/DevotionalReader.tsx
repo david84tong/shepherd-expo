@@ -26,7 +26,7 @@ import Reanimated, {
 import * as Haptics from 'expo-haptics';
 import { useUserStore } from '~/app/stores/userStore';
 import { getLevelData } from '~/utils/levelUtils';
-import { RPH } from '~/app/helper/helper';
+import { appLog, RPH } from '~/app/helper/helper';
 import SuccessMessage from './SuccessMessage';
 import DailyVerseCard from './Shared/DailyVerseCard';
 import analytics from '~/utils/analytics';
@@ -70,7 +70,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
 
   // Debug logging for devotional data
   useEffect(() => {
-    console.log('🔍 [DevotionalReader] Active devotional:', {
+    appLog('🔍 [DevotionalReader] Active devotional:', {
       id: activeDevotional?.id,
       title: activeDevotional?.title,
       imageURL: activeDevotional?.imageURL,
@@ -232,9 +232,9 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
 
   // Split context into sentences when devotional loads
   useEffect(() => {
-    console.log(' Processing context for devotional:', activeDevotional?.id);
-    console.log('🔄 Context value:', activeDevotional?.context);
-    console.log('🔄 Context type:', typeof activeDevotional?.context);
+    appLog(' Processing context for devotional:', activeDevotional?.id);
+    appLog('🔄 Context value:', activeDevotional?.context);
+    appLog('🔄 Context type:', typeof activeDevotional?.context);
 
     if (activeDevotional?.context) {
       let contextText = '';
@@ -259,21 +259,21 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
         }
       }
 
-      console.log('🔄 Processed context text:', contextText);
+      appLog('🔄 Processed context text:', contextText);
 
       if (contextText.trim().length > 0) {
         // Split by periods followed by space or end of string, keeping the period
         const sentences = contextText
           .split(/(?<=[.!?])\s+/)
           .filter(s => s.trim().length > 0);
-        console.log('🔄 Split into sentences:', sentences);
+        appLog('🔄 Split into sentences:', sentences);
         setContextSentences(sentences);
       } else {
-        console.log('🔄 No valid context text, setting empty array');
+        appLog('🔄 No valid context text, setting empty array');
         setContextSentences([]);
       }
     } else {
-      console.log('🔄 No context available, setting empty array');
+      appLog('🔄 No context available, setting empty array');
       setContextSentences([]);
     }
   }, [activeDevotional]);
@@ -282,14 +282,14 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
 
   // Debug log when devotional changes
   useEffect(() => {
-    console.log('🙏 DevotionalReader: Store state changed:', {
+    appLog('🙏 DevotionalReader: Store state changed:', {
       activeDevotional: !!activeDevotional,
       isLoading: isLoading,
       error: devotionalError,
     });
 
     if (activeDevotional) {
-      console.log('🙏 DevotionalReader: Active devotional:', {
+      appLog('🙏 DevotionalReader: Active devotional:', {
         id: activeDevotional.id,
         hasVerse: !!activeDevotional.verse,
         hasContext: !!activeDevotional.context,
@@ -361,14 +361,14 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
   }, [currentIndex, totalCards, scrollToBottom, showTapGuidance, tapCount, setDevotionalReadedFully]);
 
   const handleClose = useCallback(() => {
-    console.log('[DevotionalReader] handleClose called');
+    appLog('[DevotionalReader] handleClose called');
     useHomeStore.getState().setShowGlobalButtons(false);
     if (onClose) {
-      console.log('[DevotionalReader] Calling onClose callback');
+      appLog('[DevotionalReader] Calling onClose callback');
       hapticMedium();
       onClose({ isPrayPresses: false });
     } else {
-      console.log('[DevotionalReader] No onClose callback provided');
+      appLog('[DevotionalReader] No onClose callback provided');
     }
   }, [onClose]);
 
@@ -480,10 +480,10 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
     if (!activeDevotional) return [];
 
     const cards: DevotionalCard[] = [];
-    console.log('📋 Preparing cards to show. Current index:', currentIndex);
-    console.log('📋 Total context sentences:', contextSentences.length);
-    console.log('📋 Context sentences:', contextSentences);
-    console.log('📋 Devotional to use:', {
+    appLog('📋 Preparing cards to show. Current index:', currentIndex);
+    appLog('📋 Total context sentences:', contextSentences.length);
+    appLog('📋 Context sentences:', contextSentences);
+    appLog('📋 Devotional to use:', {
       hasVerse: !!activeDevotional?.verse,
       verse: activeDevotional?.verse,
       reference: activeDevotional?.bibleReference
@@ -507,7 +507,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
       });
     }
 
-    console.log('📋 Cards to show:', cards.length, cards);
+    appLog('📋 Cards to show:', cards.length, cards);
     return cards;
   }, [currentIndex, contextSentences, activeDevotional]);
 
@@ -612,7 +612,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
             {onClose && (
               <TouchableOpacity
                 onPress={() => {
-                  console.log('[DevotionalReader] X button pressed');
+                  appLog('[DevotionalReader] X button pressed');
                   hapticLight();
                   onClose({ isPrayPresses: false });
                 }}
@@ -665,7 +665,7 @@ const DevotionalReader = forwardRef<DevotionalReaderRef, DevotionalReaderProps>(
                 ) : (
                   <>
                     {cardsToShow.map((card, index) => {
-                      console.log('🎨 Rendering card:', index, card.type, card.content.substring(0, 50));
+                      appLog('🎨 Rendering card:', index, card.type, card.content.substring(0, 50));
 
                       // Use DailyVerseCard for the first verse card
                       if (card.type === 'verse' && index === 0) {

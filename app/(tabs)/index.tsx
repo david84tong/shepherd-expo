@@ -37,7 +37,7 @@ import type { Devotional } from '../models/Devotional';
 import { IS_ANDROID, IS_IOS } from '../utils/utils';
 import Rive from 'rive-react-native';
 import { responsiveHeight } from 'react-native-responsive-dimensions';
-import { RPH } from '../helper/helper';
+import { appLog, RPH } from '../helper/helper';
 import analytics from '~/utils/analytics';
 import BottomControls from '../components/BottomControls';
 import i18n from '../utils/i18n';
@@ -62,7 +62,7 @@ const gemIcon = imageAssets[8];
 const heartIcon = imageAssets[9];
 const starIcon = imageAssets[10];
 
-console.log('📄 HomeScreen file loaded at:', new Date().toISOString());
+appLog('📄 HomeScreen file loaded at:', new Date().toISOString());
 
 // Memoized scroll view content to prevent unnecessary re-renders
 const MemoizedScrollContent = React.memo(({ children }: { children: React.ReactNode }) => {
@@ -71,18 +71,18 @@ const MemoizedScrollContent = React.memo(({ children }: { children: React.ReactN
 MemoizedScrollContent.displayName = 'MemoizedScrollContent';
 
 export default function HomeScreen() {
-  console.log('🏠 HomeScreen function called at:', new Date().toISOString());
+  appLog('🏠 HomeScreen function called at:', new Date().toISOString());
 
   const router = useRouter();
 
   // Add a state to ensure component is mounted
   const [isMounted, setIsMounted] = useState(false);
-  console.log('📍 State initialized');
+  appLog('📍 State initialized');
 
   // Test effect to verify component is mounting
   useEffect(() => {
     const timestamp = new Date().toISOString();
-    console.log(`🎉 [${timestamp}] HomeScreen component mounted!`);
+    appLog(`🎉 [${timestamp}] HomeScreen component mounted!`);
     setIsMounted(true);
 
     try {
@@ -94,7 +94,7 @@ export default function HomeScreen() {
       const syncData = useUserStore.getState().syncFirestoreData;
       const currentUser = useUserStore.getState();
       if (currentUser.id && syncData) {
-        console.log('🔄 Syncing Firestore data on mount...');
+        appLog('🔄 Syncing Firestore data on mount...');
         // Fetch latest user data from Firestore
         firestore()
           .collection('users')
@@ -104,7 +104,7 @@ export default function HomeScreen() {
             if (doc.exists) {
               const userData = doc.data();
               if (userData && userData.completedMapPaths) {
-                console.log(
+                appLog(
                   '📥 Fresh completedMapPaths from Firestore:',
                   userData.completedMapPaths
                 );
@@ -123,29 +123,29 @@ export default function HomeScreen() {
     }
 
     return () => {
-      console.log(`👋 [${timestamp}] HomeScreen component unmounting`);
+      appLog(`👋 [${timestamp}] HomeScreen component unmounting`);
     };
   }, []);
 
-  console.log('📍 First useEffect registered');
+  appLog('📍 First useEffect registered');
 
   // Separate effect for fetching devotional - runs when component is mounted
   useEffect(() => {
-    console.log('isMounted ==>', isMounted);
+    appLog('isMounted ==>', isMounted);
     // if (!isMounted) return;
 
     const timestamp = new Date().toISOString();
-    console.log(`🎯 [${timestamp}] Component is mounted, attempting to fetch devotional...`);
+    appLog(`🎯 [${timestamp}] Component is mounted, attempting to fetch devotional...`);
 
     try {
       const fetchDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
       if (fetchDevotional) {
-        console.log(`✅ [${timestamp}] fetchTodaysDevotional function found!`);
+        appLog(`✅ [${timestamp}] fetchTodaysDevotional function found!`);
         fetchDevotional()
           .then(() => {
             const devotionalStore = useDevotionalStore.getState();
             const data = devotionalStore.currentDevotional;
-            console.log(
+            appLog(
               `📖 [${timestamp}] Devotional fetched successfully:`,
               data?.id,
               data?.bibleReference
@@ -155,18 +155,18 @@ export default function HomeScreen() {
             console.error(`❌ [${timestamp}] Error fetching devotional`, error);
           });
       } else {
-        console.log(`❌ [${timestamp}] fetchTodaysDevotional function not found!`);
+        appLog(`❌ [${timestamp}] fetchTodaysDevotional function not found!`);
       }
     } catch (error) {
       console.error('❌ Error in devotional useEffect:', error);
     }
   }, []);
 
-  console.log('📍 Second useEffect registered');
+  appLog('📍 Second useEffect registered');
 
   // Fetch recent devotionals on mount
   useEffect(() => {
-    console.log('📚 Fetching recent devotionals on mount');
+    appLog('📚 Fetching recent devotionals on mount');
     fetchRecentDevotionals().catch((error) => {
       console.error('❌ Error fetching recent devotionals on mount:', error);
     });
@@ -186,7 +186,7 @@ export default function HomeScreen() {
   const [isScrolling, setIsScrolling] = useState(false);
   const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  console.log('📍 About to call useHomeScreen hook');
+  appLog('📍 About to call useHomeScreen hook');
 
   const {
     // State
@@ -298,11 +298,11 @@ export default function HomeScreen() {
     MAX_HEARTS,
   } = useHomeScreen();
 
-  console.log('📍 useHomeScreen hook called successfully');
+  appLog('📍 useHomeScreen hook called successfully');
 
   const [startShareFlow, setStartShareFlow] = useState(false);
 
-  console.log('📍 All local state initialized');
+  appLog('📍 All local state initialized');
 
   // Path selection modal state removed - now navigating directly to map screen
 
@@ -312,7 +312,7 @@ export default function HomeScreen() {
 
   // Debug effect to track nextUnitPreview changes
   useEffect(() => {
-    console.log('🔍 NextUnitPreview debug:', {
+    appLog('🔍 NextUnitPreview debug:', {
       hasNextUnit: !!nextUnitPreview,
       unitId: nextUnitPreview?.id,
       unitTitle: nextUnitPreview?.title,
@@ -327,7 +327,7 @@ export default function HomeScreen() {
 
   // Debug effect to track completedMapPaths changes
   useEffect(() => {
-    console.log('🗺️ CompletedMapPaths updated:', {
+    appLog('🗺️ CompletedMapPaths updated:', {
       count: completedMapPaths?.length || 0,
       paths: completedMapPaths,
     });
@@ -376,7 +376,7 @@ export default function HomeScreen() {
             if (doc.exists) {
               const userData = doc.data();
               if (userData && userData.completedMapPaths) {
-                console.log('📥 Refreshed completedMapPaths on focus:', userData.completedMapPaths);
+                appLog('📥 Refreshed completedMapPaths on focus:', userData.completedMapPaths);
                 const syncData = useUserStore.getState().syncFirestoreData;
                 if (syncData) {
                   syncData(userData as any).catch((error: any) => {
@@ -392,14 +392,14 @@ export default function HomeScreen() {
       }
 
       // Also refresh recent devotionals when screen comes into focus
-      console.log('🔄 Fetching recent devotionals on focus');
+      appLog('🔄 Fetching recent devotionals on focus');
       fetchRecentDevotionals().catch((error) => {
         console.error('❌ Error fetching recent devotionals:', error);
       });
       
       // Ensure we have today's daily devotional loaded
       const fetchTodaysDevotional = useDevotionalStore.getState().fetchTodaysDevotional;
-      console.log('🔄 Fetching today\'s daily devotional on focus');
+      appLog('🔄 Fetching today\'s daily devotional on focus');
       fetchTodaysDevotional().catch((error) => {
         console.error('❌ Error fetching today\'s devotional:', error);
       });
@@ -467,7 +467,7 @@ export default function HomeScreen() {
       const timer = setTimeout(() => {
         if (scrollViewRef.current) {
           scrollViewRef.current.scrollTo({ y: scrollOffsetRef.current, animated: false });
-          console.log('Restored scroll position to:', scrollOffsetRef.current);
+          appLog('Restored scroll position to:', scrollOffsetRef.current);
         }
       }, 100);
 
@@ -478,7 +478,7 @@ export default function HomeScreen() {
   const isCustomPathCompletedToday = useMemo(() => {
     // First check the new completedUnitToday flag
     if (completedUnitToday) {
-      console.log('🗺️ Custom path completed today (from pathStore):', true);
+      appLog('🗺️ Custom path completed today (from pathStore):', true);
       return true;
     }
 
@@ -516,7 +516,7 @@ export default function HomeScreen() {
       }
     });
 
-    console.log('🗺️ Custom path completion check (fallback):', {
+    appLog('🗺️ Custom path completion check (fallback):', {
       totalCompletedPaths: completedMapPaths.length,
       todaysCompletions: todaysMapPathCompletions.length,
       isCompleted: todaysMapPathCompletions.length > 0,
@@ -658,9 +658,9 @@ export default function HomeScreen() {
   ]);
 
   // Gate of rendering: only render the screen if the assets are ready
-  console.log('🚪 Asset loading check:', { assetsLoaded, hasAssets: !!assets, riveAssetsLoaded, hasRiveAssets: !!preloadedRiveAssets });
+  appLog('🚪 Asset loading check:', { assetsLoaded, hasAssets: !!assets, riveAssetsLoaded, hasRiveAssets: !!preloadedRiveAssets });
   if (!assetsLoaded || !assets || !riveAssetsLoaded || !preloadedRiveAssets) {
-    console.log('❌ Returning null - assets not ready!');
+    appLog('❌ Returning null - assets not ready!');
     return null;
   }
 
@@ -1198,7 +1198,7 @@ export default function HomeScreen() {
                               // Ensure maximum 2 cards
                               const finalDevotionals = devotionalsToShow.slice(0, 2);
 
-                              console.log('📚 Devotionals Debug:', {
+                              appLog('📚 Devotionals Debug:', {
                                 recentDevotionalsCount: recentDevotionals.length,
                                 recentDevotionals: recentDevotionals.map(d => ({
                                   id: d?.id,

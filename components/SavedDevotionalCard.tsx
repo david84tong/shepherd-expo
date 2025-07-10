@@ -11,7 +11,7 @@ import analytics from '~/utils/analytics';
 import PrimaryButton from '~/components/PrimaryButton';
 import { Devotional } from '~/app/models/Devotional';
 import { ImageBackground } from 'expo-image';
-import { RPH } from '~/app/helper/helper';
+import { appLog, RPH } from '~/app/helper/helper';
 import { AppFonts } from '~/app/constants/appFonts';
 import firestore from '@react-native-firebase/firestore';
 import { useUserStore } from '~/app/stores/userStore';
@@ -54,7 +54,7 @@ const SavedDevotionalCard: React.FC<SavedDevotionalCardProps> = ({
             // Remove devotional from savedDevotionals collection
             const savedDevotionalId = `${currentUser.id}_${devotional.id}`;
 
-            console.log('🔍 Removing devotional from savedDevotionals:', {
+            appLog('🔍 Removing devotional from savedDevotionals:', {
                 id: savedDevotionalId,
                 devotionalId: devotional.id,
                 userId: currentUser.id
@@ -83,7 +83,7 @@ const SavedDevotionalCard: React.FC<SavedDevotionalCardProps> = ({
         try {
             // Only update Firestore if we have a devotional with an ID
             if (devotional?.id) {
-                console.log('🔍 Updating Firestore share count for devotional:', devotional.id);
+                appLog('🔍 Updating Firestore share count for devotional:', devotional.id);
 
                 // Determine which collection to update based on devotional type
                 const isCustomDevotional = devotional.id.startsWith('ai-') || devotional.id.startsWith('quick-');

@@ -15,6 +15,7 @@ import { NativeModules } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { usePathStore } from './pathStore';
 import dayjs from 'dayjs';
+import { appLog } from '../helper/helper';
 
 // Helper function to get a random devotional background
 const getRandomDevotionalBackground = (excludeUrl?: string) => {
@@ -32,7 +33,7 @@ const getRandomDevotionalBackground = (excludeUrl?: string) => {
   const randomIndex = Math.floor(Math.random() * backgroundsToChooseFrom.length);
   const selectedBackground = backgroundsToChooseFrom[randomIndex];
 
-  console.log('🖼️ [DevotionalStore] Selected random background:', {
+  appLog('🖼️ [DevotionalStore] Selected random background:', {
     index: randomIndex,
     url: selectedBackground,
     totalBackgrounds: backgroundsToChooseFrom.length,
@@ -46,22 +47,22 @@ const getRandomDevotionalBackground = (excludeUrl?: string) => {
 // Safely get WidgetDataSharer with error handling
 const getWidgetDataSharer = () => {
   try {
-    console.log('📱 Attempting to access WidgetDataSharer from NativeModules...');
-    console.log('📱 Available NativeModules:', Object.keys(NativeModules));
+    appLog('📱 Attempting to access WidgetDataSharer from NativeModules...');
+    appLog('📱 Available NativeModules:', Object.keys(NativeModules));
 
     const { WidgetDataSharer } = NativeModules;
-    console.log('📱 WidgetDataSharer from destructuring:', WidgetDataSharer);
+    appLog('📱 WidgetDataSharer from destructuring:', WidgetDataSharer);
 
     if (!WidgetDataSharer) {
       console.warn('📱 WidgetDataSharer native module not found');
-      console.log('📱 This might be because:');
-      console.log('📱 1. The native module is not properly linked');
-      console.log('📱 2. The app needs to be rebuilt');
-      console.log('📱 3. The module is not included in the Xcode project');
+      appLog('📱 This might be because:');
+      appLog('📱 1. The native module is not properly linked');
+      appLog('📱 2. The app needs to be rebuilt');
+      appLog('📱 3. The module is not included in the Xcode project');
       return null;
     }
 
-    console.log('📱 WidgetDataSharer found successfully:', {
+    appLog('📱 WidgetDataSharer found successfully:', {
       hasUpdateVerseData: typeof WidgetDataSharer.updateVerseData === 'function',
       hasUpdateWidgetStatus: typeof WidgetDataSharer.updateWidgetStatus === 'function',
     });
@@ -177,7 +178,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   recentDevotionals: [],
 
   fetchTodaysDevotional: async () => {
-    console.log('🚀 fetchTodaysDevotional function called!');
+    appLog('🚀 fetchTodaysDevotional function called!');
     set({ isLoading: true, error: null });
 
     try {
@@ -187,7 +188,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       const today = dayjs();
       const todayIdFormat = today.format('YYYY-MM-DD');
 
-      console.log(
+      appLog(
         'Looking for devotional with id property:',
         todayIdFormat,
         'Current time:',
@@ -203,14 +204,14 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       let snapshot;
       if (!idQuerySnapshot.empty) {
         snapshot = idQuerySnapshot.docs[0];
-        console.log(
+        appLog(
           'Found devotional by id field:',
           snapshot.id,
           'with id property:',
           todayIdFormat
         );
       } else {
-        console.log('No devotional found for today:', todayIdFormat);
+        appLog('No devotional found for today:', todayIdFormat);
         set({
           currentDevotional: null,
           dailyDevotional: null,
@@ -222,10 +223,10 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
       // Get the document data
       const devotionalData = snapshot.data() as Devotional;
-      console.log('FETCHING devotionalData ====>', devotionalData);
+      appLog('FETCHING devotionalData ====>', devotionalData);
 
       if (!devotionalData) {
-        console.log('No devotional data found');
+        appLog('No devotional data found');
         set({
           currentDevotional: null,
           isLoading: false,
@@ -250,8 +251,8 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         // Keep the original id field from the document data
       };
 
-      console.log('Fetched devotional:', devotional.id);
-      console.log('Devotional from Firestore:', {
+      appLog('Fetched devotional:', devotional.id);
+      appLog('Devotional from Firestore:', {
         hasVerse: !!devotionalData.verse,
         versePreview: devotionalData.verse?.substring(0, 100),
         bibleReference: devotionalData.bibleReference,
@@ -262,7 +263,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
       // Determine the Bible reference to use for fetching
       const referenceToUse = devotionalData.bibleReference || devotionalData.verse;
-      console.log('📍 Reference to use for fetching:', referenceToUse);
+      appLog('📍 Reference to use for fetching:', referenceToUse);
 
       // Check if we need to fetch the verse (if verse field contains a reference instead of actual text)
       const needsVerseFetch =
@@ -271,7 +272,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
           (devotionalData.verse && devotionalData.verse.includes(':'))); // verse looks like a reference
 
       if (needsVerseFetch) {
-        console.log('🔄 Need to fetch verse from API');
+        appLog('🔄 Need to fetch verse from API');
         // Fetch the actual Bible verse if we have a reference
         try {
           const parsed = parseBibleReference(referenceToUse);
@@ -279,7 +280,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
             // Get book ID from book name
             const bookId = BIBLE_BOOK_IDS[parsed.book];
             if (bookId) {
-              console.log(`🔄 Fetching verse: ${referenceToUse} (Book ID: ${bookId})`);
+              appLog(`🔄 Fetching verse: ${referenceToUse} (Book ID: ${bookId})`);
 
               // Fetch the chapter using user's saved translation from pathStore
               const userTranslation = usePathStore.getState().savedTranslation || 'ESV';
@@ -303,14 +304,14 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
                   if (verses.length > 0) {
                     devotional.verse = verses.join(' ');
                     devotional.bibleReference = referenceToUse; // Set the reference properly
-                    console.log(
+                    appLog(
                       `✅ Found verse range (${parsed.verse}-${parsed.endVerse}): ${devotional.verse.substring(0, 100)}...`
                     );
-                    console.log(`✅ Combined ${verses.length} verses`);
-                    console.log(`✅ Devotional verse field set`, devotional.verse);
-                    console.log(`✅ Bible reference set`, devotional.bibleReference);
+                    appLog(`✅ Combined ${verses.length} verses`);
+                    appLog(`✅ Devotional verse field set`, devotional.verse);
+                    appLog(`✅ Bible reference set`, devotional.bibleReference);
                   } else {
-                    console.log(
+                    appLog(
                       `⚠️ No verses found in range ${parsed.verse}-${parsed.endVerse} for chapter ${parsed.chapter}`
                     );
                   }
@@ -320,23 +321,23 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
                   if (verseData) {
                     devotional.verse = verseData.text;
                     devotional.bibleReference = referenceToUse; // Set the reference properly
-                    console.log(`✅ Found verse: ${verseData.text.substring(0, 50)}...`);
-                    console.log(`✅ Full verse text`, verseData.text);
-                    console.log(`✅ Devotional verse field set`, devotional.verse);
-                    console.log(`✅ Bible reference set`, devotional.bibleReference);
+                    appLog(`✅ Found verse: ${verseData.text.substring(0, 50)}...`);
+                    appLog(`✅ Full verse text`, verseData.text);
+                    appLog(`✅ Devotional verse field set`, devotional.verse);
+                    appLog(`✅ Bible reference set`, devotional.bibleReference);
                   } else {
-                    console.log(`⚠️ Verse ${parsed.verse} not found in chapter ${parsed.chapter}`);
-                    console.log(
+                    appLog(`⚠️ Verse ${parsed.verse} not found in chapter ${parsed.chapter}`);
+                    appLog(
                       `⚠️ Available verses:`,
                       chapterData.verses.map((v) => v.verse)
                     );
                   }
                 }
               } else {
-                console.log('❌ Error fetching chapter:', chapterData);
+                appLog('❌ Error fetching chapter:', chapterData);
               }
             } else {
-              console.log(`❌ Book not found in BIBLE_BOOK_IDS: ${parsed.book}`);
+              appLog(`❌ Book not found in BIBLE_BOOK_IDS: ${parsed.book}`);
             }
           }
         } catch (error) {
@@ -344,14 +345,14 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
           // Continue without the verse - don't fail the whole devotional fetch
         }
       } else {
-        console.log('✅ No need to fetch verse from API');
+        appLog('✅ No need to fetch verse from API');
         // If bibleReference is missing but we have a verse that looks like content, set it
         if (!devotional.bibleReference && referenceToUse && !referenceToUse.includes(':')) {
           devotional.bibleReference = referenceToUse;
         }
       }
 
-      console.log('📚 Final devotional object before setting:', {
+      appLog('📚 Final devotional object before setting:', {
         id: devotional.id,
         bibleReference: devotional.bibleReference,
         verse: devotional.verse,
@@ -419,7 +420,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     const excludeImageUrl = dailyDevotional?.imageURL;
 
     const selectedImageURL = getRandomDevotionalBackground(excludeImageUrl);
-    console.log('🎨 [DevotionalStore] Creating quick devotional with image:', selectedImageURL);
+    appLog('🎨 [DevotionalStore] Creating quick devotional with image:', selectedImageURL);
 
     const quickDevotional: Devotional = {
       id: `quick-${Date.now()}`,
@@ -438,7 +439,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       verse: verseText,
     };
 
-    console.log('[DevotionalStore] Created quick devotional from verse:', {
+    appLog('[DevotionalStore] Created quick devotional from verse:', {
       id: quickDevotional.id,
       imageURL: quickDevotional.imageURL,
       verse: quickDevotional.verse?.substring(0, 50) + '...',
@@ -447,7 +448,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
     // Share the quick devotional with the widget
     if (reference && verseText) {
-      console.log('📱 Sharing quick devotional with widget:', {
+      appLog('📱 Sharing quick devotional with widget:', {
         bibleReference: reference,
         verseLength: verseText.length,
       });
@@ -468,7 +469,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     chapter: number,
     verse: number
   ) => {
-    console.log('[DevotionalStore] Creating AI devotional for:', reference);
+    appLog('[DevotionalStore] Creating AI devotional for:', reference);
     set({ isCreatingDevotional: true, error: null });
 
     try {
@@ -492,7 +493,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         verseText: verseText,
       };
 
-      console.log('[DevotionalStore] Calling AI service with context:', verseContext);
+      appLog('[DevotionalStore] Calling AI service with context:', verseContext);
 
       // Call AI service to create devotional
       const aiResponse = await createDevotionalFromVerse(verseContext, idToken);
@@ -507,7 +508,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       const excludeImageUrl = dailyDevotional?.imageURL;
 
       const selectedImageURL = getRandomDevotionalBackground(excludeImageUrl);
-      console.log('🎨 [DevotionalStore] Creating AI devotional with image:', selectedImageURL);
+      appLog('🎨 [DevotionalStore] Creating AI devotional with image:', selectedImageURL);
 
       // Create a full Devotional object from the AI response
       const aiDevotional: Devotional = {
@@ -533,7 +534,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
           ...aiDevotional,
           userId: currentUser.uid, // Add userId as additional field for Firestore
         } as any);
-        console.log('[DevotionalStore] Saved custom devotional to Firestore:', aiDevotional.id);
+        appLog('[DevotionalStore] Saved custom devotional to Firestore:', aiDevotional.id);
 
         // Also track in user document
         // Import is done at the top of the file to avoid circular dependency issues
@@ -541,12 +542,12 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         // await useUserStore
         //   .getState()
         //   .addCustomDevotional(aiDevotional.id, firestore.Timestamp.now());
-        console.log('[DevotionalStore] Added custom devotional reference to user document');
+        appLog('[DevotionalStore] Added custom devotional reference to user document');
       } catch (Error) {
         console.error('[DevotionalStore] Failed to save custom devotional to Firestore:', Error);
       }
 
-      console.log('[DevotionalStore] AI devotional created successfully:', aiDevotional);
+      appLog('[DevotionalStore] AI devotional created successfully:', aiDevotional);
       set({
         currentDevotional: aiDevotional,
         customDevotional: aiDevotional,
@@ -556,7 +557,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
       // Share the AI devotional with the widget
       if (reference && verseText) {
-        console.log('📱 Sharing AI devotional with widget:', {
+        appLog('📱 Sharing AI devotional with widget:', {
           bibleReference: reference,
           verseLength: verseText.length,
         });
@@ -573,7 +574,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       setTimeout(() => {
         const fetchRecentDevotionals = get().fetchRecentDevotionals;
         if (fetchRecentDevotionals) {
-          console.log('[DevotionalStore] Triggering refresh of recent devotionals after creating new AI devotional');
+          appLog('[DevotionalStore] Triggering refresh of recent devotionals after creating new AI devotional');
           fetchRecentDevotionals().catch(error => {
             console.error('[DevotionalStore] Error refreshing recent devotionals:', error);
           });
@@ -625,7 +626,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   },
 
   clearCustomDevotional: async () => {
-    console.log('[DevotionalStore] Clearing custom devotional');
+    appLog('[DevotionalStore] Clearing custom devotional');
     set({
       customDevotional: null,
       isCreatingDevotional: false,
@@ -636,7 +637,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
     // Instead of clearing widget data, restore the daily devotional data
     const { dailyDevotional } = get();
     if (dailyDevotional?.bibleReference && dailyDevotional?.verse) {
-      console.log('📱 Restoring daily devotional to widget after clearing custom devotional:', {
+      appLog('📱 Restoring daily devotional to widget after clearing custom devotional:', {
         bibleReference: dailyDevotional.bibleReference,
         verseLength: dailyDevotional.verse.length,
         imageURL: dailyDevotional.imageURL,
@@ -648,13 +649,13 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         dailyDevotional.imageURL || null
       );
     } else {
-      console.log('📱 No daily devotional available, setting widget to noVerseAvailable');
+      appLog('📱 No daily devotional available, setting widget to noVerseAvailable');
       await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
     }
   },
 
   setCustomDevotional: (devotional: Devotional) => {
-    console.log('[DevotionalStore] Setting custom devotional:', devotional);
+    appLog('[DevotionalStore] Setting custom devotional:', devotional);
     set({
       customDevotional: devotional,
       currentDevotional: devotional,
@@ -662,12 +663,12 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   },
 
   setIsFromCheckIn: (value: boolean) => {
-    console.log('[DevotionalStore] Setting isFromCheckIn:', value);
+    appLog('[DevotionalStore] Setting isFromCheckIn:', value);
     set({ isFromCheckIn: value });
   },
 
   createCustomDevotionalFromCheckIn: async (devotional: Devotional) => {
-    console.log('[DevotionalStore] Creating custom devotional from check-in:', devotional);
+    appLog('[DevotionalStore] Creating custom devotional from check-in:', devotional);
 
     try {
       // Get current user
@@ -695,7 +696,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         .doc(customDevotionalId)
         .set(devotionalWithId);
 
-      console.log('[DevotionalStore] Saved custom devotional to Firestore:', customDevotionalId);
+      appLog('[DevotionalStore] Saved custom devotional to Firestore:', customDevotionalId);
 
       // Update the store with the new devotional
       set({
@@ -715,14 +716,14 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
               createdAt: firestore.Timestamp.now(),
             }),
           });
-        console.log('[DevotionalStore] Added custom devotional reference to user document');
+        appLog('[DevotionalStore] Added custom devotional reference to user document');
       } catch (error) {
         console.error('[DevotionalStore] Failed to update user document:', error);
       }
 
       // Update widget with the custom devotional
       if (devotionalWithId.bibleReference && devotionalWithId.verse) {
-        console.log('📱 Sharing custom check-in devotional with widget:', {
+        appLog('📱 Sharing custom check-in devotional with widget:', {
           bibleReference: devotionalWithId.bibleReference,
           verseLength: devotionalWithId.verse.length,
         });
@@ -739,7 +740,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       // Immediate refresh
       const fetchRecentDevotionals = get().fetchRecentDevotionals;
       if (fetchRecentDevotionals) {
-        console.log('[DevotionalStore] Triggering immediate refresh of recent devotionals');
+        appLog('[DevotionalStore] Triggering immediate refresh of recent devotionals');
         fetchRecentDevotionals().catch(error => {
           console.error('[DevotionalStore] Error in immediate refresh of recent devotionals:', error);
         });
@@ -765,7 +766,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
   refreshWidgetData: async () => {
     const { currentDevotional } = get();
     if (currentDevotional?.bibleReference && currentDevotional?.verse) {
-      console.log('📱 Refreshing widget data with current devotional:', {
+      appLog('📱 Refreshing widget data with current devotional:', {
         bibleReference: currentDevotional.bibleReference,
         verseLength: currentDevotional.verse.length,
         imageURL: currentDevotional.imageURL,
@@ -777,7 +778,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         currentDevotional.imageURL || null
       );
     } else {
-      console.log('📱 No current devotional data available for widget refresh');
+      appLog('📱 No current devotional data available for widget refresh');
       await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
     }
   },
@@ -790,7 +791,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
   // NEW ACTION: Fetch current devotional plus 2 previous days
   fetchRecentDevotionals: async () => {
-    console.log('🚀 Fetching current devotional plus 2 previous days...');
+    appLog('🚀 Fetching current devotional plus 2 previous days...');
     try {
       useDevotionalStore.getState().setFetchingRecentDevotionals(true);
     
@@ -799,7 +800,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       // Get current user ID
       const currentUserId = auth().currentUser?.uid;
       if (!currentUserId) {
-        console.log('❌ No authenticated user found');
+        appLog('❌ No authenticated user found');
         return [];
       }
 
@@ -827,7 +828,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         customQuerySnap = customQuerySnapResult;
       } catch (error) {
         // If the query fails due to missing index, fall back to simpler query
-        console.log('⚠️ Composite index not available, using fallback query');
+        appLog('⚠️ Composite index not available, using fallback query');
 
         // Fetch daily devotionals for TODAY only
         dailyQuerySnap = await firestore()
@@ -880,7 +881,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         };
       }
 
-      console.log(
+      appLog(
         `🔍 Found ${dailyQuerySnap.docs.length} daily devotionals and ${customQuerySnap.docs.length} custom devotionals in range`
       );
 
@@ -945,7 +946,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       // Batch fetch all needed chapters
       let chapterResults: Map<string, ChapterResponse | FetchError> = new Map();
       if (chaptersToFetch.length > 0) {
-        console.log(`📚 Batch fetching ${chaptersToFetch.length} chapters for recent devotionals`);
+        appLog(`📚 Batch fetching ${chaptersToFetch.length} chapters for recent devotionals`);
         chapterResults = await fetchChaptersBatch(get().bibleVersion, chaptersToFetch);
       }
 
@@ -970,7 +971,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
                     const verseData = chapterData.verses.find((v) => v.verse === parsed.verse);
                     if (verseData) {
                       verseText = verseData.text;
-                      console.log(
+                      appLog(
                         `✅ Found verse text for ${reference}: ${verseText.substring(0, 50)}...`
                       );
                     }
@@ -995,8 +996,8 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         })
       );
 
-      console.log(`📚 Processed ${processedDevotionals.filter(Boolean).length} recent devotionals`);
-      console.log(
+      appLog(`📚 Processed ${processedDevotionals.filter(Boolean).length} recent devotionals`);
+      appLog(
         '🔍 Final processed devotionals:',
         processedDevotionals.map((d, i) => ({
           index: i,
@@ -1023,7 +1024,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
   // NEW ACTION: Update widget timeline with 5 days of data
   updateWidgetTimeline: async () => {
-    console.log('🚀 Updating widget timeline with 5 days of data...');
+    appLog('🚀 Updating widget timeline with 5 days of data...');
 
     try {
       const today = dayjs().startOf('day');
@@ -1076,7 +1077,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
       // Batch fetch all needed chapters
       let chapterResults: Map<string, ChapterResponse | FetchError> = new Map();
       if (chaptersToFetch.length > 0) {
-        console.log(`📚 Batch fetching ${chaptersToFetch.length} chapters for widget timeline`);
+        appLog(`📚 Batch fetching ${chaptersToFetch.length} chapters for widget timeline`);
         chapterResults = await fetchChaptersBatch(get().bibleVersion, chaptersToFetch);
       }
 
@@ -1101,7 +1102,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
                     const verseData = chapterData.verses.find((v) => v.verse === parsed.verse);
                     if (verseData) {
                       verseText = verseData.text;
-                      console.log(
+                      appLog(
                         `✅ Found verse text for ${reference}: ${verseText.substring(0, 50)}...`
                       );
                     }
@@ -1140,11 +1141,11 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
         };
       });
 
-      console.log(`📱 Prepared ${widgetEntries.length} entries for widget timeline.`);
+      appLog(`📱 Prepared ${widgetEntries.length} entries for widget timeline.`);
 
       // Update both the single verse data for today AND the 5-day timeline
       const todaysData = processedDevotionals?.[0];
-      console.log('todaysData ==>', todaysData);
+      appLog('todaysData ==>', todaysData);
 
       if (!todaysData) {
         await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
@@ -1213,7 +1214,7 @@ export const useDevotionalStore = create<DevotionalStore>((set, get) => ({
 
   // Utility function to clear Bible chapter cache
   clearBibleCache: async () => {
-    console.log('🧹 Clearing Bible chapter cache from devotional store...');
+    appLog('🧹 Clearing Bible chapter cache from devotional store...');
     await clearChapterCache();
   },
 }));
@@ -1257,7 +1258,7 @@ const parseBibleReference = (
 export const shareCurrentDevotionalWithWidget = async () => {
   const { currentDevotional } = useDevotionalStore.getState();
   if (currentDevotional?.bibleReference && currentDevotional?.verse) {
-    console.log('📱 Manually sharing current devotional with widget:', {
+    appLog('📱 Manually sharing current devotional with widget:', {
       bibleReference: currentDevotional.bibleReference,
       verseLength: currentDevotional.verse.length,
       imageURL: currentDevotional.imageURL,
@@ -1269,27 +1270,27 @@ export const shareCurrentDevotionalWithWidget = async () => {
       currentDevotional.imageURL || null
     );
   } else {
-    console.log('📱 No current devotional data available for widget');
+    appLog('📱 No current devotional data available for widget');
     await safeWidgetCall('updateWidgetStatus', 'noVerseAvailable');
   }
 };
 
 // Test function to check if native modules are working
 const testNativeModules = () => {
-  console.log('🔍 Testing NativeModules availability...');
-  console.log('📱 Available NativeModules:', Object.keys(NativeModules));
+  appLog('🔍 Testing NativeModules availability...');
+  appLog('📱 Available NativeModules:', Object.keys(NativeModules));
 
   // Test if we can access any native module
   const testModule = NativeModules['AsyncStorage'] || NativeModules['RCTAsyncStorage'];
   if (testModule) {
-    console.log('✅ Other native modules are working:', testModule);
+    appLog('✅ Other native modules are working:', testModule);
   } else {
-    console.log('❌ No native modules found at all');
+    appLog('❌ No native modules found at all');
   }
 
   // Test WidgetDataSharer specifically
   const { WidgetDataSharer } = NativeModules;
-  console.log('📱 WidgetDataSharer test:', {
+  appLog('📱 WidgetDataSharer test:', {
     exists: !!WidgetDataSharer,
     type: typeof WidgetDataSharer,
     methods: WidgetDataSharer ? Object.keys(WidgetDataSharer) : 'N/A',
@@ -1315,7 +1316,7 @@ const saveWidgetDataToAsyncStorage = async (
     };
 
     await AsyncStorage.setItem('widget_daily_verse', JSON.stringify(widgetData));
-    console.log('📱 Saved widget data to AsyncStorage as fallback');
+    appLog('📱 Saved widget data to AsyncStorage as fallback');
   } catch (error) {
     console.error('📱 Error saving widget data to AsyncStorage:', error);
   }
@@ -1329,7 +1330,7 @@ const saveWidgetStatusToAsyncStorage = async (status: string) => {
     };
 
     await AsyncStorage.setItem('widget_daily_verse', JSON.stringify(widgetData));
-    console.log('📱 Saved widget status to AsyncStorage as fallback');
+    appLog('📱 Saved widget status to AsyncStorage as fallback');
   } catch (error) {
     console.error('📱 Error saving widget status to AsyncStorage:', error);
   }

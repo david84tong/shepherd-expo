@@ -1,4 +1,5 @@
 import { Platform, NativeModules } from 'react-native';
+import { appLog } from '~/app/helper/helper';
 
 // define the interface for our native module
 interface WidgetDataSyncInterface {
@@ -20,7 +21,7 @@ export const syncStreakDataToWidget = async (
   lastActivityDate: Date | null
 ): Promise<boolean> => {
   if (Platform.OS !== 'ios' || !WidgetDataSync) {
-    console.log('Widget sync not available on this platform');
+    appLog('Widget sync not available on this platform');
     return false;
   }
 
@@ -34,10 +35,10 @@ export const syncStreakDataToWidget = async (
       lastActivityDate: formattedDate
     });
     
-    console.log('Widget data synced successfully', { currentStreak, lastActivityDate: formattedDate });
+    appLog('Widget data synced successfully', { currentStreak, lastActivityDate: formattedDate });
     return true;
   } catch (error) {
-    console.log('Failed to sync widget data:', error);
+    appLog('Failed to sync widget data:', error);
     return false;
   }
 }; 

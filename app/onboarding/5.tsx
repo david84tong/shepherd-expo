@@ -17,7 +17,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
-import { RPH } from '../helper/helper';
+import { appLog, RPH } from '../helper/helper';
 import { hapticLight, hapticSuccess } from '~/utils/haptics';
 
 export default function OnboardingReadingTimeScreen() {
@@ -116,7 +116,7 @@ export default function OnboardingReadingTimeScreen() {
     try {
       hapticLight();
     } catch (error) {
-      console.log('Haptics not available');
+      appLog('Haptics not available');
     }
 
     setSelectedOption(duration); // Show their selection in UI
@@ -129,9 +129,9 @@ export default function OnboardingReadingTimeScreen() {
           frequencyGoal: savedDuration, // Always save 6-10
           updatedAt: firestore.FieldValue.serverTimestamp(),
         });
-        console.log('Updated frequency goal in Firestore to 6-10 (regardless of selection)');
+        appLog('Updated frequency goal in Firestore to 6-10 (regardless of selection)');
       } catch (error) {
-        console.log('Error updating frequency goal in Firestore:', error);
+        appLog('Error updating frequency goal in Firestore:', error);
       }
     }
 

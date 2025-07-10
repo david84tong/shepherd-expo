@@ -24,6 +24,7 @@ import analytics from '~/utils/analytics';
 import { hapticHeavy } from '~/utils/haptics';
 import { useHomeStore } from '../stores/homeStore';
 import { useUIStore } from '../stores/uiStore';
+import { appLog } from '../helper/helper';
 
 const { width, height } = Dimensions.get('window');
 
@@ -79,14 +80,14 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       try {
         // If we're from check-in, skip onboarding check entirely
         if (isFromCheckInStore) {
-          console.log('[LoadingScreen] Skipping onboarding check - from check-in');
+          appLog('[LoadingScreen] Skipping onboarding check - from check-in');
           setOnboardingCompleted(true); // Treat as completed to prevent redirect
           return;
         }
         
         const completed = await AsyncStorage.getItem(ONBOARDING_COMPLETED_KEY);
         setOnboardingCompleted(completed === 'true');
-        console.log('[LoadingScreen] Onboarding completed status:', completed === 'true');
+        appLog('[LoadingScreen] Onboarding completed status:', completed === 'true');
       } catch (error) {
         console.error('Error checking onboarding status:', error);
         setOnboardingCompleted(false);
@@ -99,12 +100,12 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const isCheckInFlow = useMemo(() => {
     // Check store flag first as it's the most reliable
     if (isFromCheckInStore) {
-      console.log('[LoadingScreen] Check-in flow detected from store');
+      appLog('[LoadingScreen] Check-in flow detected from store');
       return true;
     }
     // Then check params
     if (params.isCheckInFlow === 'true' || params.fromCheckIn === 'true') {
-      console.log('[LoadingScreen] Check-in flow detected from params');
+      appLog('[LoadingScreen] Check-in flow detected from params');
       return true;
     }
     return false;
@@ -114,21 +115,21 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const isOnboarding = useMemo(() => {
     // Check-in flow overrides everything
     if (isCheckInFlow) {
-      console.log('[LoadingScreen] isOnboarding: false (check-in flow)');
+      appLog('[LoadingScreen] isOnboarding: false (check-in flow)');
       return false;
     }
     if (params.fromSwipe === 'true') {
-      console.log('[LoadingScreen] isOnboarding: false (from swipe)');
+      appLog('[LoadingScreen] isOnboarding: false (from swipe)');
       return false;
     }
     // Use onboarding completion status if available, otherwise fall back to params/props
     if (onboardingCompleted !== null) {
       const result = !onboardingCompleted;
-      console.log('[LoadingScreen] isOnboarding:', result, '(based on completion status)');
+      appLog('[LoadingScreen] isOnboarding:', result, '(based on completion status)');
       return result;
     }
     const result = params.isOnboarding !== undefined ? params.isOnboarding === 'true' : propIsOnboarding;
-    console.log('[LoadingScreen] isOnboarding:', result, '(from params/props)');
+    appLog('[LoadingScreen] isOnboarding:', result, '(from params/props)');
     return result;
   }, [params.fromSwipe, params.isOnboarding, propIsOnboarding, onboardingCompleted, isCheckInFlow]);
 
@@ -176,7 +177,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   // Monitor API loading state - ENHANCED to be more strict
   useEffect(() => {
     if (!isOnboarding) {
-      console.log('[LoadingScreen] API State Monitor:', {
+      appLog('[LoadingScreen] API State Monitor:', {
         isCreatingDevotional,
         hasCustomDevotional: !!customDevotional,
         hasCurrentDevotional: !!devotionalStoreCurrentDevotional,
@@ -187,22 +188,22 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       
       // Only mark as loading if actively creating
       if (isCreatingDevotional) {
-        console.log('[LoadingScreen] Setting API state to loading - devotional creation in progress');
+        appLog('[LoadingScreen] Setting API state to loading - devotional creation in progress');
         setApiLoadingState('loading');
       } 
       // Only mark as completed when we have a devotional AND creation is finished
       else if ((customDevotional || devotionalStoreCurrentDevotional) && !isCreatingDevotional) {
-        console.log('[LoadingScreen] Setting API state to completed - devotional ready and creation finished');
+        appLog('[LoadingScreen] Setting API state to completed - devotional ready and creation finished');
         setApiLoadingState('completed');
       } 
       // Mark as error only when there's an actual error
       else if (devotionalError) {
-        console.log('[LoadingScreen] Setting API state to error - devotional creation failed');
+        appLog('[LoadingScreen] Setting API state to error - devotional creation failed');
         setApiLoadingState('error');
       }
       // Keep as loading if we're in check-in flow but don't have devotional yet
       else if (isCheckInFlow && !customDevotional && !devotionalStoreCurrentDevotional) {
-        console.log('[LoadingScreen] Keeping API state as loading - check-in flow waiting for devotional');
+        appLog('[LoadingScreen] Keeping API state as loading - check-in flow waiting for devotional');
         setApiLoadingState('loading');
       }
     }
@@ -338,9 +339,9 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
             const storedAbTest = await AsyncStorage.getItem('abTest');
             if (storedAbTest !== null) {
               abTestValue = parseInt(storedAbTest, 10);
-              console.log('[LoadingScreen] Retrieved A/B test value:', abTestValue);
+              appLog('[LoadingScreen] Retrieved A/B test value:', abTestValue);
             } else {
-              console.log('[LoadingScreen] No A/B test value found, using default:', abTestValue);
+              appLog('[LoadingScreen] No A/B test value found, using default:', abTestValue);
             }
           } catch (abTestError) {
             console.error('[LoadingScreen] Error retrieving A/B test value:', abTestError);
@@ -356,14 +357,14 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
 
           // Navigate based on A/B test value - but skip if from check-in
           if (!isCheckInFlow) {
-            console.log('[LoadingScreen] Navigating to pricing screen (not check-in flow)');
+            appLog('[LoadingScreen] Navigating to pricing screen (not check-in flow)');
             if (abTestValue === 0) {
               router.push('/PricingScreen');
             } else {
               router.push('/onboarding/pricing/OldPricingScreen');
             }
           } else {
-            console.log('[LoadingScreen] Skipping pricing navigation (check-in flow detected)');
+            appLog('[LoadingScreen] Skipping pricing navigation (check-in flow detected)');
           }
         }, FINAL_DELAY);
       }
@@ -455,13 +456,13 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   const showPaywallForNonProUser = useCallback(async () => {
     // Only show paywall for non-pro users
     if (isProMember) {
-      console.log('[LoadingScreen] User is pro member, skipping paywall');
+      appLog('[LoadingScreen] User is pro member, skipping paywall');
       return;
     }
     
     // Prevent duplicate paywall calls
     if (paywallShown) {
-      console.log('[LoadingScreen] Paywall already shown, skipping');
+      appLog('[LoadingScreen] Paywall already shown, skipping');
       return;
     }
     
@@ -536,7 +537,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   // Monitor devotional creation progress - ENHANCED to prevent premature navigation
   useEffect(() => {
     if (!isOnboarding) {
-      console.log('[LoadingScreen] Navigation check:', {
+      appLog('[LoadingScreen] Navigation check:', {
         apiLoadingState,
         isProMember,
         isCheckInFlow,
@@ -558,7 +559,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         !isCreatingDevotional &&
         !devotionalError; // Additional safety check
 
-      console.log('[LoadingScreen] Navigation conditions:', {
+      appLog('[LoadingScreen] Navigation conditions:', {
         stepsComplete: currentStep >= loadingPoints.length,
         animationComplete,
         apiCompleted: apiLoadingState === 'completed',
@@ -571,7 +572,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
       if (canNavigate) {
         // For check-in flow
         if (isCheckInFlow && customDevotional) {
-          console.log('[LoadingScreen] All conditions met - check-in devotional ready, navigating to DevotionalReader');
+          appLog('[LoadingScreen] All conditions met - check-in devotional ready, navigating to DevotionalReader');
 
           analytics.logEvent('LoadingScreen_CheckIn_Devotional_Ready', {
             totalLoadingTime: loadingPoints.length * STEP_DURATION,
@@ -592,7 +593,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         } 
         // For pro users with custom devotional
         else if (isProMember && !isCheckInFlow) {
-          console.log('[LoadingScreen] All conditions met - pro user devotional ready, navigating to home');
+          appLog('[LoadingScreen] All conditions met - pro user devotional ready, navigating to home');
 
           analytics.logEvent('LoadingScreen_Custom_Devotional_Created', {
             isProMember: true,
@@ -616,14 +617,14 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
         } 
         // For non-pro users - show paywall
         else if (!isProMember && !isCheckInFlow && !paywallShown) {
-          console.log('[LoadingScreen] All conditions met - non-pro user, showing paywall');
+          appLog('[LoadingScreen] All conditions met - non-pro user, showing paywall');
           showPaywallForNonProUser();
         }
       }
       
       // Handle error case - navigate back only on actual error
       if (apiLoadingState === 'error' && devotionalError) {
-        console.log('[LoadingScreen] API error occurred:', devotionalError);
+        appLog('[LoadingScreen] API error occurred:', devotionalError);
         
         // Check navigation guard before navigating
         if (!hasNavigated.current) {
@@ -658,7 +659,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   useEffect(() => {
     return () => {
       if (isFromCheckInStore) {
-        console.log('[LoadingScreen] Clearing isFromCheckIn flag on unmount');
+        appLog('[LoadingScreen] Clearing isFromCheckIn flag on unmount');
         useDevotionalStore.getState().setIsFromCheckIn(false);
       }
     };
@@ -668,7 +669,7 @@ export default function LoadingScreen({ isOnboarding: propIsOnboarding, verseTex
   // This was causing the paywall to show twice. The main navigation effect above handles all cases properly.
   // useEffect(() => {
   //   if (!isOnboarding && devotionalStoreCurrentDevotional && !isProMember && apiLoadingState !== 'completed') {
-  //     console.log('[LoadingScreen] Fallback: Non-pro user has devotional, showing paywall');
+  //     appLog('[LoadingScreen] Fallback: Non-pro user has devotional, showing paywall');
   //     showPaywallForNonProUser();
   //   }
   // }, [isOnboarding, devotionalStoreCurrentDevotional, isProMember, apiLoadingState, showPaywallForNonProUser]);

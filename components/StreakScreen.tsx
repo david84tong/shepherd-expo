@@ -12,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useAssets } from 'expo-asset';
 import { router } from 'expo-router';
+import { appLog } from '../app/helper/helper';
 import { usePathStore } from '../app/stores/pathStore';
 import { useUserStore } from '~/app/stores/userStore';
 import { useNotificationStore } from '~/app/stores/notificationStore';
@@ -136,24 +137,24 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   useEffect(() => {
     const resetNotifications = async () => {
       try {
-        console.log('📱 StreakScreen: Rescheduling streak notifications for the next day');
+        appLog('📱 StreakScreen: Rescheduling streak notifications for the next day');
 
         // Reschedule streak notifications for the next day
         const success = await rescheduleStreakNotificationsForNextDay();
 
         if (success) {
-          console.log('📱 StreakScreen: Successfully rescheduled streak notifications');
+          appLog('📱 StreakScreen: Successfully rescheduled streak notifications');
         } else {
-          console.log('📱 StreakScreen: Failed to reschedule streak notifications');
+          appLog('📱 StreakScreen: Failed to reschedule streak notifications');
         }
 
         // Also reschedule daily reminder if user has a notification time preference
         if (preferredNotificationTime && preferredNotificationTime !== 'none') {
-          console.log('📱 StreakScreen: Rescheduling daily reminder for next day');
+          appLog('📱 StreakScreen: Rescheduling daily reminder for next day');
           await scheduleDailyReminder(preferredNotificationTime);
-          console.log('📱 StreakScreen: Daily reminder successfully rescheduled');
+          appLog('📱 StreakScreen: Daily reminder successfully rescheduled');
         } else {
-          console.log(
+          appLog(
             '📱 StreakScreen: No preferred notification time set, skipping daily reminder'
           );
         }
@@ -161,7 +162,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
         // Log all scheduled notifications for debugging
         await listScheduledNotifications();
       } catch (error) {
-        console.log('📱 StreakScreen: Error rescheduling notifications:', error);
+        appLog('📱 StreakScreen: Error rescheduling notifications:', error);
       }
     };
 
@@ -259,7 +260,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
     const newCalculatedStreak = calculateStreakLogic(today, augmentedCompletedSet, createdDate);
 
     if (__DEV__) {
-      console.log('[StreakScreen] Streak Calculation Details:', {
+      appLog('[StreakScreen] Streak Calculation Details:', {
         streakValue: newCalculatedStreak,
         today: today.format('YYYY-MM-DD'),
         completedDates: Array.from(augmentedCompletedSet),
@@ -272,7 +273,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
   // Update the user's streakCount in the store whenever streak changes
   useEffect(() => {
     setStreakCount(streak);
-    console.log('streak', streak);
+    appLog('streak', streak);
 
     // Track notification rescheduling with the current streak value
     analytics.logEvent('StreakScreen_RescheduledNotifications', {
@@ -413,7 +414,7 @@ export const StreakScreen = ({ isPrayPresses, isReflectPresses }: { isPrayPresse
     analytics.logEvent('StreakScreen_Tapped_Continue', {
       streak: streak,
     });
-    console.log(
+    appLog(
       '[StreakScreen] Continue pressed. Resetting pathInProgress and navigating to home.'
     );
     setPathInProgress(false);

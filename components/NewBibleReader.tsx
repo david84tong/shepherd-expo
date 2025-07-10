@@ -52,7 +52,7 @@ import Animated from 'react-native-reanimated';
 import { responsiveFontSize } from 'react-native-responsive-dimensions';
 import { useDevotionalStore } from '~/app/stores/devotionalStore';
 import { BibleVerseActionBar } from './BibleVerseActionBar';
-import { RPH } from '~/app/helper/helper';
+import { appLog, RPH } from '~/app/helper/helper';
 import { ImageBackground } from 'expo-image';
 import { IS_ANDROID } from '~/app/utils/utils';
 import i18n from '~/app/utils/i18n';
@@ -425,7 +425,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const activeTranslation = savedTranslation || translation;
 
   // Add logging to see current path state
-  // console.log('📖 [NewBibleReader] Current path state:', {
+  // appLog('📖 [NewBibleReader] Current path state:', {
   //   pathInProgress,
   //   currentPath,
   //   isInPathMode
@@ -533,11 +533,11 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Helper function to load a chapter - OPTIMIZED to match BibleReader
   const loadChapter = useCallback(
     async (bookId: number, chapter: number, isNavigation = false) => {
-      console.log(`📖 [NewBibleReader] loadChapter called with bookId: ${bookId}, chapter: ${chapter}, isNavigation: ${isNavigation}`);
+      appLog(`📖 [NewBibleReader] loadChapter called with bookId: ${bookId}, chapter: ${chapter}, isNavigation: ${isNavigation}`);
 
       // Prevent multiple simultaneous loads (same as BibleReader)
       if (loading) {
-        console.log('📖 [NewBibleReader] Already loading, skipping');
+        appLog('📖 [NewBibleReader] Already loading, skipping');
         return false;
       }
 
@@ -546,7 +546,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
         setLoading(true);
 
         try {
-          console.log(
+          appLog(
             `📖 [NewBibleReader] Loading chapter - bookId: ${bookId}, chapter: ${chapter}, translation: ${translation}`
           );
 
@@ -558,7 +558,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             setChapterData(null);
             return false;
           } else {
-            console.log(`✅ Successfully loaded: ${result.book} ${result.chapter}`);
+            appLog(`✅ Successfully loaded: ${result.book} ${result.chapter}`);
 
             // Update all state at once (same as BibleReader)
             setChapterData(result);
@@ -574,7 +574,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             // Scroll to top after loading new chapter
             scrollToTop();
 
-            console.log(`📖 [NewBibleReader] Chapter loaded successfully: ${result.book} ${result.chapter}`);
+            appLog(`📖 [NewBibleReader] Chapter loaded successfully: ${result.book} ${result.chapter}`);
             return true;
           }
         } catch (error) {
@@ -587,7 +587,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       } else {
         // For initial load, don't show loading state
         try {
-          console.log(
+          appLog(
             `📖 [NewBibleReader] Loading initial chapter - bookId: ${bookId}, chapter: ${chapter}, translation: ${translation}`
           );
 
@@ -599,7 +599,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             setChapterData(null);
             return false;
           } else {
-            console.log(`✅ Successfully loaded initial chapter: ${result.book} ${result.chapter}`);
+            appLog(`✅ Successfully loaded initial chapter: ${result.book} ${result.chapter}`);
 
             // Update all state at once (same as BibleReader)
             setChapterData(result);
@@ -612,7 +612,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             // Always show all verses in map mode
             setCurrentIndex(result.verses.length - 1);
 
-            console.log(`📖 [NewBibleReader] Initial chapter loaded successfully: ${result.book} ${result.chapter}`);
+            appLog(`📖 [NewBibleReader] Initial chapter loaded successfully: ${result.book} ${result.chapter}`);
             return true;
           }
         } catch (error) {
@@ -628,7 +628,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Reload chapter when translation (activeTranslation) changes
   useEffect(() => {
     if (chapterData) {
-      console.log(`📖 [NewBibleReader] Detected translation change to ${activeTranslation}, reloading current chapter`);
+      appLog(`📖 [NewBibleReader] Detected translation change to ${activeTranslation}, reloading current chapter`);
       loadChapter(currentBookId, currentChapter);
     }
   }, [activeTranslation]);
@@ -637,7 +637,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   const isAtEndChapter = useMemo(() => {
     if (!currentPath || !chapterData) return false;
     const result = currentBookId === currentPath.bookId && currentChapter === currentPath.endChapter;
-    console.log('📖 [NewBibleReader] isAtEndChapter calculation:', {
+    appLog('📖 [NewBibleReader] isAtEndChapter calculation:', {
       currentBookId,
       currentPathBookId: currentPath.bookId,
       currentChapter,
@@ -667,7 +667,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
 
   // Animation effect for navigation buttons
   useEffect(() => {
-    console.log(
+    appLog(
       `[AnimationEffect] hasScrolledToBottom changed to: ${hasScrolledToBottom}. Animating buttons.`
     );
     RNAnimated.timing(buttonsAnim, {
@@ -748,7 +748,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       // Always fetch fresh data from API - no caching
       const loadInitialChapter = async () => {
         try {
-          console.log('📖 [NewBibleReader] Loading initial chapter from API');
+          appLog('📖 [NewBibleReader] Loading initial chapter from API');
           const result = await fetchChapterWithCache(translation, bookId, chapter);
 
           if (!('error' in result)) {
@@ -1014,11 +1014,11 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
     // Prevent opening selector while loading
     if (loading) return;
 
-    console.log(
+    appLog(
       `📖 [NewBibleReader] Opening selector with currentBookId: ${currentBookId}, currentChapter: ${currentChapter}`
     );
-    console.log(`📖 [NewBibleReader] Props bookId: ${bookId}, chapter: ${chapter}`);
-    console.log(
+    appLog(`📖 [NewBibleReader] Props bookId: ${bookId}, chapter: ${chapter}`);
+    appLog(
       `📖 [NewBibleReader] chapterData:`,
       chapterData ? `${chapterData.book} ${chapterData.chapter}` : 'null'
     );
@@ -1027,7 +1027,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       currentBookId,
       currentChapter,
       (newBookId: number, newChapter: number) => {
-        console.log(
+        appLog(
           `📖 [NewBibleReader] Selector callback - newBookId: ${newBookId}, newChapter: ${newChapter}`
         );
         loadChapter(newBookId, newChapter, true); // isNavigation = true
@@ -1053,7 +1053,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
       !hasFilteredRef.current
     ) {
       const { startVerse, endVerse } = currentPath;
-      console.log(`📖 [NewBibleReader] Filtering verses ${startVerse}-${endVerse}`);
+      appLog(`📖 [NewBibleReader] Filtering verses ${startVerse}-${endVerse}`);
       const filtered = chapterData.verses.filter(
         (v) => v.verse >= startVerse && v.verse <= endVerse
       );
@@ -1495,7 +1495,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
   // Add a reset highlights function
   const resetAndLoadHighlights = useCallback(() => {
     // Make a new request to load highlights whenever currentBookId/currentChapter changes
-    console.log(`Resetting and loading highlights for ${currentBookId}:${currentChapter}`);
+    appLog(`Resetting and loading highlights for ${currentBookId}:${currentChapter}`);
     loadHighlights();
   }, [currentBookId, currentChapter, loadHighlights]);
 
@@ -2284,7 +2284,7 @@ const NewBibleReader: React.FC<NewBibleReaderProps> = ({
             title="Finish Reading 🎉"
             onPress={() => {
               if (isFadingToChat) return;
-              console.log('📖 [NewBibleReader] Finish tapped');
+              appLog('📖 [NewBibleReader] Finish tapped');
               handleFinishReading();
             }}
             disabled={isFadingToChat}

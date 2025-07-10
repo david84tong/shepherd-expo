@@ -29,6 +29,7 @@ import i18n from '~/app/utils/i18n';
 import useSubscriptionStore from '~/app/stores/subscriptionStore';
 import { ONBOARDING_COMPLETED_KEY } from './models/Onboarding';
 import { hapticLight, hapticMedium } from '~/utils/haptics';
+import { appLog } from './helper/helper';
 
 // Key for tracking daily first load
 const DAILY_FIRST_LOAD_KEY = 'daily_first_load_';
@@ -110,7 +111,7 @@ const PricingScreen = () => {
         const today = new Date().toISOString().split('T')[0]; // Get YYYY-MM-DD format
         const dailyKey = DAILY_FIRST_LOAD_KEY + today;
         await AsyncStorage.setItem(dailyKey, 'true');
-        console.log(`[PricingScreen] Set daily first load to true for ${today}`);
+        appLog(`[PricingScreen] Set daily first load to true for ${today}`);
       } catch (error) {
         console.error('[PricingScreen] Error setting daily first load:', error);
       }
@@ -148,9 +149,9 @@ const PricingScreen = () => {
       const storedAbTest = await AsyncStorage.getItem('abTest');
       if (storedAbTest !== null) {
         abTestValue = parseInt(storedAbTest, 10);
-        console.log('[PricingScreen] Retrieved A/B test value:', abTestValue);
+        appLog('[PricingScreen] Retrieved A/B test value:', abTestValue);
       } else {
-        console.log('[PricingScreen] No A/B test value found, using default:', abTestValue);
+        appLog('[PricingScreen] No A/B test value found, using default:', abTestValue);
       }
     } catch (abTestError) {
       console.error('[PricingScreen] Error retrieving A/B test value:', abTestError);

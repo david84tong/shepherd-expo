@@ -33,7 +33,7 @@ import starIcon from '../assets/icons/starIcon.png';
 import { IS_ANDROID } from '~/app/utils/utils';
 import { syncWithFirestore } from '~/app/helper/firebaseHelper';
 import { AppFonts } from '~/app/constants/appFonts';
-import { RPH } from '~/app/helper/helper';
+import { appLog, RPH } from '~/app/helper/helper';
 import { hapticMedium } from '~/utils/haptics';
 
 // Get screen dimensions to ensure full screen sizing
@@ -109,7 +109,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   // Set sawDailyBonus to true immediately when bonus screen shows to prevent repeats
   useEffect(() => {
     if (effectiveType === SuccessAnimationType.BONUS && !sawDailyBonus) {
-      console.log('BONUS screen showing for first time - immediately setting sawDailyBonus flag');
+      appLog('BONUS screen showing for first time - immediately setting sawDailyBonus flag');
       setSawDailyBonus(true);
     }
   }, [effectiveType, sawDailyBonus, setSawDailyBonus]);
@@ -129,10 +129,10 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Log when component mounts or successType changes
   useEffect(() => {
-    console.log('SuccessAnimation: Current successType:', successType);
+    appLog('SuccessAnimation: Current successType:', successType);
     // If no success type is set, default to READING
     if (!successType) {
-      console.log('No success type found in store, defaulting to READING');
+      appLog('No success type found in store, defaulting to READING');
       setSuccessType(SuccessAnimationType.READING);
     }
   }, [successType, setSuccessType]);
@@ -186,32 +186,32 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Check if this is the first reading of the day
   const isFirstReadingOfDay = useMemo(() => {
-    console.log('=== DEBUG: isFirstReadingOfDay calculation ===');
-    console.log('effectiveType:', effectiveType);
+    appLog('=== DEBUG: isFirstReadingOfDay calculation ===');
+    appLog('effectiveType:', effectiveType);
 
     // Only proceed if we have the right success type
     if (!effectiveType || effectiveType !== SuccessAnimationType.READING) {
-      console.log('DEBUG: Not a reading success type - returning false');
+      appLog('DEBUG: Not a reading success type - returning false');
       return false;
     }
 
     // Get today's date at the start of the day
     const today = dayjs().startOf('day');
-    console.log('DEBUG: today:', today.format('YYYY-MM-DD HH:mm:ss'));
+    appLog('DEBUG: today:', today.format('YYYY-MM-DD HH:mm:ss'));
 
     // Get the completed readings directly
     const completedReadings = useUserStore.getState().getCompletedReadings() || [];
-    console.log('DEBUG: Total completed readings:', completedReadings.length);
+    appLog('DEBUG: Total completed readings:', completedReadings.length);
 
     // Ensure completedReadings is an array
     if (!Array.isArray(completedReadings)) {
-      console.log('DEBUG: completedReadings is not an array - returning false');
+      appLog('DEBUG: completedReadings is not an array - returning false');
       return false;
     }
 
     // If this is the first reading ever, it's definitely the first of the day
     if (completedReadings.length <= 1) {
-      console.log('DEBUG: This is the first or second reading ever - returning true');
+      appLog('DEBUG: This is the first or second reading ever - returning true');
       return true;
     }
 
@@ -250,19 +250,19 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
       // Count readings done today
       const todaysReadingsCount = readingDateStrings.filter((date) => date === todayStr).length;
-      console.log('DEBUG: Readings done today:', todaysReadingsCount);
+      appLog('DEBUG: Readings done today:', todaysReadingsCount);
 
       // Check for any readings before today
       const hasEarlierReadings = readingDateStrings.some((date) => date < todayStr);
-      console.log('DEBUG: Has earlier readings:', hasEarlierReadings);
+      appLog('DEBUG: Has earlier readings:', hasEarlierReadings);
 
       // This is the first reading of day if:
       // 1. It's the only reading today (or first), AND
       // 2. Either there are earlier readings OR this is truly the first reading ever
       const isFirstOfDay = todaysReadingsCount <= 1;
 
-      console.log('DEBUG: Is first reading of day:', isFirstOfDay);
-      console.log('=== END DEBUG ===');
+      appLog('DEBUG: Is first reading of day:', isFirstOfDay);
+      appLog('=== END DEBUG ===');
 
       return isFirstOfDay;
     } catch (error) {
@@ -273,7 +273,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
   // Get values based on successType - make sure we are handling all possible types
   if (effectiveType === SuccessAnimationType.SECTION_COMPLETE) {
-    console.log('Setting up SECTION_COMPLETE success screen');
+    appLog('Setting up SECTION_COMPLETE success screen');
     message = 'Section Complete!';
     subMessage = "You finished today's Bible reading & fed your lamb.";
     heartReward = 3;
@@ -281,7 +281,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     riveArtboard = undefined;
     rewardTitle = 'READING REWARDS';
   } else if (effectiveType === SuccessAnimationType.READING) {
-    console.log('Setting up READING success screen');
+    appLog('Setting up READING success screen');
     message = 'Reading Complete!';
     subMessage = "You finished today's Bible reading & fed your lamb.";
     heartReward = 3;
@@ -289,7 +289,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     riveArtboard = 'lamb-eating';
     rewardTitle = 'READING REWARDS';
   } else if (effectiveType === SuccessAnimationType.BONUS) {
-    console.log('Setting up BONUS success screen');
+    appLog('Setting up BONUS success screen');
     message = 'Daily Trifecta Complete!';
     subMessage = "Amazing! You've completed all three spiritual disciplines today.";
     heartReward = 5;
@@ -297,7 +297,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     riveArtboard = 'chest';
     rewardTitle = 'BONUS REWARDS';
   } else if (effectiveType === SuccessAnimationType.REFLECTION) {
-    console.log('Setting up REFLECTION success screen');
+    appLog('Setting up REFLECTION success screen');
     message = 'Reflection Complete!';
     subMessage = "You've recorded your thoughts and connected with the Word.";
     heartReward = 1;
@@ -305,7 +305,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     riveArtboard = 'heart-hold';
     rewardTitle = 'REFLECTION REWARDS';
   } else if (effectiveType === SuccessAnimationType.PRAYER) {
-    console.log('Setting up PRAYER success screen');
+    appLog('Setting up PRAYER success screen');
     message = 'Prayer Complete!';
     subMessage = 'You spent quality time with the Shepherd in prayer.';
     heartReward = 2;
@@ -333,8 +333,8 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   // Apply rewards to user state when component mounts
   useEffect(() => {
     if (!rewardsApplied && effectiveType) {
-      console.log(`Applying rewards: ${heartReward} hearts, ${xpReward} XP`);
-      console.log(`Current hearts: ${lambHearts}, Current XP: ${lambXp}`);
+      appLog(`Applying rewards: ${heartReward} hearts, ${xpReward} XP`);
+      appLog(`Current hearts: ${lambHearts}, Current XP: ${lambXp}`);
 
       // Check if at max hearts and calculate actual heart reward
       const isMax = lambHearts >= MAX_HEARTS;
@@ -355,9 +355,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       }
 
       if (lambHearts + heartsToAdd >= 50) {
-        console.log('Checking if lamb has full hp');
+        appLog('Checking if lamb has full hp');
         if (readingCompleted && prayerCompleted && reflectionCompleted) {
-          console.log('Setting lamb-full mood');
+          appLog('Setting lamb-full mood');
           setLambMood('lamb-full');
         }
       }
@@ -376,7 +376,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
       // Check if level increased
       if (newLevelValue > currentLevel) {
-        console.log(`Level up! ${currentLevel} -> ${newLevelValue}`);
+        appLog(`Level up! ${currentLevel} -> ${newLevelValue}`);
         setLeveledUp(true);
         setNewLevel(newLevelValue);
 
@@ -415,7 +415,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       if (effectiveType === SuccessAnimationType.BONUS && !sawDailyBonus) {
         const currentGems = getGens();
         setGens(currentGems + 100);
-        console.log(`Applied +9 Gems. Updated value - Gems: ${currentGems + 100}`);
+        appLog(`Applied +9 Gems. Updated value - Gems: ${currentGems + 100}`);
 
         // Add gems data to analytics
         rewardsData.gemsAwarded = 100;
@@ -423,10 +423,10 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
 
         // Set the flag to indicate user has seen daily bonus
         setSawDailyBonus(true);
-        console.log('Setting sawDailyBonus to true');
+        appLog('Setting sawDailyBonus to true');
       } else if (effectiveType === SuccessAnimationType.BONUS) {
         // Log if we're not adding gems because bonus was already seen
-        console.log('Not adding gems - user has already seen bonus animation today');
+        appLog('Not adding gems - user has already seen bonus animation today');
         rewardsData.gemsAwarded = 0;
       }
 
@@ -445,7 +445,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
         // Mark that we completed a unit today
         const pathStore = usePathStore.getState();
         pathStore.setCompletedUnitToday(true);
-        console.log('✅ Marked completedUnitToday as true in SuccessAnimation for type:', effectiveType);
+        appLog('✅ Marked completedUnitToday as true in SuccessAnimation for type:', effectiveType);
       } else if (effectiveType === SuccessAnimationType.PRAYER) {
         setLastPrayerDate(now);
       } else if (effectiveType === SuccessAnimationType.REFLECTION) {
@@ -458,9 +458,9 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
       // Sync user state to Firestore after rewards are applied
       syncWithFirestore?.();
 
-      console.log(`Applied ${heartsToAdd} hearts (of intended ${heartReward}) and ${xpReward} XP`);
-      console.log(`Updated values - Hearts: ${lambHearts + heartsToAdd}, XP: ${lambXp + xpReward}`);
-      console.log(`Updated activity timestamp for ${effectiveType}`);
+      appLog(`Applied ${heartsToAdd} hearts (of intended ${heartReward}) and ${xpReward} XP`);
+      appLog(`Updated values - Hearts: ${lambHearts + heartsToAdd}, XP: ${lambXp + xpReward}`);
+      appLog(`Updated activity timestamp for ${effectiveType}`);
     }
   }, [
     effectiveType,
@@ -477,11 +477,11 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   useEffect(() => {
     // Prevent running animation logic if successType is null (e.g., during cleanup)
     if (!effectiveType) {
-      console.log('SuccessAnimation: Animation effect skipped due to null successType.');
+      appLog('SuccessAnimation: Animation effect skipped due to null successType.');
       return;
     }
 
-    console.log(
+    appLog(
       'Running animation effect for successType:',
       effectiveType,
       'using resource:',
@@ -624,7 +624,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     // Log the event
     if (eventName) {
       analytics.logEvent(eventName, params);
-      console.log(`Analytics: Logged ${eventName}`, params);
+      appLog(`Analytics: Logged ${eventName}`, params);
     }
   }, [successType, xpReward, actualHeartReward, sawDailyBonus]);
   useEffect(() => {
@@ -649,7 +649,7 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
     isUnmounting.current = true;
 
     // Reset states (except successType until after navigation)
-    console.log('handleGoHome - Resetting states to ensure tab bar is visible');
+    appLog('handleGoHome - Resetting states to ensure tab bar is visible');
     setPathInProgress(false);
     setHomeMode('DEFAULT');
 
@@ -688,13 +688,13 @@ export const SuccessAnimation: React.FC<SuccessAnimationProps> = ({
   const triggerStreakScreen = () => {
     // If streak screen was already shown today, skip showing it again
     if (sawStreakToday) {
-      console.log('Streak screen already shown today - skipping');
+      appLog('Streak screen already shown today - skipping');
       // Just continue with normal navigation
       handleGoHome();
       return;
     }
 
-    console.log('First reading of the day - showing streak screen');
+    appLog('First reading of the day - showing streak screen');
     // Log analytics for streak screen
     analytics.logEvent('SuccessAnimation_Showing_StreakScreen', {
       fromType: effectiveType,
