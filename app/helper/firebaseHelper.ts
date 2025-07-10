@@ -135,7 +135,7 @@ export const fetchFromFirestore = async ({
         console.log('Syncing user data to store:', convertedUserData);
 
         // Sync the data to store
-        useUserStore.getState().syncFirestoreData(convertedUserData);
+        await useUserStore.getState().syncFirestoreData(convertedUserData);
 
         // Sync streak data to widget
         const syncStreakWithWidget = (streakCount: number, lastActivityDate: any) => {

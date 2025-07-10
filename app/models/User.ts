@@ -161,7 +161,7 @@ export interface UserStore extends UserDoc {
   addXp: (amount: number) => void;
   resetUserStore: () => void;
 
-  syncFirestoreData: (firestoreData: UserDoc) => void;
+  syncFirestoreData: (firestoreData: UserDoc) => Promise<void>;
 
   // Add new getter/setter for widget modal
   getHasSeenWidgetModal: () => boolean;

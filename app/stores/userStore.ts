@@ -10,6 +10,139 @@ import { isAuthenticated, updateUserData } from '../helper/firebaseHelper';
 
 // Constants
 
+// Store method keys that should be filtered out from Firestore data
+const STORE_METHOD_KEYS = [
+  'addCompletedMapPath',
+  'addCompletedPrayer',
+  'addCompletedReading',
+  'addCompletedReflection',
+  'addSkin',
+  'addXp',
+  'createUser',
+  'getBibleVersion',
+  'getChaptersReadTotal',
+  'getCompletedPrayers',
+  'getCompletedReadings',
+  'getCompletedReflections',
+  'getCreatedAt',
+  'getDenomination',
+  'getDisplayName',
+  'getExperienceLevel',
+  'getFrequencyGoal',
+  'getGens',
+  'getHasSeenBibleReaderTutorial',
+  'getHasSeenWidgetModal',
+  'getLamb',
+  'getLambHearts',
+  'getLambLevel',
+  'getLambMood',
+  'getLambName',
+  'getLambSkin',
+  'getLambXp',
+  'getLastActivityDate',
+  'getLastPrayerDate',
+  'getLastPrayerPenaltyDate',
+  'getLastReadingDate',
+  'getLastReadingPenaltyDate',
+  'getLastReflectionDate',
+  'getLastReflectionPenaltyDate',
+  'getProStatus',
+  'getSelectedPathId',
+  'getSkins',
+  'getSpiritualGoal',
+  'getStreakCount',
+  'getUpdatedAt',
+  'getUser',
+  'getVersesReadTotal',
+  'incrementStreak',
+  'resetUserStore',
+  'setBibleVersion',
+  'setChaptersReadTotal',
+  'setCompletedMapPaths',
+  'setCompletedPrayers',
+  'setCompletedReadings',
+  'setCompletedReflections',
+  'setCreatedAt',
+  'setDenomination',
+  'setDisplayName',
+  'setExperienceLevel',
+  'setFrequencyGoal',
+  'setGens',
+  'setHasSeenBibleReaderTutorial',
+  'setHasSeenWidgetModal',
+  'setIsProFromOnboarding',
+  'setLamb',
+  'setLambHearts',
+  'setLambLevel',
+  'setLambMood',
+  'setLambName',
+  'setLambSkin',
+  'setLambXp',
+  'setLastActivityDate',
+  'setLastPrayerDate',
+  'setLastPrayerPenaltyDate',
+  'setLastReadingDate',
+  'setLastReadingPenaltyDate',
+  'setLastReflectionDate',
+  'setLastReflectionPenaltyDate',
+  'setNotificationTime',
+  'setProStatus',
+  'setSelectedPathId',
+  'setSkins',
+  'setSpiritualGoal',
+  'setStreakCount',
+  'setUpdatedAt',
+  'setUser',
+  'setVersesReadTotal',
+  'syncFirestoreData'
+];
+
+// Helper function to filter out store methods from Firestore data
+const filterStoreMethods = (data: any): any => {
+  if (!data || typeof data !== 'object') {
+    return data;
+  }
+
+  const filteredData: any = {};
+  
+  for (const [key, value] of Object.entries(data)) {
+    if (!STORE_METHOD_KEYS.includes(key)) {
+      filteredData[key] = value;
+    }
+  }
+  
+  return filteredData;
+};
+
+// Helper function to clean up store methods from Firestore
+const cleanupStoreMethodsFromFirestore = async (userId: string, data: any) => {
+  if (!userId || !data || typeof data !== 'object') {
+    return;
+  }
+
+  const keysToDelete: string[] = [];
+  
+  for (const key of STORE_METHOD_KEYS) {
+    if (key in data) {
+      keysToDelete.push(key);
+    }
+  }
+
+  if (keysToDelete.length > 0) {
+    try {
+      const deleteUpdates: any = {};
+      keysToDelete.forEach(key => {
+        deleteUpdates[key] = firestore.FieldValue.delete();
+      });
+
+      await firestore().collection('users').doc(userId).update(deleteUpdates);
+      console.log(`Cleaned up ${keysToDelete.length} store method keys from Firestore:`, keysToDelete);
+    } catch (error) {
+      console.error('Error cleaning up store methods from Firestore:', error);
+    }
+  }
+};
+
 // Initial state
 const initialLamb: Lamb = {
   level: 1,
@@ -108,17 +241,27 @@ export const useUserStore = create<UserStore>()(
       },
 
       // Enhanced function to sync Firestore data
-      syncFirestoreData: (firestoreData: UserDoc) => {
+      syncFirestoreData: async (firestoreData: UserDoc) => {
         if (!firestoreData) {
           console.error('Attempted to sync null/undefined Firestore data');
           return;
         }
-        console.log('Syncing Firestore data to local store:', firestoreData);
+        
+        // Filter out store methods from Firestore data
+        const yesHaveKey = 'setNotificationTime' in firestoreData
+        const filteredData = !yesHaveKey ? firestoreData :  filterStoreMethods(firestoreData);
+      
+        // Clean up any existing store methods from Firestore
+        if (firestoreData.id && isAuthenticated() && yesHaveKey) {
+          await cleanupStoreMethodsFromFirestore(firestoreData.id, firestoreData);
+        }
+        
+        console.log('Syncing filtered Firestore data to local store:', filteredData);
         set((state) => {
           // Ensure we keep local data if Firestore data is undefined
           return {
             ...(state || {}),
-            ...(firestoreData || {}),
+            ...(filteredData || {}),
             // Ensure critical fields are properly synced
             id: firestoreData.id || state.id,
             displayName: firestoreData.displayName || state.displayName,

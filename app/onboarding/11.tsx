@@ -204,7 +204,7 @@ export default function SaveProgressScreen() {
       currentLoggedUser: user,
     });
     if (success && firestoreData) {
-      useUserStore.getState().syncFirestoreData(firestoreData);
+      await useUserStore.getState().syncFirestoreData(firestoreData);
       const prayerCompleted = useHomeStore.getState().prayerCompleted;
       const reflectionCompleted = useHomeStore.getState().reflectionCompleted;
       const readingCompleted = useHomeStore.getState().readingCompleted;

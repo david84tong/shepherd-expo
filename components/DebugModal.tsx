@@ -728,7 +728,7 @@ export function DebugButton() {
         Alert.alert('No data', 'Firestore document has no data.');
         return;
       }
-      useUserStore.getState().syncFirestoreData(data as any); // Type assertion for UserDoc
+      await useUserStore.getState().syncFirestoreData(data as any); // Type assertion for UserDoc
       Toast.show({ type: 'success', text1: 'Synced Firestore data to store!' });
     } catch (err) {
       console.error('Sync Firestore error', err);

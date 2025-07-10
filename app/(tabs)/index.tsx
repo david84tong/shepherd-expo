@@ -107,7 +107,9 @@ export default function HomeScreen() {
                   '📥 Fresh completedMapPaths from Firestore:',
                   userData.completedMapPaths
                 );
-                syncData(userData as any);
+                syncData(userData as any).catch((error: any) => {
+                  console.error('❌ Error in syncData:', error);
+                });
               }
             }
           })
@@ -340,7 +342,9 @@ export default function HomeScreen() {
                 console.log('📥 Refreshed completedMapPaths on focus:', userData.completedMapPaths);
                 const syncData = useUserStore.getState().syncFirestoreData;
                 if (syncData) {
-                  syncData(userData as any);
+                  syncData(userData as any).catch((error: any) => {
+                    console.error('❌ Error in syncData:', error);
+                  });
                 }
               }
             }
