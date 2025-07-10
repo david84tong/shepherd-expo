@@ -43,6 +43,68 @@ type CheckInScreen = 'mood' | 'focus' | 'struggle' | 'success';
 
 const { width: screenWidth } = Dimensions.get('window');
 
+// Helper function to get responsive card dimensions using RPH and RPW
+const getResponsiveCardDimensions = () => {
+  // Device size breakpoints
+  const isSmallDevice = screenWidth <= 375;
+  const isMediumDevice = screenWidth > 375 && screenWidth < 414;
+  const isLargeDevice = screenWidth >= 414 && screenWidth < 768;
+  const isTablet = screenWidth >= 768;
+
+  // Debug logging for iPhone 16 Pro Max
+  console.log('Device detection - Screen width:', screenWidth, 'isLargeDevice:', isLargeDevice);
+
+  // Calculate items per row based on device size
+  const getMoodItemsPerRow = () => {
+    if (isSmallDevice) return 2;
+    if (isMediumDevice) return 3;
+    if (isLargeDevice) return 3;
+    if (isTablet) return 4;
+    return 3;
+  };
+  const getFocusItemsPerRow = () => 3;
+
+  // Responsive gap
+  const gap = 12;
+  // Account for container padding (20px each side = 40px total)
+  const containerPadding = 40;
+  const availableWidth = screenWidth - containerPadding;
+  const focusItemsPerRow = getFocusItemsPerRow();
+  
+  // For iPhone 16 Pro Max (440px), ensure 3 cards fit by using a more aggressive calculation
+  let focusBoxWidth;
+  if (screenWidth >= 440) {
+    // For iPhone 16 Pro Max and larger, use a fixed width that ensures 3 cards fit
+    focusBoxWidth = 120; // Fixed width that works for 3 cards
+  } else {
+    // For other devices, use the calculated width
+    focusBoxWidth = Math.min(
+      (availableWidth - gap * (focusItemsPerRow - 1)) / focusItemsPerRow,
+      isTablet ? 160 : 9999 // cap at 160px for tablets, no cap for phones
+    );
+  }
+
+  console.log('Focus box calculation - availableWidth:', availableWidth, 'focusBoxWidth:', focusBoxWidth, 'gap:', gap);
+
+  return {
+    mood: {
+      width: RPH(12),
+      height: RPH(14),
+      itemsPerRow: getMoodItemsPerRow()
+    },
+    focus: {
+      width: focusBoxWidth,
+      height: RPH(11),
+      itemsPerRow: focusItemsPerRow
+    },
+    gap,
+    isSmallDevice,
+    isMediumDevice,
+    isLargeDevice,
+    isTablet
+  };
+};
+
 const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [currentScreen, setCurrentScreen] = useState<CheckInScreen>('mood');
@@ -486,180 +548,215 @@ const GlobalCheckIn: React.FC<GlobalCheckInProps> = ({ checkInRef }) => {
     { icon: 'restaurant', iconType: 'ionicon', label: 'Gluttony', value: 'gluttony', color: '#2196F3', bgColor: 'bg-lightBlue' },
   ];
 
-  const renderMoodScreen = () => (
-    <Animated.View
-      style={{
-        flex: 1,
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        transform: [{ translateX: moodAnim }],
-      }}>
-      <Text className="font-feather text-heading text-textPrimary mb-8 mt-8">How are you feeling right now?</Text>
-      <View className="flex-row flex-wrap justify-center gap-8 mb-6 ">
-        {moods.map((mood) => (
-          <Pressable
-            key={mood.value}
-            onPress={() => {
-              setSelectedMood(mood.value);
-              setMood(mood.value); // Save to store
-              hapticMedium();
-              analytics.logEvent('checkin_mood_selected', { mood: mood.value });
-              // Automatically move to focus screen after selecting mood
-              setTimeout(() => {
-                animateToScreen('focus');
-              }, 200); // Slightly longer delay for better visual feedback
-            }}
+  const renderMoodScreen = () => {
+    const dimensions = getResponsiveCardDimensions();
+    const imageSize = RPH(9); // Responsive image size
+    
+    return (
+      <Animated.View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          paddingHorizontal: 20,
+          transform: [{ translateX: moodAnim }],
+        }}>
+        <Text className="font-feather text-heading text-textPrimary mb-6 mt-6">How are you feeling right now?</Text>
+        <View className="flex-row flex-wrap justify-center mb-4" style={{ gap: dimensions.gap }}>
+          {moods.map((mood) => (
+            <Pressable
+              key={mood.value}
+              onPress={() => {
+                setSelectedMood(mood.value);
+                setMood(mood.value); // Save to store
+                hapticMedium();
+                analytics.logEvent('checkin_mood_selected', { mood: mood.value });
+                // Automatically move to focus screen after selecting mood
+                setTimeout(() => {
+                  animateToScreen('focus');
+                }, 200); // Slightly longer delay for better visual feedback
+              }}
+              style={{
+                width: dimensions.mood.width,
+                height: dimensions.mood.height,
+              }}
+              className="rounded-2xl border-2 items-center justify-center shadow-buttonShadow bg-surfaceCreamLight border-accentGold">
+              <Image
+                source={mood.image}
+                style={{ 
+                  width: imageSize, 
+                  height: imageSize, 
+                  marginBottom: -8, 
+                  marginTop: -12 
+                }}
+                resizeMode="contain"
+              />
+              <Text className="font-din text-small text-textPrimary">{mood.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+      </Animated.View>
+    );
+  };
 
-            className={`${screenWidth < 400 ? 'w-24 h-28' : 'w-28 h-32'} rounded-2xl border-2 items-center justify-center shadow-buttonShadow bg-surfaceCreamLight ${selectedMood === mood.value
-              ? 'border-orange'
-              : 'border-accentGold'
-              }`}>
-            <Image
-              source={mood.image}
-              style={{ width: 90, height: 90, marginBottom: -8, marginTop: -12 }}
-              resizeMode="contain"
-            />
-            <Text className="font-din text-small text-textPrimary">{mood.label}</Text>
-          </Pressable>
-        ))}
-      </View>
-    </Animated.View>
-  );
+  const renderFocusScreen = () => {
+    const dimensions = getResponsiveCardDimensions();
+    const iconSize = dimensions.isSmallDevice ? RPH(2.8) : RPH(3.5); // Slightly smaller icons for iPhone SE
+    
+    // Debug logging for focus screen
+    console.log('Focus screen - Screen width:', screenWidth, 'focus width:', dimensions.focus.width, 'gap:', dimensions.gap);
+    
+    return (
+      <Animated.View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          paddingHorizontal: 20,
+          transform: [{ translateX: focusAnim }],
+        }}>
+        <Text className="font-feather text-heading text-textPrimary mb-4 mt-6">What would you like to focus on?</Text>
+        <View className="flex-row flex-wrap justify-center mb-4" style={{ gap: dimensions.gap }}>
+          {focusAreas.map((focus) => (
+            <Pressable
+              key={focus.value}
+              onPress={() => {
+                setSelectedFocus(focus.value);
+                setFocus(focus.value); // Save to store
+                hapticMedium();
+                analytics.logEvent('checkin_focus_selected', { focus: focus.value });
+                // Automatically move to struggle screen after selecting focus
+                setTimeout(() => {
+                  animateToScreen('struggle');
+                }, 100);
+              }}
+              style={{
+                width: dimensions.focus.width,
+                height: dimensions.focus.height,
+              }}
+              className={`rounded-2xl border-2 items-center justify-center ${selectedFocus === focus.value
+                ? 'bg-surfaceCreamLight border-orange'
+                : 'bg-surfaceCreamLight border-accentGold'
+                }`}>
+              <View className={`${focus.bgColor} rounded-xl ${dimensions.isSmallDevice ? 'p-2 mb-1' : 'p-3 mb-2'}`}>
+                {focus.iconType === 'fontawesome6' ? (
+                  <FontAwesome6
+                    name={focus.icon as any}
+                    size={iconSize}
+                    color={focus.color}
+                  />
+                ) : (
+                  <Ionicons
+                    name={focus.icon as any}
+                    size={iconSize}
+                    color={focus.color}
+                  />
+                )}
+              </View>
+              <Text className="font-din text-sm text-textPrimary">{focus.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Pressable
+          onPress={() => {
+            skipFocus(); // Save empty string to store
+            hapticMedium();
+            analytics.logEvent('checkin_focus_skipped');
+            // Skip focus screen and go to struggle
+            setTimeout(() => {
+              animateToScreen('struggle');
+            }, 100);
+          }}
+          className="mt-4 mb-2">
+          <Text className="font-din text-base text-gray-500 underline">Skip</Text>
+        </Pressable>
+      </Animated.View>
+    );
+  };
 
-  const renderFocusScreen = () => (
-    <Animated.View
-      style={{
-        flex: 1,
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        transform: [{ translateX: focusAnim }],
-      }}>
-      <Text className="font-feather text-heading text-textPrimary mb-6 mt-8">What would you like to focus on?</Text>
-      <View className={`flex-row flex-wrap justify-center ${screenWidth < 400 ? 'gap-2' : 'gap-3'}`}>
-        {focusAreas.map((focus) => (
-          <Pressable
-            key={focus.value}
-            onPress={() => {
-              setSelectedFocus(focus.value);
-              setFocus(focus.value); // Save to store
-              hapticMedium();
-              analytics.logEvent('checkin_focus_selected', { focus: focus.value });
-              // Automatically move to struggle screen after selecting focus
-              setTimeout(() => {
-                animateToScreen('struggle');
-              }, 100);
-            }}
-            className={`${screenWidth < 400 ? 'w-[28%] h-24' : 'w-[30%] h-28'}  rounded-2xl border-2 items-center justify-center ${selectedFocus === focus.value
-              ? 'bg-surfaceCreamLight border-orange'
-              : 'bg-surfaceCreamLight border-accentGold'
-              }`}>
-            <View className={`${focus.bgColor} rounded-xl p-3 mb-2`}>
-              {focus.iconType === 'fontawesome6' ? (
-                <FontAwesome6
-                  name={focus.icon as any}
-                  size={RPH(2.6)}
-                  color={focus.color}
-                />
-              ) : (
-                <Ionicons
-                  name={focus.icon as any}
-                  size={RPH(2.6)}
-                  color={focus.color}
-                />
-              )}
-            </View>
-            <Text className="font-din text-sm text-textPrimary">{focus.label}</Text>
-          </Pressable>
-        ))}
-      </View>
-      <Pressable
-        onPress={() => {
-          skipFocus(); // Save empty string to store
-          hapticMedium();
-          analytics.logEvent('checkin_focus_skipped');
-          // Skip focus screen and go to struggle
-          setTimeout(() => {
-            animateToScreen('struggle');
-          }, 100);
-        }}
-        className={`${screenWidth < 400 ? 'mt-6 mb-2' : 'mt-12 mb-4'}`}>
-        <Text className="font-din text-base text-gray-500 underline">Skip</Text>
-      </Pressable>
-    </Animated.View>
-  );
+  const renderStruggleScreen = () => {
+    const dimensions = getResponsiveCardDimensions();
+    console.log('Screen width:', screenWidth, 'isSmallDevice:', dimensions.isSmallDevice);
+    const iconSize = dimensions.isSmallDevice ? RPH(4.2) : RPH(3.7); // Larger icons for iPhone SE
+    
+    // Debug logging for struggle screen
+    console.log('Struggle screen - Screen width:', screenWidth, 'focus width:', dimensions.focus.width, 'gap:', dimensions.gap);
+    
+    return (
+      <Animated.View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          paddingHorizontal: 20,
+          transform: [{ translateX: struggleAnim }],
+        }}>
+        <Text className="font-feather text-heading text-textPrimary mb-4 mt-6">What are you struggling with?</Text>
+        <View className="flex-row flex-wrap justify-center mb-4" style={{ gap: dimensions.gap }}>
+          {struggleAreas.map((struggle) => (
+            <Pressable
+              key={struggle.value}
+              onPress={async () => {
+                setSelectedStruggle(struggle.value);
+                setStruggle(struggle.value); // Save to store
+                hapticMedium();
+                analytics.logEvent('checkin_struggle_selected', { struggle: struggle.value });
 
-  const renderStruggleScreen = () => (
-    <Animated.View
-      style={{
-        flex: 1,
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        transform: [{ translateX: struggleAnim }],
-      }}>
-      <Text className="font-feather text-heading text-textPrimary mb-6 mt-8">What are you struggling with?</Text>
-      <View className={`flex-row flex-wrap justify-center ${screenWidth < 400 ? 'gap-2' : 'gap-3'} mb-6`}>
-        {struggleAreas.map((struggle) => (
-          <Pressable
-            key={struggle.value}
-            onPress={async () => {
-              setSelectedStruggle(struggle.value);
-              setStruggle(struggle.value); // Save to store
-              hapticMedium();
-              analytics.logEvent('checkin_struggle_selected', { struggle: struggle.value });
+                try {
+                  await handleCompleteCheckIn();
+                  animateToScreen('success');
+                } catch (error) {
+                  console.log('[GlobalCheckIn] Error completing check-in:', error);
+                  // Still animate to success even if there's an error
+                  animateToScreen('success');
+                }
+              }}
+              style={{
+                width: dimensions.focus.width,
+                height: dimensions.focus.height,
+              }}
+              className={`rounded-2xl border-2 items-center justify-center ${selectedStruggle === struggle.value
+                ? 'bg-surfaceCreamLight border-orange'
+                : 'bg-surfaceCreamLight border-accentGold'
+                }`}>
+              <View className={`${struggle.bgColor} rounded-xl ${dimensions.isSmallDevice ? 'p-1 mb-1' : 'p-3 mb-2'}`}>
+                {struggle.iconType === 'fontawesome6' ? (
+                  <FontAwesome6
+                    name={struggle.icon as any}
+                    size={iconSize}
+                    color={struggle.color}
+                  />
+                ) : (
+                  <Ionicons
+                    name={struggle.icon as any}
+                    size={iconSize}
+                    color={struggle.color}
+                  />
+                )}
+              </View>
+              <Text className="font-din text-sm text-textPrimary">{struggle.label}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Pressable
+          onPress={async () => {
+            skipStruggle(); // Save empty string to store
+            hapticMedium();
+            analytics.logEvent('checkin_struggle_skipped');
 
-              try {
-                await handleCompleteCheckIn();
-                animateToScreen('success');
-              } catch (error) {
-                console.log('[GlobalCheckIn] Error completing check-in:', error);
-                // Still animate to success even if there's an error
-                animateToScreen('success');
-              }
-            }}
-            className={`${screenWidth < 400 ? 'w-[28%] h-20' : 'w-[30%] h-28'} rounded-2xl border-2 items-center justify-center ${selectedStruggle === struggle.value
-              ? 'bg-surfaceCreamLight border-orange'
-              : 'bg-surfaceCreamLight border-accentGold'
-              }`}>
-            <View className={`${struggle.bgColor} rounded-xl ${screenWidth < 400 ? 'p-2 mb-1' : 'p-3 mb-2'}`}>
-              {struggle.iconType === 'fontawesome6' ? (
-                <FontAwesome6
-                  name={struggle.icon as any}
-                  size={screenWidth < 400 ? RPH(2.2) : RPH(2.6)}
-                  color={struggle.color}
-                />
-              ) : (
-                <Ionicons
-                  name={struggle.icon as any}
-                  size={screenWidth < 400 ? RPH(2.2) : RPH(2.6)}
-                  color={struggle.color}
-                />
-              )}
-            </View>
-            <Text className="font-din text-sm text-textPrimary">{struggle.label}</Text>
-          </Pressable>
-        ))}
-      </View>
-      <Pressable
-        onPress={async () => {
-          skipStruggle(); // Save empty string to store
-          hapticMedium();
-          analytics.logEvent('checkin_struggle_skipped');
-
-          try {
-            // Save the check-in immediately after skipping struggle
-            await handleCompleteCheckIn();
-            animateToScreen('success');
-          } catch (error) {
-            console.log('[GlobalCheckIn] Error completing check-in (skipped):', error);
-            // Still animate to success even if there's an error
-            animateToScreen('success');
-          }
-        }}
-        className={`${screenWidth < 400 ? 'mt-4 mb-2' : 'mt-4 mb-4'}`}>
-        <Text className="font-din text-base text-gray-500 underline">Skip</Text>
-      </Pressable>
-    </Animated.View>
-  );
+            try {
+              // Save the check-in immediately after skipping struggle
+              await handleCompleteCheckIn();
+              animateToScreen('success');
+            } catch (error) {
+              console.log('[GlobalCheckIn] Error completing check-in (skipped):', error);
+              // Still animate to success even if there's an error
+              animateToScreen('success');
+            }
+          }}
+          className="mt-4 mb-2">
+          <Text className="font-din text-base text-gray-500 underline">Skip</Text>
+        </Pressable>
+      </Animated.View>
+    );
+  };
 
   // Trigger animations when success screen is shown
   useEffect(() => {
