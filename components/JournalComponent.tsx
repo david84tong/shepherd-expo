@@ -809,7 +809,7 @@ const JournalComponent = forwardRef<JournalComponentRef, JournalProps>(({ visibl
             // Check current state from homeStore to get the most up-to-date values
             const currentHomeState = useHomeStore.getState();
             // Check if bonus is available after reflection completion
-            const isBonusAvailable = currentHomeState.readingCompleted && currentHomeState.prayerCompleted && currentHomeState.reflectionCompleted && isFirstReadingOfDay && !currentHomeState.sawDailyBonus;
+            const isBonusAvailable = currentHomeState.readingCompleted && currentHomeState.prayerCompleted && currentHomeState.reflectionCompleted  && !currentHomeState.sawDailyBonus;
 
             const freshHomeState = useHomeStore.getState();
             appLog('🔍 JOURNAL SUCCESS - Bonus check (onPray):', {

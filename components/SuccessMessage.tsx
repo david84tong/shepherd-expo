@@ -73,12 +73,13 @@ const SuccessMessage: React.FC<SuccessMessageProps> = ({
 
     // Check if bonus is available - either after prayer with reading+reflection done
     // OR after reflection with reading+prayer done
-    const isFirstReadingOfDay = !sawStreakToday;
+    // const isFirstReadingOfDay = !sawStreakToday;
     const allActivitiesComplete = readingCompleted && reflectionCompleted && prayerCompleted;
-    const isBonusAvailable = allActivitiesComplete && isFirstReadingOfDay && !sawDailyBonus;
+    const isBonusAvailable = allActivitiesComplete && !sawDailyBonus;
 
     return isBonusAvailable;
   }, [showCollectBonus, readingCompleted, reflectionCompleted, prayerCompleted, sawStreakToday, sawDailyBonus]);
+
 
   // Get user data
   const lambHearts = useUserStore((state) => state?.getLambHearts?.());
